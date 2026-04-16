@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import {
   Search,
   MapPin,
@@ -40,11 +41,18 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaChip } from "@/components/nexa/NexaChip";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaRating } from "@/components/nexa/NexaRating";
+import { useNiche } from "@/components/nexa/NicheContext";
 
 // --- COMPONENTS ---
 
 const HeroSection = () => {
   const [searchValue, setSearchValue] = useState("");
+  const { setCurrentNiche } = useNiche();
+
+  useEffect(() => {
+    setCurrentNiche(null);
+  }, [setCurrentNiche]);
+
   const placeholders = [
     "Try 'barbers in Lekki'",
     "Try 'restaurants near me'",
@@ -176,28 +184,29 @@ const HeroSection = () => {
 
 const CategoryGrid = () => {
   const subGroups = [
-    { parent: "Home & Maintenance", name: "Handyman Finders", icon: "/handyman.png", color: "bg-amber-100/50 dark:bg-amber-900/20", services: ["Plumber", "Electrician", "Carpenter", "Painter", "Tiler", "Welder"], count: "1,240 businesses" },
-    { parent: "Home & Maintenance", name: "Specialist Finders", icon: "/specialist.png", color: "bg-amber-100/50 dark:bg-amber-900/20", services: ["Solar Installer", "Generator Repairer", "AC Technician", "Borehole Driller"], count: "820 businesses" },
-    { parent: "Fashion & Grooming", name: "Style Finders", icon: "/style.png", color: "bg-pink-100/50 dark:bg-pink-900/20", services: ["Tailor", "Hairdresser", "Barber", "Makeup Artist", "Manicurist"], count: "1,100 businesses" },
-    { parent: "Fashion & Grooming", name: "Wardrobe Finders", icon: "/wardrobe.png", color: "bg-pink-100/50 dark:bg-pink-900/20", services: ["Laundry", "Dry Cleaner", "Personal Shopper", "Cobbler"], count: "790 businesses" },
-    { parent: "Professional Services", name: "Tech Finders", icon: "/tech.png", color: "bg-blue-100/50 dark:bg-blue-900/20", services: ["Web Dev", "App Dev", "UI/UX Designer", "SEO Expert", "Cybersecurity"], count: "640 businesses" },
-    { parent: "Professional Services", name: "Corporate Finders", icon: "/corporate.png", color: "bg-blue-100/50 dark:bg-blue-900/20", services: ["Lawyer", "Accountant", "Tax Consultant", "Business Consultant"], count: "480 businesses" },
-    { parent: "Education & Skills", name: "Academic Finders", icon: "/academic.png", color: "bg-purple-100/50 dark:bg-purple-900/20", services: ["Home Tutor", "Music Instructor", "Language Teacher", "Exam Prep"], count: "520 businesses" },
-    { parent: "Events & Entertainment", name: "Planning Finders", icon: "/planning.png", color: "bg-fuchsia-100/50 dark:bg-fuchsia-900/20", services: ["Event Planner", "Decorator", "Souvenir Vendor", "Ushering Agency"], count: "430 businesses" },
-    { parent: "Health & Wellness", name: "Medical Finders", icon: "/medical.png", color: "bg-emerald-100/50 dark:bg-emerald-900/20", services: ["Private Nurse", "Physiotherapist", "Dentist", "Optician", "Pharmacy"], count: "810 businesses" },
-    { parent: "Logistics & Transport", name: "Delivery Finders", icon: "/delivery.png", color: "bg-blue-100/50 dark:bg-blue-900/20", services: ["Dispatch Rider", "Errand Runner", "Moving Service"], count: "340 businesses" },
-    { parent: "Automotive Services", name: "Repair Finders", icon: "/repair.png", color: "bg-slate-200/50 dark:bg-slate-800/20", services: ["Car Mechanic", "Vulcanizer", "Panel Beater", "Auto Electrician"], count: "420 businesses" },
-    { parent: "Food & Agribusiness", name: "Culinary Finders", icon: "/culinary.png", color: "bg-orange-100/50 dark:bg-orange-900/20", services: ["Private Chef", "Caterer", "Cake Baker", "Bulk Food Supplier"], count: "950 businesses" },
-    { parent: "Real Estate & Construction", name: "Property Finders", icon: "/property.png", color: "bg-green-100/50 dark:bg-green-900/20", services: ["Estate Agent", "Facility Manager", "Surveyor", "Quantity Surveyor"], count: "880 businesses" },
-    { parent: "Real Estate & Construction", name: "Building Finders", icon: "/building.png", color: "bg-green-100/50 dark:bg-green-900/20", services: ["Architect", "Bricklayer", "Aluminum Fitter", "POP Ceiling"], count: "570 businesses" },
-    { parent: "Home & Maintenance", name: "Sanitation Finders", icon: "/sanitation.png", color: "bg-amber-100/50 dark:bg-amber-900/20", services: ["Cleaning", "Fumigation", "Waste Management"], count: "610 businesses" },
-    { parent: "Logistics & Transport", name: "Transport Finders", icon: "/transport.png", color: "bg-blue-100/50 dark:bg-blue-900/20", services: ["Car Rental", "Bus Service", "Interstate Travel"], count: "450 businesses" },
-    { parent: "Health & Wellness", name: "Wellness Finders", icon: "/wellness.png", color: "bg-emerald-100/50 dark:bg-emerald-900/20", services: ["Spa", "Gym", "Yoga", "Mental Health"], count: "720 businesses" },
-    { parent: "Health & Wellness", name: "Care Finders", icon: "/care.png", color: "bg-emerald-100/50 dark:bg-emerald-900/20", services: ["Childcare", "Elderly Care", "Pet Care"], count: "390 businesses" },
-    { parent: "Professional Services", name: "Content Finders", icon: "/content.png", color: "bg-blue-100/50 dark:bg-blue-900/20", services: ["Content Writing", "Videography", "Photography", "Social Media"], count: "840 businesses" },
-    { parent: "Professional Services", name: "Talent Finders", icon: "/talent.png", color: "bg-blue-100/50 dark:bg-blue-900/20", services: ["Modelling", "Acting", "Voiceover"], count: "310 businesses" },
-    { parent: "Education & Skills", name: "Vocational Finders", icon: "/vocational.png", color: "bg-purple-100/50 dark:bg-purple-900/20", services: ["Coding", "Design", "Makeup", "Tailoring School"], count: "920 businesses" },
-    { parent: "Food & Agribusiness", name: "Agro Finders", icon: "/agro.png", color: "bg-orange-100/50 dark:bg-orange-900/20", services: ["Farm Produce", "Poultry", "Fishery", "Agro Consulting"], count: "1,050 businesses" },
+    { slug: "home-services", parent: "Home & Maintenance", name: "Handyman Finders", icon: "/handyman.png", color: "bg-home/10", services: ["Plumber", "Electrician", "Carpenter", "Painter", "Tiler", "Welder"], count: "1,240 businesses" },
+    { slug: "home-services", parent: "Home & Maintenance", name: "Specialist Finders", icon: "/specialist.png", color: "bg-home/10", services: ["Solar Installer", "Generator Repairer", "AC Technician", "Borehole Driller"], count: "820 businesses" },
+    { slug: "fashion-grooming", parent: "Fashion & Grooming", name: "Style Finders", icon: "/style.png", color: "bg-fashion/10", services: ["Tailor", "Hairdresser", "Barber", "Makeup Artist", "Manicurist"], count: "1,100 businesses" },
+    { slug: "fashion-grooming", parent: "Fashion & Grooming", name: "Wardrobe Finders", icon: "/wardrobe.png", color: "bg-fashion/10", services: ["Laundry", "Dry Cleaner", "Personal Shopper", "Cobbler"], count: "790 businesses" },
+    { slug: "professional-services", parent: "Professional Services", name: "Tech Finders", icon: "/tech.png", color: "bg-professionals/10", services: ["Web Dev", "App Dev", "UI/UX Designer", "SEO Expert", "Cybersecurity"], count: "640 businesses" },
+    { slug: "professional-services", parent: "Professional Services", name: "Corporate Finders", icon: "/corporate.png", color: "bg-professionals/10", services: ["Lawyer", "Accountant", "Tax Consultant", "Business Consultant"], count: "480 businesses" },
+    { slug: "education-skills", parent: "Education & Skills", name: "Academic Finders", icon: "/academic.png", color: "bg-education/10", services: ["Home Tutor", "Music Instructor", "Language Teacher", "Exam Prep"], count: "520 businesses" },
+    { slug: "events-entertainment", parent: "Events & Entertainment", name: "Planning Finders", icon: "/planning.png", color: "bg-events/10", services: ["Event Planner", "Decorator", "Souvenir Vendor", "Ushering Agency"], count: "430 businesses" },
+    { slug: "health-wellness", parent: "Health & Wellness", name: "Medical Finders", icon: "/medical.png", color: "bg-health/10", services: ["Private Nurse", "Physiotherapist", "Dentist", "Optician", "Pharmacy"], count: "810 businesses" },
+    { slug: "logistics-transport", parent: "Logistics & Transport", name: "Delivery Finders", icon: "/delivery.png", color: "bg-logistics/10", services: ["Dispatch Rider", "Errand Runner", "Moving Service"], count: "340 businesses" },
+    { slug: "automotive-services", parent: "Automotive Services", name: "Repair Finders", icon: "/repair.png", color: "bg-auto/10", services: ["Car Mechanic", "Vulcanizer", "Panel Beater", "Auto Electrician"], count: "420 businesses" },
+    { slug: "automotive-services", parent: "Automotive Services", name: "Auto Care Finders", icon: "/auto-care.png", color: "bg-auto/10", services: ["Mobile Car Wash", "Car Tracker Installer", "CCTV / Security Installer"], count: "350 businesses" },
+    { slug: "food-agribusiness", parent: "Food & Agribusiness", name: "Culinary Finders", icon: "/culinary.png", color: "bg-food/10", services: ["Private Chef", "Caterer", "Cake Baker", "Bulk Food Supplier"], count: "950 businesses" },
+    { slug: "real-estate-construction", parent: "Real Estate & Construction", name: "Property Finders", icon: "/property.png", color: "bg-realestate/10", services: ["Estate Agent", "Facility Manager", "Surveyor", "Quantity Surveyor"], count: "880 businesses" },
+    { slug: "real-estate-construction", parent: "Real Estate & Construction", name: "Building Finders", icon: "/building.png", color: "bg-realestate/10", services: ["Architect", "Bricklayer", "Aluminum Fitter", "POP Ceiling"], count: "570 businesses" },
+    { slug: "home-services", parent: "Home & Maintenance", name: "Sanitation Finders", icon: "/sanitation.png", color: "bg-home/10", services: ["Cleaning", "Fumigation", "Waste Management"], count: "610 businesses" },
+    { slug: "logistics-transport", parent: "Logistics & Transport", name: "Transport Finders", icon: "/transport.png", color: "bg-logistics/10", services: ["Car Rental", "Bus Service", "Interstate Travel"], count: "450 businesses" },
+    { slug: "health-wellness", parent: "Health & Wellness", name: "Wellness Finders", icon: "/wellness.png", color: "bg-health/10", services: ["Spa", "Gym", "Yoga", "Mental Health"], count: "720 businesses" },
+    { slug: "health-wellness", parent: "Health & Wellness", name: "Care Finders", icon: "/care.png", color: "bg-health/10", services: ["Childcare", "Elderly Care", "Pet Care"], count: "390 businesses" },
+    { slug: "professional-services", parent: "Professional Services", name: "Content Finders", icon: "/content.png", color: "bg-professionals/10", services: ["Content Writing", "Videography", "Photography", "Social Media"], count: "840 businesses" },
+    { slug: "professional-services", parent: "Professional Services", name: "Talent Finders", icon: "/talent.png", color: "bg-professionals/10", services: ["Modelling", "Acting", "Voiceover"], count: "310 businesses" },
+    { slug: "education-skills", parent: "Education & Skills", name: "Vocational Finders", icon: "/vocational.png", color: "bg-education/10", services: ["Coding", "Design", "Makeup", "Tailoring School"], count: "920 businesses" },
+    { slug: "food-agribusiness", parent: "Food & Agribusiness", name: "Agro Finders", icon: "/agro.png", color: "bg-food/10", services: ["Farm Produce", "Poultry", "Fishery", "Agro Consulting"], count: "1,050 businesses" },
   ];
 
   return (
@@ -221,51 +230,52 @@ const CategoryGrid = () => {
                 transition={{ delay: i * 0.03 }}
                 className="w-[420px] snap-start"
               >
-                <NexaCard variant="interactive" padding="none" className="h-full group overflow-hidden">
-                  <div className="glass-glint" />
-                  <div className="flex items-stretch h-full">
-                    {/* Left Side (1/3 Width) */}
-                    <div className={cn("w-1/3 flex items-center justify-center border-r-[0.5px] border-black/5 dark:border-white/5 relative", group.color)}>
-                      <img 
-                        src={group.icon} 
-                        alt={group.name}
-                        className="w-20 h-20 object-contain drop-shadow-2xl transition-transform group-hover:scale-110 duration-500 z-10"
-                      />
-                      <div className="absolute inset-0 bg-white/10 blur-2xl rounded-full scale-50" />
-                    </div>
+                <Link href={`/${group.slug}`}>
+                  <NexaCard variant="interactive" padding="none" className="h-full group overflow-hidden cursor-pointer">
+                    <div className="glass-glint" />
+                    <div className="flex items-stretch h-full">
+                      {/* Left Side (1/3 Width) */}
+                      <div className={cn("w-1/3 flex items-center justify-center border-r-[0.5px] border-black/5 dark:border-white/5 relative", group.color)}>
+                        <img
+                          src={group.icon}
+                          alt={group.name}
+                          className="w-20 h-20 object-contain drop-shadow-2xl transition-transform group-hover:scale-110 duration-500 z-10"
+                        />
+                        <div className="absolute inset-0 bg-white/10 blur-2xl rounded-full scale-50" />
+                      </div>
 
-                    {/* Right Side (2/3 Width) */}
-                    <div className="w-2/3 py-5 px-6 flex flex-col justify-between">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-nexa-brand/70 mb-1 block">
-                          {group.parent}
-                        </span>
-                        <h3 className="text-xl font-bold text-display mb-2 leading-tight group-hover:text-nexa-brand transition-colors">
-                          {group.name}
-                        </h3>
-                        <div className="flex flex-wrap gap-x-2 gap-y-0.5 leading-snug">
-                          {group.services.map((service, idx) => (
-                            <React.Fragment key={service}>
-                              <span className="text-xs text-nexa-text-secondary hover:text-nexa-brand transition-colors cursor-pointer">
-                                {service}
-                              </span>
-                              {idx < group.services.length - 1 && <span className="text-[10px] text-nexa-text-faint self-center">•</span>}
-                            </React.Fragment>
-                          ))}
+                      {/* Right Side (2/3 Width) */}
+                      <div className="w-2/3 py-5 px-6 flex flex-col justify-between">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-nexa-brand/70 mb-1 block">
+                            {group.parent}
+                          </span>
+                          <h3 className="text-xl font-bold text-display mb-2 leading-tight group-hover:text-nexa-brand transition-colors">
+                            {group.name}
+                          </h3>
+                          <div className="flex flex-wrap gap-x-2 gap-y-0.5 leading-snug">
+                            {group.services.map((service, idx) => (
+                              <React.Fragment key={service}>
+                                <span className="text-xs text-nexa-text-secondary hover:text-nexa-brand transition-colors cursor-pointer">
+                                  {service}
+                                </span>
+                                {idx < group.services.length - 1 && <span className="text-[10px] text-nexa-text-faint self-center">•</span>}
+                              </React.Fragment>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="mt-4 pt-3 border-t-[0.5px] border-nexa-border flex items-center justify-between">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-nexa-text-faint italic">
+                            {group.count}
+                          </span>
+                          <ArrowRight className="w-4 h-4 text-nexa-brand opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
                         </div>
                       </div>
-                      
-                      <div className="mt-4 pt-3 border-t-[0.5px] border-nexa-border flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-nexa-text-faint italic">
-                          {group.count}
-                        </span>
-                        <ArrowRight className="w-4 h-4 text-nexa-brand opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                      </div>
                     </div>
-                  </div>
-                </NexaCard>
-              </motion.div>
-            ))}
+                  </NexaCard>
+                </Link>
+              </motion.div>            ))}
           </div>
         </div>
       </div>
@@ -302,7 +312,7 @@ const BusinessCard = ({ name, category, rating, count, image, isVerified }: any)
             </div>
           </div>
           <h3 className="text-lg font-bold mb-4 line-clamp-1">{name}</h3>
-          
+
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1">
               <div className="w-2 h-2 rounded-full bg-nexa-accent" />
@@ -443,7 +453,7 @@ const Footer = () => {
               ))}
             </div>
           </div>
-          
+
           <div>
             <h4 className="font-bold mb-6">Platform</h4>
             <ul className="space-y-4 text-sm text-nexa-text-secondary">
@@ -489,13 +499,13 @@ export default function HomePage() {
   return (
     <main className="bg-nexa-bg-base">
       <NexaNavbar />
-      
+
       <HeroSection />
-      
+
       <CategoryGrid />
-      
+
       <FeaturedSection />
-      
+
       <HowItWorks />
 
       <section className="py-24">
@@ -540,7 +550,7 @@ export default function HomePage() {
       </section>
 
       <Footer />
-      
+
       <NexaBottomBar />
     </main>
   );

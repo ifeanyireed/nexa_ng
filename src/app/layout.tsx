@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/nexa/ThemeProvider";
+import { NicheProvider } from "@/components/nexa/NicheContext";
 
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans" });
 const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains" });
@@ -25,7 +26,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${dmSans.variable} ${jetbrains.variable} antialiased`}>
         <ThemeProvider>
-          {children}
+          <NicheProvider>
+            {children}
+          </NicheProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -231,6 +231,19 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     ],
     parentNicheId: "events-entertainment"
   },
+  "entertainment-finders": {
+    id: "events",
+    name: "Entertainment Finders",
+    heroTitle: "Unforgettable Event Entertainment",
+    colorClass: "bg-events",
+    darkColorClass: "dark:bg-events",
+    personality: "Vibrant, energetic, entertaining",
+    subServices: ["DJs", "Live Bands", "Comedians", "Photographers", "Videographers"],
+    products: [
+      { name: "Premium Party Speaker", price: "₦150,000", image: "https://images.unsplash.com/photo-1545454671-1b3a02766039?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "events-entertainment"
+  },
   "health-wellness": {
     id: "health",
     name: "Health & Wellness",

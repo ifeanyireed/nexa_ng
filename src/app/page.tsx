@@ -184,30 +184,30 @@ const HeroSection = () => {
 
 const CategoryGrid = () => {
   const subGroups = [
-    { slug: "handyman-finders", parent: "Home & Maintenance", name: "Handyman Finders", icon: "/handyman.png", color: "bg-home/10", services: ["Plumber", "Electrician", "Carpenter", "Painter", "Tiler", "Welder"], count: "1,240 businesses" },
-    { slug: "specialist-finders", parent: "Home & Maintenance", name: "Specialist Finders", icon: "/specialist.png", color: "bg-home/10", services: ["Solar Installer", "Generator Repairer", "AC Technician", "Borehole Driller"], count: "820 businesses" },
-    { slug: "style-finders", parent: "Fashion & Grooming", name: "Style Finders", icon: "/style.png", color: "bg-fashion/10", services: ["Tailor", "Hairdresser", "Barber", "Makeup Artist", "Manicurist"], count: "1,100 businesses" },
-    { slug: "wardrobe-finders", parent: "Fashion & Grooming", name: "Wardrobe Finders", icon: "/wardrobe.png", color: "bg-fashion/10", services: ["Laundry", "Dry Cleaner", "Personal Shopper", "Cobbler"], count: "790 businesses" },
-    { slug: "tech-finders", parent: "Professional Services", name: "Tech Finders", icon: "/tech.png", color: "bg-professionals/10", services: ["Web Dev", "App Dev", "UI/UX Designer", "SEO Expert", "Cybersecurity"], count: "640 businesses" },
-    { slug: "corporate-finders", parent: "Professional Services", name: "Corporate Finders", icon: "/corporate.png", color: "bg-professionals/10", services: ["Lawyer", "Accountant", "Tax Consultant", "Business Consultant"], count: "480 businesses" },
-    { slug: "academic-finders", parent: "Education & Skills", name: "Academic Finders", icon: "/academic.png", color: "bg-education/10", services: ["Home Tutor", "Music Instructor", "Language Teacher", "Exam Prep"], count: "520 businesses" },
-    { slug: "planning-finders", parent: "Events & Entertainment", name: "Planning Finders", icon: "/planning.png", color: "bg-events/10", services: ["Event Planner", "Decorator", "Souvenir Vendor", "Ushering Agency"], count: "430 businesses" },
-    { slug: "entertainment-finders", parent: "Events & Entertainment", name: "Entertainment Finders", icon: "/planning.png", color: "bg-events/10", services: ["DJ", "Live Band", "Comedian", "Photographer", "Videographer"], count: "380 businesses" },
-    { slug: "medical-finders", parent: "Health & Wellness", name: "Medical Finders", icon: "/medical.png", color: "bg-health/10", services: ["Private Nurse", "Physiotherapist", "Dentist", "Optician", "Pharmacy"], count: "810 businesses" },
-    { slug: "delivery-finders", parent: "Logistics & Transport", name: "Delivery Finders", icon: "/delivery.png", color: "bg-logistics/10", services: ["Dispatch Rider", "Errand Runner", "Moving Service"], count: "340 businesses" },
-    { slug: "repair-finders", parent: "Automotive Services", name: "Repair Finders", icon: "/repair.png", color: "bg-auto/10", services: ["Car Mechanic", "Vulcanizer", "Panel Beater", "Auto Electrician"], count: "420 businesses" },
-    { slug: "auto-care-finders", parent: "Automotive Services", name: "Auto Care Finders", icon: "/auto-care.png", color: "bg-auto/10", services: ["Mobile Car Wash", "Car Tracker Installer", "CCTV / Security Installer"], count: "350 businesses" },
-    { slug: "culinary-finders", parent: "Food & Agribusiness", name: "Culinary Finders", icon: "/culinary.png", color: "bg-food/10", services: ["Private Chef", "Caterer", "Cake Baker", "Bulk Food Supplier"], count: "950 businesses" },
-    { slug: "property-finders", parent: "Real Estate & Construction", name: "Property Finders", icon: "/property.png", color: "bg-realestate/10", services: ["Estate Agent", "Facility Manager", "Surveyor", "Quantity Surveyor"], count: "880 businesses" },
-    { slug: "building-finders", parent: "Real Estate & Construction", name: "Building Finders", icon: "/building.png", color: "bg-realestate/10", services: ["Architect", "Bricklayer", "Aluminum Fitter", "POP Ceiling"], count: "570 businesses" },
-    { slug: "sanitation-finders", parent: "Home & Maintenance", name: "Sanitation Finders", icon: "/sanitation.png", color: "bg-home/10", services: ["Cleaning", "Fumigation", "Waste Management"], count: "610 businesses" },
-    { slug: "transport-finders", parent: "Logistics & Transport", name: "Transport Finders", icon: "/transport.png", color: "bg-logistics/10", services: ["Car Rental", "Bus Service", "Interstate Travel"], count: "450 businesses" },
-    { slug: "wellness-finders", parent: "Health & Wellness", name: "Wellness Finders", icon: "/wellness.png", color: "bg-health/10", services: ["Spa", "Gym", "Yoga", "Mental Health"], count: "720 businesses" },
-    { slug: "care-finders", parent: "Health & Wellness", name: "Care Finders", icon: "/care.png", color: "bg-health/10", services: ["Childcare", "Elderly Care", "Pet Care"], count: "390 businesses" },
-    { slug: "content-finders", parent: "Professional Services", name: "Content Finders", icon: "/content.png", color: "bg-professionals/10", services: ["Content Writing", "Videography", "Photography", "Social Media"], count: "840 businesses" },
-    { slug: "talent-finders", parent: "Professional Services", name: "Talent Finders", icon: "/talent.png", color: "bg-professionals/10", services: ["Modelling", "Acting", "Voiceover"], count: "310 businesses" },
-    { slug: "vocational-finders", parent: "Education & Skills", name: "Vocational Finders", icon: "/vocational.png", color: "bg-education/10", services: ["Coding", "Design", "Makeup", "Tailoring School"], count: "920 businesses" },
-    { slug: "agro-finders", parent: "Food & Agribusiness", name: "Agro Finders", icon: "/agro.png", color: "bg-food/10", services: ["Farm Produce", "Poultry", "Fishery", "Agro Consulting"], count: "1,050 businesses" },
+    { slug: "handyman-finders", parent: "Home & Maintenance", name: "Handyman Finders", icon: "/handyman.png", color: "bg-home/10", services: ["Plumber Finder", "Electrician Finder", "Carpenter Finder", "Painter Finder", "Tiler Finder", "Welder Finder"], count: "1,240 businesses" },
+    { slug: "specialist-finders", parent: "Home & Maintenance", name: "Specialist Finders", icon: "/specialist.png", color: "bg-home/10", services: ["Solar Installer Finder", "Generator Repairer Finder", "AC Technician Finder", "Borehole Driller Finder", "Inverter Repairer Finder"], count: "820 businesses" },
+    { slug: "sanitation-finders", parent: "Home & Maintenance", name: "Sanitation Finders", icon: "/sanitation.png", color: "bg-home/10", services: ["Home Cleaner Finder", "Fumigator (Pest Control) Finder", "Waste Disposal Finder", "Water Tank Cleaner Finder"], count: "610 businesses" },
+    { slug: "style-finders", parent: "Fashion & Grooming", name: "Style Finders", icon: "/style.png", color: "bg-fashion/10", services: ["Tailor (Bespoke) Finder", "Hairdresser (Braider) Finder", "Barber Finder", "Makeup Artist Finder", "Manicurist (Nail Tech) Finder"], count: "1,100 businesses" },
+    { slug: "wardrobe-finders", parent: "Fashion & Grooming", name: "Wardrobe Finders", icon: "/wardrobe.png", color: "bg-fashion/10", services: ["Laundry Finder", "Dry Cleaner Finder", "Personal Shopper Finder", "Cobbler (Shoe Repair) Finder"], count: "790 businesses" },
+    { slug: "tech-finders", parent: "Professional Services", name: "Tech Finders", icon: "/tech.png", color: "bg-professionals/10", services: ["Web Developer Finder", "App Developer Finder", "UI/UX Designer Finder", "SEO Expert Finder", "Cybersecurity Consultant Finder"], count: "640 businesses" },
+    { slug: "corporate-finders", parent: "Professional Services", name: "Corporate Finders", icon: "/corporate.png", color: "bg-professionals/10", services: ["Lawyer Finder", "Accountant Finder", "Tax Consultant Finder", "Business Consultant Finder", "Grant Writer Finder"], count: "480 businesses" },
+    { slug: "content-finders", parent: "Professional Services", name: "Content Finders", icon: "/content.png", color: "bg-professionals/10", services: ["Copywriter Finder", "Social Media Manager Finder", "Graphic Designer Finder", "Video Editor Finder", "Translator Finder"], count: "840 businesses" },
+    { slug: "talent-finders", parent: "Professional Services", name: "Talent Finders", icon: "/talent.png", color: "bg-professionals/10", services: ["Model Finder", "Actor Finder", "Voice-Over Artist Finder"], count: "310 businesses" },
+    { slug: "academic-finders", parent: "Education & Skills", name: "Academic Finders", icon: "/academic.png", color: "bg-education/10", services: ["Home Tutor Finder", "Music Instructor Finder", "Language Teacher Finder", "Exam Prep Tutor Finder", "School Finder"], count: "520 businesses" },
+    { slug: "vocational-finders", parent: "Education & Skills", name: "Vocational Finders", icon: "/vocational.png", color: "bg-education/10", services: ["Driving School Instructor Finder", "Tech Skill Trainer Finder", "Fashion School Instructor Finder", "Catering School Instructor Finder"], count: "920 businesses" },
+    { slug: "planning-finders", parent: "Events & Entertainment", name: "Planning Finders", icon: "/planning.png", color: "bg-events/10", services: ["Event Planner Finder", "Decorator Finder", "Souvenir Vendor Finder", "Ushering Agency Finder"], count: "430 businesses" },
+    { slug: "entertainment-finders", parent: "Events & Entertainment", name: "Entertainment Finders", icon: "/entertain.png", color: "bg-events/10", services: ["DJ Finder", "MC Finder", "Photographer Finder", "Videographer Finder", "Drone Pilot Finder", "Live Band / Musician Finder"], count: "380 businesses" },
+    { slug: "medical-finders", parent: "Health & Wellness", name: "Medical Finders", icon: "/medical.png", color: "bg-health/10", services: ["Private Nurse Finder", "Physiotherapist Finder", "Dentist Finder", "Optician Finder", "Pharmacy Finder"], count: "810 businesses" },
+    { slug: "wellness-finders", parent: "Health & Wellness", name: "Wellness Finders", icon: "/wellness.png", color: "bg-health/10", services: ["Gym Instructor Finder", "Yoga Teacher Finder", "Nutritionist Finder", "Massage Therapist Finder"], count: "720 businesses" },
+    { slug: "care-finders", parent: "Health & Wellness", name: "Care Finders", icon: "/care.png", color: "bg-health/10", services: ["Nanny Finder", "Elderly Companion Finder", "Pet Sitter Finder"], count: "390 businesses" },
+    { slug: "transport-finders", parent: "Logistics & Transport", name: "Transport Finders", icon: "/transport.png", color: "bg-logistics/10", services: ["Professional Driver Finder", "Towing Van Finder", "Car Rental Finder", "Bus Hire Finder"], count: "450 businesses" },
+    { slug: "delivery-finders", parent: "Logistics & Transport", name: "Delivery Finders", icon: "/delivery.png", color: "bg-logistics/10", services: ["Dispatch Rider (Logistics) Finder", "Errand Runner Finder", "Moving / Relocation Service Finder"], count: "340 businesses" },
+    { slug: "repair-finders", parent: "Automotive Services", name: "Repair Finders", icon: "/repair.png", color: "bg-auto/10", services: ["Car Mechanic Finder", "Vulcanizer Finder", "Panel Beater Finder", "Auto Electrician Finder"], count: "420 businesses" },
+    { slug: "auto-care-finders", parent: "Automotive Services", name: "Auto Care Finders", icon: "/auto-care.png", color: "bg-auto/10", services: ["Mobile Car Wash Finder", "Car Tracker Installer Finder", "CCTV / Security Installer Finder"], count: "350 businesses" },
+    { slug: "culinary-finders", parent: "Food & Agribusiness", name: "Culinary Finders", icon: "/culinary.png", color: "bg-food/10", services: ["Private Chef Finder", "Caterer Finder", "Cake Baker Finder", "Bulk Food Supplier Finder"], count: "950 businesses" },
+    { slug: "agro-finders", parent: "Food & Agribusiness", name: "Agro Finders", icon: "/agro.png", color: "bg-food/10", services: ["Farm Manager Finder", "Agro-Processor Finder", "Veterinary Doctor Finder", "Pet Groomer Finder", "Poultry Farmer Finder", "Fish Farmer Finder"], count: "1,050 businesses" },
+    { slug: "property-finders", parent: "Real Estate & Construction", name: "Property Finders", icon: "/property.png", color: "bg-realestate/10", services: ["Estate Agent Finder", "Facility Manager Finder", "Surveyor Finder", "Quantity Surveyor Finder"], count: "880 businesses" },
+    { slug: "building-finders", parent: "Real Estate & Construction", name: "Building Finders", icon: "/building.png", color: "bg-realestate/10", services: ["Architect Finder", "Bricklayer Finder", "Aluminum Fitter Finder", "POP Ceiling Installer Finder"], count: "570 businesses" },
   ];
 
   return (
@@ -219,8 +219,8 @@ const CategoryGrid = () => {
         </div>
       </div>
 
-      <div className="overflow-x-auto py-12 scrollbar-hide snap-x snap-mandatory">
-        <div className="flex flex-nowrap gap-6 px-[max(1rem,calc((100vw-1280px)/2+1rem))]">
+      <div className="overflow-x-auto py-12 no-scrollbar snap-x snap-mandatory scroll-edge-fade">
+        <div className="flex flex-nowrap gap-6 px-[max(1rem,calc((100vw-1280px)/2+1rem))] pb-4">
           <div className="grid grid-rows-2 grid-flow-col gap-6">
             {subGroups.map((group, i) => (
               <motion.div
@@ -456,22 +456,34 @@ const Footer = () => {
           </div>
 
           <div>
-            <h4 className="font-bold mb-6">Platform</h4>
+            <h4 className="font-bold mb-6 text-display tracking-widest uppercase text-[10px]">Platform</h4>
             <ul className="space-y-4 text-sm text-nexa-text-secondary">
-              <li className="hover:text-nexa-brand cursor-pointer">Browse Categories</li>
-              <li className="hover:text-nexa-brand cursor-pointer">Trending Businesses</li>
-              <li className="hover:text-nexa-brand cursor-pointer">Verified Directory</li>
-              <li className="hover:text-nexa-brand cursor-pointer">Nexa App</li>
+              <Link href="/categories"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Browse Categories</li></Link>
+              <Link href="/trending"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Trending Businesses</li></Link>
+              <Link href="/search"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Global Search</li></Link>
+              <li className="hover:text-nexa-brand cursor-pointer transition-colors opacity-50">Nexa App (Coming Soon)</li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-bold mb-6">Business</h4>
+            <h4 className="font-bold mb-6 text-display tracking-widest uppercase text-[10px]">Company</h4>
             <ul className="space-y-4 text-sm text-nexa-text-secondary">
-              <li className="hover:text-nexa-brand cursor-pointer">List your Business</li>
-              <li className="hover:text-nexa-brand cursor-pointer">Business Solutions</li>
-              <li className="hover:text-nexa-brand cursor-pointer">Advertising</li>
-              <li className="hover:text-nexa-brand cursor-pointer">Success Stories</li>
+              <Link href="/about"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Our Story</li></Link>
+              <Link href="/contact"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Contact & Support</li></Link>
+              <Link href="/legal/privacy"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Privacy Policy</li></Link>
+              <Link href="/legal/terms"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Terms of Service</li></Link>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-bold mb-6 text-display tracking-widest uppercase text-[10px]">Business</h4>
+            <ul className="space-y-4 text-sm text-nexa-text-secondary">
+              <Link href="/join">
+                <li className="hover:text-nexa-brand cursor-pointer transition-colors font-bold text-nexa-brand">List your Business</li>
+              </Link>
+              <Link href="/business"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Enterprise Solutions</li></Link>
+              <Link href="/business"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Advertising</li></Link>
+              <Link href="/success-stories"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Success Stories</li></Link>
             </ul>
           </div>
 

@@ -70,8 +70,11 @@ export const NexaInput = React.forwardRef<HTMLInputElement, NexaInputProps>(
                   y: isFloating ? -24 : 0,
                   scale: isFloating ? 0.85 : 1,
                   color: isFocused ? "var(--nexa-brand)" : "var(--nexa-text-muted)",
+                  backgroundColor: isFloating ? "var(--nexa-bg-surface)" : "transparent",
+                  paddingLeft: isFloating ? "4px" : "0px",
+                  paddingRight: isFloating ? "4px" : "0px",
                 }}
-                className="absolute left-3 top-3 origin-left pointer-events-none transition-colors"
+                className="absolute left-3 top-3 origin-left pointer-events-none transition-[color,padding,background-color] z-10"
               >
                 {label}
               </motion.label>
@@ -80,6 +83,8 @@ export const NexaInput = React.forwardRef<HTMLInputElement, NexaInputProps>(
               ref={ref}
               className={cn(
                 "w-full h-full bg-transparent outline-none text-nexa-text-primary pt-1 transition-all",
+                "placeholder:text-nexa-text-faint placeholder:transition-opacity placeholder:duration-200",
+                "placeholder:opacity-0 hover:placeholder:opacity-100 focus:placeholder:opacity-100",
                 !label && "pt-0"
               )}
               onFocus={handleFocus}

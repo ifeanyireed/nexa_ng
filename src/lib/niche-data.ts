@@ -20,7 +20,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-home",
     darkColorClass: "dark:bg-home",
     personality: "Reliable, hands-on, functional",
-    subServices: ["Plumbers", "Electricians", "Carpenters", "Painters", "Tilers", "Welder"],
+    subServices: ["Plumber Finder", "Electrician Finder", "Carpenter Finder", "Painter Finder", "Tiler Finder", "Welder Finder"],
     products: [
       { name: "Premium Emulsion Paint", price: "₦45,000", image: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=400" },
       { name: "Heavy Duty Drill", price: "₦120,000", image: "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&q=80&w=400" }
@@ -33,7 +33,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-home",
     darkColorClass: "dark:bg-home",
     personality: "Reliable, hands-on, functional",
-    subServices: ["Plumbers", "Electricians", "Carpenters", "Painters", "Tilers", "Welder"],
+    subServices: ["Plumber Finder", "Electrician Finder", "Carpenter Finder", "Painter Finder", "Tiler Finder", "Welder Finder"],
     products: [
       { name: "Heavy Duty Drill", price: "₦120,000", image: "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -46,7 +46,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-home",
     darkColorClass: "dark:bg-home",
     personality: "Technical, specialized, expert",
-    subServices: ["Solar Installers", "Generator Repairers", "AC Technicians", "Borehole Drillers"],
+    subServices: ["Solar Installer Finder", "Generator Repairer Finder", "AC Technician Finder", "Borehole Driller Finder", "Inverter Repairer Finder"],
     products: [
       { name: "Solar Inverter 5KVA", price: "₦850,000", image: "https://images.unsplash.com/photo-1509391366360-feaffa648bd8?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -59,7 +59,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-home",
     darkColorClass: "dark:bg-home",
     personality: "Clean, thorough, reliable",
-    subServices: ["Cleaning", "Fumigation", "Waste Management"],
+    subServices: ["Home Cleaner Finder", "Fumigator (Pest Control) Finder", "Waste Disposal Finder", "Water Tank Cleaner Finder"],
     products: [
       { name: "Industrial Vacuum Cleaner", price: "₦75,000", image: "https://images.unsplash.com/photo-1581578731548-c64695cc6958?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -72,7 +72,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-fashion",
     darkColorClass: "dark:bg-fashion",
     personality: "Stylish, aspirational, personal",
-    subServices: ["Tailors", "Hairdressers", "Barbers", "Makeup Artists", "Manicurists"],
+    subServices: ["Tailor (Bespoke) Finder", "Hairdresser (Braider) Finder", "Barber Finder", "Makeup Artist Finder", "Manicurist (Nail Tech) Finder"],
     products: [
       { name: "Bespoke Suit Fabric", price: "₦85,000", image: "https://images.unsplash.com/photo-1594932224828-b4b059b6f68d?auto=format&fit=crop&q=80&w=400" },
       { name: "Organic Hair Serum", price: "₦12,500", image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=400" }
@@ -85,7 +85,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-fashion",
     darkColorClass: "dark:bg-fashion",
     personality: "Stylish, aspirational, personal",
-    subServices: ["Tailors", "Hairdressers", "Barbers", "Makeup Artists", "Manicurists"],
+    subServices: ["Tailor (Bespoke) Finder", "Hairdresser (Braider) Finder", "Barber Finder", "Makeup Artist Finder", "Manicurist (Nail Tech) Finder"],
     products: [
       { name: "Bespoke Suit Fabric", price: "₦85,000", image: "https://images.unsplash.com/photo-1594932224828-b4b059b6f68d?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -98,7 +98,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-fashion",
     darkColorClass: "dark:bg-fashion",
     personality: "Meticulous, organized, helpful",
-    subServices: ["Laundry", "Dry Cleaners", "Personal Shoppers", "Cobblers"],
+    subServices: ["Laundry Finder", "Dry Cleaner Finder", "Personal Shopper Finder", "Cobbler (Shoe Repair) Finder"],
     products: [
       { name: "Premium Leather Polish", price: "₦3,500", image: "https://images.unsplash.com/photo-1614786413234-73d1576d91d4?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -111,7 +111,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-professionals",
     darkColorClass: "dark:bg-professionals",
     personality: "Authoritative, trusted, corporate",
-    subServices: ["Web Devs", "Lawyers", "Accountants", "Consultants", "Designers"],
+    subServices: ["Web Developer Finder", "App Developer Finder", "UI/UX Designer Finder", "SEO Expert Finder", "Cybersecurity Consultant Finder"],
     products: [
       { name: "Business Consultation", price: "₦50,000/hr", image: "https://images.unsplash.com/photo-1454165833767-027ffea9e77b?auto=format&fit=crop&q=80&w=400" }
     ]
@@ -123,7 +123,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-professionals",
     darkColorClass: "dark:bg-professionals",
     personality: "Cutting-edge, precise, innovative",
-    subServices: ["Web Devs", "App Devs", "UI/UX Designers", "SEO Experts", "Cybersecurity"],
+    subServices: ["Web Developer Finder", "App Developer Finder", "UI/UX Designer Finder", "SEO Expert Finder", "Cybersecurity Consultant Finder"],
     products: [
       { name: "Software Development Kit", price: "₦150,000", image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -136,7 +136,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-professionals",
     darkColorClass: "dark:bg-professionals",
     personality: "Corporate, reliable, professional",
-    subServices: ["Lawyers", "Accountants", "Tax Consultants", "Business Consultants"],
+    subServices: ["Lawyer Finder", "Accountant Finder", "Tax Consultant Finder", "Business Consultant Finder", "Grant Writer Finder"],
     products: [
       { name: "Corporate Legal Template", price: "₦25,000", image: "https://images.unsplash.com/photo-1505664194779-8beaceb93744?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -149,7 +149,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-professionals",
     darkColorClass: "dark:bg-professionals",
     personality: "Creative, visual, engaging",
-    subServices: ["Content Writers", "Videographers", "Photographers", "Social Media Managers"],
+    subServices: ["Copywriter Finder", "Social Media Manager Finder", "Graphic Designer Finder", "Video Editor Finder", "Translator Finder"],
     products: [
       { name: "Vlog Lighting Set", price: "₦45,000", image: "https://images.unsplash.com/photo-1594465919760-441fe5908ab0?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -162,7 +162,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-professionals",
     darkColorClass: "dark:bg-professionals",
     personality: "Charismatic, professional, diverse",
-    subServices: ["Models", "Actors", "Voiceover Artists"],
+    subServices: ["Model Finder", "Actor Finder", "Voice-Over Artist Finder"],
     products: [
       { name: "Professional Headshot Session", price: "₦35,000", image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -175,7 +175,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-education",
     darkColorClass: "dark:bg-education",
     personality: "Inspiring, growth-oriented, warm",
-    subServices: ["Home Tutors", "Music Teachers", "Driving Schools", "Tech Trainers"],
+    subServices: ["Home Tutor Finder", "Music Instructor Finder", "Language Teacher Finder", "Exam Prep Tutor Finder", "School Finder"],
     products: [
       { name: "Piano Lesson Book", price: "₦5,000", image: "https://images.unsplash.com/photo-1520529611443-d220497235d7?auto=format&fit=crop&q=80&w=400" }
     ]
@@ -187,7 +187,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-education",
     darkColorClass: "dark:bg-education",
     personality: "Academic, focused, nurturing",
-    subServices: ["Home Tutors", "Music Instructors", "Language Teachers", "Exam Prep"],
+    subServices: ["Home Tutor Finder", "Music Instructor Finder", "Language Teacher Finder", "Exam Prep Tutor Finder", "School Finder"],
     products: [
       { name: "Mathematics Textbook", price: "₦4,500", image: "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -200,7 +200,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-education",
     darkColorClass: "dark:bg-education",
     personality: "Practical, skill-focused, empowering",
-    subServices: ["Coding Schools", "Design Academies", "Makeup Schools", "Tailoring Schools"],
+    subServices: ["Driving School Instructor Finder", "Tech Skill Trainer Finder", "Fashion School Instructor Finder", "Catering School Instructor Finder"],
     products: [
       { name: "Beginner Design Kit", price: "₦15,000", image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -213,7 +213,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-events",
     darkColorClass: "dark:bg-events",
     personality: "Vibrant, celebratory, energetic",
-    subServices: ["Event Planners", "DJs", "Photographers", "Decorators"],
+    subServices: ["Event Planner Finder", "Decorator Finder", "Souvenir Vendor Finder", "Ushering Agency Finder"],
     products: [
       { name: "Party Lighting Kit", price: "₦250,000", image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80&w=400" }
     ]
@@ -225,7 +225,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-events",
     darkColorClass: "dark:bg-events",
     personality: "Organized, creative, reliable",
-    subServices: ["Event Planners", "Decorators", "Souvenir Vendors", "Ushering Agencies"],
+    subServices: ["Event Planner Finder", "Decorator Finder", "Souvenir Vendor Finder", "Ushering Agency Finder"],
     products: [
       { name: "Event Planning Guide", price: "₦10,000", image: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -238,7 +238,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-events",
     darkColorClass: "dark:bg-events",
     personality: "Vibrant, energetic, entertaining",
-    subServices: ["DJs", "Live Bands", "Comedians", "Photographers", "Videographers"],
+    subServices: ["DJ Finder", "MC Finder", "Photographer Finder", "Videographer Finder", "Drone Pilot Finder", "Live Band / Musician Finder"],
     products: [
       { name: "Premium Party Speaker", price: "₦150,000", image: "https://images.unsplash.com/photo-1545454671-1b3a02766039?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -251,7 +251,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-health",
     darkColorClass: "dark:bg-health",
     personality: "Clean, clinical, trustworthy",
-    subServices: ["Nurses", "Physiotherapists", "Gym Instructors", "Yoga Teachers"],
+    subServices: ["Private Nurse Finder", "Physiotherapist Finder", "Dentist Finder", "Optician Finder", "Pharmacy Finder"],
     products: [
       { name: "Yoga Mat Pro", price: "₦18,000", image: "https://images.unsplash.com/photo-1592432678016-e910b452f9a2?auto=format&fit=crop&q=80&w=400" }
     ]
@@ -263,7 +263,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-health",
     darkColorClass: "dark:bg-health",
     personality: "Clinical, professional, caring",
-    subServices: ["Private Nurses", "Physiotherapists", "Dentists", "Opticians", "Pharmacies"],
+    subServices: ["Private Nurse Finder", "Physiotherapist Finder", "Dentist Finder", "Optician Finder", "Pharmacy Finder"],
     products: [
       { name: "First Aid Kit", price: "₦12,000", image: "https://images.unsplash.com/photo-1603398938378-e54eab446ddd?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -276,7 +276,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-health",
     darkColorClass: "dark:bg-health",
     personality: "Zen, rejuvenating, calm",
-    subServices: ["Spas", "Gyms", "Yoga Studios", "Mental Health Specialists"],
+    subServices: ["Gym Instructor Finder", "Yoga Teacher Finder", "Nutritionist Finder", "Massage Therapist Finder"],
     products: [
       { name: "Essential Oil Set", price: "₦8,500", image: "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -289,7 +289,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-health",
     darkColorClass: "dark:bg-health",
     personality: "Caring, responsible, warm",
-    subServices: ["Childcare", "Elderly Care", "Pet Care"],
+    subServices: ["Nanny Finder", "Elderly Companion Finder", "Pet Sitter Finder"],
     products: [
       { name: "Nanny Selection Guide", price: "₦5,000", image: "https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -302,7 +302,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-logistics",
     darkColorClass: "dark:bg-logistics",
     personality: "Fast, direct, operational",
-    subServices: ["Dispatch Riders", "Tow Trucks", "Car Rentals", "Movers"],
+    subServices: ["Professional Driver Finder", "Towing Van Finder", "Car Rental Finder", "Bus Hire Finder"],
     products: [
       { name: "Heavy Duty Packing Boxes", price: "₦2,500", image: "https://images.unsplash.com/photo-1524514587686-e2909d726e9b?auto=format&fit=crop&q=80&w=400" }
     ]
@@ -314,7 +314,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-logistics",
     darkColorClass: "dark:bg-logistics",
     personality: "Swift, efficient, trackable",
-    subServices: ["Dispatch Riders", "Errand Runners", "Moving Services"],
+    subServices: ["Dispatch Rider (Logistics) Finder", "Errand Runner Finder", "Moving / Relocation Service Finder"],
     products: [
       { name: "Protective Bubble Wrap", price: "₦4,000", image: "https://images.unsplash.com/photo-1530543787849-128d94430c6a?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -327,7 +327,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-logistics",
     darkColorClass: "dark:bg-logistics",
     personality: "Mobile, reliable, widespread",
-    subServices: ["Car Rentals", "Bus Services", "Interstate Travel"],
+    subServices: ["Professional Driver Finder", "Towing Van Finder", "Car Rental Finder", "Bus Hire Finder"],
     products: [
       { name: "Travel Organizer", price: "₦6,500", image: "https://images.unsplash.com/photo-1553913861-c0fddf2619ee?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -340,7 +340,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-auto",
     darkColorClass: "dark:bg-auto",
     personality: "Technical, masculine, mechanical",
-    subServices: ["Mechanics", "Electricians", "Car Wash", "Tracker Installers"],
+    subServices: ["Car Mechanic Finder", "Vulcanizer Finder", "Panel Beater Finder", "Auto Electrician Finder"],
     products: [
       { name: "Synthetic Engine Oil", price: "₦15,000", image: "https://images.unsplash.com/photo-1486006920555-c77dcf18193c?auto=format&fit=crop&q=80&w=400" }
     ]
@@ -352,7 +352,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-auto",
     darkColorClass: "dark:bg-auto",
     personality: "Technical, mechanical, reliable",
-    subServices: ["Car Mechanics", "Vulcanizers", "Panel Beaters", "Auto Electricians"],
+    subServices: ["Car Mechanic Finder", "Vulcanizer Finder", "Panel Beater Finder", "Auto Electrician Finder"],
     products: [
       { name: "Diagnostic Scan Tool", price: "₦45,000", image: "https://images.unsplash.com/photo-1544265852-a41551cb418b?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -365,7 +365,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-auto",
     darkColorClass: "dark:bg-auto",
     personality: "Detailed, protective, aesthetic",
-    subServices: ["Mobile Car Wash", "Car Tracker Installers", "CCTV / Security Installers"],
+    subServices: ["Mobile Car Wash Finder", "Car Tracker Installer Finder", "CCTV / Security Installer Finder"],
     products: [
       { name: "Premium Car Wax", price: "₦12,000", image: "https://images.unsplash.com/photo-1563911194472-50974b6094fe?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -378,7 +378,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-food",
     darkColorClass: "dark:bg-food",
     personality: "Warm, appetising, community",
-    subServices: ["Private Chefs", "Caterers", "Bakers", "Farm Managers"],
+    subServices: ["Private Chef Finder", "Caterer Finder", "Cake Baker Finder", "Bulk Food Supplier Finder"],
     products: [
       { name: "Fresh Basket of Yam", price: "₦12,000", image: "https://images.unsplash.com/photo-1590779033100-9f60705a2f3b?auto=format&fit=crop&q=80&w=400" }
     ]
@@ -390,7 +390,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-food",
     darkColorClass: "dark:bg-food",
     personality: "Gourmet, professional, delicious",
-    subServices: ["Private Chefs", "Caterers", "Cake Bakers", "Bulk Food Suppliers"],
+    subServices: ["Private Chef Finder", "Caterer Finder", "Cake Baker Finder", "Bulk Food Supplier Finder"],
     products: [
       { name: "Chef's Knife Set", price: "₦55,000", image: "https://images.unsplash.com/photo-1593618998160-e34014e67546?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -403,7 +403,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-food",
     darkColorClass: "dark:bg-food",
     personality: "Earth, productive, vital",
-    subServices: ["Farm Produce", "Poultry", "Fishery", "Agro Consulting"],
+    subServices: ["Farm Manager Finder", "Agro-Processor Finder", "Veterinary Doctor Finder", "Pet Groomer Finder", "Poultry Farmer Finder", "Fish Farmer Finder"],
     products: [
       { name: "Organic Fertilizer", price: "₦8,000", image: "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -416,7 +416,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-realestate",
     darkColorClass: "dark:bg-realestate",
     personality: "Earthy, aspirational, solid",
-    subServices: ["Estate Agents", "Architects", "Surveyors", "Bricklayers"],
+    subServices: ["Estate Agent Finder", "Facility Manager Finder", "Surveyor Finder", "Quantity Surveyor Finder"],
     products: [
       { name: "Architectural Blueprint", price: "₦150,000", image: "https://images.unsplash.com/photo-1503387762-592dea58ef23?auto=format&fit=crop&q=80&w=400" }
     ]
@@ -428,7 +428,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-realestate",
     darkColorClass: "dark:bg-realestate",
     personality: "Professional, knowledgeable, direct",
-    subServices: ["Estate Agents", "Facility Managers", "Surveyors", "Quantity Surveyors"],
+    subServices: ["Estate Agent Finder", "Facility Manager Finder", "Surveyor Finder", "Quantity Surveyor Finder"],
     products: [
       { name: "Property Valuation Report", price: "₦40,000", image: "https://images.unsplash.com/photo-1560514196-46c8242ad059?auto=format&fit=crop&q=80&w=400" }
     ],
@@ -441,7 +441,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
     colorClass: "bg-realestate",
     darkColorClass: "dark:bg-realestate",
     personality: "Solid, technical, creative",
-    subServices: ["Architects", "Bricklayers", "Aluminum Fitters", "POP Ceiling Experts"],
+    subServices: ["Architect Finder", "Bricklayer Finder", "Aluminum Fitter Finder", "POP Ceiling Installer Finder"],
     products: [
       { name: "Construction Safety Helmet", price: "₦5,500", image: "https://images.unsplash.com/photo-1516937941344-00b4e0337589?auto=format&fit=crop&q=80&w=400" }
     ],

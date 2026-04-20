@@ -239,4 +239,27 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scroll-edge-fade {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 60px,
+      black calc(100% - 60px),
+      transparent
+    );
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 60px,
+      black calc(100% - 60px),
+      transparent
+    );
+  }
 }

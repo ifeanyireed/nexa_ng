@@ -65,9 +65,24 @@ export const NexaNavbar = () => {
             
             <NexaThemeToggle />
             <div className="hidden sm:flex items-center gap-3">
-              <NexaButton variant="secondary" size="sm" leftIcon={<User className="w-4 h-4" />}>
-                Sign In
-              </NexaButton>
+              {mode === "seller" ? (
+                <Link href="/dashboard">
+                  <NexaButton size="sm" leftIcon={<Grid className="w-4 h-4" />}>
+                    Dashboard
+                  </NexaButton>
+                </Link>
+              ) : (
+                <Link href="/join">
+                  <NexaButton variant="ghost" size="sm" className="text-nexa-text-secondary">
+                    List Business
+                  </NexaButton>
+                </Link>
+              )}
+              <Link href="/login">
+                <NexaButton variant="secondary" size="sm" leftIcon={<User className="w-4 h-4" />}>
+                  Sign In
+                </NexaButton>
+              </Link>
             </div>
             <NexaAvatar size="sm" isOnline className="sm:hidden" />
             <button className="lg:hidden p-2 text-nexa-text-primary">
@@ -87,11 +102,11 @@ export const NexaBottomBar = () => {
   const { mode, setMode } = useNiche();
 
   const tabs = [
-    { icon: <Home />, label: "Home" },
-    { icon: <Compass />, label: "Discover" },
-    { icon: <PlusSquare />, label: "Add" },
-    { icon: <Bell />, label: "Alerts" },
-    { icon: <User />, label: "Profile" },
+    { icon: <Home />, label: "Home", href: "/" },
+    { icon: <Compass />, label: "Discover", href: "/categories" },
+    { icon: <PlusSquare />, label: "Join", href: "/join" },
+    { icon: <Bell />, label: "Alerts", href: "/account?tab=settings" },
+    { icon: <User />, label: "Account", href: "/account" },
   ];
 
   return (
@@ -104,26 +119,26 @@ export const NexaBottomBar = () => {
       <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden liquid-glass rounded-t-2xl shadow-[0_-8px_32px_rgba(0,0,0,0.10)] px-2 pb-safe">
         <div className="flex items-center justify-around h-16">
           {tabs.map((tab, i) => (
-            <button
-              key={i}
-              onClick={() => setActiveTab(i)}
-              className={cn(
-                "relative flex flex-col items-center justify-center w-12 h-12 transition-colors",
-                activeTab === i ? "text-nexa-brand" : "text-nexa-text-faint"
-              )}
-            >
-              {React.cloneElement(tab.icon as React.ReactElement, {
-                className: "w-6 h-6",
-              })}
-              {activeTab === i && (
-                <motion.div
-                  layoutId="active-indicator"
-                  className="absolute -top-1 w-1 h-1 rounded-full bg-nexa-brand"
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                />
-              )}
-              <span className="text-[10px] mt-1 font-medium">{tab.label}</span>
-            </button>
+            <Link key={i} href={tab.href}>
+              <button
+                className={cn(
+                  "relative flex flex-col items-center justify-center w-12 h-12 transition-colors",
+                  activeTab === i ? "text-nexa-brand" : "text-nexa-text-faint"
+                )}
+              >
+                {React.cloneElement(tab.icon as React.ReactElement, {
+                  className: "w-6 h-6",
+                })}
+                {activeTab === i && (
+                  <motion.div
+                    layoutId="active-indicator"
+                    className="absolute -top-1 w-1 h-1 rounded-full bg-nexa-brand"
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  />
+                )}
+                <span className="text-[10px] mt-1 font-medium">{tab.label}</span>
+              </button>
+            </Link>
           ))}
         </div>
       </div>

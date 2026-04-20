@@ -18,16 +18,51 @@ export interface NicheInfo {
 }
 
 export const NICHES: NicheInfo[] = [
-  { id: "home-services", name: "Home & Maintenance", tagline: "Reliable help for your home", color: "bg-home", icon: "/handyman.png", slug: "home-services" },
-  { id: "fashion", name: "Fashion & Grooming", tagline: "Style and personal care", color: "bg-fashion", icon: "/style.png", slug: "fashion-grooming" },
-  { id: "professionals", name: "Professional Services", tagline: "Expert business solutions", color: "bg-professionals", icon: "/corporate.png", slug: "professional-services" },
-  { id: "education", name: "Education & Skills", tagline: "Learn and grow your skills", color: "bg-education", icon: "/academic.png", slug: "education-skills" },
-  { id: "events", name: "Events & Entertainment", tagline: "Celebrate life's big moments", color: "bg-events", icon: "/planning.png", slug: "events-entertainment" },
-  { id: "health", name: "Health & Wellness", tagline: "Your well-being is our priority", color: "bg-health", icon: "/medical.png", slug: "health-wellness" },
-  { id: "logistics", name: "Logistics & Transport", tagline: "Move anything, anywhere fast", color: "bg-logistics", icon: "/delivery.png", slug: "logistics-transport" },
-  { id: "auto", name: "Automotive Services", tagline: "Keep your wheels turning", color: "bg-auto", icon: "/repair.png", slug: "automotive-services" },
-  { id: "food", name: "Food & Agribusiness", tagline: "Farm to table culinary delights", color: "bg-food", icon: "/culinary.png", slug: "food-agribusiness" },
-  { id: "realestate", name: "Real Estate & Construction", tagline: "Build and find your dream home", color: "bg-realestate", icon: "/property.png", slug: "real-estate-construction" },
+  // 01
+  { id: "handyman-finders", name: "Handyman Finders", tagline: "Expert help for any task", color: "bg-home", icon: "/handyman.png", slug: "handyman-finders" },
+  { id: "specialist-finders", name: "Specialist Finders", tagline: "Technical expert solutions", color: "bg-home", icon: "/specialist.png", slug: "specialist-finders" },
+  { id: "sanitation-finders", name: "Sanitation Finders", tagline: "Professional cleaning help", color: "bg-home", icon: "/sanitation.png", slug: "sanitation-finders" },
+  { id: "cleaning-finders", name: "Cleaning Finders", tagline: "Sparkling clean spaces", color: "bg-home", icon: "/sanitation.png", slug: "sanitation-finders" }, // Extra
+  
+  // 02
+  { id: "style-finders", name: "Style Finders", tagline: "Bespoke fashion experts", color: "bg-fashion", icon: "/style.png", slug: "style-finders" },
+  { id: "wardrobe-finders", name: "Wardrobe Finders", tagline: "Care for your apparel", color: "bg-fashion", icon: "/wardrobe.png", slug: "wardrobe-finders" },
+  
+  // 03
+  { id: "tech-finders", name: "Tech Finders", tagline: "Innovative digital solutions", color: "bg-professionals", icon: "/tech.png", slug: "tech-finders" },
+  { id: "corporate-finders", name: "Corporate Finders", tagline: "Trusted business advisors", color: "bg-professionals", icon: "/corporate.png", slug: "corporate-finders" },
+  { id: "content-finders", name: "Content Finders", tagline: "Creative content creators", color: "bg-professionals", icon: "/content.png", slug: "content-finders" },
+  
+  // 04
+  { id: "academic-finders", name: "Academic Finders", tagline: "Excellence in learning", color: "bg-education", icon: "/academic.png", slug: "academic-finders" },
+  { id: "vocational-finders", name: "Vocational Finders", tagline: "Master new practical skills", color: "bg-education", icon: "/vocational.png", slug: "vocational-finders" },
+  
+  // 05
+  { id: "planning-finders", name: "Planning Finders", tagline: "Perfectly orchestrated events", color: "bg-events", icon: "/planning.png", slug: "planning-finders" },
+  { id: "entertainment-finders", name: "Entertainment Finders", tagline: "Vibrant event entertainment", color: "bg-events", icon: "/entertain.png", slug: "entertainment-finders" },
+  { id: "talent-finders", name: "Talent Finders", tagline: "Connecting you with top talent", color: "bg-professionals", icon: "/talent.png", slug: "talent-finders" },
+  
+  // 06
+  { id: "medical-finders", name: "Medical Finders", tagline: "Professional medical care", color: "bg-health", icon: "/medical.png", slug: "medical-finders" },
+  { id: "wellness-finders", name: "Wellness Finders", tagline: "Holistic health & vitality", color: "bg-health", icon: "/wellness.png", slug: "wellness-finders" },
+  { id: "care-finders", name: "Care Finders", tagline: "Compassionate care services", color: "bg-health", icon: "/care.png", slug: "care-finders" },
+  { id: "pet-care-finders", name: "Pet Care Finders", tagline: "Loving care for your pets", color: "bg-health", icon: "/care.png", slug: "care-finders" }, // Extra
+  
+  // 07
+  { id: "transport-finders", name: "Transport Finders", tagline: "Seamless travel solutions", color: "bg-logistics", icon: "/transport.png", slug: "transport-finders" },
+  { id: "delivery-finders", name: "Delivery Finders", tagline: "Fast & reliable deliveries", color: "bg-logistics", icon: "/delivery.png", slug: "delivery-finders" },
+  
+  // 08
+  { id: "repair-finders", name: "Repair Finders", tagline: "Expert auto repair help", color: "bg-auto", icon: "/repair.png", slug: "repair-finders" },
+  { id: "auto-care-finders", name: "Auto Care Finders", tagline: "Pristine auto maintenance", color: "bg-auto", icon: "/auto-care.png", slug: "auto-care-finders" },
+  
+  // 09
+  { id: "culinary-finders", name: "Culinary Finders", tagline: "Exquisite catering tastes", color: "bg-food", icon: "/culinary.png", slug: "culinary-finders" },
+  { id: "agro-finders", name: "Agro Finders", tagline: "Sustainable farming help", color: "bg-food", icon: "/agro.png", slug: "agro-finders" },
+  
+  // 10
+  { id: "property-finders", name: "Property Finders", tagline: "Find your perfect space", color: "bg-realestate", icon: "/property.png", slug: "property-finders" },
+  { id: "building-finders", name: "Building Finders", tagline: "Expert construction partners", color: "bg-realestate", icon: "/building.png", slug: "building-finders" },
 ];
 
 interface NicheSwitcherProps {
@@ -37,36 +72,39 @@ interface NicheSwitcherProps {
 
 export const NicheSwitcher = ({ isOpen, onClose }: NicheSwitcherProps) => {
   return (
-    <NexaModal isOpen={isOpen} onClose={onClose} title="Switch Niche Hub" size="xl">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 py-4">
-        {NICHES.map((niche, i) => (
-          <motion.div
-            key={niche.id}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.05 }}
-          >
-            <Link href={`/${niche.slug}`} onClick={onClose}>
-              <NexaCard 
-                variant="interactive" 
-                padding="none" 
-                className="h-full group overflow-hidden border-none bg-nexa-bg-base/50"
-              >
-                <div className={cn("h-24 flex items-center justify-center relative", niche.color)}>
-                  <img src={niche.icon} alt={niche.name} className="w-16 h-16 object-contain z-10 transition-transform group-hover:scale-110" />
-                  <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
-                </div>
-                <div className="p-4">
-                  <h3 className="font-bold text-sm mb-1 line-clamp-1 group-hover:text-nexa-brand transition-colors">{niche.name}</h3>
-                  <p className="text-[10px] text-nexa-text-secondary line-clamp-2 leading-relaxed">{niche.tagline}</p>
-                  <div className="mt-3 flex items-center text-[10px] font-bold text-nexa-brand opacity-0 group-hover:opacity-100 transition-opacity">
-                    EXPLORE <ArrowRight className="w-3 h-3 ml-1" />
+    <NexaModal isOpen={isOpen} onClose={onClose} title="Switch Niche Hub" className="max-w-[95vw] lg:max-w-7xl">
+      <div className="overflow-x-auto py-12 no-scrollbar snap-x snap-mandatory -mx-6 px-12 scroll-edge-fade">
+        <div className="grid grid-rows-2 grid-flow-col gap-6 min-w-full pb-4">
+          {NICHES.map((niche, i) => (
+            <motion.div
+              key={niche.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.01 }}
+              className="flex-shrink-0 w-52 snap-start"
+            >
+              <Link href={`/${niche.slug}`} onClick={onClose}>
+                <NexaCard 
+                  variant="interactive" 
+                  padding="none" 
+                  className="h-full group overflow-hidden border-none shadow-xl bg-nexa-bg-base dark:bg-slate-900/50"
+                >
+                  <div className={cn("h-20 flex items-center justify-center relative", niche.color)}>
+                    <img src={niche.icon} alt={niche.name} className="w-12 h-12 object-contain z-10 transition-transform group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors" />
                   </div>
-                </div>
-              </NexaCard>
-            </Link>
-          </motion.div>
-        ))}
+                  <div className="p-3">
+                    <h3 className="font-bold text-[13px] mb-0.5 line-clamp-1 group-hover:text-nexa-brand transition-colors tracking-tight">{niche.name.replace(/ Finders?$/, "")}</h3>
+                    <p className="text-[9px] text-nexa-text-secondary line-clamp-1 leading-relaxed font-medium uppercase tracking-wider">{niche.tagline}</p>
+                    <div className="mt-2 flex items-center text-[9px] font-bold text-nexa-brand opacity-0 group-hover:opacity-100 transition-all translate-y-1 group-hover:translate-y-0">
+                      EXPLORE <ArrowRight className="w-2.5 h-2.5 ml-1.5" />
+                    </div>
+                  </div>
+                </NexaCard>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </NexaModal>
   );

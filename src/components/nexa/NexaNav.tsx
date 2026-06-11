@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, MapPin, ChevronDown, Menu, User, Home, Grid, PlusSquare, Bell, Compass, LayoutGrid } from "lucide-react";
+import { Search, MapPin, ChevronDown, Menu, User, Home, Grid, PlusSquare, Bell, Compass, LayoutGrid, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { NexaButton } from "./NexaButton";
@@ -64,6 +64,10 @@ export const NexaNavbar = () => {
             </div>
             
             <NexaThemeToggle />
+            <Link href="/nexa-verified" className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-nexa-amber/10 transition-colors group">
+               <ShieldCheck className="w-4 h-4 text-nexa-amber" />
+               <span className="text-xs font-black text-nexa-amber uppercase tracking-wider">Verified</span>
+            </Link>
             <div className="hidden sm:flex items-center gap-3">
               {mode === "seller" ? (
                 <Link href="/dashboard">

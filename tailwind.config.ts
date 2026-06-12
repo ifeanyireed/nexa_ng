@@ -81,6 +81,9 @@ const config: Config = {
       boxShadow: {
         sm: "var(--nexa-shadow-sm)",
         md: "var(--nexa-shadow-md)",
+        lg: "0 10px 20px rgba(0, 0, 0, 0.04), 0 2px 6px rgba(0, 0, 0, 0.04)",
+        xl: "0 20px 40px rgba(0, 0, 0, 0.08), 0 5px 15px rgba(0, 0, 0, 0.04)",
+        "2xl": "0 30px 60px rgba(0, 0, 0, 0.12), 0 10px 20px rgba(0, 0, 0, 0.08)",
         glass: "var(--nexa-shadow-glass)",
       },
     },

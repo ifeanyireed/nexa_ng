@@ -110,7 +110,7 @@ export default function LiveJobTrackerPage() {
       </section>
 
       {/* BOTTOM: JOB PANEL (45%) */}
-      <section className="bg-nexa-bg-surface rounded-t-[40px] shadow-[0_-20px_40px_rgba(0,0,0,0.1)] relative z-30 -mt-10 p-8">
+      <section className="bg-nexa-bg-surface rounded-t-[40px] shadow-[0_-4px_10px_rgba(0,0,0,0.03)] relative z-30 -mt-10 p-8">
         <div className="max-w-4xl mx-auto space-y-8">
            {/* Status Bar */}
            <div className="flex justify-between items-center mb-12">

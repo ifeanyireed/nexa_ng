@@ -120,7 +120,7 @@ export const NexaBottomBar = () => {
         <NexaModeToggle mode={mode} onChange={setMode} className="shadow-2xl scale-90 origin-right" />
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden liquid-glass rounded-t-2xl shadow-[0_-8px_32px_rgba(0,0,0,0.10)] px-2 pb-safe">
+      <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden liquid-glass rounded-t-2xl shadow-[0_-3px_8px_rgba(0,0,0,0.03)] px-2 pb-safe">
         <div className="flex items-center justify-around h-16">
           {tabs.map((tab, i) => (
             <Link key={i} href={tab.href}>

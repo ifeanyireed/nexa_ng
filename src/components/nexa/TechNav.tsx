@@ -61,7 +61,7 @@ export const TechBottomNav = () => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 liquid-glass rounded-t-3xl shadow-[0_-8px_32px_rgba(0,0,0,0.15)] px-2 pb-safe border-t border-nexa-accent/10">
+    <div className="fixed bottom-0 left-0 right-0 z-40 liquid-glass rounded-t-3xl shadow-[0_-3px_8px_rgba(0,0,0,0.04)] px-2 pb-safe border-t border-nexa-accent/10">
       <div className="flex items-center justify-around h-20">
         {tabs.map((tab, i) => {
           const isActive = pathname.startsWith(tab.href);

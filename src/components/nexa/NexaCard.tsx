@@ -15,7 +15,7 @@ export const NexaCard = React.forwardRef<HTMLDivElement, NexaCardProps>(
       glass: "liquid-glass",
       flat: "bg-nexa-bg-surface border-[0.5px] border-nexa-border",
       elevated: "bg-nexa-bg-surface border-[0.5px] border-nexa-border shadow-md",
-      interactive: "liquid-glass cursor-pointer hover:border-nexa-brand/50 transition-all duration-300 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] hover:shadow-[0_8px_32px_0_rgba(0,0,0,0.5)]",
+      interactive: "liquid-glass cursor-pointer hover:border-nexa-brand/50 transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_30px_rgba(0,0,0,0.08),0_2px_6px_rgba(0,0,0,0.04)]",
     };
 
     const paddings = {

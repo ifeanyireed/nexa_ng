@@ -17,10 +17,10 @@ interface NexaButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
 export const NexaButton = React.forwardRef<HTMLButtonElement, NexaButtonProps>(
   ({ className, variant = "primary", size = "md", isLoading, leftIcon, rightIcon, children, ...props }, ref) => {
     const variants = {
-      primary: "bg-nexa-brand text-white shadow-[0_1px_3px_0_rgba(26,86,219,0.4)_inset,0_10px_20px_-5px_rgba(26,86,219,0.3)_inset,0_8px_32px_0_rgba(0,0,0,0.3)] border-[0.5px] border-nexa-brand/20 border-t-white/30 hover:bg-nexa-brand/90",
-      secondary: "liquid-glass text-nexa-text-primary shadow-[0_1px_3px_0_rgba(255,255,255,0.15)_inset,0_10px_20px_-5px_rgba(255,255,255,0.1)_inset,0_8px_32px_0_rgba(0,0,0,0.3)] border-[0.5px] border-white/10 border-t-white/20",
+      primary: "bg-nexa-brand text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_2px_4px_rgba(0,0,0,0.1),0_1px_2px_rgba(0,0,0,0.06)] border-[0.5px] border-nexa-brand/20 hover:bg-nexa-brand/90",
+      secondary: "liquid-glass text-nexa-text-primary shadow-[0_1px_2px_rgba(0,0,0,0.05)] border-[0.5px] border-black/5 dark:border-white/10",
       ghost: "hover:bg-nexa-brand-light text-nexa-brand dark:hover:bg-white/5",
-      danger: "bg-nexa-coral text-white shadow-[0_1px_3px_0_rgba(224,36,36,0.4)_inset,0_10px_20px_-5px_rgba(224,36,36,0.3)_inset,0_8px_32px_0_rgba(0,0,0,0.3)] border-[0.5px] border-nexa-coral/20 border-t-white/30",
+      danger: "bg-nexa-coral text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_2px_4px_rgba(0,0,0,0.1)] border-[0.5px] border-nexa-coral/20 hover:bg-nexa-coral/90",
     };
 
     const sizes = {

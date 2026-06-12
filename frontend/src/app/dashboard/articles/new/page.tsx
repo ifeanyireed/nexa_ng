@@ -24,12 +24,29 @@ import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { api } from "@/lib/api";
 
 export default function ArticleEditorPage() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [isSaved, setIsSaved] = useState(true);
+  const [isPublishing, setIsPublishing] = useState(false);
+
+  const handlePublish = async () => {
+    if (!title || !content) return;
+    setIsPublishing(true);
+    try {
+      await api.post("/pro/articles", {
+        title,
+        content
+      });
+      router.push("/dashboard/articles");
+    } catch (error) {
+      console.error("Error publishing article:", error);
+      setIsPublishing(false);
+    }
+  };
 
   return (
     <div className="h-[calc(100vh-8rem)] flex flex-col">
@@ -54,7 +71,7 @@ export default function ArticleEditorPage() {
             <NexaButton variant="secondary" size="sm" leftIcon={<Save className="w-4 h-4" />}>
                Save Draft
             </NexaButton>
-            <NexaButton size="sm" leftIcon={<Send className="w-4 h-4" />}>
+            <NexaButton size="sm" leftIcon={<Send className="w-4 h-4" />} onClick={handlePublish} isLoading={isPublishing}>
                Publish
             </NexaButton>
          </div>

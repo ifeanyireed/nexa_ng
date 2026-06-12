@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { 
   ArrowLeft, 
@@ -11,22 +11,77 @@ import {
   Truck, 
   RotateCcw,
   Plus,
-  Minus
+  Minus,
+  Info
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
-import { NICHE_DETAILS } from "@/lib/niche-data";
+import { api } from "@/lib/api";
 import Link from "next/link";
 
 export default function ProductDetailClient({ data }: { data: any }) {
   const params = useParams();
   const nicheSlug = params.niche as string;
+  const productSlug = params.slug as string;
   
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
+
+  const productId = productSlug.includes("product-") 
+    ? productSlug.split("product-")[1] 
+    : productSlug;
+
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const result = await api.get(`/discovery/products/${productId}`);
+        setProduct(result);
+      } catch (error) {
+        console.error("Error fetching product:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProduct();
+  }, [productId]);
+
+  if (loading) {
+    return (
+      <main className="bg-nexa-bg-base min-h-screen pt-32 pb-24">
+        <NexaNavbar />
+        <div className="container mx-auto px-4 animate-pulse space-y-12">
+           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              <div className="aspect-square bg-nexa-bg-surface rounded-[40px]" />
+              <div className="space-y-8">
+                 <div className="h-12 bg-nexa-bg-surface rounded-2xl w-3/4" />
+                 <div className="h-24 bg-nexa-bg-surface rounded-2xl" />
+                 <div className="h-16 bg-nexa-bg-surface rounded-2xl w-1/2" />
+              </div>
+           </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!product) {
+    return (
+      <main className="bg-nexa-bg-base min-h-screen flex items-center justify-center pt-32 pb-24">
+        <NexaNavbar />
+        <div className="text-center space-y-6">
+           <div className="w-20 h-20 rounded-full bg-nexa-bg-surface flex items-center justify-center mx-auto text-nexa-text-faint">
+              <Info className="w-10 h-10" />
+           </div>
+           <h3 className="text-2xl font-bold">Product Not Found</h3>
+           <NexaButton variant="secondary" onClick={() => window.history.back()}>Go Back</NexaButton>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="bg-nexa-bg-base min-h-screen pb-24 lg:pb-12">
@@ -42,9 +97,13 @@ export default function ProductDetailClient({ data }: { data: any }) {
           {/* PRODUCT IMAGES */}
           <div className="space-y-6">
              <div className="aspect-square bg-slate-200 rounded-[40px] overflow-hidden shadow-2xl relative">
-                {/* Main Product Image Placeholder */}
+                <img 
+                   src={product.image || "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=600"} 
+                   className="w-full h-full object-cover" 
+                   alt={product.name}
+                />
                 <div className="absolute top-4 right-4 z-10">
-                   <button className="w-12 h-12 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-nexa-text-secondary shadow-lg">
+                   <button className="w-12 h-12 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-nexa-text-secondary shadow-lg hover:text-rose-500 transition-colors">
                       <Heart className="w-6 h-6" />
                    </button>
                 </div>
@@ -58,7 +117,13 @@ export default function ProductDetailClient({ data }: { data: any }) {
                       "aspect-square rounded-2xl bg-slate-200 cursor-pointer transition-all border-2",
                       activeImage === i ? "border-nexa-brand scale-95 shadow-lg" : "border-transparent opacity-60 hover:opacity-100"
                     )}
-                  />
+                  >
+                     <img 
+                        src={product.image || "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=400"} 
+                        className="w-full h-full object-cover rounded-[14px]" 
+                        alt={product.name}
+                     />
+                  </div>
                 ))}
              </div>
           </div>
@@ -66,9 +131,9 @@ export default function ProductDetailClient({ data }: { data: any }) {
           {/* PRODUCT INFO */}
           <div className="flex flex-col">
              <div className="mb-8">
-                <NexaBadge variant="brand" className="mb-4">New Arrival</NexaBadge>
+                <NexaBadge variant="brand" className="mb-4">Verified Supply</NexaBadge>
                 <h1 className="text-3xl md:text-5xl font-extrabold text-display mb-4 leading-[1.1]">
-                  Premium {data.name.slice(0, -1)} Industrial Tool Set
+                  {product.name}
                 </h1>
                 <div className="flex items-center gap-6">
                    <div className="flex items-center gap-1">
@@ -76,7 +141,7 @@ export default function ProductDetailClient({ data }: { data: any }) {
                         <Star key={i} className="w-4 h-4 fill-amber-500 text-amber-500" />
                       ))}
                       <span className="text-sm font-bold ml-2">4.9</span>
-                      <span className="text-sm text-nexa-text-faint ml-1">(120 Reviews)</span>
+                      <span className="text-sm text-nexa-text-faint ml-1">({Math.floor(Math.random() * 200) + 50} Reviews)</span>
                    </div>
                    <div className="w-px h-4 bg-nexa-border" />
                    <span className="text-sm text-emerald-500 font-bold">In Stock</span>
@@ -85,8 +150,8 @@ export default function ProductDetailClient({ data }: { data: any }) {
 
              <div className="mb-10">
                 <div className="flex items-baseline gap-4 mb-2">
-                   <span className="text-4xl font-extrabold text-nexa-brand">₦45,000</span>
-                   <span className="text-xl text-nexa-text-faint line-through">₦60,000</span>
+                   <span className="text-4xl font-extrabold text-nexa-brand">₦{product.price.toLocaleString()}</span>
+                   <span className="text-xl text-nexa-text-faint line-through">₦{(product.price * 1.25).toLocaleString()}</span>
                    <NexaBadge variant="neutral" className="bg-coral/10 text-coral border-coral/20">-25% OFF</NexaBadge>
                 </div>
                 <p className="text-sm text-nexa-text-faint">Incl. all taxes and shipping in Lagos</p>
@@ -94,7 +159,7 @@ export default function ProductDetailClient({ data }: { data: any }) {
 
              <div className="space-y-6 mb-10 pb-10 border-b border-nexa-border">
                 <p className="text-nexa-text-secondary leading-relaxed">
-                   The ultimate toolkit for {data.name.toLowerCase()} professionals. High-durability chrome-vanadium steel with ergonomic soft-grip handles. Includes 24 essential pieces for every industrial project.
+                   {product.description || `Premium ${product.name} designed for professional use in the ${data.name.toLowerCase()} industry. High durability and verified quality by Nexa.`}
                 </p>
                 
                 <div className="flex items-center gap-4">
@@ -120,22 +185,28 @@ export default function ProductDetailClient({ data }: { data: any }) {
              </div>
 
              {/* SELLER CARD */}
-             <NexaCard variant="glass" className="mb-10 flex items-center justify-between p-4 bg-nexa-bg-surface/50">
-                <div className="flex items-center gap-4">
-                   <div className="w-14 h-14 rounded-2xl bg-nexa-brand/10 flex items-center justify-center text-xl font-bold">TP</div>
-                   <div>
-                      <div className="flex items-center gap-1 mb-1">
-                         <h4 className="font-bold text-sm">Tunji Paints & Tools</h4>
-                         <ShieldCheck className="w-3.5 h-3.5 text-nexa-brand" />
+             {product.proProfile && (
+                <NexaCard variant="glass" className="mb-10 flex items-center justify-between p-4 bg-nexa-bg-surface/50">
+                   <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 rounded-2xl bg-nexa-brand/10 flex items-center justify-center text-xl font-bold">
+                        {product.proProfile.user?.name.charAt(0)}
                       </div>
-                      <div className="flex items-center gap-2 text-[10px] text-nexa-text-faint font-bold uppercase">
-                         <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                         <span>4.8 Rating • 5 years on Nexa</span>
+                      <div>
+                         <div className="flex items-center gap-1 mb-1">
+                            <h4 className="font-bold text-sm">{product.proProfile.user?.name}</h4>
+                            <ShieldCheck className="w-3.5 h-3.5 text-nexa-brand" />
+                         </div>
+                         <div className="flex items-center gap-2 text-[10px] text-nexa-text-faint font-bold uppercase">
+                            <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                            <span>{product.proProfile.rating || "5.0"} Rating • Professional Seller</span>
+                         </div>
                       </div>
                    </div>
-                </div>
-                <NexaButton variant="secondary" size="sm">View Shop</NexaButton>
-             </NexaCard>
+                   <Link href={`/${nicheSlug}/business-${product.proProfile.id}/shop`}>
+                      <NexaButton variant="secondary" size="sm">View Shop</NexaButton>
+                   </Link>
+                </NexaCard>
+             )}
 
              {/* SHIPPING INFO */}
              <div className="grid grid-cols-2 gap-4">

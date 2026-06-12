@@ -1,24 +1,76 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { 
   ArrowLeft, 
   Share2, 
   Bookmark, 
   ShieldCheck, 
-  CheckCircle2
+  CheckCircle2,
+  Info,
+  Clock
 } from "lucide-react";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
-import { NICHE_DETAILS } from "@/lib/niche-data";
+import { api } from "@/lib/api";
 import Link from "next/link";
 
 export default function ArticleDetailClient({ data }: { data: any }) {
   const params = useParams();
   const nicheSlug = params.niche as string;
+  const articleId = params.slug as string;
+  
+  const [article, setArticle] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchArticle = async () => {
+      try {
+        const result = await api.get(`/discovery/articles/${articleId}`);
+        setArticle(result);
+      } catch (error) {
+        console.error("Error fetching article detail:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchArticle();
+  }, [articleId]);
+
+  if (loading) {
+    return (
+      <main className="bg-nexa-bg-base min-h-screen pt-32 pb-24">
+        <NexaNavbar />
+        <div className="container mx-auto px-4 animate-pulse space-y-12">
+           <div className="h-12 bg-nexa-bg-surface rounded-2xl w-3/4" />
+           <div className="aspect-[21/9] bg-nexa-bg-surface rounded-[40px]" />
+           <div className="space-y-6">
+              <div className="h-8 bg-nexa-bg-surface rounded-xl" />
+              <div className="h-8 bg-nexa-bg-surface rounded-xl" />
+              <div className="h-8 bg-nexa-bg-surface rounded-xl w-2/3" />
+           </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!article) {
+    return (
+      <main className="bg-nexa-bg-base min-h-screen flex items-center justify-center pt-32 pb-24">
+        <NexaNavbar />
+        <div className="text-center space-y-6">
+           <div className="w-20 h-20 rounded-full bg-nexa-bg-surface flex items-center justify-center mx-auto text-nexa-text-faint">
+              <Info className="w-10 h-10" />
+           </div>
+           <h2 className="text-2xl font-bold">Article Not Found</h2>
+           <NexaButton variant="secondary" onClick={() => window.history.back()}>Go Back</NexaButton>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="bg-nexa-bg-base min-h-screen pb-24 lg:pb-12">
@@ -34,19 +86,24 @@ export default function ArticleDetailClient({ data }: { data: any }) {
            
            <div className="max-w-4xl">
               <div className="flex items-center gap-3 mb-6">
-                 <NexaBadge variant="neutral" className="bg-nexa-brand/10 text-nexa-brand border-nexa-brand/20 uppercase tracking-tighter">Guide</NexaBadge>
-                 <span className="text-sm text-nexa-text-faint font-medium">Published Oct 15, 2026 • 8 min read</span>
+                 <NexaBadge variant="neutral" className="bg-nexa-brand/10 text-nexa-brand border-nexa-brand/20 uppercase tracking-tighter">Expert Guide</NexaBadge>
+                 <span className="text-sm text-nexa-text-faint font-medium flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    Published {new Date(article.createdAt).toLocaleDateString()} • 5 min read
+                 </span>
               </div>
               <h1 className="text-4xl md:text-6xl font-extrabold text-display mb-8 leading-tight">
-                How to Choose the Best {data.name} Professionals for Your Lagos Home
+                {article.title}
               </h1>
               
               <div className="flex items-center justify-between py-6 border-y border-nexa-border">
                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-nexa-brand/10 flex items-center justify-center font-bold text-lg">JD</div>
+                    <div className="w-12 h-12 rounded-full bg-nexa-brand/10 flex items-center justify-center font-bold text-lg">
+                       {article.proProfile?.user?.name.charAt(0)}
+                    </div>
                     <div>
                        <div className="flex items-center gap-2">
-                          <p className="font-bold">John Doe</p>
+                          <p className="font-bold">{article.proProfile?.user?.name}</p>
                           <ShieldCheck className="w-4 h-4 text-nexa-brand" />
                        </div>
                        <p className="text-xs text-nexa-text-secondary">Verified {data.name} Expert</p>
@@ -67,45 +124,41 @@ export default function ArticleDetailClient({ data }: { data: any }) {
         {/* FEATURE IMAGE */}
         <div className="container mx-auto px-4 mb-16">
            <div className="aspect-[21/9] bg-slate-200 rounded-[40px] overflow-hidden shadow-2xl">
-              {/* Placeholder for article image */}
+              <img 
+                 src={article.image || "https://images.unsplash.com/photo-1454165833767-027ffea9e77b?auto=format&fit=crop&q=80&w=1200"} 
+                 className="w-full h-full object-cover" 
+                 alt={article.title} 
+              />
            </div>
         </div>
 
         {/* CONTENT AREA */}
         <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-16">
            <div className="flex-1 max-w-3xl">
-              <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-extrabold prose-p:text-nexa-text-secondary prose-p:leading-relaxed">
-                 <p className="text-xl font-medium text-nexa-text-primary mb-12">
-                    Whether you're embarking on a major renovation or just need a quick repair, finding the right professional in Nigeria's commercial capital requires a strategic approach.
-                 </p>
-                 
-                 <h2 className="text-3xl mb-6">1. Verify Their Track Record</h2>
-                 <p className="mb-8">
-                    Don't just take their word for it. In the {data.name} industry, pictures of past work are non-negotiable. Always ask for a portfolio or check their verified Nexa profile for a gallery of completed projects.
-                 </p>
-                 
-                 <div className="my-12 p-8 bg-nexa-brand/5 border-l-4 border-nexa-brand rounded-r-3xl italic text-xl text-nexa-text-secondary">
-                    "Reliability is the most expensive currency in the Nigerian service market. When you find a professional who shows up on time, you've found gold."
-                 </div>
-
-                 <h2 className="text-3xl mb-6">2. Communication is Key</h2>
-                 <p className="mb-8">
-                    How quickly do they respond to your initial message? A professional who values your time will likely value the quality of their work. Look for the "Instant Responder" badge on Nexa.
-                 </p>
+              <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-extrabold prose-p:text-nexa-text-secondary prose-p:leading-relaxed whitespace-pre-wrap">
+                 {article.content}
               </div>
 
               {/* AUTHOR CARD CTA */}
-              <NexaCard variant="glass" className="mt-20 p-8 flex flex-col md:flex-row items-center gap-8 bg-gradient-to-br from-nexa-brand/5 to-transparent border-nexa-brand/20">
-                 <div className="w-24 h-24 rounded-[32px] bg-nexa-brand/10 flex items-center justify-center text-3xl font-bold flex-shrink-0">JD</div>
-                 <div className="flex-1 text-center md:text-left">
-                    <h3 className="text-2xl font-bold mb-2">Need an expert {data.name.slice(0, -1)}?</h3>
-                    <p className="text-nexa-text-secondary mb-6">John Doe has over 150+ successful projects and a 4.9-star rating on Nexa.</p>
-                    <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                       <NexaButton size="lg">Book John Doe Now</NexaButton>
-                       <NexaButton variant="secondary" size="lg">View Full Profile</NexaButton>
-                    </div>
-                 </div>
-              </NexaCard>
+              {article.proProfile && (
+                <NexaCard variant="glass" className="mt-20 p-8 flex flex-col md:flex-row items-center gap-8 bg-gradient-to-br from-nexa-brand/5 to-transparent border-nexa-brand/20">
+                   <div className="w-24 h-24 rounded-[32px] bg-nexa-brand/10 flex items-center justify-center text-3xl font-bold flex-shrink-0">
+                      {article.proProfile.user?.name.charAt(0)}
+                   </div>
+                   <div className="flex-1 text-center md:text-left">
+                      <h3 className="text-2xl font-bold mb-2">Need an expert {data.name.slice(0, -1)}?</h3>
+                      <p className="text-nexa-text-secondary mb-6">{article.proProfile.user?.name} has a {article.proProfile.rating || "5.0"}-star rating on Nexa.</p>
+                      <div className="flex flex-wrap justify-center md:justify-start gap-4">
+                         <Link href={`/${nicheSlug}/business-${article.proProfile.id}`}>
+                            <NexaButton size="lg">Book Now</NexaButton>
+                         </Link>
+                         <Link href={`/${nicheSlug}/business-${article.proProfile.id}`}>
+                            <NexaButton variant="secondary" size="lg">View Full Profile</NexaButton>
+                         </Link>
+                      </div>
+                   </div>
+                </NexaCard>
+              )}
            </div>
 
            {/* SIDEBAR */}
@@ -131,10 +184,10 @@ export default function ArticleDetailClient({ data }: { data: any }) {
                  <h4 className="font-bold mb-6">Related Articles</h4>
                  <div className="space-y-6">
                     {[1, 2].map(i => (
-                       <div key={i} className="group cursor-pointer">
+                       <div key={i} className="group cursor-pointer opacity-60">
                           <div className="aspect-video bg-slate-200 rounded-xl mb-3 overflow-hidden" />
                           <h5 className="font-bold text-sm group-hover:text-nexa-brand transition-colors line-clamp-2">
-                             Top 10 {data.name} trends in Lagos for 2026
+                             More insights coming soon from our verified {data.name} experts.
                           </h5>
                        </div>
                     ))}

@@ -1,6 +1,6 @@
-"use client";
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { api } from "@/lib/api";
+import { useAuth } from "@/components/nexa/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Calendar as CalendarIcon, 
@@ -27,58 +27,62 @@ import { NexaAvatar } from "@/components/nexa/NexaAvatar";
 import { NexaInput } from "@/components/nexa/NexaInput";
 
 export default function BookingsManagerPage() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("pending");
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  const bookings = [
-    {
-      id: "BK-1024",
-      customer: "Amina Sanni",
-      service: "Standard Plumbing Check",
-      date: "Oct 20, 2026",
-      time: "10:00 AM",
-      status: "pending",
-      amount: "₦15,000",
-      location: "Lekki Phase 1",
-      phone: "+234 803 111 2222"
-    },
-    {
-      id: "BK-1025",
-      customer: "Chidi Okafor",
-      service: "Emergency Leak Repair",
-      date: "Oct 20, 2026",
-      time: "02:30 PM",
-      status: "confirmed",
-      amount: "₦25,000",
-      location: "Victoria Island",
-      phone: "+234 802 333 4444"
-    },
-    {
-      id: "BK-1022",
-      customer: "Tunde Bakare",
-      service: "Full House Inspection",
-      date: "Oct 18, 2026",
-      time: "09:00 AM",
-      status: "completed",
-      amount: "₦40,000",
-      location: "Ikoyi",
-      phone: "+234 805 555 6666"
+  const fetchBookings = async () => {
+    try {
+      const data = await api.get("/bookings");
+      setBookings(data);
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  const handleUpdateStatus = async (id: string, status: string) => {
+    try {
+      await api.put(`/bookings/${id}/status`, { status });
+      fetchBookings();
+    } catch (error) {
+      console.error("Error updating booking status:", error);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case "pending": return <NexaBadge variant="neutral" className="bg-amber-500/10 text-amber-600 border-amber-500/20">Pending</NexaBadge>;
       case "confirmed": return <NexaBadge variant="brand">Confirmed</NexaBadge>;
       case "completed": return <NexaBadge variant="success">Completed</NexaBadge>;
       case "cancelled": return <NexaBadge variant="neutral" className="bg-red-500/10 text-red-600 border-red-500/20">Cancelled</NexaBadge>;
-      default: return null;
+      case "declined": return <NexaBadge variant="neutral" className="bg-red-500/10 text-red-600 border-red-500/20">Declined</NexaBadge>;
+      default: return <NexaBadge variant="neutral">{status}</NexaBadge>;
     }
   };
 
   const filteredBookings = bookings.filter(b => {
     if (activeTab === "all") return true;
-    return b.status === activeTab;
+    return b.status.toLowerCase() === activeTab.toLowerCase();
   });
+
+  if (loading) return (
+     <div className="space-y-8 animate-pulse">
+        <div className="h-20 bg-nexa-bg-surface rounded-[32px]" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+           <div className="md:col-span-2 space-y-4">
+              {[1, 2, 3].map(i => <div key={i} className="h-32 bg-nexa-bg-surface rounded-3xl" />)}
+           </div>
+           <div className="h-64 bg-nexa-bg-surface rounded-3xl" />
+        </div>
+     </div>
+  );
 
   return (
     <div className="space-y-8">
@@ -142,34 +146,34 @@ export default function BookingsManagerPage() {
                       {/* Date Part */}
                       <div className="md:w-32 bg-nexa-bg-base p-6 flex flex-col items-center justify-center text-center border-r border-nexa-border">
                         <span className="text-[10px] font-extrabold uppercase text-nexa-text-faint tracking-widest mb-1">
-                          {booking.date.split(' ')[0]}
+                          {new Date(booking.scheduledAt).toLocaleDateString('en-US', { month: 'short' })}
                         </span>
                         <span className="text-3xl font-extrabold leading-none">
-                          {booking.date.split(' ')[1].replace(',', '')}
+                          {new Date(booking.scheduledAt).getDate()}
                         </span>
                         <div className="flex items-center gap-1 mt-2 text-nexa-brand font-bold text-[10px]">
                            <Clock className="w-3 h-3" />
-                           {booking.time}
+                           {new Date(booking.scheduledAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                         </div>
                       </div>
 
                       {/* Main Info */}
                       <div className="flex-1 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div className="flex items-center gap-4">
-                          <NexaAvatar fallback={booking.customer.charAt(0)} />
+                          <NexaAvatar fallback={(booking.client?.name || booking.proProfile?.user?.name || "U").charAt(0)} />
                           <div>
                             <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-bold text-lg">{booking.customer}</h3>
-                              <span className="text-[10px] text-nexa-text-faint font-medium">#{booking.id}</span>
+                              <h3 className="font-bold text-lg">{booking.client?.name || booking.proProfile?.user?.name || "User"}</h3>
+                              <span className="text-[10px] text-nexa-text-faint font-medium">#{booking.id.slice(-6).toUpperCase()}</span>
                             </div>
-                            <p className="text-sm text-nexa-text-secondary font-medium">{booking.service}</p>
+                            <p className="text-sm text-nexa-text-secondary font-medium">{booking.serviceName || "Service"}</p>
                             <div className="flex items-center gap-3 mt-2 text-[10px] font-bold text-nexa-text-faint uppercase">
                                <div className="flex items-center gap-1">
                                   <MapPin className="w-3 h-3" />
-                                  {booking.location}
+                                  Lagos, Nigeria
                                </div>
                                <span>•</span>
-                               <span className="text-nexa-brand">{booking.amount}</span>
+                               <span className="text-nexa-brand">₦{(booking.amount || 0).toLocaleString()}</span>
                             </div>
                           </div>
                         </div>
@@ -194,15 +198,15 @@ export default function BookingsManagerPage() {
                     </div>
 
                     {/* Pending Actions */}
-                    {booking.status === "pending" && (
+                    {booking.status.toLowerCase() === "pending" && user?.role === "PRO" && (
                        <div className="bg-amber-500/5 border-t border-amber-500/10 p-3 px-6 flex items-center justify-between">
                           <p className="text-[10px] font-bold text-amber-700 flex items-center gap-2 uppercase tracking-widest">
                              <AlertCircle className="w-3.5 h-3.5" />
                              Awaiting your confirmation
                           </p>
                           <div className="flex items-center gap-3">
-                             <NexaButton size="sm" variant="ghost" className="text-red-500 hover:bg-red-50">Decline</NexaButton>
-                             <NexaButton size="sm">Accept Booking</NexaButton>
+                             <NexaButton size="sm" variant="ghost" className="text-red-500 hover:bg-red-50" onClick={() => handleUpdateStatus(booking.id, "DECLINED")}>Decline</NexaButton>
+                             <NexaButton size="sm" onClick={() => handleUpdateStatus(booking.id, "CONFIRMED")}>Accept Booking</NexaButton>
                           </div>
                        </div>
                     )}

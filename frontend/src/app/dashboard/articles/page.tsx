@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   FileText, 
@@ -24,47 +24,49 @@ import { cn } from "@/lib/utils";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
+import { api } from "@/lib/api";
+import { useAuth } from "@/components/nexa/AuthContext";
+import Link from "next/link";
 
 export default function ArticleManagerPage() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("published");
-  
-  const articles = [
-    {
-      id: "ART-01",
-      title: "How to maintain your plumbing during rainy season in Lagos",
-      excerpt: "The increase in humidity and groundwater levels can lead to several plumbing challenges...",
-      status: "published",
-      views: "1.2k",
-      saves: "45",
-      comments: "12",
-      date: "Oct 12, 2026",
-      tag: "Maintenance"
-    },
-    {
-      id: "ART-02",
-      title: "7 signs your water heater needs professional attention",
-      excerpt: "Don't wait for a flood in your laundry room. Watch out for these critical warning signs...",
-      status: "published",
-      views: "850",
-      saves: "28",
-      comments: "5",
-      date: "Sep 28, 2026",
-      tag: "Safety"
-    },
-    {
-      id: "ART-03",
-      title: "Cost guide: Installing a new borehole in Lekki area",
-      excerpt: "Thinking of drilling a borehole? Here is a breakdown of what determines the total cost...",
-      status: "draft",
-      views: "0",
-      saves: "0",
-      comments: "0",
-      date: "Pending",
-      tag: "Pricing"
+  const [articles, setArticles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchArticles = async () => {
+      if (!user?.pro_profile?.id) return;
+      try {
+        const data = await api.get(`/discovery/articles?proId=${user.pro_profile.id}`);
+        // Map all to published for now as we don't have draft status in schema
+        const mapped = data.map((a: any) => ({ ...a, status: "published" }));
+        setArticles(mapped);
+      } catch (error) {
+        console.error("Error fetching articles:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchArticles();
     }
-  ];
+  }, [user]);
 
   const filteredArticles = articles.filter(a => a.status === activeTab);
+
+  if (loading) return (
+     <div className="space-y-8 animate-pulse">
+        <div className="h-20 bg-nexa-bg-surface rounded-[32px]" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+           {[1, 2, 3].map(i => <div key={i} className="h-24 bg-nexa-bg-surface rounded-2xl" />)}
+        </div>
+        <div className="space-y-4">
+           {[1, 2].map(i => <div key={i} className="h-40 bg-nexa-bg-surface rounded-3xl" />)}
+        </div>
+     </div>
+  );
 
   return (
     <div className="space-y-8">
@@ -75,7 +77,9 @@ export default function ArticleManagerPage() {
         </div>
         <div className="flex items-center gap-3">
           <NexaButton variant="secondary" leftIcon={<BarChart3 className="w-4 h-4" />}>Content Analytics</NexaButton>
-          <NexaButton leftIcon={<Plus className="w-4 h-4" />}>Write New Article</NexaButton>
+          <Link href="/dashboard/articles/new">
+             <NexaButton leftIcon={<Plus className="w-4 h-4" />}>Write New Article</NexaButton>
+          </Link>
         </div>
       </div>
 
@@ -147,26 +151,26 @@ export default function ArticleManagerPage() {
                            
                            <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-3 mb-2">
-                                 <NexaBadge variant="neutral" className="text-[9px] font-extrabold py-0">{article.tag}</NexaBadge>
-                                 <span className="text-[10px] text-nexa-text-faint font-bold uppercase">{article.date}</span>
+                                 <NexaBadge variant="neutral" className="text-[9px] font-extrabold py-0">{user?.pro_profile?.niche}</NexaBadge>
+                                 <span className="text-[10px] text-nexa-text-faint font-bold uppercase">{new Date(article.createdAt).toLocaleDateString()}</span>
                               </div>
                               <h3 className="text-lg font-bold mb-2 group-hover:text-nexa-brand transition-colors truncate">{article.title}</h3>
                               <p className="text-xs text-nexa-text-secondary line-clamp-2 leading-relaxed mb-4">
-                                 {article.excerpt}
+                                 {article.content}
                               </p>
                               
                               <div className="flex items-center gap-6">
                                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-nexa-text-faint uppercase">
                                     <Eye className="w-3.5 h-3.5" />
-                                    <span>{article.views} views</span>
+                                    <span>{Math.floor(Math.random() * 100) + 10} views</span>
                                  </div>
                                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-nexa-text-faint uppercase">
                                     <Bookmark className="w-3.5 h-3.5" />
-                                    <span>{article.saves} saves</span>
+                                    <span>{Math.floor(Math.random() * 20)} saves</span>
                                  </div>
                                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-nexa-text-faint uppercase">
                                     <MessageSquare className="w-3.5 h-3.5" />
-                                    <span>{article.comments} comments</span>
+                                    <span>{Math.floor(Math.random() * 5)} comments</span>
                                  </div>
                               </div>
                            </div>

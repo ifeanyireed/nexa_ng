@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   Wallet, 
@@ -17,15 +17,37 @@ import { cn } from "@/lib/utils";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
+import { api } from "@/lib/api";
 
 export default function LeadWalletPage() {
-  const transactions = [
-    { id: "TX-9901", type: "deduction", amount: "₦2,500", date: "Oct 20, 2026", description: "Lead Acquired: Plumbing Repair" },
-    { id: "TX-9902", type: "topup", amount: "₦20,000", date: "Oct 18, 2026", description: "Wallet Top-up via Card" },
-    { id: "TX-9903", type: "deduction", amount: "₦1,500", date: "Oct 15, 2026", description: "Lead Acquired: Tap Installation" },
-    { id: "TX-9904", type: "deduction", amount: "₦3,000", date: "Oct 14, 2026", description: "Lead Acquired: Full Piping" },
-    { id: "TX-9905", type: "refund", amount: "₦1,500", date: "Oct 12, 2026", description: "Refund: Invalid Lead" },
-  ];
+  const [wallet, setWallet] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchWallet = async () => {
+      try {
+        const data = await api.get("/wallet");
+        setWallet(data);
+      } catch (error) {
+        console.error("Error fetching wallet data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchWallet();
+  }, []);
+
+  const transactions = wallet?.transactions || [];
+
+  if (loading) return (
+     <div className="max-w-5xl mx-auto space-y-8 animate-pulse">
+        <div className="h-12 w-1/3 bg-nexa-bg-surface rounded-xl" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+           <div className="h-64 bg-nexa-bg-surface rounded-3xl" />
+           <div className="lg:col-span-2 h-96 bg-nexa-bg-surface rounded-3xl" />
+        </div>
+     </div>
+  );
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">
@@ -49,7 +71,7 @@ export default function LeadWalletPage() {
                </div>
                <div className="relative z-10">
                   <p className="text-white/80 font-bold uppercase tracking-widest text-xs mb-2">Available Balance</p>
-                  <h2 className="text-5xl font-extrabold mb-6">₦42,500</h2>
+                  <h2 className="text-5xl font-extrabold mb-6">₦{(wallet?.balance || 0).toLocaleString()}</h2>
                   <div className="flex flex-col gap-3">
                      <button className="w-full bg-white text-nexa-brand font-bold py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-white/90 transition-colors">
                         <Plus className="w-5 h-5" /> Add Funds
@@ -85,31 +107,31 @@ export default function LeadWalletPage() {
                </div>
                
                <div className="divide-y divide-nexa-border flex-1 overflow-y-auto max-h-[600px] no-scrollbar">
-                  {transactions.map(tx => (
+                  {transactions.map((tx: any) => (
                      <div key={tx.id} className="p-6 flex items-center justify-between hover:bg-nexa-bg-surface/30 transition-colors">
                         <div className="flex items-center gap-4">
                            <div className={cn(
                               "w-12 h-12 rounded-xl flex items-center justify-center",
-                              tx.type === "topup" ? "bg-emerald-500/10 text-emerald-500" :
-                              tx.type === "refund" ? "bg-blue-500/10 text-blue-500" :
+                              tx.type === "DEPOSIT" ? "bg-emerald-500/10 text-emerald-500" :
+                              tx.type === "REFUND" ? "bg-blue-500/10 text-blue-500" :
                               "bg-amber-500/10 text-amber-500"
                            )}>
-                              {tx.type === "topup" || tx.type === "refund" ? <ArrowDownRight className="w-6 h-6" /> : <ArrowUpRight className="w-6 h-6" />}
+                              {tx.type === "DEPOSIT" || tx.type === "REFUND" ? <ArrowDownRight className="w-6 h-6" /> : <ArrowUpRight className="w-6 h-6" />}
                            </div>
                            <div>
-                              <p className="font-bold text-sm mb-1">{tx.description}</p>
+                              <p className="font-bold text-sm mb-1">{tx.type} - {tx.status}</p>
                               <div className="flex items-center gap-2 text-[10px] text-nexa-text-faint font-extrabold uppercase tracking-wider">
-                                 <span>{tx.date}</span>
+                                 <span>{new Date(tx.createdAt).toLocaleDateString()}</span>
                                  <span>•</span>
-                                 <span>{tx.id}</span>
+                                 <span>#{tx.id.slice(-6).toUpperCase()}</span>
                               </div>
                            </div>
                         </div>
                         <div className={cn(
                            "text-right font-extrabold",
-                           tx.type === "topup" || tx.type === "refund" ? "text-emerald-500" : "text-nexa-text-primary"
+                           tx.type === "DEPOSIT" || tx.type === "REFUND" ? "text-emerald-500" : "text-nexa-text-primary"
                         )}>
-                           {tx.type === "topup" || tx.type === "refund" ? "+" : "-"}{tx.amount}
+                           {tx.type === "DEPOSIT" || tx.type === "REFUND" ? "+" : "-"}₦{tx.amount.toLocaleString()}
                         </div>
                      </div>
                   ))}

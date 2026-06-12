@@ -42,6 +42,7 @@ import { NexaChip } from "@/components/nexa/NexaChip";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaRating } from "@/components/nexa/NexaRating";
 import { useNiche } from "@/components/nexa/NicheContext";
+import { api } from "@/lib/api";
 
 // --- COMPONENTS ---
 
@@ -338,32 +339,24 @@ const BusinessCard = ({ name, category, rating, count, image, isVerified }: any)
 };
 
 const FeaturedSection = () => {
-  const businesses = [
-    {
-      name: "The Yellow Chilli",
-      category: "Restaurant",
-      rating: 4.8,
-      count: 120,
-      image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=400&h=250",
-      isVerified: true,
-    },
-    {
-      name: "MedPlus Pharmacy",
-      category: "Health",
-      rating: 4.5,
-      count: 340,
-      image: "https://images.unsplash.com/photo-1586015555751-63bb77f4322a?auto=format&fit=crop&q=80&w=400&h=250",
-      isVerified: true,
-    },
-    {
-      name: "Ozone Cinemas",
-      category: "Entertainment",
-      rating: 4.2,
-      count: 210,
-      image: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&q=80&w=400&h=250",
-      isVerified: false,
-    },
-  ];
+  const [pros, setPros] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPros = async () => {
+      try {
+        const data = await api.get("/discovery/pros");
+        setPros(data.slice(0, 3));
+      } catch (error) {
+        console.error("Error fetching featured pros:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPros();
+  }, []);
+
+  if (loading) return null;
 
   return (
     <section className="py-24 bg-nexa-bg-base">
@@ -379,8 +372,16 @@ const FeaturedSection = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {businesses.map((biz, i) => (
-            <BusinessCard key={biz.name} {...biz} />
+          {pros.map((pro, i) => (
+            <BusinessCard 
+              key={pro.id} 
+              name={pro.user?.name || "Professional"}
+              category={pro.specialties?.split(",")[0] || "Service"}
+              rating={pro.rating}
+              count={24}
+              image="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=400&h=250"
+              isVerified={pro.verified}
+            />
           ))}
         </div>
       </div>

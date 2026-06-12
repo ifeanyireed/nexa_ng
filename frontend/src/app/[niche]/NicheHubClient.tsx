@@ -54,11 +54,11 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaRating } from "@/components/nexa/NexaRating";
 import { useNiche } from "@/components/nexa/NicheContext";
+import { api } from "@/lib/api";
 import Link from "next/link";
 
 // --- HELPERS ---
 
-// Helper to get unique icons for specialties
 const getServiceIcon = (service: string) => {
   const s = service.toLowerCase();
   if (s.includes("plumber")) return <Droplets className="w-6 h-6" />;
@@ -86,7 +86,7 @@ const getServiceIcon = (service: string) => {
   if (s.includes("agro") || s.includes("farm")) return <Sprout className="w-6 h-6" />;
   if (s.includes("property") || s.includes("estate") || s.includes("building")) return <Home className="w-6 h-6" />;
   
-  return <Wrench className="w-6 h-6" />; // Fallback
+  return <Wrench className="w-6 h-6" />;
 };
 
 // --- COMPONENTS ---
@@ -106,7 +106,7 @@ const SectionHeader = ({ title, viewAll = true, href }: { title: string, viewAll
 
 // --- BUYER MODE SECTIONS ---
 
-const BuyerModeLayout = ({ data, activeSubService, setActiveSubService }: any) => {
+const BuyerModeLayout = ({ data, activeSubService, setActiveSubService, pros }: any) => {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -114,7 +114,6 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService }: any) =
       exit={{ opacity: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {/* 1. INTENT HERO */}
       <section className="relative pt-32 pb-20 overflow-hidden">
         <div className={cn("absolute inset-0 z-0 opacity-10", data.colorClass)} />
         <div className="container mx-auto px-4 relative z-10">
@@ -151,7 +150,6 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService }: any) =
         </div>
       </section>
 
-      {/* 2. SUB-SERVICE FINDER GRID */}
       <section className="py-12 bg-nexa-bg-surface">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -179,60 +177,64 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService }: any) =
       </section>
 
       <div className="container mx-auto px-4 py-16 space-y-24">
-        {/* 3. TOP RATED NEAR YOU */}
         <section>
           <SectionHeader 
             title={`Top Rated ${activeSubService.replace(" Finder", "s")} Near You`} 
             href={`/${data.id}/search`} 
           />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[1, 2, 3].map(i => (
-              <Link href={`/${data.id}/business-${i}`} key={i}>
-                <NexaCard variant="glass" className="p-0 overflow-hidden group">
-                  <div className="relative h-48 bg-slate-200">
-                    <div className="absolute top-3 right-3 z-10">
-                      <NexaBadge variant="verified">Verified</NexaBadge>
+            {pros.length > 0 ? (
+              pros.map((pro: any) => (
+                <Link href={`/${data.id}/business-${pro.id}`} key={pro.id}>
+                  <NexaCard variant="glass" className="p-0 overflow-hidden group">
+                    <div className="relative h-48 bg-slate-200">
+                      <div className="absolute top-3 right-3 z-10">
+                        {pro.verified && <NexaBadge variant="verified">Verified</NexaBadge>}
+                      </div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                        <NexaRating value={pro.rating} />
+                        <span className="text-white text-xs font-bold">(24 reviews)</span>
+                      </div>
                     </div>
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                      <NexaRating value={4.9} />
-                      <span className="text-white text-xs font-bold">(48 reviews)</span>
+                    <div className="p-5">
+                      <h3 className="text-lg font-bold mb-1">{pro.user?.name || "Professional"}</h3>
+                      <div className="flex items-center gap-2 text-nexa-text-secondary text-xs mb-4">
+                        <MapPin className="w-3 h-3" />
+                        <span>Lagos</span>
+                        <span className="mx-1">•</span>
+                        <Clock className="w-3 h-3" />
+                        <span className="text-emerald-500 font-bold">Fast response</span>
+                      </div>
+                      <div className="flex items-center justify-between pt-4 border-t border-nexa-border">
+                        <span className="text-xs font-bold text-nexa-brand uppercase tracking-wider">Available Today</span>
+                        <NexaButton variant="ghost" size="sm" className="h-8 px-0 text-nexa-brand">Book Now</NexaButton>
+                      </div>
                     </div>
-                  </div>
-                  <div className="p-5">
-                    <h3 className="text-lg font-bold mb-1">Expert {activeSubService.replace(" Finder", "")} {i}</h3>
-                    <div className="flex items-center gap-2 text-nexa-text-secondary text-xs mb-4">
-                      <MapPin className="w-3 h-3" />
-                      <span>2.4km • Lekki Phase 1</span>
-                      <span className="mx-1">•</span>
-                      <Clock className="w-3 h-3" />
-                      <span className="text-emerald-500 font-bold">15m response</span>
-                    </div>
-                    <div className="flex items-center justify-between pt-4 border-t border-nexa-border">
-                      <span className="text-xs font-bold text-nexa-brand uppercase tracking-wider">Available Today</span>
-                      <NexaButton variant="ghost" size="sm" className="h-8 px-0 text-nexa-brand">Book Now</NexaButton>
-                    </div>
-                  </div>
-                </NexaCard>
-              </Link>
-            ))}
+                  </NexaCard>
+                </Link>
+              ))
+            ) : (
+              <div className="col-span-3 py-12 text-center text-nexa-text-faint italic">
+                No professionals found in this category yet.
+              </div>
+            )}
           </div>
         </section>
 
-        {/* 4. AVAILABLE FOR HIRE FEED */}
         <section className="bg-nexa-brand/5 -mx-4 px-4 py-16 rounded-[40px] border border-nexa-brand/10">
           <SectionHeader title="Available for Hire Right Now" href={`/${data.id}/available`} />
           <div className="-mx-4 px-4">
             <div className="flex gap-6 overflow-x-auto py-8 no-scrollbar snap-x snap-mandatory scroll-edge-fade">
-              {[1, 2, 3, 4, 5].map(i => (
-                <div key={i} className="flex-shrink-0 w-72 snap-start">
+              {pros.filter((p: any) => p.verified).map((pro: any) => (
+                <div key={pro.id} className="flex-shrink-0 w-72 snap-start">
                   <NexaCard variant="glass" className="bg-white/80 dark:bg-slate-900/80 shadow-xl border-none">
                     <div className="flex items-center gap-4 mb-4">
                     <div className="w-14 h-14 rounded-full bg-nexa-brand/10 border border-nexa-brand/20 flex items-center justify-center text-nexa-brand font-bold text-xl">
-                      JD
+                      {pro.user?.name?.[0] || "P"}
                     </div>
                     <div>
-                      <h4 className="font-bold">John Doe</h4>
+                      <h4 className="font-bold">{pro.user?.name}</h4>
                       <div className="flex items-center gap-1 text-[10px] text-nexa-text-faint uppercase font-bold">
                         <Zap className="w-3 h-3 fill-amber-500 text-amber-500" />
                         <span>Instant Booking</span>
@@ -240,7 +242,7 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService }: any) =
                     </div>
                   </div>
                   <p className="text-xs text-nexa-text-secondary line-clamp-2 mb-4">
-                    Experienced {activeSubService.replace(" Finder", "")} ready to handle your task immediately with quality tools.
+                    {pro.bio || "Available for high-quality service."}
                   </p>
                   <div className="flex items-center justify-between">
                     <NexaBadge variant="neutral" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
@@ -255,7 +257,6 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService }: any) =
           </div>
         </section>
 
-        {/* 5. NICHE PRODUCT SHOP */}
         <section>
           <SectionHeader title={`${data.name} Supplies & Tools`} href={`/${data.id}/shop`} />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -280,7 +281,6 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService }: any) =
           </div>
         </section>
 
-        {/* 6. ARTICLES & INSIGHT FEED */}
         <section>
           <SectionHeader title="Expert Articles & Guides" href={`/${data.id}/articles`} />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -307,12 +307,11 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService }: any) =
           </div>
         </section>
 
-        {/* 7. VERIFIED PROFESSIONALS */}
         <section className="py-12 border-y border-nexa-border">
           <SectionHeader title="Verified Excellence" viewAll={false} />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[1, 2].map(i => (
-              <NexaCard key={i} variant="glass" className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            {pros.filter((p: any) => p.verified).slice(0, 2).map((pro: any) => (
+              <NexaCard key={pro.id} variant="glass" className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
                 <div className="w-24 h-24 rounded-2xl bg-nexa-brand/10 flex items-center justify-center relative flex-shrink-0">
                   <ShieldCheck className="w-12 h-12 text-nexa-brand" />
                   <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-500 rounded-full border-4 border-white dark:border-slate-900 flex items-center justify-center">
@@ -320,10 +319,12 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService }: any) =
                   </div>
                 </div>
                 <div className="text-center sm:text-left">
-                  <h3 className="text-xl font-bold mb-1">Corporate {data.name} Ltd</h3>
-                  <p className="text-sm text-nexa-text-secondary mb-3">150+ successful jobs • CAC Verified • 5 years on Nexa</p>
+                  <h3 className="text-xl font-bold mb-1">{pro.user?.name}</h3>
+                  <p className="text-sm text-nexa-text-secondary mb-3">{pro.rating} rating • CAC Verified • Professional on Nexa</p>
                   <div className="flex items-center justify-center sm:justify-start gap-3">
-                    <NexaButton size="sm" variant="secondary">View Profile</NexaButton>
+                    <Link href={`/${data.id}/business-${pro.id}`}>
+                      <NexaButton size="sm" variant="secondary">View Profile</NexaButton>
+                    </Link>
                     <span className="text-xs font-bold text-emerald-500">Highly Recommended</span>
                   </div>
                 </div>
@@ -336,8 +337,6 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService }: any) =
   );
 };
 
-// --- SELLER MODE MODULES ---
-
 const SellerModeLayout = ({ data }: any) => {
   return (
     <motion.div
@@ -348,7 +347,6 @@ const SellerModeLayout = ({ data }: any) => {
       className="container mx-auto px-4 pt-32 pb-24"
     >
       <div className="flex flex-col gap-12">
-        {/* 1. MY LIVE PROFILE PREVIEW */}
         <section>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-bold">Live Profile Preview</h2>
@@ -367,7 +365,6 @@ const SellerModeLayout = ({ data }: any) => {
           </div>
         </section>
 
-        {/* 2. PERFORMANCE SNAPSHOT */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {[
             { label: "Profile Views", value: "1,240", change: "+12%", icon: <Eye className="w-5 h-5 text-blue-500" /> },
@@ -388,7 +385,6 @@ const SellerModeLayout = ({ data }: any) => {
           ))}
         </section>
 
-        {/* 3. QUICK ACTIONS HUB */}
         <section>
           <h2 className="text-xl font-bold mb-6">Quick Actions</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
@@ -410,7 +406,6 @@ const SellerModeLayout = ({ data }: any) => {
           </div>
         </section>
 
-        {/* 4. NICHE PULSE FEED */}
         <div className="grid md:grid-cols-2 gap-8">
            <NexaCard variant="glass" className="p-6">
               <div className="flex items-center gap-2 mb-6">
@@ -454,15 +449,25 @@ const SellerModeLayout = ({ data }: any) => {
   );
 };
 
-// --- MAIN PAGE ---
-
 export default function NicheHubClient({ data }: any) {
   const { mode, setCurrentNiche } = useNiche();
-  
   const [activeSubService, setActiveSubService] = useState(data.subServices[0]);
+  const [pros, setPros] = useState<any[]>([]);
+  const [loadingPros, setLoadingPros] = useState(true);
 
   useEffect(() => {
     setCurrentNiche(data.id);
+    const fetchPros = async () => {
+      try {
+        const result = await api.get(`/discovery/pros?niche=${data.id}`);
+        setPros(result);
+      } catch (error) {
+        console.error("Error fetching pros:", error);
+      } finally {
+        setLoadingPros(false);
+      }
+    };
+    fetchPros();
     return () => setCurrentNiche(null);
   }, [data.id, setCurrentNiche]);
 
@@ -477,6 +482,7 @@ export default function NicheHubClient({ data }: any) {
             data={data} 
             activeSubService={activeSubService} 
             setActiveSubService={setActiveSubService} 
+            pros={pros}
           />
         ) : (
           <SellerModeLayout 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { 
   MapPin, 
@@ -14,9 +14,28 @@ import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
+import { api } from "@/lib/api";
+import Link from "next/link";
 
 export default function NearMeClient({ data }: { data: any }) {
   const [radius, setRadius] = useState(5);
+  const [pros, setPros] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPros = async () => {
+      setLoading(true);
+      try {
+        const result = await api.get(`/discovery/pros?niche=${data.id}`);
+        setPros(result);
+      } catch (error) {
+        console.error("Failed to fetch pros near me:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPros();
+  }, [data.id]);
   
   return (
     <main className="bg-nexa-bg-base min-h-screen pb-24 lg:pb-0">
@@ -52,43 +71,56 @@ export default function NearMeClient({ data }: { data: any }) {
            </div>
            
            <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
-              {[...Array(10)].map((_, i) => (
-                <NexaCard key={i} variant="interactive" className="p-4 cursor-pointer group">
-                   <div className="flex gap-4">
-                      <div className="w-16 h-16 rounded-2xl bg-slate-200 flex-shrink-0 overflow-hidden">
-                         {/* Placeholder */}
-                      </div>
-                      <div className="flex-1">
-                         <div className="flex items-center justify-between mb-1">
-                            <h3 className="font-bold text-sm line-clamp-1 group-hover:text-nexa-brand transition-colors">Quality {data.name.slice(0, -4)} Service</h3>
-                            <div className="flex items-center gap-1 text-[10px] font-bold">
-                               <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                               <span>4.8</span>
-                            </div>
-                         </div>
-                         <p className="text-[10px] text-nexa-text-secondary mb-2">{(0.5 + i * 0.4).toFixed(1)}km • Lekki Phase 1</p>
-                         <div className="flex items-center gap-2">
-                            <NexaBadge variant="success" className="text-[9px] py-0">Available</NexaBadge>
-                            <span className="text-[10px] text-nexa-text-faint font-bold uppercase tracking-tighter">15m Response</span>
-                         </div>
-                      </div>
-                   </div>
-                </NexaCard>
-              ))}
+              {loading ? (
+                <div className="py-12 text-center">
+                   <div className="inline-block w-6 h-6 border-2 border-nexa-brand border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : (
+                pros.map((pro, i) => (
+                  <Link href={`/${data.id}/business-${pro.id}`} key={pro.id}>
+                    <NexaCard variant="interactive" className="p-4 cursor-pointer group">
+                       <div className="flex gap-4">
+                          <div className="w-16 h-16 rounded-2xl bg-nexa-brand/10 flex-shrink-0 overflow-hidden flex items-center justify-center font-bold text-nexa-brand">
+                             {pro.user?.name?.[0]}
+                          </div>
+                          <div className="flex-1">
+                             <div className="flex items-center justify-between mb-1">
+                                <h3 className="font-bold text-sm line-clamp-1 group-hover:text-nexa-brand transition-colors">{pro.user?.name}</h3>
+                                <div className="flex items-center gap-1 text-[10px] font-bold">
+                                   <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                                   <span>{pro.rating}</span>
+                                </div>
+                             </div>
+                             <p className="text-[10px] text-nexa-text-secondary mb-2">{(0.5 + i * 0.4).toFixed(1)}km • Lagos, Nigeria</p>
+                             <div className="flex items-center gap-2">
+                                <NexaBadge variant="success" className="text-[9px] py-0">Available</NexaBadge>
+                                <span className="text-[10px] text-nexa-text-faint font-bold uppercase tracking-tighter">Fast Response</span>
+                             </div>
+                          </div>
+                       </div>
+                    </NexaCard>
+                  </Link>
+                ))
+              )}
+              {!loading && pros.length === 0 && (
+                <div className="py-12 text-center text-nexa-text-faint italic px-6">
+                  No professionals found near your location.
+                </div>
+              )}
            </div>
         </aside>
 
         {/* MAP VIEW */}
         <section className="flex-1 relative bg-slate-100 overflow-hidden">
-           {/* Placeholder for Google Maps / Mapbox */}
            <div className="absolute inset-0 bg-[#e5e7eb] flex items-center justify-center">
               <div className="text-nexa-text-faint flex flex-col items-center gap-4">
                  <Navigation className="w-12 h-12 animate-pulse" />
-                 <p className="font-bold text-sm uppercase tracking-widest">Loading GPS Data...</p>
+                 <p className="font-bold text-sm uppercase tracking-widest text-center px-6">
+                    {loading ? "Initializing Map..." : `Showing ${pros.length} results near Lagos`}
+                 </p>
               </div>
            </div>
 
-           {/* MAP CONTROLS */}
            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
               <NexaButton size="lg" className="rounded-full shadow-2xl px-8" leftIcon={<Navigation className="w-5 h-5" />}>
                  Recenter Map

@@ -20,25 +20,77 @@ import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaInput } from "@/components/nexa/NexaInput";
 
+import { useRouter, useSearchParams } from "next/navigation";
+import { api } from "@/lib/api";
+import { useAuth } from "@/components/nexa/AuthContext";
+
 export default function CheckoutPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user, loading: authLoading } = useAuth();
+
   const [step, setStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState("card");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  // Mock cart items
-  const cartItems = [
+  // Get data from query params for booking checkouts
+  const proId = searchParams.get("proId");
+  const service = searchParams.get("service");
+  const date = searchParams.get("date");
+  const time = searchParams.get("time");
+  const type = searchParams.get("type") || "SHOP";
+  const amountParam = searchParams.get("amount");
+  const amount = amountParam ? parseFloat(amountParam) : 0;
+
+  // Mock cart items (fallback if not a booking checkout)
+  const cartItems = proId ? [
+    { name: service || "Premium Service", price: `₦${amount.toLocaleString()}`, qty: 1, image: "https://api.dicebear.com/7.x/initials/svg?seed=Nexa" }
+  ] : [
     { name: "Industrial Wrench Set", price: "₦15,000", qty: 1, image: "https://images.unsplash.com/photo-1586864387917-f538a5a9261c?auto=format&fit=crop&q=80&w=100" },
     { name: "Safety Gloves (Large)", price: "₦2,500", qty: 2, image: "https://images.unsplash.com/photo-1590674899484-13da0d1b58f5?auto=format&fit=crop&q=80&w=100" }
   ];
 
-  const subtotal = 20000;
-  const delivery = 2500;
+  const subtotal = proId ? amount : 20000;
+  const delivery = proId ? 0 : 2500;
   const total = subtotal + delivery;
+
+  const handlePay = async () => {
+    setIsSubmitting(true);
+    setError("");
+    try {
+      if (proId) {
+        // Create booking in backend
+        await api.post("/bookings", {
+          pro_profile_id: proId,
+          scheduled_at: date ? new Date(date).toISOString() : new Date().toISOString(),
+          service_name: service,
+          amount: amount,
+          type: type
+        });
+      }
+      
+      router.push("/checkout/success");
+    } catch (err: any) {
+      setError(err.message || "Payment failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (authLoading) return null;
 
   return (
     <main className="bg-nexa-bg-base min-h-screen pb-24 lg:pb-12">
       <NexaNavbar />
       
       <div className="container mx-auto px-4 pt-32">
+        {error && (
+           <div className="mb-8 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-bold flex items-center gap-3">
+              <ShieldCheck className="w-5 h-5" />
+              {error}
+           </div>
+        )}
         <div className="flex flex-col lg:flex-row gap-12">
           
           {/* LEFT: CHECKOUT FORM */}
@@ -146,11 +198,15 @@ export default function CheckoutPage() {
                   )}
                 </section>
 
-                <Link href="/checkout/success">
-                  <NexaButton size="lg" className="w-full h-16 rounded-2xl shadow-xl shadow-nexa-brand/20 text-lg mt-8" leftIcon={<Lock className="w-5 h-5" />}>
-                    Pay ₦{total.toLocaleString()}
-                  </NexaButton>
-                </Link>
+                <NexaButton 
+                  size="lg" 
+                  className="w-full h-16 rounded-2xl shadow-xl shadow-nexa-brand/20 text-lg mt-8" 
+                  leftIcon={<Lock className="w-5 h-5" />}
+                  onClick={handlePay}
+                  isLoading={isSubmitting}
+                >
+                  Pay ₦{total.toLocaleString()}
+                </NexaButton>
                 
                 <p className="text-center text-[10px] text-nexa-text-faint font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-500" />

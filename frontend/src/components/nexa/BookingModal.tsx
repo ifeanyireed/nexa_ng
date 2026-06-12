@@ -16,26 +16,36 @@ import { cn } from "@/lib/utils";
 import { NexaButton } from "./NexaButton";
 import { NexaCard } from "./NexaCard";
 import { NexaBadge } from "./NexaBadge";
+import { NexaVerifiedBadge } from "./NexaVerifiedBadge";
+import { api } from "@/lib/api";
+import Link from "next/link";
 
 interface BookingModalProps {
   isOpen: boolean;
   onClose: () => void;
   businessName: string;
   serviceName?: string;
+  proProfileId?: string;
 }
 
-export function BookingModal({ isOpen, onClose, businessName, serviceName }: BookingModalProps) {
+export function BookingModal({ isOpen, onClose, businessName, serviceName, proProfileId }: BookingModalProps) {
   const [step, setStep] = useState(1);
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [isNexaVerified, setIsNexaVerified] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-  const dates = Array.from({ length: 14 }, (_, i) => ({
-    day: days[(new Date().getDay() + i) % 7],
-    date: new Date().getDate() + i,
-    full: new Date(new Date().setDate(new Date().getDate() + i))
-  }));
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const dates = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    return {
+      day: days[d.getDay()],
+      date: d.getDate(),
+      full: d
+    };
+  });
 
   const timeSlots = ["09:00 AM", "10:00 AM", "11:00 AM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM"];
 
@@ -47,11 +57,42 @@ export function BookingModal({ isOpen, onClose, businessName, serviceName }: Boo
     if (step > 1) setStep(step - 1);
   };
 
+  const handleConfirmBooking = async () => {
+    if (!proProfileId || selectedDate === null || !selectedTime) return;
+    
+    setLoading(true);
+    setError("");
+    
+    try {
+      const scheduledAt = new Date(dates[selectedDate].full);
+      const [time, period] = selectedTime.split(" ");
+      let [hours, minutes] = time.split(":").map(Number);
+      if (period === "PM" && hours !== 12) hours += 12;
+      if (period === "AM" && hours === 12) hours = 0;
+      scheduledAt.setHours(hours, minutes, 0, 0);
+
+      await api.post("/bookings", {
+        pro_profile_id: proProfileId,
+        scheduled_at: scheduledAt.toISOString(),
+        service_name: serviceName || "Standard Consultation",
+        amount: 0, // Standard bookings are free upfront
+        type: "STANDARD"
+      });
+      
+      setStep(4);
+    } catch (err: any) {
+      setError(err.message || "Failed to create booking. Are you logged in?");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleClose = () => {
     setStep(1);
     setSelectedDate(null);
     setSelectedTime(null);
     setIsNexaVerified(false);
+    setError("");
     onClose();
   };
 
@@ -91,6 +132,13 @@ export function BookingModal({ isOpen, onClose, businessName, serviceName }: Boo
             </div>
 
             <div className="p-8">
+               {error && (
+                 <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold flex items-center gap-3">
+                   <AlertCircle className="w-4 h-4" />
+                   {error}
+                 </div>
+               )}
+
                <AnimatePresence mode="wait">
                   {step === 1 && (
                      <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
@@ -158,7 +206,6 @@ export function BookingModal({ isOpen, onClose, businessName, serviceName }: Boo
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Standard Option */}
                         <button 
                           onClick={() => { setIsNexaVerified(false); handleNext(); }}
                           className="liquid-glass p-6 rounded-[32px] border-nexa-border hover:border-nexa-brand/30 transition-all text-left group"
@@ -171,12 +218,10 @@ export function BookingModal({ isOpen, onClose, businessName, serviceName }: Boo
                           <p className="text-lg font-extrabold text-nexa-text-primary">₦0.00 <span className="text-xs font-bold text-nexa-text-faint">extra</span></p>
                         </button>
 
-                        {/* NexaVerified Option */}
                         <button 
                           onClick={() => { setIsNexaVerified(true); handleNext(); }}
                           className="liquid-glass p-6 rounded-[32px] border-nexa-amber/40 bg-nexa-amber/5 relative overflow-hidden group text-left"
                         >
-                          {/* Shimmer on selection */}
                           <motion.div
                             animate={{ x: ["-100%", "200%"] }}
                             transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
@@ -220,7 +265,7 @@ export function BookingModal({ isOpen, onClose, businessName, serviceName }: Boo
                               </div>
                               <div className="flex justify-between items-center">
                                  <span className="text-sm font-medium text-nexa-text-secondary">Date</span>
-                                 <span className="text-sm font-bold">{dates[selectedDate!].day}, Oct {dates[selectedDate!].date}</span>
+                                 <span className="text-sm font-bold">{dates[selectedDate!].day}, {dates[selectedDate!].date}</span>
                               </div>
                               <div className="flex justify-between items-center">
                                  <span className="text-sm font-medium text-nexa-text-secondary">Time</span>
@@ -236,13 +281,13 @@ export function BookingModal({ isOpen, onClose, businessName, serviceName }: Boo
                                 : "By confirming, you agree to the seller's cancellation policy. No payment is required upfront."}
                            </p>
                            {isNexaVerified ? (
-                              <Link href={`/book/nexa-verified/checkout?service=${serviceName}&date=${dates[selectedDate!].date}&time=${selectedTime}`}>
+                              <Link href={`/checkout?proId=${proProfileId}&service=${serviceName || "Premium Service"}&date=${dates[selectedDate!].full.toISOString()}&time=${selectedTime}&type=NEXA_VERIFIED&amount=5000`}>
                                  <NexaButton size="lg" className="w-full h-14 bg-nexa-amber hover:bg-nexa-amber/90">
                                     Proceed to Checkout
                                  </NexaButton>
                               </Link>
                            ) : (
-                              <NexaButton size="lg" className="w-full h-14" onClick={handleNext}>
+                              <NexaButton size="lg" className="w-full h-14" onClick={handleConfirmBooking} isLoading={loading}>
                                  Confirm Booking
                               </NexaButton>
                            )}
@@ -268,8 +313,8 @@ export function BookingModal({ isOpen, onClose, businessName, serviceName }: Boo
                         </div>
                         <div className="flex flex-col gap-3">
                            <NexaButton variant="secondary" onClick={handleClose}>Back to Profile</NexaButton>
-                           <Link href="/account?tab=bookings" className="w-full" onClick={handleClose}>
-                              <NexaButton className="w-full">View My Bookings</NexaButton>
+                           <Link href="/dashboard" className="w-full" onClick={handleClose}>
+                              <NexaButton className="w-full">View My Dashboard</NexaButton>
                            </Link>
                         </div>
                      </motion.div>
@@ -282,6 +327,3 @@ export function BookingModal({ isOpen, onClose, businessName, serviceName }: Boo
     </AnimatePresence>
   );
 }
-
-// Support Link inside the component for step 3
-import Link from "next/link";

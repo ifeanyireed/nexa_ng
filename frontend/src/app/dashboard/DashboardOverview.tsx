@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Calendar, 
   ShoppingBag, 
@@ -23,16 +23,41 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaAvatar } from "@/components/nexa/NexaAvatar";
 import { NICHE_DETAILS } from "@/lib/niche-data";
+import { useAuth } from "@/components/nexa/AuthContext";
+import { api } from "@/lib/api";
 import Link from "next/link";
 
 export default function DashboardOverview() {
-  const data = NICHE_DETAILS["handyman-finders"];
+  const { user } = useAuth();
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [wallet, setWallet] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [bookingsData, walletData] = await Promise.all([
+          api.get("/bookings"),
+          api.get("/wallet"),
+        ]);
+        setBookings(bookingsData);
+        setWallet(walletData);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const nicheData = user?.pro_profile?.niche ? NICHE_DETAILS[user.pro_profile.niche] : NICHE_DETAILS["handyman-finders"];
   
   const kpis = [
     { label: "Profile Views", value: "1,240", change: "+12%", trend: "up", icon: <Eye className="w-5 h-5 text-blue-500" /> },
     { label: "New Leads", value: "48", change: "+5%", trend: "up", icon: <Zap className="w-5 h-5 text-amber-500" /> },
-    { label: "Bookings", value: "12", change: "0%", trend: "neutral", icon: <Calendar className="w-5 h-5 text-emerald-500" /> },
-    { label: "Earnings", value: "₦420k", change: "+8%", trend: "up", icon: <TrendingUp className="w-5 h-5 text-fuchsia-500" /> },
+    { label: "Bookings", value: bookings.length.toString(), change: "0%", trend: "neutral", icon: <Calendar className="w-5 h-5 text-emerald-500" /> },
+    { label: "Wallet Balance", value: `₦${wallet?.balance?.toLocaleString() || "0"}`, change: "+8%", trend: "up", icon: <TrendingUp className="w-5 h-5 text-fuchsia-500" /> },
   ];
 
   return (
@@ -41,12 +66,16 @@ export default function DashboardOverview() {
       <NexaCard variant="glass" padding="none" className="overflow-hidden bg-gradient-to-r from-nexa-brand/10 to-transparent border-nexa-brand/20">
          <div className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-6 text-center md:text-left">
-               <div className={cn("w-16 h-16 rounded-[24px] flex items-center justify-center text-white shadow-xl", data.colorClass)}>
+               <div className={cn("w-16 h-16 rounded-[24px] flex items-center justify-center text-white shadow-xl", nicheData?.colorClass || "bg-nexa-brand")}>
                   <Store className="w-8 h-8" />
                </div>
                <div>
-                  <h3 className="text-2xl font-extrabold text-display">Your Home Services Hub</h3>
-                  <p className="text-nexa-text-secondary text-sm">Managing your listings in the <span className="text-nexa-brand font-bold uppercase tracking-wider">Handyman Finders</span> sub-group.</p>
+                  <h3 className="text-2xl font-extrabold text-display">Welcome, {user?.name}</h3>
+                  <p className="text-nexa-text-secondary text-sm">
+                    {user?.role === "PRO" 
+                      ? `Managing your listings in the ${nicheData?.name || "Marketplace"}.` 
+                      : "Manage your bookings and wallet here."}
+                  </p>
                </div>
             </div>
             <div className="flex items-center gap-4 bg-white/50 dark:bg-slate-800/50 p-2 rounded-2xl border border-nexa-border">
@@ -54,10 +83,10 @@ export default function DashboardOverview() {
                   <p className="text-[10px] text-nexa-text-faint font-extrabold uppercase tracking-widest mb-1">Status</p>
                   <div className="flex items-center gap-2">
                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                     <span className="text-xs font-bold">Live & Verified</span>
+                     <span className="text-xs font-bold">{user?.pro_profile?.verified ? "Live & Verified" : "Awaiting Verification"}</span>
                   </div>
                </div>
-               <Link href="/home-services/kola-handyman-services">
+               <Link href={user?.pro_profile?.niche ? `/${user.pro_profile.niche}/business-${user.pro_profile.id}` : "#"}>
                   <NexaButton size="sm" variant="secondary" rightIcon={<Eye className="w-4 h-4" />}>Preview Profile</NexaButton>
                </Link>
             </div>
@@ -87,10 +116,8 @@ export default function DashboardOverview() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
          
-         {/* LEFT & CENTER COLUMNS */}
          <div className="lg:col-span-2 space-y-12">
             
-            {/* QUICK ACTIONS */}
             <section>
                <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-extrabold flex items-center gap-2">
@@ -118,7 +145,6 @@ export default function DashboardOverview() {
                </div>
             </section>
 
-            {/* RECENT BOOKINGS */}
             <section>
                <div className="flex items-center justify-between mb-6">
                   <h3 className="text-lg font-extrabold flex items-center gap-2">
@@ -128,35 +154,39 @@ export default function DashboardOverview() {
                   <NexaButton variant="ghost" size="sm" rightIcon={<ArrowRight className="w-4 h-4" />}>View All</NexaButton>
                </div>
                <div className="space-y-4">
-                  {[1, 2, 3].map((item) => (
-                    <NexaCard key={item} variant="flat" className="p-6 flex flex-col md:flex-row items-center justify-between gap-6 border-none bg-nexa-bg-surface/30">
-                       <div className="flex items-center gap-4">
-                          <NexaAvatar fallback={`C${item}`} isOnline={item === 1} />
-                          <div>
-                             <h4 className="font-bold">Customer Name {item}</h4>
-                             <p className="text-xs text-nexa-text-faint font-medium">Lekki Phase 1 • Standard Plumbing Check</p>
-                          </div>
-                       </div>
-                       <div className="flex items-center gap-12">
-                          <div className="text-right">
-                             <p className="text-xs font-bold">₦15,000</p>
-                             <p className="text-[10px] text-nexa-text-faint font-bold uppercase tracking-wider">Tomorrow, 10 AM</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                             <NexaButton size="sm" variant="secondary">Message</NexaButton>
-                             <NexaButton size="sm">Accept</NexaButton>
-                          </div>
-                       </div>
-                    </NexaCard>
-                  ))}
+                  {bookings.length > 0 ? (
+                    bookings.slice(0, 3).map((booking) => (
+                      <NexaCard key={booking.id} variant="flat" className="p-6 flex flex-col md:flex-row items-center justify-between gap-6 border-none bg-nexa-bg-surface/30">
+                         <div className="flex items-center gap-4">
+                            <NexaAvatar fallback={booking.client?.name?.[0] || "C"} />
+                            <div>
+                               <h4 className="font-bold">{booking.client?.name || "Client"}</h4>
+                               <p className="text-xs text-nexa-text-faint font-medium">{booking.status} • Scheduled for {new Date(booking.scheduled_at).toLocaleDateString()}</p>
+                            </div>
+                         </div>
+                         <div className="flex items-center gap-12">
+                            <div className="text-right">
+                               <p className="text-xs font-bold">₦{booking.pro_profile?.hourly_rate?.toLocaleString() || "0"}</p>
+                               <p className="text-[10px] text-nexa-text-faint font-bold uppercase tracking-wider">{new Date(booking.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                               <NexaButton size="sm" variant="secondary">Message</NexaButton>
+                               {booking.status === "PENDING" && <NexaButton size="sm">Accept</NexaButton>}
+                            </div>
+                         </div>
+                      </NexaCard>
+                    ))
+                  ) : (
+                    <div className="py-12 text-center text-nexa-text-faint italic bg-nexa-bg-surface/10 rounded-3xl border border-dashed border-nexa-border">
+                      No recent bookings found.
+                    </div>
+                  )}
                </div>
             </section>
          </div>
 
-         {/* RIGHT COLUMN */}
          <aside className="space-y-12">
             
-            {/* AVAILABILITY MANAGER */}
             <section>
                <NexaCard variant="glass" className="p-6 bg-gradient-to-br from-emerald-500/5 to-transparent border-emerald-500/20">
                   <div className="flex items-center justify-between mb-6">
@@ -167,7 +197,7 @@ export default function DashboardOverview() {
                      <NexaBadge variant="success">Active</NexaBadge>
                   </div>
                   <p className="text-xs text-nexa-text-secondary mb-6 leading-relaxed">
-                     When enabled, you appear in the "Available for Hire" feed on the Home Services hub.
+                     When enabled, you appear in the "Available for Hire" feed on the hub.
                   </p>
                   <div className="bg-nexa-bg-base p-4 rounded-2xl border border-nexa-border flex items-center justify-between mb-6">
                      <span className="text-sm font-bold">Available Now</span>
@@ -179,7 +209,6 @@ export default function DashboardOverview() {
                </NexaCard>
             </section>
 
-            {/* NICHE PULSE */}
             <section>
                <h3 className="text-lg font-extrabold mb-6 flex items-center gap-2">
                   <TrendingUp className="w-5 h-5 text-nexa-brand" />

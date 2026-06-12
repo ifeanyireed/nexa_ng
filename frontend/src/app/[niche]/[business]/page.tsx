@@ -21,5 +21,5 @@ export default function BusinessProfilePage({ params }: { params: { niche: strin
   const nicheSlug = params.niche;
   const data = NICHE_DETAILS[nicheSlug] || NICHE_DETAILS["home-services"];
 
-  return <BusinessClient data={data} />;
+  return <BusinessClient data={data} businessSlug={params.business} />;
 }

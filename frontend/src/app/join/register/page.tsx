@@ -32,10 +32,21 @@ import { NICHES } from "@/components/nexa/NicheSwitcher";
 import { NICHE_DETAILS } from "@/lib/niche-data";
 import Link from "next/link";
 
+import { useRouter, useSearchParams } from "next/navigation";
+import { api } from "@/lib/api";
+import { useAuth } from "@/components/nexa/AuthContext";
+
 export default function RegisterPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { user, loading: authLoading } = useAuth();
+
   const [step, setStep] = useState(1);
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
   const [formData, setFormData] = useState({
     nicheId: "",
     subService: "",
@@ -50,6 +61,13 @@ export default function RegisterPage() {
     plan: "basic",
     nin: ""
   });
+
+  // Auth redirect
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login?redirect=/join/register");
+    }
+  }, [user, authLoading, router]);
 
   // Persist to LocalStorage
   useEffect(() => {
@@ -96,6 +114,37 @@ export default function RegisterPage() {
     { title: "Plan", icon: <CreditCard className="w-4 h-4" /> }
   ];
 
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    setError("");
+    try {
+      await api.post("/pro/onboard", {
+        business_name: formData.businessName,
+        bio: formData.description,
+        niche: formData.nicheId,
+        sub_service: formData.subService,
+        specialty_level: formData.specialtyLevel,
+        city: formData.city,
+        area: formData.area,
+        phone: formData.phone,
+        whatsapp: formData.whatsapp,
+        business_email: formData.email,
+        nin: formData.nin,
+        plan: formData.plan,
+        hourly_rate: 0
+      });
+      
+      localStorage.removeItem("nexa_registration_progress");
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Failed to register. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (authLoading) return null;
+
   return (
     <main className="bg-nexa-bg-base min-h-screen">
       
@@ -139,6 +188,12 @@ export default function RegisterPage() {
           </div>
 
           <div className="max-w-4xl mx-auto">
+            {error && (
+               <div className="mb-8 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm font-bold flex items-center gap-3 animate-shake">
+                  <Sparkles className="w-5 h-5" />
+                  {error}
+               </div>
+            )}
             <AnimatePresence mode="wait">
               {/* STEP 1: GRANULAR SPECIALTY SELECTION */}
               {step === 1 && (
@@ -613,6 +668,8 @@ export default function RegisterPage() {
                       size="lg" 
                       className="px-16 bg-nexa-brand !text-white hover:brightness-110 shadow-xl shadow-nexa-brand/20"
                       rightIcon={<Zap className="w-5 h-5" />}
+                      onClick={handleSubmit}
+                      isLoading={isSubmitting}
                     >
                       Join the {currentNiche?.name.replace(/ Finders?$/, "")} Network
                     </NexaButton>

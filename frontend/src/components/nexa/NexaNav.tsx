@@ -11,11 +11,13 @@ import { NexaAvatar } from "./NexaAvatar";
 import { NexaModeToggle } from "./NexaModeToggle";
 import { useNiche } from "./NicheContext";
 import { NicheSwitcher } from "./NicheSwitcher";
+import { useAuth } from "./AuthContext";
 
 export const NexaNavbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
   const { mode, setMode } = useNiche();
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 60);
@@ -69,26 +71,50 @@ export const NexaNavbar = () => {
                <span className="text-xs font-black text-nexa-amber uppercase tracking-wider">Verified</span>
             </Link>
             <div className="hidden sm:flex items-center gap-3">
-              {mode === "seller" ? (
-                <Link href="/dashboard">
-                  <NexaButton size="sm" leftIcon={<Grid className="w-4 h-4" />}>
-                    Dashboard
-                  </NexaButton>
-                </Link>
+              {user ? (
+                <>
+                  <Link href="/dashboard">
+                    <NexaButton size="sm" leftIcon={<Grid className="w-4 h-4" />}>
+                      Dashboard
+                    </NexaButton>
+                  </Link>
+                  <div className="flex items-center gap-2">
+                    <NexaAvatar size="sm" isOnline name={user.name} />
+                    <button onClick={logout} className="text-xs font-bold text-nexa-text-faint hover:text-red-500 transition-colors">
+                      Logout
+                    </button>
+                  </div>
+                </>
               ) : (
-                <Link href="/join">
-                  <NexaButton variant="ghost" size="sm" className="text-nexa-text-secondary">
-                    List Business
-                  </NexaButton>
-                </Link>
+                <>
+                  {mode === "seller" ? (
+                    <Link href="/join">
+                      <NexaButton size="sm" leftIcon={<PlusSquare className="w-4 h-4" />}>
+                        List Business
+                      </NexaButton>
+                    </Link>
+                  ) : (
+                    <Link href="/join">
+                      <NexaButton variant="ghost" size="sm" className="text-nexa-text-secondary">
+                        List Business
+                      </NexaButton>
+                    </Link>
+                  )}
+                  <Link href="/login">
+                    <NexaButton variant="secondary" size="sm" leftIcon={<User className="w-4 h-4" />}>
+                      Sign In
+                    </NexaButton>
+                  </Link>
+                </>
               )}
-              <Link href="/login">
-                <NexaButton variant="secondary" size="sm" leftIcon={<User className="w-4 h-4" />}>
-                  Sign In
-                </NexaButton>
-              </Link>
             </div>
-            <NexaAvatar size="sm" isOnline className="sm:hidden" />
+            {user ? (
+              <Link href="/account">
+                <NexaAvatar size="sm" isOnline name={user.name} className="sm:hidden" />
+              </Link>
+            ) : (
+              <NexaAvatar size="sm" className="sm:hidden" />
+            )}
             <button className="lg:hidden p-2 text-nexa-text-primary">
               <Menu className="w-6 h-6" />
             </button>
@@ -104,13 +130,14 @@ export const NexaNavbar = () => {
 export const NexaBottomBar = () => {
   const [activeTab, setActiveTab] = useState(0);
   const { mode, setMode } = useNiche();
+  const { user } = useAuth();
 
   const tabs = [
     { icon: <Home />, label: "Home", href: "/" },
     { icon: <Compass />, label: "Discover", href: "/categories" },
     { icon: <PlusSquare />, label: "Join", href: "/join" },
     { icon: <Bell />, label: "Alerts", href: "/account?tab=settings" },
-    { icon: <User />, label: "Account", href: "/account" },
+    { icon: <User />, label: "Account", href: user ? "/account" : "/login" },
   ];
 
   return (

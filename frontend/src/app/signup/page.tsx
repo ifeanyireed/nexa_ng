@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { 
   Mail, 
   Lock, 
@@ -17,11 +18,32 @@ import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaInput } from "@/components/nexa/NexaInput";
+import { api } from "@/lib/api";
+import { useAuth } from "@/components/nexa/AuthContext";
 
 export default function SignupPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const { login } = useAuth();
+  const router = useRouter();
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      const data = await api.post("/auth/signup", { name, email, password, role: "CLIENT" });
+      login(data.token, data.user);
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Signup failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <main className="bg-nexa-bg-base min-h-screen flex flex-col">
@@ -48,13 +70,19 @@ export default function SignupPage() {
               <p className="text-nexa-text-secondary text-sm">Join Nexa to discover and book local services.</p>
             </div>
 
-            <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+            <form className="space-y-6" onSubmit={handleSignup}>
+              {error && (
+                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold">
+                  {error}
+                </div>
+              )}
               <NexaInput
                 label="Full Name"
                 placeholder="e.g. John Doe"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 leftIcon={<User className="w-4 h-4" />}
+                disabled={loading}
               />
 
               <NexaInput
@@ -64,6 +92,7 @@ export default function SignupPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 leftIcon={<Mail className="w-4 h-4" />}
+                disabled={loading}
               />
               
               <NexaInput
@@ -73,6 +102,7 @@ export default function SignupPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 leftIcon={<Lock className="w-4 h-4" />}
+                disabled={loading}
               />
 
               <div className="flex items-start gap-3 p-4 rounded-xl bg-nexa-bg-base/50 border border-nexa-border">
@@ -82,7 +112,13 @@ export default function SignupPage() {
                 </p>
               </div>
 
-              <NexaButton size="lg" className="w-full h-14 rounded-2xl shadow-xl shadow-nexa-brand/20 font-extrabold text-lg" rightIcon={<ArrowRight className="w-5 h-5" />}>
+              <NexaButton 
+                size="lg" 
+                type="submit"
+                isLoading={loading}
+                className="w-full h-14 rounded-2xl shadow-xl shadow-nexa-brand/20 font-extrabold text-lg" 
+                rightIcon={<ArrowRight className="w-5 h-5" />}
+              >
                 Get Started
               </NexaButton>
             </form>

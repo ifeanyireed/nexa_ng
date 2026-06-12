@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Building2, 
@@ -29,25 +29,72 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { NICHE_DETAILS } from "@/lib/niche-data";
+import { useAuth } from "@/components/nexa/AuthContext";
+import { api } from "@/lib/api";
 
 export default function ProfileEditorPage() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("info");
-  const data = NICHE_DETAILS["handyman-finders"];
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState({ text: "", type: "" });
   
   const [profileData, setProfileData] = useState({
-    businessName: "Kola Handyman Services",
-    description: "Premium handyman and plumbing services in Lekki with over 10 years experience.",
-    phone: "+234 803 000 0000",
-    email: "kola@handyman.ng",
-    website: "www.handyman.ng",
-    location: "Lekki Phase 1, Lagos",
-    tags: ["Plumbing", "Electrical", "Carpentry", "Verified"],
+    businessName: "",
+    description: "",
+    phone: "",
+    email: "",
+    website: "",
+    location: "",
+    tags: [] as string[],
     hours: {
       weekday: "08:00 AM - 06:00 PM",
       saturday: "09:00 AM - 04:00 PM",
       sunday: "Closed"
     }
   });
+
+  useEffect(() => {
+    if (user?.pro_profile) {
+      const p = user.pro_profile;
+      setProfileData({
+        businessName: p.businessName || user.name || "",
+        description: p.bio || "",
+        phone: p.phone || "",
+        email: p.businessEmail || user.email || "",
+        website: "", // Not in schema yet, mock it
+        location: p.city ? `${p.area ? p.area + ", " : ""}${p.city}` : "",
+        tags: p.specialties ? p.specialties.split(",") : [],
+        hours: {
+          weekday: "08:00 AM - 06:00 PM",
+          saturday: "09:00 AM - 04:00 PM",
+          sunday: "Closed"
+        }
+      });
+    }
+  }, [user]);
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    setMessage({ text: "", type: "" });
+    try {
+      // We can use the onboard endpoint or profile update endpoint
+      await api.post("/pro/profile", {
+        business_name: profileData.businessName,
+        bio: profileData.description,
+        phone: profileData.phone,
+        business_email: profileData.email,
+        specialties: profileData.tags.join(","),
+        // Other fields we would parse from location, etc.
+        niche: user?.pro_profile?.niche || "home-services"
+      });
+      setMessage({ text: "Profile updated successfully!", type: "success" });
+      setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+    } catch (error: any) {
+      setMessage({ text: error.message || "Failed to update profile.", type: "error" });
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const tabs = [
     { id: "info", label: "General Info", icon: <Info className="w-4 h-4" /> },
@@ -67,9 +114,21 @@ export default function ProfileEditorPage() {
             <h1 className="text-3xl font-extrabold text-display">Profile Editor</h1>
             <p className="text-nexa-text-secondary text-sm mt-1">Manage how your business appears to potential customers.</p>
           </div>
-          <NexaButton leftIcon={<Save className="w-5 h-5" />} className="px-8 shadow-xl shadow-nexa-brand/20">
-            Save Changes
-          </NexaButton>
+          <div className="flex items-center gap-4">
+            {message.text && (
+              <span className={cn("text-xs font-bold", message.type === "success" ? "text-emerald-500" : "text-red-500")}>
+                {message.text}
+              </span>
+            )}
+            <NexaButton 
+              leftIcon={<Save className="w-5 h-5" />} 
+              className="px-8 shadow-xl shadow-nexa-brand/20"
+              onClick={handleSave}
+              isLoading={isSaving}
+            >
+              Save Changes
+            </NexaButton>
+          </div>
         </div>
 
         {/* TAB NAVIGATION */}

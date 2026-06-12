@@ -19,19 +19,32 @@ import {
 import { cn } from "@/lib/utils";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
-import { NexaBadge } from "@/components/nexa/NexaBadge";
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+} from "recharts";
+
+const trafficData = [
+  { name: "Jan", views: 400, leads: 240 },
+  { name: "Feb", views: 700, leads: 398 },
+  { name: "Mar", views: 450, leads: 280 },
+  { name: "Apr", views: 900, leads: 490 },
+  { name: "May", views: 650, leads: 380 },
+  { name: "Jun", views: 800, leads: 430 },
+  { name: "Jul", views: 550, leads: 320 },
+  { name: "Aug", views: 300, leads: 150 },
+  { name: "Sep", views: 950, leads: 520 },
+  { name: "Oct", views: 600, leads: 310 },
+  { name: "Nov", views: 750, leads: 420 },
+  { name: "Dec", views: 500, leads: 290 },
+];
 
 export default function AnalyticsPage() {
-  const [hoveredBar, setHoveredBar] = useState<number | null>(null);
-
   const kpis = [
     { label: "Total Views", value: "8,432", change: "+12.5%", trend: "up", icon: <Users className="w-5 h-5 text-blue-500" /> },
     { label: "Click-Through", value: "4.2%", change: "+0.8%", trend: "up", icon: <MousePointer2 className="w-5 h-5 text-emerald-500" /> },
     { label: "New Leads", value: "124", change: "-2.1%", trend: "down", icon: <TrendingUp className="w-5 h-5 text-amber-500" /> },
     { label: "Conversion", value: "18%", change: "+4.2%", trend: "up", icon: <BarChart3 className="w-5 h-5 text-fuchsia-500" /> },
   ];
-
-  const chartData = [40, 70, 45, 90, 65, 80, 55, 30, 95, 60, 75, 50];
 
   return (
     <div className="space-y-8">
@@ -70,7 +83,7 @@ export default function AnalyticsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         
-        {/* MAIN CHART PLACEHOLDER */}
+        {/* MAIN CHART */}
         <NexaCard className="lg:col-span-2 p-8 h-[400px] flex flex-col">
           <div className="flex items-center justify-between mb-8">
              <h3 className="font-extrabold text-lg flex items-center gap-2">
@@ -86,39 +99,30 @@ export default function AnalyticsPage() {
                 ))}
              </div>
           </div>
-          <div className="flex-1 w-full bg-nexa-bg-base/30 rounded-3xl border border-dashed border-nexa-border flex items-end justify-between px-8 pb-4 relative overflow-hidden">
-             {chartData.map((h, i) => (
-                <div 
-                   key={i} 
-                   className="flex-1 flex flex-col items-center group relative h-full justify-end"
-                   onMouseEnter={() => setHoveredBar(i)}
-                   onMouseLeave={() => setHoveredBar(null)}
-                >
-                   <AnimatePresence>
-                      {hoveredBar === i && (
-                         <motion.div 
-                            initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 10, scale: 0.9 }}
-                            className="absolute bottom-[calc(h+20%)] mb-2 px-3 py-1.5 bg-nexa-text-primary text-white text-[10px] font-bold rounded-lg shadow-xl z-20 whitespace-nowrap"
-                            style={{ bottom: `${h + 5}%` }}
-                         >
-                            {h * 12} Views
-                            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-nexa-text-primary rotate-45" />
-                         </motion.div>
-                      )}
-                   </AnimatePresence>
-                   <motion.div 
-                     initial={{ height: 0 }}
-                     animate={{ height: `${h}%` }}
-                     transition={{ delay: i * 0.05, duration: 1, type: "spring", stiffness: 100 }}
-                     className={cn(
-                        "w-4 md:w-8 rounded-t-xl transition-all relative",
-                        hoveredBar === i ? "bg-nexa-brand shadow-lg shadow-nexa-brand/20" : "bg-nexa-brand/20"
-                     )}
+          <div className="flex-1 w-full min-h-0">
+             <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={trafficData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                   <defs>
+                      <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                         <stop offset="5%" stopColor="var(--nexa-brand)" stopOpacity={0.2}/>
+                         <stop offset="95%" stopColor="var(--nexa-brand)" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorLeads" x1="0" y1="0" x2="0" y2="1">
+                         <stop offset="5%" stopColor="#10B981" stopOpacity={0.2}/>
+                         <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                      </linearGradient>
+                   </defs>
+                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--nexa-border)" />
+                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: "var(--nexa-text-faint)" }} dy={10} />
+                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: "var(--nexa-text-faint)" }} />
+                   <Tooltip 
+                      contentStyle={{ backgroundColor: 'var(--nexa-bg-surface)', borderColor: 'var(--nexa-border)', borderRadius: '12px', boxShadow: 'var(--nexa-shadow-md)' }}
+                      itemStyle={{ fontWeight: 'bold' }}
                    />
-                </div>
-             ))}
+                   <Area type="monotone" dataKey="views" stroke="var(--nexa-brand)" strokeWidth={3} fillOpacity={1} fill="url(#colorViews)" />
+                   <Area type="monotone" dataKey="leads" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorLeads)" />
+                </AreaChart>
+             </ResponsiveContainer>
           </div>
         </NexaCard>
 

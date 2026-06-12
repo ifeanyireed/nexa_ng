@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "go run github.com/steebchen/prisma-client-go"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String?
+  role      String   @default("CLIENT") // Using String for SQLite compatibility with emulated Enums if needed, but Prisma handles it. Let's use String for simplicity in SQLite.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  proProfile ProProfile?
+  bookings   Booking[]    @relation("ClientBookings")
+  wallet     Wallet?
+}
+
+model ProProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  bio         String?
+  hourlyRate  Float?
+  specialties String? // Comma-separated or JSON
+  niche       String? 
+  verified    Boolean  @default(false)
+  rating      Float    @default(0)
+  
+  services    Service[]
+  bookings    Booking[] @relation("ProBookings")
+}
+
+model Service {
+  id           String     @id @default(cuid())
+  name         String
+  description  String?
+  price        Float
+  proProfileId String
+  proProfile   ProProfile @relation(fields: [proProfileId], references: [id])
+}
+
+model Booking {
+  id           String   @id @default(cuid())
+  clientId     String
+  client       User     @relation("ClientBookings", fields: [clientId], references: [id])
+  proProfileId String
+  proProfile   ProProfile @relation("ProBookings", fields: [proProfileId], references: [id])
+  status       String   @default("PENDING") 
+  scheduledAt  DateTime
+  createdAt    DateTime @default(now())
+}
+
+model Wallet {
+  id      String @id @default(cuid())
+  userId  String @unique
+  user    User   @relation(fields: [userId], references: [id])
+  balance Float  @default(0)
+
+  transactions Transaction[]
+}
+
+model Transaction {
+  id        String   @id @default(cuid())
+  walletId  String
+  wallet    Wallet   @relation(fields: [walletId], references: [id])
+  amount    Float
+  type      String   
+  status    String   
+  createdAt DateTime @default(now())
+}

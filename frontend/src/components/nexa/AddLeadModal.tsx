@@ -79,7 +79,7 @@ export function AddLeadModal({ isOpen, onClose, onAddLead }: AddLeadModalProps) 
                 <User className="w-5 h-5 text-nexa-brand" />
                 <h2 className="text-xl font-extrabold">Add New Lead</h2>
               </div>
-              <button handleClose={handleClose} className="p-2 hover:bg-nexa-bg-base rounded-xl transition-colors">
+              <button onClick={handleClose} className="p-2 hover:bg-nexa-bg-base rounded-xl transition-colors">
                 <X className="w-6 h-6" />
               </button>
             </div>

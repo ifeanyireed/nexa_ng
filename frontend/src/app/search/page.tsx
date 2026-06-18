@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { 
@@ -11,10 +11,6 @@ import {
   List, 
   ChevronDown, 
   SlidersHorizontal,
-  Search,
-  Zap,
-  ShieldCheck,
-  ShoppingBag,
   Calendar
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,7 +22,7 @@ import { NexaInput } from "@/components/nexa/NexaInput";
 import { api } from "@/lib/api";
 import Link from "next/link";
 
-export default function GlobalSearchPage() {
+function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const query = searchParams.get("q") || "";
@@ -196,5 +192,13 @@ export default function GlobalSearchPage() {
 
       <NexaBottomBar />
     </main>
+  );
+}
+
+export default function GlobalSearchPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-nexa-bg-base flex items-center justify-center"><div className="w-8 h-8 border-4 border-nexa-brand border-t-transparent rounded-full animate-spin" /></div>}>
+      <SearchContent />
+    </Suspense>
   );
 }

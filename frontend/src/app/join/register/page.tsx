@@ -1,21 +1,15 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ArrowRight, 
   ArrowLeft, 
   CheckCircle2, 
   ShieldCheck, 
-  Store, 
-  User, 
   Phone, 
-  Mail, 
-  MapPin, 
   Camera, 
-  Briefcase,
   LayoutGrid,
-  ChevronRight,
   Sparkles,
   Zap,
   CreditCard,
@@ -30,13 +24,12 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { NICHES } from "@/components/nexa/NicheSwitcher";
 import { NICHE_DETAILS } from "@/lib/niche-data";
-import Link from "next/link";
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/nexa/AuthContext";
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
@@ -93,8 +86,7 @@ export default function RegisterPage() {
   }, [step, billingCycle, formData, isLoaded]);
 
   const currentNiche = NICHES.find(n => n.id === formData.nicheId);
-  const nicheData = formData.nicheId ? NICHE_DETAILS[formData.nicheId] : null;
-
+  
   const specialtyLevels = ["Specialist", "Consultant", "Provider", "Agency", "Professional", "Expert"];
   
   const nextStep = () => setStep(s => s + 1);
@@ -688,5 +680,13 @@ export default function RegisterPage() {
 
       <NexaBottomBar />
     </main>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-nexa-bg-base flex items-center justify-center"><div className="w-8 h-8 border-4 border-nexa-brand border-t-transparent rounded-full animate-spin" /></div>}>
+      <RegisterContent />
+    </Suspense>
   );
 }

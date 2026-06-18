@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
 interface NexaButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "ghost" | "danger";
+  variant?: "primary" | "secondary" | "ghost" | "danger" | "outline" | "success";
   size?: "sm" | "md" | "lg" | "xl";
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
@@ -21,6 +21,8 @@ export const NexaButton = React.forwardRef<HTMLButtonElement, NexaButtonProps>(
       secondary: "liquid-glass text-nexa-text-primary shadow-[0_1px_2px_rgba(0,0,0,0.05)] border-[0.5px] border-black/5 dark:border-white/10",
       ghost: "hover:bg-nexa-brand-light text-nexa-brand dark:hover:bg-white/5",
       danger: "bg-nexa-coral text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_2px_4px_rgba(0,0,0,0.1)] border-[0.5px] border-nexa-coral/20 hover:bg-nexa-coral/90",
+      outline: "border border-nexa-border bg-transparent text-nexa-text-secondary hover:bg-nexa-bg-surface hover:text-nexa-text-primary dark:border-nexa-border-mid",
+      success: "bg-nexa-accent text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_2px_4px_rgba(0,0,0,0.1)] border-[0.5px] border-nexa-accent/20 hover:bg-nexa-accent/90",
     };
 
     const sizes = {

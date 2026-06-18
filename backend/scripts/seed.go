@@ -5,9 +5,15 @@ import (
 	"log"
 	"nexa/backend/prisma/db"
 	"golang.org/x/crypto/bcrypt"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		log.Printf("Warning: .env file not found: %v", err)
+	}
+
 	client := db.NewClient()
 	if err := client.Connect(); err != nil {
 		log.Fatal(err)

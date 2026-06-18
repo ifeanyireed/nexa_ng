@@ -10,10 +10,12 @@ interface NexaInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement
   variant?: "default" | "search" | "phone";
   error?: string;
   prefix?: React.ReactNode;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
 }
 
 export const NexaInput = React.forwardRef<HTMLInputElement, NexaInputProps>(
-  ({ className, label, variant = "default", error, prefix, onFocus, onBlur, ...props }, ref) => {
+  ({ className, label, variant = "default", error, prefix, leftIcon, rightIcon, onFocus, onBlur, ...props }, ref) => {
     const [isFocused, setIsFocused] = useState(false);
     const [hasValue, setHasValue] = useState(!!props.value || !!props.defaultValue);
 
@@ -60,6 +62,12 @@ export const NexaInput = React.forwardRef<HTMLInputElement, NexaInputProps>(
             </div>
           )}
 
+          {leftIcon && (
+            <div className="pl-3 pr-1 text-nexa-text-faint">
+              {leftIcon}
+            </div>
+          )}
+
           {prefix && <div className="pl-3 pr-2">{prefix}</div>}
 
           <div className="relative flex-1 h-full px-3">
@@ -74,7 +82,10 @@ export const NexaInput = React.forwardRef<HTMLInputElement, NexaInputProps>(
                   paddingLeft: isFloating ? "4px" : "0px",
                   paddingRight: isFloating ? "4px" : "0px",
                 }}
-                className="absolute left-3 top-3 origin-left pointer-events-none transition-[color,padding,background-color] z-10"
+                className={cn(
+                  "absolute left-3 top-3 origin-left pointer-events-none transition-[color,padding,background-color] z-10",
+                  (leftIcon || variant === "search") && !isFloating && "left-0"
+                )}
               >
                 {label}
               </motion.label>
@@ -96,6 +107,12 @@ export const NexaInput = React.forwardRef<HTMLInputElement, NexaInputProps>(
               {...props}
             />
           </div>
+
+          {rightIcon && (
+            <div className="pr-3 pl-1 text-nexa-text-faint">
+              {rightIcon}
+            </div>
+          )}
 
           <AnimatePresence>
             {variant === "search" && hasValue && (

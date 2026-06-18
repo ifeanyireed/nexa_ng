@@ -8,12 +8,13 @@ interface NexaAvatarProps {
   src?: string;
   alt?: string;
   fallback?: string;
+  name?: string;
   size?: "sm" | "md" | "lg" | "xl";
   isOnline?: boolean;
   className?: string;
 }
 
-export const NexaAvatar = ({ src, alt, fallback, size = "md", isOnline, className }: NexaAvatarProps) => {
+export const NexaAvatar = ({ src, alt, fallback, name, size = "md", isOnline, className }: NexaAvatarProps) => {
   const sizes = {
     sm: "w-8 h-8 text-xs",
     md: "w-10 h-10 text-sm",
@@ -28,6 +29,8 @@ export const NexaAvatar = ({ src, alt, fallback, size = "md", isOnline, classNam
     xl: "w-4 h-4",
   };
 
+  const displayFallback = fallback || name || "NG";
+
   return (
     <div className={cn("relative inline-block", className)}>
       <div
@@ -39,7 +42,7 @@ export const NexaAvatar = ({ src, alt, fallback, size = "md", isOnline, classNam
         {src ? (
           <img src={src} alt={alt} className="w-full h-full object-cover" />
         ) : (
-          <span>{fallback?.slice(0, 2) || "NG"}</span>
+          <span>{displayFallback.slice(0, 2)}</span>
         )}
       </div>
       

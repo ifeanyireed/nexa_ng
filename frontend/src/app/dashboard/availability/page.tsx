@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const timeSlots = Array.from({ length: 12 }, (_, i) => `${i + 8}:00 AM`); // 8 AM to 7 PM
 
-const initialAvailability = {
+const initialAvailability: Record<string, string[]> = {
     Sunday: [],
     Monday: ['9:00 AM', '10:00 AM', '11:00 AM', '1:00 PM', '2:00 PM', '3:00 PM'],
     Tuesday: ['9:00 AM', '10:00 AM', '11:00 AM', '1:00 PM', '2:00 PM', '3:00 PM'],

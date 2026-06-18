@@ -6,7 +6,7 @@ import { ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface NexaBadgeProps {
-  variant?: "brand" | "success" | "warning" | "danger" | "neutral" | "verified";
+  variant?: "brand" | "secondary" | "success" | "warning" | "danger" | "neutral" | "verified";
   children: React.ReactNode;
   className?: string;
 }
@@ -14,6 +14,7 @@ interface NexaBadgeProps {
 export const NexaBadge = ({ variant = "neutral", children, className }: NexaBadgeProps) => {
   const variants = {
     brand: "bg-nexa-brand-light text-nexa-brand",
+    secondary: "bg-nexa-bg-surface text-nexa-text-primary border border-nexa-border",
     success: "bg-nexa-accent-light text-nexa-accent",
     warning: "bg-nexa-amber-light text-nexa-amber",
     danger: "bg-red-50 text-nexa-coral dark:bg-red-900/10",

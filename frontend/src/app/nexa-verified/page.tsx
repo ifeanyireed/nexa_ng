@@ -4,7 +4,7 @@ import React from "react";
 import { motion, useSpring, useTransform } from "framer-motion";
 import { 
   ShieldCheck, 
-  Certificate, 
+  Award, 
   Star, 
   MapPin, 
   MessageSquare, 
@@ -43,7 +43,7 @@ const Counter = ({ value, label }: { value: string; label: string }) => {
 export default function NexaVerifiedLanding() {
   const trustPillars = [
     { icon: <ShieldCheck />, title: "Background Verified", body: "Every Nexa technician passes a police clearance check and identity verification before their first job." },
-    { icon: <Certificate />, title: "Skills Certified", body: "Techs complete a NexaNG assessment and practical skills test for their trade category." },
+    { icon: <Award />, title: "Skills Certified", body: "Techs complete a NexaNG assessment and practical skills test for their trade category." },
     { icon: <Star />, title: "Service Guaranteed", body: "If you're not satisfied, we'll send another technician or refund you. No questions." },
     { icon: <MapPin />, title: "Real-Time Tracking", body: "Watch your technician travel to you live on a map. Know exactly when they'll arrive." },
     { icon: <MessageSquare />, title: "Direct Nexa Support", body: "Chat directly with our operations team before, during, and after your service." },

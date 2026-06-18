@@ -106,9 +106,9 @@ export default function BusinessClient({ data, businessSlug }: BusinessClientPro
   return (
     <main className="bg-nexa-bg-base min-h-screen pb-24 lg:pb-12">
       <NexaNavbar />
-      
-      {/* HERO SECTION */}
-      <section className="relative pt-32 pb-12 overflow-hidden">
+        
+        {/* HERO SECTION */}
+        <section className="relative pt-32 pb-12 overflow-hidden">
          <div className={cn("absolute inset-0 opacity-10 blur-3xl", data.colorClass)} />
          
          <div className="container mx-auto px-4 relative z-10">
@@ -249,7 +249,7 @@ export default function BusinessClient({ data, businessSlug }: BusinessClientPro
                                     <p className="text-[10px] text-nexa-text-faint font-bold uppercase tracking-widest">Oct 2024</p>
                                  </div>
                               </div>
-                              <NexaRating rating={5} />
+                              <NexaRating value={5} />
                            </div>
                            <p className="text-nexa-text-secondary leading-relaxed">
                               "Excellent service! They arrived on time and handled the work with great professionalism. I'm very satisfied and will definitely book again."
@@ -356,7 +356,7 @@ export default function BusinessClient({ data, businessSlug }: BusinessClientPro
                   </div>
                   <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-nexa-brand/5 rounded-full group-hover:scale-150 transition-transform duration-700" />
                </NexaCard>
-            </div>
+            </aside>
          </div>
       </div>
 

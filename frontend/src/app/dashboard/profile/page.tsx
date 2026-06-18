@@ -34,6 +34,8 @@ import { api } from "@/lib/api";
 
 export default function ProfileEditorPage() {
   const { user } = useAuth();
+  const nicheKey = user?.pro_profile?.niche || "home-services";
+  const data = NICHE_DETAILS[nicheKey] || NICHE_DETAILS["home-services"];
   const [activeTab, setActiveTab] = useState("info");
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState({ text: "", type: "" });

@@ -1,15 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { motion } from "framer-motion";
-import Link from "next/link";
 import { 
-  ArrowLeft, 
   CreditCard, 
   ShieldCheck, 
   Lock
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -19,7 +16,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/nexa/AuthContext";
 
-export default function NexaVerifiedCheckoutPage() {
+function NexaVerifiedCheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
@@ -154,5 +151,13 @@ export default function NexaVerifiedCheckoutPage() {
 
       <NexaBottomBar />
     </main>
+  );
+}
+
+export default function NexaVerifiedCheckoutPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-nexa-bg-base flex items-center justify-center"><div className="w-8 h-8 border-4 border-nexa-brand border-t-transparent rounded-full animate-spin" /></div>}>
+      <NexaVerifiedCheckoutContent />
+    </Suspense>
   );
 }

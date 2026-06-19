@@ -109,7 +109,7 @@ export default function StorefrontClient({ data }: { data: any }) {
       {/* STOREFRONT HEADER */}
       <section className="pt-32 pb-12 bg-nexa-bg-surface border-b border-nexa-border">
          <div className="container mx-auto px-4">
-            <Link href={`/${params.service}/${params.state}/${params.lga}/${businessSlug}`} className="inline-flex items-center gap-2 text-nexa-text-faint hover:text-nexa-brand transition-colors mb-8 text-xs font-bold uppercase tracking-widest">
+            <Link href={`/${params.niche}/${params.state}/${params.lga}/${businessSlug}`} className="inline-flex items-center gap-2 text-nexa-text-faint hover:text-nexa-brand transition-colors mb-8 text-xs font-bold uppercase tracking-widest">
                <ArrowLeft className="w-4 h-4" /> Back to Profile
             </Link>
             

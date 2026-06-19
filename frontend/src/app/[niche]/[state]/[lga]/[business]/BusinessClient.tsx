@@ -44,7 +44,7 @@ interface BusinessClientProps {
 
 export default function BusinessClient({ data, businessSlug }: BusinessClientProps) {
   const params = useParams();
-  const service = params.service as string;
+  const niche = params.niche as string;
   const state = params.state as string;
   const lga = params.lga as string;
 
@@ -366,7 +366,7 @@ export default function BusinessClient({ data, businessSlug }: BusinessClientPro
                      <p className="text-xs text-nexa-text-secondary leading-relaxed">
                         This business also sells quality materials and products.
                      </p>
-                      <Link href={`/${service}/${state}/${lga}/${businessSlug}/shop`} className="block">
+                      <Link href={`/${niche}/${state}/${lga}/${businessSlug}/shop`} className="block">
                         <NexaButton variant="secondary" className="w-full" rightIcon={<ChevronRight className="w-4 h-4" />}>
                            Visit Shop
                         </NexaButton>

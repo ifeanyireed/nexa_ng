@@ -1,12 +1,11 @@
-import React from "react";
 import { getNicheData } from "@/lib/niche-data";
 import { slugify } from "@/lib/utils";
-import StorefrontClient from "./StorefrontClient";
+import BusinessClient from "./BusinessClient";
 
 export async function generateStaticParams() {
   const paths = [
     {
-      service: "example-service",
+      niche: "example-niche",
       state: "example-state",
       lga: "example-lga",
       business: "example-business"
@@ -19,14 +18,14 @@ export async function generateStaticParams() {
     if (res.ok) {
       const pros = await res.json();
       pros.forEach((pro: any) => {
-        const service = slugify(pro.subService || pro.specialties || "service");
+        const niche = slugify(pro.niche || "niche");
         const state = slugify(pro.city || "state");
         const lga = slugify(pro.area || "lga");
         const name = pro.user?.name || pro.businessName || "professional";
         const business = `${slugify(name)}-business-${pro.id}`;
         
         paths.push({
-          service,
+          niche,
           state,
           lga,
           business
@@ -34,14 +33,14 @@ export async function generateStaticParams() {
       });
     }
   } catch (error) {
-    console.warn("Could not fetch pros for static params shop:", error);
+    console.warn("Could not fetch pros for static params:", error);
   }
 
   const uniquePaths = Array.from(new Set(paths.map(p => JSON.stringify(p)))).map(s => JSON.parse(s));
   return uniquePaths;
 }
 
-export default function ShopStorefrontPage({ params }: { params: { service: string, state: string, lga: string, business: string } }) {
-  const data = getNicheData("home-services");
-  return <StorefrontClient data={data} />;
+export default function BusinessProfilePage({ params }: { params: { niche: string; state: string; lga: string; business: string } }) {
+  const data = getNicheData(params.niche);
+  return <BusinessClient data={data} businessSlug={params.business} />;
 }

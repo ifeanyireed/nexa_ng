@@ -48,6 +48,7 @@ model ProProfile {
   acceptsPos     Boolean  @default(false)
   homeDelivery   Boolean  @default(false)
   rating         Float    @default(0)
+  logoUrl        String?
   
   services    Service[]
   products    Product[]

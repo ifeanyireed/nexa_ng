@@ -23,7 +23,7 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaRating } from "@/components/nexa/NexaRating";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { NICHE_DETAILS } from "@/lib/niche-data";
+import { getNicheData } from "@/lib/niche-data";
 import { api } from "@/lib/api";
 
 export default function SubServicePage() {
@@ -31,7 +31,7 @@ export default function SubServicePage() {
   const nicheSlug = params.niche as string;
   const categorySlug = params.slug as string;
   
-  const data = NICHE_DETAILS[nicheSlug] || NICHE_DETAILS["home-services"];
+  const data = getNicheData(nicheSlug);
   const categoryName = categorySlug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
   const [activeFilter, setActiveFilter] = useState("All");

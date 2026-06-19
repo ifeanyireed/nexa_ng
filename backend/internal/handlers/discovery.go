@@ -18,11 +18,15 @@ func ListPros(w http.ResponseWriter, r *http.Request) {
 	specialty := query.Get("specialty")
 	minRatingStr := query.Get("min_rating")
 	keyword := query.Get("q")
+	city := query.Get("city")
 	
 	var conditions []db.ProProfileWhereParam
 
 	if niche != "" {
 		conditions = append(conditions, db.ProProfile.Niche.Equals(niche))
+	}
+	if city != "" {
+		conditions = append(conditions, db.ProProfile.City.Equals(city))
 	}
 	if subNiche != "" {
 		conditions = append(conditions, db.ProProfile.SubService.Equals(subNiche))
@@ -49,6 +53,8 @@ func ListPros(w http.ResponseWriter, r *http.Request) {
 	).With(
 		db.ProProfile.User.Fetch(),
 		db.ProProfile.Services.Fetch(),
+	).OrderBy(
+		db.ProProfile.Rating.Order(db.SortOrderDesc),
 	).Exec(context.Background())
 
 	if err != nil {

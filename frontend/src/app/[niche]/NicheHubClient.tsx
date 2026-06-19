@@ -304,7 +304,7 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService, pros, ar
                     <div className="group cursor-pointer">
                       <div className="aspect-video bg-slate-200 rounded-2xl mb-4 overflow-hidden relative">
                         <img 
-                          src={getProImage(article.proProfile?.specialties || "", article.niche)} 
+                          src={article.image || getProImage(article.proProfile?.specialties || "", article.niche)} 
                           alt={article.title} 
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
                         />

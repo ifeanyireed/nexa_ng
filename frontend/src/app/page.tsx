@@ -34,7 +34,7 @@ import {
   Facebook,
   Linkedin,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getProImage } from "@/lib/utils";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -44,6 +44,7 @@ import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaRating } from "@/components/nexa/NexaRating";
 import { useNiche } from "@/components/nexa/NicheContext";
 import { LocationDropdown } from "@/components/nexa/LocationDropdown";
+import { useLocation } from "@/components/nexa/LocationContext";
 import { api } from "@/lib/api";
 
 // --- COMPONENTS ---
@@ -377,13 +378,15 @@ const BusinessCard = ({ name, category, rating, count, image, isVerified }: any)
 };
 
 const FeaturedSection = () => {
+  const { currentCity } = useLocation();
   const [pros, setPros] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPros = async () => {
+      setLoading(true);
       try {
-        const data = await api.get("/discovery/pros");
+        const data = await api.get(`/discovery/pros?city=${encodeURIComponent(currentCity.name)}`);
         setPros(data.slice(0, 3));
       } catch (error) {
         console.error("Error fetching featured pros:", error);
@@ -392,36 +395,40 @@ const FeaturedSection = () => {
       }
     };
     fetchPros();
-  }, []);
-
-  if (loading) return null;
+  }, [currentCity.name]);
 
   return (
     <section className="py-24 bg-nexa-bg-base">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between mb-12">
-          <div className="flex items-center gap-4">
-            <div className="w-1 h-8 bg-nexa-accent rounded-full" />
-            <h2 className="text-3xl font-bold text-display">Top Picks in Lagos</h2>
-          </div>
-          <NexaButton variant="ghost" rightIcon={<ArrowRight className="w-4 h-4" />}>
-            View All
-          </NexaButton>
+        <div className="flex items-center gap-4 mb-12">
+          <div className="w-1 h-8 bg-nexa-accent rounded-full" />
+          <h2 className="text-3xl font-bold text-display">Top Picks in {currentCity.name}</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {pros.map((pro, i) => (
-            <BusinessCard 
-              key={pro.id} 
-              name={pro.user?.name || "Professional"}
-              category={pro.specialties?.split(",")[0] || "Service"}
-              rating={pro.rating}
-              count={24}
-              image="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=400&h=250"
-              isVerified={pro.verified}
-            />
-          ))}
-        </div>
+        {loading ? (
+          <div className="py-12 text-center">
+            <div className="inline-block w-8 h-8 border-4 border-nexa-brand border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : pros.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {pros.map((pro, i) => (
+              <Link href={`/${pro.niche}/business-${pro.id}`} key={pro.id} className="block">
+                <BusinessCard 
+                  name={pro.user?.name || "Professional"}
+                  category={pro.specialties?.split(",")[0] || "Service"}
+                  rating={pro.rating}
+                  count={24}
+                  image={getProImage(pro.specialties || "", pro.subService || "")}
+                  isVerified={pro.verified}
+                />
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center text-nexa-text-faint italic py-12 bg-nexa-bg-surface/10 border border-dashed border-nexa-border rounded-2xl">
+            More verified top picks coming soon in {currentCity.name}!
+          </p>
+        )}
       </div>
     </section>
   );

@@ -125,7 +125,7 @@ export default function BusinessClient({ data, businessSlug }: BusinessClientPro
                <div className="relative group">
                   <div className="w-32 h-32 md:w-48 md:h-48 rounded-[40px] bg-slate-200 overflow-hidden border-4 border-white dark:border-slate-900 shadow-2xl relative">
                      <img 
-                        src={`https://api.dicebear.com/7.x/initials/svg?seed=${pro.user?.name || "Nexa"}`} 
+                        src={pro.logoUrl || pro.logo_url || `https://api.dicebear.com/7.x/initials/svg?seed=${pro.user?.name || "Nexa"}`} 
                         className="w-full h-full object-cover" 
                         alt={pro.user?.name} 
                      />

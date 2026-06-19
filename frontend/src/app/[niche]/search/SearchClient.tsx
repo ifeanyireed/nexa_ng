@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   MapPin, 
   Star, 
@@ -31,6 +31,8 @@ export default function SearchClient({ data }: { data: any }) {
   const [loading, setLoading] = useState(true);
   const [searchInput, setSearchInput] = useState(query);
   const [activeSpecialty, setActiveSpecialty] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
+  const [minRating, setMinRating] = useState("");
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -39,6 +41,9 @@ export default function SearchClient({ data }: { data: any }) {
         let url = `/discovery/pros?niche=${data.id}&q=${query}`;
         if (activeSpecialty) {
           url += `&specialty=${encodeURIComponent(activeSpecialty)}`;
+        }
+        if (minRating) {
+          url += `&min_rating=${minRating}`;
         }
         const result = await api.get(url);
         setResults(result);
@@ -49,7 +54,7 @@ export default function SearchClient({ data }: { data: any }) {
       }
     };
     fetchResults();
-  }, [data.id, query, activeSpecialty]);
+  }, [data.id, query, activeSpecialty, minRating]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,14 +79,83 @@ export default function SearchClient({ data }: { data: any }) {
               />
             </div>
             <div className="flex items-center gap-2 w-full md:w-auto">
-              <NexaButton variant="secondary" className="flex-1 md:flex-none" leftIcon={<MapPin className="w-4 h-4" />}>
+              <NexaButton variant="secondary" type="button" className="flex-1 md:flex-none" leftIcon={<MapPin className="w-4 h-4" />}>
                 Lagos
               </NexaButton>
-              <NexaButton variant="secondary" className="flex-1 md:flex-none" leftIcon={<SlidersHorizontal className="w-4 h-4" />}>
+              <NexaButton 
+                onClick={() => setShowFilters(!showFilters)}
+                type="button"
+                variant={showFilters ? "primary" : "secondary"}
+                className="flex-1 md:flex-none" 
+                leftIcon={<SlidersHorizontal className="w-4 h-4" />}
+              >
                 Filters
               </NexaButton>
             </div>
           </form>
+
+          <AnimatePresence>
+            {showFilters && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden border-t border-nexa-border/60 mt-4 pt-4"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 pb-2">
+                  {/* Minimum Rating */}
+                  <div>
+                    <label className="block text-xs font-bold text-nexa-text-secondary uppercase mb-2">Minimum Rating</label>
+                    <div className="flex gap-2">
+                      {["", "4.0", "4.5", "4.8"].map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => setMinRating(val)}
+                          className={cn(
+                            "px-3 py-1.5 rounded-lg border text-xs font-bold transition-all",
+                            minRating === val
+                              ? "bg-nexa-brand text-white border-nexa-brand"
+                              : "bg-nexa-bg-base border-nexa-border hover:border-nexa-brand text-nexa-text-secondary"
+                          )}
+                        >
+                          {val ? `${val} ★` : "All"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Verification Status */}
+                  <div>
+                    <label className="block text-xs font-bold text-nexa-text-secondary uppercase mb-2">Verification Status</label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        className="px-3 py-1.5 rounded-lg border text-xs font-bold bg-nexa-brand text-white border-nexa-brand"
+                      >
+                        All Pros
+                      </button>
+                      <button
+                        type="button"
+                        className="px-3 py-1.5 rounded-lg border text-xs font-bold bg-nexa-bg-base border-nexa-border text-nexa-text-faint cursor-not-allowed"
+                        disabled
+                      >
+                        Verified Only
+                      </button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-nexa-text-secondary uppercase mb-2">Sort By</label>
+                    <NexaButton variant="secondary" size="sm" className="w-full justify-between" rightIcon={<ChevronDown className="w-4 h-4" />}>
+                      Recommended
+                    </NexaButton>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
           
           {/* QUICK NICHE FILTERS */}
           <div className="flex items-center gap-2 mt-4 overflow-x-auto pb-2 no-scrollbar">

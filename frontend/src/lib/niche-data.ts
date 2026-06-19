@@ -449,3 +449,19 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
   }
 };
 
+export function getNicheData(slug: string): NicheData {
+  const normalized: Record<string, string> = {
+    "fashion": "fashion-grooming",
+    "professionals": "professional-services",
+    "education": "education-skills",
+    "events": "events-entertainment",
+    "health": "health-wellness",
+    "logistics": "logistics-transport",
+    "auto": "automotive-services",
+    "food": "food-agribusiness",
+    "realestate": "real-estate-construction"
+  };
+  const targetKey = normalized[slug] || slug;
+  return NICHE_DETAILS[targetKey] || NICHE_DETAILS["home-services"];
+}
+

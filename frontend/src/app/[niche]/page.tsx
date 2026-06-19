@@ -1,5 +1,5 @@
 import React from "react";
-import { NICHE_DETAILS } from "@/lib/niche-data";
+import { NICHE_DETAILS, getNicheData } from "@/lib/niche-data";
 import NicheHubClient from "./NicheHubClient";
 
 export function generateStaticParams() {
@@ -9,8 +9,7 @@ export function generateStaticParams() {
 }
 
 export default function NicheHubPage({ params }: { params: { niche: string } }) {
-  const nicheSlug = params.niche;
-  const data = NICHE_DETAILS[nicheSlug] || NICHE_DETAILS["home-services"];
+  const data = getNicheData(params.niche);
 
   return (
     <main className="bg-nexa-bg-base min-h-screen">

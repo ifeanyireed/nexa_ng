@@ -166,6 +166,23 @@ func main() {
 			acceptsPos := (nicheIndex+proIndex)%2 == 0
 			homeDelivery := (nicheIndex+proIndex)%3 == 0
 
+			avatarUrls := []string{
+				"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+				"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80",
+				"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80",
+				"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80",
+				"https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=300&auto=format&fit=crop&q=80",
+				"https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80",
+				"https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300&auto=format&fit=crop&q=80",
+				"https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=300&auto=format&fit=crop&q=80",
+			}
+			avatarIdx := (nicheIndex*2 + proIndex) % len(avatarUrls)
+			avatarUrl := avatarUrls[avatarIdx]
+			city := "Lagos"
+			if (nicheIndex+proIndex)%2 == 1 {
+				city = "Abuja"
+			}
+
 			// Update or Create ProProfile
 			profile, err := client.ProProfile.UpsertOne(
 				db.ProProfile.UserID.Equals(user.ID),
@@ -178,16 +195,19 @@ func main() {
 				db.ProProfile.SubService.Set(niche.Slug), // Sub-niche category slug
 				db.ProProfile.Verified.Set(true),
 				db.ProProfile.Rating.Set(4.7),
-				db.ProProfile.City.Set("Lagos"),
+				db.ProProfile.City.Set(city),
 				db.ProProfile.AcceptsPos.Set(acceptsPos),
 				db.ProProfile.HomeDelivery.Set(homeDelivery),
+				db.ProProfile.LogoURL.Set(avatarUrl),
 			).Update(
 				db.ProProfile.Bio.Set(pro.Bio),
 				db.ProProfile.Specialties.Set(pro.Specialty),
 				db.ProProfile.Niche.Set(niche.ParentID),
 				db.ProProfile.SubService.Set(niche.Slug),
+				db.ProProfile.City.Set(city),
 				db.ProProfile.AcceptsPos.Set(acceptsPos),
 				db.ProProfile.HomeDelivery.Set(homeDelivery),
+				db.ProProfile.LogoURL.Set(avatarUrl),
 			).Exec(ctx)
 
 			if err != nil {
@@ -203,17 +223,29 @@ func main() {
 				db.Service.Description.Set("Initial consultation and assessment."),
 			).Exec(ctx)
 
-			// Create a dynamic Article for the Pro
-			var imgPath string
+			// Assign the custom generated image corresponding to the article's niche parent category
+			imgPath := "/hero4.jpeg"
 			switch niche.ParentID {
 			case "home-services":
-				imgPath = "/hero7.jpeg"
-			case "fashion-grooming":
-				imgPath = "/hero5.jpeg"
-			case "professional-services":
-				imgPath = "/hero6.jpeg"
-			default:
-				imgPath = "/hero8.jpeg"
+				imgPath = "/article_home.jpg"
+			case "fashion":
+				imgPath = "/article_fashion.jpg"
+			case "professionals":
+				imgPath = "/article_professional.jpg"
+			case "education":
+				imgPath = "/article_education.jpg"
+			case "events":
+				imgPath = "/article_events.jpg"
+			case "health":
+				imgPath = "/article_health.jpg"
+			case "logistics":
+				imgPath = "/article_logistics.jpg"
+			case "auto":
+				imgPath = "/article_auto.jpg"
+			case "food":
+				imgPath = "/article_food.jpg"
+			case "realestate":
+				imgPath = "/article_realestate.jpg"
 			}
 
 			client.Article.CreateOne(

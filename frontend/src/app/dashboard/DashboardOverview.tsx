@@ -22,7 +22,7 @@ import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaAvatar } from "@/components/nexa/NexaAvatar";
-import { NICHE_DETAILS } from "@/lib/niche-data";
+import { getNicheData } from "@/lib/niche-data";
 import { useAuth } from "@/components/nexa/AuthContext";
 import { api } from "@/lib/api";
 import Link from "next/link";
@@ -36,11 +36,9 @@ export default function DashboardOverview() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [bookingsData, walletData] = await Promise.all([
-          api.get("/bookings"),
-          api.get("/wallet"),
-        ]);
-        setBookings(bookingsData);
+        const bookingsData = await api.get("/bookings");
+        setBookings(bookingsData || []);
+        const walletData = await api.get("/wallets/me");
         setWallet(walletData);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -51,7 +49,7 @@ export default function DashboardOverview() {
     fetchData();
   }, []);
 
-  const nicheData = user?.pro_profile?.niche ? NICHE_DETAILS[user.pro_profile.niche] : NICHE_DETAILS["handyman-finders"];
+  const nicheData = getNicheData(user?.pro_profile?.niche || "handyman-finders");
   
   const kpis = [
     { label: "Profile Views", value: "1,240", change: "+12%", trend: "up", icon: <Eye className="w-5 h-5 text-blue-500" /> },

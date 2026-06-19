@@ -1,6 +1,6 @@
 import React from "react";
 import ProductDetailClient from "./ProductDetailClient";
-import { NICHE_DETAILS } from "@/lib/niche-data";
+import { NICHE_DETAILS, getNicheData } from "@/lib/niche-data";
 
 export function generateStaticParams() {
   const niches = Object.keys(NICHE_DETAILS);
@@ -19,7 +19,6 @@ export function generateStaticParams() {
 }
 
 export default function ProductDetailPage({ params }: { params: { niche: string; slug: string } }) {
-  const nicheSlug = params.niche;
-  const data = NICHE_DETAILS[nicheSlug] || NICHE_DETAILS["home-services"];
+  const data = getNicheData(params.niche);
   return <ProductDetailClient data={data} />;
 }

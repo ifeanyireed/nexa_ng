@@ -9,13 +9,16 @@ import {
   ShieldCheck, 
   CheckCircle2,
   Info,
-  Clock
+  Clock,
+  Check
 } from "lucide-react";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { api } from "@/lib/api";
+import { cn, getProImage } from "@/lib/utils";
+import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
 export default function ArticleDetailClient({ data }: { data: any }) {
@@ -26,6 +29,38 @@ export default function ArticleDetailClient({ data }: { data: any }) {
   const [article, setArticle] = useState<any>(null);
   const [relatedArticles, setRelatedArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const bookmarked = JSON.parse(localStorage.getItem("nexa_bookmarked_articles") || "[]");
+      setIsBookmarked(bookmarked.includes(articleId));
+    }
+  }, [articleId]);
+
+  const handleBookmark = () => {
+    if (typeof window !== "undefined") {
+      const bookmarked = JSON.parse(localStorage.getItem("nexa_bookmarked_articles") || "[]");
+      let updated;
+      if (bookmarked.includes(articleId)) {
+        updated = bookmarked.filter((id: string) => id !== articleId);
+        setIsBookmarked(false);
+      } else {
+        updated = [...bookmarked, articleId];
+        setIsBookmarked(true);
+      }
+      localStorage.setItem("nexa_bookmarked_articles", JSON.stringify(updated));
+    }
+  };
+
+  const handleShare = () => {
+    if (typeof window !== "undefined") {
+      navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   useEffect(() => {
     const fetchArticleAndRelated = async () => {
@@ -35,7 +70,7 @@ export default function ArticleDetailClient({ data }: { data: any }) {
         setArticle(result);
 
         // Fetch related articles in the same niche category
-        const allArticles = await api.get(`/discovery/articles?niche=${nicheSlug}`);
+        const allArticles = await api.get(`/discovery/articles?niche=${result.niche}`);
         const filtered = (allArticles || [])
           .filter((a: any) => a.id !== cleanId)
           .slice(0, 2);
@@ -118,14 +153,59 @@ export default function ArticleDetailClient({ data }: { data: any }) {
                        <p className="text-xs text-nexa-text-secondary">Verified {data.name} Expert</p>
                     </div>
                  </div>
-                 <div className="flex items-center gap-2">
-                    <button className="p-2 rounded-full hover:bg-nexa-bg-surface text-nexa-text-secondary transition-all">
-                       <Share2 className="w-5 h-5" />
-                    </button>
-                    <button className="p-2 rounded-full hover:bg-nexa-bg-surface text-nexa-text-secondary transition-all">
-                       <Bookmark className="w-5 h-5" />
-                    </button>
-                 </div>
+                  <div className="flex items-center gap-2">
+                     <button 
+                        onClick={handleShare}
+                        className={cn(
+                          "p-2 rounded-full hover:bg-nexa-bg-surface transition-all flex items-center gap-1.5 relative overflow-hidden min-w-[36px] h-9",
+                          copied ? "text-emerald-500 bg-emerald-500/10 px-3" : "text-nexa-text-secondary"
+                        )}
+                        title="Share Article"
+                     >
+                        <AnimatePresence mode="wait">
+                           {copied ? (
+                              <motion.div
+                                 key="check"
+                                 initial={{ scale: 0.8, opacity: 0 }}
+                                 animate={{ scale: 1, opacity: 1 }}
+                                 exit={{ scale: 0.8, opacity: 0 }}
+                                 className="flex items-center gap-1"
+                              >
+                                 <Check className="w-4 h-4" />
+                                 <span className="text-xs font-bold whitespace-nowrap">Copied!</span>
+                              </motion.div>
+                           ) : (
+                              <motion.div
+                                 key="share"
+                                 initial={{ scale: 0.8, opacity: 0 }}
+                                 animate={{ scale: 1, opacity: 1 }}
+                                 exit={{ scale: 0.8, opacity: 0 }}
+                              >
+                                 <Share2 className="w-5 h-5" />
+                              </motion.div>
+                           )}
+                        </AnimatePresence>
+                     </button>
+                     <motion.button 
+                        whileTap={{ scale: 0.9 }}
+                        onClick={handleBookmark}
+                        className={cn(
+                          "p-2 rounded-full hover:bg-nexa-bg-surface transition-all flex items-center justify-center",
+                          isBookmarked ? "text-nexa-brand" : "text-nexa-text-secondary"
+                        )}
+                        title={isBookmarked ? "Remove Bookmark" : "Bookmark Article"}
+                     >
+                        <motion.div
+                           animate={{ scale: isBookmarked ? [1, 1.2, 1] : 1 }}
+                           transition={{ duration: 0.3 }}
+                        >
+                           <Bookmark 
+                              className="w-5 h-5" 
+                              fill={isBookmarked ? "currentColor" : "none"} 
+                           />
+                        </motion.div>
+                     </motion.button>
+                  </div>
               </div>
            </div>
         </div>
@@ -134,7 +214,7 @@ export default function ArticleDetailClient({ data }: { data: any }) {
         <div className="container mx-auto px-4 mb-16">
            <div className="aspect-[21/9] bg-slate-200 rounded-[40px] overflow-hidden shadow-2xl">
               <img 
-                 src={article.image || "https://images.unsplash.com/photo-1454165833767-027ffea9e77b?auto=format&fit=crop&q=80&w=1200"} 
+                 src={article.image || getProImage(article.proProfile?.specialties || "", article.niche)} 
                  className="w-full h-full object-cover" 
                  alt={article.title} 
               />
@@ -155,7 +235,7 @@ export default function ArticleDetailClient({ data }: { data: any }) {
                       {article.proProfile.user?.name.charAt(0)}
                    </div>
                    <div className="flex-1 text-center md:text-left">
-                      <h3 className="text-2xl font-bold mb-2">Need an expert {data.name.slice(0, -1)}?</h3>
+                      <h3 className="text-2xl font-bold mb-2 leading-tight">Need an expert {data.name.endsWith("s") ? data.name.slice(0, -1) : data.name}?</h3>
                       <p className="text-nexa-text-secondary mb-6">{article.proProfile.user?.name} has a {article.proProfile.rating || "5.0"}-star rating on Nexa.</p>
                       <div className="flex flex-wrap justify-center md:justify-start gap-4">
                          <Link href={`/${nicheSlug}/business-${article.proProfile.id}`}>
@@ -197,7 +277,7 @@ export default function ArticleDetailClient({ data }: { data: any }) {
                           <Link key={relArticle.id} href={`/${nicheSlug}/articles/${relArticle.id}`} className="block group">
                              <div className="aspect-video bg-slate-200 rounded-xl mb-3 overflow-hidden relative">
                                 <img 
-                                   src={relArticle.image || "/hero6.jpeg"} 
+                                   src={relArticle.image || getProImage(relArticle.proProfile?.specialties || "", relArticle.niche)} 
                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
                                    alt={relArticle.title} 
                                 />

@@ -45,6 +45,8 @@ model ProProfile {
   nin            String?
   plan           String?   @default("basic")
   verified       Boolean  @default(false)
+  acceptsPos     Boolean  @default(false)
+  homeDelivery   Boolean  @default(false)
   rating         Float    @default(0)
   
   services    Service[]

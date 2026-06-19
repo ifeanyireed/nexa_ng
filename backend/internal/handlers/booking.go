@@ -109,3 +109,22 @@ func UpdateBookingStatus(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(booking)
 }
+
+func GetBooking(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	booking, err := internalDB.Client.Booking.FindUnique(
+		db.Booking.ID.Equals(id),
+	).With(
+		db.Booking.Client.Fetch(),
+		db.Booking.ProProfile.Fetch().With(db.ProProfile.User.Fetch()),
+	).Exec(context.Background())
+
+	if err != nil {
+		http.Error(w, "booking not found", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(booking)
+}

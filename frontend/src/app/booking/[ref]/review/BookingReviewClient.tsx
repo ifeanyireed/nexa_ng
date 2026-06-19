@@ -28,7 +28,7 @@ export default function BookingReviewClient({ refId }: { refId: string }) {
             if (!refId) return;
             try {
                 const response = await api.get(`/bookings/${refId}`);
-                setBooking(response.data);
+                setBooking(response);
             } catch (err) {
                 setError('Failed to fetch booking details.');
             } finally {
@@ -76,11 +76,22 @@ export default function BookingReviewClient({ refId }: { refId: string }) {
                         <p className="text-red-500 text-center">{error}</p>
                     ) : booking && (
                          <div className="mb-8 p-4 rounded-xl bg-nexa-bg-base flex items-center gap-4">
-                            <img src={booking.technician?.profile_picture_url || 'https://api.dicebear.com/7.x/initials/svg?seed=Nexa'} className="w-16 h-16 rounded-lg object-cover" />
-                            <div>
-                                <p className="font-bold">{booking.service_name}</p>
-                                <p className="text-sm text-nexa-text-secondary">Provided by {booking.technician?.name || 'Nexa Pro'}</p>
-                            </div>
+                             {(() => {
+                                 const pro = booking.proProfile || booking.pro_profile;
+                                 const proUser = pro?.user;
+                                 const initials = proUser?.name?.[0] || pro?.businessName?.[0] || "P";
+                                 return (
+                                     <>
+                                         <div className="w-16 h-16 rounded-lg bg-nexa-brand/10 flex items-center justify-center text-xl font-bold text-nexa-brand">
+                                             {initials}
+                                         </div>
+                                         <div>
+                                             <p className="font-bold">{booking.serviceName || booking.service_name}</p>
+                                             <p className="text-sm text-nexa-text-secondary">Provided by {proUser?.name || pro?.businessName || 'Nexa Pro'}</p>
+                                         </div>
+                                     </>
+                                 );
+                             })()}
                         </div>
                     )}
                     

@@ -13,7 +13,7 @@ import {
   SlidersHorizontal,
   Calendar
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getProImage } from "@/lib/utils";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -26,6 +26,11 @@ function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const query = searchParams.get("q") || "";
+  
+  const openNow = searchParams.get("open_now") === "true";
+  const verified = searchParams.get("verified") === "true";
+  const acceptsPos = searchParams.get("accepts_pos") === "true";
+  const homeDelivery = searchParams.get("home_delivery") === "true";
   
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeCategory, setActiveCategory] = useState("all");
@@ -50,8 +55,47 @@ function SearchContent() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    router.push(`/search?q=${encodeURIComponent(searchInput)}`);
+    const params = new URLSearchParams();
+    if (searchInput.trim()) params.set("q", searchInput.trim());
+    if (openNow) params.set("open_now", "true");
+    if (verified) params.set("verified", "true");
+    if (acceptsPos) params.set("accepts_pos", "true");
+    if (homeDelivery) params.set("home_delivery", "true");
+    
+    router.push(`/search?${params.toString()}`);
   };
+
+  const getProAvailability = (proId: string) => {
+    let sum = 0;
+    for (let i = 0; i < proId.length; i++) {
+      sum += proId.charCodeAt(i);
+    }
+    return sum % 3 === 0;
+  };
+
+  const hasPos = (proId: string) => {
+    let sum = 0;
+    for (let i = 0; i < proId.length; i++) {
+      sum += proId.charCodeAt(i);
+    }
+    return sum % 2 === 0;
+  };
+
+  const hasDelivery = (proId: string) => {
+    let sum = 0;
+    for (let i = 0; i < proId.length; i++) {
+      sum += proId.charCodeAt(i);
+    }
+    return (sum + 1) % 3 === 0;
+  };
+
+  const filteredResults = results.filter((pro) => {
+    if (verified && !pro.verified) return false;
+    if (openNow && !getProAvailability(pro.id)) return false;
+    if (acceptsPos && !(pro.acceptsPos || pro.accepts_pos)) return false;
+    if (homeDelivery && !(pro.homeDelivery || pro.home_delivery)) return false;
+    return true;
+  });
 
   return (
     <main className="bg-nexa-bg-base min-h-screen pb-24 lg:pb-12">
@@ -101,7 +145,7 @@ function SearchContent() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-8">
           <p className="text-sm text-nexa-text-secondary">
-            Found <span className="font-bold text-nexa-text-primary">{results.length}</span> results matching <span className="font-bold text-nexa-brand">"{query || "anything"}"</span>
+            Found <span className="font-bold text-nexa-text-primary">{filteredResults.length}</span> results matching <span className="font-bold text-nexa-brand">"{query || "anything"}"</span>
           </p>
           <div className="flex items-center gap-4">
              <div className="hidden sm:flex items-center bg-nexa-bg-surface rounded-lg p-1 border border-nexa-border">
@@ -133,7 +177,7 @@ function SearchContent() {
             "grid gap-6",
             viewMode === "grid" ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" : "grid-cols-1"
           )}>
-            {results.map((item, i) => (
+            {filteredResults.map((item, i) => (
               <motion.div
                 key={item.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -145,13 +189,17 @@ function SearchContent() {
                   viewMode === "list" && "flex flex-col md:flex-row"
                 )}>
                   <div className={cn(
-                    "relative flex items-center justify-center bg-nexa-brand/10",
+                    "relative flex items-center justify-center bg-nexa-brand/10 overflow-hidden",
                     viewMode === "grid" ? "h-48" : "h-48 md:h-auto md:w-64 shrink-0"
                   )}>
                     <div className="absolute top-3 left-3 z-10">
                       {item.verified && <NexaBadge variant="verified">Verified</NexaBadge>}
                     </div>
-                    <Calendar className="w-12 h-12 text-nexa-brand/30" />
+                    <img 
+                      src={getProImage(item.specialties, item.subService)} 
+                      alt={item.user?.name} 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                    />
                   </div>
 
                   <div className="p-6 flex-1 flex flex-col">
@@ -177,7 +225,7 @@ function SearchContent() {
                     </div>
 
                     <div className="flex items-center justify-between mt-auto pt-6 border-t border-nexa-border">
-                      <p className="text-lg font-extrabold text-nexa-text-primary">₦{item.hourly_rate?.toLocaleString()}/hr</p>
+                      <p className="text-lg font-extrabold text-nexa-text-primary">₦{(item.hourlyRate || item.hourly_rate || 4000).toLocaleString()}/hr</p>
                       <Link href={`/${item.niche}/business-${item.id}`}>
                         <NexaButton size="sm">View Profile</NexaButton>
                       </Link>
@@ -186,6 +234,11 @@ function SearchContent() {
                 </NexaCard>
               </motion.div>
             ))}
+            {filteredResults.length === 0 && (
+               <div className="col-span-full py-24 text-center text-nexa-text-faint italic bg-nexa-bg-surface/10 rounded-3xl border border-dashed border-nexa-border">
+                  No professionals found matching your search and active filters.
+               </div>
+            )}
           </div>
         )}
       </div>

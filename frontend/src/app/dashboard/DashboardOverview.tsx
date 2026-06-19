@@ -161,13 +161,13 @@ export default function DashboardOverview() {
                             <NexaAvatar fallback={booking.client?.name?.[0] || "C"} />
                             <div>
                                <h4 className="font-bold">{booking.client?.name || "Client"}</h4>
-                               <p className="text-xs text-nexa-text-faint font-medium">{booking.status} • Scheduled for {new Date(booking.scheduled_at).toLocaleDateString()}</p>
+                               <p className="text-xs text-nexa-text-faint font-medium">{booking.status} • Scheduled for {new Date(booking.scheduledAt || booking.scheduled_at).toLocaleDateString()}</p>
                             </div>
                          </div>
                          <div className="flex items-center gap-12">
                             <div className="text-right">
-                               <p className="text-xs font-bold">₦{booking.pro_profile?.hourly_rate?.toLocaleString() || "0"}</p>
-                               <p className="text-[10px] text-nexa-text-faint font-bold uppercase tracking-wider">{new Date(booking.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                               <p className="text-xs font-bold">₦{(booking.amount || booking.proProfile?.hourlyRate || booking.pro_profile?.hourly_rate || 0).toLocaleString()}</p>
+                               <p className="text-[10px] text-nexa-text-faint font-bold uppercase tracking-wider">{new Date(booking.scheduledAt || booking.scheduled_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                             </div>
                             <div className="flex items-center gap-2">
                                <NexaButton size="sm" variant="secondary">Message</NexaButton>

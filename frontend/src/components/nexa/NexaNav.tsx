@@ -12,6 +12,7 @@ import { NexaModeToggle } from "./NexaModeToggle";
 import { useNiche } from "./NicheContext";
 import { NicheSwitcher } from "./NicheSwitcher";
 import { useAuth } from "./AuthContext";
+import { LocationDropdown } from "./LocationDropdown";
 
 export const NexaNavbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -29,7 +30,7 @@ export const NexaNavbar = () => {
     <>
       <nav
         className={cn(
-          "fixed top-0 left-0 right-0 z-40 transition-all duration-300",
+          "fixed top-0 left-0 right-0 z-40 transition-all duration-300 !overflow-visible",
           scrolled ? "h-16 liquid-glass shadow-lg" : "h-20 bg-transparent"
         )}
       >
@@ -59,11 +60,7 @@ export const NexaNavbar = () => {
 
           {/* ACTIONS */}
           <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-2 px-4 py-1.5 liquid-glass rounded-full cursor-pointer hover:border-nexa-brand transition-all mr-2">
-              <MapPin className="w-4 h-4 text-nexa-brand" />
-              <span className="text-sm font-medium">Lagos</span>
-              <ChevronDown className="w-3.5 h-3.5 text-nexa-text-faint" />
-            </div>
+            <LocationDropdown className="hidden md:block mr-2" />
             
             <NexaThemeToggle />
             <Link href="/nexa-verified" className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-nexa-amber/10 transition-colors group">

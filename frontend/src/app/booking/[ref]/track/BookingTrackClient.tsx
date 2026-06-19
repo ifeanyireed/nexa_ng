@@ -30,7 +30,7 @@ export default function BookingTrackClient({ refId }: { refId: string }) {
             if (!refId) return;
             try {
                 const response = await api.get(`/bookings/${refId}`);
-                setBooking(response.data);
+                setBooking(response);
             } catch (err) {
                 setError('Failed to fetch booking details.');
             } finally {
@@ -41,7 +41,7 @@ export default function BookingTrackClient({ refId }: { refId: string }) {
         fetchBooking();
     }, [refId]);
 
-    const statusTimeline = booking ? booking.status_history : mockStatus;
+    const statusTimeline = booking?.status_history || mockStatus;
 
     return (
         <main className="bg-nexa-bg-base min-h-screen pb-24 lg:pb-12">
@@ -88,7 +88,7 @@ export default function BookingTrackClient({ refId }: { refId: string }) {
                                 <div className="space-y-4">
                                     <div className="flex justify-between">
                                         <span className="text-sm font-medium text-nexa-text-secondary">Service</span>
-                                        <span className="text-sm font-bold">{booking.service_name}</span>
+                                        <span className="text-sm font-bold">{booking.serviceName || booking.service_name}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-sm font-medium text-nexa-text-secondary">Status</span>
@@ -96,28 +96,37 @@ export default function BookingTrackClient({ refId }: { refId: string }) {
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-sm font-medium text-nexa-text-secondary">Scheduled For</span>
-                                        <span className="text-sm font-bold">{new Date(booking.scheduled_at).toLocaleDateString()}</span>
+                                        <span className="text-sm font-bold">{new Date(booking.scheduledAt || booking.scheduled_at).toLocaleDateString()}</span>
                                     </div>
                                     <div className="flex justify-between text-lg font-extrabold pt-2">
                                         <span>Total</span>
-                                        <span className="text-nexa-brand">₦{booking.amount.toLocaleString()}</span>
+                                        <span className="text-nexa-brand">₦{booking.amount?.toLocaleString()}</span>
                                     </div>
                                 </div>
                             )}
 
                             <div className="mt-8 pt-6 border-t border-nexa-border">
-                                <h4 className="text-lg font-bold mb-4 flex items-center gap-2"><User size={18}/> Assigned Technician</h4>
-                                {booking?.technician ? (
-                                     <div className="flex items-center gap-4">
-                                        <img src={booking.technician.profile_picture_url} className="w-12 h-12 rounded-full object-cover" />
-                                        <div>
-                                            <p className="font-bold">{booking.technician.name}</p>
-                                            <p className="text-xs text-nexa-brand font-bold">{booking.technician.specialty}</p>
+                                <h4 className="text-lg font-bold mb-4 flex items-center gap-2"><User size={18}/> Service Provider</h4>
+                                {(() => {
+                                    const pro = booking?.proProfile || booking?.pro_profile;
+                                    const proUser = pro?.user;
+                                    if (!pro) {
+                                        return <p className="text-sm text-nexa-text-secondary">Waiting for assignment...</p>;
+                                    }
+                                    const initials = proUser?.name?.[0] || pro.businessName?.[0] || "P";
+                                    const specialty = pro.specialties?.split(",")?.[0] || pro.niche || "Professional";
+                                    return (
+                                         <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-full bg-nexa-brand/10 flex items-center justify-center text-lg font-bold text-nexa-brand">
+                                                {initials}
+                                            </div>
+                                            <div>
+                                                <p className="font-bold">{proUser?.name || pro.businessName || "Nexa Pro"}</p>
+                                                <p className="text-xs text-nexa-brand font-bold uppercase tracking-wider">{specialty}</p>
+                                            </div>
                                         </div>
-                                    </div>
-                                ) : (
-                                    <p className="text-sm text-nexa-text-secondary">Waiting for assignment...</p>
-                                )}
+                                    );
+                                })()}
                             </div>
                         </NexaCard>
                     </div>

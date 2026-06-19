@@ -24,6 +24,8 @@ type UpdateProfileRequest struct {
 	BusinessEmail  string  `json:"business_email"`
 	NIN            string  `json:"nin"`
 	Plan           string  `json:"plan"`
+	AcceptsPOS     bool    `json:"accepts_pos"`
+	HomeDelivery   bool    `json:"home_delivery"`
 }
 
 func UpdateProProfile(w http.ResponseWriter, r *http.Request) {
@@ -65,6 +67,8 @@ func UpdateProProfile(w http.ResponseWriter, r *http.Request) {
 		db.ProProfile.BusinessEmail.Set(req.BusinessEmail),
 		db.ProProfile.Nin.Set(req.NIN),
 		db.ProProfile.Plan.Set(req.Plan),
+		db.ProProfile.AcceptsPos.Set(req.AcceptsPOS),
+		db.ProProfile.HomeDelivery.Set(req.HomeDelivery),
 	).Update(
 		db.ProProfile.BusinessName.Set(req.BusinessName),
 		db.ProProfile.Bio.Set(req.Bio),
@@ -80,6 +84,8 @@ func UpdateProProfile(w http.ResponseWriter, r *http.Request) {
 		db.ProProfile.BusinessEmail.Set(req.BusinessEmail),
 		db.ProProfile.Nin.Set(req.NIN),
 		db.ProProfile.Plan.Set(req.Plan),
+		db.ProProfile.AcceptsPos.Set(req.AcceptsPOS),
+		db.ProProfile.HomeDelivery.Set(req.HomeDelivery),
 	).Exec(context.Background())
 
 	if err != nil {

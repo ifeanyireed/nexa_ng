@@ -7,6 +7,7 @@ import (
 	"nexa/backend/internal/handlers"
 	nexaMiddleware "nexa/backend/internal/middleware"
 	"os"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -15,9 +16,11 @@ import (
 )
 
 func main() {
-	// Load .env file
-	if err := godotenv.Load(); err != nil {
-		log.Printf("Warning: .env file not found: %v", err)
+	// Try loading .env.development first, fallback to standard .env
+	if err := godotenv.Load(".env.development"); err != nil {
+		if err := godotenv.Load(); err != nil {
+			log.Printf("Warning: No .env or .env.development file found: %v", err)
+		}
 	}
 
 	// Initialize Database
@@ -31,8 +34,13 @@ func main() {
 	r.Use(middleware.Recoverer)
 
 	// CORS
+	allowedOrigins := strings.Split(os.Getenv("ALLOWED_ORIGINS"), ",")
+	if len(allowedOrigins) == 0 || allowedOrigins[0] == "" {
+		allowedOrigins = []string{"http://localhost:3000"}
+	}
+
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedOrigins:   allowedOrigins,
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
 		ExposedHeaders:   []string{"Link"},
@@ -72,6 +80,7 @@ func main() {
 		// Booking Routes
 		r.Post("/api/bookings", handlers.CreateBooking)
 		r.Get("/api/bookings", handlers.ListMyBookings)
+		r.Get("/api/bookings/{id}", handlers.GetBooking)
 		r.Put("/api/bookings/{id}/status", handlers.UpdateBookingStatus)
 
 		// Wallet Routes

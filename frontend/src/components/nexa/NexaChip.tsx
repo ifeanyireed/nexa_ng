@@ -30,7 +30,7 @@ export const NexaChip = ({
       className={cn(
         "inline-flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-medium cursor-pointer transition-all duration-200",
         selected
-          ? "bg-nexa-brand text-white shadow-md shadow-nexa-brand-glow"
+          ? "bg-blue-600 text-white shadow-md shadow-nexa-brand-glow"
           : "liquid-glass text-nexa-text-secondary hover:text-nexa-text-primary",
         className
       )}

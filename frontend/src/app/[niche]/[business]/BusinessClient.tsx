@@ -24,7 +24,7 @@ import {
   ShoppingBag,
   Award
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getProImage } from "@/lib/utils";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -109,7 +109,16 @@ export default function BusinessClient({ data, businessSlug }: BusinessClientPro
         
         {/* HERO SECTION */}
         <section className="relative pt-32 pb-12 overflow-hidden">
-         <div className={cn("absolute inset-0 opacity-10 blur-3xl", data.colorClass)} />
+          {/* Category Background Cover */}
+          <div className="absolute inset-0 z-0 select-none opacity-20">
+            <img 
+              src={getProImage(pro.specialties, pro.subService)} 
+              className="w-full h-full object-cover blur-[2px]" 
+              alt="Profile Cover" 
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-nexa-bg-base via-nexa-bg-base/70 to-transparent" />
+          </div>
+          <div className={cn("absolute inset-0 opacity-20 blur-3xl z-0", data.colorClass)} />
          
          <div className="container mx-auto px-4 relative z-10">
             <div className="flex flex-col lg:flex-row gap-12 items-start lg:items-end">
@@ -264,7 +273,7 @@ export default function BusinessClient({ data, businessSlug }: BusinessClientPro
             <aside className="space-y-8">
                
                {/* PRICING & CTA CARD */}
-               <NexaCard className="p-8 border-nexa-brand/20 bg-nexa-bg-surface sticky top-32">
+               <NexaCard className="p-8 border-nexa-brand/20 bg-nexa-bg-surface sticky top-32 z-10">
                   <div className="flex items-center justify-between mb-6">
                      <h3 className="font-bold">Consultation Fee</h3>
                      <p className="text-2xl font-extrabold">₦{pro.hourlyRate?.toLocaleString() || "5,000"}</p>

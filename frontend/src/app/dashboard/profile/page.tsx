@@ -52,7 +52,9 @@ export default function ProfileEditorPage() {
       weekday: "08:00 AM - 06:00 PM",
       saturday: "09:00 AM - 04:00 PM",
       sunday: "Closed"
-    }
+    },
+    acceptsPos: false,
+    homeDelivery: false
   });
 
   useEffect(() => {
@@ -70,7 +72,9 @@ export default function ProfileEditorPage() {
           weekday: "08:00 AM - 06:00 PM",
           saturday: "09:00 AM - 04:00 PM",
           sunday: "Closed"
-        }
+        },
+        acceptsPos: p.acceptsPos || p.accepts_pos || false,
+        homeDelivery: p.homeDelivery || p.home_delivery || false
       });
     }
   }, [user]);
@@ -86,8 +90,9 @@ export default function ProfileEditorPage() {
         phone: profileData.phone,
         business_email: profileData.email,
         specialties: profileData.tags.join(","),
-        // Other fields we would parse from location, etc.
-        niche: user?.pro_profile?.niche || "home-services"
+        niche: user?.pro_profile?.niche || "home-services",
+        accepts_pos: profileData.acceptsPos,
+        home_delivery: profileData.homeDelivery
       });
       setMessage({ text: "Profile updated successfully!", type: "success" });
       setTimeout(() => setMessage({ text: "", type: "" }), 3000);
@@ -185,6 +190,36 @@ export default function ProfileEditorPage() {
                     onChange={(e) => setProfileData({...profileData, description: e.target.value})}
                   />
                   <p className="text-[10px] text-nexa-text-faint text-right">Max 500 characters. SEO optimized bio recommended.</p>
+                </div>
+
+                <div className="pt-6 border-t border-nexa-border space-y-4">
+                  <h4 className="text-xs font-bold uppercase tracking-widest text-nexa-text-faint">Service Options</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <label className="flex items-center gap-3 p-4 bg-nexa-bg-base border border-nexa-border rounded-2xl cursor-pointer hover:border-nexa-brand/30 transition-all select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={profileData.acceptsPos}
+                        onChange={(e) => setProfileData({ ...profileData, acceptsPos: e.target.checked })}
+                        className="w-5 h-5 rounded-lg border-nexa-border text-nexa-brand focus:ring-nexa-brand/20 cursor-pointer"
+                      />
+                      <div>
+                        <p className="text-sm font-bold">Accepts POS</p>
+                        <p className="text-[10px] text-nexa-text-secondary font-medium">Accept card payments via POS terminal</p>
+                      </div>
+                    </label>
+                    <label className="flex items-center gap-3 p-4 bg-nexa-bg-base border border-nexa-border rounded-2xl cursor-pointer hover:border-nexa-brand/30 transition-all select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={profileData.homeDelivery}
+                        onChange={(e) => setProfileData({ ...profileData, homeDelivery: e.target.checked })}
+                        className="w-5 h-5 rounded-lg border-nexa-border text-nexa-brand focus:ring-nexa-brand/20 cursor-pointer"
+                      />
+                      <div>
+                        <p className="text-sm font-bold">Home Delivery</p>
+                        <p className="text-[10px] text-nexa-text-secondary font-medium">Offer delivery directly to client location</p>
+                      </div>
+                    </label>
+                  </div>
                 </div>
               </motion.div>
             )}

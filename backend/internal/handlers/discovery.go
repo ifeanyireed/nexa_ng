@@ -14,6 +14,7 @@ import (
 func ListPros(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	niche := query.Get("niche")
+	subNiche := query.Get("sub_niche")
 	specialty := query.Get("specialty")
 	minRatingStr := query.Get("min_rating")
 	keyword := query.Get("q")
@@ -22,6 +23,9 @@ func ListPros(w http.ResponseWriter, r *http.Request) {
 
 	if niche != "" {
 		conditions = append(conditions, db.ProProfile.Niche.Equals(niche))
+	}
+	if subNiche != "" {
+		conditions = append(conditions, db.ProProfile.SubService.Equals(subNiche))
 	}
 	if specialty != "" {
 		conditions = append(conditions, db.ProProfile.Specialties.Contains(specialty))

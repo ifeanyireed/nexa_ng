@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Zap, 
   Calendar, 
@@ -22,6 +22,10 @@ import Link from "next/link";
 export default function AvailableClient({ data }: { data: any }) {
   const [pros, setPros] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState(0);
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedSpecialty, setSelectedSpecialty] = useState<string | null>(null);
+  const [minRating, setMinRating] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchPros = async () => {
@@ -38,6 +42,36 @@ export default function AvailableClient({ data }: { data: any }) {
     fetchPros();
   }, [data.id]);
 
+  const getProAvailability = (proId: string) => {
+    let sum = 0;
+    for (let i = 0; i < proId.length; i++) {
+      sum += proId.charCodeAt(i);
+    }
+    return sum % 3;
+  };
+
+  const uniqueSpecialties = Array.from(
+    new Set(
+      pros
+        .flatMap((p) => p.specialties?.split(",") || [])
+        .map((s) => s.trim())
+        .filter(Boolean)
+    )
+  );
+
+  const filteredPros = pros.filter((pro) => {
+    if (getProAvailability(pro.id) !== activeTab) return false;
+    
+    if (selectedSpecialty) {
+       const specs = pro.specialties?.split(",").map((s: string) => s.trim()) || [];
+       if (!specs.includes(selectedSpecialty)) return false;
+    }
+    
+    if (minRating && pro.rating < minRating) return false;
+    
+    return true;
+  });
+
   return (
     <main className="bg-nexa-bg-base min-h-screen pb-24 lg:pb-12">
       <NexaNavbar />
@@ -50,17 +84,25 @@ export default function AvailableClient({ data }: { data: any }) {
                      <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
                      <NexaBadge variant="brand">Instant Hiring</NexaBadge>
                   </div>
-                  <h1 className="text-3xl md:text-5xl font-extrabold text-display">
+                  <h1 className="text-3xl md:text-5xl font-extrabold text-display leading-[1.1] md:leading-[1.1]">
                     Available {data.name} Experts
                   </h1>
                   <p className="text-nexa-text-secondary mt-4 max-w-xl">
                     Professionals who are ready to start your project today or have confirmed availability this week.
                   </p>
                </div>
-               <div className="flex items-center gap-3">
-                  <NexaButton variant="secondary" leftIcon={<Filter className="w-4 h-4" />}>Filters</NexaButton>
-                  <NexaButton leftIcon={<Calendar className="w-4 h-4" />}>View Calendar</NexaButton>
-               </div>
+                <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+                   <NexaButton 
+                      size="lg" 
+                      variant="secondary" 
+                      className={cn("whitespace-nowrap", showFilters && "bg-nexa-brand/10 border-nexa-brand/35 text-nexa-brand")}
+                      onClick={() => setShowFilters(!showFilters)}
+                      leftIcon={<Filter className="w-5 h-5" />}
+                   >
+                      Filters
+                   </NexaButton>
+                   <NexaButton size="lg" className="whitespace-nowrap" leftIcon={<Calendar className="w-5 h-5" />}>View Calendar</NexaButton>
+                </div>
             </div>
          </div>
       </section>
@@ -68,14 +110,79 @@ export default function AvailableClient({ data }: { data: any }) {
       <div className="container mx-auto px-4 py-12">
          <div className="flex items-center gap-2 mb-10 overflow-x-auto pb-2 no-scrollbar">
             {["Available Today", "Available Tomorrow", "Later this Week"].map((tab, i) => (
-               <button key={tab} className={cn(
-                  "px-6 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap",
-                  i === 0 ? "bg-nexa-brand text-white shadow-lg shadow-nexa-brand/20" : "bg-nexa-bg-surface border border-nexa-border text-nexa-text-faint hover:text-nexa-text-secondary"
-               )}>
+               <button 
+                  key={tab} 
+                  onClick={() => {
+                     setActiveTab(i);
+                     setSelectedSpecialty(null);
+                     setMinRating(null);
+                  }}
+                  className={cn(
+                     "px-6 py-2.5 rounded-full text-sm font-bold transition-all whitespace-nowrap",
+                     i === activeTab ? "bg-nexa-brand text-white shadow-lg shadow-nexa-brand/20" : "bg-nexa-bg-surface border border-nexa-border text-nexa-text-faint hover:text-nexa-text-secondary"
+                  )}
+               >
                   {tab}
                </button>
             ))}
          </div>
+
+         <AnimatePresence>
+            {showFilters && (
+               <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.25, ease: "easeInOut" }}
+                  className="mb-8 p-6 rounded-3xl bg-nexa-bg-surface border border-nexa-border overflow-hidden grid grid-cols-1 md:grid-cols-2 gap-6"
+               >
+                  <div>
+                     <h4 className="text-xs font-bold text-nexa-text-faint uppercase tracking-wider mb-3">Specialty</h4>
+                     <div className="flex flex-wrap gap-2">
+                        <button
+                           onClick={() => setSelectedSpecialty(null)}
+                           className={cn(
+                              "px-3 py-1.5 rounded-xl text-xs font-bold transition-all border",
+                              !selectedSpecialty ? "bg-nexa-brand text-white border-nexa-brand" : "bg-nexa-bg-surface border-nexa-border text-nexa-text-secondary hover:text-nexa-text-primary"
+                           )}
+                        >
+                           All
+                        </button>
+                        {uniqueSpecialties.map((spec: any) => (
+                           <button
+                              key={spec}
+                              onClick={() => setSelectedSpecialty(spec)}
+                              className={cn(
+                                 "px-3 py-1.5 rounded-xl text-xs font-bold transition-all border",
+                                 selectedSpecialty === spec ? "bg-nexa-brand text-white border-nexa-brand" : "bg-nexa-bg-surface border-nexa-border text-nexa-text-secondary hover:text-nexa-text-primary"
+                              )}
+                           >
+                              {spec}
+                           </button>
+                        ))}
+                     </div>
+                  </div>
+
+                  <div>
+                     <h4 className="text-xs font-bold text-nexa-text-faint uppercase tracking-wider mb-3">Minimum Rating</h4>
+                     <div className="flex gap-2">
+                        {[null, 4.0, 4.5].map((val) => (
+                           <button
+                              key={val ?? "all"}
+                              onClick={() => setMinRating(val)}
+                              className={cn(
+                                 "px-4 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1",
+                                 minRating === val ? "bg-nexa-brand text-white border-nexa-brand" : "bg-nexa-bg-surface border-nexa-border text-nexa-text-secondary hover:text-nexa-text-primary"
+                              )}
+                           >
+                              {val ? `${val}★ & up` : "All Ratings"}
+                           </button>
+                        ))}
+                     </div>
+                  </div>
+               </motion.div>
+            )}
+         </AnimatePresence>
 
          {loading ? (
             <div className="py-24 text-center">
@@ -83,13 +190,13 @@ export default function AvailableClient({ data }: { data: any }) {
             </div>
          ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-               {pros.map((pro, i) => (
+               {filteredPros.map((pro, i) => (
                   <motion.div
-                    key={pro.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.05 }}
+                     key={pro.id}
+                     initial={{ opacity: 0, y: 20 }}
+                     whileInView={{ opacity: 1, y: 0 }}
+                     viewport={{ once: true }}
+                     transition={{ delay: i * 0.05 }}
                   >
                      <NexaCard variant="interactive" className="p-6">
                         <div className="flex items-start justify-between mb-6">
@@ -111,7 +218,11 @@ export default function AvailableClient({ data }: { data: any }) {
                                  </div>
                               </div>
                            </div>
-                           <NexaBadge variant="success">Available Now</NexaBadge>
+                           <NexaBadge 
+                              variant={activeTab === 0 ? "success" : activeTab === 1 ? "brand" : "secondary"}
+                           >
+                              {activeTab === 0 ? "Available Now" : activeTab === 1 ? "Tomorrow" : "Later this Week"}
+                           </NexaBadge>
                         </div>
 
                         <div className="space-y-4 mb-8">
@@ -135,7 +246,7 @@ export default function AvailableClient({ data }: { data: any }) {
                         <div className="pt-6 border-t border-nexa-border flex items-center justify-between">
                            <div>
                               <p className="text-[10px] text-nexa-text-faint font-bold uppercase tracking-widest mb-1">Starts from</p>
-                              <p className="text-lg font-extrabold">₦{pro.hourly_rate?.toLocaleString()}</p>
+                              <p className="text-lg font-extrabold">₦{(pro.hourlyRate || pro.hourly_rate || 4000).toLocaleString()}</p>
                            </div>
                            <Link href={`/${data.id}/business-${pro.id}`}>
                               <NexaButton rightIcon={<ArrowRight className="w-4 h-4" />}>Book Now</NexaButton>
@@ -144,9 +255,9 @@ export default function AvailableClient({ data }: { data: any }) {
                      </NexaCard>
                   </motion.div>
                ))}
-               {pros.length === 0 && (
+               {filteredPros.length === 0 && (
                   <div className="col-span-full py-24 text-center text-nexa-text-faint italic bg-nexa-bg-surface/10 rounded-3xl border border-dashed border-nexa-border">
-                     No experts currently listed as available in this category.
+                     No experts currently listed as available for this period.
                   </div>
                )}
             </div>

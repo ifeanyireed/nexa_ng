@@ -24,21 +24,30 @@ export default function ArticleDetailClient({ data }: { data: any }) {
   const articleId = params.slug as string;
   
   const [article, setArticle] = useState<any>(null);
+  const [relatedArticles, setRelatedArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchArticle = async () => {
+    const fetchArticleAndRelated = async () => {
       try {
-        const result = await api.get(`/discovery/articles/${articleId}`);
+        const cleanId = articleId.replace(/^article-/, "");
+        const result = await api.get(`/discovery/articles/${cleanId}`);
         setArticle(result);
+
+        // Fetch related articles in the same niche category
+        const allArticles = await api.get(`/discovery/articles?niche=${nicheSlug}`);
+        const filtered = (allArticles || [])
+          .filter((a: any) => a.id !== cleanId)
+          .slice(0, 2);
+        setRelatedArticles(filtered);
       } catch (error) {
         console.error("Error fetching article detail:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchArticle();
-  }, [articleId]);
+    fetchArticleAndRelated();
+  }, [articleId, nicheSlug]);
 
   if (loading) {
     return (
@@ -133,8 +142,8 @@ export default function ArticleDetailClient({ data }: { data: any }) {
         </div>
 
         {/* CONTENT AREA */}
-        <div className="container mx-auto px-4 flex flex-col lg:flex-row gap-16">
-           <div className="flex-1 max-w-3xl">
+        <div className="container mx-auto px-4 flex flex-col lg:flex-row justify-between gap-16">
+           <div className="flex-1 max-w-4xl">
               <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-extrabold prose-p:text-nexa-text-secondary prose-p:leading-relaxed whitespace-pre-wrap">
                  {article.content}
               </div>
@@ -162,7 +171,7 @@ export default function ArticleDetailClient({ data }: { data: any }) {
            </div>
 
            {/* SIDEBAR */}
-           <aside className="w-full lg:w-80 space-y-12">
+           <aside className="w-full lg:w-80 flex-shrink-0 space-y-12">
               <div>
                  <h4 className="font-bold mb-6 flex items-center gap-2">
                     <CheckCircle2 className="w-5 h-5 text-emerald-500" />
@@ -183,14 +192,29 @@ export default function ArticleDetailClient({ data }: { data: any }) {
               <div className="pt-12 border-t border-nexa-border">
                  <h4 className="font-bold mb-6">Related Articles</h4>
                  <div className="space-y-6">
-                    {[1, 2].map(i => (
-                       <div key={i} className="group cursor-pointer opacity-60">
-                          <div className="aspect-video bg-slate-200 rounded-xl mb-3 overflow-hidden" />
-                          <h5 className="font-bold text-sm group-hover:text-nexa-brand transition-colors line-clamp-2">
-                             More insights coming soon from our verified {data.name} experts.
-                          </h5>
-                       </div>
-                    ))}
+                    {relatedArticles.length > 0 ? (
+                       relatedArticles.map((relArticle) => (
+                          <Link key={relArticle.id} href={`/${nicheSlug}/articles/${relArticle.id}`} className="block group">
+                             <div className="aspect-video bg-slate-200 rounded-xl mb-3 overflow-hidden relative">
+                                <img 
+                                   src={relArticle.image || "/hero6.jpeg"} 
+                                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                                   alt={relArticle.title} 
+                                />
+                             </div>
+                             <h5 className="font-bold text-sm group-hover:text-nexa-brand transition-colors line-clamp-2">
+                                {relArticle.title}
+                             </h5>
+                             <p className="text-[10px] text-nexa-text-faint mt-1 uppercase font-bold">
+                                By {relArticle.proProfile?.user?.name || "Verified Expert"}
+                             </p>
+                          </Link>
+                       ))
+                    ) : (
+                       <p className="text-xs text-nexa-text-faint italic">
+                          More insights coming soon from our verified {data.name} experts.
+                       </p>
+                    )}
                  </div>
               </div>
            </aside>

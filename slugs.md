@@ -75,3 +75,8 @@ This document lists the routes for the Nexa_ng Service Finder platform.
 ## Legal
 - **Privacy Policy**: `/legal/privacy`
 - **Terms of Service**: `/legal/terms`
+
+  The seed script will create:
+   - A Pro User (Chef Gbolahan) with a sample service.
+   - A second Pro User (Segun Auto Fix).
+   - Default login password for both: password123.

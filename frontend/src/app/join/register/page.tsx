@@ -52,7 +52,9 @@ function RegisterContent() {
     whatsapp: "",
     email: "",
     plan: "basic",
-    nin: ""
+    nin: "",
+    acceptsPos: false,
+    homeDelivery: false
   });
 
   // Auth redirect
@@ -123,7 +125,9 @@ function RegisterContent() {
         business_email: formData.email,
         nin: formData.nin,
         plan: formData.plan,
-        hourly_rate: 0
+        hourly_rate: 0,
+        accepts_pos: formData.acceptsPos,
+        home_delivery: formData.homeDelivery
       });
       
       localStorage.removeItem("nexa_registration_progress");
@@ -340,6 +344,36 @@ function RegisterContent() {
                         value={formData.description}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       />
+                    </div>
+
+                    <div className="pt-6 border-t border-nexa-border space-y-4">
+                      <h4 className="text-xs font-bold uppercase tracking-widest text-nexa-text-faint">Service Options</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <label className="flex items-center gap-3 p-4 bg-nexa-bg-base border border-nexa-border rounded-2xl cursor-pointer hover:border-nexa-brand/30 transition-all select-none">
+                          <input 
+                            type="checkbox" 
+                            checked={formData.acceptsPos}
+                            onChange={(e) => setFormData({ ...formData, acceptsPos: e.target.checked })}
+                            className="w-5 h-5 rounded-lg border-nexa-border text-nexa-brand focus:ring-nexa-brand/20 cursor-pointer"
+                          />
+                          <div>
+                            <p className="text-sm font-bold">Accepts POS</p>
+                            <p className="text-[10px] text-nexa-text-secondary font-medium">Accept card payments via POS terminal</p>
+                          </div>
+                        </label>
+                        <label className="flex items-center gap-3 p-4 bg-nexa-bg-base border border-nexa-border rounded-2xl cursor-pointer hover:border-nexa-brand/30 transition-all select-none">
+                          <input 
+                            type="checkbox" 
+                            checked={formData.homeDelivery}
+                            onChange={(e) => setFormData({ ...formData, homeDelivery: e.target.checked })}
+                            className="w-5 h-5 rounded-lg border-nexa-border text-nexa-brand focus:ring-nexa-brand/20 cursor-pointer"
+                          />
+                          <div>
+                            <p className="text-sm font-bold">Home Delivery</p>
+                            <p className="text-[10px] text-nexa-text-secondary font-medium">Offer delivery directly to client location</p>
+                          </div>
+                        </label>
+                      </div>
                     </div>
                   </NexaCard>
 

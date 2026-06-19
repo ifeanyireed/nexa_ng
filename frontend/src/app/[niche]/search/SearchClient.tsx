@@ -193,7 +193,7 @@ export default function SearchClient({ data }: { data: any }) {
                     </div>
 
                     <div className="flex items-center justify-between pt-4 mt-auto border-t border-nexa-border">
-                      <p className="text-sm font-bold">₦{item.hourly_rate?.toLocaleString()}/hr</p>
+                      <p className="text-sm font-bold">₦{(item.hourlyRate || item.hourly_rate || 4000).toLocaleString()}/hr</p>
                       <Link href={`/${data.id}/business-${item.id}`}>
                         <NexaButton size="sm">Book Now</NexaButton>
                       </Link>

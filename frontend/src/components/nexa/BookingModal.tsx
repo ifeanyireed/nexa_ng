@@ -99,22 +99,22 @@ export function BookingModal({ isOpen, onClose, businessName, serviceName, proPr
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
+        <div className="fixed inset-0 z-[100] flex items-end lg:items-center justify-center lg:p-4">
           <motion.div 
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }}
             onClick={handleClose}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]" 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
           />
           <motion.div 
             initial={{ y: "100%", opacity: 0 }} 
             animate={{ y: 0, opacity: 1 }} 
             exit={{ y: "100%", opacity: 0 }}
-            className="fixed bottom-0 left-0 right-0 lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 lg:bottom-auto w-full lg:max-w-2xl bg-nexa-bg-base lg:rounded-[40px] shadow-2xl z-[110] overflow-hidden"
+            className="relative w-full lg:max-w-2xl bg-nexa-bg-base rounded-t-[32px] lg:rounded-[40px] shadow-2xl z-[110] overflow-hidden max-h-[95vh] lg:max-h-[90vh] flex flex-col"
           >
             {/* HEADER */}
-            <div className="p-6 border-b border-nexa-border flex items-center justify-between bg-nexa-bg-surface">
+            <div className="p-6 border-b border-nexa-border flex items-center justify-between bg-nexa-bg-surface flex-shrink-0">
               <div className="flex items-center gap-3">
                 {step > 1 && step < 4 && (
                   <button onClick={handleBack} className="p-2 hover:bg-nexa-bg-base rounded-xl transition-colors">
@@ -131,7 +131,7 @@ export function BookingModal({ isOpen, onClose, businessName, serviceName, proPr
               </button>
             </div>
 
-            <div className="p-8">
+            <div className="p-8 overflow-y-auto no-scrollbar">
                {error && (
                  <div className="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold flex items-center gap-3">
                    <AlertCircle className="w-4 h-4" />
@@ -322,7 +322,7 @@ export function BookingModal({ isOpen, onClose, businessName, serviceName, proPr
                </AnimatePresence>
             </div>
           </motion.div>
-        </>
+        </div>
       )}
     </AnimatePresence>
   );

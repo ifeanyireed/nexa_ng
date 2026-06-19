@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/nexa/ThemeProvider";
 import { NicheProvider } from "@/components/nexa/NicheContext";
 import { AuthProvider } from "@/components/nexa/AuthContext";
+import { LocationProvider } from "@/components/nexa/LocationContext";
 
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans" });
 const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains" });
@@ -29,7 +30,9 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <NicheProvider>
-              {children}
+              <LocationProvider>
+                {children}
+              </LocationProvider>
             </NicheProvider>
           </AuthProvider>
         </ThemeProvider>

@@ -47,7 +47,7 @@ import {
   Sprout,
   Home
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getProImage } from "@/lib/utils";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -106,7 +106,7 @@ const SectionHeader = ({ title, viewAll = true, href }: { title: string, viewAll
 
 // --- BUYER MODE SECTIONS ---
 
-const BuyerModeLayout = ({ data, activeSubService, setActiveSubService, pros }: any) => {
+const BuyerModeLayout = ({ data, activeSubService, setActiveSubService, pros, articles }: any) => {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -183,16 +183,27 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService, pros }: 
             href={`/${data.id}/search`} 
           />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {pros.length > 0 ? (
-              pros.map((pro: any) => (
+            {pros.filter((pro: any) => {
+              const serviceKeyword = activeSubService.replace(" Finder", "");
+              return pro.specialties?.toLowerCase().includes(serviceKeyword.toLowerCase());
+            }).length > 0 ? (
+              pros.filter((pro: any) => {
+                const serviceKeyword = activeSubService.replace(" Finder", "");
+                return pro.specialties?.toLowerCase().includes(serviceKeyword.toLowerCase());
+              }).map((pro: any) => (
                 <Link href={`/${data.id}/business-${pro.id}`} key={pro.id}>
                   <NexaCard variant="glass" className="p-0 overflow-hidden group">
-                    <div className="relative h-48 bg-slate-200">
+                    <div className="relative h-48 bg-slate-200 overflow-hidden">
+                      <img 
+                        src={getProImage(pro.specialties, pro.subService)} 
+                        alt={pro.user?.name} 
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                      />
                       <div className="absolute top-3 right-3 z-10">
                         {pro.verified && <NexaBadge variant="verified">Verified</NexaBadge>}
                       </div>
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                      <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
+                      <div className="absolute bottom-3 left-3 flex items-center gap-2 z-20">
                         <NexaRating value={pro.rating} />
                         <span className="text-white text-xs font-bold">(24 reviews)</span>
                       </div>
@@ -284,26 +295,64 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService, pros }: 
         <section>
           <SectionHeader title="Expert Articles & Guides" href={`/${data.id}/articles`} />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[1, 2, 3].map(i => (
-              <Link href={`/${data.id}/articles/article-${i}`} key={i}>
-                <div className="group cursor-pointer">
-                  <div className="aspect-video bg-slate-200 rounded-2xl mb-4 overflow-hidden">
-                    <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-400 group-hover:scale-105 transition-transform duration-500" />
+            {articles && articles.length > 0 ? (
+              articles.slice(0, 3).map((article: any) => {
+                const authorName = article.proProfile?.user?.name || "John Doe";
+                const initials = authorName.split(" ").map((n: any) => n[0]).join("").toUpperCase();
+                return (
+                  <Link href={`/${data.id}/articles/article-${article.id}`} key={article.id}>
+                    <div className="group cursor-pointer">
+                      <div className="aspect-video bg-slate-200 rounded-2xl mb-4 overflow-hidden relative">
+                        <img 
+                          src={getProImage(article.proProfile?.specialties || "", article.niche)} 
+                          alt={article.title} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                        />
+                      </div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <NexaBadge variant="neutral" className="text-[10px] py-0">
+                          {activeSubService.replace(" Finder", "")} Guide
+                        </NexaBadge>
+                        <span className="text-[10px] text-nexa-text-faint font-bold uppercase">5 min read</span>
+                      </div>
+                      <h3 className="text-lg font-bold mb-2 group-hover:text-nexa-brand transition-colors line-clamp-2">
+                        {article.title}
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-nexa-brand/10 flex items-center justify-center text-[10px] font-bold text-nexa-brand">
+                          {initials}
+                        </div>
+                        <span className="text-xs text-nexa-text-secondary font-medium">
+                          by {authorName} • Verified Pro
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })
+            ) : (
+              // Fallback placeholders if loading or no articles seeded
+              [1, 2, 3].map(i => (
+                <Link href={`/${data.id}/articles/article-${i}`} key={i}>
+                  <div className="group cursor-pointer">
+                    <div className="aspect-video bg-slate-200 rounded-2xl mb-4 overflow-hidden">
+                      <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-400 group-hover:scale-105 transition-transform duration-500" />
+                    </div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <NexaBadge variant="neutral" className="text-[10px] py-0">{activeSubService.replace(" Finder", "")} Guide</NexaBadge>
+                      <span className="text-[10px] text-nexa-text-faint font-bold uppercase">5 min read</span>
+                    </div>
+                    <h3 className="text-lg font-bold mb-2 group-hover:text-nexa-brand transition-colors line-clamp-2">
+                      How to choose the best {activeSubService.replace(" Finder", "")} for your project in Lagos
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-nexa-brand/10 flex items-center justify-center text-[10px] font-bold">JD</div>
+                      <span className="text-xs text-nexa-text-secondary font-medium">by John Doe • Verified Seller</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <NexaBadge variant="neutral" className="text-[10px] py-0">{activeSubService.replace(" Finder", "")} Guide</NexaBadge>
-                    <span className="text-[10px] text-nexa-text-faint font-bold uppercase">5 min read</span>
-                  </div>
-                  <h3 className="text-lg font-bold mb-2 group-hover:text-nexa-brand transition-colors line-clamp-2">
-                    How to choose the best {activeSubService.replace(" Finder", "")} for your project in Lagos
-                  </h3>
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-full bg-nexa-brand/10 flex items-center justify-center text-[10px] font-bold">JD</div>
-                    <span className="text-xs text-nexa-text-secondary font-medium">by John Doe • Verified Seller</span>
-                  </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              ))
+            )}
           </div>
         </section>
 
@@ -454,12 +503,14 @@ export default function NicheHubClient({ data }: any) {
   const [activeSubService, setActiveSubService] = useState(data.subServices[0]);
   const [pros, setPros] = useState<any[]>([]);
   const [loadingPros, setLoadingPros] = useState(true);
+  const [articles, setArticles] = useState<any[]>([]);
 
   useEffect(() => {
     setCurrentNiche(data.id);
     const fetchPros = async () => {
       try {
-        const result = await api.get(`/discovery/pros?niche=${data.id}`);
+        const slug = window.location.pathname.split("/").pop();
+        const result = await api.get(`/discovery/pros?niche=${data.id}&sub_niche=${slug}`);
         setPros(result);
       } catch (error) {
         console.error("Error fetching pros:", error);
@@ -467,7 +518,18 @@ export default function NicheHubClient({ data }: any) {
         setLoadingPros(false);
       }
     };
+
+    const fetchArticles = async () => {
+      try {
+        const result = await api.get(`/discovery/articles?niche=${data.id}`);
+        setArticles(result);
+      } catch (error) {
+        console.error("Error fetching articles:", error);
+      }
+    };
+
     fetchPros();
+    fetchArticles();
     return () => setCurrentNiche(null);
   }, [data.id, setCurrentNiche]);
 
@@ -483,6 +545,7 @@ export default function NicheHubClient({ data }: any) {
             activeSubService={activeSubService} 
             setActiveSubService={setActiveSubService} 
             pros={pros}
+            articles={articles}
           />
         ) : (
           <SellerModeLayout 

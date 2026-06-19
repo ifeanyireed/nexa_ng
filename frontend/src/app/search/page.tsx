@@ -13,7 +13,7 @@ import {
   SlidersHorizontal,
   Calendar
 } from "lucide-react";
-import { cn, getProImage } from "@/lib/utils";
+import { cn, getProImage, getProLink } from "@/lib/utils";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -226,7 +226,7 @@ function SearchContent() {
 
                     <div className="flex items-center justify-between mt-auto pt-6 border-t border-nexa-border">
                       <p className="text-lg font-extrabold text-nexa-text-primary">₦{(item.hourlyRate || item.hourly_rate || 4000).toLocaleString()}/hr</p>
-                      <Link href={`/${item.niche}/business-${item.id}`}>
+                      <Link href={getProLink(item)}>
                         <NexaButton size="sm">View Profile</NexaButton>
                       </Link>
                     </div>

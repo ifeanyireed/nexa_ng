@@ -465,3 +465,18 @@ export function getNicheData(slug: string): NicheData {
   return NICHE_DETAILS[targetKey] || NICHE_DETAILS["home-services"];
 }
 
+export function getAllNicheSlugs(): string[] {
+  const shortSlugs = [
+    "fashion",
+    "professionals",
+    "education",
+    "events",
+    "health",
+    "logistics",
+    "auto",
+    "food",
+    "realestate"
+  ];
+  return Array.from(new Set([...Object.keys(NICHE_DETAILS), ...shortSlugs]));
+}
+

@@ -47,7 +47,7 @@ import {
   Sprout,
   Home
 } from "lucide-react";
-import { cn, getProImage } from "@/lib/utils";
+import { cn, getProImage, getProLink } from "@/lib/utils";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -191,7 +191,7 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService, pros, ar
                 const serviceKeyword = activeSubService.replace(" Finder", "");
                 return pro.specialties?.toLowerCase().includes(serviceKeyword.toLowerCase());
               }).map((pro: any) => (
-                <Link href={`/${data.id}/business-${pro.id}`} key={pro.id}>
+                <Link href={getProLink(pro)} key={pro.id}>
                   <NexaCard variant="glass" className="p-0 overflow-hidden group">
                     <div className="relative h-48 bg-slate-200 overflow-hidden">
                       <img 
@@ -300,7 +300,7 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService, pros, ar
                 const authorName = article.proProfile?.user?.name || "John Doe";
                 const initials = authorName.split(" ").map((n: any) => n[0]).join("").toUpperCase();
                 return (
-                  <Link href={`/${data.id}/articles/article-${article.id}`} key={article.id}>
+                  <Link href={`/${data.id}/articles/${getArticleSlug(article)}`} key={article.id}>
                     <div className="group cursor-pointer">
                       <div className="aspect-video bg-slate-200 rounded-2xl mb-4 overflow-hidden relative">
                         <img 
@@ -332,7 +332,7 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService, pros, ar
               })
             ) : (
               // Fallback placeholders if loading or no articles seeded
-              [1, 2, 3].map(i => (
+              [0, 1, 2].map(i => (
                 <Link href={`/${data.id}/articles/article-${i}`} key={i}>
                   <div className="group cursor-pointer">
                     <div className="aspect-video bg-slate-200 rounded-2xl mb-4 overflow-hidden">
@@ -371,7 +371,7 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService, pros, ar
                   <h3 className="text-xl font-bold mb-1">{pro.user?.name}</h3>
                   <p className="text-sm text-nexa-text-secondary mb-3">{pro.rating} rating • CAC Verified • Professional on Nexa</p>
                   <div className="flex items-center justify-center sm:justify-start gap-3">
-                    <Link href={`/${data.id}/business-${pro.id}`}>
+                    <Link href={getProLink(pro)}>
                       <NexaButton size="sm" variant="secondary">View Profile</NexaButton>
                     </Link>
                     <span className="text-xs font-bold text-emerald-500">Highly Recommended</span>

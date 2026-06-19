@@ -1,9 +1,9 @@
 import React from "react";
-import { NICHE_DETAILS, getNicheData } from "@/lib/niche-data";
+import { NICHE_DETAILS, getNicheData, getAllNicheSlugs } from "@/lib/niche-data";
 import NearMeClient from "./NearMeClient";
 
 export function generateStaticParams() {
-  return Object.keys(NICHE_DETAILS).map((niche) => ({
+  return getAllNicheSlugs().map((niche) => ({
     niche: niche,
   }));
 }

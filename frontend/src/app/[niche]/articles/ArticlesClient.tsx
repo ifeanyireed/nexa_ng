@@ -11,7 +11,7 @@ import {
   BookOpen,
   Info
 } from "lucide-react";
-import { cn, getProImage } from "@/lib/utils";
+import { cn, getProImage, getArticleSlug } from "@/lib/utils";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -97,7 +97,7 @@ export default function ArticlesClient({ data }: any) {
               {/* FEATURED ARTICLE */}
               {featuredArticle && (
                 <section className="mb-16">
-                   <Link href={`/${nicheSlug}/articles/${featuredArticle.id}`}>
+                   <Link href={`/${nicheSlug}/articles/${getArticleSlug(featuredArticle)}`}>
                      <NexaCard variant="interactive" padding="none" className="overflow-hidden flex flex-col md:flex-row min-h-[400px]">
                         <div className="flex-1 bg-slate-200 relative">
                            <img 
@@ -146,7 +146,7 @@ export default function ArticlesClient({ data }: any) {
                      viewport={{ once: true }}
                      transition={{ delay: i * 0.1 }}
                    >
-                      <Link href={`/${nicheSlug}/articles/${article.id}`}>
+                      <Link href={`/${nicheSlug}/articles/${getArticleSlug(article)}`}>
                          <div className="group cursor-pointer">
                             <div className="aspect-video bg-slate-200 rounded-2xl mb-4 overflow-hidden relative">
                                <img 

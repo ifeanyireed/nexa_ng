@@ -11,7 +11,7 @@ import {
   ArrowRight,
   Filter
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getProLink } from "@/lib/utils";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -248,7 +248,7 @@ export default function AvailableClient({ data }: { data: any }) {
                               <p className="text-[10px] text-nexa-text-faint font-bold uppercase tracking-widest mb-1">Starts from</p>
                               <p className="text-lg font-extrabold">₦{(pro.hourlyRate || pro.hourly_rate || 4000).toLocaleString()}</p>
                            </div>
-                           <Link href={`/${data.id}/business-${pro.id}`}>
+                           <Link href={getProLink(pro)}>
                               <NexaButton rightIcon={<ArrowRight className="w-4 h-4" />}>Book Now</NexaButton>
                            </Link>
                         </div>

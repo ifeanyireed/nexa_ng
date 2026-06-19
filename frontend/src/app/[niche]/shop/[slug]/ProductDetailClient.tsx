@@ -14,7 +14,7 @@ import {
   Minus,
   Info
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getProLink } from "@/lib/utils";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -202,7 +202,7 @@ export default function ProductDetailClient({ data }: { data: any }) {
                          </div>
                       </div>
                    </div>
-                   <Link href={`/${nicheSlug}/business-${product.proProfile.id}/shop`}>
+                   <Link href={getProLink(product.proProfile) + "/shop"}>
                       <NexaButton variant="secondary" size="sm">View Shop</NexaButton>
                    </Link>
                 </NexaCard>

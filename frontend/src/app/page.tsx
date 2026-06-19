@@ -34,7 +34,7 @@ import {
   Facebook,
   Linkedin,
 } from "lucide-react";
-import { cn, getProImage } from "@/lib/utils";
+import { cn, getProImage, getProLink } from "@/lib/utils";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -412,7 +412,7 @@ const FeaturedSection = () => {
         ) : pros.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {pros.map((pro, i) => (
-              <Link href={`/${pro.niche}/business-${pro.id}`} key={pro.id} className="block">
+              <Link href={getProLink(pro)} key={pro.id} className="block">
                 <BusinessCard 
                   name={pro.user?.name || "Professional"}
                   category={pro.specialties?.split(",")[0] || "Service"}

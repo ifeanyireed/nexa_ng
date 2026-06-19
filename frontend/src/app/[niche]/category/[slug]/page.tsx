@@ -1,10 +1,10 @@
 import React from "react";
 import SubServiceClient from "./SubServiceClient";
-import { NICHE_DETAILS } from "@/lib/niche-data";
+import { NICHE_DETAILS, getAllNicheSlugs } from "@/lib/niche-data";
 
 export function generateStaticParams() {
   const params: { niche: string, slug: string }[] = [];
-  Object.keys(NICHE_DETAILS).forEach(niche => {
+  getAllNicheSlugs().forEach(niche => {
     params.push({ niche, slug: "painters" });
   });
   return params;

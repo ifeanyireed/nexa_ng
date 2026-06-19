@@ -1,9 +1,9 @@
 import React from "react";
 import ProductDetailClient from "./ProductDetailClient";
-import { NICHE_DETAILS, getNicheData } from "@/lib/niche-data";
+import { NICHE_DETAILS, getNicheData, getAllNicheSlugs } from "@/lib/niche-data";
 
 export function generateStaticParams() {
-  const niches = Object.keys(NICHE_DETAILS);
+  const niches = getAllNicheSlugs();
   const paths: any[] = [];
   
   niches.forEach(niche => {

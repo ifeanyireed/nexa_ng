@@ -81,3 +81,32 @@ export function getProImage(specialty: string, subService: string): string {
 
   return key ? images[key] : "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=500&auto=format&fit=crop&q=80";
 }
+
+export function slugify(text: string): string {
+  return (text || "")
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^\w\-]+/g, "")
+    .replace(/\-\-+/g, "-")
+    .replace(/^-+/, "")
+    .replace(/-+$/, "");
+}
+
+export function getProSlug(pro: any): string {
+  const name = pro.user?.name || pro.businessName || "professional";
+  return `${slugify(name)}-business-${pro.id}`;
+}
+
+export function getArticleSlug(article: any): string {
+  return `${slugify(article.title)}-article-${article.id}`;
+}
+
+export function getProLink(pro: any): string {
+  const service = slugify(pro.subService || pro.specialties || "service");
+  const state = slugify(pro.city || "state");
+  const lga = slugify(pro.area || "lga");
+  const slug = getProSlug(pro);
+  return `/${service}/${state}/${lga}/${slug}`;
+}

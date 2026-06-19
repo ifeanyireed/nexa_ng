@@ -11,6 +11,7 @@ import {
   Star
 } from "lucide-react";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
+import { getProLink } from "@/lib/utils";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -77,7 +78,7 @@ export default function NearMeClient({ data }: { data: any }) {
                 </div>
               ) : (
                 pros.map((pro, i) => (
-                  <Link href={`/${data.id}/business-${pro.id}`} key={pro.id}>
+                  <Link href={getProLink(pro)} key={pro.id}>
                     <NexaCard variant="interactive" className="p-4 cursor-pointer group">
                        <div className="flex gap-4">
                           <div className="w-16 h-16 rounded-2xl bg-nexa-brand/10 flex-shrink-0 overflow-hidden flex items-center justify-center font-bold text-nexa-brand">

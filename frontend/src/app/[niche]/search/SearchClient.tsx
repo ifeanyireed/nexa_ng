@@ -12,7 +12,7 @@ import {
   ChevronDown, 
   SlidersHorizontal 
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getProLink } from "@/lib/utils";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -268,7 +268,7 @@ export default function SearchClient({ data }: { data: any }) {
 
                     <div className="flex items-center justify-between pt-4 mt-auto border-t border-nexa-border">
                       <p className="text-sm font-bold">₦{(item.hourlyRate || item.hourly_rate || 4000).toLocaleString()}/hr</p>
-                      <Link href={`/${data.id}/business-${item.id}`}>
+                      <Link href={getProLink(item)}>
                         <NexaButton size="sm">Book Now</NexaButton>
                       </Link>
                     </div>

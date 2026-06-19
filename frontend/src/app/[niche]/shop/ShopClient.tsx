@@ -17,6 +17,7 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { getProLink } from "@/lib/utils";
 
 export default function ShopClient({ data, nicheSlug }: { data: any, nicheSlug: string }) {
   const [products, setProducts] = useState<any[]>([]);
@@ -117,7 +118,7 @@ export default function ShopClient({ data, nicheSlug }: { data: any, nicheSlug: 
                    viewport={{ once: true }}
                    transition={{ delay: (i % 4) * 0.1 }}
                  >
-                    <Link href={`/${nicheSlug}/business-${product.proProfileId}/shop`}>
+                    <Link href={getProLink(product.proProfile) + "/shop"}>
                        <NexaCard variant="flat" padding="none" className="group h-full flex flex-col">
                           <div className="aspect-square relative overflow-hidden bg-slate-100">
                              <div className="absolute top-3 left-3 z-10">

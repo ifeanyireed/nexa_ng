@@ -17,7 +17,7 @@ import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { api } from "@/lib/api";
-import { cn, getProImage } from "@/lib/utils";
+import { cn, getProImage, getProLink, getArticleSlug } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 
@@ -65,7 +65,9 @@ export default function ArticleDetailClient({ data }: { data: any }) {
   useEffect(() => {
     const fetchArticleAndRelated = async () => {
       try {
-        const cleanId = articleId.replace(/^article-/, "");
+        const cleanId = articleId.includes("-article-")
+          ? articleId.split("-article-")[1]
+          : articleId.replace(/^article-/, "");
         const result = await api.get(`/discovery/articles/${cleanId}`);
         setArticle(result);
 
@@ -238,10 +240,10 @@ export default function ArticleDetailClient({ data }: { data: any }) {
                       <h3 className="text-2xl font-bold mb-2 leading-tight">Need an expert {data.name.endsWith("s") ? data.name.slice(0, -1) : data.name}?</h3>
                       <p className="text-nexa-text-secondary mb-6">{article.proProfile.user?.name} has a {article.proProfile.rating || "5.0"}-star rating on Nexa.</p>
                       <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                         <Link href={`/${nicheSlug}/business-${article.proProfile.id}`}>
+                         <Link href={getProLink(article.proProfile)}>
                             <NexaButton size="lg">Book Now</NexaButton>
                          </Link>
-                         <Link href={`/${nicheSlug}/business-${article.proProfile.id}`}>
+                         <Link href={getProLink(article.proProfile)}>
                             <NexaButton variant="secondary" size="lg">View Full Profile</NexaButton>
                          </Link>
                       </div>
@@ -274,7 +276,7 @@ export default function ArticleDetailClient({ data }: { data: any }) {
                  <div className="space-y-6">
                     {relatedArticles.length > 0 ? (
                        relatedArticles.map((relArticle) => (
-                          <Link key={relArticle.id} href={`/${nicheSlug}/articles/${relArticle.id}`} className="block group">
+                          <Link key={relArticle.id} href={`/${nicheSlug}/articles/${getArticleSlug(relArticle)}`} className="block group">
                              <div className="aspect-video bg-slate-200 rounded-xl mb-3 overflow-hidden relative">
                                 <img 
                                    src={relArticle.image || getProImage(relArticle.proProfile?.specialties || "", relArticle.niche)} 

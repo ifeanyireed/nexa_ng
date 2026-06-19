@@ -14,7 +14,7 @@ import {
   Award,
   Info
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getProLink } from "@/lib/utils";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -129,7 +129,7 @@ export default function TrendingPage() {
                           {pro.verified && <ShieldCheck className="w-5 h-5 text-nexa-brand" />}
                           <span className="text-[10px] font-bold text-nexa-text-faint uppercase tracking-widest">{pro.verified ? "Nexa Verified" : "Active Member"}</span>
                        </div>
-                       <Link href={`/${pro.niche}/business-${pro.id}`}>
+                       <Link href={getProLink(pro)}>
                           <NexaButton size="sm" variant="secondary" rightIcon={<ArrowRight className="w-4 h-4" />}>View Profile</NexaButton>
                        </Link>
                     </div>

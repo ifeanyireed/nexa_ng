@@ -15,7 +15,7 @@ import {
   Tag,
   Info
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getProLink } from "@/lib/utils";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -172,7 +172,7 @@ export default function SubServicePage() {
                     </div>
 
                     {pros.map((pro, i) => (
-                       <Link href={`/${nicheSlug}/business-${pro.id}`} key={pro.id} className="block">
+                       <Link href={getProLink(pro)} key={pro.id} className="block">
                           <NexaCard variant="glass" className="p-0 overflow-hidden flex flex-col sm:flex-row group hover:border-nexa-brand/50 transition-colors">
                              <div className="sm:w-64 h-48 sm:h-auto bg-slate-200 relative flex-shrink-0">
                                 <img 

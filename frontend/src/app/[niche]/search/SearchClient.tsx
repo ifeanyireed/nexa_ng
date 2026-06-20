@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   MapPin, 
@@ -24,6 +24,8 @@ import Link from "next/link";
 export default function SearchClient({ data }: { data: any }) {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const params = useParams();
+  const nicheSlug = (params?.niche as string) || data.id;
   const query = searchParams.get("q") || "";
   
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -58,7 +60,7 @@ export default function SearchClient({ data }: { data: any }) {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    router.push(`/${data.id}/search?q=${encodeURIComponent(searchInput)}`);
+    router.push(`/${nicheSlug}/search?q=${encodeURIComponent(searchInput)}`);
   };
 
   return (

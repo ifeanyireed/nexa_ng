@@ -41,6 +41,12 @@ export async function generateStaticParams() {
         if (shortNiche) {
           paths.push({ niche: shortNiche, slug });
         }
+
+        // Also support specialty/service specific slugs in the URL
+        if (art.proProfile?.specialties) {
+          const specialtySlug = slugify(art.proProfile.specialties.split(",")[0]);
+          paths.push({ niche: specialtySlug, slug });
+        }
       });
     }
   } catch (error) {

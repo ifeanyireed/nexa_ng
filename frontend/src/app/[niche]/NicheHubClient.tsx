@@ -47,7 +47,7 @@ import {
   Sprout,
   Home
 } from "lucide-react";
-import { cn, getProImage, getProLink } from "@/lib/utils";
+import { cn, getProImage, getProLink, getArticleSlug } from "@/lib/utils";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -56,6 +56,7 @@ import { NexaRating } from "@/components/nexa/NexaRating";
 import { useNiche } from "@/components/nexa/NicheContext";
 import { api } from "@/lib/api";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 
 // --- HELPERS ---
 
@@ -106,7 +107,7 @@ const SectionHeader = ({ title, viewAll = true, href }: { title: string, viewAll
 
 // --- BUYER MODE SECTIONS ---
 
-const BuyerModeLayout = ({ data, activeSubService, setActiveSubService, pros, articles }: any) => {
+const BuyerModeLayout = ({ data, nicheSlug, activeSubService, setActiveSubService, pros, articles }: any) => {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -138,7 +139,7 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService, pros, ar
                 />
               </div>
               <div className="hidden md:block w-px h-8 bg-nexa-border" />
-              <Link href={`/${data.id}/near-me`} className="flex items-center gap-2 px-4 py-2 cursor-pointer hover:bg-white/10 rounded-xl transition-colors">
+              <Link href={`/${nicheSlug}/near-me`} className="flex items-center gap-2 px-4 py-2 cursor-pointer hover:bg-white/10 rounded-xl transition-colors">
                 <MapPin className="w-5 h-5 text-nexa-brand" />
                 <span className="text-sm font-medium whitespace-nowrap">Lekki, Lagos</span>
               </Link>
@@ -180,7 +181,7 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService, pros, ar
         <section>
           <SectionHeader 
             title={`Top Rated ${activeSubService.replace(" Finder", "s")} Near You`} 
-            href={`/${data.id}/search`} 
+            href={`/${nicheSlug}/search`} 
           />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {pros.filter((pro: any) => {
@@ -234,7 +235,7 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService, pros, ar
         </section>
 
         <section className="bg-nexa-brand/5 -mx-4 px-4 py-16 rounded-[40px] border border-nexa-brand/10">
-          <SectionHeader title="Available for Hire Right Now" href={`/${data.id}/available`} />
+          <SectionHeader title="Available for Hire Right Now" href={`/${nicheSlug}/available`} />
           <div className="-mx-4 px-4">
             <div className="flex gap-6 overflow-x-auto py-8 no-scrollbar snap-x snap-mandatory scroll-edge-fade">
               {pros.filter((p: any) => p.verified).map((pro: any) => (
@@ -269,10 +270,10 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService, pros, ar
         </section>
 
         <section>
-          <SectionHeader title={`${data.name} Supplies & Tools`} href={`/${data.id}/shop`} />
+          <SectionHeader title={`${data.name} Supplies & Tools`} href={`/${nicheSlug}/shop`} />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {data.products.map((product: any, i: number) => (
-              <Link href={`/${data.id}/shop/product-${i}`} key={i}>
+              <Link href={`/${nicheSlug}/shop/product-${i}`} key={i}>
                 <NexaCard variant="flat" padding="none" className="group cursor-pointer h-full flex flex-col">
                   <div className="aspect-square relative overflow-hidden bg-slate-100">
                     <img src={product.image} alt={product.name} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
@@ -293,14 +294,14 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService, pros, ar
         </section>
 
         <section>
-          <SectionHeader title="Expert Articles & Guides" href={`/${data.id}/articles`} />
+          <SectionHeader title="Expert Articles & Guides" href={`/${nicheSlug}/articles`} />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {articles && articles.length > 0 ? (
               articles.slice(0, 3).map((article: any) => {
                 const authorName = article.proProfile?.user?.name || "John Doe";
                 const initials = authorName.split(" ").map((n: any) => n[0]).join("").toUpperCase();
                 return (
-                  <Link href={`/${data.id}/articles/${getArticleSlug(article)}`} key={article.id}>
+                  <Link href={`/${nicheSlug}/articles/${getArticleSlug(article)}`} key={article.id}>
                     <div className="group cursor-pointer">
                       <div className="aspect-video bg-slate-200 rounded-2xl mb-4 overflow-hidden relative">
                         <img 
@@ -333,7 +334,7 @@ const BuyerModeLayout = ({ data, activeSubService, setActiveSubService, pros, ar
             ) : (
               // Fallback placeholders if loading or no articles seeded
               [0, 1, 2].map(i => (
-                <Link href={`/${data.id}/articles/article-${i}`} key={i}>
+                <Link href={`/${nicheSlug}/articles/article-${i}`} key={i}>
                   <div className="group cursor-pointer">
                     <div className="aspect-video bg-slate-200 rounded-2xl mb-4 overflow-hidden">
                       <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-400 group-hover:scale-105 transition-transform duration-500" />
@@ -500,6 +501,8 @@ const SellerModeLayout = ({ data }: any) => {
 
 export default function NicheHubClient({ data }: any) {
   const { mode, setCurrentNiche } = useNiche();
+  const params = useParams();
+  const nicheSlug = (params?.niche as string) || data.id;
   const [activeSubService, setActiveSubService] = useState(data.subServices[0]);
   const [pros, setPros] = useState<any[]>([]);
   const [loadingPros, setLoadingPros] = useState(true);
@@ -542,6 +545,7 @@ export default function NicheHubClient({ data }: any) {
           <BuyerModeLayout 
             key="buyer"
             data={data} 
+            nicheSlug={nicheSlug}
             activeSubService={activeSubService} 
             setActiveSubService={setActiveSubService} 
             pros={pros}

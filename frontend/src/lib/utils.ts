@@ -104,9 +104,9 @@ export function getArticleSlug(article: any): string {
 }
 
 export function getProLink(pro: any): string {
-  const niche = slugify(pro.niche || "niche");
+  const service = slugify(pro.specialties?.split(",")[0] || pro.niche || "service");
   const state = slugify(pro.city || "state");
   const lga = slugify(pro.area || "lga");
   const slug = getProSlug(pro);
-  return `/${niche}/${state}/${lga}/${slug}`;
+  return `/${service}/${state}/${lga}/${slug}`;
 }

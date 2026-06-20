@@ -18,13 +18,15 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import Link from "next/link";
 import { api } from "@/lib/api";
+import { useParams } from "next/navigation";
 
 export default function ArticlesClient({ data }: any) {
+  const params = useParams();
   const [articles, setArticles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const nicheSlug = data.id;
+  const nicheSlug = (params?.niche as string) || data.id;
 
   useEffect(() => {
     const fetchArticles = async () => {

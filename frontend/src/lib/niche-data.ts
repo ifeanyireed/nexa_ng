@@ -449,8 +449,7 @@ export const NICHE_DETAILS: Record<string, NicheData> = {
   }
 };
 
-export function getNicheData(slug: string): NicheData {
-  const normalized: Record<string, string> = {
+export const SPECIALTY_TO_NICHE_MAP: Record<string, string> = {
     "fashion": "fashion-grooming",
     "professionals": "professional-services",
     "education": "education-skills",
@@ -459,9 +458,89 @@ export function getNicheData(slug: string): NicheData {
     "logistics": "logistics-transport",
     "auto": "automotive-services",
     "food": "food-agribusiness",
-    "realestate": "real-estate-construction"
-  };
-  const targetKey = normalized[slug] || slug;
+    "realestate": "real-estate-construction",
+
+    // Home Services
+    "plumber": "home-services",
+    "electrician": "home-services",
+    "carpenter": "home-services",
+    "painter": "home-services",
+    "tiler": "home-services",
+    "welder": "home-services",
+    "solar-installer": "home-services",
+    "generator-repairer": "home-services",
+    "ac-technician": "home-services",
+    "borehole-driller": "home-services",
+    "inverter-repairer": "home-services",
+    "home-cleaner": "home-services",
+    "fumigator": "home-services",
+
+    // Fashion
+    "tailor": "fashion-grooming",
+    "barber": "fashion-grooming",
+    "hairdresser": "fashion-grooming",
+    "makeup-artist": "fashion-grooming",
+    "manicurist": "fashion-grooming",
+
+    // Professionals
+    "web-developer": "professional-services",
+    "uiux-designer": "professional-services",
+    "lawyer": "professional-services",
+    "accountant": "professional-services",
+    "copywriter": "professional-services",
+    "social-media-manager": "professional-services",
+    "model": "professional-services",
+    "voiceover-artist": "professional-services",
+    "voice-over-artist": "professional-services",
+
+    // Education
+    "home-tutor": "education-skills",
+    "music-instructor": "education-skills",
+    "driving-school": "education-skills",
+    "tech-skill-trainer": "education-skills",
+
+    // Events
+    "event-planner": "events-entertainment",
+    "decorator": "events-entertainment",
+    "dj": "events-entertainment",
+    "photographer": "events-entertainment",
+
+    // Health
+    "private-nurse": "health-wellness",
+    "physiotherapist": "health-wellness",
+    "gym-instructor": "health-wellness",
+    "yoga-teacher": "health-wellness",
+    "nanny": "health-wellness",
+    "elderly-companion": "health-wellness",
+
+    // Logistics
+    "professional-driver": "logistics-transport",
+    "towing-van": "logistics-transport",
+    "dispatch-rider": "logistics-transport",
+    "moving-service": "logistics-transport",
+
+    // Auto
+    "car-mechanic": "automotive-services",
+    "vulcanizer": "automotive-services",
+    "mobile-car-wash": "automotive-services",
+    "car-tracker-installer": "automotive-services",
+
+    // Food
+    "private-chef": "food-agribusiness",
+    "cake-maker": "food-agribusiness",
+    "cake-baker": "food-agribusiness",
+    "farm-manager": "food-agribusiness",
+    "veterinary-doctor": "food-agribusiness",
+
+    // Real Estate
+    "estate-agent": "real-estate-construction",
+    "facility-manager": "real-estate-construction",
+    "architect": "real-estate-construction",
+    "bricklayer": "real-estate-construction"
+};
+
+export function getNicheData(slug: string): NicheData {
+  const targetKey = SPECIALTY_TO_NICHE_MAP[slug] || slug;
   return NICHE_DETAILS[targetKey] || NICHE_DETAILS["home-services"];
 }
 
@@ -477,6 +556,10 @@ export function getAllNicheSlugs(): string[] {
     "food",
     "realestate"
   ];
-  return Array.from(new Set([...Object.keys(NICHE_DETAILS), ...shortSlugs]));
+  return Array.from(new Set([
+    ...Object.keys(NICHE_DETAILS),
+    ...shortSlugs,
+    ...Object.keys(SPECIALTY_TO_NICHE_MAP)
+  ]));
 }
 

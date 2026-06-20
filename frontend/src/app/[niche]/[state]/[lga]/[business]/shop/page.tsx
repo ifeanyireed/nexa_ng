@@ -19,7 +19,7 @@ export async function generateStaticParams() {
     if (res.ok) {
       const pros = await res.json();
       pros.forEach((pro: any) => {
-        const niche = slugify(pro.niche || "niche");
+        const niche = slugify(pro.specialties?.split(",")[0] || pro.niche || "service");
         const state = slugify(pro.city || "state");
         const lga = slugify(pro.area || "lga");
         const name = pro.user?.name || pro.businessName || "professional";

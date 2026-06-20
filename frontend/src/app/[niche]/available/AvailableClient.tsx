@@ -18,8 +18,11 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { api } from "@/lib/api";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 
 export default function AvailableClient({ data }: { data: any }) {
+  const params = useParams();
+  const nicheSlug = (params?.niche as string) || data.id;
   const [pros, setPros] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
@@ -269,7 +272,7 @@ export default function AvailableClient({ data }: { data: any }) {
                <p className="text-nexa-text-secondary mb-8 max-w-lg mx-auto">
                   You can still book any professional in the {data.name} niche and schedule a time that works for you.
                </p>
-               <Link href={`/${data.id}/search`}>
+               <Link href={`/${nicheSlug}/search`}>
                   <NexaButton size="lg" variant="secondary" rightIcon={<ArrowRight className="w-4 h-4" />}>
                      Browse All {data.name}
                   </NexaButton>

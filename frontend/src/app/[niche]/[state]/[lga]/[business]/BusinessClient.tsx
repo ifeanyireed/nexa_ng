@@ -99,7 +99,7 @@ export default function BusinessClient({ data, businessSlug }: BusinessClientPro
            </div>
            <h2 className="text-3xl font-extrabold text-display">Business Not Found</h2>
            <p className="text-nexa-text-secondary">The professional profile you are looking for does not exist or has been moved.</p>
-           <Link href={`/${nicheData.id}`}>
+           <Link href={`/${niche}`}>
               <NexaButton variant="secondary">Back to {nicheData.name}</NexaButton>
            </Link>
         </div>
@@ -139,11 +139,11 @@ export default function BusinessClient({ data, businessSlug }: BusinessClientPro
                         className="w-full h-full object-cover" 
                       />
                    </div>
-                   {pro.verified && (
-                      <div className="absolute -bottom-2 -right-2 z-20">
-                         <NexaVerifiedBadge size="lg" />
-                      </div>
-                   )}
+                    {pro.verified && (
+                       <div className="absolute -bottom-2 -right-2 z-20 scale-110">
+                          <NexaVerifiedBadge />
+                       </div>
+                    )}
                 </div>
                 
                 <div className="space-y-4 flex-1">

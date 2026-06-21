@@ -5,9 +5,9 @@ import BusinessClient from "./BusinessClient";
 export async function generateStaticParams() {
   const paths = [
     {
-      niche: "example-niche",
-      state: "example-state",
-      lga: "example-lga",
+      niche: "home-services",
+      state: "lagos",
+      lga: "lekki",
       business: "example-business"
     }
   ];
@@ -40,7 +40,9 @@ export async function generateStaticParams() {
   return uniquePaths;
 }
 
-export default function BusinessProfilePage({ params }: { params: { niche: string; state: string; lga: string; business: string } }) {
-  const data = getNicheData(params.niche);
-  return <BusinessClient data={data} businessSlug={params.business} />;
+export default async function BusinessProfilePage({ params }: { params: Promise<{ niche: string; state: string; lga: string; business: string }> }) {
+  const resolvedParams = await params;
+
+  const data = getNicheData(resolvedParams.niche);
+  return <BusinessClient data={data} businessSlug={resolvedParams.business} />;
 }

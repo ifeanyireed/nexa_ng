@@ -57,7 +57,9 @@ export async function generateStaticParams() {
   return uniquePaths;
 }
 
-export default function ArticleDetailPage({ params }: { params: { niche: string; slug: string } }) {
-  const data = getNicheData(params.niche);
+export default async function ArticleDetailPage({ params }: { params: Promise<{ niche: string; slug: string }> }) {
+  const resolvedParams = await params;
+
+  const data = getNicheData(resolvedParams.niche);
   return <ArticleDetailClient data={data} />;
 }

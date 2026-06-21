@@ -23,8 +23,18 @@ import Link from "next/link";
 
 export default function ArticleDetailClient({ data }: { data: any }) {
   const params = useParams();
-  const nicheSlug = params.niche as string;
-  const articleId = params.slug as string;
+  let nicheSlug = params.niche as string;
+  let articleId = params.slug as string;
+
+  if (typeof window !== "undefined") {
+    const parts = window.location.pathname.split("/").filter(Boolean);
+    if (!nicheSlug && parts.length > 0) {
+      nicheSlug = parts[0];
+    }
+    if (!articleId && parts.length === 3 && parts[1] === "articles") {
+      articleId = parts[2];
+    }
+  }
   
   const [article, setArticle] = useState<any>(null);
   const [relatedArticles, setRelatedArticles] = useState<any[]>([]);

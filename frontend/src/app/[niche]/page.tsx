@@ -8,8 +8,10 @@ export function generateStaticParams() {
   }));
 }
 
-export default function NicheHubPage({ params }: { params: { niche: string } }) {
-  const data = getNicheData(params.niche);
+export default async function NicheHubPage({ params }: { params: Promise<{ niche: string }> }) {
+  const resolvedParams = await params;
+
+  const data = getNicheData(resolvedParams.niche);
 
   return (
     <main className="bg-nexa-bg-base min-h-screen">

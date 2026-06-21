@@ -10,6 +10,8 @@ export function generateStaticParams() {
   return params;
 }
 
-export default function CategoryPage({ params }: { params: { niche: string; slug: string } }) {
+export default async function CategoryPage({ params }: { params: Promise<{ niche: string; slug: string }> }) {
+  const resolvedParams = await params;
+
   return <SubServiceClient />;
 }

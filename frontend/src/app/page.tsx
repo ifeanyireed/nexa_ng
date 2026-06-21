@@ -45,6 +45,7 @@ import { NexaRating } from "@/components/nexa/NexaRating";
 import { useNiche } from "@/components/nexa/NicheContext";
 import { LocationDropdown } from "@/components/nexa/LocationDropdown";
 import { useLocation } from "@/components/nexa/LocationContext";
+import { Footer } from "@/components/nexa/Footer";
 import { api } from "@/lib/api";
 
 // --- COMPONENTS ---
@@ -106,6 +107,7 @@ const HeroSection = () => {
       if (filter === "Verified") params.set("verified", "true");
       if (filter === "Accepts POS") params.set("accepts_pos", "true");
       if (filter === "Home Delivery") params.set("home_delivery", "true");
+      if (filter === "Near Me") params.set("near_me", "true");
     });
     const queryString = params.toString();
     router.push(queryString ? `/search?${queryString}` : `/search`);
@@ -195,7 +197,7 @@ const HeroSection = () => {
           </form>
 
           <div className="flex flex-wrap justify-start gap-2 mt-6">
-            {["Open Now", "Verified", "Accepts POS", "Home Delivery"].map((tag, i) => (
+            {["Open Now", "Verified", "Accepts POS", "Home Delivery", "Near Me"].map((tag, i) => (
               <motion.div
                 key={tag}
                 initial={{ opacity: 0, x: -10 }}
@@ -324,7 +326,7 @@ const CategoryGrid = () => {
   );
 };
 
-const BusinessCard = ({ name, category, rating, count, image, isVerified }: any) => {
+const BusinessCard = ({ name, category, rating, count, image, isVerified, city, area, email }: any) => {
   return (
     <motion.div whileHover={{ y: -8 }} transition={{ duration: 0.3 }}>
       <NexaCard variant="glass" padding="none" className="h-full group">
@@ -360,13 +362,38 @@ const BusinessCard = ({ name, category, rating, count, image, isVerified }: any)
               <span className="text-xs font-medium text-nexa-accent">Open Now</span>
             </div>
             <div className="flex items-center gap-2">
-              <button className="w-8 h-8 rounded-full liquid-glass flex items-center justify-center text-nexa-text-secondary hover:text-nexa-brand transition-colors">
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  window.location.href = "tel:+2348006392776";
+                }}
+                className="w-8 h-8 rounded-full liquid-glass flex items-center justify-center text-nexa-text-secondary hover:text-nexa-brand transition-colors"
+                title="Call Business"
+              >
                 <Phone className="w-3.5 h-3.5" />
               </button>
-              <button className="w-8 h-8 rounded-full liquid-glass flex items-center justify-center text-nexa-text-secondary hover:text-nexa-brand transition-colors">
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  window.location.href = `mailto:${encodeURIComponent(email || "contact@business.com")}?subject=${encodeURIComponent("Inquiry regarding " + category)}`;
+                }}
+                className="w-8 h-8 rounded-full liquid-glass flex items-center justify-center text-nexa-text-secondary hover:text-nexa-brand transition-colors"
+                title="Send Message"
+              >
                 <MessageSquare className="w-3.5 h-3.5" />
               </button>
-              <button className="w-8 h-8 rounded-full liquid-glass flex items-center justify-center text-nexa-text-secondary hover:text-nexa-brand transition-colors">
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const query = encodeURIComponent(`${name}, ${area || ""}, ${city || "Lagos"}, Nigeria`);
+                  window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, "_blank");
+                }}
+                className="w-8 h-8 rounded-full liquid-glass flex items-center justify-center text-nexa-text-secondary hover:text-nexa-brand transition-colors"
+                title="Get Directions"
+              >
                 <Navigation className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -420,6 +447,9 @@ const FeaturedSection = () => {
                   count={24}
                   image={getProImage(pro.specialties || "", pro.subService || "")}
                   isVerified={pro.verified}
+                  city={pro.city}
+                  area={pro.area}
+                  email={pro.user?.email}
                 />
               </Link>
             ))}
@@ -472,75 +502,45 @@ const HowItWorks = () => {
   );
 };
 
-const Footer = () => {
-  const socials = [
-    { icon: <Twitter className="w-5 h-5" />, href: "#" },
-    { icon: <Instagram className="w-5 h-5" />, href: "#" },
-    { icon: <Facebook className="w-5 h-5" />, href: "#" },
-    { icon: <Linkedin className="w-5 h-5" />, href: "#" },
-  ];
-
+const BusinessHero = () => {
   return (
-    <footer className="pt-24 pb-12 bg-nexa-bg-base border-t-2 border-nexa-brand/10">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-          <div className="col-span-1 md:col-span-1">
-            <div className="flex items-center gap-2 mb-6">
-              <img src="/logo.png" alt="Nexa Logo" className="w-8 h-8 object-contain" />
-              <span className="text-xl font-bold text-display">Nexa</span>
+    <section className="py-24 bg-nexa-bg-base text-nexa-text-primary overflow-hidden relative border-t border-nexa-border">
+      <div className="absolute inset-0 bg-gradient-to-tr from-nexa-brand/5 via-transparent to-transparent opacity-75 pointer-events-none" />
+      <div className="container mx-auto px-4 relative z-10">
+        <div className="max-w-5xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="inline-flex items-center gap-2 bg-nexa-brand/10 border border-nexa-brand/20 text-nexa-brand px-4 py-2 rounded-full mb-8 backdrop-blur-md mx-auto">
+               <Briefcase className="w-4 h-4 animate-pulse" />
+               <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Nexa for Business</span>
             </div>
-            <p className="text-nexa-text-secondary text-sm mb-6 leading-relaxed">
-              Nigeria's #1 business discovery and conversion platform. Empowering local businesses and consumers through technology.
+            <h2 className="text-4xl md:text-5xl font-extrabold mb-6 leading-tight tracking-tight">
+              Scale your business <br className="hidden sm:block" />
+              with <span className="text-nexa-brand">Nexa Enterprise</span>.
+            </h2>
+            <p className="text-base md:text-lg text-nexa-text-secondary mb-10 max-w-2xl mx-auto leading-relaxed">
+              Unlock priority discovery search, verified ratings, B2B CRM pipelines, custom APIs, and the verified Gold Badge.
             </p>
-            <div className="flex gap-4">
-              {socials.map((social, i) => (
-                <div key={i} className="w-10 h-10 rounded-full liquid-glass flex items-center justify-center cursor-pointer hover:bg-nexa-brand hover:text-white transition-all">
-                  {social.icon}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h4 className="font-bold mb-6 text-display tracking-widest uppercase text-[10px]">Company</h4>
-            <ul className="space-y-4 text-sm text-nexa-text-secondary">
-              <Link href="/about"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Our Story</li></Link>
-              <Link href="/contact"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Contact & Support</li></Link>
-              <Link href="/legal/privacy"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Privacy Policy</li></Link>
-              <Link href="/legal/terms"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Terms of Service</li></Link>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-bold mb-6 text-display tracking-widest uppercase text-[10px]">Business</h4>
-            <ul className="space-y-4 text-sm text-nexa-text-secondary">
-              <Link href="/join">
-                <li className="hover:text-nexa-brand cursor-pointer transition-colors font-bold text-nexa-brand">List your Business</li>
+            <div className="flex justify-center gap-4">
+              <Link href="/business">
+                <NexaButton size="lg" className="px-10 h-16 rounded-2xl bg-nexa-brand text-white hover:bg-nexa-brand/90 transition-all shadow-xl shadow-nexa-brand/20">
+                  Explore Business Solutions <ArrowRight className="w-4 h-4 ml-2 inline-block transition-transform group-hover:translate-x-1" />
+                </NexaButton>
               </Link>
-              <Link href="/business"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Enterprise Solutions</li></Link>
-              <Link href="/business"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Advertising</li></Link>
-              <Link href="/success-stories"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Success Stories</li></Link>
-            </ul>
-          </div>
-
-          <div>
-            <h4 className="font-bold mb-6">Newsletter</h4>
-            <p className="text-sm text-nexa-text-secondary mb-4">Get the best local deals and business tips delivered to you.</p>
-            <div className="flex gap-2">
-              <input type="email" placeholder="email@nexa.ng" className="flex-1 bg-nexa-bg-surface border border-nexa-border rounded-lg px-3 text-sm focus:outline-none focus:ring-2 focus:ring-nexa-brand-glow" />
-              <NexaButton size="sm">Join</NexaButton>
             </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-nexa-border text-xs text-nexa-text-faint">
-          <p>© 2026 Nexa Technologies. All rights reserved.</p>
-          <p className="mt-4 md:mt-0 flex items-center gap-1">Made with ❤️ for Nigeria 🇳🇬</p>
+          </motion.div>
         </div>
       </div>
-    </footer>
+    </section>
   );
 };
+
+
+
 
 // --- MAIN PAGE ---
 
@@ -556,6 +556,8 @@ export default function HomePage() {
       <FeaturedSection />
 
       <HowItWorks />
+
+      <BusinessHero />
 
       <section className="py-24 relative overflow-hidden">
         {/* Decorative Background Gradients */}

@@ -77,7 +77,7 @@ export const TechBottomNav = () => {
                   "p-2 rounded-2xl transition-all",
                   isActive && "bg-nexa-accent/10"
                 )}>
-                  {React.cloneElement(tab.icon as React.ReactElement, {
+                  {React.cloneElement(tab.icon as React.ReactElement<any>, {
                     className: cn("w-6 h-6", isActive ? "stroke-[2.5px]" : "stroke-[1.5px]"),
                   })}
                 </div>

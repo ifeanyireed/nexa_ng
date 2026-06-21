@@ -19,18 +19,21 @@ import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaInput } from "@/components/nexa/NexaInput";
+import { useLocation } from "@/components/nexa/LocationContext";
 import { api } from "@/lib/api";
 import Link from "next/link";
 
 function SearchContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { currentCity } = useLocation();
   const query = searchParams.get("q") || "";
   
   const openNow = searchParams.get("open_now") === "true";
   const verified = searchParams.get("verified") === "true";
   const acceptsPos = searchParams.get("accepts_pos") === "true";
   const homeDelivery = searchParams.get("home_delivery") === "true";
+  const nearMe = searchParams.get("near_me") === "true";
   
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [activeCategory, setActiveCategory] = useState("all");
@@ -61,6 +64,7 @@ function SearchContent() {
     if (verified) params.set("verified", "true");
     if (acceptsPos) params.set("accepts_pos", "true");
     if (homeDelivery) params.set("home_delivery", "true");
+    if (nearMe) params.set("near_me", "true");
     
     router.push(`/search?${params.toString()}`);
   };
@@ -94,6 +98,7 @@ function SearchContent() {
     if (openNow && !getProAvailability(pro.id)) return false;
     if (acceptsPos && !(pro.acceptsPos || pro.accepts_pos)) return false;
     if (homeDelivery && !(pro.homeDelivery || pro.home_delivery)) return false;
+    if (nearMe && pro.city && currentCity && pro.city.toLowerCase() !== currentCity.name.toLowerCase()) return false;
     return true;
   });
 

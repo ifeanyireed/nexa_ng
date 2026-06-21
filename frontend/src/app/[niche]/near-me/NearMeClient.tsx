@@ -17,6 +17,7 @@ import { getProLink } from "@/lib/utils";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
+import { useLocation } from "@/components/nexa/LocationContext";
 import { api } from "@/lib/api";
 import Link from "next/link";
 
@@ -58,6 +59,7 @@ const getCoordinates = (areaName: string, cityName: string, proId: string) => {
 };
 
 export default function NearMeClient({ data }: { data: any }) {
+  const { currentCity, currentArea, userCoords } = useLocation();
   const [radius, setRadius] = useState(5);
   const [pros, setPros] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -126,14 +128,39 @@ export default function NearMeClient({ data }: { data: any }) {
       mapInstanceRef.current = null;
     }
 
-    // Default map center (Lagos)
+    // Default map center (GPS userCoords if present, else city coordinates fallback)
+    const normCity = (currentCity?.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const normArea = (currentArea || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const baseCoords = AREA_COORDINATES[normArea] || AREA_COORDINATES[normCity] || [6.5244, 3.3792];
+    const mapCenter = userCoords || baseCoords;
+
     const map = L.map("leaflet-map-container", {
       zoomControl: false,
       attributionControl: false
-    }).setView([6.5244, 3.3792], 11);
+    }).setView(mapCenter, 13);
 
     mapInstanceRef.current = map;
     markersRef.current = {};
+
+    // Plot User GPS Dot if present
+    if (userCoords) {
+      const myLocationMarkerHtml = `
+        <div class="relative flex items-center justify-center">
+          <div class="w-6 h-6 rounded-full bg-blue-500/30 animate-ping absolute"></div>
+          <div class="w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-lg absolute"></div>
+          <div class="w-1.5 h-1.5 rounded-full bg-white absolute"></div>
+        </div>
+      `;
+      const myLocationIcon = L.divIcon({
+        html: myLocationMarkerHtml,
+        className: "my-location-marker",
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+      });
+      L.marker(userCoords, { icon: myLocationIcon })
+        .addTo(map)
+        .bindPopup("<div class='font-bold text-xs p-1 text-center text-blue-600'>Your current computer location</div>");
+    }
 
     // Add TileLayer (OpenStreetMap Hot Style tiles)
     L.tileLayer("https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png", {
@@ -145,11 +172,22 @@ export default function NearMeClient({ data }: { data: any }) {
       prefix: false
     }).addAttribution('&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors').addTo(map);
 
-    // Filtered list of pros
-    const filteredPros = pros.filter(pro => 
-      (pro.user?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (pro.specialties || "").toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Filtered list of pros: match search query & check city matching selected location
+    const local = pros.filter(pro => {
+      const matchesSearch = 
+        (pro.user?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (pro.specialties || "").toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCity = pro.city?.toLowerCase() === currentCity?.name?.toLowerCase();
+      return matchesSearch && matchesCity;
+    });
+
+    const hasLocal = local.length > 0;
+    const filteredPros = hasLocal 
+      ? local 
+      : pros.filter(pro => 
+          (pro.user?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (pro.specialties || "").toLowerCase().includes(searchQuery.toLowerCase())
+        );
 
     // Plot Markers
     const bounds: any[] = [];
@@ -218,7 +256,7 @@ export default function NearMeClient({ data }: { data: any }) {
     if (bounds.length > 0) {
       map.fitBounds(bounds, { padding: [50, 50] });
     }
-  }, [mapLoaded, loading, pros, searchQuery]);
+  }, [mapLoaded, loading, pros, searchQuery, currentCity, currentArea, userCoords]);
 
   // Center on selected professional
   const handleProClick = (pro: any) => {
@@ -251,10 +289,21 @@ export default function NearMeClient({ data }: { data: any }) {
     }
   };
 
-  const filteredPros = pros.filter(pro => 
-    (pro.user?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (pro.specialties || "").toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const localPros = pros.filter(pro => {
+    const matchesSearch = 
+      (pro.user?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (pro.specialties || "").toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCity = pro.city?.toLowerCase() === currentCity?.name?.toLowerCase();
+    return matchesSearch && matchesCity;
+  });
+
+  const hasLocal = localPros.length > 0;
+  const filteredPros = hasLocal 
+    ? localPros 
+    : pros.filter(pro => 
+        (pro.user?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (pro.specialties || "").toLowerCase().includes(searchQuery.toLowerCase())
+      );
 
   return (
     <main className="bg-nexa-bg-base min-h-screen pb-24 lg:pb-0">
@@ -297,48 +346,58 @@ export default function NearMeClient({ data }: { data: any }) {
                    <div className="inline-block w-6 h-6 border-2 border-nexa-brand border-t-transparent rounded-full animate-spin" />
                 </div>
               ) : (
-                filteredPros.map((pro, i) => (
-                  <div 
-                    key={pro.id} 
-                    id={`pro-card-${pro.id}`}
-                    onClick={() => handleProClick(pro)}
-                    className="block"
-                  >
-                    <NexaCard 
-                      variant={activePro?.id === pro.id ? "glass" : "interactive"} 
-                      className={`p-4 cursor-pointer group transition-all duration-300 ${activePro?.id === pro.id ? "border-nexa-brand ring-1 ring-nexa-brand/20 bg-nexa-brand/5" : ""}`}
+                <>
+                  {!hasLocal && (
+                    <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-600 rounded-xl text-xs flex items-start gap-2 mb-2 mx-1 animate-pulse">
+                      <Info className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                      <span>
+                        No professionals found in {currentCity.name} yet. Showing professionals from other locations:
+                      </span>
+                    </div>
+                  )}
+                  {filteredPros.map((pro, i) => (
+                    <div 
+                      key={pro.id} 
+                      id={`pro-card-${pro.id}`}
+                      onClick={() => handleProClick(pro)}
+                      className="block"
                     >
-                       <div className="flex gap-4">
-                          <div className={`w-16 h-16 rounded-2xl flex-shrink-0 overflow-hidden flex items-center justify-center font-bold transition-colors ${activePro?.id === pro.id ? "bg-nexa-brand text-white" : "bg-nexa-brand/10 text-nexa-brand"}`}>
-                             {pro.user?.name?.[0]}
-                          </div>
-                          <div className="flex-1">
-                             <div className="flex items-center justify-between mb-1">
-                                <h3 className="font-bold text-sm line-clamp-1 group-hover:text-nexa-brand transition-colors">{pro.user?.name}</h3>
-                                <div className="flex items-center gap-1 text-[10px] font-bold">
-                                   <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                                   <span>{pro.rating || '5.0'}</span>
-                                </div>
-                             </div>
-                             <p className="text-[10px] text-nexa-text-secondary mb-2">{(0.5 + i * 0.4).toFixed(1)}km • {pro.area || 'Lekki'}, {pro.city || 'Lagos'}</p>
-                             <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                   <NexaBadge variant="success" className="text-[9px] py-0">Available</NexaBadge>
-                                   <span className="text-[10px] text-nexa-text-faint font-bold uppercase tracking-tighter">Fast Response</span>
-                                </div>
-                                {activePro?.id === pro.id && (
-                                  <Link href={getProLink(pro)} onClick={(e) => e.stopPropagation()}>
-                                    <span className="text-xs font-bold text-nexa-brand flex items-center gap-1 hover:underline">
-                                      View Profile <ExternalLink className="w-3 h-3" />
-                                    </span>
-                                  </Link>
-                                )}
-                             </div>
-                          </div>
-                       </div>
-                    </NexaCard>
-                  </div>
-                ))
+                      <NexaCard 
+                        variant={activePro?.id === pro.id ? "glass" : "interactive"} 
+                        className={`p-4 cursor-pointer group transition-all duration-300 ${activePro?.id === pro.id ? "border-nexa-brand ring-1 ring-nexa-brand/20 bg-nexa-brand/5" : ""}`}
+                      >
+                         <div className="flex gap-4">
+                            <div className={`w-16 h-16 rounded-2xl flex-shrink-0 overflow-hidden flex items-center justify-center font-bold transition-colors ${activePro?.id === pro.id ? "bg-nexa-brand text-white" : "bg-nexa-brand/10 text-nexa-brand"}`}>
+                               {pro.user?.name?.[0]}
+                            </div>
+                            <div className="flex-1">
+                               <div className="flex items-center justify-between mb-1">
+                                  <h3 className="font-bold text-sm line-clamp-1 group-hover:text-nexa-brand transition-colors">{pro.user?.name}</h3>
+                                  <div className="flex items-center gap-1 text-[10px] font-bold">
+                                     <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
+                                     <span>{pro.rating || '5.0'}</span>
+                                   </div>
+                               </div>
+                               <p className="text-[10px] text-nexa-text-secondary mb-2">{(0.5 + i * 0.4).toFixed(1)}km • {pro.area || 'Lekki'}, {pro.city || 'Lagos'}</p>
+                               <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                     <NexaBadge variant="success" className="text-[9px] py-0">Available</NexaBadge>
+                                     <span className="text-[10px] text-nexa-text-faint font-bold uppercase tracking-tighter">Fast Response</span>
+                                  </div>
+                                  {activePro?.id === pro.id && (
+                                    <Link href={getProLink(pro)} onClick={(e) => e.stopPropagation()}>
+                                      <span className="text-xs font-bold text-nexa-brand flex items-center gap-1 hover:underline">
+                                        View Profile <ExternalLink className="w-3 h-3" />
+                                      </span>
+                                    </Link>
+                                  )}
+                               </div>
+                            </div>
+                         </div>
+                      </NexaCard>
+                    </div>
+                  ))}
+                </>
               )}
               {!loading && filteredPros.length === 0 && (
                 <div className="py-12 text-center text-nexa-text-faint italic px-6">

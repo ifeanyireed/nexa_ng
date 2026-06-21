@@ -8,10 +8,12 @@ export function generateStaticParams() {
   }));
 }
 
-export default function NicheShopPage({ params }: { params: { niche: string } }) {
-  const data = getNicheData(params.niche);
+export default async function NicheShopPage({ params }: { params: Promise<{ niche: string }> }) {
+  const resolvedParams = await params;
+
+  const data = getNicheData(resolvedParams.niche);
 
   return (
-    <ShopClient data={data} nicheSlug={params.niche} />
+    <ShopClient data={data} nicheSlug={resolvedParams.niche} />
   );
 }

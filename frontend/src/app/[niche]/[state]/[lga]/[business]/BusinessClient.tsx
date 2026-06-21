@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   MapPin, 
@@ -37,6 +37,42 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { getNicheData } from "@/lib/niche-data";
 
+// Mapping of areas to base coordinates in Nigeria
+const AREA_COORDINATES: Record<string, [number, number]> = {
+  // Lagos
+  "ikeja": [6.6018, 3.3515],
+  "lekki": [6.4281, 3.4219],
+  "surulere": [6.5059, 3.3619],
+  "yaba": [6.5095, 3.3711],
+  "victoriaisland": [6.4281, 3.4219],
+  "ikoyi": [6.4549, 3.4410],
+  // Abuja
+  "garki": [9.0238, 7.4831],
+  "wuse": [9.0683, 7.4789],
+  "maitama": [9.0913, 7.5028],
+  // Fallbacks
+  "lagos": [6.5244, 3.3792],
+  "abuja": [9.0578, 7.4951]
+};
+
+const getCoordinates = (areaName: string, cityName: string, proId: string) => {
+  const normArea = (areaName || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const normCity = (cityName || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  
+  let baseCoords = AREA_COORDINATES[normArea] || AREA_COORDINATES[normCity] || [6.5244, 3.3792];
+  
+  // Deterministic offset based on proId string hash
+  let hash = 0;
+  const str = proId || "";
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const latOffset = ((hash & 0xFF) / 255 - 0.5) * 0.008;
+  const lngOffset = (((hash >> 8) & 0xFF) / 255 - 0.5) * 0.008;
+  
+  return [baseCoords[0] + latOffset, baseCoords[1] + lngOffset] as [number, number];
+};
+
 interface BusinessClientProps {
   data: any;
   businessSlug: string;
@@ -52,6 +88,85 @@ export default function BusinessClient({ data, businessSlug }: BusinessClientPro
   const [loading, setLoading] = useState(true);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedService, setSelectedService] = useState<any>(null);
+
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const mapInstanceRef = useRef<any>(null);
+
+  // Dynamic Leaflet Injection (build-safe)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    // Load Leaflet CSS
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+    link.integrity = "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
+    link.crossOrigin = "";
+    document.head.appendChild(link);
+
+    // Load Leaflet JS
+    const script = document.createElement("script");
+    script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+    script.integrity = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
+    script.crossOrigin = "";
+    script.async = true;
+    script.onload = () => {
+      setMapLoaded(true);
+    };
+    document.head.appendChild(script);
+
+    return () => {
+      document.head.removeChild(link);
+      document.head.removeChild(script);
+    };
+  }, []);
+
+  // Initialize leaf map centered at pro coordinates
+  useEffect(() => {
+    if (!mapLoaded || !pro) return;
+    const L = (window as any).L;
+    if (!L) return;
+
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.remove();
+      mapInstanceRef.current = null;
+    }
+
+    const coords = getCoordinates(pro.area, pro.city, pro.id);
+    const map = L.map("profile-map-container", {
+      zoomControl: true,
+      attributionControl: false
+    }).setView(coords, 14);
+
+    mapInstanceRef.current = map;
+
+    // Hot style map tiles
+    L.tileLayer("https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png", {
+      maxZoom: 19
+    }).addTo(map);
+
+    const markerHtml = `
+      <div class="relative flex items-center justify-center">
+        <div class="absolute -top-7 w-9 h-9 rounded-full bg-nexa-brand text-white border-2 border-white flex items-center justify-center shadow-xl font-extrabold text-xs select-none">
+          ${(pro.user?.name || "P")[0]}
+        </div>
+        <div class="w-3.5 h-3.5 rounded-full bg-nexa-brand border-2 border-white shadow-md animate-ping absolute top-0"></div>
+        <div class="w-3.5 h-3.5 rounded-full bg-nexa-brand border-2 border-white shadow-md absolute top-0"></div>
+      </div>
+    `;
+
+    const customIcon = L.divIcon({
+      html: markerHtml,
+      className: "custom-leaflet-marker",
+      iconSize: [36, 36],
+      iconAnchor: [18, 18]
+    });
+
+    L.marker(coords, { icon: customIcon })
+      .addTo(map)
+      .bindPopup(`<div class='font-bold text-xs p-1 text-center text-nexa-brand'>${pro.user?.name || "Business Location"}</div>`)
+      .openPopup();
+  }, [mapLoaded, pro]);
 
   const proId = businessSlug.includes("business-") 
     ? businessSlug.split("business-")[1] 
@@ -281,6 +396,25 @@ export default function BusinessClient({ data, businessSlug }: BusinessClientPro
             {/* RIGHT COLUMN: SIDEBAR */}
             <aside className="space-y-8">
                
+               {/* MAP VIEW */}
+               <NexaCard className="p-8 space-y-4">
+                  <div className="flex items-center gap-3">
+                     <MapPin className="w-6 h-6 text-nexa-brand" />
+                     <h3 className="font-bold">Business Location</h3>
+                  </div>
+                  <p className="text-xs text-nexa-text-secondary leading-relaxed">
+                     {pro.area ? `${pro.area}, ` : ""}{pro.city || "Lagos"}, Nigeria
+                  </p>
+                  <div className="h-64 rounded-2xl overflow-hidden relative border border-nexa-border bg-[#e5e7eb]">
+                     <div id="profile-map-container" className="w-full h-full z-10" />
+                     {!mapLoaded && (
+                        <div className="absolute inset-0 bg-[#e5e7eb] flex items-center justify-center z-20">
+                           <div className="inline-block w-6 h-6 border-2 border-nexa-brand border-t-transparent rounded-full animate-spin" />
+                        </div>
+                     )}
+                  </div>
+               </NexaCard>
+
                {/* PRICING & CTA CARD */}
                <NexaCard className="p-8 border-nexa-brand/20 bg-nexa-bg-surface sticky top-32 z-10">
                   <div className="flex items-center justify-between mb-6">

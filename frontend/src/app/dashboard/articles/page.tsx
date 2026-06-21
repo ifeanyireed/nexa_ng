@@ -93,7 +93,7 @@ export default function ArticleManagerPage() {
            <NexaCard key={i} variant="glass" className="p-6">
               <div className="flex items-center justify-between mb-4">
                  <div className="w-10 h-10 rounded-xl bg-nexa-bg-base flex items-center justify-center">
-                    {React.cloneElement(stat.icon as React.ReactElement, { className: "w-5 h-5" })}
+                    {React.cloneElement(stat.icon as React.ReactElement<any>, { className: "w-5 h-5" })}
                  </div>
                  <span className="text-[10px] font-extrabold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">{stat.change}</span>
               </div>

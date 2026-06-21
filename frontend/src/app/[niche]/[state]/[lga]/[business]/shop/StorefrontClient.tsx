@@ -32,16 +32,23 @@ import { api } from "@/lib/api";
 
 export default function StorefrontClient({ data }: { data: any }) {
   const params = useParams();
-  const businessSlug = params.business as string;
+  let businessSlug = params.business as string;
   
+  if (!businessSlug && typeof window !== "undefined") {
+    const parts = window.location.pathname.split("/").filter(Boolean);
+    if (parts.length === 5 && parts[4] === "shop") {
+      businessSlug = parts[3];
+    }
+  }
+
   const [pro, setPro] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState<any[]>([]);
 
-  const proId = businessSlug.includes("business-") 
-    ? businessSlug.split("business-")[1] 
-    : businessSlug;
+  const proId = (businessSlug || "").includes("business-") 
+    ? (businessSlug || "").split("business-")[1] 
+    : (businessSlug || "");
 
   useEffect(() => {
     const fetchPro = async () => {

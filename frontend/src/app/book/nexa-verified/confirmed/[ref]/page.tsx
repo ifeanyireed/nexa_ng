@@ -5,6 +5,8 @@ export function generateStaticParams() {
   return [{ ref: 'example' }];
 }
 
-export default function ConfirmationPage({ params }: { params: { ref: string } }) {
-  return <ConfirmationClient refId={params.ref} />;
+export default async function ConfirmationPage({ params }: { params: Promise<{ ref: string }> }) {
+  const resolvedParams = await params;
+
+  return <ConfirmationClient refId={resolvedParams.ref} />;
 }

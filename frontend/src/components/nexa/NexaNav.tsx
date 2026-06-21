@@ -154,7 +154,7 @@ export const NexaBottomBar = () => {
                   activeTab === i ? "text-nexa-brand" : "text-nexa-text-faint"
                 )}
               >
-                {React.cloneElement(tab.icon as React.ReactElement, {
+                {React.cloneElement(tab.icon as React.ReactElement<any>, {
                   className: "w-6 h-6",
                 })}
                 {activeTab === i && (

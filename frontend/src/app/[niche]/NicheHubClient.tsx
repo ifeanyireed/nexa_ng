@@ -54,6 +54,7 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaRating } from "@/components/nexa/NexaRating";
 import { useNiche } from "@/components/nexa/NicheContext";
+import { useLocation } from "@/components/nexa/LocationContext";
 import { api } from "@/lib/api";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -108,6 +109,7 @@ const SectionHeader = ({ title, viewAll = true, href }: { title: string, viewAll
 // --- BUYER MODE SECTIONS ---
 
 const BuyerModeLayout = ({ data, nicheSlug, activeSubService, setActiveSubService, pros, articles }: any) => {
+  const { currentCity, currentArea } = useLocation();
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -126,7 +128,7 @@ const BuyerModeLayout = ({ data, nicheSlug, activeSubService, setActiveSubServic
             <NexaBadge variant="neutral" className="mb-4">{data.name}</NexaBadge>
             <h1 className="text-4xl md:text-6xl font-extrabold text-display mb-8 leading-tight">
               {data.heroTitle} <br />
-              <span className={cn("text-nexa-brand", `text-${data.id}`)}>{data.name} in Lagos.</span>
+              <span className={cn("text-nexa-brand", `text-${data.id}`)}>{data.name} in {currentCity.name}.</span>
             </h1>
 
             <div className="liquid-glass p-2 rounded-2xl flex flex-col md:flex-row items-stretch md:items-center gap-2 shadow-xl border border-white/20">
@@ -140,8 +142,10 @@ const BuyerModeLayout = ({ data, nicheSlug, activeSubService, setActiveSubServic
               </div>
               <div className="hidden md:block w-px h-8 bg-nexa-border" />
               <Link href={`/${nicheSlug}/near-me`} className="flex items-center gap-2 px-4 py-2 cursor-pointer hover:bg-white/10 rounded-xl transition-colors">
-                <MapPin className="w-5 h-5 text-nexa-brand" />
-                <span className="text-sm font-medium whitespace-nowrap">Lekki, Lagos</span>
+                <MapPin className="w-5 h-5 text-nexa-brand animate-pulse" />
+                <span className="text-sm font-bold whitespace-nowrap">
+                  {currentArea ? `${currentArea}, ` : ""}{currentCity.name}
+                </span>
               </Link>
               <NexaButton size="lg" className="rounded-xl shadow-lg shadow-nexa-brand/20">
                 Search
@@ -183,89 +187,127 @@ const BuyerModeLayout = ({ data, nicheSlug, activeSubService, setActiveSubServic
             title={`Top Rated ${activeSubService.replace(" Finder", "s")} Near You`} 
             href={`/${nicheSlug}/search`} 
           />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="space-y-6">
             {pros.filter((pro: any) => {
               const serviceKeyword = activeSubService.replace(" Finder", "");
-              return pro.specialties?.toLowerCase().includes(serviceKeyword.toLowerCase());
-            }).length > 0 ? (
-              pros.filter((pro: any) => {
-                const serviceKeyword = activeSubService.replace(" Finder", "");
-                return pro.specialties?.toLowerCase().includes(serviceKeyword.toLowerCase());
-              }).map((pro: any) => (
-                <Link href={getProLink(pro)} key={pro.id}>
-                  <NexaCard variant="glass" className="p-0 overflow-hidden group">
-                    <div className="relative h-48 bg-slate-200 overflow-hidden">
-                      <img 
-                        src={getProImage(pro.specialties, pro.subService)} 
-                        alt={pro.user?.name} 
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
-                      />
-                      <div className="absolute top-3 right-3 z-10">
-                        {pro.verified && <NexaBadge variant="verified">Verified</NexaBadge>}
-                      </div>
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
-                      <div className="absolute bottom-3 left-3 flex items-center gap-2 z-20">
-                        <NexaRating value={pro.rating} />
-                        <span className="text-white text-xs font-bold">(24 reviews)</span>
-                      </div>
-                    </div>
-                    <div className="p-5">
-                      <h3 className="text-lg font-bold mb-1">{pro.user?.name || "Professional"}</h3>
-                      <div className="flex items-center gap-2 text-nexa-text-secondary text-xs mb-4">
-                        <MapPin className="w-3 h-3" />
-                        <span>Lagos</span>
-                        <span className="mx-1">•</span>
-                        <Clock className="w-3 h-3" />
-                        <span className="text-emerald-500 font-bold">Fast response</span>
-                      </div>
-                      <div className="flex items-center justify-between pt-4 border-t border-nexa-border">
-                        <span className="text-xs font-bold text-nexa-brand uppercase tracking-wider">Available Today</span>
-                        <NexaButton variant="ghost" size="sm" className="h-8 px-0 text-nexa-brand">Book Now</NexaButton>
-                      </div>
-                    </div>
-                  </NexaCard>
-                </Link>
-              ))
-            ) : (
-              <div className="col-span-3 py-12 text-center text-nexa-text-faint italic">
-                No professionals found in this category yet.
+              const matchesService = pro.specialties?.toLowerCase().includes(serviceKeyword.toLowerCase());
+              const matchesCity = pro.city?.toLowerCase() === currentCity.name.toLowerCase();
+              return matchesService && matchesCity;
+            }).length === 0 && (
+              <div className="p-4 bg-amber-500/10 border border-amber-500/20 text-amber-600 rounded-2xl text-sm flex items-center gap-3">
+                <ShieldCheck className="w-5 h-5 text-amber-500 flex-shrink-0" />
+                <span>
+                  No local {activeSubService.replace(" Finder", "s")} found in {currentCity.name} yet. Showing top rated professionals from other locations:
+                </span>
               </div>
             )}
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {(() => {
+                const serviceKeyword = activeSubService.replace(" Finder", "");
+                const local = pros.filter((pro: any) => {
+                  const matchesService = pro.specialties?.toLowerCase().includes(serviceKeyword.toLowerCase());
+                  const matchesCity = pro.city?.toLowerCase() === currentCity.name.toLowerCase();
+                  return matchesService && matchesCity;
+                });
+                
+                const listToRender = local.length > 0 
+                  ? local 
+                  : pros.filter((pro: any) => pro.specialties?.toLowerCase().includes(serviceKeyword.toLowerCase()));
+
+                return listToRender.length > 0 ? (
+                  listToRender.map((pro: any) => (
+                    <Link href={getProLink(pro)} key={pro.id}>
+                      <NexaCard variant="glass" className="p-0 overflow-hidden group">
+                        <div className="relative h-48 bg-slate-200 overflow-hidden">
+                          <img 
+                            src={getProImage(pro.specialties, pro.subService)} 
+                            alt={pro.user?.name} 
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                          />
+                          <div className="absolute top-3 right-3 z-10">
+                            {pro.verified && <NexaBadge variant="verified">Verified</NexaBadge>}
+                          </div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
+                          <div className="absolute bottom-3 left-3 flex items-center gap-2 z-20">
+                            <NexaRating value={pro.rating} />
+                            <span className="text-white text-xs font-bold">(24 reviews)</span>
+                          </div>
+                        </div>
+                        <div className="p-5">
+                          <h3 className="text-lg font-bold mb-1">{pro.user?.name || "Professional"}</h3>
+                          <div className="flex items-center gap-2 text-nexa-text-secondary text-xs mb-4">
+                            <MapPin className="w-3 h-3" />
+                            <span>{pro.city || "Lagos"}{pro.area ? `, ${pro.area}` : ""}</span>
+                            <span className="mx-1">•</span>
+                            <Clock className="w-3 h-3" />
+                            <span className="text-emerald-500 font-bold">Fast response</span>
+                          </div>
+                          <div className="flex items-center justify-between pt-4 border-t border-nexa-border">
+                            <span className="text-xs font-bold text-nexa-brand uppercase tracking-wider">Available Today</span>
+                            <NexaButton variant="ghost" size="sm" className="h-8 px-0 text-nexa-brand">Book Now</NexaButton>
+                          </div>
+                        </div>
+                      </NexaCard>
+                    </Link>
+                  ))
+                ) : (
+                  <div className="col-span-3 py-12 text-center text-nexa-text-faint italic">
+                    No professionals found in this category yet.
+                  </div>
+                );
+              })()}
+            </div>
           </div>
         </section>
 
         <section className="bg-nexa-brand/5 -mx-4 px-4 py-16 rounded-[40px] border border-nexa-brand/10">
           <SectionHeader title="Available for Hire Right Now" href={`/${nicheSlug}/available`} />
           <div className="-mx-4 px-4">
-            <div className="flex gap-6 overflow-x-auto py-8 no-scrollbar snap-x snap-mandatory scroll-edge-fade">
-              {pros.filter((p: any) => p.verified).map((pro: any) => (
-                <div key={pro.id} className="flex-shrink-0 w-72 snap-start">
-                  <NexaCard variant="glass" className="bg-white/80 dark:bg-slate-900/80 shadow-xl border-none">
-                    <div className="flex items-center gap-4 mb-4">
-                    <div className="w-14 h-14 rounded-full bg-nexa-brand/10 border border-nexa-brand/20 flex items-center justify-center text-nexa-brand font-bold text-xl">
-                      {pro.user?.name?.[0] || "P"}
-                    </div>
-                    <div>
-                      <h4 className="font-bold">{pro.user?.name}</h4>
-                      <div className="flex items-center gap-1 text-[10px] text-nexa-text-faint uppercase font-bold">
-                        <Zap className="w-3 h-3 fill-amber-500 text-amber-500" />
-                        <span>Instant Booking</span>
+            {(() => {
+              const localVerified = pros.filter((p: any) => p.verified && p.city?.toLowerCase() === currentCity.name.toLowerCase());
+              const hasLocal = localVerified.length > 0;
+              const listToRender = hasLocal ? localVerified : pros.filter((p: any) => p.verified);
+
+              return (
+                <div className="space-y-4">
+                  {!hasLocal && (
+                    <p className="text-sm text-nexa-text-secondary px-4 italic">
+                      No verified professionals found in {currentCity.name} right now. Showing professionals from other areas:
+                    </p>
+                  )}
+                  <div className="flex gap-6 overflow-x-auto py-8 no-scrollbar snap-x snap-mandatory scroll-edge-fade">
+                    {listToRender.map((pro: any) => (
+                      <div key={pro.id} className="flex-shrink-0 w-72 snap-start">
+                        <NexaCard variant="glass" className="bg-white/80 dark:bg-slate-900/80 shadow-xl border-none">
+                          <div className="flex items-center gap-4 mb-4">
+                            <div className="w-14 h-14 rounded-full bg-nexa-brand/10 border border-nexa-brand/20 flex items-center justify-center text-nexa-brand font-bold text-xl">
+                              {pro.user?.name?.[0] || "P"}
+                            </div>
+                            <div>
+                              <h4 className="font-bold">{pro.user?.name}</h4>
+                              <div className="flex items-center gap-1 text-[10px] text-nexa-text-faint uppercase font-bold">
+                                <Zap className="w-3 h-3 fill-amber-500 text-amber-500" />
+                                <span>Instant Booking • {pro.city || "Lagos"}{pro.area ? `, ${pro.area}` : ""}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-xs text-nexa-text-secondary line-clamp-2 mb-4">
+                            {pro.bio || "Available for high-quality service."}
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <NexaBadge variant="neutral" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+                              Available Today
+                            </NexaBadge>
+                            <NexaButton size="sm" className="h-8">Hire</NexaButton>
+                          </div>
+                        </NexaCard>
                       </div>
-                    </div>
+                    ))}
                   </div>
-                  <p className="text-xs text-nexa-text-secondary line-clamp-2 mb-4">
-                    {pro.bio || "Available for high-quality service."}
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <NexaBadge variant="neutral" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
-                      Available Today
-                    </NexaBadge>
-                    <NexaButton size="sm" className="h-8">Hire</NexaButton>
-                  </div>
-                </NexaCard>
-              </div>
-            ))}
-          </div>
+                </div>
+              );
+            })()}
           </div>
         </section>
 
@@ -344,7 +386,7 @@ const BuyerModeLayout = ({ data, nicheSlug, activeSubService, setActiveSubServic
                       <span className="text-[10px] text-nexa-text-faint font-bold uppercase">5 min read</span>
                     </div>
                     <h3 className="text-lg font-bold mb-2 group-hover:text-nexa-brand transition-colors line-clamp-2">
-                      How to choose the best {activeSubService.replace(" Finder", "")} for your project in Lagos
+                      How to choose the best {activeSubService.replace(" Finder", "")} for your project in {currentCity.name}
                     </h3>
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full bg-nexa-brand/10 flex items-center justify-center text-[10px] font-bold">JD</div>
@@ -359,28 +401,45 @@ const BuyerModeLayout = ({ data, nicheSlug, activeSubService, setActiveSubServic
 
         <section className="py-12 border-y border-nexa-border">
           <SectionHeader title="Verified Excellence" viewAll={false} />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {pros.filter((p: any) => p.verified).slice(0, 2).map((pro: any) => (
-              <NexaCard key={pro.id} variant="glass" className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-                <div className="w-24 h-24 rounded-2xl bg-nexa-brand/10 flex items-center justify-center relative flex-shrink-0">
-                  <ShieldCheck className="w-12 h-12 text-nexa-brand" />
-                  <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-500 rounded-full border-4 border-white dark:border-slate-900 flex items-center justify-center">
-                    <CheckCircle2 className="w-4 h-4 text-white" />
-                  </div>
+          {(() => {
+            const localExcellent = pros.filter((p: any) => p.verified && p.city?.toLowerCase() === currentCity.name.toLowerCase());
+            const hasLocal = localExcellent.length > 0;
+            const listToRender = (hasLocal ? localExcellent : pros.filter((p: any) => p.verified)).slice(0, 2);
+
+            return (
+              <div className="space-y-4">
+                {!hasLocal && (
+                  <p className="text-sm text-nexa-text-secondary italic">
+                    No verified excellence found in {currentCity.name} yet. Showing featured professionals:
+                  </p>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {listToRender.map((pro: any) => (
+                    <NexaCard key={pro.id} variant="glass" className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                      <div className="w-24 h-24 rounded-2xl bg-nexa-brand/10 flex items-center justify-center relative flex-shrink-0">
+                        <ShieldCheck className="w-12 h-12 text-nexa-brand" />
+                        <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-emerald-500 rounded-full border-4 border-white dark:border-slate-900 flex items-center justify-center">
+                          <CheckCircle2 className="w-4 h-4 text-white" />
+                        </div>
+                      </div>
+                      <div className="text-center sm:text-left flex-1">
+                        <h3 className="text-xl font-bold mb-1">{pro.user?.name}</h3>
+                        <p className="text-sm text-nexa-text-secondary mb-3">
+                          {pro.rating} rating • {pro.city || "Lagos"}{pro.area ? `, ${pro.area}` : ""} • Professional on Nexa
+                        </p>
+                        <div className="flex items-center justify-center sm:justify-start gap-3">
+                          <Link href={getProLink(pro)}>
+                            <NexaButton size="sm" variant="secondary">View Profile</NexaButton>
+                          </Link>
+                          <span className="text-xs font-bold text-emerald-500">Highly Recommended</span>
+                        </div>
+                      </div>
+                    </NexaCard>
+                  ))}
                 </div>
-                <div className="text-center sm:text-left">
-                  <h3 className="text-xl font-bold mb-1">{pro.user?.name}</h3>
-                  <p className="text-sm text-nexa-text-secondary mb-3">{pro.rating} rating • CAC Verified • Professional on Nexa</p>
-                  <div className="flex items-center justify-center sm:justify-start gap-3">
-                    <Link href={getProLink(pro)}>
-                      <NexaButton size="sm" variant="secondary">View Profile</NexaButton>
-                    </Link>
-                    <span className="text-xs font-bold text-emerald-500">Highly Recommended</span>
-                  </div>
-                </div>
-              </NexaCard>
-            ))}
-          </div>
+              </div>
+            );
+          })()}
         </section>
       </div>
     </motion.div>

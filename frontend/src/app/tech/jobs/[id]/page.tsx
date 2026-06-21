@@ -5,6 +5,8 @@ export function generateStaticParams() {
     return [{ id: 'example' }];
 }
 
-export default function JobDetailsPage({ params }: { params: { id: string } }) {
-    return <JobDetailsClient id={params.id} />;
+export default async function JobDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+
+    return <JobDetailsClient id={resolvedParams.id} />;
 }

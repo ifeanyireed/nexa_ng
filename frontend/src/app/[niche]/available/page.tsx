@@ -8,8 +8,10 @@ export function generateStaticParams() {
   }));
 }
 
-export default function AvailableNowPage({ params }: { params: { niche: string } }) {
-  const data = getNicheData(params.niche);
+export default async function AvailableNowPage({ params }: { params: Promise<{ niche: string }> }) {
+  const resolvedParams = await params;
+
+  const data = getNicheData(resolvedParams.niche);
 
   return (
     <AvailableClient data={data} />

@@ -5,6 +5,8 @@ export function generateStaticParams() {
   return [{ ref: 'example' }];
 }
 
-export default function SupportDisputePage({ params }: { params: { ref: string } }) {
-  return <SupportDisputeClient refId={params.ref} />;
+export default async function SupportDisputePage({ params }: { params: Promise<{ ref: string }> }) {
+  const resolvedParams = await params;
+
+  return <SupportDisputeClient refId={resolvedParams.ref} />;
 }

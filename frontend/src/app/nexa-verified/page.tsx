@@ -144,7 +144,7 @@ export default function NexaVerifiedLanding() {
               className="liquid-glass p-8 rounded-2xl group hover:border-nexa-amber/30 transition-all"
             >
               <div className="w-12 h-12 rounded-xl bg-nexa-amber/10 flex items-center justify-center text-nexa-amber mb-6 group-hover:scale-110 transition-transform">
-                {React.cloneElement(pillar.icon as React.ReactElement, { className: "w-6 h-6" })}
+                {React.cloneElement(pillar.icon as React.ReactElement<any>, { className: "w-6 h-6" })}
               </div>
               <h3 className="text-xl font-extrabold mb-4 text-display">{pillar.title}</h3>
               <p className="text-sm text-nexa-text-secondary leading-relaxed">{pillar.body}</p>

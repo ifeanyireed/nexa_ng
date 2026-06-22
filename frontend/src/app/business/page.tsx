@@ -328,7 +328,7 @@ export default function BusinessSolutionsPage() {
                     </div>
 
                     <div className="mb-8 flex items-baseline gap-1 bg-nexa-bg-base/40 p-4 rounded-2xl border border-nexa-border/30">
-                      <span className="text-3xl md:text-4xl font-black tracking-tight">
+                      <span className="text-2xl md:text-3xl font-black tracking-tight">
                         {formatPrice(price)}
                       </span>
                       <span className="text-xs text-nexa-text-secondary font-bold">

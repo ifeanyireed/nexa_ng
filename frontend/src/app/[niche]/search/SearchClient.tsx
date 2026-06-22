@@ -12,7 +12,7 @@ import {
   ChevronDown, 
   SlidersHorizontal 
 } from "lucide-react";
-import { cn, getProLink } from "@/lib/utils";
+import { cn, getProLink, getProImage } from "@/lib/utils";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -35,6 +35,10 @@ export default function SearchClient({ data }: { data: any }) {
   const [activeSpecialty, setActiveSpecialty] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [minRating, setMinRating] = useState("");
+
+  useEffect(() => {
+    setSearchInput(query);
+  }, [query]);
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -232,13 +236,17 @@ export default function SearchClient({ data }: { data: any }) {
                   viewMode === "list" && "flex flex-col md:flex-row"
                 )}>
                   <div className={cn(
-                    "relative bg-nexa-brand/10 flex items-center justify-center",
-                    viewMode === "grid" ? "h-48" : "h-48 md:h-auto md:w-64"
+                    "relative flex items-center justify-center bg-nexa-brand/10 overflow-hidden",
+                    viewMode === "grid" ? "h-48" : "h-48 md:h-auto md:w-64 shrink-0"
                   )}>
                     <div className="absolute top-3 left-3 z-10">
                       {item.verified && <NexaBadge variant="verified">Verified</NexaBadge>}
                     </div>
-                    <Star className="w-12 h-12 text-nexa-brand/30" />
+                    <img 
+                      src={getProImage(item.specialties, item.subService)} 
+                      alt={item.user?.name} 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                    />
                   </div>
                   <div className="p-5 flex-1 flex flex-col">
                     <div className="flex items-center justify-between mb-2">

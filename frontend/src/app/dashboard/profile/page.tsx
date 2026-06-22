@@ -21,7 +21,10 @@ import {
   Instagram,
   Twitter,
   Star,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Trash2,
+  Play,
+  Film
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NexaButton } from "@/components/nexa/NexaButton";
@@ -54,12 +57,21 @@ export default function ProfileEditorPage() {
       sunday: "Closed"
     },
     acceptsPos: false,
-    homeDelivery: false
+    homeDelivery: false,
+    catalog: [] as { id: string; title: string; items: { id: string; title: string; type: string; url: string }[] }[]
   });
 
   useEffect(() => {
     if (user?.pro_profile) {
       const p = user.pro_profile;
+      let loadedCatalog = [];
+      if (p.catalog) {
+        try {
+          loadedCatalog = JSON.parse(p.catalog);
+        } catch (e) {
+          console.error("Error parsing catalog:", e);
+        }
+      }
       setProfileData({
         businessName: p.businessName || user.name || "",
         description: p.bio || "",
@@ -74,7 +86,8 @@ export default function ProfileEditorPage() {
           sunday: "Closed"
         },
         acceptsPos: p.acceptsPos || p.accepts_pos || false,
-        homeDelivery: p.homeDelivery || p.home_delivery || false
+        homeDelivery: p.homeDelivery || p.home_delivery || false,
+        catalog: loadedCatalog
       });
     }
   }, [user]);
@@ -92,7 +105,8 @@ export default function ProfileEditorPage() {
         specialties: profileData.tags.join(","),
         niche: user?.pro_profile?.niche || "home-services",
         accepts_pos: profileData.acceptsPos,
-        home_delivery: profileData.homeDelivery
+        home_delivery: profileData.homeDelivery,
+        catalog: JSON.stringify(profileData.catalog)
       });
       setMessage({ text: "Profile updated successfully!", type: "success" });
       setTimeout(() => setMessage({ text: "", type: "" }), 3000);
@@ -108,11 +122,12 @@ export default function ProfileEditorPage() {
     { id: "hours", label: "Working Hours", icon: <Clock className="w-4 h-4" /> },
     { id: "contact", label: "Contact & Social", icon: <Phone className="w-4 h-4" /> },
     { id: "branding", label: "Branding & Photos", icon: <Camera className="w-4 h-4" /> },
+    { id: "catalog", label: "Business Catalog", icon: <ImageIcon className="w-4 h-4" /> },
     { id: "tags", label: "Services & Tags", icon: <Tag className="w-4 h-4" /> }
   ];
 
   return (
-    <div className="flex flex-col xl:flex-row gap-12">
+    <div className="flex flex-col gap-12">
       
       {/* EDITOR PANEL */}
       <div className="flex-1 space-y-8">
@@ -355,6 +370,134 @@ export default function ProfileEditorPage() {
               </motion.div>
             )}
 
+            {activeTab === "catalog" && (
+               <motion.div
+                 key="catalog"
+                 initial={{ opacity: 0, y: 10 }}
+                 animate={{ opacity: 1, y: 0 }}
+                 exit={{ opacity: 0, y: -10 }}
+                 className="space-y-8"
+               >
+                 <div className="flex items-center justify-between border-b border-nexa-border pb-4">
+                   <div>
+                     <h3 className="text-lg font-bold text-display">Catalog Showcase</h3>
+                     <p className="text-xs text-nexa-text-secondary">Organize your showcase items into custom-titled catalog groups.</p>
+                   </div>
+                   <NexaButton 
+                     size="sm" 
+                     leftIcon={<Plus className="w-4 h-4" />}
+                     onClick={() => {
+                       const newGroup = {
+                         id: `g-${Date.now()}`,
+                         title: "New Catalog Group",
+                         items: []
+                       };
+                       setProfileData({
+                         ...profileData,
+                         catalog: [...profileData.catalog, newGroup]
+                       });
+                     }}
+                   >
+                     Add New Group
+                   </NexaButton>
+                 </div>
+
+                 <div className="space-y-8">
+                   {profileData.catalog.length === 0 ? (
+                     <div className="text-center py-12 border-2 border-dashed border-nexa-border rounded-3xl bg-nexa-bg-base">
+                       <ImageIcon className="w-12 h-12 text-nexa-text-faint mx-auto mb-3" />
+                       <p className="font-bold text-sm text-nexa-text-secondary">No catalog groups added yet</p>
+                       <p className="text-xs text-nexa-text-faint mt-1 max-w-sm mx-auto">Create group titles (e.g. "Bridal Makeup", "Men's Cuts") and load photos/videos into them.</p>
+                     </div>
+                   ) : (
+                     profileData.catalog.map((group, groupIdx) => (
+                       <div key={group.id} className="p-6 border border-nexa-border rounded-3xl bg-nexa-bg-base space-y-6">
+                         <div className="flex items-center justify-between gap-4">
+                           <div className="flex-1">
+                             <input 
+                               type="text" 
+                               value={group.title}
+                               onChange={(e) => {
+                                 const updated = [...profileData.catalog];
+                                 updated[groupIdx].title = e.target.value;
+                                 setProfileData({ ...profileData, catalog: updated });
+                               }}
+                               className="font-bold text-lg bg-transparent border-b border-transparent hover:border-nexa-border focus:border-nexa-brand focus:outline-none w-full pb-1 transition-all"
+                               placeholder="Group Title (e.g., Living Room Modern Setup)"
+                             />
+                           </div>
+                           <button 
+                             onClick={() => {
+                               const updated = profileData.catalog.filter(g => g.id !== group.id);
+                               setProfileData({ ...profileData, catalog: updated });
+                             }}
+                             className="p-2 text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all"
+                             title="Delete Group"
+                           >
+                             <Trash2 className="w-5 h-5" />
+                           </button>
+                         </div>
+
+                         {/* Items Grid */}
+                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                           {group.items.map((item, itemIdx) => (
+                             <div key={item.id} className="aspect-[4/3] rounded-2xl bg-nexa-bg-surface border border-nexa-border group relative flex flex-col items-center justify-center overflow-hidden">
+                               <img src={item.url} className="w-full h-full object-cover absolute inset-0" alt={item.title} />
+                               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-3 z-10">
+                                 <div className="flex justify-end">
+                                   <button 
+                                     onClick={() => {
+                                       const updated = [...profileData.catalog];
+                                       updated[groupIdx].items = updated[groupIdx].items.filter(it => it.id !== item.id);
+                                       setProfileData({ ...profileData, catalog: updated });
+                                     }}
+                                     className="w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+                                   >
+                                     <X className="w-4 h-4" />
+                                   </button>
+                                 </div>
+                                 <p className="text-white text-[10px] font-bold text-center line-clamp-2 truncate">{item.title}</p>
+                               </div>
+                               {item.type === "video" && (
+                                 <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
+                                   <div className="w-8 h-8 rounded-full bg-nexa-brand flex items-center justify-center text-white">
+                                     <Play className="w-3.5 h-3.5 fill-white" />
+                                   </div>
+                                 </div>
+                               )}
+                             </div>
+                           ))}
+
+                           {/* Add Tile Button */}
+                           <button 
+                             onClick={() => {
+                               const title = prompt("Enter a title for this photo/video:", "Showcase Work");
+                               if (!title) return;
+                               const url = prompt("Enter the photo/video Unsplash or media URL:", "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&q=80&w=400");
+                               if (!url) return;
+                               const isVideo = confirm("Is this a video? (Cancel for photo)");
+                               const updated = [...profileData.catalog];
+                               updated[groupIdx].items.push({
+                                 id: `item-${Date.now()}`,
+                                 title,
+                                 type: isVideo ? "video" : "photo",
+                                 url
+                               });
+                               setProfileData({ ...profileData, catalog: updated });
+                             }}
+                             className="aspect-[4/3] rounded-2xl border-2 border-dashed border-nexa-border bg-nexa-bg-surface hover:border-nexa-brand transition-all flex flex-col items-center justify-center text-nexa-text-faint hover:text-nexa-brand cursor-pointer p-4"
+                           >
+                             <Plus className="w-6 h-6 mb-2" />
+                             <span className="text-[10px] font-bold uppercase tracking-wider">Add Photo/Video</span>
+                           </button>
+                         </div>
+                       </div>
+                     ))
+                   )}
+                 </div>
+               </motion.div>
+            )}
+
             {activeTab === "tags" && (
                <motion.div
                 key="tags"
@@ -395,8 +538,8 @@ export default function ProfileEditorPage() {
       </div>
 
       {/* LIVE PREVIEW SIDEBAR */}
-      <aside className="w-full xl:w-[480px]">
-        <div className="sticky top-40 space-y-6">
+      <aside className="w-full max-w-[480px] mx-auto">
+        <div className="space-y-6">
           <div className="flex items-center justify-between px-2">
              <h3 className="font-extrabold text-sm uppercase tracking-widest text-nexa-text-faint flex items-center gap-2">
                 <Eye className="w-4 h-4" />
@@ -449,6 +592,35 @@ export default function ProfileEditorPage() {
                       <div className="h-10 bg-nexa-brand text-white rounded-xl flex items-center justify-center text-[10px] font-bold">Book Now</div>
                       <div className="h-10 bg-nexa-bg-surface text-nexa-text-primary border border-nexa-border rounded-xl flex items-center justify-center text-[10px] font-bold">Message</div>
                    </div>
+
+                   {/* Catalog Preview */}
+                   {profileData.catalog && profileData.catalog.length > 0 && (
+                     <div className="space-y-3 pt-2">
+                       <div className="h-px bg-nexa-border w-full" />
+                       <span className="text-[8px] font-bold tracking-widest text-nexa-text-faint">CATALOG GROUPS</span>
+                       <div className="space-y-3">
+                         {profileData.catalog.slice(0, 2).map((group: any) => (
+                           <div key={group.id} className="space-y-1">
+                             <p className="text-[9px] font-bold text-nexa-brand truncate">{group.title}</p>
+                             <div className="grid grid-cols-3 gap-2">
+                               {group.items?.slice(0, 3).map((item: any) => (
+                                 <div key={item.id} className="aspect-square rounded-lg overflow-hidden bg-slate-200 border border-nexa-border relative">
+                                   <img src={item.url} className="w-full h-full object-cover" alt="" />
+                                   {item.type === "video" && (
+                                     <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                                       <div className="w-4 h-4 rounded-full bg-nexa-brand flex items-center justify-center text-white scale-75">
+                                         <Play className="w-2 h-2 fill-white text-white" />
+                                       </div>
+                                     </div>
+                                   )}
+                                 </div>
+                               ))}
+                             </div>
+                           </div>
+                         ))}
+                       </div>
+                     </div>
+                   )}
 
                    <div className="space-y-3">
                       <div className="h-px bg-nexa-border w-full" />

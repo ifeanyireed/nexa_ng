@@ -95,8 +95,9 @@ export function slugify(text: string): string {
 }
 
 export function getProSlug(pro: any): string {
+  if (pro.slug) return pro.slug;
   const name = pro.user?.name || pro.businessName || "professional";
-  return `${slugify(name)}-business-${pro.id}`;
+  return slugify(name);
 }
 
 export function getArticleSlug(article: any): string {

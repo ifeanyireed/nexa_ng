@@ -1,6 +1,6 @@
 import React from "react";
 import { getNicheData } from "@/lib/niche-data";
-import { slugify } from "@/lib/utils";
+import { slugify, getProSlug } from "@/lib/utils";
 import StorefrontClient from "./StorefrontClient";
 
 export async function generateStaticParams() {
@@ -22,8 +22,7 @@ export async function generateStaticParams() {
         const niche = slugify(pro.specialties?.split(",")[0] || pro.niche || "service");
         const state = slugify(pro.city || "state");
         const lga = slugify(pro.area || "lga");
-        const name = pro.user?.name || pro.businessName || "professional";
-        const business = `${slugify(name)}-business-${pro.id}`;
+        const business = getProSlug(pro);
         
         paths.push({
           niche,

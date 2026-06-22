@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"nexa/backend/internal/db"
 	"nexa/backend/internal/handlers"
 	nexaMiddleware "nexa/backend/internal/middleware"
+	prismaDb "nexa/backend/prisma/db"
 	"os"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -26,6 +30,9 @@ func main() {
 	// Initialize Database
 	db.Init()
 	defer db.Close()
+
+	// Populate missing slugs for existing profiles
+	populateSlugs()
 
 	r := chi.NewRouter()
 
@@ -96,5 +103,65 @@ func main() {
 	log.Printf("Server starting on port %s", port)
 	if err := http.ListenAndServe(":"+port, r); err != nil {
 		log.Fatalf("could not start server: %v", err)
+	}
+}
+
+func populateSlugs() {
+	ctx := context.Background()
+	pros, err := db.Client.ProProfile.FindMany(
+		prismaDb.ProProfile.Slug.IsNull(),
+	).With(
+		prismaDb.ProProfile.User.Fetch(),
+	).Exec(ctx)
+	if err != nil {
+		log.Printf("Warning: Failed to fetch profiles for slug populator: %v", err)
+		return
+	}
+
+	log.Printf("Checking %d profiles for missing slugs...", len(pros))
+	for _, pro := range pros {
+		nameForSlug := ""
+		if busName, ok := pro.BusinessName(); ok && busName != "" {
+			nameForSlug = busName
+		} else if uName, ok := pro.User().Name(); ok && uName != "" {
+			nameForSlug = uName
+		}
+		
+		if nameForSlug == "" {
+			nameForSlug = pro.ID
+		}
+		
+		slugVal := strings.ToLower(nameForSlug)
+		reg, _ := regexp.Compile("[^a-z0-9]+")
+		slugVal = reg.ReplaceAllString(slugVal, "-")
+		slugVal = strings.Trim(slugVal, "-")
+		
+		if slugVal == "" {
+			slugVal = pro.ID
+		}
+
+		finalSlug := slugVal
+		suffix := 1
+		for {
+			existing, err := db.Client.ProProfile.FindUnique(
+				prismaDb.ProProfile.Slug.Equals(finalSlug),
+			).Exec(ctx)
+			if err != nil || existing == nil {
+				break
+			}
+			finalSlug = slugVal + "-" + strconv.Itoa(suffix)
+			suffix++
+		}
+
+		_, err = db.Client.ProProfile.FindUnique(
+			prismaDb.ProProfile.ID.Equals(pro.ID),
+		).Update(
+			prismaDb.ProProfile.Slug.Set(finalSlug),
+		).Exec(ctx)
+		if err != nil {
+			log.Printf("Failed to set slug for pro %s: %v", pro.ID, err)
+		} else {
+			log.Printf("Successfully populated slug '%s' for pro %s", finalSlug, pro.ID)
+		}
 	}
 }

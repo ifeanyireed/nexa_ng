@@ -57,7 +57,7 @@ import { useNiche } from "@/components/nexa/NicheContext";
 import { useLocation } from "@/components/nexa/LocationContext";
 import { api } from "@/lib/api";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 
 // --- HELPERS ---
 
@@ -110,6 +110,15 @@ const SectionHeader = ({ title, viewAll = true, href }: { title: string, viewAll
 
 const BuyerModeLayout = ({ data, nicheSlug, activeSubService, setActiveSubService, pros, articles }: any) => {
   const { currentCity, currentArea } = useLocation();
+  const router = useRouter();
+  const [searchInput, setSearchInput] = useState("");
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchInput.trim()) return;
+    router.push(`/${nicheSlug}/search?q=${encodeURIComponent(searchInput.trim())}`);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -131,26 +140,28 @@ const BuyerModeLayout = ({ data, nicheSlug, activeSubService, setActiveSubServic
               <span className={cn("text-nexa-brand", `text-${data.id}`)}>{data.name} in {currentCity.name}.</span>
             </h1>
 
-            <div className="liquid-glass p-2 rounded-2xl flex flex-col md:flex-row items-stretch md:items-center gap-2 shadow-xl border border-white/20">
+            <form onSubmit={handleSearch} className="liquid-glass p-2 rounded-2xl flex flex-col md:flex-row items-stretch md:items-center gap-2 shadow-xl border border-white/20">
               <div className="flex-1 flex items-center px-4">
                 <Search className="w-5 h-5 text-nexa-text-faint" />
                 <input 
                   type="text" 
                   placeholder={`Find a ${activeSubService.replace(" Finder", "")}...`}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
                   className="bg-transparent border-none outline-none w-full h-12 px-3 text-nexa-text-primary"
                 />
               </div>
               <div className="hidden md:block w-px h-8 bg-nexa-border" />
-              <Link href={`/${nicheSlug}/near-me`} className="flex items-center gap-2 px-4 py-2 cursor-pointer hover:bg-white/10 rounded-xl transition-colors">
+              <Link href={`/${nicheSlug}/near-me`} className="flex items-center gap-2 px-4 py-2 hover:bg-white/10 rounded-xl transition-colors">
                 <MapPin className="w-5 h-5 text-nexa-brand animate-pulse" />
                 <span className="text-sm font-bold whitespace-nowrap">
-                  {currentArea ? `${currentArea}, ` : ""}{currentCity.name}
+                  Near Me
                 </span>
               </Link>
-              <NexaButton size="lg" className="rounded-xl shadow-lg shadow-nexa-brand/20">
+              <NexaButton type="submit" size="lg" className="rounded-xl shadow-lg shadow-nexa-brand/20">
                 Search
               </NexaButton>
-            </div>
+            </form>
           </motion.div>
         </div>
       </section>

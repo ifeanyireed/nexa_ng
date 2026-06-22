@@ -22,8 +22,8 @@ This document lists the routes for the Nexa_ng Service Finder platform.
 - **Nexa Verified Info**: `/nexa-verified`
 
 ## Business & Shopping
-- **Business Profile**: `/[niche]/[business]`
-- **Business Shop**: `/[niche]/[business]/shop`
+- **Business Profile**: `/[niche]/[state]/[lga]/[business]`
+- **Business Shop**: `/[niche]/[state]/[lga]/[business]/shop`
 - **Product Detail**: `/[niche]/shop/[slug]`
 - **Niche Shop**: `/[niche]/shop`
 - **Business Landing**: `/business`

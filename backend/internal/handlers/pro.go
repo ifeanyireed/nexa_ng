@@ -7,6 +7,8 @@ import (
 	internalDB "nexa/backend/internal/db"
 	"nexa/backend/internal/middleware"
 	"nexa/backend/prisma/db"
+	"regexp"
+	"strings"
 )
 
 type UpdateProfileRequest struct {
@@ -26,6 +28,7 @@ type UpdateProfileRequest struct {
 	Plan           string  `json:"plan"`
 	AcceptsPOS     bool    `json:"accepts_pos"`
 	HomeDelivery   bool    `json:"home_delivery"`
+	Catalog        string  `json:"catalog"`
 }
 
 func UpdateProProfile(w http.ResponseWriter, r *http.Request) {
@@ -49,11 +52,29 @@ func UpdateProProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Generate unique slug
+	nameForSlug := req.BusinessName
+	if nameForSlug == "" {
+		user, err := internalDB.Client.User.FindUnique(
+			db.User.ID.Equals(userID),
+		).Exec(context.Background())
+		if err == nil {
+			if name, ok := user.Name(); ok && name != "" {
+				nameForSlug = name
+			}
+		}
+	}
+	slugVal := slugify(nameForSlug)
+	if slugVal == "" {
+		slugVal = userID
+	}
+
 	profile, err := internalDB.Client.ProProfile.UpsertOne(
 		db.ProProfile.UserID.Equals(userID),
 	).Create(
 		db.ProProfile.User.Link(db.User.ID.Equals(userID)),
 		db.ProProfile.BusinessName.Set(req.BusinessName),
+		db.ProProfile.Slug.Set(slugVal),
 		db.ProProfile.Bio.Set(req.Bio),
 		db.ProProfile.HourlyRate.Set(req.HourlyRate),
 		db.ProProfile.Specialties.Set(req.Specialties),
@@ -69,8 +90,10 @@ func UpdateProProfile(w http.ResponseWriter, r *http.Request) {
 		db.ProProfile.Plan.Set(req.Plan),
 		db.ProProfile.AcceptsPos.Set(req.AcceptsPOS),
 		db.ProProfile.HomeDelivery.Set(req.HomeDelivery),
+		db.ProProfile.Catalog.Set(req.Catalog),
 	).Update(
 		db.ProProfile.BusinessName.Set(req.BusinessName),
+		db.ProProfile.Slug.Set(slugVal),
 		db.ProProfile.Bio.Set(req.Bio),
 		db.ProProfile.HourlyRate.Set(req.HourlyRate),
 		db.ProProfile.Specialties.Set(req.Specialties),
@@ -86,6 +109,7 @@ func UpdateProProfile(w http.ResponseWriter, r *http.Request) {
 		db.ProProfile.Plan.Set(req.Plan),
 		db.ProProfile.AcceptsPos.Set(req.AcceptsPOS),
 		db.ProProfile.HomeDelivery.Set(req.HomeDelivery),
+		db.ProProfile.Catalog.Set(req.Catalog),
 	).Exec(context.Background())
 
 	if err != nil {
@@ -181,4 +205,12 @@ func CreateArticle(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(article)
+}
+
+func slugify(str string) string {
+	str = strings.ToLower(str)
+	reg, _ := regexp.Compile("[^a-z0-9]+")
+	str = reg.ReplaceAllString(str, "-")
+	str = strings.Trim(str, "-")
+	return str
 }

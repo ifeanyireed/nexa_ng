@@ -23,6 +23,7 @@ import { NexaAvatar } from "@/components/nexa/NexaAvatar";
 import { NexaThemeToggle } from "@/components/nexa/NexaThemeToggle";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/components/nexa/AuthContext";
 
 export default function DashboardLayout({
   children,
@@ -31,15 +32,25 @@ export default function DashboardLayout({
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const pathname = usePathname();
+  const { user } = useAuth();
+  
+  const isPro = user?.role === "PRO";
+  const isAdmin = user?.role === "ADMIN";
   
   const menuItems = [
     { label: "Dashboard", icon: <LayoutDashboard className="w-5 h-5" />, href: "/dashboard" },
-    { label: "My Profile", icon: <UserCircle className="w-5 h-5" />, href: "/dashboard/profile" },
+    ...(isPro || isAdmin ? [
+      { label: "My Profile", icon: <UserCircle className="w-5 h-5" />, href: "/dashboard/profile" }
+    ] : [
+      { label: "Become a Pro", icon: <UserCircle className="w-5 h-5" />, href: "/dashboard/profile" }
+    ]),
     { label: "Bookings", icon: <Calendar className="w-5 h-5" />, href: "/dashboard/bookings", badge: "3" },
     { label: "NexaShop", icon: <ShoppingBag className="w-5 h-5" />, href: "/dashboard/shop" },
     { label: "Messages", icon: <MessageSquare className="w-5 h-5" />, href: "/dashboard/messages", badge: "12" },
-    { label: "Articles", icon: <FileText className="w-5 h-5" />, href: "/dashboard/articles" },
-    { label: "Analytics", icon: <BarChart3 className="w-5 h-5" />, href: "/dashboard/analytics" },
+    ...(isPro || isAdmin ? [
+      { label: "Articles", icon: <FileText className="w-5 h-5" />, href: "/dashboard/articles" },
+      { label: "Analytics", icon: <BarChart3 className="w-5 h-5" />, href: "/dashboard/analytics" }
+    ] : [])
   ];
 
   return (

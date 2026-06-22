@@ -26,9 +26,11 @@ interface BookingModalProps {
   businessName: string;
   serviceName?: string;
   proProfileId?: string;
+  initialDate?: Date;
+  initialTime?: string;
 }
 
-export function BookingModal({ isOpen, onClose, businessName, serviceName, proProfileId }: BookingModalProps) {
+export function BookingModal({ isOpen, onClose, businessName, serviceName, proProfileId, initialDate, initialTime }: BookingModalProps) {
   const [step, setStep] = useState(1);
   const [selectedDate, setSelectedDate] = useState<number | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -48,6 +50,24 @@ export function BookingModal({ isOpen, onClose, businessName, serviceName, proPr
   });
 
   const timeSlots = ["09:00 AM", "10:00 AM", "11:00 AM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM"];
+
+  React.useEffect(() => {
+    if (isOpen) {
+      if (initialDate) {
+        const index = dates.findIndex(d => 
+          d.full.getFullYear() === initialDate.getFullYear() &&
+          d.full.getMonth() === initialDate.getMonth() &&
+          d.full.getDate() === initialDate.getDate()
+        );
+        if (index !== -1) {
+          setSelectedDate(index);
+        }
+      }
+      if (initialTime) {
+        setSelectedTime(initialTime);
+      }
+    }
+  }, [isOpen, initialDate, initialTime]);
 
   const handleNext = () => {
     if (step < 4) setStep(step + 1);

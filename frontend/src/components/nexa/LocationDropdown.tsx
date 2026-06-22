@@ -82,28 +82,47 @@ export function LocationDropdown({ className, buttonClassName }: { className?: s
             triggerToast(`Auto-detected: ${finalCity.name}${areaName ? `, ${areaName}` : ""}`);
           } catch (err) {
             console.error(err);
-            // Fallback default
-            const defaultCity = CITIES.find(c => c.slug === "lagos") || CITIES[0];
-            setCurrentCity(defaultCity);
-            setCurrentArea("Lekki");
-            setUserCoords(null);
-            triggerToast("Location set to default: Lagos, Lekki");
+            triggerToast("Location auto-detection failed. Please select manually.");
           } finally {
             setIsDetecting(false);
             setIsOpen(false);
           }
         },
         (error) => {
-          setTimeout(() => {
-            // Fallback default for demo if permission is denied
-            const lagos = CITIES.find(c => c.slug === "lagos") || CITIES[0];
-            setCurrentCity(lagos);
-            setCurrentArea("Lekki");
-            setUserCoords(null);
+          setTimeout(async () => {
+            console.warn("Browser geolocation denied/failed, attempting IP fallback...", error);
+            try {
+              const res = await fetch("https://ipapi.co/json/");
+              if (res.ok) {
+                const ipData = await res.json();
+                if (ipData.latitude && ipData.longitude) {
+                  const detectedCityName = ipData.city || "Lagos";
+                  const matchedCity = CITIES.find(
+                    c => c.name.toLowerCase().includes(detectedCityName.toLowerCase()) || 
+                         detectedCityName.toLowerCase().includes(c.name.toLowerCase())
+                  );
+                  const finalCity = matchedCity || {
+                    name: detectedCityName,
+                    slug: detectedCityName.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+                    areas: []
+                  };
+                  setCurrentCity(finalCity);
+                  setCurrentArea(finalCity.areas?.[0] || "");
+                  setUserCoords([ipData.latitude, ipData.longitude]);
+                  triggerToast(`Auto-detected (IP): ${finalCity.name}`);
+                  setIsDetecting(false);
+                  setIsOpen(false);
+                  return;
+                }
+              }
+            } catch (ipErr) {
+              console.error("IP fallback failed:", ipErr);
+            }
+            
+            triggerToast("Location auto-detection failed. Please select manually.");
             setIsDetecting(false);
             setIsOpen(false);
-            triggerToast("Location set to default: Lagos, Lekki");
-          }, 1200);
+          }, 500);
         }
       );
     } else {
@@ -177,8 +196,8 @@ export function LocationDropdown({ className, buttonClassName }: { className?: s
                     key={city.slug}
                     onClick={() => {
                       setCurrentCity(city);
-                      setCurrentArea(""); // Clear LGA for manual state selection to keep uncluttered
-                      setUserCoords(null); // Clear custom GPS coordinates for manual state selection
+                      setCurrentArea(""); // Clear area/LGA when manually choosing city
+                      setUserCoords(null); // Clear custom GPS coordinates when manually choosing city
                       setIsOpen(false);
                       triggerToast(`Location updated: ${city.name}`);
                     }}

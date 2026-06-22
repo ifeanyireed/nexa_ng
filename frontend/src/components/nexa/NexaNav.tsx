@@ -34,6 +34,13 @@ export const NexaNavbar = () => {
           scrolled ? "h-16 liquid-glass shadow-lg" : "h-20 bg-transparent"
         )}
       >
+        {/* Translucent blurry white overlay for contrast when scrolled */}
+        <div 
+          className={cn(
+            "absolute inset-0 bg-white/70 dark:bg-slate-900/75 backdrop-blur-md transition-opacity duration-300 pointer-events-none -z-10",
+            scrolled ? "opacity-100" : "opacity-0"
+          )}
+        />
         <div className="container mx-auto h-full px-4 flex items-center justify-between">
           {/* LOGO & NICHE SWITCHER */}
           <div className="flex items-center gap-6">

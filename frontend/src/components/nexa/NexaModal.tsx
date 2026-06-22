@@ -11,9 +11,10 @@ interface NexaModalProps {
   title?: string;
   children: React.ReactNode;
   className?: string;
+  backdropClassName?: string;
 }
 
-export const NexaModal = ({ isOpen, onClose, title, children, className }: NexaModalProps) => {
+export const NexaModal = ({ isOpen, onClose, title, children, className, backdropClassName }: NexaModalProps) => {
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -42,7 +43,7 @@ export const NexaModal = ({ isOpen, onClose, title, children, className }: NexaM
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-nexa-bg-base/40 backdrop-blur-md"
+            className={cn("absolute inset-0 bg-nexa-bg-base/40 backdrop-blur-md", backdropClassName)}
           />
           
           <motion.div

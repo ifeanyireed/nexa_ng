@@ -10,14 +10,15 @@ import {
   ChevronDown, 
   Star,
   ExternalLink,
-  Info
+  Info,
+  Loader2
 } from "lucide-react";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { getProLink } from "@/lib/utils";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
-import { useLocation } from "@/components/nexa/LocationContext";
+import { useLocation, CITIES } from "@/components/nexa/LocationContext";
 import { api } from "@/lib/api";
 import Link from "next/link";
 
@@ -30,10 +31,21 @@ const AREA_COORDINATES: Record<string, [number, number]> = {
   "yaba": [6.5095, 3.3711],
   "victoriaisland": [6.4281, 3.4219],
   "ikoyi": [6.4549, 3.4410],
+  "festac": [6.4674, 3.2842],
+  "festactown": [6.4674, 3.2842],
   // Abuja
   "garki": [9.0238, 7.4831],
   "wuse": [9.0683, 7.4789],
   "maitama": [9.0913, 7.5028],
+  // Other Cities
+  "ibadan": [7.3775, 3.9470],
+  "portharcourt": [4.8156, 7.0498],
+  "kano": [12.0022, 8.5919],
+  "benincity": [6.3350, 5.6263],
+  "abeokuta": [7.1599, 3.3486],
+  "enugu": [6.4584, 7.5086],
+  "kaduna": [10.5105, 7.4165],
+  "jos": [9.8965, 8.8583],
   // Fallbacks
   "lagos": [6.5244, 3.3792],
   "abuja": [9.0578, 7.4951]
@@ -59,7 +71,12 @@ const getCoordinates = (areaName: string, cityName: string, proId: string) => {
 };
 
 export default function NearMeClient({ data }: { data: any }) {
-  const { currentCity, currentArea, userCoords } = useLocation();
+  const { currentCity, setCurrentCity, currentArea, setCurrentArea, userCoords, setUserCoords, isLoading, autoDetectLocation } = useLocation();
+
+  useEffect(() => {
+    autoDetectLocation();
+  }, [autoDetectLocation]);
+
   const [radius, setRadius] = useState(5);
   const [pros, setPros] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -128,11 +145,7 @@ export default function NearMeClient({ data }: { data: any }) {
       mapInstanceRef.current = null;
     }
 
-    // Default map center (GPS userCoords if present, else city coordinates fallback)
-    const normCity = (currentCity?.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-    const normArea = (currentArea || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-    const baseCoords = AREA_COORDINATES[normArea] || AREA_COORDINATES[normCity] || [6.5244, 3.3792];
-    const mapCenter = userCoords || baseCoords;
+    if (!mapCenter) return;
 
     const map = L.map("leaflet-map-container", {
       zoomControl: false,
@@ -224,7 +237,7 @@ export default function NearMeClient({ data }: { data: any }) {
           <h4 class="font-extrabold text-sm text-slate-800">${pro.user?.name}</h4>
           <p class="text-[10px] text-slate-500 flex items-center gap-1">
             <svg class="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            ${pro.area || 'Area'}, ${pro.city || 'City'}
+            ${pro.area ? `${pro.area}, ` : ""}${pro.city || 'Lagos'}
           </p>
           <a href="${getProLink(pro)}" class="inline-flex items-center justify-center w-full h-8 text-center text-xs font-bold bg-nexa-brand text-white rounded-lg hover:bg-opacity-90 transition-colors shadow">
             Book Service
@@ -289,6 +302,11 @@ export default function NearMeClient({ data }: { data: any }) {
     }
   };
 
+  const normCity = (currentCity?.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const normArea = (currentArea || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const baseCoords = AREA_COORDINATES[normArea] || AREA_COORDINATES[normCity];
+  const mapCenter = userCoords || baseCoords;
+
   const localPros = pros.filter(pro => {
     const matchesSearch = 
       (pro.user?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -313,10 +331,19 @@ export default function NearMeClient({ data }: { data: any }) {
         {/* SIDEBAR LIST */}
         <aside className="w-full lg:w-[400px] bg-nexa-bg-surface border-r border-nexa-border flex flex-col z-20">
            <div className="p-6 border-b border-nexa-border">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-4">
                  <h1 className="text-xl font-bold">Near Me</h1>
                  <NexaBadge variant="brand">{data.name}</NexaBadge>
               </div>
+              
+              {currentCity.name && currentCity.slug !== "" && currentCity.slug !== "detecting" && (
+                <div className="flex items-center gap-2 text-xs font-bold text-nexa-brand mb-4 bg-nexa-brand/5 border border-nexa-brand/10 p-3 rounded-xl">
+                  <MapPin className="w-4 h-4 animate-pulse flex-shrink-0" />
+                  <span className="line-clamp-1">
+                    Detected: {currentCity.name}{currentArea ? `, ${currentArea} LGA` : ""}
+                  </span>
+                </div>
+              )}
               <div className="space-y-4">
                  <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-nexa-text-faint" />
@@ -378,7 +405,7 @@ export default function NearMeClient({ data }: { data: any }) {
                                      <span>{pro.rating || '5.0'}</span>
                                    </div>
                                </div>
-                               <p className="text-[10px] text-nexa-text-secondary mb-2">{(0.5 + i * 0.4).toFixed(1)}km • {pro.area || 'Lekki'}, {pro.city || 'Lagos'}</p>
+                               <p className="text-[10px] text-nexa-text-secondary mb-2">{(0.5 + i * 0.4).toFixed(1)}km • {pro.area ? `${pro.area}, ` : ""}{pro.city || 'Lagos'}</p>
                                <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
                                      <NexaBadge variant="success" className="text-[9px] py-0">Available</NexaBadge>
@@ -412,16 +439,40 @@ export default function NearMeClient({ data }: { data: any }) {
            {/* Leaflet map container */}
            <div id="leaflet-map-container" className="w-full h-full z-10" />
 
-           {!mapLoaded && (
-              <div className="absolute inset-0 bg-[#e5e7eb] flex items-center justify-center z-20">
-                 <div className="text-nexa-text-faint flex flex-col items-center gap-4">
-                    <Navigation className="w-12 h-12 animate-pulse" />
-                    <p className="font-bold text-sm uppercase tracking-widest text-center px-6">
-                       Initializing Map...
-                    </p>
-                 </div>
-              </div>
-           )}
+            {!userCoords && !currentCity.slug && isLoading && (
+               <div className="absolute inset-0 bg-[#e5e7eb] flex flex-col items-center justify-center z-50 text-slate-800 p-6 text-center">
+                  <Loader2 className="w-10 h-10 text-nexa-brand animate-spin mb-4" />
+                  <p className="font-extrabold text-sm uppercase tracking-widest">
+                     Locating You...
+                  </p>
+                  <p className="text-xs text-nexa-text-faint mt-1">
+                     Fetching your dynamic State and LGA...
+                  </p>
+               </div>
+            )}
+
+            {!userCoords && !currentCity.slug && !isLoading && (
+               <div className="absolute inset-0 bg-[#e5e7eb] flex flex-col items-center justify-center z-50 text-slate-800 p-6 text-center">
+                  <MapPin className="w-12 h-12 text-rose-500 mb-4 animate-bounce" />
+                  <p className="font-extrabold text-sm uppercase tracking-widest text-rose-600">
+                     Location Detection Failed
+                  </p>
+                  <p className="text-xs text-nexa-text-faint mt-2 max-w-sm">
+                     Could not auto-detect your location. Please check browser GPS permissions or select your city manually above.
+                  </p>
+               </div>
+            )}
+
+            {!mapLoaded && mapCenter && (
+               <div className="absolute inset-0 bg-[#e5e7eb] flex items-center justify-center z-20">
+                  <div className="text-nexa-text-faint flex flex-col items-center gap-4">
+                     <Navigation className="w-12 h-12 animate-pulse" />
+                     <p className="font-bold text-sm uppercase tracking-widest text-center px-6">
+                        Initializing Map...
+                     </p>
+                  </div>
+               </div>
+            )}
 
            {mapLoaded && (
              <>

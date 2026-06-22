@@ -179,12 +179,16 @@ func GetProduct(w http.ResponseWriter, r *http.Request) {
 func GetPro(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
-	pro, err := internalDB.Client.ProProfile.FindUnique(
-		db.ProProfile.ID.Equals(id),
+	pro, err := internalDB.Client.ProProfile.FindFirst(
+		db.ProProfile.Or(
+			db.ProProfile.ID.Equals(id),
+			db.ProProfile.Slug.Equals(id),
+		),
 	).With(
 		db.ProProfile.User.Fetch(),
 		db.ProProfile.Services.Fetch(),
 		db.ProProfile.Products.Fetch(),
+		db.ProProfile.Bookings.Fetch(),
 	).Exec(context.Background())
 
 	if err != nil {

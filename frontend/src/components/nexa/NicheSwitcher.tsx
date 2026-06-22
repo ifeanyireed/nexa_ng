@@ -72,7 +72,13 @@ interface NicheSwitcherProps {
 
 export const NicheSwitcher = ({ isOpen, onClose }: NicheSwitcherProps) => {
   return (
-    <NexaModal isOpen={isOpen} onClose={onClose} title="Switch Niche Hub" className="max-w-[95vw] lg:max-w-7xl">
+    <NexaModal 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      title="Switch Niche Hub" 
+      className="max-w-[95vw] lg:max-w-7xl bg-white/85 dark:bg-slate-950/85 backdrop-blur-xl border border-white/20 dark:border-white/10"
+      backdropClassName="bg-white/70 dark:bg-black/75 backdrop-blur-md"
+    >
       <div className="overflow-x-auto py-12 no-scrollbar snap-x snap-mandatory -mx-6 px-12 scroll-edge-fade">
         <div className="grid grid-rows-2 grid-flow-col gap-6 min-w-full pb-4">
           {NICHES.map((niche, i) => (

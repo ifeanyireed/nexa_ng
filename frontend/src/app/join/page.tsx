@@ -76,7 +76,7 @@ export default function SellerLandingPage() {
             </h1>
             
             <p className="text-xl text-nexa-text-secondary mb-12 max-w-2xl mx-auto leading-relaxed">
-              Join 10,000+ verified professionals across Nigeria. Get listed in a marketplace built specifically for your industry.
+              Join 10k+ verified professionals across Nigeria. Get listed in a marketplace built specifically for your industry.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

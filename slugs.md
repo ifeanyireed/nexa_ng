@@ -33,6 +33,7 @@ This document lists the routes for the Nexa_ng Service Finder platform.
 - **Signup**: `/signup`
 - **Join as Pro**: `/join`
 - **Pro Registration**: `/join/register`
+- **Tech Onboarding**: `/join/technician`
 
 ## Checkout & Bookings
 - **Checkout**: `/checkout`
@@ -42,8 +43,8 @@ This document lists the routes for the Nexa_ng Service Finder platform.
 - **Track Booking**: `/booking/[ref]/track`
 - **Review Booking**: `/booking/[ref]/review`
 
-## User / Pro Dashboard
-- **Dashboard Home**: `/dashboard`
+## User / Pro / Client Dashboard
+- **Pro Dashboard Home**: `/dashboard`
 - **Profile**: `/dashboard/profile`
 - **Settings**: `/dashboard/settings`
 - **Wallet**: `/dashboard/wallet`
@@ -56,10 +57,10 @@ This document lists the routes for the Nexa_ng Service Finder platform.
 - **Manage Shop**: `/dashboard/shop`
 - **Manage Articles**: `/dashboard/articles`
 - **New Article**: `/dashboard/articles/new`
+- **Client Dashboard Home**: `/client/dashboard`
 - **Account**: `/account`
 
 ## Technical & Support
-- **Tech Onboarding**: `/tech/onboarding`
 - **Tech Dashboard**: `/tech/dashboard`
 - **Tech Job Details**: `/tech/jobs/[id]`
 - **Tech Earnings**: `/tech/earnings`
@@ -77,7 +78,7 @@ This document lists the routes for the Nexa_ng Service Finder platform.
 - **Terms of Service**: `/legal/terms`
 
   The seed script will create:
-   - A Pro User (Chef Gbolahan) with a sample service.
-   - A second Pro User (Segun Auto Fix).
-   - Default login password for both: password123.
-
+   - An Admin User (`admin@nexa.ng`).
+   - A Client User (`client@nexa.ng`).
+   - Multiple Pro Users across various niches (e.g. `bisi@handyman.ng`, `chef@gbolahan.ng`).
+   - Default login password for all accounts: `password123`.

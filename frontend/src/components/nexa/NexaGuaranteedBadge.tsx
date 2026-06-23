@@ -5,12 +5,12 @@ import { motion } from "framer-motion";
 import { ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface NexaVerifiedBadgeProps {
+interface NexaGuaranteedBadgeProps {
   className?: string;
   showText?: boolean;
 }
 
-export const NexaVerifiedBadge: React.FC<NexaVerifiedBadgeProps> = ({ 
+export const NexaGuaranteedBadge: React.FC<NexaGuaranteedBadgeProps> = ({ 
   className, 
   showText = true 
 }) => {
@@ -20,14 +20,14 @@ export const NexaVerifiedBadge: React.FC<NexaVerifiedBadgeProps> = ({
       animate={{ opacity: 1, scale: 1 }}
       className={cn(
         "relative flex items-center gap-1.5 px-3 py-1 rounded-full overflow-hidden",
-        "bg-emerald-500/10 border border-emerald-500/20",
+        "bg-nexa-amber/10 border border-nexa-amber/20",
         className
       )}
     >
-      <ShieldCheck className="w-4 h-4 text-emerald-500" />
+      <ShieldCheck className="w-4 h-4 text-nexa-amber" />
       {showText && (
-        <span className="text-[10px] font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider relative z-10">
-          NexaVerified
+        <span className="text-[10px] font-extrabold text-nexa-amber uppercase tracking-wider relative z-10">
+          NexaGuaranteed
         </span>
       )}
       

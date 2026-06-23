@@ -20,12 +20,10 @@ import (
 )
 
 func main() {
-	// Try loading .env.development first, fallback to standard .env
-	if err := godotenv.Load(".env.development"); err != nil {
-		if err := godotenv.Load(); err != nil {
-			log.Printf("Warning: No .env or .env.development file found: %v", err)
-		}
-	}
+	// Load .env.development if it exists
+	godotenv.Load(".env.development")
+	// Load .env (it won't overwrite variables already loaded from .env.development)
+	godotenv.Load(".env")
 
 	// Initialize Database
 	db.Init()

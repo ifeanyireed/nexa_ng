@@ -14,11 +14,12 @@ import {
   Award,
   Info
 } from "lucide-react";
-import { cn, getProLink } from "@/lib/utils";
+import { cn, getProLink, getProImage } from "@/lib/utils";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
+import { Footer } from "@/components/nexa/Footer";
 import { api } from "@/lib/api";
 
 export default function TrendingPage() {
@@ -92,13 +93,20 @@ export default function TrendingPage() {
                 transition={{ delay: i * 0.1 }}
               >
                 <NexaCard variant="interactive" padding="none" className="h-full flex flex-col overflow-hidden border-none shadow-sm group">
-                  <div className={cn("h-32 flex items-center justify-center relative", nicheColors[pro.niche] || "bg-nexa-brand")}>
-                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors" />
-                    <Award className="w-12 h-12 text-white/40" />
-                    <div className="absolute top-4 right-4">
+                  <div className="h-48 relative overflow-hidden bg-slate-200">
+                    <img
+                      src={getProImage(pro.specialties || "", pro.subService || "")}
+                      alt={pro.user?.name || "Business"}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none" />
+                    <div className="absolute top-4 right-4 z-10">
                        <NexaBadge variant="neutral" className="bg-white/90 backdrop-blur-md text-nexa-text-primary border-none shadow-lg font-extrabold">
                           +{Math.floor(Math.random() * 30) + 10}% 🔥
                        </NexaBadge>
+                    </div>
+                    <div className="absolute bottom-4 left-4 z-10 w-12 h-12 rounded-xl liquid-glass border border-white/40 flex items-center justify-center shadow-lg p-2">
+                      <img src="/logo.png" alt="Nexa" className="w-full h-full object-contain" />
                     </div>
                   </div>
 
@@ -149,6 +157,7 @@ export default function TrendingPage() {
         )}
       </div>
 
+      <Footer />
       <NexaBottomBar />
     </main>
   );

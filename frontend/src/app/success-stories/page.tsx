@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { 
   Quote, 
   TrendingUp, 
@@ -103,7 +104,7 @@ export default function SuccessStoriesPage() {
                </div>
 
                <div className="relative">
-                  <Quote className="absolute -top-6 -left-8 w-16 h-16 text-nexa-brand/10" />
+                  <Quote className="absolute -top-6 -left-12 w-16 h-16 text-nexa-brand/10" />
                   <p className="text-2xl text-nexa-text-secondary leading-relaxed font-medium italic relative z-10">
                     "{story.story}"
                   </p>
@@ -118,7 +119,7 @@ export default function SuccessStoriesPage() {
                   ))}
                </div>
 
-               <div className="pt-8 border-t border-nexa-border flex items-center justify-between">
+               <div className="pt-8 border-t border-nexa-border flex items-center">
                   <div className="flex items-center gap-4">
                      <div className="w-12 h-12 rounded-full bg-nexa-bg-surface flex items-center justify-center border border-nexa-border">
                         <ShieldCheck className="w-6 h-6 text-nexa-brand" />
@@ -128,7 +129,6 @@ export default function SuccessStoriesPage() {
                         <p className="text-[10px] text-nexa-text-faint font-bold uppercase tracking-widest">Verified Seller since 2024</p>
                      </div>
                   </div>
-                  <NexaButton size="lg" variant="secondary" rightIcon={<ArrowRight className="w-4 h-4" />}>Read Full Story</NexaButton>
                </div>
             </div>
           </motion.div>
@@ -136,15 +136,19 @@ export default function SuccessStoriesPage() {
       </div>
 
       {/* CTA SECTION */}
-      <section className="py-24 bg-slate-900 text-white overflow-hidden relative">
-         <div className="container mx-auto px-4 text-center">
-            <h2 className="text-3xl md:text-5xl font-extrabold mb-8">Your success story starts here.</h2>
-            <p className="text-xl text-slate-400 mb-12 max-w-2xl mx-auto leading-relaxed">
+      <section className="py-24 bg-gradient-to-br from-nexa-brand to-nexa-brand-mid text-white overflow-hidden relative shadow-2xl">
+         {/* Decorative Background Gradients */}
+         <div className="absolute top-0 left-0 w-96 h-96 bg-white/10 rounded-full blur-[100px] pointer-events-none" />
+         <div className="absolute bottom-0 right-0 w-96 h-96 bg-black/10 rounded-full blur-[100px] pointer-events-none" />
+         
+         <div className="container mx-auto px-4 text-center relative z-10">
+            <h2 className="text-3xl md:text-5xl font-extrabold mb-8 text-display">Your success story starts here.</h2>
+            <p className="text-xl text-white/90 mb-12 max-w-2xl mx-auto leading-relaxed">
                Join thousands of Nigerian businesses who have abandoned generic directories for Nexa's high-performance niche hubs.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-               <NexaButton size="lg" className="h-16 px-12 rounded-2xl shadow-xl shadow-nexa-brand/20">List My Business</NexaButton>
-               <NexaButton variant="secondary" size="lg" className="h-16 px-12 rounded-2xl bg-white/5 border-white/10 text-white hover:bg-white/10">Browse Case Studies</NexaButton>
+               <NexaButton size="lg" className="h-16 px-12 rounded-2xl bg-white text-nexa-brand hover:bg-white/90 shadow-xl shadow-black/10 font-bold">List My Business</NexaButton>
+               <NexaButton variant="secondary" size="lg" className="h-16 px-12 rounded-2xl bg-black/10 border-white/20 text-white hover:bg-black/20 backdrop-blur-md">Browse Case Studies</NexaButton>
             </div>
          </div>
       </section>

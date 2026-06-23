@@ -34,7 +34,9 @@ export default function LoginPage() {
     try {
       const data = await api.post("/auth/login", { email, password });
       login(data.token, data.user);
-      if (data.user?.role === "PRO" || data.user?.role === "ADMIN") {
+      if (data.user?.role === "ADMIN") {
+        router.push("/ops");
+      } else if (data.user?.role === "PRO") {
         router.push("/dashboard");
       } else {
         router.push("/client/dashboard");

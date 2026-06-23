@@ -18,9 +18,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NexaThemeToggle } from "./NexaThemeToggle";
 import { NexaAvatar } from "./NexaAvatar";
+import { useAuth } from "./AuthContext";
 
 export const OpsSidebar = () => {
   const pathname = usePathname();
+  const { logout } = useAuth();
   
   const menuItems = [
     { label: "Dispatch", icon: <MapIcon className="w-5 h-5" />, href: "/ops/assignments" },
@@ -73,7 +75,7 @@ export const OpsSidebar = () => {
             <Settings className="w-5 h-5" />
             <span className="hidden lg:block font-bold text-sm">Settings</span>
          </button>
-         <button className="w-full flex items-center gap-4 p-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-all">
+         <button onClick={logout} className="w-full flex items-center gap-4 p-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-all">
             <LogOut className="w-5 h-5" />
             <span className="hidden lg:block font-bold text-sm">Logout</span>
          </button>

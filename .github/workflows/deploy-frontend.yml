@@ -1,0 +1,67 @@
+name: Deploy Next.js Static Frontend
+
+on:
+  # 1. Allows manual triggering from the GitHub Actions UI
+  workflow_dispatch:
+  
+  # 2. Allows triggering via Webhook from your Go Backend
+  repository_dispatch:
+    types: [rebuild-frontend]
+    
+  # 3. Automatically runs when you push code to the main branch
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Build Static Export
+        working-directory: ./frontend
+        # IMPORTANT: This step talks to your live Go backend to fetch the latest Pros
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+        run: npm run build
+
+      - name: Zip the Output
+        working-directory: ./frontend
+        run: zip -rq out.zip out/
+
+      - name: Deploy to DigitalOcean via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: root
+          password: ${{ secrets.DROPLET_PASSWORD }}
+          source: "frontend/out.zip"
+          target: "/var/www/nexa_ng/"
+          strip_components: 1
+
+      - name: Extract on Droplet
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: root
+          password: ${{ secrets.DROPLET_PASSWORD }}
+          script: |
+            cd /var/www/nexa_ng/frontend
+            unzip -oq out.zip
+            rm out.zip

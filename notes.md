@@ -136,3 +136,13 @@ Install Certbot to secure your traffic with Let's Encrypt:
 sudo apt install certbot python3-certbot-nginx -y
 sudo certbot --nginx -d nexa.reedbreed.cc
  
+
+• Email:  admin@nexa.ng 
+• Password:  password123 
+• Role:  ADMIN
+
+• Email:  bisi@handyman.ng  (alabi@handyman.ng )
+• Password:  password123 
+
+• Email:  client@nexa.ng 
+• Password:  password123 

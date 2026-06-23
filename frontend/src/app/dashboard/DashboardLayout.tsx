@@ -32,7 +32,7 @@ export default function DashboardLayout({
 }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   
   const isPro = user?.role === "PRO";
   const isAdmin = user?.role === "ADMIN";
@@ -118,7 +118,7 @@ export default function DashboardLayout({
                 {isSidebarOpen && <span className="font-bold text-sm">Settings</span>}
              </button>
            </Link>
-           <button className="w-full flex items-center gap-4 p-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-all text-left">
+           <button onClick={logout} className="w-full flex items-center gap-4 p-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-all text-left">
               <LogOut className="w-5 h-5" />
               {isSidebarOpen && <span className="font-bold text-sm">Logout</span>}
            </button>

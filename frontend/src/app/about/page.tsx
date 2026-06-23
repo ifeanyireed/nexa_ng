@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
+import { Footer } from "@/components/nexa/Footer";
 
 export default function AboutPage() {
   const values = [
@@ -127,8 +128,8 @@ export default function AboutPage() {
          <div className="container mx-auto px-4">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                {[
-                 { label: "Verified Sellers", val: "10,000+" },
-                 { label: "Monthly Leads", val: "50,000+" },
+                 { label: "Verified Sellers", val: "10k+" },
+                 { label: "Monthly Leads", val: "50k+" },
                  { label: "Cities Covered", val: "36" },
                  { label: "Niche Hubs", val: "50+" }
                ].map((s, i) => (
@@ -141,6 +142,7 @@ export default function AboutPage() {
          </div>
       </section>
 
+      <Footer />
       <NexaBottomBar />
     </main>
   );

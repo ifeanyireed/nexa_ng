@@ -39,8 +39,10 @@ func main() {
 
 	ctx := context.Background()
 
-	// Clear old articles to avoid duplicate keys or spam on subsequent runs
+	// Clear old articles, services, and products to avoid duplicate keys or spam on subsequent runs
 	client.Article.FindMany().Delete().Exec(ctx)
+	client.Service.FindMany().Delete().Exec(ctx)
+	client.Product.FindMany().Delete().Exec(ctx)
 
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 
@@ -145,6 +147,44 @@ func main() {
 		}},
 	}
 
+	// Seed an Admin Account
+	_, err := client.User.UpsertOne(
+		db.User.Email.Equals("admin@nexa.ng"),
+	).Create(
+		db.User.Email.Set("admin@nexa.ng"),
+		db.User.Password.Set(string(hashedPassword)),
+		db.User.Role.Set("ADMIN"),
+		db.User.Name.Set("Nexa Super Admin"),
+	).Update(
+		db.User.Password.Set(string(hashedPassword)),
+		db.User.Role.Set("ADMIN"),
+	).Exec(ctx)
+
+	if err != nil {
+		log.Printf("Error creating admin account: %v", err)
+	} else {
+		log.Println("Successfully seeded admin@nexa.ng / password123")
+	}
+
+	// Seed a Client Account
+	_, err = client.User.UpsertOne(
+		db.User.Email.Equals("client@nexa.ng"),
+	).Create(
+		db.User.Email.Set("client@nexa.ng"),
+		db.User.Password.Set(string(hashedPassword)),
+		db.User.Role.Set("CLIENT"),
+		db.User.Name.Set("Test Client"),
+	).Update(
+		db.User.Password.Set(string(hashedPassword)),
+		db.User.Role.Set("CLIENT"),
+	).Exec(ctx)
+
+	if err != nil {
+		log.Printf("Error creating client account: %v", err)
+	} else {
+		log.Println("Successfully seeded client@nexa.ng / password123")
+	}
+
 	for nicheIndex, niche := range niches {
 		for proIndex, pro := range niche.Pros {
 			// Update or Create User
@@ -180,10 +220,6 @@ func main() {
 			avatarIdx := (nicheIndex*2 + proIndex) % len(avatarUrls)
 			avatarUrl := avatarUrls[avatarIdx]
 			city := "Lagos"
-			if (nicheIndex+proIndex)%2 == 1 {
-				city = "Abuja"
-			}
-
 			// Update or Create ProProfile
 			profile, err := client.ProProfile.UpsertOne(
 				db.ProProfile.UserID.Equals(user.ID),
@@ -224,6 +260,15 @@ func main() {
 				db.Service.Price.Set(5000),
 				db.Service.ProProfile.Link(db.ProProfile.ID.Equals(profile.ID)),
 				db.Service.Description.Set("Initial consultation and assessment."),
+			).Exec(ctx)
+
+			// Create a Product
+			client.Product.CreateOne(
+				db.Product.Name.Set(fmt.Sprintf("Premium %s Kit", pro.Specialty)),
+				db.Product.Price.Set(15000),
+				db.Product.ProProfile.Link(db.ProProfile.ID.Equals(profile.ID)),
+				db.Product.Description.Set(fmt.Sprintf("High quality materials and items recommended by %s.", pro.Name)),
+				db.Product.Image.Set("https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=500&auto=format&fit=crop&q=60"),
 			).Exec(ctx)
 
 			// Assign the custom generated image corresponding to the article's niche parent category

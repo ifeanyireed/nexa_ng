@@ -38,6 +38,8 @@ export const Footer = () => {
             <h4 className="font-bold mb-6 text-display tracking-widest uppercase text-[10px]">Company</h4>
             <ul className="space-y-4 text-sm text-nexa-text-secondary">
               <Link href="/about"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Our Story</li></Link>
+              <Link href="/nexa-verified"><li className="hover:text-nexa-brand cursor-pointer transition-colors font-bold text-nexa-amber">Nexa Guaranteed</li></Link>
+              <Link href="/trending"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Trending</li></Link>
               <Link href="/contact"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Contact & Support</li></Link>
               <Link href="/legal/privacy"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Privacy Policy</li></Link>
               <Link href="/legal/terms"><li className="hover:text-nexa-brand cursor-pointer transition-colors">Terms of Service</li></Link>

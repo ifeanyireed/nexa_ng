@@ -228,7 +228,7 @@ const CategoryGrid = () => {
   const [counts, setCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api'}/discovery/stats/niches`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8085/api'}/discovery/stats/niches`)
       .then(res => res.json())
       .then(data => setCounts(data))
       .catch(err => console.error("Failed to fetch niche stats", err));

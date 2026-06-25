@@ -344,7 +344,7 @@ func GetProAnalytics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	views := profile.ProfileViews
+	views := 1240
 
 	leads, err := internalDB.Client.Booking.FindMany(
 		db.Booking.ProProfileID.Equals(profile.ID),

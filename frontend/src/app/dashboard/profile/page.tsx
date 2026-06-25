@@ -184,11 +184,15 @@ export default function ProfileEditorPage() {
                 className="space-y-8"
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <NexaInput 
-                    label="Business Display Name" 
-                    value={profileData.businessName}
-                    onChange={(e) => setProfileData({...profileData, businessName: e.target.value})}
-                  />
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase tracking-widest text-nexa-text-faint">Business Display Name</label>
+                    <input 
+                      type="text"
+                      className="w-full h-14 px-4 bg-nexa-bg-base border border-nexa-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-nexa-brand/20 transition-all text-sm font-bold"
+                      value={profileData.businessName}
+                      onChange={(e) => setProfileData({...profileData, businessName: e.target.value})}
+                    />
+                  </div>
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-widest text-nexa-text-faint">Business Category</label>
                     <div className="h-14 px-4 bg-nexa-bg-base border border-nexa-border rounded-2xl flex items-center text-sm font-bold opacity-60">

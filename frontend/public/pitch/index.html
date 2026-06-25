@@ -8,10 +8,10 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#07090F;
-  --surface:#0D1120;
-  --card:rgba(255,255,255,0.04);
-  --card-hover:rgba(255,255,255,0.07);
+  --bg:#FFFFFF;
+  --surface:#F8FAFC;
+  --card:#FFFFFF;
+  --card-hover:#F1F5F9;
   --brand:#1A56DB;
   --brand-mid:#3F83F8;
   --brand-bg:rgba(26,86,219,0.12);
@@ -31,15 +31,15 @@
   --teal-bg:rgba(20,184,166,0.10);
   --amber:#F59E0B;
   --amber-bg:rgba(245,158,11,0.10);
-  --text:#F1F5F9;
-  --text2:#94A3B8;
-  --text3:#475569;
-  --border:rgba(255,255,255,0.07);
-  --border2:rgba(255,255,255,0.13);
+  --text:#0F172A;
+  --text2:#475569;
+  --text3:#94A3B8;
+  --border:rgba(0,0,0,0.1);
+  --border2:rgba(0,0,0,0.15);
   --r:14px;
-  --glass-bg:rgba(255,255,255,0.04);
-  --glass-border:rgba(255,255,255,0.10);
-  --glass-top:rgba(255,255,255,0.18);
+  --glass-bg:rgba(255,255,255,0.7);
+  --glass-border:rgba(0,0,0,0.1);
+  --glass-top:rgba(255,255,255,0.9);
 }
 
 html,body{
@@ -88,7 +88,7 @@ html,body{
   border:1px solid var(--glass-border);
   border-top-color:var(--glass-top);
   border-radius:var(--r);
-  box-shadow:0 8px 40px rgba(0,0,0,.4),inset 0 1px 0 var(--glass-top);
+  box-shadow:0 8px 40px rgba(0,0,0,.08),inset 0 1px 0 var(--glass-top);
 }
 
 /* ── TYPOGRAPHY ── */
@@ -376,6 +376,21 @@ html,body{
   background:var(--card);color:var(--text2)}
 
 </style>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  i[data-lucide] {
+    width: 1em;
+    height: 1em;
+    display: inline-block;
+    vertical-align: middle;
+  }
+  .niche-icon i { width: 24px; height: 24px; }
+  .pillar-icon i { width: 28px; height: 28px; }
+  .product-icon-wrap i { width: 24px; height: 24px; }
+  .rev-icon i { width: 32px; height: 32px; }
+  .nv-card-icon i { width: 28px; height: 28px; }
+</style>
 </head>
 <body>
 
@@ -402,10 +417,10 @@ html,body{
     <div class="s1-divider anim anim-4"></div>
     <div class="s1-sub anim anim-4">Built for Nigeria &nbsp;·&nbsp; Built for Africa</div>
     <div class="s1-badge-row anim anim-5">
-      <span class="pill pill-brand">🔍 Discovery</span>
-      <span class="pill pill-brand">📅 Bookings</span>
-      <span class="pill pill-brand">🛍 Commerce</span>
-      <span class="pill pill-gold">⚡ NexaVerified</span>
+      <span class="pill pill-brand"><i data-lucide="search"></i> Discovery</span>
+      <span class="pill pill-brand"><i data-lucide="calendar"></i> Bookings</span>
+      <span class="pill pill-brand"><i data-lucide="shopping-bag"></i> Commerce</span>
+      <span class="pill pill-gold"><i data-lucide="zap"></i> NexaVerified</span>
       <span class="pill pill-green">10 Niche Hubs</span>
     </div>
   </div>
@@ -421,30 +436,30 @@ html,body{
     <h2 class="heading anim anim-2" style="font-size:36px;margin:8px 0 22px">Four people. One broken system.</h2>
     <div class="s2-grid anim anim-3">
       <div class="persona-card glass buyer-1">
-        <div class="persona-role" style="color:var(--brand-mid)">🛒 Buyer · Homeowner</div>
+        <div class="persona-role" style="color:var(--brand-mid)"><i data-lucide="shopping-cart"></i> Buyer · Homeowner</div>
         <div class="persona-name">Mama Chioma</div>
-        <div class="persona-loc">📍 Lagos Island</div>
+        <div class="persona-loc"><i data-lucide="map-pin"></i> Lagos Island</div>
         <div class="persona-pain">Midnight. Bathroom flooding. Five plumbers — nobody picks up. She posts in three WhatsApp groups. Gets one reply at 7am. Her ceiling caves at 3.</div>
         <div class="persona-fix">✓ Now books a verified plumber in 90 seconds</div>
       </div>
       <div class="persona-card glass buyer-2">
-        <div class="persona-role" style="color:#A78BFA">🛒 Buyer · Startup Founder</div>
+        <div class="persona-role" style="color:#A78BFA"><i data-lucide="shopping-cart"></i> Buyer · Startup Founder</div>
         <div class="persona-name">Tunde</div>
-        <div class="persona-loc">📍 Abuja</div>
+        <div class="persona-loc"><i data-lucide="map-pin"></i> Abuja</div>
         <div class="persona-pain">Deadline tomorrow. 47 browser tabs. Zero ratings. No way to know who's real. He picks wrong. Gets ghosted.</div>
         <div class="persona-fix">✓ Finds vetted designers with portfolios & reviews</div>
       </div>
       <div class="persona-card glass seller-1">
-        <div class="persona-role" style="color:#F9A8D4">🏪 Seller · Makeup Artist</div>
+        <div class="persona-role" style="color:#F9A8D4"><i data-lucide="store"></i> Seller · Makeup Artist</div>
         <div class="persona-name">Ngozi</div>
-        <div class="persona-loc">📍 Lekki, Lagos</div>
+        <div class="persona-loc"><i data-lucide="map-pin"></i> Lekki, Lagos</div>
         <div class="persona-pain">Burns three hours daily answering "how much?" on WhatsApp while real clients book someone else. She's the best — but the busiest aren't always the best.</div>
         <div class="persona-fix">✓ Calendar fills automatically while she's with clients</div>
       </div>
       <div class="persona-card glass seller-2">
-        <div class="persona-role" style="color:var(--gold-bright)">🏪 Seller · Solar Installer</div>
+        <div class="persona-role" style="color:var(--gold-bright)"><i data-lucide="store"></i> Seller · Solar Installer</div>
         <div class="persona-name">Emeka</div>
-        <div class="persona-loc">📍 Abuja</div>
+        <div class="persona-loc"><i data-lucide="map-pin"></i> Abuja</div>
         <div class="persona-pain">The finest solar installer in Abuja. No website. No reviews. No digital presence. Invisible to the world.</div>
         <div class="persona-fix">✓ NexaVerified profile, niche leaderboard #1</div>
       </div>
@@ -495,34 +510,34 @@ html,body{
     <p class="muted anim anim-3" style="font-size:14px;margin-bottom:24px">The infrastructure layer between intent and revenue — for every business in Nigeria.</p>
     <div class="pillars anim anim-4">
       <div class="glass pillar">
-        <div class="pillar-icon" style="background:var(--brand-bg)">🔍</div>
+        <div class="pillar-icon" style="background:var(--brand-bg)"><i data-lucide="search"></i></div>
         <div class="pillar-title">Discover</div>
         <div class="pillar-desc">Help people find any business by category, city, and need — faster than Google, more trusted than WhatsApp.</div>
       </div>
       <div class="glass pillar">
-        <div class="pillar-icon" style="background:var(--green-bg)">🏪</div>
+        <div class="pillar-icon" style="background:var(--green-bg)"><i data-lucide="store"></i></div>
         <div class="pillar-title">Get Found</div>
         <div class="pillar-desc">Give every business a dedicated niche profile page that is structured, verified, and SEO-indexed from day one.</div>
       </div>
       <div class="glass pillar">
-        <div class="pillar-icon" style="background:var(--purple-bg)">⚡</div>
+        <div class="pillar-icon" style="background:var(--purple-bg)"><i data-lucide="zap"></i></div>
         <div class="pillar-title">Convert</div>
         <div class="pillar-desc">Bookings, NexaChat, WhatsApp Connect, NexaShop, lead forms — every tool to turn a visitor into a customer.</div>
       </div>
       <div class="glass pillar">
-        <div class="pillar-icon" style="background:var(--gold-bg)">💰</div>
+        <div class="pillar-icon" style="background:var(--gold-bg)"><i data-lucide="coins"></i></div>
         <div class="pillar-title">Monetise</div>
         <div class="pillar-desc">Five revenue streams: listings, lead fees, subscriptions, commissions, and premium tools. Every interaction earns.</div>
       </div>
     </div>
     <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap" class="anim anim-5">
-      <span class="pill pill-brand">📍 Near Me Search</span>
-      <span class="pill pill-brand">⭐ Reviews & Ratings</span>
-      <span class="pill pill-brand">🗺 Map View</span>
-      <span class="pill pill-green">📅 Booking System</span>
-      <span class="pill pill-green">🛒 NexaShop</span>
-      <span class="pill pill-gold">🛡 NexaVerified</span>
-      <span class="pill pill-gold">📊 Analytics</span>
+      <span class="pill pill-brand"><i data-lucide="map-pin"></i> Near Me Search</span>
+      <span class="pill pill-brand"><i data-lucide="star"></i> Reviews & Ratings</span>
+      <span class="pill pill-brand"><i data-lucide="map"></i> Map View</span>
+      <span class="pill pill-green"><i data-lucide="calendar"></i> Booking System</span>
+      <span class="pill pill-green"><i data-lucide="shopping-cart"></i> NexaShop</span>
+      <span class="pill pill-gold"><i data-lucide="shield-check"></i> NexaVerified</span>
+      <span class="pill pill-gold"><i data-lucide="bar-chart"></i> Analytics</span>
     </div>
   </div>
 </div>
@@ -538,48 +553,48 @@ html,body{
     <p class="muted anim anim-3" style="font-size:14px;margin-bottom:20px">Each niche hub is a purpose-built finder app with its own palette, layout, vocabulary, and content ecosystem. A painter landing on NexaNG never sees a lawyer.</p>
     <div class="niche-grid anim anim-4">
       <div class="niche-pill" style="--nc:var(--amber)">
-        <div class="niche-icon" style="background:var(--amber-bg)">🔧</div>
+        <div class="niche-icon" style="background:var(--amber-bg)"><i data-lucide="wrench"></i></div>
         <div><div class="niche-name">Home & Maintenance</div><div class="niche-count">Plumbers · Electricians · Solar</div></div>
       </div>
       <div class="niche-pill" style="--nc:var(--pink)">
-        <div class="niche-icon" style="background:var(--pink-bg)">💇</div>
+        <div class="niche-icon" style="background:var(--pink-bg)"><i data-lucide="scissors"></i></div>
         <div><div class="niche-name">Fashion & Grooming</div><div class="niche-count">Tailors · Barbers · Makeup</div></div>
       </div>
       <div class="niche-pill" style="--nc:#60A5FA">
-        <div class="niche-icon" style="background:rgba(96,165,250,.1)">⚖️</div>
+        <div class="niche-icon" style="background:rgba(96,165,250,.1)"><i data-lucide="scale"></i></div>
         <div><div class="niche-name">Professional Services</div><div class="niche-count">Lawyers · Accountants · Tech</div></div>
       </div>
       <div class="niche-pill" style="--nc:var(--purple)">
-        <div class="niche-icon" style="background:var(--purple-bg)">🎓</div>
+        <div class="niche-icon" style="background:var(--purple-bg)"><i data-lucide="graduation-cap"></i></div>
         <div><div class="niche-name">Education & Skills</div><div class="niche-count">Tutors · Instructors · Trainers</div></div>
       </div>
       <div class="niche-pill" style="--nc:#C026D3">
-        <div class="niche-icon" style="background:rgba(192,38,211,.1)">🎉</div>
+        <div class="niche-icon" style="background:rgba(192,38,211,.1)"><i data-lucide="party-popper"></i></div>
         <div><div class="niche-name">Events & Entertainment</div><div class="niche-count">DJs · Planners · Photographers</div></div>
       </div>
       <div class="niche-pill" style="--nc:var(--green)">
-        <div class="niche-icon" style="background:var(--green-bg)">💊</div>
+        <div class="niche-icon" style="background:var(--green-bg)"><i data-lucide="pill"></i></div>
         <div><div class="niche-name">Health & Wellness</div><div class="niche-count">Nurses · Dentists · Gym</div></div>
       </div>
       <div class="niche-pill" style="--nc:var(--brand)">
-        <div class="niche-icon" style="background:var(--brand-bg)">🚚</div>
+        <div class="niche-icon" style="background:var(--brand-bg)"><i data-lucide="truck"></i></div>
         <div><div class="niche-name">Logistics & Transport</div><div class="niche-count">Dispatch · Drivers · Movers</div></div>
       </div>
       <div class="niche-pill" style="--nc:#9CA3AF">
-        <div class="niche-icon" style="background:rgba(156,163,175,.1)">🚗</div>
+        <div class="niche-icon" style="background:rgba(156,163,175,.1)"><i data-lucide="car"></i></div>
         <div><div class="niche-name">Automotive Services</div><div class="niche-count">Mechanics · Panel Beaters</div></div>
       </div>
       <div class="niche-pill" style="--nc:#B45309">
-        <div class="niche-icon" style="background:rgba(180,83,9,.1)">🍽</div>
+        <div class="niche-icon" style="background:rgba(180,83,9,.1)"><i data-lucide="utensils"></i></div>
         <div><div class="niche-name">Food & Agribusiness</div><div class="niche-count">Chefs · Caterers · Farms</div></div>
       </div>
       <div class="niche-pill" style="--nc:var(--green)">
-        <div class="niche-icon" style="background:rgba(16,185,129,.08)">🏠</div>
+        <div class="niche-icon" style="background:rgba(16,185,129,.08)"><i data-lucide="home"></i></div>
         <div><div class="niche-name">Real Estate & Construction</div><div class="niche-count">Agents · Architects · Builders</div></div>
       </div>
     </div>
     <div class="anim anim-5" style="margin-top:16px;padding:12px 16px;border-radius:10px;background:var(--brand-bg);border:1px solid rgba(63,131,248,.2);font-size:13px;display:flex;align-items:center;gap:10px;max-width:960px">
-      <span>💡</span>
+      <span><i data-lucide="lightbulb"></i></span>
       <span style="color:var(--text2)">Each hub has: <strong style="color:var(--text)">Service listings · Product shop · Articles feed · Near Me finder · Available for Hire · Deals section</strong> — all scoped to that niche only.</span>
     </div>
   </div>
@@ -597,7 +612,7 @@ html,body{
       <div class="glass mode-panel">
         <div class="mode-header">
           <span class="heading" style="font-size:16px">Buyer Mode</span>
-          <span class="mode-badge buyer-badge">🛒 Default</span>
+          <span class="mode-badge buyer-badge"><i data-lucide="shopping-cart"></i> Default</span>
         </div>
         <div class="mode-feature"><div class="dot-icon" style="background:var(--brand-mid)"></div><div>Service listings scoped to this niche only — no cross-contamination</div></div>
         <div class="mode-feature"><div class="dot-icon" style="background:var(--brand-mid)"></div><div>Top-rated professionals near me — GPS-based ranking</div></div>
@@ -609,13 +624,13 @@ html,body{
       <div class="toggle-divider">
         <div style="font-size:11px;color:var(--text3);text-align:center;line-height:1.5">Bottom<br>right<br>thumb</div>
         <div class="toggle-pill">
-          <div class="toggle-half on-buyer">🛒 Buyer</div>
-          <div class="toggle-half" style="color:var(--text2);padding:6px 16px">🏪 Seller</div>
+          <div class="toggle-half on-buyer"><i data-lucide="shopping-cart"></i> Buyer</div>
+          <div class="toggle-half" style="color:var(--text2);padding:6px 16px"><i data-lucide="store"></i> Seller</div>
         </div>
         <div style="font-size:20px">⟷</div>
         <div class="toggle-pill">
-          <div class="toggle-half" style="color:var(--text2);padding:6px 16px">🛒 Buyer</div>
-          <div class="toggle-half on-seller">🏪 Seller</div>
+          <div class="toggle-half" style="color:var(--text2);padding:6px 16px"><i data-lucide="shopping-cart"></i> Buyer</div>
+          <div class="toggle-half on-seller"><i data-lucide="store"></i> Seller</div>
         </div>
         <div style="font-size:11px;color:var(--text3);text-align:center;line-height:1.5">Auth<br>required<br>for sellers</div>
       </div>
@@ -651,32 +666,32 @@ html,body{
     <p class="muted anim anim-3" style="font-size:14px;margin-bottom:22px">Every business on NexaNG gets the tools to turn a profile visit into money. No third-party redirects. No broken links. Everything closes on platform.</p>
     <div class="product-grid anim anim-4">
       <div class="glass product-card">
-        <div class="product-icon-wrap" style="background:var(--brand-bg)">📅</div>
+        <div class="product-icon-wrap" style="background:var(--brand-bg)"><i data-lucide="calendar"></i></div>
         <div class="product-name">Booking System</div>
         <div class="product-desc">Calendar scheduling, time slot selection, SMS reminders via Termii, and optional Paystack deposit. Customers book without leaving the page.</div>
       </div>
       <div class="glass product-card">
-        <div class="product-icon-wrap" style="background:var(--green-bg)">🛍</div>
+        <div class="product-icon-wrap" style="background:var(--green-bg)"><i data-lucide="shopping-bag"></i></div>
         <div class="product-name">NexaShop</div>
         <div class="product-desc">Full product catalogue, cart, Paystack checkout, digital delivery, inventory tracking, and discount codes. A storefront inside every profile.</div>
       </div>
       <div class="glass product-card">
-        <div class="product-icon-wrap" style="background:var(--purple-bg)">💬</div>
+        <div class="product-icon-wrap" style="background:var(--purple-bg)"><i data-lucide="message-square"></i></div>
         <div class="product-name">NexaChat</div>
         <div class="product-desc">On-platform messaging, auto-responder, lead capture on every conversation, and a full chat history. No WhatsApp dependency required.</div>
       </div>
       <div class="glass product-card">
-        <div class="product-icon-wrap" style="background:rgba(37,211,102,.1)">📲</div>
+        <div class="product-icon-wrap" style="background:rgba(37,211,102,.1)"><i data-lucide="smartphone"></i></div>
         <div class="product-name">WhatsApp Connect</div>
         <div class="product-desc">Pre-filled WhatsApp CTA on every profile. Pro tier: broadcast list builder to send promos to opted-in customers.</div>
       </div>
       <div class="glass product-card">
-        <div class="product-icon-wrap" style="background:var(--coral-bg)">📋</div>
+        <div class="product-icon-wrap" style="background:var(--coral-bg)"><i data-lucide="clipboard-list"></i></div>
         <div class="product-name">Lead Capture Forms</div>
         <div class="product-desc">'Request a Quote' and 'Get a Callback' forms on every profile. Validated leads delivered via dashboard and email. PPL billing for high-ticket verticals.</div>
       </div>
       <div class="glass product-card">
-        <div class="product-icon-wrap" style="background:var(--amber-bg)">📝</div>
+        <div class="product-icon-wrap" style="background:var(--amber-bg)"><i data-lucide="pen-tool"></i></div>
         <div class="product-name">Niche Articles</div>
         <div class="product-desc">Sellers write keyword-rich articles that appear in their niche feed. Builds SEO authority and positions them as the expert buyers trust.</div>
       </div>
@@ -691,38 +706,38 @@ html,body{
   <div class="orb orb-gold" style="opacity:.15"></div>
   <div class="nv-content anim anim-1">
     <div class="nv-header">
-      <div class="nv-badge">🛡 NexaVerified Premium Service</div>
+      <div class="nv-badge"><i data-lucide="shield-check"></i> NexaVerified Premium Service</div>
       <h2 class="heading" style="font-size:34px;margin:8px 0 8px">When trust isn't enough — <span style="color:var(--gold-bright)">we become the service.</span></h2>
       <p class="muted" style="font-size:14px">NexaNG employs, vets, dispatches, and guarantees its own field technicians. A first-party service layer that transforms NexaNG from a marketplace into infrastructure.</p>
     </div>
     <div class="nv-grid anim anim-3">
       <div class="glass nv-card" style="border-color:rgba(245,158,11,.2)">
-        <div class="nv-card-icon">🔍</div>
+        <div class="nv-card-icon"><i data-lucide="search"></i></div>
         <div class="nv-card-title">Background Verified</div>
         <div class="nv-card-desc">Every Nexa technician passes a police clearance check and identity verification via VerifyMe Nigeria before their first job.</div>
       </div>
       <div class="glass nv-card" style="border-color:rgba(245,158,11,.2)">
-        <div class="nv-card-icon">🏆</div>
+        <div class="nv-card-icon"><i data-lucide="award"></i></div>
         <div class="nv-card-title">Skills Certified</div>
         <div class="nv-card-desc">Techs complete a NexaNG assessment and practical skills test for their specific trade category. Rated and ranked.</div>
       </div>
       <div class="glass nv-card" style="border-color:rgba(245,158,11,.2)">
-        <div class="nv-card-icon">🛡</div>
+        <div class="nv-card-icon"><i data-lucide="shield-check"></i></div>
         <div class="nv-card-title">Service Guaranteed</div>
         <div class="nv-card-desc">Satisfaction or we send another technician — or refund. Payment held in Paystack escrow until customer confirms completion.</div>
       </div>
       <div class="glass nv-card" style="border-color:rgba(245,158,11,.2)">
-        <div class="nv-card-icon">📍</div>
+        <div class="nv-card-icon"><i data-lucide="map-pin"></i></div>
         <div class="nv-card-title">Real-Time Tracking</div>
         <div class="nv-card-desc">Watch your technician travel to you live on a map. GPS-tracked from dispatch to arrival to job completion.</div>
       </div>
       <div class="glass nv-card" style="border-color:rgba(245,158,11,.2)">
-        <div class="nv-card-icon">💬</div>
+        <div class="nv-card-icon"><i data-lucide="message-square"></i></div>
         <div class="nv-card-title">Nexa Ops Support</div>
         <div class="nv-card-desc">Direct channel to our operations team before, during, and after the service. 2-hour SLA on all disputes.</div>
       </div>
       <div class="glass nv-card" style="border-color:rgba(245,158,11,.2)">
-        <div class="nv-card-icon">💳</div>
+        <div class="nv-card-icon"><i data-lucide="credit-card"></i></div>
         <div class="nv-card-title">Secure Escrow</div>
         <div class="nv-card-desc">Pay via Paystack. Funds held securely — released only when the customer confirms the job is done to standard.</div>
       </div>
@@ -748,31 +763,31 @@ html,body{
     <p class="muted anim anim-3" style="font-size:14px;margin-bottom:20px">NexaNG makes money whether a business is browsing, listing, converting, or selling. No single point of failure.</p>
     <div class="revenue-grid anim anim-4">
       <div class="glass rev-card">
-        <div class="rev-icon">📋</div>
+        <div class="rev-icon"><i data-lucide="clipboard-list"></i></div>
         <div class="rev-name">Listing Tiers</div>
         <div class="rev-model">Free → Starter → Business → Pro tiered SaaS</div>
         <div class="rev-val">₦0 – ₦50K/mo</div>
       </div>
       <div class="glass rev-card">
-        <div class="rev-icon">🎯</div>
+        <div class="rev-icon"><i data-lucide="target"></i></div>
         <div class="rev-name">Lead Fees</div>
         <div class="rev-model">Pay-per-qualified lead for high-ticket verticals</div>
         <div class="rev-val">₦500 – ₦5K/lead</div>
       </div>
       <div class="glass rev-card">
-        <div class="rev-icon">💳</div>
+        <div class="rev-icon"><i data-lucide="credit-card"></i></div>
         <div class="rev-name">Subscriptions</div>
         <div class="rev-model">Monthly or annual SaaS with feature gating</div>
         <div class="rev-val">₦5K – ₦50K/mo</div>
       </div>
       <div class="glass rev-card">
-        <div class="rev-icon">🛒</div>
+        <div class="rev-icon"><i data-lucide="shopping-cart"></i></div>
         <div class="rev-name">Commissions</div>
         <div class="rev-model">% of NexaShop GMV via Paystack split payment</div>
         <div class="rev-val">3 – 5% per sale</div>
       </div>
       <div class="glass rev-card">
-        <div class="rev-icon">⚡</div>
+        <div class="rev-icon"><i data-lucide="zap"></i></div>
         <div class="rev-name">Premium Tools</div>
         <div class="rev-model">NexaAds, SEO Booster, Review Rocket, WhatsApp Blast</div>
         <div class="rev-val">₦2K – ₦20K/mo</div>
@@ -874,7 +889,7 @@ html,body{
       </div>
       <div class="rccg-right">
         <div class="rccg-point glass">
-          <div class="rccg-point-icon">🔧</div>
+          <div class="rccg-point-icon"><i data-lucide="wrench"></i></div>
           <div class="rccg-point-text"><strong>Every plumber, baker, and tailor</strong> inside Redemption City needs to be found. NexaNG gives them a verified, bookable profile instantly.</div>
         </div>
         <div class="rccg-point glass">
@@ -890,7 +905,7 @@ html,body{
           <div class="rccg-point-text"><strong>This model scales to any closed community</strong> — university campuses, industrial estates, new cities across Africa. Same playbook, new deployment.</div>
         </div>
         <div style="margin-top:4px;padding:14px 16px;border-radius:10px;background:var(--gold-bg);border:1px solid rgba(245,158,11,.25);font-size:13px;color:var(--text2)">
-          💡 <strong style="color:var(--gold-bright)">That's one community.</strong> Nigeria has hundreds.
+          <i data-lucide="lightbulb"></i> <strong style="color:var(--gold-bright)">That's one community.</strong> Nigeria has hundreds.
         </div>
       </div>
     </div>
@@ -910,28 +925,28 @@ html,body{
         <div class="phase-num">01</div>
         <div class="phase-title">Seed Supply</div>
         <div class="phase-period">Months 1–3</div>
-        <div class="phase-item"><span>📋</span> Scrape + curate 1,000 Lagos listings</div>
+        <div class="phase-item"><span><i data-lucide="clipboard-list"></i></span> Scrape + curate 1,000 Lagos listings</div>
         <div class="phase-item"><span>📩</span> Claim-profile WhatsApp campaign</div>
-        <div class="phase-item"><span>🤝</span> Lagos Markets Association partnership</div>
+        <div class="phase-item"><span><i data-lucide="handshake"></i></span> Lagos Markets Association partnership</div>
         <div class="phase-item"><span>🆓</span> Business tier free for first 500 claimers</div>
       </div>
       <div class="glass phase-card" style="--pc:var(--purple)">
         <div class="phase-num">02</div>
         <div class="phase-title">Drive Demand</div>
         <div class="phase-period">Months 2–6</div>
-        <div class="phase-item"><span>🔍</span> SEO: 500+ programmatic niche × city pages</div>
+        <div class="phase-item"><span><i data-lucide="search"></i></span> SEO: 500+ programmatic niche × city pages</div>
         <div class="phase-item"><span>📱</span> TikTok + Instagram 'Find It on NexaNG'</div>
-        <div class="phase-item"><span>🎯</span> Meta ads — Lagos CPA under ₦300/user</div>
+        <div class="phase-item"><span><i data-lucide="target"></i></span> Meta ads — Lagos CPA under ₦300/user</div>
         <div class="phase-item"><span>🎖</span> 'Business of the Week' content format</div>
       </div>
       <div class="glass phase-card" style="--pc:var(--green)">
         <div class="phase-num">03</div>
         <div class="phase-title">Monetise</div>
         <div class="phase-period">Months 4–9</div>
-        <div class="phase-item"><span>📊</span> Analytics as sales hook — show views lost</div>
+        <div class="phase-item"><span><i data-lucide="bar-chart"></i></span> Analytics as sales hook — show views lost</div>
         <div class="phase-item"><span>🏃</span> Field reps hit business clusters in person</div>
-        <div class="phase-item"><span>🤝</span> Paystack merchant cross-referral</div>
-        <div class="phase-item"><span>💰</span> Annual plan: 2 months free upfront cash</div>
+        <div class="phase-item"><span><i data-lucide="handshake"></i></span> Paystack merchant cross-referral</div>
+        <div class="phase-item"><span><i data-lucide="coins"></i></span> Annual plan: 2 months free upfront cash</div>
       </div>
       <div class="glass phase-card" style="--pc:var(--gold)">
         <div class="phase-num">04</div>
@@ -939,8 +954,8 @@ html,body{
         <div class="phase-period">Months 8–24</div>
         <div class="phase-item"><span>🏙</span> Abuja M8 · PH M10 · Kano M12</div>
         <div class="phase-item"><span>📱</span> Mobile app launch (React Native)</div>
-        <div class="phase-item"><span>⚡</span> NexaVerified premium launch</div>
-        <div class="phase-item"><span>🌍</span> Accra, Ghana pilot Month 24</div>
+        <div class="phase-item"><span><i data-lucide="zap"></i></span> NexaVerified premium launch</div>
+        <div class="phase-item"><span><i data-lucide="globe"></i></span> Accra, Ghana pilot Month 24</div>
       </div>
     </div>
     <div class="anim anim-5" style="margin-top:14px">
@@ -950,9 +965,9 @@ html,body{
         <span class="city-chip active">🏛 Abuja — M8</span>
         <span class="city-chip">🛢 Port Harcourt — M10</span>
         <span class="city-chip">🕌 Kano — M12</span>
-        <span class="city-chip">🎓 Ibadan — M14</span>
+        <span class="city-chip"><i data-lucide="graduation-cap"></i> Ibadan — M14</span>
         <span class="city-chip">🏭 Enugu — M16</span>
-        <span class="city-chip" style="border-color:rgba(245,158,11,.35);color:var(--gold)">🌍 Accra, Ghana — M24</span>
+        <span class="city-chip" style="border-color:rgba(245,158,11,.35);color:var(--gold)"><i data-lucide="globe"></i> Accra, Ghana — M24</span>
       </div>
     </div>
   </div>
@@ -991,7 +1006,7 @@ html,body{
           <div class="moat-card-desc">Every new business makes the platform more valuable for consumers. Every new consumer makes it more valuable for businesses. Compounds with city density.</div>
         </div>
         <div class="glass moat-card">
-          <div class="moat-card-title">🔍 SEO Authority</div>
+          <div class="moat-card-title"><i data-lucide="search"></i> SEO Authority</div>
           <div class="moat-card-desc">Thousands of indexed category × city × business pages. A growing organic moat that is expensive and slow for competitors to replicate.</div>
         </div>
         <div class="glass moat-card">
@@ -1003,7 +1018,7 @@ html,body{
           <div class="moat-card-desc">CAC verification, Paystack, Termii SMS, and local-language support make NexaNG feel built for Nigeria — not adapted for it.</div>
         </div>
         <div class="glass moat-card">
-          <div class="moat-card-title">⭐ Review Corpus</div>
+          <div class="moat-card-title"><i data-lucide="star"></i> Review Corpus</div>
           <div class="moat-card-desc">Authentic, accumulated reviews are very hard to replicate and are the key trust signal every buyer needs before converting.</div>
         </div>
       </div>
@@ -1029,15 +1044,15 @@ html,body{
       <span style="color:var(--text);font-weight:500">We're powering it.</span>
     </div>
     <div style="margin-bottom:24px" class="anim anim-5">
-      <span class="pill pill-brand" style="font-size:13px;padding:8px 18px">🔍 Discovery</span>&nbsp;
-      <span class="pill pill-green" style="font-size:13px;padding:8px 18px">📅 Conversion</span>&nbsp;
-      <span class="pill pill-gold" style="font-size:13px;padding:8px 18px">🛡 NexaVerified</span>
+      <span class="pill pill-brand" style="font-size:13px;padding:8px 18px"><i data-lucide="search"></i> Discovery</span>&nbsp;
+      <span class="pill pill-green" style="font-size:13px;padding:8px 18px"><i data-lucide="calendar"></i> Conversion</span>&nbsp;
+      <span class="pill pill-gold" style="font-size:13px;padding:8px 18px"><i data-lucide="shield-check"></i> NexaVerified</span>
     </div>
     <div class="close-contact anim anim-6">
       <div class="contact-item">🌐 nexang.com</div>
       <div class="contact-item">📧 hello@nexang.com</div>
-      <div class="contact-item">📍 Lagos, Nigeria</div>
-      <div class="contact-item">🏆 Nomba Hackathon 2026</div>
+      <div class="contact-item"><i data-lucide="map-pin"></i> Lagos, Nigeria</div>
+      <div class="contact-item"><i data-lucide="award"></i> Nomba Hackathon 2026</div>
     </div>
   </div>
 </div>
@@ -1130,6 +1145,10 @@ document.addEventListener('touchend', e => {
 }, { passive: true });
 
 update();
+</script>
+
+<script>
+  lucide.createIcons();
 </script>
 </body>
 </html>

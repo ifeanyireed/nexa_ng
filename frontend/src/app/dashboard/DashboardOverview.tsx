@@ -271,7 +271,9 @@ export default function DashboardOverview() {
                             <div className="absolute right-1 w-4 h-4 bg-white rounded-full shadow-sm" />
                          </div>
                       </div>
-                      <NexaButton variant="secondary" className="w-full text-xs font-extrabold uppercase tracking-widest">Update Schedule</NexaButton>
+                      <Link href={`${prefix}/availability`}>
+                        <NexaButton variant="secondary" className="w-full text-xs font-extrabold uppercase tracking-widest">Update Schedule</NexaButton>
+                      </Link>
                    </NexaCard>
                 </section>
 

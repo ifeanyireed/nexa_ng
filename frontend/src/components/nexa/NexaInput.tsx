@@ -19,6 +19,12 @@ export const NexaInput = React.forwardRef<HTMLInputElement, NexaInputProps>(
     const [isFocused, setIsFocused] = useState(false);
     const [hasValue, setHasValue] = useState(!!props.value || !!props.defaultValue);
 
+    React.useEffect(() => {
+      if (props.value !== undefined) {
+        setHasValue(!!props.value);
+      }
+    }, [props.value]);
+
     const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
       setIsFocused(true);
       onFocus?.(e);

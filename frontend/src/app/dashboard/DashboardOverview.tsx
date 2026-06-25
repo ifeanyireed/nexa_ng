@@ -20,7 +20,7 @@ import {
   MessageSquare,
   Settings
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getProLink } from "@/lib/utils";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -35,6 +35,7 @@ export default function DashboardOverview() {
   const { user } = useAuth();
   const [bookings, setBookings] = useState<any[]>([]);
   const [wallet, setWallet] = useState<any>(null);
+  const [analytics, setAnalytics] = useState<any>({ profileViews: 0, newLeads: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,16 +43,20 @@ export default function DashboardOverview() {
       try {
         const bookingsData = await api.get("/bookings");
         setBookings(bookingsData || []);
-        const walletData = await api.get("/wallets/me");
+        const walletData = await api.get("/wallet");
         setWallet(walletData);
+        if (user?.role === "PRO" || user?.role === "ADMIN") {
+          const analyticsData = await api.get("/pro/analytics");
+          if (analyticsData) setAnalytics(analyticsData);
+        }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
-  }, []);
+    if (user) fetchData();
+  }, [user]);
 
   const isPro = user?.role === "PRO";
   const nicheData = getNicheData(user?.pro_profile?.niche || "handyman-finders");
@@ -70,8 +75,8 @@ export default function DashboardOverview() {
   };
   
   const kpis = isPro ? [
-    { label: "Profile Views", value: "1,240", change: "+12%", trend: "up", icon: <Eye className="w-5 h-5 text-blue-500" /> },
-    { label: "New Leads", value: "48", change: "+5%", trend: "up", icon: <Zap className="w-5 h-5 text-amber-500" /> },
+    { label: "Profile Views", value: analytics.profileViews.toLocaleString(), change: "+12%", trend: "up", icon: <Eye className="w-5 h-5 text-blue-500" /> },
+    { label: "New Leads", value: analytics.newLeads.toLocaleString(), change: "+5%", trend: "up", icon: <Zap className="w-5 h-5 text-amber-500" /> },
     { label: "Bookings", value: bookings.length.toString(), change: "0%", trend: "neutral", icon: <Calendar className="w-5 h-5 text-emerald-500" /> },
     { label: "Wallet Balance", value: `₦${wallet?.balance?.toLocaleString() || "0"}`, change: "+8%", trend: "up", icon: <TrendingUp className="w-5 h-5 text-fuchsia-500" /> },
   ] : [
@@ -93,7 +98,7 @@ export default function DashboardOverview() {
     { label: "Deposit Funds", icon: <TrendingUp className="w-6 h-6" />, desc: "Top up wallet", href: `${prefix}/wallet` },
     { label: "My Bookings", icon: <Calendar className="w-6 h-6" />, desc: "Manage appointments", href: `${prefix}/bookings` },
     { label: "Inbox Messages", icon: <MessageSquare className="w-6 h-6" />, desc: "Chat with pros", href: `${prefix}/messages` },
-    { label: "NexaShop", icon: <ShoppingBag className="w-6 h-6" />, desc: "Buy products", href: `${prefix}/shop` },
+    { label: "NexaShop", icon: <ShoppingBag className="w-6 h-6" />, desc: "Buy products", href: "/shop" },
     { label: "Account Settings", icon: <Settings className="w-6 h-6" />, desc: "Update details", href: `${prefix}/settings` },
   ];
 
@@ -103,7 +108,7 @@ export default function DashboardOverview() {
       <NexaCard variant="glass" padding="none" className="overflow-hidden bg-gradient-to-r from-nexa-brand/10 to-transparent border-nexa-brand/20">
          <div className="p-6 flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-6 text-center md:text-left">
-               <div className={cn("w-16 h-16 rounded-[24px] flex items-center justify-center text-white shadow-xl", isPro ? (nicheData?.colorClass || "bg-nexa-brand") : "bg-nexa-brand")}>
+               <div className={cn("w-16 h-16 rounded-[24px] flex items-center justify-center text-white shadow-xl bg-emerald-500")}>
                   <Store className="w-8 h-8" />
                </div>
                <div>
@@ -124,7 +129,7 @@ export default function DashboardOverview() {
                        <span className="text-xs font-bold">{user?.pro_profile?.verified ? "Live & Verified" : "Awaiting Verification"}</span>
                     </div>
                  </div>
-                 <Link href={user?.pro_profile?.niche ? `/${user.pro_profile.niche}/business-${user.pro_profile.id}` : "#"}>
+                 <Link href={user?.pro_profile ? getProLink({ ...user.pro_profile, user }) : "#"}>
                     <NexaButton size="sm" variant="secondary" rightIcon={<Eye className="w-4 h-4" />}>Preview Profile</NexaButton>
                  </Link>
               </div>

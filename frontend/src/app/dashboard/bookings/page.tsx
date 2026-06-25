@@ -26,7 +26,7 @@ import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaAvatar } from "@/components/nexa/NexaAvatar";
-import { NexaInput } from "@/components/nexa/NexaInput";
+import Link from "next/link";
 
 export default function BookingsManagerPage() {
   const { user } = useAuth();
@@ -34,10 +34,12 @@ export default function BookingsManagerPage() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
+  const isPro = user?.role === "PRO";
+
   const fetchBookings = async () => {
     try {
       const data = await api.get("/bookings");
-      setBookings(data);
+      setBookings(data || []);
     } catch (error) {
       console.error("Error fetching bookings:", error);
     } finally {
@@ -74,6 +76,15 @@ export default function BookingsManagerPage() {
     return b.status.toLowerCase() === activeTab.toLowerCase();
   });
 
+  // Calculate dynamic stats
+  const totalCount = bookings.length;
+  const activeCount = bookings.filter(b => b.status.toLowerCase() === "confirmed" || b.status.toLowerCase() === "pending").length;
+  const completedCount = bookings.filter(b => b.status.toLowerCase() === "completed").length;
+  
+  const totalFinancial = bookings
+    .filter(b => b.status.toLowerCase() === "completed" || b.status.toLowerCase() === "confirmed")
+    .reduce((sum, b) => sum + (b.amount || 0), 0);
+
   if (loading) return (
      <div className="space-y-8 animate-pulse">
         <div className="h-20 bg-nexa-bg-surface rounded-[32px]" />
@@ -91,11 +102,21 @@ export default function BookingsManagerPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 className="text-3xl font-extrabold text-display">Booking Manager</h1>
-          <p className="text-nexa-text-secondary text-sm mt-1">Track and manage your upcoming service appointments.</p>
+          <p className="text-nexa-text-secondary text-sm mt-1">
+            {isPro 
+              ? "Track and manage your upcoming service appointments and customer requests." 
+              : "Track and manage your appointments with Nexa service professionals."}
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <NexaButton variant="secondary" leftIcon={<Filter className="w-4 h-4" />}>Filter</NexaButton>
-          <NexaButton leftIcon={<CalendarIcon className="w-4 h-4" />}>Schedule Availability</NexaButton>
+          {isPro ? (
+            <NexaButton leftIcon={<CalendarIcon className="w-4 h-4" />}>Schedule Availability</NexaButton>
+          ) : (
+            <Link href="/">
+              <NexaButton leftIcon={<Search className="w-4 h-4" />}>Find Services</NexaButton>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -127,7 +148,7 @@ export default function BookingsManagerPage() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-nexa-text-faint" />
             <input 
               type="text" 
-              placeholder="Search by customer name or booking ID..." 
+              placeholder={isPro ? "Search by customer name or service..." : "Search by professional name or service..."}
               className="w-full h-12 pl-12 pr-4 bg-nexa-bg-surface border border-nexa-border rounded-xl focus:outline-none focus:ring-2 focus:ring-nexa-brand/20 transition-all text-sm"
             />
           </div>
@@ -135,86 +156,108 @@ export default function BookingsManagerPage() {
           {/* BOOKING FEED */}
           <div className="space-y-4">
             <AnimatePresence mode="popLayout">
-              {filteredBookings.map((booking) => (
-                <motion.div
-                  key={booking.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  layout
-                >
-                  <NexaCard variant="interactive" className="p-0 overflow-hidden border-none bg-nexa-bg-surface/50 group">
-                    <div className="flex flex-col md:flex-row md:items-stretch">
-                      {/* Date Part */}
-                      <div className="md:w-32 bg-nexa-bg-base p-6 flex flex-col items-center justify-center text-center border-r border-nexa-border">
-                        <span className="text-[10px] font-extrabold uppercase text-nexa-text-faint tracking-widest mb-1">
-                          {new Date(booking.scheduledAt).toLocaleDateString('en-US', { month: 'short' })}
-                        </span>
-                        <span className="text-3xl font-extrabold leading-none">
-                          {new Date(booking.scheduledAt).getDate()}
-                        </span>
-                        <div className="flex items-center gap-1 mt-2 text-nexa-brand font-bold text-[10px]">
-                           <Clock className="w-3 h-3" />
-                           {new Date(booking.scheduledAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                        </div>
-                      </div>
+              {filteredBookings.map((booking) => {
+                const displayName = isPro 
+                  ? (booking.client?.name || "Client") 
+                  : (booking.proProfile?.businessName || booking.proProfile?.user?.name || "Professional");
+                const avatarLetter = displayName.charAt(0).toUpperCase();
 
-                      {/* Main Info */}
-                      <div className="flex-1 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                        <div className="flex items-center gap-4">
-                          <NexaAvatar fallback={(booking.client?.name || booking.proProfile?.user?.name || "U").charAt(0)} />
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-bold text-lg">{booking.client?.name || booking.proProfile?.user?.name || "User"}</h3>
-                              <span className="text-[10px] text-nexa-text-faint font-medium">#{booking.id.slice(-6).toUpperCase()}</span>
-                            </div>
-                            <p className="text-sm text-nexa-text-secondary font-medium">{booking.serviceName || "Service"}</p>
-                            <div className="flex items-center gap-3 mt-2 text-[10px] font-bold text-nexa-text-faint uppercase">
-                               <div className="flex items-center gap-1">
-                                  <MapPin className="w-3 h-3" />
-                                  Lagos, Nigeria
-                               </div>
-                               <span>•</span>
-                               <span className="text-nexa-brand">₦{(booking.amount || 0).toLocaleString()}</span>
-                            </div>
+                return (
+                  <motion.div
+                    key={booking.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    layout
+                  >
+                    <NexaCard variant="interactive" className="p-0 overflow-hidden border-none bg-nexa-bg-surface/50 group">
+                      <div className="flex flex-col md:flex-row md:items-stretch">
+                        {/* Date Part */}
+                        <div className="md:w-32 bg-nexa-bg-base p-6 flex flex-col items-center justify-center text-center border-r border-nexa-border">
+                          <span className="text-[10px] font-extrabold uppercase text-nexa-text-faint tracking-widest mb-1">
+                            {new Date(booking.scheduledAt).toLocaleDateString('en-US', { month: 'short' })}
+                          </span>
+                          <span className="text-3xl font-extrabold leading-none">
+                            {new Date(booking.scheduledAt).getDate()}
+                          </span>
+                          <div className="flex items-center gap-1 mt-2 text-nexa-brand font-bold text-[10px]">
+                             <Clock className="w-3 h-3" />
+                             {new Date(booking.scheduledAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                           </div>
                         </div>
 
-                        <div className="flex flex-col items-end gap-3">
-                           {getStatusBadge(booking.status)}
-                           <div className="flex items-center gap-2">
-                              <button className="p-2 rounded-xl bg-nexa-bg-base border border-nexa-border text-nexa-text-secondary hover:text-nexa-brand transition-colors">
-                                 <MessageSquare className="w-4 h-4" />
-                              </button>
-                              <button className="p-2 rounded-xl bg-nexa-bg-base border border-nexa-border text-nexa-text-secondary hover:text-emerald-500 transition-colors">
-                                 <Phone className="w-4 h-4" />
-                              </button>
-                              <div className="relative">
-                                 <button className="p-2 rounded-xl bg-nexa-bg-base border border-nexa-border text-nexa-text-secondary hover:bg-white transition-colors">
-                                    <MoreHorizontal className="w-4 h-4" />
-                                 </button>
+                        {/* Main Info */}
+                        <div className="flex-1 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                          <div className="flex items-center gap-4">
+                            <NexaAvatar fallback={avatarLetter} name={displayName} />
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-bold text-lg">{displayName}</h3>
+                                <span className="text-[10px] text-nexa-text-faint font-medium">#{booking.id.slice(-6).toUpperCase()}</span>
                               </div>
-                           </div>
+                              <p className="text-sm text-nexa-text-secondary font-medium">{booking.serviceName || "Service"}</p>
+                              <div className="flex items-center gap-3 mt-2 text-[10px] font-bold text-nexa-text-faint uppercase">
+                                 <div className="flex items-center gap-1">
+                                    <MapPin className="w-3 h-3" />
+                                    Lagos, Nigeria
+                                 </div>
+                                 <span>•</span>
+                                 <span className="text-nexa-brand">₦{(booking.amount || 0).toLocaleString()}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col items-end gap-3">
+                             {getStatusBadge(booking.status)}
+                             <div className="flex items-center gap-2">
+                                <Link href="/dashboard/messages">
+                                  <button className="p-2 rounded-xl bg-nexa-bg-base border border-nexa-border text-nexa-text-secondary hover:text-nexa-brand transition-colors">
+                                     <MessageSquare className="w-4 h-4" />
+                                  </button>
+                                </Link>
+                                <button className="p-2 rounded-xl bg-nexa-bg-base border border-nexa-border text-nexa-text-secondary hover:text-emerald-500 transition-colors">
+                                   <Phone className="w-4 h-4" />
+                                </button>
+                                <div className="relative">
+                                   <button className="p-2 rounded-xl bg-nexa-bg-base border border-nexa-border text-nexa-text-secondary hover:bg-white transition-colors">
+                                      <MoreHorizontal className="w-4 h-4" />
+                                   </button>
+                                </div>
+                             </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Pending Actions */}
-                    {booking.status.toLowerCase() === "pending" && user?.role === "PRO" && (
-                       <div className="bg-amber-500/5 border-t border-amber-500/10 p-3 px-6 flex items-center justify-between">
-                          <p className="text-[10px] font-bold text-amber-700 flex items-center gap-2 uppercase tracking-widest">
-                             <AlertCircle className="w-3.5 h-3.5" />
-                             Awaiting your confirmation
-                          </p>
-                          <div className="flex items-center gap-3">
-                             <NexaButton size="sm" variant="ghost" className="text-red-500 hover:bg-red-50" onClick={() => handleUpdateStatus(booking.id, "DECLINED")}>Decline</NexaButton>
-                             <NexaButton size="sm" onClick={() => handleUpdateStatus(booking.id, "CONFIRMED")}>Accept Booking</NexaButton>
-                          </div>
-                       </div>
-                    )}
-                  </NexaCard>
-                </motion.div>
-              ))}
+                      {/* Pending Actions (Pro View) */}
+                      {booking.status.toLowerCase() === "pending" && isPro && (
+                         <div className="bg-amber-500/5 border-t border-amber-500/10 p-3 px-6 flex items-center justify-between">
+                            <p className="text-[10px] font-bold text-amber-700 flex items-center gap-2 uppercase tracking-widest">
+                               <AlertCircle className="w-3.5 h-3.5" />
+                               Awaiting your confirmation
+                            </p>
+                            <div className="flex items-center gap-3">
+                               <NexaButton size="sm" variant="ghost" className="text-red-500 hover:bg-red-50" onClick={() => handleUpdateStatus(booking.id, "DECLINED")}>Decline</NexaButton>
+                               <NexaButton size="sm" onClick={() => handleUpdateStatus(booking.id, "CONFIRMED")}>Accept Booking</NexaButton>
+                            </div>
+                         </div>
+                      )}
+
+                      {/* Cancel Actions (Client View) */}
+                      {["pending", "confirmed"].includes(booking.status.toLowerCase()) && !isPro && (
+                         <div className="bg-red-500/5 border-t border-red-500/10 p-3 px-6 flex items-center justify-between">
+                            <p className="text-[10px] font-bold text-red-700 flex items-center gap-2 uppercase tracking-widest">
+                               <AlertCircle className="w-3.5 h-3.5" />
+                               Manage Appointment
+                            </p>
+                            <div className="flex items-center gap-3">
+                               <NexaButton size="sm" variant="ghost" className="text-red-500 hover:bg-red-50" onClick={() => handleUpdateStatus(booking.id, "CANCELLED")}>Cancel Booking</NexaButton>
+                            </div>
+                         </div>
+                      )}
+                    </NexaCard>
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
 
             {filteredBookings.length === 0 && (
@@ -223,7 +266,11 @@ export default function BookingsManagerPage() {
                    <CalendarIcon className="w-10 h-10" />
                 </div>
                 <h3 className="font-bold text-xl">No {activeTab} bookings found</h3>
-                <p className="text-nexa-text-secondary max-w-xs mx-auto">Your customers haven't scheduled any services in this category yet.</p>
+                <p className="text-nexa-text-secondary max-w-xs mx-auto">
+                  {isPro 
+                    ? "Your customers haven't scheduled any services in this category yet." 
+                    : "You haven't scheduled any service appointments in this category yet."}
+                </p>
               </div>
             )}
           </div>
@@ -275,9 +322,9 @@ export default function BookingsManagerPage() {
               <h3 className="text-sm font-extrabold uppercase tracking-widest text-nexa-text-faint mb-6">Monthly Summary</h3>
               <div className="space-y-6">
                  {[
-                   { label: "Bookings", val: "24", change: "+15%" },
-                   { label: "Completion", val: "92%", change: "+2%" },
-                   { label: "Revenue", val: "₦340k", change: "+24%" },
+                   { label: "Total Bookings", val: totalCount, change: `+${totalCount}` },
+                   { label: isPro ? "Completed" : "Active Bookings", val: isPro ? completedCount : activeCount, change: "Current" },
+                   { label: isPro ? "Revenue" : "Total Spend", val: `₦${totalFinancial.toLocaleString()}`, change: "Processed" },
                  ].map((stat, i) => (
                    <div key={i} className="flex items-center justify-between">
                       <div>
@@ -289,7 +336,9 @@ export default function BookingsManagerPage() {
                  ))}
               </div>
               <div className="pt-8 mt-8 border-t border-nexa-border">
-                 <NexaButton variant="ghost" className="w-full text-xs font-extrabold uppercase tracking-widest text-nexa-brand" rightIcon={<ArrowRight className="w-4 h-4" />}>View Detailed Reports</NexaButton>
+                 <NexaButton variant="ghost" className="w-full text-xs font-extrabold uppercase tracking-widest text-nexa-brand" rightIcon={<ArrowRight className="w-4 h-4" />}>
+                   {isPro ? "View Detailed Reports" : "Browse Service Catalog"}
+                 </NexaButton>
               </div>
            </NexaCard>
 

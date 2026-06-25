@@ -18,39 +18,48 @@ model User {
   password  String
   name      String?
   role      String   @default("CLIENT") // Using String for SQLite compatibility with emulated Enums if needed, but Prisma handles it. Let's use String for simplicity in SQLite.
+  isOnline  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   proProfile ProProfile?
   bookings   Booking[]    @relation("ClientBookings")
+  orders     Order[]      @relation("ClientOrders")
   wallet     Wallet?
+
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  notifications    Notification[] @relation("UserNotifications")
 }
 
 model ProProfile {
-  id             String   @id @default(cuid())
-  userId         String   @unique
-  user           User     @relation(fields: [userId], references: [id])
-  businessName   String?
-  slug           String?  @unique
-  bio            String?
-  hourlyRate     Float?
-  specialties    String? // Comma-separated or JSON
-  niche          String? 
-  subService     String?
-  specialtyLevel String?
-  city           String?
-  area           String?
-  phone          String?
-  whatsapp       String?
-  businessEmail  String?
-  nin            String?
-  plan           String?   @default("basic")
-  verified       Boolean  @default(false)
-  acceptsPos     Boolean  @default(false)
-  homeDelivery   Boolean  @default(false)
-  rating         Float    @default(0)
-  logoUrl        String?
-  catalog        String?
+  id                    String    @id @default(cuid())
+  userId                String    @unique
+  user                  User      @relation(fields: [userId], references: [id])
+  businessName          String?
+  slug                  String?   @unique
+  bio                   String?
+  hourlyRate            Float?
+  specialties           String?   // Comma-separated or JSON
+  niche                 String? 
+  subService            String?
+  specialtyLevel        String?
+  city                  String?
+  area                  String?
+  phone                 String?
+  whatsapp              String?
+  businessEmail         String?
+  nin                   String?
+  plan                  String?   @default("basic")
+  subscriptionExpiresAt DateTime?
+  verified              Boolean   @default(false)
+  acceptsPos            Boolean   @default(false)
+  homeDelivery          Boolean   @default(false)
+  rating                Float     @default(0)
+  profileViews          Int       @default(0)
+  logoUrl               String?
+  catalog               String?
+  availability          String?   @db.Text
   
   services    Service[]
   products    Product[]
@@ -87,6 +96,7 @@ model Product {
   image        String?
   proProfileId String
   proProfile   ProProfile @relation(fields: [proProfileId], references: [id])
+  orders       Order[]
 }
 
 model Booking {
@@ -119,5 +129,55 @@ model Transaction {
   amount    Float
   type      String   
   status    String   
+  createdAt DateTime @default(now())
+}
+
+model Order {
+  id              String    @id @default(cuid())
+  clientId        String
+  client          User      @relation("ClientOrders", fields: [clientId], references: [id])
+  productId       String
+  product         Product   @relation(fields: [productId], references: [id])
+  quantity        Int       @default(1)
+  amount          Float
+  status          String    @default("PENDING") // PENDING, PAID, CANCELLED
+  shippingAddress String?
+  phone           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  delivery        Delivery?
+}
+
+model Delivery {
+  id                String    @id @default(cuid())
+  orderId           String    @unique
+  order             Order     @relation(fields: [orderId], references: [id])
+  status            String    @default("PENDING") // PENDING, SHIPPED, OUT_FOR_DELIVERY, DELIVERED
+  trackingNumber    String?
+  carrier           String?
+  estimatedDelivery DateTime?
+  updatedAt         DateTime  @updatedAt
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  text       String   @db.Text
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("UserNotifications", fields: [userId], references: [id])
+  title     String
+  message   String
+  type      String   @default("SYSTEM") // SYSTEM, BOOKING, ORDER, DELIVERY, ADMIN_PUSH, SUBSCRIPTION
+  isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
 }

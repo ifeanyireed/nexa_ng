@@ -36,9 +36,13 @@ export default function ArticleManagerPage() {
 
   useEffect(() => {
     const fetchArticles = async () => {
-      if (!user?.pro_profile?.id) return;
+      const proId = user?.pro_profile?.id || user?.pro_profile?.ID;
+      if (!proId) {
+        setLoading(false);
+        return;
+      }
       try {
-        const data = await api.get(`/discovery/articles?proId=${user.pro_profile.id}`);
+        const data = await api.get(`/discovery/articles?proId=${proId}`);
         // Map all to published for now as we don't have draft status in schema
         const mapped = data.map((a: any) => ({ ...a, status: "published" }));
         setArticles(mapped);

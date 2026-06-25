@@ -95,8 +95,9 @@ export function slugify(text: string): string {
 }
 
 export function getProSlug(pro: any): string {
-  if (pro.slug) return pro.slug;
-  const name = pro.user?.name || pro.businessName || "professional";
+  if (pro.slug || pro.Slug) return pro.slug || pro.Slug;
+  if (pro.id || pro.ID) return `business-${pro.id || pro.ID}`;
+  const name = pro.user?.name || pro.businessName || pro.BusinessName || "professional";
   return slugify(name);
 }
 
@@ -105,9 +106,14 @@ export function getArticleSlug(article: any): string {
 }
 
 export function getProLink(pro: any): string {
-  const service = slugify(pro.specialties?.split(",")[0] || pro.niche || "service");
-  const state = slugify(pro.city || "state");
-  const lga = slugify(pro.area || "lga");
+  const specialties = pro.specialties || pro.Specialties;
+  const niche = pro.niche || pro.Niche;
+  const city = pro.city || pro.City;
+  const area = pro.area || pro.Area;
+  
+  const service = slugify((specialties ? specialties.split(",")[0] : null) || niche || "service");
+  const state = slugify(city || "state");
+  const lga = slugify(area || "lga");
   const slug = getProSlug(pro);
   return `/${service}/${state}/${lga}/${slug}`;
 }

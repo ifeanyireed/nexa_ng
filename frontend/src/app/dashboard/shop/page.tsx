@@ -20,7 +20,7 @@ import {
   CheckCircle2,
   XCircle
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getProLink } from "@/lib/utils";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -36,9 +36,13 @@ export default function ShopManagerPage() {
 
   useEffect(() => {
     const fetchProducts = async () => {
-      if (!user?.pro_profile?.id) return;
+      const proId = user?.pro_profile?.id || user?.pro_profile?.ID;
+      if (!proId) {
+        setLoading(false);
+        return;
+      }
       try {
-        const data = await api.get(`/discovery/products?proId=${user.pro_profile.id}`);
+        const data = await api.get(`/discovery/products?proId=${proId}`);
         setProducts(data);
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -70,7 +74,7 @@ export default function ShopManagerPage() {
           <p className="text-nexa-text-secondary text-sm mt-1">Manage your inventory, pricing, and product visibility.</p>
         </div>
         <div className="flex items-center gap-3">
-          <Link href={`/${user?.pro_profile?.niche || "niche"}/business-${user?.pro_profile?.id}/shop`}>
+          <Link href={user?.pro_profile ? getProLink({ ...user.pro_profile, user }) + "/shop" : "#"}>
              <NexaButton variant="secondary" leftIcon={<Eye className="w-4 h-4" />}>View My Shop</NexaButton>
           </Link>
           <NexaButton leftIcon={<Plus className="w-4 h-4" />}>Add New Product</NexaButton>

@@ -5,10 +5,10 @@ import (
 	"os/exec"
 )
 
-// TriggerFrontendRebuild runs the Next.js build locally on your DigitalOcean Droplet.
+// TriggerLocalFrontendRebuild runs the Next.js build locally on your DigitalOcean Droplet.
 // Since Next.js 'output: export' places files directly into the 'out' folder,
 // and Nginx serves from that folder, we just need to run 'npm run build'.
-func TriggerFrontendRebuild() error {
+func TriggerLocalFrontendRebuild() error {
 	log.Println("Starting local frontend rebuild on Droplet...")
 
 	// We point the command to the frontend directory on your server.

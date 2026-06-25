@@ -16,10 +16,15 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { api } from "@/lib/api";
-import { getProLink } from "@/lib/utils";
+import { getProLink, cn } from "@/lib/utils";
+import { Footer } from "@/components/nexa/Footer";
+import { useFavorites } from "@/lib/useFavorites";
 
 export default function ShopClient({ data, nicheSlug }: { data: any, nicheSlug: string }) {
+  const router = useRouter();
+  const { isFavorite, toggleFavorite } = useFavorites();
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -118,14 +123,14 @@ export default function ShopClient({ data, nicheSlug }: { data: any, nicheSlug: 
                    viewport={{ once: true }}
                    transition={{ delay: (i % 4) * 0.1 }}
                  >
-                    <Link href={getProLink(product.proProfile) + "/shop"}>
+                    <div onClick={() => router.push(`/${nicheSlug}/shop/${product.id}`)} className="cursor-pointer h-full">
                        <NexaCard variant="flat" padding="none" className="group h-full flex flex-col">
                           <div className="aspect-square relative overflow-hidden bg-slate-100">
                              <div className="absolute top-3 left-3 z-10">
                                 <NexaBadge variant="neutral" className="bg-white/80 backdrop-blur-sm border-none shadow-sm text-black">New</NexaBadge>
                              </div>
-                             <button className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-nexa-text-faint hover:text-rose-500 transition-colors">
-                                <Heart className="w-4 h-4" />
+                             <button onClick={(e) => toggleFavorite(product.id, e)} className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-nexa-text-faint hover:text-rose-500 transition-colors">
+                                <Heart className={cn("w-4 h-4 transition-colors", isFavorite(product.id) ? "fill-rose-500 text-rose-500" : "")} />
                              </button>
                              <img 
                                 src={product.image || "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=400"} 
@@ -134,7 +139,7 @@ export default function ShopClient({ data, nicheSlug }: { data: any, nicheSlug: 
                              />
                              
                              <div className="absolute bottom-0 left-0 right-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform">
-                                <NexaButton className="w-full shadow-xl">View Details</NexaButton>
+                                <NexaButton className="w-full shadow-xl pointer-events-none">View Details</NexaButton>
                              </div>
                           </div>
                           <div className="p-4 flex-1 flex flex-col">
@@ -154,7 +159,7 @@ export default function ShopClient({ data, nicheSlug }: { data: any, nicheSlug: 
                              </div>
                           </div>
                        </NexaCard>
-                    </Link>
+                    </div>
                  </motion.div>
               ))}
            </div>
@@ -178,6 +183,7 @@ export default function ShopClient({ data, nicheSlug }: { data: any, nicheSlug: 
         )}
       </div>
 
+      <Footer />
       <NexaBottomBar />
     </main>
   );

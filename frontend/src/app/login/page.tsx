@@ -9,7 +9,6 @@ import {
   Lock, 
   ArrowRight, 
   ChevronLeft,
-  Github,
   Chrome
 } from "lucide-react";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
@@ -26,6 +25,14 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const { login } = useAuth();
   const router = useRouter();
+
+  const handleGoogleAuth = () => {
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}&redirect_uri=${window.location.origin}/auth/callback/google&response_type=token&scope=email profile`;
+  };
+
+  const handleMicrosoftAuth = () => {
+    window.location.href = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID}&response_type=token&redirect_uri=${window.location.origin}/auth/callback/microsoft&scope=openid profile email`;
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +76,7 @@ export default function LoginPage() {
 
           <NexaCard variant="glass" className="p-8 md:p-10 shadow-2xl border-nexa-border/50">
             <div className="text-center mb-10">
-              <h1 className="text-3xl font-extrabold text-display mb-2">Welcome Back</h1>
+              <h1 className="text-3xl font-extrabold text-display mb-2 leading-none">Welcome Back</h1>
               <p className="text-nexa-text-secondary text-sm">Log in to manage your bookings and orders.</p>
             </div>
 
@@ -124,11 +131,11 @@ export default function LoginPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-10">
-              <NexaButton variant="secondary" className="h-12 rounded-xl" leftIcon={<Chrome className="w-4 h-4" />}>
+              <NexaButton onClick={handleGoogleAuth} variant="secondary" className="h-12 rounded-xl" leftIcon={<Chrome className="w-4 h-4" />}>
                 Google
               </NexaButton>
-              <NexaButton variant="secondary" className="h-12 rounded-xl" leftIcon={<Github className="w-4 h-4" />}>
-                Github
+              <NexaButton onClick={handleMicrosoftAuth} variant="secondary" className="h-12 rounded-xl">
+                Microsoft
               </NexaButton>
             </div>
 

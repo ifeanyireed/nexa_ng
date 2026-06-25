@@ -2,6 +2,7 @@
 
 import React from "react";
 import { OpsSidebar, OpsHeader } from "@/components/nexa/OpsNav";
+import { RoleGuard } from "@/components/nexa/RoleGuard";
 
 export default function OpsLayout({
   children,
@@ -9,8 +10,9 @@ export default function OpsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[#020617] flex selection:bg-blue-500 selection:text-white">
-      <OpsSidebar />
+    <RoleGuard allowedRoles={["ADMIN", "OPS"]}>
+      <div className="min-h-screen bg-[#020617] flex selection:bg-blue-500 selection:text-white">
+        <OpsSidebar />
       
       <div className="flex-1 flex flex-col min-w-0">
         <OpsHeader />
@@ -19,5 +21,6 @@ export default function OpsLayout({
         </main>
       </div>
     </div>
+  </RoleGuard>
   );
 }

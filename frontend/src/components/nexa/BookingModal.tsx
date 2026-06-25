@@ -19,6 +19,7 @@ import { NexaBadge } from "./NexaBadge";
 import { NexaVerifiedBadge } from "./NexaVerifiedBadge";
 import { api } from "@/lib/api";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -37,6 +38,28 @@ export function BookingModal({ isOpen, onClose, businessName, serviceName, proPr
   const [isNexaVerified, setIsNexaVerified] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const router = useRouter();
+
+  const [proAvailability, setProAvailability] = React.useState<Record<string, string[]>>({});
+
+  React.useEffect(() => {
+    if (isOpen && proProfileId) {
+      const fetchProDetails = async () => {
+        try {
+          const proData = await api.get(`/discovery/pros/${proProfileId}`);
+          if (proData && proData.availability) {
+            const parsed = JSON.parse(proData.availability);
+            setProAvailability(parsed);
+          } else {
+            setProAvailability({});
+          }
+        } catch (err) {
+          console.error("Failed to load pro availability details:", err);
+        }
+      };
+      fetchProDetails();
+    }
+  }, [isOpen, proProfileId]);
 
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const dates = Array.from({ length: 14 }, (_, i) => {
@@ -50,6 +73,24 @@ export function BookingModal({ isOpen, onClose, businessName, serviceName, proPr
   });
 
   const timeSlots = ["09:00 AM", "10:00 AM", "11:00 AM", "01:00 PM", "02:00 PM", "03:00 PM", "04:00 PM"];
+
+  const getAvailableTimeSlots = () => {
+    if (selectedDate === null) return [];
+    const dateObj = dates[selectedDate].full;
+    const weekdayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const dayName = weekdayNames[dateObj.getDay()];
+    
+    const proSlots = proAvailability[dayName];
+    if (proSlots && proSlots.length > 0) {
+      return proSlots;
+    }
+    
+    const hasConfigured = Object.values(proAvailability).some(slots => slots && slots.length > 0);
+    if (!hasConfigured) {
+      return timeSlots;
+    }
+    return [];
+  };
 
   React.useEffect(() => {
     if (isOpen) {
@@ -91,15 +132,10 @@ export function BookingModal({ isOpen, onClose, businessName, serviceName, proPr
       if (period === "AM" && hours === 12) hours = 0;
       scheduledAt.setHours(hours, minutes, 0, 0);
 
-      await api.post("/bookings", {
-        pro_profile_id: proProfileId,
-        scheduled_at: scheduledAt.toISOString(),
-        service_name: serviceName || "Standard Consultation",
-        amount: 0, // Standard bookings are free upfront
-        type: "STANDARD"
-      });
+      const amount = isNexaVerified ? 5000 : 0;
+      const type = isNexaVerified ? "PREMIUM" : "STANDARD";
       
-      setStep(4);
+      router.push(`/checkout?proId=${proProfileId}&service=${encodeURIComponent(serviceName || "Standard Consultation")}&amount=${amount}&type=${type}&date=${scheduledAt.toISOString()}`);
     } catch (err: any) {
       setError(err.message || "Failed to create booking. Are you logged in?");
     } finally {
@@ -185,22 +221,28 @@ export function BookingModal({ isOpen, onClose, businessName, serviceName, proPr
 
                         <div>
                            <h3 className="text-sm font-bold uppercase tracking-widest text-nexa-text-faint mb-4">Select Time</h3>
-                           <div className="grid grid-cols-3 gap-3">
-                              {timeSlots.map((time) => (
-                                 <button
-                                    key={time}
-                                    onClick={() => setSelectedTime(time)}
-                                    className={cn(
-                                       "py-3 rounded-xl border-2 text-xs font-bold transition-all",
-                                       selectedTime === time 
-                                          ? "border-nexa-brand bg-nexa-brand/5 text-nexa-brand" 
-                                          : "border-nexa-border bg-nexa-bg-surface hover:border-nexa-brand/30"
-                                    )}
-                                 >
-                                    {time}
-                                 </button>
-                              ))}
-                           </div>
+                           {getAvailableTimeSlots().length === 0 ? (
+                              <div className="py-6 text-center text-nexa-text-faint text-xs bg-nexa-bg-surface border border-nexa-border border-dashed rounded-2xl">
+                                 No available working slots on this day.
+                              </div>
+                           ) : (
+                              <div className="grid grid-cols-3 gap-3">
+                                 {getAvailableTimeSlots().map((time) => (
+                                    <button
+                                       key={time}
+                                       onClick={() => setSelectedTime(time)}
+                                       className={cn(
+                                          "py-3 rounded-xl border-2 text-xs font-bold transition-all",
+                                          selectedTime === time 
+                                             ? "border-nexa-brand bg-nexa-brand/5 text-nexa-brand" 
+                                             : "border-nexa-border bg-nexa-bg-surface hover:border-nexa-brand/30"
+                                       )}
+                                    >
+                                       {time}
+                                    </button>
+                                 ))}
+                              </div>
+                           )}
                         </div>
 
                         <NexaButton 

@@ -10,7 +10,6 @@ import {
   User,
   ArrowRight, 
   ChevronLeft,
-  Github,
   Chrome,
   ShieldCheck
 } from "lucide-react";
@@ -29,6 +28,14 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const { login } = useAuth();
   const router = useRouter();
+
+  const handleGoogleAuth = () => {
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID}&redirect_uri=${window.location.origin}/auth/callback/google&response_type=token&scope=email profile`;
+  };
+
+  const handleMicrosoftAuth = () => {
+    window.location.href = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID}&response_type=token&redirect_uri=${window.location.origin}/auth/callback/microsoft&scope=openid profile email`;
+  };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,7 +73,7 @@ export default function SignupPage() {
 
           <NexaCard variant="glass" className="p-8 md:p-10 shadow-2xl border-nexa-border/50">
             <div className="text-center mb-10">
-              <h1 className="text-3xl font-extrabold text-display mb-2">Create Account</h1>
+              <h1 className="text-3xl font-extrabold text-display mb-2 leading-none">Create Account</h1>
               <p className="text-nexa-text-secondary text-sm">Join Nexa to discover and book local services.</p>
             </div>
 
@@ -130,11 +137,11 @@ export default function SignupPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-10">
-              <NexaButton variant="secondary" className="h-12 rounded-xl" leftIcon={<Chrome className="w-4 h-4" />}>
+              <NexaButton onClick={handleGoogleAuth} variant="secondary" className="h-12 rounded-xl" leftIcon={<Chrome className="w-4 h-4" />}>
                 Google
               </NexaButton>
-              <NexaButton variant="secondary" className="h-12 rounded-xl" leftIcon={<Github className="w-4 h-4" />}>
-                Github
+              <NexaButton onClick={handleMicrosoftAuth} variant="secondary" className="h-12 rounded-xl">
+                Microsoft
               </NexaButton>
             </div>
 

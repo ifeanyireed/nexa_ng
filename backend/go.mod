@@ -12,4 +12,7 @@ require (
 	golang.org/x/crypto v0.53.0
 )
 
-require go.mongodb.org/mongo-driver/v2 v2.0.1 // indirect
+require (
+	github.com/gorilla/websocket v1.5.3 // indirect
+	go.mongodb.org/mongo-driver/v2 v2.0.1 // indirect
+)

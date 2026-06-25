@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useAuth } from "@/components/nexa/AuthContext";
+import dynamic from "next/dynamic";
+import { api } from "@/lib/api";
+
+const PaystackButton = dynamic(() => import("@/components/nexa/PaystackButton"), { ssr: false });
+
 import { motion } from "framer-motion";
 import { 
   ArrowLeft, 
@@ -19,18 +25,24 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaInput } from "@/components/nexa/NexaInput";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { api } from "@/lib/api";
-import { useAuth } from "@/components/nexa/AuthContext";
 
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
 
-  const [step, setStep] = useState(1);
-  const [paymentMethod, setPaymentMethod] = useState("card");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [stateName, setStateName] = useState("");
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/login?redirect=/checkout");
+    }
+  }, [user, authLoading, router]);
 
   // Get data from query params for booking checkouts
   const proId = searchParams.get("proId");
@@ -42,23 +54,50 @@ function CheckoutContent() {
   const amount = amountParam ? parseFloat(amountParam) : 0;
 
   // Mock cart items (fallback if not a booking checkout)
-  const cartItems = proId ? [
-    { name: service || "Premium Service", price: `₦${amount.toLocaleString()}`, qty: 1, image: "https://api.dicebear.com/7.x/initials/svg?seed=Nexa" }
-  ] : [
-    { name: "Industrial Wrench Set", price: "₦15,000", qty: 1, image: "https://images.unsplash.com/photo-1586864387917-f538a5a9261c?auto=format&fit=crop&q=80&w=100" },
-    { name: "Safety Gloves (Large)", price: "₦2,500", qty: 2, image: "https://images.unsplash.com/photo-1590674899484-13da0d1b58f5?auto=format&fit=crop&q=80&w=100" }
-  ];
+  const [cartItems, setCartItems] = useState<any[]>([]);
 
-  const subtotal = proId ? amount : 20000;
-  const delivery = proId ? 0 : 2500;
+  useEffect(() => {
+    if (proId) {
+      setCartItems([{
+        name: service || "Premium Service",
+        qty: 1,
+        price: amount,
+        image: "https://api.dicebear.com/7.x/initials/svg?seed=Nexa"
+      }]);
+    } else {
+      try {
+        const savedCart = localStorage.getItem("nexa_cart");
+        if (savedCart) {
+          const parsed = JSON.parse(savedCart);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setCartItems(parsed);
+          }
+        }
+      } catch (e) {
+        console.error("Cart hydration failed", e);
+      }
+    }
+  }, [proId, service, amount]);
+
+  const subtotal = cartItems.reduce((acc, item) => {
+    const p = typeof item.price === 'string' ? parseInt(item.price.replace(/\D/g, '')) : item.price;
+    return acc + (p * item.qty);
+  }, 0);
+  
+  // Checkout + Delivery is only for products. If proId is present, it's a direct service booking, so delivery is 0.
+  const delivery = proId ? 0 : 3500; 
   const total = subtotal + delivery;
 
-  const handlePay = async () => {
-    setIsSubmitting(true);
-    setError("");
-    try {
-      if (proId) {
-        // Create booking in backend
+  const paystackConfig = {
+    reference: (new Date()).getTime().toString(),
+    email: user?.email || "customer@nexa.com",
+    amount: total * 100, // Convert to kobo
+    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "",
+  };
+
+  const finalizeBookingAndRoute = async () => {
+    if (proId) {
+      try {
         await api.post("/bookings", {
           pro_profile_id: proId,
           scheduled_at: date ? new Date(date).toISOString() : new Date().toISOString(),
@@ -66,14 +105,33 @@ function CheckoutContent() {
           amount: amount,
           type: type
         });
+      } catch (e) {
+        console.error("Failed to save booking:", e);
       }
-      
-      router.push("/checkout/success");
-    } catch (err: any) {
-      setError(err.message || "Payment failed. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+    } else {
+      try {
+        const fullAddress = `${address}, ${city}, ${stateName}`;
+        for (const item of cartItems) {
+          const itemPrice = typeof item.price === 'string' ? parseInt(item.price.replace(/\D/g, '')) : item.price;
+          await api.post("/orders", {
+            product_id: item.id,
+            quantity: item.qty,
+            amount: itemPrice * item.qty,
+            shipping_address: fullAddress,
+            phone: phone || "+234 803 000 0000"
+          });
+        }
+        localStorage.removeItem("nexa_cart");
+      } catch (e) {
+        console.error("Failed to save order:", e);
+      }
     }
+    router.push("/dashboard?payment=success");
+  };
+
+  const handlePayZero = async () => {
+    setIsSubmitting(true);
+    await finalizeBookingAndRoute();
   };
 
   if (authLoading) return null;
@@ -93,125 +151,35 @@ function CheckoutContent() {
           
           {/* LEFT: CHECKOUT FORM */}
           <div className="flex-1 space-y-8">
-            <div className="flex items-center justify-between mb-8">
-              <h1 className="text-3xl font-extrabold text-display">Checkout</h1>
-              <div className="flex items-center gap-2">
-                {[1, 2].map((s) => (
-                  <div 
-                    key={s} 
-                    className={cn(
-                      "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all",
-                      step >= s ? "bg-nexa-brand text-white" : "bg-nexa-bg-surface text-nexa-text-faint"
-                    )}
-                  >
-                    {s}
+            <h1 className="text-3xl font-extrabold text-display mb-8">Checkout Details</h1>
+
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
+              <section>
+                <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-nexa-brand" />
+                  Billing & Contact Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <NexaInput label="Full Name" placeholder="John Doe" defaultValue={user?.name || ""} />
+                  <NexaInput label="Email Address" placeholder="customer@nexa.com" defaultValue={user?.email || ""} disabled />
+                  <NexaInput label="Phone Number" placeholder="+234 803 000 0000" value={phone} onChange={e => setPhone(e.target.value)} />
+                  <div className="md:col-span-2">
+                    <NexaInput label="Delivery / Service Address" placeholder="Street name and number" value={address} onChange={e => setAddress(e.target.value)} />
                   </div>
-                ))}
-              </div>
-            </div>
+                  <NexaInput label="City" placeholder="Lekki" value={city} onChange={e => setCity(e.target.value)} />
+                  <NexaInput label="State" placeholder="Lagos" value={stateName} onChange={e => setStateName(e.target.value)} />
+                </div>
+              </section>
 
-            {step === 1 ? (
-              <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
-                <section>
-                  <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
-                    <Truck className="w-5 h-5 text-nexa-brand" />
-                    Delivery Information
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <NexaInput label="Full Name" placeholder="John Doe" />
-                    <NexaInput label="Phone Number" placeholder="+234 803 000 0000" />
-                    <div className="md:col-span-2">
-                      <NexaInput label="Shipping Address" placeholder="Street name and number" />
-                    </div>
-                    <NexaInput label="City" placeholder="Lekki" />
-                    <NexaInput label="State" placeholder="Lagos" />
-                  </div>
-                </section>
-
-                <NexaButton size="lg" className="w-full h-14" onClick={() => setStep(2)} rightIcon={<ChevronRight className="w-5 h-5" />}>
-                  Continue to Payment
-                </NexaButton>
-              </motion.div>
-            ) : (
-              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
-                <button onClick={() => setStep(1)} className="text-xs font-bold text-nexa-brand uppercase tracking-widest flex items-center gap-2">
-                  <ArrowLeft className="w-4 h-4" /> Back to Shipping
-                </button>
-
-                <section>
-                  <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
-                    <CreditCard className="w-5 h-5 text-nexa-brand" />
-                    Payment Method
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                    {[
-                      { id: "card", label: "Card", icon: <CreditCard className="w-5 h-5" /> },
-                      { id: "transfer", label: "Transfer", icon: <Building className="w-5 h-5" /> },
-                      { id: "ussd", label: "USSD", icon: <Smartphone className="w-5 h-5" /> }
-                    ].map((m) => (
-                      <button 
-                        key={m.id}
-                        onClick={() => setPaymentMethod(m.id)}
-                        className={cn(
-                          "p-6 rounded-2xl border-2 transition-all flex flex-col items-center gap-3",
-                          paymentMethod === m.id ? "border-nexa-brand bg-nexa-brand/5" : "border-nexa-border bg-nexa-bg-surface hover:border-nexa-brand/30"
-                        )}
-                      >
-                        <div className={cn("w-10 h-10 rounded-full flex items-center justify-center", paymentMethod === m.id ? "bg-nexa-brand text-white" : "bg-nexa-bg-base text-nexa-text-faint")}>
-                          {m.icon}
-                        </div>
-                        <span className="text-sm font-bold">{m.label}</span>
-                      </button>
-                    ))}
-                  </div>
-
-                  {paymentMethod === "card" && (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
-                      <NexaInput label="Card Number" placeholder="0000 0000 0000 0000" />
-                      <div className="grid grid-cols-2 gap-6">
-                        <NexaInput label="Expiry Date" placeholder="MM/YY" />
-                        <NexaInput label="CVV" placeholder="123" />
-                      </div>
-                    </div>
-                  )}
-
-                  {paymentMethod === "transfer" && (
-                    <div className="p-6 rounded-2xl bg-nexa-bg-surface border border-nexa-border space-y-4 animate-in fade-in slide-in-from-bottom-2">
-                      <p className="text-sm text-nexa-text-secondary">Please transfer the total amount to the account below:</p>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-xs text-nexa-text-faint font-bold uppercase">Bank</span>
-                          <span className="text-sm font-bold">Nexa Bank (Providus)</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-xs text-nexa-text-faint font-bold uppercase">Account Number</span>
-                          <span className="text-sm font-bold tracking-widest">1234567890</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-xs text-nexa-text-faint font-bold uppercase">Account Name</span>
-                          <span className="text-sm font-bold">NEXA TECHNOLOGIES LTD</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </section>
-
-                <NexaButton 
-                  size="lg" 
-                  className="w-full h-16 rounded-2xl shadow-xl shadow-nexa-brand/20 text-lg mt-8" 
-                  leftIcon={<Lock className="w-5 h-5" />}
-                  onClick={handlePay}
-                  isLoading={isSubmitting}
-                >
-                  Pay ₦{total.toLocaleString()}
-                </NexaButton>
-                
-                <p className="text-center text-[10px] text-nexa-text-faint font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                  Secure Encryption by NexaPay
+              <div className="p-6 rounded-2xl bg-nexa-brand/5 border border-nexa-brand/20">
+                <h4 className="font-bold text-nexa-brand mb-2 flex items-center gap-2">
+                  <Lock className="w-4 h-4" /> Secure Payment via Paystack
+                </h4>
+                <p className="text-sm text-nexa-text-secondary">
+                  We route all transactions securely through Paystack. You will be able to choose between Card, Transfer, USSD, and other local payment methods directly inside the Paystack modal.
                 </p>
-              </motion.div>
-            )}
+              </div>
+            </motion.div>
           </div>
 
           {/* RIGHT: ORDER SUMMARY */}
@@ -229,7 +197,7 @@ function CheckoutContent() {
                       <h4 className="font-bold text-sm truncate">{item.name}</h4>
                       <div className="flex items-center justify-between mt-1">
                         <p className="text-xs text-nexa-text-faint">Qty: {item.qty}</p>
-                        <p className="text-sm font-bold">{item.price}</p>
+                        <p className="text-sm font-bold">₦{typeof item.price === 'number' ? item.price.toLocaleString() : item.price}</p>
                       </div>
                     </div>
                   </div>
@@ -241,16 +209,45 @@ function CheckoutContent() {
                   <span>Subtotal</span>
                   <span>₦{subtotal.toLocaleString()}</span>
                 </div>
-                <div className="flex justify-between text-sm text-nexa-text-secondary font-medium">
-                  <span>Delivery Fee</span>
-                  <span>₦{delivery.toLocaleString()}</span>
-                </div>
+                {!proId && (
+                  <div className="flex justify-between text-sm text-nexa-text-secondary font-medium">
+                    <span>Delivery Fee</span>
+                    <span>₦{delivery.toLocaleString()}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-lg font-extrabold pt-2">
                   <span>Total</span>
                   <span className="text-nexa-brand">₦{total.toLocaleString()}</span>
                 </div>
               </div>
 
+              {total === 0 ? (
+                <NexaButton 
+                  size="lg" 
+                  className="w-full h-16 rounded-2xl shadow-xl shadow-nexa-brand/20 text-lg mt-8" 
+                  leftIcon={<Lock className="w-5 h-5" />}
+                  onClick={handlePayZero}
+                  isLoading={isSubmitting}
+                >
+                  Confirm Booking
+                </NexaButton>
+              ) : (
+                <div className="mt-8">
+                  <PaystackButton 
+                    config={paystackConfig}
+                    onSuccess={finalizeBookingAndRoute}
+                    onClose={() => {}}
+                    text={`Pay ₦${total.toLocaleString()}`}
+                    className="w-full h-16 rounded-2xl shadow-xl shadow-nexa-brand/20 text-lg"
+                  />
+                </div>
+              )}
+              
+              <p className="text-center text-[10px] text-nexa-text-faint font-bold uppercase tracking-[0.2em] flex items-center justify-center gap-2 mt-6">
+                <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                Secure Encryption by NexaPay
+              </p>
+              
               <div className="mt-8 p-4 rounded-2xl bg-nexa-brand/5 border border-nexa-brand/10 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-nexa-brand/10 text-nexa-brand flex items-center justify-center shrink-0">
                   <ShieldCheck className="w-5 h-5" />
@@ -261,8 +258,8 @@ function CheckoutContent() {
               </div>
             </NexaCard>
           </div>
-
         </div>
+
       </div>
 
       <NexaBottomBar />

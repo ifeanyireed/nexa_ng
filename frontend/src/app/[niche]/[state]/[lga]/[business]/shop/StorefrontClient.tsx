@@ -19,7 +19,8 @@ import {
   Store,
   Info,
   ArrowLeft,
-  Zap
+  Zap,
+  Heart
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
@@ -27,11 +28,14 @@ import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { api } from "@/lib/api";
+import { useFavorites } from "@/lib/useFavorites";
 
 export default function StorefrontClient({ data }: { data: any }) {
   const params = useParams();
+  const router = useRouter();
+  const { isFavorite, toggleFavorite } = useFavorites();
   let businessSlug = params.business as string;
   
   if (!businessSlug && typeof window !== "undefined") {
@@ -66,27 +70,39 @@ export default function StorefrontClient({ data }: { data: any }) {
 
   const addToCart = (product: any) => {
     setCartItems(prev => {
-      const exists = prev.find(item => item.id === product.id);
-      if (exists) {
-        return prev.map(item => item.id === product.id ? { ...item, qty: item.qty + 1 } : item);
+      const existing = prev.find(item => item.id === product.id);
+      let newCart;
+      if (existing) {
+        newCart = prev.map(item => item.id === product.id ? { ...item, qty: item.qty + 1 } : item);
+      } else {
+        newCart = [...prev, { ...product, qty: 1 }];
       }
-      return [...prev, { ...product, qty: 1 }];
+      localStorage.setItem("nexa_cart", JSON.stringify(newCart));
+      return newCart;
     });
     setIsCartOpen(true);
   };
 
   const removeFromCart = (id: string) => {
-    setCartItems(prev => prev.filter(item => item.id !== id));
+    setCartItems(prev => {
+      const newCart = prev.filter(item => item.id !== id);
+      localStorage.setItem("nexa_cart", JSON.stringify(newCart));
+      return newCart;
+    });
   };
 
   const updateQty = (id: string, delta: number) => {
-    setCartItems(prev => prev.map(item => {
-      if (item.id === id) {
-        const newQty = Math.max(1, item.qty + delta);
-        return { ...item, qty: newQty };
-      }
-      return item;
-    }));
+    setCartItems(prev => {
+      const newCart = prev.map(item => {
+        if (item.id === id) {
+          const newQty = item.qty + delta;
+          return { ...item, qty: newQty > 0 ? newQty : 1 };
+        }
+        return item;
+      });
+      localStorage.setItem("nexa_cart", JSON.stringify(newCart));
+      return newCart;
+    });
   };
 
   const cartTotal = cartItems.reduce((acc, item) => {
@@ -154,7 +170,8 @@ export default function StorefrontClient({ data }: { data: any }) {
          {pro.products?.length > 0 ? (
            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               {pro.products.map((product: any) => (
-                 <NexaCard key={product.id} variant="interactive" className="p-0 overflow-hidden flex flex-col group h-full">
+                 <div key={product.id} onClick={() => router.push(`/${params.niche}/shop/${product.id}`)} className="cursor-pointer h-full">
+                    <NexaCard variant="interactive" className="p-0 overflow-hidden flex flex-col group h-full">
                     <div className="aspect-square bg-slate-100 relative overflow-hidden">
                        <img 
                           src={product.image || "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=400"} 
@@ -164,6 +181,9 @@ export default function StorefrontClient({ data }: { data: any }) {
                        <div className="absolute top-3 left-3">
                           <NexaBadge className="bg-white/80 backdrop-blur-md border-none text-black">New Arrival</NexaBadge>
                        </div>
+                       <button onClick={(e) => toggleFavorite(product.id, e)} className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-nexa-text-faint hover:text-rose-500 transition-colors">
+                          <Heart className={cn("w-4 h-4 transition-colors", isFavorite(product.id) ? "fill-rose-500 text-rose-500" : "")} />
+                       </button>
                     </div>
                     <div className="p-6 flex-1 flex flex-col">
                        <h3 className="text-lg font-bold mb-2 group-hover:text-nexa-brand transition-colors">{product.name}</h3>
@@ -172,7 +192,7 @@ export default function StorefrontClient({ data }: { data: any }) {
                        <div className="mt-auto flex items-center justify-between">
                           <span className="text-xl font-extrabold text-nexa-text-primary">₦{product.price.toLocaleString()}</span>
                           <button 
-                            onClick={() => addToCart(product)}
+                            onClick={(e) => { e.stopPropagation(); addToCart(product); }}
                             className="w-10 h-10 rounded-xl bg-nexa-brand text-white flex items-center justify-center hover:scale-110 transition-transform shadow-lg shadow-nexa-brand/20"
                           >
                              <Plus className="w-5 h-5" />
@@ -180,6 +200,7 @@ export default function StorefrontClient({ data }: { data: any }) {
                        </div>
                     </div>
                  </NexaCard>
+              </div>
               ))}
            </div>
          ) : (
@@ -270,7 +291,7 @@ export default function StorefrontClient({ data }: { data: any }) {
                            </div>
                         </div>
                         
-                        <Link href="/checkout">
+                        <Link href="/checkout/shipping">
                            <NexaButton size="lg" className="w-full h-14" rightIcon={<ArrowRight className="w-5 h-5" />}>
                               Checkout Now
                            </NexaButton>

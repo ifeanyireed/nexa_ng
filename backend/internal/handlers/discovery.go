@@ -11,6 +11,31 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+func mapNicheSlug(slug string) string {
+	switch slug {
+	case "fashion-grooming":
+		return "fashion"
+	case "professional-services":
+		return "professionals"
+	case "education-skills":
+		return "education"
+	case "events-entertainment":
+		return "events"
+	case "health-wellness":
+		return "health"
+	case "logistics-transport":
+		return "logistics"
+	case "automotive-services":
+		return "auto"
+	case "food-agribusiness":
+		return "food"
+	case "real-estate-construction":
+		return "realestate"
+	default:
+		return slug
+	}
+}
+
 func ListPros(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	niche := query.Get("niche")
@@ -23,7 +48,11 @@ func ListPros(w http.ResponseWriter, r *http.Request) {
 	var conditions []db.ProProfileWhereParam
 
 	if niche != "" {
-		conditions = append(conditions, db.ProProfile.Niche.Equals(niche))
+		mappedNiche := mapNicheSlug(niche)
+		conditions = append(conditions, db.ProProfile.Or(
+			db.ProProfile.Niche.Equals(mappedNiche),
+			db.ProProfile.SubService.Equals(mappedNiche),
+		))
 	}
 	if city != "" {
 		conditions = append(conditions, db.ProProfile.City.Equals(city))
@@ -75,7 +104,8 @@ func ListArticles(w http.ResponseWriter, r *http.Request) {
 	var conditions []db.ArticleWhereParam
 
 	if niche != "" {
-		conditions = append(conditions, db.Article.Niche.Equals(niche))
+		mappedNiche := mapNicheSlug(niche)
+		conditions = append(conditions, db.Article.Niche.Equals(mappedNiche))
 	}
 	if proId != "" {
 		conditions = append(conditions, db.Article.ProProfileID.Equals(proId))
@@ -127,14 +157,46 @@ func ListProducts(w http.ResponseWriter, r *http.Request) {
 	niche := query.Get("niche")
 	keyword := query.Get("q")
 	proId := query.Get("proId")
+	city := query.Get("city")
+	minPriceStr := query.Get("min_price")
+	maxPriceStr := query.Get("max_price")
+	homeDeliveryStr := query.Get("home_delivery")
+	acceptsPosStr := query.Get("accepts_pos")
 
 	var conditions []db.ProductWhereParam
 
 	if niche != "" {
-		conditions = append(conditions, db.Product.ProProfile.Where(db.ProProfile.Niche.Equals(niche)))
+		mappedNiche := mapNicheSlug(niche)
+		conditions = append(conditions, db.Product.ProProfile.Where(
+			db.ProProfile.Or(
+				db.ProProfile.Niche.Equals(mappedNiche),
+				db.ProProfile.SubService.Equals(mappedNiche),
+			),
+		))
 	}
 	if proId != "" {
 		conditions = append(conditions, db.Product.ProProfileID.Equals(proId))
+	}
+	if city != "" {
+		conditions = append(conditions, db.Product.ProProfile.Where(db.ProProfile.City.Equals(city)))
+	}
+	if minPriceStr != "" {
+		minPrice, err := strconv.ParseFloat(minPriceStr, 64)
+		if err == nil {
+			conditions = append(conditions, db.Product.Price.Gte(minPrice))
+		}
+	}
+	if maxPriceStr != "" {
+		maxPrice, err := strconv.ParseFloat(maxPriceStr, 64)
+		if err == nil {
+			conditions = append(conditions, db.Product.Price.Lte(maxPrice))
+		}
+	}
+	if homeDeliveryStr == "true" {
+		conditions = append(conditions, db.Product.ProProfile.Where(db.ProProfile.HomeDelivery.Equals(true)))
+	}
+	if acceptsPosStr == "true" {
+		conditions = append(conditions, db.Product.ProProfile.Where(db.ProProfile.AcceptsPos.Equals(true)))
 	}
 	if keyword != "" {
 		conditions = append(conditions, db.Product.Or(

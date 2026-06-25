@@ -3,9 +3,11 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	internalDB "nexa/backend/internal/db"
 	"nexa/backend/internal/middleware"
+	"nexa/backend/internal/utils"
 	"nexa/backend/prisma/db"
 	"regexp"
 	"strings"
@@ -157,6 +159,8 @@ func CreateService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_ = utils.CreateNotification(userID, "New Service Added", fmt.Sprintf("Your service '%s' has been listed successfully.", req.Name), "SYSTEM")
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(service)
 }
@@ -203,6 +207,8 @@ func CreateArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	_ = utils.CreateNotification(userID, "Article Published", fmt.Sprintf("Your article '%s' has been published successfully.", req.Title), "SYSTEM")
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(article)
 }
@@ -213,4 +219,148 @@ func slugify(str string) string {
 	str = reg.ReplaceAllString(str, "-")
 	str = strings.Trim(str, "-")
 	return str
+}
+
+type CreateProductRequest struct {
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	Price       float64 `json:"price"`
+	Image       string  `json:"image,omitempty"`
+}
+
+// CreateProduct publishes a product listing and triggers a dashboard notification
+func CreateProduct(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(middleware.UserIDKey).(string)
+	ctx := context.Background()
+
+	var req CreateProductRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+
+	profile, err := internalDB.Client.ProProfile.FindUnique(
+		db.ProProfile.UserID.Equals(userID),
+	).Exec(ctx)
+
+	if err != nil || profile == nil {
+		http.Error(w, "pro profile not found", http.StatusNotFound)
+		return
+	}
+
+	// Create product in database. Required args: Name, Price, ProProfile
+	product, err := internalDB.Client.Product.CreateOne(
+		db.Product.Name.Set(req.Name),
+		db.Product.Price.Set(req.Price),
+		db.Product.ProProfile.Link(db.ProProfile.ID.Equals(profile.ID)),
+		db.Product.Description.Set(req.Description),
+		db.Product.Image.Set(req.Image),
+	).Exec(ctx)
+
+	if err != nil {
+		http.Error(w, "error creating product: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Trigger system notification
+	_ = utils.CreateNotification(userID, "New Product Added", fmt.Sprintf("Your product '%s' has been successfully added to NexaShop.", req.Name), "SYSTEM")
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(product)
+}
+
+// GetProAvailability retrieves availability slots for the logged-in pro.
+func GetProAvailability(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(middleware.UserIDKey).(string)
+	ctx := context.Background()
+
+	profile, err := internalDB.Client.ProProfile.FindUnique(
+		db.ProProfile.UserID.Equals(userID),
+	).Exec(ctx)
+
+	if err != nil || profile == nil {
+		http.Error(w, "pro profile not found", http.StatusNotFound)
+		return
+	}
+
+	availStr, ok := profile.Availability()
+	w.Header().Set("Content-Type", "application/json")
+	if !ok || availStr == "" {
+		w.Write([]byte(`{}`))
+		return
+	}
+
+	w.Write([]byte(availStr))
+}
+
+// UpdateProAvailability saves the weekly availability schedule.
+func UpdateProAvailability(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(middleware.UserIDKey).(string)
+	ctx := context.Background()
+
+	var reqBody map[string][]string
+	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
+		http.Error(w, "invalid JSON payload", http.StatusBadRequest)
+		return
+	}
+
+	jsonBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		http.Error(w, "error processing JSON", http.StatusInternalServerError)
+		return
+	}
+
+	_, err = internalDB.Client.ProProfile.FindUnique(
+		db.ProProfile.UserID.Equals(userID),
+	).Update(
+		db.ProProfile.Availability.Set(string(jsonBytes)),
+	).Exec(ctx)
+
+	if err != nil {
+		http.Error(w, "failed to save availability: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+}
+
+type ProAnalytics struct {
+	ProfileViews int `json:"profileViews"`
+	NewLeads     int `json:"newLeads"`
+}
+
+// GetProAnalytics retrieves the analytics data for the dashboard.
+func GetProAnalytics(w http.ResponseWriter, r *http.Request) {
+	userID := r.Context().Value(middleware.UserIDKey).(string)
+	ctx := context.Background()
+
+	profile, err := internalDB.Client.ProProfile.FindUnique(
+		db.ProProfile.UserID.Equals(userID),
+	).Exec(ctx)
+
+	if err != nil || profile == nil {
+		http.Error(w, "pro profile not found", http.StatusNotFound)
+		return
+	}
+
+	views := profile.ProfileViews
+
+	leads, err := internalDB.Client.Booking.FindMany(
+		db.Booking.ProProfileID.Equals(profile.ID),
+		db.Booking.Status.Equals("PENDING"),
+	).Exec(ctx)
+
+	newLeads := 0
+	if err == nil {
+		newLeads = len(leads)
+	}
+
+	analytics := ProAnalytics{
+		ProfileViews: views,
+		NewLeads:     newLeads,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(analytics)
 }

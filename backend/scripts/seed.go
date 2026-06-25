@@ -25,6 +25,13 @@ type ProData struct {
 	Area       string
 }
 
+type ProductSeed struct {
+	Name  string
+	Price float64
+	Image string
+	Desc  string
+}
+
 func main() {
 	// Load .env file
 	if err := godotenv.Load(); err != nil {
@@ -225,6 +232,7 @@ func main() {
 				db.ProProfile.UserID.Equals(user.ID),
 			).Create(
 				db.ProProfile.User.Link(db.User.ID.Equals(user.ID)),
+				db.ProProfile.BusinessName.Set(fmt.Sprintf("%s Services", pro.Name)),
 				db.ProProfile.Bio.Set(pro.Bio),
 				db.ProProfile.HourlyRate.Set(4000),
 				db.ProProfile.Specialties.Set(pro.Specialty),
@@ -238,6 +246,7 @@ func main() {
 				db.ProProfile.HomeDelivery.Set(homeDelivery),
 				db.ProProfile.LogoURL.Set(avatarUrl),
 			).Update(
+				db.ProProfile.BusinessName.Set(fmt.Sprintf("%s Services", pro.Name)),
 				db.ProProfile.Bio.Set(pro.Bio),
 				db.ProProfile.Specialties.Set(pro.Specialty),
 				db.ProProfile.Niche.Set(niche.ParentID),
@@ -263,12 +272,87 @@ func main() {
 			).Exec(ctx)
 
 			// Create a Product
+			productSeeds := map[string][]ProductSeed{
+				"home-services": {
+					{"Premium Toolbox Set", 45000, "https://images.unsplash.com/photo-1530124566582-a618bc2615dc?w=500&auto=format&fit=crop&q=60", "Complete set of high-quality tools for home repairs."},
+					{"Smart Home Security Kit", 120000, "https://images.unsplash.com/photo-1558611848-73f7eb4001a1?w=500&auto=format&fit=crop&q=60", "Advanced security cameras and sensors."},
+					{"Heavy-Duty Drill", 35000, "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=500&auto=format&fit=crop&q=60", "Professional grade power drill."},
+					{"Eco-Friendly Cleaning Kit", 15000, "https://images.unsplash.com/photo-1584820927498-cafea1236113?w=500&auto=format&fit=crop&q=60", "Non-toxic cleaning supplies."},
+				},
+				"fashion": {
+					{"Bespoke Native Fabric", 25000, "https://images.unsplash.com/photo-1603228254119-e6a4d015fb73?w=500&auto=format&fit=crop&q=60", "High-quality traditional fabric."},
+					{"Men's Grooming Kit", 12000, "https://images.unsplash.com/photo-1621607512214-68297480165e?w=500&auto=format&fit=crop&q=60", "Premium beard oils and clippers."},
+					{"Designer Sunglasses", 30000, "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=500&auto=format&fit=crop&q=60", "Stylish eyewear."},
+					{"Leather Oxford Shoes", 45000, "https://images.unsplash.com/photo-1614252209825-9c988891552a?w=500&auto=format&fit=crop&q=60", "Handcrafted leather footwear."},
+				},
+				"professionals": {
+					{"Ergonomic Office Chair", 85000, "https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?w=500&auto=format&fit=crop&q=60", "Comfortable seating for long hours."},
+					{"Wireless Headphones", 60000, "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60", "Focus without distractions."},
+					{"Premium Leather Briefcase", 55000, "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&auto=format&fit=crop&q=60", "Professional laptop and document carrier."},
+					{"Mechanical Keyboard", 35000, "https://images.unsplash.com/photo-1595225476474-87563907a212?w=500&auto=format&fit=crop&q=60", "Tactile typing experience."},
+				},
+				"education": {
+					{"Interactive Whiteboard", 150000, "https://images.unsplash.com/photo-1588075592446-265fd1e6e76f?w=500&auto=format&fit=crop&q=60", "Modern teaching tool."},
+					{"Acoustic Guitar Pack", 45000, "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=500&auto=format&fit=crop&q=60", "Perfect for beginners."},
+					{"Study Course Material", 20000, "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=500&auto=format&fit=crop&q=60", "Comprehensive study guides."},
+					{"Science Experiment Kit", 25000, "https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=500&auto=format&fit=crop&q=60", "Hands-on learning for kids."},
+				},
+				"events": {
+					{"Party Lighting System", 75000, "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=500&auto=format&fit=crop&q=60", "Dynamic lights for any occasion."},
+					{"Professional Camera Lens", 250000, "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=500&auto=format&fit=crop&q=60", "Capture memories in high definition."},
+					{"Floral Arrangement Set", 30000, "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=500&auto=format&fit=crop&q=60", "Beautiful decorations."},
+					{"DJ Controller", 180000, "https://images.unsplash.com/photo-1571266028243-3716f02d2d2e?w=500&auto=format&fit=crop&q=60", "Mix tracks like a pro."},
+				},
+				"health": {
+					{"Yoga Mat & Blocks", 15000, "https://images.unsplash.com/photo-1601134599986-7e2831f2dc34?w=500&auto=format&fit=crop&q=60", "Essential fitness gear."},
+					{"Adjustable Dumbbells", 40000, "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=500&auto=format&fit=crop&q=60", "Space-saving workout equipment."},
+					{"First Aid Trauma Kit", 25000, "https://images.unsplash.com/photo-1603398938378-e54eab446dde?w=500&auto=format&fit=crop&q=60", "Medical emergency supplies."},
+					{"Massage Gun", 35000, "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=500&auto=format&fit=crop&q=60", "Deep tissue muscle recovery."},
+				},
+				"logistics": {
+					{"Heavy Duty Moving Boxes", 10000, "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=500&auto=format&fit=crop&q=60", "Durable packaging."},
+					{"GPS Tracker", 18000, "https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=500&auto=format&fit=crop&q=60", "Real-time asset tracking."},
+					{"Delivery Courier Bag", 15000, "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=500&auto=format&fit=crop&q=60", "Insulated and waterproof."},
+					{"Tow Strap Heavy Duty", 22000, "https://images.unsplash.com/photo-1549468057-5b7fa1a41d7a?w=500&auto=format&fit=crop&q=60", "Reliable towing accessory."},
+				},
+				"auto": {
+					{"Car Care Detailing Kit", 28000, "https://images.unsplash.com/photo-1601362840469-51e4d8d58785?w=500&auto=format&fit=crop&q=60", "Keep your vehicle shining."},
+					{"Premium Synthetic Motor Oil", 18000, "https://images.unsplash.com/photo-1610488969395-5eb7300c1df0?w=500&auto=format&fit=crop&q=60", "High performance engine protection."},
+					{"Smart Dash Cam", 45000, "https://images.unsplash.com/photo-1517005085862-e61b7b049d50?w=500&auto=format&fit=crop&q=60", "Record your journeys safely."},
+					{"Portable Jump Starter", 35000, "https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?w=500&auto=format&fit=crop&q=60", "Never get stranded again."},
+				},
+				"food": {
+					{"Chef's Knife Set", 65000, "https://images.unsplash.com/photo-1593618998160-e34014e67546?w=500&auto=format&fit=crop&q=60", "Professional grade culinary knives."},
+					{"Artisan Baking Kit", 25000, "https://images.unsplash.com/photo-1556910103-1c02745a872f?w=500&auto=format&fit=crop&q=60", "Everything you need to bake."},
+					{"Premium Spice Collection", 15000, "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=500&auto=format&fit=crop&q=60", "Exotic and rich flavors."},
+					{"Organic Fertilizer Pack", 12000, "https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=500&auto=format&fit=crop&q=60", "Boost your farm yields naturally."},
+				},
+				"realestate": {
+					{"Smart Door Lock", 85000, "https://images.unsplash.com/photo-1558002038-1055907df827?w=500&auto=format&fit=crop&q=60", "Keyless and secure entry."},
+					{"Interior Paint Premium Set", 40000, "https://images.unsplash.com/photo-1562184552-997c461abbe6?w=500&auto=format&fit=crop&q=60", "Transform your living space."},
+					{"Architectural Design Software", 150000, "https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=500&auto=format&fit=crop&q=60", "Professional 3D modeling tools."},
+					{"Laser Distance Measure", 25000, "https://images.unsplash.com/photo-1534063224097-f507b9fb2b23?w=500&auto=format&fit=crop&q=60", "Accurate property measurements."},
+				},
+			}
+			
+			fallbackProducts := []ProductSeed{
+				{"Nexa Verified Supply Box", 15000, "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=500&auto=format&fit=crop&q=60", "Standard supplies."},
+				{"Professional Starter Kit", 25000, "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&auto=format&fit=crop&q=60", "Get started with everything you need."},
+			}
+
+			catProducts, ok := productSeeds[niche.ParentID]
+			if !ok {
+				catProducts = fallbackProducts
+			}
+
+			prodData := catProducts[proIndex%len(catProducts)]
+
 			client.Product.CreateOne(
-				db.Product.Name.Set(fmt.Sprintf("Premium %s Kit", pro.Specialty)),
-				db.Product.Price.Set(15000),
+				db.Product.Name.Set(prodData.Name),
+				db.Product.Price.Set(prodData.Price),
 				db.Product.ProProfile.Link(db.ProProfile.ID.Equals(profile.ID)),
-				db.Product.Description.Set(fmt.Sprintf("High quality materials and items recommended by %s.", pro.Name)),
-				db.Product.Image.Set("https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=500&auto=format&fit=crop&q=60"),
+				db.Product.Description.Set(prodData.Desc),
+				db.Product.Image.Set(prodData.Image),
 			).Exec(ctx)
 
 			// Assign the custom generated image corresponding to the article's niche parent category

@@ -31,6 +31,17 @@ export const NexaAvatar = ({ src, alt, fallback, name, size = "md", isOnline, cl
 
   const displayFallback = fallback || name || "NG";
 
+  const getDeterministicAvatar = (seed: string) => {
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+      hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = (Math.abs(hash) % 20) + 1;
+    return `/character${index}.jpg`;
+  };
+
+  const avatarSrc = src || getDeterministicAvatar(displayFallback);
+
   return (
     <div className={cn("relative inline-block", className)}>
       <div
@@ -39,11 +50,7 @@ export const NexaAvatar = ({ src, alt, fallback, name, size = "md", isOnline, cl
           sizes[size]
         )}
       >
-        {src ? (
-          <img src={src} alt={alt} className="w-full h-full object-cover" />
-        ) : (
-          <span>{displayFallback.slice(0, 2)}</span>
-        )}
+        <img src={avatarSrc} alt={alt || displayFallback} className="w-full h-full object-cover" />
       </div>
       
       {isOnline && (

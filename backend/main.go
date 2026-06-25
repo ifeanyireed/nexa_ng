@@ -67,12 +67,16 @@ func main() {
 		r.Get("/articles", handlers.ListArticles)
 		r.Get("/articles/{id}", handlers.GetArticle)
 	})
+	r.Get("/api/ws", handlers.HandleWSConnection)
 
 	// Protected Routes
 	r.Group(func(r chi.Router) {
 		r.Use(nexaMiddleware.AuthMiddleware)
 		r.Get("/api/auth/me", handlers.GetMe)
 		r.Post("/api/pro/onboard", handlers.UpdateProProfile)
+		r.Put("/api/users/settings", handlers.UpdateUserSettings)
+		r.Put("/api/users/password", handlers.UpdateUserPassword)
+		r.Delete("/api/users/me", handlers.DeleteUserAccount)
 
 		// Pro Only Routes
 		r.Group(func(r chi.Router) {
@@ -80,6 +84,17 @@ func main() {
 			r.Post("/api/pro/profile", handlers.UpdateProProfile)
 			r.Post("/api/pro/services", handlers.CreateService)
 			r.Post("/api/pro/articles", handlers.CreateArticle)
+			r.Post("/api/pro/products", handlers.CreateProduct)
+			r.Get("/api/pro/availability", handlers.GetProAvailability)
+			r.Put("/api/pro/availability", handlers.UpdateProAvailability)
+			r.Get("/api/pro/analytics", handlers.GetProAnalytics)
+		})
+
+		// Admin Only Routes
+		r.Group(func(r chi.Router) {
+			r.Use(nexaMiddleware.RoleMiddleware("ADMIN"))
+			r.Post("/api/admin/push", handlers.SendAdminPushNotification)
+			r.Post("/api/admin/subscriptions/renewals/trigger", handlers.TriggerSubscriptionRenewals)
 		})
 
 		// Booking Routes
@@ -87,10 +102,32 @@ func main() {
 		r.Get("/api/bookings", handlers.ListMyBookings)
 		r.Get("/api/bookings/{id}", handlers.GetBooking)
 		r.Put("/api/bookings/{id}/status", handlers.UpdateBookingStatus)
+		r.Post("/api/bookings/reminders/trigger", handlers.TriggerBookingReminders)
+
+		// Order Routes
+		r.Post("/api/orders", handlers.CreateOrder)
+		r.Get("/api/orders", handlers.ListMyOrders)
+		r.Get("/api/orders/{id}", handlers.GetOrder)
+		r.Put("/api/orders/{id}/status", handlers.UpdateOrderStatus)
+
+		// Delivery Routes
+		r.Get("/api/deliveries/{orderId}", handlers.GetDelivery)
+		r.Put("/api/deliveries/{orderId}/status", handlers.UpdateDeliveryStatus)
+
+		// Chat Routes
+		r.Post("/api/chat/messages", handlers.SendMessage)
+		r.Get("/api/chat/messages/{otherUserId}", handlers.GetChatHistory)
+		r.Get("/api/chat/conversations", handlers.GetConversations)
+		r.Post("/api/users/status", handlers.UpdateOnlineStatus)
 
 		// Wallet Routes
 		r.Get("/api/wallet", handlers.GetWallet)
 		r.Post("/api/wallet/deposit", handlers.Deposit)
+
+		// Notification Routes
+		r.Get("/api/notifications", handlers.ListMyNotifications)
+		r.Put("/api/notifications/{id}/read", handlers.MarkNotificationRead)
+		r.Put("/api/notifications/read-all", handlers.MarkAllNotificationsRead)
 	})
 
 	port := os.Getenv("PORT")

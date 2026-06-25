@@ -7,6 +7,7 @@ import { NexaCard } from '@/components/nexa/NexaCard';
 import { NexaButton } from '@/components/nexa/NexaButton';
 import { NexaNavbar } from '@/components/nexa/NexaNav';
 import Link from 'next/link';
+import { useAuth } from '@/components/nexa/AuthContext';
 
 const currentJob = {
     id: 'JOB-123',
@@ -22,6 +23,8 @@ const upcomingJobs = [
 ];
 
 export default function TechDashboardPage() {
+    const { user } = useAuth();
+
     return (
         <>
             <NexaNavbar />
@@ -29,7 +32,7 @@ export default function TechDashboardPage() {
                 <div className="space-y-8">
                     <div>
                         <h1 className="text-3xl font-extrabold text-display">Technician Dashboard</h1>
-                        <p className="text-nexa-text-secondary text-sm mt-1">Welcome back, John. Here's what's happening today.</p>
+                        <p className="text-nexa-text-secondary text-sm mt-1">Welcome back, {user?.name?.split(" ")[0] || "John"}. Here's what's happening today.</p>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

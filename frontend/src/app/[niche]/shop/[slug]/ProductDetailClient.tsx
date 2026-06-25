@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { 
   ArrowLeft, 
   ShoppingBag, 
@@ -21,11 +21,14 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { api } from "@/lib/api";
 import Link from "next/link";
+import { useFavorites } from "@/lib/useFavorites";
 
 export default function ProductDetailClient({ data }: { data: any }) {
   const params = useParams();
+  const router = useRouter();
   const nicheSlug = params.niche as string;
   const productSlug = params.slug as string;
+  const { isFavorite, toggleFavorite } = useFavorites();
   
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -103,8 +106,8 @@ export default function ProductDetailClient({ data }: { data: any }) {
                    alt={product.name}
                 />
                 <div className="absolute top-4 right-4 z-10">
-                   <button className="w-12 h-12 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-nexa-text-secondary shadow-lg hover:text-rose-500 transition-colors">
-                      <Heart className="w-6 h-6" />
+                   <button onClick={(e) => toggleFavorite(product.id, e)} className="w-12 h-12 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center text-nexa-text-secondary shadow-lg hover:text-rose-500 transition-colors">
+                      <Heart className={cn("w-6 h-6 transition-colors", isFavorite(product.id) ? "fill-rose-500 text-rose-500" : "")} />
                    </button>
                 </div>
              </div>
@@ -178,8 +181,22 @@ export default function ProductDetailClient({ data }: { data: any }) {
                          <Plus className="w-4 h-4" />
                       </button>
                    </div>
-                   <NexaButton size="xl" className="flex-1 shadow-2xl" leftIcon={<ShoppingBag className="w-5 h-5" />}>
-                      Add to Cart
+                   <NexaButton 
+                     size="xl" 
+                     className="flex-1 shadow-2xl" 
+                     leftIcon={<ShoppingBag className="w-5 h-5" />}
+                     onClick={() => {
+                        localStorage.setItem("nexa_cart", JSON.stringify([{
+                           id: data.id,
+                           name: data.name,
+                           price: data.price,
+                           image: data.image,
+                           qty: 1
+                        }]));
+                        router.push("/checkout/shipping");
+                     }}
+                   >
+                      Buy Now
                    </NexaButton>
                 </div>
              </div>

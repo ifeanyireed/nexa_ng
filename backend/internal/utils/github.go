@@ -8,10 +8,10 @@ import (
 	"os"
 )
 
-// TriggerFrontendRebuild sends a repository dispatch webhook to GitHub Actions.
+// TriggerGithubFrontendRebuild sends a repository dispatch webhook to GitHub Actions.
 // This tells GitHub to run the "rebuild-frontend" workflow, regenerating the 
 // static Next.js export and pushing it to the production server.
-func TriggerFrontendRebuild() error {
+func TriggerGithubFrontendRebuild() error {
 	// The GitHub repository (format: "owner/repo"). 
 	// e.g. "ifeanyireed/nexa_ng" or whatever your actual repo is.
 	repo := os.Getenv("GITHUB_REPOSITORY")

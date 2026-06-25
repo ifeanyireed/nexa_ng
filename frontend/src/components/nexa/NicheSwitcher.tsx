@@ -76,8 +76,8 @@ export const NicheSwitcher = ({ isOpen, onClose }: NicheSwitcherProps) => {
       isOpen={isOpen} 
       onClose={onClose} 
       title="Switch Niche Hub" 
-      className="max-w-[95vw] lg:max-w-7xl bg-white/85 dark:bg-slate-950/85 backdrop-blur-xl border border-white/20 dark:border-white/10"
-      backdropClassName="bg-white/70 dark:bg-black/75 backdrop-blur-md"
+      className="max-w-[95vw] lg:max-w-7xl bg-white/85 backdrop-blur-xl border border-white/20"
+      backdropClassName="bg-white/70 backdrop-blur-md"
     >
       <div className="overflow-x-auto py-12 no-scrollbar snap-x snap-mandatory -mx-6 px-12 scroll-edge-fade">
         <div className="grid grid-rows-2 grid-flow-col gap-6 min-w-full pb-4">
@@ -93,7 +93,7 @@ export const NicheSwitcher = ({ isOpen, onClose }: NicheSwitcherProps) => {
                 <NexaCard 
                   variant="interactive" 
                   padding="none" 
-                  className="h-full group overflow-hidden border-none shadow-xl bg-nexa-bg-base dark:bg-slate-900/50"
+                  className="h-full group overflow-hidden border-none shadow-xl bg-nexa-bg-base"
                 >
                   <div className={cn("h-20 flex items-center justify-center relative", niche.color)}>
                     <img src={niche.icon} alt={niche.name} className="w-12 h-12 object-contain z-10 transition-transform group-hover:scale-110" />

@@ -65,43 +65,7 @@
     --glass-border-top: rgba(255, 255, 255, 0.15);
   }
 
-  [data-theme="dark"] {
-    --nexa-bg-base: #020202;
-    --nexa-bg-surface: #0A0A0A;
-    --nexa-bg-overlay: rgba(5, 5, 5, 0.78);
-    --nexa-bg-glass: rgba(255, 255, 255, 0.03);
-    --nexa-brand: #4F83F8;
-    --nexa-brand-light: rgba(79, 131, 248, 0.12);
-    --nexa-brand-mid: #3F83F8;
-    --nexa-brand-glow: rgba(79, 131, 248, 0.22);
-    --nexa-accent: #34D399;
-    --nexa-accent-light: rgba(52, 211, 153, 0.12);
 
-    /* NICHE COLORS - DARK */
-    --nexa-home: #FCD34D;
-    --nexa-fashion: #F472B6;
-    --nexa-professionals: #93C5FD;
-    --nexa-education: #A78BFA;
-    --nexa-events: #E879F9;
-    --nexa-health: #34D399;
-    --nexa-logistics: #60A5FA;
-    --nexa-auto: #E5E7EB;
-    --nexa-food: #FDE68A;
-    --nexa-realestate: #4ADE80;
-
-    --nexa-amber: #DBA35B;
-    --nexa-amber-light: rgba(252, 211, 77, 0.12);
-    --nexa-text-primary: #F3F4F8;
-    --nexa-text-secondary: #C9CDDA;
-    --nexa-text-muted: #8891A8;
-    --nexa-text-faint: #545F7A;
-    --nexa-border: rgba(255, 255, 255, 0.07);
-    --nexa-border-mid: rgba(255, 255, 255, 0.13);
-    --nexa-shadow-glass: 0 4px 12px 0 rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-border-top: rgba(255, 255, 255, 0.12);
-  }
 
   body {
     background: var(--nexa-bg-base);

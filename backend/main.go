@@ -62,6 +62,7 @@ func main() {
 	r.Route("/api/discovery", func(r chi.Router) {
 		r.Get("/pros", handlers.ListPros)
 		r.Get("/pros/{id}", handlers.GetPro)
+		r.Get("/stats/niches", handlers.GetNicheStats)
 		r.Get("/products", handlers.ListProducts)
 		r.Get("/products/{id}", handlers.GetProduct)
 		r.Get("/articles", handlers.ListArticles)

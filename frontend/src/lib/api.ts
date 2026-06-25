@@ -37,8 +37,16 @@ async function apiFetch(endpoint: string, options: RequestInit = {}) {
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Unknown error" }));
-    throw new Error(error.message || response.statusText);
+    let errorMessage = response.statusText;
+    const contentType = response.headers.get("content-type");
+    if (contentType && contentType.includes("application/json")) {
+      const error = await response.json().catch(() => ({ message: "Unknown JSON error" }));
+      errorMessage = error.message || error.error || errorMessage;
+    } else {
+      const textError = await response.text().catch(() => "");
+      errorMessage = textError ? textError.trim() : errorMessage;
+    }
+    throw new Error(errorMessage);
   }
 
   return response.json();

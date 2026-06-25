@@ -12,14 +12,18 @@ import (
 func GetWallet(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(middleware.UserIDKey).(string)
 
-	wallet, err := internalDB.Client.Wallet.UpsertOne(
+	wallet, err := internalDB.Client.Wallet.FindUnique(
 		db.Wallet.UserID.Equals(userID),
-	).Create(
-		db.Wallet.User.Link(db.User.ID.Equals(userID)),
-		db.Wallet.Balance.Set(0),
-	).Update().Exec(context.Background())
+	).Exec(context.Background())
 
-	if err != nil {
+	if err != nil || wallet == nil {
+		wallet, err = internalDB.Client.Wallet.CreateOne(
+			db.Wallet.User.Link(db.User.ID.Equals(userID)),
+			db.Wallet.Balance.Set(0),
+		).Exec(context.Background())
+	}
+
+	if err != nil || wallet == nil {
 		http.Error(w, "error fetching wallet", http.StatusInternalServerError)
 		return
 	}

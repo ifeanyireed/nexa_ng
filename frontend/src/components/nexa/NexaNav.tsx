@@ -37,7 +37,7 @@ export const NexaNavbar = () => {
         {/* Translucent blurry white overlay for contrast when scrolled */}
         <div 
           className={cn(
-            "absolute inset-0 bg-white/70 dark:bg-slate-900/75 backdrop-blur-md transition-opacity duration-300 pointer-events-none -z-10",
+            "absolute inset-0 bg-white/70 backdrop-blur-md transition-opacity duration-300 pointer-events-none -z-10",
             scrolled ? "opacity-100" : "opacity-0"
           )}
         />
@@ -69,7 +69,6 @@ export const NexaNavbar = () => {
           <div className="flex items-center gap-3">
             <LocationDropdown className="hidden md:block mr-2" />
             
-            <NexaThemeToggle />
             <Link href="/nexa-verified" className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-nexa-amber/10 transition-colors group">
                <ShieldCheck className="w-4 h-4 text-nexa-amber" />
                <span className="text-xs font-black text-nexa-amber uppercase tracking-wider">Verified</span>

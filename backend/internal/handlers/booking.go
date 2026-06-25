@@ -111,10 +111,17 @@ func ListMyBookings(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	if role == "PRO" {
-		profile, _ := internalDB.Client.ProProfile.FindUnique(
+		profile, errProfile := internalDB.Client.ProProfile.FindUnique(
 			db.ProProfile.UserID.Equals(userID),
 		).Exec(context.Background())
 		
+		if errProfile != nil || profile == nil {
+			// Profile not created yet, return empty list
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode([]db.BookingModel{})
+			return
+		}
+
 		bookings, err = internalDB.Client.Booking.FindMany(
 			db.Booking.ProProfileID.Equals(profile.ID),
 		).With(

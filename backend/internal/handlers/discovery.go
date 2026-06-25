@@ -261,3 +261,24 @@ func GetPro(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(pro)
 }
+
+func GetNicheStats(w http.ResponseWriter, r *http.Request) {
+	pros, err := internalDB.Client.ProProfile.FindMany().Exec(context.Background())
+	if err != nil {
+		http.Error(w, "error fetching pros", http.StatusInternalServerError)
+		return
+	}
+
+	stats := make(map[string]int)
+	for _, pro := range pros {
+		if niche, ok := pro.Niche(); ok && niche != "" {
+			stats[niche]++
+		}
+		if subNiche, ok := pro.SubService(); ok && subNiche != "" {
+			stats[subNiche]++
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(stats)
+}

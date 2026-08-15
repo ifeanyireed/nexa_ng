@@ -1,13 +1,12 @@
 package main
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"nexa/backend/internal/db"
 	"nexa/backend/internal/handlers"
 	nexaMiddleware "nexa/backend/internal/middleware"
-	prismaDb "nexa/backend/prisma/db"
+	"nexa/backend/internal/models"
 	"os"
 	"regexp"
 	"strconv"
@@ -25,7 +24,7 @@ func main() {
 	// Load .env (it won't overwrite variables already loaded from .env.development)
 	godotenv.Load(".env")
 
-	// Initialize Database
+	// Initialize Database via GORM
 	db.Init()
 	defer db.Close()
 
@@ -41,7 +40,7 @@ func main() {
 	// CORS
 	allowedOrigins := strings.Split(os.Getenv("ALLOWED_ORIGINS"), ",")
 	if len(allowedOrigins) == 0 || allowedOrigins[0] == "" {
-		allowedOrigins = []string{"http://localhost:3000"}
+		allowedOrigins = []string{"http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000", "http://127.0.0.1:3001"}
 	}
 
 	r.Use(cors.Handler(cors.Options{
@@ -133,7 +132,7 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		port = "8085"
 	}
 
 	log.Printf("Server starting on port %s", port)
@@ -143,35 +142,36 @@ func main() {
 }
 
 func populateSlugs() {
-	ctx := context.Background()
-	pros, err := db.Client.ProProfile.FindMany(
-		prismaDb.ProProfile.Slug.IsNull(),
-	).With(
-		prismaDb.ProProfile.User.Fetch(),
-	).Exec(ctx)
+	if db.DB == nil {
+		return
+	}
+
+	var pros []models.ProProfile
+	err := db.DB.Preload("User").Where("slug IS NULL OR slug = ''").Find(&pros).Error
 	if err != nil {
 		log.Printf("Warning: Failed to fetch profiles for slug populator: %v", err)
 		return
 	}
 
+	if len(pros) == 0 {
+		return
+	}
+
 	log.Printf("Checking %d profiles for missing slugs...", len(pros))
 	for _, pro := range pros {
-		nameForSlug := ""
-		if busName, ok := pro.BusinessName(); ok && busName != "" {
-			nameForSlug = busName
-		} else if uName, ok := pro.User().Name(); ok && uName != "" {
-			nameForSlug = uName
+		nameForSlug := pro.BusinessName
+		if nameForSlug == "" && pro.User != nil {
+			nameForSlug = pro.User.Name
 		}
-		
 		if nameForSlug == "" {
 			nameForSlug = pro.ID
 		}
-		
+
 		slugVal := strings.ToLower(nameForSlug)
 		reg, _ := regexp.Compile("[^a-z0-9]+")
 		slugVal = reg.ReplaceAllString(slugVal, "-")
 		slugVal = strings.Trim(slugVal, "-")
-		
+
 		if slugVal == "" {
 			slugVal = pro.ID
 		}
@@ -179,25 +179,16 @@ func populateSlugs() {
 		finalSlug := slugVal
 		suffix := 1
 		for {
-			existing, err := db.Client.ProProfile.FindUnique(
-				prismaDb.ProProfile.Slug.Equals(finalSlug),
-			).Exec(ctx)
-			if err != nil || existing == nil {
+			var count int64
+			db.DB.Model(&models.ProProfile{}).Where("slug = ? AND id != ?", finalSlug, pro.ID).Count(&count)
+			if count == 0 {
 				break
 			}
 			finalSlug = slugVal + "-" + strconv.Itoa(suffix)
 			suffix++
 		}
 
-		_, err = db.Client.ProProfile.FindUnique(
-			prismaDb.ProProfile.ID.Equals(pro.ID),
-		).Update(
-			prismaDb.ProProfile.Slug.Set(finalSlug),
-		).Exec(ctx)
-		if err != nil {
-			log.Printf("Failed to set slug for pro %s: %v", pro.ID, err)
-		} else {
-			log.Printf("Successfully populated slug '%s' for pro %s", finalSlug, pro.ID)
-		}
+		db.DB.Model(&models.ProProfile{}).Where("id = ?", pro.ID).Update("slug", finalSlug)
+		log.Printf("Successfully populated slug '%s' for pro %s", finalSlug, pro.ID)
 	}
 }

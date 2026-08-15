@@ -1,14 +1,13 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	internalDB "nexa/backend/internal/db"
 	"nexa/backend/internal/middleware"
+	"nexa/backend/internal/models"
 	"nexa/backend/internal/utils"
-	"nexa/backend/prisma/db"
 	"regexp"
 	"strings"
 )
@@ -34,6 +33,11 @@ type UpdateProfileRequest struct {
 }
 
 func UpdateProProfile(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	userID := r.Context().Value(middleware.UserIDKey).(string)
 
 	var req UpdateProfileRequest
@@ -43,13 +47,7 @@ func UpdateProProfile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update user role to PRO
-	_, err := internalDB.Client.User.FindUnique(
-		db.User.ID.Equals(userID),
-	).Update(
-		db.User.Role.Set("PRO"),
-	).Exec(context.Background())
-
-	if err != nil {
+	if err := internalDB.DB.Model(&models.User{}).Where("id = ?", userID).Update("role", "PRO").Error; err != nil {
 		http.Error(w, "error updating user role", http.StatusInternalServerError)
 		return
 	}
@@ -57,13 +55,9 @@ func UpdateProProfile(w http.ResponseWriter, r *http.Request) {
 	// Generate unique slug
 	nameForSlug := req.BusinessName
 	if nameForSlug == "" {
-		user, err := internalDB.Client.User.FindUnique(
-			db.User.ID.Equals(userID),
-		).Exec(context.Background())
-		if err == nil {
-			if name, ok := user.Name(); ok && name != "" {
-				nameForSlug = name
-			}
+		var user models.User
+		if err := internalDB.DB.Where("id = ?", userID).First(&user).Error; err == nil {
+			nameForSlug = user.Name
 		}
 	}
 	slugVal := slugify(nameForSlug)
@@ -71,52 +65,57 @@ func UpdateProProfile(w http.ResponseWriter, r *http.Request) {
 		slugVal = userID
 	}
 
-	profile, err := internalDB.Client.ProProfile.UpsertOne(
-		db.ProProfile.UserID.Equals(userID),
-	).Create(
-		db.ProProfile.User.Link(db.User.ID.Equals(userID)),
-		db.ProProfile.BusinessName.Set(req.BusinessName),
-		db.ProProfile.Slug.Set(slugVal),
-		db.ProProfile.Bio.Set(req.Bio),
-		db.ProProfile.HourlyRate.Set(req.HourlyRate),
-		db.ProProfile.Specialties.Set(req.Specialties),
-		db.ProProfile.Niche.Set(req.Niche),
-		db.ProProfile.SubService.Set(req.SubService),
-		db.ProProfile.SpecialtyLevel.Set(req.SpecialtyLevel),
-		db.ProProfile.City.Set(req.City),
-		db.ProProfile.Area.Set(req.Area),
-		db.ProProfile.Phone.Set(req.Phone),
-		db.ProProfile.Whatsapp.Set(req.Whatsapp),
-		db.ProProfile.BusinessEmail.Set(req.BusinessEmail),
-		db.ProProfile.Nin.Set(req.NIN),
-		db.ProProfile.Plan.Set(req.Plan),
-		db.ProProfile.AcceptsPos.Set(req.AcceptsPOS),
-		db.ProProfile.HomeDelivery.Set(req.HomeDelivery),
-		db.ProProfile.Catalog.Set(req.Catalog),
-	).Update(
-		db.ProProfile.BusinessName.Set(req.BusinessName),
-		db.ProProfile.Slug.Set(slugVal),
-		db.ProProfile.Bio.Set(req.Bio),
-		db.ProProfile.HourlyRate.Set(req.HourlyRate),
-		db.ProProfile.Specialties.Set(req.Specialties),
-		db.ProProfile.Niche.Set(req.Niche),
-		db.ProProfile.SubService.Set(req.SubService),
-		db.ProProfile.SpecialtyLevel.Set(req.SpecialtyLevel),
-		db.ProProfile.City.Set(req.City),
-		db.ProProfile.Area.Set(req.Area),
-		db.ProProfile.Phone.Set(req.Phone),
-		db.ProProfile.Whatsapp.Set(req.Whatsapp),
-		db.ProProfile.BusinessEmail.Set(req.BusinessEmail),
-		db.ProProfile.Nin.Set(req.NIN),
-		db.ProProfile.Plan.Set(req.Plan),
-		db.ProProfile.AcceptsPos.Set(req.AcceptsPOS),
-		db.ProProfile.HomeDelivery.Set(req.HomeDelivery),
-		db.ProProfile.Catalog.Set(req.Catalog),
-	).Exec(context.Background())
-
+	var profile models.ProProfile
+	err := internalDB.DB.Where("user_id = ?", userID).First(&profile).Error
 	if err != nil {
-		http.Error(w, "error updating profile", http.StatusInternalServerError)
-		return
+		profile = models.ProProfile{
+			UserID:         userID,
+			BusinessName:   req.BusinessName,
+			Slug:           slugVal,
+			Bio:            req.Bio,
+			HourlyRate:     req.HourlyRate,
+			Specialties:    req.Specialties,
+			Niche:          req.Niche,
+			SubService:     req.SubService,
+			SpecialtyLevel: req.SpecialtyLevel,
+			City:           req.City,
+			Area:           req.Area,
+			Phone:          req.Phone,
+			Whatsapp:       req.Whatsapp,
+			BusinessEmail:  req.BusinessEmail,
+			NIN:            req.NIN,
+			Plan:           req.Plan,
+			AcceptsPOS:     req.AcceptsPOS,
+			HomeDelivery:   req.HomeDelivery,
+			Catalog:        req.Catalog,
+		}
+		if err := internalDB.DB.Create(&profile).Error; err != nil {
+			http.Error(w, "error creating profile: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		profile.BusinessName = req.BusinessName
+		profile.Slug = slugVal
+		profile.Bio = req.Bio
+		profile.HourlyRate = req.HourlyRate
+		profile.Specialties = req.Specialties
+		profile.Niche = req.Niche
+		profile.SubService = req.SubService
+		profile.SpecialtyLevel = req.SpecialtyLevel
+		profile.City = req.City
+		profile.Area = req.Area
+		profile.Phone = req.Phone
+		profile.Whatsapp = req.Whatsapp
+		profile.BusinessEmail = req.BusinessEmail
+		profile.NIN = req.NIN
+		profile.Plan = req.Plan
+		profile.AcceptsPOS = req.AcceptsPOS
+		profile.HomeDelivery = req.HomeDelivery
+		profile.Catalog = req.Catalog
+		if err := internalDB.DB.Save(&profile).Error; err != nil {
+			http.Error(w, "error updating profile: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -130,6 +129,11 @@ type CreateServiceRequest struct {
 }
 
 func CreateService(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	userID := r.Context().Value(middleware.UserIDKey).(string)
 
 	var req CreateServiceRequest
@@ -138,24 +142,21 @@ func CreateService(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	profile, err := internalDB.Client.ProProfile.FindUnique(
-		db.ProProfile.UserID.Equals(userID),
-	).Exec(context.Background())
-
-	if err != nil {
+	var profile models.ProProfile
+	if err := internalDB.DB.Where("user_id = ?", userID).First(&profile).Error; err != nil {
 		http.Error(w, "pro profile not found", http.StatusNotFound)
 		return
 	}
 
-	service, err := internalDB.Client.Service.CreateOne(
-		db.Service.Name.Set(req.Name),
-		db.Service.Price.Set(req.Price),
-		db.Service.ProProfile.Link(db.ProProfile.ID.Equals(profile.ID)),
-		db.Service.Description.Set(req.Description),
-	).Exec(context.Background())
+	service := models.Service{
+		Name:         req.Name,
+		Description:  req.Description,
+		Price:        req.Price,
+		ProProfileID: profile.ID,
+	}
 
-	if err != nil {
-		http.Error(w, "error creating service", http.StatusInternalServerError)
+	if err := internalDB.DB.Create(&service).Error; err != nil {
+		http.Error(w, "error creating service: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -172,6 +173,11 @@ type CreateArticleRequest struct {
 }
 
 func CreateArticle(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	userID := r.Context().Value(middleware.UserIDKey).(string)
 
 	var req CreateArticleRequest
@@ -180,30 +186,27 @@ func CreateArticle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	profile, err := internalDB.Client.ProProfile.FindUnique(
-		db.ProProfile.UserID.Equals(userID),
-	).Exec(context.Background())
-
-	if err != nil {
+	var profile models.ProProfile
+	if err := internalDB.DB.Where("user_id = ?", userID).First(&profile).Error; err != nil {
 		http.Error(w, "pro profile not found", http.StatusNotFound)
 		return
 	}
 
-	niche, ok := profile.Niche()
-	if !ok {
+	if profile.Niche == "" {
 		http.Error(w, "pro niche not set", http.StatusBadRequest)
 		return
 	}
 
-	article, err := internalDB.Client.Article.CreateOne(
-		db.Article.Title.Set(req.Title),
-		db.Article.Content.Set(req.Content),
-		db.Article.Niche.Set(niche),
-		db.Article.ProProfile.Link(db.ProProfile.ID.Equals(profile.ID)),
-	).Exec(context.Background())
+	article := models.Article{
+		Title:        req.Title,
+		Content:      req.Content,
+		Image:        req.Image,
+		Niche:        profile.Niche,
+		ProProfileID: profile.ID,
+	}
 
-	if err != nil {
-		http.Error(w, "error creating article", http.StatusInternalServerError)
+	if err := internalDB.DB.Create(&article).Error; err != nil {
+		http.Error(w, "error creating article: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -230,8 +233,12 @@ type CreateProductRequest struct {
 
 // CreateProduct publishes a product listing and triggers a dashboard notification
 func CreateProduct(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	userID := r.Context().Value(middleware.UserIDKey).(string)
-	ctx := context.Background()
 
 	var req CreateProductRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -239,30 +246,25 @@ func CreateProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	profile, err := internalDB.Client.ProProfile.FindUnique(
-		db.ProProfile.UserID.Equals(userID),
-	).Exec(ctx)
-
-	if err != nil || profile == nil {
+	var profile models.ProProfile
+	if err := internalDB.DB.Where("user_id = ?", userID).First(&profile).Error; err != nil {
 		http.Error(w, "pro profile not found", http.StatusNotFound)
 		return
 	}
 
-	// Create product in database. Required args: Name, Price, ProProfile
-	product, err := internalDB.Client.Product.CreateOne(
-		db.Product.Name.Set(req.Name),
-		db.Product.Price.Set(req.Price),
-		db.Product.ProProfile.Link(db.ProProfile.ID.Equals(profile.ID)),
-		db.Product.Description.Set(req.Description),
-		db.Product.Image.Set(req.Image),
-	).Exec(ctx)
+	product := models.Product{
+		Name:         req.Name,
+		Price:        req.Price,
+		ProProfileID: profile.ID,
+		Description:  req.Description,
+		Image:        req.Image,
+	}
 
-	if err != nil {
+	if err := internalDB.DB.Create(&product).Error; err != nil {
 		http.Error(w, "error creating product: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Trigger system notification
 	_ = utils.CreateNotification(userID, "New Product Added", fmt.Sprintf("Your product '%s' has been successfully added to NexaShop.", req.Name), "SYSTEM")
 
 	w.Header().Set("Content-Type", "application/json")
@@ -271,32 +273,36 @@ func CreateProduct(w http.ResponseWriter, r *http.Request) {
 
 // GetProAvailability retrieves availability slots for the logged-in pro.
 func GetProAvailability(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	userID := r.Context().Value(middleware.UserIDKey).(string)
-	ctx := context.Background()
 
-	profile, err := internalDB.Client.ProProfile.FindUnique(
-		db.ProProfile.UserID.Equals(userID),
-	).Exec(ctx)
-
-	if err != nil || profile == nil {
+	var profile models.ProProfile
+	if err := internalDB.DB.Where("user_id = ?", userID).First(&profile).Error; err != nil {
 		http.Error(w, "pro profile not found", http.StatusNotFound)
 		return
 	}
 
-	availStr, ok := profile.Availability()
 	w.Header().Set("Content-Type", "application/json")
-	if !ok || availStr == "" {
+	if profile.Availability == "" {
 		w.Write([]byte(`{}`))
 		return
 	}
 
-	w.Write([]byte(availStr))
+	w.Write([]byte(profile.Availability))
 }
 
 // UpdateProAvailability saves the weekly availability schedule.
 func UpdateProAvailability(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	userID := r.Context().Value(middleware.UserIDKey).(string)
-	ctx := context.Background()
 
 	var reqBody map[string][]string
 	if err := json.NewDecoder(r.Body).Decode(&reqBody); err != nil {
@@ -310,13 +316,9 @@ func UpdateProAvailability(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = internalDB.Client.ProProfile.FindUnique(
-		db.ProProfile.UserID.Equals(userID),
-	).Update(
-		db.ProProfile.Availability.Set(string(jsonBytes)),
-	).Exec(ctx)
-
-	if err != nil {
+	if err := internalDB.DB.Model(&models.ProProfile{}).
+		Where("user_id = ?", userID).
+		Update("availability", string(jsonBytes)).Error; err != nil {
 		http.Error(w, "failed to save availability: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -332,33 +334,32 @@ type ProAnalytics struct {
 
 // GetProAnalytics retrieves the analytics data for the dashboard.
 func GetProAnalytics(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	userID := r.Context().Value(middleware.UserIDKey).(string)
-	ctx := context.Background()
 
-	profile, err := internalDB.Client.ProProfile.FindUnique(
-		db.ProProfile.UserID.Equals(userID),
-	).Exec(ctx)
-
-	if err != nil || profile == nil {
+	var profile models.ProProfile
+	if err := internalDB.DB.Where("user_id = ?", userID).First(&profile).Error; err != nil {
 		http.Error(w, "pro profile not found", http.StatusNotFound)
 		return
 	}
 
-	views := 1240
+	var count int64
+	internalDB.DB.Model(&models.Booking{}).
+		Where("pro_profile_id = ? AND status = ?", profile.ID, "PENDING").
+		Count(&count)
 
-	leads, err := internalDB.Client.Booking.FindMany(
-		db.Booking.ProProfileID.Equals(profile.ID),
-		db.Booking.Status.Equals("PENDING"),
-	).Exec(ctx)
-
-	newLeads := 0
-	if err == nil {
-		newLeads = len(leads)
+	views := profile.ProfileViews
+	if views == 0 {
+		views = 120
 	}
 
 	analytics := ProAnalytics{
 		ProfileViews: views,
-		NewLeads:     newLeads,
+		NewLeads:     int(count),
 	}
 
 	w.Header().Set("Content-Type", "application/json")

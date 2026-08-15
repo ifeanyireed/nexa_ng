@@ -1,14 +1,13 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	internalDB "nexa/backend/internal/db"
 	"nexa/backend/internal/middleware"
+	"nexa/backend/internal/models"
 	"nexa/backend/internal/utils"
-	"nexa/backend/prisma/db"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -22,7 +21,10 @@ type SendAdminPushRequest struct {
 
 // SendAdminPushNotification triggers a database notification and WebSocket broadcast for all users or a specific user.
 func SendAdminPushNotification(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
 
 	var req SendAdminPushRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -36,9 +38,8 @@ func SendAdminPushNotification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if req.UserID == "ALL" {
-		// Fetch all users to create notifications
-		users, err := internalDB.Client.User.FindMany().Exec(ctx)
-		if err != nil {
+		var users []models.User
+		if err := internalDB.DB.Select("id").Find(&users).Error; err != nil {
 			http.Error(w, "failed to fetch users", http.StatusInternalServerError)
 			return
 		}
@@ -47,7 +48,6 @@ func SendAdminPushNotification(w http.ResponseWriter, r *http.Request) {
 			_ = utils.CreateNotification(user.ID, req.Title, req.Message, "ADMIN_PUSH")
 		}
 	} else {
-		// Send to specific user ID
 		err := utils.CreateNotification(req.UserID, req.Title, req.Message, "ADMIN_PUSH")
 		if err != nil {
 			http.Error(w, "failed to send admin notification", http.StatusInternalServerError)
@@ -61,17 +61,18 @@ func SendAdminPushNotification(w http.ResponseWriter, r *http.Request) {
 
 // TriggerSubscriptionRenewals scans expiring pro subscriptions (next 3 days) and sends SMS + Email + In-App reminders
 func TriggerSubscriptionRenewals(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	now := time.Now()
 	threeDaysLater := now.Add(72 * time.Hour)
 
-	// Fetch pros whose subscription expires in the next 3 days
-	pros, err := internalDB.Client.ProProfile.FindMany(
-		db.ProProfile.SubscriptionExpiresAt.Gte(now),
-		db.ProProfile.SubscriptionExpiresAt.Lte(threeDaysLater),
-	).With(
-		db.ProProfile.User.Fetch(),
-	).Exec(ctx)
+	var pros []models.ProProfile
+	err := internalDB.DB.Preload("User").
+		Where("subscription_expires_at >= ? AND subscription_expires_at <= ?", now, threeDaysLater).
+		Find(&pros).Error
 
 	if err != nil {
 		http.Error(w, "error fetching expiring subscriptions: "+err.Error(), http.StatusInternalServerError)
@@ -82,13 +83,13 @@ func TriggerSubscriptionRenewals(w http.ResponseWriter, r *http.Request) {
 	for _, pro := range pros {
 		userID := pro.UserID
 		planName := "Nexa Pro"
-		if p, ok := pro.Plan(); ok && p != "" {
-			planName = p
+		if pro.Plan != "" {
+			planName = pro.Plan
 		}
-		
+
 		expiryDate := ""
-		if exp, ok := pro.SubscriptionExpiresAt(); ok {
-			expiryDate = exp.Format("Jan 02, 2006")
+		if pro.SubscriptionExpiresAt != nil {
+			expiryDate = pro.SubscriptionExpiresAt.Format("Jan 02, 2006")
 		}
 
 		alertMsg := fmt.Sprintf("Nexa Alert: Your %s subscription expires on %s. Renew now to keep your premium features and gold verification status.", planName, expiryDate)
@@ -97,17 +98,19 @@ func TriggerSubscriptionRenewals(w http.ResponseWriter, r *http.Request) {
 		_ = utils.CreateNotification(userID, "Subscription Renewal Due", fmt.Sprintf("Your %s subscription expires on %s. Renew now to avoid service disruption.", planName, expiryDate), "SUBSCRIPTION")
 
 		// 2. Termii SMS
-		if phone, ok := pro.Phone(); ok && phone != "" {
+		if pro.Phone != "" {
 			go func(phoneNumber, msg string) {
 				_ = utils.SendSMS(phoneNumber, msg)
-			}(phone, alertMsg)
+			}(pro.Phone, alertMsg)
 		}
 
 		// 3. Email
-		email := pro.User().Email
-		go func(toEmail, msg string) {
-			_ = utils.SendEmail(toEmail, "Nexa Subscription Renewal Notice", msg)
-		}(email, alertMsg)
+		if pro.User != nil && pro.User.Email != "" {
+			email := pro.User.Email
+			go func(toEmail, msg string) {
+				_ = utils.SendEmail(toEmail, "Nexa Subscription Renewal Notice", msg)
+			}(email, alertMsg)
+		}
 
 		remindersSent++
 	}
@@ -121,14 +124,17 @@ func TriggerSubscriptionRenewals(w http.ResponseWriter, r *http.Request) {
 
 // ListMyNotifications fetches in-app notifications for the logged-in user
 func ListMyNotifications(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value(middleware.UserIDKey).(string)
-	ctx := context.Background()
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
 
-	notifications, err := internalDB.Client.Notification.FindMany(
-		db.Notification.UserID.Equals(userID),
-	).OrderBy(
-		db.Notification.CreatedAt.Order(db.SortOrderDesc),
-	).Exec(ctx)
+	userID := r.Context().Value(middleware.UserIDKey).(string)
+
+	var notifications []models.Notification
+	err := internalDB.DB.Where("user_id = ?", userID).
+		Order("created_at desc").
+		Find(&notifications).Error
 
 	if err != nil {
 		http.Error(w, "error fetching notifications: "+err.Error(), http.StatusInternalServerError)
@@ -141,16 +147,21 @@ func ListMyNotifications(w http.ResponseWriter, r *http.Request) {
 
 // MarkNotificationRead marks a specific notification as read
 func MarkNotificationRead(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	id := chi.URLParam(r, "id")
-	ctx := context.Background()
 
-	notif, err := internalDB.Client.Notification.FindUnique(
-		db.Notification.ID.Equals(id),
-	).Update(
-		db.Notification.IsRead.Set(true),
-	).Exec(ctx)
+	var notif models.Notification
+	if err := internalDB.DB.Where("id = ?", id).First(&notif).Error; err != nil {
+		http.Error(w, "notification not found", http.StatusNotFound)
+		return
+	}
 
-	if err != nil {
+	notif.IsRead = true
+	if err := internalDB.DB.Save(&notif).Error; err != nil {
 		http.Error(w, "error updating notification: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -161,15 +172,16 @@ func MarkNotificationRead(w http.ResponseWriter, r *http.Request) {
 
 // MarkAllNotificationsRead marks all notifications of the user as read
 func MarkAllNotificationsRead(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value(middleware.UserIDKey).(string)
-	ctx := context.Background()
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
 
-	_, err := internalDB.Client.Notification.FindMany(
-		db.Notification.UserID.Equals(userID),
-		db.Notification.IsRead.Equals(false),
-	).Update(
-		db.Notification.IsRead.Set(true),
-	).Exec(ctx)
+	userID := r.Context().Value(middleware.UserIDKey).(string)
+
+	err := internalDB.DB.Model(&models.Notification{}).
+		Where("user_id = ? AND is_read = ?", userID, false).
+		Update("is_read", true).Error
 
 	if err != nil {
 		http.Error(w, "error marking all notifications as read: "+err.Error(), http.StatusInternalServerError)

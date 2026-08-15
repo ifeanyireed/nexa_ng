@@ -1,12 +1,11 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	internalDB "nexa/backend/internal/db"
 	"nexa/backend/internal/middleware"
-	"nexa/backend/prisma/db"
+	"nexa/backend/internal/models"
 	"os"
 	"time"
 
@@ -41,6 +40,11 @@ type AuthResponse struct {
 }
 
 func Signup(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database service unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	var req SignupRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
@@ -57,15 +61,15 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		req.Role = "CLIENT"
 	}
 
-	user, err := internalDB.Client.User.CreateOne(
-		db.User.Email.Set(req.Email),
-		db.User.Password.Set(string(hashedPassword)),
-		db.User.Role.Set(req.Role),
-		db.User.Name.Set(req.Name),
-	).Exec(context.Background())
+	user := models.User{
+		Email:    req.Email,
+		Password: string(hashedPassword),
+		Name:     req.Name,
+		Role:     req.Role,
+	}
 
-	if err != nil {
-		http.Error(w, "could not create user", http.StatusConflict)
+	if err := internalDB.DB.Create(&user).Error; err != nil {
+		http.Error(w, "could not create user: "+err.Error(), http.StatusConflict)
 		return
 	}
 
@@ -75,13 +79,12 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	name, _ := user.Name()
 	resp := AuthResponse{
 		Token: token,
 		User: UserResponse{
 			ID:    user.ID,
 			Email: user.Email,
-			Name:  name,
+			Name:  user.Name,
 			Role:  user.Role,
 		},
 	}
@@ -91,17 +94,19 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database service unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
 
-	user, err := internalDB.Client.User.FindUnique(
-		db.User.Email.Equals(req.Email),
-	).Exec(context.Background())
-
-	if err != nil {
+	var user models.User
+	if err := internalDB.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
 		http.Error(w, "invalid credentials", http.StatusUnauthorized)
 		return
 	}
@@ -117,13 +122,12 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	name, _ := user.Name()
 	resp := AuthResponse{
 		Token: token,
 		User: UserResponse{
 			ID:    user.ID,
 			Email: user.Email,
-			Name:  name,
+			Name:  user.Name,
 			Role:  user.Role,
 		},
 	}
@@ -133,42 +137,36 @@ func Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetMe(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database service unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	userID, ok := r.Context().Value(middleware.UserIDKey).(string)
 	if !ok {
 		http.Error(w, "unauthorized", http.StatusUnauthorized)
 		return
 	}
 
-	user, err := internalDB.Client.User.FindUnique(
-		db.User.ID.Equals(userID),
-	).With(
-		db.User.ProProfile.Fetch(),
-	).Exec(context.Background())
-
-	if err != nil {
+	var user models.User
+	if err := internalDB.DB.Preload("ProProfile").Where("id = ?", userID).First(&user).Error; err != nil {
 		http.Error(w, "user not found", http.StatusNotFound)
 		return
 	}
 
-	name, _ := user.Name()
-	
-	// Create a response type that includes the pro profile if needed
 	type ExtendedUserResponse struct {
 		UserResponse
-		ProProfile *db.ProProfileModel `json:"pro_profile,omitempty"`
+		ProProfile *models.ProProfile `json:"pro_profile,omitempty"`
 	}
 
 	resp := ExtendedUserResponse{
 		UserResponse: UserResponse{
 			ID:    user.ID,
 			Email: user.Email,
-			Name:  name,
+			Name:  user.Name,
 			Role:  user.Role,
 		},
-	}
-
-	if proProfile, ok := user.ProProfile(); ok {
-		resp.ProProfile = proProfile
+		ProProfile: user.ProProfile,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

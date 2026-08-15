@@ -1,14 +1,13 @@
 package handlers
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	internalDB "nexa/backend/internal/db"
+	"nexa/backend/internal/models"
 	"nexa/backend/internal/utils"
-	"nexa/backend/prisma/db"
+	"os"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -62,12 +61,9 @@ func HandleWSConnection(w http.ResponseWriter, r *http.Request) {
 	log.Printf("User %s connected via WebSocket", userID)
 
 	// Update user status to online in the DB
-	ctx := context.Background()
-	_, _ = internalDB.Client.User.FindUnique(
-		db.User.ID.Equals(userID),
-	).Update(
-		db.User.IsOnline.Set(true),
-	).Exec(ctx)
+	if internalDB.DB != nil {
+		internalDB.DB.Model(&models.User{}).Where("id = ?", userID).Update("is_online", true)
+	}
 
 	// Set connection teardown lifecycle
 	defer func() {
@@ -90,14 +86,10 @@ func HandleWSConnection(w http.ResponseWriter, r *http.Request) {
 		_, stillHasConn := utils.ActiveClients[userID]
 		utils.ActiveClientsMu.RUnlock()
 
-		if !stillHasConn {
-			_, _ = internalDB.Client.User.FindUnique(
-				db.User.ID.Equals(userID),
-			).Update(
-				db.User.IsOnline.Set(false),
-			).Exec(ctx)
+		if !stillHasConn && internalDB.DB != nil {
+			internalDB.DB.Model(&models.User{}).Where("id = ?", userID).Update("is_online", false)
 		}
-		
+
 		log.Printf("User %s disconnected from WebSocket", userID)
 	}()
 

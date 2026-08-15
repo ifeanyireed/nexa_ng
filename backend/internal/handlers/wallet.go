@@ -1,46 +1,36 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	internalDB "nexa/backend/internal/db"
 	"nexa/backend/internal/middleware"
-	"nexa/backend/prisma/db"
+	"nexa/backend/internal/models"
 )
 
 func GetWallet(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	userID := r.Context().Value(middleware.UserIDKey).(string)
 
-	wallet, err := internalDB.Client.Wallet.FindUnique(
-		db.Wallet.UserID.Equals(userID),
-	).Exec(context.Background())
-
-	if err != nil || wallet == nil {
-		wallet, err = internalDB.Client.Wallet.CreateOne(
-			db.Wallet.User.Link(db.User.ID.Equals(userID)),
-			db.Wallet.Balance.Set(0),
-		).Exec(context.Background())
-	}
-
-	if err != nil || wallet == nil {
-		http.Error(w, "error fetching wallet", http.StatusInternalServerError)
-		return
-	}
-
-	walletWithTransactions, err := internalDB.Client.Wallet.FindUnique(
-		db.Wallet.ID.Equals(wallet.ID),
-	).With(
-		db.Wallet.Transactions.Fetch(),
-	).Exec(context.Background())
-
+	var wallet models.Wallet
+	err := internalDB.DB.Preload("Transactions").Where("user_id = ?", userID).First(&wallet).Error
 	if err != nil {
-		http.Error(w, "error fetching transactions", http.StatusInternalServerError)
-		return
+		wallet = models.Wallet{
+			UserID:  userID,
+			Balance: 0,
+		}
+		if err := internalDB.DB.Create(&wallet).Error; err != nil {
+			http.Error(w, "error creating wallet", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(walletWithTransactions)
+	json.NewEncoder(w).Encode(wallet)
 }
 
 type TransactionRequest struct {
@@ -48,6 +38,11 @@ type TransactionRequest struct {
 }
 
 func Deposit(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	userID := r.Context().Value(middleware.UserIDKey).(string)
 
 	var req TransactionRequest
@@ -56,35 +51,26 @@ func Deposit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	wallet, err := internalDB.Client.Wallet.FindUnique(
-		db.Wallet.UserID.Equals(userID),
-	).Exec(context.Background())
-
-	if err != nil {
+	var wallet models.Wallet
+	if err := internalDB.DB.Where("user_id = ?", userID).First(&wallet).Error; err != nil {
 		http.Error(w, "wallet not found", http.StatusNotFound)
 		return
 	}
 
-	newBalance := wallet.Balance + req.Amount
-	_, err = internalDB.Client.Wallet.FindUnique(
-		db.Wallet.ID.Equals(wallet.ID),
-	).Update(
-		db.Wallet.Balance.Set(newBalance),
-	).Exec(context.Background())
-
-	if err != nil {
+	wallet.Balance += req.Amount
+	if err := internalDB.DB.Save(&wallet).Error; err != nil {
 		http.Error(w, "error updating balance", http.StatusInternalServerError)
 		return
 	}
 
-	transaction, err := internalDB.Client.Transaction.CreateOne(
-		db.Transaction.Wallet.Link(db.Wallet.ID.Equals(wallet.ID)),
-		db.Transaction.Amount.Set(req.Amount),
-		db.Transaction.Type.Set("DEPOSIT"),
-		db.Transaction.Status.Set("COMPLETED"),
-	).Exec(context.Background())
+	transaction := models.Transaction{
+		WalletID: wallet.ID,
+		Amount:   req.Amount,
+		Type:     "DEPOSIT",
+		Status:   "COMPLETED",
+	}
 
-	if err != nil {
+	if err := internalDB.DB.Create(&transaction).Error; err != nil {
 		http.Error(w, "error creating transaction", http.StatusInternalServerError)
 		return
 	}

@@ -1,15 +1,14 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	internalDB "nexa/backend/internal/db"
 	"nexa/backend/internal/middleware"
+	"nexa/backend/internal/models"
 	"nexa/backend/internal/utils"
-	"nexa/backend/prisma/db"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -24,6 +23,11 @@ type CreateBookingRequest struct {
 }
 
 func CreateBooking(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	userID := r.Context().Value(middleware.UserIDKey).(string)
 
 	var req CreateBookingRequest
@@ -36,64 +40,67 @@ func CreateBooking(w http.ResponseWriter, r *http.Request) {
 		req.Type = "STANDARD"
 	}
 
-	booking, err := internalDB.Client.Booking.CreateOne(
-		db.Booking.Client.Link(db.User.ID.Equals(userID)),
-		db.Booking.ProProfile.Link(db.ProProfile.ID.Equals(req.ProProfileID)),
-		db.Booking.ScheduledAt.Set(req.ScheduledAt),
-		db.Booking.ServiceName.Set(req.ServiceName),
-		db.Booking.Amount.Set(req.Amount),
-		db.Booking.Type.Set(req.Type),
-	).Exec(context.Background())
+	booking := models.Booking{
+		ClientID:     userID,
+		ProProfileID: req.ProProfileID,
+		ScheduledAt:  req.ScheduledAt,
+		ServiceName:  req.ServiceName,
+		Amount:       req.Amount,
+		Type:         req.Type,
+		Status:       "PENDING",
+	}
 
-	if err != nil {
-		http.Error(w, "error creating booking", http.StatusInternalServerError)
+	if err := internalDB.DB.Create(&booking).Error; err != nil {
+		http.Error(w, "error creating booking: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// Fetch booking details to send SMS notification
-	bookingWithDetails, err := internalDB.Client.Booking.FindUnique(
-		db.Booking.ID.Equals(booking.ID),
-	).With(
-		db.Booking.Client.Fetch(),
-		db.Booking.ProProfile.Fetch().With(db.ProProfile.User.Fetch()),
-	).Exec(context.Background())
+	var bookingWithDetails models.Booking
+	err := internalDB.DB.Preload("Client").
+		Preload("ProProfile").
+		Preload("ProProfile.User").
+		Where("id = ?", booking.ID).
+		First(&bookingWithDetails).Error
 
 	if err == nil {
 		clientName := "A client"
-		if uName, ok := bookingWithDetails.Client().Name(); ok && uName != "" {
-			clientName = uName
+		if bookingWithDetails.Client != nil && bookingWithDetails.Client.Name != "" {
+			clientName = bookingWithDetails.Client.Name
 		}
-		serviceName := "Service"
-		if sName, ok := bookingWithDetails.ServiceName(); ok && sName != "" {
-			serviceName = sName
+		serviceName := bookingWithDetails.ServiceName
+		if serviceName == "" {
+			serviceName = "Service"
 		}
-		amount := 0.0
-		if amt, ok := bookingWithDetails.Amount(); ok {
-			amount = amt
-		}
+		amount := bookingWithDetails.Amount
 		scheduledAt := bookingWithDetails.ScheduledAt.Format("Jan 02, 2006 at 3:04 PM")
 
 		msg := fmt.Sprintf("Hello! You have a new Nexa booking from %s for '%s' scheduled on %s. Amount: ₦%.2f. Log in to accept.", clientName, serviceName, scheduledAt, amount)
 		clientMsg := fmt.Sprintf("You have successfully requested a booking for '%s' scheduled on %s. Amount: ₦%.2f. Pending Pro confirmation.", serviceName, scheduledAt, amount)
 
-		// Mirror to notifications
-		_ = utils.CreateNotification(bookingWithDetails.ProProfile().UserID, "New Booking Request", msg, "BOOKING")
+		if bookingWithDetails.ProProfile != nil {
+			_ = utils.CreateNotification(bookingWithDetails.ProProfile.UserID, "New Booking Request", msg, "BOOKING")
+			if bookingWithDetails.ProProfile.Phone != "" {
+				go func() {
+					if err := utils.SendSMS(bookingWithDetails.ProProfile.Phone, msg); err != nil {
+						log.Printf("Error sending new booking SMS: %v", err)
+					}
+				}()
+			}
+		}
 		_ = utils.CreateNotification(userID, "Booking Requested", clientMsg, "BOOKING")
 
-		if phone, ok := bookingWithDetails.ProProfile().Phone(); ok && phone != "" {
-			go func() {
-				if err := utils.SendSMS(phone, msg); err != nil {
-					log.Printf("Error sending new booking SMS: %v", err)
-				}
-			}()
+		clientEmail := ""
+		if bookingWithDetails.Client != nil {
+			clientEmail = bookingWithDetails.Client.Email
 		}
-
-		clientEmail := bookingWithDetails.Client().Email
 		proEmail := ""
-		if bEmail, ok := bookingWithDetails.ProProfile().BusinessEmail(); ok && bEmail != "" {
-			proEmail = bEmail
-		} else if proUser := bookingWithDetails.ProProfile().User(); proUser != nil {
-			proEmail = proUser.Email
+		if bookingWithDetails.ProProfile != nil {
+			if bookingWithDetails.ProProfile.BusinessEmail != "" {
+				proEmail = bookingWithDetails.ProProfile.BusinessEmail
+			} else if bookingWithDetails.ProProfile.User != nil {
+				proEmail = bookingWithDetails.ProProfile.User.Email
+			}
 		}
 
 		utils.SendBookingEmailHelper(clientEmail, proEmail, "New Booking Scheduled - Nexa", msg)
@@ -104,39 +111,39 @@ func CreateBooking(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListMyBookings(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	userID := r.Context().Value(middleware.UserIDKey).(string)
 	role := r.Context().Value(middleware.RoleKey).(string)
 
-	var bookings []db.BookingModel
+	var bookings []models.Booking
 	var err error
 
 	if role == "PRO" {
-		profile, errProfile := internalDB.Client.ProProfile.FindUnique(
-			db.ProProfile.UserID.Equals(userID),
-		).Exec(context.Background())
-		
-		if errProfile != nil || profile == nil {
-			// Profile not created yet, return empty list
+		var profile models.ProProfile
+		errProfile := internalDB.DB.Where("user_id = ?", userID).First(&profile).Error
+		if errProfile != nil {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode([]db.BookingModel{})
+			json.NewEncoder(w).Encode([]models.Booking{})
 			return
 		}
 
-		bookings, err = internalDB.Client.Booking.FindMany(
-			db.Booking.ProProfileID.Equals(profile.ID),
-		).With(
-			db.Booking.Client.Fetch(),
-		).Exec(context.Background())
+		err = internalDB.DB.Preload("Client").
+			Where("pro_profile_id = ?", profile.ID).
+			Order("created_at desc").
+			Find(&bookings).Error
 	} else {
-		bookings, err = internalDB.Client.Booking.FindMany(
-			db.Booking.ClientID.Equals(userID),
-		).With(
-			db.Booking.ProProfile.Fetch(),
-		).Exec(context.Background())
+		err = internalDB.DB.Preload("ProProfile").
+			Where("client_id = ?", userID).
+			Order("created_at desc").
+			Find(&bookings).Error
 	}
 
 	if err != nil {
-		http.Error(w, "error fetching bookings", http.StatusInternalServerError)
+		http.Error(w, "error fetching bookings: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -145,8 +152,14 @@ func ListMyBookings(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateBookingStatus(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	userID := r.Context().Value(middleware.UserIDKey).(string)
 	id := chi.URLParam(r, "id")
+
 	var req struct {
 		Status string `json:"status"`
 	}
@@ -155,29 +168,30 @@ func UpdateBookingStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	booking, err := internalDB.Client.Booking.FindUnique(
-		db.Booking.ID.Equals(id),
-	).Update(
-		db.Booking.Status.Set(req.Status),
-	).Exec(context.Background())
+	var booking models.Booking
+	if err := internalDB.DB.Where("id = ?", id).First(&booking).Error; err != nil {
+		http.Error(w, "booking not found", http.StatusNotFound)
+		return
+	}
 
-	if err != nil {
-		http.Error(w, "error updating booking", http.StatusInternalServerError)
+	booking.Status = req.Status
+	if err := internalDB.DB.Save(&booking).Error; err != nil {
+		http.Error(w, "error updating booking: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// Fetch booking details to send SMS status updates
-	bookingWithDetails, err := internalDB.Client.Booking.FindUnique(
-		db.Booking.ID.Equals(booking.ID),
-	).With(
-		db.Booking.Client.Fetch(),
-		db.Booking.ProProfile.Fetch().With(db.ProProfile.User.Fetch()),
-	).Exec(context.Background())
+	var bookingWithDetails models.Booking
+	err := internalDB.DB.Preload("Client").
+		Preload("ProProfile").
+		Preload("ProProfile.User").
+		Where("id = ?", booking.ID).
+		First(&bookingWithDetails).Error
 
 	if err == nil {
-		serviceName := "Service"
-		if sName, ok := bookingWithDetails.ServiceName(); ok && sName != "" {
-			serviceName = sName
+		serviceName := bookingWithDetails.ServiceName
+		if serviceName == "" {
+			serviceName = "Service"
 		}
 		scheduledAt := bookingWithDetails.ScheduledAt.Format("Jan 02, 2006 at 3:04 PM")
 		var msg string
@@ -201,24 +215,29 @@ func UpdateBookingStatus(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if msg != "" {
-			// Mirror to notifications
-			_ = utils.CreateNotification(bookingWithDetails.ProProfile().UserID, fmt.Sprintf("Booking %s", req.Status), msg, "BOOKING")
+			if bookingWithDetails.ProProfile != nil {
+				_ = utils.CreateNotification(bookingWithDetails.ProProfile.UserID, fmt.Sprintf("Booking %s", req.Status), msg, "BOOKING")
+				if bookingWithDetails.ProProfile.Phone != "" {
+					go func() {
+						if err := utils.SendSMS(bookingWithDetails.ProProfile.Phone, msg); err != nil {
+							log.Printf("Error sending booking update SMS: %v", err)
+						}
+					}()
+				}
+			}
 			_ = utils.CreateNotification(bookingWithDetails.ClientID, fmt.Sprintf("Booking %s", req.Status), clientMsg, "BOOKING")
 
-			if phone, ok := bookingWithDetails.ProProfile().Phone(); ok && phone != "" {
-				go func() {
-					if err := utils.SendSMS(phone, msg); err != nil {
-						log.Printf("Error sending booking update SMS: %v", err)
-					}
-				}()
+			clientEmail := ""
+			if bookingWithDetails.Client != nil {
+				clientEmail = bookingWithDetails.Client.Email
 			}
-
-			clientEmail := bookingWithDetails.Client().Email
 			proEmail := ""
-			if bEmail, ok := bookingWithDetails.ProProfile().BusinessEmail(); ok && bEmail != "" {
-				proEmail = bEmail
-			} else if proUser := bookingWithDetails.ProProfile().User(); proUser != nil {
-				proEmail = proUser.Email
+			if bookingWithDetails.ProProfile != nil {
+				if bookingWithDetails.ProProfile.BusinessEmail != "" {
+					proEmail = bookingWithDetails.ProProfile.BusinessEmail
+				} else if bookingWithDetails.ProProfile.User != nil {
+					proEmail = bookingWithDetails.ProProfile.User.Email
+				}
 			}
 
 			subject := fmt.Sprintf("Booking Status Updated: %s - Nexa", req.Status)
@@ -231,14 +250,19 @@ func UpdateBookingStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetBooking(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	id := chi.URLParam(r, "id")
 
-	booking, err := internalDB.Client.Booking.FindUnique(
-		db.Booking.ID.Equals(id),
-	).With(
-		db.Booking.Client.Fetch(),
-		db.Booking.ProProfile.Fetch().With(db.ProProfile.User.Fetch()),
-	).Exec(context.Background())
+	var booking models.Booking
+	err := internalDB.DB.Preload("Client").
+		Preload("ProProfile").
+		Preload("ProProfile.User").
+		Where("id = ?", id).
+		First(&booking).Error
 
 	if err != nil {
 		http.Error(w, "booking not found", http.StatusNotFound)

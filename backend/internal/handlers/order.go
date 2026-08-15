@@ -1,15 +1,14 @@
 package handlers
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	internalDB "nexa/backend/internal/db"
 	"nexa/backend/internal/middleware"
+	"nexa/backend/internal/models"
 	"nexa/backend/internal/utils"
-	"nexa/backend/prisma/db"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -25,8 +24,12 @@ type CreateOrderRequest struct {
 
 // CreateOrder handles order creation and sends order SMS + Email notifications to both client and seller
 func CreateOrder(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	userID := r.Context().Value(middleware.UserIDKey).(string)
-	ctx := context.Background()
 
 	var req CreateOrderRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -38,55 +41,53 @@ func CreateOrder(w http.ResponseWriter, r *http.Request) {
 		req.Quantity = 1
 	}
 
-	// Create the order using correct Prisma Go positional args: Client, Product, Amount
-	order, err := internalDB.Client.Order.CreateOne(
-		db.Order.Client.Link(db.User.ID.Equals(userID)),
-		db.Order.Product.Link(db.Product.ID.Equals(req.ProductID)),
-		db.Order.Amount.Set(req.Amount),
-		db.Order.Quantity.Set(req.Quantity),
-		db.Order.Status.Set("PAID"), // Set to PAID after checkout payment
-		db.Order.ShippingAddress.Set(req.ShippingAddress),
-		db.Order.Phone.Set(req.Phone),
-	).Exec(ctx)
+	order := models.Order{
+		ClientID:        userID,
+		ProductID:       req.ProductID,
+		Amount:          req.Amount,
+		Quantity:        req.Quantity,
+		Status:          "PAID",
+		ShippingAddress: req.ShippingAddress,
+		Phone:           req.Phone,
+	}
 
-	if err != nil {
+	if err := internalDB.DB.Create(&order).Error; err != nil {
 		http.Error(w, "error creating order: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// Automatically create a Delivery entry
-	_, err = internalDB.Client.Delivery.CreateOne(
-		db.Delivery.Order.Link(db.Order.ID.Equals(order.ID)),
-		db.Delivery.Status.Set("PENDING"),
-	).Exec(ctx)
-	if err != nil {
+	delivery := models.Delivery{
+		OrderID: order.ID,
+		Status:  "PENDING",
+	}
+	if err := internalDB.DB.Create(&delivery).Error; err != nil {
 		log.Printf("Warning: Failed to create Delivery record for order %s: %v", order.ID, err)
 	}
 
 	// Fetch Order with details to send SMS + Email
-	orderWithDetails, err := internalDB.Client.Order.FindUnique(
-		db.Order.ID.Equals(order.ID),
-	).With(
-		db.Order.Client.Fetch(),
-		db.Order.Product.Fetch().With(db.Product.ProProfile.Fetch().With(db.ProProfile.User.Fetch())),
-	).Exec(ctx)
+	var orderWithDetails models.Order
+	err := internalDB.DB.Preload("Client").
+		Preload("Product").
+		Preload("Product.ProProfile").
+		Preload("Product.ProProfile.User").
+		Where("id = ?", order.ID).
+		First(&orderWithDetails).Error
 
-	if err == nil {
-		proProfile := orderWithDetails.Product().ProProfile()
-		phone, hasPhone := proProfile.Phone()
-		productName := orderWithDetails.Product().Name
+	if err == nil && orderWithDetails.Product != nil && orderWithDetails.Product.ProProfile != nil {
+		proProfile := orderWithDetails.Product.ProProfile
+		phone := proProfile.Phone
+		productName := orderWithDetails.Product.Name
 		qty := orderWithDetails.Quantity
 		totalAmt := orderWithDetails.Amount
 
 		msg := fmt.Sprintf("Hello! You have a new Nexa order for '%s' (Qty: %d). Total Amount: ₦%.2f. Delivery Address: %s. Log in to fulfill.", productName, qty, totalAmt, req.ShippingAddress)
 		clientMsg := fmt.Sprintf("Your order for '%s' (Qty: %d) has been placed successfully. Total: ₦%.2f.", productName, qty, totalAmt)
 
-		// Mirror to notifications
 		_ = utils.CreateNotification(proProfile.UserID, "New Order Received", msg, "ORDER")
 		_ = utils.CreateNotification(userID, "Order Placed", clientMsg, "ORDER")
 
-		// Send SMS to Pro if available
-		if hasPhone && phone != "" {
+		if phone != "" {
 			go func() {
 				if err := utils.SendSMS(phone, msg); err != nil {
 					log.Printf("Error sending new order SMS: %v", err)
@@ -94,13 +95,15 @@ func CreateOrder(w http.ResponseWriter, r *http.Request) {
 			}()
 		}
 
-		// Send Email to Pro and Client
-		clientEmail := orderWithDetails.Client().Email
+		clientEmail := ""
+		if orderWithDetails.Client != nil {
+			clientEmail = orderWithDetails.Client.Email
+		}
 		proEmail := ""
-		if bEmail, ok := proProfile.BusinessEmail(); ok && bEmail != "" {
-			proEmail = bEmail
-		} else if proUser := proProfile.User(); proUser != nil {
-			proEmail = proUser.Email
+		if proProfile.BusinessEmail != "" {
+			proEmail = proProfile.BusinessEmail
+		} else if proProfile.User != nil {
+			proEmail = proProfile.User.Email
 		}
 
 		utils.SendBookingEmailHelper(clientEmail, proEmail, "New Order Received - Nexa", msg)
@@ -112,37 +115,38 @@ func CreateOrder(w http.ResponseWriter, r *http.Request) {
 
 // ListMyOrders lists orders for clients or sellers (Pros)
 func ListMyOrders(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	userID := r.Context().Value(middleware.UserIDKey).(string)
 	role := r.Context().Value(middleware.RoleKey).(string)
-	ctx := context.Background()
 
-	var orders []db.OrderModel
+	var orders []models.Order
 	var err error
 
 	if role == "PRO" {
-		profile, err := internalDB.Client.ProProfile.FindUnique(
-			db.ProProfile.UserID.Equals(userID),
-		).Exec(ctx)
-
-		if err != nil || profile == nil {
+		var profile models.ProProfile
+		if err := internalDB.DB.Where("user_id = ?", userID).First(&profile).Error; err != nil {
 			http.Error(w, "pro profile not found", http.StatusNotFound)
 			return
 		}
 
-		orders, err = internalDB.Client.Order.FindMany(
-			db.Order.Product.Where(db.Product.ProProfileID.Equals(profile.ID)),
-		).With(
-			db.Order.Product.Fetch(),
-			db.Order.Client.Fetch(),
-			db.Order.Delivery.Fetch(),
-		).Exec(ctx)
+		err = internalDB.DB.Preload("Product").
+			Preload("Client").
+			Preload("Delivery").
+			Joins("JOIN `Product` on `Product`.id = `Order`.product_id").
+			Where("`Product`.pro_profile_id = ?", profile.ID).
+			Order("`Order`.created_at desc").
+			Find(&orders).Error
 	} else {
-		orders, err = internalDB.Client.Order.FindMany(
-			db.Order.ClientID.Equals(userID),
-		).With(
-			db.Order.Product.Fetch().With(db.Product.ProProfile.Fetch()),
-			db.Order.Delivery.Fetch(),
-		).Exec(ctx)
+		err = internalDB.DB.Preload("Product").
+			Preload("Product.ProProfile").
+			Preload("Delivery").
+			Where("client_id = ?", userID).
+			Order("created_at desc").
+			Find(&orders).Error
 	}
 
 	if err != nil {
@@ -156,16 +160,20 @@ func ListMyOrders(w http.ResponseWriter, r *http.Request) {
 
 // GetOrder fetches order details
 func GetOrder(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	ctx := context.Background()
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
 
-	order, err := internalDB.Client.Order.FindUnique(
-		db.Order.ID.Equals(id),
-	).With(
-		db.Order.Client.Fetch(),
-		db.Order.Product.Fetch().With(db.Product.ProProfile.Fetch()),
-		db.Order.Delivery.Fetch(),
-	).Exec(ctx)
+	id := chi.URLParam(r, "id")
+
+	var order models.Order
+	err := internalDB.DB.Preload("Client").
+		Preload("Product").
+		Preload("Product.ProProfile").
+		Preload("Delivery").
+		Where("id = ?", id).
+		First(&order).Error
 
 	if err != nil {
 		http.Error(w, "order not found", http.StatusNotFound)
@@ -178,8 +186,12 @@ func GetOrder(w http.ResponseWriter, r *http.Request) {
 
 // UpdateOrderStatus updates order status (e.g. PAID, CANCELLED)
 func UpdateOrderStatus(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	id := chi.URLParam(r, "id")
-	ctx := context.Background()
 
 	var req struct {
 		Status string `json:"status"`
@@ -189,36 +201,36 @@ func UpdateOrderStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order, err := internalDB.Client.Order.FindUnique(
-		db.Order.ID.Equals(id),
-	).Update(
-		db.Order.Status.Set(req.Status),
-	).Exec(ctx)
+	var order models.Order
+	if err := internalDB.DB.Where("id = ?", id).First(&order).Error; err != nil {
+		http.Error(w, "order not found", http.StatusNotFound)
+		return
+	}
 
-	if err != nil {
+	order.Status = req.Status
+	if err := internalDB.DB.Save(&order).Error; err != nil {
 		http.Error(w, "error updating order: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Send cancellation notification if cancelled
 	if req.Status == "CANCELLED" {
-		orderWithDetails, err := internalDB.Client.Order.FindUnique(
-			db.Order.ID.Equals(order.ID),
-		).With(
-			db.Order.Client.Fetch(),
-			db.Order.Product.Fetch().With(db.Product.ProProfile.Fetch().With(db.ProProfile.User.Fetch())),
-		).Exec(ctx)
+		var orderWithDetails models.Order
+		err := internalDB.DB.Preload("Client").
+			Preload("Product").
+			Preload("Product.ProProfile").
+			Preload("Product.ProProfile.User").
+			Where("id = ?", order.ID).
+			First(&orderWithDetails).Error
 
-		if err == nil {
-			proProfile := orderWithDetails.Product().ProProfile()
-			phone, hasPhone := proProfile.Phone()
-			msg := fmt.Sprintf("Your Nexa order for '%s' (Order ID: %s) has been cancelled.", orderWithDetails.Product().Name, order.ID)
+		if err == nil && orderWithDetails.Product != nil && orderWithDetails.Product.ProProfile != nil {
+			proProfile := orderWithDetails.Product.ProProfile
+			phone := proProfile.Phone
+			msg := fmt.Sprintf("Your Nexa order for '%s' (Order ID: %s) has been cancelled.", orderWithDetails.Product.Name, order.ID)
 
-			// Mirror to notifications
 			_ = utils.CreateNotification(proProfile.UserID, "Order Cancelled", msg, "ORDER")
 			_ = utils.CreateNotification(orderWithDetails.ClientID, "Order Cancelled", msg, "ORDER")
 
-			if hasPhone && phone != "" {
+			if phone != "" {
 				go func() {
 					if err := utils.SendSMS(phone, msg); err != nil {
 						log.Printf("Error sending cancelled order SMS: %v", err)
@@ -226,12 +238,15 @@ func UpdateOrderStatus(w http.ResponseWriter, r *http.Request) {
 				}()
 			}
 
-			clientEmail := orderWithDetails.Client().Email
+			clientEmail := ""
+			if orderWithDetails.Client != nil {
+				clientEmail = orderWithDetails.Client.Email
+			}
 			proEmail := ""
-			if bEmail, ok := proProfile.BusinessEmail(); ok && bEmail != "" {
-				proEmail = bEmail
-			} else if proUser := proProfile.User(); proUser != nil {
-				proEmail = proUser.Email
+			if proProfile.BusinessEmail != "" {
+				proEmail = proProfile.BusinessEmail
+			} else if proProfile.User != nil {
+				proEmail = proProfile.User.Email
 			}
 
 			utils.SendBookingEmailHelper(clientEmail, proEmail, "Order Cancelled - Nexa", msg)
@@ -243,16 +258,20 @@ func UpdateOrderStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 type UpdateDeliveryStatusRequest struct {
-	Status            string    `json:"status"`
-	TrackingNumber    string    `json:"tracking_number,omitempty"`
-	Carrier           string    `json:"carrier,omitempty"`
-	EstimatedDelivery time.Time `json:"estimated_delivery,omitempty"`
+	Status            string     `json:"status"`
+	TrackingNumber    string     `json:"tracking_number,omitempty"`
+	Carrier           string     `json:"carrier,omitempty"`
+	EstimatedDelivery *time.Time `json:"estimated_delivery,omitempty"`
 }
 
 // UpdateDeliveryStatus updates delivery tracking status and dispatches delivery SMS + Email notifications to the client
 func UpdateDeliveryStatus(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	orderID := chi.URLParam(r, "orderId")
-	ctx := context.Background()
 
 	var req UpdateDeliveryStatusRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -260,70 +279,50 @@ func UpdateDeliveryStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Find the existing delivery
-	existingDelivery, err := internalDB.Client.Delivery.FindUnique(
-		db.Delivery.OrderID.Equals(orderID),
-	).Exec(ctx)
-
-	if err != nil || existingDelivery == nil {
+	var delivery models.Delivery
+	if err := internalDB.DB.Where("order_id = ?", orderID).First(&delivery).Error; err != nil {
 		http.Error(w, "delivery record not found", http.StatusNotFound)
 		return
 	}
 
-	// Update delivery status using db.DeliverySetParam slice to support optional updates conditionally
-	params := []db.DeliverySetParam{
-		db.Delivery.Status.Set(req.Status),
-	}
-
+	delivery.Status = req.Status
 	if req.TrackingNumber != "" {
-		params = append(params, db.Delivery.TrackingNumber.Set(req.TrackingNumber))
+		delivery.TrackingNumber = req.TrackingNumber
 	}
 	if req.Carrier != "" {
-		params = append(params, db.Delivery.Carrier.Set(req.Carrier))
+		delivery.Carrier = req.Carrier
 	}
-	if !req.EstimatedDelivery.IsZero() {
-		params = append(params, db.Delivery.EstimatedDelivery.Set(req.EstimatedDelivery))
+	if req.EstimatedDelivery != nil {
+		delivery.EstimatedDelivery = req.EstimatedDelivery
 	}
 
-	delivery, err := internalDB.Client.Delivery.FindUnique(
-		db.Delivery.OrderID.Equals(orderID),
-	).Update(
-		params...,
-	).Exec(ctx)
-
-	if err != nil {
+	if err := internalDB.DB.Save(&delivery).Error; err != nil {
 		http.Error(w, "error updating delivery: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Fetch Order details to send notifications to client's phone and email
-	order, err := internalDB.Client.Order.FindUnique(
-		db.Order.ID.Equals(orderID),
-	).With(
-		db.Order.Client.Fetch(),
-		db.Order.Product.Fetch(),
-	).Exec(ctx)
+	var order models.Order
+	err := internalDB.DB.Preload("Client").
+		Preload("Product").
+		Where("id = ?", orderID).
+		First(&order).Error
 
-	if err == nil {
-		productName := order.Product().Name
-		var msg string
-
+	if err == nil && order.Product != nil {
+		productName := order.Product.Name
 		carrierName := req.Carrier
 		if carrierName == "" {
-			if c, ok := delivery.Carrier(); ok && c != "" {
-				carrierName = c
-			} else {
-				carrierName = "our delivery partner"
-			}
+			carrierName = delivery.Carrier
+		}
+		if carrierName == "" {
+			carrierName = "our delivery partner"
 		}
 
 		trackNum := req.TrackingNumber
 		if trackNum == "" {
-			if t, ok := delivery.TrackingNumber(); ok {
-				trackNum = t
-			}
+			trackNum = delivery.TrackingNumber
 		}
 
+		var msg string
 		switch req.Status {
 		case "SHIPPED":
 			msg = fmt.Sprintf("Your Nexa order for '%s' has been shipped via %s. Tracking number: %s.", productName, carrierName, trackNum)
@@ -334,23 +333,19 @@ func UpdateDeliveryStatus(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if msg != "" {
-			// Mirror to notifications
 			_ = utils.CreateNotification(order.ClientID, "Delivery Update", msg, "DELIVERY")
-
-			// Send SMS to client
-			if phone, ok := order.Phone(); ok && phone != "" {
+			if order.Phone != "" {
 				go func() {
-					if err := utils.SendSMS(phone, msg); err != nil {
+					if err := utils.SendSMS(order.Phone, msg); err != nil {
 						log.Printf("Error sending delivery SMS: %v", err)
 					}
 				}()
 			}
-
-			// Send Email to client
-			clientEmail := order.Client().Email
-			go func() {
-				_ = utils.SendEmail(clientEmail, "Delivery Update - Nexa", msg)
-			}()
+			if order.Client != nil && order.Client.Email != "" {
+				go func() {
+					_ = utils.SendEmail(order.Client.Email, "Delivery Update - Nexa", msg)
+				}()
+			}
 		}
 	}
 
@@ -360,14 +355,15 @@ func UpdateDeliveryStatus(w http.ResponseWriter, r *http.Request) {
 
 // GetDelivery fetches delivery details for a specific order
 func GetDelivery(w http.ResponseWriter, r *http.Request) {
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	orderID := chi.URLParam(r, "orderId")
-	ctx := context.Background()
 
-	delivery, err := internalDB.Client.Delivery.FindUnique(
-		db.Delivery.OrderID.Equals(orderID),
-	).Exec(ctx)
-
-	if err != nil {
+	var delivery models.Delivery
+	if err := internalDB.DB.Where("order_id = ?", orderID).First(&delivery).Error; err != nil {
 		http.Error(w, "delivery not found", http.StatusNotFound)
 		return
 	}
@@ -378,19 +374,20 @@ func GetDelivery(w http.ResponseWriter, r *http.Request) {
 
 // TriggerBookingReminders scans confirmed bookings in the next 24 hours and dispatches SMS + Email reminders
 func TriggerBookingReminders(w http.ResponseWriter, r *http.Request) {
-	ctx := context.Background()
+	if internalDB.DB == nil {
+		http.Error(w, "database unavailable", http.StatusServiceUnavailable)
+		return
+	}
+
 	now := time.Now()
 	tomorrow := now.Add(24 * time.Hour)
 
-	// Fetch confirmed bookings scheduled between now and 24 hours later
-	bookings, err := internalDB.Client.Booking.FindMany(
-		db.Booking.ScheduledAt.Gte(now),
-		db.Booking.ScheduledAt.Lte(tomorrow),
-		db.Booking.Status.Equals("CONFIRMED"),
-	).With(
-		db.Booking.Client.Fetch(),
-		db.Booking.ProProfile.Fetch().With(db.ProProfile.User.Fetch()),
-	).Exec(ctx)
+	var bookings []models.Booking
+	err := internalDB.DB.Preload("Client").
+		Preload("ProProfile").
+		Preload("ProProfile.User").
+		Where("scheduled_at >= ? AND scheduled_at <= ? AND status = ?", now, tomorrow, "CONFIRMED").
+		Find(&bookings).Error
 
 	if err != nil {
 		http.Error(w, "error fetching bookings for reminders: "+err.Error(), http.StatusInternalServerError)
@@ -399,51 +396,50 @@ func TriggerBookingReminders(w http.ResponseWriter, r *http.Request) {
 
 	remindersSent := 0
 	for _, booking := range bookings {
-		proProfile := booking.ProProfile()
-		phone, ok := proProfile.Phone()
-
+		proProfile := booking.ProProfile
 		clientName := "A client"
-		if uName, ok := booking.Client().Name(); ok && uName != "" {
-			clientName = uName
+		if booking.Client != nil && booking.Client.Name != "" {
+			clientName = booking.Client.Name
 		}
-		serviceName := "Service"
-		if sName, ok := booking.ServiceName(); ok && sName != "" {
-			serviceName = sName
+		serviceName := booking.ServiceName
+		if serviceName == "" {
+			serviceName = "Service"
 		}
 		scheduledTime := booking.ScheduledAt.Format("Jan 02 at 3:04 PM")
 
 		msg := fmt.Sprintf("Nexa Reminder: You have an upcoming booking for '%s' with client %s scheduled for %s. Get ready!", serviceName, clientName, scheduledTime)
 
 		proName := "Pro"
-		if bName, ok := proProfile.BusinessName(); ok && bName != "" {
-			proName = bName
-		} else if proUser := proProfile.User(); proUser != nil {
-			if name, ok := proUser.Name(); ok && name != "" {
-				proName = name
-			}
+		if proProfile != nil && proProfile.BusinessName != "" {
+			proName = proProfile.BusinessName
+		} else if proProfile != nil && proProfile.User != nil && proProfile.User.Name != "" {
+			proName = proProfile.User.Name
 		}
 		clientMsg := fmt.Sprintf("Nexa Reminder: You have an upcoming booking for '%s' with %s scheduled for %s.", serviceName, proName, scheduledTime)
 
-		// Mirror to notifications
-		_ = utils.CreateNotification(proProfile.UserID, "Upcoming Booking Reminder", msg, "BOOKING")
+		if proProfile != nil {
+			_ = utils.CreateNotification(proProfile.UserID, "Upcoming Booking Reminder", msg, "BOOKING")
+			if proProfile.Phone != "" {
+				go func(phoneNumber, message string) {
+					if err := utils.SendSMS(phoneNumber, message); err != nil {
+						log.Printf("Error sending booking reminder SMS to %s: %v", phoneNumber, err)
+					}
+				}(proProfile.Phone, msg)
+			}
+		}
 		_ = utils.CreateNotification(booking.ClientID, "Upcoming Booking Reminder", clientMsg, "BOOKING")
 
-		// Send SMS to Pro
-		if ok && phone != "" {
-			go func(phoneNumber, message string) {
-				if err := utils.SendSMS(phoneNumber, message); err != nil {
-					log.Printf("Error sending booking reminder SMS to %s: %v", phoneNumber, err)
-				}
-			}(phone, msg)
+		clientEmail := ""
+		if booking.Client != nil {
+			clientEmail = booking.Client.Email
 		}
-
-		// Send Email to Pro and Client
-		clientEmail := booking.Client().Email
 		proEmail := ""
-		if bEmail, ok := proProfile.BusinessEmail(); ok && bEmail != "" {
-			proEmail = bEmail
-		} else if proUser := proProfile.User(); proUser != nil {
-			proEmail = proUser.Email
+		if proProfile != nil {
+			if proProfile.BusinessEmail != "" {
+				proEmail = proProfile.BusinessEmail
+			} else if proProfile.User != nil {
+				proEmail = proProfile.User.Email
+			}
 		}
 
 		utils.SendBookingEmailHelper(clientEmail, proEmail, "Upcoming Booking Reminder - Nexa", msg)

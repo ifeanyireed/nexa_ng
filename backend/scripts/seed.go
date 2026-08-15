@@ -1,28 +1,29 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
-	"nexa/backend/prisma/db"
+	internalDB "nexa/backend/internal/db"
+	"nexa/backend/internal/models"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type NicheData struct {
-	Slug       string
-	ParentID   string
-	Name       string
-	Pros       []ProData
+	Slug     string
+	ParentID string
+	Name     string
+	Pros     []ProData
 }
 
 type ProData struct {
-	Name       string
-	Email      string
-	Bio        string
-	Specialty  string
-	Area       string
+	Name      string
+	Email     string
+	Bio       string
+	Specialty string
+	Area      string
 }
 
 type ProductSeed struct {
@@ -33,25 +34,61 @@ type ProductSeed struct {
 }
 
 func main() {
-	// Load .env file
-	if err := godotenv.Load(); err != nil {
-		log.Printf("Warning: .env file not found: %v", err)
+	// Load .env / .env.development
+	godotenv.Load(".env.development")
+	godotenv.Load(".env")
+
+	// Init GORM DB
+	internalDB.Init()
+	if internalDB.DB == nil {
+		log.Fatal("Could not connect to database via GORM. Please check your DB credentials or Remote MySQL settings.")
 	}
 
-	client := db.NewClient()
-	if err := client.Connect(); err != nil {
-		log.Fatal(err)
-	}
-	defer client.Disconnect()
+	db := internalDB.DB
 
-	ctx := context.Background()
-
-	// Clear old articles, services, and products to avoid duplicate keys or spam on subsequent runs
-	client.Article.FindMany().Delete().Exec(ctx)
-	client.Service.FindMany().Delete().Exec(ctx)
-	client.Product.FindMany().Delete().Exec(ctx)
+	// Clear old records if desired
+	db.Exec("SET FOREIGN_KEY_CHECKS = 0")
+	db.Where("1 = 1").Delete(&models.Article{})
+	db.Where("1 = 1").Delete(&models.Service{})
+	db.Where("1 = 1").Delete(&models.Product{})
+	db.Exec("SET FOREIGN_KEY_CHECKS = 1")
 
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+	hashStr := string(hashedPassword)
+
+	// Admin Account
+	var adminUser models.User
+	if err := db.Where("email = ?", "admin@nexa.ng").First(&adminUser).Error; err != nil {
+		adminUser = models.User{
+			Email:    "admin@nexa.ng",
+			Password: hashStr,
+			Role:     "ADMIN",
+			Name:     "Nexa Super Admin",
+			IsOnline: true,
+		}
+		db.Create(&adminUser)
+		log.Println("✅ Seeded admin user: admin@nexa.ng / password123")
+	}
+
+	// Client Account
+	var clientUser models.User
+	if err := db.Where("email = ?", "client@nexa.ng").First(&clientUser).Error; err != nil {
+		clientUser = models.User{
+			Email:    "client@nexa.ng",
+			Password: hashStr,
+			Role:     "CLIENT",
+			Name:     "Test Client",
+			IsOnline: false,
+		}
+		db.Create(&clientUser)
+
+		wallet := models.Wallet{
+			UserID:  clientUser.ID,
+			Balance: 50000,
+		}
+		db.Create(&wallet)
+		log.Println("✅ Seeded client user: client@nexa.ng / password123")
+	}
 
 	niches := []NicheData{
 		{Slug: "handyman-finders", ParentID: "home-services", Name: "Handyman Finders", Pros: []ProData{
@@ -154,241 +191,144 @@ func main() {
 		}},
 	}
 
-	// Seed an Admin Account
-	_, err := client.User.UpsertOne(
-		db.User.Email.Equals("admin@nexa.ng"),
-	).Create(
-		db.User.Email.Set("admin@nexa.ng"),
-		db.User.Password.Set(string(hashedPassword)),
-		db.User.Role.Set("ADMIN"),
-		db.User.Name.Set("Nexa Super Admin"),
-	).Update(
-		db.User.Password.Set(string(hashedPassword)),
-		db.User.Role.Set("ADMIN"),
-	).Exec(ctx)
-
-	if err != nil {
-		log.Printf("Error creating admin account: %v", err)
-	} else {
-		log.Println("Successfully seeded admin@nexa.ng / password123")
+	avatarUrls := []string{
+		"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
+		"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80",
+		"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80",
+		"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80",
+		"https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=300&auto=format&fit=crop&q=80",
+		"https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80",
+		"https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300&auto=format&fit=crop&q=80",
+		"https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=300&auto=format&fit=crop&q=80",
 	}
 
-	// Seed a Client Account
-	_, err = client.User.UpsertOne(
-		db.User.Email.Equals("client@nexa.ng"),
-	).Create(
-		db.User.Email.Set("client@nexa.ng"),
-		db.User.Password.Set(string(hashedPassword)),
-		db.User.Role.Set("CLIENT"),
-		db.User.Name.Set("Test Client"),
-	).Update(
-		db.User.Password.Set(string(hashedPassword)),
-		db.User.Role.Set("CLIENT"),
-	).Exec(ctx)
-
-	if err != nil {
-		log.Printf("Error creating client account: %v", err)
-	} else {
-		log.Println("Successfully seeded client@nexa.ng / password123")
+	productSeeds := map[string][]ProductSeed{
+		"home-services": {
+			{"Premium Toolbox Set", 45000, "https://images.unsplash.com/photo-1530124566582-a618bc2615dc?w=500&auto=format&fit=crop&q=60", "Complete set of high-quality tools for home repairs."},
+			{"Smart Home Security Kit", 120000, "https://images.unsplash.com/photo-1558611848-73f7eb4001a1?w=500&auto=format&fit=crop&q=60", "Advanced security cameras and sensors."},
+		},
+		"fashion": {
+			{"Bespoke Native Fabric", 25000, "https://images.unsplash.com/photo-1603228254119-e6a4d015fb73?w=500&auto=format&fit=crop&q=60", "High-quality traditional fabric."},
+			{"Men's Grooming Kit", 12000, "https://images.unsplash.com/photo-1621607512214-68297480165e?w=500&auto=format&fit=crop&q=60", "Premium beard oils and clippers."},
+		},
+		"professionals": {
+			{"Ergonomic Office Chair", 85000, "https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?w=500&auto=format&fit=crop&q=60", "Comfortable seating for long hours."},
+			{"Mechanical Keyboard", 35000, "https://images.unsplash.com/photo-1595225476474-87563907a212?w=500&auto=format&fit=crop&q=60", "Tactile typing experience."},
+		},
+		"education": {
+			{"Interactive Whiteboard", 150000, "https://images.unsplash.com/photo-1588075592446-265fd1e6e76f?w=500&auto=format&fit=crop&q=60", "Modern teaching tool."},
+			{"Acoustic Guitar Pack", 45000, "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=500&auto=format&fit=crop&q=60", "Perfect for beginners."},
+		},
+		"events": {
+			{"Party Lighting System", 75000, "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=500&auto=format&fit=crop&q=60", "Dynamic lights for any occasion."},
+			{"DJ Controller", 180000, "https://images.unsplash.com/photo-1571266028243-3716f02d2d2e?w=500&auto=format&fit=crop&q=60", "Mix tracks like a pro."},
+		},
+		"health": {
+			{"Yoga Mat & Blocks", 15000, "https://images.unsplash.com/photo-1601134599986-7e2831f2dc34?w=500&auto=format&fit=crop&q=60", "Essential fitness gear."},
+			{"Adjustable Dumbbells", 40000, "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=500&auto=format&fit=crop&q=60", "Space-saving workout equipment."},
+		},
+		"logistics": {
+			{"Heavy Duty Moving Boxes", 10000, "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=500&auto=format&fit=crop&q=60", "Durable packaging."},
+			{"GPS Tracker", 18000, "https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=500&auto=format&fit=crop&q=60", "Real-time asset tracking."},
+		},
+		"auto": {
+			{"Car Care Detailing Kit", 28000, "https://images.unsplash.com/photo-1601362840469-51e4d8d58785?w=500&auto=format&fit=crop&q=60", "Keep your vehicle shining."},
+			{"Smart Dash Cam", 45000, "https://images.unsplash.com/photo-1517005085862-e61b7b049d50?w=500&auto=format&fit=crop&q=60", "Record your journeys safely."},
+		},
+		"food": {
+			{"Chef's Knife Set", 65000, "https://images.unsplash.com/photo-1593618998160-e34014e67546?w=500&auto=format&fit=crop&q=60", "Professional grade culinary knives."},
+			{"Premium Spice Collection", 15000, "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=500&auto=format&fit=crop&q=60", "Exotic and rich flavors."},
+		},
+		"realestate": {
+			{"Smart Door Lock", 85000, "https://images.unsplash.com/photo-1558002038-1055907df827?w=500&auto=format&fit=crop&q=60", "Keyless and secure entry."},
+			{"Interior Paint Premium Set", 40000, "https://images.unsplash.com/photo-1562184552-997c461abbe6?w=500&auto=format&fit=crop&q=60", "Transform your living space."},
+		},
 	}
 
 	for nicheIndex, niche := range niches {
 		for proIndex, pro := range niche.Pros {
-			// Update or Create User
-			user, err := client.User.UpsertOne(
-				db.User.Email.Equals(pro.Email),
-			).Create(
-				db.User.Email.Set(pro.Email),
-				db.User.Password.Set(string(hashedPassword)),
-				db.User.Role.Set("PRO"),
-				db.User.Name.Set(pro.Name),
-			).Update(
-				db.User.Name.Set(pro.Name),
-			).Exec(ctx)
-
+			var user models.User
+			err := db.Where("email = ?", pro.Email).First(&user).Error
 			if err != nil {
-				log.Printf("Error with user %s: %v", pro.Email, err)
-				continue
+				user = models.User{
+					Email:    pro.Email,
+					Password: hashStr,
+					Role:     "PRO",
+					Name:     pro.Name,
+					IsOnline: true,
+				}
+				db.Create(&user)
 			}
 
 			acceptsPos := (nicheIndex+proIndex)%2 == 0
 			homeDelivery := (nicheIndex+proIndex)%3 == 0
+			avatarUrl := avatarUrls[(nicheIndex*2+proIndex)%len(avatarUrls)]
+			slugVal := strings.ToLower(strings.ReplaceAll(fmt.Sprintf("%s-services", pro.Name), " ", "-"))
 
-			avatarUrls := []string{
-				"https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=300&auto=format&fit=crop&q=80",
-				"https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&auto=format&fit=crop&q=80",
-				"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=300&auto=format&fit=crop&q=80",
-				"https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300&auto=format&fit=crop&q=80",
-				"https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=300&auto=format&fit=crop&q=80",
-				"https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=300&auto=format&fit=crop&q=80",
-				"https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=300&auto=format&fit=crop&q=80",
-				"https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=300&auto=format&fit=crop&q=80",
-			}
-			avatarIdx := (nicheIndex*2 + proIndex) % len(avatarUrls)
-			avatarUrl := avatarUrls[avatarIdx]
-			city := "Lagos"
-			// Update or Create ProProfile
-			profile, err := client.ProProfile.UpsertOne(
-				db.ProProfile.UserID.Equals(user.ID),
-			).Create(
-				db.ProProfile.User.Link(db.User.ID.Equals(user.ID)),
-				db.ProProfile.BusinessName.Set(fmt.Sprintf("%s Services", pro.Name)),
-				db.ProProfile.Bio.Set(pro.Bio),
-				db.ProProfile.HourlyRate.Set(4000),
-				db.ProProfile.Specialties.Set(pro.Specialty),
-				db.ProProfile.Niche.Set(niche.ParentID), // Top-level ID
-				db.ProProfile.SubService.Set(niche.Slug), // Sub-niche category slug
-				db.ProProfile.Verified.Set(true),
-				db.ProProfile.Rating.Set(4.7),
-				db.ProProfile.City.Set(city),
-				db.ProProfile.Area.Set(pro.Area),
-				db.ProProfile.AcceptsPos.Set(acceptsPos),
-				db.ProProfile.HomeDelivery.Set(homeDelivery),
-				db.ProProfile.LogoURL.Set(avatarUrl),
-			).Update(
-				db.ProProfile.BusinessName.Set(fmt.Sprintf("%s Services", pro.Name)),
-				db.ProProfile.Bio.Set(pro.Bio),
-				db.ProProfile.Specialties.Set(pro.Specialty),
-				db.ProProfile.Niche.Set(niche.ParentID),
-				db.ProProfile.SubService.Set(niche.Slug),
-				db.ProProfile.City.Set(city),
-				db.ProProfile.Area.Set(pro.Area),
-				db.ProProfile.AcceptsPos.Set(acceptsPos),
-				db.ProProfile.HomeDelivery.Set(homeDelivery),
-				db.ProProfile.LogoURL.Set(avatarUrl),
-			).Exec(ctx)
-
+			var profile models.ProProfile
+			err = db.Where("user_id = ?", user.ID).First(&profile).Error
 			if err != nil {
-				log.Printf("Error with profile for %s: %v", pro.Name, err)
-				continue
+				profile = models.ProProfile{
+					UserID:         user.ID,
+					BusinessName:   fmt.Sprintf("%s Services", pro.Name),
+					Slug:           slugVal,
+					Bio:            pro.Bio,
+					HourlyRate:     4000,
+					Specialties:    pro.Specialty,
+					Niche:          niche.ParentID,
+					SubService:     niche.Slug,
+					SpecialtyLevel: "Master",
+					City:           "Lagos",
+					Area:           pro.Area,
+					Phone:          "+2348012345678",
+					Whatsapp:       "+2348012345678",
+					BusinessEmail:  pro.Email,
+					Verified:       true,
+					AcceptsPOS:     acceptsPos,
+					HomeDelivery:   homeDelivery,
+					Rating:         4.8,
+					ProfileViews:   120,
+					LogoURL:        avatarUrl,
+				}
+				db.Create(&profile)
 			}
 
-			// Create a Service if it doesn't exist (simplified)
-			client.Service.CreateOne(
-				db.Service.Name.Set(fmt.Sprintf("%s Consultation", pro.Specialty)),
-				db.Service.Price.Set(5000),
-				db.Service.ProProfile.Link(db.ProProfile.ID.Equals(profile.ID)),
-				db.Service.Description.Set("Initial consultation and assessment."),
-			).Exec(ctx)
-
-			// Create a Product
-			productSeeds := map[string][]ProductSeed{
-				"home-services": {
-					{"Premium Toolbox Set", 45000, "https://images.unsplash.com/photo-1530124566582-a618bc2615dc?w=500&auto=format&fit=crop&q=60", "Complete set of high-quality tools for home repairs."},
-					{"Smart Home Security Kit", 120000, "https://images.unsplash.com/photo-1558611848-73f7eb4001a1?w=500&auto=format&fit=crop&q=60", "Advanced security cameras and sensors."},
-					{"Heavy-Duty Drill", 35000, "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=500&auto=format&fit=crop&q=60", "Professional grade power drill."},
-					{"Eco-Friendly Cleaning Kit", 15000, "https://images.unsplash.com/photo-1584820927498-cafea1236113?w=500&auto=format&fit=crop&q=60", "Non-toxic cleaning supplies."},
-				},
-				"fashion": {
-					{"Bespoke Native Fabric", 25000, "https://images.unsplash.com/photo-1603228254119-e6a4d015fb73?w=500&auto=format&fit=crop&q=60", "High-quality traditional fabric."},
-					{"Men's Grooming Kit", 12000, "https://images.unsplash.com/photo-1621607512214-68297480165e?w=500&auto=format&fit=crop&q=60", "Premium beard oils and clippers."},
-					{"Designer Sunglasses", 30000, "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=500&auto=format&fit=crop&q=60", "Stylish eyewear."},
-					{"Leather Oxford Shoes", 45000, "https://images.unsplash.com/photo-1614252209825-9c988891552a?w=500&auto=format&fit=crop&q=60", "Handcrafted leather footwear."},
-				},
-				"professionals": {
-					{"Ergonomic Office Chair", 85000, "https://images.unsplash.com/photo-1505843490538-5133c6c7d0e1?w=500&auto=format&fit=crop&q=60", "Comfortable seating for long hours."},
-					{"Wireless Headphones", 60000, "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500&auto=format&fit=crop&q=60", "Focus without distractions."},
-					{"Premium Leather Briefcase", 55000, "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=500&auto=format&fit=crop&q=60", "Professional laptop and document carrier."},
-					{"Mechanical Keyboard", 35000, "https://images.unsplash.com/photo-1595225476474-87563907a212?w=500&auto=format&fit=crop&q=60", "Tactile typing experience."},
-				},
-				"education": {
-					{"Interactive Whiteboard", 150000, "https://images.unsplash.com/photo-1588075592446-265fd1e6e76f?w=500&auto=format&fit=crop&q=60", "Modern teaching tool."},
-					{"Acoustic Guitar Pack", 45000, "https://images.unsplash.com/photo-1510915361894-db8b60106cb1?w=500&auto=format&fit=crop&q=60", "Perfect for beginners."},
-					{"Study Course Material", 20000, "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=500&auto=format&fit=crop&q=60", "Comprehensive study guides."},
-					{"Science Experiment Kit", 25000, "https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=500&auto=format&fit=crop&q=60", "Hands-on learning for kids."},
-				},
-				"events": {
-					{"Party Lighting System", 75000, "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=500&auto=format&fit=crop&q=60", "Dynamic lights for any occasion."},
-					{"Professional Camera Lens", 250000, "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=500&auto=format&fit=crop&q=60", "Capture memories in high definition."},
-					{"Floral Arrangement Set", 30000, "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?w=500&auto=format&fit=crop&q=60", "Beautiful decorations."},
-					{"DJ Controller", 180000, "https://images.unsplash.com/photo-1571266028243-3716f02d2d2e?w=500&auto=format&fit=crop&q=60", "Mix tracks like a pro."},
-				},
-				"health": {
-					{"Yoga Mat & Blocks", 15000, "https://images.unsplash.com/photo-1601134599986-7e2831f2dc34?w=500&auto=format&fit=crop&q=60", "Essential fitness gear."},
-					{"Adjustable Dumbbells", 40000, "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?w=500&auto=format&fit=crop&q=60", "Space-saving workout equipment."},
-					{"First Aid Trauma Kit", 25000, "https://images.unsplash.com/photo-1603398938378-e54eab446dde?w=500&auto=format&fit=crop&q=60", "Medical emergency supplies."},
-					{"Massage Gun", 35000, "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=500&auto=format&fit=crop&q=60", "Deep tissue muscle recovery."},
-				},
-				"logistics": {
-					{"Heavy Duty Moving Boxes", 10000, "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?w=500&auto=format&fit=crop&q=60", "Durable packaging."},
-					{"GPS Tracker", 18000, "https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?w=500&auto=format&fit=crop&q=60", "Real-time asset tracking."},
-					{"Delivery Courier Bag", 15000, "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=500&auto=format&fit=crop&q=60", "Insulated and waterproof."},
-					{"Tow Strap Heavy Duty", 22000, "https://images.unsplash.com/photo-1549468057-5b7fa1a41d7a?w=500&auto=format&fit=crop&q=60", "Reliable towing accessory."},
-				},
-				"auto": {
-					{"Car Care Detailing Kit", 28000, "https://images.unsplash.com/photo-1601362840469-51e4d8d58785?w=500&auto=format&fit=crop&q=60", "Keep your vehicle shining."},
-					{"Premium Synthetic Motor Oil", 18000, "https://images.unsplash.com/photo-1610488969395-5eb7300c1df0?w=500&auto=format&fit=crop&q=60", "High performance engine protection."},
-					{"Smart Dash Cam", 45000, "https://images.unsplash.com/photo-1517005085862-e61b7b049d50?w=500&auto=format&fit=crop&q=60", "Record your journeys safely."},
-					{"Portable Jump Starter", 35000, "https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?w=500&auto=format&fit=crop&q=60", "Never get stranded again."},
-				},
-				"food": {
-					{"Chef's Knife Set", 65000, "https://images.unsplash.com/photo-1593618998160-e34014e67546?w=500&auto=format&fit=crop&q=60", "Professional grade culinary knives."},
-					{"Artisan Baking Kit", 25000, "https://images.unsplash.com/photo-1556910103-1c02745a872f?w=500&auto=format&fit=crop&q=60", "Everything you need to bake."},
-					{"Premium Spice Collection", 15000, "https://images.unsplash.com/photo-1596040033229-a9821ebd058d?w=500&auto=format&fit=crop&q=60", "Exotic and rich flavors."},
-					{"Organic Fertilizer Pack", 12000, "https://images.unsplash.com/photo-1464226184884-fa280b87c399?w=500&auto=format&fit=crop&q=60", "Boost your farm yields naturally."},
-				},
-				"realestate": {
-					{"Smart Door Lock", 85000, "https://images.unsplash.com/photo-1558002038-1055907df827?w=500&auto=format&fit=crop&q=60", "Keyless and secure entry."},
-					{"Interior Paint Premium Set", 40000, "https://images.unsplash.com/photo-1562184552-997c461abbe6?w=500&auto=format&fit=crop&q=60", "Transform your living space."},
-					{"Architectural Design Software", 150000, "https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=500&auto=format&fit=crop&q=60", "Professional 3D modeling tools."},
-					{"Laser Distance Measure", 25000, "https://images.unsplash.com/photo-1534063224097-f507b9fb2b23?w=500&auto=format&fit=crop&q=60", "Accurate property measurements."},
-				},
+			// Service
+			service := models.Service{
+				Name:         fmt.Sprintf("%s Consultation", pro.Specialty),
+				Description:  "Comprehensive initial consultation, inspection, and estimate.",
+				Price:        5000,
+				ProProfileID: profile.ID,
 			}
-			
-			fallbackProducts := []ProductSeed{
-				{"Nexa Verified Supply Box", 15000, "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=500&auto=format&fit=crop&q=60", "Standard supplies."},
-				{"Professional Starter Kit", 25000, "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=500&auto=format&fit=crop&q=60", "Get started with everything you need."},
+			db.Create(&service)
+
+			// Product
+			catProds := productSeeds[niche.ParentID]
+			prodData := catProds[proIndex%len(catProds)]
+			product := models.Product{
+				Name:         prodData.Name,
+				Description:  prodData.Desc,
+				Price:        prodData.Price,
+				Image:        prodData.Image,
+				ProProfileID: profile.ID,
 			}
+			db.Create(&product)
 
-			catProducts, ok := productSeeds[niche.ParentID]
-			if !ok {
-				catProducts = fallbackProducts
-			}
-
-			prodData := catProducts[proIndex%len(catProducts)]
-
-			client.Product.CreateOne(
-				db.Product.Name.Set(prodData.Name),
-				db.Product.Price.Set(prodData.Price),
-				db.Product.ProProfile.Link(db.ProProfile.ID.Equals(profile.ID)),
-				db.Product.Description.Set(prodData.Desc),
-				db.Product.Image.Set(prodData.Image),
-			).Exec(ctx)
-
-			// Assign the custom generated image corresponding to the article's niche parent category
-			imgPath := "/hero4.jpeg"
-			switch niche.ParentID {
-			case "home-services":
+			// Article
+			imgPath := fmt.Sprintf("/article_%s.jpg", niche.ParentID)
+			if niche.ParentID == "home-services" {
 				imgPath = "/article_home.jpg"
-			case "fashion":
-				imgPath = "/article_fashion.jpg"
-			case "professionals":
-				imgPath = "/article_professional.jpg"
-			case "education":
-				imgPath = "/article_education.jpg"
-			case "events":
-				imgPath = "/article_events.jpg"
-			case "health":
-				imgPath = "/article_health.jpg"
-			case "logistics":
-				imgPath = "/article_logistics.jpg"
-			case "auto":
-				imgPath = "/article_auto.jpg"
-			case "food":
-				imgPath = "/article_food.jpg"
-			case "realestate":
-				imgPath = "/article_realestate.jpg"
 			}
-
-			client.Article.CreateOne(
-				db.Article.Title.Set(fmt.Sprintf("How to choose the best %s in %s", pro.Specialty, "Lagos")),
-				db.Article.Content.Set(fmt.Sprintf("This is an expert guide by %s detailing how to find, evaluate, and choose a top-quality %s for your project in Nigeria. Always check references, review portfolios, and verify licenses before booking.", pro.Name, pro.Specialty)),
-				db.Article.Niche.Set(niche.ParentID),
-				db.Article.ProProfile.Link(db.ProProfile.ID.Equals(profile.ID)),
-				db.Article.Image.Set(imgPath),
-			).Exec(ctx)
+			article := models.Article{
+				Title:        fmt.Sprintf("How to choose the best %s in Lagos", pro.Specialty),
+				Content:      fmt.Sprintf("This is an expert guide by %s detailing how to find, evaluate, and choose a top-quality %s for your project in Nigeria.", pro.Name, pro.Specialty),
+				Image:        imgPath,
+				Niche:        niche.ParentID,
+				ProProfileID: profile.ID,
+			}
+			db.Create(&article)
 		}
 	}
 
-	log.Println("Reseed completed successfully with specific service tracking!")
+	log.Println("✅ GORM Database seed completed successfully!")
 }

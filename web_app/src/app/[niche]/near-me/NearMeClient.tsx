@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
 import { 
   MapPin, 
   Navigation, 
@@ -18,8 +17,9 @@ import { getProLink } from "@/lib/utils";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
-import { useLocation, CITIES } from "@/components/nexa/LocationContext";
+import { useLocation } from "@/components/nexa/LocationContext";
 import { api } from "@/lib/api";
+import { loadGoogleMapsScript, nexaMapStyles, GOOGLE_MAPS_API_KEY } from "@/lib/google-maps";
 import Link from "next/link";
 
 // Mapping of areas to base coordinates in Nigeria
@@ -58,7 +58,6 @@ const getCoordinates = (areaName: string, cityName: string, proId: string) => {
   
   let baseCoords = AREA_COORDINATES[normArea] || AREA_COORDINATES[normCity] || [6.5244, 3.3792];
   
-  // Deterministic offset based on proId string hash
   let hash = 0;
   const str = proId || "";
   for (let i = 0; i < str.length; i++) {
@@ -71,13 +70,13 @@ const getCoordinates = (areaName: string, cityName: string, proId: string) => {
 };
 
 export default function NearMeClient({ data }: { data: any }) {
-  const { currentCity, setCurrentCity, currentArea, setCurrentArea, userCoords, setUserCoords, isLoading, autoDetectLocation } = useLocation();
+  const { currentCity, currentArea, userCoords, isLoading, autoDetectLocation } = useLocation();
 
   useEffect(() => {
     autoDetectLocation();
   }, [autoDetectLocation]);
 
-  const [radius, setRadius] = useState(5);
+  const [radius] = useState(5);
   const [pros, setPros] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -85,8 +84,10 @@ export default function NearMeClient({ data }: { data: any }) {
   const [activePro, setActivePro] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
   const markersRef = useRef<Record<string, any>>({});
+  const infoWindowsRef = useRef<Record<string, any>>({});
   
   // 1. Fetch professionals
   useEffect(() => {
@@ -104,209 +105,42 @@ export default function NearMeClient({ data }: { data: any }) {
     fetchPros();
   }, [data.id]);
 
-  // 2. Inject Leaflet assets dynamically (build-safe)
+  const normCity = (currentCity?.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const normArea = (currentArea || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const baseCoords = AREA_COORDINATES[normArea] || AREA_COORDINATES[normCity] || [6.5244, 3.3792];
+  const mapCenterCoords = userCoords ? { lat: userCoords[0], lng: userCoords[1] } : { lat: baseCoords[0], lng: baseCoords[1] };
+
+  // 2. Initialize Google Maps
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    let isMounted = true;
 
-    // Load Leaflet CSS
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
-    link.integrity = "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
-    link.crossOrigin = "";
-    document.head.appendChild(link);
+    loadGoogleMapsScript(GOOGLE_MAPS_API_KEY)
+      .then((maps) => {
+        if (!isMounted || !mapContainerRef.current) return;
 
-    // Load Leaflet JS
-    const script = document.createElement("script");
-    script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-    script.integrity = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
-    script.crossOrigin = "";
-    script.async = true;
-    script.onload = () => {
-      setMapLoaded(true);
-    };
-    document.head.appendChild(script);
+        const map = new maps.Map(mapContainerRef.current, {
+          center: mapCenterCoords,
+          zoom: 13,
+          styles: nexaMapStyles,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+          zoomControl: false,
+        });
+
+        mapInstanceRef.current = map;
+        setMapLoaded(true);
+      })
+      .catch((err) => {
+        console.error("Failed to initialize Google Maps in NearMe:", err);
+      });
 
     return () => {
-      document.head.removeChild(link);
-      document.head.removeChild(script);
+      isMounted = false;
     };
   }, []);
 
-  // 3. Initialize Map & Plot Markers
-  useEffect(() => {
-    if (!mapLoaded || loading) return;
-    const L = (window as any).L;
-    if (!L) return;
-
-    // Clean up previous instance if any
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.remove();
-      mapInstanceRef.current = null;
-    }
-
-    if (!mapCenter) return;
-
-    const map = L.map("leaflet-map-container", {
-      zoomControl: false,
-      attributionControl: false
-    }).setView(mapCenter, 13);
-
-    mapInstanceRef.current = map;
-    markersRef.current = {};
-
-    // Plot User GPS Dot if present
-    if (userCoords) {
-      const myLocationMarkerHtml = `
-        <div class="relative flex items-center justify-center">
-          <div class="w-6 h-6 rounded-full bg-blue-500/30 animate-ping absolute"></div>
-          <div class="w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow-lg absolute"></div>
-          <div class="w-1.5 h-1.5 rounded-full bg-white absolute"></div>
-        </div>
-      `;
-      const myLocationIcon = L.divIcon({
-        html: myLocationMarkerHtml,
-        className: "my-location-marker",
-        iconSize: [24, 24],
-        iconAnchor: [12, 12]
-      });
-      L.marker(userCoords, { icon: myLocationIcon })
-        .addTo(map)
-        .bindPopup("<div class='font-bold text-xs p-1 text-center text-blue-600'>Your current computer location</div>");
-    }
-
-    // Add TileLayer (OpenStreetMap Hot Style tiles)
-    L.tileLayer("https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png", {
-      maxZoom: 19
-    }).addTo(map);
-
-    // Add Attribution
-    L.control.attribution({
-      prefix: false
-    }).addAttribution('&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors').addTo(map);
-
-    // Filtered list of pros: match search query & check city matching selected location
-    const local = pros.filter(pro => {
-      const matchesSearch = 
-        (pro.user?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (pro.specialties || "").toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCity = pro.city?.toLowerCase() === currentCity?.name?.toLowerCase();
-      return matchesSearch && matchesCity;
-    });
-
-    const hasLocal = local.length > 0;
-    const filteredPros = hasLocal 
-      ? local 
-      : pros.filter(pro => 
-          (pro.user?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (pro.specialties || "").toLowerCase().includes(searchQuery.toLowerCase())
-        );
-
-    // Plot Markers
-    const bounds: any[] = [];
-    filteredPros.forEach((pro) => {
-      const coords = getCoordinates(pro.area, pro.city, pro.id);
-      bounds.push(coords);
-
-      const markerHtml = `
-        <div class="relative flex items-center justify-center">
-          <div class="absolute -top-7 w-9 h-9 rounded-full bg-nexa-brand text-white border-2 border-white flex items-center justify-center shadow-xl font-extrabold text-xs select-none hover:scale-110 transition-transform">
-            ${(pro.user?.name || "P")[0]}
-          </div>
-          <div class="w-3.5 h-3.5 rounded-full bg-nexa-brand border-2 border-white shadow-md animate-ping absolute top-0"></div>
-          <div class="w-3.5 h-3.5 rounded-full bg-nexa-brand border-2 border-white shadow-md absolute top-0"></div>
-        </div>
-      `;
-
-      const customIcon = L.divIcon({
-        html: markerHtml,
-        className: "custom-leaflet-marker",
-        iconSize: [36, 36],
-        iconAnchor: [18, 18]
-      });
-
-      // HTML template for Popups
-      const popupContent = `
-        <div class="p-2 space-y-2 font-sans w-52">
-          <div class="flex items-center justify-between gap-2">
-            <span class="text-xs font-bold text-nexa-brand uppercase tracking-wider">${pro.specialties?.split(",")[0] || 'Service'}</span>
-            <span class="flex items-center gap-0.5 text-xs font-bold bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded">
-              ★ ${pro.rating || '5.0'}
-            </span>
-          </div>
-          <h4 class="font-extrabold text-sm text-slate-800">${pro.user?.name}</h4>
-          <p class="text-[10px] text-slate-500 flex items-center gap-1">
-            <svg class="w-3 h-3 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            ${pro.area ? `${pro.area}, ` : ""}${pro.city || 'Lagos'}
-          </p>
-          <a href="${getProLink(pro)}" class="inline-flex items-center justify-center w-full h-8 text-center text-xs font-bold bg-nexa-brand text-white rounded-lg hover:bg-opacity-90 transition-colors shadow">
-            Book Service
-          </a>
-        </div>
-      `;
-
-      const marker = L.marker(coords, { icon: customIcon })
-        .addTo(map)
-        .bindPopup(popupContent, {
-          closeButton: false,
-          offset: [0, -20]
-        });
-
-      // Bind click events
-      marker.on("click", () => {
-        setActivePro(pro);
-        // Scroll sidebar item into view
-        const element = document.getElementById(`pro-card-${pro.id}`);
-        if (element) {
-          element.scrollIntoView({ behavior: "smooth", block: "nearest" });
-        }
-      });
-
-      markersRef.current[pro.id] = marker;
-    });
-
-    // Zoom map to fit all bounds if markers exist
-    if (bounds.length > 0) {
-      map.fitBounds(bounds, { padding: [50, 50] });
-    }
-  }, [mapLoaded, loading, pros, searchQuery, currentCity, currentArea, userCoords]);
-
-  // Center on selected professional
-  const handleProClick = (pro: any) => {
-    setActivePro(pro);
-    if (!mapInstanceRef.current) return;
-    const L = (window as any).L;
-    if (!L) return;
-
-    const coords = getCoordinates(pro.area, pro.city, pro.id);
-    mapInstanceRef.current.setView(coords, 14, { animate: true });
-
-    // Open Leaflet popup
-    const marker = markersRef.current[pro.id];
-    if (marker) {
-      marker.openPopup();
-    }
-  };
-
-  // Zoom controls
-  const handleZoomIn = () => {
-    if (mapInstanceRef.current) mapInstanceRef.current.zoomIn();
-  };
-  const handleZoomOut = () => {
-    if (mapInstanceRef.current) mapInstanceRef.current.zoomOut();
-  };
-  const handleRecenter = () => {
-    if (mapInstanceRef.current && pros.length > 0) {
-      const bounds = pros.map(p => getCoordinates(p.area, p.city, p.id));
-      mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50] });
-    }
-  };
-
-  const normCity = (currentCity?.name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-  const normArea = (currentArea || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-  const baseCoords = AREA_COORDINATES[normArea] || AREA_COORDINATES[normCity];
-  const mapCenter = userCoords || baseCoords;
-
+  // Filtered list of pros
   const localPros = pros.filter(pro => {
     const matchesSearch = 
       (pro.user?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -322,6 +156,140 @@ export default function NearMeClient({ data }: { data: any }) {
         (pro.user?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
         (pro.specialties || "").toLowerCase().includes(searchQuery.toLowerCase())
       );
+
+  // 3. Plot Google Maps Markers
+  useEffect(() => {
+    if (!mapLoaded || !mapInstanceRef.current || typeof window === "undefined") return;
+    const maps = (window as any).google?.maps;
+    if (!maps) return;
+
+    // Clear previous markers
+    Object.values(markersRef.current).forEach((marker: any) => marker.setMap(null));
+    markersRef.current = {};
+    infoWindowsRef.current = {};
+
+    const map = mapInstanceRef.current;
+    const bounds = new maps.LatLngBounds();
+
+    // Plot user location marker if available
+    if (userCoords) {
+      const userLatLng = new maps.LatLng(userCoords[0], userCoords[1]);
+      bounds.extend(userLatLng);
+
+      new maps.Marker({
+        position: userLatLng,
+        map,
+        title: "Your Location",
+        icon: {
+          path: maps.SymbolPath.CIRCLE,
+          scale: 8,
+          fillColor: "#3b82f6",
+          fillOpacity: 1,
+          strokeColor: "#ffffff",
+          strokeWeight: 2,
+        },
+      });
+    }
+
+    // Plot pro markers
+    filteredPros.forEach((pro) => {
+      const coords = getCoordinates(pro.area, pro.city, pro.id);
+      const position = new maps.LatLng(coords[0], coords[1]);
+      bounds.extend(position);
+
+      const marker = new maps.Marker({
+        position,
+        map,
+        title: pro.user?.name || pro.businessName || "Pro Location",
+      });
+
+      const infoContent = `
+        <div style="padding: 10px; font-family: system-ui, sans-serif; max-width: 220px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span style="font-size: 11px; font-weight: bold; color: #ff5722; text-transform: uppercase;">${pro.specialties?.split(",")[0] || "Service"}</span>
+            <span style="font-size: 11px; font-weight: bold; background: #fef3c7; color: #d97706; padding: 2px 6px; border-radius: 4px;">★ ${pro.rating || "5.0"}</span>
+          </div>
+          <h4 style="font-size: 14px; font-weight: bold; margin: 0 0 4px; color: #0f172a;">${pro.user?.name || pro.businessName}</h4>
+          <p style="font-size: 12px; color: #64748b; margin: 0 0 8px;">${pro.area ? pro.area + ", " : ""}${pro.city || "Lagos"}</p>
+          <a href="${getProLink(pro)}" style="display: block; text-align: center; background: #ff5722; color: #ffffff; text-decoration: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold;">
+            Book Service
+          </a>
+        </div>
+      `;
+
+      const infoWindow = new maps.InfoWindow({
+        content: infoContent,
+      });
+
+      marker.addListener("click", () => {
+        // Close other info windows
+        Object.values(infoWindowsRef.current).forEach((iw: any) => iw.close());
+        infoWindow.open(map, marker);
+        setActivePro(pro);
+
+        // Scroll into view on sidebar
+        const element = document.getElementById(`pro-card-${pro.id}`);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      });
+
+      markersRef.current[pro.id] = marker;
+      infoWindowsRef.current[pro.id] = infoWindow;
+    });
+
+    if (!bounds.isEmpty()) {
+      map.fitBounds(bounds, { top: 50, bottom: 50, left: 50, right: 50 });
+    }
+  }, [mapLoaded, filteredPros, userCoords]);
+
+  // Center on selected professional
+  const handleProClick = (pro: any) => {
+    setActivePro(pro);
+    if (!mapInstanceRef.current || typeof window === "undefined") return;
+    const maps = (window as any).google?.maps;
+    if (!maps) return;
+
+    const coords = getCoordinates(pro.area, pro.city, pro.id);
+    const position = new maps.LatLng(coords[0], coords[1]);
+    mapInstanceRef.current.panTo(position);
+    mapInstanceRef.current.setZoom(15);
+
+    const marker = markersRef.current[pro.id];
+    const infoWindow = infoWindowsRef.current[pro.id];
+    if (marker && infoWindow) {
+      Object.values(infoWindowsRef.current).forEach((iw: any) => iw.close());
+      infoWindow.open(mapInstanceRef.current, marker);
+    }
+  };
+
+  // Zoom controls
+  const handleZoomIn = () => {
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.setZoom(mapInstanceRef.current.getZoom() + 1);
+    }
+  };
+
+  const handleZoomOut = () => {
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.setZoom(mapInstanceRef.current.getZoom() - 1);
+    }
+  };
+
+  const handleRecenter = () => {
+    if (mapInstanceRef.current && typeof window !== "undefined") {
+      const maps = (window as any).google?.maps;
+      if (!maps) return;
+      const bounds = new maps.LatLngBounds();
+      filteredPros.forEach((p) => {
+        const coords = getCoordinates(p.area, p.city, p.id);
+        bounds.extend(new maps.LatLng(coords[0], coords[1]));
+      });
+      if (!bounds.isEmpty()) {
+        mapInstanceRef.current.fitBounds(bounds);
+      }
+    }
+  };
 
   return (
     <main className="bg-nexa-bg-base min-h-screen pb-24 lg:pb-0">
@@ -393,9 +361,9 @@ export default function NearMeClient({ data }: { data: any }) {
                         variant={activePro?.id === pro.id ? "glass" : "interactive"} 
                         className={`p-4 cursor-pointer group transition-all duration-300 ${activePro?.id === pro.id ? "border-nexa-brand ring-1 ring-nexa-brand/20 bg-nexa-brand/5" : ""}`}
                       >
-                         <div className="flex gap-4">
-                            <div className={`w-16 h-16 rounded-2xl flex-shrink-0 overflow-hidden flex items-center justify-center font-bold transition-colors ${activePro?.id === pro.id ? "bg-nexa-brand text-white" : "bg-nexa-brand/10 text-nexa-brand"}`}>
-                               {pro.user?.name?.[0]}
+                         <div className="flex items-start gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-nexa-brand/10 border border-nexa-brand/20 flex items-center justify-center font-bold text-nexa-brand flex-shrink-0 text-base">
+                               {(pro.user?.name || "P")[0]}
                             </div>
                             <div className="flex-1">
                                <div className="flex items-center justify-between mb-1">
@@ -436,8 +404,7 @@ export default function NearMeClient({ data }: { data: any }) {
 
         {/* MAP VIEW */}
         <section className="flex-1 relative bg-[#e5e7eb] overflow-hidden">
-           {/* Leaflet map container */}
-           <div id="leaflet-map-container" className="w-full h-full z-10" />
+           <div ref={mapContainerRef} className="w-full h-full z-10" />
 
             {!userCoords && !currentCity.slug && isLoading && (
                <div className="absolute inset-0 bg-[#e5e7eb] flex flex-col items-center justify-center z-50 text-slate-800 p-6 text-center">
@@ -463,12 +430,12 @@ export default function NearMeClient({ data }: { data: any }) {
                </div>
             )}
 
-            {!mapLoaded && mapCenter && (
+            {!mapLoaded && (
                <div className="absolute inset-0 bg-[#e5e7eb] flex items-center justify-center z-20">
                   <div className="text-nexa-text-faint flex flex-col items-center gap-4">
                      <Navigation className="w-12 h-12 animate-pulse" />
                      <p className="font-bold text-sm uppercase tracking-widest text-center px-6">
-                        Initializing Map...
+                        Initializing Google Maps...
                      </p>
                   </div>
                </div>
@@ -490,13 +457,13 @@ export default function NearMeClient({ data }: { data: any }) {
                <div className="absolute top-6 right-6 flex flex-col gap-2 z-20">
                   <button 
                     onClick={handleZoomIn}
-                    className="w-12 h-12 rounded-xl liquid-glass flex items-center justify-center shadow-lg text-nexa-text-primary hover:bg-white/20 transition-all font-bold text-xl"
+                    className="w-12 h-12 rounded-xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center shadow-lg text-nexa-text-primary hover:bg-white transition-all font-bold text-xl border border-nexa-border"
                   >
                      +
                   </button>
                   <button 
                     onClick={handleZoomOut}
-                    className="w-12 h-12 rounded-xl liquid-glass flex items-center justify-center shadow-lg text-nexa-text-primary hover:bg-white/20 transition-all font-bold text-xl"
+                    className="w-12 h-12 rounded-xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md flex items-center justify-center shadow-lg text-nexa-text-primary hover:bg-white transition-all font-bold text-xl border border-nexa-border"
                   >
                      −
                   </button>

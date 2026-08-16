@@ -84,7 +84,7 @@ export const AdminShell = ({ children }: AdminShellProps) => {
               <img
                 src="/logo.png"
                 alt="GTM AI Agency Logo"
-                className="w-8 h-8 rounded-xl object-contain shrink-0 shadow-sm"
+                className="w-8 h-8 object-contain shrink-0"
               />
               {isSidebarOpen && (
                 <div className="flex flex-col leading-tight">

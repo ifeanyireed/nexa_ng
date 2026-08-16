@@ -75,9 +75,7 @@ export const PublicFooter: React.FC = () => {
           {/* Brand Col */}
           <div className="col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-white dark:bg-black border border-[var(--nexa-border)] p-1 flex items-center justify-center">
-                <img src="/logo.png" alt="GTM AI Agency Logo" className="w-full h-full object-contain" />
-              </div>
+              <img src="/logo.png" alt="GTM AI Agency Logo" className="w-8 h-8 object-contain shrink-0" />
               <span className="font-extrabold text-base text-[var(--nexa-text-primary)] text-display">
                 GTM AI Agency
               </span>

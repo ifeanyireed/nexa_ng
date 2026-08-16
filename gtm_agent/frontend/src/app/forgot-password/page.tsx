@@ -32,9 +32,7 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen bg-[var(--nexa-bg-base)] flex flex-col justify-between text-[var(--nexa-text-primary)]">
       <header className="p-6 flex items-center justify-between max-w-7xl mx-auto w-full">
         <Link href="/" className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-white dark:bg-black border border-[var(--nexa-border)] p-1 flex items-center justify-center shadow-sm">
-            <img src="/logo.png" alt="GTM AI Agency" className="w-full h-full object-contain" />
-          </div>
+          <img src="/logo.png" alt="GTM AI Agency" className="w-8 h-8 object-contain shrink-0" />
           <span className="font-extrabold text-base text-[var(--nexa-text-primary)] text-display">
             GTM AI Agency
           </span>

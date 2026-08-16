@@ -29,10 +29,6 @@ import {
   Truck,
   Building2,
   Briefcase,
-  Twitter,
-  Instagram,
-  Facebook,
-  Linkedin,
 } from "lucide-react";
 import { cn, getProImage, getProLink } from "@/lib/utils";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";

@@ -10,9 +10,9 @@ import {
   User,
   ArrowRight, 
   ChevronLeft,
-  Chrome,
   ShieldCheck
 } from "lucide-react";
+import { IconBrandGoogle } from "@tabler/icons-react";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -137,7 +137,7 @@ export default function SignupPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-10">
-              <NexaButton onClick={handleGoogleAuth} variant="secondary" className="h-12 rounded-xl" leftIcon={<Chrome className="w-4 h-4" />}>
+              <NexaButton onClick={handleGoogleAuth} variant="secondary" className="h-12 rounded-xl" leftIcon={<IconBrandGoogle className="w-4 h-4" />}>
                 Google
               </NexaButton>
               <NexaButton onClick={handleMicrosoftAuth} variant="secondary" className="h-12 rounded-xl">

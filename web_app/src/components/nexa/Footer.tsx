@@ -2,15 +2,20 @@
 
 import React from "react";
 import Link from "next/link";
-import { Twitter, Instagram, Facebook, Linkedin } from "lucide-react";
+import {
+  IconBrandX,
+  IconBrandInstagram,
+  IconBrandFacebook,
+  IconBrandLinkedin,
+} from "@tabler/icons-react";
 import { NexaButton } from "./NexaButton";
 
 export const Footer = () => {
   const socials = [
-    { icon: <Twitter className="w-5 h-5" />, href: "#" },
-    { icon: <Instagram className="w-5 h-5" />, href: "#" },
-    { icon: <Facebook className="w-5 h-5" />, href: "#" },
-    { icon: <Linkedin className="w-5 h-5" />, href: "#" },
+    { icon: <IconBrandX className="w-5 h-5" />, href: "#" },
+    { icon: <IconBrandInstagram className="w-5 h-5" />, href: "#" },
+    { icon: <IconBrandFacebook className="w-5 h-5" />, href: "#" },
+    { icon: <IconBrandLinkedin className="w-5 h-5" />, href: "#" },
   ];
 
   return (

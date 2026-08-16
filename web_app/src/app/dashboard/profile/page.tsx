@@ -17,15 +17,17 @@ import {
   Save, 
   Eye,
   Info,
-  Facebook,
-  Instagram,
-  Twitter,
   Star,
   Image as ImageIcon,
   Trash2,
   Play,
   Film
 } from "lucide-react";
+import {
+  IconBrandFacebook,
+  IconBrandInstagram,
+  IconBrandX,
+} from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -315,9 +317,9 @@ export default function ProfileEditorPage() {
                    <h3 className="font-bold text-sm mb-6">Social Media Links</h3>
                    <div className="space-y-4">
                       {[
-                        { icon: <Facebook className="w-5 h-5" />, label: "Facebook Page" },
-                        { icon: <Instagram className="w-5 h-5" />, label: "Instagram Profile" },
-                        { icon: <Twitter className="w-5 h-5" />, label: "Twitter / X" }
+                        { icon: <IconBrandFacebook className="w-5 h-5" />, label: "Facebook Page" },
+                        { icon: <IconBrandInstagram className="w-5 h-5" />, label: "Instagram Profile" },
+                        { icon: <IconBrandX className="w-5 h-5" />, label: "Twitter / X" }
                       ].map((social, i) => (
                         <div key={i} className="flex items-center gap-4 bg-nexa-bg-base p-2 rounded-2xl border border-nexa-border">
                            <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center border border-nexa-border">

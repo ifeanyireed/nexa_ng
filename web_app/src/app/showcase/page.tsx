@@ -14,7 +14,7 @@ import { NexaModal } from "@/components/nexa/NexaModal";
 import { NexaBottomSheet } from "@/components/nexa/NexaBottomSheet";
 import { NexaDivider } from "@/components/nexa/NexaDivider";
 import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
-import { Search, MapPin, Check, Plus, Trash2, ShieldCheck, Github } from "lucide-react";
+import { Search, MapPin, Check, Plus, Trash2, ShieldCheck } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 
 export default function ShowcasePage() {

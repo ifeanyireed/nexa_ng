@@ -45,7 +45,7 @@ export const PublicNav: React.FC = () => {
         <div className="flex items-center justify-between h-18">
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-white dark:bg-slate-900 border border-[var(--nexa-border)] p-1.5 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-xl bg-white dark:bg-black border border-[var(--nexa-border)] p-1.5 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
               <img
                 src="/logo.png"
                 alt="GTM AI Agency Logo"

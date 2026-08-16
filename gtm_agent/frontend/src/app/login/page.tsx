@@ -71,7 +71,7 @@ export default function LoginPage() {
       {/* Top Simple Header */}
       <header className="p-6 flex items-center justify-between max-w-7xl mx-auto w-full">
         <Link href="/" className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-[var(--nexa-border)] p-1 flex items-center justify-center shadow-sm">
+          <div className="w-9 h-9 rounded-xl bg-white dark:bg-black border border-[var(--nexa-border)] p-1 flex items-center justify-center shadow-sm">
             <img src="/logo.png" alt="GTM AI Agency" className="w-full h-full object-contain" />
           </div>
           <span className="font-extrabold text-base text-[var(--nexa-text-primary)] text-display">

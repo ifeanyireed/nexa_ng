@@ -199,9 +199,8 @@ func ListProducts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var products []models.Product
-	if err := dbQuery.Order("`Product`.created_at desc").Find(&products).Error; err != nil {
-		// Fallback without created_at if table doesn't have it
-		if err := dbQuery.Find(&products).Error; err != nil {
+	if err := dbQuery.Order("price desc").Find(&products).Error; err != nil {
+		if err := internalDB.DB.Find(&products).Error; err != nil {
 			http.Error(w, "error fetching products: "+err.Error(), http.StatusInternalServerError)
 			return
 		}

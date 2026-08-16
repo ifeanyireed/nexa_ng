@@ -6,8 +6,8 @@ import { NicheProvider } from "@/components/nexa/NicheContext";
 import { AuthProvider } from "@/components/nexa/AuthContext";
 import { LocationProvider } from "@/components/nexa/LocationContext";
 
-const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans" });
-const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains" });
+const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans", display: "swap" });
+const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Nexa | Nigeria's Business Discovery Platform",

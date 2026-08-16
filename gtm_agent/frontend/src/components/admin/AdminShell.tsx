@@ -158,9 +158,11 @@ export const AdminShell = ({ children }: AdminShellProps) => {
           {/* Footer User Profile & Theme Toggle */}
           <div className="p-3 border-t border-[var(--nexa-border)] flex items-center justify-between">
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-8 h-8 rounded-xl bg-[#1A56DB] flex items-center justify-center text-white font-bold text-xs shrink-0">
-                SA
-              </div>
+              <img
+                src="/avatar12.png"
+                alt="Platform SuperAdmin Profile"
+                className="w-8 h-8 rounded-xl object-cover shrink-0 border border-[var(--nexa-border)] shadow-sm"
+              />
               {isSidebarOpen && (
                 <div className="flex flex-col truncate">
                   <span className="text-xs font-bold text-[var(--nexa-text-primary)] truncate">

@@ -1,11 +1,13 @@
 services:
   - type: web
-    name: nexa-backend-service
+    name: nexa-marketplace-service
     env: go
-    rootDir: backend
+    plan: free
+    region: frankfurt
+    rootDir: marketplace_service
     buildCommand: go build -o server main.go
     startCommand: ./server
-    healthCheckPath: /api/auth/login
+    healthCheckPath: /health
     envVars:
       - key: PORT
         value: "8085"
@@ -15,3 +17,48 @@ services:
         value: "mysql://u721451974_nexa:*Reedb4b4@srv2113.hstgr.io:3306/u721451974_nexa_db"
       - key: JWT_SECRET
         value: "nexa-jwt-secret-key-production-2026"
+      - key: ENV
+        value: "production"
+
+  - type: web
+    name: nexa-user-subscription-service
+    env: go
+    plan: free
+    region: frankfurt
+    rootDir: user_subscription_service
+    buildCommand: go build -o server main.go
+    startCommand: ./server
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "8081"
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: DATABASE_URL
+        value: "mysql://u721451974_nexa:*Reedb4b4@srv2113.hstgr.io:3306/u721451974_nexa_db"
+      - key: JWT_SECRET
+        value: "nexa-jwt-secret-key-production-2026"
+      - key: ENV
+        value: "production"
+
+  - type: web
+    name: nexa-ai-gtm-service
+    env: go
+    plan: free
+    region: frankfurt
+    rootDir: ai_gtm_service
+    buildCommand: go build -o server main.go
+    startCommand: ./server
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "8082"
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: DATABASE_URL
+        value: "mysql://u721451974_nexa:*Reedb4b4@srv2113.hstgr.io:3306/u721451974_nexa_db"
+      - key: JWT_SECRET
+        value: "nexa-jwt-secret-key-production-2026"
+      - key: ENV
+        value: "production"
+

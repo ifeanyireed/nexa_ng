@@ -27,6 +27,7 @@ import {
   X,
   Bot,
   Send,
+  Globe,
 } from "lucide-react";
 import { useTheme } from "@/components/nexa/ThemeProvider";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -48,7 +49,7 @@ export const AppShell = ({ children }: AppShellProps) => {
   const [selectedAgent, setSelectedAgent] = useState<AIAgent | null>(null);
 
   const navItems = [
-    { label: "Executive Home", href: "/", icon: LayoutDashboard },
+    { label: "Executive Home", href: "/dashboard", icon: LayoutDashboard },
     { label: "AI Organization", href: "/team", icon: Users, badge: "15" },
     { label: "GTM Strategy", href: "/strategy", icon: Compass },
     { label: "Campaigns", href: "/campaigns", icon: Megaphone, badge: "4" },
@@ -84,7 +85,7 @@ export const AppShell = ({ children }: AppShellProps) => {
         >
           {/* Brand Header */}
           <div className="h-16 flex items-center justify-between px-5 border-b border-[var(--nexa-border)]">
-            <Link href="/" className="flex items-center gap-2.5 overflow-hidden">
+            <Link href="/dashboard" className="flex items-center gap-2.5 overflow-hidden">
               <img
                 src="/logo.png"
                 alt="GTM AI Agency Logo"
@@ -254,6 +255,15 @@ export const AppShell = ({ children }: AppShellProps) => {
                 <Mic className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Ask AI Voice</span>
               </button>
+
+              {/* Public Website Link */}
+              <Link
+                href="/"
+                className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)] text-xs font-semibold hover:bg-[var(--nexa-bg-surface)] transition-all"
+              >
+                <Globe className="w-3.5 h-3.5 text-[#1A56DB]" />
+                <span>Public Site</span>
+              </Link>
 
               {/* Approval Quick Link */}
               <Link

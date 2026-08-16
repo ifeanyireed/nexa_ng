@@ -2,532 +2,464 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { PublicNav } from "@/components/public/PublicNav";
+import { PublicFooter } from "@/components/public/PublicFooter";
+import { NexaCard } from "@/components/nexa/NexaCard";
+import { NexaBadge } from "@/components/nexa/NexaBadge";
+import { NexaButton } from "@/components/nexa/NexaButton";
 import {
   Sparkles,
-  ArrowUpRight,
-  TrendingUp,
-  Users,
-  Target,
-  Mail,
-  Calendar,
-  CheckCircle2,
-  AlertTriangle,
-  Play,
-  Pause,
-  Volume2,
-  ChevronRight,
+  Cpu,
+  ShieldCheck,
   Zap,
+  TrendingUp,
+  ArrowRight,
+  CheckCircle2,
+  Users,
   MessageSquare,
+  Mail,
   DollarSign,
-  Plus,
+  Layers,
+  Lock,
+  Globe2,
+  Play,
+  Share2,
+  BarChart3,
+  Calendar,
 } from "lucide-react";
-import { AppShell } from "@/components/gtm/AppShell";
-import { NexaCard } from "@/components/nexa/NexaCard";
-import { NexaButton } from "@/components/nexa/NexaButton";
-import { NexaBadge } from "@/components/nexa/NexaBadge";
-import { NexaAvatar } from "@/components/nexa/NexaAvatar";
-import { AgentDrawer } from "@/components/gtm/AgentDrawer";
-import { DashboardSkeleton } from "@/components/nexa/PageSkeleton";
 import {
-  INITIAL_AGENTS,
-  INITIAL_CAMPAIGNS,
-  INITIAL_APPROVALS,
-  DAILY_BRIEFING_CONTENT,
-  AIAgent,
-} from "@/lib/gtm-data";
-import { GTM_API } from "@/lib/api-client";
-import { useEffect } from "react";
+  IconBrandTelegram,
+  IconBrandWhatsapp,
+  IconBrandLinkedin,
+  IconBrandOpenai,
+  IconBrandMeta,
+} from "@tabler/icons-react";
 
-export default function ExecutiveHome() {
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<AIAgent | null>(null);
-  const [agents, setAgents] = useState<AIAgent[]>(INITIAL_AGENTS);
-  const [campaigns, setCampaigns] = useState<any[]>(INITIAL_CAMPAIGNS);
-  const [approvals, setApprovals] = useState<any[]>(INITIAL_APPROVALS);
-  const [isLoading, setIsLoading] = useState(true);
+export default function LandingPage() {
+  const [activeAgentCategory, setActiveAgentCategory] = useState<string>("ALL");
+  const [roiLeads, setRoiLeads] = useState<number>(5000);
 
-  useEffect(() => {
-    async function loadDashboardData() {
-      try {
-        const [liveAgents, liveCampaigns, liveApprovals] = await Promise.allSettled([
-          GTM_API.getAgents("org-01"),
-          GTM_API.getCampaigns("org-01"),
-          GTM_API.getApprovals("org-01"),
-        ]);
+  const agents = [
+    { key: "cro", name: "Sterling Vance", role: "Chief Revenue Officer", category: "Executive", avatar: "/avatar1.png", quote: "Pacing to generate $142.5k pipeline across private school ERP segments." },
+    { key: "researcher", name: "Dr. Elena Rostova", role: "Market Researcher", category: "Intelligence", avatar: "/avatar2.png", quote: "Detected 20% competitor price increases in Abuja market. Re-framing value hook." },
+    { key: "lead_hunter", name: "Olivia Chen", role: "Lead Hunter", category: "Intelligence", avatar: "/avatar3.png", quote: "Extracted 450 verified school principal emails and WhatsApp direct lines." },
+    { key: "gtm_strategist", name: "Marcus Aurel", role: "GTM Strategist", category: "Strategy", avatar: "/avatar4.png", quote: "Framed offer around Automated Tuition Recovery rather than complex software." },
+    { key: "copywriter", name: "Julian Cross", role: "AI Copywriter", category: "Content", avatar: "/avatar6.png", quote: "Drafted 3-line pattern interrupt emails with 42% projected open rate." },
+    { key: "outreach_manager", name: "Noah Sterling", role: "Outreach Manager", category: "Outreach", avatar: "/avatar8.png", quote: "Dispatched Batch 1 via AWS SES warm pool. Zero bounces detected." },
+    { key: "whatsapp_manager", name: "Amara Obi", role: "WhatsApp Manager", category: "Outreach", avatar: "/avatar9.png", quote: "14 warm replies received on WhatsApp Cloud. Triggering demo links." },
+    { key: "analytics_manager", name: "Siddharth Rao", role: "Analytics Manager", category: "Intelligence", avatar: "/avatar12.png", quote: "Hybrid Email + WhatsApp sequence converting 3.1x higher than cold email alone." },
+  ];
 
-        if (liveAgents.status === "fulfilled" && Array.isArray(liveAgents.value) && liveAgents.value.length > 0) {
-          const merged = INITIAL_AGENTS.map((init) => {
-            const match = liveAgents.value.find((a: any) => a.key === init.id || a.id === init.id);
-            if (match) {
-              return {
-                ...init,
-                name: match.name || init.name,
-                role: match.role || init.role,
-                status: (match.status ? match.status.toLowerCase() : init.status) as any,
-                currentTask: match.current_task || init.currentTask,
-                taskProgress: match.task_progress || init.taskProgress,
-                confidence: match.confidence_score ? Math.round(match.confidence_score) : init.confidence,
-                recommendation: match.recommendation || init.recommendation,
-              };
-            }
-            return init;
-          });
-          setAgents(merged);
-        }
+  const filteredAgents =
+    activeAgentCategory === "ALL"
+      ? agents
+      : agents.filter((a) => a.category.toUpperCase() === activeAgentCategory);
 
-        if (liveCampaigns.status === "fulfilled" && Array.isArray(liveCampaigns.value) && liveCampaigns.value.length > 0) {
-          const mappedCampaigns = liveCampaigns.value.map((c: any) => ({
-            id: c.id || "cmp-01",
-            name: c.name || "Default Campaign",
-            targetAudience: c.target_audience || c.targetAudience || "Target Decision Makers",
-            status: c.status === "ACTIVE" ? "Active" : c.status || "Active",
-            channels: Array.isArray(c.channels)
-              ? c.channels
-              : typeof c.channels === "string" && c.channels.startsWith("[")
-              ? JSON.parse(c.channels)
-              : ["Email", "WhatsApp"],
-            leadsContacted: c.leads_contacted ?? c.leadsContacted ?? c.prospects_count ?? 180,
-            repliesCount: c.replies_count ?? c.repliesCount ?? 14,
-            meetingsBooked: c.meetings_booked ?? c.meetingsBooked ?? c.meetings_count ?? 4,
-            revenuePipeline: Number(c.revenue_pipeline_usd ?? c.revenue_pipeline ?? c.revenuePipeline ?? c.pipeline_value ?? 142500),
-          }));
-          setCampaigns(mappedCampaigns);
-        }
-
-        if (liveApprovals.status === "fulfilled" && Array.isArray(liveApprovals.value) && liveApprovals.value.length > 0) {
-          const mappedApprovals = liveApprovals.value.map((a: any) => ({
-            id: a.id || `app-${Math.random()}`,
-            title: a.title || "Autonomous Action",
-            agentName: a.agent_name || a.agentName || "AI Specialist",
-            agentRole: a.agent_role || a.agentRole || "Agent",
-            category: a.category || "Outreach",
-            details: a.details || a.description || "Action requested by swarm agent.",
-            status: a.status || "PENDING",
-            priority: a.priority || "MEDIUM",
-            time: a.created_at ? new Date(a.created_at).toLocaleTimeString() : (a.time || "Just now"),
-          }));
-          setApprovals(mappedApprovals);
-        }
-      } catch (err) {
-        console.warn("Dashboard loaded cached state:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    loadDashboardData();
-  }, []);
-
-  const toggleAudio = () => {
-    setIsPlayingAudio(!isPlayingAudio);
-  };
+  const calculatedMeetings = Math.round(roiLeads * 0.082 * 0.28);
+  const calculatedPipeline = calculatedMeetings * 18500;
 
   return (
-    <AppShell>
-      <AgentDrawer
-        agent={selectedAgent}
-        isOpen={!!selectedAgent}
-        onClose={() => setSelectedAgent(null)}
-      />
+    <div className="min-h-screen bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] selection:bg-[#1A56DB] selection:text-white">
+      <PublicNav />
 
-      {isLoading ? (
-        <DashboardSkeleton />
-      ) : (
-        <div className="space-y-7">
-        {/* Top Header / Welcome Banner */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <NexaBadge variant="brand" dot>
-                Live Revenue Swarm
-              </NexaBadge>
-              <span className="text-xs text-[var(--nexa-text-muted)] font-medium">
-                Workspace: EduTech Nigeria · Q3 2026 Plan
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--nexa-text-primary)] text-display tracking-tight">
-              Executive Revenue Command
-            </h1>
+      {/* Hero Section */}
+      <section className="relative pt-20 pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto overflow-hidden">
+        <div className="text-center space-y-6 max-w-4xl mx-auto">
+          {/* Top Pill */}
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] dark:bg-[#1A56DB]/20 border border-[#1A56DB]/30 text-xs font-extrabold shadow-sm">
+            <Sparkles className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: "6s" }} />
+            The Autonomous GTM Swarm Era
           </div>
 
-          <div className="flex items-center gap-3">
-            <Link href="/campaigns/new">
+          {/* Headline */}
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-display tracking-tight text-[var(--nexa-text-primary)] leading-[1.08]">
+            Replace 10 Disconnected Tools with a <span className="text-[#1A56DB]">14-Agent Revenue Swarm</span>
+          </h1>
+
+          {/* Subtitle */}
+          <p className="text-sm sm:text-base lg:text-lg text-[var(--nexa-text-secondary)] max-w-2xl mx-auto leading-relaxed">
+            Autonomous market research, verified lead extraction, high-converting copy, multi-channel dispatch, and instant Telegram mobile approvals — synchronized 24/7.
+          </p>
+
+          {/* CTA Group */}
+          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/signup">
               <NexaButton
-                size="md"
+                size="lg"
                 variant="primary"
-                leftIcon={<Plus className="w-4 h-4" />}
+                className="w-full sm:w-auto font-black text-sm shadow-xl shadow-[#1A56DB]/25 h-13 px-8 rounded-2xl"
+                rightIcon={<ArrowRight className="w-4 h-4" />}
               >
-                Deploy Campaign
+                Start 14-Day Free Trial
               </NexaButton>
             </Link>
-            <Link href="/approvals">
+            <Link href="/dashboard">
               <NexaButton
-                size="md"
+                size="lg"
                 variant="secondary"
-                leftIcon={<CheckCircle2 className="w-4 h-4 text-[#C88A3A]" />}
+                className="w-full sm:w-auto font-bold text-sm h-13 px-8 rounded-2xl"
+                leftIcon={<Play className="w-4 h-4 text-[#1A56DB]" />}
               >
-                Review 3 Approvals
+                Launch Swarm Console
               </NexaButton>
             </Link>
+          </div>
+
+          {/* Trust Badges Strip */}
+          <div className="pt-6 flex flex-wrap items-center justify-center gap-6 text-xs text-[var(--nexa-text-muted)] font-medium">
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-[#0E9F6E]" /> No Credit Card Required
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-[#0E9F6E]" /> SOC2 & AES-256 Encrypted
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-[#0E9F6E]" /> Setup in Under 10 Minutes
+            </span>
           </div>
         </div>
 
-        {/* Daily Executive Morning Briefing */}
-        <NexaCard
-          variant="glass"
-          padding="lg"
-          className="border-l-4 border-l-[#1A56DB] bg-gradient-to-r from-[var(--nexa-bg-surface)] to-[var(--nexa-brand-light)]/20 relative overflow-hidden"
-        >
-          <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-            <div className="space-y-3 flex-1">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-xl bg-[#1A56DB] flex items-center justify-center text-white">
-                  <Sparkles className="w-3.5 h-3.5" />
-                </div>
-                <h3 className="text-sm font-bold uppercase tracking-wider text-[#1A56DB] dark:text-[#60A5FA]">
-                  Daily Briefing from Sterling Vance (CRO)
-                </h3>
+        {/* Live Swarm Coordination Simulator Preview */}
+        <div className="mt-14 max-w-5xl mx-auto">
+          <NexaCard variant="glass" padding="none" className="border-2 border-[#1A56DB]/25 shadow-2xl overflow-hidden">
+            {/* Window Top Bar */}
+            <div className="p-3.5 bg-[var(--nexa-bg-surface)] border-b border-[var(--nexa-border)] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-3 h-3 rounded-full bg-red-500/80" />
+                <span className="w-3 h-3 rounded-full bg-amber-500/80" />
+                <span className="w-3 h-3 rounded-full bg-emerald-500/80" />
+                <span className="ml-2 text-xs font-mono text-[var(--nexa-text-muted)]">
+                  swarm-orchestrator@cluster-01:~ [LIVE TELEMETRY]
+                </span>
               </div>
-
-              <div className="text-lg sm:text-xl font-bold text-[var(--nexa-text-primary)] text-display">
-                "{DAILY_BRIEFING_CONTENT.headline}"
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-[#0E9F6E]/10 text-[#0E9F6E] border border-[#0E9F6E]/30 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#0E9F6E] animate-pulse" />
+                  14 AGENTS ONLINE
+                </span>
               </div>
+            </div>
 
-              <p className="text-sm text-[var(--nexa-text-secondary)] leading-relaxed max-w-3xl">
-                {DAILY_BRIEFING_CONTENT.body}
-              </p>
-
-              {/* High-value Recommendation Banner */}
-              <div className="mt-4 p-3.5 rounded-xl bg-[#ECFDF5] dark:bg-[#10B981]/10 border border-[#0E9F6E]/20 flex items-start gap-3">
-                <div className="p-1 rounded-lg bg-[#0E9F6E] text-white shrink-0 mt-0.5">
-                  <TrendingUp className="w-3.5 h-3.5" />
-                </div>
-                <div className="flex-1">
-                  <div className="text-xs font-bold text-[#0E9F6E] dark:text-[#34D399]">
-                    Recommended Action:
+            {/* Simulated Live Action Stream */}
+            <div className="p-6 bg-[var(--nexa-bg-base)]/90 space-y-4 font-mono text-xs">
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)]">
+                <img src="/avatar1.png" alt="Sterling Vance" className="w-8 h-8 rounded-lg object-cover" />
+                <div className="space-y-0.5 flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-[var(--nexa-text-primary)]">Sterling Vance (Chief Revenue Officer)</span>
+                    <span className="text-[10px] text-[var(--nexa-text-muted)]">09:15:02 WAT</span>
                   </div>
-                  <p className="text-xs text-[var(--nexa-text-secondary)] mt-0.5">
-                    {DAILY_BRIEFING_CONTENT.keyRecommendation}
+                  <p className="text-[var(--nexa-text-secondary)] font-sans">
+                    "Identified private schools vertical with $45M TAM. Olivia, extract 450 verified Principal emails and WhatsApp contacts in Lagos."
                   </p>
                 </div>
-                <NexaButton size="sm" variant="success">
-                  Execute Shift
-                </NexaButton>
               </div>
-            </div>
 
-            {/* Audio Read-Aloud Player */}
-            <div className="shrink-0 flex flex-col items-center justify-center p-4 rounded-2xl liquid-glass border border-[var(--glass-border)] bg-[var(--nexa-bg-surface)]/80 self-start md:self-center">
-              <button
-                onClick={toggleAudio}
-                className="w-12 h-12 rounded-full bg-[#1A56DB] dark:bg-[#3B82F6] text-white flex items-center justify-center shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                title={isPlayingAudio ? "Pause Audio Briefing" : "Listen to Audio Briefing"}
-              >
-                {isPlayingAudio ? (
-                  <Pause className="w-5 h-5" />
-                ) : (
-                  <Play className="w-5 h-5 ml-0.5" />
-                )}
-              </button>
-              <span className="text-[11px] font-bold text-[var(--nexa-text-muted)] mt-2">
-                {isPlayingAudio ? "Streaming Audio..." : "Listen (1:45)"}
-              </span>
-              {isPlayingAudio && (
-                <div className="flex items-center gap-1 mt-1">
-                  <span className="w-1 h-3 bg-[#1A56DB] rounded-full animate-bounce" />
-                  <span className="w-1 h-5 bg-[#1A56DB] rounded-full animate-bounce delay-75" />
-                  <span className="w-1 h-2 bg-[#1A56DB] rounded-full animate-bounce delay-150" />
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] ml-4 sm:ml-8">
+                <img src="/avatar3.png" alt="Olivia Chen" className="w-8 h-8 rounded-lg object-cover" />
+                <div className="space-y-0.5 flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-[var(--nexa-text-primary)]">Olivia Chen (Lead Hunter)</span>
+                    <span className="text-[10px] text-[var(--nexa-text-muted)]">09:15:28 WAT</span>
+                  </div>
+                  <p className="text-[var(--nexa-text-secondary)] font-sans">
+                    "450 school decision makers enriched. 0% syntax errors. Dispatched payload to Julian Cross for personalized 3-line copy generation."
+                  </p>
                 </div>
-              )}
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-[#1A56DB]/10 border border-[#1A56DB]/30 ml-8 sm:ml-16">
+                <div className="w-8 h-8 rounded-lg bg-[#1A56DB] text-white flex items-center justify-center shrink-0">
+                  <IconBrandTelegram className="w-5 h-5" />
+                </div>
+                <div className="space-y-0.5 flex-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-[#1A56DB]">Telegram CRO Bot (@NexaGTM_CRO_Bot)</span>
+                    <span className="text-[10px] text-[#0E9F6E] font-bold">1-TAP APPROVED</span>
+                  </div>
+                  <p className="text-[var(--nexa-text-primary)] font-sans text-[11px]">
+                    Interactive Approval Card sent to Operator: 'Approve 450-Drop Batch 1 to Private Schools?' $\rightarrow$ Operator tapped <strong>[APPROVE]</strong>. Dispatched across AWS SES & WhatsApp WABA.
+                  </p>
+                </div>
+              </div>
             </div>
+          </NexaCard>
+        </div>
+      </section>
+
+      {/* Metrics & Proof Banner */}
+      <section className="border-y border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]/50 py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          <div className="space-y-1">
+            <div className="text-3xl sm:text-4xl font-black font-mono text-[#1A56DB]">$142.5K</div>
+            <div className="text-xs font-bold text-[var(--nexa-text-primary)]">Avg Attributed Pipeline</div>
+            <div className="text-[11px] text-[var(--nexa-text-muted)]">Per 30-day active campaign</div>
           </div>
-        </NexaCard>
-
-        {/* Executive Pulse Metrics (Yesterday vs. Today) */}
-        <div>
-          <div className="flex items-center justify-between mb-3.5">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--nexa-text-muted)]">
-              Yesterday vs. Today Operations
-            </h2>
-            <Link
-              href="/analytics"
-              className="text-xs font-semibold text-[#1A56DB] dark:text-[#60A5FA] hover:underline flex items-center gap-1"
-            >
-              Full Analytics Matrix <ArrowUpRight className="w-3 h-3" />
-            </Link>
+          <div className="space-y-1">
+            <div className="text-3xl sm:text-4xl font-black font-mono text-[#0E9F6E]">3.1x</div>
+            <div className="text-xs font-bold text-[var(--nexa-text-primary)]">Higher Meeting Booking</div>
+            <div className="text-[11px] text-[var(--nexa-text-muted)]">Email + WABA hybrid sequences</div>
           </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Metric 1 */}
-            <NexaCard variant="flat" padding="md" className="space-y-2">
-              <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-                <span>Leads Researched</span>
-                <Users className="w-4 h-4 text-[#1A56DB]" />
-              </div>
-              <div className="text-2xl font-extrabold text-[var(--nexa-text-primary)] text-mono">
-                1,240
-              </div>
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-[#0E9F6E] font-semibold">+186 Qualified</span>
-                <span className="text-[var(--nexa-text-faint)]">Goal: 1,000</span>
-              </div>
-            </NexaCard>
-
-            {/* Metric 2 */}
-            <NexaCard variant="flat" padding="md" className="space-y-2">
-              <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-                <span>Touchpoints Sent</span>
-                <Mail className="w-4 h-4 text-[#3B82F6]" />
-              </div>
-              <div className="text-2xl font-extrabold text-[var(--nexa-text-primary)] text-mono">
-                342
-              </div>
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-[#0E9F6E] font-semibold">64.8% Open Rate</span>
-                <span className="text-[var(--nexa-text-faint)]">58 Queued</span>
-              </div>
-            </NexaCard>
-
-            {/* Metric 3 */}
-            <NexaCard variant="flat" padding="md" className="space-y-2">
-              <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-                <span>Engaged Replies</span>
-                <MessageSquare className="w-4 h-4 text-[#0E9F6E]" />
-              </div>
-              <div className="text-2xl font-extrabold text-[var(--nexa-text-primary)] text-mono">
-                14
-              </div>
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-[#0E9F6E] font-semibold">14.8% Reply Rate</span>
-                <span className="text-[var(--nexa-text-faint)]">+2.4x vs avg</span>
-              </div>
-            </NexaCard>
-
-            {/* Metric 4 */}
-            <NexaCard variant="flat" padding="md" className="space-y-2">
-              <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-                <span>Booked Enterprise Demos</span>
-                <Calendar className="w-4 h-4 text-[#C88A3A]" />
-              </div>
-              <div className="text-2xl font-extrabold text-[var(--nexa-text-primary)] text-mono">
-                4 <span className="text-sm font-normal text-[var(--nexa-text-muted)]">($28k pipe)</span>
-              </div>
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-[#0E9F6E] font-semibold">100% Qualified</span>
-                <span className="text-[var(--nexa-text-faint)]">Today: 6 calls</span>
-              </div>
-            </NexaCard>
+          <div className="space-y-1">
+            <div className="text-3xl sm:text-4xl font-black font-mono text-[#7E22CE]">14 Agents</div>
+            <div className="text-xs font-bold text-[var(--nexa-text-primary)]">Coordinated In Real-Time</div>
+            <div className="text-[11px] text-[var(--nexa-text-muted)]">Zero human SDR fatigue</div>
+          </div>
+          <div className="space-y-1">
+            <div className="text-3xl sm:text-4xl font-black font-mono text-[#E3A008]">&lt; 1.2%</div>
+            <div className="text-xs font-bold text-[var(--nexa-text-primary)]">Domain Bounce Rate</div>
+            <div className="text-[11px] text-[var(--nexa-text-muted)]">Protected by Circuit Breakers</div>
           </div>
         </div>
+      </section>
 
-        {/* Live AI Workforce Floor */}
-        <div>
-          <div className="flex items-center justify-between mb-3.5">
-            <div>
-              <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--nexa-text-primary)] text-display">
-                AI Revenue Workforce Floor
-              </h2>
-              <p className="text-xs text-[var(--nexa-text-muted)]">
-                Click on any AI specialist to inspect live reasoning, review deliverables, or chat directly.
-              </p>
+      {/* The 4 Pillars (Sales Closer) */}
+      <section id="features" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+        <div className="text-center space-y-3 max-w-3xl mx-auto">
+          <NexaBadge variant="brand">Autonomous Revenue Infrastructure</NexaBadge>
+          <h2 className="text-3xl sm:text-5xl font-black text-display text-[var(--nexa-text-primary)]">
+            Engineered to Outperform Entire SDR Teams
+          </h2>
+          <p className="text-xs sm:text-sm text-[var(--nexa-text-secondary)]">
+            Everything high-growth B2B software companies need to scale outreach without hiring armies of reps.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Feature 1 */}
+          <NexaCard variant="glass" padding="lg" className="space-y-4 border-l-4 border-l-[#1A56DB]">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#1A56DB]/10 text-[#1A56DB] flex items-center justify-center">
+                <Mail className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-lg text-[var(--nexa-text-primary)] text-display">
+                  Multi-Channel Outreach Engine
+                </h3>
+                <span className="text-xs text-[var(--nexa-text-muted)]">Email · WhatsApp · LinkedIn · Meta</span>
+              </div>
             </div>
-            <Link
-              href="/team"
-              className="text-xs font-semibold text-[#1A56DB] dark:text-[#60A5FA] hover:underline flex items-center gap-1"
-            >
-              View All 15 Agents <ChevronRight className="w-3.5 h-3.5" />
-            </Link>
+            <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
+              Don't rely solely on crowded inboxes. Our swarm orchestrates verified AWS SES drops, sends official Meta Cloud WhatsApp interactive templates, and connects directly on LinkedIn with contextualized personalization.
+            </p>
+          </NexaCard>
+
+          {/* Feature 2 */}
+          <NexaCard variant="glass" padding="lg" className="space-y-4 border-l-4 border-l-[#0E9F6E]">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#0E9F6E]/10 text-[#0E9F6E] flex items-center justify-center">
+                <IconBrandTelegram className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-lg text-[var(--nexa-text-primary)] text-display">
+                  Telegram CRO Mobile Command
+                </h3>
+                <span className="text-xs text-[var(--nexa-text-muted)]">1-Click Mobile Approvals & Alerts</span>
+              </div>
+            </div>
+            <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
+              Run your entire GTM agency straight from Telegram. Whenever copy is drafted or high-value replies arrive, interactive cards appear on your phone. Tap 'Approve' or query your CRO with voice in real time.
+            </p>
+          </NexaCard>
+
+          {/* Feature 3 */}
+          <NexaCard variant="glass" padding="lg" className="space-y-4 border-l-4 border-l-[#7E22CE]">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#7E22CE]/10 text-[#7E22CE] flex items-center justify-center">
+                <ShieldCheck className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-lg text-[var(--nexa-text-primary)] text-display">
+                  Tripwire Circuit Breakers
+                </h3>
+                <span className="text-xs text-[var(--nexa-text-muted)]">Zero Risk of Burned Domains</span>
+              </div>
+            </div>
+            <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
+              Domain health is paramount. If hard bounces breach 3%, the system automatically throttles the domain, triggers automated SES warmup schedules, and shifts outbound capacity to secondary verified inbox pools.
+            </p>
+          </NexaCard>
+
+          {/* Feature 4 */}
+          <NexaCard variant="glass" padding="lg" className="space-y-4 border-l-4 border-l-[#E3A008]">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#E3A008]/10 text-[#E3A008] flex items-center justify-center">
+                <Lock className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-lg text-[var(--nexa-text-primary)] text-display">
+                  Model Gateway (BYOK)
+                </h3>
+                <span className="text-xs text-[var(--nexa-text-muted)]">OpenAI · Claude · Mistral · DeepSeek</span>
+              </div>
+            </div>
+            <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
+              Enjoy 100% price transparency. Plug your own LLM API keys directly into our model gateway to pay raw token costs at wholesale provider rates, with 0% markup on model inference.
+            </p>
+          </NexaCard>
+        </div>
+      </section>
+
+      {/* Live 14-Agent Swarm Explorer */}
+      <section id="agents" className="py-20 bg-[var(--nexa-bg-surface)]/40 border-y border-[var(--nexa-border)]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <NexaBadge variant="brand">Autonomous Specialists</NexaBadge>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-display text-[var(--nexa-text-primary)] mt-1">
+                Explore the 14-Agent Swarm
+              </h2>
+            </div>
+
+            {/* Category Filter Pills */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              {["ALL", "EXECUTIVE", "INTELLIGENCE", "STRATEGY", "CONTENT", "OUTREACH"].map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setActiveAgentCategory(cat)}
+                  className={`px-3 py-1 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                    activeAgentCategory === cat
+                      ? "bg-[#1A56DB] text-white shadow-sm"
+                      : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-muted)] border border-[var(--nexa-border)]"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-            {agents.slice(0, 6).map((agent) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {filteredAgents.map((agent) => (
               <NexaCard
-                key={agent.id}
-                variant="interactive"
+                key={agent.key}
+                variant="glass"
                 padding="md"
-                onClick={() => setSelectedAgent(agent)}
-                className="space-y-3"
+                className="space-y-3 hover:border-[var(--nexa-border-strong)] transition-all flex flex-col justify-between"
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="space-y-2">
                   <div className="flex items-center gap-3">
-                    <NexaAvatar
-                      name={agent.name}
+                    <img
                       src={agent.avatar}
-                      size="md"
-                      status={agent.status}
+                      alt={agent.name}
+                      className="w-11 h-11 rounded-xl object-cover border border-[var(--nexa-border)] shadow-sm shrink-0"
                     />
                     <div>
-                      <div className="font-bold text-sm text-[var(--nexa-text-primary)]">
+                      <div className="font-bold text-xs text-[var(--nexa-text-primary)]">
                         {agent.name}
                       </div>
-                      <div className="text-xs text-[var(--nexa-text-muted)]">
+                      <div className="text-[10px] text-[#1A56DB] font-semibold">
                         {agent.role}
                       </div>
                     </div>
                   </div>
-                  <NexaBadge
-                    variant={agent.status === "working" ? "brand" : "success"}
-                    dot
-                  >
-                    {agent.status === "working" ? "Working" : "Active"}
-                  </NexaBadge>
+                  <p className="text-[11px] text-[var(--nexa-text-secondary)] italic leading-relaxed">
+                    "{agent.quote}"
+                  </p>
                 </div>
 
-                <div className="p-2.5 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-1">
-                  <div className="flex items-center justify-between text-[11px] text-[var(--nexa-text-muted)]">
-                    <span className="font-medium truncate pr-2">
-                      {agent.currentTask}
-                    </span>
-                    <span className="text-mono font-bold shrink-0">
-                      {agent.taskProgress}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-[var(--nexa-border)] h-1 rounded-full overflow-hidden">
-                    <div
-                      className="bg-[#1A56DB] dark:bg-[#3B82F6] h-full rounded-full"
-                      style={{ width: `${agent.taskProgress}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-1 text-xs">
-                  <span className="text-[var(--nexa-text-muted)]">
-                    Confidence: <span className="font-bold text-[var(--nexa-text-primary)] text-mono">{agent.confidence}%</span>
-                  </span>
-                  <span className="text-[#1A56DB] dark:text-[#60A5FA] font-bold flex items-center gap-1 group-hover:underline">
-                    Workstation <ArrowUpRight className="w-3.5 h-3.5" />
-                  </span>
+                <div className="pt-2 border-t border-[var(--nexa-border)] flex items-center justify-between text-[10px]">
+                  <NexaBadge variant="neutral">{agent.category}</NexaBadge>
+                  <span className="text-[#0E9F6E] font-bold font-mono">● ONLINE</span>
                 </div>
               </NexaCard>
             ))}
           </div>
         </div>
+      </section>
 
-        {/* Active Campaigns & Pending Approvals Split Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Active Campaigns Overview */}
-          <NexaCard variant="glass" padding="md" className="space-y-4">
-            <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
-              <div>
-                <h3 className="font-bold text-sm text-[var(--nexa-text-primary)] text-display">
-                  Active Multi-Channel Campaigns
-                </h3>
-                <p className="text-xs text-[var(--nexa-text-muted)]">
-                  Live revenue engines operating across connected channels
-                </p>
-              </div>
-              <Link href="/campaigns">
-                <NexaButton size="sm" variant="ghost">
-                  All Campaigns
-                </NexaButton>
-              </Link>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {campaigns.map((camp) => (
-                <div
-                  key={camp.id}
-                  className="p-3.5 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] hover:border-[#1A56DB]/40 transition-all space-y-2"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="font-bold text-sm text-[var(--nexa-text-primary)]">
-                        {camp.name}
-                      </div>
-                      <div className="text-xs text-[var(--nexa-text-muted)] mt-0.5">
-                        {camp.targetAudience}
-                      </div>
-                    </div>
-                    <NexaBadge
-                      variant={camp.status === "Active" ? "success" : "warning"}
-                    >
-                      {camp.status}
-                    </NexaBadge>
-                  </div>
-
-                    <div className="flex items-center justify-between text-xs pt-1 border-t border-[var(--nexa-border)]/50">
-                    <div className="flex items-center gap-2">
-                      {camp.channels && camp.channels.map((ch: string) => (
-                        <span
-                          key={ch}
-                          className="px-2 py-0.5 rounded-md bg-[var(--nexa-bg-base)] text-[10px] font-semibold text-[var(--nexa-text-secondary)] border border-[var(--nexa-border)]"
-                        >
-                          {ch}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="text-mono font-bold text-[#0E9F6E]">
-                      ${Number(camp.revenuePipeline || 0).toLocaleString()} Pipe
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </NexaCard>
-
-          {/* Pending Approvals Quick Hub */}
-          <NexaCard variant="glass" padding="md" className="space-y-4">
-            <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
-              <div>
-                <h3 className="font-bold text-sm text-[var(--nexa-text-primary)] text-display flex items-center gap-2">
-                  <span>Approval Center</span>
-                  <NexaBadge variant="warning" dot>
-                    3 Pending
-                  </NexaBadge>
-                </h3>
-                <p className="text-xs text-[var(--nexa-text-muted)]">
-                  Actions requiring executive authorization before execution
-                </p>
-              </div>
-              <Link href="/approvals">
-                <NexaButton size="sm" variant="ghost">
-                  Open Center
-                </NexaButton>
-              </Link>
-            </div>
-
-            <div className="space-y-3">
-              {approvals.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-3.5 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] space-y-2.5"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="font-bold text-xs text-[var(--nexa-text-primary)]">
-                        {item.title}
-                      </div>
-                      <div className="text-[11px] text-[var(--nexa-text-muted)] mt-0.5">
-                        Created by {item.creatorAgent} · {item.targetChannel}
-                      </div>
-                    </div>
-                    <NexaBadge
-                      variant={item.riskLevel === "High" ? "danger" : item.riskLevel === "Medium" ? "warning" : "brand"}
-                    >
-                      {item.riskLevel} Risk
-                    </NexaBadge>
-                  </div>
-
-                  <p className="text-xs text-[var(--nexa-text-secondary)] line-clamp-2">
-                    {item.summary}
-                  </p>
-
-                  <div className="flex items-center justify-end gap-2 pt-1 border-t border-[var(--nexa-border)]/50">
-                    <Link href="/approvals">
-                      <NexaButton size="sm" variant="outline">
-                        Inspect Diff
-                      </NexaButton>
-                    </Link>
-                    <NexaButton size="sm" variant="primary">
-                      Approve
-                    </NexaButton>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </NexaCard>
+      {/* Comparison: GTM AI Agency vs Traditional SDR Team */}
+      <section className="py-24 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        <div className="text-center space-y-2">
+          <h2 className="text-3xl sm:text-4xl font-black text-display text-[var(--nexa-text-primary)]">
+            How We Compare to Traditional Outbound
+          </h2>
+          <p className="text-xs sm:text-sm text-[var(--nexa-text-secondary)]">
+            Why leading B2B SaaS and enterprise providers choose autonomous swarm execution.
+          </p>
         </div>
-      </div>
-      )}
-    </AppShell>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs text-left border-collapse">
+            <thead>
+              <tr className="border-b border-[var(--nexa-border)] text-[var(--nexa-text-muted)] uppercase tracking-wider font-bold">
+                <th className="py-3 px-4">Capability</th>
+                <th className="py-3 px-4 text-[#1A56DB] bg-[#1A56DB]/5 rounded-t-xl">
+                  GTM AI Agency Swarm
+                </th>
+                <th className="py-3 px-4">Traditional 3-Person SDR Team</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--nexa-border)] text-[var(--nexa-text-primary)] font-medium">
+              <tr>
+                <td className="py-4 px-4 font-bold">Monthly Operating Cost</td>
+                <td className="py-4 px-4 font-black text-[#0E9F6E] bg-[#1A56DB]/5">$450 - $2,400 / mo</td>
+                <td className="py-4 px-4 text-red-500 font-mono">$18,000+ / mo (Salaries + Benefits)</td>
+              </tr>
+              <tr>
+                <td className="py-4 px-4 font-bold">Outreach Channels</td>
+                <td className="py-4 px-4 bg-[#1A56DB]/5 text-[#1A56DB] font-bold">
+                  Email (SES), WhatsApp, LinkedIn, Meta Ads
+                </td>
+                <td className="py-4 px-4 text-[var(--nexa-text-secondary)]">Cold Email Only</td>
+              </tr>
+              <tr>
+                <td className="py-4 px-4 font-bold">Ramp Time / Onboarding</td>
+                <td className="py-4 px-4 bg-[#1A56DB]/5 font-bold text-[#0E9F6E]">Under 10 Minutes</td>
+                <td className="py-4 px-4 text-[var(--nexa-text-secondary)]">3 - 6 Months Hiring & Training</td>
+              </tr>
+              <tr>
+                <td className="py-4 px-4 font-bold">Operating Hours</td>
+                <td className="py-4 px-4 bg-[#1A56DB]/5 font-bold text-[#0E9F6E]">24/7/365 Continuous</td>
+                <td className="py-4 px-4 text-[var(--nexa-text-secondary)]">8 Hours / Day (High Burnout)</td>
+              </tr>
+              <tr>
+                <td className="py-4 px-4 font-bold">Domain Protection</td>
+                <td className="py-4 px-4 bg-[#1A56DB]/5 font-bold text-[#0E9F6E]">Automatic Circuit Breakers & SES Pools</td>
+                <td className="py-4 px-4 text-red-500">Manual monitoring (frequent burn)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Final Sales Closer Call-To-Action */}
+      <section className="py-24 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <NexaCard variant="glass" padding="lg" className="border-2 border-[#1A56DB] shadow-2xl text-center space-y-6 bg-gradient-to-b from-[#1A56DB]/10 to-transparent">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1A56DB]/20 text-[#1A56DB] text-xs font-black">
+            <Sparkles className="w-4 h-4" />
+            Instant Provisioning Available
+          </div>
+
+          <h2 className="text-3xl sm:text-5xl font-black text-display text-[var(--nexa-text-primary)]">
+            Ready to Generate $100K+ in Pipeline This Month?
+          </h2>
+
+          <p className="text-xs sm:text-sm text-[var(--nexa-text-secondary)] max-w-xl mx-auto leading-relaxed">
+            Start your 14-day free trial. Deploy your 14 autonomous agents and launch your first synchronized campaign in under 10 minutes.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+            <Link href="/signup">
+              <NexaButton
+                size="lg"
+                variant="primary"
+                className="w-full sm:w-auto font-black text-sm px-8 h-13 rounded-2xl shadow-xl shadow-[#1A56DB]/25"
+                rightIcon={<ArrowRight className="w-4 h-4" />}
+              >
+                Start 14-Day Free Trial
+              </NexaButton>
+            </Link>
+            <Link href="/contact">
+              <NexaButton size="lg" variant="secondary" className="w-full sm:w-auto font-bold text-sm h-13 px-8 rounded-2xl">
+                Book Strategy Consultation
+              </NexaButton>
+            </Link>
+          </div>
+        </NexaCard>
+      </section>
+
+      <PublicFooter />
+    </div>
   );
 }

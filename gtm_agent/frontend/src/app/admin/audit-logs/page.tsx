@@ -73,8 +73,8 @@ export default function AdminAuditLogsPage() {
                 onClick={() => setFilterType(t)}
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                   filterType === t
-                    ? "bg-[#7E22CE] text-white shadow-sm"
-                    : "text-[var(--nexa-text-secondary)] hover:bg-[#7E22CE]/10 hover:text-[#7E22CE] dark:hover:bg-white/5"
+                    ? "bg-[#1A56DB] text-white shadow-sm dark:bg-[#2563EB]"
+                    : "text-[var(--nexa-text-secondary)] hover:bg-[var(--nexa-brand-light)]/60 hover:text-[#1A56DB] dark:hover:bg-white/5"
                 }`}
               >
                 {t}
@@ -89,7 +89,7 @@ export default function AdminAuditLogsPage() {
               placeholder="Search audit actions..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-9 pl-9 pr-3 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#7E22CE]"
+              className="w-full h-9 pl-9 pr-3 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
             />
           </div>
         </div>

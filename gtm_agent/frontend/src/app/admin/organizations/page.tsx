@@ -85,7 +85,7 @@ export default function AdminOrganizationsPage() {
           <div className="p-3.5 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-xs text-[var(--nexa-text-secondary)] space-y-1">
             <div>
               <strong>Current Plan Tier: </strong>
-              <span className="font-mono text-[#7E22CE] font-bold">
+              <span className="font-mono text-[#1A56DB] dark:text-[#60A5FA] font-bold">
                 {selectedTenantForQuota?.planTier}
               </span>
             </div>
@@ -203,7 +203,7 @@ export default function AdminOrganizationsPage() {
               placeholder="Search organization, domain, or owner..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-9 pl-9 pr-3 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#7E22CE]"
+              className="w-full h-9 pl-9 pr-3 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
             />
           </div>
 
@@ -242,9 +242,7 @@ export default function AdminOrganizationsPage() {
                     <td className="py-3.5 px-3">
                       <NexaBadge
                         variant={
-                          t.planTier === "ENTERPRISE"
-                            ? "purple"
-                            : t.planTier === "GROWTH"
+                          t.planTier === "ENTERPRISE" || t.planTier === "GROWTH"
                             ? "brand"
                             : t.planTier === "SCALE"
                             ? "cyan"
@@ -284,7 +282,7 @@ export default function AdminOrganizationsPage() {
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => setImpersonationTenant(t)}
-                          className="p-1.5 rounded-lg border border-[var(--nexa-border)] hover:bg-[#7E22CE]/10 hover:text-[#7E22CE] text-[var(--nexa-text-muted)] transition-colors cursor-pointer"
+                          className="p-1.5 rounded-lg border border-[var(--nexa-border)] hover:bg-[#1A56DB]/10 hover:text-[#1A56DB] text-[var(--nexa-text-muted)] transition-colors cursor-pointer"
                           title="Impersonate Tenant"
                         >
                           <LogIn className="w-3.5 h-3.5" />

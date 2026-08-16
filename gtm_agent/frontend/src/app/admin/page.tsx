@@ -84,10 +84,10 @@ export default function AdminOverviewPage() {
           </NexaCard>
 
           {/* Card 2: Active Tenants */}
-          <NexaCard variant="glass" padding="md" className="space-y-1.5 border-l-4 border-l-[#7E22CE]">
+          <NexaCard variant="glass" padding="md" className="space-y-1.5 border-l-4 border-l-[#1A56DB]">
             <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
               <span>Tenant Workspaces</span>
-              <Building2 className="w-4 h-4 text-[#7E22CE]" />
+              <Building2 className="w-4 h-4 text-[#1A56DB]" />
             </div>
             <div className="text-2xl font-black text-[var(--nexa-text-primary)] text-mono">
               240 Orgs
@@ -150,10 +150,10 @@ export default function AdminOverviewPage() {
               {INITIAL_SWARM_HEALTH.map((agent) => (
                 <div
                   key={agent.agentKey}
-                  className="p-3.5 rounded-2xl liquid-glass border border-[var(--nexa-border)] flex items-center justify-between hover:border-[#7E22CE]/40 transition-colors"
+                  className="p-3.5 rounded-2xl liquid-glass border border-[var(--nexa-border)] flex items-center justify-between hover:border-[#1A56DB]/40 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-[#EBF5FF] dark:bg-[#3B82F6]/15 flex items-center justify-center font-bold text-xs text-[#1A56DB]">
+                    <div className="w-9 h-9 rounded-xl bg-[#EBF5FF] dark:bg-[#2563EB]/15 flex items-center justify-center font-bold text-xs text-[#1A56DB] shrink-0 border border-[#1A56DB]/20">
                       {agent.name.slice(0, 2).toUpperCase()}
                     </div>
                     <div>
@@ -218,9 +218,7 @@ export default function AdminOverviewPage() {
                     </div>
                     <NexaBadge
                       variant={
-                        tenant.planTier === "ENTERPRISE"
-                          ? "purple"
-                          : tenant.planTier === "GROWTH"
+                        tenant.planTier === "ENTERPRISE" || tenant.planTier === "GROWTH"
                           ? "brand"
                           : "neutral"
                       }
@@ -243,12 +241,12 @@ export default function AdminOverviewPage() {
 
             {/* Operator Live Audit Log */}
             <NexaCard variant="glass" padding="md" className="space-y-3 mt-4">
-              <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-2">
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--nexa-text-muted)] flex items-center gap-1.5">
-                  <ShieldAlert className="w-3.5 h-3.5 text-[#7E22CE]" /> Live Operator Audit
-                </span>
-                <Link href="/admin/audit-logs" className="text-[11px] font-bold text-[#7E22CE] hover:underline">
-                  View Log
+              <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-2.5">
+                <div className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
+                  <ShieldAlert className="w-3.5 h-3.5 text-[#1A56DB]" /> Live Operator Audit
+                </div>
+                <Link href="/admin/audit-logs" className="text-[11px] font-bold text-[#1A56DB] hover:underline">
+                  View All
                 </Link>
               </div>
 

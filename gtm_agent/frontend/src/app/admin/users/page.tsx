@@ -198,7 +198,7 @@ export default function AdminUsersPage() {
             <select
               value={newUserOrg}
               onChange={(e) => setNewUserOrg(e.target.value)}
-              className="w-full h-11 px-3 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#7E22CE]"
+              className="w-full h-11 px-3 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
             >
               <option value="EduSuite Nigeria">EduSuite Nigeria (org-01)</option>
               <option value="PayFlow Africa">PayFlow Africa (org-02)</option>
@@ -214,7 +214,7 @@ export default function AdminUsersPage() {
             <select
               value={newUserRole}
               onChange={(e) => setNewUserRole(e.target.value as any)}
-              className="w-full h-11 px-3 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#7E22CE]"
+              className="w-full h-11 px-3 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
             >
               <option value="SUPER_ADMIN">SUPER_ADMIN · Full Platform Operator</option>
               <option value="TENANT_OWNER">TENANT_OWNER · Workspace Admin & BYOK Keys</option>
@@ -228,7 +228,7 @@ export default function AdminUsersPage() {
             <NexaButton size="sm" variant="outline" type="button" onClick={() => setIsInviteModalOpen(false)}>
               Cancel
             </NexaButton>
-            <NexaButton size="sm" variant="primary" type="submit" className="bg-[#7E22CE] text-white">
+            <NexaButton size="sm" variant="primary" type="submit">
               Provision Test User
             </NexaButton>
           </div>
@@ -323,7 +323,7 @@ export default function AdminUsersPage() {
                 <NexaButton size="sm" variant="outline" type="button" onClick={() => setIsEditModalOpen(false)}>
                   Cancel
                 </NexaButton>
-                <NexaButton size="sm" variant="primary" type="submit" className="bg-[#7E22CE] text-white">
+                <NexaButton size="sm" variant="primary" type="submit" className="bg-[#1A56DB] text-white">
                   Save Changes
                 </NexaButton>
               </div>
@@ -337,7 +337,7 @@ export default function AdminUsersPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <NexaBadge variant="purple" dot>
+              <NexaBadge variant="brand" dot>
                 Cross-Tenant Directory
               </NexaBadge>
               <span className="text-xs text-[var(--nexa-text-muted)]">
@@ -369,7 +369,7 @@ export default function AdminUsersPage() {
               size="sm"
               variant="primary"
               onClick={() => setIsInviteModalOpen(true)}
-              className="bg-[#7E22CE] text-white"
+              className="bg-[#1A56DB] text-white"
               leftIcon={<Plus className="w-4 h-4" />}
             >
               Add Test User
@@ -381,7 +381,7 @@ export default function AdminUsersPage() {
         <NexaCard
           variant="glass"
           padding="md"
-          className="relative overflow-hidden border-2 border-[#7E22CE]/30 bg-gradient-to-r from-[#7E22CE]/10 via-[var(--nexa-bg-surface)] to-[var(--nexa-bg-base)]"
+          className="relative overflow-hidden border-2 border-[#1A56DB]/30 bg-gradient-to-r from-[#1A56DB]/10 via-[var(--nexa-bg-surface)] to-[var(--nexa-bg-base)]"
         >
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -440,7 +440,7 @@ export default function AdminUsersPage() {
                     showToast(`Active persona switched to ${target.name} (${target.role})`);
                   }
                 }}
-                className="h-9 px-3 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] font-bold outline-none focus:border-[#7E22CE] cursor-pointer"
+                className="h-9 px-3 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] font-bold outline-none focus:border-[#1A56DB] cursor-pointer"
               >
                 {users.map((u) => (
                   <option key={u.id} value={u.id}>
@@ -458,7 +458,7 @@ export default function AdminUsersPage() {
             onClick={() => setActiveTab("directory")}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeTab === "directory"
-                ? "bg-[#7E22CE] text-white shadow-sm"
+                ? "bg-[#1A56DB] text-white shadow-sm"
                 : "text-[var(--nexa-text-secondary)] hover:bg-[var(--nexa-bg-surface)]"
             }`}
           >
@@ -498,7 +498,7 @@ export default function AdminUsersPage() {
                   placeholder="Search test users by name, email, or role..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-9 pl-9 pr-3 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#7E22CE]"
+                  className="w-full h-9 pl-9 pr-3 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
                 />
               </div>
 
@@ -511,7 +511,7 @@ export default function AdminUsersPage() {
                       onClick={() => setSelectedRoleFilter(role)}
                       className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
                         selectedRoleFilter === role
-                          ? "bg-[#7E22CE] text-white"
+                          ? "bg-[#1A56DB] text-white"
                           : "text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
                       }`}
                     >
@@ -554,7 +554,7 @@ export default function AdminUsersPage() {
                       <tr
                         key={u.id}
                         className={`hover:bg-[var(--nexa-bg-base)]/40 transition-colors ${
-                          activeTestUser.id === u.id ? "bg-[#7E22CE]/5 font-semibold" : ""
+                          activeTestUser.id === u.id ? "bg-[#1A56DB]/5 font-semibold" : ""
                         }`}
                       >
                         <td className="py-3.5 px-4">
@@ -564,7 +564,7 @@ export default function AdminUsersPage() {
                               <div className="font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
                                 {u.name}
                                 {activeTestUser.id === u.id && (
-                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#7E22CE] text-white font-bold uppercase">
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#1A56DB] text-white font-bold uppercase">
                                     Simulating
                                   </span>
                                 )}
@@ -585,7 +585,7 @@ export default function AdminUsersPage() {
                           <NexaBadge
                             variant={
                               u.role === "SUPER_ADMIN"
-                                ? "purple"
+                                ? "brand"
                                 : u.role === "TENANT_OWNER"
                                 ? "brand"
                                 : u.role === "GROWTH_LEAD"
@@ -626,7 +626,7 @@ export default function AdminUsersPage() {
                                 setActiveTestUser(u);
                                 showToast(`Now simulating ${u.name} (${u.role})`);
                               }}
-                              className="px-2.5 py-1 rounded-lg bg-[var(--nexa-bg-surface)] hover:bg-[#7E22CE] hover:text-white border border-[var(--nexa-border)] text-[11px] font-bold text-[var(--nexa-text-secondary)] transition-all cursor-pointer"
+                              className="px-2.5 py-1 rounded-lg bg-[var(--nexa-bg-surface)] hover:bg-[#1A56DB] hover:text-white border border-[var(--nexa-border)] text-[11px] font-bold text-[var(--nexa-text-secondary)] transition-all cursor-pointer"
                               title="Simulate this user"
                             >
                               Simulate
@@ -672,7 +672,7 @@ export default function AdminUsersPage() {
                     <tr className="border-b border-[var(--nexa-border)] bg-[var(--nexa-bg-base)]/80 text-[var(--nexa-text-muted)] uppercase tracking-wider font-bold">
                       <th className="py-3 px-4 w-1/3">System Capability</th>
                       <th className="py-3 px-3 text-center">
-                        <span className="text-[#7E22CE]">SUPER_ADMIN</span>
+                        <span className="text-[#1A56DB] font-bold">SUPER_ADMIN</span>
                       </th>
                       <th className="py-3 px-3 text-center">
                         <span className="text-[#1A56DB]">TENANT_OWNER</span>
@@ -758,10 +758,10 @@ export default function AdminUsersPage() {
                 <div className="p-4 rounded-2xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-sm text-[var(--nexa-text-primary)] flex items-center gap-2">
-                      <ShieldAlert className="w-4 h-4 text-[#7E22CE]" />
+                      <ShieldAlert className="w-4 h-4 text-[#1A56DB]" />
                       SuperAdmin Global Root
                     </span>
-                    <NexaBadge variant="purple">SUPER_ADMIN</NexaBadge>
+                    <NexaBadge variant="brand">SUPER_ADMIN</NexaBadge>
                   </div>
                   <p className="text-xs text-[var(--nexa-text-muted)]">
                     Simulate platform administrator with emergency circuit breaker authority, multi-tenant database access, and global feature flag toggles.

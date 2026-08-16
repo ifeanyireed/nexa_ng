@@ -91,7 +91,7 @@ export const AdminShell = ({ children }: AdminShellProps) => {
                   <span className="font-extrabold text-sm tracking-tight text-[var(--nexa-text-primary)] text-display">
                     GTM AI Agency
                   </span>
-                  <span className="text-[10px] font-bold text-[#7E22CE] dark:text-[#C084FC]">
+                  <span className="text-[10px] font-semibold text-[#1A56DB] dark:text-[#60A5FA]">
                     SuperAdmin Operator
                   </span>
                 </div>
@@ -117,14 +117,14 @@ export const AdminShell = ({ children }: AdminShellProps) => {
                   href={item.href}
                   className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all group cursor-pointer ${
                     isActive
-                      ? "bg-gradient-to-r from-[#7E22CE] to-[#1A56DB] text-white shadow-sm"
-                      : "text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] hover:bg-[#7E22CE]/10 dark:hover:bg-white/5"
+                      ? "bg-[#1A56DB] text-white shadow-sm dark:bg-[#2563EB]"
+                      : "text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] hover:bg-[var(--nexa-brand-light)]/60 dark:hover:bg-white/5"
                   }`}
                   title={!isSidebarOpen ? item.label : undefined}
                 >
                   <Icon
                     className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
-                      isActive ? "text-white" : "text-[var(--nexa-text-muted)] group-hover:text-[#7E22CE] dark:group-hover:text-[#C084FC]"
+                      isActive ? "text-white" : "text-[var(--nexa-text-muted)] group-hover:text-[#1A56DB] dark:group-hover:text-[#60A5FA]"
                     }`}
                   />
                   {isSidebarOpen && <span className="flex-1 truncate">{item.label}</span>}
@@ -147,7 +147,7 @@ export const AdminShell = ({ children }: AdminShellProps) => {
           {/* Quick Return to Tenant App */}
           <div className="p-3 border-t border-[var(--nexa-border)] bg-[var(--nexa-bg-base)]/50">
             <Link
-              href="/"
+              href="/dashboard"
               className="flex items-center justify-center gap-2 p-2.5 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] hover:border-[#1A56DB]/40 text-xs font-bold text-[#1A56DB] dark:text-[#60A5FA] transition-all group"
             >
               <ArrowLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
@@ -158,7 +158,7 @@ export const AdminShell = ({ children }: AdminShellProps) => {
           {/* Footer User Profile & Theme Toggle */}
           <div className="p-3 border-t border-[var(--nexa-border)] flex items-center justify-between">
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-700 flex items-center justify-center text-white font-bold text-xs shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-[#1A56DB] flex items-center justify-center text-white font-bold text-xs shrink-0">
                 SA
               </div>
               {isSidebarOpen && (
@@ -166,7 +166,7 @@ export const AdminShell = ({ children }: AdminShellProps) => {
                   <span className="text-xs font-bold text-[var(--nexa-text-primary)] truncate">
                     Platform SuperAdmin
                   </span>
-                  <span className="text-[10px] text-[#7E22CE] dark:text-[#C084FC] truncate font-mono">
+                  <span className="text-[10px] text-[#1A56DB] dark:text-[#60A5FA] truncate font-mono">
                     root-access
                   </span>
                 </div>
@@ -198,7 +198,7 @@ export const AdminShell = ({ children }: AdminShellProps) => {
               </button>
 
               <div className="flex items-center gap-2">
-                <NexaBadge variant="purple" dot>
+                <NexaBadge variant="brand" dot>
                   SUPER ADMIN CONSOLE
                 </NexaBadge>
                 <span className="hidden sm:inline text-xs text-[var(--nexa-text-muted)]">
@@ -225,7 +225,7 @@ export const AdminShell = ({ children }: AdminShellProps) => {
 
               <div className="h-5 w-px bg-[var(--nexa-border)] hidden sm:block" />
 
-              <Link href="/">
+              <Link href="/dashboard">
                 <NexaButton size="sm" variant="ghost" leftIcon={<ArrowLeft className="w-3.5 h-3.5" />}>
                   Exit Admin
                 </NexaButton>

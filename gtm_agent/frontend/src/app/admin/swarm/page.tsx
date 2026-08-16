@@ -50,7 +50,7 @@ export default function AdminSwarmPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <NexaBadge variant="purple" dot>
+              <NexaBadge variant="brand" dot>
                 15 Agent Heartbeats Active
               </NexaBadge>
               <span className="text-xs text-[var(--nexa-text-muted)]">

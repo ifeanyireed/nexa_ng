@@ -59,7 +59,7 @@ export default function AdminObservabilityPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <NexaBadge variant="purple" dot>
+              <NexaBadge variant="brand" dot>
                 Model Gateway Routing
               </NexaBadge>
               <span className="text-xs text-[var(--nexa-text-muted)]">
@@ -135,7 +135,7 @@ export default function AdminObservabilityPage() {
           <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
             <div>
               <h3 className="font-bold text-sm text-[var(--nexa-text-primary)] text-display flex items-center gap-2">
-                <Activity className="w-4 h-4 text-[#7E22CE]" />
+                <Activity className="w-4 h-4 text-[#1A56DB]" />
                 Distributed Trace Logs
               </h3>
               <p className="text-xs text-[var(--nexa-text-muted)]">

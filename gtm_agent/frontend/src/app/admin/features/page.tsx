@@ -86,7 +86,7 @@ export default function AdminFeaturesPage() {
               placeholder="Search feature flags..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-9 pl-9 pr-3 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#7E22CE]"
+              className="w-full h-9 pl-9 pr-3 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
             />
           </div>
 
@@ -105,9 +105,7 @@ export default function AdminFeaturesPage() {
                     <div className="flex items-center gap-2">
                       <NexaBadge
                         variant={
-                          flag.category === "AI Engine"
-                            ? "purple"
-                            : flag.category === "Enterprise"
+                          flag.category === "AI Engine" || flag.category === "Enterprise"
                             ? "brand"
                             : "cyan"
                         }
@@ -146,7 +144,7 @@ export default function AdminFeaturesPage() {
                 <div className="p-3 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-1.5">
                   <div className="flex items-center justify-between text-xs font-semibold">
                     <span className="text-[var(--nexa-text-muted)]">Canary Rollout</span>
-                    <span className="text-mono font-bold text-[#7E22CE] dark:text-[#C084FC]">
+                    <span className="text-mono font-bold text-[#1A56DB] dark:text-[#60A5FA]">
                       {flag.rolloutPercentage}% of Tenants
                     </span>
                   </div>
@@ -157,7 +155,7 @@ export default function AdminFeaturesPage() {
                     step="5"
                     value={flag.rolloutPercentage}
                     onChange={(e) => updateRolloutPct(flag.id, parseInt(e.target.value, 10))}
-                    className="w-full h-1.5 bg-[var(--nexa-border)] rounded-lg appearance-none cursor-pointer accent-[#7E22CE]"
+                    className="w-full h-1.5 bg-[var(--nexa-border)] rounded-lg appearance-none cursor-pointer accent-[#1A56DB]"
                   />
                 </div>
 

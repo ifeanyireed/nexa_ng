@@ -291,13 +291,13 @@ export default function AdminEmailPage() {
 
           <NexaCard variant="glass" padding="md">
             <div className="text-[11px] text-[var(--nexa-text-muted)] font-semibold flex items-center gap-1.5">
-              <Server className="w-3.5 h-3.5 text-[#7E22CE]" />
+              <Server className="w-3.5 h-3.5 text-[#1A56DB]" />
               Connected Domains
             </div>
             <div className="text-2xl font-black text-[var(--nexa-text-primary)] mt-1 font-mono">
               {analytics.connected_domains_count}
             </div>
-            <div className="text-[10px] text-[#7E22CE] mt-1 font-semibold">DKIM/SPF Verified</div>
+            <div className="text-[10px] text-[#1A56DB] mt-1 font-semibold">DKIM/SPF Verified</div>
           </NexaCard>
         </div>
 
@@ -407,10 +407,10 @@ export default function AdminEmailPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-base text-[var(--nexa-text-primary)] text-display flex items-center gap-2">
-                  <Sliders className="w-4 h-4 text-[#7E22CE]" />
+                  <Sliders className="w-4 h-4 text-[#1A56DB]" />
                   Global Daily Email Quotas per Subscription Tier
                 </h3>
-                <NexaBadge variant="purple">Central Limits</NexaBadge>
+                <NexaBadge variant="brand">Central Limits</NexaBadge>
               </div>
               <p className="text-xs text-[var(--nexa-text-muted)] mt-0.5">
                 These settings enforce the maximum daily outbound email dispatches allowed per tenant across all tiers.

@@ -164,7 +164,7 @@ export default function AdminOverviewPage() {
                         <NexaBadge variant="brand">{agent.role}</NexaBadge>
                       </div>
                       <div className="text-[11px] text-[var(--nexa-text-muted)] mt-0.5 font-mono">
-                        Model: {agent.primaryModel} · {agent.totalExecutionsToday.toLocaleString()} runs today
+                        Model: {agent.primaryModel} · {(agent.totalExecutionsToday || 0).toLocaleString()} runs today
                       </div>
                     </div>
                   </div>
@@ -231,10 +231,10 @@ export default function AdminOverviewPage() {
 
                   <div className="flex items-center justify-between text-[11px] pt-2 border-t border-[var(--nexa-border)]/60 text-mono">
                     <span className="text-[var(--nexa-text-muted)]">
-                      Leads: {tenant.leadsUsed.toLocaleString()} / {tenant.leadsLimit.toLocaleString()}
+                      Leads: {(tenant.leadsUsed || 0).toLocaleString()} / {(tenant.leadsLimit || 0).toLocaleString()}
                     </span>
                     <span className="font-bold text-[#0E9F6E]">
-                      ${tenant.mrr.toLocaleString()} MRR
+                      ${(tenant.mrr || 0).toLocaleString()} MRR
                     </span>
                   </div>
                 </div>

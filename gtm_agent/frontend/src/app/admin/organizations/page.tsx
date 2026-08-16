@@ -92,8 +92,8 @@ export default function AdminOrganizationsPage() {
             <div>
               <strong>Current Limits: </strong>
               <span className="font-mono">
-                {selectedTenantForQuota?.leadsLimit.toLocaleString()} leads / mo ·{" "}
-                {selectedTenantForQuota?.campaignsLimit} active campaigns
+                {selectedTenantForQuota?.leadsLimit?.toLocaleString() || "0"} leads / mo ·{" "}
+                {selectedTenantForQuota?.campaignsLimit || 0} active campaigns
               </span>
             </div>
           </div>
@@ -269,10 +269,10 @@ export default function AdminOrganizationsPage() {
                       </NexaBadge>
                     </td>
                     <td className="py-3.5 px-3 font-mono font-bold text-[#0E9F6E]">
-                      ${t.mrr.toLocaleString()}
+                      ${(t.mrr || 0).toLocaleString()}
                     </td>
                     <td className="py-3.5 px-3 font-mono">
-                      {t.leadsUsed.toLocaleString()} / {t.leadsLimit.toLocaleString()}
+                      {(t.leadsUsed || 0).toLocaleString()} / {(t.leadsLimit || 0).toLocaleString()}
                     </td>
                     <td className="py-3.5 px-3 font-mono">
                       {t.campaignsActive} / {t.campaignsLimit}

@@ -262,7 +262,7 @@ export default function AdminEmailPage() {
               Total Dispatched Today
             </div>
             <div className="text-2xl font-black text-[var(--nexa-text-primary)] mt-1 font-mono">
-              {analytics.total_emails_today.toLocaleString()}
+              {(analytics?.total_emails_today || 0).toLocaleString()}
             </div>
             <div className="text-[10px] text-[#0E9F6E] mt-1 font-semibold">Across 42 Active Workspaces</div>
           </NexaCard>

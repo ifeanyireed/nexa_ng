@@ -265,7 +265,7 @@ export default function AnalyticsPage() {
                   <DollarSign className="w-4 h-4 text-[#0E9F6E]" />
                 </div>
                 <div className="text-2xl font-black text-[var(--nexa-text-primary)] font-mono">
-                  ${overview.attributed_pipeline_usd.toLocaleString()}
+                  ${(overview?.attributed_pipeline_usd || 0).toLocaleString()}
                 </div>
                 <div className="text-xs text-[#0E9F6E] flex items-center gap-1 font-semibold">
                   <TrendingUp className="w-3.5 h-3.5" /> +{overview.pipeline_growth_pct}% vs last month
@@ -474,7 +474,7 @@ export default function AnalyticsPage() {
                   <Eye className="w-4 h-4 text-[#1A56DB]" />
                 </div>
                 <div className="text-2xl font-black text-[var(--nexa-text-primary)] font-mono">
-                  {totalImpressions.toLocaleString()}
+                  {(totalImpressions || 0).toLocaleString()}
                 </div>
                 <span className="text-[10px] text-[#0E9F6E]">Across all 4 networks</span>
               </NexaCard>
@@ -485,9 +485,9 @@ export default function AnalyticsPage() {
                   <ThumbsUp className="w-4 h-4 text-[#0E9F6E]" />
                 </div>
                 <div className="text-2xl font-black text-[#0E9F6E] font-mono">
-                  {totalLikes.toLocaleString()}
+                  {(totalLikes || 0).toLocaleString()}
                 </div>
-                <span className="text-[10px] text-[#0E9F6E]">+{totalComments} comments & replies</span>
+                <span className="text-[10px] text-[#0E9F6E]">+{totalComments || 0} comments & replies</span>
               </NexaCard>
 
               <NexaCard variant="glass" padding="md" className="space-y-1">
@@ -496,7 +496,7 @@ export default function AnalyticsPage() {
                   <MousePointer className="w-4 h-4 text-[#7E22CE]" />
                 </div>
                 <div className="text-2xl font-black text-[var(--nexa-text-primary)] font-mono">
-                  {totalClicks.toLocaleString()}
+                  {(totalClicks || 0).toLocaleString()}
                 </div>
                 <span className="text-[10px] text-[#7E22CE]">Attributed inbound visits</span>
               </NexaCard>
@@ -557,7 +557,7 @@ export default function AnalyticsPage() {
                     <div className="p-2 rounded-xl bg-[var(--nexa-bg-base)]">
                       <div className="text-[10px] text-[var(--nexa-text-muted)]">Impressions</div>
                       <div className="text-xs font-bold font-mono text-[var(--nexa-text-primary)] mt-0.5">
-                        {post.impressions.toLocaleString()}
+                        {(post.impressions || 0).toLocaleString()}
                       </div>
                     </div>
                     <div className="p-2 rounded-xl bg-[var(--nexa-bg-base)]">

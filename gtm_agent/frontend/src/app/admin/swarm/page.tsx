@@ -140,7 +140,7 @@ export default function AdminSwarmPage() {
 
                 <div className="text-xs text-[var(--nexa-text-muted)] flex items-center justify-between pt-1">
                   <span>Primary Model: <strong className="text-[var(--nexa-text-primary)]">{agent.primaryModel}</strong></span>
-                  <span className="font-mono">{agent.totalExecutionsToday.toLocaleString()} today</span>
+                  <span className="font-mono">{(agent.totalExecutionsToday || 0).toLocaleString()} today</span>
                 </div>
               </div>
 

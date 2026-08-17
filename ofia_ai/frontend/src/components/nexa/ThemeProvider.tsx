@@ -21,9 +21,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (saved && (saved === "light" || saved === "dark")) {
       setThemeState(saved);
       document.documentElement.classList.toggle("dark", saved === "dark");
-    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      setThemeState("dark");
-      document.documentElement.classList.add("dark");
+    } else {
+      setThemeState("light");
+      document.documentElement.classList.remove("dark");
     }
     setMounted(true);
   }, []);

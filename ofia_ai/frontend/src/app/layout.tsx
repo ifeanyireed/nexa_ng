@@ -16,9 +16,34 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ofia AI | Navigate Complexity. Cultivate Hidden Growth.",
+  title: "Ofia AI | Autonomous B2B Go-To-Market & Revenue Platform",
   description:
-    "The ultimate business navigation platform. We provide the digital machete that clears operational clutter, the compass that charts revenue paths, and the fertile soil that powers autonomous B2B scaling.",
+    "Autonomous B2B Go-To-Market platform powered by 14 specialized AI agents. Verified lead extraction, high-converting multi-channel outreach across Email, WhatsApp, and LinkedIn, with 1-tap Telegram mobile approvals.",
+  metadataBase: new URL("https://ofia.ng"),
+  openGraph: {
+    title: "Ofia AI | Autonomous B2B Go-To-Market & Revenue Platform",
+    description:
+      "Autonomous B2B Go-To-Market platform powered by 14 specialized AI agents. Verified lead extraction, high-converting multi-channel outreach across Email, WhatsApp, and LinkedIn, with 1-tap Telegram mobile approvals.",
+    url: "https://ofia.ng",
+    siteName: "Ofia AI",
+    images: [
+      {
+        url: "/logo.png",
+        width: 800,
+        height: 800,
+        alt: "Ofia AI Logo",
+      },
+    ],
+    locale: "en_NG",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ofia AI | Autonomous B2B Go-To-Market & Revenue Platform",
+    description:
+      "Autonomous B2B Go-To-Market platform powered by 14 specialized AI agents. Verified lead extraction, high-converting multi-channel outreach across Email, WhatsApp, and LinkedIn, with 1-tap Telegram mobile approvals.",
+    images: ["/logo.png"],
+  },
   icons: {
     icon: [
       { url: "/logo.png" },

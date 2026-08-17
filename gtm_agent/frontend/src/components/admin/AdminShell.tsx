@@ -83,13 +83,13 @@ export const AdminShell = ({ children }: AdminShellProps) => {
             <Link href="/admin" className="flex items-center gap-2.5 overflow-hidden">
               <img
                 src="/logo.png"
-                alt="Ofia GTM Agents Logo"
+                alt="Ofia AI Logo"
                 className="w-8 h-8 object-contain shrink-0"
               />
               {isSidebarOpen && (
                 <div className="flex flex-col leading-tight">
                   <span className="font-extrabold text-sm tracking-tight text-[var(--nexa-text-primary)] text-display">
-                    Ofia GTM Agents
+                    Ofia AI
                   </span>
                   <span className="text-[10px] font-semibold text-[#1A56DB] dark:text-[#60A5FA]">
                     SuperAdmin Operator

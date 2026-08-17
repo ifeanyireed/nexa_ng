@@ -47,7 +47,7 @@ func (d *EmailDispatcher) SendEmail(payload OutboundEmailPayload) error {
 
 	fromName := settings.EmailFromName
 	if fromName == "" {
-		fromName = "Ofia GTM Outbound"
+		fromName = "Ofia AI Outbound"
 	}
 	fromAddress := settings.EmailFromAddress
 	if fromAddress == "" {

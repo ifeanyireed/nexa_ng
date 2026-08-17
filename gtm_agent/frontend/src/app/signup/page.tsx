@@ -74,9 +74,9 @@ export default function SignupPage() {
       {/* Top Header */}
       <header className="p-6 flex items-center justify-between max-w-7xl mx-auto w-full">
         <Link href="/" className="flex items-center gap-3">
-          <img src="/logo.png" alt="Ofia GTM Agents" className="w-8 h-8 object-contain shrink-0" />
+          <img src="/logo.png" alt="Ofia AI" className="w-8 h-8 object-contain shrink-0" />
           <span className="font-extrabold text-base text-[var(--nexa-text-primary)] text-display">
-            Ofia GTM Agents
+            Ofia AI
           </span>
         </Link>
 
@@ -239,7 +239,7 @@ export default function SignupPage() {
 
       {/* Footer */}
       <footer className="p-6 text-center text-xs text-[var(--nexa-text-muted)]">
-        By signing up, you agree to Ofia GTM Agents Terms of Service and Privacy Policy.
+        By signing up, you agree to Ofia AI Terms of Service and Privacy Policy.
       </footer>
     </div>
   );

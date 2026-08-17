@@ -564,6 +564,6 @@ func (h *SettingsHandler) TestConnection(w http.ResponseWriter, r *http.Request)
 func sendSMTPTest(host string, port int, user, pass, to string) error {
 	addr := fmt.Sprintf("%s:%d", host, port)
 	auth := smtp.PlainAuth("", user, pass, host)
-	msg := []byte("To: " + to + "\r\nSubject: Ofia GTM Agents SMTP Verification\r\n\r\nConnection test successful!\r\n")
+	msg := []byte("To: " + to + "\r\nSubject: Ofia AI SMTP Verification\r\n\r\nConnection test successful!\r\n")
 	return smtp.SendMail(addr, auth, user, []string{to}, msg)
 }

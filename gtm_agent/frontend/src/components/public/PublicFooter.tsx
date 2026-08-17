@@ -75,9 +75,9 @@ export const PublicFooter: React.FC = () => {
           {/* Brand Col */}
           <div className="col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-3">
-              <img src="/logo.png" alt="Ofia GTM Agents Logo" className="w-8 h-8 object-contain shrink-0" />
+              <img src="/logo.png" alt="Ofia AI Logo" className="w-8 h-8 object-contain shrink-0" />
               <span className="font-extrabold text-base text-[var(--nexa-text-primary)] text-display">
-                Ofia GTM Agents
+                Ofia AI
               </span>
             </Link>
             <p className="text-xs text-[var(--nexa-text-muted)] max-w-sm leading-relaxed">
@@ -220,7 +220,7 @@ export const PublicFooter: React.FC = () => {
         {/* Bottom Sub-footer */}
         <div className="mt-12 pt-8 border-t border-[var(--nexa-border)] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--nexa-text-muted)]">
           <div>
-            © {new Date().getFullYear()} Ofia GTM Agents. All rights reserved. Powered by Ofia Swarm Architecture.
+            © {new Date().getFullYear()} Ofia AI. All rights reserved. Powered by Ofia Swarm Architecture.
           </div>
           <div className="flex items-center gap-6">
             <span className="flex items-center gap-1.5 text-[11px]">

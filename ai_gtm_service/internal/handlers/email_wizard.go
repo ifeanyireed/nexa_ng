@@ -265,12 +265,12 @@ func (h *EmailWizardHandler) TestDispatchEmail(w http.ResponseWriter, r *http.Re
 
 	subj := req.Subject
 	if subj == "" {
-		subj = "Ofia GTM Agents - Test Delivery Verification"
+		subj = "Ofia AI - Test Delivery Verification"
 	}
 
 	htmlContent := fmt.Sprintf(`
 		<div style="font-family: sans-serif; padding: 24px; color: #111;">
-			<h2 style="color: #1A56DB;">Ofia GTM Agents Email Infrastructure Active</h2>
+			<h2 style="color: #1A56DB;">Ofia AI Email Infrastructure Active</h2>
 			<p>Congratulations! Your email provider handshake and domain routing are operational.</p>
 			<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 16px 0;" />
 			<p style="font-size: 12px; color: #6b7280;">Sent via Ofia Provider-Agnostic Email Orchestrator for Organization: %s</p>
@@ -282,7 +282,7 @@ func (h *EmailWizardHandler) TestDispatchEmail(w http.ResponseWriter, r *http.Re
 		To:             req.RecipientEmail,
 		Subject:        subj,
 		HTMLBody:       htmlContent,
-		TextBody:       "Ofia GTM Agents Email Infrastructure Active. Test delivery verification successful.",
+		TextBody:       "Ofia AI Email Infrastructure Active. Test delivery verification successful.",
 	})
 
 	if err != nil {

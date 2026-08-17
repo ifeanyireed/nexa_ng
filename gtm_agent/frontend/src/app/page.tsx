@@ -385,7 +385,7 @@ export default function LandingPage() {
               <tr className="border-b border-[var(--nexa-border)] text-[var(--nexa-text-muted)] uppercase tracking-wider font-bold">
                 <th className="py-3 px-4">Capability</th>
                 <th className="py-3 px-4 text-[#1A56DB] bg-[#1A56DB]/5 rounded-t-xl">
-                  Ofia GTM Agents Swarm
+                  Ofia AI Swarm
                 </th>
                 <th className="py-3 px-4">Traditional 3-Person SDR Team</th>
               </tr>

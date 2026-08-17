@@ -223,7 +223,7 @@ export function EmailInfrastructureWizard() {
     try {
       const res = await GTM_API.testDispatchEmail("org-01", {
         recipient_email: testRecipient,
-        subject: "Ofia GTM Email Verification Handshake",
+        subject: "Ofia AI Email Verification Handshake",
       });
       showToast(res.message || `Test email dispatched to ${testRecipient}!`);
     } catch {

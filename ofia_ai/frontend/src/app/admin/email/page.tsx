@@ -607,6 +607,42 @@ export default function AdminEmailPage() {
             </div>
           </NexaCard>
         </div>
+
+        {/* BOTTOM GLOBAL SAVE ACTIONS CARD */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div>
+            <h4 className="font-bold text-sm text-[var(--nexa-text-primary)] flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-[#1A56DB]" />
+              Ready to Apply Global Infrastructure Updates?
+            </h4>
+            <p className="text-xs text-[var(--nexa-text-muted)] mt-0.5">
+              Changes will be committed directly to MySQL (<code className="font-mono text-[11px] text-[#1A56DB]">gtm_global_email_settings</code>) and enforced across all active tenants.
+            </p>
+          </div>
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+            <NexaButton
+              size="md"
+              variant="outline"
+              onClick={() => {
+                loadSettings();
+                loadAnalytics();
+                showToast("Reset form to latest database values.");
+              }}
+            >
+              Discard Changes
+            </NexaButton>
+            <NexaButton
+              size="md"
+              variant="primary"
+              leftIcon={<CheckCircle2 className="w-4 h-4" />}
+              onClick={handleSaveAll}
+              isLoading={isSaving}
+              className="bg-[#1A56DB] text-white hover:bg-[#1545B0] shadow-md px-6"
+            >
+              Save Global Configuration
+            </NexaButton>
+          </div>
+        </div>
       </div>
     </AdminShell>
   );

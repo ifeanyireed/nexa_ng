@@ -21,6 +21,8 @@ import {
   Lock,
   Workflow,
   CheckCircle2,
+  Compass,
+  TreePine,
 } from "lucide-react";
 import {
   IconBrandTelegram,
@@ -53,56 +55,65 @@ export default function AboutPage() {
 
       {/* Hero Section */}
       <section className="pt-20 pb-16 px-4 sm:px-6 lg:px-8 text-center max-w-5xl mx-auto space-y-6">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#7E22CE]/10 text-[#7E22CE] dark:bg-[#7E22CE]/20 border border-[#7E22CE]/30 text-xs font-bold">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] dark:bg-[#1A56DB]/20 border border-[#1A56DB]/30 text-xs font-bold">
           <Workflow className="w-3.5 h-3.5" />
-          The Autonomous Revenue Manifesto
+          The "Ofia" Philosophy & Brand Story
         </div>
 
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-display tracking-tight text-[var(--nexa-text-primary)]">
-          Why Cold Outreach is Broken — And How We Built the <span className="text-[#1A56DB]">Autonomous Swarm</span>
+          Navigating Business Complexity. Cultivating <span className="text-[#1A56DB]">Hidden Potential</span>
         </h1>
 
         <p className="text-sm sm:text-base text-[var(--nexa-text-secondary)] max-w-3xl mx-auto leading-relaxed">
-          Traditional sales development is plagued by burnout, high SDR turnover, generic copy, and ruined domain reputations. We engineered a synchronized swarm of 14 autonomous AI agents that operate 24/7 with zero human fatigue and surgical precision.
+          In Nigerian tech, successful brands flip traditional meanings. In African tradition, the <em>Ofia</em> is not just a place of wild trees; it is a massive repository of untapped wealth, fertile soil, and hidden paths. The forest is only dangerous to those without a map or a machete.
         </p>
       </section>
 
       {/* Core Philosophical Pillars */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <NexaCard variant="glass" padding="lg" className="space-y-4 border-t-4 border-t-[#1A56DB]">
-            <div className="w-12 h-12 rounded-2xl bg-[#1A56DB]/10 text-[#1A56DB] flex items-center justify-center">
-              <Cpu className="w-6 h-6" />
+          <NexaCard variant="glass" padding="lg" className="space-y-4 border-t-4 border-t-red-500/80">
+            <div className="w-12 h-12 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center">
+              <TreePine className="w-6 h-6" />
             </div>
-            <h3 className="font-extrabold text-lg text-[var(--nexa-text-primary)] text-display">
-              1. Collaborative Swarm Specialization
-            </h3>
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono font-bold text-red-500 uppercase tracking-wider">The Hook / Problem</span>
+              <h3 className="font-extrabold text-lg text-[var(--nexa-text-primary)] text-display">
+                The Growth Jungle
+              </h3>
+            </div>
             <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-              One monolithic AI cannot handle market research, copy drafting, SES warmup, and WhatsApp conversations simultaneously. Our architecture assigns dedicated, specialized agents with isolated state and shared long-term memory.
+              Every founder starts with a vision, but as the business grows, it morphs into a jungle. Managing outreach, fragmented data, cold inboxes, and compliance can feel like being lost in a thick, unmapped forest. In the corporate world, <strong>chaos kills momentum</strong>.
             </p>
           </NexaCard>
 
           <NexaCard variant="glass" padding="lg" className="space-y-4 border-t-4 border-t-[#0E9F6E]">
             <div className="w-12 h-12 rounded-2xl bg-[#0E9F6E]/10 text-[#0E9F6E] flex items-center justify-center">
-              <ShieldCheck className="w-6 h-6" />
+              <Compass className="w-6 h-6" />
             </div>
-            <h3 className="font-extrabold text-lg text-[var(--nexa-text-primary)] text-display">
-              2. Tripwire Circuit Breakers
-            </h3>
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono font-bold text-[#0E9F6E] uppercase tracking-wider">The Paradigm Shift</span>
+              <h3 className="font-extrabold text-lg text-[var(--nexa-text-primary)] text-display">
+                Untapped Wealth & Fertile Soil
+              </h3>
+            </div>
             <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-              We never let AI run wild with your brand reputation. Built-in algorithmic killswitches halt campaigns instantly if bounce rates exceed 3%, automatically engaging AWS SES warmup rotations and alerting you via Telegram.
+              We reject the fear of market complexity. The B2B terrain is rich with high-value enterprise accounts and hidden growth vectors. It is only treacherous if you enter without autonomous instruments and precision navigation.
             </p>
           </NexaCard>
 
-          <NexaCard variant="glass" padding="lg" className="space-y-4 border-t-4 border-t-[#7E22CE]">
-            <div className="w-12 h-12 rounded-2xl bg-[#7E22CE]/10 text-[#7E22CE] flex items-center justify-center">
-              <Lock className="w-6 h-6" />
+          <NexaCard variant="glass" padding="lg" className="space-y-4 border-t-4 border-t-[#1A56DB]">
+            <div className="w-12 h-12 rounded-2xl bg-[#1A56DB]/10 text-[#1A56DB] flex items-center justify-center">
+              <Workflow className="w-6 h-6" />
             </div>
-            <h3 className="font-extrabold text-lg text-[var(--nexa-text-primary)] text-display">
-              3. BYOK Transparency & Zero Markup
-            </h3>
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono font-bold text-[#1A56DB] uppercase tracking-wider">The Solution</span>
+              <h3 className="font-extrabold text-lg text-[var(--nexa-text-primary)] text-display">
+                The Digital Machete & Compass
+              </h3>
+            </div>
             <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-              We believe in open infrastructure. Plug your own OpenAI, Anthropic, Mistral, or DeepSeek API keys directly into our Model Gateway. You pay raw token costs at wholesale provider rates with zero hidden markups.
+              Ofia is the ultimate business navigation platform. We provide the <strong>digital machete</strong> that clears operational clutter, the <strong>compass</strong> that guides revenue decisions, and the <strong>fertile soil</strong> that feeds your scaling. We don't change the terrain; we give you the tools to conquer it.
             </p>
           </NexaCard>
         </div>
@@ -220,10 +231,10 @@ export default function AboutPage() {
       {/* Final Call to Action */}
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 text-center space-y-6">
         <h2 className="text-3xl sm:text-4xl font-extrabold text-[var(--nexa-text-primary)] text-display">
-          Ready to Deploy Your Autonomous Revenue Swarm?
+          Ready to Conquer Your Market Terrain?
         </h2>
         <p className="text-xs sm:text-sm text-[var(--nexa-text-secondary)] max-w-xl mx-auto">
-          Start your 14-day free trial today. Connect your domain, meet your 14 agents, and launch your first multi-channel campaign in under 10 minutes.
+          Equip your business with the digital machete and compass. Start your 14-day free trial, meet your 14 autonomous specialists, and cultivate enterprise revenue.
         </p>
         <div className="flex items-center justify-center gap-3">
           <Link href="/signup">

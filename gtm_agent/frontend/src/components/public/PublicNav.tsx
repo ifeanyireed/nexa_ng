@@ -60,7 +60,7 @@ export const PublicNav: React.FC = () => {
                 </span>
               </div>
               <span className="text-[10px] font-mono text-[var(--nexa-text-muted)] tracking-wider">
-                Autonomous Revenue Swarm
+                Autonomous Business Navigation
               </span>
             </div>
           </Link>

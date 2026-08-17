@@ -26,6 +26,10 @@ import {
   Share2,
   BarChart3,
   Calendar,
+  Compass,
+  Workflow,
+  Target,
+  TreePine,
 } from "lucide-react";
 import {
   IconBrandTelegram,
@@ -67,18 +71,18 @@ export default function LandingPage() {
         <div className="text-center space-y-6 max-w-4xl mx-auto">
           {/* Top Pill */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] dark:bg-[#1A56DB]/20 border border-[#1A56DB]/30 text-xs font-extrabold shadow-sm">
-            <Sparkles className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: "6s" }} />
-            The Autonomous GTM Swarm Era
+            <Compass className="w-3.5 h-3.5 text-[#1A56DB]" />
+            Navigate Complexity. Cultivate Hidden Growth.
           </div>
 
           {/* Headline */}
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-display tracking-tight text-[var(--nexa-text-primary)] leading-[1.08]">
-            Replace 10 Disconnected Tools with a <span className="text-[#1A56DB]">14-Agent Revenue Swarm</span>
+            Clear Operational Clutter. Conquer Your Market with <span className="text-[#1A56DB]">Ofia AI</span>
           </h1>
 
-          {/* Subtitle */}
-          <p className="text-sm sm:text-base lg:text-lg text-[var(--nexa-text-secondary)] max-w-2xl mx-auto leading-relaxed">
-            Autonomous market research, verified lead extraction, high-converting copy, multi-channel dispatch, and instant Telegram mobile approvals — synchronized 24/7.
+          {/* Subtitle with Ofia Narrative */}
+          <p className="text-sm sm:text-base lg:text-lg text-[var(--nexa-text-secondary)] max-w-3xl mx-auto leading-relaxed">
+            Every business starts with a vision, but growth creates a jungle. Ofia is your <strong>digital machete</strong> to clear operational clutter, your <strong>compass</strong> to chart hidden revenue paths, and your <strong>fertile soil</strong> to scale enterprise pipeline autonomously.
           </p>
 
           {/* CTA Group */}
@@ -90,7 +94,7 @@ export default function LandingPage() {
                 className="w-full sm:w-auto font-black text-sm shadow-xl shadow-[#1A56DB]/25 h-13 px-8 rounded-2xl"
                 rightIcon={<ArrowRight className="w-4 h-4" />}
               >
-                Start 14-Day Free Trial
+                Conquer Your Market — Free 14-Day Trial
               </NexaButton>
             </Link>
             <Link href="/dashboard">
@@ -100,7 +104,7 @@ export default function LandingPage() {
                 className="w-full sm:w-auto font-bold text-sm h-13 px-8 rounded-2xl"
                 leftIcon={<Play className="w-4 h-4 text-[#1A56DB]" />}
               >
-                Launch Swarm Console
+                Launch Navigation Console
               </NexaButton>
             </Link>
           </div>
@@ -108,13 +112,13 @@ export default function LandingPage() {
           {/* Trust Badges Strip */}
           <div className="pt-6 flex flex-wrap items-center justify-center gap-6 text-xs text-[var(--nexa-text-muted)] font-medium">
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-[#0E9F6E]" /> No Credit Card Required
+              <CheckCircle2 className="w-4 h-4 text-[#0E9F6E]" /> Instant Terrain Provisioning
             </span>
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-[#0E9F6E]" /> SOC2 & AES-256 Encrypted
             </span>
             <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-[#0E9F6E]" /> Setup in Under 10 Minutes
+              <CheckCircle2 className="w-4 h-4 text-[#0E9F6E]" /> Live Swarm in Under 10 Minutes
             </span>
           </div>
         </div>
@@ -213,15 +217,78 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* The 4 Pillars (Sales Closer) */}
+      {/* The Brand Pitch: The Ofia Narrative */}
+      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        <div className="text-center space-y-3 max-w-3xl mx-auto">
+          <NexaBadge variant="brand">The Brand Philosophy</NexaBadge>
+          <h2 className="text-3xl sm:text-5xl font-black text-display text-[var(--nexa-text-primary)]">
+            From the Business Jungle to <span className="text-[#1A56DB]">Conquered Territory</span>
+          </h2>
+          <p className="text-xs sm:text-sm text-[var(--nexa-text-secondary)] leading-relaxed">
+            In Nigerian tech, successful brands flip traditional meanings. The story of Ofia is about navigating business complexity and cultivating hidden potential.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Card 1: The Hook */}
+          <NexaCard variant="glass" padding="lg" className="space-y-4 border-t-4 border-t-red-500/80">
+            <div className="w-12 h-12 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center">
+              <TreePine className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <div className="text-[11px] font-mono font-bold text-red-500 uppercase tracking-wider">The Problem</div>
+              <h3 className="font-extrabold text-lg text-[var(--nexa-text-primary)] text-display">
+                The Growth Jungle
+              </h3>
+            </div>
+            <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
+              Every business starts with a vision, but as it scales, it morphs into a jungle. Managing outreach, fragmented data, cold inboxes, and compliance can feel like being lost in a thick, unmapped forest. In the corporate world, <strong>chaos kills momentum</strong>.
+            </p>
+          </NexaCard>
+
+          {/* Card 2: The Paradigm Shift */}
+          <NexaCard variant="glass" padding="lg" className="space-y-4 border-t-4 border-t-[#0E9F6E]">
+            <div className="w-12 h-12 rounded-2xl bg-[#0E9F6E]/10 text-[#0E9F6E] flex items-center justify-center">
+              <Compass className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <div className="text-[11px] font-mono font-bold text-[#0E9F6E] uppercase tracking-wider">The Philosophy</div>
+              <h3 className="font-extrabold text-lg text-[var(--nexa-text-primary)] text-display">
+                Untapped Wealth & Fertile Soil
+              </h3>
+            </div>
+            <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
+              In African tradition, the <em>Ofia</em> is not just a place of wild trees; it is a massive repository of <strong>untapped wealth, fertile soil, and hidden paths</strong>. The forest is only dangerous to those without a map or a machete.
+            </p>
+          </NexaCard>
+
+          {/* Card 3: The Solution */}
+          <NexaCard variant="glass" padding="lg" className="space-y-4 border-t-4 border-t-[#1A56DB]">
+            <div className="w-12 h-12 rounded-2xl bg-[#1A56DB]/10 text-[#1A56DB] flex items-center justify-center">
+              <Workflow className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <div className="text-[11px] font-mono font-bold text-[#1A56DB] uppercase tracking-wider">The Navigation Tool</div>
+              <h3 className="font-extrabold text-lg text-[var(--nexa-text-primary)] text-display">
+                The Digital Machete & Compass
+              </h3>
+            </div>
+            <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
+              Ofia is the ultimate business navigation platform. We provide the <strong>digital machete</strong> to clear operational clutter, the <strong>compass</strong> to guide revenue decisions, and the <strong>fertile soil</strong> to scale. We don't change the terrain; we give you the tools to conquer it.
+            </p>
+          </NexaCard>
+        </div>
+      </section>
+
+      {/* The 4 Capabilities (Digital Navigation Instruments) */}
       <section id="features" className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
         <div className="text-center space-y-3 max-w-3xl mx-auto">
-          <NexaBadge variant="brand">Autonomous Revenue Infrastructure</NexaBadge>
+          <NexaBadge variant="brand">Autonomous Navigation Instruments</NexaBadge>
           <h2 className="text-3xl sm:text-5xl font-black text-display text-[var(--nexa-text-primary)]">
-            Engineered to Outperform Entire SDR Teams
+            How Ofia Conquers Business Complexity
           </h2>
           <p className="text-xs sm:text-sm text-[var(--nexa-text-secondary)]">
-            Everything high-growth B2B software companies need to scale outreach without hiring armies of reps.
+            Four synchronized capabilities that cut through chaos and cultivate recurring B2B enterprise pipeline.
           </p>
         </div>
 
@@ -234,13 +301,13 @@ export default function LandingPage() {
               </div>
               <div>
                 <h3 className="font-extrabold text-lg text-[var(--nexa-text-primary)] text-display">
-                  Multi-Channel Outreach Engine
+                  Digital Machete: Multi-Channel Execution
                 </h3>
-                <span className="text-xs text-[var(--nexa-text-muted)]">Email · WhatsApp · LinkedIn · Meta</span>
+                <span className="text-xs text-[var(--nexa-text-muted)]">Clear Outbound Friction Across Inboxes & WhatsApp</span>
               </div>
             </div>
             <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-              Don't rely solely on crowded inboxes. Our swarm orchestrates verified AWS SES drops, sends official Meta Cloud WhatsApp interactive templates, and connects directly on LinkedIn with contextualized personalization.
+              Slash through cluttered lead databases and low open rates. Our swarm extracts verified decision makers, rotates warm AWS SES inboxes, and drives real-time WhatsApp Cloud discussions without manual SDR drag.
             </p>
           </NexaCard>
 
@@ -248,17 +315,17 @@ export default function LandingPage() {
           <NexaCard variant="glass" padding="lg" className="space-y-4 border-l-4 border-l-[#0E9F6E]">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-[#0E9F6E]/10 text-[#0E9F6E] flex items-center justify-center">
-                <IconBrandTelegram className="w-6 h-6" />
+                <Compass className="w-6 h-6" />
               </div>
               <div>
                 <h3 className="font-extrabold text-lg text-[var(--nexa-text-primary)] text-display">
-                  Telegram CRO Mobile Command
+                  Revenue Compass: Telegram CRO Navigation
                 </h3>
-                <span className="text-xs text-[var(--nexa-text-muted)]">1-Click Mobile Approvals & Alerts</span>
+                <span className="text-xs text-[var(--nexa-text-muted)]">1-Tap Mobile Direction & Live Approvals</span>
               </div>
             </div>
             <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-              Run your entire GTM agency straight from Telegram. Whenever copy is drafted or high-value replies arrive, interactive cards appear on your phone. Tap 'Approve' or query your CRO with voice in real time.
+              Always know your precise position in the market. Receive daily executive briefings, review AI-drafted sequences on your phone, and approve dispatches with a single tap in Telegram.
             </p>
           </NexaCard>
 
@@ -270,13 +337,13 @@ export default function LandingPage() {
               </div>
               <div>
                 <h3 className="font-extrabold text-lg text-[var(--nexa-text-primary)] text-display">
-                  Tripwire Circuit Breakers
+                  Protective Guide: Tripwire Circuit Breakers
                 </h3>
-                <span className="text-xs text-[var(--nexa-text-muted)]">Zero Risk of Burned Domains</span>
+                <span className="text-xs text-[var(--nexa-text-muted)]">Zero Risk of Burning Your Brand or Domains</span>
               </div>
             </div>
             <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-              Domain health is paramount. If hard bounces breach 3%, the system automatically throttles the domain, triggers automated SES warmup schedules, and shifts outbound capacity to secondary verified inbox pools.
+              The jungle is only safe when you have guardrails. If bounce rates ever exceed 3%, Ofia halts campaigns instantly, engages automated SES warmup protocols, and alerts your executive command room.
             </p>
           </NexaCard>
 
@@ -284,17 +351,17 @@ export default function LandingPage() {
           <NexaCard variant="glass" padding="lg" className="space-y-4 border-l-4 border-l-[#E3A008]">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-[#E3A008]/10 text-[#E3A008] flex items-center justify-center">
-                <Lock className="w-6 h-6" />
+                <Layers className="w-6 h-6" />
               </div>
               <div>
                 <h3 className="font-extrabold text-lg text-[var(--nexa-text-primary)] text-display">
-                  Model Gateway (BYOK)
+                  Fertile Ground: Model Gateway (BYOK)
                 </h3>
-                <span className="text-xs text-[var(--nexa-text-muted)]">OpenAI · Claude · Mistral · DeepSeek</span>
+                <span className="text-xs text-[var(--nexa-text-muted)]">OpenAI · Claude · Mistral · DeepSeek at Wholesale Cost</span>
               </div>
             </div>
             <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-              Enjoy 100% price transparency. Plug your own LLM API keys directly into our model gateway to pay raw token costs at wholesale provider rates, with 0% markup on model inference.
+              Feed your scaling on transparent terms. Connect your own LLM provider keys directly to pay wholesale token prices with 0% middleman markups, ensuring long-term sustainable growth.
             </p>
           </NexaCard>
         </div>
@@ -368,14 +435,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Comparison: GTM AI Agency vs Traditional SDR Team */}
+      {/* Comparison: Ofia AI vs Traditional SDR Team */}
       <section className="py-24 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         <div className="text-center space-y-2">
           <h2 className="text-3xl sm:text-4xl font-black text-display text-[var(--nexa-text-primary)]">
-            How We Compare to Traditional Outbound
+            Navigating the Terrain: Ofia AI Swarm vs Traditional SDR Teams
           </h2>
           <p className="text-xs sm:text-sm text-[var(--nexa-text-secondary)]">
-            Why leading B2B SaaS and enterprise providers choose autonomous swarm execution.
+            Why enterprise leaders choose the autonomous digital machete over the chaos and fatigue of high SDR turnover.
           </p>
         </div>
 
@@ -387,7 +454,7 @@ export default function LandingPage() {
                 <th className="py-3 px-4 text-[#1A56DB] bg-[#1A56DB]/5 rounded-t-xl">
                   Ofia AI Swarm
                 </th>
-                <th className="py-3 px-4">Traditional 3-Person SDR Team</th>
+                <th className="py-3 px-4">Lost in the Forest (Traditional SDRs)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--nexa-border)] text-[var(--nexa-text-primary)] font-medium">
@@ -410,13 +477,13 @@ export default function LandingPage() {
               </tr>
               <tr>
                 <td className="py-4 px-4 font-bold">Operating Hours</td>
-                <td className="py-4 px-4 bg-[#1A56DB]/5 font-bold text-[#0E9F6E]">24/7/365 Continuous</td>
-                <td className="py-4 px-4 text-[var(--nexa-text-secondary)]">8 Hours / Day (High Burnout)</td>
+                <td className="py-4 px-4 bg-[#1A56DB]/5 font-bold text-[#0E9F6E]">24/7/365 Continuous Navigation</td>
+                <td className="py-4 px-4 text-[var(--nexa-text-secondary)]">8 Hours / Day (High Burnout & Friction)</td>
               </tr>
               <tr>
                 <td className="py-4 px-4 font-bold">Domain Protection</td>
                 <td className="py-4 px-4 bg-[#1A56DB]/5 font-bold text-[#0E9F6E]">Automatic Circuit Breakers & SES Pools</td>
-                <td className="py-4 px-4 text-red-500">Manual monitoring (frequent burn)</td>
+                <td className="py-4 px-4 text-red-500">Manual monitoring (frequent domain burn)</td>
               </tr>
             </tbody>
           </table>
@@ -428,15 +495,15 @@ export default function LandingPage() {
         <NexaCard variant="glass" padding="lg" className="border-2 border-[#1A56DB] shadow-2xl text-center space-y-6 bg-gradient-to-b from-[#1A56DB]/10 to-transparent">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1A56DB]/20 text-[#1A56DB] text-xs font-black">
             <Sparkles className="w-4 h-4" />
-            Instant Provisioning Available
+            Instant Terrain Provisioning
           </div>
 
           <h2 className="text-3xl sm:text-5xl font-black text-display text-[var(--nexa-text-primary)]">
-            Ready to Generate $100K+ in Pipeline This Month?
+            Ready to Conquer Your Market Terrain?
           </h2>
 
           <p className="text-xs sm:text-sm text-[var(--nexa-text-secondary)] max-w-xl mx-auto leading-relaxed">
-            Start your 14-day free trial. Deploy your 14 autonomous agents and launch your first synchronized campaign in under 10 minutes.
+            Equip your business with the digital machete and compass today. Deploy your 14 autonomous agents and harvest untapped pipeline in under 10 minutes.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
@@ -447,7 +514,7 @@ export default function LandingPage() {
                 className="w-full sm:w-auto font-black text-sm px-8 h-13 rounded-2xl shadow-xl shadow-[#1A56DB]/25"
                 rightIcon={<ArrowRight className="w-4 h-4" />}
               >
-                Start 14-Day Free Trial
+                Conquer Your Market — Free Trial
               </NexaButton>
             </Link>
             <Link href="/contact">

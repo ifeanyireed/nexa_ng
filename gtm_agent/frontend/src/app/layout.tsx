@@ -16,9 +16,9 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ofia AI | Autonomous Revenue & Growth Platform",
+  title: "Ofia AI | Navigate Complexity. Cultivate Hidden Growth.",
   description:
-    "An AI-powered Go-To-Market operating system that deploys an autonomous revenue team for research, prospecting, campaign execution, and conversion optimization.",
+    "The ultimate business navigation platform. We provide the digital machete that clears operational clutter, the compass that charts revenue paths, and the fertile soil that powers autonomous B2B scaling.",
   icons: {
     icon: [
       { url: "/logo.png" },

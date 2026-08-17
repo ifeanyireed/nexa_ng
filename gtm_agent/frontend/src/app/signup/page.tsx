@@ -99,7 +99,7 @@ export default function SignupPage() {
                   Step {step} of 2
                 </div>
                 <h1 className="text-xl font-black text-display text-[var(--nexa-text-primary)]">
-                  {step === 1 ? "Provision Swarm Workspace" : "Select Swarm Capacity"}
+                  {step === 1 ? "Provision Navigation Workspace" : "Select Navigation Capacity"}
                 </h1>
               </div>
               <NexaBadge variant="brand">14-Day Free Trial</NexaBadge>

@@ -43,7 +43,7 @@ export default function PricingPage() {
     {
       id: "FREE_TRIAL",
       name: "Free Trial",
-      tagline: "Explore the Swarm with zero commitment",
+      tagline: "Explore the navigation tools with zero commitment",
       monthlyPrice: 0,
       badge: "14 Days",
       badgeVariant: "neutral" as const,
@@ -54,10 +54,10 @@ export default function PricingPage() {
       dailyEmails: "50 emails / day",
       channels: ["Email Outreach (SES)"],
       features: [
-        "Full access to all 14 Autonomous AI Agents",
+        "Full access to all 14 Autonomous AI Specialists",
         "Lead Hunter extraction & basic email enrichment",
-        "Campaign Manager automated sequences",
-        "Community Slack & Documentation",
+        "Digital Machete automated campaign sequences",
+        "Community Slack & Comprehensive Documentation",
       ],
       missingFeatures: [
         "Telegram CRO Real-time Bot",
@@ -72,7 +72,7 @@ export default function PricingPage() {
     {
       id: "STARTER",
       name: "Starter Swarm",
-      tagline: "Ideal for boutique agencies & early-stage founders",
+      tagline: "Clear operational clutter and navigate boutique outreach",
       monthlyPrice: 450,
       badge: "Founder Essential",
       badgeVariant: "brand" as const,
@@ -85,8 +85,8 @@ export default function PricingPage() {
       features: [
         "All 14 Autonomous Revenue Agents",
         "WhatsApp Cloud API automated conversations",
-        "Weekly GTM Strategy synthesis updates",
-        "Circuit Breaker bounce protection (<3%)",
+        "Weekly GTM Strategy synthesis & market mapping",
+        "Tripwire Circuit Breaker bounce protection (<3%)",
         "Standard Email & Telegram Support",
       ],
       missingFeatures: [
@@ -101,7 +101,7 @@ export default function PricingPage() {
     {
       id: "GROWTH",
       name: "Growth Swarm",
-      tagline: "Accelerate pipeline with multi-channel dominance",
+      tagline: "Slash through friction and dominate multi-channel terrain",
       monthlyPrice: 1200,
       badge: "High ROI Pick",
       badgeVariant: "brand" as const,
@@ -112,12 +112,12 @@ export default function PricingPage() {
       dailyEmails: "1,000 emails / day",
       channels: ["Email (SES)", "WhatsApp", "LinkedIn Messaging"],
       features: [
-        "Telegram CRO Bot with Instant 1-Click Approvals",
+        "Revenue Compass: Telegram CRO with 1-Click Approvals",
         "LinkedIn Automated Prospecting & InMail",
         "Multi-domain AWS SES Inbox Rotation & Warmup",
         "Lead Hunter Deep Apollo & Crunchbase Enrichment",
-        "Bring Your Own Key (BYOK) for OpenAI & Claude",
-        "Monthly AI Strategy Review with Human Growth Lead",
+        "Fertile Ground: BYOK Model Gateway (Claude & GPT-4o)",
+        "Monthly AI Strategy Review with Growth Lead",
       ],
       missingFeatures: [
         "Meta Ads Autonomous Budget Optimizer",
@@ -129,7 +129,7 @@ export default function PricingPage() {
     {
       id: "SCALE",
       name: "Scale Dominance",
-      tagline: "For aggressive sales teams closing 8-figure pipeline",
+      tagline: "Aggressive market conquest for 8-figure revenue teams",
       monthlyPrice: 2400,
       badge: "Most Popular",
       badgeVariant: "purple" as const,
@@ -138,39 +138,41 @@ export default function PricingPage() {
       campaigns: "25 Active Campaigns",
       seats: "20 Team Seats",
       dailyEmails: "4,000 emails / day",
-      channels: ["Email", "WhatsApp", "LinkedIn", "Meta Ads"],
+      channels: ["Email (SES)", "WhatsApp (WABA)", "LinkedIn", "Meta Ads"],
       features: [
-        "All 14 Agents + Meta Ad Spend Optimizer",
-        "Omni-channel Sequence Engine (Email + WABA + LinkedIn)",
-        "Voice Assistant WebRTC Real-Time Command HUD",
-        "Automated Meeting Booking & Google Calendar Sync",
-        "Real-Time Slack & Webhook Dispatchers",
-        "Priority 99.9% SLA & Dedicated Slack Room",
+        "Full 14-Agent Synchronized Execution Swarm",
+        "Meta Lookalike Ad Audiences & Creative Director Sync",
+        "Dedicated SES Multi-Region IP Warmup Pools",
+        "Continuous Autonomous Learning & Persona Calibration",
+        "Custom Lead Scraping Webhooks & Database Sync",
+        "24/7 Dedicated Slack Channel & Strategy Architect",
       ],
-      missingFeatures: [],
-      ctaText: "Deploy Scale Swarm",
+      missingFeatures: [
+        "Bespoke On-Premises Isolated LLM Clusters",
+      ],
+      ctaText: "Deploy Scale Dominance",
       ctaHref: "/signup?plan=SCALE",
     },
     {
       id: "ENTERPRISE",
       name: "Custom Enterprise",
-      tagline: "Unlimited volume, custom LLM fine-tuning & white-label",
-      monthlyPrice: 4500,
-      badge: "Custom SLA",
-      badgeVariant: "success" as const,
+      tagline: "Dedicated navigation architecture & bespoke agent swarms",
+      monthlyPrice: 5000,
+      badge: "Full Custom",
+      badgeVariant: "brand" as const,
       popular: false,
-      leads: "50,000+ Custom Leads / mo",
-      campaigns: "100+ Active Campaigns",
-      seats: "Unlimited Seats",
-      dailyEmails: "10,000+ emails / day",
-      channels: ["All Channels + Custom Private Endpoints"],
+      leads: "Unlimited Enriched Leads",
+      campaigns: "Unlimited Concurrent Campaigns",
+      seats: "Unlimited Team Seats",
+      dailyEmails: "Unlimited via Dedicated SES Cluster",
+      channels: ["All Channels + Custom CRM Integrations"],
       features: [
-        "Dedicated Isolated Cloud Cluster or On-Prem Deployment",
-        "Custom Swarm Persona & Brand Voice Fine-Tuning",
-        "Custom CRM Two-Way Sync (Salesforce, HubSpot, Zoho)",
-        "24/7 Dedicated Solutions Engineer & War Room",
-        "Custom SOC2 Type II & HIPAA Compliance Documentation",
-        "Custom Invoicing & Multi-Entity Tenant Billing",
+        "Custom Fine-Tuned Local LLM Deployment (Mistral / Llama)",
+        "Full Salesforce / HubSpot Bidirectional Pipeline Sync",
+        "Dedicated VPC Instance & Custom Security SLA",
+        "Custom Scraping Scanners for Proprietary Verticals",
+        "Quarterly On-Site Growth Strategy & Swarm Calibration",
+        "Dedicated Technical Account Manager & SLA < 15min",
       ],
       missingFeatures: [],
       ctaText: "Contact Enterprise Sales",
@@ -202,16 +204,16 @@ export default function PricingPage() {
       <section className="pt-20 pb-12 px-4 sm:px-6 lg:px-8 text-center max-w-5xl mx-auto space-y-6">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] dark:bg-[#1A56DB]/20 border border-[#1A56DB]/30 text-xs font-bold">
           <Sparkles className="w-3.5 h-3.5" />
-          Transparent Autonomous Swarm Tiers
+          Autonomous Navigation Instruments & Tiers
         </div>
 
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-display tracking-tight text-[var(--nexa-text-primary)]">
-          Predictable Pricing for <br />
-          <span className="text-[#1A56DB]">Autonomous Revenue Engines</span>
+          Predictable Pricing to <br />
+          <span className="text-[#1A56DB]">Conquer Business Complexity</span>
         </h1>
 
         <p className="text-sm sm:text-base text-[var(--nexa-text-secondary)] max-w-2xl mx-auto leading-relaxed">
-          Replace 10+ disconnected SaaS tools and human SDR burnout with a synchronized 14-agent AI Swarm. Cancel anytime with no long-term lock-in.
+          Equip your company with the digital machete and compass. Clear operational clutter, navigate enterprise sales cycles, and cultivate compound pipeline growth.
         </p>
 
         {/* Billing Cycle Switcher */}

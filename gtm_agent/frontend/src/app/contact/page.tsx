@@ -65,13 +65,13 @@ export default function ContactPage() {
       <section className="pt-20 pb-12 px-4 sm:px-6 lg:px-8 text-center max-w-4xl mx-auto space-y-4">
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] text-xs font-bold">
           <Sparkles className="w-3.5 h-3.5" />
-          Enterprise GTM Architecture Team
+          Business Navigation & Growth Architects
         </div>
         <h1 className="text-4xl sm:text-5xl font-black text-display tracking-tight text-[var(--nexa-text-primary)]">
-          Let’s Architect Your <span className="text-[#1A56DB]">Autonomous Revenue Swarm</span>
+          Let’s Map Your Market & <span className="text-[#1A56DB]">Conquer the Terrain</span>
         </h1>
         <p className="text-xs sm:text-sm text-[var(--nexa-text-secondary)] max-w-2xl mx-auto leading-relaxed">
-          Book a 1-on-1 strategy teardown with our Chief Revenue Officer and GTM engineers. We'll analyze your current outbound bottlenecks and demonstrate a live 14-agent swarm run customized for your ICP.
+          Book a 1-on-1 strategy teardown with our revenue engineers. We'll diagnose your operational clutter, chart hidden high-value accounts, and demonstrate your customized Ofia AI workforce.
         </p>
       </section>
 

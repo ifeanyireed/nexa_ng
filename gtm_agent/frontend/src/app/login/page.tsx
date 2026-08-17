@@ -95,10 +95,10 @@ export default function LoginPage() {
                 Encrypted Operator Console
               </div>
               <h1 className="text-2xl font-black text-display text-[var(--nexa-text-primary)]">
-                Sign in to Swarm Console
+                Sign in to Navigation Console
               </h1>
               <p className="text-xs text-[var(--nexa-text-muted)]">
-                Access your 14 autonomous agents, live leads, and multi-channel campaigns.
+                Enter your command center. Clear clutter, chart hidden paths, and cultivate pipeline.
               </p>
             </div>
 

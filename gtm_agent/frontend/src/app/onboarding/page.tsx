@@ -90,7 +90,7 @@ export default function OnboardingPage() {
         {/* Header Branding */}
         <div className="text-center space-y-1">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] dark:text-[#60A5FA] text-xs font-bold mb-2">
-            <Sparkles className="w-3.5 h-3.5" /> AI Revenue Team Deployment Wizard
+            <Compass className="w-3.5 h-3.5" /> Business Navigation & Workforce Deployment
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--nexa-text-primary)] text-display tracking-tight">
             Deploy Your Ofia AI Workforce

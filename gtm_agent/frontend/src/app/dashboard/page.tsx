@@ -138,14 +138,14 @@ export default function ExecutiveHome() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <NexaBadge variant="brand" dot>
-                Live Revenue Swarm
+                Live Navigation Engine
               </NexaBadge>
               <span className="text-xs text-[var(--nexa-text-muted)] font-medium">
                 Workspace: EduTech Nigeria · Q3 2026 Plan
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--nexa-text-primary)] text-display tracking-tight">
-              Executive Revenue Command
+              Executive Navigation Command
             </h1>
           </div>
 

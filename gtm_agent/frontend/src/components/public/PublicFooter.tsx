@@ -81,7 +81,7 @@ export const PublicFooter: React.FC = () => {
               </span>
             </Link>
             <p className="text-xs text-[var(--nexa-text-muted)] max-w-sm leading-relaxed">
-              The world's premier Autonomous Revenue Swarm for high-growth SaaS, enterprise software, and B2B institutions. Engineered to discover, enrich, message, and close enterprise deals with zero manual fatigue.
+              In African tradition, the <em>Ofia</em> is a massive repository of untapped wealth, fertile soil, and hidden paths. We provide the digital machete to clear operational clutter and the autonomous AI compass to conquer business complexity.
             </p>
             <div className="flex items-center gap-2 pt-2">
               <a

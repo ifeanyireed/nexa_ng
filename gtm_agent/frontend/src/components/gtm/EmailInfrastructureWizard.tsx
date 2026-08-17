@@ -223,7 +223,7 @@ export function EmailInfrastructureWizard() {
     try {
       const res = await GTM_API.testDispatchEmail("org-01", {
         recipient_email: testRecipient,
-        subject: "Nexa GTM Email Verification Handshake",
+        subject: "Ofia GTM Email Verification Handshake",
       });
       showToast(res.message || `Test email dispatched to ${testRecipient}!`);
     } catch {
@@ -295,7 +295,7 @@ export function EmailInfrastructureWizard() {
                   </NexaBadge>
                 </div>
                 <p className="text-[11px] text-[var(--nexa-text-muted)] mt-0.5">
-                  Noah Sterling and outreach agents route all dispatches through the orchestrator. Platform notifications use <code>nexa.ng</code>, while campaigns use your custom verified domain.
+                  Noah Sterling and outreach agents route all dispatches through the orchestrator. Platform notifications use <code>ofia.ng</code>, while campaigns use your custom verified domain.
                 </p>
               </div>
             </div>
@@ -313,7 +313,7 @@ export function EmailInfrastructureWizard() {
 
           {/* Provider Connect Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Card 1: Nexa Managed Platform Pool */}
+            {/* Card 1: Ofia Managed Platform Pool */}
             <NexaCard
               variant="glass"
               padding="md"
@@ -327,7 +327,7 @@ export function EmailInfrastructureWizard() {
                     <Rocket className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-[var(--nexa-text-primary)]">Nexa Managed</h4>
+                    <h4 className="text-xs font-bold text-[var(--nexa-text-primary)]">Ofia Managed</h4>
                     <span className="text-[10px] text-[var(--nexa-text-muted)]">Instant High-Reputation Pool</span>
                   </div>
                 </div>
@@ -341,7 +341,7 @@ export function EmailInfrastructureWizard() {
               <div className="p-2.5 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-xs space-y-1.5">
                 <div className="flex justify-between text-[11px]">
                   <span className="text-[var(--nexa-text-muted)]">Domain:</span>
-                  <span className="font-mono font-bold text-[var(--nexa-text-primary)]">nexa.ng</span>
+                  <span className="font-mono font-bold text-[var(--nexa-text-primary)]">ofia.ng</span>
                 </div>
                 <div className="flex justify-between text-[11px]">
                   <span className="text-[var(--nexa-text-muted)]">DKIM / SPF:</span>
@@ -658,7 +658,7 @@ export function EmailInfrastructureWizard() {
               </div>
               <div>
                 <div className="text-xs font-bold text-[var(--nexa-text-primary)]">Choose Email Option</div>
-                <div className="text-[10px] text-[var(--nexa-text-muted)]">Nexa Managed or Custom</div>
+                <div className="text-[10px] text-[var(--nexa-text-muted)]">Ofia Managed or Custom</div>
               </div>
             </div>
 
@@ -709,7 +709,7 @@ export function EmailInfrastructureWizard() {
                   Step 1: Choose Your Email Delivery Infrastructure
                 </h3>
                 <p className="text-xs text-[var(--nexa-text-muted)] mt-1">
-                  Connect your own provider to leverage your dedicated IP or choose Nexa Managed for immediate activation.
+                  Connect your own provider to leverage your dedicated IP or choose Ofia Managed for immediate activation.
                 </p>
               </div>
 
@@ -772,9 +772,9 @@ export function EmailInfrastructureWizard() {
                 </div>
 
                 <div
-                  onClick={() => setSelectedProvider("NEXA_MANAGED")}
+                  onClick={() => setSelectedProvider("OFIA_MANAGED")}
                   className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-                    selectedProvider === "NEXA_MANAGED"
+                    selectedProvider === "OFIA_MANAGED"
                       ? "border-[#1A56DB] bg-[#1A56DB]/10"
                       : "border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] hover:border-[var(--nexa-border-strong)]"
                   }`}
@@ -782,7 +782,7 @@ export function EmailInfrastructureWizard() {
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-2">
                       <Rocket className="w-4 h-4 text-[#1A56DB]" />
-                      Nexa Managed
+                      Ofia Managed
                     </span>
                     <NexaBadge variant="brand">0 Setup</NexaBadge>
                   </div>

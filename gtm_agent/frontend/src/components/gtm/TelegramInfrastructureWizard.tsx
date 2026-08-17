@@ -31,10 +31,10 @@ export function TelegramInfrastructureWizard() {
   // Telegram States
   const [botToken, setBotToken] = useState("748291048:AAH_••••••••••••••••••••••••");
   const [operatorChatId, setOperatorChatId] = useState("748291048");
-  const [botUsername, setBotUsername] = useState("@NexaCRO_Bot");
+  const [botUsername, setBotUsername] = useState("@OfiaCRO_Bot");
 
   // Webhook State
-  const webhookUrl = "https://api.nexa.ng/api/v1/gtm/telegram/webhook";
+  const webhookUrl = "https://api.ofia.ng/api/v1/gtm/telegram/webhook";
 
   // Test & UI Feedback States
   const [isVerifyingWebhook, setIsVerifyingWebhook] = useState(false);
@@ -350,13 +350,13 @@ export function TelegramInfrastructureWizard() {
                   Step 2: Auto-Register Webhook with Telegram API
                 </h3>
                 <p className="text-xs text-[var(--nexa-text-muted)] mt-1">
-                  Nexa automatically establishes a bi-directional webhook stream so you receive real-time alerts without polling.
+                  Ofia automatically establishes a bi-directional webhook stream so you receive real-time alerts without polling.
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-3">
                 <div>
-                  <label className="text-[11px] font-bold text-[var(--nexa-text-muted)]">Nexa Webhook Gateway</label>
+                  <label className="text-[11px] font-bold text-[var(--nexa-text-muted)]">Ofia Webhook Gateway</label>
                   <div className="flex items-center gap-2 mt-1">
                     <input
                       type="text"

@@ -16,7 +16,7 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GTM AI Agency | Autonomous Revenue & Growth Platform",
+  title: "Ofia GTM Agents | Autonomous Revenue & Growth Platform",
   description:
     "An AI-powered Go-To-Market operating system that deploys an autonomous revenue team for research, prospecting, campaign execution, and conversion optimization.",
   icons: {

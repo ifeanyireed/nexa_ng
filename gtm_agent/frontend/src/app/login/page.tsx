@@ -71,9 +71,9 @@ export default function LoginPage() {
       {/* Top Simple Header */}
       <header className="p-6 flex items-center justify-between max-w-7xl mx-auto w-full">
         <Link href="/" className="flex items-center gap-3">
-          <img src="/logo.png" alt="GTM AI Agency" className="w-8 h-8 object-contain shrink-0" />
+          <img src="/logo.png" alt="Ofia GTM Agents" className="w-8 h-8 object-contain shrink-0" />
           <span className="font-extrabold text-base text-[var(--nexa-text-primary)] text-display">
-            GTM AI Agency
+            Ofia GTM Agents
           </span>
         </Link>
 
@@ -229,7 +229,7 @@ export default function LoginPage() {
 
       {/* Simple Bottom Bar */}
       <footer className="p-6 text-center text-xs text-[var(--nexa-text-muted)]">
-        © {new Date().getFullYear()} GTM AI Agency. Protected by SOC2 Type II & 256-bit AES encryption.
+        © {new Date().getFullYear()} Ofia GTM Agents. Protected by SOC2 Type II & 256-bit AES encryption.
       </footer>
     </div>
   );

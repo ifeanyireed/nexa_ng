@@ -32,9 +32,9 @@ export default function AdminEmailPage() {
   const [platformAwsRegion, setPlatformAwsRegion] = useState("us-east-1");
   const [platformAwsAccessKey, setPlatformAwsAccessKey] = useState("AKIA_PLATFORM_••••••••");
   const [platformAwsSecret, setPlatformAwsSecret] = useState("wJalrXUtnFEMI_PLATFORM_••••••••");
-  const [platformFromAddress, setPlatformFromAddress] = useState("outreach@nexa.ng");
-  const [platformFromName, setPlatformFromName] = useState("Nexa Autonomous GTM");
-  const [platformReplyTo, setPlatformReplyTo] = useState("support@nexa.ng");
+  const [platformFromAddress, setPlatformFromAddress] = useState("outreach@ofia.ng");
+  const [platformFromName, setPlatformFromName] = useState("Ofia Autonomous GTM");
+  const [platformReplyTo, setPlatformReplyTo] = useState("support@ofia.ng");
 
   // Global Safety Guardrails
   const [enforceDKIM, setEnforceDKIM] = useState(true);
@@ -77,7 +77,7 @@ export default function AdminEmailPage() {
     active_sending_tenants: 42,
     connected_domains_count: 58,
     provider_breakdown: [
-      { provider: "Nexa Managed (nexa.ng)", count: 8420, percentage: 45.6 },
+      { provider: "Ofia Managed (ofia.ng)", count: 8420, percentage: 45.6 },
       { provider: "Resend", count: 5210, percentage: 28.2 },
       { provider: "Amazon SES", count: 3120, percentage: 16.9 },
       { provider: "Brevo", count: 1200, percentage: 6.5 },
@@ -88,7 +88,7 @@ export default function AdminEmailPage() {
   // UI Feedback States
   const [isSaving, setIsSaving] = useState(false);
   const [isTestingPlatform, setIsTestingPlatform] = useState(false);
-  const [testRecipient, setTestRecipient] = useState("admin@nexa.ng");
+  const [testRecipient, setTestRecipient] = useState("admin@ofia.ng");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -308,7 +308,7 @@ export default function AdminEmailPage() {
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-base text-[var(--nexa-text-primary)] text-display flex items-center gap-2">
                   <Server className="w-4 h-4 text-[#1A56DB]" />
-                  Platform Shared Email Pool (nexa.ng)
+                  Platform Shared Email Pool (ofia.ng)
                 </h3>
                 <NexaBadge variant="brand">Platform Fallback</NexaBadge>
               </div>
@@ -331,7 +331,7 @@ export default function AdminEmailPage() {
                 onChange={(e) => setPlatformProvider(e.target.value)}
                 className="w-full h-11 px-3 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
               >
-                <option value="RESEND">Resend API (Recommended - nexa.ng)</option>
+                <option value="RESEND">Resend API (Recommended - ofia.ng)</option>
                 <option value="AWS_SES">Amazon SES (Multi-Region Cluster)</option>
                 <option value="BREVO">Brevo Transactional Pool</option>
               </select>
@@ -339,14 +339,14 @@ export default function AdminEmailPage() {
 
             <NexaInput
               label="Platform Default From Email"
-              placeholder="outreach@nexa.ng"
+              placeholder="outreach@ofia.ng"
               value={platformFromAddress}
               onChange={(e) => setPlatformFromAddress(e.target.value)}
             />
 
             <NexaInput
               label="Platform Default Sender Name"
-              placeholder="Nexa Autonomous GTM"
+              placeholder="Ofia Autonomous GTM"
               value={platformFromName}
               onChange={(e) => setPlatformFromName(e.target.value)}
             />
@@ -363,7 +363,7 @@ export default function AdminEmailPage() {
 
             <NexaInput
               label="Platform Default Reply-To"
-              placeholder="support@nexa.ng"
+              placeholder="support@ofia.ng"
               value={platformReplyTo}
               onChange={(e) => setPlatformReplyTo(e.target.value)}
             />
@@ -386,7 +386,7 @@ export default function AdminEmailPage() {
                 type="email"
                 value={testRecipient}
                 onChange={(e) => setTestRecipient(e.target.value)}
-                placeholder="admin@nexa.ng"
+                placeholder="admin@ofia.ng"
                 className="px-3 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] w-48 outline-none"
               />
               <NexaButton

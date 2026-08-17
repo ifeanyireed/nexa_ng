@@ -30,12 +30,12 @@ export function WhatsAppInfrastructureWizard() {
   const [phoneId, setPhoneId] = useState("104928475918234");
   const [wabaId, setWabaId] = useState("193847291039485");
   const [token, setToken] = useState("EAAG9482910481029482019481");
-  const [webhookSecret, setWebhookSecret] = useState("nexa_waba_secret_2026");
+  const [webhookSecret, setWebhookSecret] = useState("ofia_waba_secret_2026");
   const [displayPhoneNumber, setDisplayPhoneNumber] = useState("+234 812 345 6789");
 
   // Webhook Configuration
-  const webhookUrl = "https://api.nexa.ng/api/v1/gtm/org-01/whatsapp/webhook";
-  const verifyToken = "nexa_verify_token_2026_prod";
+  const webhookUrl = "https://api.ofia.ng/api/v1/gtm/org-01/whatsapp/webhook";
+  const verifyToken = "ofia_verify_token_2026_prod";
 
   // Test & UI Feedback States
   const [testPhoneNumber, setTestPhoneNumber] = useState("+2348012345678");

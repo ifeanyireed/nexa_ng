@@ -47,13 +47,13 @@ export const PublicNav: React.FC = () => {
           <Link href="/" className="flex items-center gap-3 group">
             <img
               src="/logo.png"
-              alt="GTM AI Agency Logo"
+              alt="Ofia GTM Agents Logo"
               className="w-9 h-9 object-contain group-hover:scale-105 transition-transform shrink-0"
             />
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <span className="font-extrabold text-lg text-[var(--nexa-text-primary)] text-display tracking-tight">
-                  GTM AI Agency
+                  Ofia GTM Agents
                 </span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#1A56DB]/10 text-[#1A56DB] dark:bg-[#1A56DB]/20 border border-[#1A56DB]/30">
                   Swarm v2.6

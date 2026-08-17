@@ -25,7 +25,7 @@ export default function IntegrationsPage() {
       name: "Telegram CRO Bot (Free)",
       type: "Executive Conversational Bot & 1-Click Approvals",
       status: "Connected",
-      details: "@NexaGTM_CRO_Bot · 24/7 briefing & lead queries",
+      details: "@OfiaGTM_CRO_Bot · 24/7 briefing & lead queries",
       icon: IconBrandTelegram,
       href: "/telegram",
       highlight: true,

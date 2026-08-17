@@ -33,7 +33,7 @@ export default function TelegramSetupPage() {
   const [isTestSent, setIsTestSent] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
 
-  const officialBotLink = "https://t.me/NexaGTM_CRO_Bot?start=org_01";
+  const officialBotLink = "https://t.me/OfiaGTM_CRO_Bot?start=org_01";
 
   const commands = [
     {
@@ -144,7 +144,7 @@ export default function TelegramSetupPage() {
                 </div>
                 <div>
                   <h2 className="font-extrabold text-base sm:text-lg text-[var(--nexa-text-primary)] text-display">
-                    Connect to @NexaGTM_CRO_Bot
+                    Connect to @OfiaGTM_CRO_Bot
                   </h2>
                   <p className="text-xs text-[var(--nexa-text-muted)]">
                     Official Free Executive Assistant for EduSuite Nigeria
@@ -164,7 +164,7 @@ export default function TelegramSetupPage() {
                     className="bg-[#0088CC] hover:bg-[#0077B5] text-white font-bold"
                     leftIcon={<ExternalLink className="w-4 h-4" />}
                   >
-                    Open @NexaGTM_CRO_Bot
+                    Open @OfiaGTM_CRO_Bot
                   </NexaButton>
                 </a>
                 <button
@@ -226,7 +226,7 @@ export default function TelegramSetupPage() {
                 Open Official Bot on Telegram
               </h3>
               <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-                Click <a href={officialBotLink} target="_blank" rel="noreferrer" className="text-[#0088CC] font-bold hover:underline">@NexaGTM_CRO_Bot</a> on your mobile or desktop device and press <strong>Start</strong>.
+                Click <a href={officialBotLink} target="_blank" rel="noreferrer" className="text-[#0088CC] font-bold hover:underline">@OfiaGTM_CRO_Bot</a> on your mobile or desktop device and press <strong>Start</strong>.
               </p>
             </NexaCard>
 

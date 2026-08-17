@@ -47,11 +47,11 @@ func (d *EmailDispatcher) SendEmail(payload OutboundEmailPayload) error {
 
 	fromName := settings.EmailFromName
 	if fromName == "" {
-		fromName = "Nexa GTM Outbound"
+		fromName = "Ofia GTM Outbound"
 	}
 	fromAddress := settings.EmailFromAddress
 	if fromAddress == "" {
-		fromAddress = "outbound@nexa.internal"
+		fromAddress = "outbound@ofia.internal"
 	}
 
 	// If tenant has custom SMTP configured

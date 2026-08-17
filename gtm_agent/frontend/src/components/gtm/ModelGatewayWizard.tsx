@@ -141,7 +141,7 @@ export function ModelGatewayWizard() {
                   <NexaBadge variant="success">Auto-Rotating Cooldown Enabled</NexaBadge>
                 </div>
                 <p className="text-[11px] text-[var(--nexa-text-muted)] mt-0.5">
-                  When any API key hits an HTTP 429 rate limit, Nexa automatically quarantines the key for 60 seconds and retries seamlessly on backup keys.
+                  When any API key hits an HTTP 429 rate limit, Ofia automatically quarantines the key for 60 seconds and retries seamlessly on backup keys.
                 </p>
               </div>
             </div>
@@ -344,7 +344,7 @@ export function ModelGatewayWizard() {
                   Step 1: Select AI Model Provider
                 </h3>
                 <p className="text-xs text-[var(--nexa-text-muted)] mt-1">
-                  Nexa supports multi-key pools for high-availability autonomous agent executions.
+                  Ofia supports multi-key pools for high-availability autonomous agent executions.
                 </p>
               </div>
 

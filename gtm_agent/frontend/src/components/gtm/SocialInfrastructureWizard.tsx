@@ -48,7 +48,7 @@ export function SocialInfrastructureWizard() {
   const [twitterAccessToken, setTwitterAccessToken] = useState("x_tok_••••••••••••••••");
   const [twitterTokenSecret, setTwitterTokenSecret] = useState("x_tsec_••••••••••••••••");
   const [customWebhookUrl, setCustomWebhookUrl] = useState("https://hooks.zapier.com/hooks/catch/19283/xxxx");
-  const [customWebhookSecret, setCustomWebhookSecret] = useState("whsec_nexa_2026_prod");
+  const [customWebhookSecret, setCustomWebhookSecret] = useState("whsec_ofia_2026_prod");
   const [autoPublishEnabled, setAutoPublishEnabled] = useState(true);
 
   // Test & UI Feedback States

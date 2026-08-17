@@ -32,9 +32,9 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen bg-[var(--nexa-bg-base)] flex flex-col justify-between text-[var(--nexa-text-primary)]">
       <header className="p-6 flex items-center justify-between max-w-7xl mx-auto w-full">
         <Link href="/" className="flex items-center gap-3">
-          <img src="/logo.png" alt="GTM AI Agency" className="w-8 h-8 object-contain shrink-0" />
+          <img src="/logo.png" alt="Ofia GTM Agents" className="w-8 h-8 object-contain shrink-0" />
           <span className="font-extrabold text-base text-[var(--nexa-text-primary)] text-display">
-            GTM AI Agency
+            Ofia GTM Agents
           </span>
         </Link>
       </header>
@@ -109,7 +109,7 @@ export default function ForgotPasswordPage() {
       </main>
 
       <footer className="p-6 text-center text-xs text-[var(--nexa-text-muted)]">
-        © {new Date().getFullYear()} GTM AI Agency. All rights reserved.
+        © {new Date().getFullYear()} Ofia GTM Agents. All rights reserved.
       </footer>
     </div>
   );

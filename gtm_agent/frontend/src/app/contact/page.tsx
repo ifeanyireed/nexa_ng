@@ -92,7 +92,7 @@ export default function ContactPage() {
 
               {/* Direct Channel 1: Telegram CRO Bot */}
               <a
-                href="https://t.me/NexaGTM_CRO_Bot"
+                href="https://t.me/OfiaGTM_CRO_Bot"
                 target="_blank"
                 rel="noreferrer"
                 className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-[#1A56DB]/50 flex items-center justify-between transition-all group block"
@@ -106,7 +106,7 @@ export default function ContactPage() {
                       Telegram CRO Bot Direct
                     </div>
                     <div className="text-[11px] text-[var(--nexa-text-muted)]">
-                      @NexaGTM_CRO_Bot (Instant AI & Human)
+                      @OfiaGTM_CRO_Bot (Instant AI & Human)
                     </div>
                   </div>
                 </div>
@@ -138,7 +138,7 @@ export default function ContactPage() {
 
               {/* Direct Channel 3: Official Email */}
               <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-[#7E22CE]/10 text-[#7E22CE] flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-[#1A56DB]/10 text-[#1A56DB] flex items-center justify-center shrink-0">
                   <Mail className="w-5 h-5" />
                 </div>
                 <div>
@@ -146,7 +146,7 @@ export default function ContactPage() {
                     Official Executive Inquiry
                   </div>
                   <div className="text-xs font-mono text-[var(--nexa-text-muted)]">
-                    enterprise@nexa.ng · sla@gtm.agency
+                    enterprise@ofia.ng · sla@gtm.agency
                   </div>
                 </div>
               </div>

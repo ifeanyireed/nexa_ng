@@ -93,7 +93,7 @@ export default function OnboardingPage() {
             <Sparkles className="w-3.5 h-3.5" /> AI Revenue Team Deployment Wizard
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--nexa-text-primary)] text-display tracking-tight">
-            Deploy Your GTM AI Agency
+            Deploy Your Ofia GTM Agents
           </h1>
           <p className="text-xs text-[var(--nexa-text-muted)]">
             Step {currentStep} of 10 — {steps[currentStep - 1].label}
@@ -404,7 +404,7 @@ export default function OnboardingPage() {
               </div>
               <div>
                 <h2 className="text-2xl font-extrabold text-[var(--nexa-text-primary)] text-display">
-                  Your GTM AI Agency Workforce Is Ready!
+                  Your Ofia GTM Agents Workforce Is Ready!
                 </h2>
                 <p className="text-xs text-[var(--nexa-text-muted)] mt-1 max-w-md mx-auto">
                   All 15 agents are initialized. Click below to enter your executive command office.

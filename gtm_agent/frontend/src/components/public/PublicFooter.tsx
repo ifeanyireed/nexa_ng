@@ -75,9 +75,9 @@ export const PublicFooter: React.FC = () => {
           {/* Brand Col */}
           <div className="col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-3">
-              <img src="/logo.png" alt="GTM AI Agency Logo" className="w-8 h-8 object-contain shrink-0" />
+              <img src="/logo.png" alt="Ofia GTM Agents Logo" className="w-8 h-8 object-contain shrink-0" />
               <span className="font-extrabold text-base text-[var(--nexa-text-primary)] text-display">
-                GTM AI Agency
+                Ofia GTM Agents
               </span>
             </Link>
             <p className="text-xs text-[var(--nexa-text-muted)] max-w-sm leading-relaxed">
@@ -85,7 +85,7 @@ export const PublicFooter: React.FC = () => {
             </p>
             <div className="flex items-center gap-2 pt-2">
               <a
-                href="https://t.me/NexaGTM_CRO_Bot"
+                href="https://t.me/OfiaGTM_CRO_Bot"
                 target="_blank"
                 rel="noreferrer"
                 className="w-8 h-8 rounded-lg bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] flex items-center justify-center text-[#1A56DB] hover:bg-[#1A56DB] hover:text-white transition-all"
@@ -220,7 +220,7 @@ export const PublicFooter: React.FC = () => {
         {/* Bottom Sub-footer */}
         <div className="mt-12 pt-8 border-t border-[var(--nexa-border)] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--nexa-text-muted)]">
           <div>
-            © {new Date().getFullYear()} GTM AI Agency. All rights reserved. Powered by Nexa Swarm Architecture.
+            © {new Date().getFullYear()} Ofia GTM Agents. All rights reserved. Powered by Ofia Swarm Architecture.
           </div>
           <div className="flex items-center gap-6">
             <span className="flex items-center gap-1.5 text-[11px]">

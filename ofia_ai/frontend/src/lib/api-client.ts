@@ -285,6 +285,25 @@ export const GTM_API = {
     });
   },
 
+  getAdminUsers: async () => {
+    return fetchJSON<any[]>(`${GTM_BASE}/admin/users`);
+  },
+
+  getAdminFeatureFlags: async () => {
+    return fetchJSON<any[]>(`${GTM_BASE}/admin/features`);
+  },
+
+  toggleAdminFeatureFlag: async (key: string, isEnabled: boolean) => {
+    return fetchJSON<any>(`${GTM_BASE}/admin/features/${key}/toggle`, {
+      method: "POST",
+      body: JSON.stringify({ is_enabled: isEnabled }),
+    });
+  },
+
+  getAdminAuditLogs: async () => {
+    return fetchJSON<any[]>(`${GTM_BASE}/admin/audit-logs`);
+  },
+
   // 10. Multi-Channel Revenue Attribution, Email Replies & Social Media Analytics
   getOverviewAnalytics: async (orgId = "org-01") => {
     return fetchJSON<any>(`${GTM_BASE}/${orgId}/analytics/overview`);

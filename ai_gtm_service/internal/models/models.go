@@ -340,3 +340,36 @@ type GTMSocialPostMetrics struct {
 func (GTMSocialPostMetrics) TableName() string {
 	return "gtm_social_post_metrics"
 }
+
+type GTMFeatureFlag struct {
+	ID                string    `gorm:"primaryKey;size:191" json:"id"`
+	Key               string    `gorm:"uniqueIndex;size:100;not null" json:"key"`
+	Name              string    `gorm:"size:191;not null" json:"name"`
+	Description       string    `gorm:"type:text" json:"description"`
+	Category          string    `gorm:"size:50;not null" json:"category"`
+	RolloutPercentage int       `gorm:"default:100" json:"rollout_percentage"`
+	IsEnabledGlobally bool      `gorm:"default:true" json:"is_enabled_globally"`
+	UpdatedBy         string    `gorm:"size:191" json:"updated_by"`
+	UpdatedAt         time.Time `json:"updated_at"`
+}
+
+func (GTMFeatureFlag) TableName() string {
+	return "gtm_feature_flag"
+}
+
+type GTMAuditLog struct {
+	ID         string    `gorm:"primaryKey;size:191" json:"id"`
+	ActorEmail string    `gorm:"size:191;not null;index" json:"actor_email"`
+	ActorName  string    `gorm:"size:191" json:"actor_name"`
+	Action     string    `gorm:"size:191;not null" json:"action"`
+	TargetType string    `gorm:"size:50" json:"target_type"`
+	TargetID   string    `gorm:"size:191" json:"target_id"`
+	Details    string    `gorm:"type:text" json:"details"`
+	IPAddress  string    `gorm:"size:50" json:"ip_address"`
+	Status     string    `gorm:"size:30;default:'SUCCESS'" json:"status"`
+	CreatedAt  time.Time `gorm:"index" json:"created_at"`
+}
+
+func (GTMAuditLog) TableName() string {
+	return "gtm_audit_log"
+}

@@ -275,9 +275,9 @@ type GTMGlobalEmailSettings struct {
 	PlatformAWSRegion          string    `gorm:"size:50;default:'us-east-1'" json:"platform_aws_region"`
 	PlatformAWSAccessKey       string    `gorm:"size:191" json:"platform_aws_access_key"`
 	PlatformAWSSecretEncrypted string    `gorm:"type:text" json:"-"`
-	PlatformFromAddress        string    `gorm:"size:191;not null;default:'outreach@nexa.ng'" json:"platform_from_address"`
-	PlatformFromName           string    `gorm:"size:191;not null;default:'Nexa Autonomous GTM'" json:"platform_from_name"`
-	PlatformReplyTo            string    `gorm:"size:191;not null;default:'support@nexa.ng'" json:"platform_reply_to"`
+	PlatformFromAddress        string    `gorm:"size:191;not null;default:'outreach@ofia.ng'" json:"platform_from_address"`
+	PlatformFromName           string    `gorm:"size:191;not null;default:'Ofia Autonomous GTM'" json:"platform_from_name"`
+	PlatformReplyTo            string    `gorm:"size:191;not null;default:'support@ofia.ng'" json:"platform_reply_to"`
 	EnforceDKIMVerification    bool      `gorm:"default:true" json:"enforce_dkim_verification"`
 	MaxBounceRateThreshold     float64   `gorm:"default:5.0" json:"max_bounce_rate_threshold"`
 	MaxSpamComplaintThreshold  float64   `gorm:"default:0.08" json:"max_spam_complaint_threshold"`

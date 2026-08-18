@@ -14,6 +14,7 @@ import (
 	"nexa/ai_gtm_service/internal/db"
 	"nexa/ai_gtm_service/internal/email"
 	"nexa/ai_gtm_service/internal/handlers"
+	"nexa/ai_gtm_service/internal/middleware"
 	"nexa/ai_gtm_service/internal/outreach"
 	"nexa/ai_gtm_service/internal/telegram"
 )
@@ -28,6 +29,7 @@ func main() {
 
 	database := db.InitDB()
 
+	authHandler := handlers.NewAuthHandler(database)
 	agentsHandler := handlers.NewAgentsHandler(database)
 	campaignsHandler := handlers.NewCampaignsHandler(database)
 	leadsHandler := handlers.NewLeadsHandler(database)
@@ -41,6 +43,7 @@ func main() {
 	emailOrchestrator := email.InitEmailOrchestrator(database)
 	emailWizardHandler := handlers.NewEmailWizardHandler(database, emailOrchestrator)
 	adminEmailHandler := handlers.NewAdminEmailHandler(database, emailOrchestrator)
+	adminOverviewHandler := handlers.NewAdminOverviewHandler(database)
 	analyticsHandler := handlers.NewAnalyticsHandler(database)
 
 	r := chi.NewRouter()
@@ -69,8 +72,26 @@ func main() {
 	// Real-Time Voice WebSocket Stream
 	r.Get("/ws/voice", voiceHandler.HandleVoiceStream)
 
+	// Public & Protected Auth Routes
+	r.Route("/api/v1/auth", func(r chi.Router) {
+		r.Post("/register", authHandler.Register)
+		r.Post("/login", authHandler.Login)
+
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.AuthMiddleware)
+			r.Get("/me", authHandler.GetMe)
+		})
+	})
+
 	// API v1 Routes
 	r.Route("/api/v1/gtm", func(r chi.Router) {
+		// Workspace Users & RBAC Team Management
+		r.Route("/{orgId}/users", func(r chi.Router) {
+			r.Get("/", authHandler.ListWorkspaceUsers)
+			r.Post("/invite", authHandler.InviteUser)
+			r.Put("/{userId}/role", authHandler.UpdateUserRole)
+		})
+
 		// Global & Tenant-specific Telegram Webhook
 		r.Post("/telegram/webhook", telegramEngine.HandleWebhook)
 		r.Post("/{orgId}/telegram/webhook", telegramEngine.HandleWebhook)
@@ -147,12 +168,23 @@ func main() {
 		r.Get("/{orgId}/observability/traces", obsHandler.GetTraces)
 		r.Post("/admin/circuit-breaker/{agentKey}", obsHandler.TripCircuitBreaker)
 
-		// Admin Global Email Infrastructure & Cross-Tenant Limits
-		r.Route("/admin/email", func(r chi.Router) {
-			r.Get("/settings", adminEmailHandler.GetGlobalSettings)
-			r.Put("/settings", adminEmailHandler.UpdateGlobalSettings)
-			r.Post("/test-platform", adminEmailHandler.TestPlatformDispatch)
-			r.Get("/analytics", adminEmailHandler.GetEmailAnalytics)
+		// Super Admin Platform Cockpit (Direct Database Read & Write)
+		r.Route("/admin", func(r chi.Router) {
+			r.Get("/overview", adminOverviewHandler.GetOverview)
+			r.Get("/organizations", adminOverviewHandler.ListOrganizations)
+			r.Post("/organizations", adminOverviewHandler.CreateOrganization)
+			r.Put("/organizations/{id}", adminOverviewHandler.UpdateOrganization)
+			r.Post("/circuit-breaker/{agentKey}/reset", adminOverviewHandler.ResetCircuitBreaker)
+			r.Post("/killswitch/trip", adminOverviewHandler.TripGlobalKillswitch)
+			r.Post("/killswitch/reset", adminOverviewHandler.ResetGlobalKillswitch)
+
+			// Admin Global Email Infrastructure & Cross-Tenant Limits
+			r.Route("/email", func(r chi.Router) {
+				r.Get("/settings", adminEmailHandler.GetGlobalSettings)
+				r.Put("/settings", adminEmailHandler.UpdateGlobalSettings)
+				r.Post("/test-platform", adminEmailHandler.TestPlatformDispatch)
+				r.Get("/analytics", adminEmailHandler.GetEmailAnalytics)
+			})
 		})
 	})
 

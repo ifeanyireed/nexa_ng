@@ -117,7 +117,7 @@ func (p *SocialPublisher) publishInstagram(settings models.GTMTenantSettings, te
 }
 
 func (p *SocialPublisher) publishTwitter(settings models.GTMTenantSettings, text, mediaURL string) PublishResult {
-	if settings.TwitterApiKeyEncrypted == "" {
+	if settings.TwitterAPIKeyEncrypted == "" {
 		return PublishResult{Channel: "TWITTER", Success: true, PostID: "tw_sim_748291048"}
 	}
 

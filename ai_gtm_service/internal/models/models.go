@@ -4,6 +4,63 @@ import (
 	"time"
 )
 
+type Role string
+
+const (
+	RoleSuperAdmin  Role = "SUPER_ADMIN"
+	RoleTenantOwner Role = "TENANT_OWNER"
+	RoleGrowthLead  Role = "GROWTH_LEAD"
+	RoleSalesRep    Role = "SALES_REP"
+	RoleViewer      Role = "VIEWER"
+	RoleClient      Role = "CLIENT"
+	RolePro         Role = "PRO"
+)
+
+type User struct {
+	ID        string    `gorm:"primaryKey;size:191" json:"id"`
+	Email     string    `gorm:"uniqueIndex;size:191;not null" json:"email"`
+	Password  string    `gorm:"size:191;not null" json:"-"`
+	Name      string    `gorm:"size:191" json:"name"`
+	Role      Role      `gorm:"size:50;not null;default:'TENANT_OWNER'" json:"role"`
+	Avatar    string    `gorm:"size:255" json:"avatar,omitempty"`
+	Title     string    `gorm:"size:191" json:"title,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func (User) TableName() string {
+	return "User"
+}
+
+type Organization struct {
+	ID           string    `gorm:"primaryKey;column:id;size:191" json:"id"`
+	Name         string    `gorm:"column:name;size:191;not null" json:"name"`
+	Slug         string    `gorm:"column:slug;uniqueIndex;size:191;not null" json:"slug"`
+	OwnerID      string    `gorm:"column:ownerId;size:191;not null" json:"owner_id"`
+	PlanTier     string    `gorm:"column:planTier;size:50;not null;default:'STARTER'" json:"plan_tier"`
+	BillingCycle string    `gorm:"column:billingCycle;size:20;not null;default:'MONTHLY'" json:"billing_cycle"`
+	Status       string    `gorm:"column:status;size:30;not null;default:'ACTIVE'" json:"status"`
+	CreatedAt    time.Time `gorm:"column:createdAt" json:"created_at"`
+	UpdatedAt    time.Time `gorm:"column:updatedAt" json:"updated_at"`
+}
+
+func (Organization) TableName() string {
+	return "Organization"
+}
+
+type WorkspaceMember struct {
+	ID             string    `gorm:"primaryKey;column:id;size:191" json:"id"`
+	OrganizationID string    `gorm:"column:organizationId;size:191;not null;uniqueIndex:org_user_uniq" json:"organization_id"`
+	UserID         string    `gorm:"column:userId;size:191;not null;uniqueIndex:org_user_uniq" json:"user_id"`
+	Role           Role      `gorm:"column:role;size:50;not null;default:'GROWTH_LEAD'" json:"role"`
+	CreatedAt      time.Time `gorm:"column:createdAt" json:"created_at"`
+	User           *User     `gorm:"foreignKey:UserID" json:"user,omitempty"`
+}
+
+func (WorkspaceMember) TableName() string {
+	return "WorkspaceMember"
+}
+
 type AIAgent struct {
 	ID                   string    `gorm:"primaryKey;size:191" json:"id"`
 	OrganizationID       string    `gorm:"size:191;not null;uniqueIndex:org_agent_key_uniq" json:"organization_id"`

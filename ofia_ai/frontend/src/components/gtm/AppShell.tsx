@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -28,6 +28,7 @@ import {
   Bot,
   Send,
   Globe,
+  Shield,
 } from "lucide-react";
 import { useTheme } from "@/components/nexa/ThemeProvider";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -47,6 +48,26 @@ export const AppShell = ({ children }: AppShellProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<AIAgent | null>(null);
+
+  // Authenticated User & RBAC state
+  const [userName, setUserName] = useState("Adeyemi Adeleke");
+  const [userRole, setUserRole] = useState("TENANT_OWNER");
+  const [userOrg, setUserOrg] = useState("EduSuite Nigeria");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const email = localStorage.getItem("nexa_user_email");
+      const role = localStorage.getItem("nexa_user_role");
+      const name = localStorage.getItem("nexa_user_name");
+      if (role) setUserRole(role);
+      if (name) setUserName(name);
+      if (email && email.includes("admin")) {
+        setUserRole("SUPER_ADMIN");
+        setUserName("Amara Okafor");
+        setUserOrg("Ofia AI Platform");
+      }
+    }
+  }, []);
 
   const navItems = [
     { label: "Executive Home", href: "/dashboard", icon: LayoutDashboard },
@@ -193,30 +214,42 @@ export const AppShell = ({ children }: AppShellProps) => {
           <div className="p-3 border-t border-[var(--nexa-border)] flex items-center justify-between">
             <div className="flex items-center gap-2.5 overflow-hidden">
               <img
-                src="/avatar12.png"
-                alt="EduTech Nigeria Profile"
+                src={userRole === "SUPER_ADMIN" ? "/avatar1.png" : userRole === "GROWTH_LEAD" ? "/avatar5.png" : userRole === "SALES_REP" ? "/avatar8.png" : userRole === "VIEWER" ? "/avatar3.png" : "/avatar12.png"}
+                alt={`${userName} Profile`}
                 className="w-8 h-8 rounded-xl object-cover shrink-0 border border-[var(--nexa-border)] shadow-sm"
               />
               {isSidebarOpen && (
                 <div className="flex flex-col truncate">
-                  <span className="text-xs font-bold text-[var(--nexa-text-primary)] truncate">
-                    EduTech Nigeria
+                  <span className="text-xs font-bold text-[var(--nexa-text-primary)] truncate flex items-center gap-1.5">
+                    {userName}
                   </span>
-                  <span className="text-[10px] text-[var(--nexa-text-muted)] truncate">
-                    Growth Tier · Active
+                  <span className="text-[10px] text-[var(--nexa-text-muted)] truncate flex items-center gap-1">
+                    <span className={`w-1.5 h-1.5 rounded-full ${userRole === "SUPER_ADMIN" ? "bg-[#7E22CE]" : userRole === "GROWTH_LEAD" ? "bg-[#1A56DB]" : userRole === "SALES_REP" ? "bg-[#C88A3A]" : "bg-[#0E9F6E]"}`} />
+                    {userRole.replace("_", " ")} · {userOrg}
                   </span>
                 </div>
               )}
             </div>
 
             {isSidebarOpen && (
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-xl text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] hover:bg-[var(--nexa-bg-base)] transition-colors cursor-pointer"
-                title="Toggle Dark/Light Mode"
-              >
-                {theme === "dark" ? <Sun className="w-4 h-4 text-[#F59E0B]" /> : <Moon className="w-4 h-4" />}
-              </button>
+              <div className="flex items-center gap-1">
+                {userRole === "SUPER_ADMIN" && (
+                  <Link
+                    href="/admin"
+                    className="p-1.5 rounded-xl text-[#7E22CE] bg-[#7E22CE]/10 hover:bg-[#7E22CE]/20 transition-colors"
+                    title="Super Admin Operator Console"
+                  >
+                    <Shield className="w-3.5 h-3.5" />
+                  </Link>
+                )}
+                <button
+                  onClick={toggleTheme}
+                  className="p-2 rounded-xl text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] hover:bg-[var(--nexa-bg-base)] transition-colors cursor-pointer"
+                  title="Toggle Dark/Light Mode"
+                >
+                  {theme === "dark" ? <Sun className="w-4 h-4 text-[#F59E0B]" /> : <Moon className="w-4 h-4" />}
+                </button>
+              </div>
             )}
           </div>
         </aside>

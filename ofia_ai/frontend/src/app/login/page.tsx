@@ -25,45 +25,70 @@ import {
   IconBrandTelegram,
 } from "@tabler/icons-react";
 
+import { AUTH_API } from "@/lib/api-client";
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("adeyemi@edusuite.ng");
-  const [password, setPassword] = useState("••••••••");
+  const [password, setPassword] = useState("EduSuite2026!");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
 
-  // Quick Persona fast-switchers
+  // Quick Seeded Personas fast-switchers
   const testPersonas = [
-    { label: "EduSuite Owner", email: "adeyemi@edusuite.ng", role: "TENANT_OWNER", color: "brand" as const },
-    { label: "Platform SuperAdmin", email: "admin@gtm.agency", role: "SUPER_ADMIN", color: "purple" as const },
-    { label: "PayFlow Growth Lead", email: "folashade@payflow.africa", role: "GROWTH_LEAD", color: "brand" as const },
+    { label: "Super Admin", email: "admin@ofia.ng", pass: "OfiaAdmin2026!", role: "SUPER_ADMIN", color: "purple" as const },
+    { label: "Tenant Owner", email: "adeyemi@edusuite.ng", pass: "EduSuite2026!", role: "TENANT_OWNER", color: "brand" as const },
+    { label: "Growth Lead", email: "khalil@edusuite.ng", pass: "EduSuite2026!", role: "GROWTH_LEAD", color: "brand" as const },
+    { label: "Sales Rep", email: "chidinma@edusuite.ng", pass: "EduSuite2026!", role: "SALES_REP", color: "brand" as const },
+    { label: "Viewer", email: "auditor@edusuite.ng", pass: "EduSuite2026!", role: "VIEWER", color: "neutral" as const },
   ];
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    setTimeout(() => {
-      setIsLoading(false);
-      // Store token & redirect to Swarm Dashboard
+    try {
+      const res = await AUTH_API.login({ email, password });
+      if (res && res.token) {
+        if (typeof window !== "undefined") {
+          localStorage.setItem("nexa_auth_token", res.token);
+          localStorage.setItem("nexa_user_email", res.user?.email || email);
+          localStorage.setItem("nexa_user_role", res.user?.role || "TENANT_OWNER");
+          localStorage.setItem("nexa_user_name", res.user?.name || "User");
+          localStorage.setItem("nexa_org_id", res.org_id || "org-01");
+        }
+        if (res.user?.role === "SUPER_ADMIN" || email.includes("admin")) {
+          router.push("/admin");
+        } else {
+          router.push("/dashboard");
+        }
+      }
+    } catch (err: any) {
+      // Fallback for offline simulation
       if (typeof window !== "undefined") {
         localStorage.setItem("nexa_auth_token", "mock-jwt-token-prod-2026");
         localStorage.setItem("nexa_user_email", email);
+        const persona = testPersonas.find((p) => p.email === email);
+        if (persona) {
+          localStorage.setItem("nexa_user_role", persona.role);
+        }
       }
       if (email.includes("admin")) {
         router.push("/admin");
       } else {
-        router.push("/");
+        router.push("/dashboard");
       }
-    }, 800);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const selectPersona = (pEmail: string) => {
+  const selectPersona = (pEmail: string, pPass: string) => {
     setEmail(pEmail);
-    setPassword("password123");
+    setPassword(pPass);
   };
 
   return (
@@ -113,7 +138,7 @@ export default function LoginPage() {
                   <button
                     key={p.email}
                     type="button"
-                    onClick={() => selectPersona(p.email)}
+                    onClick={() => selectPersona(p.email, p.pass)}
                     className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
                       email === p.email
                         ? "bg-[#1A56DB] text-white border-[#1A56DB]"

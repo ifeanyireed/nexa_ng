@@ -224,7 +224,68 @@ export const GTM_API = {
     return fetchJSON<any>(`${GTM_BASE}/admin/email/analytics`);
   },
 
-  // 9. Multi-Channel Revenue Attribution, Email Replies & Social Media Analytics
+  // 9. Super Admin Overview & Platform Health (Direct Database Sync)
+  getAdminOverview: async () => {
+    return fetchJSON<{
+      total_mrr: number;
+      total_tenants: number;
+      active_tenants_count: number;
+      total_users_count: number;
+      total_ai_spend_ngn: number;
+      agent_error_rate_pct: number;
+      avg_latency_ms: number;
+      active_campaigns_count: number;
+      total_attributed_pipeline: number;
+      tripped_breakers_count: number;
+      tenants: any[];
+      agent_health_summary: any[];
+      audit_logs: any[];
+    }>(`${GTM_BASE}/admin/overview`);
+  },
+
+  getAdminOrganizations: async () => {
+    return fetchJSON<any[]>(`${GTM_BASE}/admin/organizations`);
+  },
+
+  createAdminOrganization: async (data: { name: string; plan_tier: string; billing_cycle?: string }) => {
+    return fetchJSON<any>(`${GTM_BASE}/admin/organizations`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateAdminOrganization: async (id: string, data: { name?: string; plan_tier?: string; status?: string }) => {
+    return fetchJSON<any>(`${GTM_BASE}/admin/organizations/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  tripCircuitBreaker: async (agentKey: string) => {
+    return fetchJSON<any>(`${GTM_BASE}/admin/circuit-breaker/${agentKey}`, {
+      method: "POST",
+    });
+  },
+
+  resetCircuitBreaker: async (agentKey: string) => {
+    return fetchJSON<any>(`${GTM_BASE}/admin/circuit-breaker/${agentKey}/reset`, {
+      method: "POST",
+    });
+  },
+
+  tripGlobalKillswitch: async () => {
+    return fetchJSON<any>(`${GTM_BASE}/admin/killswitch/trip`, {
+      method: "POST",
+    });
+  },
+
+  resetGlobalKillswitch: async () => {
+    return fetchJSON<any>(`${GTM_BASE}/admin/killswitch/reset`, {
+      method: "POST",
+    });
+  },
+
+  // 10. Multi-Channel Revenue Attribution, Email Replies & Social Media Analytics
   getOverviewAnalytics: async (orgId = "org-01") => {
     return fetchJSON<any>(`${GTM_BASE}/${orgId}/analytics/overview`);
   },
@@ -235,6 +296,52 @@ export const GTM_API = {
 
   getSocialAnalytics: async (orgId = "org-01") => {
     return fetchJSON<any[]>(`${GTM_BASE}/${orgId}/analytics/social`);
+  },
+};
+
+const AUTH_BASE = process.env.NEXT_PUBLIC_AUTH_API_URL || "http://localhost:8082/api/v1/auth";
+
+export const AUTH_API = {
+  login: async (credentials: { email: string; password: string }) => {
+    return fetchJSON<{ token: string; user: any; org_id: string; organization?: any }>(
+      `${AUTH_BASE}/login`,
+      {
+        method: "POST",
+        body: JSON.stringify(credentials),
+      }
+    );
+  },
+
+  register: async (data: { email: string; password: string; name: string; business_name?: string; role?: string }) => {
+    return fetchJSON<{ token: string; user: any; org_id: string; organization?: any }>(
+      `${AUTH_BASE}/register`,
+      {
+        method: "POST",
+        body: JSON.stringify(data),
+      }
+    );
+  },
+
+  getMe: async () => {
+    return fetchJSON<{ user: any; org_id: string; role: string; organization: any }>(`${AUTH_BASE}/me`);
+  },
+
+  getWorkspaceUsers: async (orgId = "org-01") => {
+    return fetchJSON<any[]>(`${GTM_BASE}/${orgId}/users`);
+  },
+
+  inviteWorkspaceUser: async (orgId = "org-01", data: { email: string; name: string; role: string; title?: string; password?: string }) => {
+    return fetchJSON<any>(`${GTM_BASE}/${orgId}/users/invite`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateUserRole: async (orgId = "org-01", userId: string, role: string) => {
+    return fetchJSON<any>(`${GTM_BASE}/${orgId}/users/${userId}/role`, {
+      method: "PUT",
+      body: JSON.stringify({ role }),
+    });
   },
 };
 

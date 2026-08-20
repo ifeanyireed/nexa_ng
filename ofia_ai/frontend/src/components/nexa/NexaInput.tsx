@@ -89,7 +89,7 @@ export const NexaInput = React.forwardRef<HTMLInputElement, NexaInputProps>(
                   paddingRight: isFloating ? "4px" : "0px",
                 }}
                 className={cn(
-                  "absolute left-3 top-2.5 origin-left pointer-events-none transition-[color,padding,background-color] z-10 text-sm font-medium",
+                  "absolute left-3 top-2.5 origin-left pointer-events-none transition-[color,padding,background-color] z-10 text-sm font-medium whitespace-nowrap",
                   (leftIcon || variant === "search") && !isFloating && "left-0"
                 )}
               >

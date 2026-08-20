@@ -681,7 +681,7 @@ export default function AdminEmailPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <NexaInput
-                  label="Max Bounce Rate Threshold (%)"
+                  label="Max Bounce Rate (%)"
                   placeholder="5.0"
                   value={maxBounceRate}
                   onChange={(e) => setMaxBounceRate(e.target.value)}

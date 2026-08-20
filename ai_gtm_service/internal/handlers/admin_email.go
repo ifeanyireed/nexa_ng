@@ -223,13 +223,19 @@ func (h *AdminEmailHandler) TestPlatformDispatch(w http.ResponseWriter, r *http.
 	res, err := h.orchestrator.SendAgentEmail(r.Context(), email.OutboundEmail{
 		OrganizationID: "platform_admin",
 		To:             req.RecipientEmail,
-		Subject:        "Nexa Platform Pool Verification - Admin Test",
-		HTMLBody:       "<h2>Nexa Platform Email Pool Verified</h2><p>This email confirms that the platform shared email infrastructure is healthy and operational.</p>",
-		TextBody:       "Nexa Platform Email Pool Verified. Dispatch handshake successful.",
+		Subject:        "Ofia Platform Email Infrastructure Verified - Admin Test",
+		HTMLBody:       "<h2>Ofia AI Platform Email Infrastructure Verified</h2><p>This email confirms that the platform shared email infrastructure is healthy and operational.</p>",
+		TextBody:       "Ofia AI Platform Email Infrastructure Verified. Dispatch handshake successful.",
 	})
 
 	if err != nil {
-		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"success": false,
+			"error":   err.Error(),
+			"message": err.Error(),
+		})
 		return
 	}
 

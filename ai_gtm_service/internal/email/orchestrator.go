@@ -35,10 +35,16 @@ func GetGlobalEmailOrchestrator() *EmailOrchestrator {
 func (o *EmailOrchestrator) ResolveProvider(settings models.GTMTenantSettings) EmailProvider {
 	switch settings.EmailProvider {
 	case "RESEND":
-		apiKey, _ := crypto.Decrypt(settings.EmailAPIKeyEncrypted)
+		apiKey, _ := crypto.Decrypt(settings.ResendAPIKeyEncrypted)
+		if apiKey == "" {
+			apiKey, _ = crypto.Decrypt(settings.EmailAPIKeyEncrypted)
+		}
 		return NewResendProvider(apiKey)
 	case "BREVO":
-		apiKey, _ := crypto.Decrypt(settings.EmailAPIKeyEncrypted)
+		apiKey, _ := crypto.Decrypt(settings.BrevoAPIKeyEncrypted)
+		if apiKey == "" {
+			apiKey, _ = crypto.Decrypt(settings.EmailAPIKeyEncrypted)
+		}
 		return NewBrevoProvider(apiKey)
 	case "AWS_SES":
 		secret, _ := crypto.Decrypt(settings.AWSSecretKeyEncrypted)
@@ -47,34 +53,100 @@ func (o *EmailOrchestrator) ResolveProvider(settings models.GTMTenantSettings) E
 		apiKey, _ := crypto.Decrypt(settings.EmailAPIKeyEncrypted)
 		return NewSendGridProvider(apiKey)
 	default:
-		return o.nexaDefault
+		// Fallback to platform-wide global driver
+		return o.ResolveGlobalPlatformProvider()
+	}
+}
+
+// ResolveGlobalPlatformProvider returns the platform-wide configured driver from gtm_global_email_settings
+func (o *EmailOrchestrator) ResolveGlobalPlatformProvider() EmailProvider {
+	var globalSettings models.GTMGlobalEmailSettings
+	if o.db != nil {
+		o.db.FirstOrCreate(&globalSettings, models.GTMGlobalEmailSettings{ID: "global"})
+	}
+
+	prov := globalSettings.PlatformProvider
+	if prov == "" {
+		prov = "RESEND"
+	}
+
+	switch prov {
+	case "RESEND":
+		resendKey, _ := crypto.Decrypt(globalSettings.ResendAPIKeyEncrypted)
+		if resendKey == "" {
+			resendKey, _ = crypto.Decrypt(globalSettings.PlatformAPIKeyEncrypted)
+		}
+		return NewResendProvider(resendKey)
+	case "BREVO":
+		brevoKey, _ := crypto.Decrypt(globalSettings.BrevoAPIKeyEncrypted)
+		if brevoKey == "" {
+			brevoKey, _ = crypto.Decrypt(globalSettings.PlatformAPIKeyEncrypted)
+		}
+		return NewBrevoProvider(brevoKey)
+	case "AWS_SES":
+		secret, _ := crypto.Decrypt(globalSettings.PlatformAWSSecretEncrypted)
+		return NewSESProvider(globalSettings.PlatformAWSRegion, globalSettings.PlatformAWSAccessKey, secret)
+	default:
+		resendKey, _ := crypto.Decrypt(globalSettings.ResendAPIKeyEncrypted)
+		if resendKey == "" {
+			resendKey, _ = crypto.Decrypt(globalSettings.PlatformAPIKeyEncrypted)
+		}
+		return NewResendProvider(resendKey)
 	}
 }
 
 // SendAgentEmail is the single entry point for all 15 GTM agents (Noah Sterling, Devon Vance, etc.)
 // Agents NEVER call email providers directly.
 func (o *EmailOrchestrator) SendAgentEmail(ctx context.Context, email OutboundEmail) (*SendResult, error) {
-	var settings models.GTMTenantSettings
-	if o.db != nil && email.OrganizationID != "" {
-		_ = o.db.First(&settings, "organizationId = ?", email.OrganizationID)
-	}
+	var provider EmailProvider
 
-	// 1. Resolve Provider Driver
-	provider := o.ResolveProvider(settings)
-
-	// 2. Configure Sender Address (Customer Verified Domain > Nexa Platform Pool)
-	if settings.DomainStatus == "VERIFIED" && settings.EmailFromAddress != "" {
-		email.From = settings.EmailFromAddress
-		if settings.EmailFromName != "" {
-			email.FromName = settings.EmailFromName
+	if email.OrganizationID == "platform_admin" || email.OrganizationID == "" {
+		var globalSettings models.GTMGlobalEmailSettings
+		if o.db != nil {
+			o.db.FirstOrCreate(&globalSettings, models.GTMGlobalEmailSettings{ID: "global"})
 		}
-	} else if email.From == "" {
-		email.From = "outreach@nexa.ng"
-		email.FromName = "Nexa Autonomous GTM"
-	}
 
-	if email.ReplyTo == "" && settings.ReplyToEmail != "" {
-		email.ReplyTo = settings.ReplyToEmail
+		provider = o.ResolveGlobalPlatformProvider()
+
+		if email.From == "" {
+			if globalSettings.PlatformFromAddress != "" {
+				email.From = globalSettings.PlatformFromAddress
+			} else {
+				email.From = "outreach@ofia.ng"
+			}
+		}
+		if email.FromName == "" {
+			if globalSettings.PlatformFromName != "" {
+				email.FromName = globalSettings.PlatformFromName
+			} else {
+				email.FromName = "Ofia Autonomous GTM"
+			}
+		}
+		if email.ReplyTo == "" && globalSettings.PlatformReplyTo != "" {
+			email.ReplyTo = globalSettings.PlatformReplyTo
+		}
+	} else {
+		var settings models.GTMTenantSettings
+		if o.db != nil {
+			_ = o.db.First(&settings, "organizationId = ? OR organization_id = ?", email.OrganizationID, email.OrganizationID)
+		}
+
+		provider = o.ResolveProvider(settings)
+
+		// Configure Sender Address (Customer Verified Domain > Platform Pool)
+		if settings.DomainStatus == "VERIFIED" && settings.EmailFromAddress != "" {
+			email.From = settings.EmailFromAddress
+			if settings.EmailFromName != "" {
+				email.FromName = settings.EmailFromName
+			}
+		} else if email.From == "" {
+			email.From = "outreach@ofia.ng"
+			email.FromName = "Ofia Autonomous GTM"
+		}
+
+		if email.ReplyTo == "" && settings.ReplyToEmail != "" {
+			email.ReplyTo = settings.ReplyToEmail
+		}
 	}
 
 	// 3. Dispatch through provider driver

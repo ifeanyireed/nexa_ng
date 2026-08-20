@@ -215,12 +215,20 @@ export default function AdminEmailPage() {
   };
 
   const handleTestPlatformDispatch = async () => {
+    if (!testRecipient.trim()) {
+      showToast("❌ Please enter a valid recipient email address");
+      return;
+    }
     setIsTestingPlatform(true);
     try {
-      const res = await GTM_API.testPlatformEmailDispatch({ recipient_email: testRecipient });
-      showToast(res.message || `Platform test email sent to ${testRecipient}!`);
-    } catch {
-      showToast(`Platform test email dispatched to ${testRecipient} via ${platformProvider}!`);
+      const res = await GTM_API.testPlatformEmailDispatch({ recipient_email: testRecipient.trim() });
+      if (res && res.error) {
+        showToast(`❌ ${res.error}`);
+      } else {
+        showToast(`✅ ${res.message || `Platform test email sent to ${testRecipient}!`}`);
+      }
+    } catch (err: any) {
+      showToast(`❌ ${err.message || "Failed to dispatch test email. Check API key."}`);
     } finally {
       setIsTestingPlatform(false);
     }
@@ -251,8 +259,18 @@ export default function AdminEmailPage() {
       <div className="space-y-7">
         {/* Toast */}
         {toastMessage && (
-          <div className="p-3.5 rounded-2xl bg-[#0E9F6E]/15 border border-[#0E9F6E]/30 text-[#0E9F6E] text-xs font-bold flex items-center gap-2 animate-in fade-in">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <div
+            className={`p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in ${
+              toastMessage.startsWith("❌")
+                ? "bg-[#E02424]/15 border border-[#E02424]/30 text-[#E02424]"
+                : "bg-[#0E9F6E]/15 border border-[#0E9F6E]/30 text-[#0E9F6E]"
+            }`}
+          >
+            {toastMessage.startsWith("❌") ? (
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+            ) : (
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+            )}
             {toastMessage}
           </div>
         )}

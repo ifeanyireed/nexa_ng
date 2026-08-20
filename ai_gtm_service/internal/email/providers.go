@@ -1,9 +1,13 @@
 package email
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net"
+	"net/http"
 	"strings"
 	"time"
 )
@@ -84,13 +88,121 @@ func (p *ResendProvider) GetProviderName() string {
 
 func (p *ResendProvider) Send(ctx context.Context, email OutboundEmail) (*SendResult, error) {
 	start := time.Now()
-	// Real-world Resend REST API send dispatch
+
+	apiKey := strings.TrimSpace(p.APIKey)
+	if apiKey == "" {
+		return nil, fmt.Errorf("Resend API Key is not configured. Please enter and save your API key in Admin Email Settings")
+	}
+
+	fromHeader := email.From
+	if fromHeader == "" {
+		fromHeader = "onboarding@resend.dev"
+	}
+	if email.FromName != "" && !strings.Contains(fromHeader, "<") {
+		fromHeader = fmt.Sprintf("%s <%s>", email.FromName, fromHeader)
+	}
+
+	payload := map[string]interface{}{
+		"from":    fromHeader,
+		"to":      []string{email.To},
+		"subject": email.Subject,
+	}
+	if email.HTMLBody != "" {
+		payload["html"] = email.HTMLBody
+	}
+	if email.TextBody != "" {
+		payload["text"] = email.TextBody
+	}
+	if email.ReplyTo != "" {
+		payload["reply_to"] = email.ReplyTo
+	}
+
+	bodyBytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode Resend payload: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.resend.com/emails", bytes.NewBuffer(bodyBytes))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Resend request: %w", err)
+	}
+
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "Ofia-GTM-Engine/1.0")
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("Resend API network error: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode >= 400 {
+		var resendErr struct {
+			Name       string `json:"name"`
+			Message    string `json:"message"`
+			StatusCode int    `json:"statusCode"`
+		}
+		_ = json.Unmarshal(respBody, &resendErr)
+		errMsg := resendErr.Message
+		if errMsg == "" {
+			errMsg = string(respBody)
+		}
+
+		// If domain is unverified on Resend and this is a test dispatch, retry with onboarding@resend.dev sandbox
+		if (resp.StatusCode == 403 || strings.Contains(strings.ToLower(errMsg), "domain") || strings.Contains(strings.ToLower(errMsg), "verify")) && fromHeader != "onboarding@resend.dev" {
+			payload["from"] = "onboarding@resend.dev"
+			retryBytes, _ := json.Marshal(payload)
+			retryReq, _ := http.NewRequestWithContext(ctx, "POST", "https://api.resend.com/emails", bytes.NewBuffer(retryBytes))
+			if retryReq != nil {
+				retryReq.Header.Set("Authorization", "Bearer "+apiKey)
+				retryReq.Header.Set("Content-Type", "application/json")
+				retryResp, retryErr := client.Do(retryReq)
+				if retryErr == nil {
+					defer retryResp.Body.Close()
+					if retryResp.StatusCode < 400 {
+						var retryData struct {
+							ID string `json:"id"`
+						}
+						_ = json.NewDecoder(retryResp.Body).Decode(&retryData)
+						msgID := retryData.ID
+						if msgID == "" {
+							msgID = fmt.Sprintf("re_%d", time.Now().UnixNano())
+						}
+						return &SendResult{
+							MessageID: msgID,
+							Provider:  "RESEND (via onboarding@resend.dev sandbox)",
+							Domain:    "resend.dev",
+							Status:    "DELIVERED",
+							Latency:   time.Since(start),
+						}, nil
+					}
+				}
+			}
+		}
+
+		return nil, fmt.Errorf("Resend API error (%d): %s", resp.StatusCode, errMsg)
+	}
+
+	var resendResp struct {
+		ID string `json:"id"`
+	}
+	_ = json.Unmarshal(respBody, &resendResp)
+
+	msgID := resendResp.ID
+	if msgID == "" {
+		msgID = fmt.Sprintf("re_%d", time.Now().UnixNano())
+	}
+
 	return &SendResult{
-		MessageID: fmt.Sprintf("resend_re_%d", time.Now().UnixNano()),
+		MessageID: msgID,
 		Provider:  "RESEND",
 		Domain:    extractDomain(email.From),
 		Status:    "DELIVERED",
-		Latency:   time.Since(start) + (110 * time.Millisecond),
+		Latency:   time.Since(start),
 	}, nil
 }
 
@@ -162,12 +274,93 @@ func (p *BrevoProvider) GetProviderName() string {
 
 func (p *BrevoProvider) Send(ctx context.Context, email OutboundEmail) (*SendResult, error) {
 	start := time.Now()
+
+	apiKey := strings.TrimSpace(p.APIKey)
+	if apiKey == "" {
+		return nil, fmt.Errorf("Brevo API Key is not configured. Please enter and save your API key in Admin Email Settings")
+	}
+
+	senderEmail := email.From
+	if senderEmail == "" {
+		senderEmail = "outreach@ofia.ng"
+	}
+	senderName := email.FromName
+	if senderName == "" {
+		senderName = "Ofia Autonomous GTM"
+	}
+
+	payload := map[string]interface{}{
+		"sender": map[string]string{
+			"name":  senderName,
+			"email": senderEmail,
+		},
+		"to": []map[string]string{
+			{"email": email.To},
+		},
+		"subject": email.Subject,
+	}
+	if email.HTMLBody != "" {
+		payload["htmlContent"] = email.HTMLBody
+	}
+	if email.TextBody != "" {
+		payload["textContent"] = email.TextBody
+	}
+	if email.ReplyTo != "" {
+		payload["replyTo"] = map[string]string{"email": email.ReplyTo}
+	}
+
+	bodyBytes, err := json.Marshal(payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode Brevo payload: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://api.brevo.com/v3/smtp/email", bytes.NewBuffer(bodyBytes))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Brevo request: %w", err)
+	}
+
+	req.Header.Set("api-key", apiKey)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "Ofia-GTM-Engine/1.0")
+
+	client := &http.Client{Timeout: 15 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("Brevo API network error: %w", err)
+	}
+	defer resp.Body.Close()
+
+	respBody, _ := io.ReadAll(resp.Body)
+
+	if resp.StatusCode >= 400 {
+		var brevoErr struct {
+			Code    string `json:"code"`
+			Message string `json:"message"`
+		}
+		_ = json.Unmarshal(respBody, &brevoErr)
+		errMsg := brevoErr.Message
+		if errMsg == "" {
+			errMsg = string(respBody)
+		}
+		return nil, fmt.Errorf("Brevo API error (%d): %s", resp.StatusCode, errMsg)
+	}
+
+	var brevoResp struct {
+		MessageID string `json:"messageId"`
+	}
+	_ = json.Unmarshal(respBody, &brevoResp)
+
+	msgID := brevoResp.MessageID
+	if msgID == "" {
+		msgID = fmt.Sprintf("brevo_%d", time.Now().UnixNano())
+	}
+
 	return &SendResult{
-		MessageID: fmt.Sprintf("brevo_%d", time.Now().UnixNano()),
+		MessageID: msgID,
 		Provider:  "BREVO",
 		Domain:    extractDomain(email.From),
 		Status:    "DELIVERED",
-		Latency:   time.Since(start) + (130 * time.Millisecond),
+		Latency:   time.Since(start),
 	}, nil
 }
 

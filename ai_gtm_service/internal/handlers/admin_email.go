@@ -27,6 +27,10 @@ type AdminEmailSettingsResponse struct {
 	PlatformProvider           string   `json:"platform_provider"`
 	HasPlatformAPIKey          bool     `json:"has_platform_api_key"`
 	PlatformAPIKeyMasked       string   `json:"platform_api_key_masked"`
+	HasResendAPIKey            bool     `json:"has_resend_api_key"`
+	ResendAPIKeyMasked         string   `json:"resend_api_key_masked"`
+	HasBrevoAPIKey             bool     `json:"has_brevo_api_key"`
+	BrevoAPIKeyMasked          string   `json:"brevo_api_key_masked"`
 	PlatformAWSRegion          string   `json:"platform_aws_region"`
 	PlatformAWSAccessKey       string   `json:"platform_aws_access_key"`
 	HasPlatformAWSSecret       bool     `json:"has_platform_aws_secret"`
@@ -49,6 +53,8 @@ type AdminEmailSettingsResponse struct {
 type UpdateAdminEmailSettingsRequest struct {
 	PlatformProvider          string   `json:"platform_provider"`
 	PlatformAPIKey            string   `json:"platform_api_key,omitempty"`
+	ResendAPIKey              string   `json:"resend_api_key,omitempty"`
+	BrevoAPIKey               string   `json:"brevo_api_key,omitempty"`
 	PlatformAWSRegion         string   `json:"platform_aws_region,omitempty"`
 	PlatformAWSAccessKey      string   `json:"platform_aws_access_key,omitempty"`
 	PlatformAWSSecret         string   `json:"platform_aws_secret,omitempty"`
@@ -75,6 +81,15 @@ func (h *AdminEmailHandler) GetGlobalSettings(w http.ResponseWriter, r *http.Req
 	}
 
 	platformKeyDec, _ := crypto.Decrypt(settings.PlatformAPIKeyEncrypted)
+	resendKeyDec, _ := crypto.Decrypt(settings.ResendAPIKeyEncrypted)
+	brevoKeyDec, _ := crypto.Decrypt(settings.BrevoAPIKeyEncrypted)
+
+	if resendKeyDec == "" && settings.PlatformProvider == "RESEND" {
+		resendKeyDec = platformKeyDec
+	}
+	if brevoKeyDec == "" && settings.PlatformProvider == "BREVO" {
+		brevoKeyDec = platformKeyDec
+	}
 
 	suppressedList := strings.Split(settings.SuppressedDomains, ",")
 	if len(suppressedList) == 1 && suppressedList[0] == "" {
@@ -90,6 +105,10 @@ func (h *AdminEmailHandler) GetGlobalSettings(w http.ResponseWriter, r *http.Req
 		PlatformProvider:          settings.PlatformProvider,
 		HasPlatformAPIKey:         settings.PlatformAPIKeyEncrypted != "",
 		PlatformAPIKeyMasked:      crypto.MaskSecret(platformKeyDec),
+		HasResendAPIKey:            resendKeyDec != "",
+		ResendAPIKeyMasked:         crypto.MaskSecret(resendKeyDec),
+		HasBrevoAPIKey:             brevoKeyDec != "",
+		BrevoAPIKeyMasked:          crypto.MaskSecret(brevoKeyDec),
 		PlatformAWSRegion:         settings.PlatformAWSRegion,
 		PlatformAWSAccessKey:      settings.PlatformAWSAccessKey,
 		HasPlatformAWSSecret:      settings.PlatformAWSSecretEncrypted != "",
@@ -145,10 +164,30 @@ func (h *AdminEmailHandler) UpdateGlobalSettings(w http.ResponseWriter, r *http.
 			settings.AllowedProviders = strings.Join(req.AllowedProviders, ",")
 		}
 
+		if req.ResendAPIKey != "" {
+			enc, _ := crypto.Encrypt(req.ResendAPIKey)
+			settings.ResendAPIKeyEncrypted = enc
+			if req.PlatformProvider == "RESEND" {
+				settings.PlatformAPIKeyEncrypted = enc
+			}
+		}
+		if req.BrevoAPIKey != "" {
+			enc, _ := crypto.Encrypt(req.BrevoAPIKey)
+			settings.BrevoAPIKeyEncrypted = enc
+			if req.PlatformProvider == "BREVO" {
+				settings.PlatformAPIKeyEncrypted = enc
+			}
+		}
 		if req.PlatformAPIKey != "" {
 			enc, _ := crypto.Encrypt(req.PlatformAPIKey)
 			settings.PlatformAPIKeyEncrypted = enc
+			if req.PlatformProvider == "RESEND" {
+				settings.ResendAPIKeyEncrypted = enc
+			} else if req.PlatformProvider == "BREVO" {
+				settings.BrevoAPIKeyEncrypted = enc
+			}
 		}
+
 		if req.PlatformAWSRegion != "" {
 			settings.PlatformAWSRegion = req.PlatformAWSRegion
 		}

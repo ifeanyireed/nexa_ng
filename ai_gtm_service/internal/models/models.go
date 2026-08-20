@@ -202,7 +202,9 @@ type GTMTenantSettings struct {
 	AWSRegion                    string    `gorm:"size:50" json:"aws_region"`
 	AWSAccessKeyID               string    `gorm:"size:191" json:"aws_access_key_id"`
 	AWSSecretKeyEncrypted        string    `gorm:"type:text" json:"-"`
-	EmailAPIKeyEncrypted         string    `gorm:"type:text" json:"-"`
+	EmailAPIKeyEncrypted         string    `gorm:"type:text;column:email_api_key_encrypted" json:"-"`
+	ResendAPIKeyEncrypted        string    `gorm:"type:text;column:resend_api_key_encrypted" json:"-"`
+	BrevoAPIKeyEncrypted         string    `gorm:"type:text;column:brevo_api_key_encrypted" json:"-"`
 	DailyEmailLimit              int       `gorm:"default:500" json:"daily_email_limit"`
 	WhatsAppPhoneNumberID        string    `gorm:"size:191" json:"whatsapp_phone_number_id"`
 	WhatsAppWABAID               string    `gorm:"size:191" json:"whatsapp_waba_id"`
@@ -271,7 +273,9 @@ func (GTMEmailDispatchLog) TableName() string {
 type GTMGlobalEmailSettings struct {
 	ID                         string    `gorm:"primaryKey;size:191" json:"id"`
 	PlatformProvider           string    `gorm:"size:50;not null;default:'RESEND'" json:"platform_provider"`
-	PlatformAPIKeyEncrypted    string    `gorm:"type:text" json:"-"`
+	PlatformAPIKeyEncrypted    string    `gorm:"type:text;column:platform_api_key_encrypted" json:"-"`
+	ResendAPIKeyEncrypted      string    `gorm:"type:text;column:resend_api_key_encrypted" json:"-"`
+	BrevoAPIKeyEncrypted       string    `gorm:"type:text;column:brevo_api_key_encrypted" json:"-"`
 	PlatformAWSRegion          string    `gorm:"size:50;default:'us-east-1'" json:"platform_aws_region"`
 	PlatformAWSAccessKey       string    `gorm:"size:191" json:"platform_aws_access_key"`
 	PlatformAWSSecretEncrypted string    `gorm:"type:text" json:"-"`

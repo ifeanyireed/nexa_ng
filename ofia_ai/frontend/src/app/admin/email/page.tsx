@@ -28,10 +28,18 @@ import { GTM_API } from "@/lib/api-client";
 export default function AdminEmailPage() {
   // Platform Email Pool States
   const [platformProvider, setPlatformProvider] = useState("RESEND");
-  const [platformApiKey, setPlatformApiKey] = useState("");
-  const [hasPlatformApiKey, setHasPlatformApiKey] = useState(false);
-  const [maskedPlatformApiKey, setMaskedPlatformApiKey] = useState("");
 
+  // Distinct Resend Key State
+  const [resendApiKey, setResendApiKey] = useState("");
+  const [hasResendApiKey, setHasResendApiKey] = useState(false);
+  const [maskedResendApiKey, setMaskedResendApiKey] = useState("");
+
+  // Distinct Brevo Key State
+  const [brevoApiKey, setBrevoApiKey] = useState("");
+  const [hasBrevoApiKey, setHasBrevoApiKey] = useState(false);
+  const [maskedBrevoApiKey, setMaskedBrevoApiKey] = useState("");
+
+  // Distinct AWS SES States
   const [platformAwsRegion, setPlatformAwsRegion] = useState("us-east-1");
   const [platformAwsAccessKey, setPlatformAwsAccessKey] = useState("");
   const [platformAwsSecret, setPlatformAwsSecret] = useState("");
@@ -115,9 +123,13 @@ export default function AdminEmailPage() {
         if (data.platform_from_name) setPlatformFromName(data.platform_from_name);
         if (data.platform_reply_to) setPlatformReplyTo(data.platform_reply_to);
 
-        setHasPlatformApiKey(Boolean(data.has_platform_api_key));
-        setMaskedPlatformApiKey(data.platform_api_key_masked || "");
-        setPlatformApiKey("");
+        setHasResendApiKey(Boolean(data.has_resend_api_key || (data.has_platform_api_key && data.platform_provider === "RESEND")));
+        setMaskedResendApiKey(data.resend_api_key_masked || (data.platform_provider === "RESEND" ? data.platform_api_key_masked : "") || "");
+        setResendApiKey("");
+
+        setHasBrevoApiKey(Boolean(data.has_brevo_api_key || (data.has_platform_api_key && data.platform_provider === "BREVO")));
+        setMaskedBrevoApiKey(data.brevo_api_key_masked || (data.platform_provider === "BREVO" ? data.platform_api_key_masked : "") || "");
+        setBrevoApiKey("");
 
         if (data.platform_aws_region) setPlatformAwsRegion(data.platform_aws_region);
         if (data.platform_aws_access_key) setPlatformAwsAccessKey(data.platform_aws_access_key);
@@ -173,8 +185,12 @@ export default function AdminEmailPage() {
         allowed_providers: allowedProviders,
       };
 
-      if (platformApiKey.trim() !== "") {
-        payload.platform_api_key = platformApiKey.trim();
+      if (resendApiKey.trim() !== "") {
+        payload.resend_api_key = resendApiKey.trim();
+      }
+
+      if (brevoApiKey.trim() !== "") {
+        payload.brevo_api_key = brevoApiKey.trim();
       }
 
       if (platformProvider === "AWS_SES") {
@@ -444,17 +460,15 @@ export default function AdminEmailPage() {
                   </p>
                 </div>
               </>
-            ) : (
+            ) : platformProvider === "BREVO" ? (
               <div className="sm:col-span-3 space-y-1.5">
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-[var(--nexa-text-muted)]">
-                    {platformProvider === "BREVO"
-                      ? "Brevo v3 API Key (AES-256 Encrypted)"
-                      : "Resend Master API Key (AES-256 Encrypted)"}
+                    Brevo v3 API Key (AES-256 Encrypted)
                   </label>
-                  {hasPlatformApiKey ? (
+                  {hasBrevoApiKey ? (
                     <span className="text-[10px] font-bold text-[#0E9F6E] flex items-center gap-1 bg-[#0E9F6E]/10 px-2.5 py-0.5 rounded-full border border-[#0E9F6E]/20">
-                      <CheckCircle2 className="w-3 h-3" /> Configured in Database ({maskedPlatformApiKey || "Active"})
+                      <CheckCircle2 className="w-3 h-3" /> Configured in Database ({maskedBrevoApiKey || "Active"})
                     </span>
                   ) : (
                     <span className="text-[10px] font-semibold text-[#F59E0B] flex items-center gap-1 bg-[#F59E0B]/10 px-2.5 py-0.5 rounded-full border border-[#F59E0B]/20">
@@ -464,20 +478,50 @@ export default function AdminEmailPage() {
                 </div>
                 <NexaInput
                   placeholder={
-                    hasPlatformApiKey
-                      ? `Enter new key to overwrite (currently saved: ${maskedPlatformApiKey || "configured"})`
-                      : platformProvider === "BREVO"
-                      ? "xkeysib-••••••••••••••••••••••••••••••••"
+                    hasBrevoApiKey
+                      ? `Enter new key to overwrite (currently saved: ${maskedBrevoApiKey || "configured"})`
+                      : "xkeysib-•••••••••••••••••••••••••••••••• (Paste your Brevo API Key)"
+                  }
+                  type="password"
+                  value={brevoApiKey}
+                  onChange={(e) => setBrevoApiKey(e.target.value)}
+                />
+                <p className="text-[10px] text-[var(--nexa-text-muted)]">
+                  {hasBrevoApiKey
+                    ? "Brevo API key is safely encrypted in MySQL. Leave empty to keep it, or type a new key to update."
+                    : "No Brevo API key found in MySQL database. Paste your key above and click 'Save Global Configuration'."}
+                </p>
+              </div>
+            ) : (
+              <div className="sm:col-span-3 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-[var(--nexa-text-muted)]">
+                    Resend Master API Key (AES-256 Encrypted)
+                  </label>
+                  {hasResendApiKey ? (
+                    <span className="text-[10px] font-bold text-[#0E9F6E] flex items-center gap-1 bg-[#0E9F6E]/10 px-2.5 py-0.5 rounded-full border border-[#0E9F6E]/20">
+                      <CheckCircle2 className="w-3 h-3" /> Configured in Database ({maskedResendApiKey || "Active"})
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-semibold text-[#F59E0B] flex items-center gap-1 bg-[#F59E0B]/10 px-2.5 py-0.5 rounded-full border border-[#F59E0B]/20">
+                      <AlertTriangle className="w-3 h-3" /> Not Configured in Database
+                    </span>
+                  )}
+                </div>
+                <NexaInput
+                  placeholder={
+                    hasResendApiKey
+                      ? `Enter new key to overwrite (currently saved: ${maskedResendApiKey || "configured"})`
                       : "re_•••••••••••••••• (Paste your Resend API Key here)"
                   }
                   type="password"
-                  value={platformApiKey}
-                  onChange={(e) => setPlatformApiKey(e.target.value)}
+                  value={resendApiKey}
+                  onChange={(e) => setResendApiKey(e.target.value)}
                 />
                 <p className="text-[10px] text-[var(--nexa-text-muted)]">
-                  {hasPlatformApiKey
-                    ? "A valid API key is saved and encrypted in MySQL. Leave empty to keep it, or type a new key to update."
-                    : "No API key found in MySQL database. Paste your key above and click 'Save Global Configuration'."}
+                  {hasResendApiKey
+                    ? "Resend API key is safely encrypted in MySQL. Leave empty to keep it, or type a new key to update."
+                    : "No Resend key found in MySQL database. Paste your key above and click 'Save Global Configuration'."}
                 </p>
               </div>
             )}

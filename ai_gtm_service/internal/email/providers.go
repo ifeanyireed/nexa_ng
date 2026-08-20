@@ -163,11 +163,12 @@ func (p *ResendProvider) Send(ctx context.Context, email OutboundEmail) (*SendRe
 				retryResp, retryErr := client.Do(retryReq)
 				if retryErr == nil {
 					defer retryResp.Body.Close()
+					retryBody, _ := io.ReadAll(retryResp.Body)
 					if retryResp.StatusCode < 400 {
 						var retryData struct {
 							ID string `json:"id"`
 						}
-						_ = json.NewDecoder(retryResp.Body).Decode(&retryData)
+						_ = json.Unmarshal(retryBody, &retryData)
 						msgID := retryData.ID
 						if msgID == "" {
 							msgID = fmt.Sprintf("re_%d", time.Now().UnixNano())
@@ -179,6 +180,14 @@ func (p *ResendProvider) Send(ctx context.Context, email OutboundEmail) (*SendRe
 							Status:    "DELIVERED",
 							Latency:   time.Since(start),
 						}, nil
+					} else {
+						var retryErrObj struct {
+							Message string `json:"message"`
+						}
+						_ = json.Unmarshal(retryBody, &retryErrObj)
+						if retryErrObj.Message != "" {
+							errMsg = retryErrObj.Message
+						}
 					}
 				}
 			}

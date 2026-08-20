@@ -28,10 +28,15 @@ import { GTM_API } from "@/lib/api-client";
 export default function AdminEmailPage() {
   // Platform Email Pool States
   const [platformProvider, setPlatformProvider] = useState("RESEND");
-  const [platformApiKey, setPlatformApiKey] = useState("re_platform_••••••••••••••••");
+  const [platformApiKey, setPlatformApiKey] = useState("");
+  const [hasPlatformApiKey, setHasPlatformApiKey] = useState(false);
+  const [maskedPlatformApiKey, setMaskedPlatformApiKey] = useState("");
+
   const [platformAwsRegion, setPlatformAwsRegion] = useState("us-east-1");
-  const [platformAwsAccessKey, setPlatformAwsAccessKey] = useState("AKIA_PLATFORM_••••••••");
-  const [platformAwsSecret, setPlatformAwsSecret] = useState("wJalrXUtnFEMI_PLATFORM_••••••••");
+  const [platformAwsAccessKey, setPlatformAwsAccessKey] = useState("");
+  const [platformAwsSecret, setPlatformAwsSecret] = useState("");
+  const [hasPlatformAwsSecret, setHasPlatformAwsSecret] = useState(false);
+
   const [platformFromAddress, setPlatformFromAddress] = useState("outreach@ofia.ng");
   const [platformFromName, setPlatformFromName] = useState("Ofia Autonomous GTM");
   const [platformReplyTo, setPlatformReplyTo] = useState("support@ofia.ng");
@@ -74,8 +79,8 @@ export default function AdminEmailPage() {
     delivered_rate: 99.4,
     bounce_rate_pct: 0.58,
     complaint_rate_pct: 0.02,
-    active_sending_tenants: 42,
-    connected_domains_count: 58,
+    active_sending_tenants: 4,
+    connected_domains_count: 4,
     provider_breakdown: [
       { provider: "Ofia Managed (ofia.ng)", count: 8420, percentage: 45.6 },
       { provider: "Resend", count: 5210, percentage: 28.2 },
@@ -109,6 +114,16 @@ export default function AdminEmailPage() {
         if (data.platform_from_address) setPlatformFromAddress(data.platform_from_address);
         if (data.platform_from_name) setPlatformFromName(data.platform_from_name);
         if (data.platform_reply_to) setPlatformReplyTo(data.platform_reply_to);
+
+        setHasPlatformApiKey(Boolean(data.has_platform_api_key));
+        setMaskedPlatformApiKey(data.platform_api_key_masked || "");
+        setPlatformApiKey("");
+
+        if (data.platform_aws_region) setPlatformAwsRegion(data.platform_aws_region);
+        if (data.platform_aws_access_key) setPlatformAwsAccessKey(data.platform_aws_access_key);
+        setHasPlatformAwsSecret(Boolean(data.has_platform_aws_secret));
+        setPlatformAwsSecret("");
+
         if (data.enforce_dkim_verification !== undefined) setEnforceDKIM(data.enforce_dkim_verification);
         if (data.max_bounce_rate_threshold) setMaxBounceRate(String(data.max_bounce_rate_threshold));
         if (data.max_spam_complaint_threshold) setMaxSpamComplaint(String(data.max_spam_complaint_threshold));
@@ -124,8 +139,8 @@ export default function AdminEmailPage() {
           setAllowedProviders(data.allowed_providers);
         }
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.warn("Using localized fallback settings:", err);
     }
   };
 
@@ -141,12 +156,8 @@ export default function AdminEmailPage() {
   const handleSaveAll = async () => {
     setIsSaving(true);
     try {
-      await GTM_API.updateAdminEmailSettings({
+      const payload: any = {
         platform_provider: platformProvider,
-        platform_api_key: platformApiKey.includes("••••") ? undefined : platformApiKey,
-        platform_aws_region: platformAwsRegion,
-        platform_aws_access_key: platformAwsAccessKey.includes("••••") ? undefined : platformAwsAccessKey,
-        platform_aws_secret: platformAwsSecret.includes("••••") ? undefined : platformAwsSecret,
         platform_from_address: platformFromAddress,
         platform_from_name: platformFromName,
         platform_reply_to: platformReplyTo,
@@ -160,10 +171,28 @@ export default function AdminEmailPage() {
         enterprise_daily_limit: parseInt(enterpriseLimit) || 10000,
         suppressed_domains: suppressedDomains,
         allowed_providers: allowedProviders,
-      });
-      showToast("Global Platform Email settings & cross-tenant limits saved to u721451974_nexa_db!");
+      };
+
+      if (platformApiKey.trim() !== "") {
+        payload.platform_api_key = platformApiKey.trim();
+      }
+
+      if (platformProvider === "AWS_SES") {
+        payload.platform_aws_region = platformAwsRegion;
+        if (platformAwsAccessKey.trim() !== "") {
+          payload.platform_aws_access_key = platformAwsAccessKey.trim();
+        }
+        if (platformAwsSecret.trim() !== "") {
+          payload.platform_aws_secret = platformAwsSecret.trim();
+        }
+      }
+
+      await GTM_API.updateAdminEmailSettings(payload);
+      showToast("Global Platform Email settings & credentials saved to MySQL database!");
+      await loadSettings();
     } catch {
       showToast("Global Platform Email settings updated successfully!");
+      await loadSettings();
     } finally {
       setIsSaving(false);
     }
@@ -351,22 +380,107 @@ export default function AdminEmailPage() {
               onChange={(e) => setPlatformFromName(e.target.value)}
             />
 
-            <div className="sm:col-span-2">
-              <NexaInput
-                label="Platform Master API Key (AES-256 Encrypted)"
-                placeholder="re_platform_••••••••••••••••••••"
-                type="password"
-                value={platformApiKey}
-                onChange={(e) => setPlatformApiKey(e.target.value)}
-              />
-            </div>
-
             <NexaInput
               label="Platform Default Reply-To"
               placeholder="support@ofia.ng"
               value={platformReplyTo}
               onChange={(e) => setPlatformReplyTo(e.target.value)}
             />
+
+            {platformProvider === "AWS_SES" ? (
+              <>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-[var(--nexa-text-muted)]">
+                    AWS Region
+                  </label>
+                  <select
+                    value={platformAwsRegion}
+                    onChange={(e) => setPlatformAwsRegion(e.target.value)}
+                    className="w-full h-11 px-3 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
+                  >
+                    <option value="us-east-1">US East (N. Virginia) - us-east-1</option>
+                    <option value="us-east-2">US East (Ohio) - us-east-2</option>
+                    <option value="eu-west-1">Europe (Ireland) - eu-west-1</option>
+                    <option value="af-south-1">Africa (Cape Town) - af-south-1</option>
+                  </select>
+                </div>
+
+                <NexaInput
+                  label="AWS Access Key ID"
+                  placeholder="AKIA_••••••••••••••••"
+                  value={platformAwsAccessKey}
+                  onChange={(e) => setPlatformAwsAccessKey(e.target.value)}
+                />
+
+                <div className="sm:col-span-3 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-[var(--nexa-text-muted)]">
+                      AWS Secret Access Key (AES-256 Encrypted)
+                    </label>
+                    {hasPlatformAwsSecret ? (
+                      <span className="text-[10px] font-bold text-[#0E9F6E] flex items-center gap-1 bg-[#0E9F6E]/10 px-2 py-0.5 rounded-full border border-[#0E9F6E]/20">
+                        <CheckCircle2 className="w-3 h-3" /> Configured in Database
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-semibold text-[#F59E0B] flex items-center gap-1 bg-[#F59E0B]/10 px-2 py-0.5 rounded-full border border-[#F59E0B]/20">
+                        <AlertTriangle className="w-3 h-3" /> Not Configured in Database
+                      </span>
+                    )}
+                  </div>
+                  <NexaInput
+                    placeholder={
+                      hasPlatformAwsSecret
+                        ? "Enter new secret to overwrite (currently configured in database)"
+                        : "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+                    }
+                    type="password"
+                    value={platformAwsSecret}
+                    onChange={(e) => setPlatformAwsSecret(e.target.value)}
+                  />
+                  <p className="text-[10px] text-[var(--nexa-text-muted)]">
+                    {hasPlatformAwsSecret
+                      ? "AWS Secret is safely encrypted in MySQL. Leave blank to keep existing key."
+                      : "No AWS Secret saved in MySQL database yet. Enter secret and click Save."}
+                  </p>
+                </div>
+              </>
+            ) : (
+              <div className="sm:col-span-3 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-[var(--nexa-text-muted)]">
+                    {platformProvider === "BREVO"
+                      ? "Brevo v3 API Key (AES-256 Encrypted)"
+                      : "Resend Master API Key (AES-256 Encrypted)"}
+                  </label>
+                  {hasPlatformApiKey ? (
+                    <span className="text-[10px] font-bold text-[#0E9F6E] flex items-center gap-1 bg-[#0E9F6E]/10 px-2.5 py-0.5 rounded-full border border-[#0E9F6E]/20">
+                      <CheckCircle2 className="w-3 h-3" /> Configured in Database ({maskedPlatformApiKey || "Active"})
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-semibold text-[#F59E0B] flex items-center gap-1 bg-[#F59E0B]/10 px-2.5 py-0.5 rounded-full border border-[#F59E0B]/20">
+                      <AlertTriangle className="w-3 h-3" /> Not Configured in Database
+                    </span>
+                  )}
+                </div>
+                <NexaInput
+                  placeholder={
+                    hasPlatformApiKey
+                      ? `Enter new key to overwrite (currently saved: ${maskedPlatformApiKey || "configured"})`
+                      : platformProvider === "BREVO"
+                      ? "xkeysib-••••••••••••••••••••••••••••••••"
+                      : "re_•••••••••••••••• (Paste your Resend API Key here)"
+                  }
+                  type="password"
+                  value={platformApiKey}
+                  onChange={(e) => setPlatformApiKey(e.target.value)}
+                />
+                <p className="text-[10px] text-[var(--nexa-text-muted)]">
+                  {hasPlatformApiKey
+                    ? "A valid API key is saved and encrypted in MySQL. Leave empty to keep it, or type a new key to update."
+                    : "No API key found in MySQL database. Paste your key above and click 'Save Global Configuration'."}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Test Platform Pool Dispatch */}

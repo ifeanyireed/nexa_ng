@@ -22,8 +22,13 @@ import {
   Activity,
   DollarSign,
   Lock,
+  Sparkles,
+  HelpCircle,
+  Info,
+  ExternalLink,
 } from "lucide-react";
 import { GTM_API } from "@/lib/api-client";
+import { EmailSetupWizard } from "@/components/admin/EmailSetupWizard";
 
 export default function AdminEmailPage() {
   // Platform Email Pool States
@@ -101,8 +106,10 @@ export default function AdminEmailPage() {
   // UI Feedback States
   const [isSaving, setIsSaving] = useState(false);
   const [isTestingPlatform, setIsTestingPlatform] = useState(false);
-  const [testRecipient, setTestRecipient] = useState("admin@ofia.ng");
+  const [testRecipient, setTestRecipient] = useState("reedbreednigeria@gmail.com");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [showTourBanner, setShowTourBanner] = useState(true);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -296,6 +303,15 @@ export default function AdminEmailPage() {
             <NexaButton
               size="sm"
               variant="outline"
+              className="border-[#7E3AF2]/40 text-[#7E3AF2] hover:bg-[#7E3AF2]/10 font-bold shadow-sm"
+              leftIcon={<Sparkles className="w-4 h-4 text-[#7E3AF2]" />}
+              onClick={() => setIsWizardOpen(true)}
+            >
+              Setup Wizard
+            </NexaButton>
+            <NexaButton
+              size="sm"
+              variant="outline"
               leftIcon={<RefreshCw className="w-4 h-4" />}
               onClick={() => {
                 loadSettings();
@@ -316,6 +332,44 @@ export default function AdminEmailPage() {
             </NexaButton>
           </div>
         </div>
+
+        {/* GUIDED SETUP TOUR BANNER */}
+        {showTourBanner && (
+          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#1A56DB]/10 via-[#7E3AF2]/10 to-[#0E9F6E]/10 border border-[#1A56DB]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in">
+            <div className="flex items-start sm:items-center gap-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#1A56DB] to-[#7E3AF2] flex items-center justify-center text-white shrink-0 shadow-md">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div className="space-y-0.5">
+                <div className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-2">
+                  Need Help Configuring Email Relay & Deliverability?
+                  <NexaBadge variant="purple">5-Min Interactive Tour</NexaBadge>
+                </div>
+                <div className="text-[11px] text-[var(--nexa-text-secondary)]">
+                  Step-by-step guidance on Driver selection, API key encryption, Sandbox vs Production restrictions, and DNS records (DKIM/SPF).
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <NexaButton
+                size="sm"
+                variant="primary"
+                leftIcon={<Sparkles className="w-3.5 h-3.5" />}
+                onClick={() => setIsWizardOpen(true)}
+                className="bg-[#1A56DB] text-white hover:bg-[#1545B0] shadow-sm font-bold"
+              >
+                Launch Setup Wizard
+              </NexaButton>
+              <button
+                onClick={() => setShowTourBanner(false)}
+                className="p-2 rounded-xl text-[var(--nexa-text-muted)] hover:bg-[var(--nexa-bg-surface)] transition-all cursor-pointer"
+                title="Dismiss Tour"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Cross-Tenant Telemetry Top Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -386,9 +440,20 @@ export default function AdminEmailPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[var(--nexa-text-muted)]">
-                Active Platform Driver
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-[var(--nexa-text-muted)] flex items-center gap-1.5">
+                  Active Platform Driver
+                  <span title="Resend is recommended for instant deliverability. Brevo provides 300 free daily sends. AWS SES is best for high volume.">
+                    <HelpCircle className="w-3.5 h-3.5 text-[var(--nexa-text-muted)] cursor-help" />
+                  </span>
+                </label>
+                <button
+                  onClick={() => setIsWizardOpen(true)}
+                  className="text-[10px] font-bold text-[#1A56DB] hover:underline cursor-pointer flex items-center gap-0.5"
+                >
+                  <Sparkles className="w-2.5 h-2.5" /> Wizard
+                </button>
+              </div>
               <select
                 value={platformProvider}
                 onChange={(e) => setPlatformProvider(e.target.value)}
@@ -448,8 +513,11 @@ export default function AdminEmailPage() {
 
                 <div className="sm:col-span-3 space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-[var(--nexa-text-muted)]">
+                    <label className="text-xs font-semibold text-[var(--nexa-text-muted)] flex items-center gap-1.5">
                       AWS Secret Access Key (AES-256 Encrypted)
+                      <span title="Stored using AES-256-GCM zero-knowledge encryption in MySQL database.">
+                        <HelpCircle className="w-3.5 h-3.5 text-[var(--nexa-text-muted)] cursor-help" />
+                      </span>
                     </label>
                     {hasPlatformAwsSecret ? (
                       <span className="text-[10px] font-bold text-[#0E9F6E] flex items-center gap-1 bg-[#0E9F6E]/10 px-2 py-0.5 rounded-full border border-[#0E9F6E]/20">
@@ -481,8 +549,19 @@ export default function AdminEmailPage() {
             ) : platformProvider === "BREVO" ? (
               <div className="sm:col-span-3 space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-[var(--nexa-text-muted)]">
+                  <label className="text-xs font-semibold text-[var(--nexa-text-muted)] flex items-center gap-1.5">
                     Brevo v3 API Key (AES-256 Encrypted)
+                    <span title="Generated in Brevo dashboard under SMTP & API. Encrypted with AES-256-GCM.">
+                      <HelpCircle className="w-3.5 h-3.5 text-[var(--nexa-text-muted)] cursor-help" />
+                    </span>
+                    <a
+                      href="https://app.brevo.com/settings/keys/api"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-[#1A56DB] hover:underline flex items-center gap-0.5 font-bold"
+                    >
+                      Get Key <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
                   </label>
                   {hasBrevoApiKey ? (
                     <span className="text-[10px] font-bold text-[#0E9F6E] flex items-center gap-1 bg-[#0E9F6E]/10 px-2.5 py-0.5 rounded-full border border-[#0E9F6E]/20">
@@ -513,8 +592,19 @@ export default function AdminEmailPage() {
             ) : (
               <div className="sm:col-span-3 space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-[var(--nexa-text-muted)]">
+                  <label className="text-xs font-semibold text-[var(--nexa-text-muted)] flex items-center gap-1.5">
                     Resend Master API Key (AES-256 Encrypted)
+                    <span title="Generated at resend.com/api-keys. Safely encrypted in MySQL using AES-256-GCM zero-knowledge encryption.">
+                      <HelpCircle className="w-3.5 h-3.5 text-[var(--nexa-text-muted)] cursor-help" />
+                    </span>
+                    <a
+                      href="https://resend.com/api-keys"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[10px] text-[#1A56DB] hover:underline flex items-center gap-0.5 font-bold"
+                    >
+                      Get Key <ExternalLink className="w-2.5 h-2.5" />
+                    </a>
                   </label>
                   {hasResendApiKey ? (
                     <span className="text-[10px] font-bold text-[#0E9F6E] flex items-center gap-1 bg-[#0E9F6E]/10 px-2.5 py-0.5 rounded-full border border-[#0E9F6E]/20">
@@ -546,30 +636,66 @@ export default function AdminEmailPage() {
           </div>
 
           {/* Test Platform Pool Dispatch */}
-          <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="space-y-0.5">
-              <div className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5 text-[#1A56DB]" />
-                Test Platform Shared Pool Handshake
+          <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="space-y-0.5">
+                <div className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
+                  <Zap className="w-3.5 h-3.5 text-[#1A56DB]" />
+                  Test Platform Shared Pool Handshake
+                </div>
+                <div className="text-[11px] text-[var(--nexa-text-muted)]">
+                  Dispatches a live verification handshake email from <code>{platformFromAddress}</code> via {platformProvider}.
+                </div>
               </div>
-              <div className="text-[11px] text-[var(--nexa-text-muted)]">
-                Dispatches a verification email from <code>{platformFromAddress}</code> via {platformProvider}.
+
+              {/* Sandbox Tip / Guide trigger */}
+              <button
+                onClick={() => setIsWizardOpen(true)}
+                className="text-[11px] font-bold text-[#1A56DB] hover:underline flex items-center gap-1 cursor-pointer self-start sm:self-auto"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                How Sandbox & Domain Verification Works
+              </button>
+            </div>
+
+            {/* Quick Sandbox Warning & Helper */}
+            <div className="p-3 rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div className="flex items-start gap-2 text-[11px] text-[var(--nexa-text-secondary)]">
+                <Info className="w-4 h-4 text-[#1A56DB] shrink-0 mt-0.5" />
+                <span>
+                  <strong>Sandbox Testing Note:</strong> Before <code>ofia.ng</code> is verified on Resend, emails can only be sent to your registered Resend account address.
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <button
+                  onClick={() => setTestRecipient("reedbreednigeria@gmail.com")}
+                  className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-[#1A56DB]/10 text-[#1A56DB] hover:bg-[#1A56DB]/20 transition-all cursor-pointer"
+                >
+                  Use Account Email
+                </button>
+                <button
+                  onClick={() => setTestRecipient("admin@ofia.ng")}
+                  className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-[var(--nexa-bg-base)] text-[var(--nexa-text-muted)] hover:bg-[var(--nexa-border)] transition-all cursor-pointer"
+                >
+                  Use ofia.ng
+                </button>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
               <input
                 type="email"
                 value={testRecipient}
                 onChange={(e) => setTestRecipient(e.target.value)}
-                placeholder="admin@ofia.ng"
-                className="px-3 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] w-48 outline-none"
+                placeholder="reedbreednigeria@gmail.com"
+                className="w-full sm:flex-1 px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
               />
               <NexaButton
                 size="sm"
                 variant="primary"
                 onClick={handleTestPlatformDispatch}
                 isLoading={isTestingPlatform}
+                className="w-full sm:w-auto font-bold px-5"
               >
                 Dispatch Test
               </NexaButton>
@@ -819,6 +945,15 @@ export default function AdminEmailPage() {
             </NexaButton>
           </div>
         </div>
+
+        {/* SETUP WIZARD MODAL */}
+        <EmailSetupWizard
+          isOpen={isWizardOpen}
+          onClose={() => setIsWizardOpen(false)}
+          currentProvider={platformProvider}
+          hasApiKey={hasResendApiKey || hasBrevoApiKey || hasPlatformAwsSecret}
+          onSelectProvider={(p) => setPlatformProvider(p)}
+        />
       </div>
     </AdminShell>
   );

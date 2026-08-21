@@ -333,7 +333,7 @@ export const EmailSetupWizard: React.FC<EmailSetupWizardProps> = ({
           </motion.div>
         )}
 
-        {/* STEP 4: DNS RECORDS */}
+        {/* STEP 4: DNS RECORDS - PROVIDER DASHBOARD WALKTHROUGH */}
         {step === 4 && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
@@ -343,79 +343,154 @@ export const EmailSetupWizard: React.FC<EmailSetupWizardProps> = ({
             <div className="p-4 rounded-2xl bg-[#1A56DB]/10 border border-[#1A56DB]/20 text-[#1A56DB] flex items-start gap-3">
               <Globe className="w-5 h-5 shrink-0 mt-0.5" />
               <div className="text-xs space-y-1">
-                <span className="font-bold">Step 4: Add DNS Authentication Records to ofia.ng</span>
+                <span className="font-bold">Step 4: Copy Unique DNS Records From Your {currentProvider} Dashboard</span>
                 <p className="text-[var(--nexa-text-secondary)] leading-relaxed">
-                  Add these 3 DNS records in your DNS provider (Cloudflare, Namecheap, GoDaddy, Hostinger) to pass SPF, DKIM, and DMARC checks.
+                  Every account receives <strong>unique cryptographic DKIM public keys and SPF routing tokens</strong> generated specifically for your domain. Copy them directly from your provider dashboard into your DNS registrar.
                 </p>
               </div>
             </div>
 
-            <div className="space-y-2.5">
-              {/* DKIM */}
-              <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
-                    <NexaBadge variant="brand">DKIM (TXT)</NexaBadge>
-                    <code>resend._domainkey.ofia.ng</code>
+            {/* Direct Dashboard Link Banner */}
+            <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[#1A56DB]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="text-xs font-semibold text-[var(--nexa-text-primary)] flex items-center gap-2">
+                <Server className="w-4 h-4 text-[#1A56DB]" />
+                <span>Open your <strong>{currentProvider}</strong> Domains page to view your generated records:</span>
+              </div>
+              <a
+                href={
+                  currentProvider === "BREVO"
+                    ? "https://app.brevo.com/senders/domains"
+                    : currentProvider === "AWS_SES"
+                    ? "https://console.aws.amazon.com/ses/home#/identities"
+                    : "https://resend.com/domains"
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#1A56DB] text-white hover:bg-[#1545B0] transition-all flex items-center gap-1.5 self-start sm:self-auto shrink-0 shadow-sm"
+              >
+                Go to {currentProvider} Domains <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+
+            {/* Visual Screenshot Mockup of Provider Domains Page */}
+            <div className="rounded-2xl border border-[var(--nexa-border)] bg-[#0B0F19] text-white p-4 shadow-xl space-y-3 font-sans">
+              {/* Browser Window Header */}
+              <div className="flex items-center justify-between border-b border-gray-800 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1.5">
+                    <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+                    <div className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
+                  </div>
+                  <span className="text-[11px] text-gray-400 font-mono pl-2">
+                    {currentProvider === "BREVO"
+                      ? "app.brevo.com/senders/domains"
+                      : currentProvider === "AWS_SES"
+                      ? "console.aws.amazon.com/ses/identities/ofia.ng"
+                      : "resend.com/domains/ofia.ng"}
                   </span>
-                  <button
-                    onClick={() => copyToClipboard("resend._domainkey", "dkim-name")}
-                    className="text-[11px] font-bold text-[#1A56DB] flex items-center gap-1 cursor-pointer hover:underline"
-                  >
-                    {copiedKey === "dkim-name" ? <Check className="w-3 h-3 text-[#0E9F6E]" /> : <Copy className="w-3 h-3" />}
-                    Copy Name
-                  </button>
                 </div>
-                <div className="p-2 rounded-xl bg-[var(--nexa-bg-surface)] text-[11px] font-mono text-[var(--nexa-text-muted)] flex items-center justify-between">
-                  <span className="truncate">p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQ...</span>
-                  <button
-                    onClick={() => copyToClipboard("p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQ...", "dkim-val")}
-                    className="text-xs text-[#1A56DB] ml-2 shrink-0 font-bold"
-                  >
-                    {copiedKey === "dkim-val" ? "Copied!" : "Copy Value"}
-                  </button>
-                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full border border-yellow-500/30">
+                  ● Status: Pending Verification
+                </span>
               </div>
 
-              {/* SPF */}
-              <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
-                    <NexaBadge variant="cyan">SPF (TXT)</NexaBadge>
-                    <code>ofia.ng</code> (or @)
-                  </span>
-                  <button
-                    onClick={() => copyToClipboard("v=spf1 include:amazonses.com ~all", "spf-val")}
-                    className="text-[11px] font-bold text-[#1A56DB] flex items-center gap-1 cursor-pointer hover:underline"
-                  >
-                    {copiedKey === "spf-val" ? <Check className="w-3 h-3 text-[#0E9F6E]" /> : <Copy className="w-3 h-3" />}
-                    Copy Value
-                  </button>
-                </div>
-                <div className="p-2 rounded-xl bg-[var(--nexa-bg-surface)] text-[11px] font-mono text-[var(--nexa-text-muted)]">
-                  v=spf1 include:amazonses.com ~all
-                </div>
+              {/* Mockup Instructions */}
+              <div className="text-[11px] text-gray-300 font-medium flex items-center gap-1.5">
+                <Info className="w-3.5 h-3.5 text-[#3B82F6]" />
+                Copy the <strong>Record Type</strong>, <strong>Name/Host</strong>, and <strong>Value</strong> rows shown on your screen:
               </div>
 
-              {/* DMARC */}
-              <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
-                    <NexaBadge variant="purple">DMARC (TXT)</NexaBadge>
-                    <code>_dmarc.ofia.ng</code>
-                  </span>
-                  <button
-                    onClick={() => copyToClipboard("v=DMARC1; p=none;", "dmarc-val")}
-                    className="text-[11px] font-bold text-[#1A56DB] flex items-center gap-1 cursor-pointer hover:underline"
-                  >
-                    {copiedKey === "dmarc-val" ? <Check className="w-3 h-3 text-[#0E9F6E]" /> : <Copy className="w-3 h-3" />}
-                    Copy Value
-                  </button>
-                </div>
-                <div className="p-2 rounded-xl bg-[var(--nexa-bg-surface)] text-[11px] font-mono text-[var(--nexa-text-muted)]">
-                  v=DMARC1; p=none; rua=mailto:dmarc@ofia.ng
-                </div>
+              {/* Mockup DNS Table */}
+              <div className="overflow-x-auto rounded-xl border border-gray-800 bg-[#111827]">
+                <table className="w-full text-left text-[11px]">
+                  <thead className="bg-gray-900/80 text-gray-400 border-b border-gray-800">
+                    <tr>
+                      <th className="py-2 px-3 font-semibold">Type</th>
+                      <th className="py-2 px-3 font-semibold">Name / Host</th>
+                      <th className="py-2 px-3 font-semibold">Value / Target</th>
+                      <th className="py-2 px-3 font-semibold text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800 text-gray-200 font-mono">
+                    <tr className="hover:bg-gray-800/40">
+                      <td className="py-2.5 px-3 font-bold text-cyan-400">TXT</td>
+                      <td className="py-2.5 px-3">
+                        <code className="text-white bg-gray-800/70 px-1.5 py-0.5 rounded">
+                          {currentProvider === "BREVO" ? "mail._domainkey" : "resend._domainkey"}
+                        </code>
+                      </td>
+                      <td className="py-2.5 px-3 text-gray-400 truncate max-w-[200px]">
+                        p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBg...
+                      </td>
+                      <td className="py-2.5 px-3 text-right">
+                        <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+                          Click Copy in {currentProvider}
+                        </span>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-800/40">
+                      <td className="py-2.5 px-3 font-bold text-cyan-400">TXT</td>
+                      <td className="py-2.5 px-3">
+                        <code className="text-white bg-gray-800/70 px-1.5 py-0.5 rounded">
+                          {currentProvider === "BREVO" ? "ofia.ng" : "bounces.ofia.ng"}
+                        </code>
+                      </td>
+                      <td className="py-2.5 px-3 text-gray-400 truncate max-w-[200px]">
+                        {currentProvider === "BREVO"
+                          ? "v=spf1 include:spf.sendinblue.com ~all"
+                          : "v=spf1 include:amazonses.com ~all"}
+                      </td>
+                      <td className="py-2.5 px-3 text-right">
+                        <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+                          Click Copy in {currentProvider}
+                        </span>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-800/40">
+                      <td className="py-2.5 px-3 font-bold text-purple-400">MX</td>
+                      <td className="py-2.5 px-3">
+                        <code className="text-white bg-gray-800/70 px-1.5 py-0.5 rounded">bounces</code>
+                      </td>
+                      <td className="py-2.5 px-3 text-gray-400 truncate max-w-[200px]">
+                        feedback-smtp.us-east-1.amazonses.com
+                      </td>
+                      <td className="py-2.5 px-3 text-right">
+                        <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+                          Click Copy in {currentProvider}
+                        </span>
+                      </td>
+                    </tr>
+                    <tr className="hover:bg-gray-800/40">
+                      <td className="py-2.5 px-3 font-bold text-cyan-400">TXT</td>
+                      <td className="py-2.5 px-3">
+                        <code className="text-white bg-gray-800/70 px-1.5 py-0.5 rounded">_dmarc</code>
+                      </td>
+                      <td className="py-2.5 px-3 text-gray-400 truncate max-w-[200px]">
+                        v=DMARC1; p=none;
+                      </td>
+                      <td className="py-2.5 px-3 text-right">
+                        <span className="text-[10px] font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
+                          Click Copy in {currentProvider}
+                        </span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
+            </div>
+
+            {/* 4-Step Visual Action Checklist */}
+            <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-2.5">
+              <h4 className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                Where to paste these records:
+              </h4>
+              <ol className="text-xs text-[var(--nexa-text-secondary)] space-y-1.5 list-decimal list-inside leading-relaxed">
+                <li>Log in to your domain registrar (e.g. <strong>Hostinger, Cloudflare, Namecheap, or GoDaddy</strong>).</li>
+                <li>Navigate to <strong>DNS Zone Management</strong> for <code>ofia.ng</code>.</li>
+                <li>Add each record type (TXT, MX) copying the exact <strong>Host/Name</strong> and <strong>Value</strong> from your {currentProvider} screen.</li>
+                <li>Return to {currentProvider} and click <strong>"Verify DNS Records"</strong>. (Verification takes 2–15 minutes).</li>
+              </ol>
             </div>
           </motion.div>
         )}

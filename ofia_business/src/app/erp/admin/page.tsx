@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useERPStore, User, DEPARTMENTS } from "@/lib/erp-store";
-import ERPLayout from "@/components/nets_erp/Layout";
+import { BusinessShell } from "@/components/business/BusinessShell";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Briefcase,
@@ -950,6 +950,6 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
-    </ERPLayout>
+    </BusinessShell>
   );
 }

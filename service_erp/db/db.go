@@ -46,8 +46,8 @@ func InitDB() (*sql.DB, error) {
 func getDSN() string {
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		// Fallback local/default configuration
-		return "u721451974_finance:*Reedb4b4@tcp(srv2113.hstgr.io:3306)/u721451974_finance_db?parseTime=true&loc=Local"
+		// Fallback configuration matching service_users
+		return "u721451974_nexa:*Reedb4b4@tcp(srv2113.hstgr.io:3306)/u721451974_nexa_db?charset=utf8mb4&parseTime=true&loc=Local&tls=preferred"
 	}
 
 	if strings.HasPrefix(dbURL, "mysql://") {

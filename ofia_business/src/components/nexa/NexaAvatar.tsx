@@ -2,101 +2,91 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
-interface NexaAvatarProps {
-  name: string;
+export interface NexaAvatarProps {
   src?: string;
-  role?: string;
-  size?: "xs" | "sm" | "md" | "lg" | "xl";
-  status?: "online" | "working" | "idle" | "offline";
+  alt?: string;
+  fallback?: string;
+  name?: string;
+  size?: "sm" | "md" | "lg" | "xl";
+  isOnline?: boolean;
+  status?: "working" | "online" | "idle" | "busy" | "offline" | string;
   className?: string;
 }
 
 export const NexaAvatar = ({
-  name,
   src,
-  role,
+  alt,
+  fallback,
+  name,
   size = "md",
+  isOnline,
   status,
   className,
 }: NexaAvatarProps) => {
   const sizes = {
-    xs: "w-6 h-6 text-[10px]",
     sm: "w-8 h-8 text-xs",
     md: "w-10 h-10 text-sm",
-    lg: "w-13 h-13 text-base",
+    lg: "w-12 h-12 text-base",
     xl: "w-16 h-16 text-lg",
   };
 
   const statusSizes = {
-    xs: "w-1.5 h-1.5 ring-1",
-    sm: "w-2 h-2 ring-1.5",
-    md: "w-2.5 h-2.5 ring-2",
-    lg: "w-3 h-3 ring-2",
-    xl: "w-3.5 h-3.5 ring-2",
+    sm: "w-2 h-2",
+    md: "w-2.5 h-2.5",
+    lg: "w-3 h-3",
+    xl: "w-4 h-4",
   };
 
-  const statusColors = {
-    online: "bg-[#0E9F6E] dark:bg-[#10B981]",
-    working: "bg-[#1A56DB] dark:bg-[#3B82F6] animate-pulse",
-    idle: "bg-[#C88A3A] dark:bg-[#F59E0B]",
-    offline: "bg-[var(--nexa-text-faint)]",
-  };
+  const displayFallback = fallback || name || "NG";
 
-  const getInitials = (n: string) => {
-    if (!n) return "AI";
-    const parts = n.trim().split(" ");
-    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-    return n.slice(0, 2).toUpperCase();
-  };
-
-  // Generate consistent color hash for avatar background
-  const getGradient = (n: string) => {
-    const colors = [
-      "from-blue-600 to-indigo-700",
-      "from-emerald-600 to-teal-700",
-      "from-purple-600 to-indigo-800",
-      "from-amber-500 to-orange-600",
-      "from-rose-500 to-pink-600",
-      "from-cyan-600 to-blue-700",
-    ];
+  const getDeterministicAvatar = (seed: string) => {
     let hash = 0;
-    for (let i = 0; i < n.length; i++) hash = n.charCodeAt(i) + ((hash << 5) - hash);
-    return colors[Math.abs(hash) % colors.length];
+    for (let i = 0; i < seed.length; i++) {
+      hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = (Math.abs(hash) % 20) + 1;
+    return `/character${index}.jpg`;
   };
+
+  const avatarSrc = src || getDeterministicAvatar(displayFallback);
+
+  const statusColor =
+    status === "working"
+      ? "bg-[#1A56DB]"
+      : status === "online"
+      ? "bg-[#0E9F6E]"
+      : status === "busy"
+      ? "bg-[#E02424]"
+      : status === "idle"
+      ? "bg-[#F59E0B]"
+      : "bg-[#0E9F6E]";
 
   return (
-    <div className={cn("relative inline-flex shrink-0 select-none", className)}>
-      {src ? (
+    <div className={cn("relative inline-block shrink-0", className)}>
+      <div
+        className={cn(
+          "rounded-full overflow-hidden border border-[var(--nexa-border)] bg-gradient-to-br from-[#1A56DB]/10 to-[#0E9F6E]/10 flex items-center justify-center text-[#1A56DB] font-bold uppercase",
+          sizes[size]
+        )}
+      >
         <img
-          src={src}
-          alt={name}
-          className={cn(
-            "rounded-full object-cover ring-1 ring-[var(--nexa-border)]",
-            sizes[size]
-          )}
+          src={avatarSrc}
+          alt={alt || displayFallback}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            (e.currentTarget as HTMLElement).style.display = "none";
+          }}
         />
-      ) : (
-        <div
-          className={cn(
-            "rounded-full flex items-center justify-center font-bold text-white shadow-sm bg-gradient-to-tr",
-            getGradient(name),
-            sizes[size]
-          )}
-        >
-          {getInitials(name)}
-        </div>
-      )}
+        <span className="text-xs">{displayFallback.slice(0, 2).toUpperCase()}</span>
+      </div>
 
-      {status && (
-        <span
-          className={cn(
-            "absolute bottom-0 right-0 rounded-full ring-[var(--nexa-bg-surface)]",
-            statusColors[status],
-            statusSizes[size]
-          )}
-          title={`Status: ${status}`}
-        />
+      {(isOnline || status) && (
+        <div className={cn("absolute bottom-0 right-0", statusSizes[size])}>
+          <div className={cn("absolute inset-0 rounded-full animate-ping opacity-75", statusColor)} />
+          <div className={cn("relative w-full h-full rounded-full border border-[var(--nexa-bg-surface)]", statusColor)} />
+        </div>
       )}
     </div>
   );

@@ -4,37 +4,49 @@ import React from "react";
 import { motion, HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 
-interface NexaCardProps extends HTMLMotionProps<"div"> {
-  variant?: "glass" | "flat" | "elevated" | "interactive";
+export interface NexaCardProps extends HTMLMotionProps<"div"> {
+  variant?: "glass" | "flat" | "elevated" | "interactive" | "default";
   padding?: "none" | "sm" | "md" | "lg";
+  hoverEffect?: boolean;
 }
 
 export const NexaCard = React.forwardRef<HTMLDivElement, NexaCardProps>(
-  ({ className, variant = "glass", padding = "md", children, ...props }, ref) => {
+  (
+    {
+      className,
+      variant = "glass",
+      padding = "md",
+      hoverEffect = false,
+      children,
+      ...props
+    },
+    ref
+  ) => {
     const variants = {
-      glass: "liquid-glass",
-      flat: "bg-[var(--nexa-bg-surface)] border-[0.5px] border-[var(--nexa-border)]",
-      elevated: "bg-[var(--nexa-bg-surface)] border-[0.5px] border-[var(--nexa-border)] shadow-md",
+      glass: "bg-[var(--nexa-bg-surface)]/80 backdrop-blur-md border border-[var(--nexa-border)]",
+      default: "bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)]",
+      flat: "bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)]",
+      elevated: "bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] shadow-md",
       interactive:
-        "liquid-glass cursor-pointer hover:border-[#1A56DB]/40 dark:hover:border-[#3B82F6]/40 transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.08),0_2px_6px_rgba(0,0,0,0.04)]",
+        "bg-[var(--nexa-bg-surface)]/80 backdrop-blur-md border border-[var(--nexa-border)] cursor-pointer hover:border-[#1A56DB]/50 transition-all duration-300 shadow-sm hover:shadow-lg",
     };
 
     const paddings = {
       none: "p-0",
       sm: "p-3",
       md: "p-5",
-      lg: "p-7",
+      lg: "p-8",
     };
 
-    const isInteractive = variant === "interactive";
+    const isInteractive = variant === "interactive" || hoverEffect;
 
     return (
       <motion.div
         ref={ref}
         whileHover={isInteractive ? { y: -4, scale: 1.005 } : undefined}
-        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
         className={cn(
-          "rounded-2xl overflow-hidden relative",
+          "rounded-2xl overflow-hidden",
           variants[variant],
           paddings[padding],
           className

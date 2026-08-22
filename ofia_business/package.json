@@ -3,32 +3,30 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbopack -p 3004",
     "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "start": "next start -p 3004",
+    "lint": "next lint"
   },
   "dependencies": {
-    "@tabler/icons-react": "^3.46.0",
-    "canvas-confetti": "^1.9.4",
+    "@tabler/icons-react": "^3.31.0",
     "clsx": "^2.1.1",
-    "framer-motion": "^13.1.0",
-    "lucide-react": "^1.31.0",
+    "framer-motion": "^12.4.7",
+    "lucide-react": "^1.16.0",
     "next": "16.3.1",
-    "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "recharts": "^3.10.1",
-    "tailwind-merge": "^3.6.0"
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-paystack": "^6.0.0",
+    "recharts": "^2.15.1",
+    "tailwind-merge": "^3.0.1"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/canvas-confetti": "^1.9.0",
+    "@tailwindcss/postcss": "^4.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.3.1",
-    "tailwindcss": "^4",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^4.0.0",
     "typescript": "^5"
   }
 }

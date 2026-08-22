@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/nexa/ThemeProvider";
+import { NicheProvider } from "@/components/nexa/NicheContext";
+import { AuthProvider } from "@/components/nexa/AuthContext";
+import { LocationProvider } from "@/components/nexa/LocationContext";
 
 const dmSans = DM_Sans({
   subsets: ["latin"],
@@ -16,9 +19,42 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ofia Business | Unified Enterprise & Growth Suite",
+  title: "Ofia AI | Autonomous B2B Go-To-Market & Revenue Platform",
   description:
-    "Unified Business Suite bringing together Autonomous AI GTM, Marketplace Merchant Storefronts, and Enterprise ERP HR & Finance operations.",
+    "Autonomous B2B Go-To-Market platform powered by 14 specialized AI agents. Verified lead extraction, high-converting multi-channel outreach across Email, WhatsApp, and LinkedIn, with 1-tap Telegram mobile approvals.",
+  metadataBase: new URL("https://ofia.ng"),
+  openGraph: {
+    title: "Ofia AI | Autonomous B2B Go-To-Market & Revenue Platform",
+    description:
+      "Autonomous B2B Go-To-Market platform powered by 14 specialized AI agents. Verified lead extraction, high-converting multi-channel outreach across Email, WhatsApp, and LinkedIn, with 1-tap Telegram mobile approvals.",
+    url: "https://ofia.ng",
+    siteName: "Ofia AI",
+    images: [
+      {
+        url: "/logo.png",
+        width: 800,
+        height: 800,
+        alt: "Ofia AI Logo",
+      },
+    ],
+    locale: "en_NG",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ofia AI | Autonomous B2B Go-To-Market & Revenue Platform",
+    description:
+      "Autonomous B2B Go-To-Market platform powered by 14 specialized AI agents. Verified lead extraction, high-converting multi-channel outreach across Email, WhatsApp, and LinkedIn, with 1-tap Telegram mobile approvals.",
+    images: ["/logo.png"],
+  },
+  icons: {
+    icon: [
+      { url: "/logo.png" },
+      { url: "/icon.png" },
+    ],
+    apple: "/logo.png",
+    shortcut: "/logo.png",
+  },
 };
 
 export default function RootLayout({
@@ -29,9 +65,16 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${dmSans.variable} ${jetbrains.variable} font-sans antialiased bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] min-h-screen selection:bg-[#1A56DB] selection:text-white`}
+        className={`${dmSans.variable} ${jetbrains.variable} antialiased selection:bg-[#1A56DB]/20 selection:text-[#1A56DB]`}
+        suppressHydrationWarning
       >
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <LocationProvider>
+              <NicheProvider>{children}</NicheProvider>
+            </LocationProvider>
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

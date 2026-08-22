@@ -2,56 +2,81 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
+import { ShieldCheck } from "lucide-react";
+import { motion } from "framer-motion";
 
-interface NexaBadgeProps {
-  variant?: "brand" | "secondary" | "success" | "warning" | "danger" | "neutral" | "purple" | "cyan";
+export type NexaBadgeVariant =
+  | "brand"
+  | "secondary"
+  | "success"
+  | "warning"
+  | "danger"
+  | "neutral"
+  | "verified"
+  | "purple"
+  | "green"
+  | "cyan"
+  | "amber"
+  | "coral";
+
+export interface NexaBadgeProps {
+  variant?: NexaBadgeVariant;
+  dot?: boolean;
   children: React.ReactNode;
   className?: string;
-  dot?: boolean;
 }
 
 export const NexaBadge = ({
   variant = "neutral",
+  dot = false,
   children,
   className,
-  dot = false,
 }: NexaBadgeProps) => {
-  const variants = {
-    brand: "bg-[#EBF5FF] text-[#1A56DB] dark:bg-[#3B82F6]/15 dark:text-[#60A5FA]",
+  const variants: Record<NexaBadgeVariant, string> = {
+    brand: "bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20",
     secondary: "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-primary)] border border-[var(--nexa-border)]",
-    success: "bg-[#ECFDF5] text-[#0E9F6E] dark:bg-[#10B981]/15 dark:text-[#34D399]",
-    warning: "bg-[#FFFBEB] text-[#C88A3A] dark:bg-[#F59E0B]/15 dark:text-[#FBBF24]",
-    danger: "bg-[#FEF2F2] text-[#E02424] dark:bg-[#EF4444]/15 dark:text-[#F87171]",
+    success: "bg-[#0E9F6E]/10 text-[#0E9F6E] border border-[#0E9F6E]/20",
+    green: "bg-[#0E9F6E]/10 text-[#0E9F6E] border border-[#0E9F6E]/20",
+    purple: "bg-[#9061F9]/10 text-[#9061F9] border border-[#9061F9]/20",
+    cyan: "bg-[#0694A2]/10 text-[#0694A2] border border-[#0694A2]/20",
+    warning: "bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/20",
+    amber: "bg-[#D97706]/10 text-[#D97706] border border-[#D97706]/20",
+    danger: "bg-[#E02424]/10 text-[#E02424] border border-[#E02424]/20",
+    coral: "bg-[#FF5A1F]/10 text-[#FF5A1F] border border-[#FF5A1F]/20",
     neutral: "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] border border-[var(--nexa-border)]",
-    purple: "bg-[#F3E8FF] text-[#7E22CE] dark:bg-[#9333EA]/15 dark:text-[#C084FC]",
-    cyan: "bg-[#ECFEFF] text-[#0E7490] dark:bg-[#06B6D4]/15 dark:text-[#22D3EE]",
+    verified: "bg-[#FEF9C3] text-[#A16207] dark:bg-[#A16207]/20 dark:text-[#FDE047] border border-[#FEF08A]/30 flex items-center gap-1",
   };
 
-  const dotColors = {
-    brand: "bg-[#1A56DB] dark:bg-[#60A5FA]",
-    secondary: "bg-[var(--nexa-text-muted)]",
-    success: "bg-[#0E9F6E] dark:bg-[#34D399]",
-    warning: "bg-[#C88A3A] dark:bg-[#FBBF24]",
-    danger: "bg-[#E02424] dark:bg-[#F87171]",
-    neutral: "bg-[var(--nexa-text-faint)]",
-    purple: "bg-[#7E22CE] dark:bg-[#C084FC]",
-    cyan: "bg-[#0E7490] dark:bg-[#22D3EE]",
+  const dotColors: Record<NexaBadgeVariant, string> = {
+    brand: "bg-[#1A56DB]",
+    secondary: "bg-[var(--nexa-text-secondary)]",
+    success: "bg-[#0E9F6E]",
+    green: "bg-[#0E9F6E]",
+    purple: "bg-[#9061F9]",
+    cyan: "bg-[#0694A2]",
+    warning: "bg-[#F59E0B]",
+    amber: "bg-[#D97706]",
+    danger: "bg-[#E02424]",
+    coral: "bg-[#FF5A1F]",
+    neutral: "bg-neutral-400",
+    verified: "bg-[#A16207]",
   };
 
   return (
-    <div
+    <span
       className={cn(
-        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-tight shrink-0 select-none",
+        "inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold relative overflow-hidden shrink-0",
         variants[variant],
         className
       )}
     >
       {dot && (
-        <span
-          className={cn("w-1.5 h-1.5 rounded-full animate-pulse", dotColors[variant])}
-        />
+        <span className={cn("w-1.5 h-1.5 rounded-full shrink-0 animate-pulse", dotColors[variant])} />
+      )}
+      {variant === "verified" && (
+        <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
       )}
       {children}
-    </div>
+    </span>
   );
 };

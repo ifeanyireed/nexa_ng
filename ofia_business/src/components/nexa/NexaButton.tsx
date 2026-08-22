@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 
 interface NexaButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "ghost" | "danger" | "outline" | "success" | "glass";
+  variant?: "primary" | "secondary" | "ghost" | "danger" | "outline" | "success";
   size?: "sm" | "md" | "lg" | "xl";
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
@@ -15,63 +15,50 @@ interface NexaButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
 }
 
 export const NexaButton = React.forwardRef<HTMLButtonElement, NexaButtonProps>(
-  (
-    {
-      className,
-      variant = "primary",
-      size = "md",
-      isLoading,
-      leftIcon,
-      rightIcon,
-      children,
-      disabled,
-      ...props
-    },
-    ref
-  ) => {
+  ({ className, variant = "primary", size = "md", isLoading, leftIcon, rightIcon, children, ...props }, ref) => {
     const variants = {
-      primary:
-        "bg-[#1A56DB] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_2px_4px_rgba(0,0,0,0.1),0_1px_2px_rgba(0,0,0,0.06)] border-[0.5px] border-[#1A56DB]/40 hover:bg-[#1A56DB]/90 dark:bg-[#3B82F6] dark:hover:bg-[#3B82F6]/90",
-      secondary:
-        "liquid-glass text-[var(--nexa-text-primary)] shadow-[0_1px_2px_rgba(0,0,0,0.05)] border-[0.5px] border-black/5 dark:border-white/10 hover:bg-white/90 dark:hover:bg-white/10",
-      glass:
-        "liquid-glass text-[var(--nexa-text-primary)] hover:border-[#1A56DB]/40 dark:hover:border-[#3B82F6]/40",
-      ghost:
-        "hover:bg-[#EBF5FF] text-[#1A56DB] dark:text-[#60A5FA] dark:hover:bg-white/5",
-      danger:
-        "bg-[#E02424] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_2px_4px_rgba(0,0,0,0.1)] border-[0.5px] border-[#E02424]/30 hover:bg-[#E02424]/90",
-      outline:
-        "border border-[var(--nexa-border)] bg-transparent text-[var(--nexa-text-secondary)] hover:bg-[var(--nexa-bg-surface)] hover:text-[var(--nexa-text-primary)] dark:border-[var(--nexa-border-mid)]",
-      success:
-        "bg-[#0E9F6E] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_2px_4px_rgba(0,0,0,0.1)] border-[0.5px] border-[#0E9F6E]/30 hover:bg-[#0E9F6E]/90 dark:bg-[#10B981] dark:hover:bg-[#10B981]/90",
+      primary: "bg-nexa-brand text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_2px_4px_rgba(0,0,0,0.1),0_1px_2px_rgba(0,0,0,0.06)] border-[0.5px] border-nexa-brand/20 hover:bg-nexa-brand/90",
+      secondary: "liquid-glass text-nexa-text-primary shadow-[0_1px_2px_rgba(0,0,0,0.05)] border-[0.5px] border-black/5 dark:border-white/10",
+      ghost: "hover:bg-nexa-brand-light text-nexa-brand dark:hover:bg-white/5",
+      danger: "bg-nexa-coral text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_2px_4px_rgba(0,0,0,0.1)] border-[0.5px] border-nexa-coral/20 hover:bg-nexa-coral/90",
+      outline: "border border-nexa-border bg-transparent text-nexa-text-secondary hover:bg-nexa-bg-surface hover:text-nexa-text-primary dark:border-nexa-border-mid",
+      success: "bg-nexa-accent text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.3),0_2px_4px_rgba(0,0,0,0.1)] border-[0.5px] border-nexa-accent/20 hover:bg-nexa-accent/90",
     };
 
     const sizes = {
-      sm: "h-8 px-3 text-xs rounded-lg gap-1.5",
-      md: "h-10 px-4 text-sm rounded-xl gap-2",
-      lg: "h-12 px-6 text-base rounded-xl gap-2.5",
-      xl: "h-14 px-8 text-lg font-semibold rounded-2xl gap-3",
+      sm: "h-8 px-3 text-xs",
+      md: "h-10 px-4 text-sm",
+      lg: "h-12 px-6 text-base",
+      xl: "h-14 px-8 text-lg font-semibold",
     };
 
     return (
       <motion.button
         ref={ref as any}
-        whileHover={{ y: -1.5 }}
-        whileTap={{ scale: 0.98 }}
-        transition={{ duration: 0.15, ease: "easeOut" }}
+        whileHover={{ y: -2 }}
+        whileTap={{ scale: 0.97 }}
+        transition={{ duration: 0.18, ease: "easeOut" }}
         className={cn(
-          "relative flex items-center justify-center font-medium transition-all focus:outline-none focus:ring-2 focus:ring-[#1A56DB]/30 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden select-none cursor-pointer",
+          "relative flex items-center justify-center gap-2 rounded-xl font-bold transition-all focus:outline-none focus:ring-2 focus:ring-nexa-brand-glow disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden",
           variants[variant],
           sizes[size],
           className
         )}
-        disabled={isLoading || disabled}
+        disabled={isLoading}
         {...(props as any)}
       >
-        {isLoading && <Loader2 className="w-4 h-4 animate-spin shrink-0" />}
-        {!isLoading && leftIcon && <span className="shrink-0">{leftIcon}</span>}
-        <span className={cn(isLoading && "opacity-0", "truncate")}>{children}</span>
-        {!isLoading && rightIcon && <span className="shrink-0">{rightIcon}</span>}
+        {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+        {!isLoading && leftIcon}
+        <span className={cn(isLoading && "opacity-0")}>{children}</span>
+        {!isLoading && rightIcon}
+        
+        {/* Ripple effect placeholder - complex ripple would need a separate component or hook */}
+        <motion.span
+          initial={{ scale: 0, opacity: 0.35 }}
+          whileTap={{ scale: 4, opacity: 0 }}
+          className="absolute inset-0 bg-white/35 rounded-full pointer-events-none"
+          transition={{ duration: 0.5 }}
+        />
       </motion.button>
     );
   }

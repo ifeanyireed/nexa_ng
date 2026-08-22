@@ -27,7 +27,7 @@ type ProxyResponse struct {
 	Error   string `json:"error,omitempty"`
 }
 
-// SendEmail sends an HTML email to the specified recipient using default sender settings
+// SendEmail sends an HTML email to the specified recipient using default finance sender settings
 func SendEmail(to, subject, htmlBody string) error {
 	return SendEmailViaProxy(EmailPayload{
 		To:      to,
@@ -36,7 +36,7 @@ func SendEmail(to, subject, htmlBody string) error {
 	})
 }
 
-// SendEmailWithSender sends an email specifying sender details
+// SendEmailWithSender sends an email specifying custom sender details
 func SendEmailWithSender(to, subject, htmlBody, fromEmail, fromName string) error {
 	return SendEmailViaProxy(EmailPayload{
 		To:       to,
@@ -75,7 +75,7 @@ func SendEmailViaProxy(payload EmailPayload) error {
 	if payload.FromName == "" {
 		payload.FromName = os.Getenv("EMAIL_FROM_NAME")
 		if payload.FromName == "" {
-			payload.FromName = "New Era HR"
+			payload.FromName = "New Era Finance"
 		}
 	}
 

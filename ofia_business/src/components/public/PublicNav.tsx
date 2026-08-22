@@ -33,6 +33,7 @@ export const PublicNav: React.FC = () => {
 
   const navLinks = [
     { label: "Features", href: "/#features" },
+    { label: "Enterprise ERP", href: "/erp" },
     { label: "Live Agents", href: "/#agents" },
     { label: "Pricing & Tiers", href: "/pricing" },
     { label: "About Mission", href: "/about" },

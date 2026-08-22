@@ -13,6 +13,13 @@ import {
   Cpu,
   Layers,
   ArrowUpRight,
+  Boxes,
+  ShoppingCart,
+  Gift,
+  Truck,
+  PieChart,
+  Users,
+  Trophy,
 } from "lucide-react";
 import {
   IconBrandTelegram,
@@ -39,11 +46,11 @@ export const PublicFooter: React.FC = () => {
 
           <div className="flex items-center gap-3 justify-center sm:justify-start">
             <div className="w-10 h-10 rounded-xl bg-[#0E9F6E]/10 text-[#0E9F6E] flex items-center justify-center">
-              <ShieldCheck className="w-5 h-5" />
+              <Boxes className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-xs font-bold text-[var(--nexa-text-primary)]">Circuit Breaker Active</div>
-              <div className="text-[10px] text-[var(--nexa-text-muted)]">Automatic Bounce & Risk Killswitches</div>
+              <div className="text-xs font-bold text-[var(--nexa-text-primary)]">Unified ERP Engine</div>
+              <div className="text-[10px] text-[var(--nexa-text-muted)]">IMS, POS, GL & Logistics</div>
             </div>
           </div>
 
@@ -77,11 +84,11 @@ export const PublicFooter: React.FC = () => {
             <Link href="/" className="flex items-center gap-3">
               <img src="/logo.png" alt="Ofia AI Logo" className="w-8 h-8 object-contain shrink-0" />
               <span className="font-extrabold text-base text-[var(--nexa-text-primary)] text-display">
-                Ofia AI
+                Ofia AI & ERP
               </span>
             </Link>
             <p className="text-xs text-[var(--nexa-text-muted)] max-w-sm leading-relaxed">
-              In African tradition, the <em>Ofia</em> is a massive repository of untapped wealth, fertile soil, and hidden paths. We provide the digital machete to clear operational clutter and the autonomous AI compass to conquer business complexity.
+              In African tradition, the <em>Ofia</em> is a massive repository of untapped wealth, fertile soil, and hidden paths. We provide the digital machete to clear operational clutter and the autonomous AI & ERP compass to conquer business complexity.
             </p>
             <div className="flex items-center gap-2 pt-2">
               <a
@@ -114,10 +121,59 @@ export const PublicFooter: React.FC = () => {
             </div>
           </div>
 
-          {/* Col 1: Platform & AI Workforce */}
+          {/* Col 1: Enterprise ERP Modules */}
           <div className="space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--nexa-text-primary)] text-display">
-              Autonomous Platform
+              Enterprise ERP
+            </h4>
+            <ul className="space-y-2 text-xs">
+              <li>
+                <Link href="/erp" className="hover:text-[#1A56DB] transition-colors font-bold text-[#1A56DB] flex items-center gap-1">
+                  ERP Suite Overview <NexaBadge variant="brand">New</NexaBadge>
+                </Link>
+              </li>
+              <li>
+                <Link href="/erp/admin/inventory" className="hover:text-[#1A56DB] transition-colors">
+                  Inventory (IMS)
+                </Link>
+              </li>
+              <li>
+                <Link href="/erp/admin/pos" className="hover:text-[#1A56DB] transition-colors">
+                  Point of Sale (POS)
+                </Link>
+              </li>
+              <li>
+                <Link href="/erp/admin/referrals" className="hover:text-[#1A56DB] transition-colors">
+                  Viral Referrals
+                </Link>
+              </li>
+              <li>
+                <Link href="/erp/admin/logistics" className="hover:text-[#1A56DB] transition-colors">
+                  Logistics & Dispatch
+                </Link>
+              </li>
+              <li>
+                <Link href="/erp/accountant" className="hover:text-[#1A56DB] transition-colors">
+                  General Ledger & Finance
+                </Link>
+              </li>
+              <li>
+                <Link href="/erp/hr" className="hover:text-[#1A56DB] transition-colors">
+                  HR & 360 Appraisals
+                </Link>
+              </li>
+              <li>
+                <Link href="/erp/admin/quests" className="hover:text-[#1A56DB] transition-colors">
+                  Team Quests Engine
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Col 2: AI GTM Workforce */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--nexa-text-primary)] text-display">
+              AI GTM Workforce
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
@@ -145,38 +201,9 @@ export const PublicFooter: React.FC = () => {
                   Model Gateway (BYOK)
                 </Link>
               </li>
-            </ul>
-          </div>
-
-          {/* Col 2: Solutions & Tiers */}
-          <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--nexa-text-primary)] text-display">
-              Plans & Pricing
-            </h4>
-            <ul className="space-y-2 text-xs">
               <li>
                 <Link href="/pricing" className="hover:text-[#1A56DB] transition-colors">
-                  Free Trial (14 Days)
-                </Link>
-              </li>
-              <li>
-                <Link href="/pricing" className="hover:text-[#1A56DB] transition-colors">
-                  Starter Plan (₦450k/mo)
-                </Link>
-              </li>
-              <li>
-                <Link href="/pricing" className="hover:text-[#1A56DB] transition-colors">
-                  Growth Plan (₦1.2M/mo)
-                </Link>
-              </li>
-              <li>
-                <Link href="/pricing" className="hover:text-[#1A56DB] transition-colors flex items-center gap-1">
-                  Scale Plan (₦2.4M/mo) <NexaBadge variant="purple">Popular</NexaBadge>
-                </Link>
-              </li>
-              <li>
-                <Link href="/pricing" className="hover:text-[#1A56DB] transition-colors">
-                  Custom Enterprise (₦5M/mo)
+                  Workforce Pricing Tiers
                 </Link>
               </li>
             </ul>
@@ -220,12 +247,12 @@ export const PublicFooter: React.FC = () => {
         {/* Bottom Sub-footer */}
         <div className="mt-12 pt-8 border-t border-[var(--nexa-border)] flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[var(--nexa-text-muted)]">
           <div>
-            © {new Date().getFullYear()} Ofia AI. All rights reserved. Powered by Ofia AI Workforce Architecture.
+            © {new Date().getFullYear()} Ofia AI & Enterprise ERP. All rights reserved.
           </div>
           <div className="flex items-center gap-6">
             <span className="flex items-center gap-1.5 text-[11px]">
               <span className="w-2 h-2 rounded-full bg-[#0E9F6E] animate-pulse" />
-              All 14 Autonomous Agents Operational
+              All 5 Microservices & 14 AI Agents Operational
             </span>
             <span className="text-mono text-[10px]">v2.6.4-prod</span>
           </div>

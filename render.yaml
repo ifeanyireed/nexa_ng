@@ -1,32 +1,14 @@
 services:
+  # ==========================================
+  # 1. USER & AUTHENTICATION SERVICE (:8081)
+  # ==========================================
   - type: web
-    name: nexa-marketplace-service
+    name: ofia-service-users
     env: go
-    plan: free
+    plan: starter
     region: frankfurt
-    rootDir: marketplace_service
-    buildCommand: go build -o server main.go
-    startCommand: ./server
-    healthCheckPath: /health
-    envVars:
-      - key: PORT
-        value: "8085"
-      - key: ALLOWED_ORIGINS
-        value: "*"
-      - key: DATABASE_URL
-        value: "mysql://u721451974_nexa:*Reedb4b4@srv2113.hstgr.io:3306/u721451974_nexa_db"
-      - key: JWT_SECRET
-        value: "nexa-jwt-secret-key-production-2026"
-      - key: ENV
-        value: "production"
-
-  - type: web
-    name: nexa-user-subscription-service
-    env: go
-    plan: free
-    region: frankfurt
-    rootDir: user_subscription_service
-    buildCommand: go build -o server main.go
+    rootDir: service_users
+    buildCommand: go build -o server .
     startCommand: ./server
     healthCheckPath: /health
     envVars:
@@ -41,13 +23,16 @@ services:
       - key: ENV
         value: "production"
 
+  # ==========================================
+  # 2. AUTONOMOUS AI GTM SERVICE (:8082)
+  # ==========================================
   - type: web
-    name: nexa-ai-gtm-service
+    name: ofia-service-ai
     env: go
-    plan: free
+    plan: starter
     region: frankfurt
-    rootDir: ai_gtm_service
-    buildCommand: go build -o server main.go
+    rootDir: service_ai
+    buildCommand: go build -o server .
     startCommand: ./server
     healthCheckPath: /health
     envVars:
@@ -62,3 +47,104 @@ services:
       - key: ENV
         value: "production"
 
+  # ==========================================
+  # 3. MARKETPLACE & COMMERCE SERVICE (:8083)
+  # ==========================================
+  - type: web
+    name: ofia-service-marketplace
+    env: go
+    plan: starter
+    region: frankfurt
+    rootDir: service_marketplace
+    buildCommand: go build -o server .
+    startCommand: ./server
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "8083"
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: DATABASE_URL
+        value: "mysql://u721451974_nexa:*Reedb4b4@srv2113.hstgr.io:3306/u721451974_nexa_db"
+      - key: JWT_SECRET
+        value: "nexa-jwt-secret-key-production-2026"
+      - key: ENV
+        value: "production"
+
+  # ==========================================
+  # 4. UNIFIED ENTERPRISE ERP SERVICE (:8084)
+  # ==========================================
+  - type: web
+    name: ofia-service-erp
+    env: go
+    plan: starter
+    region: frankfurt
+    rootDir: service_erp
+    buildCommand: go build -o server .
+    startCommand: ./server
+    healthCheckPath: /healthz
+    envVars:
+      - key: PORT
+        value: "8084"
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: DATABASE_URL
+        value: "mysql://u721451974_nexa:*Reedb4b4@srv2113.hstgr.io:3306/u721451974_nexa_db"
+      - key: ENV
+        value: "production"
+
+  # ==========================================
+  # 5. LOGISTICS & DISPATCH SERVICE (:8085)
+  # ==========================================
+  - type: web
+    name: ofia-service-logistics
+    env: go
+    plan: starter
+    region: frankfurt
+    rootDir: service_logistics
+    buildCommand: go build -o server .
+    startCommand: ./server
+    healthCheckPath: /healthz
+    envVars:
+      - key: PORT
+        value: "8085"
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: DATABASE_URL
+        value: "mysql://u721451974_nexa:*Reedb4b4@srv2113.hstgr.io:3306/u721451974_nexa_db"
+      - key: ENV
+        value: "production"
+
+  # ==========================================
+  # 6. OFIA BUSINESS FRONTEND (:3000)
+  # ==========================================
+  - type: web
+    name: ofia-business-frontend
+    env: node
+    plan: starter
+    region: frankfurt
+    rootDir: ofia_business
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: "production"
+      - key: PORT
+        value: "3000"
+
+  # ==========================================
+  # 7. OFIA ADMIN FRONTEND (:3001)
+  # ==========================================
+  - type: web
+    name: ofia-admin-frontend
+    env: node
+    plan: starter
+    region: frankfurt
+    rootDir: ofia_admin
+    buildCommand: npm install && npm run build
+    startCommand: npm start -p 3001
+    envVars:
+      - key: NODE_ENV
+        value: "production"
+      - key: PORT
+        value: "3001"

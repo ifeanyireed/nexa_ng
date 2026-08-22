@@ -17,7 +17,7 @@ services:
       - key: ALLOWED_ORIGINS
         value: "*"
       - key: DATABASE_URL
-        value: "mysql://u721451974_nexa:*Reedb4b4@srv2113.hstgr.io:3306/u721451974_nexa_db"
+        value: "u721451974_nexa:*Reedb4b4@tcp(srv2113.hstgr.io:3306)/u721451974_nexa_db?charset=utf8mb4&parseTime=True&loc=Local&tls=preferred"
       - key: JWT_SECRET
         value: "nexa-jwt-secret-key-production-2026"
       - key: ENV
@@ -41,7 +41,7 @@ services:
       - key: ALLOWED_ORIGINS
         value: "*"
       - key: DATABASE_URL
-        value: "mysql://u721451974_nexa:*Reedb4b4@srv2113.hstgr.io:3306/u721451974_nexa_db"
+        value: "u721451974_nexa:*Reedb4b4@tcp(srv2113.hstgr.io:3306)/u721451974_nexa_db?charset=utf8mb4&parseTime=True&loc=Local&tls=preferred"
       - key: JWT_SECRET
         value: "nexa-jwt-secret-key-production-2026"
       - key: ENV
@@ -65,7 +65,7 @@ services:
       - key: ALLOWED_ORIGINS
         value: "*"
       - key: DATABASE_URL
-        value: "mysql://u721451974_nexa:*Reedb4b4@srv2113.hstgr.io:3306/u721451974_nexa_db"
+        value: "u721451974_nexa:*Reedb4b4@tcp(srv2113.hstgr.io:3306)/u721451974_nexa_db?charset=utf8mb4&parseTime=True&loc=Local&tls=preferred"
       - key: JWT_SECRET
         value: "nexa-jwt-secret-key-production-2026"
       - key: ENV
@@ -89,7 +89,7 @@ services:
       - key: ALLOWED_ORIGINS
         value: "*"
       - key: DATABASE_URL
-        value: "mysql://u721451974_nexa:*Reedb4b4@srv2113.hstgr.io:3306/u721451974_nexa_db"
+        value: "u721451974_nexa:*Reedb4b4@tcp(srv2113.hstgr.io:3306)/u721451974_nexa_db?charset=utf8mb4&parseTime=True&loc=Local&tls=preferred"
       - key: ENV
         value: "production"
 
@@ -111,7 +111,7 @@ services:
       - key: ALLOWED_ORIGINS
         value: "*"
       - key: DATABASE_URL
-        value: "mysql://u721451974_nexa:*Reedb4b4@srv2113.hstgr.io:3306/u721451974_nexa_db"
+        value: "u721451974_nexa:*Reedb4b4@tcp(srv2113.hstgr.io:3306)/u721451974_nexa_db?charset=utf8mb4&parseTime=True&loc=Local&tls=preferred"
       - key: ENV
         value: "production"
 

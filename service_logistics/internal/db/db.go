@@ -3,7 +3,6 @@ package db
 import (
 	"fmt"
 	"log"
-	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -22,22 +21,40 @@ func ParseDatabaseDSN(rawURL string) string {
 		return ""
 	}
 
+	rawURL = strings.TrimSpace(rawURL)
+
+	// If it already contains standard Go MySQL TCP format: user:pass@tcp(host:port)/dbname
 	if strings.Contains(rawURL, "@tcp(") {
 		return rawURL
 	}
 
-	if strings.HasPrefix(rawURL, "mysql://") {
-		u, err := url.Parse(rawURL)
-		if err == nil {
-			user := u.User.Username()
-			pass, _ := u.User.Password()
-			host := u.Host
-			if !strings.Contains(host, ":") {
-				host = host + ":3306"
+	// Strip mysql:// or mariadb:// prefix if present
+	clean := strings.TrimPrefix(rawURL, "mysql://")
+	clean = strings.TrimPrefix(clean, "mariadb://")
+
+	lastAtIndex := strings.LastIndex(clean, "@")
+	if lastAtIndex != -1 {
+		userInfo := clean[:lastAtIndex]
+		hostAndDb := clean[lastAtIndex+1:]
+
+		slashIndex := strings.Index(hostAndDb, "/")
+		if slashIndex != -1 {
+			hostPort := hostAndDb[:slashIndex]
+			dbAndParams := hostAndDb[slashIndex+1:]
+
+			if !strings.Contains(hostPort, ":") {
+				hostPort = hostPort + ":3306"
 			}
-			dbname := strings.TrimPrefix(u.Path, "/")
-			return fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local&tls=preferred",
-				user, pass, host, dbname)
+
+			if !strings.Contains(dbAndParams, "parseTime=") {
+				if strings.Contains(dbAndParams, "?") {
+					dbAndParams += "&charset=utf8mb4&parseTime=True&loc=Local&tls=preferred"
+				} else {
+					dbAndParams += "?charset=utf8mb4&parseTime=True&loc=Local&tls=preferred"
+				}
+			}
+
+			return fmt.Sprintf("%s@tcp(%s)/%s", userInfo, hostPort, dbAndParams)
 		}
 	}
 
@@ -57,13 +74,16 @@ func InitDB() *gorm.DB {
 	}
 
 	var err error
-	DB, err = gorm.Open(mysql.Open(databaseURL), &gorm.Config{
+	gormDB, err := gorm.Open(mysql.Open(databaseURL), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Warn),
 	})
 	if err != nil {
 		log.Printf("⚠️ Warning: Failed to connect to MySQL database for service_logistics (%s): %v. Proceeding in degraded/in-memory mode.", databaseURL, err)
+		DB = nil
 		return nil
 	}
+
+	DB = gormDB
 
 	// Auto migrate logistics tables
 	err = DB.AutoMigrate(

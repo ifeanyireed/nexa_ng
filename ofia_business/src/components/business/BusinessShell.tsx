@@ -6,21 +6,27 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity,
+  Bike,
   Bot,
+  Boxes,
   Building2,
   Calendar,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
   Clock,
+  Compass,
   CreditCard,
   Database,
+  DollarSign,
   FileSpreadsheet,
   FileText,
   Flame,
+  Gift,
   Globe,
   Grid,
   Headphones,
+  History,
   Key,
   Layers,
   LayoutDashboard,
@@ -31,13 +37,17 @@ import {
   MessageSquare,
   Package,
   PieChart,
+  Receipt,
+  RefreshCw,
   Search,
+  Send,
   Server,
   Settings,
   Shield,
   ShieldAlert,
   ShieldCheck,
   ShoppingBag,
+  ShoppingCart,
   Sliders,
   Sparkles,
   Store,
@@ -45,9 +55,11 @@ import {
   Target,
   Terminal,
   TrendingUp,
+  Truck,
   UserCheck,
   Users,
   Wallet,
+  Warehouse,
   Wrench,
   X,
   Zap,
@@ -87,6 +99,10 @@ export function BusinessShell({
 
   // Active module detection
   const isAdmin = pathname.startsWith("/erp/admin");
+  const isInventory = pathname.startsWith("/erp/admin/inventory");
+  const isPOS = pathname.startsWith("/erp/admin/pos");
+  const isReferrals = pathname.startsWith("/erp/admin/referrals");
+  const isLogistics = pathname.startsWith("/erp/admin/logistics");
   const isAI = pathname.startsWith("/erp/admin/ai");
   const isMarketplace = pathname.startsWith("/erp/admin/marketplace");
   const isComponents = pathname.startsWith("/erp/admin/components");
@@ -99,6 +115,98 @@ export function BusinessShell({
 
   // Contextual Nav Sections
   const getNavSections = (): NavSection[] => {
+    if (isInventory) {
+      return [
+        {
+          title: "Inventory Management (IMS)",
+          items: [
+            { label: "Inventory Cockpit", href: "/erp/admin/inventory", icon: LayoutDashboard },
+            { label: "Master SKU Catalog", href: "/erp/admin/inventory/items", icon: Package, badge: "142 SKUs", badgeVariant: "brand" },
+            { label: "Warehouse Hubs & Bins", href: "/erp/admin/inventory/warehouses", icon: Warehouse },
+            { label: "Stock Transfers (GRN)", href: "/erp/admin/inventory/transfers", icon: Truck },
+            { label: "Stock Audits & Shrinkage", href: "/erp/admin/inventory/adjustments", icon: RefreshCw },
+            { label: "Vendor Restock POs", href: "/erp/admin/inventory/suppliers", icon: Boxes },
+          ],
+        },
+        {
+          title: "Commercial Modules",
+          items: [
+            { label: "POS Cashier", href: "/erp/admin/pos", icon: ShoppingCart },
+            { label: "Logistics Dispatch", href: "/erp/admin/logistics", icon: Send },
+            { label: "Admin Mission Control", href: "/erp/admin", icon: Shield },
+          ],
+        },
+      ];
+    }
+
+    if (isPOS) {
+      return [
+        {
+          title: "Point of Sale (POS)",
+          items: [
+            { label: "POS Touch Terminal", href: "/erp/admin/pos", icon: ShoppingCart, badge: "Live", badgeVariant: "green" },
+            { label: "Shift History (Z-Report)", href: "/erp/admin/pos/sessions", icon: History },
+            { label: "Receipt Archive", href: "/erp/admin/pos/receipts", icon: Receipt },
+            { label: "SmartPOS Terminals", href: "/erp/admin/pos/terminals", icon: Sliders },
+          ],
+        },
+        {
+          title: "Commercial Modules",
+          items: [
+            { label: "Inventory (IMS)", href: "/erp/admin/inventory", icon: Boxes },
+            { label: "Logistics Dispatch", href: "/erp/admin/logistics", icon: Truck },
+            { label: "Admin Mission Control", href: "/erp/admin", icon: Shield },
+          ],
+        },
+      ];
+    }
+
+    if (isReferrals) {
+      return [
+        {
+          title: "Viral Referral & Affiliates",
+          items: [
+            { label: "Referral Cockpit", href: "/erp/admin/referrals", icon: LayoutDashboard, badge: "K=1.48", badgeVariant: "purple" },
+            { label: "Campaign Rules (₦5k/₦5k)", href: "/erp/admin/referrals/campaigns", icon: Gift },
+            { label: "Affiliate Directory", href: "/erp/admin/referrals/affiliates", icon: Users, badge: "184", badgeVariant: "brand" },
+            { label: "Paystack Payouts", href: "/erp/admin/referrals/payouts", icon: DollarSign },
+            { label: "Funnels & Anti-Fraud", href: "/erp/admin/referrals/analytics", icon: TrendingUp },
+          ],
+        },
+        {
+          title: "Admin Operations",
+          items: [
+            { label: "Admin Mission Control", href: "/erp/admin", icon: Shield },
+            { label: "AI GTM Swarm", href: "/erp/admin/ai", icon: Bot },
+            { label: "Marketplace Store", href: "/erp/admin/marketplace", icon: Store },
+          ],
+        },
+      ];
+    }
+
+    if (isLogistics) {
+      return [
+        {
+          title: "Logistics Command Center",
+          items: [
+            { label: "Logistics Overview", href: "/erp/admin/logistics", icon: LayoutDashboard, badge: "98% SLA", badgeVariant: "green" },
+            { label: "Waybills & Shipments", href: "/erp/admin/logistics/shipments", icon: Package },
+            { label: "Dispatch Console", href: "/erp/admin/logistics/dispatch", icon: Send },
+            { label: "Courier Fleet GPS", href: "/erp/admin/logistics/fleet", icon: Truck },
+            { label: "Delivery Rate Matrix", href: "/erp/admin/logistics/rates", icon: DollarSign },
+          ],
+        },
+        {
+          title: "Admin Operations",
+          items: [
+            { label: "Inventory (IMS)", href: "/erp/admin/inventory", icon: Boxes },
+            { label: "POS Cashier", href: "/erp/admin/pos", icon: ShoppingCart },
+            { label: "Admin Mission Control", href: "/erp/admin", icon: Shield },
+          ],
+        },
+      ];
+    }
+
     if (isAI) {
       return [
         {
@@ -175,6 +283,10 @@ export function BusinessShell({
           title: "Admin Command Center",
           items: [
             { label: "Admin Mission Control", href: "/erp/admin", icon: LayoutDashboard },
+            { label: "Inventory (IMS)", href: "/erp/admin/inventory", icon: Boxes, badge: "142 SKUs", badgeVariant: "green" },
+            { label: "POS Cashier", href: "/erp/admin/pos", icon: ShoppingCart, badge: "Terminal", badgeVariant: "brand" },
+            { label: "Viral Referrals", href: "/erp/admin/referrals", icon: Gift, badge: "K=1.48", badgeVariant: "purple" },
+            { label: "Logistics & Dispatch", href: "/erp/admin/logistics", icon: Truck, badge: "98% SLA", badgeVariant: "green" },
             { label: "AI GTM Swarm", href: "/erp/admin/ai", icon: Bot, badge: "15 Agents", badgeVariant: "purple" },
             { label: "Marketplace Store", href: "/erp/admin/marketplace", icon: Store, badge: "Merchant", badgeVariant: "green" },
             { label: "UI Component Library", href: "/erp/admin/components", icon: Layers },

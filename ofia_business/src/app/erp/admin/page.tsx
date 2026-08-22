@@ -4,43 +4,38 @@ import React from "react";
 import Link from "next/link";
 import {
   Activity,
+  AlertTriangle,
   ArrowRight,
   ArrowUpRight,
+  Barcode,
   Bot,
+  Boxes,
   Building2,
-  Calendar,
   CheckCircle2,
   CreditCard,
-  Database,
   DollarSign,
-  FileSpreadsheet,
-  FileText,
-  Flame,
-  Globe,
-  Key,
+  Gift,
   Layers,
   LayoutDashboard,
-  Lock,
   Mail,
+  MapPin,
   Package,
+  Percent,
   PieChart,
-  Server,
+  Printer,
+  Send,
   Settings,
   Shield,
-  ShieldAlert,
   ShieldCheck,
   ShoppingBag,
+  ShoppingCart,
   Sliders,
   Sparkles,
   Store,
-  Tag,
-  Target,
-  Terminal,
   TrendingUp,
-  UserCheck,
+  Truck,
   Users,
-  Wallet,
-  Wrench,
+  Warehouse,
   Zap,
 } from "lucide-react";
 import { BusinessShell } from "@/components/business/BusinessShell";
@@ -51,10 +46,20 @@ import { NexaButton } from "@/components/nexa/NexaButton";
 export default function AdminCommandCenterPage() {
   return (
     <BusinessShell
-      title="Admin Command Center"
-      subtitle="Executive management over Autonomous AI GTM Outreach, Marketplace Storefront Operations, and Design System Components."
+      title="Admin Mission Control"
+      subtitle="Complete operational control over Autonomous AI GTM, Marketplace Store, Inventory (IMS), Point of Sale (POS), Referrals, and Logistics."
       action={
         <div className="flex items-center gap-2.5">
+          <Link href="/erp/admin/pos">
+            <NexaButton
+              size="sm"
+              variant="primary"
+              leftIcon={<ShoppingCart className="w-3.5 h-3.5" />}
+              className="bg-[#0E9F6E] text-white hover:bg-[#046C4E]"
+            >
+              Open POS Cashier
+            </NexaButton>
+          </Link>
           <Link href="/erp/admin/ai/campaigns/new">
             <NexaButton
               size="sm"
@@ -63,11 +68,6 @@ export default function AdminCommandCenterPage() {
               className="bg-[#1A56DB] text-white hover:bg-[#1545B0]"
             >
               Launch AI Campaign
-            </NexaButton>
-          </Link>
-          <Link href="/erp/admin/marketplace/shop">
-            <NexaButton size="sm" variant="outline" leftIcon={<Package className="w-3.5 h-3.5" />}>
-              Add Product SKU
             </NexaButton>
           </Link>
         </div>
@@ -91,226 +91,197 @@ export default function AdminCommandCenterPage() {
 
           <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#0E9F6E]">
             <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Store GMV & Revenue</span>
-              <DollarSign className="w-4 h-4 text-[#0E9F6E]" />
+              <span className="font-semibold">Stock Valuation (IMS)</span>
+              <Boxes className="w-4 h-4 text-[#0E9F6E]" />
             </div>
             <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              ₦14,850,000
+              ₦48,650,000
             </div>
             <div className="text-[11px] text-[#0E9F6E] font-bold">
-              +28.4% this month
+              142 SKUs Across 3 Warehouses
             </div>
           </NexaCard>
 
           <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#9061F9]">
             <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Deliverability Score</span>
-              <Mail className="w-4 h-4 text-[#9061F9]" />
+              <span className="font-semibold">Viral Referral K-Factor</span>
+              <TrendingUp className="w-4 h-4 text-[#9061F9]" />
             </div>
             <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              99.4%
+              1.48 (Viral)
             </div>
             <div className="text-[11px] text-[#9061F9] font-bold">
-              Resend / SMTP Relay Active
+              184 Active Affiliate Partners
             </div>
           </NexaCard>
 
           <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#F59E0B]">
             <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Pending Human Approvals</span>
-              <ShieldCheck className="w-4 h-4 text-[#F59E0B]" />
+              <span className="font-semibold">Live Logistics SLA</span>
+              <Truck className="w-4 h-4 text-[#F59E0B]" />
             </div>
             <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              3 Tasks
+              98.2% On-Time
             </div>
             <div className="text-[11px] text-[#0E9F6E] font-semibold">
-              Telegram 1-Tap Sync Ready
+              14 In-Transit Shipments
             </div>
           </NexaCard>
         </div>
 
-        {/* 3 ADMIN MODULE HUBS */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-          {/* MODULE 1: AI GTM SWARM */}
-          <NexaCard
-            variant="glass"
-            padding="lg"
-            className="space-y-5 border border-[#1A56DB]/30 flex flex-col justify-between relative overflow-hidden"
-          >
+        {/* CORE OPERATIONAL MODULE HUBS */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* MODULE 1: INVENTORY (IMS) */}
+          <NexaCard variant="glass" padding="lg" className="space-y-4 border border-[var(--nexa-border)] flex flex-col justify-between hover:border-[#0E9F6E] transition-all">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2.5 rounded-xl bg-[#1A56DB]/10 text-[#1A56DB]">
-                    <Bot className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-black text-base text-[var(--nexa-text-primary)]">Autonomous AI GTM</h3>
-                    <p className="text-[11px] text-[var(--nexa-text-muted)] font-mono">Multi-Channel Swarm</p>
-                  </div>
+                <div className="w-10 h-10 rounded-xl bg-[#0E9F6E]/10 text-[#0E9F6E] flex items-center justify-center font-bold">
+                  <Boxes className="w-5 h-5" />
                 </div>
-                <NexaBadge variant="brand">15 Agents</NexaBadge>
+                <NexaBadge variant="green">142 SKUs</NexaBadge>
               </div>
-
-              <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-                Autonomous outbound sales execution, ICP lead intelligence, multi-channel campaigns, AI Studio copywriting, and RAG knowledge base.
-              </p>
-
-              <div className="p-3 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-2 text-xs font-mono">
-                <div className="flex justify-between">
-                  <span className="text-[var(--nexa-text-muted)]">Active Campaigns:</span>
-                  <span className="font-bold text-[#1A56DB]">4 Live</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[var(--nexa-text-muted)]">Daily Emails Sent:</span>
-                  <span className="font-bold text-[#0E9F6E]">320 / 500</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[var(--nexa-text-muted)]">Positive Reply Rate:</span>
-                  <span className="font-bold text-[var(--nexa-text-primary)]">14.8%</span>
-                </div>
+              <div>
+                <h3 className="font-black text-base text-[var(--nexa-text-primary)]">Inventory Management (IMS)</h3>
+                <p className="text-xs text-[var(--nexa-text-muted)] mt-1">
+                  Multi-warehouse stock tracking, barcode registry, inter-branch transfers (GRN), and restock PO forecasting.
+                </p>
               </div>
             </div>
-
-            <div className="space-y-2 pt-2 border-t border-[var(--nexa-border)]">
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <Link href="/erp/admin/ai/campaigns" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#1A56DB]/10 hover:text-[#1A56DB] transition-all flex items-center justify-between">
-                  <span>Campaigns</span>
-                  <ArrowRight className="w-3 h-3 text-[var(--nexa-text-muted)]" />
-                </Link>
-                <Link href="/erp/admin/ai/leads" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#1A56DB]/10 hover:text-[#1A56DB] transition-all flex items-center justify-between">
-                  <span>Lead Database</span>
-                  <ArrowRight className="w-3 h-3 text-[var(--nexa-text-muted)]" />
-                </Link>
-                <Link href="/erp/admin/ai/studio" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#1A56DB]/10 hover:text-[#1A56DB] transition-all flex items-center justify-between">
-                  <span>AI Studio</span>
-                  <ArrowRight className="w-3 h-3 text-[var(--nexa-text-muted)]" />
-                </Link>
-                <Link href="/erp/admin/ai/team" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#1A56DB]/10 hover:text-[#1A56DB] transition-all flex items-center justify-between">
-                  <span>Agent Swarm</span>
-                  <ArrowRight className="w-3 h-3 text-[var(--nexa-text-muted)]" />
-                </Link>
-              </div>
-
-              <Link href="/erp/admin/ai" className="block pt-1">
-                <NexaButton size="sm" variant="primary" className="w-full bg-[#1A56DB] text-white hover:bg-[#1545B0] justify-center">
-                  Open AI Dashboard
+            <div className="pt-4 border-t border-[var(--nexa-border)] flex items-center justify-between">
+              <span className="text-xs text-[#0E9F6E] font-bold">₦48.6M Asset Value</span>
+              <Link href="/erp/admin/inventory">
+                <NexaButton size="sm" variant="outline" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
+                  Manage Stock
                 </NexaButton>
               </Link>
             </div>
           </NexaCard>
 
-          {/* MODULE 2: MARKETPLACE STOREFRONT */}
-          <NexaCard
-            variant="glass"
-            padding="lg"
-            className="space-y-5 border border-[#0E9F6E]/30 flex flex-col justify-between relative overflow-hidden"
-          >
+          {/* MODULE 2: POINT OF SALE (POS) */}
+          <NexaCard variant="glass" padding="lg" className="space-y-4 border border-[var(--nexa-border)] flex flex-col justify-between hover:border-[#1A56DB] transition-all">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2.5 rounded-xl bg-[#0E9F6E]/10 text-[#0E9F6E]">
-                    <ShoppingBag className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-black text-base text-[var(--nexa-text-primary)]">Marketplace Storefront</h3>
-                    <p className="text-[11px] text-[var(--nexa-text-muted)] font-mono">E-Commerce & Bookings</p>
-                  </div>
+                <div className="w-10 h-10 rounded-xl bg-[#1A56DB]/10 text-[#1A56DB] flex items-center justify-center font-bold">
+                  <ShoppingCart className="w-5 h-5" />
                 </div>
-                <NexaBadge variant="green">Merchant Hub</NexaBadge>
+                <NexaBadge variant="brand">Active Register</NexaBadge>
               </div>
-
-              <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-                Direct commerce storefront management, product catalog SKUs, service appointment booking schedules, flash deals, and Paystack payouts.
-              </p>
-
-              <div className="p-3 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-2 text-xs font-mono">
-                <div className="flex justify-between">
-                  <span className="text-[var(--nexa-text-muted)]">Active Catalog SKUs:</span>
-                  <span className="font-bold text-[#0E9F6E]">38 Items</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[var(--nexa-text-muted)]">Pending Bookings:</span>
-                  <span className="font-bold text-[#1A56DB]">8 Appointments</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[var(--nexa-text-muted)]">Wallet Balance:</span>
-                  <span className="font-bold text-[var(--nexa-text-primary)]">₦845,200</span>
-                </div>
+              <div>
+                <h3 className="font-black text-base text-[var(--nexa-text-primary)]">Point of Sale (POS) Terminal</h3>
+                <p className="text-xs text-[var(--nexa-text-muted)] mt-1">
+                  Touch catalog grid, barcode scanning, multi-tender split payments (Cash, Card, Transfer), and thermal receipt printing.
+                </p>
               </div>
             </div>
-
-            <div className="space-y-2 pt-2 border-t border-[var(--nexa-border)]">
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <Link href="/erp/admin/marketplace/shop" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#0E9F6E]/10 hover:text-[#0E9F6E] transition-all flex items-center justify-between">
-                  <span>Product SKUs</span>
-                  <ArrowRight className="w-3 h-3 text-[var(--nexa-text-muted)]" />
-                </Link>
-                <Link href="/erp/admin/marketplace/bookings" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#0E9F6E]/10 hover:text-[#0E9F6E] transition-all flex items-center justify-between">
-                  <span>Bookings</span>
-                  <ArrowRight className="w-3 h-3 text-[var(--nexa-text-muted)]" />
-                </Link>
-                <Link href="/erp/admin/marketplace/deals" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#0E9F6E]/10 hover:text-[#0E9F6E] transition-all flex items-center justify-between">
-                  <span>Flash Deals</span>
-                  <ArrowRight className="w-3 h-3 text-[var(--nexa-text-muted)]" />
-                </Link>
-                <Link href="/erp/admin/marketplace/wallet" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#0E9F6E]/10 hover:text-[#0E9F6E] transition-all flex items-center justify-between">
-                  <span>Payout Wallet</span>
-                  <ArrowRight className="w-3 h-3 text-[var(--nexa-text-muted)]" />
-                </Link>
-              </div>
-
-              <Link href="/erp/admin/marketplace" className="block pt-1">
-                <NexaButton size="sm" variant="primary" className="w-full bg-[#0E9F6E] text-white hover:bg-[#0B855D] justify-center">
-                  Open Storefront Admin
+            <div className="pt-4 border-t border-[var(--nexa-border)] flex items-center justify-between">
+              <span className="text-xs text-[#1A56DB] font-bold">Z-Report Shift Ready</span>
+              <Link href="/erp/admin/pos">
+                <NexaButton size="sm" variant="outline" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
+                  Launch Cashier
                 </NexaButton>
               </Link>
             </div>
           </NexaCard>
 
-          {/* MODULE 3: DESIGN SYSTEM & COMPONENTS */}
-          <NexaCard
-            variant="glass"
-            padding="lg"
-            className="space-y-5 border border-[#9061F9]/30 flex flex-col justify-between relative overflow-hidden"
-          >
+          {/* MODULE 3: REFERRAL ENGINE */}
+          <NexaCard variant="glass" padding="lg" className="space-y-4 border border-[var(--nexa-border)] flex flex-col justify-between hover:border-[#9061F9] transition-all">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2.5 rounded-xl bg-[#9061F9]/10 text-[#9061F9]">
-                    <Layers className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-black text-base text-[var(--nexa-text-primary)]">Design System UI</h3>
-                    <p className="text-[11px] text-[var(--nexa-text-muted)] font-mono">Components & Tokens</p>
-                  </div>
+                <div className="w-10 h-10 rounded-xl bg-[#9061F9]/10 text-[#9061F9] flex items-center justify-center font-bold">
+                  <Gift className="w-5 h-5" />
                 </div>
-                <NexaBadge variant="purple">UI Primitives</NexaBadge>
+                <NexaBadge variant="purple">K-Factor 1.48</NexaBadge>
               </div>
-
-              <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-                Standardized atomic component library, liquid-glass cards, buttons, badges, modals, form controls, and dark/light color tokens.
-              </p>
-
-              <div className="p-3 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-2 text-xs font-mono">
-                <div className="flex justify-between">
-                  <span className="text-[var(--nexa-text-muted)]">Component Library:</span>
-                  <span className="font-bold text-[#9061F9]">100% Type-Safe</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[var(--nexa-text-muted)]">Theme Engine:</span>
-                  <span className="font-bold text-[#0E9F6E]">Dark / Light Active</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-[var(--nexa-text-muted)]">Voice Assistant HUD:</span>
-                  <span className="font-bold text-[#1A56DB]">Integrated</span>
-                </div>
+              <div>
+                <h3 className="font-black text-base text-[var(--nexa-text-primary)]">Viral Referral & Affiliates</h3>
+                <p className="text-xs text-[var(--nexa-text-muted)] mt-1">
+                  Dual-sided rewards (Give ₦5k / Get ₦5k), vanity affiliate links, and automated Paystack commission transfers.
+                </p>
               </div>
             </div>
+            <div className="pt-4 border-t border-[var(--nexa-border)] flex items-center justify-between">
+              <span className="text-xs text-[#9061F9] font-bold">184 Affiliates</span>
+              <Link href="/erp/admin/referrals">
+                <NexaButton size="sm" variant="outline" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
+                  Referral Hub
+                </NexaButton>
+              </Link>
+            </div>
+          </NexaCard>
 
-            <div className="space-y-2 pt-2 border-t border-[var(--nexa-border)]">
-              <Link href="/erp/admin/components" className="block pt-1">
-                <NexaButton size="sm" variant="primary" className="w-full bg-[#9061F9] text-white hover:bg-[#7E3AF2] justify-center">
-                  Explore UI Component Library
+          {/* MODULE 4: LOGISTICS COMMAND CENTER */}
+          <NexaCard variant="glass" padding="lg" className="space-y-4 border border-[var(--nexa-border)] flex flex-col justify-between hover:border-[#F59E0B] transition-all">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-[#F59E0B]/10 text-[#F59E0B] flex items-center justify-center font-bold">
+                  <Truck className="w-5 h-5" />
+                </div>
+                <NexaBadge variant="warning">98.2% SLA</NexaBadge>
+              </div>
+              <div>
+                <h3 className="font-black text-base text-[var(--nexa-text-primary)]">Logistics & Dispatch</h3>
+                <p className="text-xs text-[var(--nexa-text-muted)] mt-1">
+                  Live waybill tracking, automated proximity technician dispatch, fleet GPS telemetry, and rate calculation matrix.
+                </p>
+              </div>
+            </div>
+            <div className="pt-4 border-t border-[var(--nexa-border)] flex items-center justify-between">
+              <span className="text-xs text-[#F59E0B] font-bold">14 In-Flight</span>
+              <Link href="/erp/admin/logistics">
+                <NexaButton size="sm" variant="outline" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
+                  Dispatch Console
+                </NexaButton>
+              </Link>
+            </div>
+          </NexaCard>
+
+          {/* MODULE 5: AUTONOMOUS AI GTM */}
+          <NexaCard variant="glass" padding="lg" className="space-y-4 border border-[var(--nexa-border)] flex flex-col justify-between hover:border-[#1A56DB] transition-all">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-[#1A56DB]/10 text-[#1A56DB] flex items-center justify-center font-bold">
+                  <Bot className="w-5 h-5" />
+                </div>
+                <NexaBadge variant="brand">15 AI Agents</NexaBadge>
+              </div>
+              <div>
+                <h3 className="font-black text-base text-[var(--nexa-text-primary)]">Autonomous AI GTM Swarm</h3>
+                <p className="text-xs text-[var(--nexa-text-muted)] mt-1">
+                  Multi-channel cold email, WhatsApp, and LinkedIn outreach with 1-tap Telegram mobile human-in-the-loop approvals.
+                </p>
+              </div>
+            </div>
+            <div className="pt-4 border-t border-[var(--nexa-border)] flex items-center justify-between">
+              <span className="text-xs text-[#1A56DB] font-bold">1,480 Active Leads</span>
+              <Link href="/erp/admin/ai">
+                <NexaButton size="sm" variant="outline" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
+                  Open AI Swarm
+                </NexaButton>
+              </Link>
+            </div>
+          </NexaCard>
+
+          {/* MODULE 6: MARKETPLACE & STOREFRONT */}
+          <NexaCard variant="glass" padding="lg" className="space-y-4 border border-[var(--nexa-border)] flex flex-col justify-between hover:border-[#0E9F6E] transition-all">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-[#0E9F6E]/10 text-[#0E9F6E] flex items-center justify-center font-bold">
+                  <Store className="w-5 h-5" />
+                </div>
+                <NexaBadge variant="green">Digital Storefront</NexaBadge>
+              </div>
+              <div>
+                <h3 className="font-black text-base text-[var(--nexa-text-primary)]">Marketplace Merchant Store</h3>
+                <p className="text-xs text-[var(--nexa-text-muted)] mt-1">
+                  Public merchant catalog, appointment booking schedule, customer inquiries, and Paystack wallet disbursements.
+                </p>
+              </div>
+            </div>
+            <div className="pt-4 border-t border-[var(--nexa-border)] flex items-center justify-between">
+              <span className="text-xs text-[#0E9F6E] font-bold">₦14.85M GMV</span>
+              <Link href="/erp/admin/marketplace">
+                <NexaButton size="sm" variant="outline" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
+                  Manage Store
                 </NexaButton>
               </Link>
             </div>

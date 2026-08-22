@@ -30,3 +30,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Go binaries
+service_ai/ai_gtm_service
+service_marketplace/marketplace_service
+service_users/user_subscription_service
+service_logistics/logistics_service
+*.exe
+*.test

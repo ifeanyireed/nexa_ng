@@ -33,7 +33,9 @@ import {
   Sparkles,
   Store,
   TrendingUp,
+  Trophy,
   Truck,
+  Tv,
   Users,
   Warehouse,
   Zap,
@@ -282,6 +284,32 @@ export default function AdminCommandCenterPage() {
               <Link href="/erp/admin/marketplace">
                 <NexaButton size="sm" variant="outline" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
                   Manage Store
+                </NexaButton>
+              </Link>
+            </div>
+          </NexaCard>
+
+          {/* MODULE 7: TEAM QUESTS & COMPETITIONS */}
+          <NexaCard variant="glass" padding="lg" className="space-y-4 border border-[var(--nexa-border)] flex flex-col justify-between hover:border-[#9061F9] transition-all">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-10 h-10 rounded-xl bg-[#9061F9]/10 text-[#9061F9] flex items-center justify-center font-bold">
+                  <Trophy className="w-5 h-5" />
+                </div>
+                <NexaBadge variant="purple">Retreat & Hackathon</NexaBadge>
+              </div>
+              <div>
+                <h3 className="font-black text-base text-[var(--nexa-text-primary)]">Team Quests Engine</h3>
+                <p className="text-xs text-[var(--nexa-text-muted)] mt-1">
+                  Enterprise retreats, hackathons, sales blitzes, agility challenges, transactional score ledgers, and zero-login stage TV scoreboards.
+                </p>
+              </div>
+            </div>
+            <div className="pt-4 border-t border-[var(--nexa-border)] flex items-center justify-between">
+              <span className="text-xs text-[#9061F9] font-bold">120 Staff Enrolled</span>
+              <Link href="/erp/admin/quests">
+                <NexaButton size="sm" variant="outline" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
+                  Launch Quests
                 </NexaButton>
               </Link>
             </div>

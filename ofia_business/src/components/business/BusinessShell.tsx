@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity,
+  Award,
   Bike,
   Bot,
   Boxes,
@@ -22,6 +23,7 @@ import {
   FileSpreadsheet,
   FileText,
   Flame,
+  Gavel,
   Gift,
   Globe,
   Grid,
@@ -55,7 +57,9 @@ import {
   Target,
   Terminal,
   TrendingUp,
+  Trophy,
   Truck,
+  Tv,
   UserCheck,
   Users,
   Wallet,
@@ -99,6 +103,7 @@ export function BusinessShell({
 
   // Active module detection
   const isAdmin = pathname.startsWith("/erp/admin");
+  const isQuests = pathname.startsWith("/erp/admin/quests") || pathname.startsWith("/erp/hr/quests");
   const isInventory = pathname.startsWith("/erp/admin/inventory");
   const isPOS = pathname.startsWith("/erp/admin/pos");
   const isReferrals = pathname.startsWith("/erp/admin/referrals");
@@ -115,6 +120,28 @@ export function BusinessShell({
 
   // Contextual Nav Sections
   const getNavSections = (): NavSection[] => {
+    if (isQuests) {
+      return [
+        {
+          title: "Team Quests Engine",
+          items: [
+            { label: "Quests Dashboard", href: "/erp/admin/quests", icon: LayoutDashboard },
+            { label: "Create New Quest", href: "/erp/admin/quests/new", icon: Sparkles },
+            { label: "2026 Staff Retreat", href: "/erp/admin/quests/qst-retreat-2026", icon: Flame, badge: "Live", badgeVariant: "green" },
+            { label: "Judge Control Desk", href: "/erp/admin/quests/qst-retreat-2026/challenges/chl-02", icon: Gavel },
+          ],
+        },
+        {
+          title: "Public Displays & Portals",
+          items: [
+            { label: "Stage TV Scoreboard", href: "/quests/2026-staff-retreat/scoreboard", icon: Tv, badge: "Live", badgeVariant: "purple" },
+            { label: "Public Quest Page", href: "/quests/2026-staff-retreat", icon: Globe },
+            { label: "Admin Mission Control", href: "/erp/admin", icon: Shield },
+          ],
+        },
+      ];
+    }
+
     if (isInventory) {
       return [
         {
@@ -287,6 +314,7 @@ export function BusinessShell({
             { label: "POS Cashier", href: "/erp/admin/pos", icon: ShoppingCart, badge: "Terminal", badgeVariant: "brand" },
             { label: "Viral Referrals", href: "/erp/admin/referrals", icon: Gift, badge: "K=1.48", badgeVariant: "purple" },
             { label: "Logistics & Dispatch", href: "/erp/admin/logistics", icon: Truck, badge: "98% SLA", badgeVariant: "green" },
+            { label: "Team Quests", href: "/erp/admin/quests", icon: Trophy, badge: "Games", badgeVariant: "purple" },
             { label: "AI GTM Swarm", href: "/erp/admin/ai", icon: Bot, badge: "15 Agents", badgeVariant: "purple" },
             { label: "Marketplace Store", href: "/erp/admin/marketplace", icon: Store, badge: "Merchant", badgeVariant: "green" },
             { label: "UI Component Library", href: "/erp/admin/components", icon: Layers },
@@ -343,6 +371,7 @@ export function BusinessShell({
             { label: "Employee Directory", href: "/erp/hr/users", icon: Users },
             { label: "Objective Bank", href: "/erp/hr/objectives", icon: Target },
             { label: "Appraisal Cycles", href: "/erp/hr/cycle", icon: Calendar },
+            { label: "Team Quests", href: "/erp/admin/quests", icon: Trophy, badge: "Games", badgeVariant: "purple" },
             { label: "Department Reports", href: "/erp/hr/reports", icon: FileSpreadsheet },
           ],
         },
@@ -373,6 +402,7 @@ export function BusinessShell({
           title: "Staff Self-Service",
           items: [
             { label: "Workplace Portal", href: "/erp/employee", icon: LayoutDashboard },
+            { label: "My Team Quests", href: "/erp/employee/quests", icon: Trophy, badge: "Rank #1", badgeVariant: "green" },
             { label: "Personal Profile", href: "/erp/employee/profile", icon: UserCheck },
             { label: "My Appraisals", href: "/erp/employee/reviews", icon: CheckCircle2 },
           ],

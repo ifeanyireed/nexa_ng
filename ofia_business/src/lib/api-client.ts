@@ -317,7 +317,60 @@ export const ERP_API = {
   },
 };
 
-// 6. LOGISTICS SERVICE (:8085)
+// 6. TEAM QUESTS ENGINE (:8084)
+export const QUESTS_API = {
+  getQuests: async () => {
+    return fetchJSON<any[]>(`${ERP_BASE}/quests`);
+  },
+
+  getQuestDetail: async (slug?: string, id?: string) => {
+    const query = slug ? `slug=${slug}` : id ? `id=${id}` : "";
+    return fetchJSON<any>(`${ERP_BASE}/quests/detail?${query}`);
+  },
+
+  createQuest: async (data: any) => {
+    return fetchJSON<any>(`${ERP_BASE}/quests`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  getTeams: async () => {
+    return fetchJSON<any[]>(`${ERP_BASE}/quests/teams`);
+  },
+
+  createTeam: async (data: any) => {
+    return fetchJSON<any>(`${ERP_BASE}/quests/teams`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  getChallenges: async () => {
+    return fetchJSON<any[]>(`${ERP_BASE}/quests/challenges`);
+  },
+
+  createChallenge: async (data: any) => {
+    return fetchJSON<any>(`${ERP_BASE}/quests/challenges`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  getScoreboard: async (slug?: string) => {
+    const query = slug ? `slug=${slug}` : "";
+    return fetchJSON<any>(`${ERP_BASE}/quests/scoreboard?${query}`);
+  },
+
+  awardScore: async (data: { team_id: string; points: number; reason: string }) => {
+    return fetchJSON<any>(`${ERP_BASE}/quests/scores`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+};
+
+// 7. LOGISTICS SERVICE (:8085)
 export const LOGISTICS_API = {
   getShipments: async (orgId?: string) => {
     const url = orgId ? `${LOGISTICS_BASE}/shipments?org_id=${orgId}` : `${LOGISTICS_BASE}/shipments`;

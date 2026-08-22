@@ -51,6 +51,13 @@ export function middleware(request: NextRequest) {
       }
       // Otherwise, it's a business tenant workplace (e.g. edusuite.ofia.ng)
       else {
+        // Allow public quest screens without rewriting to /tenant
+        if (url.pathname.startsWith("/quests")) {
+          const response = NextResponse.next();
+          response.headers.set("x-tenant-slug", subdomain);
+          return response;
+        }
+
         if (url.pathname === "/") {
           url.pathname = "/tenant";
           return NextResponse.rewrite(url);

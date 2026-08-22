@@ -3,315 +3,375 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import {
-  ShieldAlert,
-  Sparkles,
-  ShoppingBag,
-  Briefcase,
-  Server,
   Activity,
-  Users,
-  Building2,
-  Mail,
-  Award,
-  AlertOctagon,
-  Layers,
-  UserCheck,
-  FolderTree,
-  FileSpreadsheet,
-  TrendingUp,
   ArrowRight,
+  ArrowUpRight,
+  Bot,
+  Building2,
   CheckCircle2,
-  Cpu,
-  RefreshCw,
-  ExternalLink,
+  CreditCard,
+  Database,
+  DollarSign,
+  Globe,
+  Layers,
+  Lock,
+  Mail,
+  PieChart,
+  Server,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
+  ShoppingBag,
+  Sparkles,
+  Store,
+  Terminal,
+  TrendingUp,
+  UserCheck,
+  Users,
+  Wrench,
+  Zap,
 } from "lucide-react";
-import { AdminShell } from "@/components/admin/AdminShell";
+import { SuperAdminShell } from "@/components/admin/SuperAdminShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 
-export default function SuperAdminOverviewPage() {
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    setTimeout(() => setIsRefreshing(false), 800);
-  };
-
-  const services = [
-    { name: "ai_gtm_service", port: 8082, desc: "Autonomous GTM Swarm & Outreach Engine", status: "ONLINE", latency: "14ms", version: "v2.4.0" },
-    { name: "user_subscription_service", port: 8081, desc: "Auth, Multi-Tenant RBAC & SubscriptionHelper", status: "ONLINE", latency: "12ms", version: "v1.8.0" },
-    { name: "marketplace_service", port: 8085, desc: "Marketplace Search, Booking & Paystack Escrow", status: "ONLINE", latency: "18ms", version: "v2.1.0" },
-    { name: "erp_service (Finance & HR)", port: 8080, desc: "General Ledger, Payroll & Appraisal Engine", status: "ONLINE", latency: "16ms", version: "v1.5.0" },
-  ];
-
+export default function MasterMissionControlPage() {
   return (
-    <AdminShell>
-      <div className="space-y-6">
-        {/* HEADER */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black text-[var(--nexa-text-primary)] flex items-center gap-2.5">
-              <ShieldAlert className="w-6 h-6 text-[#1A56DB]" />
-              Super Admin Unified Command Center
-            </h1>
-            <p className="text-xs sm:text-sm text-[var(--nexa-text-muted)] mt-1">
-              Cross-application infrastructure, security, identity, and telemetry for <strong>Ofia AI</strong>, <strong>Ofia Marketplace</strong>, and <strong>Ofia ERP</strong>.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2.5">
+    <SuperAdminShell
+      title="Master Mission Control & Cross-App Governance"
+      subtitle="Unified Super Admin command center orchestrating Ofia AI Autonomous Swarm, Ofia Discovery Marketplace, and Ofia Enterprise ERP."
+      action={
+        <div className="flex items-center gap-2.5">
+          <Link href="/ai/email">
+            <NexaButton
+              size="sm"
+              variant="primary"
+              leftIcon={<Mail className="w-3.5 h-3.5" />}
+              className="bg-[#1A56DB] text-white hover:bg-[#1545B0] shadow-sm"
+            >
+              Email Setup Wizard
+            </NexaButton>
+          </Link>
+          <Link href="/marketplace/disputes">
             <NexaButton
               size="sm"
               variant="outline"
-              leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`} />}
-              onClick={handleRefresh}
+              leftIcon={<ShieldAlert className="w-3.5 h-3.5 text-[#E02424]" />}
             >
-              Refresh Telemetry
+              Dispute Queue (2)
             </NexaButton>
-            <NexaBadge variant="brand">Platform v3.2 Production</NexaBadge>
-          </div>
+          </Link>
         </div>
-
-        {/* 3 APPLICATION OVERVIEW CARDS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* OFIA AI CARD */}
-          <NexaCard variant="glass" padding="md" className="space-y-4 border-l-4 border-l-[#1A56DB]">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-[#1A56DB]/10 text-[#1A56DB]">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">Ofia AI</h3>
-                  <p className="text-[11px] text-[var(--nexa-text-muted)]">Autonomous GTM Engine</p>
-                </div>
-              </div>
-              <NexaBadge variant="brand">B2B SaaS</NexaBadge>
+      }
+    >
+      <div className="space-y-8">
+        {/* CROSS-APP EXECUTIVE KPI BANNER */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Total Ecosystem Revenue */}
+          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#0E9F6E]">
+            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
+              <span className="font-semibold">Ecosystem Volume (YTD)</span>
+              <DollarSign className="w-4 h-4 text-[#0E9F6E]" />
             </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[var(--nexa-border)]">
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[var(--nexa-text-muted)]">Active Workspaces</span>
-                <p className="text-lg font-black text-[var(--nexa-text-primary)]">240</p>
-              </div>
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[var(--nexa-text-muted)]">AI Agents Live</span>
-                <p className="text-lg font-black text-[#0E9F6E]">15 / 15</p>
-              </div>
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[var(--nexa-text-muted)]">Deliverability</span>
-                <p className="text-sm font-bold text-[#1A56DB]">99.4%</p>
-              </div>
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[var(--nexa-text-muted)]">Daily Outbound</span>
-                <p className="text-sm font-bold text-[var(--nexa-text-primary)]">14,280 emails</p>
-              </div>
+            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
+              ₦427,050,000
             </div>
-
-            <div className="flex items-center justify-between pt-2 border-t border-[var(--nexa-border)] text-xs">
-              <Link href="/ai" className="font-bold text-[#1A56DB] hover:underline flex items-center gap-1">
-                Open AI Admin <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-              <Link href="/ai/email" className="text-[11px] text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]">
-                Email Infra →
-              </Link>
+            <div className="flex items-center gap-1 text-[11px] text-[#0E9F6E] font-bold">
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>Across GTM, Marketplace & ERP</span>
             </div>
           </NexaCard>
 
-          {/* OFIA MARKETPLACE CARD */}
-          <NexaCard variant="glass" padding="md" className="space-y-4 border-l-4 border-l-[#0E9F6E]">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-[#0E9F6E]/10 text-[#0E9F6E]">
-                  <ShoppingBag className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">Ofia Marketplace</h3>
-                  <p className="text-[11px] text-[var(--nexa-text-muted)]">Nexa Discovery Network</p>
-                </div>
-              </div>
-              <NexaBadge variant="cyan">B2C & B2B</NexaBadge>
+          {/* Active AI Organizations */}
+          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#1A56DB]">
+            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
+              <span className="font-semibold">Active AI Organizations</span>
+              <Bot className="w-4 h-4 text-[#1A56DB]" />
             </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[var(--nexa-border)]">
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[var(--nexa-text-muted)]">Total GMV</span>
-                <p className="text-lg font-black text-[var(--nexa-text-primary)]">₦42.8M</p>
-              </div>
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[var(--nexa-text-muted)]">Active Pros</span>
-                <p className="text-lg font-black text-[#0E9F6E]">3,420</p>
-              </div>
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[var(--nexa-text-muted)]">Niches Covered</span>
-                <p className="text-sm font-bold text-[#0E9F6E]">99+ Categories</p>
-              </div>
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[var(--nexa-text-muted)]">Escrow Status</span>
-                <p className="text-sm font-bold text-[#1A56DB]">₦3.2M in Transit</p>
-              </div>
+            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
+              142 Tenants
             </div>
-
-            <div className="flex items-center justify-between pt-2 border-t border-[var(--nexa-border)] text-xs">
-              <Link href="/marketplace" className="font-bold text-[#0E9F6E] hover:underline flex items-center gap-1">
-                Open Marketplace Admin <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-              <Link href="/marketplace/pros" className="text-[11px] text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]">
-                Pro Vetting →
-              </Link>
+            <div className="text-[11px] text-[#1A56DB] font-semibold">
+              15 Autonomous Specialists Deployed
             </div>
           </NexaCard>
 
-          {/* OFIA ERP CARD */}
-          <NexaCard variant="glass" padding="md" className="space-y-4 border-l-4 border-l-[#7E3AF2]">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-2 rounded-xl bg-[#7E3AF2]/10 text-[#7E3AF2]">
-                  <Briefcase className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">Ofia ERP</h3>
-                  <p className="text-[11px] text-[var(--nexa-text-muted)]">Enterprise HR & Finance</p>
-                </div>
-              </div>
-              <NexaBadge variant="purple">Enterprise</NexaBadge>
+          {/* Marketplace Merchants */}
+          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#7E3AF2]">
+            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
+              <span className="font-semibold">Marketplace Verified Pros</span>
+              <ShoppingBag className="w-4 h-4 text-[#7E3AF2]" />
             </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[var(--nexa-border)]">
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[var(--nexa-text-muted)]">Staff Enrolled</span>
-                <p className="text-lg font-black text-[var(--nexa-text-primary)]">120 Staff</p>
-              </div>
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[var(--nexa-text-muted)]">Departments</span>
-                <p className="text-lg font-black text-[#7E3AF2]">14 Active</p>
-              </div>
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[var(--nexa-text-muted)]">Monthly Payroll</span>
-                <p className="text-sm font-bold text-[var(--nexa-text-primary)]">₦18.4M / mo</p>
-              </div>
-              <div>
-                <span className="text-[10px] uppercase font-bold text-[var(--nexa-text-muted)]">KPI Completion</span>
-                <p className="text-sm font-bold text-[#0E9F6E]">98.6%</p>
-              </div>
+            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
+              1,420 Merchants
             </div>
+            <div className="text-[11px] text-[#0E9F6E] font-semibold">
+              98.2% Fulfillment Success Rate
+            </div>
+          </NexaCard>
 
-            <div className="flex items-center justify-between pt-2 border-t border-[var(--nexa-border)] text-xs">
-              <Link href="/erp" className="font-bold text-[#7E3AF2] hover:underline flex items-center gap-1">
-                Open ERP Admin <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-              <Link href="/erp/users" className="text-[11px] text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]">
-                Staff RBAC →
-              </Link>
+          {/* Corporate ERP Staff */}
+          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#9061F9]">
+            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
+              <span className="font-semibold">Enterprise ERP Headcount</span>
+              <Building2 className="w-4 h-4 text-[#9061F9]" />
+            </div>
+            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
+              84 Active Staff
+            </div>
+            <div className="text-[11px] text-[var(--nexa-text-muted)] font-mono">
+              11 Operating Departments
             </div>
           </NexaCard>
         </div>
 
-        {/* MICROSERVICES CLUSTER TELEMETRY */}
-        <NexaCard variant="glass" padding="lg" className="space-y-4">
+        {/* 3 APPLICATION HUBS - GROUPED CARDS */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+          {/* APP 1: OFIA AI SWARM */}
+          <NexaCard
+            variant="glass"
+            padding="lg"
+            className="space-y-5 border border-[#1A56DB]/30 flex flex-col justify-between relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#1A56DB]/5 rounded-bl-full pointer-events-none" />
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2.5 rounded-xl bg-[#1A56DB]/10 text-[#1A56DB]">
+                    <Bot className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-base text-[var(--nexa-text-primary)]">Ofia AI Platform</h3>
+                    <p className="text-[11px] text-[var(--nexa-text-muted)] font-mono">Autonomous GTM & AI Swarm</p>
+                  </div>
+                </div>
+                <NexaBadge variant="brand">B2B SaaS</NexaBadge>
+              </div>
+
+              <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
+                Centralized management of cold email infrastructure (Resend/Brevo/SES), multi-tenant organizations, 15 specialized AI agents, and LLM telemetry.
+              </p>
+
+              <div className="p-3 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-2 text-xs font-mono">
+                <div className="flex justify-between">
+                  <span className="text-[var(--nexa-text-muted)]">Active Relay Provider:</span>
+                  <span className="font-bold text-[#1A56DB]">Resend REST API</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--nexa-text-muted)]">Inbox Deliverability:</span>
+                  <span className="font-bold text-[#0E9F6E]">99.4%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--nexa-text-muted)]">LLM Token Latency:</span>
+                  <span className="font-bold text-[var(--nexa-text-primary)]">142ms Avg</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-2 border-t border-[var(--nexa-border)]">
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <Link href="/ai/email" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#1A56DB]/10 hover:text-[#1A56DB] transition-all flex items-center justify-between">
+                  <span>Email Console</span>
+                  <ArrowRight className="w-3 h-3 text-[var(--nexa-text-muted)]" />
+                </Link>
+                <Link href="/ai/organizations" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#1A56DB]/10 hover:text-[#1A56DB] transition-all flex items-center justify-between">
+                  <span>Tenants & Plans</span>
+                  <ArrowRight className="w-3 h-3 text-[var(--nexa-text-muted)]" />
+                </Link>
+                <Link href="/ai/observability" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#1A56DB]/10 hover:text-[#1A56DB] transition-all flex items-center justify-between">
+                  <span>Token Traces</span>
+                  <ArrowRight className="w-3 h-3 text-[var(--nexa-text-muted)]" />
+                </Link>
+                <Link href="/ai/swarm" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#1A56DB]/10 hover:text-[#1A56DB] transition-all flex items-center justify-between">
+                  <span>Agent Swarm (15)</span>
+                  <ArrowRight className="w-3 h-3 text-[var(--nexa-text-muted)]" />
+                </Link>
+              </div>
+
+              <Link href="/ai" className="block pt-1">
+                <NexaButton size="sm" variant="primary" className="w-full bg-[#1A56DB] text-white hover:bg-[#1545B0] justify-center">
+                  Open AI Platform Admin
+                </NexaButton>
+              </Link>
+            </div>
+          </NexaCard>
+
+          {/* APP 2: OFIA MARKETPLACE */}
+          <NexaCard
+            variant="glass"
+            padding="lg"
+            className="space-y-5 border border-[#0E9F6E]/30 flex flex-col justify-between relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#0E9F6E]/5 rounded-bl-full pointer-events-none" />
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2.5 rounded-xl bg-[#0E9F6E]/10 text-[#0E9F6E]">
+                    <ShoppingBag className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-base text-[var(--nexa-text-primary)]">Ofia Marketplace</h3>
+                    <p className="text-[11px] text-[var(--nexa-text-muted)] font-mono">B2B/B2C Discovery Platform</p>
+                  </div>
+                </div>
+                <NexaBadge variant="green">Marketplace</NexaBadge>
+              </div>
+
+              <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
+                Supervision of 99+ Nigerian niche verticals, business verification (Nexa Verified), on-demand technician job dispatch, and escrow dispute arbitration.
+              </p>
+
+              <div className="p-3 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-2 text-xs font-mono">
+                <div className="flex justify-between">
+                  <span className="text-[var(--nexa-text-muted)]">Monthly GMV:</span>
+                  <span className="font-bold text-[#0E9F6E]">₦84,250,000</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--nexa-text-muted)]">Verified Businesses:</span>
+                  <span className="font-bold text-[#0E9F6E]">894 Badges Issued</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--nexa-text-muted)]">Dispute Queue:</span>
+                  <span className="font-bold text-[#E02424]">2 Open Grievances</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-2 border-t border-[var(--nexa-border)]">
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <Link href="/marketplace/merchants" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#0E9F6E]/10 hover:text-[#0E9F6E] transition-all flex items-center justify-between">
+                  <span>Pro Merchants</span>
+                  <ArrowRight className="w-3 h-3 text-[var(--nexa-text-muted)]" />
+                </Link>
+                <Link href="/marketplace/assignments" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#0E9F6E]/10 hover:text-[#0E9F6E] transition-all flex items-center justify-between">
+                  <span>Job Dispatch</span>
+                  <ArrowRight className="w-3 h-3 text-[var(--nexa-text-muted)]" />
+                </Link>
+                <Link href="/marketplace/disputes" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#0E9F6E]/10 hover:text-[#0E9F6E] transition-all flex items-center justify-between">
+                  <span>Disputes & Escrow</span>
+                  <ArrowRight className="w-3 h-3 text-[var(--nexa-text-muted)]" />
+                </Link>
+                <Link href="/marketplace/technicians" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#0E9F6E]/10 hover:text-[#0E9F6E] transition-all flex items-center justify-between">
+                  <span>Field Technicians</span>
+                  <ArrowRight className="w-3 h-3 text-[var(--nexa-text-muted)]" />
+                </Link>
+              </div>
+
+              <Link href="/marketplace" className="block pt-1">
+                <NexaButton size="sm" variant="primary" className="w-full bg-[#0E9F6E] text-white hover:bg-[#0B855D] justify-center">
+                  Open Marketplace Admin
+                </NexaButton>
+              </Link>
+            </div>
+          </NexaCard>
+
+          {/* APP 3: OFIA ENTERPRISE ERP */}
+          <NexaCard
+            variant="glass"
+            padding="lg"
+            className="space-y-5 border border-[#9061F9]/30 flex flex-col justify-between relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#9061F9]/5 rounded-bl-full pointer-events-none" />
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2.5 rounded-xl bg-[#9061F9]/10 text-[#9061F9]">
+                    <Building2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-base text-[var(--nexa-text-primary)]">Ofia Enterprise ERP</h3>
+                    <p className="text-[11px] text-[var(--nexa-text-muted)] font-mono">HR, Finance & Operations</p>
+                  </div>
+                </div>
+                <NexaBadge variant="purple">Internal ERP</NexaBadge>
+              </div>
+
+              <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
+                Corporate governance across Human Resources, general ledger, consolidated balance sheets, payroll disbursement, and immutable enterprise audit trails.
+              </p>
+
+              <div className="p-3 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-2 text-xs font-mono">
+                <div className="flex justify-between">
+                  <span className="text-[var(--nexa-text-muted)]">Operating Income (YTD):</span>
+                  <span className="font-bold text-[#0E9F6E]">₦124,500,000</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--nexa-text-muted)]">Monthly Payroll:</span>
+                  <span className="font-bold text-[var(--nexa-text-primary)]">₦18,450,000</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[var(--nexa-text-muted)]">RBAC Access Tiers:</span>
+                  <span className="font-bold text-[#9061F9]">6 Active Roles</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-2 border-t border-[var(--nexa-border)]">
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <Link href="/erp/users" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#9061F9]/10 hover:text-[#9061F9] transition-all flex items-center justify-between">
+                  <span>RBAC Governance</span>
+                  <ArrowRight className="w-3 h-3 text-[var(--nexa-text-muted)]" />
+                </Link>
+                <Link href="/erp/departments" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#9061F9]/10 hover:text-[#9061F9] transition-all flex items-center justify-between">
+                  <span>Departments</span>
+                  <ArrowRight className="w-3 h-3 text-[var(--nexa-text-muted)]" />
+                </Link>
+              </div>
+
+              <Link href="/erp" className="block pt-1">
+                <NexaButton size="sm" variant="primary" className="w-full bg-[#9061F9] text-white hover:bg-[#7E3AF2] justify-center">
+                  Open ERP Admin
+                </NexaButton>
+              </Link>
+            </div>
+          </NexaCard>
+        </div>
+
+        {/* SYSTEM CLUSTER & MICROSERVICES STATUS */}
+        <NexaCard variant="glass" padding="lg" className="space-y-4 border border-[var(--nexa-border)]">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-extrabold text-base text-[var(--nexa-text-primary)] flex items-center gap-2">
+              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)] flex items-center gap-2">
                 <Server className="w-4 h-4 text-[#1A56DB]" />
-                Microservices Mesh & Database Connectivity
+                Infrastructure & Microservices Cluster Topology
               </h3>
-              <p className="text-xs text-[var(--nexa-text-muted)] mt-0.5">
-                Real-time health status of Golang services and MySQL master cluster.
+              <p className="text-xs text-[var(--nexa-text-muted)]">
+                Real-time health status of core Go backends and multi-tenant databases
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#0E9F6E] animate-ping" />
-              <span className="text-xs font-bold text-[#0E9F6E]">4 / 4 Services Healthy</span>
-            </div>
+            <NexaBadge variant="green" className="py-1 px-3 text-xs font-mono font-bold">
+              ● All Clusters Healthy
+            </NexaBadge>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            {services.map((svc) => (
-              <div
-                key={svc.name}
-                className="p-3.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-2 hover:border-[#1A56DB]/40 transition-all"
-              >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            {[
+              { name: "ai_gtm_service", port: "8082", tech: "Go 1.26 + GORM", status: "HEALTHY", desc: "Autonomous Swarm & Email Relay" },
+              { name: "user_subscription_service", port: "8081", tech: "Go 1.26 + JWT", status: "HEALTHY", desc: "Auth, Multi-Tenant RBAC & Quotas" },
+              { name: "marketplace_service", port: "8085", tech: "Go 1.26 + REST", status: "HEALTHY", desc: "99 Niche Directories & Bookings" },
+              { name: "erp_service", port: "8080/8085", tech: "Go 1.26 + MySQL", status: "HEALTHY", desc: "Finance & HR Microservices" },
+            ].map((srv) => (
+              <div key={srv.name} className="p-3.5 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-1.5 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold text-[var(--nexa-text-primary)] truncate">
-                    :{svc.port}
-                  </span>
-                  <NexaBadge variant="cyan">{svc.status}</NexaBadge>
+                  <span className="font-bold font-mono text-[var(--nexa-text-primary)]">{srv.name}</span>
+                  <NexaBadge variant="green" className="text-[9px] py-0 font-mono">
+                    {srv.status}
+                  </NexaBadge>
                 </div>
-                <div className="text-xs font-bold text-[var(--nexa-text-primary)]">{svc.name}</div>
-                <p className="text-[11px] text-[var(--nexa-text-muted)] leading-snug">{svc.desc}</p>
-                <div className="flex items-center justify-between pt-1 border-t border-[var(--nexa-border)] text-[10px] text-[var(--nexa-text-muted)]">
-                  <span>Latency: <strong className="text-[#0E9F6E]">{svc.latency}</strong></span>
-                  <span>{svc.version}</span>
+                <div className="text-[11px] text-[var(--nexa-text-muted)]">{srv.desc}</div>
+                <div className="flex justify-between text-[10px] text-[var(--nexa-text-muted)] pt-1 border-t border-[var(--nexa-border)] font-mono">
+                  <span>Port: {srv.port}</span>
+                  <span>{srv.tech}</span>
                 </div>
               </div>
             ))}
           </div>
         </NexaCard>
-
-        {/* QUICK JUMP GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-3">
-            <h4 className="text-xs font-black uppercase text-[var(--nexa-text-muted)] tracking-wider">
-              Ofia AI Shortcuts
-            </h4>
-            <div className="space-y-1.5 text-xs">
-              <Link href="/ai/email" className="flex items-center justify-between p-2 rounded-xl hover:bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] font-semibold">
-                <span className="flex items-center gap-2"><Mail className="w-3.5 h-3.5 text-[#1A56DB]" /> Platform Email & Relay Keys</span>
-                <span className="text-[10px] text-[#1A56DB]">Configure →</span>
-              </Link>
-              <Link href="/ai/organizations" className="flex items-center justify-between p-2 rounded-xl hover:bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] font-semibold">
-                <span className="flex items-center gap-2"><Building2 className="w-3.5 h-3.5 text-[#1A56DB]" /> Tenant Plans & Quotas</span>
-                <span className="text-[10px] text-[#1A56DB]">Manage →</span>
-              </Link>
-              <Link href="/ai/swarm" className="flex items-center justify-between p-2 rounded-xl hover:bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] font-semibold">
-                <span className="flex items-center gap-2"><Activity className="w-3.5 h-3.5 text-[#1A56DB]" /> 15 AI Specialist Agents</span>
-                <span className="text-[10px] text-[#1A56DB]">Inspect →</span>
-              </Link>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-3">
-            <h4 className="text-xs font-black uppercase text-[var(--nexa-text-muted)] tracking-wider">
-              Marketplace Shortcuts
-            </h4>
-            <div className="space-y-1.5 text-xs">
-              <Link href="/marketplace/pros" className="flex items-center justify-between p-2 rounded-xl hover:bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] font-semibold">
-                <span className="flex items-center gap-2"><Award className="w-3.5 h-3.5 text-[#0E9F6E]" /> Pro Vetting & Verified Badges</span>
-                <span className="text-[10px] text-[#0E9F6E]">12 Queue →</span>
-              </Link>
-              <Link href="/marketplace/categories" className="flex items-center justify-between p-2 rounded-xl hover:bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] font-semibold">
-                <span className="flex items-center gap-2"><Layers className="w-3.5 h-3.5 text-[#0E9F6E]" /> 99+ Categories & Commissions</span>
-                <span className="text-[10px] text-[#0E9F6E]">Edit Fees →</span>
-              </Link>
-              <Link href="/marketplace/disputes" className="flex items-center justify-between p-2 rounded-xl hover:bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] font-semibold">
-                <span className="flex items-center gap-2"><AlertOctagon className="w-3.5 h-3.5 text-[#0E9F6E]" /> Escrow Arbitration</span>
-                <span className="text-[10px] text-[#0E9F6E]">Review →</span>
-              </Link>
-            </div>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-3">
-            <h4 className="text-xs font-black uppercase text-[var(--nexa-text-muted)] tracking-wider">
-              Ofia ERP Shortcuts
-            </h4>
-            <div className="space-y-1.5 text-xs">
-              <Link href="/erp/users" className="flex items-center justify-between p-2 rounded-xl hover:bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] font-semibold">
-                <span className="flex items-center gap-2"><UserCheck className="w-3.5 h-3.5 text-[#7E3AF2]" /> Staff & 6 RBAC Roles</span>
-                <span className="text-[10px] text-[#7E3AF2]">120 Staff →</span>
-              </Link>
-              <Link href="/erp/departments" className="flex items-center justify-between p-2 rounded-xl hover:bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] font-semibold">
-                <span className="flex items-center gap-2"><FolderTree className="w-3.5 h-3.5 text-[#7E3AF2]" /> Departmental Structures</span>
-                <span className="text-[10px] text-[#7E3AF2]">Configure →</span>
-              </Link>
-              <Link href="/erp/audit-trail" className="flex items-center justify-between p-2 rounded-xl hover:bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] font-semibold">
-                <span className="flex items-center gap-2"><FileSpreadsheet className="w-3.5 h-3.5 text-[#7E3AF2]" /> Financial & Performance Audit</span>
-                <span className="text-[10px] text-[#7E3AF2]">Audit Log →</span>
-              </Link>
-            </div>
-          </div>
-        </div>
       </div>
-    </AdminShell>
+    </SuperAdminShell>
   );
 }

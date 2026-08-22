@@ -1,192 +1,201 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import {
-  Briefcase,
-  Users,
+  Activity,
+  ArrowUpRight,
   Building2,
-  FolderTree,
-  FileSpreadsheet,
   CheckCircle2,
-  TrendingUp,
-  Landmark,
-  ArrowRight,
+  CreditCard,
+  DollarSign,
+  FileSpreadsheet,
+  FileText,
+  Layers,
+  Lock,
+  PieChart,
   ShieldCheck,
+  TrendingUp,
+  UserCheck,
+  Users,
 } from "lucide-react";
-import { AdminShell } from "@/components/admin/AdminShell";
+import { SuperAdminShell } from "@/components/admin/SuperAdminShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 
 export default function ERPAdminOverviewPage() {
-  const departments = [
-    { name: "Finance & Accounts", head: "Head of Finance", staffCount: 12, payroll: "₦3.2M", kpiStatus: "100% Completed" },
-    { name: "Fleet Operations & Maintenance", head: "Fleet Operations Manager", staffCount: 38, payroll: "₦5.8M", kpiStatus: "96% Completed" },
-    { name: "Human Resources & Admin", head: "HR Executive Lead", staffCount: 8, payroll: "₦1.9M", kpiStatus: "100% Completed" },
-    { name: "Systems, ERP & IT", head: "ERP/IT Lead", staffCount: 6, payroll: "₦2.1M", kpiStatus: "100% Completed" },
-    { name: "Marketing & Growth", head: "Growth Lead", staffCount: 14, payroll: "₦2.8M", kpiStatus: "94% Completed" },
-  ];
-
   return (
-    <AdminShell>
+    <SuperAdminShell
+      title="Enterprise ERP Administration"
+      subtitle="Corporate governance across Human Resources, Staff Roster, Departmental Structure, and Role-Based Access Control."
+      action={
+        <div className="flex items-center gap-2.5">
+          <Link href="/erp/users">
+            <NexaButton size="sm" variant="outline" leftIcon={<Lock className="w-3.5 h-3.5 text-[#9061F9]" />}>
+              RBAC Governance
+            </NexaButton>
+          </Link>
+          <Link href="/erp/departments">
+            <NexaButton size="sm" variant="primary" leftIcon={<Layers className="w-3.5 h-3.5" />} className="bg-[#9061F9] text-white hover:bg-[#7E3AF2]">
+              Department Structure
+            </NexaButton>
+          </Link>
+        </div>
+      }
+    >
       <div className="space-y-6">
-        {/* HEADER */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-black text-[var(--nexa-text-primary)] flex items-center gap-2.5">
-              <Briefcase className="w-6 h-6 text-[#7E3AF2]" />
-              Ofia ERP Enterprise Super Admin
-            </h1>
-            <p className="text-xs sm:text-sm text-[var(--nexa-text-muted)] mt-1">
-              Organization-wide human resources, multi-role RBAC governance, and general ledger finance management.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            <Link href="/erp/users">
-              <NexaButton size="sm" variant="primary" className="bg-[#7E3AF2] hover:bg-[#6C2BD9] text-white">
-                Manage 120 Staff Roles
-              </NexaButton>
-            </Link>
-          </div>
-        </div>
-
-        {/* METRICS GRID */}
+        {/* TOP METRIC CARDS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <NexaCard variant="glass" padding="md" className="space-y-1">
-            <span className="text-xs font-bold text-[var(--nexa-text-muted)] uppercase">Active Enterprise Staff</span>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)] flex items-center justify-between">
-              <span>120</span>
-              <NexaBadge variant="purple">Full Roster</NexaBadge>
+          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#9061F9]">
+            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
+              <span className="font-semibold">Active Corporate Staff</span>
+              <Users className="w-4 h-4 text-[#9061F9]" />
             </div>
-            <p className="text-[11px] text-[var(--nexa-text-muted)]">Across 14 departments</p>
+            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
+              84 Staff
+            </div>
+            <div className="text-[11px] text-[#9061F9] font-bold">
+              11 Operating Departments
+            </div>
           </NexaCard>
 
-          <NexaCard variant="glass" padding="md" className="space-y-1">
-            <span className="text-xs font-bold text-[var(--nexa-text-muted)] uppercase">Monthly Payroll Disbursed</span>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)] flex items-center justify-between">
-              <span>₦18,450,000</span>
-              <span className="text-xs font-bold text-[#0E9F6E]">On Time</span>
+          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#0E9F6E]">
+            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
+              <span className="font-semibold">RBAC Access Tiers</span>
+              <Lock className="w-4 h-4 text-[#0E9F6E]" />
             </div>
-            <p className="text-[11px] text-[var(--nexa-text-muted)]">Automated statutory tax deduction</p>
+            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
+              6 Roles
+            </div>
+            <div className="text-[11px] text-[#0E9F6E] font-bold">
+              Employee, Manager, HR, Accountant, MD, Admin
+            </div>
           </NexaCard>
 
-          <NexaCard variant="glass" padding="md" className="space-y-1">
-            <span className="text-xs font-bold text-[var(--nexa-text-muted)] uppercase">Q3 Appraisal Progress</span>
-            <div className="text-2xl font-black text-[#0E9F6E] flex items-center justify-between">
-              <span>98.6%</span>
-              <NexaBadge variant="brand">Active Cycle</NexaBadge>
+          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#1A56DB]">
+            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
+              <span className="font-semibold">Departmental Cost Centers</span>
+              <Layers className="w-4 h-4 text-[#1A56DB]" />
             </div>
-            <p className="text-[11px] text-[var(--nexa-text-muted)]">118 of 120 appraisals graded</p>
+            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
+              11 Centers
+            </div>
+            <div className="text-[11px] text-[var(--nexa-text-muted)] font-mono">
+              Finance, Fleet, IT, HR, Executive
+            </div>
           </NexaCard>
 
-          <NexaCard variant="glass" padding="md" className="space-y-1">
-            <span className="text-xs font-bold text-[var(--nexa-text-muted)] uppercase">RBAC Roles Defined</span>
-            <div className="text-2xl font-black text-[#7E3AF2] flex items-center justify-between">
-              <span>6 Roles</span>
-              <span className="text-xs font-bold text-[var(--nexa-text-muted)]">Enforced</span>
+          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#F59E0B]">
+            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
+              <span className="font-semibold">Audit Health & Permissions</span>
+              <ShieldCheck className="w-4 h-4 text-[#F59E0B]" />
             </div>
-            <p className="text-[11px] text-[var(--nexa-text-muted)]">Employee, Manager, HR, Acc, MD, Admin</p>
+            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
+              100%
+            </div>
+            <div className="text-[11px] text-[#0E9F6E] font-semibold">
+              Strict Least-Privilege Enforced
+            </div>
           </NexaCard>
         </div>
 
-        {/* QUICK ERP LINKS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link href="/erp/users" className="p-4 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] hover:border-[#7E3AF2]/50 transition-all space-y-2 group">
-            <div className="flex items-center justify-between">
-              <Users className="w-5 h-5 text-[#7E3AF2]" />
-              <NexaBadge variant="purple">120 Users</NexaBadge>
-            </div>
-            <h4 className="font-bold text-sm text-[var(--nexa-text-primary)] group-hover:text-[#7E3AF2] transition-colors">
-              User & RBAC Management
-            </h4>
-            <p className="text-xs text-[var(--nexa-text-muted)]">
-              Assign roles (`employee`, `manager`, `hr`, `accountant`, `md`, `admin`) and reporting managers.
-            </p>
-          </Link>
-
-          <Link href="/erp/departments" className="p-4 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] hover:border-[#7E3AF2]/50 transition-all space-y-2 group">
-            <div className="flex items-center justify-between">
-              <FolderTree className="w-5 h-5 text-[#1A56DB]" />
-              <NexaBadge variant="brand">14 Depts</NexaBadge>
-            </div>
-            <h4 className="font-bold text-sm text-[var(--nexa-text-primary)] group-hover:text-[#1A56DB] transition-colors">
-              Department Structures & KPIs
-            </h4>
-            <p className="text-xs text-[var(--nexa-text-muted)]">
-              Manage parent department trees and standardized quarterly KPI weightings.
-            </p>
-          </Link>
-
-          <Link href="/erp/audit-trail" className="p-4 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] hover:border-[#7E3AF2]/50 transition-all space-y-2 group">
-            <div className="flex items-center justify-between">
-              <FileSpreadsheet className="w-5 h-5 text-[#0E9F6E]" />
-              <NexaBadge variant="cyan">Real-time</NexaBadge>
-            </div>
-            <h4 className="font-bold text-sm text-[var(--nexa-text-primary)] group-hover:text-[#0E9F6E] transition-colors">
-              Financial & HR Audit Trail
-            </h4>
-            <p className="text-xs text-[var(--nexa-text-muted)]">
-              Track payroll disbursement logs, general ledger adjustments, and salary updates.
-            </p>
-          </Link>
-        </div>
-
-        {/* DEPARTMENTAL OVERVIEW TABLE */}
-        <NexaCard variant="glass" padding="none" className="overflow-hidden">
-          <div className="p-4 sm:p-5 border-b border-[var(--nexa-border)] flex items-center justify-between">
-            <div>
-              <h3 className="font-extrabold text-sm sm:text-base text-[var(--nexa-text-primary)]">
-                Corporate Department Roster
-              </h3>
+        {/* QUICK LINK PANELS */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Link href="/erp/users" className="block group">
+            <NexaCard variant="glass" padding="md" className="space-y-2 border border-[var(--nexa-border)] group-hover:border-[#9061F9] transition-all">
+              <div className="flex items-center justify-between">
+                <div className="p-2 rounded-xl bg-[#9061F9]/10 text-[#9061F9]">
+                  <Lock className="w-5 h-5" />
+                </div>
+                <ArrowUpRight className="w-4 h-4 text-[var(--nexa-text-muted)] group-hover:text-[#9061F9] transition-colors" />
+              </div>
+              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">User & Role Governance</h3>
               <p className="text-xs text-[var(--nexa-text-muted)]">
-                Headcount and payroll allocation by department.
+                Assign 6-tier RBAC access roles (Employee, Manager, HR, Accountant, MD, Admin) across corporate staff.
               </p>
-            </div>
-            <Link href="/erp/departments" className="text-xs font-bold text-[#7E3AF2] hover:underline">
-              Configure Tree →
-            </Link>
-          </div>
+            </NexaCard>
+          </Link>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-muted)] border-b border-[var(--nexa-border)] uppercase tracking-wider font-mono text-[10px]">
-                <tr>
-                  <th className="py-3 px-4">Department</th>
-                  <th className="py-3 px-4">Designated Lead</th>
-                  <th className="py-3 px-4">Staff Count</th>
-                  <th className="py-3 px-4">Monthly Allocation</th>
-                  <th className="py-3 px-4">Appraisal Cycle</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--nexa-border)] font-medium">
-                {departments.map((dept) => (
-                  <tr key={dept.name} className="hover:bg-[var(--nexa-bg-surface)]/60 transition-colors">
-                    <td className="py-3.5 px-4 font-bold text-[var(--nexa-text-primary)]">
-                      {dept.name}
-                    </td>
-                    <td className="py-3.5 px-4 text-[var(--nexa-text-secondary)]">{dept.head}</td>
-                    <td className="py-3.5 px-4 font-bold">{dept.staffCount} staff</td>
-                    <td className="py-3.5 px-4 font-mono font-bold text-[#0E9F6E]">{dept.payroll}</td>
-                    <td className="py-3.5 px-4">
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#0E9F6E] bg-[#0E9F6E]/10 px-2 py-0.5 rounded-full border border-[#0E9F6E]/20">
-                        {dept.kpiStatus}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <Link href="/erp/users" className="text-xs font-bold text-[#7E3AF2] hover:underline">
-                        View Staff
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </NexaCard>
+          <Link href="/erp/departments" className="block group">
+            <NexaCard variant="glass" padding="md" className="space-y-2 border border-[var(--nexa-border)] group-hover:border-[#0E9F6E] transition-all">
+              <div className="flex items-center justify-between">
+                <div className="p-2 rounded-xl bg-[#0E9F6E]/10 text-[#0E9F6E]">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <ArrowUpRight className="w-4 h-4 text-[var(--nexa-text-muted)] group-hover:text-[#0E9F6E] transition-colors" />
+              </div>
+              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">Departmental Hierarchy & Cost Centers</h3>
+              <p className="text-xs text-[var(--nexa-text-muted)]">
+                Configure corporate departments, assign departmental leads, and manage headcount budgets.
+              </p>
+            </NexaCard>
+          </Link>
+        </div>
+
+        {/* DEPARTMENTAL HEADCOUNT & RECENT AUDIT LOGS */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <NexaCard variant="glass" padding="lg" className="space-y-4 border border-[var(--nexa-border)]">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)] flex items-center gap-2">
+                <Layers className="w-4 h-4 text-[#9061F9]" />
+                Departmental Roster & Headcount
+              </h3>
+              <NexaBadge variant="purple">11 Departments</NexaBadge>
+            </div>
+
+            <div className="space-y-2.5">
+              {[
+                { dept: "Finance & Accounts", count: 8, lead: "Head of Finance", color: "#1A56DB" },
+                { dept: "Fleet Operations & Maintenance", count: 28, lead: "Fleet Operations Manager", color: "#0E9F6E" },
+                { dept: "Systems & IT", count: 6, lead: "ERP/IT Officer", color: "#9061F9" },
+                { dept: "Human Resources", count: 5, lead: "HR Executive Lead", color: "#F59E0B" },
+                { dept: "Executive Management", count: 4, lead: "Managing Director", color: "#E02424" },
+              ].map((d) => (
+                <div key={d.dept} className="p-3 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-between text-xs">
+                  <div>
+                    <div className="font-bold text-[var(--nexa-text-primary)]">{d.dept}</div>
+                    <div className="text-[11px] text-[var(--nexa-text-muted)]">Lead: {d.lead}</div>
+                  </div>
+                  <div className="font-mono font-bold text-sm text-[var(--nexa-text-primary)]">
+                    {d.count} Staff
+                  </div>
+                </div>
+              ))}
+            </div>
+          </NexaCard>
+
+          <NexaCard variant="glass" padding="lg" className="space-y-4 border border-[var(--nexa-border)]">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)] flex items-center gap-2">
+                <Activity className="w-4 h-4 text-[#0E9F6E]" />
+                Recent Financial & HR Events
+              </h3>
+              <NexaBadge variant="green">Live Ledger</NexaBadge>
+            </div>
+
+            <div className="space-y-2.5">
+              {[
+                { event: "Payroll Batch Authorized (Feb 2026)", user: "Managing Director (MD)", amount: "₦18,450,000", time: "1h ago" },
+                { event: "Withholding Tax (WHT) Remitted to FIRS", user: "Finance Lead", amount: "₦1,240,000", time: "4h ago" },
+                { event: "Q1 Performance Appraisal Cycle Opened", user: "HR Executive", amount: "All Staff", time: "1d ago" },
+                { event: "General Ledger Period Reconciled (Jan)", user: "Head of Finance", amount: "Balanced", time: "2d ago" },
+              ].map((ev, i) => (
+                <div key={i} className="p-3 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-between text-xs">
+                  <div className="space-y-0.5">
+                    <div className="font-bold text-[var(--nexa-text-primary)]">{ev.event}</div>
+                    <div className="text-[11px] text-[var(--nexa-text-muted)]">By: {ev.user}</div>
+                  </div>
+                  <div className="text-right space-y-0.5">
+                    <div className="font-mono font-bold text-[var(--nexa-text-primary)]">{ev.amount}</div>
+                    <div className="text-[10px] text-[var(--nexa-text-muted)]">{ev.time}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </NexaCard>
+        </div>
       </div>
-    </AdminShell>
+    </SuperAdminShell>
   );
 }

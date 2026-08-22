@@ -1026,7 +1026,7 @@ export default function AdminOverviewPage() {
                   Multi-provider routing, token latency, and monthly spend
                 </p>
               </div>
-              <Link href="/admin/observability">
+              <Link href="/ai/observability">
                 <NexaButton size="sm" variant="ghost" className="text-xs text-[#1A56DB]">
                   Detailed Traces
                 </NexaButton>
@@ -1084,7 +1084,7 @@ export default function AdminOverviewPage() {
                   Manage cross-tenant dispatch quotas and fallback SMTP clusters
                 </p>
               </div>
-              <Link href="/admin/email">
+              <Link href="/ai/email">
                 <NexaButton size="sm" variant="primary" className="bg-[#1A56DB] text-white">
                   Full Email Console
                 </NexaButton>

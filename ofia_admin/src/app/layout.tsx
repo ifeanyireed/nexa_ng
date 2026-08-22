@@ -16,9 +16,12 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ofia Super Admin | Unified Multi-Application Command Center",
+  title: "Ofia Super Admin | Master Mission Control",
   description:
-    "Unified Super Admin platform for managing Ofia AI GTM Swarm, Ofia Marketplace, and Ofia ERP infrastructure, security, users, and cross-application telemetry.",
+    "Unified Super Admin & Multi-App Governance for Ofia AI Swarm, Ofia Marketplace, and Ofia Enterprise ERP.",
+  icons: {
+    icon: [{ url: "/logo.png" }, { url: "/icon.png" }],
+  },
 };
 
 export default function RootLayout({
@@ -29,7 +32,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${dmSans.variable} ${jetbrains.variable} font-sans antialiased bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] min-h-screen selection:bg-[#1A56DB] selection:text-white`}
+        className={`${dmSans.variable} ${jetbrains.variable} font-sans antialiased bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] min-h-screen selection:bg-[#1A56DB]/20 selection:text-[#1A56DB]`}
+        suppressHydrationWarning
       >
         <ThemeProvider>{children}</ThemeProvider>
       </body>

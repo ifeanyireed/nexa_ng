@@ -1,87 +1,69 @@
 "use client";
 
-import React from "react";
-import Link from "next/link";
+import React, { useState } from "react";
 import {
-  TrendingUp,
-  MapPin,
+  CreditCard,
   DollarSign,
-  Calendar,
+  Layers,
+  PieChart,
+  ShoppingBag,
+  TrendingUp,
   Users,
-  Award,
+  Wallet,
 } from "lucide-react";
-import { AdminShell } from "@/components/admin/AdminShell";
+import { SuperAdminShell } from "@/components/admin/SuperAdminShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 
 export default function MarketplaceAnalyticsPage() {
-  const cityData = [
-    { city: "Lagos (Lekki, VI, Ikeja)", bookings: "4,820", gmv: "₦26.4M", activePros: "1,840", growth: "+31%" },
-    { city: "Abuja (Maitama, Garki, Wuse)", bookings: "1,940", gmv: "₦10.2M", activePros: "820", growth: "+22%" },
-    { city: "Port Harcourt (GRA, Trans Amadi)", bookings: "780", gmv: "₦4.1M", activePros: "450", growth: "+18%" },
-    { city: "Ibadan & Other States", bookings: "420", gmv: "₦2.1M", activePros: "310", growth: "+14%" },
-  ];
-
   return (
-    <AdminShell>
+    <SuperAdminShell
+      title="Marketplace GMV & Financial Analytics"
+      subtitle="Detailed breakdown of Gross Merchandise Value, Paystack transaction splits, merchant withdrawal volume, and category revenue."
+    >
       <div className="space-y-6">
-        {/* HEADER */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <Link href="/marketplace" className="text-xs font-bold text-[#0E9F6E] hover:underline">
-                ← Marketplace Admin
-              </Link>
-            </div>
-            <h1 className="text-xl sm:text-2xl font-black text-[var(--nexa-text-primary)] flex items-center gap-2.5 mt-1">
-              <TrendingUp className="w-6 h-6 text-[#7E3AF2]" />
-              City & Geo Analytics Hub
-            </h1>
-            <p className="text-xs sm:text-sm text-[var(--nexa-text-muted)] mt-1">
-              Geographic breakdown of search volume, completed transactions, and pro merchant coverage across Nigeria.
-            </p>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#0E9F6E]">
+            <span className="text-xs text-[var(--nexa-text-muted)] font-semibold">Total Cumulative GMV</span>
+            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">₦342,800,000</div>
+            <div className="text-[11px] text-[#0E9F6E] font-bold">+24% QoQ Growth</div>
+          </NexaCard>
 
-          <NexaBadge variant="purple">Real-time Telemetry</NexaBadge>
+          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#1A56DB]">
+            <span className="text-xs text-[var(--nexa-text-muted)] font-semibold">Platform Fee Yield (5%)</span>
+            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">₦17,140,000</div>
+            <div className="text-[11px] text-[var(--nexa-text-muted)]">Direct revenue to Ofia treasury</div>
+          </NexaCard>
+
+          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#7E3AF2]">
+            <span className="text-xs text-[var(--nexa-text-muted)] font-semibold">Merchant Escrow Held</span>
+            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">₦8,450,000</div>
+            <div className="text-[11px] text-[#7E3AF2] font-semibold">Pending customer completion confirmation</div>
+          </NexaCard>
         </div>
 
-        {/* CITY BREAKDOWN TABLE */}
-        <NexaCard variant="glass" padding="none" className="overflow-hidden">
-          <div className="p-4 sm:p-5 border-b border-[var(--nexa-border)]">
-            <h3 className="font-extrabold text-sm sm:text-base text-[var(--nexa-text-primary)]">
-              State & City Performance
-            </h3>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-muted)] border-b border-[var(--nexa-border)] uppercase tracking-wider font-mono text-[10px]">
-                <tr>
-                  <th className="py-3 px-4">City Hub</th>
-                  <th className="py-3 px-4">Monthly Bookings</th>
-                  <th className="py-3 px-4">Realized GMV</th>
-                  <th className="py-3 px-4">Active Pros</th>
-                  <th className="py-3 px-4 text-right">MoM Growth</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--nexa-border)] font-medium">
-                {cityData.map((row) => (
-                  <tr key={row.city} className="hover:bg-[var(--nexa-bg-surface)]/60 transition-colors">
-                    <td className="py-3.5 px-4 font-bold text-[var(--nexa-text-primary)] flex items-center gap-2">
-                      <MapPin className="w-3.5 h-3.5 text-[#1A56DB]" />
-                      {row.city}
-                    </td>
-                    <td className="py-3.5 px-4 font-mono">{row.bookings}</td>
-                    <td className="py-3.5 px-4 font-mono font-bold text-[#0E9F6E]">{row.gmv}</td>
-                    <td className="py-3.5 px-4">{row.activePros} pros</td>
-                    <td className="py-3.5 px-4 font-bold text-[#0E9F6E] text-right">{row.growth}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* State Breakdown */}
+        <NexaCard variant="glass" padding="lg" className="space-y-4 border border-[var(--nexa-border)]">
+          <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">Regional GMV Breakdown</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-1">
+              <div className="font-bold text-sm">Lagos State</div>
+              <div className="text-xl font-bold text-[#0E9F6E]">₦52,400,000 (62%)</div>
+              <p className="text-xs text-[var(--nexa-text-muted)]">Top Areas: Lekki, Ikeja, Victoria Island, Yaba</p>
+            </div>
+            <div className="p-4 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-1">
+              <div className="font-bold text-sm">Abuja FCT</div>
+              <div className="text-xl font-bold text-[#1A56DB]">₦21,800,000 (26%)</div>
+              <p className="text-xs text-[var(--nexa-text-muted)]">Top Areas: Maitama, Wuse 2, Garki, Jabi</p>
+            </div>
+            <div className="p-4 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-1">
+              <div className="font-bold text-sm">Rivers (Port Harcourt)</div>
+              <div className="text-xl font-bold text-[#7E3AF2]">₦10,050,000 (12%)</div>
+              <p className="text-xs text-[var(--nexa-text-muted)]">Top Areas: GRA Phase 2, Peter Odili, Trans Amadi</p>
+            </div>
           </div>
         </NexaCard>
       </div>
-    </AdminShell>
+    </SuperAdminShell>
   );
 }

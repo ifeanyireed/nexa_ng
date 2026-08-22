@@ -1,0 +1,74 @@
+S/N ,Employee,Designation,Department,Performance Role,Line Managers,Email
+1,ENEANOH MMACHIMEREM UGONNA,Regional Head of Operations,Head of Operations,Line Manager,Olasupo Arogundade,enugu.operations@neweratransports.com
+2,SAMALI UMORU JAMES,Fleet Operations Manager ,Fleet 6 (Fleet Operations Manager),Line Manager,Funmi Arogundade,ibadan.operations@neweratransports.com
+3,BUORO  ABUBAKAR IDRIS,Fleet Operations Manager ,Fleet 6 (Fleet Operations Manager),Line Manager,Funmi Arogundade,kano.operations@neweratransports.com
+4,ASIEGBU  CHIOMA JOHN,Marketing Executive/CSR,Marketing 2 (Marketing Executive & CSR),Employee,DIVINE FAVOUR CHI EGBOMUCHE,clientrelations@neweratransports.com
+5,SAHEED AKANBI  YUSUF,Facility Manager/Fleet Supervisor,Fleet 4 (Facility Manager),Employee,SAMALI UMORU JAMES,lagos.supervisor@neweratransports.com
+6,IHEUKWUMERE FRIDAY KELECHI,Fleet Supervisor Enugu OPV,Fleet 8 (Fleet Supervisor),Employee,ENEANOH MMACHIMEREM UGONNA,enugu.supervisor@neweratransports.com
+7,TUNMIE JOHNSON EKANMBAKUMO,Fleet Supervisor ,Fleet 8 (Fleet Supervisor),Employee,OLUWASIJIBOMI EBENEZER AKINSOHUN,tunmie.ekanbakumo@neweratransports.com
+8,CHIDIMMA MAUREEN UZOUKWU,NOC Supervisor,NOC 1 (Fleet Monitoring & NOC Supervisor),Line Manager,EMEKA OKORO,chidimma.uzoukwu@neweratransports.com
+9,AREMU ABIODUN NAJEEM,Fleet Supervisor ,Fleet 8 (Fleet Supervisor),Employee,SAMALI UMORU JAMES,ibadan.supervisor@neweratransports.com
+10,BABALOLA IMOLEAYO ADELAKUN,Fleet Operations Manager ,Fleet 6 (Fleet Operations Manager),Employee,ENEANOH MMACHIMEREM UGONNA,babalola.adelakun@neweratransports.com
+11,OLUWASIJIBOMI EBENEZER AKINSOHUN,Regional Head of Operations,Head of Operations,Line Manager,Olasupo Arogundade,oluwasijibomi.akinsohun@neweratransports.com
+12,AROTILE ROTIMI SEYI,Head of Finance,Finance 5 (Head of Finance),Line Manager,Olasupo Arogundade,rotimi.arotile@neweratransports.com
+13,OCHIABUTO CHINONSO SOPHIA,Social Media Executive,Marketing 5 (Social Media Executive),Employee,DIVINE FAVOUR CHI EGBOMUCHE,socialmedia@neweratransports.com
+14,OPEYEMI ISMAILA,Receptionist,Admin/HR 2 (Front Desk),Employee,Funmi Arogundade,opeyemi@neweratransports.com
+15,ODUBIYI OLUWASEUN,Fleet Supervisor ,Fleet 8 (Fleet Supervisor),Employee,SAMALI UMORU JAMES,Oluwaseun.Odubiyi@neweratransports.com
+16,DIVINE FAVOUR CHI EGBOMUCHE,Head Of Marketing,Marketing 1 (Head of Marketing),Line Manager,Olasupo Arogundade,divinefavour.egbomuche@neweratransports.com
+17,EGBA STELLA ADUTOMIVIE,HR EXECUTIVE,HR 1 (HR Executive 1),HR Admin,KALU GIFT KELECHI,stella.egba@kingshouselearning.com
+18,ISAAC EKPO JAMES,MARKETING EXECUTIVE,Marketing 3 (Marketing Executive),Employee,DIVINE FAVOUR CHI EGBOMUCHE,Isaac.ekpo@kingshouselearning.com
+19,KALU GIFT KELECHI,HEAD of Human Resources,HR3 (Head of Human Resource),HR Admin,Olasupo Arogundade,kelechi.kalu@neweratransports.com
+20,EKWEALOR OLUCHI UGOCHI ,Fleet Monitoring Officer ,NOC 2 (Fleet Monitoring Officer),Employee,CHIDIMMA MAUREEN UZOUKWU,ugochi.oluchi@neweratransports.com
+21,ONEBUNNE GINIKA PERPETUS,Fleet Supervisor  ,Fleet 8 (Fleet Supervisor),Employee,OLUWASIJIBOMI EBENEZER AKINSOHUN,perpetus.ginika@neweratransports.com
+22,IBEMERE ONYEKACHI PRECIOUS,Fleet Monitoring Officer ,NOC 2 (Fleet Monitoring Officer),Employee,CHIDIMMA MAUREEN UZOUKWU,precious.ibemere@neweratransports.com
+23,NWAOHA MICHAEL ONYEKWERE,HSE EXECUTIVE,Fleet 7 (HSE Executive),Employee,EMEKA OKORO,michael.nwaoha@neweratransports.com
+24,ISHAQ IBRAHIM,FLEET MAINTENANCE OFFICER NORTH,Fleet 5 (Fleet Maintenance North),Employee,BUORO  ABUBAKAR IDRIS,ishaq.ibrahim@neweratransorts.com
+25,UMEZURIKE ESTHER CHINAZA,Receptionist,Admin/HR 1 (Front Desk & Account Support),Employee,Funmi Arogundade,umezurike.chinaza@neweratransports.com
+26,EDITH ABOSEDE FRIDAY,Sales Closer,Marketing 6 (Sales Closer),Employee,DIVINE FAVOUR CHI EGBOMUCHE,Edith.friday@neweratransports.com
+27,CHIJIOKE DAVID SOMTOCHUKWU,Fleet Monitoring Officer ,NOC 2 (Fleet Monitoring Officer),Employee,CHIDIMMA MAUREEN UZOUKWU,chijioke.david@neweratransports.com
+28,ABOSEDE AJAYI ,Sales Closer,Marketing 6 (Sales Closer),Employee,DIVINE FAVOUR CHI EGBOMUCHE,abosede.olawunmi@neweratransports.com
+29,Oluwatobiloba Olateju,ERP/IT Officer,ERP/IT 1 (ERP/IT Officer),Employee,Olasupo Arogundade,olateju.daniel@neweratransports.com
+30,Salami Muibat,Office Assistance,Admin/HR 3 (Office Assistant),Employee,EGBA STELLA ADUTOMIVIE,
+31,Idowu Aina Victoria,Fleet Monitoring Officer ,NOC 2 (Fleet Monitoring Officer),Employee,CHIDIMMA MAUREEN UZOUKWU,Victoria.idowu@neweratransports.com
+32,Akorede Sandra Bisola,Legal Counsel/EA,Legal 1 (Legal Counsel & EA),Employee,Olasupo Arogundade,akorede.sandra@neweratransports.com
+33,Goldy Godfrey,HR Executive,HR 2 (HR Executive 2),HR Admin,KALU GIFT KELECHI,goldy.godfrey@neweratransports.com
+34,Sanusi Hamid Agboworin,Workshop Manager,Workshop 3 (Workshop Manager),Employee,Olasupo Arogundade,sanusi.hamid@neweratransports.com
+35,EMEKA OKORO,Internal Control Manager ,Internal Control 1 (Internal Control),Line Manager,AROTILE ROTIMI SEYI,internal.control@neweratransports.com
+36,DAVID MBACHA,ERP/IT Officer,ERP/IT 1 (ERP/IT Officer),Employee,Olasupo Arogundade,david.mbacha@neweratransports.com
+37,Victoria Aghogho Otojareri,Accountant (Payables),Finance 1 (Acc Payable),Employee,AROTILE ROTIMI SEYI,accounts@neweratransports.com
+38,Melissa Onwuanaku,Fleet Monitoring officer,NOC 2 (Fleet Monitoring Officer),Employee,CHIDIMMA MAUREEN UZOUKWU,onwuanaku.Melissa@neweratransports.com
+39,Bejamin Abe,Internal Control Manager ,Internal Control 1 (Internal Control),Employee,AROTILE ROTIMI SEYI,benjamin.abe@neweratransports.com
+40,Queen Okonkwo,Accountant (Receivables),Finance 2 (Acc Receivable),Employee,AROTILE ROTIMI SEYI,queen.okonkwo@neweratransports.com
+41,Harriet Gbiaye,Legal Counsel/Property Manager,Legal 2 (Legal Counsel),Employee,Olasupo Arogundade,harriet.gbiaye@neweratransports.com
+42,Olubukola Kehinde Adebayo,Accountant (Financial Reporting),Finance 4 (Finance Analyst),Employee,AROTILE ROTIMI SEYI,olubukola.adebayo@neweratransports.com
+43,Joyce Anulika Udensi,Account Officer,Finance 2 (Acc Receivable),Employee,AROTILE ROTIMI SEYI,joyce.udensi@neweratransports.com
+44,Funmi Arogundade,,,MD,,gm@neweratransports.com
+45,Olasupo Arogundade,,,MD,,supo89@hotmail.com
+46,MUSA BINTA,Admin/Relationship Officer,KHLC 4 (Admin Officer),Employee,SOLOMON GRACE AMARACHI,binta.musa@kingshouselearning.com
+47,SOLOMON GRACE AMARACHI,Program Coordinator,KHLC 3 (Program Coordinator),Line Manager,OLASUPO AROGUNDADE,grace.solomon@kingshouselearning.com
+48,BANWO IBISOLA YETUNDE,Supervisor,KHLC 2 (Supervisor),Employee,SOLOMON GRACE AMARACHI,yetunde.ibisola@kingshouselearning.com
+49,LAWAL OBANLE PROMISE,Head of Robotics/CBT,KHLC 5 (Head of   C&R/CBT),Line Manager,OLASUPO AROGUNDADE,promise.obanla@kingshouselearning.com
+50,AKINWALE AKINOLA SAMSON,Skill Up Coordinator,KHLC 3 (Program Coordinator),Line Manager,OLASUPO AROGUNDADE,Akinwale.Samson@kingshouselearning.com
+51,BALA BLESSING,Supervisor,KHLC 2 (Supervisor),Line Manager,SOLOMON GRACE AMARACHI,blessing.bala@kingshouselearning.com
+52,INIOBONG CHRISTIANA OKOKON,Skill up Coordinator,KHLC 3 (Program Coordinator),Employee,AKINWALE AKINOLA SAMSON,Okokon.Christiana@kingshouselearning.com
+53,ADEDOKUN KHALEED OLUWATOBILOBA,Supervisor,KHLC 2 (Supervisor),Line Manager,SOLOMON GRACE AMARACHI,Adedokun.khaleed@kingshouselearning.com
+54,NWANTU FAITH TITUS,Instructor,KHLC 1 (Instructor),Employee,BANWO IBISOLA YETUNDE,faith.nwantu@kingshouselearning.com
+55,FAVOUR EZEKIEL OLADAPO,Instructor,KHLC 1 (Instructor),Employee,LAWAL OBANLE PROMISE,favour.oladapo@kingshouselearning.com
+56,FANIYI OLAWALE TOSIN,Instructor,KHLC 1 (Instructor),Employee,BALA BLESSING,tosin.faniyi@kingshouselearning.com
+57,ADEWUYI STEPHEN O,Instructor,KHLC 1 (Instructor),Employee,BALA BLESSING,Stephen.Adewuyi@kingshouselearning.com
+58,TOSIN OLUWOLE ABIOYE,Instructor,KHLC 1 (Instructor),Employee,ADEDOKUN KHALEED OLUWATOBILOBA,abioye.tosin@kingshouselearning.com
+59,OKUNUGA SEYI SAMUEL,Instructor,KHLC 1 (Instructor),Employee,BALA BLESSING,okunugaseyi12345@gmail.com
+60,ADEYEMI HALIMAT ADEDOYIN,Instructor,KHLC 1 (Instructor),Employee,BANWO IBISOLA YETUNDE,adeyemi.adedoyin@kingshouselearning.com
+61,WILLIAMS AJIBOLA OLUFUNKE,Instructor,KHLC 1 (Instructor),Employee,BALA BLESSING,Williams.Ajibola@kingshouselearning.com
+62,RITA OCHUWA OGHAIRO,Instructor,KHLC 1 (Instructor),Employee,BANWO IBISOLA YETUNDE,Rita.Oghiaro@kingshouselearning.com
+63,SOLOMON IDOWU MICHAEL,Instructor,KHLC 1 (Instructor),Employee,ADEDOKUN KHALEED OLUWATOBILOBA,solomon.michael@kingshouselearning.com
+64,SALAUDEEN AZEEZAT ARIKE,Instructor,KHLC 1 (Instructor),Employee,ADEDOKUN KHALEED OLUWATOBILOBA,saludeen.azeezat@kingshouselearning.com
+65,DEBORAH DENNIS,Instructor,KHLC 1 (Instructor),Employee,BANWO IBISOLA YETUNDE,Deborah.Dennis@kingshouselearning.com
+66,MARY AWOLOLA,Instructor,KHLC 1 (Instructor),Employee,ADEDOKUN KHALEED OLUWATOBILOBA,Mary.Awolola@kingshouselearning.com
+67,ADEBANJO MATTHEW,Instructor,KHLC 1 (Instructor),Employee,BALA BLESSING,Adebanjo.mathew@kingshouselearning.com
+68,GODDAY JAMES EJEGALE,Instructor,KHLC 1 (Instructor),Employee,BANWO IBISOLA YETUNDE,James.Godday@kingshouselearning.com
+69,JEROME JOY KARLISHA,Instructor,KHLC 1 (Instructor),Employee,LAWAL OBANLE PROMISE,joy.Jerome@kingshouselearning.com
+70,OLAYIWOLA OMOTAYO,Instructor,KHLC 1 (Instructor),Employee,BALA BLESSING,olayiwola.omotayo@kingshouselearning.com
+71,ELIZABETH ODERINDE,Instructor,KHLC 1 (Instructor),Employee,BANWO IBISOLA YETUNDE,elizabeth.Oderinde@kingshouselearning.com
+72,Dosunmu Emmanuel Kayode,Instructor,KHLC 1 (Instructor),Employee,ADEDOKUN KHALEED OLUWATOBILOBA,dosunmu.emmanuel@kingshouselearning.com
+73,Folarin Hassanah Abisola,Instructor,KHLC 1 (Instructor),Employee,ADEDOKUN KHALEED OLUWATOBILOBA,hassanah.folarin@kingshouselearning.com

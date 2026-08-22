@@ -1,0 +1,66 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id             String   @id
+  name           String
+  email          String   @unique
+  role           String   // "employee" | "manager" | "hr" | "md"
+  department     String
+  avatar         String
+  managerName    String?
+  managerId      String?
+  ratingTrend    String?  // JSON stringified array of numbers (e.g., "[7.8, 8.2, 8.5]")
+  designation    String?
+  gradeLevel     String?
+  employmentDate String?
+  company        String?
+  location       String?
+  password       String?
+
+  manager        User?    @relation("UserManager", fields: [managerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  employees      User[]   @relation("UserManager")
+}
+
+model ReviewCycle {
+  id          String   @id
+  name        String
+  startDate   DateTime
+  endDate     DateTime
+  status      String   // "Draft" | "Active" | "Completed"
+  departments String   // JSON stringified array of departments (e.g., "[\"Engineering\", \"Sales\"]")
+}
+
+model Objective {
+  id            String  @id
+  text          String
+  weight        Int
+  type          String  // "objective" | "competency"
+  expectedLevel Int?    // Expected competency level (1-5)
+  category      String? // Category name for competency objectives (Behavioural, Leadership, etc.)
+  departments   String? // JSON stringified array of target departments (Engineering, Sales, etc.)
+  description   String? // JSON stringified array of list-based descriptions
+}
+
+model PerformanceReview {
+  id               String   @id
+  employeeId       String
+  employeeName     String
+  department       String
+  cycleId          String
+  cycleName        String
+  status           String   // "Draft" | "Submitted" | "Manager Reviewed" | "HR Approved" | "Returned"
+  employeeComments String?  @db.Text
+  managerComments  String?  @db.Text
+  hrComments       String?  @db.Text
+  improvementPlan  String?  @db.Text
+  finalScore       Float?
+  objectivesJson   String   @db.Text // JSON stringified array of Objective evaluations
+  updatedAt        DateTime @default(now()) @updatedAt
+}

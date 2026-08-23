@@ -37,6 +37,7 @@ export const SUPER_ADMIN_ERP_MODULES: ErpModuleItem[] = [
   { key: "logistics", label: "Ofia Logistics Manager", category: "Operations", description: "Dispatch desk, waybills, courier assignments, and fleet routing.", iconName: "Truck", color: "#6366F1" },
   { key: "accounting", label: "Accounting & Ledgers", category: "People & Finance", description: "General ledger, charts of accounts, trial balance, and tax remittances.", iconName: "Layers", color: "#0E9F6E", badge: "GL" },
   { key: "hr", label: "HR & Appraisals", category: "People & Finance", description: "Employee roster, KPI appraisal cycles, reviews, and team retreat quests.", iconName: "Users", color: "#9061F9" },
+  { key: "users", label: "User Management", category: "People & Finance", description: "Corporate staff directory, 10-tier role governance, departmental hierarchy, and cost centers.", iconName: "Users", color: "#1A56DB", badge: "Staff" },
   { key: "access_control", label: "Access Control & RBAC", category: "Core", description: "Tenant role-based access matrix, security permissions, and audit logging.", iconName: "ShieldCheck", color: "#1A56DB", badge: "RBAC" },
 ];
 

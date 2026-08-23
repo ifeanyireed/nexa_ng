@@ -475,6 +475,7 @@ export function ErpAdminShell({
     { label: "CRM and Sales", icon: <BarChart3 className="w-5 h-5" />, href: "/erp/marketer", badge: "Sales", key: "crm", section: "Ofia Enterprise Suite" },
     { label: "Accounting & Ledgers", icon: <Layers className="w-5 h-5" />, href: "/erp/accountant", badge: "GL", key: "accounting", section: "Ofia Enterprise Suite" },
     { label: "HR & Appraisals", icon: <Users className="w-5 h-5" />, href: "/erp/hr", key: "hr", section: "Ofia Enterprise Suite" },
+    { label: "User Management", icon: <UserCheck className="w-5 h-5" />, href: "/erp/admin/users", badge: "Staff", key: "users", section: "Ofia Enterprise Suite" },
     { label: "Access Control", icon: <ShieldCheck className="w-5 h-5" />, href: "/erp/admin/access-control", badge: "RBAC", key: "access_control", section: "Ofia Enterprise Suite" },
 
     // 3. PORTALS & WORKSPACES
@@ -486,6 +487,13 @@ export function ErpAdminShell({
   // Automatic sub navigation tabs according to current pathname
   const getSubTabs = (): SubNavItem[] => {
     if (subTabs !== undefined) return subTabs;
+
+    if (pathname.startsWith("/erp/admin/users")) {
+      return [
+        { label: "Staff Directory", href: "/erp/admin/users", icon: <Users className="w-3.5 h-3.5" /> },
+        { label: "Departments & Cost Centers", href: "/erp/admin/users/departments", icon: <Layers className="w-3.5 h-3.5" /> },
+      ];
+    }
 
     if (pathname.startsWith("/erp/admin/access-control")) {
       return [];

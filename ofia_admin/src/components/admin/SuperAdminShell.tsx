@@ -159,8 +159,7 @@ export function SuperAdminShell({
     if (pathname.startsWith("/erp")) {
       return [
         { label: "ERP Administration", href: "/erp", icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
-        { label: "User & Role Governance", href: "/erp/users", icon: <Lock className="w-3.5 h-3.5" />, badge: "6 RBAC" },
-        { label: "Departmental Structure", href: "/erp/departments", icon: <Layers className="w-3.5 h-3.5" />, badge: "11 Depts" },
+        { label: "Tenant Provisioning", href: "/tenants", icon: <Building2 className="w-3.5 h-3.5" />, badge: "5 Orgs" },
       ];
     }
 

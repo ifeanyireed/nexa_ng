@@ -64,7 +64,9 @@ export function RoleGuard({
     // 3. Automatic Route Role Rules (if allowedRoles not explicitly provided)
     let effectiveAllowedRoles = allowedRoles;
     if (!effectiveAllowedRoles) {
-      if (pathname === "/erp/admin" || pathname.startsWith("/erp/admin/access-control")) {
+      if (pathname.startsWith("/erp/admin/users")) {
+        effectiveAllowedRoles = ["admin", "md", "hr"];
+      } else if (pathname === "/erp/admin" || pathname.startsWith("/erp/admin/access-control")) {
         effectiveAllowedRoles = ["admin"];
       } else if (pathname.startsWith("/erp/marketer") || pathname.startsWith("/erp/admin/crm")) {
         effectiveAllowedRoles = ["admin", "md", "marketer", "manager"];

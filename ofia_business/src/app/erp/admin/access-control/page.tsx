@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import {
   ERP_ROLES,
+  CONFIGURABLE_ERP_ROLES,
   ERP_MODULES,
   RoleKey,
   RoleInfo,
@@ -35,6 +36,7 @@ import {
   ArrowRight,
   Database,
   RefreshCw,
+  Ban,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/nexa/AuthContext";
@@ -42,7 +44,7 @@ import { useAuth } from "@/components/nexa/AuthContext";
 export default function AccessControlPage() {
   const { user } = useAuth();
   const [tenantName, setTenantName] = useState<string>("EduSuite");
-  const [selectedRole, setSelectedRole] = useState<RoleKey>("employee");
+  const [selectedRole, setSelectedRole] = useState<RoleKey>("md");
   const [matrix, setMatrix] = useState<PermissionMatrix>(DEFAULT_PERMISSION_MATRIX);
   const [isSavedToast, setIsSavedToast] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string>("Permissions Synchronized with MySQL");
@@ -267,20 +269,45 @@ export default function AccessControlPage() {
           </div>
         </div>
 
+        {/* TENANT ADMINISTRATOR MASTER ACCESS BANNER */}
+        <div className="p-4 rounded-2xl bg-[#1A56DB]/5 border border-[#1A56DB]/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#1A56DB] text-white flex items-center justify-center font-bold text-sm shrink-0">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-black text-display text-[var(--nexa-text-primary)]">
+                  Tenant Administrator Access (Default & Unrestricted)
+                </span>
+                <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-[#1A56DB]/15 text-[#1A56DB] uppercase">
+                  Super Admin Governed
+                </span>
+              </div>
+              <p className="text-[11px] text-[var(--nexa-text-secondary)] mt-0.5">
+                The Tenant Administrator possesses permanent master access to all modules provisioned to <strong>{tenantName}</strong> by the Super Admin. Below, configure role-based access for your staff personas.
+              </p>
+            </div>
+          </div>
+          <div className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-[10px] font-extrabold uppercase shrink-0">
+            All Provisioned Modules Enabled
+          </div>
+        </div>
+
         {/* ROLE PERSONA SELECTOR CARDS */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Shield className="w-4 h-4 text-nexa-brand" />
-              <span className="font-extrabold text-sm text-display">Select User Type / Role</span>
+              <span className="font-extrabold text-sm text-display">Configure Staff Role Permissions</span>
             </div>
             <span className="text-xs text-nexa-text-faint font-semibold">
-              Click a role to configure which modules appear in their workspace
+              Click a staff persona to configure which modules appear in their workspace
             </span>
           </div>
 
           <div className="flex items-stretch gap-3.5 overflow-x-auto pb-3 pt-1 scrollbar-hide snap-x">
-            {ERP_ROLES.map((role) => {
+            {CONFIGURABLE_ERP_ROLES.map((role) => {
               const isSelected = selectedRole === role.key;
               const permissions = matrix[role.key] || {};
               const enabledNum = Object.values(permissions).filter(Boolean).length;
@@ -424,26 +451,34 @@ export default function AccessControlPage() {
           {/* MODULE TOGGLE GRID */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {filteredModules.map((module) => {
-              const isEnabled = matrix[selectedRole]?.[module.key] ?? false;
+              const isSuperAdminAllowed = matrix.admin?.[module.key] !== false;
+              const isEnabled = isSuperAdminAllowed && (matrix[selectedRole]?.[module.key] ?? false);
 
               return (
                 <div
                   key={module.key}
                   className={cn(
                     "p-4 rounded-2xl border transition-all flex items-center justify-between gap-4",
-                    isEnabled
+                    !isSuperAdminAllowed
+                      ? "bg-rose-500/5 border-rose-500/20 opacity-60"
+                      : isEnabled
                       ? "bg-nexa-bg-surface border-nexa-border hover:border-nexa-brand/40 shadow-xs"
                       : "bg-nexa-bg-base/40 border-nexa-border/60 opacity-70"
                   )}
                 >
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <span className="text-xs font-bold text-nexa-text-primary truncate">
                         {module.label}
                       </span>
-                      {module.badge && (
+                      {module.badge && isSuperAdminAllowed && (
                         <span className="text-[9px] font-extrabold uppercase px-2 py-0.2 rounded-full bg-nexa-brand/10 text-nexa-brand border border-nexa-brand/20 shrink-0">
                           {module.badge}
+                        </span>
+                      )}
+                      {!isSuperAdminAllowed && (
+                        <span className="text-[9px] font-extrabold uppercase px-2 py-0.2 rounded-full bg-rose-500/10 text-rose-500 border border-rose-500/20 shrink-0">
+                          Disabled by Super Admin
                         </span>
                       )}
                       <span className="text-[10px] font-mono text-nexa-text-faint bg-nexa-bg-base px-2 py-0.5 rounded-md border border-nexa-border shrink-0 hidden sm:inline">
@@ -451,29 +486,37 @@ export default function AccessControlPage() {
                       </span>
                     </div>
                     <p className="text-[11px] text-nexa-text-secondary line-clamp-2 leading-relaxed">
-                      {module.description}
+                      {!isSuperAdminAllowed
+                        ? "This module has not been provisioned for this organization by the Super Admin."
+                        : module.description}
                     </p>
                   </div>
 
                   {/* TOGGLE SWITCH */}
-                  <button
-                    type="button"
-                    onClick={() => handleToggleModule(module.key)}
-                    className={cn(
-                      "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-                      isEnabled ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-700"
-                    )}
-                    role="switch"
-                    aria-checked={isEnabled}
-                  >
-                    <span
-                      aria-hidden="true"
+                  {isSuperAdminAllowed ? (
+                    <button
+                      type="button"
+                      onClick={() => handleToggleModule(module.key)}
                       className={cn(
-                        "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out",
-                        isEnabled ? "translate-x-5" : "translate-x-0"
+                        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                        isEnabled ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-700"
                       )}
-                    />
-                  </button>
+                      role="switch"
+                      aria-checked={isEnabled}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out",
+                          isEnabled ? "translate-x-5" : "translate-x-0"
+                        )}
+                      />
+                    </button>
+                  ) : (
+                    <div className="w-11 h-6 rounded-full bg-slate-200 dark:bg-slate-800 p-0.5 opacity-50 shrink-0 flex items-center justify-start cursor-not-allowed">
+                      <div className="w-5 h-5 rounded-full bg-slate-400" />
+                    </div>
+                  )}
                 </div>
               );
             })}

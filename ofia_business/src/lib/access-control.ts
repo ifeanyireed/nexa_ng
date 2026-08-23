@@ -95,6 +95,11 @@ export const ERP_ROLES: RoleInfo[] = [
   },
 ];
 
+// Configurable roles on the tenant access matrix (Tenant Admin is locked/unrestricted by default)
+export const CONFIGURABLE_ERP_ROLES: RoleInfo[] = ERP_ROLES.filter(
+  (r) => r.key !== "admin"
+);
+
 export interface ErpModuleDef {
   key: string;
   label: string;
@@ -413,17 +418,34 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
     const res = await USER_API.getTenantRBAC(tenantId);
     if (res && res.matrix && Object.keys(res.matrix).length > 0) {
       const merged: PermissionMatrix = { ...DEFAULT_PERMISSION_MATRIX };
+
+      // Super Admin provisioned module set (stored under 'tenant_provision' or 'admin')
+      const provisioned = res.matrix.tenant_provision || res.matrix.admin || {};
+
       for (const role of ERP_ROLES) {
         merged[role.key] = {
           ...DEFAULT_PERMISSION_MATRIX[role.key],
           ...(res.matrix[role.key] || {}),
         };
       }
-      // Access control is strictly reserved for admin
+
+      // 1. Tenant Administrator (admin) ALWAYS gets all modules allowed to the tenant by the Super Admin in MySQL
+      for (const mod of ERP_MODULES) {
+        merged.admin[mod.key] = provisioned[mod.key] !== false;
+      }
       merged.admin.access_control = true;
+
+      // 2. For other roles, a module is enabled ONLY IF:
+      // a) Super Admin allowed the module for the tenant in the database, AND
+      // b) Tenant Admin granted it to that role
       for (const role of ERP_ROLES) {
         if (role.key !== "admin") {
           merged[role.key].access_control = false;
+          for (const mod of ERP_MODULES) {
+            const isTenantAllowed = provisioned[mod.key] !== false;
+            const isRoleGranted = merged[role.key][mod.key] ?? DEFAULT_PERMISSION_MATRIX[role.key]?.[mod.key] ?? false;
+            merged[role.key][mod.key] = isTenantAllowed && isRoleGranted;
+          }
         }
       }
 
@@ -469,9 +491,14 @@ export function isModuleEnabledForRole(
   if (moduleKey === "access_control") {
     return role === "admin";
   }
-  if (role === "admin") return true;
   const matrix = getTenantPermissionMatrix(tenantId);
   const roleKey = role as RoleKey;
+
+  // Tenant Admin gets all modules allowed to the tenant
+  if (role === "admin") {
+    return matrix.admin?.[moduleKey] !== false;
+  }
+
   if (!matrix[roleKey]) {
     return DEFAULT_PERMISSION_MATRIX.employee[moduleKey] ?? false;
   }

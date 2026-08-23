@@ -62,6 +62,7 @@ import { NexaThemeToggle } from "@/components/nexa/NexaThemeToggle";
 import { useAuth } from "@/components/nexa/AuthContext";
 import {
   getTenantPermissionMatrix,
+  fetchTenantPermissionMatrix,
   PermissionMatrix,
   DEFAULT_PERMISSION_MATRIX,
   RoleKey,
@@ -129,6 +130,13 @@ export function ErpAdminShell({
       }
       setTenantName(tName);
       setPermissionMatrix(getTenantPermissionMatrix(tName));
+
+      // Listen to MySQL database on load to determine Super Admin allowed modules
+      fetchTenantPermissionMatrix(tName).then((remote) => {
+        if (remote && Object.keys(remote).length > 0) {
+          setPermissionMatrix(remote);
+        }
+      });
 
       // Resolve user role
       const storedErpUser = localStorage.getItem("erp_current_user");

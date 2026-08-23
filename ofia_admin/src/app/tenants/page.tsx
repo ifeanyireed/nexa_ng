@@ -227,7 +227,7 @@ function TenantManagementContent() {
     // Persist to MySQL database table TenantRolePermission via service_users / service_erp
     setIsSavingDb(true);
     try {
-      const defaultRoleKeys = ["admin", "md", "manager", "employee", "hr", "accountant"];
+      const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant"];
       const matrixPayload: Record<string, Record<string, boolean>> = {};
 
       defaultRoleKeys.forEach((role) => {
@@ -262,7 +262,7 @@ function TenantManagementContent() {
 
     setIsSavingDb(true);
     try {
-      const defaultRoleKeys = ["admin", "md", "manager", "employee", "hr", "accountant"];
+      const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant"];
       const matrixPayload: Record<string, Record<string, boolean>> = {};
       defaultRoleKeys.forEach((role) => {
         matrixPayload[role] = { ...updatedModules };

@@ -160,14 +160,6 @@ export const ERP_MODULES: ErpModuleDef[] = [
     href: "/erp/admin/logistics",
   },
   {
-    key: "access_control",
-    label: "Access Control & RBAC",
-    category: "Ofia Enterprise Suite",
-    description: "Multi-tenant role permissions, user-type matrix, and security auditing.",
-    href: "/erp/admin/access-control",
-    badge: "RBAC",
-  },
-  {
     key: "accounting",
     label: "Accounting & Ledgers",
     category: "Ofia Enterprise Suite",
@@ -181,6 +173,14 @@ export const ERP_MODULES: ErpModuleDef[] = [
     category: "Ofia Enterprise Suite",
     description: "Staff performance review cycles, objectives, calibrations, and reports.",
     href: "/erp/hr",
+  },
+  {
+    key: "access_control",
+    label: "Access Control & RBAC",
+    category: "Ofia Enterprise Suite",
+    description: "Multi-tenant role permissions, user-type matrix, and security auditing.",
+    href: "/erp/admin/access-control",
+    badge: "RBAC",
   },
   {
     key: "employee",

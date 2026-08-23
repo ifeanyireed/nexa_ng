@@ -473,9 +473,9 @@ export function ErpAdminShell({
 
     // 2. OFIA ENTERPRISE SUITE
     { label: "CRM and Sales", icon: <BarChart3 className="w-5 h-5" />, href: "/erp/marketer", badge: "Sales", key: "crm", section: "Ofia Enterprise Suite" },
-    { label: "Access Control", icon: <ShieldCheck className="w-5 h-5" />, href: "/erp/admin/access-control", badge: "RBAC", key: "access_control", section: "Ofia Enterprise Suite" },
     { label: "Accounting & Ledgers", icon: <Layers className="w-5 h-5" />, href: "/erp/accountant", badge: "GL", key: "accounting", section: "Ofia Enterprise Suite" },
     { label: "HR & Appraisals", icon: <Users className="w-5 h-5" />, href: "/erp/hr", key: "hr", section: "Ofia Enterprise Suite" },
+    { label: "Access Control", icon: <ShieldCheck className="w-5 h-5" />, href: "/erp/admin/access-control", badge: "RBAC", key: "access_control", section: "Ofia Enterprise Suite" },
 
     // 3. PORTALS & WORKSPACES
     { label: "Employee Portal", icon: <UserCheck className="w-5 h-5" />, href: "/erp/employee", key: "employee", section: "Portals & Team" },

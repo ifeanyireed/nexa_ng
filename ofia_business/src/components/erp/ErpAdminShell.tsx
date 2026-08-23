@@ -560,14 +560,14 @@ export function ErpAdminShell({
               const matchesSearch = item.label.toLowerCase().includes(searchQuery.toLowerCase());
               if (!matchesSearch) return false;
 
-              // Overview is the permanent default core module and is always visible
+              // The '/erp/admin' Overview page is strictly for the Tenant Administrator dashboard
               if (item.key === "overview" || item.href === "/erp/admin") {
-                return true;
+                return pathname.startsWith("/erp/admin") || currentRole === "admin";
               }
 
               // The role access tab should ALWAYS be on the side bar nav in the erp/admin ONLY
               if (item.key === "access_control") {
-                return pathname.startsWith("/erp/admin");
+                return pathname.startsWith("/erp/admin") || currentRole === "admin";
               }
 
               // Determine if module is allowed to the tenant by the Super Admin in the database

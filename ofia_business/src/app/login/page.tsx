@@ -37,7 +37,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
 
-  // 9 Seeded EduSuite ERP Role Personas for instant 1-click test fill
+  // 10 Seeded EduSuite ERP Role Personas for instant 1-click test fill
   const testPersonas = [
     {
       label: "Tenant Admin",
@@ -94,13 +94,22 @@ export default function LoginPage() {
       route: "/erp/employee",
     },
     {
+      label: "Growth Marketer",
+      email: "marketing@edusuite.ng",
+      pass: "password123",
+      roleKey: "marketer",
+      badge: "Marketing & CRM",
+      color: "#EC4899",
+      route: "/erp/marketer",
+    },
+    {
       label: "POS Cashier",
       email: "cashier@edusuite.ng",
       pass: "password123",
       roleKey: "cashier",
       badge: "Retail & POS",
       color: "#0694A2",
-      route: "/erp/admin/pos",
+      route: "/erp/admin/shop/pos",
     },
     {
       label: "Warehouse Officer",
@@ -109,7 +118,7 @@ export default function LoginPage() {
       roleKey: "inventory_officer",
       badge: "Supply Chain",
       color: "#F59E0B",
-      route: "/erp/admin/inventory",
+      route: "/erp/admin/shop/inventory",
     },
     {
       label: "Fleet Dispatcher",
@@ -210,12 +219,14 @@ export default function LoginPage() {
       route = "/erp/hr";
     } else if (userEmail.includes("md")) {
       route = "/erp/md";
+    } else if (userEmail.includes("market") || userEmail.includes("sales") || userEmail.includes("crm")) {
+      route = "/erp/marketer";
     } else if (userEmail.includes("manager")) {
       route = "/erp/manager";
     } else if (userEmail.includes("cashier")) {
-      route = "/erp/admin/pos";
+      route = "/erp/admin/shop/pos";
     } else if (userEmail.includes("inventory")) {
-      route = "/erp/admin/inventory";
+      route = "/erp/admin/shop/inventory";
     } else if (userEmail.includes("dispatch")) {
       route = "/erp/admin/logistics";
     } else if (userEmail.includes("employee") || userEmail.includes("tech")) {

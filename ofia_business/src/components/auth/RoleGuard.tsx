@@ -52,10 +52,11 @@ export function RoleGuard({
     if (role === "md") home = "/erp/md";
     else if (role === "hr") home = "/erp/hr";
     else if (role === "accountant") home = "/erp/accountant";
+    else if (role === "marketer") home = "/erp/marketer";
     else if (role === "manager") home = "/erp/manager";
     else if (role === "employee") home = "/erp/employee";
-    else if (role === "cashier") home = "/erp/admin/pos";
-    else if (role === "inventory_officer") home = "/erp/admin/inventory";
+    else if (role === "cashier") home = "/erp/admin/shop/pos";
+    else if (role === "inventory_officer") home = "/erp/admin/shop/inventory";
     else if (role === "dispatcher") home = "/erp/admin/logistics";
 
     setRedirectTarget(fallbackRoute || home);
@@ -65,6 +66,8 @@ export function RoleGuard({
     if (!effectiveAllowedRoles) {
       if (pathname === "/erp/admin" || pathname.startsWith("/erp/admin/access-control")) {
         effectiveAllowedRoles = ["admin"];
+      } else if (pathname.startsWith("/erp/marketer") || pathname.startsWith("/erp/admin/crm")) {
+        effectiveAllowedRoles = ["admin", "md", "marketer", "manager"];
       } else if (pathname.startsWith("/erp/md")) {
         effectiveAllowedRoles = ["admin", "md"];
       } else if (pathname.startsWith("/erp/hr")) {
@@ -79,24 +82,27 @@ export function RoleGuard({
           "md",
           "hr",
           "accountant",
+          "marketer",
           "manager",
           "employee",
           "cashier",
           "inventory_officer",
           "dispatcher",
         ];
-      } else if (pathname.startsWith("/erp/admin/pos")) {
+      } else if (pathname.startsWith("/erp/admin/shop/pos") || pathname.startsWith("/erp/admin/pos")) {
         effectiveAllowedRoles = ["admin", "md", "cashier", "manager"];
-      } else if (pathname.startsWith("/erp/admin/inventory")) {
+      } else if (pathname.startsWith("/erp/admin/shop/inventory") || pathname.startsWith("/erp/admin/inventory")) {
         effectiveAllowedRoles = ["admin", "md", "inventory_officer", "manager"];
+      } else if (pathname.startsWith("/erp/admin/shop/referrals") || pathname.startsWith("/erp/admin/referrals")) {
+        effectiveAllowedRoles = ["admin", "md", "marketer", "manager"];
+      } else if (pathname.startsWith("/erp/admin/shop")) {
+        effectiveAllowedRoles = ["admin", "md", "marketer", "cashier", "inventory_officer", "manager"];
       } else if (pathname.startsWith("/erp/admin/logistics")) {
         effectiveAllowedRoles = ["admin", "md", "dispatcher", "manager"];
       } else if (pathname.startsWith("/erp/admin/ai")) {
-        effectiveAllowedRoles = ["admin", "md"];
-      } else if (pathname.startsWith("/erp/admin/referrals")) {
-        effectiveAllowedRoles = ["admin", "md", "manager"];
+        effectiveAllowedRoles = ["admin", "md", "marketer"];
       } else if (pathname.startsWith("/erp/hr/quests")) {
-        effectiveAllowedRoles = ["admin", "md", "hr", "manager", "employee"];
+        effectiveAllowedRoles = ["admin", "md", "hr", "marketer", "manager", "employee"];
       }
     }
 

@@ -34,7 +34,7 @@ export default function LogisticsDashboardPage() {
 
   return (
     <BusinessShell
-      title="Logistics & Dispatch Command Center"
+      title="Ofia Logistics Manager"
       subtitle="Real-time order shipment tracking, automated technician/courier dispatch, fleet GPS tracking, and delivery rate matrix."
       action={
         <div className="flex items-center gap-2">

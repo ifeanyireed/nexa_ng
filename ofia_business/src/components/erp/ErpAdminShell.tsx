@@ -83,7 +83,7 @@ export interface ErpAdminShellProps {
   title?: string;
   subtitle?: string;
   action?: React.ReactNode;
-  activeModule?: "mission" | "ai" | "marketplace" | "inventory" | "pos" | "referrals" | "logistics" | "quests" | "finance" | "hr" | "md" | "employee" | "access_control";
+  activeModule?: "mission" | "ai" | "crm" | "marketplace" | "shop" | "inventory" | "pos" | "referrals" | "logistics" | "quests" | "finance" | "hr" | "md" | "employee" | "access_control";
   subTabs?: SubNavItem[];
 }
 
@@ -131,6 +131,7 @@ export function ErpAdminShell({
       case "md": return "Managing Director";
       case "hr": return "HR Director";
       case "accountant": return "Chief Accountant";
+      case "marketer": return "Growth Marketer";
       case "manager": return "Line Manager";
       case "employee": return "General Employee";
       case "cashier": return "POS Cashier";
@@ -146,6 +147,7 @@ export function ErpAdminShell({
       case "md": return "text-purple-600 bg-purple-500/10 border-purple-500/20";
       case "hr": return "text-rose-600 bg-rose-500/10 border-rose-500/20";
       case "accountant": return "text-emerald-600 bg-emerald-500/10 border-emerald-500/20";
+      case "marketer": return "text-pink-600 bg-pink-500/10 border-pink-500/20";
       case "manager": return "text-amber-600 bg-amber-500/10 border-amber-500/20";
       case "cashier": return "text-cyan-600 bg-cyan-500/10 border-cyan-500/20";
       case "inventory_officer": return "text-amber-600 bg-amber-500/10 border-amber-500/20";
@@ -164,12 +166,14 @@ export function ErpAdminShell({
         return { path: "/erp/md", label: "MD", roleKey: "md" };
       case "accountant":
         return { path: "/erp/accountant", label: "Accountant", roleKey: "accountant" };
+      case "marketer":
+        return { path: "/erp/marketer", label: "CRM", roleKey: "marketer" };
       case "employee":
         return { path: "/erp/employee", label: "Employee", roleKey: "employee" };
       case "cashier":
-        return { path: "/erp/admin/pos", label: "POS", roleKey: "cashier" };
+        return { path: "/erp/admin/shop/pos", label: "POS", roleKey: "cashier" };
       case "inventory_officer":
-        return { path: "/erp/admin/inventory", label: "Inventory", roleKey: "inventory_officer" };
+        return { path: "/erp/admin/shop/inventory", label: "Inventory", roleKey: "inventory_officer" };
       case "dispatcher":
         return { path: "/erp/admin/logistics", label: "Logistics", roleKey: "dispatcher" };
       case "admin":
@@ -452,20 +456,31 @@ export function ErpAdminShell({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const navItems = [
-    { label: "Overview", icon: <LayoutDashboard className="w-5 h-5" />, href: "/erp/admin", key: "overview" },
-    { label: "Ofia AI", icon: <Bot className="w-5 h-5" />, href: "/erp/admin/ai", badge: "15 AI", key: "ai" },
-    { label: "Access Control", icon: <ShieldCheck className="w-5 h-5" />, href: "/erp/admin/access-control", badge: "RBAC", key: "access_control" },
-    { label: "Marketplace Store", icon: <ShoppingBag className="w-5 h-5" />, href: "/erp/admin/marketplace", key: "marketplace" },
-    { label: "Inventory (IMS)", icon: <Boxes className="w-5 h-5" />, href: "/erp/admin/inventory", badge: "Low", key: "inventory" },
-    { label: "Point of Sale (POS)", icon: <ShoppingCart className="w-5 h-5" />, href: "/erp/admin/pos", key: "pos" },
-    { label: "Viral Referrals", icon: <Gift className="w-5 h-5" />, href: "/erp/admin/referrals", key: "referrals" },
-    { label: "Logistics Hub", icon: <Truck className="w-5 h-5" />, href: "/erp/admin/logistics", key: "logistics" },
-    { label: "Accounting & Ledgers", icon: <Layers className="w-5 h-5" />, href: "/erp/accountant", badge: "GL", key: "accounting" },
-    { label: "HR & Appraisals", icon: <Users className="w-5 h-5" />, href: "/erp/hr", key: "hr" },
-    { label: "Employee Portal", icon: <UserCheck className="w-5 h-5" />, href: "/erp/employee", key: "employee" },
-    { label: "Manager Portal", icon: <Sliders className="w-5 h-5" />, href: "/erp/manager", key: "manager" },
-    { label: "MD Executive", icon: <TrendingUp className="w-5 h-5" />, href: "/erp/md", key: "md" },
+  const navItems: {
+    label: string;
+    icon: React.ReactNode;
+    href: string;
+    badge?: string;
+    key: string;
+    section: "Operations" | "Ofia Enterprise Suite" | "Portals & Team";
+  }[] = [
+    // 1. OPERATIONS & REVENUE APPS
+    { label: "Overview", icon: <LayoutDashboard className="w-5 h-5" />, href: "/erp/admin", key: "overview", section: "Operations" },
+    { label: "Ofia AI Swarm", icon: <Bot className="w-5 h-5" />, href: "/erp/admin/ai", badge: "15 AI", key: "ai", section: "Operations" },
+    { label: "Ofia Compass Manager", icon: <ShoppingBag className="w-5 h-5" />, href: "/erp/admin/marketplace", key: "marketplace", section: "Operations" },
+    { label: "Ofia Shop Manager", icon: <Store className="w-5 h-5" />, href: "/erp/admin/shop", badge: "Retail", key: "shop", section: "Operations" },
+    { label: "Ofia Logistics Manager", icon: <Truck className="w-5 h-5" />, href: "/erp/admin/logistics", key: "logistics", section: "Operations" },
+
+    // 2. OFIA ENTERPRISE SUITE
+    { label: "CRM and Sales", icon: <BarChart3 className="w-5 h-5" />, href: "/erp/marketer", badge: "Sales", key: "crm", section: "Ofia Enterprise Suite" },
+    { label: "Access Control", icon: <ShieldCheck className="w-5 h-5" />, href: "/erp/admin/access-control", badge: "RBAC", key: "access_control", section: "Ofia Enterprise Suite" },
+    { label: "Accounting & Ledgers", icon: <Layers className="w-5 h-5" />, href: "/erp/accountant", badge: "GL", key: "accounting", section: "Ofia Enterprise Suite" },
+    { label: "HR & Appraisals", icon: <Users className="w-5 h-5" />, href: "/erp/hr", key: "hr", section: "Ofia Enterprise Suite" },
+
+    // 3. PORTALS & WORKSPACES
+    { label: "Employee Portal", icon: <UserCheck className="w-5 h-5" />, href: "/erp/employee", key: "employee", section: "Portals & Team" },
+    { label: "Manager Portal", icon: <Sliders className="w-5 h-5" />, href: "/erp/manager", key: "manager", section: "Portals & Team" },
+    { label: "MD Executive", icon: <TrendingUp className="w-5 h-5" />, href: "/erp/md", key: "md", section: "Portals & Team" },
   ];
 
   // Automatic sub navigation tabs according to current pathname
@@ -474,6 +489,16 @@ export function ErpAdminShell({
 
     if (pathname.startsWith("/erp/admin/access-control")) {
       return [];
+    }
+
+    if (pathname.startsWith("/erp/marketer")) {
+      return [
+        { label: "CRM Overview", href: "/erp/marketer", icon: <BarChart3 className="w-3.5 h-3.5" /> },
+        { label: "Deals Pipeline", href: "/erp/marketer/pipeline", icon: <TrendingUp className="w-3.5 h-3.5" /> },
+        { label: "Leads Directory", href: "/erp/marketer/leads", icon: <Users className="w-3.5 h-3.5" /> },
+        { label: "Accounts & Clients", href: "/erp/marketer/accounts", icon: <Building2 className="w-3.5 h-3.5" /> },
+        { label: "Sales Activities", href: "/erp/marketer/activities", icon: <Calendar className="w-3.5 h-3.5" /> },
+      ];
     }
 
     if (pathname.startsWith("/erp/admin/ai")) {
@@ -494,23 +519,23 @@ export function ErpAdminShell({
       ];
     }
 
-    if (pathname.startsWith("/erp/admin/inventory")) {
+    if (pathname.startsWith("/erp/admin/shop")) {
       return [
-        { label: "Stock Overview", href: "/erp/admin/inventory", icon: <Boxes className="w-3.5 h-3.5" /> },
-        { label: "Master Items", href: "/erp/admin/inventory/items", icon: <Tag className="w-3.5 h-3.5" /> },
-        { label: "Depot Warehouses", href: "/erp/admin/inventory/warehouses", icon: <Warehouse className="w-3.5 h-3.5" /> },
-        { label: "Suppliers & Vendors", href: "/erp/admin/inventory/suppliers", icon: <Building2 className="w-3.5 h-3.5" /> },
-        { label: "Branch Transfers", href: "/erp/admin/inventory/transfers", icon: <Truck className="w-3.5 h-3.5" /> },
-        { label: "Stock Adjustments", href: "/erp/admin/inventory/adjustments", icon: <Sliders className="w-3.5 h-3.5" /> },
-      ];
-    }
-
-    if (pathname.startsWith("/erp/admin/pos")) {
-      return [
-        { label: "Cashier Terminal", href: "/erp/admin/pos", icon: <ShoppingCart className="w-3.5 h-3.5" /> },
-        { label: "Shift Sessions", href: "/erp/admin/pos/sessions", icon: <Clock className="w-3.5 h-3.5" /> },
-        { label: "Digital Receipts", href: "/erp/admin/pos/receipts", icon: <Printer className="w-3.5 h-3.5" /> },
-        { label: "Hardware Terminals", href: "/erp/admin/pos/terminals", icon: <Layers className="w-3.5 h-3.5" /> },
+        { label: "Shop Overview", href: "/erp/admin/shop", icon: <Store className="w-3.5 h-3.5" /> },
+        { label: "Point of Sale (POS)", href: "/erp/admin/shop/pos", icon: <ShoppingCart className="w-3.5 h-3.5" /> },
+        { label: "Shift Sessions", href: "/erp/admin/shop/pos/sessions", icon: <Clock className="w-3.5 h-3.5" /> },
+        { label: "Digital Receipts", href: "/erp/admin/shop/pos/receipts", icon: <Printer className="w-3.5 h-3.5" /> },
+        { label: "Hardware Terminals", href: "/erp/admin/shop/pos/terminals", icon: <Layers className="w-3.5 h-3.5" /> },
+        { label: "Stock Overview", href: "/erp/admin/shop/inventory", icon: <Boxes className="w-3.5 h-3.5" /> },
+        { label: "Master SKUs", href: "/erp/admin/shop/inventory/items", icon: <Tag className="w-3.5 h-3.5" /> },
+        { label: "Warehouses", href: "/erp/admin/shop/inventory/warehouses", icon: <Warehouse className="w-3.5 h-3.5" /> },
+        { label: "Suppliers & Vendors", href: "/erp/admin/shop/inventory/suppliers", icon: <Building2 className="w-3.5 h-3.5" /> },
+        { label: "Branch Transfers", href: "/erp/admin/shop/inventory/transfers", icon: <Truck className="w-3.5 h-3.5" /> },
+        { label: "Stock Adjustments", href: "/erp/admin/shop/inventory/adjustments", icon: <Sliders className="w-3.5 h-3.5" /> },
+        { label: "Viral Referrals", href: "/erp/admin/shop/referrals", icon: <Gift className="w-3.5 h-3.5" /> },
+        { label: "Affiliates", href: "/erp/admin/shop/referrals/affiliates", icon: <Users className="w-3.5 h-3.5" /> },
+        { label: "Campaign Rules", href: "/erp/admin/shop/referrals/campaigns", icon: <Zap className="w-3.5 h-3.5" /> },
+        { label: "Payout Batches", href: "/erp/admin/shop/referrals/payouts", icon: <DollarSign className="w-3.5 h-3.5" /> },
       ];
     }
 
@@ -521,16 +546,6 @@ export function ErpAdminShell({
         { label: "Live Fleet Map", href: "/erp/admin/logistics/fleet", icon: <Activity className="w-3.5 h-3.5" /> },
         { label: "Zonal Shipping Rates", href: "/erp/admin/logistics/rates", icon: <DollarSign className="w-3.5 h-3.5" /> },
         { label: "Waybill Shipments", href: "/erp/admin/logistics/shipments", icon: <FileText className="w-3.5 h-3.5" /> },
-      ];
-    }
-
-    if (pathname.startsWith("/erp/admin/referrals")) {
-      return [
-        { label: "Referrals Command", href: "/erp/admin/referrals", icon: <Gift className="w-3.5 h-3.5" /> },
-        { label: "Affiliate Promoters", href: "/erp/admin/referrals/affiliates", icon: <Users className="w-3.5 h-3.5" /> },
-        { label: "Campaign Rules", href: "/erp/admin/referrals/campaigns", icon: <Zap className="w-3.5 h-3.5" /> },
-        { label: "Payout Batches", href: "/erp/admin/referrals/payouts", icon: <DollarSign className="w-3.5 h-3.5" /> },
-        { label: "Growth Analytics", href: "/erp/admin/referrals/analytics", icon: <TrendingUp className="w-3.5 h-3.5" /> },
       ];
     }
 
@@ -561,14 +576,6 @@ export function ErpAdminShell({
         { label: "Salaries / Payroll", href: "/erp/accountant/employee-salaries", icon: <Users className="w-3.5 h-3.5" /> },
         { label: "FIRS Tax / Remittances", href: "/erp/accountant/statutory-remittances", icon: <ShieldCheck className="w-3.5 h-3.5" /> },
         { label: "Audit Trail", href: "/erp/accountant/audit-trail", icon: <Activity className="w-3.5 h-3.5" /> },
-      ];
-    }
-
-    if (pathname.startsWith("/erp/hr/quests")) {
-      return [
-        { label: "Active Quests", href: "/erp/hr/quests", icon: <Trophy className="w-3.5 h-3.5" /> },
-        { label: "Create Quest", href: "/erp/hr/quests/new", icon: <Sparkles className="w-3.5 h-3.5" /> },
-        { label: "HR Overview", href: "/erp/hr", icon: <Activity className="w-3.5 h-3.5" /> },
       ];
     }
 
@@ -662,10 +669,10 @@ export function ErpAdminShell({
           )}
         </div>
 
-        {/* NAV ITEMS */}
-        <nav className="flex-1 px-4 space-y-1.5 mt-2 overflow-y-auto">
-          {navItems
-            .filter((item) => {
+        {/* NAV ITEMS WITH SECTION GROUPINGS */}
+        <nav className="flex-1 px-4 space-y-1 mt-2 overflow-y-auto">
+          {(() => {
+            const filtered = navItems.filter((item) => {
               const matchesSearch = item.label.toLowerCase().includes(searchQuery.toLowerCase());
               if (!matchesSearch) return false;
 
@@ -692,47 +699,70 @@ export function ErpAdminShell({
                 return true;
               }
 
-              // For subordinate staff roles (md, hr, accountant, manager, employee, etc.):
+              // For subordinate staff roles (md, hr, accountant, marketer, manager, employee, etc.):
               // check if granted in the tenant RBAC matrix
               return Boolean(permissionMatrix[currentRole]?.[item.key]);
-            })
-            .map((item, i) => {
+            });
+
+            let currentSection = "";
+
+            return filtered.map((item, i) => {
               const isActive =
                 pathname === item.href ||
                 (item.href !== "/erp/admin" && pathname.startsWith(item.href)) ||
                 (item.href === "/erp/admin" && pathname === "/erp/admin");
+
+              const showSectionHeader = item.section && item.section !== currentSection;
+              if (showSectionHeader) {
+                currentSection = item.section;
+              }
+
               return (
-                <Link href={item.href} key={i}>
-                  <button
-                    className={cn(
-                      "w-full flex items-center gap-3.5 p-3 rounded-full transition-all group mb-1 cursor-pointer",
-                      isActive
-                        ? "bg-nexa-brand text-white shadow-lg shadow-nexa-brand/20 font-bold"
-                        : "text-nexa-text-faint hover:bg-nexa-bg-base hover:text-nexa-text-primary font-semibold"
-                    )}
-                  >
-                    <div
+                <React.Fragment key={item.key || i}>
+                  {showSectionHeader && (
+                    <div className={cn("pt-3 pb-1", i === 0 && "pt-0")}>
+                      {isSidebarOpen ? (
+                        <div className="text-[10px] font-extrabold uppercase tracking-wider text-nexa-text-faint px-3 flex items-center gap-1.5">
+                          <span>{item.section}</span>
+                        </div>
+                      ) : (
+                        <div className="w-8 h-[1px] bg-nexa-border mx-auto my-1" />
+                      )}
+                    </div>
+                  )}
+                  <Link href={item.href}>
+                    <button
                       className={cn(
-                        "transition-transform group-hover:scale-110",
-                        isActive ? "text-white" : "text-nexa-brand"
+                        "w-full flex items-center gap-3.5 p-3 rounded-full transition-all group mb-1 cursor-pointer",
+                        isActive
+                          ? "bg-nexa-brand text-white shadow-lg shadow-nexa-brand/20 font-bold"
+                          : "text-nexa-text-faint hover:bg-nexa-bg-base hover:text-nexa-text-primary font-semibold"
                       )}
                     >
-                      {item.icon}
-                    </div>
-                    {isSidebarOpen && (
-                      <div className="flex-1 flex items-center justify-between text-left">
-                        <span className="text-xs">{item.label}</span>
-                        {item.badge && (
-                          <span className="bg-emerald-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full">
-                            {item.badge}
-                          </span>
+                      <div
+                        className={cn(
+                          "transition-transform group-hover:scale-110",
+                          isActive ? "text-white" : "text-nexa-brand"
                         )}
+                      >
+                        {item.icon}
                       </div>
-                    )}
-                  </button>
-                </Link>
+                      {isSidebarOpen && (
+                        <div className="flex-1 flex items-center justify-between text-left">
+                          <span className="text-xs">{item.label}</span>
+                          {item.badge && (
+                            <span className="bg-emerald-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full">
+                              {item.badge}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </button>
+                  </Link>
+                </React.Fragment>
               );
-            })}
+            });
+          })()}
         </nav>
 
         {/* FOOTER ACTIONS */}
@@ -900,10 +930,12 @@ export function ErpAdminShell({
                   (tab.href !== "/erp/admin" &&
                     tab.href !== "/erp/admin/access-control" &&
                     tab.href !== "/erp/admin/ai" &&
-                    tab.href !== "/erp/admin/inventory" &&
-                    tab.href !== "/erp/admin/pos" &&
+                    tab.href !== "/erp/marketer" &&
+                    tab.href !== "/erp/admin/shop" &&
+                    tab.href !== "/erp/admin/shop/inventory" &&
+                    tab.href !== "/erp/admin/shop/pos" &&
+                    tab.href !== "/erp/admin/shop/referrals" &&
                     tab.href !== "/erp/admin/logistics" &&
-                    tab.href !== "/erp/admin/referrals" &&
                     tab.href !== "/erp/admin/marketplace" &&
                     tab.href !== "/erp/accountant" &&
                     tab.href !== "/erp/hr" &&
@@ -946,7 +978,7 @@ export function ErpAdminShell({
         </div>
       </main>
 
-      {/* TOP RIGHT SWITCH TO [ROLE] BUTTON */}
+      {/* BOTTOM RIGHT SWITCH TO [ROLE] BUTTON */}
       {(() => {
         const sessionHome = getRoleHomePortal(currentRole);
         const isAwayFromRoleHome =
@@ -957,14 +989,14 @@ export function ErpAdminShell({
         if (!isAwayFromRoleHome || !sessionHome) return null;
 
         return (
-          <div className="fixed top-5 right-6 z-[100] animate-fadeIn">
+          <div className="fixed bottom-6 right-6 z-[100] animate-bounce-subtle">
             <Link href={sessionHome.path}>
               <button
                 type="button"
-                className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1A56DB] hover:bg-[#1546b8] text-white text-xs font-bold transition-all shadow-md hover:shadow-lg cursor-pointer border border-blue-500/30 active:scale-95"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#1A56DB] hover:bg-[#1546b8] text-white text-xs font-bold transition-all shadow-xl hover:shadow-2xl cursor-pointer border border-blue-400/40 active:scale-95 ring-2 ring-black/10"
                 title={`Switch to ${sessionHome.label}`}
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <RotateCcw className="w-4 h-4" />
                 <span>Switch to {sessionHome.label}</span>
               </button>
             </Link>

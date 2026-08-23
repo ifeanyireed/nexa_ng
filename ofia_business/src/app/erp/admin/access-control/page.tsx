@@ -181,7 +181,7 @@ export default function AccessControlPage() {
   const rolePermissions = matrix[selectedRole] || {};
   const activeCount = Object.values(rolePermissions).filter(Boolean).length;
 
-  const categories = ["all", "Core Control", "Operations", "Finance & HR", "Portals & Team"];
+  const categories = ["all", "Operations", "Ofia Enterprise Suite", "Portals & Team"];
 
   const filteredModules = ERP_MODULES.filter((m) => {
     const matchesCategory = selectedCategory === "all" || m.category === selectedCategory;
@@ -467,79 +467,162 @@ export default function AccessControlPage() {
             </div>
           </div>
 
-          {/* MODULE TOGGLE GRID */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-            {filteredModules.map((module) => {
-              const isSuperAdminAllowed = matrix.admin?.[module.key] !== false;
-              const isEnabled = isSuperAdminAllowed && (matrix[selectedRole]?.[module.key] ?? false);
+          {/* MODULE TOGGLE GRID WITH SECTION GROUPINGS & THIN DIVIDERS */}
+          {(() => {
+            const sections = [
+              {
+                key: "Operations",
+                title: "Operations & Branded Modules",
+                subtitle: "Autonomous AI swarm, storefront commerce, point of sale retail, and zonal logistics dispatch.",
+                badge: "Branded Modules",
+              },
+              {
+                key: "Ofia Enterprise Suite",
+                title: "Ofia Enterprise Suite",
+                subtitle: "B2B CRM & sales deals, access control governance, general ledger accounting, and HR appraisals.",
+                badge: "Enterprise Suite",
+              },
+              {
+                key: "Portals & Team",
+                title: "Portals & Team Workspaces",
+                subtitle: "Employee self-service desks, departmental line manager consoles, and executive MD cockpit.",
+                badge: "Team Portals",
+              },
+            ];
 
-              return (
-                <div
-                  key={module.key}
-                  className={cn(
-                    "p-4 rounded-2xl border transition-all flex items-center justify-between gap-4",
-                    !isSuperAdminAllowed
-                      ? "bg-rose-500/5 border-rose-500/20 opacity-60"
-                      : isEnabled
-                      ? "bg-nexa-bg-surface border-nexa-border hover:border-nexa-brand/40 shadow-xs"
-                      : "bg-nexa-bg-base/40 border-nexa-border/60 opacity-70"
-                  )}
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-xs font-bold text-nexa-text-primary truncate">
-                        {module.label}
-                      </span>
-                      {module.badge && isSuperAdminAllowed && (
-                        <span className="text-[9px] font-extrabold uppercase px-2 py-0.2 rounded-full bg-nexa-brand/10 text-nexa-brand border border-nexa-brand/20 shrink-0">
-                          {module.badge}
-                        </span>
-                      )}
-                      {!isSuperAdminAllowed && (
-                        <span className="text-[9px] font-extrabold uppercase px-2 py-0.2 rounded-full bg-rose-500/10 text-rose-500 border border-rose-500/20 shrink-0">
-                          Disabled by Super Admin
-                        </span>
-                      )}
-                      <span className="text-[10px] font-mono text-nexa-text-faint bg-nexa-bg-base px-2 py-0.5 rounded-md border border-nexa-border shrink-0 hidden sm:inline">
-                        {module.href}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-nexa-text-secondary line-clamp-2 leading-relaxed">
-                      {!isSuperAdminAllowed
-                        ? "This module has not been provisioned for this organization by the Super Admin."
-                        : module.description}
-                    </p>
-                  </div>
+            const activeSections =
+              selectedCategory === "all"
+                ? sections
+                : sections.filter((s) => s.key === selectedCategory);
 
-                  {/* TOGGLE SWITCH */}
-                  {isSuperAdminAllowed ? (
-                    <button
-                      type="button"
-                      onClick={() => handleToggleModule(module.key)}
-                      className={cn(
-                        "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
-                        isEnabled ? "bg-emerald-500" : "bg-slate-300 dark:bg-slate-700"
+            let renderedSectionsCount = 0;
+
+            return (
+              <div className="space-y-6">
+                {activeSections.map((section) => {
+                  const sectionModules = filteredModules.filter(
+                    (m) => m.category === section.key
+                  );
+
+                  if (sectionModules.length === 0) return null;
+
+                  const isFirstRendered = renderedSectionsCount === 0;
+                  renderedSectionsCount++;
+
+                  return (
+                    <div key={section.key} className="space-y-3.5">
+                      {/* Thin divider line between sections */}
+                      {!isFirstRendered && (
+                        <div className="border-t border-nexa-border/70 pt-3" />
                       )}
-                      role="switch"
-                      aria-checked={isEnabled}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className={cn(
-                          "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out",
-                          isEnabled ? "translate-x-5" : "translate-x-0"
-                        )}
-                      />
-                    </button>
-                  ) : (
-                    <div className="w-11 h-6 rounded-full bg-slate-200 dark:bg-slate-800 p-0.5 opacity-50 shrink-0 flex items-center justify-start cursor-not-allowed">
-                      <div className="w-5 h-5 rounded-full bg-slate-400" />
+
+                      {/* Section Title Header */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-1">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-black uppercase tracking-wider text-display text-nexa-text-primary">
+                              {section.title}
+                            </span>
+                            <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-nexa-brand/10 text-nexa-brand border border-nexa-brand/20">
+                              {section.badge}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-nexa-text-secondary mt-0.5">
+                            {section.subtitle}
+                          </p>
+                        </div>
+                        <span className="text-[10px] font-mono font-bold text-nexa-text-faint shrink-0">
+                          {sectionModules.length}{" "}
+                          {sectionModules.length === 1 ? "Module" : "Modules"}
+                        </span>
+                      </div>
+
+                      {/* Section 2-Column Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                        {sectionModules.map((module) => {
+                          const isSuperAdminAllowed =
+                            matrix.admin?.[module.key] !== false;
+                          const isEnabled =
+                            isSuperAdminAllowed &&
+                            (matrix[selectedRole]?.[module.key] ?? false);
+
+                          return (
+                            <div
+                              key={module.key}
+                              className={cn(
+                                "p-4 rounded-2xl border transition-all flex items-center justify-between gap-4",
+                                !isSuperAdminAllowed
+                                  ? "bg-rose-500/5 border-rose-500/20 opacity-60"
+                                  : isEnabled
+                                  ? "bg-nexa-bg-surface border-nexa-border hover:border-nexa-brand/40 shadow-xs"
+                                  : "bg-nexa-bg-base/40 border-nexa-border/60 opacity-70"
+                              )}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                  <span className="text-xs font-bold text-nexa-text-primary truncate">
+                                    {module.label}
+                                  </span>
+                                  {module.badge && isSuperAdminAllowed && (
+                                    <span className="text-[9px] font-extrabold uppercase px-2 py-0.2 rounded-full bg-nexa-brand/10 text-nexa-brand border border-nexa-brand/20 shrink-0">
+                                      {module.badge}
+                                    </span>
+                                  )}
+                                  {!isSuperAdminAllowed && (
+                                    <span className="text-[9px] font-extrabold uppercase px-2 py-0.2 rounded-full bg-rose-500/10 text-rose-500 border border-rose-500/20 shrink-0">
+                                      Disabled by Super Admin
+                                    </span>
+                                  )}
+                                  <span className="text-[10px] font-mono text-nexa-text-faint bg-nexa-bg-base px-2 py-0.5 rounded-md border border-nexa-border shrink-0 hidden sm:inline">
+                                    {module.href}
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-nexa-text-secondary line-clamp-2 leading-relaxed">
+                                  {!isSuperAdminAllowed
+                                    ? "This module has not been provisioned for this organization by the Super Admin."
+                                    : module.description}
+                                </p>
+                              </div>
+
+                              {/* TOGGLE SWITCH */}
+                              {isSuperAdminAllowed ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleModule(module.key)}
+                                  className={cn(
+                                    "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none",
+                                    isEnabled
+                                      ? "bg-emerald-500"
+                                      : "bg-slate-300 dark:bg-slate-700"
+                                  )}
+                                  role="switch"
+                                  aria-checked={isEnabled}
+                                >
+                                  <span
+                                    aria-hidden="true"
+                                    className={cn(
+                                      "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out",
+                                      isEnabled
+                                        ? "translate-x-5"
+                                        : "translate-x-0"
+                                    )}
+                                  />
+                                </button>
+                              ) : (
+                                <div className="w-11 h-6 rounded-full bg-slate-200 dark:bg-slate-800 p-0.5 opacity-50 shrink-0 flex items-center justify-start cursor-not-allowed">
+                                  <div className="w-5 h-5 rounded-full bg-slate-400" />
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
 
           {filteredModules.length === 0 && (
             <div className="py-12 text-center text-nexa-text-faint space-y-2">

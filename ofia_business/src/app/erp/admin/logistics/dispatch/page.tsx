@@ -44,7 +44,7 @@ export default function DispatchConsolePage() {
         <div className="flex items-center gap-2">
           <Link href="/erp/admin/logistics">
             <NexaButton size="sm" variant="outline" leftIcon={<ArrowLeft className="w-3.5 h-3.5" />}>
-              Logistics Hub
+              Ofia Logistics Manager
             </NexaButton>
           </Link>
           <NexaButton

@@ -1,11 +1,14 @@
 "use client";
 
+import { USER_API } from "./api-client";
+
 export type RoleKey =
   | "admin"
   | "md"
   | "hr"
   | "manager"
   | "accountant"
+  | "marketer"
   | "employee"
   | "cashier"
   | "inventory_officer"
@@ -52,6 +55,14 @@ export const ERP_ROLES: RoleInfo[] = [
     description: "Double-entry bookkeeping, trial balance, tax remittances, invoices, and payroll processing.",
     color: "#0E9F6E",
     avatarBg: "bg-emerald-600",
+  },
+  {
+    key: "marketer",
+    label: "Growth Marketer / Sales",
+    badge: "Marketing",
+    description: "Manage CRM sales pipelines, B2B deal stages, viral promoter campaigns, and customer conversions.",
+    color: "#EC4899",
+    avatarBg: "bg-pink-600",
   },
   {
     key: "manager",
@@ -103,7 +114,7 @@ export const CONFIGURABLE_ERP_ROLES: RoleInfo[] = ERP_ROLES.filter(
 export interface ErpModuleDef {
   key: string;
   label: string;
-  category: "Core Control" | "Operations" | "Finance & HR" | "Portals & Team";
+  category: "Operations" | "Ofia Enterprise Suite" | "Portals & Team" | "Core Control" | "Finance & HR";
   description: string;
   href: string;
   badge?: string;
@@ -113,66 +124,53 @@ export const ERP_MODULES: ErpModuleDef[] = [
   {
     key: "ai",
     label: "Ofia AI Swarm",
-    category: "Core Control",
+    category: "Operations",
     description: "15 autonomous marketing, sales, and lead automation agent swarm.",
     href: "/erp/admin/ai",
     badge: "15 AI",
   },
   {
-    key: "access_control",
-    label: "Access Control & RBAC",
-    category: "Core Control",
-    description: "Multi-tenant role permissions, user-type matrix, and security auditing.",
-    href: "/erp/admin/access-control",
-    badge: "RBAC",
+    key: "crm",
+    label: "CRM and Sales",
+    category: "Ofia Enterprise Suite",
+    description: "B2B sales pipelines, customer deals, account contacts, and revenue tracking.",
+    href: "/erp/marketer",
+    badge: "Sales",
   },
   {
     key: "marketplace",
-    label: "Marketplace Store",
+    label: "Ofia Compass Manager",
     category: "Operations",
     description: "Public storefront, order fulfillments, merchant catalogs, and payments.",
     href: "/erp/admin/marketplace",
   },
   {
-    key: "inventory",
-    label: "Inventory (IMS)",
+    key: "shop",
+    label: "Ofia Shop Manager",
     category: "Operations",
-    description: "Multi-warehouse stock registers, replenishment rules, and transfers.",
-    href: "/erp/admin/inventory",
-    badge: "IMS",
-  },
-  {
-    key: "pos",
-    label: "Point of Sale (POS)",
-    category: "Operations",
-    description: "Touch counter cashiering, barcode scanning, and session balancing.",
-    href: "/erp/admin/pos",
+    description: "Point of sale (POS) cash registers, warehouse inventory (IMS), and viral customer referral campaigns.",
+    href: "/erp/admin/shop",
+    badge: "Retail",
   },
   {
     key: "logistics",
-    label: "Logistics Hub",
+    label: "Ofia Logistics Manager",
     category: "Operations",
     description: "Zonal route dispatching, fleet management, and shipment tracking.",
     href: "/erp/admin/logistics",
   },
   {
-    key: "referrals",
-    label: "Viral Referrals",
-    category: "Operations",
-    description: "Affiliate promoter tracking, payout batches, and commission links.",
-    href: "/erp/admin/referrals",
-  },
-  {
-    key: "quests",
-    label: "Team Quests",
-    category: "Finance & HR",
-    description: "Gamified employee retreat competitions, hackathons, and agility challenges.",
-    href: "/erp/hr/quests",
+    key: "access_control",
+    label: "Access Control & RBAC",
+    category: "Ofia Enterprise Suite",
+    description: "Multi-tenant role permissions, user-type matrix, and security auditing.",
+    href: "/erp/admin/access-control",
+    badge: "RBAC",
   },
   {
     key: "accounting",
     label: "Accounting & Ledgers",
-    category: "Finance & HR",
+    category: "Ofia Enterprise Suite",
     description: "General ledger, charts of accounts, trial balance, and tax remittances.",
     href: "/erp/accountant",
     badge: "GL",
@@ -180,7 +178,7 @@ export const ERP_MODULES: ErpModuleDef[] = [
   {
     key: "hr",
     label: "HR & Appraisals",
-    category: "Finance & HR",
+    category: "Ofia Enterprise Suite",
     description: "Staff performance review cycles, objectives, calibrations, and reports.",
     href: "/erp/hr",
   },
@@ -213,8 +211,10 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
   admin: {
     mission: true,
     ai: true,
+    crm: true,
     access_control: true,
     marketplace: true,
+    shop: true,
     inventory: true,
     pos: true,
     logistics: true,
@@ -229,8 +229,10 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
   md: {
     mission: true,
     ai: true,
+    crm: true,
     access_control: false,
     marketplace: true,
+    shop: true,
     inventory: true,
     pos: true,
     logistics: true,
@@ -245,8 +247,10 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
   hr: {
     mission: true,
     ai: false,
+    crm: false,
     access_control: false,
     marketplace: false,
+    shop: false,
     inventory: false,
     pos: false,
     logistics: false,
@@ -261,8 +265,10 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
   accountant: {
     mission: true,
     ai: false,
+    crm: false,
     access_control: false,
     marketplace: false,
+    shop: true,
     inventory: true,
     pos: true,
     logistics: false,
@@ -274,11 +280,31 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     manager: false,
     md: false,
   },
+  marketer: {
+    mission: false,
+    ai: true,
+    crm: true,
+    access_control: false,
+    marketplace: true,
+    shop: true,
+    inventory: false,
+    pos: false,
+    logistics: false,
+    referrals: true,
+    quests: true,
+    accounting: false,
+    hr: false,
+    employee: true,
+    manager: false,
+    md: false,
+  },
   manager: {
     mission: true,
     ai: false,
+    crm: true,
     access_control: false,
     marketplace: false,
+    shop: true,
     inventory: true,
     pos: false,
     logistics: true,
@@ -293,8 +319,10 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
   employee: {
     mission: false,
     ai: false,
+    crm: false,
     access_control: false,
     marketplace: false,
+    shop: false,
     inventory: false,
     pos: false,
     logistics: false,
@@ -309,8 +337,10 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
   cashier: {
     mission: false,
     ai: false,
+    crm: false,
     access_control: false,
     marketplace: false,
+    shop: true,
     inventory: true,
     pos: true,
     logistics: false,
@@ -325,8 +355,10 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
   inventory_officer: {
     mission: false,
     ai: false,
+    crm: false,
     access_control: false,
     marketplace: false,
+    shop: true,
     inventory: true,
     pos: false,
     logistics: true,
@@ -341,8 +373,10 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
   dispatcher: {
     mission: false,
     ai: false,
+    crm: false,
     access_control: false,
     marketplace: false,
+    shop: false,
     inventory: false,
     pos: false,
     logistics: true,
@@ -408,8 +442,6 @@ export function saveTenantPermissionMatrix(
     console.error("Failed to save tenant permissions:", e);
   }
 }
-
-import { USER_API } from "./api-client";
 
 export async function fetchTenantPermissionMatrix(tenantId: string): Promise<PermissionMatrix> {
   const local = getTenantPermissionMatrix(tenantId);

@@ -32,7 +32,7 @@ export default function DeliveryRatesPage() {
         <div className="flex items-center gap-2">
           <Link href="/erp/admin/logistics">
             <NexaButton size="sm" variant="outline" leftIcon={<ArrowLeft className="w-3.5 h-3.5" />}>
-              Logistics Hub
+              Ofia Logistics Manager
             </NexaButton>
           </Link>
           <NexaButton size="sm" variant="primary" leftIcon={<Plus className="w-3.5 h-3.5" />} className="bg-[#1A56DB] text-white">

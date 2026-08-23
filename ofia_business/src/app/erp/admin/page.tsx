@@ -85,10 +85,16 @@ export default function AdminCommandCenterPage() {
 
   const quickActions = [
     {
+      label: "CRM Sales Pipeline",
+      icon: <TrendingUp className="w-6 h-6" />,
+      desc: "Deals & Leads",
+      href: "/erp/marketer",
+    },
+    {
       label: "Open POS Register",
       icon: <ShoppingCart className="w-6 h-6" />,
       desc: "Touch Cashier",
-      href: "/erp/admin/pos",
+      href: "/erp/admin/shop/pos",
     },
     {
       label: "Launch AI Campaign",
@@ -100,7 +106,7 @@ export default function AdminCommandCenterPage() {
       label: "Restock Purchase Order",
       icon: <Boxes className="w-6 h-6" />,
       desc: "Supplier Inbound",
-      href: "/erp/admin/inventory/suppliers",
+      href: "/erp/admin/shop/inventory/suppliers",
     },
     {
       label: "Dispatch Courier",
@@ -112,7 +118,7 @@ export default function AdminCommandCenterPage() {
       label: "Create Referral Rule",
       icon: <Gift className="w-6 h-6" />,
       desc: "Give ₦5k / Get ₦5k",
-      href: "/erp/admin/referrals/campaigns",
+      href: "/erp/admin/shop/referrals/campaigns",
     },
     {
       label: "Retreat TV Scoreboard",
@@ -221,7 +227,7 @@ export default function AdminCommandCenterPage() {
                   <Activity className="w-5 h-5 text-nexa-brand" />
                   Recent Live Transactions & Dispatches
                 </h3>
-                <Link href="/erp/admin/pos/receipts">
+                <Link href="/erp/admin/shop/pos/receipts">
                   <NexaButton
                     variant="ghost"
                     size="sm"
@@ -268,7 +274,7 @@ export default function AdminCommandCenterPage() {
                             Details
                           </NexaButton>
                         </Link>
-                        <Link href="/erp/admin/pos">
+                        <Link href="/erp/admin/shop/pos">
                           <NexaButton size="sm" className="rounded-full">
                             Receipt
                           </NexaButton>
@@ -319,7 +325,7 @@ export default function AdminCommandCenterPage() {
                     />
                   </button>
                 </div>
-                <Link href="/erp/admin/pos/sessions">
+                <Link href="/erp/admin/shop/pos/sessions">
                   <NexaButton
                     variant="secondary"
                     className="w-full text-xs font-extrabold uppercase tracking-widest rounded-full"

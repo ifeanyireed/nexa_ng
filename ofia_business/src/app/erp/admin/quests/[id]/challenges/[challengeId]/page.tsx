@@ -38,7 +38,7 @@ const DEMO_SUBMISSIONS: SubmissionItem[] = [
   {
     id: "sub-01",
     teamName: "Team Alpha (Blue Eagles)",
-    logo: "🦅",
+    logo: "A",
     submittedAt: "2:45 PM",
     status: "APPROVED",
     scoreAwarded: 195,
@@ -48,7 +48,7 @@ const DEMO_SUBMISSIONS: SubmissionItem[] = [
   {
     id: "sub-02",
     teamName: "Team Bravo (Red Vipers)",
-    logo: "🐍",
+    logo: "B",
     submittedAt: "3:10 PM",
     status: "PENDING",
     evidenceUrl: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=800&q=80",
@@ -57,7 +57,7 @@ const DEMO_SUBMISSIONS: SubmissionItem[] = [
   {
     id: "sub-03",
     teamName: "Team Delta (Green Lions)",
-    logo: "🦁",
+    logo: "D",
     submittedAt: "3:15 PM",
     status: "PENDING",
     evidenceUrl: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=800&q=80",
@@ -113,7 +113,9 @@ export default function ChallengeControlRoomPage() {
               <div className="text-[11px] text-gray-400">3 Submissions Received · 2 Pending Review · Time Remaining: 42m</div>
             </div>
           </div>
-          <NexaBadge variant="green" size="sm">🟢 JUDGING ACTIVE</NexaBadge>
+          <NexaBadge variant="green" size="sm" className="flex items-center gap-1">
+            <Flame className="w-3 h-3 text-emerald-300" /> JUDGING ACTIVE
+          </NexaBadge>
         </div>
 
         {/* SUBMISSION REVIEW & GRADING WORKSPACE */}

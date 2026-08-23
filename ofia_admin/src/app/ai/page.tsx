@@ -194,10 +194,10 @@ export default function AdminOverviewPage() {
     try {
       if (armed) {
         await GTM_API.tripGlobalKillswitch();
-        showToast("🚨 Global Killswitch ARMED: All 15 AI agents safely paused in database!");
+        showToast("Global Killswitch ARMED: All 15 AI agents safely paused in database!");
       } else {
         await GTM_API.resetGlobalKillswitch();
-        showToast("✅ Global Killswitch DISARMED: All AI agents restored to ONLINE state!");
+        showToast("Global Killswitch DISARMED: All AI agents restored to ONLINE state!");
       }
       loadLiveAdminData();
     } catch {

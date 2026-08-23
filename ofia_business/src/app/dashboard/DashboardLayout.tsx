@@ -18,7 +18,8 @@ import {
   Grid,
   Menu,
   Check,
-  CheckCheck
+  CheckCheck,
+  Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NexaAvatar } from "@/components/nexa/NexaAvatar";
@@ -341,7 +342,9 @@ export default function DashboardLayout({
                       <div className="flex-1 overflow-y-auto divide-y divide-nexa-border max-h-[350px]">
                          {notifications.length === 0 ? (
                            <div className="p-8 text-center text-nexa-text-faint">
-                              <p className="text-sm font-semibold">All caught up! 🎉</p>
+                              <p className="text-sm font-semibold flex items-center justify-center gap-1.5">
+                                 <Sparkles className="w-4 h-4 text-amber-500" /> All caught up!
+                               </p>
                               <p className="text-xs mt-1">No notifications to show.</p>
                            </div>
                          ) : (

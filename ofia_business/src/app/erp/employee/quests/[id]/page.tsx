@@ -22,6 +22,7 @@ import {
   Users,
   Target,
   Tv,
+  X,
 } from "lucide-react";
 
 export default function EmployeeQuestConsolePage() {
@@ -36,7 +37,7 @@ export default function EmployeeQuestConsolePage() {
   const challenges = [
     {
       id: "chl-01",
-      name: "🧠 Executive Company & Industry Trivia",
+      name: "Executive Company & Industry Trivia",
       type: "Speed Quiz",
       status: "COMPLETED",
       score: "+150 pts awarded",
@@ -45,7 +46,7 @@ export default function EmployeeQuestConsolePage() {
     },
     {
       id: "chl-02",
-      name: "📸 Best Creative Team Mascot Photo",
+      name: "Best Creative Team Mascot Photo",
       type: "Photo Evidence",
       status: "ACTIVE",
       score: "Max +200 pts",
@@ -55,7 +56,7 @@ export default function EmployeeQuestConsolePage() {
     },
     {
       id: "chl-03",
-      name: "💡 2-Hour Product Innovation Pitch",
+      name: "2-Hour Product Innovation Pitch",
       type: "Panel Pitch",
       status: "UPCOMING",
       score: "Max +300 pts",
@@ -100,7 +101,9 @@ export default function EmployeeQuestConsolePage() {
         {/* TEAM IDENTITY BANNER */}
         <div className="p-6 rounded-2xl bg-gradient-to-r from-[#1A56DB] to-[#1E429F] text-white shadow-lg flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <span className="text-4xl p-3 bg-white/10 rounded-2xl backdrop-blur-md">🦅</span>
+            <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center font-mono font-black text-xl backdrop-blur-md">
+              A
+            </div>
             <div>
               <div className="text-xs font-bold text-white/80 uppercase tracking-wider">Your Squad</div>
               <h2 className="text-xl font-black">Team Alpha (Blue Eagles)</h2>
@@ -111,7 +114,9 @@ export default function EmployeeQuestConsolePage() {
           <div className="text-right">
             <div className="text-xs text-white/80 uppercase font-bold">Total Points</div>
             <div className="text-3xl font-black text-amber-300">840 pts</div>
-            <span className="text-xs font-bold bg-white/20 px-2.5 py-0.5 rounded-full">🥇 Rank 1 of 8</span>
+            <span className="text-xs font-bold bg-white/20 px-2.5 py-0.5 rounded-full flex items-center gap-1 mt-1 justify-end">
+              <Trophy className="w-3.5 h-3.5 text-amber-300" /> Rank 1 of 8
+            </span>
           </div>
         </div>
 
@@ -190,9 +195,9 @@ export default function EmployeeQuestConsolePage() {
                 </h3>
                 <button
                   onClick={() => setActiveChallengeModal(null)}
-                  className="text-xs text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
+                  className="text-xs text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] cursor-pointer"
                 >
-                  ✕
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 

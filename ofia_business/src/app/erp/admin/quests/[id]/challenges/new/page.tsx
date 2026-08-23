@@ -31,7 +31,7 @@ export default function CreateChallengePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [challengeData, setChallengeData] = useState({
-    name: "📸 Best Creative Team Mascot Photo",
+    name: "Best Creative Team Mascot Photo",
     type: "SUBMISSION", // QUIZ, SUBMISSION, MANUAL_JUDGING, TIMED_TASK
     participationType: "TEAM",
     points: "200",
@@ -157,8 +157,8 @@ export default function CreateChallengePage() {
                   onChange={(e) => setChallengeData({ ...challengeData, reviewMode: e.target.value })}
                   className="w-full p-2.5 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-xs text-[var(--nexa-text-primary)] outline-none"
                 >
-                  <option value="AUTOMATIC">⚡ Instant Automatic Scoring</option>
-                  <option value="JUDGE_APPROVAL">⚖️ Requires Judge Verification & Scoring</option>
+                  <option value="AUTOMATIC">Instant Automatic Scoring</option>
+                  <option value="JUDGE_APPROVAL">Requires Judge Verification & Scoring</option>
                 </select>
               </div>
 

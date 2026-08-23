@@ -107,13 +107,13 @@ export default function AdminEmailPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isTestingPlatform, setIsTestingPlatform] = useState(false);
   const [testRecipient, setTestRecipient] = useState("reedbreednigeria@gmail.com");
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; isError: boolean } | null>(null);
   const [isWizardOpen, setIsWizardOpen] = useState(false);
   const [showTourBanner, setShowTourBanner] = useState(true);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
+  const showToast = (message: string, isError = false) => {
+    setToast({ message, isError });
+    setTimeout(() => setToast(null), 3500);
   };
 
   useEffect(() => {
@@ -223,19 +223,19 @@ export default function AdminEmailPage() {
 
   const handleTestPlatformDispatch = async () => {
     if (!testRecipient.trim()) {
-      showToast("❌ Please enter a valid recipient email address");
+      showToast("Please enter a valid recipient email address", true);
       return;
     }
     setIsTestingPlatform(true);
     try {
       const res = await GTM_API.testPlatformEmailDispatch({ recipient_email: testRecipient.trim() });
       if (res && res.error) {
-        showToast(`❌ ${res.error}`);
+        showToast(res.error, true);
       } else {
-        showToast(`✅ ${res.message || `Platform test email sent to ${testRecipient}!`}`);
+        showToast(res.message || `Platform test email sent to ${testRecipient}!`, false);
       }
     } catch (err: any) {
-      showToast(`❌ ${err.message || "Failed to dispatch test email. Check API key."}`);
+      showToast(err.message || "Failed to dispatch test email. Check API key.", true);
     } finally {
       setIsTestingPlatform(false);
     }
@@ -265,20 +265,20 @@ export default function AdminEmailPage() {
     <AdminShell>
       <div className="space-y-7">
         {/* Toast */}
-        {toastMessage && (
+        {toast && (
           <div
             className={`p-3.5 rounded-2xl text-xs font-bold flex items-center gap-2 animate-in fade-in ${
-              toastMessage.startsWith("❌")
+              toast.isError
                 ? "bg-[#E02424]/15 border border-[#E02424]/30 text-[#E02424]"
                 : "bg-[#0E9F6E]/15 border border-[#0E9F6E]/30 text-[#0E9F6E]"
             }`}
           >
-            {toastMessage.startsWith("❌") ? (
+            {toast.isError ? (
               <AlertTriangle className="w-4 h-4 shrink-0" />
             ) : (
               <CheckCircle2 className="w-4 h-4 shrink-0" />
             )}
-            {toastMessage}
+            {toast.message}
           </div>
         )}
 

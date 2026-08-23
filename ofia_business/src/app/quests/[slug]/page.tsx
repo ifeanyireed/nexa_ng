@@ -26,10 +26,10 @@ export default function PublicQuestLandingPage() {
   const slug = params?.slug || "2026-staff-retreat";
 
   const teams = [
-    { name: "Team Alpha (Blue Eagles)", logo: "🦅", points: 840, rank: 1, motto: "Swift, Strategic, Unstoppable" },
-    { name: "Team Bravo (Red Vipers)", logo: "🐍", points: 795, rank: 2, motto: "Relentless Speed & Precision" },
-    { name: "Team Delta (Green Lions)", logo: "🦁", points: 710, rank: 3, motto: "Courage in Every Stride" },
-    { name: "Team Charlie (Gold Titans)", logo: "⚡", points: 650, rank: 4, motto: "Power, Intellect, Victory" },
+    { name: "Team Alpha (Blue Eagles)", logo: "A", points: 840, rank: 1, motto: "Swift, Strategic, Unstoppable" },
+    { name: "Team Bravo (Red Vipers)", logo: "B", points: 795, rank: 2, motto: "Relentless Speed & Precision" },
+    { name: "Team Delta (Green Lions)", logo: "D", points: 710, rank: 3, motto: "Courage in Every Stride" },
+    { name: "Team Charlie (Gold Titans)", logo: "C", points: 650, rank: 4, motto: "Power, Intellect, Victory" },
   ];
 
   const challenges = [
@@ -77,7 +77,9 @@ export default function PublicQuestLandingPage() {
 
         <div className="relative max-w-5xl mx-auto px-6 pb-8 w-full space-y-2">
           <div className="flex items-center gap-2">
-            <NexaBadge variant="green" size="sm">🟢 LIVE RETREAT EVENT</NexaBadge>
+            <NexaBadge variant="green" size="sm" className="flex items-center gap-1 rounded-full">
+              <Flame className="w-3 h-3 text-emerald-400" /> LIVE RETREAT EVENT
+            </NexaBadge>
             <span className="text-xs font-mono text-white/90">Epe Resort & Spa, Lagos · Aug 22–25</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-black text-white">
@@ -104,16 +106,26 @@ export default function PublicQuestLandingPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {teams.map((t) => (
-              <NexaCard key={t.name} variant="glass" padding="md" className="space-y-3 text-center">
-                <div className="text-3xl">{t.logo}</div>
+              <NexaCard key={t.name} variant="glass" padding="md" className="space-y-3 text-center rounded-3xl">
+                <div className="w-12 h-12 rounded-2xl bg-[#1A56DB]/10 text-[#1A56DB] font-mono font-black text-lg flex items-center justify-center mx-auto">
+                  {t.logo}
+                </div>
                 <div>
                   <div className="text-xs font-bold text-[var(--nexa-text-primary)]">{t.name}</div>
                   <div className="text-[11px] text-[var(--nexa-text-muted)] italic">&ldquo;{t.motto}&rdquo;</div>
                 </div>
                 <div className="pt-2 border-t border-[var(--nexa-border)]">
                   <div className="text-xl font-black text-[#1A56DB] font-mono">{t.points} pts</div>
-                  <NexaBadge variant={t.rank === 1 ? "green" : "brand"} size="sm">
-                    {t.rank === 1 ? "🥇 1st Place" : t.rank === 2 ? "🥈 2nd Place" : t.rank === 3 ? "🥉 3rd Place" : "4th Place"}
+                  <NexaBadge variant={t.rank === 1 ? "green" : "brand"} size="sm" className="rounded-full flex items-center gap-1 justify-center">
+                    {t.rank === 1 ? (
+                      <span className="flex items-center gap-1"><Trophy className="w-3 h-3 text-amber-500" /> 1st Place</span>
+                    ) : t.rank === 2 ? (
+                      <span className="flex items-center gap-1"><Award className="w-3 h-3 text-slate-400" /> 2nd Place</span>
+                    ) : t.rank === 3 ? (
+                      <span className="flex items-center gap-1"><Award className="w-3 h-3 text-amber-700" /> 3rd Place</span>
+                    ) : (
+                      "4th Place"
+                    )}
                   </NexaBadge>
                 </div>
               </NexaCard>

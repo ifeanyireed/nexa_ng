@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { BusinessShell } from "@/components/business/BusinessShell";
+import { ErpStatGrid } from "@/components/erp/ErpStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
@@ -46,7 +47,7 @@ const DEMO_TEAMS: TeamItem[] = [
     id: "team-alpha",
     name: "Team Alpha (Blue Eagles)",
     motto: "Swift, Strategic, Unstoppable",
-    logo: "🦅",
+    logo: "A",
     color: "#1A56DB",
     points: 840,
     rank: 1,
@@ -56,7 +57,7 @@ const DEMO_TEAMS: TeamItem[] = [
     id: "team-bravo",
     name: "Team Bravo (Red Vipers)",
     motto: "Relentless Speed & Precision",
-    logo: "🐍",
+    logo: "B",
     color: "#E02424",
     points: 795,
     rank: 2,
@@ -66,7 +67,7 @@ const DEMO_TEAMS: TeamItem[] = [
     id: "team-delta",
     name: "Team Delta (Green Lions)",
     motto: "Courage in Every Stride",
-    logo: "🦁",
+    logo: "D",
     color: "#0E9F6E",
     points: 710,
     rank: 3,
@@ -76,7 +77,7 @@ const DEMO_TEAMS: TeamItem[] = [
     id: "team-charlie",
     name: "Team Charlie (Gold Titans)",
     motto: "Power, Intellect, Victory",
-    logo: "⚡",
+    logo: "C",
     color: "#D97706",
     points: 650,
     rank: 4,
@@ -87,7 +88,7 @@ const DEMO_TEAMS: TeamItem[] = [
 const DEMO_CHALLENGES = [
   {
     id: "chl-01",
-    name: "🧠 Executive Company & Industry Trivia",
+    name: "Executive Company & Industry Trivia",
     type: "Speed Quiz",
     status: "COMPLETED",
     points: 150,
@@ -95,7 +96,7 @@ const DEMO_CHALLENGES = [
   },
   {
     id: "chl-02",
-    name: "📸 Best Creative Team Mascot Photo",
+    name: "Best Creative Team Mascot Photo",
     type: "Evidence Upload",
     status: "ACTIVE",
     points: 200,
@@ -103,7 +104,7 @@ const DEMO_CHALLENGES = [
   },
   {
     id: "chl-03",
-    name: "💡 2-Hour Product Innovation Pitch",
+    name: "2-Hour Product Innovation Pitch",
     type: "Judge Panel",
     status: "UPCOMING",
     points: 300,
@@ -111,7 +112,7 @@ const DEMO_CHALLENGES = [
   },
   {
     id: "chl-04",
-    name: "🏃 Beach Relay Agility Sprint",
+    name: "Beach Relay Agility Sprint",
     type: "Outdoor Race",
     status: "UPCOMING",
     points: 250,
@@ -189,13 +190,51 @@ export default function QuestOverviewCommandPage() {
 
         {/* OVERVIEW TAB */}
         {activeTab === "overview" && (
-          <div className="space-y-6">
+          <div className="space-y-8">
+            {/* TOP 4 KPI CARDS — MATCHING /erp/admin VERBATIM */}
+            <ErpStatGrid
+              stats={[
+                {
+                  label: "Leading Squad Score",
+                  value: "840 pts",
+                  change: "1st Place",
+                  trend: "up",
+                  icon: <Trophy className="w-5 h-5 text-amber-500" />,
+                  sub: "Team Alpha (Blue Eagles)",
+                },
+                {
+                  label: "Active Squad Teams",
+                  value: "4 Teams",
+                  change: "100% Active",
+                  trend: "up",
+                  icon: <Users className="w-5 h-5 text-blue-500" />,
+                  sub: "56 Competing Delegates",
+                },
+                {
+                  label: "Completed Sprints",
+                  value: "1 of 4 Done",
+                  change: "25% Complete",
+                  trend: "up",
+                  icon: <Target className="w-5 h-5 text-purple-500" />,
+                  sub: "Next: Mascot Photo Sprint",
+                },
+                {
+                  label: "Stage TV Scoreboard",
+                  value: "Live Sync",
+                  change: "60 FPS TV",
+                  trend: "up",
+                  icon: <Tv className="w-5 h-5 text-emerald-500" />,
+                  sub: "Real-time SSE Event Stream",
+                },
+              ]}
+            />
+
             {/* LIVE LEADERBOARD BANNER */}
             <div className="p-6 rounded-2xl bg-gradient-to-r from-[#1A56DB] via-[#1E429F] to-[#7E3AF2] text-white shadow-lg flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <NexaBadge variant="green" size="sm">
-                    🟢 LIVE COMPETITION
+                  <NexaBadge variant="green" size="sm" className="flex items-center gap-1">
+                    <Flame className="w-3 h-3 text-emerald-300" /> LIVE COMPETITION
                   </NexaBadge>
                   <span className="text-xs font-mono text-white/80">Day 2 of 4 · Epe Resort & Spa</span>
                 </div>
@@ -207,7 +246,7 @@ export default function QuestOverviewCommandPage() {
 
               <div className="flex items-center gap-3">
                 <Link href={`/erp/admin/quests/${questId}/challenges/chl-02`}>
-                  <NexaButton size="md" variant="secondary" leftIcon={<Play className="w-4 h-4 text-[#1A56DB]" />} className="bg-white text-[#1A56DB] hover:bg-gray-100">
+                  <NexaButton size="md" variant="secondary" leftIcon={<Play className="w-4 h-4 text-[#1A56DB]" />} className="bg-white text-[#1A56DB] hover:bg-gray-100 rounded-full">
                     Judge Control Room
                   </NexaButton>
                 </Link>
@@ -217,14 +256,14 @@ export default function QuestOverviewCommandPage() {
             {/* TWO COLUMN SUMMARY */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* LEADERBOARD STANDINGS */}
-              <NexaCard variant="glass" padding="md" className="space-y-4 lg:col-span-2">
+              <NexaCard variant="glass" padding="md" className="space-y-4 lg:col-span-2 rounded-3xl">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-bold text-[var(--nexa-text-primary)] flex items-center gap-2">
                     <Trophy className="w-4 h-4 text-amber-500" /> Current Squad Standings
                   </h3>
                   <button
                     onClick={() => setActiveTab("teams")}
-                    className="text-xs text-[#1A56DB] font-bold hover:underline"
+                    className="text-xs text-[#1A56DB] font-bold hover:underline cursor-pointer"
                   >
                     Manage Teams →
                   </button>
@@ -234,18 +273,25 @@ export default function QuestOverviewCommandPage() {
                   {DEMO_TEAMS.map((team) => (
                     <div
                       key={team.id}
-                      className="p-3.5 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-between hover:border-[var(--nexa-border-hover)] transition-all"
+                      className="p-3.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-between hover:border-[var(--nexa-border-hover)] transition-all"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm bg-[var(--nexa-card-bg)] border border-[var(--nexa-border)]">
-                          {team.rank === 1 && "🥇"}
-                          {team.rank === 2 && "🥈"}
-                          {team.rank === 3 && "🥉"}
-                          {team.rank > 3 && `#${team.rank}`}
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs bg-[var(--nexa-card-bg)] border border-[var(--nexa-border)]">
+                          {team.rank === 1 ? (
+                            <Trophy className="w-4 h-4 text-amber-500" />
+                          ) : team.rank === 2 ? (
+                            <Award className="w-4 h-4 text-slate-400" />
+                          ) : team.rank === 3 ? (
+                            <Award className="w-4 h-4 text-amber-700" />
+                          ) : (
+                            `#${team.rank}`
+                          )}
                         </div>
                         <div>
                           <div className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-2">
-                            <span>{team.logo}</span>
+                            <span className="w-5 h-5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] font-mono text-[10px] flex items-center justify-center font-black">
+                              {team.logo}
+                            </span>
                             <span>{team.name}</span>
                           </div>
                           <div className="text-[11px] text-[var(--nexa-text-muted)]">{team.motto} · {team.membersCount} members</div>

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { BusinessShell } from "@/components/business/BusinessShell";
+import { ErpStatGrid } from "@/components/erp/ErpStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
@@ -97,62 +98,61 @@ export default function TeamQuestsDashboardPage() {
 
   return (
     <BusinessShell
-      title="Team Quests & Engagement Engine"
+      title="Retreat Quests & Engagement Engine"
       subtitle="Enterprise competition, retreat gamification, hackathons, and company-wide agility challenges."
       action={
         <div className="flex items-center gap-2.5">
           <Link href="/quests/2026-staff-retreat/scoreboard" target="_blank">
-            <NexaButton size="sm" variant="outline" leftIcon={<Tv className="w-4 h-4 text-[#1A56DB]" />}>
+            <NexaButton size="sm" variant="outline" className="rounded-full" leftIcon={<Tv className="w-4 h-4 text-[#1A56DB]" />}>
               Stage Scoreboard
             </NexaButton>
           </Link>
           <Link href="/erp/admin/quests/new">
-            <NexaButton size="sm" variant="primary" leftIcon={<Plus className="w-4 h-4" />}>
+            <NexaButton size="sm" variant="primary" className="rounded-full bg-[#1A56DB] text-white" leftIcon={<Plus className="w-4 h-4" />}>
               Create Quest
             </NexaButton>
           </Link>
         </div>
       }
     >
-      <div className="space-y-6">
-        {/* KPI COCKPIT */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#1A56DB]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Active Quests</span>
-              <Flame className="w-4 h-4 text-[#1A56DB]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">1 Live Quest</div>
-            <div className="text-[11px] text-[#1A56DB] font-bold">2026 Annual Staff Retreat</div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#0E9F6E]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Enrolled Employees</span>
-              <Users className="w-4 h-4 text-[#0E9F6E]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">162 Staff</div>
-            <div className="text-[11px] text-[#0E9F6E] font-medium">Across 15 Active Teams</div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#9061F9]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Challenges Completed</span>
-              <Target className="w-4 h-4 text-[#9061F9]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">84 Submissions</div>
-            <div className="text-[11px] text-[#9061F9] font-medium">92% Participation Rate</div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#F59E0B]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Leading Team</span>
-              <Trophy className="w-4 h-4 text-[#F59E0B]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">840 pts</div>
-            <div className="text-[11px] text-[#F59E0B] font-bold">Team Alpha (Blue Eagles)</div>
-          </NexaCard>
-        </div>
+      <div className="space-y-10">
+        {/* TOP 4 KPI CARDS — MATCHING /erp/admin VERBATIM */}
+        <ErpStatGrid
+          stats={[
+            {
+              label: "Active Quest Sprints",
+              value: "1 Live Quest",
+              change: "2026 Staff Retreat",
+              trend: "up",
+              icon: <Flame className="w-5 h-5 text-amber-500" />,
+              sub: "Epe Resort & Spa, Lagos",
+            },
+            {
+              label: "Enrolled Employees",
+              value: "162 Staff",
+              change: "15 Teams",
+              trend: "up",
+              icon: <Users className="w-5 h-5 text-blue-500" />,
+              sub: "Company-Wide Enrollment",
+            },
+            {
+              label: "Challenges Completed",
+              value: "84 Done",
+              change: "92% SLA",
+              trend: "up",
+              icon: <Target className="w-5 h-5 text-purple-500" />,
+              sub: "High participation velocity",
+            },
+            {
+              label: "Leading Team Score",
+              value: "840 pts",
+              change: "Team Alpha",
+              trend: "up",
+              icon: <Trophy className="w-5 h-5 text-emerald-500" />,
+              sub: "Stage TV Display Live",
+            },
+          ]}
+        />
 
         {/* TABS & FILTER */}
         <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
@@ -161,21 +161,37 @@ export default function TeamQuestsDashboardPage() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                className={`px-4 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
                   activeTab === tab
-                    ? "bg-[#1A56DB] text-white shadow-sm"
-                    : "text-[var(--nexa-text-secondary)] hover:bg-[var(--nexa-bg-base)]"
+                    ? "bg-[#1A56DB] text-white shadow-md shadow-[#1A56DB]/20"
+                    : "text-[var(--nexa-text-secondary)] hover:bg-[var(--nexa-bg-base)] border border-transparent hover:border-[var(--nexa-border)]"
                 }`}
               >
-                {tab === "ACTIVE" && "🟢 Active Quests"}
-                {tab === "UPCOMING" && "⏳ Upcoming"}
-                {tab === "COMPLETED" && "🏆 Completed"}
-                {tab === "ALL" && "📁 All Quests"}
+                {tab === "ACTIVE" && (
+                  <span className="flex items-center gap-1.5">
+                    <Flame className="w-3.5 h-3.5 text-emerald-500" /> Active Quests
+                  </span>
+                )}
+                {tab === "UPCOMING" && (
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-amber-500" /> Upcoming
+                  </span>
+                )}
+                {tab === "COMPLETED" && (
+                  <span className="flex items-center gap-1.5">
+                    <Trophy className="w-3.5 h-3.5 text-blue-500" /> Completed
+                  </span>
+                )}
+                {tab === "ALL" && (
+                  <span className="flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-purple-500" /> All Quests
+                  </span>
+                )}
               </button>
             ))}
           </div>
 
-          <span className="text-xs text-[var(--nexa-text-muted)]">
+          <span className="text-xs text-[var(--nexa-text-muted)] font-medium">
             Showing <strong>{filteredQuests.length}</strong> competition engines
           </span>
         </div>
@@ -187,7 +203,7 @@ export default function TeamQuestsDashboardPage() {
               key={quest.id}
               variant="glass"
               padding="none"
-              className="overflow-hidden group hover:border-[#1A56DB]/50 transition-all flex flex-col justify-between"
+              className="overflow-hidden group hover:border-[#1A56DB]/50 transition-all flex flex-col justify-between rounded-3xl"
             >
               <div>
                 <div className="relative h-44 w-full overflow-hidden bg-gray-900">
@@ -208,11 +224,28 @@ export default function TeamQuestsDashboardPage() {
                           : "secondary"
                       }
                       size="sm"
+                      className="rounded-full flex items-center gap-1"
                     >
-                      {quest.status === "ACTIVE" && "🟢 Live Active"}
-                      {quest.status === "UPCOMING" && "⏳ Starting Soon"}
-                      {quest.status === "COMPLETED" && "🏆 Finalized"}
-                      {quest.status === "DRAFT" && "Draft"}
+                      {quest.status === "ACTIVE" && (
+                        <span className="flex items-center gap-1">
+                          <Flame className="w-3 h-3 text-emerald-500" /> Live Active
+                        </span>
+                      )}
+                      {quest.status === "UPCOMING" && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-amber-500" /> Starting Soon
+                        </span>
+                      )}
+                      {quest.status === "COMPLETED" && (
+                        <span className="flex items-center gap-1">
+                          <Trophy className="w-3 h-3 text-blue-500" /> Finalized
+                        </span>
+                      )}
+                      {quest.status === "DRAFT" && (
+                        <span className="flex items-center gap-1">
+                          <Layers className="w-3 h-3 text-slate-400" /> Draft
+                        </span>
+                      )}
                     </NexaBadge>
                   </div>
 
@@ -225,36 +258,36 @@ export default function TeamQuestsDashboardPage() {
                   </div>
                 </div>
 
-                <div className="p-4 space-y-3">
+                <div className="p-5 space-y-3.5">
                   <p className="text-xs text-[var(--nexa-text-secondary)] line-clamp-2 leading-relaxed">
                     {quest.description}
                   </p>
 
-                  <div className="grid grid-cols-3 gap-2 py-2 border-y border-[var(--nexa-border)] text-center">
+                  <div className="grid grid-cols-3 gap-2 py-3 border-y border-[var(--nexa-border)] text-center">
                     <div>
-                      <div className="text-xs text-[var(--nexa-text-muted)]">Participants</div>
-                      <div className="text-sm font-bold text-[var(--nexa-text-primary)]">
+                      <div className="text-[11px] text-[var(--nexa-text-muted)] font-medium">Participants</div>
+                      <div className="text-sm font-black text-[var(--nexa-text-primary)]">
                         {quest.participantsCount}
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-[var(--nexa-text-muted)]">Teams</div>
-                      <div className="text-sm font-bold text-[var(--nexa-text-primary)]">
+                      <div className="text-[11px] text-[var(--nexa-text-muted)] font-medium">Teams</div>
+                      <div className="text-sm font-black text-[var(--nexa-text-primary)]">
                         {quest.teamsCount}
                       </div>
                     </div>
                     <div>
-                      <div className="text-xs text-[var(--nexa-text-muted)]">Challenges</div>
-                      <div className="text-sm font-bold text-[var(--nexa-text-primary)]">
+                      <div className="text-[11px] text-[var(--nexa-text-muted)] font-medium">Challenges</div>
+                      <div className="text-sm font-black text-[var(--nexa-text-primary)]">
                         {quest.challengesCount}
                       </div>
                     </div>
                   </div>
 
                   {quest.topTeam && (
-                    <div className="p-2.5 rounded-lg bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-between text-xs">
-                      <span className="text-[var(--nexa-text-muted)] flex items-center gap-1.5">
-                        <Trophy className="w-3.5 h-3.5 text-amber-500" /> Leader:
+                    <div className="p-3 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-between text-xs">
+                      <span className="text-[var(--nexa-text-muted)] flex items-center gap-1.5 font-medium">
+                        <Trophy className="w-4 h-4 text-amber-500" /> Leader:
                       </span>
                       <span className="font-bold text-[var(--nexa-text-primary)]">
                         {quest.topTeam.name} ({quest.topTeam.points} pts)
@@ -264,14 +297,14 @@ export default function TeamQuestsDashboardPage() {
                 </div>
               </div>
 
-              <div className="p-4 pt-0 flex items-center gap-2">
+              <div className="p-5 pt-0 flex items-center gap-2">
                 <Link href={`/erp/admin/quests/${quest.id}`} className="flex-1">
-                  <NexaButton size="sm" variant="primary" className="w-full justify-center">
+                  <NexaButton size="sm" variant="primary" className="w-full justify-center rounded-full bg-[#1A56DB]">
                     Manage Quest
                   </NexaButton>
                 </Link>
                 <Link href={`/quests/${quest.slug}/scoreboard`} target="_blank">
-                  <NexaButton size="sm" variant="outline" className="px-2.5" title="Open Stage TV Scoreboard">
+                  <NexaButton size="sm" variant="outline" className="px-3 rounded-full" title="Open Stage TV Scoreboard">
                     <Tv className="w-4 h-4 text-[#1A56DB]" />
                   </NexaButton>
                 </Link>

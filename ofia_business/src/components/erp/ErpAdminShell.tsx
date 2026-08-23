@@ -371,7 +371,7 @@ export function ErpAdminShell({
         <header className="h-20 bg-nexa-bg-surface/80 backdrop-blur-xl border-b border-nexa-border sticky top-0 z-40 px-8 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-4">
             <h2 className="text-xl font-bold hidden md:block">
-              Welcome back, {user?.name?.split(" ")[0] || "Admin"} 👋
+              Welcome back, {user?.name?.split(" ")[0] || "Admin"}
             </h2>
           </div>
 

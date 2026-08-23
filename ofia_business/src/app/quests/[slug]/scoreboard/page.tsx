@@ -33,7 +33,7 @@ const INITIAL_STANDINGS: TeamStanding[] = [
     id: "team-alpha",
     name: "Team Alpha (Blue Eagles)",
     motto: "Swift, Strategic, Unstoppable",
-    logo: "🦅",
+    logo: "A",
     color: "#1A56DB",
     points: 840,
     rank: 1,
@@ -43,7 +43,7 @@ const INITIAL_STANDINGS: TeamStanding[] = [
     id: "team-bravo",
     name: "Team Bravo (Red Vipers)",
     motto: "Relentless Speed & Precision",
-    logo: "🐍",
+    logo: "B",
     color: "#E02424",
     points: 795,
     rank: 2,
@@ -53,7 +53,7 @@ const INITIAL_STANDINGS: TeamStanding[] = [
     id: "team-delta",
     name: "Team Delta (Green Lions)",
     motto: "Courage in Every Stride",
-    logo: "🦁",
+    logo: "D",
     color: "#0E9F6E",
     points: 710,
     rank: 3,
@@ -63,7 +63,7 @@ const INITIAL_STANDINGS: TeamStanding[] = [
     id: "team-charlie",
     name: "Team Charlie (Gold Titans)",
     motto: "Power, Intellect, Victory",
-    logo: "⚡",
+    logo: "C",
     color: "#D97706",
     points: 650,
     rank: 4,
@@ -81,9 +81,9 @@ export default function StageTVScoreboardPage() {
   const [liveTickerIndex, setLiveTickerIndex] = useState(0);
 
   const announcements = [
-    "🔥 Next Challenge: Best Creative Team Mascot Photo closes in 35 minutes!",
-    "⚡ Team Alpha took 1st place in the Executive Company Trivia round (+150 pts)!",
-    "🏆 Evening Gala Awards Ceremony begins at 7:30 PM at the Palm Grand Ballroom.",
+    "Next Challenge: Best Creative Team Mascot Photo closes in 35 minutes!",
+    "Team Alpha took 1st place in the Executive Company Trivia round (+150 pts)!",
+    "Evening Gala Awards Ceremony begins at 7:30 PM at the Palm Grand Ballroom.",
   ];
 
   // Auto-refresh timer for TV display
@@ -173,7 +173,7 @@ export default function StageTVScoreboardPage() {
               {/* RANK BADGE & LOGO */}
               <div className="flex items-center gap-5">
                 <div
-                  className={`w-16 h-16 rounded-2xl flex items-center justify-center text-3xl font-black shadow-inner border ${
+                  className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black shadow-inner border ${
                     team.rank === 1
                       ? "bg-amber-400 text-black border-amber-300 shadow-amber-500/40"
                       : team.rank === 2
@@ -183,14 +183,21 @@ export default function StageTVScoreboardPage() {
                       : "bg-gray-800 text-gray-300 border-gray-700"
                   }`}
                 >
-                  {team.rank === 1 && "🥇"}
-                  {team.rank === 2 && "🥈"}
-                  {team.rank === 3 && "🥉"}
-                  {team.rank > 3 && `#${team.rank}`}
+                  {team.rank === 1 ? (
+                    <Trophy className="w-8 h-8 text-black" />
+                  ) : team.rank === 2 ? (
+                    <Award className="w-8 h-8 text-black" />
+                  ) : team.rank === 3 ? (
+                    <Award className="w-8 h-8 text-white" />
+                  ) : (
+                    `#${team.rank}`
+                  )}
                 </div>
 
                 <div>
-                  <div className="text-3xl mb-1">{team.logo}</div>
+                  <div className="w-8 h-8 rounded-xl bg-white/10 text-white font-mono font-black text-sm flex items-center justify-center mb-1">
+                    {team.logo}
+                  </div>
                   <h3 className="text-xl font-black text-white">{team.name}</h3>
                   <p className="text-xs text-gray-400 font-medium italic">&ldquo;{team.motto}&rdquo;</p>
                 </div>

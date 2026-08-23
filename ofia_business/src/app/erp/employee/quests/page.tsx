@@ -93,7 +93,9 @@ export default function EmployeeMyQuestsPage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
                 <div className="absolute top-3 left-3">
-                  <NexaBadge variant="green" size="sm">🟢 LIVE COMPETITION</NexaBadge>
+                  <NexaBadge variant="green" size="sm" className="flex items-center gap-1 rounded-full">
+                    <Flame className="w-3 h-3 text-emerald-400" /> LIVE COMPETITION
+                  </NexaBadge>
                 </div>
                 <div className="absolute bottom-3 left-3 right-3 text-white">
                   <div className="text-[11px] text-white/80 flex items-center gap-1">
@@ -107,11 +109,13 @@ export default function EmployeeMyQuestsPage() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs text-[var(--nexa-text-muted)]">Your Assigned Squad:</span>
-                    <NexaBadge variant="brand" size="sm">Rank #1 in Quest</NexaBadge>
+                    <NexaBadge variant="brand" size="sm" className="rounded-full">Rank #1 in Quest</NexaBadge>
                   </div>
                   
                   <div className="flex items-center gap-3">
-                    <span className="text-3xl">🦅</span>
+                    <div className="w-12 h-12 rounded-2xl bg-[#1A56DB]/10 text-[#1A56DB] flex items-center justify-center font-mono font-black text-lg">
+                      A
+                    </div>
                     <div>
                       <h3 className="text-base font-black text-[var(--nexa-text-primary)]">
                         Team Alpha (Blue Eagles)

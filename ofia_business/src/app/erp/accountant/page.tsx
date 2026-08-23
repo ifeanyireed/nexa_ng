@@ -1,18 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React from "react";
+import AccountantOverview from "./overview/page";
 
-export default function AccountantRoot() {
-	const router = useRouter();
-
-	useEffect(() => {
-		router.replace("/erp/accountant/overview");
-	}, [router]);
-
-	return (
-		<div className="py-20 flex justify-center items-center">
-			<div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-		</div>
-	);
+export default function AccountantPage() {
+	return <AccountantOverview />;
 }

@@ -82,10 +82,10 @@ export default function AccountantOverview() {
 					</div>
 					<div className="flex flex-col gap-2 border-t border-gray-100 pt-3">
 						{[
-							{ title: "Chart of Accounts", desc: "Account structure and classifications.", icon: <IconClipboardList className="w-5 h-5 text-blue-600" />, route: "/accountant/coa" },
-							{ title: "Aged Receivables", desc: "Who owes us and how old it is.", icon: <IconCalendarClock className="w-5 h-5 text-emerald-600" />, route: "/accountant/invoices" },
-							{ title: "Aged Payables", desc: "What we owe vendors and when.", icon: <IconReceipt className="w-5 h-5 text-red-500" />, route: "/accountant/expenses" },
-							{ title: "Bank Reconciliation", desc: "Match statements with transaction logs.", icon: <IconReportMoney className="w-5 h-5 text-purple-600" />, route: "/accountant/reconcile" }
+							{ title: "Chart of Accounts", desc: "Account structure and classifications.", icon: <IconClipboardList className="w-5 h-5 text-blue-600" />, route: "/erp/accountant/coa" },
+							{ title: "Aged Receivables", desc: "Who owes us and how old it is.", icon: <IconCalendarClock className="w-5 h-5 text-emerald-600" />, route: "/erp/accountant/invoices" },
+							{ title: "Aged Payables", desc: "What we owe vendors and when.", icon: <IconReceipt className="w-5 h-5 text-red-500" />, route: "/erp/accountant/expenses" },
+							{ title: "Bank Reconciliation", desc: "Match statements with transaction logs.", icon: <IconReportMoney className="w-5 h-5 text-purple-600" />, route: "/erp/accountant/reconcile" }
 						].map((wItem, index) => (
 							<button
 								key={index}

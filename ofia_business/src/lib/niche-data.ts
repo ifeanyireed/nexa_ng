@@ -460,6 +460,13 @@ export const SPECIALTY_TO_NICHE_MAP: Record<string, string> = {
     "food": "food-agribusiness",
     "realestate": "real-estate-construction",
 
+    // 11 Master High-Recurring Verticals
+    "hotels": "real-estate-construction",
+    "rides": "logistics-transport",
+    "apartments": "real-estate-construction",
+    "cars": "automotive-services",
+    "tutors": "education-skills",
+
     // Canonical One-Word SEO Subcategory Slugs
     "handyman": "handyman-finders",
     "specialists": "specialist-finders",

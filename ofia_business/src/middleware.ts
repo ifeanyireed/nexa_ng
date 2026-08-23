@@ -80,9 +80,22 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // 4. INDUSTRY CLUSTER & NICHE DISCOVERY SUBDOMAINS ({niche}.ofia.ng / {cluster}.ofia.ng)
+  // 4. INDUSTRY CLUSTER & NICHE DISCOVERY SUBDOMAINS ({niche}.ofia.ng / {vertical}.ofia.ng)
   const KNOWN_NICHE_SLUGS = new Set([
-    // 10 Master Sectors
+    // 11 Master Verticals
+    "food",
+    "hotels", "hotel",
+    "rides", "ride",
+    "dispatch",
+    "beauty",
+    "apartments", "apartment", "shortlets", "shortlet",
+    "cars", "car",
+    "laundry",
+    "tutors", "tutor",
+    "autocare",
+    "properties", "property",
+
+    // 10 Sector Aliases
     "home-services", "homeservices",
     "fashion-grooming", "fashion",
     "professional-services", "professionals",
@@ -90,8 +103,8 @@ export function middleware(request: NextRequest) {
     "events-entertainment", "events",
     "health-wellness", "health",
     "logistics-transport", "logistics",
-    "automotive-services", "auto", "cars",
-    "food-agribusiness", "food",
+    "automotive-services", "auto",
+    "food-agribusiness",
     "real-estate-construction", "realestate",
 
     // 24 Canonical One-Word SEO Subcategory Slugs
@@ -110,7 +123,7 @@ export function middleware(request: NextRequest) {
     "plumber", "electrician", "carpenter", "painter", "tiler", "welder",
     "solar", "solar-installer", "generator", "generator-repairer", "ac-technician", "borehole", "inverter",
     "tailor", "barber", "hairdresser", "makeup", "makeup-artist", "nails",
-    "lawyer", "accountant", "cctv", "mechanic", "car-mechanic", "chef", "caterer"
+    "lawyer", "accountant", "cctv", "mechanic", "car-mechanic", "chef", "caterer", "chauffeur", "mover"
   ]);
 
   if (subdomain && subdomain !== "www" && subdomain !== "app" && subdomain !== "admin") {

@@ -54,6 +54,7 @@ import {
   BarChart3,
   Store,
   ShieldCheck,
+  Edit3,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -127,6 +128,19 @@ function TenantManagementContent() {
   const [extraLeads, setExtraLeads] = useState("2000");
   const [extraCampaigns, setExtraCampaigns] = useState("5");
   const [editPlanTier, setEditPlanTier] = useState<TenantOrg["planTier"]>("GROWTH");
+
+  // Edit Tenant Details Form state
+  const [selectedTenantForEdit, setSelectedTenantForEdit] = useState<TenantOrg | null>(null);
+  const [editTenantName, setEditTenantName] = useState("");
+  const [editTenantSlug, setEditTenantSlug] = useState("");
+  const [editTenantDomain, setEditTenantDomain] = useState("");
+  const [editTenantOwnerName, setEditTenantOwnerName] = useState("");
+  const [editTenantOwnerEmail, setEditTenantOwnerEmail] = useState("");
+  const [editTenantPlanTier, setEditTenantPlanTier] = useState<TenantOrg["planTier"]>("GROWTH");
+  const [editTenantStatus, setEditTenantStatus] = useState<TenantOrg["status"]>("Active");
+  const [editTenantMrr, setEditTenantMrr] = useState("1200000");
+  const [editTenantLeadsLimit, setEditTenantLeadsLimit] = useState("5000");
+  const [editTenantCampaignsLimit, setEditTenantCampaignsLimit] = useState("10");
 
   // Notifications & Telemetry
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -304,6 +318,49 @@ function TenantManagementContent() {
     );
     showToast(`Updated subscription limits for ${selectedTenantForQuota.name}`);
     setSelectedTenantForQuota(null);
+  };
+
+  // Open Edit Tenant Details Modal
+  const handleOpenEditTenant = (t: TenantOrg) => {
+    setSelectedTenantForEdit(t);
+    setEditTenantName(t.name);
+    setEditTenantSlug(t.slug);
+    setEditTenantDomain(t.domain);
+    setEditTenantOwnerName(t.ownerName);
+    setEditTenantOwnerEmail(t.ownerEmail);
+    setEditTenantPlanTier(t.planTier);
+    setEditTenantStatus(t.status);
+    setEditTenantMrr(String(t.mrr));
+    setEditTenantLeadsLimit(String(t.leadsLimit));
+    setEditTenantCampaignsLimit(String(t.campaignsLimit));
+  };
+
+  // Save Edited Tenant Details
+  const handleSaveEditTenant = () => {
+    if (!selectedTenantForEdit) return;
+
+    setTenants((prev) =>
+      prev.map((t) =>
+        t.id === selectedTenantForEdit.id
+          ? {
+              ...t,
+              name: editTenantName,
+              slug: editTenantSlug,
+              domain: editTenantDomain,
+              ownerName: editTenantOwnerName,
+              ownerEmail: editTenantOwnerEmail,
+              planTier: editTenantPlanTier,
+              status: editTenantStatus,
+              mrr: parseInt(editTenantMrr || "0", 10),
+              leadsLimit: parseInt(editTenantLeadsLimit || "0", 10),
+              campaignsLimit: parseInt(editTenantCampaignsLimit || "0", 10),
+            }
+          : t
+      )
+    );
+
+    showToast(`Tenant profile for '${editTenantName}' saved successfully`);
+    setSelectedTenantForEdit(null);
   };
 
   // Toggle tenant suspension
@@ -576,6 +633,14 @@ function TenantManagementContent() {
 
                 {/* CONTROLS */}
                 <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+                  <button
+                    onClick={() => handleOpenEditTenant(focusedTenant)}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-bold text-[var(--nexa-text-primary)] hover:bg-[var(--nexa-border)] transition-colors cursor-pointer"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-[#1A56DB]" />
+                    Edit Tenant Details
+                  </button>
+
                   <button
                     onClick={() => {
                       setSelectedTenantForQuota(focusedTenant);
@@ -863,6 +928,14 @@ function TenantManagementContent() {
 
                       <div className="flex items-center gap-2 shrink-0 flex-wrap">
                         <button
+                          onClick={() => handleOpenEditTenant(tenant)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-bold text-[var(--nexa-text-primary)] hover:bg-[var(--nexa-border)] transition-colors cursor-pointer"
+                        >
+                          <Edit3 className="w-3.5 h-3.5 text-[#1A56DB]" />
+                          Edit Profile
+                        </button>
+
+                        <button
                           onClick={() => {
                             setSelectedTenantId(tenant.id);
                             router.push(`/tenants?tenant=${tenant.id}`);
@@ -1147,6 +1220,168 @@ function TenantManagementContent() {
               className="bg-[#1A56DB] text-white"
             >
               Provision Workspace
+            </NexaButton>
+          </div>
+        </div>
+      </NexaModal>
+
+      {/* MODAL 3: EDIT TENANT DETAILS */}
+      <NexaModal
+        isOpen={!!selectedTenantForEdit}
+        onClose={() => setSelectedTenantForEdit(null)}
+        title={`Edit Tenant Profile: ${selectedTenantForEdit?.name}`}
+        subtitle="Update legal organization metadata, custom domain, subscription tier, owner credentials, and contracted quotas"
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                Organization Name *
+              </label>
+              <input
+                type="text"
+                value={editTenantName}
+                onChange={(e) => setEditTenantName(e.target.value)}
+                className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs outline-none focus:border-[#1A56DB]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                Workspace Subdomain / Slug *
+              </label>
+              <input
+                type="text"
+                value={editTenantSlug}
+                onChange={(e) => setEditTenantSlug(e.target.value)}
+                className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-mono outline-none focus:border-[#1A56DB]"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                Primary Custom Domain *
+              </label>
+              <input
+                type="text"
+                value={editTenantDomain}
+                onChange={(e) => setEditTenantDomain(e.target.value)}
+                className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-mono outline-none focus:border-[#1A56DB]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                Subscription Plan Tier
+              </label>
+              <select
+                value={editTenantPlanTier}
+                onChange={(e) => setEditTenantPlanTier(e.target.value as any)}
+                className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-bold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
+              >
+                <option value="FREE_TRIAL">FREE TRIAL (14-Day Pilot)</option>
+                <option value="STARTER">STARTER (₦450k / mo)</option>
+                <option value="GROWTH">GROWTH (₦1.2M / mo)</option>
+                <option value="SCALE">SCALE (₦2.4M / mo)</option>
+                <option value="ENTERPRISE">ENTERPRISE (₦5.0M / mo)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                Owner Contact Full Name
+              </label>
+              <input
+                type="text"
+                value={editTenantOwnerName}
+                onChange={(e) => setEditTenantOwnerName(e.target.value)}
+                className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs outline-none focus:border-[#1A56DB]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                Owner Admin Email Address
+              </label>
+              <input
+                type="email"
+                value={editTenantOwnerEmail}
+                onChange={(e) => setEditTenantOwnerEmail(e.target.value)}
+                className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs outline-none focus:border-[#1A56DB]"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                Account Operational Status
+              </label>
+              <select
+                value={editTenantStatus}
+                onChange={(e) => setEditTenantStatus(e.target.value as any)}
+                className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-bold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
+              >
+                <option value="Active">Active (Operational)</option>
+                <option value="Trialing">Trialing (Pilot)</option>
+                <option value="Past Due">Past Due (Payment Pending)</option>
+                <option value="Suspended">Suspended (Access Locked)</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                Contracted Monthly MRR (₦)
+              </label>
+              <input
+                type="number"
+                value={editTenantMrr}
+                onChange={(e) => setEditTenantMrr(e.target.value)}
+                className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-mono outline-none focus:border-[#1A56DB]"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                Total Leads Limit
+              </label>
+              <input
+                type="number"
+                value={editTenantLeadsLimit}
+                onChange={(e) => setEditTenantLeadsLimit(e.target.value)}
+                className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-mono outline-none focus:border-[#1A56DB]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                Active Campaigns Limit
+              </label>
+              <input
+                type="number"
+                value={editTenantCampaignsLimit}
+                onChange={(e) => setEditTenantCampaignsLimit(e.target.value)}
+                className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-mono outline-none focus:border-[#1A56DB]"
+              />
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-[var(--nexa-border)] flex items-center justify-end gap-2">
+            <NexaButton
+              size="sm"
+              variant="outline"
+              onClick={() => setSelectedTenantForEdit(null)}
+            >
+              Cancel
+            </NexaButton>
+            <NexaButton
+              size="sm"
+              variant="primary"
+              onClick={handleSaveEditTenant}
+              className="bg-[#1A56DB] text-white"
+            >
+              Save Tenant Details
             </NexaButton>
           </div>
         </div>

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -91,12 +92,76 @@ func InitDB() *gorm.DB {
 		sqlDB.SetConnMaxLifetime(10 * time.Minute)
 	}
 
-	// Auto-migrate tables including RBAC matrix
+	// Auto-migrate tables including User and RBAC matrix
 	_ = DB.AutoMigrate(
+		&models.User{},
+		&models.Organization{},
+		&models.WorkspaceMember{},
 		&models.TenantRolePermission{},
 		&models.TenantPermissionAuditLog{},
 	)
 
+	// Seed Super Admin users into MySQL database
+	seedSuperAdmins(DB)
+
 	log.Println("Database connection initialized successfully for service_users")
 	return DB
+}
+
+func seedSuperAdmins(db *gorm.DB) {
+	if db == nil {
+		return
+	}
+
+	superAdmins := []struct {
+		ID       string
+		Email    string
+		Password string
+		Name     string
+		Role     models.Role
+	}{
+		{
+			ID:       "admin-root-01",
+			Email:    "superadmin@ofia.ng",
+			Password: "OfiaSuperAdmin2026!",
+			Name:     "Adeyemi Phillips",
+			Role:     models.RoleSuperAdmin,
+		},
+		{
+			ID:       "admin-secops-02",
+			Email:    "secops@ofia.ng",
+			Password: "SecOpsAudit2026!",
+			Name:     "Ibrahim Musa",
+			Role:     models.RoleSuperAdmin,
+		},
+		{
+			ID:       "admin-viewer-03",
+			Email:    "auditor@ofia.ng",
+			Password: "AuditorPass2026!",
+			Name:     "Chioma Okonkwo",
+			Role:     models.RoleViewer,
+		},
+	}
+
+	for _, sa := range superAdmins {
+		var count int64
+		db.Model(&models.User{}).Where("email = ?", sa.Email).Count(&count)
+		if count == 0 {
+			hashedPassword, err := bcrypt.GenerateFromPassword([]byte(sa.Password), bcrypt.DefaultCost)
+			if err == nil {
+				user := models.User{
+					ID:        sa.ID,
+					Email:     sa.Email,
+					Password:  string(hashedPassword),
+					Name:      sa.Name,
+					Role:      sa.Role,
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
+				}
+				if err := db.Create(&user).Error; err == nil {
+					log.Printf("✅ Seeded SuperAdmin user in MySQL: %s (%s)", sa.Name, sa.Email)
+				}
+			}
+		}
+	}
 }

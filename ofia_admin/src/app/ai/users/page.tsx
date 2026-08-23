@@ -84,7 +84,7 @@ export default function AdminUsersPage() {
     e.preventDefault();
     if (!newUserEmail || !newUserName) return;
 
-    const avatarIndex = (users.length % 30) + 1;
+    const avatarIndex = (users.length % 20) + 1;
     const created: AdminUser = {
       id: `usr-${Date.now()}`,
       name: newUserName,
@@ -93,7 +93,7 @@ export default function AdminUsersPage() {
       title: newUserTitle,
       orgName: newUserOrg,
       orgId: newUserOrg === "EduSuite Nigeria" ? "org-01" : newUserOrg === "PayFlow Africa" ? "org-02" : "org-03",
-      avatar: `/avatar${avatarIndex}.png`,
+      avatar: `/character${avatarIndex}.jpg`,
       twoFactorEnabled: true,
       status: "Active",
       lastLogin: "Just now",
@@ -120,7 +120,7 @@ export default function AdminUsersPage() {
   };
 
   const handleInjectPreset = (presetRole: AdminUser["role"], orgName: string, name: string, title: string, email: string) => {
-    const avatarIndex = (users.length % 30) + 1;
+    const avatarIndex = (users.length % 20) + 1;
     const created: AdminUser = {
       id: `usr-${Date.now()}`,
       name,
@@ -129,7 +129,7 @@ export default function AdminUsersPage() {
       title,
       orgName,
       orgId: orgName === "EduSuite Nigeria" ? "org-01" : "org-02",
-      avatar: `/avatar${avatarIndex}.png`,
+      avatar: `/character${avatarIndex}.jpg`,
       twoFactorEnabled: true,
       status: "Active",
       lastLogin: "Active right now",

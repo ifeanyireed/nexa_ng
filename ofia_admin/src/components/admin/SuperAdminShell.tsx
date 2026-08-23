@@ -147,19 +147,12 @@ export function SuperAdminShell({
 
     if (pathname.startsWith("/marketplace")) {
       return [
-        { label: "Marketplace Hub", href: "/marketplace", icon: <Store className="w-3.5 h-3.5" /> },
+        { label: "Compass Hub", href: "/marketplace", icon: <Store className="w-3.5 h-3.5" /> },
         { label: "GMV & Analytics", href: "/marketplace/analytics", icon: <TrendingUp className="w-3.5 h-3.5" /> },
         { label: "Pro Merchants", href: "/marketplace/merchants", icon: <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />, badge: "Verified" },
         { label: "Job Assignments", href: "/marketplace/assignments", icon: <Wrench className="w-3.5 h-3.5" /> },
         { label: "Disputes & Escrow", href: "/marketplace/disputes", icon: <ShieldAlert className="w-3.5 h-3.5" /> },
         { label: "Field Technicians", href: "/marketplace/technicians", icon: <UserCheck className="w-3.5 h-3.5" /> },
-      ];
-    }
-
-    if (pathname.startsWith("/erp")) {
-      return [
-        { label: "ERP Administration", href: "/erp", icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
-        { label: "Tenant Provisioning", href: "/tenants", icon: <Building2 className="w-3.5 h-3.5" />, badge: "5 Orgs" },
       ];
     }
 
@@ -275,16 +268,10 @@ export function SuperAdminShell({
               badge: "15 AI",
             },
             {
-              label: "Ofia Marketplace",
+              label: "Ofia Compass",
               href: "/marketplace",
               icon: ShoppingBag,
               badge: "PRO",
-            },
-            {
-              label: "Enterprise ERP",
-              href: "/erp",
-              icon: Layers,
-              badge: "ERP",
             },
           ]
             .filter((item) =>
@@ -434,7 +421,6 @@ export function SuperAdminShell({
                   (tab.href !== "/" &&
                     tab.href !== "/ai" &&
                     tab.href !== "/marketplace" &&
-                    tab.href !== "/erp" &&
                     pathname.startsWith(tab.href));
                 return (
                   <Link href={tab.href} key={idx} className="shrink-0">

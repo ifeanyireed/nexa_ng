@@ -47,8 +47,8 @@ export const NexaAvatar = ({
     for (let i = 0; i < seed.length; i++) {
       hash = seed.charCodeAt(i) + ((hash << 5) - hash);
     }
-    const index = (Math.abs(hash) % 30) + 1;
-    return `/avatar${index}.png`;
+    const index = (Math.abs(hash) % 20) + 1;
+    return `/character${index}.jpg`;
   };
 
   const avatarSrc = src || getDeterministicAvatar(displayFallback);

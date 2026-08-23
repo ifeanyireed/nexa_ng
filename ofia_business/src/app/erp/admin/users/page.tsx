@@ -34,20 +34,21 @@ interface ERPStaffUser {
   department: string;
   designation: string;
   managerName?: string;
+  avatar: string;
   status: "ACTIVE" | "ON_LEAVE" | "TERMINATED";
 }
 
 const INITIAL_STAFF_USERS: ERPStaffUser[] = [
-  { id: "USR-001", name: "Adeyemi Phillips", email: "admin@edusuite.ng", role: "admin", department: "Executive Directorate", designation: "Tenant Administrator / Operations Lead", status: "ACTIVE" },
-  { id: "USR-002", name: "Dr. Babatunde Jinadu", email: "md@edusuite.ng", role: "md", department: "Executive Directorate", designation: "Managing Director / CEO", status: "ACTIVE" },
-  { id: "USR-003", name: "Goldy Okeke", email: "hr@edusuite.ng", role: "hr", department: "Human Resources & Talent", designation: "HR Lead / People Ops", status: "ACTIVE" },
-  { id: "USR-004", name: "Oluwatobiloba Olateju", email: "accountant@edusuite.ng", role: "accountant", department: "Finance & Accounts", designation: "Chief Accountant / Controller", status: "ACTIVE" },
-  { id: "USR-005", name: "Chioma Okonkwo", email: "marketing@edusuite.ng", role: "marketer", department: "Commercial & Growth", designation: "Growth & CRM Lead", status: "ACTIVE" },
-  { id: "USR-006", name: "Babajide Sanwo", email: "manager@edusuite.ng", role: "manager", department: "Fleet & Warehouse Operations", designation: "Operations Line Manager", status: "ACTIVE" },
-  { id: "USR-007", name: "Sunday Johnson", email: "employee@edusuite.ng", role: "employee", department: "Fleet & Warehouse Operations", designation: "Operations Officer", managerName: "Babajide Sanwo", status: "ACTIVE" },
-  { id: "USR-008", name: "Chinedu Eze", email: "cashier@edusuite.ng", role: "cashier", department: "Retail & Front Desk", designation: "Lead POS Terminal Cashier", managerName: "Babajide Sanwo", status: "ACTIVE" },
-  { id: "USR-009", name: "Ngozi Obi", email: "inventory@edusuite.ng", role: "inventory_officer", department: "Supply Chain & Depot", designation: "Central Warehouse Inventory Officer", managerName: "Babajide Sanwo", status: "ACTIVE" },
-  { id: "USR-010", name: "Ibrahim Musa", email: "dispatch@edusuite.ng", role: "dispatcher", department: "Logistics & Fulfillment", designation: "Zonal Route Dispatcher", managerName: "Babajide Sanwo", status: "ACTIVE" },
+  { id: "USR-001", name: "Adeyemi Phillips", email: "admin@edusuite.ng", role: "admin", department: "Executive Directorate", designation: "Tenant Administrator / Operations Lead", avatar: "/character1.jpg", status: "ACTIVE" },
+  { id: "USR-002", name: "Dr. Babatunde Jinadu", email: "md@edusuite.ng", role: "md", department: "Executive Directorate", designation: "Managing Director / CEO", avatar: "/character2.jpg", status: "ACTIVE" },
+  { id: "USR-003", name: "Goldy Okeke", email: "hr@edusuite.ng", role: "hr", department: "Human Resources & Talent", designation: "HR Lead / People Ops", avatar: "/character3.jpg", status: "ACTIVE" },
+  { id: "USR-004", name: "Oluwatobiloba Olateju", email: "accountant@edusuite.ng", role: "accountant", department: "Finance & Accounts", designation: "Chief Accountant / Controller", avatar: "/character4.jpg", status: "ACTIVE" },
+  { id: "USR-005", name: "Chioma Okonkwo", email: "marketing@edusuite.ng", role: "marketer", department: "Commercial & Growth", designation: "Growth & CRM Lead", avatar: "/character5.jpg", status: "ACTIVE" },
+  { id: "USR-006", name: "Babajide Sanwo", email: "manager@edusuite.ng", role: "manager", department: "Fleet & Warehouse Operations", designation: "Operations Line Manager", avatar: "/character6.jpg", status: "ACTIVE" },
+  { id: "USR-007", name: "Sunday Johnson", email: "employee@edusuite.ng", role: "employee", department: "Fleet & Warehouse Operations", designation: "Operations Officer", managerName: "Babajide Sanwo", avatar: "/character7.jpg", status: "ACTIVE" },
+  { id: "USR-008", name: "Chinedu Eze", email: "cashier@edusuite.ng", role: "cashier", department: "Retail & Front Desk", designation: "Lead POS Terminal Cashier", managerName: "Babajide Sanwo", avatar: "/character8.jpg", status: "ACTIVE" },
+  { id: "USR-009", name: "Ngozi Obi", email: "inventory@edusuite.ng", role: "inventory_officer", department: "Supply Chain & Depot", designation: "Central Warehouse Inventory Officer", managerName: "Babajide Sanwo", avatar: "/character9.jpg", status: "ACTIVE" },
+  { id: "USR-010", name: "Ibrahim Musa", email: "dispatch@edusuite.ng", role: "dispatcher", department: "Logistics & Fulfillment", designation: "Zonal Route Dispatcher", managerName: "Babajide Sanwo", avatar: "/character10.jpg", status: "ACTIVE" },
 ];
 
 const DEPARTMENTS = [
@@ -89,6 +90,7 @@ export default function UserManagementPage() {
     e.preventDefault();
     if (!newName || !newEmail) return;
 
+    const avatarNum = (users.length % 20) + 1;
     const newUser: ERPStaffUser = {
       id: `USR-${String(users.length + 1).padStart(3, "0")}`,
       name: newName,
@@ -97,6 +99,7 @@ export default function UserManagementPage() {
       department: newDepartment,
       designation: newDesignation || "Corporate Officer",
       managerName: newManager || undefined,
+      avatar: `/character${avatarNum}.jpg`,
       status: "ACTIVE",
     };
 
@@ -220,8 +223,17 @@ export default function UserManagementPage() {
               {filtered.map((user) => (
                 <tr key={user.id} className="hover:bg-[var(--nexa-bg-base)]/50 transition-colors">
                   <td className="py-3.5 px-4">
-                    <div className="font-bold text-[var(--nexa-text-primary)]">{user.name}</div>
-                    <div className="text-[11px] text-[var(--nexa-text-muted)] font-mono">{user.email} • {user.id}</div>
+                    <div className="flex items-center gap-2.5">
+                      <img
+                        src={user.avatar}
+                        alt={user.name}
+                        className="w-8 h-8 rounded-full object-cover shrink-0 ring-1 ring-[var(--nexa-border)] shadow-xs"
+                      />
+                      <div>
+                        <div className="font-bold text-[var(--nexa-text-primary)]">{user.name}</div>
+                        <div className="text-[11px] text-[var(--nexa-text-muted)] font-mono">{user.email} • {user.id}</div>
+                      </div>
+                    </div>
                   </td>
                   <td className="py-3.5 px-3">
                     <div className="font-semibold text-[var(--nexa-text-primary)]">{user.department}</div>

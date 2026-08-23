@@ -214,11 +214,11 @@ export default function MasterOverviewPage() {
                     <ShoppingBag className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-black text-base text-[var(--nexa-text-primary)]">Ofia Marketplace</h3>
+                    <h3 className="font-black text-base text-[var(--nexa-text-primary)]">Ofia Compass</h3>
                     <p className="text-[11px] text-[var(--nexa-text-muted)] font-mono">B2B/B2C Discovery Platform</p>
                   </div>
                 </div>
-                <NexaBadge variant="green">Marketplace</NexaBadge>
+                <NexaBadge variant="green">Compass</NexaBadge>
               </div>
 
               <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
@@ -263,69 +263,69 @@ export default function MasterOverviewPage() {
 
               <Link href="/marketplace" className="block pt-1">
                 <NexaButton size="sm" variant="primary" className="w-full bg-[#0E9F6E] text-white hover:bg-[#0B855D] justify-center">
-                  Open Marketplace Admin
+                  Open Ofia Compass
                 </NexaButton>
               </Link>
             </div>
           </NexaCard>
 
-          {/* APP 3: OFIA ENTERPRISE ERP */}
+          {/* APP 3: MULTI-TENANT WORKSPACES */}
           <NexaCard
             variant="glass"
             padding="lg"
-            className="space-y-5 border border-[#9061F9]/30 flex flex-col justify-between relative overflow-hidden"
+            className="space-y-5 border border-[#1A56DB]/30 flex flex-col justify-between relative overflow-hidden"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[#9061F9]/5 rounded-bl-full pointer-events-none" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#1A56DB]/5 rounded-bl-full pointer-events-none" />
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2.5 rounded-xl bg-[#9061F9]/10 text-[#9061F9]">
+                  <div className="p-2.5 rounded-xl bg-[#1A56DB]/10 text-[#1A56DB]">
                     <Building2 className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-black text-base text-[var(--nexa-text-primary)]">Ofia Enterprise ERP</h3>
-                    <p className="text-[11px] text-[var(--nexa-text-muted)] font-mono">HR, Finance & Operations</p>
+                    <h3 className="font-black text-base text-[var(--nexa-text-primary)]">Multi-Tenant Workspaces</h3>
+                    <p className="text-[11px] text-[var(--nexa-text-muted)] font-mono">Provisioning, Quotas & MRR</p>
                   </div>
                 </div>
-                <NexaBadge variant="purple">Internal ERP</NexaBadge>
+                <NexaBadge variant="brand">Multi-Tenant</NexaBadge>
               </div>
 
               <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-                Corporate governance across Human Resources, general ledger, consolidated balance sheets, payroll disbursement, and immutable enterprise audit trails.
+                Centralized tenant lifecycle control, custom domains, automated plan tier upgrades, enterprise RBAC module permissions, and live MRR telemetry.
               </p>
 
               <div className="p-3 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-2 text-xs font-mono">
                 <div className="flex justify-between">
-                  <span className="text-[var(--nexa-text-muted)]">Operating Income (YTD):</span>
-                  <span className="font-bold text-[#0E9F6E]">₦124,500,000</span>
+                  <span className="text-[var(--nexa-text-muted)]">Active Enterprises:</span>
+                  <span className="font-bold text-[#0E9F6E]">5 Organizations</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[var(--nexa-text-muted)]">Monthly Payroll:</span>
-                  <span className="font-bold text-[var(--nexa-text-primary)]">₦18,450,000</span>
+                  <span className="text-[var(--nexa-text-muted)]">Monthly Recurring Revenue:</span>
+                  <span className="font-bold text-[var(--nexa-text-primary)]">₦1,180,000</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[var(--nexa-text-muted)]">RBAC Access Tiers:</span>
-                  <span className="font-bold text-[#9061F9]">6 Active Roles</span>
+                  <span className="text-[var(--nexa-text-muted)]">RBAC Modules Managed:</span>
+                  <span className="font-bold text-[#1A56DB]">9 Modules</span>
                 </div>
               </div>
             </div>
 
             <div className="space-y-2 pt-2 border-t border-[var(--nexa-border)]">
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <Link href="/erp/users" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#9061F9]/10 hover:text-[#9061F9] transition-all flex items-center justify-between">
-                  <span>RBAC Governance</span>
+                <Link href="/tenants?tenant=org-01" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#1A56DB]/10 hover:text-[#1A56DB] transition-all flex items-center justify-between">
+                  <span>EduSuite Console</span>
                   <ArrowRight className="w-3 h-3 text-[var(--nexa-text-muted)]" />
                 </Link>
-                <Link href="/erp/departments" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#9061F9]/10 hover:text-[#9061F9] transition-all flex items-center justify-between">
-                  <span>Departments</span>
+                <Link href="/tenants" className="p-2 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[#1A56DB]/10 hover:text-[#1A56DB] transition-all flex items-center justify-between">
+                  <span>Directory</span>
                   <ArrowRight className="w-3 h-3 text-[var(--nexa-text-muted)]" />
                 </Link>
               </div>
 
-              <Link href="/erp" className="block pt-1">
-                <NexaButton size="sm" variant="primary" className="w-full bg-[#9061F9] text-white hover:bg-[#7E3AF2] justify-center">
-                  Open ERP Admin
+              <Link href="/tenants" className="block pt-1">
+                <NexaButton size="sm" variant="primary" className="w-full bg-[#1A56DB] text-white hover:bg-[#1545B0] justify-center">
+                  Manage Tenant Hub
                 </NexaButton>
               </Link>
             </div>

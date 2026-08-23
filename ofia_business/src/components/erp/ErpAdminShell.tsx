@@ -479,31 +479,35 @@ export function ErpAdminShell({
               {isSidebarOpen && <span className="font-bold text-xs">Workspace Settings</span>}
             </button>
           </Link>
-          <button
-            onClick={logout}
-            className="w-full flex items-center gap-3.5 p-3 rounded-full text-red-500 hover:bg-red-500/10 transition-all text-left cursor-pointer"
-          >
-            <LogOut className="w-5 h-5" />
-            {isSidebarOpen && <span className="font-bold text-xs">Logout</span>}
-          </button>
+          <div className="flex items-center gap-1.5 justify-between">
+            <button
+              onClick={logout}
+              className={cn(
+                "flex items-center gap-3.5 p-3 rounded-full text-red-500 hover:bg-red-500/10 transition-all text-left cursor-pointer",
+                isSidebarOpen ? "flex-1" : "w-full justify-center"
+              )}
+              title="Logout"
+            >
+              <LogOut className="w-5 h-5 shrink-0" />
+              {isSidebarOpen && <span className="font-bold text-xs">Logout</span>}
+            </button>
+
+            {isSidebarOpen ? (
+              <div className="shrink-0">
+                <NexaThemeToggle />
+              </div>
+            ) : null}
+          </div>
+          {!isSidebarOpen && (
+            <div className="flex justify-center pt-1">
+              <NexaThemeToggle />
+            </div>
+          )}
         </div>
       </aside>
 
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        {/* DASHBOARD TOP HEADER */}
-        <header className="h-20 bg-nexa-bg-surface/80 backdrop-blur-xl border-b border-nexa-border sticky top-0 z-40 px-8 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-4">
-            <h2 className="text-xl font-bold hidden md:block">
-              Welcome back, {user?.name?.split(" ")[0] || "Admin"}
-            </h2>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <NexaThemeToggle />
-          </div>
-        </header>
-
         {/* CONTENT WRAPPER */}
         <div className="p-8 space-y-6 flex-1">
           {/* HEADER TITLE & ACTIONS (IF PROVIDED) */}

@@ -292,26 +292,48 @@ export function ErpAdminShell({
       }
 
       // Resolve user role
+      let resolvedRole: RoleKey = "admin";
       const storedErpUser = localStorage.getItem("erp_current_user");
       if (storedErpUser) {
         try {
           const parsed = JSON.parse(storedErpUser);
           if (parsed && parsed.role) {
-            setCurrentRole(parsed.role as RoleKey);
+            resolvedRole = parsed.role as RoleKey;
           }
         } catch {}
       } else if (pathname.startsWith("/erp/employee")) {
-        setCurrentRole("employee");
+        resolvedRole = "employee";
       } else if (pathname.startsWith("/erp/manager")) {
-        setCurrentRole("manager");
+        resolvedRole = "manager";
       } else if (pathname.startsWith("/erp/md")) {
-        setCurrentRole("md");
+        resolvedRole = "md";
       } else if (pathname.startsWith("/erp/hr")) {
-        setCurrentRole("hr");
+        resolvedRole = "hr";
       } else if (pathname.startsWith("/erp/accountant")) {
-        setCurrentRole("accountant");
-      } else {
-        setCurrentRole("admin");
+        resolvedRole = "accountant";
+      }
+      setCurrentRole(resolvedRole);
+
+      // Role Protection Guard:
+      // If a non-admin role lands directly on /erp/admin (root admin overview) or /erp/admin/access-control:
+      // redirect them immediately to their designated home dashboard!
+      if (resolvedRole !== "admin" && (pathname === "/erp/admin" || pathname === "/erp/admin/access-control")) {
+        if (resolvedRole === "md") {
+          window.location.href = "/erp/md";
+          return;
+        } else if (resolvedRole === "hr") {
+          window.location.href = "/erp/hr";
+          return;
+        } else if (resolvedRole === "accountant") {
+          window.location.href = "/erp/accountant";
+          return;
+        } else if (resolvedRole === "manager") {
+          window.location.href = "/erp/manager";
+          return;
+        } else if (resolvedRole === "employee") {
+          window.location.href = "/erp/employee";
+          return;
+        }
       }
 
       const handleRbacUpdate = (e: Event) => {
@@ -560,14 +582,14 @@ export function ErpAdminShell({
               const matchesSearch = item.label.toLowerCase().includes(searchQuery.toLowerCase());
               if (!matchesSearch) return false;
 
-              // The '/erp/admin' Overview page is strictly for the Tenant Administrator dashboard
+              // The '/erp/admin' Overview page is strictly for the Tenant Administrator
               if (item.key === "overview" || item.href === "/erp/admin") {
-                return pathname.startsWith("/erp/admin") || currentRole === "admin";
+                return currentRole === "admin";
               }
 
-              // The role access tab should ALWAYS be on the side bar nav in the erp/admin ONLY
+              // The role access tab is strictly for the Tenant Administrator on the admin portal
               if (item.key === "access_control") {
-                return pathname.startsWith("/erp/admin") || currentRole === "admin";
+                return currentRole === "admin" && pathname.startsWith("/erp/admin");
               }
 
               // Determine if module is allowed to the tenant by the Super Admin in the database
@@ -578,13 +600,13 @@ export function ErpAdminShell({
                 return false;
               }
 
-              // Tenant Administrator dashboard (/erp/admin/* or currentRole === 'admin') is NOT configurable:
-              // It automatically has ALL modules allowed to the tenant by the Super Admin by default
-              if (pathname.startsWith("/erp/admin") || currentRole === "admin") {
+              // Tenant Administrator receives ALL modules allowed to the tenant by default
+              if (currentRole === "admin") {
                 return true;
               }
 
-              // For subordinate staff roles (employee, manager, hr, etc.), check if granted in tenant RBAC matrix
+              // For subordinate staff roles (md, hr, accountant, manager, employee, etc.):
+              // check if granted in the tenant RBAC matrix
               return Boolean(permissionMatrix[currentRole]?.[item.key]);
             })
             .map((item, i) => {

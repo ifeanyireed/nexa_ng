@@ -41,7 +41,10 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/components/nexa/AuthContext";
 
+import { useRouter } from "next/navigation";
+
 export default function AccessControlPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const [tenantName, setTenantName] = useState<string>("EduSuite");
   const [selectedRole, setSelectedRole] = useState<RoleKey>("md");
@@ -55,6 +58,22 @@ export default function AccessControlPage() {
   // Determine active tenant name and look up RBAC matrix from MySQL database on load
   useEffect(() => {
     if (typeof window !== "undefined") {
+      // Role Guard: Redirect non-admin personas away from Access Control
+      const storedUser = localStorage.getItem("erp_current_user");
+      if (storedUser) {
+        try {
+          const u = JSON.parse(storedUser);
+          if (u && u.role && u.role !== "admin") {
+            if (u.role === "md") router.replace("/erp/md");
+            else if (u.role === "hr") router.replace("/erp/hr");
+            else if (u.role === "accountant") router.replace("/erp/accountant");
+            else if (u.role === "manager") router.replace("/erp/manager");
+            else if (u.role === "employee") router.replace("/erp/employee");
+            return;
+          }
+        } catch {}
+      }
+
       let tName = "EduSuite";
       const host = window.location.host.toLowerCase();
       const hostParts = host.split(":")[0].split(".");
@@ -96,7 +115,7 @@ export default function AccessControlPage() {
           setIsLoadingDb(false);
         });
     }
-  }, [user]);
+  }, [user, router]);
 
   // Handle individual toggle with remote MySQL persistence
   const handleToggleModule = async (moduleKey: string) => {

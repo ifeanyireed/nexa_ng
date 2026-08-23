@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Bot,
   Boxes,
@@ -25,7 +26,27 @@ import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 
 export default function AdminCommandCenterPage() {
+  const router = useRouter();
   const [isStoreOpen, setIsStoreOpen] = useState(true);
+
+  // Role Guard: Redirect non-admin personas to their assigned departmental dashboard
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("erp_current_user");
+      if (stored) {
+        try {
+          const u = JSON.parse(stored);
+          if (u && u.role && u.role !== "admin") {
+            if (u.role === "md") router.replace("/erp/md");
+            else if (u.role === "hr") router.replace("/erp/hr");
+            else if (u.role === "accountant") router.replace("/erp/accountant");
+            else if (u.role === "manager") router.replace("/erp/manager");
+            else if (u.role === "employee") router.replace("/erp/employee");
+          }
+        } catch {}
+      }
+    }
+  }, [router]);
 
   const kpis = [
     {

@@ -539,6 +539,371 @@ export const SPECIALTY_TO_NICHE_MAP: Record<string, string> = {
     "bricklayer": "real-estate-construction"
 };
 
+export interface SubcategoryGroup {
+  slug: string;
+  name: string;
+  parentCategory: string;
+  parentCategorySlug: string;
+  description: string;
+  services: {
+    name: string;
+    slug: string;
+  }[];
+}
+
+export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
+  // 1. Home & Maintenance
+  {
+    slug: "handyman-finders",
+    name: "Handyman Finders",
+    parentCategory: "Home & Maintenance",
+    parentCategorySlug: "home-services",
+    description: "General household repairs, electrical, plumbing, carpentry, tiling, and welding.",
+    services: [
+      { name: "Plumber Finder", slug: "plumber" },
+      { name: "Electrician Finder", slug: "electrician" },
+      { name: "Carpenter Finder", slug: "carpenter" },
+      { name: "Painter Finder", slug: "painter" },
+      { name: "Tiler Finder", slug: "tiler" },
+      { name: "Welder Finder", slug: "welder" },
+    ],
+  },
+  {
+    slug: "specialist-finders",
+    name: "Specialist Finders",
+    parentCategory: "Home & Maintenance",
+    parentCategorySlug: "home-services",
+    description: "Technical home systems, solar power, inverters, HVAC, and borehole engineering.",
+    services: [
+      { name: "Solar Installer Finder", slug: "solar-installer" },
+      { name: "Generator Repairer Finder", slug: "generator-repairer" },
+      { name: "AC Technician Finder", slug: "ac-technician" },
+      { name: "Borehole Driller Finder", slug: "borehole-driller" },
+      { name: "Inverter Repairer Finder", slug: "inverter-repairer" },
+    ],
+  },
+  {
+    slug: "sanitation-finders",
+    name: "Sanitation Finders",
+    parentCategory: "Home & Maintenance",
+    parentCategorySlug: "home-services",
+    description: "Residential and commercial deep cleaning, fumigation, pest control, and water tank sanitation.",
+    services: [
+      { name: "Home Cleaner Finder", slug: "home-cleaner" },
+      { name: "Fumigator (Pest Control) Finder", slug: "fumigator" },
+      { name: "Waste Disposal Finder", slug: "waste-disposal" },
+      { name: "Water Tank Cleaner Finder", slug: "water-tank-cleaner" },
+    ],
+  },
+
+  // 2. Fashion & Grooming
+  {
+    slug: "style-finders",
+    name: "Style Finders",
+    parentCategory: "Fashion & Grooming",
+    parentCategorySlug: "fashion-grooming",
+    description: "Bespoke tailoring, barbering, hair braiding, nails, and professional makeup artistry.",
+    services: [
+      { name: "Bespoke Tailor Finder", slug: "tailor" },
+      { name: "Hairdresser / Braider Finder", slug: "hairdresser" },
+      { name: "Barber Finder", slug: "barber" },
+      { name: "Makeup Artist Finder", slug: "makeup-artist" },
+      { name: "Manicurist / Nail Tech Finder", slug: "manicurist" },
+    ],
+  },
+  {
+    slug: "wardrobe-finders",
+    name: "Wardrobe Finders",
+    parentCategory: "Fashion & Grooming",
+    parentCategorySlug: "fashion-grooming",
+    description: "Garment maintenance, laundry, dry cleaning, personal shopping, and shoe repair.",
+    services: [
+      { name: "Laundry Finder", slug: "laundry" },
+      { name: "Dry Cleaner Finder", slug: "dry-cleaner" },
+      { name: "Personal Shopper Finder", slug: "personal-shopper" },
+      { name: "Cobbler (Shoe Repair) Finder", slug: "cobbler" },
+    ],
+  },
+
+  // 3. Professional Services
+  {
+    slug: "tech-finders",
+    name: "Tech Finders",
+    parentCategory: "Professional Services",
+    parentCategorySlug: "professional-services",
+    description: "Software engineering, mobile app development, UI/UX design, SEO, and cybersecurity.",
+    services: [
+      { name: "Web Developer Finder", slug: "web-developer" },
+      { name: "App Developer Finder", slug: "app-developer" },
+      { name: "UI/UX Designer Finder", slug: "uiux-designer" },
+      { name: "SEO Expert Finder", slug: "seo-expert" },
+      { name: "Cybersecurity Consultant Finder", slug: "cybersecurity" },
+    ],
+  },
+  {
+    slug: "corporate-finders",
+    name: "Corporate Finders",
+    parentCategory: "Professional Services",
+    parentCategorySlug: "professional-services",
+    description: "Legal representation, accounting, tax consultancy, business strategy, and grant writing.",
+    services: [
+      { name: "Lawyer Finder", slug: "lawyer" },
+      { name: "Accountant Finder", slug: "accountant" },
+      { name: "Tax Consultant Finder", slug: "tax-consultant" },
+      { name: "Business Consultant Finder", slug: "business-consultant" },
+      { name: "Grant Writer Finder", slug: "grant-writer" },
+    ],
+  },
+  {
+    slug: "content-finders",
+    name: "Content Finders",
+    parentCategory: "Professional Services",
+    parentCategorySlug: "professional-services",
+    description: "Copywriting, social media growth, graphic design, video editing, and language translation.",
+    services: [
+      { name: "Copywriter Finder", slug: "copywriter" },
+      { name: "Social Media Manager Finder", slug: "social-media-manager" },
+      { name: "Graphic Designer Finder", slug: "graphic-designer" },
+      { name: "Video Editor Finder", slug: "video-editor" },
+      { name: "Translator Finder", slug: "translator" },
+    ],
+  },
+  {
+    slug: "talent-finders",
+    name: "Talent Finders",
+    parentCategory: "Professional Services",
+    parentCategorySlug: "professional-services",
+    description: "Commercial models, actors, voice-over artists, and media performers.",
+    services: [
+      { name: "Model Finder", slug: "model" },
+      { name: "Actor Finder", slug: "actor" },
+      { name: "Voice-Over Artist Finder", slug: "voiceover-artist" },
+    ],
+  },
+
+  // 4. Education & Skills
+  {
+    slug: "academic-finders",
+    name: "Academic Finders",
+    parentCategory: "Education & Skills",
+    parentCategorySlug: "education-skills",
+    description: "Home tutoring, exam preparation, language instruction, and private schools.",
+    services: [
+      { name: "Home Tutor Finder", slug: "home-tutor" },
+      { name: "Exam Prep Tutor Finder", slug: "exam-prep" },
+      { name: "Language Teacher Finder", slug: "language-teacher" },
+      { name: "Music Instructor Finder", slug: "music-instructor" },
+      { name: "Private School Finder", slug: "school" },
+    ],
+  },
+  {
+    slug: "vocational-finders",
+    name: "Vocational Finders",
+    parentCategory: "Education & Skills",
+    parentCategorySlug: "education-skills",
+    description: "Hands-on vocational instruction: driving, software coding, fashion design, and catering.",
+    services: [
+      { name: "Driving School Instructor Finder", slug: "driving-school" },
+      { name: "Tech Skill Trainer Finder", slug: "tech-skill-trainer" },
+      { name: "Fashion School Instructor Finder", slug: "fashion-school" },
+      { name: "Catering School Instructor Finder", slug: "catering-school" },
+    ],
+  },
+
+  // 5. Events & Entertainment
+  {
+    slug: "planning-finders",
+    name: "Planning Finders",
+    parentCategory: "Events & Entertainment",
+    parentCategorySlug: "events-entertainment",
+    description: "Event planning, decoration, venue styling, souvenirs, and ushering services.",
+    services: [
+      { name: "Event Planner Finder", slug: "event-planner" },
+      { name: "Decorator Finder", slug: "decorator" },
+      { name: "Souvenir Vendor Finder", slug: "souvenir-vendor" },
+      { name: "Ushering Agency Finder", slug: "ushering-agency" },
+    ],
+  },
+  {
+    slug: "entertainment-finders",
+    name: "Entertainment Finders",
+    parentCategory: "Events & Entertainment",
+    parentCategorySlug: "events-entertainment",
+    description: "DJs, MCs, event photographers, videographers, drone pilots, and live musical bands.",
+    services: [
+      { name: "DJ Finder", slug: "dj" },
+      { name: "MC Finder", slug: "mc" },
+      { name: "Photographer Finder", slug: "photographer" },
+      { name: "Videographer Finder", slug: "videographer" },
+      { name: "Drone Pilot Finder", slug: "drone-pilot" },
+      { name: "Live Band Finder", slug: "live-band" },
+    ],
+  },
+
+  // 6. Health & Wellness
+  {
+    slug: "medical-finders",
+    name: "Medical Finders",
+    parentCategory: "Health & Wellness",
+    parentCategorySlug: "health-wellness",
+    description: "Private duty nursing, physiotherapy, dentistry, optometry, and retail pharmacies.",
+    services: [
+      { name: "Private Nurse Finder", slug: "private-nurse" },
+      { name: "Physiotherapist Finder", slug: "physiotherapist" },
+      { name: "Dentist Finder", slug: "dentist" },
+      { name: "Optician Finder", slug: "optician" },
+      { name: "Pharmacy Finder", slug: "pharmacy" },
+    ],
+  },
+  {
+    slug: "wellness-finders",
+    name: "Wellness Finders",
+    parentCategory: "Health & Wellness",
+    parentCategorySlug: "health-wellness",
+    description: "Personal fitness training, yoga, clinical nutrition, and therapeutic massage.",
+    services: [
+      { name: "Gym Instructor Finder", slug: "gym-instructor" },
+      { name: "Yoga Teacher Finder", slug: "yoga-teacher" },
+      { name: "Nutritionist Finder", slug: "nutritionist" },
+      { name: "Massage Therapist Finder", slug: "massage-therapist" },
+    ],
+  },
+  {
+    slug: "care-finders",
+    name: "Care Finders",
+    parentCategory: "Health & Wellness",
+    parentCategorySlug: "health-wellness",
+    description: "Nannies, infant care, elderly companions, and domestic pet sitting.",
+    services: [
+      { name: "Nanny Finder", slug: "nanny" },
+      { name: "Elderly Companion Finder", slug: "elderly-companion" },
+      { name: "Pet Sitter Finder", slug: "pet-sitter" },
+    ],
+  },
+
+  // 7. Logistics & Transport
+  {
+    slug: "delivery-finders",
+    name: "Delivery Finders",
+    parentCategory: "Logistics & Transport",
+    parentCategorySlug: "logistics-transport",
+    description: "Same-day dispatch riders, on-demand errand runners, and home/office relocations.",
+    services: [
+      { name: "Dispatch Rider Finder", slug: "dispatch-rider" },
+      { name: "Errand Runner Finder", slug: "errand-runner" },
+      { name: "Moving / Relocation Service Finder", slug: "moving-service" },
+    ],
+  },
+  {
+    slug: "transport-finders",
+    name: "Transport Finders",
+    parentCategory: "Logistics & Transport",
+    parentCategorySlug: "logistics-transport",
+    description: "Professional drivers, emergency towing vans, car rentals, and charter buses.",
+    services: [
+      { name: "Professional Driver Finder", slug: "professional-driver" },
+      { name: "Towing Van Finder", slug: "towing-van" },
+      { name: "Car Rental Finder", slug: "car-rental" },
+      { name: "Bus Hire Finder", slug: "bus-hire" },
+    ],
+  },
+
+  // 8. Automotive Services
+  {
+    slug: "repair-finders",
+    name: "Repair Finders",
+    parentCategory: "Automotive Services",
+    parentCategorySlug: "automotive-services",
+    description: "Auto mechanical repair, vulcanizing, panel beating, and auto electrical diagnostics.",
+    services: [
+      { name: "Car Mechanic Finder", slug: "car-mechanic" },
+      { name: "Vulcanizer Finder", slug: "vulcanizer" },
+      { name: "Panel Beater Finder", slug: "panel-beater" },
+      { name: "Auto Electrician Finder", slug: "auto-electrician" },
+    ],
+  },
+  {
+    slug: "auto-care-finders",
+    name: "Auto Care Finders",
+    parentCategory: "Automotive Services",
+    parentCategorySlug: "automotive-services",
+    description: "Mobile auto detailing, GPS vehicle trackers, and vehicular security dashcam installation.",
+    services: [
+      { name: "Mobile Car Wash Finder", slug: "mobile-car-wash" },
+      { name: "Car Tracker Installer Finder", slug: "car-tracker-installer" },
+      { name: "Vehicle CCTV / Dashcam Installer Finder", slug: "auto-cctv-installer" },
+    ],
+  },
+
+  // 9. Food & Agribusiness
+  {
+    slug: "culinary-finders",
+    name: "Culinary Finders",
+    parentCategory: "Food & Agribusiness",
+    parentCategorySlug: "food-agribusiness",
+    description: "Private home chefs, event catering, celebration cakes, and wholesale foodstuff supply.",
+    services: [
+      { name: "Private Chef Finder", slug: "private-chef" },
+      { name: "Event Caterer Finder", slug: "caterer" },
+      { name: "Cake Baker Finder", slug: "cake-baker" },
+      { name: "Bulk Food Supplier Finder", slug: "bulk-food-supplier" },
+    ],
+  },
+  {
+    slug: "agro-finders",
+    name: "Agro Finders",
+    parentCategory: "Food & Agribusiness",
+    parentCategorySlug: "food-agribusiness",
+    description: "Farm management, agro-processing, veterinary medicine, pet grooming, poultry, and fish farming.",
+    services: [
+      { name: "Farm Manager Finder", slug: "farm-manager" },
+      { name: "Agro-Processor Finder", slug: "agro-processor" },
+      { name: "Veterinary Doctor Finder", slug: "veterinary-doctor" },
+      { name: "Pet Groomer Finder", slug: "pet-groomer" },
+      { name: "Poultry Farmer Finder", slug: "poultry-farmer" },
+      { name: "Fish Farmer Finder", slug: "fish-farmer" },
+    ],
+  },
+
+  // 10. Real Estate & Construction
+  {
+    slug: "property-finders",
+    name: "Property Finders",
+    parentCategory: "Real Estate & Construction",
+    parentCategorySlug: "real-estate-construction",
+    description: "Real estate agency, facility management, land surveying, and quantity surveying.",
+    services: [
+      { name: "Estate Agent Finder", slug: "estate-agent" },
+      { name: "Facility Manager Finder", slug: "facility-manager" },
+      { name: "Land Surveyor Finder", slug: "surveyor" },
+      { name: "Quantity Surveyor Finder", slug: "quantity-surveyor" },
+    ],
+  },
+  {
+    slug: "building-finders",
+    name: "Building Finders",
+    parentCategory: "Real Estate & Construction",
+    parentCategorySlug: "real-estate-construction",
+    description: "Architectural design, bricklaying, aluminum & glass fabrication, and POP ceiling installation.",
+    services: [
+      { name: "Architect Finder", slug: "architect" },
+      { name: "Bricklayer Finder", slug: "bricklayer" },
+      { name: "Aluminum & Glass Fitter Finder", slug: "aluminum-fitter" },
+      { name: "POP Ceiling Installer Finder", slug: "pop-installer" },
+    ],
+  },
+];
+
+export function getSubcategoryGroupBySlug(slug: string): SubcategoryGroup | undefined {
+  return SUBCATEGORY_GROUPS.find((g) => g.slug === slug);
+}
+
+export function getSubcategoryGroupsByParent(parentSlug: string): SubcategoryGroup[] {
+  return SUBCATEGORY_GROUPS.filter(
+    (g) => g.parentCategorySlug === parentSlug || g.parentCategorySlug === SPECIALTY_TO_NICHE_MAP[parentSlug]
+  );
+}
+
 export function getNicheData(slug: string): NicheData {
   const targetKey = SPECIALTY_TO_NICHE_MAP[slug] || slug;
   return NICHE_DETAILS[targetKey] || NICHE_DETAILS["home-services"];
@@ -559,7 +924,8 @@ export function getAllNicheSlugs(): string[] {
   return Array.from(new Set([
     ...Object.keys(NICHE_DETAILS),
     ...shortSlugs,
-    ...Object.keys(SPECIALTY_TO_NICHE_MAP)
+    ...Object.keys(SPECIALTY_TO_NICHE_MAP),
+    ...SUBCATEGORY_GROUPS.map((g) => g.slug)
   ]));
 }
 

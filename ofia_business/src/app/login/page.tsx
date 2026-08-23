@@ -37,13 +37,89 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
 
-  // Quick Seeded ERP Personas fast-switchers
+  // 9 Seeded EduSuite ERP Role Personas for instant 1-click test fill
   const testPersonas = [
-    { label: "Tenant Admin", email: "admin@edusuite.ng", pass: "password123", role: "TENANT_ADMIN", route: "/erp/admin" },
-    { label: "Accountant", email: "accountant@edusuite.ng", pass: "password123", role: "ACCOUNTANT", route: "/erp/accountant" },
-    { label: "HR Lead", email: "hr@edusuite.ng", pass: "password123", role: "HR_DIRECTOR", route: "/erp/hr" },
-    { label: "Managing Director", email: "md@edusuite.ng", pass: "password123", role: "MANAGING_DIRECTOR", route: "/erp/md" },
-    { label: "Field Tech / POS", email: "tech@edusuite.ng", pass: "password123", role: "FIELD_TECH", route: "/erp/employee" },
+    {
+      label: "Tenant Admin",
+      email: "admin@edusuite.ng",
+      pass: "password123",
+      roleKey: "admin",
+      badge: "Super Admin",
+      color: "#1A56DB",
+      route: "/erp/admin",
+    },
+    {
+      label: "Managing Director (MD)",
+      email: "md@edusuite.ng",
+      pass: "password123",
+      roleKey: "md",
+      badge: "Executive",
+      color: "#7E3AF2",
+      route: "/erp/md",
+    },
+    {
+      label: "Human Resources (HR)",
+      email: "hr@edusuite.ng",
+      pass: "password123",
+      roleKey: "hr",
+      badge: "People & Culture",
+      color: "#E02424",
+      route: "/erp/hr",
+    },
+    {
+      label: "Chief Accountant",
+      email: "accountant@edusuite.ng",
+      pass: "password123",
+      roleKey: "accountant",
+      badge: "Finance",
+      color: "#0E9F6E",
+      route: "/erp/accountant",
+    },
+    {
+      label: "Line Manager",
+      email: "manager@edusuite.ng",
+      pass: "password123",
+      roleKey: "manager",
+      badge: "Supervisor",
+      color: "#D97706",
+      route: "/erp/manager",
+    },
+    {
+      label: "General Employee",
+      email: "employee@edusuite.ng",
+      pass: "password123",
+      roleKey: "employee",
+      badge: "Staff",
+      color: "#4B5563",
+      route: "/erp/employee",
+    },
+    {
+      label: "POS Cashier",
+      email: "cashier@edusuite.ng",
+      pass: "password123",
+      roleKey: "cashier",
+      badge: "Retail & POS",
+      color: "#0694A2",
+      route: "/erp/admin/pos",
+    },
+    {
+      label: "Warehouse Officer",
+      email: "inventory@edusuite.ng",
+      pass: "password123",
+      roleKey: "inventory_officer",
+      badge: "Supply Chain",
+      color: "#F59E0B",
+      route: "/erp/admin/inventory",
+    },
+    {
+      label: "Fleet Dispatcher",
+      email: "dispatch@edusuite.ng",
+      pass: "password123",
+      roleKey: "dispatcher",
+      badge: "Fulfillment",
+      color: "#3B82F6",
+      route: "/erp/admin/logistics",
+    },
   ];
 
   const [currentTenant, setCurrentTenant] = useState<string>("");
@@ -70,16 +146,31 @@ export default function LoginPage() {
     setIsLoading(true);
     setError("");
 
+    const matchingPersona = testPersonas.find((p) => p.email === email);
+    const resolvedRole = matchingPersona ? matchingPersona.roleKey : email.includes("md") ? "md" : email.includes("hr") ? "hr" : email.includes("accountant") ? "accountant" : email.includes("manager") ? "manager" : email.includes("cashier") ? "cashier" : email.includes("inventory") ? "inventory_officer" : email.includes("dispatch") ? "dispatcher" : email.includes("employee") ? "employee" : "admin";
+
     try {
       const res = await AUTH_API.login({ email, password });
-      if (res && res.token) {
-        if (typeof window !== "undefined") {
+      if (typeof window !== "undefined") {
+        if (res && res.token) {
           localStorage.setItem("nexa_auth_token", res.token);
-          localStorage.setItem("nexa_user_email", res.user?.email || email);
-          localStorage.setItem("nexa_user_role", res.user?.role || "TENANT_ADMIN");
-          localStorage.setItem("nexa_user_name", res.user?.name || "ERP Operator");
-          localStorage.setItem("nexa_org_id", res.org_id || "org-01");
+        } else {
+          localStorage.setItem("nexa_auth_token", "mock-erp-jwt-token-2026");
         }
+        localStorage.setItem("nexa_user_email", email);
+        localStorage.setItem("nexa_user_role", resolvedRole);
+        localStorage.setItem("nexa_user_name", matchingPersona?.label || "EduSuite Staff");
+        localStorage.setItem("nexa_org_id", "edusuite");
+        localStorage.setItem("nexa_org_name", "EduSuite");
+        localStorage.setItem(
+          "erp_current_user",
+          JSON.stringify({
+            email,
+            role: resolvedRole,
+            name: matchingPersona?.label || "EduSuite Staff",
+            tenant: "EduSuite",
+          })
+        );
       }
       navigateUser(email);
     } catch (err: any) {
@@ -87,10 +178,19 @@ export default function LoginPage() {
       if (typeof window !== "undefined") {
         localStorage.setItem("nexa_auth_token", "mock-erp-jwt-token-2026");
         localStorage.setItem("nexa_user_email", email);
-        const persona = testPersonas.find((p) => p.email === email);
-        if (persona) {
-          localStorage.setItem("nexa_user_role", persona.role);
-        }
+        localStorage.setItem("nexa_user_role", resolvedRole);
+        localStorage.setItem("nexa_user_name", matchingPersona?.label || "EduSuite Staff");
+        localStorage.setItem("nexa_org_id", "edusuite");
+        localStorage.setItem("nexa_org_name", "EduSuite");
+        localStorage.setItem(
+          "erp_current_user",
+          JSON.stringify({
+            email,
+            role: resolvedRole,
+            name: matchingPersona?.label || "EduSuite Staff",
+            tenant: "EduSuite",
+          })
+        );
       }
       navigateUser(email);
     } finally {
@@ -106,7 +206,15 @@ export default function LoginPage() {
       route = "/erp/hr";
     } else if (userEmail.includes("md")) {
       route = "/erp/md";
-    } else if (userEmail.includes("tech")) {
+    } else if (userEmail.includes("manager")) {
+      route = "/erp/manager";
+    } else if (userEmail.includes("cashier")) {
+      route = "/erp/admin/pos";
+    } else if (userEmail.includes("inventory")) {
+      route = "/erp/admin/inventory";
+    } else if (userEmail.includes("dispatch")) {
+      route = "/erp/admin/logistics";
+    } else if (userEmail.includes("employee") || userEmail.includes("tech")) {
       route = "/erp/employee";
     }
 
@@ -184,30 +292,51 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* Quick Test Persona Switcher */}
+            {/* Quick Test Persona Switcher (EduSuite 9 Roles) */}
             <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-2.5">
               <div className="flex items-center justify-between text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider px-1">
-                <span>1-Click ERP Role Personas</span>
+                <span className="flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-[#1A56DB]" />
+                  <span>EduSuite 1-Click Role Quick Fill</span>
+                </span>
                 <span className="text-[#0E9F6E] font-extrabold flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#0E9F6E] animate-pulse" />
-                  Quick Fill
+                  9 Test Accounts
                 </span>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {testPersonas.map((p) => (
-                  <button
-                    key={p.email}
-                    type="button"
-                    onClick={() => selectPersona(p.email, p.pass)}
-                    className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border transition-all cursor-pointer shadow-sm ${
-                      email === p.email
-                        ? "bg-[#1A56DB] text-white border-[#1A56DB] shadow-[#1A56DB]/30"
-                        : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)] hover:border-[#1A56DB] hover:text-[#1A56DB]"
-                    }`}
-                  >
-                    {p.label}
-                  </button>
-                ))}
+              <div className="grid grid-cols-3 gap-1.5">
+                {testPersonas.map((p) => {
+                  const isSelected = email === p.email;
+                  return (
+                    <button
+                      key={p.email}
+                      type="button"
+                      onClick={() => selectPersona(p.email, p.pass)}
+                      className={`px-2.5 py-2 rounded-xl text-left border transition-all cursor-pointer shadow-xs flex flex-col justify-between ${
+                        isSelected
+                          ? "bg-[#1A56DB]/10 text-[#1A56DB] border-[#1A56DB] ring-2 ring-[#1A56DB]/20 font-bold"
+                          : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)] hover:border-[#1A56DB]/40 hover:text-[var(--nexa-text-primary)] font-semibold"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full mb-0.5">
+                        <span
+                          className="text-[8px] font-black uppercase px-1.5 py-0.2 rounded-full border"
+                          style={{
+                            backgroundColor: `${p.color}15`,
+                            color: p.color,
+                            borderColor: `${p.color}30`,
+                          }}
+                        >
+                          {p.badge}
+                        </span>
+                        {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-[#1A56DB]" />}
+                      </div>
+                      <span className="text-[10px] truncate block leading-tight">
+                        {p.label}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 

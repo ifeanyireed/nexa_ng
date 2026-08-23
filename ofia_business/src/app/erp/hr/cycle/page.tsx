@@ -1,8 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useERPStore, ReviewCycle, DEPARTMENTS } from "@/lib/erp-store";
-import ERPLayout from "@/components/nets_erp/Layout";
+import { BusinessShell } from "@/components/business/BusinessShell";
+import { NexaCard } from "@/components/nexa/NexaCard";
+import { NexaBadge } from "@/components/nexa/NexaBadge";
+import { NexaButton } from "@/components/nexa/NexaButton";
+import { NexaInput } from "@/components/nexa/NexaInput";
+import { Calendar, Plus, CheckCircle2, Clock, AlertCircle, ArrowLeft } from "lucide-react";
 
 export default function ReviewCycleManagement() {
   const { cycles, addReviewCycle, updateCycles } = useERPStore();
@@ -60,7 +66,6 @@ export default function ReviewCycleManagement() {
       if (c.id === cycleId) {
         return { ...c, status: newStatus };
       }
-      // If we activate a cycle, deactivate others
       if (newStatus === "Active" && c.status === "Active") {
         return { ...c, status: "Completed" as const };
       }
@@ -70,131 +75,151 @@ export default function ReviewCycleManagement() {
   };
 
   return (
-    <ERPLayout>
-      <div className="flex flex-col gap-6">
-        
-        {/* Header Title */}
-        <div>
-          <h2 className="text-[20px] font-black text-slate-800 tracking-tight">Review Cycle Management</h2>
-          <p className="text-xs text-slate-450 font-semibold mt-1">Configure performance timelines and objectives parameters</p>
-        </div>
-
-        {/* Two-column layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+    <BusinessShell
+      title="Appraisal Cycle Management"
+      subtitle="Configure enterprise performance appraisal cycles, evaluation timelines, and target department scopes."
+      action={
+        <Link href="/erp/hr">
+          <NexaButton size="sm" variant="outline" className="rounded-full" leftIcon={<ArrowLeft className="w-3.5 h-3.5" />}>
+            Back to HR Overview
+          </NexaButton>
+        </Link>
+      }
+    >
+      <div className="space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
           {/* Active Cycles List (7cols) */}
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 lg:col-span-7 flex flex-col gap-4">
-            <h3 className="font-bold text-slate-850 text-sm pb-2 border-b border-gray-100">Review Cycles</h3>
+          <NexaCard variant="glass" padding="lg" className="lg:col-span-7 space-y-4 rounded-3xl">
+            <h3 className="font-extrabold text-[var(--nexa-text-primary)] text-sm pb-2 border-b border-[var(--nexa-border)]">
+              Configured Review Cycles
+            </h3>
             
             <div className="space-y-4">
               {cycles.map((c) => (
-                <div key={c.id} className="p-4 bg-gray-50 rounded-2xl flex flex-col gap-3 border border-gray-100">
+                <div key={c.id} className="p-4 bg-[var(--nexa-bg-base)] rounded-2xl flex flex-col gap-3 border border-[var(--nexa-border)]">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h4 className="font-bold text-slate-800 text-xs">{c.name}</h4>
-                      <span className="text-[10px] text-slate-400 font-bold block mt-0.5">ID: {c.id} • period: {c.startDate} to {c.endDate}</span>
+                      <h4 className="font-bold text-xs text-[var(--nexa-text-primary)]">{c.name}</h4>
+                      <span className="text-[10px] text-[var(--nexa-text-muted)] font-mono block mt-0.5">
+                        ID: {c.id} • Period: {c.startDate} to {c.endDate}
+                      </span>
                     </div>
 
                     <div className="flex items-center gap-2">
                       {c.status === "Active" ? (
-                        <span className="bg-blue-50 text-blue-800 font-black px-2.5 py-0.5 rounded text-[10px] uppercase">Active</span>
+                        <NexaBadge variant="green" size="sm" className="rounded-full">Active</NexaBadge>
                       ) : c.status === "Completed" ? (
-                        <span className="bg-gray-150 text-gray-550 font-black px-2.5 py-0.5 rounded text-[10px] uppercase">Completed</span>
+                        <NexaBadge variant="neutral" size="sm" className="rounded-full">Completed</NexaBadge>
                       ) : (
-                        <span className="bg-amber-50 text-amber-750 font-black px-2.5 py-0.5 rounded text-[10px] uppercase">Draft</span>
+                        <NexaBadge variant="brand" size="sm" className="rounded-full">Draft</NexaBadge>
                       )}
                     </div>
                   </div>
 
                   <div className="flex flex-wrap gap-1">
                     {c.departments.map(d => (
-                      <span key={d} className="bg-white border border-gray-200 text-[10px] font-bold text-slate-500 px-2 py-0.5 rounded-md">
+                      <span key={d} className="bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[10px] font-bold text-[var(--nexa-text-secondary)] px-2 py-0.5 rounded-full">
                         {d}
                       </span>
                     ))}
                   </div>
 
-                  <div className="flex gap-2 items-center justify-end pt-2 border-t border-gray-150/50">
+                  <div className="flex gap-2 items-center justify-end pt-2 border-t border-[var(--nexa-border)]">
                     {c.status === "Draft" && (
-                      <button
+                      <NexaButton
+                        size="sm"
+                        variant="primary"
                         onClick={() => handleUpdateStatus(c.id, "Active")}
-                        className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg text-[10px] transition-all"
+                        className="rounded-full bg-[#1A56DB] text-xs h-7"
                       >
                         Publish Cycle
-                      </button>
+                      </NexaButton>
                     )}
                     {c.status === "Active" && (
-                      <button
+                      <NexaButton
+                        size="sm"
+                        variant="outline"
                         onClick={() => handleUpdateStatus(c.id, "Completed")}
-                        className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg text-[10px] transition-all"
+                        className="rounded-full text-xs h-7"
                       >
                         Complete Cycle
-                      </button>
+                      </NexaButton>
                     )}
                   </div>
                 </div>
               ))}
             </div>
-          </div>
+          </NexaCard>
 
           {/* Create Cycle Form (5cols) */}
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 lg:col-span-5">
-            <h3 className="font-bold text-slate-850 text-sm pb-2 border-b border-gray-100 mb-4">Create Review Cycle</h3>
+          <NexaCard variant="glass" padding="lg" className="lg:col-span-5 rounded-3xl">
+            <h3 className="font-extrabold text-[var(--nexa-text-primary)] text-sm pb-2 border-b border-[var(--nexa-border)] mb-4">
+              Create New Review Cycle
+            </h3>
             
             <form onSubmit={handleCreate} className="space-y-4">
               <div>
-                <label className="block text-[10px] font-extrabold text-slate-450 uppercase mb-1.5 tracking-wider">Cycle Name</label>
+                <label className="block text-[10px] font-extrabold text-[var(--nexa-text-muted)] uppercase mb-1.5 tracking-wider">
+                  Cycle Name
+                </label>
                 <input
                   type="text"
-                  placeholder="e.g. 2026 Annual Performance Cycle"
+                  placeholder="e.g. 2026 Annual Performance Review"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs font-semibold"
+                  className="w-full px-3 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-semibold text-[var(--nexa-text-primary)] outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] font-extrabold text-slate-450 uppercase mb-1.5 tracking-wider">Start Date</label>
+                  <label className="block text-[10px] font-extrabold text-[var(--nexa-text-muted)] uppercase mb-1.5 tracking-wider">
+                    Start Date
+                  </label>
                   <input
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs font-semibold"
+                    className="w-full px-3 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-semibold text-[var(--nexa-text-primary)] outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-extrabold text-slate-455 uppercase mb-1.5 tracking-wider">End Date</label>
+                  <label className="block text-[10px] font-extrabold text-[var(--nexa-text-muted)] uppercase mb-1.5 tracking-wider">
+                    End Date
+                  </label>
                   <input
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs font-semibold"
+                    className="w-full px-3 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-semibold text-[var(--nexa-text-primary)] outline-none"
                   />
                 </div>
               </div>
 
               <div>
                 <div className="flex justify-between items-center mb-1.5">
-                  <label className="block text-[10px] font-extrabold text-slate-450 uppercase tracking-wider">Target Departments</label>
+                  <label className="block text-[10px] font-extrabold text-[var(--nexa-text-muted)] uppercase tracking-wider">
+                    Target Departments
+                  </label>
                   <button
                     type="button"
                     onClick={handleSelectAll}
-                    className="text-[10px] font-extrabold text-blue-600 hover:text-blue-700 uppercase cursor-pointer"
+                    className="text-[10px] font-extrabold text-[#1A56DB] hover:underline uppercase cursor-pointer"
                   >
                     {selectedDepts.length === depts.length ? "Deselect All" : "Select All"}
                   </button>
                 </div>
-                <div className="grid grid-cols-2 gap-2 mt-1 max-h-48 overflow-y-auto p-2 border border-gray-150 rounded-xl">
+                <div className="grid grid-cols-2 gap-2 mt-1 max-h-48 overflow-y-auto p-2 border border-[var(--nexa-border)] rounded-xl bg-[var(--nexa-bg-base)]">
                   {depts.map(d => (
                     <button
                       key={d}
                       type="button"
                       onClick={() => handleToggleDept(d)}
-                      className={`px-2.5 py-1.5 rounded-lg border text-left text-[9.5px] font-bold transition-all cursor-pointer ${
+                      className={`px-2.5 py-1.5 rounded-lg border text-left text-[10px] font-bold transition-all cursor-pointer ${
                         selectedDepts.includes(d)
-                          ? "bg-blue-50 border-blue-200 text-blue-700"
-                          : "bg-white border-gray-200 text-slate-550 hover:bg-slate-50"
+                          ? "bg-[#1A56DB]/10 border-[#1A56DB] text-[#1A56DB]"
+                          : "bg-[var(--nexa-bg-surface)] border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] hover:bg-[var(--nexa-bg-base)]"
                       }`}
                     >
                       {d}
@@ -204,43 +229,46 @@ export default function ReviewCycleManagement() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-extrabold text-slate-450 uppercase mb-1.5 tracking-wider">Initial Publish State</label>
+                <label className="block text-[10px] font-extrabold text-[var(--nexa-text-muted)] uppercase mb-1.5 tracking-wider">
+                  Initial Publish State
+                </label>
                 <div className="flex gap-4">
-                  <label className="flex items-center gap-2 text-xs text-slate-600 font-semibold cursor-pointer">
+                  <label className="flex items-center gap-2 text-xs text-[var(--nexa-text-secondary)] font-semibold cursor-pointer">
                     <input
                       type="radio"
                       name="status"
                       checked={cycleStatus === "Draft"}
                       onChange={() => setCycleStatus("Draft")}
-                      className="text-blue-600 focus:ring-blue-500"
+                      className="text-[#1A56DB]"
                     />
                     Save as Draft
                   </label>
-                  <label className="flex items-center gap-2 text-xs text-slate-600 font-semibold cursor-pointer">
+                  <label className="flex items-center gap-2 text-xs text-[var(--nexa-text-secondary)] font-semibold cursor-pointer">
                     <input
                       type="radio"
                       name="status"
                       checked={cycleStatus === "Active"}
                       onChange={() => setCycleStatus("Active")}
-                      className="text-blue-600 focus:ring-blue-500"
+                      className="text-[#1A56DB]"
                     />
                     Active (Publish)
                   </label>
                 </div>
               </div>
 
-              <button
+              <NexaButton
                 type="submit"
-                className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-md transition-all mt-2"
+                size="md"
+                variant="primary"
+                className="w-full rounded-full bg-[#1A56DB] text-white"
               >
                 Create Cycle
-              </button>
+              </NexaButton>
             </form>
-          </div>
+          </NexaCard>
 
         </div>
-
       </div>
-    </ERPLayout>
+    </BusinessShell>
   );
 }

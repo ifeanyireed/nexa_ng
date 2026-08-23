@@ -35,29 +35,26 @@ interface LocationContextType {
 const LocationContext = createContext<LocationContextType | undefined>(undefined);
 
 export function LocationProvider({ children }: { children: React.ReactNode }) {
-  const [currentCity, setCurrentCityState] = useState<City>({ name: "Detecting Location...", slug: "" });
-  const [currentArea, setCurrentAreaState] = useState<string>("");
+  const [currentCity, setCurrentCityState] = useState<City>(CITIES[0]);
+  const [currentArea, setCurrentAreaState] = useState<string>("Lekki");
   const [userCoords, setUserCoordsState] = useState<[number, number] | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Define reusable auto-detect function
   const autoDetectLocation = useCallback(async () => {
-    setIsLoading(true);
-    if (typeof window === "undefined") {
-      setIsLoading(false);
-      return;
-    }
+    if (typeof window === "undefined") return;
 
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         async (position) => {
-          const { latitude, longitude } = position.coords;
-          setUserCoordsState([latitude, longitude]);
-          localStorage.setItem("nexa_user_coords", JSON.stringify([latitude, longitude]));
-
           try {
+            const { latitude, longitude } = position.coords;
+            setUserCoordsState([latitude, longitude]);
+            localStorage.setItem("nexa_user_coords", JSON.stringify([latitude, longitude]));
+
             const res = await fetch(
-              `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=en`
+              `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=en`,
+              { signal: AbortSignal.timeout(4000) }
             );
             if (res.ok) {
               const data = await res.json();
@@ -82,22 +79,19 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
                 };
 
                 setCurrentCityState(finalCity);
-                setCurrentAreaState(lgaName);
+                setCurrentAreaState(lgaName || finalCity.areas?.[0] || "");
                 localStorage.setItem("nexa_location", JSON.stringify(finalCity));
-                localStorage.setItem("nexa_area", lgaName);
+                localStorage.setItem("nexa_area", lgaName || finalCity.areas?.[0] || "");
               }
             }
           } catch (err) {
-            console.error("Reverse geocoding failed on provider detection:", err);
-          } finally {
-            setIsLoading(false);
+            // Silently fallback without crashing
           }
         },
-        async (error) => {
-          console.warn("GPS auto-detection failed/denied, attempting IP fallback...", error);
-          
+        async () => {
+          // GPS unavailable/denied - try fast IP fallback
           try {
-            const res = await fetch("https://ipapi.co/json/");
+            const res = await fetch("https://ipapi.co/json/", { signal: AbortSignal.timeout(3000) });
             if (res.ok) {
               const ipData = await res.json();
               if (ipData.latitude && ipData.longitude) {
@@ -126,27 +120,18 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
                   };
 
                   setCurrentCityState(finalCity);
-                  setCurrentAreaState(lgaName);
+                  setCurrentAreaState(lgaName || finalCity.areas?.[0] || "");
                   localStorage.setItem("nexa_location", JSON.stringify(finalCity));
-                  localStorage.setItem("nexa_area", lgaName);
+                  localStorage.setItem("nexa_area", lgaName || finalCity.areas?.[0] || "");
                 }
               }
             }
-          } catch (ipErr) {
-            console.error("IP fallback failed:", ipErr);
-          } finally {
-            // If everything fails and we don't have saved coords, don't set hardcoded fallbacks
-            if (!localStorage.getItem("nexa_user_coords")) {
-              setCurrentCityState({ name: "Location Not Detected", slug: "" });
-              setCurrentAreaState("");
-              setUserCoordsState(null);
-            }
-            setIsLoading(false);
+          } catch {
+            // Silently retain default Lagos
           }
-        }
+        },
+        { timeout: 5000, enableHighAccuracy: false }
       );
-    } else {
-      setIsLoading(false);
     }
   }, []);
 
@@ -160,7 +145,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     if (savedCity) {
       try {
         setCurrentCityState(JSON.parse(savedCity));
-      } catch (e) {}
+      } catch {}
     }
     if (savedArea) {
       setCurrentAreaState(savedArea);
@@ -168,7 +153,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     if (savedCoords) {
       try {
         setUserCoordsState(JSON.parse(savedCoords));
-      } catch (e) {}
+      } catch {}
     }
 
     // 2. Dynamic auto-detect
@@ -218,7 +203,7 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
 const defaultLocationContext: LocationContextType = {
   currentCity: CITIES[0],
   setCurrentCity: () => {},
-  currentArea: "All Lagos",
+  currentArea: "Lekki",
   setCurrentArea: () => {},
   userCoords: null,
   setUserCoords: () => {},

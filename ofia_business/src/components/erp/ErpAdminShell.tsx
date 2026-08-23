@@ -248,6 +248,7 @@ export function ErpAdminShell({
 
     if (pathname.startsWith("/erp/hr")) {
       return [
+        { label: "Appraisal Overview", href: "/erp/hr", icon: <Activity className="w-3.5 h-3.5" /> },
         { label: "Staff Directory", href: "/erp/hr/users", icon: <Users className="w-3.5 h-3.5" /> },
         { label: "Objective Banks", href: "/erp/hr/objectives", icon: <Target className="w-3.5 h-3.5" /> },
         { label: "Appraisal Cycles", href: "/erp/hr/cycle", icon: <Calendar className="w-3.5 h-3.5" /> },

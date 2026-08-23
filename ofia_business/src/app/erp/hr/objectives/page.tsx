@@ -1,8 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { useERPStore, Objective, DEPARTMENTS } from "@/lib/erp-store";
-import ERPLayout from "@/components/nets_erp/Layout";
+import { BusinessShell } from "@/components/business/BusinessShell";
+import { NexaCard } from "@/components/nexa/NexaCard";
+import { NexaBadge } from "@/components/nexa/NexaBadge";
+import { NexaButton } from "@/components/nexa/NexaButton";
+import { ArrowLeft } from "lucide-react";
 
 export default function ObjectiveManagement() {
   const { objectives, updateObjectives } = useERPStore();
@@ -233,14 +238,18 @@ export default function ObjectiveManagement() {
       }, 0);
 
   return (
-    <ERPLayout>
-      <div className="flex flex-col gap-6">
-        
-        {/* Header */}
-        <div>
-          <h2 className="text-[20px] font-black text-slate-800 tracking-tight">Objective Management</h2>
-          <p className="text-xs text-slate-450 font-semibold mt-1">Configure KPI parameters and department objectives weights</p>
-        </div>
+    <BusinessShell
+      title="KPI & Objective Rubric Library"
+      subtitle="Configure departmental performance competencies, OKR categories, and weighted grading metrics."
+      action={
+        <Link href="/erp/hr">
+          <NexaButton size="sm" variant="outline" className="rounded-full" leftIcon={<ArrowLeft className="w-3.5 h-3.5" />}>
+            Back to HR Overview
+          </NexaButton>
+        </Link>
+      }
+    >
+      <div className="space-y-6">
 
         {/* Audit weight warning indicator */}
         <div className="p-4 rounded-2xl border flex justify-between items-center text-xs font-bold bg-emerald-50 border-emerald-100 text-emerald-800">
@@ -741,6 +750,6 @@ export default function ObjectiveManagement() {
           </div>
         </div>
       )}
-    </ERPLayout>
+    </BusinessShell>
   );
 }

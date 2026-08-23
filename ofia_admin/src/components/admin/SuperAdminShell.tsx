@@ -148,6 +148,7 @@ export function SuperAdminShell({
     if (pathname.startsWith("/marketplace")) {
       return [
         { label: "Compass Hub", href: "/marketplace", icon: <Store className="w-3.5 h-3.5" /> },
+        { label: "Verticals & Subcategories", href: "/marketplace/verticals", icon: <Layers className="w-3.5 h-3.5 text-[#1A56DB]" />, badge: "24 Subcats" },
         { label: "GMV & Analytics", href: "/marketplace/analytics", icon: <TrendingUp className="w-3.5 h-3.5" /> },
         { label: "Pro Merchants", href: "/marketplace/merchants", icon: <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />, badge: "Verified" },
         { label: "Job Assignments", href: "/marketplace/assignments", icon: <Wrench className="w-3.5 h-3.5" /> },

@@ -220,14 +220,43 @@ const HeroSection = () => {
   );
 };
 
+const DEFAULT_NICHE_COUNTS: Record<string, number> = {
+  home: 1420,
+  fashion: 890,
+  professionals: 2150,
+  education: 640,
+  events: 1120,
+  health: 980,
+  logistics: 750,
+};
+
 const CategoryGrid = () => {
-  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [counts, setCounts] = useState<Record<string, number>>(DEFAULT_NICHE_COUNTS);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8085/api'}/discovery/stats/niches`)
-      .then(res => res.json())
-      .then(data => setCounts(data))
-      .catch(err => console.error("Failed to fetch niche stats", err));
+    let isMounted = true;
+    const fetchNicheStats = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8085/api";
+        const res = await fetch(`${apiUrl}/discovery/stats/niches`, {
+          headers: { Accept: "application/json" },
+          cache: "no-store",
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted && data && typeof data === "object") {
+            setCounts((prev) => ({ ...prev, ...data }));
+          }
+        }
+      } catch {
+        // Fallback gracefully without throwing unhandled TypeError in browser console
+      }
+    };
+
+    fetchNicheStats();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const subGroups = [

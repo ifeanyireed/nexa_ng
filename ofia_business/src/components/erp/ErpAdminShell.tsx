@@ -59,6 +59,12 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaAvatar } from "@/components/nexa/NexaAvatar";
 import { NexaThemeToggle } from "@/components/nexa/NexaThemeToggle";
 import { useAuth } from "@/components/nexa/AuthContext";
+import {
+  getTenantPermissionMatrix,
+  PermissionMatrix,
+  DEFAULT_PERMISSION_MATRIX,
+  RoleKey,
+} from "@/lib/access-control";
 
 export interface SubNavItem {
   label: string;
@@ -72,7 +78,7 @@ export interface ErpAdminShellProps {
   title?: string;
   subtitle?: string;
   action?: React.ReactNode;
-  activeModule?: "mission" | "ai" | "marketplace" | "inventory" | "pos" | "referrals" | "logistics" | "quests" | "finance" | "hr" | "md" | "employee";
+  activeModule?: "mission" | "ai" | "marketplace" | "inventory" | "pos" | "referrals" | "logistics" | "quests" | "finance" | "hr" | "md" | "employee" | "access_control";
   subTabs?: SubNavItem[];
 }
 
@@ -91,6 +97,8 @@ export function ErpAdminShell({
   const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [tenantName, setTenantName] = useState<string>("EduSuite");
+  const [permissionMatrix, setPermissionMatrix] = useState<PermissionMatrix>(DEFAULT_PERMISSION_MATRIX);
+  const [currentRole, setCurrentRole] = useState<RoleKey>("admin");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -103,22 +111,58 @@ export function ErpAdminShell({
       } else if (!isLocal && hostParts.length > 2) {
         sub = hostParts[0];
       }
+      let tName = "EduSuite";
       if (sub && sub !== "erp" && sub !== "admin" && sub !== "www" && sub !== "app") {
-        setTenantName(sub.charAt(0).toUpperCase() + sub.slice(1));
+        tName = sub.charAt(0).toUpperCase() + sub.slice(1);
       } else if (user?.email && user.email.includes("@")) {
         const domain = user.email.split("@")[1].split(".")[0];
         if (domain && domain !== "ofia" && domain !== "gmail" && domain !== "yahoo") {
-          setTenantName(domain.charAt(0).toUpperCase() + domain.slice(1));
+          tName = domain.charAt(0).toUpperCase() + domain.slice(1);
         }
       } else {
         const stored = localStorage.getItem("nexa_org_name") || localStorage.getItem("nexa_user_email");
         if (stored && stored.includes("@")) {
           const domain = stored.split("@")[1].split(".")[0];
-          setTenantName(domain.charAt(0).toUpperCase() + domain.slice(1));
+          tName = domain.charAt(0).toUpperCase() + domain.slice(1);
         }
       }
+      setTenantName(tName);
+      setPermissionMatrix(getTenantPermissionMatrix(tName));
+
+      // Resolve user role
+      const storedErpUser = localStorage.getItem("erp_current_user");
+      if (storedErpUser) {
+        try {
+          const parsed = JSON.parse(storedErpUser);
+          if (parsed && parsed.role) {
+            setCurrentRole(parsed.role as RoleKey);
+          }
+        } catch {}
+      } else if (pathname.startsWith("/erp/employee")) {
+        setCurrentRole("employee");
+      } else if (pathname.startsWith("/erp/manager")) {
+        setCurrentRole("manager");
+      } else if (pathname.startsWith("/erp/md")) {
+        setCurrentRole("md");
+      } else if (pathname.startsWith("/erp/hr")) {
+        setCurrentRole("hr");
+      } else if (pathname.startsWith("/erp/accountant")) {
+        setCurrentRole("accountant");
+      } else {
+        setCurrentRole("admin");
+      }
+
+      const handleRbacUpdate = (e: Event) => {
+        const customEvent = e as CustomEvent;
+        if (customEvent.detail && customEvent.detail.matrix) {
+          setPermissionMatrix(customEvent.detail.matrix);
+        }
+      };
+
+      window.addEventListener("ofia_rbac_updated", handleRbacUpdate);
+      return () => window.removeEventListener("ofia_rbac_updated", handleRbacUpdate);
     }
-  }, [user]);
+  }, [user, pathname]);
 
   const notifications = [
     { id: "1", title: "New AI Lead Qualified", message: "Adeyemi from Lagos verified interest in ERP Enterprise.", type: "AI", time: "2m ago", isRead: false },
@@ -141,6 +185,7 @@ export function ErpAdminShell({
   const navItems = [
     { label: "Mission Control", icon: <LayoutDashboard className="w-5 h-5" />, href: "/erp/admin", key: "mission" },
     { label: "Ofia AI", icon: <Bot className="w-5 h-5" />, href: "/erp/admin/ai", badge: "15 AI", key: "ai" },
+    { label: "Access Control", icon: <ShieldCheck className="w-5 h-5" />, href: "/erp/admin/access-control", badge: "RBAC", key: "access_control" },
     { label: "Marketplace Store", icon: <ShoppingBag className="w-5 h-5" />, href: "/erp/admin/marketplace", key: "marketplace" },
     { label: "Inventory (IMS)", icon: <Boxes className="w-5 h-5" />, href: "/erp/admin/inventory", badge: "Low", key: "inventory" },
     { label: "Point of Sale (POS)", icon: <ShoppingCart className="w-5 h-5" />, href: "/erp/admin/pos", key: "pos" },
@@ -152,7 +197,11 @@ export function ErpAdminShell({
 
   // Automatic sub navigation tabs according to current pathname
   const getSubTabs = (): SubNavItem[] => {
-    if (subTabs && subTabs.length > 0) return subTabs;
+    if (subTabs !== undefined) return subTabs;
+
+    if (pathname.startsWith("/erp/admin/access-control")) {
+      return [];
+    }
 
     if (pathname.startsWith("/erp/admin/ai")) {
       return [
@@ -338,7 +387,19 @@ export function ErpAdminShell({
         {/* NAV ITEMS */}
         <nav className="flex-1 px-4 space-y-1.5 mt-2 overflow-y-auto">
           {navItems
-            .filter((item) => item.label.toLowerCase().includes(searchQuery.toLowerCase()))
+            .filter((item) => {
+              const matchesSearch = item.label.toLowerCase().includes(searchQuery.toLowerCase());
+              // The role access tab should ALWAYS be on the side bar nav in the erp/admin ONLY
+              if (item.key === "access_control") {
+                const isAdminPortal = pathname.startsWith("/erp/admin");
+                return matchesSearch && isAdminPortal;
+              }
+              const isAllowed =
+                currentRole === "admin" ||
+                currentRole === "md" ||
+                Boolean(permissionMatrix[currentRole]?.[item.key]);
+              return matchesSearch && isAllowed;
+            })
             .map((item, i) => {
               const isActive =
                 pathname === item.href ||
@@ -535,7 +596,9 @@ export function ErpAdminShell({
               {activeSubTabs.map((tab, idx) => {
                 const isTabActive =
                   pathname === tab.href ||
-                  (tab.href !== "/erp/admin/ai" &&
+                  (tab.href !== "/erp/admin" &&
+                    tab.href !== "/erp/admin/access-control" &&
+                    tab.href !== "/erp/admin/ai" &&
                     tab.href !== "/erp/admin/inventory" &&
                     tab.href !== "/erp/admin/pos" &&
                     tab.href !== "/erp/admin/logistics" &&

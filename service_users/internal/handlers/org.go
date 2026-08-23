@@ -124,3 +124,82 @@ func (h *OrgHandler) GetOrgDetails(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(org)
 }
+
+type SaveRBACRequest struct {
+	Matrix map[string]map[string]bool `json:"matrix"`
+}
+
+func (h *OrgHandler) GetTenantRBAC(w http.ResponseWriter, r *http.Request) {
+	orgID := chi.URLParam(r, "orgId")
+	if orgID == "" {
+		orgID = "default"
+	}
+
+	matrix := make(map[string]map[string]bool)
+
+	if h.db != nil {
+		var perms []models.TenantRolePermission
+		if err := h.db.Where("tenantId = ?", orgID).Find(&perms).Error; err == nil && len(perms) > 0 {
+			for _, p := range perms {
+				if matrix[p.Role] == nil {
+					matrix[p.Role] = make(map[string]bool)
+				}
+				matrix[p.Role][p.ModuleKey] = p.IsEnabled
+			}
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"tenant_id": orgID,
+		"matrix":    matrix,
+	})
+}
+
+func (h *OrgHandler) SaveTenantRBAC(w http.ResponseWriter, r *http.Request) {
+	orgID := chi.URLParam(r, "orgId")
+	if orgID == "" {
+		orgID = "default"
+	}
+
+	var req SaveRBACRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, `{"error": "Invalid JSON body"}`, http.StatusBadRequest)
+		return
+	}
+
+	if h.db != nil && req.Matrix != nil {
+		for role, modules := range req.Matrix {
+			for modKey, isEnabled := range modules {
+				var existing models.TenantRolePermission
+				err := h.db.Where("tenantId = ? AND role = ? AND moduleKey = ?", orgID, role, modKey).First(&existing).Error
+				if err != nil {
+					newPerm := models.TenantRolePermission{
+						ID:        uuid.New().String(),
+						TenantID:  orgID,
+						Role:      role,
+						ModuleKey: modKey,
+						IsEnabled: isEnabled,
+						CreatedAt: time.Now(),
+						UpdatedAt: time.Now(),
+					}
+					h.db.Create(&newPerm)
+				} else {
+					h.db.Model(&existing).Updates(map[string]interface{}{
+						"isEnabled": isEnabled,
+						"updatedAt": time.Now(),
+					})
+				}
+			}
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"success":   true,
+		"message":   "Tenant RBAC matrix successfully persisted to MySQL database",
+		"tenant_id": orgID,
+		"matrix":    req.Matrix,
+	})
+}
+

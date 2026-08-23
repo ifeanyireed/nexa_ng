@@ -86,6 +86,20 @@ export const USER_API = {
       body: JSON.stringify(data),
     });
   },
+
+  getTenantRBAC: async (orgId = "default") => {
+    return fetchJSON<{ tenant_id: string; matrix: any }>(`${USER_BASE}/organizations/${orgId}/rbac`);
+  },
+
+  saveTenantRBAC: async (orgId = "default", matrix: any) => {
+    return fetchJSON<{ success: boolean; message: string; tenant_id: string; matrix: any }>(
+      `${USER_BASE}/organizations/${orgId}/rbac`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ matrix }),
+      }
+    );
+  },
 };
 
 // 3. AUTONOMOUS AI GTM SWARM SERVICE (:8082)

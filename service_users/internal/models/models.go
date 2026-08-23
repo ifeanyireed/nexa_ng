@@ -144,3 +144,37 @@ type Transaction struct {
 func (Transaction) TableName() string {
 	return "Transaction"
 }
+
+// TenantRolePermission defines module access toggles per role for a tenant
+type TenantRolePermission struct {
+	ID             string    `gorm:"primaryKey;size:191" json:"id"`
+	TenantID       string    `gorm:"column:tenantId;size:191;not null;uniqueIndex:tenant_role_module_uniq" json:"tenant_id"`
+	Role           string    `gorm:"size:50;not null;uniqueIndex:tenant_role_module_uniq" json:"role"`
+	ModuleKey      string    `gorm:"column:moduleKey;size:50;not null;uniqueIndex:tenant_role_module_uniq" json:"module_key"`
+	IsEnabled      bool      `gorm:"column:isEnabled;not null;default:true" json:"is_enabled"`
+	AllowedActions string    `gorm:"column:allowedActions;type:json" json:"allowed_actions,omitempty"`
+	CreatedAt      time.Time `gorm:"column:createdAt" json:"created_at"`
+	UpdatedAt      time.Time `gorm:"column:updatedAt" json:"updated_at"`
+}
+
+func (TenantRolePermission) TableName() string {
+	return "TenantRolePermission"
+}
+
+// TenantPermissionAuditLog records changes made to role permissions
+type TenantPermissionAuditLog struct {
+	ID            string    `gorm:"primaryKey;size:191" json:"id"`
+	TenantID      string    `gorm:"column:tenantId;size:191;not null;index:idx_audit_tenant" json:"tenant_id"`
+	ActorUserID   string    `gorm:"column:actorUserId;size:191;not null" json:"actor_user_id"`
+	TargetRole    string    `gorm:"column:targetRole;size:50;not null" json:"target_role"`
+	ModuleKey     string    `gorm:"column:moduleKey;size:50;not null" json:"module_key"`
+	PreviousState bool      `gorm:"column:previousState;not null" json:"previous_state"`
+	NewState      bool      `gorm:"column:newState;not null" json:"new_state"`
+	IPAddress     string    `gorm:"column:ipAddress;size:45" json:"ip_address,omitempty"`
+	CreatedAt     time.Time `gorm:"column:createdAt" json:"created_at"`
+}
+
+func (TenantPermissionAuditLog) TableName() string {
+	return "TenantPermissionAuditLog"
+}
+

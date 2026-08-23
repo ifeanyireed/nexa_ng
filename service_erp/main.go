@@ -94,6 +94,8 @@ func registerRoutes() {
 	registerRoute("/api/v1/erp/objectives", handlers.HandleObjectives)
 	registerRoute("/api/v1/erp/cycles", handlers.HandleCycles)
 	registerRoute("/api/v1/erp/reviews", handlers.HandleReviews)
+	registerRoute("/api/v1/erp/rbac", handlers.HandleRBAC)
+	registerRoute("/rbac", handlers.HandleRBAC)
 
 	// 3. Finance & General Ledger Endpoints
 	registerRoute("/stats", handlers.HandleStats)

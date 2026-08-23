@@ -41,6 +41,7 @@ export default function MasterMissionControlPage() {
     <SuperAdminShell
       title="Master Mission Control & Cross-App Governance"
       subtitle="Unified Super Admin command center orchestrating Ofia AI Autonomous Swarm, Ofia Discovery Marketplace, and Ofia Enterprise ERP."
+      subTabs={[]}
       action={
         <div className="flex items-center gap-2.5">
           <Link href="/ai/email">

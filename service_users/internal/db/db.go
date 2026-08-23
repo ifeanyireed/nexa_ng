@@ -10,6 +10,7 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	"nexa/user_subscription_service/internal/models"
 )
 
 var DB *gorm.DB
@@ -89,6 +90,12 @@ func InitDB() *gorm.DB {
 		sqlDB.SetMaxIdleConns(5)
 		sqlDB.SetConnMaxLifetime(10 * time.Minute)
 	}
+
+	// Auto-migrate tables including RBAC matrix
+	_ = DB.AutoMigrate(
+		&models.TenantRolePermission{},
+		&models.TenantPermissionAuditLog{},
+	)
 
 	log.Println("Database connection initialized successfully for service_users")
 	return DB

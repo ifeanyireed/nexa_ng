@@ -31,14 +31,19 @@ export default function ERPAdminOverviewPage() {
       subtitle="Corporate governance across Human Resources, Staff Roster, Departmental Structure, and Role-Based Access Control."
       action={
         <div className="flex items-center gap-2.5">
+          <Link href="/erp/tenants">
+            <NexaButton size="sm" variant="primary" leftIcon={<Building2 className="w-3.5 h-3.5" />} className="bg-[#1A56DB] text-white hover:bg-[#1545B0]">
+              Tenant & Module Control
+            </NexaButton>
+          </Link>
           <Link href="/erp/users">
             <NexaButton size="sm" variant="outline" leftIcon={<Lock className="w-3.5 h-3.5 text-[#9061F9]" />}>
               RBAC Governance
             </NexaButton>
           </Link>
           <Link href="/erp/departments">
-            <NexaButton size="sm" variant="primary" leftIcon={<Layers className="w-3.5 h-3.5" />} className="bg-[#9061F9] text-white hover:bg-[#7E3AF2]">
-              Department Structure
+            <NexaButton size="sm" variant="outline" leftIcon={<Layers className="w-3.5 h-3.5 text-[#0E9F6E]" />}>
+              Departments
             </NexaButton>
           </Link>
         </div>
@@ -47,6 +52,19 @@ export default function ERPAdminOverviewPage() {
       <div className="space-y-6">
         {/* TOP METRIC CARDS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#1A56DB]">
+            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
+              <span className="font-semibold">Tenant Workspaces</span>
+              <Building2 className="w-4 h-4 text-[#1A56DB]" />
+            </div>
+            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
+              5 Organizations
+            </div>
+            <div className="text-[11px] text-[#1A56DB] font-bold">
+              9 ERP Modules Configured
+            </div>
+          </NexaCard>
+
           <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#9061F9]">
             <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
               <span className="font-semibold">Active Corporate Staff</span>
@@ -73,19 +91,6 @@ export default function ERPAdminOverviewPage() {
             </div>
           </NexaCard>
 
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#1A56DB]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Departmental Cost Centers</span>
-              <Layers className="w-4 h-4 text-[#1A56DB]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              11 Centers
-            </div>
-            <div className="text-[11px] text-[var(--nexa-text-muted)] font-mono">
-              Finance, Fleet, IT, HR, Executive
-            </div>
-          </NexaCard>
-
           <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#F59E0B]">
             <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
               <span className="font-semibold">Audit Health & Permissions</span>
@@ -101,7 +106,22 @@ export default function ERPAdminOverviewPage() {
         </div>
 
         {/* QUICK LINK PANELS */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Link href="/erp/tenants" className="block group">
+            <NexaCard variant="glass" padding="md" className="space-y-2 border border-[var(--nexa-border)] group-hover:border-[#1A56DB] transition-all">
+              <div className="flex items-center justify-between">
+                <div className="p-2 rounded-xl bg-[#1A56DB]/10 text-[#1A56DB]">
+                  <Building2 className="w-5 h-5" />
+                </div>
+                <ArrowUpRight className="w-4 h-4 text-[var(--nexa-text-muted)] group-hover:text-[#1A56DB] transition-colors" />
+              </div>
+              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">Tenant & Module Control</h3>
+              <p className="text-xs text-[var(--nexa-text-muted)]">
+                Inspect tenant subscriptions, override quota limits, and toggle on/off ERP modules per organization.
+              </p>
+            </NexaCard>
+          </Link>
+
           <Link href="/erp/users" className="block group">
             <NexaCard variant="glass" padding="md" className="space-y-2 border border-[var(--nexa-border)] group-hover:border-[#9061F9] transition-all">
               <div className="flex items-center justify-between">
@@ -125,7 +145,7 @@ export default function ERPAdminOverviewPage() {
                 </div>
                 <ArrowUpRight className="w-4 h-4 text-[var(--nexa-text-muted)] group-hover:text-[#0E9F6E] transition-colors" />
               </div>
-              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">Departmental Hierarchy & Cost Centers</h3>
+              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">Department Hierarchy</h3>
               <p className="text-xs text-[var(--nexa-text-muted)]">
                 Configure corporate departments, assign departmental leads, and manage headcount budgets.
               </p>

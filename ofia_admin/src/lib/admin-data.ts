@@ -15,8 +15,31 @@ export interface TenantOrg {
   campaignsLimit: number;
   monthlyAiSpendUSD: number;
   integrationHealth: "Healthy" | "Degraded" | "Error";
+  erpModules?: Record<string, boolean>;
   createdAt: string;
 }
+
+export interface ErpModuleItem {
+  key: string;
+  label: string;
+  category: "Core" | "Sales & Commerce" | "Operations" | "People & Finance";
+  description: string;
+  iconName: string;
+  color: string;
+  badge?: string;
+}
+
+export const SUPER_ADMIN_ERP_MODULES: ErpModuleItem[] = [
+  { key: "mission", label: "Mission Control", category: "Core", description: "Centralized KPI telemetry, real-time widgets, and executive summary.", iconName: "LayoutDashboard", color: "#1A56DB" },
+  { key: "ai", label: "Ofia AI Swarm", category: "Core", description: "15 autonomous specialist AI agents for marketing, outreach, and operations.", iconName: "Bot", color: "#1A56DB", badge: "15 AI" },
+  { key: "marketplace", label: "Marketplace Store", category: "Sales & Commerce", description: "Public storefront, listing catalog, and customer direct bookings.", iconName: "ShoppingBag", color: "#0E9F6E" },
+  { key: "inventory", label: "Inventory (IMS)", category: "Operations", description: "Multi-warehouse depot tracking, barcode scans, SKU alerts, and transfers.", iconName: "Boxes", color: "#F59E0B", badge: "Low Alert" },
+  { key: "pos", label: "Point of Sale (POS)", category: "Sales & Commerce", description: "Cashier terminal, thermal receipts, shift balancing, and barcode checkout.", iconName: "ShoppingCart", color: "#10B981" },
+  { key: "logistics", label: "Logistics Hub", category: "Operations", description: "Dispatch desk, waybills, courier assignments, and fleet routing.", iconName: "Truck", color: "#6366F1" },
+  { key: "referrals", label: "Viral Referrals", category: "Sales & Commerce", description: "Affiliate tracking, commission payouts, and viral invite loops.", iconName: "Gift", color: "#EC4899" },
+  { key: "quests", label: "Retreat Quests", category: "People & Finance", description: "Gamified corporate milestones, rewards, and staff challenges.", iconName: "Trophy", color: "#F59E0B" },
+  { key: "hr", label: "HR & Appraisals", category: "People & Finance", description: "Employee roster, KPI appraisal cycles, reviews, and payroll logs.", iconName: "Users", color: "#9061F9" },
+];
 
 export interface AdminUser {
   id: string;
@@ -126,6 +149,17 @@ export const INITIAL_TENANTS: TenantOrg[] = [
     campaignsLimit: 10,
     monthlyAiSpendUSD: 142500,
     integrationHealth: "Healthy",
+    erpModules: {
+      mission: true,
+      ai: true,
+      marketplace: true,
+      inventory: true,
+      pos: true,
+      logistics: false,
+      referrals: true,
+      quests: true,
+      hr: true,
+    },
     createdAt: "2026-06-15",
   },
   {
@@ -145,6 +179,17 @@ export const INITIAL_TENANTS: TenantOrg[] = [
     campaignsLimit: 100,
     monthlyAiSpendUSD: 680000,
     integrationHealth: "Healthy",
+    erpModules: {
+      mission: true,
+      ai: true,
+      marketplace: true,
+      inventory: true,
+      pos: true,
+      logistics: true,
+      referrals: true,
+      quests: true,
+      hr: true,
+    },
     createdAt: "2026-05-10",
   },
   {
@@ -164,6 +209,17 @@ export const INITIAL_TENANTS: TenantOrg[] = [
     campaignsLimit: 3,
     monthlyAiSpendUSD: 45200,
     integrationHealth: "Healthy",
+    erpModules: {
+      mission: true,
+      ai: true,
+      marketplace: false,
+      inventory: true,
+      pos: false,
+      logistics: false,
+      referrals: false,
+      quests: false,
+      hr: true,
+    },
     createdAt: "2026-07-01",
   },
   {
@@ -183,6 +239,17 @@ export const INITIAL_TENANTS: TenantOrg[] = [
     campaignsLimit: 25,
     monthlyAiSpendUSD: 310800,
     integrationHealth: "Degraded",
+    erpModules: {
+      mission: true,
+      ai: true,
+      marketplace: true,
+      inventory: true,
+      pos: false,
+      logistics: true,
+      referrals: true,
+      quests: false,
+      hr: true,
+    },
     createdAt: "2026-04-20",
   },
   {
@@ -202,6 +269,17 @@ export const INITIAL_TENANTS: TenantOrg[] = [
     campaignsLimit: 1,
     monthlyAiSpendUSD: 8400,
     integrationHealth: "Healthy",
+    erpModules: {
+      mission: true,
+      ai: true,
+      marketplace: true,
+      inventory: false,
+      pos: false,
+      logistics: false,
+      referrals: true,
+      quests: false,
+      hr: false,
+    },
     createdAt: "2026-08-10",
   },
 ];

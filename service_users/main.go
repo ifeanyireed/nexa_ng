@@ -67,6 +67,10 @@ func main() {
 		// Paystack / Stripe Billing Webhooks
 		r.Post("/webhooks/paystack", subHandler.HandlePaystackWebhook)
 
+		// Tenant RBAC Access Control Matrix (Public & Workspace Direct)
+		r.Get("/organizations/{orgId}/rbac", orgHandler.GetTenantRBAC)
+		r.Put("/organizations/{orgId}/rbac", orgHandler.SaveTenantRBAC)
+
 		// Protected Workspace & User Routes
 		r.Group(func(r chi.Router) {
 			r.Use(middleware.AuthMiddleware)
@@ -78,6 +82,10 @@ func main() {
 				r.Get("/", orgHandler.ListUserOrgs)
 				r.Post("/", orgHandler.CreateOrg)
 				r.Get("/{orgId}", orgHandler.GetOrgDetails)
+
+				// Tenant RBAC & Access Control
+				r.Get("/{orgId}/rbac", orgHandler.GetTenantRBAC)
+				r.Put("/{orgId}/rbac", orgHandler.SaveTenantRBAC)
 
 				// Subscription & Limits
 				r.Get("/{orgId}/subscription", subHandler.GetSubscriptionDetails)

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaButton } from "@/components/nexa/NexaButton";
-import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import {
   Lock,
@@ -107,15 +106,15 @@ export default function LoginPage() {
           <img src="/logo.png" alt="Ofia ERP Logo" className="w-8 h-8 object-contain shrink-0" />
           <span className="font-extrabold text-base text-[var(--nexa-text-primary)] text-display flex items-center gap-2">
             Ofia ERP
-            <NexaBadge variant="brand" className="text-[10px] uppercase font-mono px-1.5 py-0">
+            <span className="text-[10px] font-bold uppercase font-mono px-2.5 py-0.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20">
               Suite
-            </NexaBadge>
+            </span>
           </span>
         </Link>
 
         <div className="flex items-center gap-2 text-xs">
           <span className="text-[var(--nexa-text-muted)]">Don't have an enterprise tenant?</span>
-          <Link href="/join/register" className="font-bold text-[#1A56DB] hover:underline">
+          <Link href="/join/register" className="font-bold text-[#1A56DB] hover:underline px-3 py-1 rounded-full hover:bg-[#1A56DB]/10 transition-colors">
             Setup Workspace →
           </Link>
         </div>
@@ -124,25 +123,28 @@ export default function LoginPage() {
       {/* Main Login Card */}
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-md space-y-6">
-          <NexaCard variant="glass" padding="lg" className="border-2 border-[#1A56DB]/20 shadow-2xl space-y-6">
-            <div className="text-center space-y-1">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] text-[11px] font-bold">
+          <NexaCard variant="glass" padding="lg" className="border-2 border-[#1A56DB]/20 shadow-2xl rounded-3xl space-y-6">
+            <div className="text-center space-y-2">
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] text-[11px] font-bold border border-[#1A56DB]/20 shadow-sm">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 Enterprise Operating Console
               </div>
-              <h1 className="text-2xl font-black text-display text-[var(--nexa-text-primary)]">
+              <h1 className="text-2xl font-black text-display text-[var(--nexa-text-primary)] tracking-tight">
                 Sign in to Ofia ERP
               </h1>
-              <p className="text-xs text-[var(--nexa-text-muted)]">
+              <p className="text-xs text-[var(--nexa-text-muted)] leading-relaxed">
                 Access Inventory, POS, Zonal Dispatch, General Ledger, HR Appraisals, and AI Agents.
               </p>
             </div>
 
             {/* Quick Test Persona Switcher */}
-            <div className="p-3 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-2">
-              <div className="flex items-center justify-between text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider">
+            <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-2.5">
+              <div className="flex items-center justify-between text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider px-1">
                 <span>1-Click ERP Role Personas</span>
-                <span className="text-[#0E9F6E]">Quick Fill</span>
+                <span className="text-[#0E9F6E] font-extrabold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#0E9F6E] animate-pulse" />
+                  Quick Fill
+                </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {testPersonas.map((p) => (
@@ -150,10 +152,10 @@ export default function LoginPage() {
                     key={p.email}
                     type="button"
                     onClick={() => selectPersona(p.email, p.pass)}
-                    className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border transition-all cursor-pointer shadow-sm ${
                       email === p.email
-                        ? "bg-[#1A56DB] text-white border-[#1A56DB]"
-                        : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)] hover:border-[#1A56DB]"
+                        ? "bg-[#1A56DB] text-white border-[#1A56DB] shadow-[#1A56DB]/30"
+                        : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)] hover:border-[#1A56DB] hover:text-[#1A56DB]"
                     }`}
                   >
                     {p.label}
@@ -163,24 +165,31 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-500 text-xs font-semibold">
+              <div className="p-3 rounded-full bg-red-500/10 border border-red-500/30 text-red-500 text-xs font-semibold text-center">
                 {error}
               </div>
             )}
 
             <form onSubmit={handleLogin} className="space-y-4">
-              <NexaInput
-                label="Enterprise Email"
-                type="email"
-                required
-                placeholder="admin@edusuite.ng"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                leftIcon={<Mail className="w-4 h-4 text-[var(--nexa-text-muted)]" />}
-              />
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-[var(--nexa-text-secondary)] px-1">
+                  Enterprise Email
+                </label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    required
+                    placeholder="admin@edusuite.ng"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full h-11 pl-10 pr-4 text-xs rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB] focus:ring-2 focus:ring-[#1A56DB]/20 transition-all"
+                  />
+                  <Mail className="w-4 h-4 text-[var(--nexa-text-muted)] absolute left-3.5 top-3.5" />
+                </div>
+              </div>
 
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between px-1">
                   <label className="text-xs font-semibold text-[var(--nexa-text-secondary)]">
                     Password
                   </label>
@@ -195,42 +204,48 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full h-11 pl-10 pr-10 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
+                    className="w-full h-11 pl-10 pr-10 text-xs rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB] focus:ring-2 focus:ring-[#1A56DB]/20 transition-all"
                   />
                   <Lock className="w-4 h-4 text-[var(--nexa-text-muted)] absolute left-3.5 top-3.5" />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-3.5 text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
+                    className="absolute right-3.5 top-3.5 text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] p-0.5 rounded-full"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-xs">
-                <label className="flex items-center gap-2 cursor-pointer">
+              <div className="flex items-center justify-between text-xs px-1">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className="rounded border-[var(--nexa-border)] accent-[#1A56DB]"
+                    className="rounded-full border-[var(--nexa-border)] accent-[#1A56DB]"
                   />
                   <span className="text-[var(--nexa-text-secondary)]">Remember this device</span>
                 </label>
-                <span className="text-[10px] text-[var(--nexa-text-muted)]">2FA Enforced</span>
+                <span className="text-[10px] text-[var(--nexa-text-muted)] font-medium px-2 py-0.5 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)]">
+                  2FA Enforced
+                </span>
               </div>
 
-              <NexaButton
-                size="lg"
+              <button
                 type="submit"
-                variant="primary"
-                isLoading={isLoading}
-                className="w-full font-extrabold text-sm shadow-md shadow-[#1A56DB]/20"
-                rightIcon={<ArrowRight className="w-4 h-4" />}
+                disabled={isLoading}
+                className="w-full h-12 rounded-full bg-[#1A56DB] hover:bg-[#1545B0] text-white font-extrabold text-sm shadow-lg shadow-[#1A56DB]/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
-                Authenticate & Enter Workspace
-              </NexaButton>
+                {isLoading ? (
+                  <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span>Authenticate & Enter Workspace</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
             </form>
 
             <div className="relative flex py-1 items-center">
@@ -245,7 +260,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => handleLogin({ preventDefault: () => {} } as any)}
-                className="h-10 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-[var(--nexa-border-strong)] text-xs font-semibold text-[var(--nexa-text-primary)] flex items-center justify-center gap-2 transition-all cursor-pointer"
+                className="h-10 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-[#1A56DB] text-xs font-semibold text-[var(--nexa-text-primary)] flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow"
               >
                 <IconBrandGoogle className="w-4 h-4" />
                 Google Workspace
@@ -253,7 +268,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => handleLogin({ preventDefault: () => {} } as any)}
-                className="h-10 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-[var(--nexa-border-strong)] text-xs font-semibold text-[var(--nexa-text-primary)] flex items-center justify-center gap-2 transition-all cursor-pointer"
+                className="h-10 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-[#1A56DB] text-xs font-semibold text-[var(--nexa-text-primary)] flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow"
               >
                 <IconBrandWindows className="w-4 h-4" />
                 Microsoft Entra

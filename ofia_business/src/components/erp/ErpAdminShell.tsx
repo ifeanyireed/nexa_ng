@@ -86,9 +86,37 @@ export function ErpAdminShell({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const pathname = usePathname();
   const { user, logout } = useAuth();
-
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [tenantName, setTenantName] = useState<string>("EduSuite");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const host = window.location.host.toLowerCase();
+      const hostParts = host.split(":")[0].split(".");
+      const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
+      let sub = "";
+      if (isLocal && hostParts.length > 1 && hostParts[0] !== "localhost" && hostParts[0] !== "www") {
+        sub = hostParts[0];
+      } else if (!isLocal && hostParts.length > 2) {
+        sub = hostParts[0];
+      }
+      if (sub && sub !== "erp" && sub !== "admin" && sub !== "www" && sub !== "app") {
+        setTenantName(sub.charAt(0).toUpperCase() + sub.slice(1));
+      } else if (user?.email && user.email.includes("@")) {
+        const domain = user.email.split("@")[1].split(".")[0];
+        if (domain && domain !== "ofia" && domain !== "gmail" && domain !== "yahoo") {
+          setTenantName(domain.charAt(0).toUpperCase() + domain.slice(1));
+        }
+      } else {
+        const stored = localStorage.getItem("nexa_org_name") || localStorage.getItem("nexa_user_email");
+        if (stored && stored.includes("@")) {
+          const domain = stored.split("@")[1].split(".")[0];
+          setTenantName(domain.charAt(0).toUpperCase() + domain.slice(1));
+        }
+      }
+    }
+  }, [user]);
 
   const notifications = [
     { id: "1", title: "New AI Lead Qualified", message: "Adeyemi from Lagos verified interest in ERP Enterprise.", type: "AI", time: "2m ago", isRead: false },
@@ -253,18 +281,23 @@ export function ErpAdminShell({
         <div className="p-6 flex items-center justify-between">
           {isSidebarOpen ? (
             <Link href="/" className="flex items-center gap-2.5">
-              <img src="/logo.png" alt="Ofia Compass" className="w-8 h-8 object-contain" />
+              <img src="/logo.png" alt="Ofia ERP Logo" className="w-8 h-8 object-contain shrink-0" />
               <div className="flex flex-col">
-                <span className="text-lg font-extrabold text-display leading-tight">
-                  Ofia Compass
-                </span>
-                <span className="text-[10px] font-bold text-[#1A56DB] uppercase tracking-wider">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-base font-extrabold text-display leading-tight text-[var(--nexa-text-primary)]">
+                    Ofia ERP
+                  </span>
+                  <span className="text-[10px] font-extrabold font-mono uppercase text-[#1A56DB] bg-[#1A56DB]/10 border border-[#1A56DB]/20 px-2 py-0.5 rounded-full">
+                    {tenantName.toUpperCase()}
+                  </span>
+                </div>
+                <span className="text-[9px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider mt-0.5">
                   ERP Mission Control
                 </span>
               </div>
             </Link>
           ) : (
-            <img src="/logo.png" alt="Ofia Compass" className="w-8 h-8 mx-auto" />
+            <img src="/logo.png" alt="Ofia ERP Logo" className="w-8 h-8 mx-auto" />
           )}
         </div>
 
@@ -362,7 +395,7 @@ export function ErpAdminShell({
               >
                 <Bell className="w-5 h-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-red-500 rounded-full border border-white dark:border-slate-900 text-[9px] font-bold text-white flex items-center justify-center px-1 animate-pulse">
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-red-500 rounded-full text-[9px] font-extrabold text-white flex items-center justify-center px-1 shadow-sm animate-pulse">
                     {unreadCount}
                   </span>
                 )}
@@ -410,12 +443,12 @@ export function ErpAdminShell({
             {/* USER AVATAR & IDENTITY */}
             <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold">{user?.name || "Tenant Admin"}</p>
+                <p className="text-xs font-bold">{user?.name || `${tenantName} Admin`}</p>
                 <p className="text-[10px] text-emerald-500 font-extrabold uppercase tracking-wider">
-                  Enterprise Operator
+                  {tenantName} Operator
                 </p>
               </div>
-              <NexaAvatar size="md" isOnline name={user?.name || "Admin"} />
+              <NexaAvatar size="md" isOnline name={user?.name || tenantName} />
             </div>
           </div>
         </header>

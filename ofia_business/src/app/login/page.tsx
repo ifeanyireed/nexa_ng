@@ -153,8 +153,8 @@ export default function LoginPage() {
           <img src="/logo.png" alt="Ofia ERP Logo" className="w-8 h-8 object-contain shrink-0" />
           <span className="font-extrabold text-base text-[var(--nexa-text-primary)] text-display flex items-center gap-2">
             Ofia ERP
-            <span className="text-[10px] font-bold uppercase font-mono px-2.5 py-0.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20">
-              {currentTenant ? `${currentTenant}` : "Suite"}
+            <span className="text-[10px] font-extrabold font-mono uppercase px-2.5 py-0.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20">
+              {currentTenant ? currentTenant.toUpperCase() : "SUITE"}
             </span>
           </span>
         </Link>

@@ -1,10 +1,18 @@
 import React from "react";
-import DashboardLayout from "./DashboardLayout";
+import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 
-export default function Layout({
+export default function MarketplaceLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <DashboardLayout>{children}</DashboardLayout>;
+  return (
+    <ErpAdminShell
+      title="Marketplace Store Operations"
+      subtitle="Manage your tenant's digital storefront, customer service bookings, deals, SEO articles, catalog shop items, and escrow payouts."
+      activeModule="marketplace"
+    >
+      {children}
+    </ErpAdminShell>
+  );
 }

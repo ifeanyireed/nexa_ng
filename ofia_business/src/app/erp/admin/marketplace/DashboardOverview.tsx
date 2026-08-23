@@ -58,11 +58,16 @@ export default function DashboardOverview() {
     if (user) fetchData();
   }, [user]);
 
-  const isPro = user?.role === "PRO";
-  const nicheData = getNicheData(user?.pro_profile?.niche || "handyman-finders");
   const pathname = usePathname();
+  const isErpAdmin = pathname?.startsWith("/erp/admin/marketplace");
   const isClientPath = pathname?.startsWith("/client");
-  const prefix = isClientPath ? "/client/dashboard" : "/dashboard";
+  const prefix = isErpAdmin
+    ? "/erp/admin/marketplace"
+    : isClientPath
+    ? "/client/dashboard"
+    : "/dashboard";
+  const isPro = isErpAdmin || user?.role === "PRO" || user?.role === "ADMIN" || user?.role === "TENANT_ADMIN" || user?.role === "TENANT_OWNER";
+  const nicheData = getNicheData(user?.pro_profile?.niche || "handyman-finders");
 
   const handleUpdateStatus = async (id: string, status: string) => {
     try {

@@ -309,17 +309,17 @@ export default function DashboardLayout({
               </div>
               <NexaThemeToggle />
               <div className="relative" ref={dropdownRef}>
-                 <button 
-                   onClick={() => setIsNotifOpen(!isNotifOpen)}
-                   className="relative p-2 hover:bg-nexa-bg-base rounded-xl cursor-pointer text-nexa-text-secondary focus:outline-none transition-colors"
-                 >
-                    <Bell className="w-5 h-5" />
-                    {unreadCount > 0 && (
-                      <span className="absolute top-1 right-1 min-w-[16px] h-4 bg-red-500 rounded-full border border-white dark:border-slate-900 text-[9px] font-bold text-white flex items-center justify-center px-1 animate-pulse">
-                        {unreadCount}
-                      </span>
-                    )}
-                 </button>
+                  <button 
+                    onClick={() => setIsNotifOpen(!isNotifOpen)}
+                    className="relative p-2.5 hover:bg-nexa-bg-base rounded-full cursor-pointer text-nexa-text-secondary focus:outline-none transition-colors border border-nexa-border"
+                  >
+                     <Bell className="w-5 h-5" />
+                     {unreadCount > 0 && (
+                       <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-red-500 rounded-full text-[9px] font-extrabold text-white flex items-center justify-center px-1 shadow-sm animate-pulse">
+                         {unreadCount}
+                       </span>
+                     )}
+                  </button>
 
                  {isNotifOpen && (
                    <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-nexa-bg-surface border border-nexa-border rounded-2xl shadow-2xl z-[100] overflow-hidden flex flex-col max-h-[500px]">

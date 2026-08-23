@@ -9,6 +9,8 @@ interface User {
   email: string;
   name: string;
   role: string;
+  org_id?: string;
+  org_name?: string;
   pro_profile?: any;
 }
 

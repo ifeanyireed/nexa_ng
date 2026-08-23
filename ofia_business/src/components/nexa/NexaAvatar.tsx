@@ -1,8 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
 
 export interface NexaAvatarProps {
   src?: string;
@@ -25,6 +24,8 @@ export const NexaAvatar = ({
   status,
   className,
 }: NexaAvatarProps) => {
+  const [imgError, setImgError] = useState(false);
+
   const sizes = {
     sm: "w-8 h-8 text-xs",
     md: "w-10 h-10 text-sm",
@@ -46,8 +47,8 @@ export const NexaAvatar = ({
     for (let i = 0; i < seed.length; i++) {
       hash = seed.charCodeAt(i) + ((hash << 5) - hash);
     }
-    const index = (Math.abs(hash) % 20) + 1;
-    return `/character${index}.jpg`;
+    const index = (Math.abs(hash) % 30) + 1;
+    return `/avatar${index}.png`;
   };
 
   const avatarSrc = src || getDeterministicAvatar(displayFallback);
@@ -64,28 +65,29 @@ export const NexaAvatar = ({
       : "bg-[#0E9F6E]";
 
   return (
-    <div className={cn("relative inline-block shrink-0", className)}>
+    <div className={cn("relative inline-flex items-center justify-center shrink-0", className)}>
       <div
         className={cn(
-          "rounded-full overflow-hidden border border-[var(--nexa-border)] bg-gradient-to-br from-[#1A56DB]/10 to-[#0E9F6E]/10 flex items-center justify-center text-[#1A56DB] font-bold uppercase",
+          "rounded-full overflow-hidden border border-[var(--nexa-border)] bg-gradient-to-br from-[#1A56DB]/15 via-slate-100 to-[#0E9F6E]/15 dark:via-slate-800 flex items-center justify-center text-[#1A56DB] font-extrabold uppercase shadow-sm select-none",
           sizes[size]
         )}
       >
-        <img
-          src={avatarSrc}
-          alt={alt || displayFallback}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            (e.currentTarget as HTMLElement).style.display = "none";
-          }}
-        />
-        <span className="text-xs">{displayFallback.slice(0, 2).toUpperCase()}</span>
+        {!imgError ? (
+          <img
+            src={avatarSrc}
+            alt={alt || displayFallback}
+            className="w-full h-full object-cover object-center rounded-full"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <span className="font-extrabold tracking-wider">{displayFallback.slice(0, 2).toUpperCase()}</span>
+        )}
       </div>
 
       {(isOnline || status) && (
-        <div className={cn("absolute bottom-0 right-0", statusSizes[size])}>
+        <div className={cn("absolute bottom-0.5 right-0.5 pointer-events-none", statusSizes[size])}>
           <div className={cn("absolute inset-0 rounded-full animate-ping opacity-75", statusColor)} />
-          <div className={cn("relative w-full h-full rounded-full border border-[var(--nexa-bg-surface)]", statusColor)} />
+          <div className={cn("relative w-full h-full rounded-full ring-2 ring-white dark:ring-slate-900", statusColor)} />
         </div>
       )}
     </div>

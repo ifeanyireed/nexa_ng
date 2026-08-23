@@ -33,7 +33,7 @@ export default function MarketplaceOverviewPage() {
 
   return (
     <SuperAdminShell
-      title="Marketplace Mission Control"
+      title="Marketplace Overview"
       subtitle="Executive oversight of 99+ Nigerian niche verticals, merchant verification, booking fulfillment, and GMV revenue streams."
       action={
         <div className="flex items-center gap-2.5">

@@ -50,6 +50,7 @@ import {
   Radio,
   FileCheck2,
   Target,
+  UserCheck,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -183,7 +184,7 @@ export function ErpAdminShell({
   }, []);
 
   const navItems = [
-    { label: "Mission Control", icon: <LayoutDashboard className="w-5 h-5" />, href: "/erp/admin", key: "mission" },
+    { label: "Overview", icon: <LayoutDashboard className="w-5 h-5" />, href: "/erp/admin", key: "overview" },
     { label: "Ofia AI", icon: <Bot className="w-5 h-5" />, href: "/erp/admin/ai", badge: "15 AI", key: "ai" },
     { label: "Access Control", icon: <ShieldCheck className="w-5 h-5" />, href: "/erp/admin/access-control", badge: "RBAC", key: "access_control" },
     { label: "Marketplace Store", icon: <ShoppingBag className="w-5 h-5" />, href: "/erp/admin/marketplace", key: "marketplace" },
@@ -192,7 +193,11 @@ export function ErpAdminShell({
     { label: "Viral Referrals", icon: <Gift className="w-5 h-5" />, href: "/erp/admin/referrals", key: "referrals" },
     { label: "Logistics Hub", icon: <Truck className="w-5 h-5" />, href: "/erp/admin/logistics", key: "logistics" },
     { label: "Retreat Quests", icon: <Trophy className="w-5 h-5" />, href: "/erp/admin/quests", key: "quests" },
+    { label: "Accounting & Ledgers", icon: <Layers className="w-5 h-5" />, href: "/erp/accountant", badge: "GL", key: "accounting" },
     { label: "HR & Appraisals", icon: <Users className="w-5 h-5" />, href: "/erp/hr", key: "hr" },
+    { label: "Employee Portal", icon: <UserCheck className="w-5 h-5" />, href: "/erp/employee", key: "employee" },
+    { label: "Manager Portal", icon: <Sliders className="w-5 h-5" />, href: "/erp/manager", key: "manager" },
+    { label: "MD Executive", icon: <TrendingUp className="w-5 h-5" />, href: "/erp/md", key: "md" },
   ];
 
   // Automatic sub navigation tabs according to current pathname
@@ -253,27 +258,30 @@ export function ErpAdminShell({
 
     if (pathname.startsWith("/erp/admin/referrals")) {
       return [
-        { label: "Referrals Overview", href: "/erp/admin/referrals", icon: <Gift className="w-3.5 h-3.5" /> },
-        { label: "Affiliate Partners", href: "/erp/admin/referrals/affiliates", icon: <Users className="w-3.5 h-3.5" /> },
-        { label: "Reward Campaigns", href: "/erp/admin/referrals/campaigns", icon: <Zap className="w-3.5 h-3.5" /> },
-        { label: "Paystack Payouts", href: "/erp/admin/referrals/payouts", icon: <DollarSign className="w-3.5 h-3.5" /> },
-        { label: "Analytics", href: "/erp/admin/referrals/analytics", icon: <BarChart3 className="w-3.5 h-3.5" /> },
+        { label: "Referrals Command", href: "/erp/admin/referrals", icon: <Gift className="w-3.5 h-3.5" /> },
+        { label: "Affiliate Promoters", href: "/erp/admin/referrals/affiliates", icon: <Users className="w-3.5 h-3.5" /> },
+        { label: "Campaign Rules", href: "/erp/admin/referrals/campaigns", icon: <Zap className="w-3.5 h-3.5" /> },
+        { label: "Payout Batches", href: "/erp/admin/referrals/payouts", icon: <DollarSign className="w-3.5 h-3.5" /> },
+        { label: "Growth Analytics", href: "/erp/admin/referrals/analytics", icon: <TrendingUp className="w-3.5 h-3.5" /> },
+      ];
+    }
+
+    if (pathname.startsWith("/erp/admin/quests")) {
+      return [
+        { label: "Active Quests", href: "/erp/admin/quests", icon: <Trophy className="w-3.5 h-3.5" /> },
+        { label: "Create Quest", href: "/erp/admin/quests/new", icon: <Sparkles className="w-3.5 h-3.5" /> },
       ];
     }
 
     if (pathname.startsWith("/erp/admin/marketplace")) {
       return [
-        { label: "Store Overview", href: "/erp/admin/marketplace", icon: <Store className="w-3.5 h-3.5" /> },
-        { label: "Bookings", href: "/erp/admin/marketplace/bookings", icon: <Calendar className="w-3.5 h-3.5" /> },
-        { label: "Deals & Discounts", href: "/erp/admin/marketplace/deals", icon: <Tag className="w-3.5 h-3.5" /> },
-        { label: "Articles SEO", href: "/erp/admin/marketplace/articles", icon: <FileText className="w-3.5 h-3.5" /> },
-        { label: "NexaShop Products", href: "/erp/admin/marketplace/shop", icon: <ShoppingBag className="w-3.5 h-3.5" /> },
-        { label: "Leads CRM", href: "/erp/admin/marketplace/leads", icon: <Users className="w-3.5 h-3.5" /> },
-        { label: "Direct Messages", href: "/erp/admin/marketplace/messages", icon: <MessageSquare className="w-3.5 h-3.5" /> },
-        { label: "Escrow Wallet", href: "/erp/admin/marketplace/wallet", icon: <DollarSign className="w-3.5 h-3.5" /> },
-        { label: "Store Analytics", href: "/erp/admin/marketplace/analytics", icon: <BarChart3 className="w-3.5 h-3.5" /> },
-        { label: "Merchant Profile", href: "/erp/admin/marketplace/profile", icon: <ShieldCheck className="w-3.5 h-3.5" /> },
-        { label: "Availability", href: "/erp/admin/marketplace/availability", icon: <Clock className="w-3.5 h-3.5" /> },
+        { label: "Storefront Overview", href: "/erp/admin/marketplace", icon: <ShoppingBag className="w-3.5 h-3.5" /> },
+        { label: "Shop Products", href: "/erp/admin/marketplace/shop", icon: <ShoppingCart className="w-3.5 h-3.5" /> },
+        { label: "Service Bookings", href: "/erp/admin/marketplace/bookings", icon: <Clock className="w-3.5 h-3.5" /> },
+        { label: "Incoming Leads", href: "/erp/admin/marketplace/leads", icon: <Users className="w-3.5 h-3.5" /> },
+        { label: "Promotions & Deals", href: "/erp/admin/marketplace/deals", icon: <Gift className="w-3.5 h-3.5" /> },
+        { label: "Articles & Guides", href: "/erp/admin/marketplace/articles", icon: <FileText className="w-3.5 h-3.5" /> },
+        { label: "Earnings Wallet", href: "/erp/admin/marketplace/wallet", icon: <DollarSign className="w-3.5 h-3.5" /> },
         { label: "Store Settings", href: "/erp/admin/marketplace/settings", icon: <Settings className="w-3.5 h-3.5" /> },
       ];
     }
@@ -311,7 +319,7 @@ export function ErpAdminShell({
   const activeSubTabs = getSubTabs();
 
   return (
-    <div className="min-h-screen bg-nexa-bg-base flex relative text-nexa-text-primary">
+    <div className="min-h-screen bg-nexa-bg-base text-nexa-text-primary flex relative font-sans">
       {/* SIDEBAR — EXACT OFIA MARKETPLACE VERBATIM STYLING */}
       <aside
         className={cn(
@@ -342,7 +350,7 @@ export function ErpAdminShell({
                   </span>
                 </div>
                 <span className="text-[9px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider mt-0.5">
-                  ERP Mission Control
+                  ERP Overview
                 </span>
               </div>
             </Link>
@@ -389,15 +397,21 @@ export function ErpAdminShell({
           {navItems
             .filter((item) => {
               const matchesSearch = item.label.toLowerCase().includes(searchQuery.toLowerCase());
+              // Overview is the permanent default core module and is always visible
+              if (item.key === "overview" || item.href === "/erp/admin") {
+                return matchesSearch;
+              }
               // The role access tab should ALWAYS be on the side bar nav in the erp/admin ONLY
               if (item.key === "access_control") {
                 const isAdminPortal = pathname.startsWith("/erp/admin");
                 return matchesSearch && isAdminPortal;
               }
+              // Module permission check for currentRole (including 'admin' who can have module availability configured)
+              const rolePermissions = permissionMatrix[currentRole] || {};
               const isAllowed =
-                currentRole === "admin" ||
-                currentRole === "md" ||
-                Boolean(permissionMatrix[currentRole]?.[item.key]);
+                rolePermissions[item.key] !== undefined
+                  ? Boolean(rolePermissions[item.key])
+                  : currentRole === "admin" || currentRole === "md";
               return matchesSearch && isAllowed;
             })
             .map((item, i) => {

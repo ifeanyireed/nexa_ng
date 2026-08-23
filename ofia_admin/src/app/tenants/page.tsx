@@ -102,7 +102,6 @@ function TenantManagementContent() {
   const [newOwnerEmail, setNewOwnerEmail] = useState("");
   const [newPlanTier, setNewPlanTier] = useState<TenantOrg["planTier"]>("GROWTH");
   const [newErpModules, setNewErpModules] = useState<Record<string, boolean>>({
-    mission: true,
     ai: true,
     marketplace: true,
     inventory: true,
@@ -420,10 +419,10 @@ function TenantManagementContent() {
               <Boxes className="w-4 h-4 text-[#9061F9]" />
             </div>
             <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              9 Modules
+              8 Modules
             </div>
             <div className="text-[11px] text-[#9061F9] font-bold">
-              AI, IMS, POS, Logistics, Referrals
+              AI, IMS, POS, Logistics, Referrals, HR
             </div>
           </NexaCard>
 
@@ -665,7 +664,7 @@ function TenantManagementContent() {
                       onClick={() => handleBulkToggleTenant(focusedTenant.id, true)}
                       className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 cursor-pointer"
                     >
-                      Grant All 9 Modules
+                      Grant All 8 Modules
                     </button>
                     <button
                       onClick={() => handleBulkToggleTenant(focusedTenant.id, false)}
@@ -860,7 +859,7 @@ function TenantManagementContent() {
                           className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#1A56DB] text-white text-xs font-bold hover:bg-[#1545B0] transition-colors cursor-pointer shadow-xs"
                         >
                           <Sliders className="w-3.5 h-3.5" />
-                          Configure Modules ({enabledCount}/9)
+                          Configure Modules ({enabledCount}/8)
                         </button>
 
                         <a

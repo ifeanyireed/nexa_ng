@@ -106,13 +106,6 @@ export interface ErpModuleDef {
 
 export const ERP_MODULES: ErpModuleDef[] = [
   {
-    key: "mission",
-    label: "Mission Control",
-    category: "Core Control",
-    description: "Central tenant cockpit with real-time KPI overview and critical alerts.",
-    href: "/erp/admin",
-  },
-  {
     key: "ai",
     label: "Ofia AI Swarm",
     category: "Core Control",

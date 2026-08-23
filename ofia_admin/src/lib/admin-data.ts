@@ -30,7 +30,6 @@ export interface ErpModuleItem {
 }
 
 export const SUPER_ADMIN_ERP_MODULES: ErpModuleItem[] = [
-  { key: "mission", label: "Mission Control", category: "Core", description: "Centralized KPI telemetry, real-time widgets, and executive summary.", iconName: "LayoutDashboard", color: "#1A56DB" },
   { key: "ai", label: "Ofia AI Swarm", category: "Core", description: "15 autonomous specialist AI agents for marketing, outreach, and operations.", iconName: "Bot", color: "#1A56DB", badge: "15 AI" },
   { key: "marketplace", label: "Marketplace Store", category: "Sales & Commerce", description: "Public storefront, listing catalog, and customer direct bookings.", iconName: "ShoppingBag", color: "#0E9F6E" },
   { key: "inventory", label: "Inventory (IMS)", category: "Operations", description: "Multi-warehouse depot tracking, barcode scans, SKU alerts, and transfers.", iconName: "Boxes", color: "#F59E0B", badge: "Low Alert" },

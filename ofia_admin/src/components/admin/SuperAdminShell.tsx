@@ -170,7 +170,7 @@ export function SuperAdminShell({
                   </span>
                 </div>
                 <span className="text-[9px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider mt-0.5">
-                  Master Mission Control
+                  Master Overview
                 </span>
               </div>
             </Link>
@@ -222,7 +222,7 @@ export function SuperAdminShell({
         <nav className="flex-1 px-4 space-y-1.5 mt-2 overflow-y-auto">
           {[
             {
-              label: "Master Mission Control",
+              label: "Overview",
               href: "/",
               icon: LayoutDashboard,
               badge: "HUB",

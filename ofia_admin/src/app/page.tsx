@@ -36,10 +36,10 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 
-export default function MasterMissionControlPage() {
+export default function MasterOverviewPage() {
   return (
     <SuperAdminShell
-      title="Master Mission Control & Cross-App Governance"
+      title="Master Overview & Cross-App Governance"
       subtitle="Unified Super Admin command center orchestrating Ofia AI Autonomous Swarm, Ofia Discovery Marketplace, and Ofia Enterprise ERP."
       subTabs={[]}
       action={

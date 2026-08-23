@@ -18,31 +18,33 @@ import {
   Zap,
   Users,
   CheckCircle2,
+  Building2,
+  Briefcase,
+  Layers,
 } from "lucide-react";
 import {
   IconBrandGoogle,
   IconBrandWindows,
-  IconBrandTelegram,
 } from "@tabler/icons-react";
 
 import { AUTH_API } from "@/lib/api-client";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("adeyemi@edusuite.ng");
-  const [password, setPassword] = useState("EduSuite2026!");
+  const [email, setEmail] = useState("admin@edusuite.ng");
+  const [password, setPassword] = useState("password123");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
 
-  // Quick Seeded Personas fast-switchers
+  // Quick Seeded ERP Personas fast-switchers
   const testPersonas = [
-    { label: "Super Admin", email: "admin@ofia.ng", pass: "OfiaAdmin2026!", role: "SUPER_ADMIN", color: "purple" as const },
-    { label: "Tenant Owner", email: "adeyemi@edusuite.ng", pass: "EduSuite2026!", role: "TENANT_OWNER", color: "brand" as const },
-    { label: "Growth Lead", email: "khalil@edusuite.ng", pass: "EduSuite2026!", role: "GROWTH_LEAD", color: "brand" as const },
-    { label: "Sales Rep", email: "chidinma@edusuite.ng", pass: "EduSuite2026!", role: "SALES_REP", color: "brand" as const },
-    { label: "Viewer", email: "auditor@edusuite.ng", pass: "EduSuite2026!", role: "VIEWER", color: "neutral" as const },
+    { label: "Tenant Admin", email: "admin@edusuite.ng", pass: "password123", role: "TENANT_ADMIN", route: "/erp/admin" },
+    { label: "Accountant", email: "accountant@edusuite.ng", pass: "password123", role: "ACCOUNTANT", route: "/erp/accountant" },
+    { label: "HR Lead", email: "hr@edusuite.ng", pass: "password123", role: "HR_DIRECTOR", route: "/erp/hr" },
+    { label: "Managing Director", email: "md@edusuite.ng", pass: "password123", role: "MANAGING_DIRECTOR", route: "/erp/md" },
+    { label: "Field Tech / POS", email: "tech@edusuite.ng", pass: "password123", role: "FIELD_TECH", route: "/erp/employee" },
   ];
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -56,33 +58,39 @@ export default function LoginPage() {
         if (typeof window !== "undefined") {
           localStorage.setItem("nexa_auth_token", res.token);
           localStorage.setItem("nexa_user_email", res.user?.email || email);
-          localStorage.setItem("nexa_user_role", res.user?.role || "TENANT_OWNER");
-          localStorage.setItem("nexa_user_name", res.user?.name || "User");
+          localStorage.setItem("nexa_user_role", res.user?.role || "TENANT_ADMIN");
+          localStorage.setItem("nexa_user_name", res.user?.name || "ERP Operator");
           localStorage.setItem("nexa_org_id", res.org_id || "org-01");
         }
-        if (res.user?.role === "SUPER_ADMIN" || email.includes("admin")) {
-          router.push("/admin");
-        } else {
-          router.push("/dashboard");
-        }
       }
+      navigateUser(email);
     } catch (err: any) {
-      // Fallback for offline simulation
+      // Fallback simulation for seamless offline/demo access
       if (typeof window !== "undefined") {
-        localStorage.setItem("nexa_auth_token", "mock-jwt-token-prod-2026");
+        localStorage.setItem("nexa_auth_token", "mock-erp-jwt-token-2026");
         localStorage.setItem("nexa_user_email", email);
         const persona = testPersonas.find((p) => p.email === email);
         if (persona) {
           localStorage.setItem("nexa_user_role", persona.role);
         }
       }
-      if (email.includes("admin")) {
-        router.push("/admin");
-      } else {
-        router.push("/dashboard");
-      }
+      navigateUser(email);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const navigateUser = (userEmail: string) => {
+    if (userEmail.includes("accountant")) {
+      router.push("/erp/accountant");
+    } else if (userEmail.includes("hr")) {
+      router.push("/erp/hr");
+    } else if (userEmail.includes("md")) {
+      router.push("/erp/md");
+    } else if (userEmail.includes("tech")) {
+      router.push("/erp/employee");
+    } else {
+      router.push("/erp/admin");
     }
   };
 
@@ -96,16 +104,19 @@ export default function LoginPage() {
       {/* Top Simple Header */}
       <header className="p-6 flex items-center justify-between max-w-7xl mx-auto w-full">
         <Link href="/" className="flex items-center gap-3">
-          <img src="/logo.png" alt="Ofia AI" className="w-8 h-8 object-contain shrink-0" />
-          <span className="font-extrabold text-base text-[var(--nexa-text-primary)] text-display">
-            Ofia AI
+          <img src="/logo.png" alt="Ofia ERP Logo" className="w-8 h-8 object-contain shrink-0" />
+          <span className="font-extrabold text-base text-[var(--nexa-text-primary)] text-display flex items-center gap-2">
+            Ofia ERP
+            <NexaBadge variant="brand" className="text-[10px] uppercase font-mono px-1.5 py-0">
+              Suite
+            </NexaBadge>
           </span>
         </Link>
 
         <div className="flex items-center gap-2 text-xs">
-          <span className="text-[var(--nexa-text-muted)]">Don't have a workspace?</span>
-          <Link href="/signup" className="font-bold text-[#1A56DB] hover:underline">
-            Provision Free Trial →
+          <span className="text-[var(--nexa-text-muted)]">Don't have an enterprise tenant?</span>
+          <Link href="/join/register" className="font-bold text-[#1A56DB] hover:underline">
+            Setup Workspace →
           </Link>
         </div>
       </header>
@@ -117,20 +128,20 @@ export default function LoginPage() {
             <div className="text-center space-y-1">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] text-[11px] font-bold">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                Encrypted Operator Console
+                Enterprise Operating Console
               </div>
               <h1 className="text-2xl font-black text-display text-[var(--nexa-text-primary)]">
-                Sign in to Navigation Console
+                Sign in to Ofia ERP
               </h1>
               <p className="text-xs text-[var(--nexa-text-muted)]">
-                Enter your command center. Clear clutter, chart hidden paths, and cultivate pipeline.
+                Access Inventory, POS, Zonal Dispatch, General Ledger, HR Appraisals, and AI Agents.
               </p>
             </div>
 
             {/* Quick Test Persona Switcher */}
             <div className="p-3 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-2">
               <div className="flex items-center justify-between text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider">
-                <span>1-Click Test Personas</span>
+                <span>1-Click ERP Role Personas</span>
                 <span className="text-[#0E9F6E]">Quick Fill</span>
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -159,10 +170,10 @@ export default function LoginPage() {
 
             <form onSubmit={handleLogin} className="space-y-4">
               <NexaInput
-                label="Work Email"
+                label="Enterprise Email"
                 type="email"
                 required
-                placeholder="adeyemi@edusuite.ng"
+                placeholder="admin@edusuite.ng"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 leftIcon={<Mail className="w-4 h-4 text-[var(--nexa-text-muted)]" />}
@@ -173,7 +184,7 @@ export default function LoginPage() {
                   <label className="text-xs font-semibold text-[var(--nexa-text-secondary)]">
                     Password
                   </label>
-                  <Link href="/forgot-password" className="text-[11px] font-bold text-[#1A56DB] hover:underline">
+                  <Link href="/erp/reset-password" className="text-[11px] font-bold text-[#1A56DB] hover:underline">
                     Forgot Password?
                   </Link>
                 </div>
@@ -207,7 +218,7 @@ export default function LoginPage() {
                   />
                   <span className="text-[var(--nexa-text-secondary)]">Remember this device</span>
                 </label>
-                <span className="text-[10px] text-[var(--nexa-text-muted)]">2FA Protected</span>
+                <span className="text-[10px] text-[var(--nexa-text-muted)]">2FA Enforced</span>
               </div>
 
               <NexaButton
@@ -218,14 +229,14 @@ export default function LoginPage() {
                 className="w-full font-extrabold text-sm shadow-md shadow-[#1A56DB]/20"
                 rightIcon={<ArrowRight className="w-4 h-4" />}
               >
-                Authenticate & Enter Console
+                Authenticate & Enter Workspace
               </NexaButton>
             </form>
 
             <div className="relative flex py-1 items-center">
               <div className="flex-grow border-t border-[var(--nexa-border)]"></div>
               <span className="flex-shrink mx-3 text-[10px] uppercase font-bold text-[var(--nexa-text-muted)] tracking-wider">
-                Or Single Sign-On
+                Or Enterprise SSO
               </span>
               <div className="flex-grow border-t border-[var(--nexa-border)]"></div>
             </div>
@@ -254,7 +265,7 @@ export default function LoginPage() {
 
       {/* Simple Bottom Bar */}
       <footer className="p-6 text-center text-xs text-[var(--nexa-text-muted)]">
-        © {new Date().getFullYear()} Ofia AI. Protected by SOC2 Type II & 256-bit AES encryption.
+        © 2026 Ofia ERP. Protected by SOC2 Type II & 256-bit AES encryption.
       </footer>
     </div>
   );

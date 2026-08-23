@@ -51,6 +51,7 @@ import {
   FileCheck2,
   Target,
   UserCheck,
+  Sparkles,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";

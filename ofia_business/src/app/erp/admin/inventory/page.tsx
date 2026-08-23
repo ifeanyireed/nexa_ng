@@ -60,42 +60,42 @@ export default function InventoryDashboardPage() {
         </div>
       }
     >
-      <div className="space-y-8">
-        {/* KPI CARDS */}
+      <div className="space-y-10">
+        {/* TOP 4 KPI CARDS — MATCHING /erp/admin VERBATIM */}
         <ErpStatGrid
           stats={[
             {
-              label: "Total Stock Valuation",
-              value: "₦48,650,000",
-              change: "142 Active SKUs",
-              sub: "Across 3 Depot Warehouses",
+              label: "Stock Valuation (IMS)",
+              value: "₦48.65M",
+              change: "4 Depot Hubs",
+              trend: "up",
               icon: <Boxes className="w-5 h-5 text-emerald-500" />,
-              iconBg: "bg-emerald-500/10 text-emerald-500",
+              sub: "348 Active SKUs",
             },
             {
               label: "Low Stock Warnings",
-              value: "3 Items Critical",
-              change: "Action Required",
+              value: "3 Critical SKUs",
+              change: "Action Needed",
               changeType: "danger",
-              sub: "Below safety threshold limits",
+              trend: "up",
               icon: <AlertTriangle className="w-5 h-5 text-red-500" />,
-              iconBg: "bg-red-500/10 text-red-500",
+              sub: "Below safety threshold",
             },
             {
               label: "Stock Turnover Rate",
               value: "6.4x / year",
               change: "+18% vs Q1",
-              sub: "Strong inventory velocity",
+              trend: "up",
               icon: <TrendingUp className="w-5 h-5 text-blue-500" />,
-              iconBg: "bg-blue-500/10 text-blue-500",
+              sub: "High velocity turnover",
             },
             {
-              label: "Active Warehouses",
+              label: "Active Depot Hubs",
               value: "3 Locations",
               change: "100% Online",
-              sub: "Ikeja • Lekki • Abuja Hubs",
+              trend: "up",
               icon: <Warehouse className="w-5 h-5 text-purple-500" />,
-              iconBg: "bg-purple-500/10 text-purple-500",
+              sub: "Ikeja • Lekki • Abuja",
             },
           ]}
         />
@@ -119,33 +119,37 @@ export default function InventoryDashboardPage() {
                 <tr>
                   <th className="py-3 px-4">SKU / Item Name</th>
                   <th className="py-3 px-3">Category</th>
-                  <th className="py-3 px-3">Location</th>
-                  <th className="py-3 px-3">Current Stock</th>
-                  <th className="py-3 px-3">Min Level</th>
-                  <th className="py-3 px-3">Unit Cost</th>
-                  <th className="py-3 px-4 text-right">Action</th>
+                  <th className="py-3 px-3">Available Stock</th>
+                  <th className="py-3 px-3">Safety Min</th>
+                  <th className="py-3 px-3">Warehouse Hub</th>
+                  <th className="py-3 px-3">Primary Supplier</th>
+                  <th className="py-3 px-3">Est. Unit Cost</th>
+                  <th className="py-3 px-4 text-right">Quick Restock</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--nexa-border)] text-[var(--nexa-text-primary)]">
-                {lowStockAlerts.map((item) => (
-                  <tr key={item.id} className="hover:bg-[var(--nexa-bg-base)]/50 transition-colors">
+                {lowStockAlerts.map((alert) => (
+                  <tr key={alert.id} className="hover:bg-[var(--nexa-bg-base)]/50 transition-colors">
                     <td className="py-3.5 px-4">
-                      <div className="font-bold">{item.name}</div>
-                      <div className="text-[11px] text-[var(--nexa-text-muted)] font-mono">{item.id}</div>
+                      <div className="font-bold text-xs">{alert.name}</div>
+                      <div className="font-mono text-[10px] text-[var(--nexa-text-muted)]">{alert.id.toUpperCase()}</div>
                     </td>
                     <td className="py-3.5 px-3">
-                      <NexaBadge variant="purple" className="text-[9px]">{item.category}</NexaBadge>
+                      <NexaBadge variant="neutral">{alert.category}</NexaBadge>
                     </td>
-                    <td className="py-3.5 px-3 text-[var(--nexa-text-secondary)]">{item.warehouse}</td>
                     <td className="py-3.5 px-3">
-                      <span className="font-bold text-[#E02424] font-mono">{item.currentStock} Units</span>
+                      <span className="font-black text-[#E02424] bg-red-500/10 px-2 py-0.5 rounded-full border border-red-500/20">
+                        {alert.currentStock} Units Left
+                      </span>
                     </td>
-                    <td className="py-3.5 px-3 text-[var(--nexa-text-muted)] font-mono">{item.minStock} Units</td>
-                    <td className="py-3.5 px-3 font-bold font-mono">{item.unitCost}</td>
+                    <td className="py-3.5 px-3 font-semibold text-[var(--nexa-text-muted)]">{alert.minStock} Units</td>
+                    <td className="py-3.5 px-3 text-xs">{alert.warehouse}</td>
+                    <td className="py-3.5 px-3 text-xs text-[var(--nexa-text-muted)]">{alert.supplier}</td>
+                    <td className="py-3.5 px-3 font-bold text-xs">{alert.unitCost}</td>
                     <td className="py-3.5 px-4 text-right">
-                      <Link href={`/erp/admin/inventory/suppliers?item=${item.id}`}>
-                        <NexaButton size="sm" variant="primary" className="bg-[#E02424] text-white hover:bg-[#C81E1E]">
-                          Reorder Now
+                      <Link href="/erp/admin/inventory/suppliers">
+                        <NexaButton size="sm" variant="outline" className="text-xs h-7">
+                          Create PO
                         </NexaButton>
                       </Link>
                     </td>
@@ -156,39 +160,49 @@ export default function InventoryDashboardPage() {
           </div>
         </div>
 
-        {/* QUICK IMS SHORTCUTS */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Link href="/erp/admin/inventory/items" className="block group">
-            <NexaCard variant="glass" padding="md" className="space-y-2 border border-[var(--nexa-border)] group-hover:border-[#1A56DB] transition-all">
-              <Package className="w-5 h-5 text-[#1A56DB]" />
-              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">SKU Item Catalog</h3>
-              <p className="text-xs text-[var(--nexa-text-muted)]">Manage 142 SKUs, barcodes, and cost markups.</p>
-            </NexaCard>
-          </Link>
+        {/* WAREHOUSE DISTRIBUTION MAP / CARDS */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-black text-[var(--nexa-text-primary)] flex items-center gap-2">
+              <Warehouse className="w-4 h-4 text-[#1A56DB]" />
+              Depot Storage Capacity & Stock Distribution
+            </h2>
+            <Link href="/erp/admin/inventory/warehouses" className="text-xs text-[#1A56DB] font-bold hover:underline flex items-center gap-1">
+              <span>Manage Warehouses</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
 
-          <Link href="/erp/admin/inventory/warehouses" className="block group">
-            <NexaCard variant="glass" padding="md" className="space-y-2 border border-[var(--nexa-border)] group-hover:border-[#0E9F6E] transition-all">
-              <Warehouse className="w-5 h-5 text-[#0E9F6E]" />
-              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">Warehouse Bins</h3>
-              <p className="text-xs text-[var(--nexa-text-muted)]">Aisle, rack, and bin storage allocations.</p>
-            </NexaCard>
-          </Link>
-
-          <Link href="/erp/admin/inventory/transfers" className="block group">
-            <NexaCard variant="glass" padding="md" className="space-y-2 border border-[var(--nexa-border)] group-hover:border-[#9061F9] transition-all">
-              <Truck className="w-5 h-5 text-[#9061F9]" />
-              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">Branch Transfers</h3>
-              <p className="text-xs text-[var(--nexa-text-muted)]">Dispatch and GRN receipt between branches.</p>
-            </NexaCard>
-          </Link>
-
-          <Link href="/erp/admin/inventory/adjustments" className="block group">
-            <NexaCard variant="glass" padding="md" className="space-y-2 border border-[var(--nexa-border)] group-hover:border-[#F59E0B] transition-all">
-              <RefreshCw className="w-5 h-5 text-[#F59E0B]" />
-              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">Stock Audit & Shrinkage</h3>
-              <p className="text-xs text-[var(--nexa-text-muted)]">Physical variance audit write-offs.</p>
-            </NexaCard>
-          </Link>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              { name: "Ikeja Central Distribution Depot", capacity: "85%", skus: 94, city: "Lagos Mainland", isPrimary: true },
+              { name: "Lekki Fulfillment & Rapid Hub", capacity: "62%", skus: 48, city: "Lagos Island", isPrimary: false },
+              { name: "Abuja Regional Transit Depot", capacity: "40%", skus: 32, city: "Federal Capital Territory", isPrimary: false },
+            ].map((hub, i) => (
+              <NexaCard key={i} variant="glass" padding="md" className="space-y-3 border border-[var(--nexa-border)]">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-[#1A56DB]" />
+                    <span className="text-xs font-bold text-[var(--nexa-text-primary)]">{hub.name}</span>
+                  </div>
+                  {hub.isPrimary && <NexaBadge variant="brand">Primary</NexaBadge>}
+                </div>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[var(--nexa-text-muted)]">Capacity Utilization</span>
+                    <span className="font-bold text-[var(--nexa-text-primary)]">{hub.capacity}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                    <div className="h-full bg-[#1A56DB] rounded-full" style={{ width: hub.capacity }} />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)] pt-1 border-t border-[var(--nexa-border)]">
+                  <span>{hub.city}</span>
+                  <span className="font-semibold text-[#1A56DB]">{hub.skus} SKUs Stored</span>
+                </div>
+              </NexaCard>
+            ))}
+          </div>
         </div>
       </div>
     </BusinessShell>

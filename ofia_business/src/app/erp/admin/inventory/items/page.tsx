@@ -12,8 +12,11 @@ import {
   QrCode,
   Search,
   Trash2,
+  TrendingUp,
+  AlertTriangle,
 } from "lucide-react";
 import { BusinessShell } from "@/components/business/BusinessShell";
+import { ErpStatGrid } from "@/components/erp/ErpStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
@@ -54,7 +57,46 @@ export default function InventoryItemsPage() {
         </div>
       }
     >
-      <div className="space-y-6">
+      <div className="space-y-8">
+        {/* KPI CARDS */}
+        <ErpStatGrid
+          stats={[
+            {
+              label: "Catalog SKUs",
+              value: "142 Active",
+              change: "+12 Added",
+              sub: "All product categories",
+              icon: <Package className="w-5 h-5 text-blue-500" />,
+              iconBg: "bg-blue-500/10 text-blue-500",
+            },
+            {
+              label: "Average Margin",
+              value: "34.8%",
+              change: "+4.2% Margin",
+              sub: "Cost vs selling spread",
+              icon: <TrendingUp className="w-5 h-5 text-emerald-500" />,
+              iconBg: "bg-emerald-500/10 text-emerald-500",
+            },
+            {
+              label: "Stock Reorders",
+              value: "2 SKUs",
+              change: "Low Stock",
+              changeType: "danger",
+              sub: "Below reorder threshold",
+              icon: <AlertTriangle className="w-5 h-5 text-red-500" />,
+              iconBg: "bg-red-500/10 text-red-500",
+            },
+            {
+              label: "Barcodes Scanned",
+              value: "100% EAN-13",
+              change: "Verified",
+              sub: "Ready for POS checkout",
+              icon: <Barcode className="w-5 h-5 text-purple-500" />,
+              iconBg: "bg-purple-500/10 text-purple-500",
+            },
+          ]}
+        />
+
         {/* SEARCH & FILTER BAR */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="w-full sm:w-96">

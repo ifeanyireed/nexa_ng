@@ -85,6 +85,15 @@ export interface ErpAdminShellProps {
   subTabs?: SubNavItem[];
 }
 
+interface OriginPortal {
+  path: string;
+  label: string;
+  title: string;
+  roleKey: string;
+  badgeColor: string;
+  iconBg: string;
+}
+
 export function ErpAdminShell({
   children,
   title,
@@ -99,6 +108,14 @@ export function ErpAdminShell({
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isExitBannerDismissed, setIsExitBannerDismissed] = useState(false);
+  const [originPortal, setOriginPortal] = useState<OriginPortal>({
+    path: "/erp/admin",
+    label: "Admin",
+    title: "Tenant Administrator",
+    roleKey: "admin",
+    badgeColor: "bg-blue-500/20 text-blue-300 border-blue-400/30",
+    iconBg: "from-blue-600 to-indigo-600",
+  });
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [tenantName, setTenantName] = useState<string>("EduSuite");
   const [permissionMatrix, setPermissionMatrix] = useState<PermissionMatrix>(DEFAULT_PERMISSION_MATRIX);
@@ -139,6 +156,140 @@ export function ErpAdminShell({
           setPermissionMatrix(remote);
         }
       });
+
+      // Track and remember home/origin portal
+      let origin: OriginPortal | null = null;
+      if (pathname.startsWith("/erp/admin")) {
+        origin = {
+          path: "/erp/admin",
+          label: "Admin",
+          title: "Tenant Administrator",
+          roleKey: "admin",
+          badgeColor: "bg-blue-500/20 text-blue-300 border-blue-400/30",
+          iconBg: "from-blue-600 to-indigo-600",
+        };
+      } else if (
+        pathname.startsWith("/erp/md") &&
+        !pathname.includes("employee") &&
+        !pathname.includes("manager") &&
+        !pathname.includes("hr") &&
+        !pathname.includes("accountant")
+      ) {
+        origin = {
+          path: "/erp/md",
+          label: "MD",
+          title: "Managing Director",
+          roleKey: "md",
+          badgeColor: "bg-purple-500/20 text-purple-300 border-purple-400/30",
+          iconBg: "from-purple-600 to-indigo-600",
+        };
+      } else if (
+        pathname.startsWith("/erp/hr") &&
+        !pathname.includes("employee") &&
+        !pathname.includes("manager")
+      ) {
+        origin = {
+          path: "/erp/hr",
+          label: "HR",
+          title: "Human Resources",
+          roleKey: "hr",
+          badgeColor: "bg-rose-500/20 text-rose-300 border-rose-400/30",
+          iconBg: "from-rose-600 to-pink-600",
+        };
+      } else if (
+        pathname.startsWith("/erp/accountant") &&
+        !pathname.includes("employee") &&
+        !pathname.includes("manager")
+      ) {
+        origin = {
+          path: "/erp/accountant",
+          label: "Accountant",
+          title: "Chief Accountant",
+          roleKey: "accountant",
+          badgeColor: "bg-emerald-500/20 text-emerald-300 border-emerald-400/30",
+          iconBg: "from-emerald-600 to-teal-600",
+        };
+      } else if (
+        pathname.startsWith("/erp/manager") &&
+        !pathname.includes("employee")
+      ) {
+        origin = {
+          path: "/erp/manager",
+          label: "Manager",
+          title: "Line Manager",
+          roleKey: "manager",
+          badgeColor: "bg-amber-500/20 text-amber-300 border-amber-400/30",
+          iconBg: "from-amber-600 to-orange-600",
+        };
+      }
+
+      if (origin) {
+        sessionStorage.setItem("erp_origin_portal", JSON.stringify(origin));
+        setOriginPortal(origin);
+      } else {
+        const storedOrigin = sessionStorage.getItem("erp_origin_portal");
+        if (storedOrigin) {
+          try {
+            setOriginPortal(JSON.parse(storedOrigin));
+          } catch {}
+        } else {
+          // Default fallback origin based on primary user role
+          const storedUser = localStorage.getItem("erp_current_user");
+          let primary = "admin";
+          if (storedUser) {
+            try {
+              const u = JSON.parse(storedUser);
+              if (u.role) primary = u.role;
+            } catch {}
+          }
+          if (primary === "md") {
+            setOriginPortal({
+              path: "/erp/md",
+              label: "MD",
+              title: "Managing Director",
+              roleKey: "md",
+              badgeColor: "bg-purple-500/20 text-purple-300 border-purple-400/30",
+              iconBg: "from-purple-600 to-indigo-600",
+            });
+          } else if (primary === "hr") {
+            setOriginPortal({
+              path: "/erp/hr",
+              label: "HR",
+              title: "Human Resources",
+              roleKey: "hr",
+              badgeColor: "bg-rose-500/20 text-rose-300 border-rose-400/30",
+              iconBg: "from-rose-600 to-pink-600",
+            });
+          } else if (primary === "accountant") {
+            setOriginPortal({
+              path: "/erp/accountant",
+              label: "Accountant",
+              title: "Chief Accountant",
+              roleKey: "accountant",
+              badgeColor: "bg-emerald-500/20 text-emerald-300 border-emerald-400/30",
+              iconBg: "from-emerald-600 to-teal-600",
+            });
+          } else if (primary === "manager") {
+            setOriginPortal({
+              path: "/erp/manager",
+              label: "Manager",
+              title: "Line Manager",
+              roleKey: "manager",
+              badgeColor: "bg-amber-500/20 text-amber-300 border-amber-400/30",
+              iconBg: "from-amber-600 to-orange-600",
+            });
+          } else {
+            setOriginPortal({
+              path: "/erp/admin",
+              label: "Admin",
+              title: "Tenant Administrator",
+              roleKey: "admin",
+              badgeColor: "bg-blue-500/20 text-blue-300 border-blue-400/30",
+              iconBg: "from-blue-600 to-indigo-600",
+            });
+          }
+        }
+      }
 
       // Resolve user role
       const storedErpUser = localStorage.getItem("erp_current_user");
@@ -677,40 +828,53 @@ export function ErpAdminShell({
         </div>
       </main>
 
-      {/* FLOATING ADMIN IMPERSONATION & EXIT BUTTON */}
-      {(pathname.startsWith("/erp/hr") ||
-        pathname.startsWith("/erp/employee") ||
-        pathname.startsWith("/erp/accountant") ||
-        pathname.startsWith("/erp/manager") ||
-        pathname.startsWith("/erp/md") ||
-        pathname.startsWith("/hr") ||
-        pathname.startsWith("/employee") ||
-        pathname.startsWith("/accountant") ||
-        pathname.startsWith("/manager") ||
-        pathname.startsWith("/md")) &&
+      {/* FLOATING PERSONA IMPERSONATION & RETURN CONTROLLER */}
+      {originPortal &&
+        pathname !== originPortal.path &&
+        !pathname.startsWith(originPortal.path + "/") &&
+        (pathname.startsWith("/erp/employee") ||
+          pathname.startsWith("/erp/manager") ||
+          pathname.startsWith("/erp/hr") ||
+          pathname.startsWith("/erp/accountant") ||
+          pathname.startsWith("/erp/md") ||
+          pathname.startsWith("/hr") ||
+          pathname.startsWith("/employee") ||
+          pathname.startsWith("/accountant") ||
+          pathname.startsWith("/manager") ||
+          pathname.startsWith("/md")) &&
         !isExitBannerDismissed && (
           <div className="fixed bottom-6 right-6 z-[100] animate-bounce-subtle">
             <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-slate-900/95 dark:bg-slate-950/95 text-white border border-slate-700/80 shadow-2xl backdrop-blur-md ring-1 ring-white/10">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-xs shrink-0">
+                <div
+                  className={cn(
+                    "w-8 h-8 rounded-xl bg-gradient-to-tr flex items-center justify-center text-white font-bold shadow-xs shrink-0",
+                    originPortal.iconBg
+                  )}
+                >
                   <ShieldCheck className="w-4 h-4 text-white" />
                 </div>
                 <div className="text-left">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs font-black text-white">Viewing Staff Portal</span>
-                    <span className="text-[9px] font-extrabold px-1.5 py-0.2 rounded-full bg-blue-500/30 text-blue-300 border border-blue-400/30 uppercase">
-                      Admin Mode
+                    <span className="text-xs font-black text-white">Viewing Subordinate Portal</span>
+                    <span
+                      className={cn(
+                        "text-[9px] font-extrabold px-1.5 py-0.2 rounded-full border uppercase",
+                        originPortal.badgeColor
+                      )}
+                    >
+                      {originPortal.label} Mode
                     </span>
                   </div>
                   <span className="text-[10px] text-slate-300 block font-medium">
-                    {pathname.includes("hr")
-                      ? "Human Resources (HR) Portal"
-                      : pathname.includes("accountant")
-                      ? "Chief Accountant Portal"
-                      : pathname.includes("employee")
+                    {pathname.includes("employee")
                       ? "General Employee Portal"
                       : pathname.includes("manager")
                       ? "Line Manager Portal"
+                      : pathname.includes("hr")
+                      ? "Human Resources (HR) Portal"
+                      : pathname.includes("accountant")
+                      ? "Chief Accountant Portal"
                       : pathname.includes("md")
                       ? "MD Executive Portal"
                       : "Staff Workspace"}
@@ -720,10 +884,23 @@ export function ErpAdminShell({
 
               <div className="h-6 w-px bg-slate-700 mx-1 shrink-0" />
 
-              <Link href="/erp/admin" className="shrink-0">
-                <button className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-black shadow-md shadow-blue-600/30 transition-all hover:scale-105 active:scale-95 cursor-pointer">
+              <Link href={originPortal.path} className="shrink-0">
+                <button
+                  className={cn(
+                    "flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-white text-xs font-black shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer",
+                    originPortal.roleKey === "hr"
+                      ? "bg-rose-600 hover:bg-rose-500 shadow-rose-600/30"
+                      : originPortal.roleKey === "md"
+                      ? "bg-purple-600 hover:bg-purple-500 shadow-purple-600/30"
+                      : originPortal.roleKey === "accountant"
+                      ? "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/30"
+                      : originPortal.roleKey === "manager"
+                      ? "bg-amber-600 hover:bg-amber-500 shadow-amber-600/30"
+                      : "bg-blue-600 hover:bg-blue-500 shadow-blue-600/30"
+                  )}
+                >
                   <LogOut className="w-3.5 h-3.5 rotate-180" />
-                  <span>Exit to Admin</span>
+                  <span>Exit to {originPortal.label}</span>
                 </button>
               </Link>
 

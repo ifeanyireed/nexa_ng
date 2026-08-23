@@ -460,6 +460,32 @@ export const SPECIALTY_TO_NICHE_MAP: Record<string, string> = {
     "food": "food-agribusiness",
     "realestate": "real-estate-construction",
 
+    // Canonical One-Word SEO Subcategory Slugs
+    "handyman": "handyman-finders",
+    "specialists": "specialist-finders",
+    "cleaning": "sanitation-finders",
+    "beauty": "style-finders",
+    "laundry": "wardrobe-finders",
+    "tech": "tech-finders",
+    "corporate": "corporate-finders",
+    "creative": "content-finders",
+    "talent": "talent-finders",
+    "tutoring": "academic-finders",
+    "vocational": "vocational-finders",
+    "planning": "planning-finders",
+    "entertainment": "entertainment-finders",
+    "medical": "medical-finders",
+    "wellness": "wellness-finders",
+    "caregiving": "care-finders",
+    "dispatch": "delivery-finders",
+    "transport": "transport-finders",
+    "mechanics": "repair-finders",
+    "autocare": "auto-care-finders",
+    "culinary": "culinary-finders",
+    "agriculture": "agro-finders",
+    "properties": "property-finders",
+    "construction": "building-finders",
+
     // Home Services
     "plumber": "home-services",
     "electrician": "home-services",
@@ -554,7 +580,7 @@ export interface SubcategoryGroup {
 export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
   // 1. Home & Maintenance
   {
-    slug: "handyman-finders",
+    slug: "handyman",
     name: "Handyman Finders",
     parentCategory: "Home & Maintenance",
     parentCategorySlug: "home-services",
@@ -569,7 +595,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
     ],
   },
   {
-    slug: "specialist-finders",
+    slug: "specialists",
     name: "Specialist Finders",
     parentCategory: "Home & Maintenance",
     parentCategorySlug: "home-services",
@@ -583,7 +609,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
     ],
   },
   {
-    slug: "sanitation-finders",
+    slug: "cleaning",
     name: "Sanitation Finders",
     parentCategory: "Home & Maintenance",
     parentCategorySlug: "home-services",
@@ -598,7 +624,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
 
   // 2. Fashion & Grooming
   {
-    slug: "style-finders",
+    slug: "beauty",
     name: "Style Finders",
     parentCategory: "Fashion & Grooming",
     parentCategorySlug: "fashion-grooming",
@@ -612,7 +638,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
     ],
   },
   {
-    slug: "wardrobe-finders",
+    slug: "laundry",
     name: "Wardrobe Finders",
     parentCategory: "Fashion & Grooming",
     parentCategorySlug: "fashion-grooming",
@@ -627,7 +653,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
 
   // 3. Professional Services
   {
-    slug: "tech-finders",
+    slug: "tech",
     name: "Tech Finders",
     parentCategory: "Professional Services",
     parentCategorySlug: "professional-services",
@@ -641,7 +667,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
     ],
   },
   {
-    slug: "corporate-finders",
+    slug: "corporate",
     name: "Corporate Finders",
     parentCategory: "Professional Services",
     parentCategorySlug: "professional-services",
@@ -655,7 +681,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
     ],
   },
   {
-    slug: "content-finders",
+    slug: "creative",
     name: "Content Finders",
     parentCategory: "Professional Services",
     parentCategorySlug: "professional-services",
@@ -669,7 +695,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
     ],
   },
   {
-    slug: "talent-finders",
+    slug: "talent",
     name: "Talent Finders",
     parentCategory: "Professional Services",
     parentCategorySlug: "professional-services",
@@ -683,7 +709,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
 
   // 4. Education & Skills
   {
-    slug: "academic-finders",
+    slug: "tutoring",
     name: "Academic Finders",
     parentCategory: "Education & Skills",
     parentCategorySlug: "education-skills",
@@ -697,7 +723,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
     ],
   },
   {
-    slug: "vocational-finders",
+    slug: "vocational",
     name: "Vocational Finders",
     parentCategory: "Education & Skills",
     parentCategorySlug: "education-skills",
@@ -712,7 +738,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
 
   // 5. Events & Entertainment
   {
-    slug: "planning-finders",
+    slug: "planning",
     name: "Planning Finders",
     parentCategory: "Events & Entertainment",
     parentCategorySlug: "events-entertainment",
@@ -725,7 +751,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
     ],
   },
   {
-    slug: "entertainment-finders",
+    slug: "entertainment",
     name: "Entertainment Finders",
     parentCategory: "Events & Entertainment",
     parentCategorySlug: "events-entertainment",
@@ -742,7 +768,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
 
   // 6. Health & Wellness
   {
-    slug: "medical-finders",
+    slug: "medical",
     name: "Medical Finders",
     parentCategory: "Health & Wellness",
     parentCategorySlug: "health-wellness",
@@ -756,7 +782,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
     ],
   },
   {
-    slug: "wellness-finders",
+    slug: "wellness",
     name: "Wellness Finders",
     parentCategory: "Health & Wellness",
     parentCategorySlug: "health-wellness",
@@ -769,7 +795,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
     ],
   },
   {
-    slug: "care-finders",
+    slug: "caregiving",
     name: "Care Finders",
     parentCategory: "Health & Wellness",
     parentCategorySlug: "health-wellness",
@@ -783,7 +809,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
 
   // 7. Logistics & Transport
   {
-    slug: "delivery-finders",
+    slug: "dispatch",
     name: "Delivery Finders",
     parentCategory: "Logistics & Transport",
     parentCategorySlug: "logistics-transport",
@@ -795,7 +821,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
     ],
   },
   {
-    slug: "transport-finders",
+    slug: "transport",
     name: "Transport Finders",
     parentCategory: "Logistics & Transport",
     parentCategorySlug: "logistics-transport",
@@ -810,7 +836,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
 
   // 8. Automotive Services
   {
-    slug: "repair-finders",
+    slug: "mechanics",
     name: "Repair Finders",
     parentCategory: "Automotive Services",
     parentCategorySlug: "automotive-services",
@@ -823,7 +849,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
     ],
   },
   {
-    slug: "auto-care-finders",
+    slug: "autocare",
     name: "Auto Care Finders",
     parentCategory: "Automotive Services",
     parentCategorySlug: "automotive-services",
@@ -837,7 +863,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
 
   // 9. Food & Agribusiness
   {
-    slug: "culinary-finders",
+    slug: "culinary",
     name: "Culinary Finders",
     parentCategory: "Food & Agribusiness",
     parentCategorySlug: "food-agribusiness",
@@ -850,7 +876,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
     ],
   },
   {
-    slug: "agro-finders",
+    slug: "agriculture",
     name: "Agro Finders",
     parentCategory: "Food & Agribusiness",
     parentCategorySlug: "food-agribusiness",
@@ -867,7 +893,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
 
   // 10. Real Estate & Construction
   {
-    slug: "property-finders",
+    slug: "properties",
     name: "Property Finders",
     parentCategory: "Real Estate & Construction",
     parentCategorySlug: "real-estate-construction",
@@ -880,7 +906,7 @@ export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
     ],
   },
   {
-    slug: "building-finders",
+    slug: "construction",
     name: "Building Finders",
     parentCategory: "Real Estate & Construction",
     parentCategorySlug: "real-estate-construction",

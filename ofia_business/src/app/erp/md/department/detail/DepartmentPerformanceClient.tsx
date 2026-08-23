@@ -3,27 +3,37 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useERPStore, PerformanceReview, User, getParentDept } from "@/lib/erp-store";
-import ERPLayout from "@/components/nets_erp/Layout";
+import { BusinessShell } from "@/components/business/BusinessShell";
 
 export default function DepartmentPerformancePage() {
   const router = useRouter();
   const { reviews, users } = useERPStore();
 
-  const [deptId, setDeptId] = useState<string>("");
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [deptId, setDeptId] = useState<string>("Fleet");
+  const [currentUser, setCurrentUser] = useState<User>({
+    id: "MD001",
+    name: "Executive Director",
+    email: "md@ofia.ng",
+    role: "md",
+    department: "Executive Management",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+  });
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const id = searchParams.get("deptId") || "";
-    setDeptId(id);
+    if (typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      const id = searchParams.get("deptId") || "Fleet";
+      setDeptId(id);
 
-    const stored = localStorage.getItem("erp_current_user");
-    if (stored) {
-      setCurrentUser(JSON.parse(stored));
+      const stored = localStorage.getItem("erp_current_user");
+      if (stored) {
+        try {
+          const u = JSON.parse(stored);
+          if (u && u.id) setCurrentUser(u);
+        } catch {}
+      }
     }
   }, []);
-
-  if (!currentUser) return null;
 
   // Filter employees and reviews for this department
   const deptEmployees = users.filter(u => getParentDept(u.department) === deptId && u.role === "employee");
@@ -45,8 +55,11 @@ export default function DepartmentPerformancePage() {
   const currentDeptAvg = allDeptAverages.find(d => d.name === deptId)?.average || 0;
 
   return (
-    <ERPLayout>
-      <div className="flex flex-col gap-6">
+    <BusinessShell
+      title={`Department Deep Dive — ${deptId}`}
+      subtitle="Competency calibrations, employee appraisal distribution, and performance ranking."
+    >
+      <div className="space-y-6">
         
         {/* Header navigation back */}
         <div className="flex items-center justify-between pb-3 border-b border-gray-200">
@@ -147,6 +160,6 @@ export default function DepartmentPerformancePage() {
         </div>
 
       </div>
-    </ERPLayout>
+    </BusinessShell>
   );
 }

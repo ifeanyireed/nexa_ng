@@ -3,22 +3,43 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useERPStore, PerformanceReview, User, getParentDept } from "@/lib/erp-store";
-import ERPLayout from "@/components/nets_erp/Layout";
-import StatCards from "@/components/nets_erp/StatCards";
+import { BusinessShell } from "@/components/business/BusinessShell";
+import { NexaCard } from "@/components/nexa/NexaCard";
+import { NexaBadge } from "@/components/nexa/NexaBadge";
+import { NexaButton } from "@/components/nexa/NexaButton";
+import { ErpStatGrid } from "@/components/erp/ErpStatCard";
+import { Building2, Award, TrendingUp, Users, ArrowRight } from "lucide-react";
 
 export default function MDDashboard() {
   const router = useRouter();
   const { reviews, users } = useERPStore();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User>({
+    id: "MD001",
+    name: "Executive Director",
+    email: "md@ofia.ng",
+    role: "md",
+    department: "Executive Management",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+  });
 
   useEffect(() => {
-    const stored = localStorage.getItem("erp_current_user");
-    if (stored) {
-      setCurrentUser(JSON.parse(stored));
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("erp_current_user");
+      if (stored) {
+        try {
+          const u = JSON.parse(stored);
+          if (u && u.id) {
+            setCurrentUser(u);
+            return;
+          }
+        } catch {}
+      }
+      if (users.length > 0) {
+        const found = users.find(u => u.role === "md") || users[0];
+        setCurrentUser(found);
+      }
     }
-  }, []);
-
-  if (!currentUser) return null;
+  }, [users]);
 
   // Filter completed reviews
   const completedReviews = reviews.filter(r => r.status === "HR Approved");
@@ -48,11 +69,11 @@ export default function MDDashboard() {
   const auditProgressPercentage = totalReviewsCount > 0 ? (auditCompletedCount / totalReviewsCount) * 100 : 0;
 
   return (
-    <ERPLayout>
-      <div className="flex flex-col gap-6">
-        
-        {/* Top Stat Cards */}
-        <StatCards />
+    <BusinessShell
+      title="Executive Briefing & MD Governance"
+      subtitle="Enterprise-wide appraisal calibrations, department rating benchmarks, and executive talent heatmaps."
+    >
+      <div className="space-y-6">
         
         {/* Company Overview Row */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-5">
@@ -160,8 +181,7 @@ export default function MDDashboard() {
           </div>
 
         </div>
-
       </div>
-    </ERPLayout>
+    </BusinessShell>
   );
 }

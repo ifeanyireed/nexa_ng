@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useERPStore, PerformanceReview, User, Objective } from "@/lib/erp-store";
-import ERPLayout from "@/components/nets_erp/Layout";
+import { BusinessShell } from "@/components/business/BusinessShell";
 
 const getCategoryBadgeStyle = (cat?: string) => {
   switch (cat?.toLowerCase()) {
@@ -64,9 +64,9 @@ export default function ManagerReviewClient() {
 
   if (!review || !employee) {
     return (
-      <ERPLayout>
-        <div className="py-8 text-center text-slate-450 font-bold">Loading review details...</div>
-      </ERPLayout>
+      <BusinessShell title="Manager Appraisal Dossier" subtitle="Loading employee performance verification...">
+        <div className="py-12 text-center text-slate-450 font-bold">Loading review details...</div>
+      </BusinessShell>
     );
   }
 
@@ -338,15 +338,18 @@ export default function ManagerReviewClient() {
   };
 
   return (
-    <ERPLayout>
-      <div className="flex flex-col gap-6">
+    <BusinessShell
+      title={`Evaluate ${employee.name}`}
+      subtitle={`${employee.id} • ${employee.department} • Manager Scoring Verification & Guidance`}
+    >
+      <div className="space-y-6">
         
         {/* Header navigation back */}
         <div className="flex items-center justify-between pb-3 border-b border-gray-200">
           <div>
             <button
-              onClick={() => router.push("/manager")}
-              className="text-xs text-blue-600 font-bold hover:underline flex items-center gap-1.5"
+              onClick={() => router.push("/erp/manager")}
+              className="text-xs text-blue-600 font-bold hover:underline flex items-center gap-1.5 cursor-pointer"
             >
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="19" y1="12" x2="5" y2="12" />
@@ -470,8 +473,7 @@ export default function ManagerReviewClient() {
             Approve & Submit
           </button>
         </div>
-
       </div>
-    </ERPLayout>
+    </BusinessShell>
   );
 }

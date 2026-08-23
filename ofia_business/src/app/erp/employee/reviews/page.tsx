@@ -3,24 +3,40 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useERPStore, PerformanceReview, User } from "@/lib/erp-store";
-import ERPLayout from "@/components/nets_erp/Layout";
+import { BusinessShell } from "@/components/business/BusinessShell";
 
 export default function MyPerformanceReviews() {
   const router = useRouter();
-  const { reviews } = useERPStore();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { reviews, users } = useERPStore();
+  const [currentUser, setCurrentUser] = useState<User>({
+    id: "EMP001",
+    name: "Jane Doe",
+    email: "jane.doe@ofia.ng",
+    role: "employee",
+    department: "Marketing",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+  });
   const [userReviews, setUserReviews] = useState<PerformanceReview[]>([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem("erp_current_user");
-    if (stored) {
-      const u = JSON.parse(stored);
-      setCurrentUser(u);
-      setUserReviews(reviews.filter(r => r.employeeId === u.id));
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("erp_current_user");
+      let activeUser = currentUser;
+      if (stored) {
+        try {
+          const u = JSON.parse(stored);
+          if (u && u.id) {
+            activeUser = u;
+            setCurrentUser(u);
+          }
+        } catch {}
+      } else if (users.length > 0) {
+        activeUser = users[0];
+        setCurrentUser(activeUser);
+      }
+      setUserReviews(reviews.filter(r => r.employeeId === activeUser.id));
     }
-  }, [reviews]);
-
-  if (!currentUser) return null;
+  }, [reviews, users]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -40,8 +56,11 @@ export default function MyPerformanceReviews() {
   };
 
   return (
-    <ERPLayout>
-      <div className="flex flex-col gap-6">
+    <BusinessShell
+      title="My Performance Appraisals"
+      subtitle="History of all self-assessments, manager calibrations, and approved competency scores."
+    >
+      <div className="space-y-6">
         
         {/* Header Block */}
         <div>
@@ -106,8 +125,7 @@ export default function MyPerformanceReviews() {
             </table>
           </div>
         </div>
-
       </div>
-    </ERPLayout>
+    </BusinessShell>
   );
 }

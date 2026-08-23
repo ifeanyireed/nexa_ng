@@ -3,25 +3,46 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useERPStore, PerformanceReview, User } from "@/lib/erp-store";
-import ERPLayout from "@/components/nets_erp/Layout";
-import StatCards from "@/components/nets_erp/StatCards";
+import { BusinessShell } from "@/components/business/BusinessShell";
+import { NexaCard } from "@/components/nexa/NexaCard";
+import { NexaBadge } from "@/components/nexa/NexaBadge";
+import { NexaButton } from "@/components/nexa/NexaButton";
+import { ErpStatGrid } from "@/components/erp/ErpStatCard";
+import { UserCheck, Star, Award, CheckCircle2, ArrowRight } from "lucide-react";
 
 export default function EmployeeDashboard() {
   const router = useRouter();
-  const { reviews, cycles } = useERPStore();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { reviews, cycles, users } = useERPStore();
+  const [currentUser, setCurrentUser] = useState<User>({
+    id: "EMP001",
+    name: "Jane Doe",
+    email: "jane.doe@ofia.ng",
+    role: "employee",
+    department: "Marketing",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+  });
   const [userReviews, setUserReviews] = useState<PerformanceReview[]>([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem("erp_current_user");
-    if (stored) {
-      const u = JSON.parse(stored);
-      setCurrentUser(u);
-      setUserReviews(reviews.filter(r => r.employeeId === u.id));
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("erp_current_user");
+      if (stored) {
+        try {
+          const u = JSON.parse(stored);
+          if (u && u.id) {
+            setCurrentUser(u);
+            setUserReviews(reviews.filter(r => r.employeeId === u.id));
+            return;
+          }
+        } catch {}
+      }
+      if (users.length > 0) {
+        const found = users.find(u => u.id === "EMP001") || users[0];
+        setCurrentUser(found);
+        setUserReviews(reviews.filter(r => r.employeeId === found.id));
+      }
     }
-  }, [reviews]);
-
-  if (!currentUser) return null;
+  }, [reviews, users]);
 
   // Find active cycle review
   const activeCycle = cycles.find(c => c.status === "Active");
@@ -46,11 +67,11 @@ export default function EmployeeDashboard() {
   };
 
   return (
-    <ERPLayout>
-      <div className="flex flex-col gap-6">
-        
-        {/* Top Stat Cards */}
-        <StatCards />
+    <BusinessShell
+      title={`Employee Portal — ${currentUser.name}`}
+      subtitle={`${currentUser.department} • Self-appraisals, quarterly performance milestones, and competency progression.`}
+    >
+      <div className="space-y-6">
         
         {/* Welcome Section */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -189,6 +210,6 @@ export default function EmployeeDashboard() {
         </div>
 
       </div>
-    </ERPLayout>
+    </BusinessShell>
   );
 }

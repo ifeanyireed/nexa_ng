@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useERPStore, PerformanceReview, Objective } from "@/lib/erp-store";
-import ERPLayout from "@/components/nets_erp/Layout";
+import { BusinessShell } from "@/components/business/BusinessShell";
 
 const getCategoryBadgeStyle = (cat?: string) => {
   switch (cat?.toLowerCase()) {
@@ -55,9 +55,9 @@ export default function ReviewDetailClient() {
 
   if (!review) {
     return (
-      <ERPLayout>
-        <div className="py-8 text-center text-slate-450 font-bold">Loading review details...</div>
-      </ERPLayout>
+      <BusinessShell title="Performance Review Dossier" subtitle="Loading self-appraisal submission...">
+        <div className="py-12 text-center text-slate-450 font-bold">Loading review details...</div>
+      </BusinessShell>
     );
   }
 
@@ -163,7 +163,7 @@ export default function ReviewDetailClient() {
   if (isSubmittedSuccess) {
     const selfAvg = calculateSelfAverage();
     return (
-      <ERPLayout>
+      <BusinessShell title="Appraisal Submission Success" subtitle="Your self-appraisal score and responses have been logged.">
         <div className="max-w-2xl mx-auto bg-white rounded-[28px] border border-gray-150/40 p-8 flex flex-col items-center gap-6 shadow-sm text-center">
           <div className="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
             <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
@@ -198,20 +198,20 @@ export default function ReviewDetailClient() {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-xs font-extrabold text-slate-455 uppercase tracking-wide">Overall Rating (Normalized)</span>
-              <span className="bg-blue-50 text-blue-700 font-black px-2.5 py-1 rounded-lg text-xs">
+              <span className="text-sm font-black text-blue-600">
                 {selfAvg.toFixed(1)} / 10
               </span>
             </div>
           </div>
 
           <button
-            onClick={() => router.push("/employee")}
+            onClick={() => router.push("/erp/employee/reviews")}
             className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-all shadow-md"
           >
-            Back to Dashboard
+            Return to My Reviews
           </button>
         </div>
-      </ERPLayout>
+      </BusinessShell>
     );
   }
 
@@ -335,15 +335,18 @@ export default function ReviewDetailClient() {
   };
 
   return (
-    <ERPLayout>
-      <div className="flex flex-col gap-6">
+    <BusinessShell
+      title={review.cycleName}
+      subtitle="Employee Self-Assessment & Competency Appraisal Dossier"
+    >
+      <div className="space-y-6">
         
         {/* Header navigation back */}
         <div className="flex items-center justify-between pb-3 border-b border-gray-200">
           <div>
             <button
-              onClick={() => router.push(review.employeeId === "EMP001" ? "/employee/reviews" : "/manager")}
-              className="text-xs text-blue-600 font-bold hover:underline flex items-center gap-1.5"
+              onClick={() => router.push(review.employeeId === "EMP001" ? "/erp/employee/reviews" : "/erp/manager")}
+              className="text-xs text-blue-600 font-bold hover:underline flex items-center gap-1.5 cursor-pointer"
             >
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <line x1="19" y1="12" x2="5" y2="12" />
@@ -488,8 +491,7 @@ export default function ReviewDetailClient() {
             </button>
           </div>
         )}
-
       </div>
-    </ERPLayout>
+    </BusinessShell>
   );
 }

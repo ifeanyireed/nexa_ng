@@ -3,22 +3,43 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useERPStore, PerformanceReview, User } from "@/lib/erp-store";
-import ERPLayout from "@/components/nets_erp/Layout";
-import StatCards from "@/components/nets_erp/StatCards";
+import { BusinessShell } from "@/components/business/BusinessShell";
+import { NexaCard } from "@/components/nexa/NexaCard";
+import { NexaBadge } from "@/components/nexa/NexaBadge";
+import { NexaButton } from "@/components/nexa/NexaButton";
+import { ErpStatGrid } from "@/components/erp/ErpStatCard";
+import { Users, Star, Clock, CheckCircle2, ArrowRight } from "lucide-react";
 
 export default function ManagerDashboard() {
   const router = useRouter();
   const { reviews, users, cycles } = useERPStore();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User>({
+    id: "MGR001",
+    name: "John Smith",
+    email: "john.smith@ofia.ng",
+    role: "manager",
+    department: "Marketing",
+    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
+  });
 
   useEffect(() => {
-    const stored = localStorage.getItem("erp_current_user");
-    if (stored) {
-      setCurrentUser(JSON.parse(stored));
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("erp_current_user");
+      if (stored) {
+        try {
+          const u = JSON.parse(stored);
+          if (u && u.id) {
+            setCurrentUser(u);
+            return;
+          }
+        } catch {}
+      }
+      if (users.length > 0) {
+        const found = users.find(u => u.role === "manager") || users[0];
+        setCurrentUser(found);
+      }
     }
-  }, []);
-
-  if (!currentUser) return null;
+  }, [users]);
 
   // Filter reviews of employees who report to this manager
   // In our mock store, EMP001, EMP002, EMP003 report to John Smith (MGR001)
@@ -58,11 +79,11 @@ export default function ManagerDashboard() {
   };
 
   return (
-    <ERPLayout>
-      <div className="flex flex-col gap-6">
-        
-        {/* Top Stat Cards */}
-        <StatCards />
+    <BusinessShell
+      title={`Line Manager Desk — ${currentUser.name}`}
+      subtitle={`${currentUser.department} • Team self-appraisal submissions, scoring verification, and performance feedback.`}
+    >
+      <div className="space-y-6">
         
         {/* Statistics Cards */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-5">
@@ -205,8 +226,7 @@ export default function ManagerDashboard() {
             </table>
           </div>
         </div>
-
       </div>
-    </ERPLayout>
+    </BusinessShell>
   );
 }

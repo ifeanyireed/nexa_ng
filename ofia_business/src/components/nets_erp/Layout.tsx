@@ -148,16 +148,37 @@ export default function ERPLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { users, isLoading } = useERPStore();
   
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User>({
+    id: "EMP001",
+    name: "Jane Doe",
+    email: "jane.doe@ofia.ng",
+    role: "employee",
+    department: "Marketing",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+  });
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Sync collapsed state from localStorage on mount
+  // Sync user and collapsed state from localStorage on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("erp_sidebar_collapsed");
-      setIsCollapsed(stored === "true");
+      const storedCollapse = localStorage.getItem("erp_sidebar_collapsed");
+      if (storedCollapse) setIsCollapsed(storedCollapse === "true");
+
+      const storedUser = localStorage.getItem("erp_current_user");
+      if (storedUser) {
+        try {
+          const parsed = JSON.parse(storedUser);
+          if (parsed && parsed.id) {
+            setCurrentUser(parsed);
+          }
+        } catch {}
+      } else if (users.length > 0) {
+        const found = users.find(u => u.id === "EMP001") || users[0];
+        setCurrentUser(found);
+        localStorage.setItem("erp_current_user", JSON.stringify(found));
+      }
     }
-  }, []);
+  }, [users]);
 
   const toggleCollapse = () => {
     const next = !isCollapsed;
@@ -194,7 +215,7 @@ export default function ERPLayout({ children }: { children: React.ReactNode }) {
     const updatedUser = { ...currentUser, role: targetRole as Role };
     setCurrentUser(updatedUser);
     localStorage.setItem("erp_current_user", JSON.stringify(updatedUser));
-    router.push(`/${targetRole}`);
+    router.push(`/erp/${targetRole}`);
   };
 
   const getSwitchLabel = () => {
@@ -222,45 +243,6 @@ export default function ERPLayout({ children }: { children: React.ReactNode }) {
     }
     return "Switch View";
   };
-
-  // Sync current user from local storage or set default employee
-  useEffect(() => {
-    if (users.length > 0) {
-      const stored = localStorage.getItem("erp_current_user");
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          const found = users.find(u => u.id === parsed.id);
-          if (found) {
-            setCurrentUser({ ...found, role: parsed.role });
-            return;
-          }
-        } catch {}
-      }
-      // Fallback default is Jane Doe (Employee)
-      const defaultUser = users.find(u => u.id === "EMP001") || users[0];
-      setCurrentUser(defaultUser);
-      localStorage.setItem("erp_current_user", JSON.stringify(defaultUser));
-    }
-  }, [users]);
-
-  // Enforce Role-Based Access Control (RBAC) client-side
-  useEffect(() => {
-    if (currentUser) {
-      const role = currentUser.role;
-      if (pathname.startsWith("/hr") && role !== "hr") {
-        router.push(`/${role}`);
-      } else if (pathname.startsWith("/manager") && role !== "manager") {
-        router.push(`/${role}`);
-      } else if (pathname.startsWith("/md") && role !== "md") {
-        router.push(`/${role}`);
-      } else if (pathname.startsWith("/admin") && role !== "admin") {
-        router.push(`/${role}`);
-      } else if (pathname.startsWith("/accountant") && role !== "accountant") {
-        router.push(`/${role}`);
-      }
-    }
-  }, [currentUser, pathname, router]);
 
   // Determine sidebar menu items based on role
   const getSidebarItems = (): SidebarItem[] => {
@@ -311,10 +293,6 @@ export default function ERPLayout({ children }: { children: React.ReactNode }) {
   };
 
   const sidebarItems = getSidebarItems();
-
-  if (!currentUser) {
-    return <LoadingScreen message="Authenticating session..." />;
-  }
 
   return (
     <div className="min-h-screen bg-[#F0F2F5] text-[#1E293B] font-sans antialiased flex flex-col md:flex-row w-full relative">

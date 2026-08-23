@@ -295,9 +295,8 @@ export default function LoginPage() {
         <div className="w-full max-w-md space-y-6">
           <NexaCard variant="glass" padding="lg" className="border-2 border-[#1A56DB]/20 shadow-2xl rounded-3xl space-y-6">
             <div className="text-center space-y-2">
-              <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] text-[11px] font-bold border border-[#1A56DB]/20 shadow-sm">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                {currentTenant ? `${currentTenant.toUpperCase()} Operating Console` : "Enterprise Operating Console"}
+              <div className="flex justify-center mb-1">
+                <img src="/logo.png" alt="Ofia Logo" className="w-12 h-12 object-contain" />
               </div>
               <h1 className="text-2xl font-black text-display text-[var(--nexa-text-primary)] tracking-tight">
                 {currentTenant ? `Sign in to ${currentTenant.toUpperCase()} ERP` : "Sign in to Ofia ERP"}

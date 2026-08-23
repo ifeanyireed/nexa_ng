@@ -488,13 +488,11 @@ export default function AccountantLayout({ children }: { children: React.ReactNo
 
 	const navTabs = [
 		{ id: "overview", label: "Finance Hub", slug: "/accountant/overview" },
-		{ id: "coa", label: "Chart of Accounts", slug: "/accountant/coa" },
-		{ id: "ledger", label: "General Journal Ledger", slug: "/accountant/ledger" }
+		{ id: "coa", label: "Chart of Accounts", slug: "/accountant/coa" }
 	];
 
 	const getActiveTab = () => {
 		if (pathname.includes("/coa")) return "coa";
-		if (pathname.includes("/ledger")) return "ledger";
 		return "overview";
 	};
 
@@ -539,11 +537,6 @@ export default function AccountantLayout({ children }: { children: React.ReactNo
 				return {
 					title: "Chart of Accounts (COA)",
 					desc: "Organize and manage your general ledger accounts, codes, classifications, and balance sides."
-				};
-			case "ledger":
-				return {
-					title: "General Journal Ledger",
-					desc: "Review chronological double-entry journal transactions, debit/credit details, and ledger logs."
 				};
 			case "overview":
 			default:

@@ -145,7 +145,6 @@ export function ErpAdminShell({
     { label: "Viral Referrals", icon: <Gift className="w-5 h-5" />, href: "/erp/admin/referrals", key: "referrals" },
     { label: "Logistics Hub", icon: <Truck className="w-5 h-5" />, href: "/erp/admin/logistics", key: "logistics" },
     { label: "Retreat Quests", icon: <Trophy className="w-5 h-5" />, href: "/erp/admin/quests", key: "quests" },
-    { label: "General Ledger", icon: <PieChart className="w-5 h-5" />, href: "/erp/accountant", key: "finance" },
     { label: "HR & Appraisals", icon: <Users className="w-5 h-5" />, href: "/erp/hr", key: "hr" },
   ];
 
@@ -234,7 +233,6 @@ export function ErpAdminShell({
         { label: "Chart of Accounts", href: "/erp/accountant/coa", icon: <FolderKanban className="w-3.5 h-3.5" /> },
         { label: "Invoices & Billing", href: "/erp/accountant/invoices", icon: <FileText className="w-3.5 h-3.5" /> },
         { label: "Expenses", href: "/erp/accountant/expenses", icon: <DollarSign className="w-3.5 h-3.5" /> },
-        { label: "General Ledger", href: "/erp/accountant/ledger", icon: <FileSpreadsheet className="w-3.5 h-3.5" /> },
         { label: "Trial Balance", href: "/erp/accountant/trial-balance", icon: <Layers className="w-3.5 h-3.5" /> },
         { label: "Income Statement", href: "/erp/accountant/income-statement", icon: <TrendingUp className="w-3.5 h-3.5" /> },
         { label: "Financial Position", href: "/erp/accountant/financial-position", icon: <Building2 className="w-3.5 h-3.5" /> },

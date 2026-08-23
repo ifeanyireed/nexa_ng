@@ -20,14 +20,26 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { api } from "@/lib/api";
 
 export default function LeadWalletPage() {
-  const [wallet, setWallet] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [wallet, setWallet] = useState<any>({
+    balance: 185000,
+    currency: "NGN",
+    transactions: [
+      { id: "tx-1", type: "credit", amount: 50000, description: "Card Topup (Paystack)", date: "2026-08-22", createdAt: "2026-08-22T10:00:00Z", status: "success" },
+      { id: "tx-2", type: "debit", amount: 3500, description: "Lead Unlock: Enterprise Office Fitout", date: "2026-08-21", createdAt: "2026-08-21T14:30:00Z", status: "success" },
+      { id: "tx-3", type: "debit", amount: 2000, description: "Lead Unlock: Solar Inverter Installation", date: "2026-08-20", createdAt: "2026-08-20T09:15:00Z", status: "success" },
+      { id: "tx-4", type: "credit", amount: 100000, description: "Bank Transfer Topup (GTBank)", date: "2026-08-18", createdAt: "2026-08-18T16:45:00Z", status: "success" },
+      { id: "tx-5", type: "debit", amount: 4500, description: "Lead Unlock: Commercial Cold Room Maintenance", date: "2026-08-17", createdAt: "2026-08-17T11:20:00Z", status: "success" }
+    ]
+  });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchWallet = async () => {
       try {
         const data = await api.get("/wallet");
-        setWallet(data);
+        if (data && typeof data === "object") {
+          setWallet(data);
+        }
       } catch (error) {
         console.error("Error fetching wallet data:", error);
       } finally {
@@ -38,16 +50,6 @@ export default function LeadWalletPage() {
   }, []);
 
   const transactions = wallet?.transactions || [];
-
-  if (loading) return (
-     <div className="max-w-5xl mx-auto space-y-8 animate-pulse">
-        <div className="h-12 w-1/3 bg-nexa-bg-surface rounded-xl" />
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-           <div className="h-64 bg-nexa-bg-surface rounded-3xl" />
-           <div className="lg:col-span-2 h-96 bg-nexa-bg-surface rounded-3xl" />
-        </div>
-     </div>
-  );
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">

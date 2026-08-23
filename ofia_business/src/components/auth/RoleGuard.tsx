@@ -95,7 +95,7 @@ export function RoleGuard({
         effectiveAllowedRoles = ["admin", "md"];
       } else if (pathname.startsWith("/erp/admin/referrals")) {
         effectiveAllowedRoles = ["admin", "md", "manager"];
-      } else if (pathname.startsWith("/erp/admin/quests")) {
+      } else if (pathname.startsWith("/erp/hr/quests")) {
         effectiveAllowedRoles = ["admin", "md", "hr", "manager", "employee"];
       }
     }

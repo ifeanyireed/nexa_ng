@@ -51,7 +51,7 @@ export default function CreateQuestWizardPage() {
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
-      router.push(`/erp/admin/quests/qst-retreat-2026`);
+      router.push(`/erp/hr/quests/qst-retreat-2026`);
     }, 1200);
   };
 
@@ -60,7 +60,7 @@ export default function CreateQuestWizardPage() {
       title="Create New Team Quest"
       subtitle="Configure competition rules, teams, participant rosters, and branding."
       action={
-        <Link href="/erp/admin/quests">
+        <Link href="/erp/hr/quests">
           <NexaButton size="sm" variant="outline">
             Cancel
           </NexaButton>

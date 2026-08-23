@@ -148,7 +148,7 @@ export default function QuestOverviewCommandPage() {
               Public Page
             </NexaButton>
           </Link>
-          <Link href={`/erp/admin/quests/${questId}/challenges/new`}>
+          <Link href={`/erp/hr/quests/${questId}/challenges/new`}>
             <NexaButton size="sm" variant="primary" leftIcon={<Plus className="w-4 h-4" />}>
               Add Challenge
             </NexaButton>
@@ -245,7 +245,7 @@ export default function QuestOverviewCommandPage() {
               </div>
 
               <div className="flex items-center gap-3">
-                <Link href={`/erp/admin/quests/${questId}/challenges/chl-02`}>
+                <Link href={`/erp/hr/quests/${questId}/challenges/chl-02`}>
                   <NexaButton size="md" variant="secondary" leftIcon={<Play className="w-4 h-4 text-[#1A56DB]" />} className="bg-white text-[#1A56DB] hover:bg-gray-100 rounded-full">
                     Judge Control Room
                   </NexaButton>
@@ -395,7 +395,7 @@ export default function QuestOverviewCommandPage() {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-[var(--nexa-text-primary)]">Quest Challenges & Activities</h3>
-              <Link href={`/erp/admin/quests/${questId}/challenges/new`}>
+              <Link href={`/erp/hr/quests/${questId}/challenges/new`}>
                 <NexaButton size="sm" variant="primary" leftIcon={<Plus className="w-3.5 h-3.5" />}>
                   New Challenge
                 </NexaButton>
@@ -418,7 +418,7 @@ export default function QuestOverviewCommandPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Link href={`/erp/admin/quests/${questId}/challenges/${chl.id}`}>
+                    <Link href={`/erp/hr/quests/${questId}/challenges/${chl.id}`}>
                       <NexaButton size="sm" variant="outline">
                         Judge Desk
                       </NexaButton>

@@ -46,7 +46,7 @@ export default function CreateChallengePage() {
     setIsSubmitting(true);
     setTimeout(() => {
       setIsSubmitting(false);
-      router.push(`/erp/admin/quests/${questId}`);
+      router.push(`/erp/hr/quests/${questId}`);
     }, 1000);
   };
 
@@ -55,7 +55,7 @@ export default function CreateChallengePage() {
       title="Create New Challenge"
       subtitle="Generic competition template: Trivia, evidence upload, timed race, or manual panel judging."
       action={
-        <Link href={`/erp/admin/quests/${questId}`}>
+        <Link href={`/erp/hr/quests/${questId}`}>
           <NexaButton size="sm" variant="outline" leftIcon={<ArrowLeft className="w-4 h-4" />}>
             Back to Quest
           </NexaButton>
@@ -180,7 +180,7 @@ export default function CreateChallengePage() {
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--nexa-border)]">
-            <Link href={`/erp/admin/quests/${questId}`}>
+            <Link href={`/erp/hr/quests/${questId}`}>
               <NexaButton size="sm" variant="outline">
                 Cancel
               </NexaButton>

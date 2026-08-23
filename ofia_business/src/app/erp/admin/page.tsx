@@ -118,7 +118,7 @@ export default function AdminCommandCenterPage() {
       label: "Retreat TV Scoreboard",
       icon: <Trophy className="w-6 h-6" />,
       desc: "Live Stage Display",
-      href: "/erp/admin/quests",
+      href: "/erp/hr/quests",
     },
   ];
 

@@ -461,7 +461,6 @@ export function ErpAdminShell({
     { label: "Point of Sale (POS)", icon: <ShoppingCart className="w-5 h-5" />, href: "/erp/admin/pos", key: "pos" },
     { label: "Viral Referrals", icon: <Gift className="w-5 h-5" />, href: "/erp/admin/referrals", key: "referrals" },
     { label: "Logistics Hub", icon: <Truck className="w-5 h-5" />, href: "/erp/admin/logistics", key: "logistics" },
-    { label: "Retreat Quests", icon: <Trophy className="w-5 h-5" />, href: "/erp/admin/quests", key: "quests" },
     { label: "Accounting & Ledgers", icon: <Layers className="w-5 h-5" />, href: "/erp/accountant", badge: "GL", key: "accounting" },
     { label: "HR & Appraisals", icon: <Users className="w-5 h-5" />, href: "/erp/hr", key: "hr" },
     { label: "Employee Portal", icon: <UserCheck className="w-5 h-5" />, href: "/erp/employee", key: "employee" },
@@ -535,13 +534,6 @@ export function ErpAdminShell({
       ];
     }
 
-    if (pathname.startsWith("/erp/admin/quests")) {
-      return [
-        { label: "Active Quests", href: "/erp/admin/quests", icon: <Trophy className="w-3.5 h-3.5" /> },
-        { label: "Create Quest", href: "/erp/admin/quests/new", icon: <Sparkles className="w-3.5 h-3.5" /> },
-      ];
-    }
-
     if (pathname.startsWith("/erp/admin/marketplace")) {
       return [
         { label: "Storefront Overview", href: "/erp/admin/marketplace", icon: <ShoppingBag className="w-3.5 h-3.5" /> },
@@ -572,6 +564,14 @@ export function ErpAdminShell({
       ];
     }
 
+    if (pathname.startsWith("/erp/hr/quests")) {
+      return [
+        { label: "Active Quests", href: "/erp/hr/quests", icon: <Trophy className="w-3.5 h-3.5" /> },
+        { label: "Create Quest", href: "/erp/hr/quests/new", icon: <Sparkles className="w-3.5 h-3.5" /> },
+        { label: "HR Overview", href: "/erp/hr", icon: <Activity className="w-3.5 h-3.5" /> },
+      ];
+    }
+
     if (pathname.startsWith("/erp/hr")) {
       return [
         { label: "Appraisal Overview", href: "/erp/hr", icon: <Activity className="w-3.5 h-3.5" /> },
@@ -579,6 +579,7 @@ export function ErpAdminShell({
         { label: "Objective Banks", href: "/erp/hr/objectives", icon: <Target className="w-3.5 h-3.5" /> },
         { label: "Appraisal Cycles", href: "/erp/hr/cycle", icon: <Calendar className="w-3.5 h-3.5" /> },
         { label: "Reports & Ranking", href: "/erp/hr/reports", icon: <BarChart3 className="w-3.5 h-3.5" /> },
+        { label: "Team Quests", href: "/erp/hr/quests", icon: <Trophy className="w-3.5 h-3.5" /> },
       ];
     }
 

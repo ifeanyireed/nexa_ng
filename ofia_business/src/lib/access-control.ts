@@ -164,10 +164,10 @@ export const ERP_MODULES: ErpModuleDef[] = [
   },
   {
     key: "quests",
-    label: "Retreat Quests",
-    category: "Operations",
-    description: "Gamified employee achievements, milestones, and reward challenges.",
-    href: "/erp/admin/quests",
+    label: "Team Quests",
+    category: "Finance & HR",
+    description: "Gamified employee retreat competitions, hackathons, and agility challenges.",
+    href: "/erp/hr/quests",
   },
   {
     key: "accounting",

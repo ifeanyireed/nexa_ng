@@ -107,7 +107,7 @@ export default function TeamQuestsDashboardPage() {
               Stage Scoreboard
             </NexaButton>
           </Link>
-          <Link href="/erp/admin/quests/new">
+          <Link href="/erp/hr/quests/new">
             <NexaButton size="sm" variant="primary" className="rounded-full bg-[#1A56DB] text-white" leftIcon={<Plus className="w-4 h-4" />}>
               Create Quest
             </NexaButton>
@@ -298,7 +298,7 @@ export default function TeamQuestsDashboardPage() {
               </div>
 
               <div className="p-5 pt-0 flex items-center gap-2">
-                <Link href={`/erp/admin/quests/${quest.id}`} className="flex-1">
+                <Link href={`/erp/hr/quests/${quest.id}`} className="flex-1">
                   <NexaButton size="sm" variant="primary" className="w-full justify-center rounded-full bg-[#1A56DB]">
                     Manage Quest
                   </NexaButton>

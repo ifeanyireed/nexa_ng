@@ -96,7 +96,7 @@ export default function ChallengeControlRoomPage() {
       title="Judge Control Room — Mascot Photo Challenge"
       subtitle="Review live photo submissions, evaluate against criteria, and award transactional score ledger points."
       action={
-        <Link href={`/erp/admin/quests/${questId}`}>
+        <Link href={`/erp/hr/quests/${questId}`}>
           <NexaButton size="sm" variant="outline" leftIcon={<ArrowLeft className="w-4 h-4" />}>
             Back to Quest
           </NexaButton>

@@ -186,16 +186,16 @@ export function SuperAdminShell({
             <Link href="/" className="flex items-center gap-2.5">
               <img
                 src="/logo.png"
-                alt="Ofia Super Admin"
+                alt="Ofia Business Suite SUPER-ADMIN"
                 className="w-8 h-8 object-contain shrink-0"
               />
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-base font-extrabold text-display leading-tight text-[var(--nexa-text-primary)]">
-                    Ofia Super Admin
+                    Ofia Business Suite
                   </span>
                   <span className="text-[10px] font-extrabold font-mono uppercase text-[#1A56DB] bg-[#1A56DB]/10 border border-[#1A56DB]/20 px-2 py-0.5 rounded-full">
-                    CROSS-APP
+                    SUPER-ADMIN
                   </span>
                 </div>
                 <span className="text-[9px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider mt-0.5">
@@ -207,7 +207,7 @@ export function SuperAdminShell({
             <Link href="/" className="mx-auto">
               <img
                 src="/logo.png"
-                alt="Ofia Super Admin"
+                alt="Ofia Business Suite SUPER-ADMIN"
                 className="w-8 h-8 object-contain mx-auto"
               />
             </Link>

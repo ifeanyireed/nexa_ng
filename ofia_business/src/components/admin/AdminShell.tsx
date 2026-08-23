@@ -159,7 +159,7 @@ export const AdminShell = ({ children }: AdminShellProps) => {
           <div className="p-3 border-t border-[var(--nexa-border)] flex items-center justify-between">
             <div className="flex items-center gap-2.5 overflow-hidden">
               <img
-                src="/avatar12.png"
+                src="/character12.jpg"
                 alt="Platform SuperAdmin Profile"
                 className="w-8 h-8 rounded-xl object-cover shrink-0 border border-[var(--nexa-border)] shadow-sm"
               />

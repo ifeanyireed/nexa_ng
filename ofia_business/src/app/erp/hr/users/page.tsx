@@ -52,7 +52,7 @@ export default function UserRoleManagement() {
       email,
       role,
       department,
-      avatar: `/avatar${Math.floor(Math.random() * 20) + 1}.png`,
+      avatar: `/character${Math.floor(Math.random() * 20) + 1}.jpg`,
       managerName: role === "employee" ? managerName || defaultManager : undefined,
     };
 

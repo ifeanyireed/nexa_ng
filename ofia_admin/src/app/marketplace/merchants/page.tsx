@@ -21,6 +21,7 @@ import { SuperAdminShell } from "@/components/admin/SuperAdminShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
+import { NexaAvatar } from "@/components/nexa/NexaAvatar";
 
 interface ProMerchant {
   id: string;
@@ -226,14 +227,19 @@ export default function MarketplaceMerchantsPage() {
               {filtered.map((pro) => (
                 <tr key={pro.id} className="hover:bg-[var(--nexa-bg-base)]/50 transition-colors">
                   <td className="py-3.5 px-4">
-                    <div className="font-bold flex items-center gap-2">
-                      <span>{pro.businessName}</span>
-                      {pro.verified && (
-                        <ShieldCheck className="w-4 h-4 text-[#0E9F6E] shrink-0" />
-                      )}
-                    </div>
-                    <div className="text-[11px] text-[var(--nexa-text-muted)] mt-0.5">
-                      {pro.ownerName} • {pro.phone}
+                    <div className="flex items-center gap-3">
+                      <NexaAvatar name={pro.ownerName} size="sm" />
+                      <div>
+                        <div className="font-bold flex items-center gap-2">
+                          <span>{pro.businessName}</span>
+                          {pro.verified && (
+                            <ShieldCheck className="w-4 h-4 text-[#0E9F6E] shrink-0" />
+                          )}
+                        </div>
+                        <div className="text-[11px] text-[var(--nexa-text-muted)] mt-0.5">
+                          {pro.ownerName} • {pro.phone}
+                        </div>
+                      </div>
                     </div>
                   </td>
                   <td className="py-3.5 px-3">

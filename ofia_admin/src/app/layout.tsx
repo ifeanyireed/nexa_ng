@@ -16,7 +16,7 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ofia Super Admin | Master Overview",
+  title: "Ofia Business Suite SUPER-ADMIN | Master Overview",
   description:
     "Unified Super Admin & Multi-App Governance for Ofia AI Swarm, Ofia Compass, and Multi-Tenant Workspaces.",
   icons: {

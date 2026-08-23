@@ -17,6 +17,7 @@ import { SuperAdminShell } from "@/components/admin/SuperAdminShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
+import { NexaAvatar } from "@/components/nexa/NexaAvatar";
 
 const TECH_LIST = [
   { id: "TECH-001", name: "John Philip", specialty: "Electrical & Inverters", location: "Lekki Phase 1, Lagos", phone: "+234 802 111 2222", rating: 4.9, completedJobs: 142, status: "AVAILABLE" },
@@ -77,11 +78,13 @@ export default function MarketplaceTechniciansPage() {
             <tbody className="divide-y divide-[var(--nexa-border)] text-[var(--nexa-text-primary)]">
               {filtered.map((tech) => (
                 <tr key={tech.id} className="hover:bg-[var(--nexa-bg-base)]/50 transition-colors">
-                  <td className="py-3.5 px-4 font-bold flex items-center gap-2">
-                    <UserCheck className="w-4 h-4 text-[#0E9F6E]" />
-                    <div>
-                      <div>{tech.name}</div>
-                      <div className="font-mono text-[10px] text-[var(--nexa-text-muted)]">{tech.id}</div>
+                  <td className="py-3.5 px-4 font-bold">
+                    <div className="flex items-center gap-3">
+                      <NexaAvatar name={tech.name} size="sm" />
+                      <div>
+                        <div>{tech.name}</div>
+                        <div className="font-mono text-[10px] text-[var(--nexa-text-muted)] font-normal">{tech.id}</div>
+                      </div>
                     </div>
                   </td>
                   <td className="py-3.5 px-3">

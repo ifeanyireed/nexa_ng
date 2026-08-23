@@ -20,7 +20,7 @@ export interface LayoutTemplateMeta {
 export const LAYOUT_TEMPLATES_CATALOG: Record<VerticalLayoutTemplate, LayoutTemplateMeta> = {
   QUICK_ORDER_FOOD: {
     key: "QUICK_ORDER_FOOD",
-    label: "Quick-Order Restaurant / Kitchen",
+    label: "Quick-Order",
     badge: "Food & Menu",
     color: "#EF4444",
     description: "Visual item menu grid, instant cart drawer, preparation time estimator, and kitchen rider dispatch.",
@@ -29,7 +29,7 @@ export const LAYOUT_TEMPLATES_CATALOG: Record<VerticalLayoutTemplate, LayoutTemp
   },
   RENTAL_STAY_BOOKING: {
     key: "RENTAL_STAY_BOOKING",
-    label: "Shortlet, Hotel & Property Stays",
+    label: "Rental & Stay Booking",
     badge: "Hospitality & Stays",
     color: "#059669",
     description: "Check-in/out date range picker, nightly rate multiplier, guest count, amenity filters, and security deposit escrow.",
@@ -38,7 +38,7 @@ export const LAYOUT_TEMPLATES_CATALOG: Record<VerticalLayoutTemplate, LayoutTemp
   },
   ON_DEMAND_DISPATCH: {
     key: "ON_DEMAND_DISPATCH",
-    label: "On-Demand Route, Rides & Courier Dispatch",
+    label: "On-Demand Dispatch",
     badge: "Rides & Courier",
     color: "#3B82F6",
     description: "Live map radius lookup, instant distance fare computation, courier dispatch desk, and waybill barcode tracking.",
@@ -47,7 +47,7 @@ export const LAYOUT_TEMPLATES_CATALOG: Record<VerticalLayoutTemplate, LayoutTemp
   },
   CALENDAR_BOOKING: {
     key: "CALENDAR_BOOKING",
-    label: "Calendar Slot & Specialist Booking",
+    label: "Calendar Booking",
     badge: "Appointments",
     color: "#8B5CF6",
     description: "Interactive time-slot selector, specialist staff picker, service duration calculator, and booking deposit escrow.",
@@ -56,7 +56,7 @@ export const LAYOUT_TEMPLATES_CATALOG: Record<VerticalLayoutTemplate, LayoutTemp
   },
   VEHICLE_INSPECTION_LISTING: {
     key: "VEHICLE_INSPECTION_LISTING",
-    label: "Automotive Inspection & Workshop Bay",
+    label: "Vehicle Inspection",
     badge: "Auto & Detailing",
     color: "#D97706",
     description: "Vehicle VIN/plate lookup, mileage selector, multi-point diagnostic bay report, and quote approval.",
@@ -65,7 +65,7 @@ export const LAYOUT_TEMPLATES_CATALOG: Record<VerticalLayoutTemplate, LayoutTemp
   },
   SUBSCRIPTION_PICKUP: {
     key: "SUBSCRIPTION_PICKUP",
-    label: "Recurring Doorstep Laundry & Wardrobe Pickup",
+    label: "Subscription Pickup",
     badge: "Recurring Care",
     color: "#06B6D4",
     description: "Bag volume estimator, wash & fold / dry-cleaning tiering, recurring weekly schedule, and doorstep collection.",
@@ -74,7 +74,7 @@ export const LAYOUT_TEMPLATES_CATALOG: Record<VerticalLayoutTemplate, LayoutTemp
   },
   TECHNICAL_ESTIMATE_QUOTE: {
     key: "TECHNICAL_ESTIMATE_QUOTE",
-    label: "Technical Estimate & Scope of Work",
+    label: "Technical Estimate Quote",
     badge: "Field Contracting",
     color: "#1A56DB",
     description: "Scope specification form, material procurement quote, on-site technician survey request, and milestone escrow.",

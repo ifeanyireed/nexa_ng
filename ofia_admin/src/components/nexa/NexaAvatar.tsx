@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface NexaAvatarProps {
@@ -12,6 +12,16 @@ interface NexaAvatarProps {
   className?: string;
 }
 
+export const getDeterministicAvatar = (seed: string) => {
+  if (!seed) return "/character1.jpg";
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = (Math.abs(hash) % 20) + 1;
+  return `/character${index}.jpg`;
+};
+
 export const NexaAvatar = ({
   name,
   src,
@@ -20,11 +30,13 @@ export const NexaAvatar = ({
   status,
   className,
 }: NexaAvatarProps) => {
+  const [hasError, setHasError] = useState(false);
+
   const sizes = {
     xs: "w-6 h-6 text-[10px]",
     sm: "w-8 h-8 text-xs",
     md: "w-10 h-10 text-sm",
-    lg: "w-13 h-13 text-base",
+    lg: "w-12 h-12 text-base",
     xl: "w-16 h-16 text-lg",
   };
 
@@ -44,49 +56,35 @@ export const NexaAvatar = ({
   };
 
   const getInitials = (n: string) => {
-    if (!n) return "AI";
+    if (!n) return "OF";
     const parts = n.trim().split(" ");
     if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
     return n.slice(0, 2).toUpperCase();
   };
 
-  // Generate consistent color hash for avatar background
-  const getGradient = (n: string) => {
-    const colors = [
-      "from-blue-600 to-indigo-700",
-      "from-emerald-600 to-teal-700",
-      "from-purple-600 to-indigo-800",
-      "from-amber-500 to-orange-600",
-      "from-rose-500 to-pink-600",
-      "from-cyan-600 to-blue-700",
-    ];
-    let hash = 0;
-    for (let i = 0; i < n.length; i++) hash = n.charCodeAt(i) + ((hash << 5) - hash);
-    return colors[Math.abs(hash) % colors.length];
-  };
+  const avatarSrc = src || getDeterministicAvatar(name);
 
   return (
     <div className={cn("relative inline-flex shrink-0 select-none", className)}>
-      {src ? (
-        <img
-          src={src}
-          alt={name}
-          className={cn(
-            "rounded-full object-cover ring-1 ring-[var(--nexa-border)]",
-            sizes[size]
-          )}
-        />
-      ) : (
-        <div
-          className={cn(
-            "rounded-full flex items-center justify-center font-bold text-white shadow-sm bg-gradient-to-tr",
-            getGradient(name),
-            sizes[size]
-          )}
-        >
-          {getInitials(name)}
-        </div>
-      )}
+      <div
+        className={cn(
+          "rounded-full overflow-hidden border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] flex items-center justify-center font-bold text-white shadow-xs",
+          sizes[size]
+        )}
+      >
+        {!hasError ? (
+          <img
+            src={avatarSrc}
+            alt={name || "Avatar"}
+            onError={() => setHasError(true)}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <span className="text-[var(--nexa-text-secondary)] uppercase font-bold text-xs">
+            {getInitials(name)}
+          </span>
+        )}
+      </div>
 
       {status && (
         <span

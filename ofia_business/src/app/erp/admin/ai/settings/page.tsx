@@ -46,7 +46,7 @@ export default function SettingsPage() {
     e.preventDefault();
     if (!inviteName || !inviteEmail) return;
 
-    const avatarIndex = ((teamMembers.length + 3) % 30) + 1;
+    const avatarIndex = ((teamMembers.length + 3) % 20) + 1;
     const newMember: AdminUser = {
       id: `usr-${Date.now()}`,
       name: inviteName,
@@ -55,7 +55,7 @@ export default function SettingsPage() {
       title: inviteTitle || "Team Member",
       orgName: "EduSuite Nigeria",
       orgId: "org-01",
-      avatar: `/avatar${avatarIndex}.png`,
+      avatar: `/character${avatarIndex}.jpg`,
       twoFactorEnabled: true,
       status: "Active",
       lastLogin: "Active right now",

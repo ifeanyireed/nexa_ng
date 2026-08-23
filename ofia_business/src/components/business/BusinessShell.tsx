@@ -479,17 +479,13 @@ export function BusinessShell({
 
           {/* Platform Logo */}
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#1A56DB] via-[#7E3AF2] to-[#0E9F6E] p-0.5 shadow-md group-hover:scale-105 transition-transform">
-              <div className="w-full h-full bg-[#0B0F19] rounded-[10px] flex items-center justify-center text-white font-black text-sm">
-                OF
-              </div>
-            </div>
+            <img src="/logo.png" alt="Ofia Compass Logo" className="w-8 h-8 object-contain transition-transform group-hover:scale-105" />
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-extrabold text-sm tracking-tight text-[var(--nexa-text-primary)]">
                   Ofia Compass
                 </span>
-                <NexaBadge variant="brand" className="text-[9px] py-0 px-1.5 font-mono uppercase">
+                <NexaBadge variant="brand" className="text-[9px] py-0 px-2 font-mono uppercase rounded-full">
                   Enterprise
                 </NexaBadge>
               </div>

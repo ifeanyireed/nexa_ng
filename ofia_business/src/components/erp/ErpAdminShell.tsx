@@ -406,22 +406,34 @@ export function ErpAdminShell({
           {navItems
             .filter((item) => {
               const matchesSearch = item.label.toLowerCase().includes(searchQuery.toLowerCase());
+              if (!matchesSearch) return false;
+
               // Overview is the permanent default core module and is always visible
               if (item.key === "overview" || item.href === "/erp/admin") {
-                return matchesSearch;
+                return true;
               }
+
               // The role access tab should ALWAYS be on the side bar nav in the erp/admin ONLY
               if (item.key === "access_control") {
-                const isAdminPortal = pathname.startsWith("/erp/admin");
-                return matchesSearch && isAdminPortal;
+                return pathname.startsWith("/erp/admin");
               }
-              // Module permission check for currentRole (including 'admin' who can have module availability configured)
-              const rolePermissions = permissionMatrix[currentRole] || {};
-              const isAllowed =
-                rolePermissions[item.key] !== undefined
-                  ? Boolean(rolePermissions[item.key])
-                  : currentRole === "admin" || currentRole === "md";
-              return matchesSearch && isAllowed;
+
+              // Determine if module is allowed to the tenant by the Super Admin in the database
+              const isTenantAllowed = permissionMatrix.admin?.[item.key] !== false;
+
+              // If Super Admin disabled the module for this tenant in MySQL, hide it completely
+              if (!isTenantAllowed) {
+                return false;
+              }
+
+              // Tenant Administrator dashboard (/erp/admin/* or currentRole === 'admin') is NOT configurable:
+              // It automatically has ALL modules allowed to the tenant by the Super Admin by default
+              if (pathname.startsWith("/erp/admin") || currentRole === "admin") {
+                return true;
+              }
+
+              // For subordinate staff roles (employee, manager, hr, etc.), check if granted in tenant RBAC matrix
+              return Boolean(permissionMatrix[currentRole]?.[item.key]);
             })
             .map((item, i) => {
               const isActive =

@@ -24,7 +24,7 @@ import {
   TrendingUp,
   Clock,
   ArrowRight,
-  ArrowLeftRight,
+  RotateCcw,
   Eye,
   FileText,
   Tag,
@@ -151,6 +151,30 @@ export function ErpAdminShell({
       case "inventory_officer": return "text-amber-600 bg-amber-500/10 border-amber-500/20";
       case "dispatcher": return "text-blue-600 bg-blue-500/10 border-blue-500/20";
       default: return "text-slate-500 bg-slate-500/10 border-slate-500/20";
+    }
+  };
+
+  const getRoleHomePortal = (role: RoleKey): { path: string; label: string; roleKey: RoleKey } => {
+    switch (role) {
+      case "hr":
+        return { path: "/erp/hr", label: "HR", roleKey: "hr" };
+      case "manager":
+        return { path: "/erp/manager", label: "Manager", roleKey: "manager" };
+      case "md":
+        return { path: "/erp/md", label: "MD", roleKey: "md" };
+      case "accountant":
+        return { path: "/erp/accountant", label: "Accountant", roleKey: "accountant" };
+      case "employee":
+        return { path: "/erp/employee", label: "Employee", roleKey: "employee" };
+      case "cashier":
+        return { path: "/erp/admin/pos", label: "POS", roleKey: "cashier" };
+      case "inventory_officer":
+        return { path: "/erp/admin/inventory", label: "Inventory", roleKey: "inventory_officer" };
+      case "dispatcher":
+        return { path: "/erp/admin/logistics", label: "Logistics", roleKey: "dispatcher" };
+      case "admin":
+      default:
+        return { path: "/erp/admin", label: "Admin", roleKey: "admin" };
     }
   };
 
@@ -324,40 +348,52 @@ export function ErpAdminShell({
         }
       }
 
-      // Resolve user role, name, and email
+      // Resolve user active session role, name, and email
       let resolvedRole: RoleKey = "admin";
       let resolvedName = user?.name || `${tName} Admin`;
       let resolvedEmail = user?.email || "admin@edusuite.ng";
+      let hasStoredRole = false;
 
       const storedErpUser = localStorage.getItem("erp_current_user");
       if (storedErpUser) {
         try {
           const parsed = JSON.parse(storedErpUser);
           if (parsed) {
-            if (parsed.role) resolvedRole = parsed.role as RoleKey;
+            if (parsed.role) {
+              resolvedRole = parsed.role as RoleKey;
+              hasStoredRole = true;
+            }
             if (parsed.name) resolvedName = parsed.name;
             if (parsed.email) resolvedEmail = parsed.email;
           }
         } catch {}
-      } else {
+      }
+
+      if (!hasStoredRole) {
         const storedRole = localStorage.getItem("nexa_user_role");
         const storedName = localStorage.getItem("nexa_user_name");
         const storedEmail = localStorage.getItem("nexa_user_email");
-        if (storedRole) resolvedRole = storedRole as RoleKey;
+        if (storedRole) {
+          resolvedRole = storedRole as RoleKey;
+          hasStoredRole = true;
+        }
         if (storedName) resolvedName = storedName;
         if (storedEmail) resolvedEmail = storedEmail;
       }
 
-      if (pathname.startsWith("/erp/employee") && resolvedRole === "admin") {
-        resolvedRole = "employee";
-      } else if (pathname.startsWith("/erp/manager") && resolvedRole === "admin") {
-        resolvedRole = "manager";
-      } else if (pathname.startsWith("/erp/md") && resolvedRole === "admin") {
-        resolvedRole = "md";
-      } else if (pathname.startsWith("/erp/hr") && resolvedRole === "admin") {
-        resolvedRole = "hr";
-      } else if (pathname.startsWith("/erp/accountant") && resolvedRole === "admin") {
-        resolvedRole = "accountant";
+      // If no stored role is present in session, fallback to current route
+      if (!hasStoredRole) {
+        if (pathname.startsWith("/erp/employee")) {
+          resolvedRole = "employee";
+        } else if (pathname.startsWith("/erp/manager")) {
+          resolvedRole = "manager";
+        } else if (pathname.startsWith("/erp/md")) {
+          resolvedRole = "md";
+        } else if (pathname.startsWith("/erp/hr")) {
+          resolvedRole = "hr";
+        } else if (pathname.startsWith("/erp/accountant")) {
+          resolvedRole = "accountant";
+        }
       }
 
       setCurrentRole(resolvedRole);
@@ -910,43 +946,30 @@ export function ErpAdminShell({
       </main>
 
       {/* TOP RIGHT SWITCH TO [ROLE] BUTTON */}
-      {originPortal &&
-        pathname !== originPortal.path &&
-        !pathname.startsWith(originPortal.path + "/") &&
-        (pathname.startsWith("/erp/employee") ||
-          pathname.startsWith("/erp/manager") ||
-          pathname.startsWith("/erp/hr") ||
-          pathname.startsWith("/erp/accountant") ||
-          pathname.startsWith("/erp/md") ||
-          pathname.startsWith("/hr") ||
-          pathname.startsWith("/employee") ||
-          pathname.startsWith("/accountant") ||
-          pathname.startsWith("/manager") ||
-          pathname.startsWith("/md")) && (
+      {(() => {
+        const sessionHome = getRoleHomePortal(currentRole);
+        const isAwayFromRoleHome =
+          sessionHome &&
+          pathname !== sessionHome.path &&
+          !pathname.startsWith(sessionHome.path + "/");
+
+        if (!isAwayFromRoleHome || !sessionHome) return null;
+
+        return (
           <div className="fixed top-5 right-6 z-[100] animate-fadeIn">
-            <Link href={originPortal.path}>
+            <Link href={sessionHome.path}>
               <button
                 type="button"
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-full text-white text-xs font-black shadow-xl backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer border border-white/25 ring-2 ring-black/10",
-                  originPortal.roleKey === "hr"
-                    ? "bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 shadow-rose-600/30"
-                    : originPortal.roleKey === "md"
-                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-purple-600/30"
-                    : originPortal.roleKey === "accountant"
-                    ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-600/30"
-                    : originPortal.roleKey === "manager"
-                    ? "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 shadow-amber-600/30"
-                    : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-600/30"
-                )}
-                title={`Switch to ${originPortal.label}`}
+                className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1A56DB] hover:bg-[#1546b8] text-white text-xs font-bold transition-all shadow-md hover:shadow-lg cursor-pointer border border-blue-500/30 active:scale-95"
+                title={`Switch to ${sessionHome.label}`}
               >
-                <ArrowLeftRight className="w-3.5 h-3.5" />
-                <span>Switch to {originPortal.label}</span>
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Switch to {sessionHome.label}</span>
               </button>
             </Link>
           </div>
-        )}
+        );
+      })()}
     </div>
   );
 }

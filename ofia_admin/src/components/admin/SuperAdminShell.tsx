@@ -44,11 +44,13 @@ import {
   Wrench,
   X,
   Zap,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NexaAvatar } from "@/components/nexa/NexaAvatar";
 import { NexaThemeToggle } from "@/components/nexa/NexaThemeToggle";
 import { NexaBadge, NexaBadgeVariant } from "@/components/nexa/NexaBadge";
+import { SuperAdminUser } from "@/lib/jwt-auth";
 
 export interface SubNavItem {
   label: string;
@@ -75,6 +77,40 @@ export function SuperAdminShell({
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentUser, setCurrentUser] = useState<SuperAdminUser | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = sessionStorage.getItem("ofia_superadmin_user");
+      if (stored) {
+        try {
+          setCurrentUser(JSON.parse(stored));
+        } catch {}
+      }
+    }
+
+    fetch("/api/auth/me")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && data.user) {
+          setCurrentUser(data.user);
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("ofia_superadmin_user", JSON.stringify(data.user));
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {}
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("ofia_superadmin_user");
+    }
+    window.location.href = "/login";
+  };
 
   // Automatic sub-navigation tabs according to current pathname
   const getSubTabs = (): SubNavItem[] => {
@@ -305,29 +341,63 @@ export function SuperAdminShell({
         </nav>
 
         {/* FOOTER ACTIONS */}
-        <div className="p-4 border-t border-[var(--nexa-border)] space-y-2 relative">
+        <div className="p-3 border-t border-[var(--nexa-border)] space-y-2 relative">
           {/* User Profile / Status Row */}
           {isSidebarOpen ? (
-            <div className="flex items-center justify-between p-2 rounded-2xl bg-[var(--nexa-bg-base)]/70 border border-[var(--nexa-border)]">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <NexaAvatar size="sm" status="online" name="Super Admin" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold text-[var(--nexa-text-primary)] truncate">
-                    Super Admin
-                  </p>
-                  <p className="text-[9px] text-emerald-500 font-extrabold uppercase tracking-wider truncate">
-                    3 / 3 Clusters Live
-                  </p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between p-2 rounded-2xl bg-[var(--nexa-bg-base)]/70 border border-[var(--nexa-border)]">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <NexaAvatar
+                    size="sm"
+                    status="online"
+                    src={currentUser?.avatar}
+                    name={currentUser?.name || "Super Admin"}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-[var(--nexa-text-primary)] truncate">
+                      {currentUser?.name || "Super Admin"}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-[8px] font-extrabold px-1.5 py-0.2 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] uppercase">
+                        {currentUser?.role || "SUPER ADMIN"}
+                      </span>
+                      <span className="text-[8px] text-emerald-500 font-bold truncate">
+                        • Live
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="shrink-0 ml-1.5">
+                  <NexaThemeToggle />
                 </div>
               </div>
-              <div className="shrink-0 ml-1.5">
-                <NexaThemeToggle />
-              </div>
+
+              {/* LOGOUT BUTTON */}
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-rose-500/20 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold transition-colors cursor-pointer"
+                title="Sign out of SuperAdmin Console"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Log Out</span>
+              </button>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-2">
-              <NexaAvatar size="sm" status="online" name="Super Admin" />
+              <NexaAvatar
+                size="sm"
+                status="online"
+                src={currentUser?.avatar}
+                name={currentUser?.name || "Super Admin"}
+              />
               <NexaThemeToggle />
+              <button
+                onClick={handleLogout}
+                className="w-8 h-8 rounded-xl flex items-center justify-center text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                title="Log Out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
           )}
         </div>

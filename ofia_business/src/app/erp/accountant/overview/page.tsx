@@ -10,6 +10,8 @@ import {
 	IconReportMoney,
 	IconChevronRight
 } from "@tabler/icons-react";
+import { ErpStatGrid } from "@/components/erp/ErpStatCard";
+import { Building2, CreditCard, PieChart, TrendingUp, DollarSign } from "lucide-react";
 
 export default function AccountantOverview() {
 	const router = useRouter();
@@ -32,23 +34,14 @@ export default function AccountantOverview() {
 	return (
 		<div className="flex flex-col gap-6 animate-fadeIn">
 			{/* Balance Sheet KPI cards */}
-			<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-				{[
-					{ label: "Assets", val: totalAssets, neg: totalAssets < 0, theme: "from-blue-50/50 to-indigo-50/20 border-blue-100 text-blue-900 shadow-blue-50/20" },
-					{ label: "Liabilities", val: totalLiabilities, neg: false, theme: "from-rose-50/50 to-red-50/20 border-rose-100 text-red-900 shadow-rose-50/20" },
-					{ label: "Equity", val: equity, neg: equity < 0, theme: "from-purple-50/50 to-fuchsia-50/20 border-purple-100 text-purple-900 shadow-purple-50/20" },
-					{ label: "Income", val: stats.totalRevenue, neg: false, theme: "from-emerald-50/50 to-teal-50/20 border-emerald-100 text-emerald-900 shadow-emerald-50/20" },
-					{ label: "Expenses", val: stats.totalExpenses, neg: false, theme: "from-orange-50/50 to-amber-50/20 border-orange-100 text-orange-900 shadow-orange-50/20" },
-					{ label: "Net Position", val: netPosition, neg: netPosition < 0, theme: "from-slate-50 to-slate-100 border-slate-200 text-slate-900 shadow-slate-50/20" }
-				].map((card, idx) => (
-					<div key={idx} className={`bg-gradient-to-br ${card.theme} rounded-2xl p-4 shadow-sm border flex flex-col justify-between min-h-24 hover:scale-[1.02] hover:shadow-md transition-all duration-300`}>
-						<span className="text-[9px] font-black uppercase tracking-wider opacity-60">{card.label}</span>
-						<h3 className={`text-sm font-black mt-2 ${card.neg ? "text-red-700" : ""}`}>
-							{formatNairaShort(card.val)}
-						</h3>
-					</div>
-				))}
-			</div>
+			<ErpStatGrid
+				stats={[
+					{ label: "Assets", value: formatNairaShort(totalAssets), change: totalAssets >= 0 ? "Solvent" : "Deficit", changeType: totalAssets >= 0 ? "success" : "danger", sub: "Cash & Current Receivables", icon: <Building2 className="w-5 h-5 text-blue-500" />, iconBg: "bg-blue-500/10 text-blue-500" },
+					{ label: "Liabilities", value: formatNairaShort(totalLiabilities), change: "Obligations", changeType: "warning", sub: "Payables & short-term debt", icon: <CreditCard className="w-5 h-5 text-rose-500" />, iconBg: "bg-rose-500/10 text-rose-500" },
+					{ label: "Total Equity", value: formatNairaShort(equity), change: equity >= 0 ? "Healthy" : "Negative", changeType: equity >= 0 ? "success" : "danger", sub: "Shareholder retained capital", icon: <PieChart className="w-5 h-5 text-purple-500" />, iconBg: "bg-purple-500/10 text-purple-500" },
+					{ label: "Net Position", value: formatNairaShort(netPosition), change: netPosition >= 0 ? "+Profitable" : "-Loss", changeType: netPosition >= 0 ? "success" : "danger", sub: "Operating income margin", icon: <TrendingUp className="w-5 h-5 text-emerald-500" />, iconBg: "bg-emerald-500/10 text-emerald-500" },
+				]}
+			/>
 
 			{/* Grid: Financial Health & Shortcut links */}
 			<div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

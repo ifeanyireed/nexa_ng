@@ -16,6 +16,7 @@ import {
   Zap,
 } from "lucide-react";
 import { BusinessShell } from "@/components/business/BusinessShell";
+import { ErpStatGrid } from "@/components/erp/ErpStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
@@ -53,43 +54,42 @@ export default function ReferralEngineDashboardPage() {
     >
       <div className="space-y-8">
         {/* KPI CARDS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#1A56DB]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Viral K-Factor</span>
-              <TrendingUp className="w-4 h-4 text-[#1A56DB]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">1.48 (Viral Growth)</div>
-            <div className="text-[11px] text-[#1A56DB] font-bold">Every 100 users invite 148 new leads</div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#0E9F6E]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Referral Revenue Attributed</span>
-              <DollarSign className="w-4 h-4 text-[#0E9F6E]" />
-            </div>
-            <div className="text-2xl font-black text-[#0E9F6E]">₦34,500,000</div>
-            <div className="text-[11px] text-[#0E9F6E] font-semibold">+42% Growth via Word-of-Mouth</div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#9061F9]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Total Affiliates & Promoters</span>
-              <Users className="w-4 h-4 text-[#9061F9]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">184 Partners</div>
-            <div className="text-[11px] text-[#9061F9] font-mono">68 Active This Week</div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#F59E0B]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Pending Commissions</span>
-              <Gift className="w-4 h-4 text-[#F59E0B]" />
-            </div>
-            <div className="text-2xl font-black text-[#F59E0B]">₦650,000</div>
-            <div className="text-[11px] text-[#F59E0B] font-bold">3 Payouts Ready to Disburse</div>
-          </NexaCard>
-        </div>
+        <ErpStatGrid
+          stats={[
+            {
+              label: "Viral K-Factor",
+              value: "1.48 (Viral Growth)",
+              change: "+34% Virality",
+              sub: "Every 100 users invite 148 leads",
+              icon: <TrendingUp className="w-5 h-5 text-blue-500" />,
+              iconBg: "bg-blue-500/10 text-blue-500",
+            },
+            {
+              label: "Referral Revenue Attributed",
+              value: "₦34,500,000",
+              change: "+42% Growth",
+              sub: "Direct word-of-mouth conversion",
+              icon: <DollarSign className="w-5 h-5 text-emerald-500" />,
+              iconBg: "bg-emerald-500/10 text-emerald-500",
+            },
+            {
+              label: "Active Affiliates & Promoters",
+              value: "184 Partners",
+              change: "68 Active This Week",
+              sub: "Automated tracking links",
+              icon: <Users className="w-5 h-5 text-purple-500" />,
+              iconBg: "bg-purple-500/10 text-purple-500",
+            },
+            {
+              label: "Pending Commissions",
+              value: "₦650,000",
+              change: "3 Payouts Ready",
+              sub: "Paystack transfer batch prepared",
+              icon: <Gift className="w-5 h-5 text-amber-500" />,
+              iconBg: "bg-amber-500/10 text-amber-500",
+            },
+          ]}
+        />
 
         {/* TOP AFFILIATE PARTNERS TABLE */}
         <div className="space-y-4">

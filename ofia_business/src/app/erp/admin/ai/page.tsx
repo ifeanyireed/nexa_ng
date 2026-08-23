@@ -22,6 +22,7 @@ import {
   Plus,
 } from "lucide-react";
 import { AppShell } from "@/components/gtm/AppShell";
+import { ErpStatGrid } from "@/components/erp/ErpStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -256,67 +257,42 @@ export default function ExecutiveHome() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {/* Metric 1 */}
-            <NexaCard variant="flat" padding="md" className="space-y-2">
-              <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-                <span>Leads Researched</span>
-                <Users className="w-4 h-4 text-[#1A56DB]" />
-              </div>
-              <div className="text-2xl font-extrabold text-[var(--nexa-text-primary)] text-mono">
-                1,240
-              </div>
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-[#0E9F6E] font-semibold">+186 Qualified</span>
-                <span className="text-[var(--nexa-text-faint)]">Goal: 1,000</span>
-              </div>
-            </NexaCard>
-
-            {/* Metric 2 */}
-            <NexaCard variant="flat" padding="md" className="space-y-2">
-              <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-                <span>Touchpoints Sent</span>
-                <Mail className="w-4 h-4 text-[#3B82F6]" />
-              </div>
-              <div className="text-2xl font-extrabold text-[var(--nexa-text-primary)] text-mono">
-                342
-              </div>
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-[#0E9F6E] font-semibold">64.8% Open Rate</span>
-                <span className="text-[var(--nexa-text-faint)]">58 Queued</span>
-              </div>
-            </NexaCard>
-
-            {/* Metric 3 */}
-            <NexaCard variant="flat" padding="md" className="space-y-2">
-              <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-                <span>Engaged Replies</span>
-                <MessageSquare className="w-4 h-4 text-[#0E9F6E]" />
-              </div>
-              <div className="text-2xl font-extrabold text-[var(--nexa-text-primary)] text-mono">
-                14
-              </div>
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-[#0E9F6E] font-semibold">14.8% Reply Rate</span>
-                <span className="text-[var(--nexa-text-faint)]">+2.4x vs avg</span>
-              </div>
-            </NexaCard>
-
-            {/* Metric 4 */}
-            <NexaCard variant="flat" padding="md" className="space-y-2">
-              <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-                <span>Booked Enterprise Demos</span>
-                <Calendar className="w-4 h-4 text-[#C88A3A]" />
-              </div>
-              <div className="text-2xl font-extrabold text-[var(--nexa-text-primary)] text-mono">
-                4 <span className="text-sm font-normal text-[var(--nexa-text-muted)]">(₦28M pipe)</span>
-              </div>
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-[#0E9F6E] font-semibold">100% Qualified</span>
-                <span className="text-[var(--nexa-text-faint)]">Today: 6 calls</span>
-              </div>
-            </NexaCard>
-          </div>
+          <ErpStatGrid
+            stats={[
+              {
+                label: "Leads Researched",
+                value: "1,240",
+                change: "+186 Qualified",
+                sub: "Goal: 1,000 leads/day",
+                icon: <Users className="w-5 h-5 text-blue-500" />,
+                iconBg: "bg-blue-500/10 text-blue-500",
+              },
+              {
+                label: "Touchpoints Sent",
+                value: "342",
+                change: "64.8% Open Rate",
+                sub: "58 Queued Outbound",
+                icon: <Mail className="w-5 h-5 text-indigo-500" />,
+                iconBg: "bg-indigo-500/10 text-indigo-500",
+              },
+              {
+                label: "Engaged Replies",
+                value: "14",
+                change: "14.8% Reply Rate",
+                sub: "+2.4x vs industry avg",
+                icon: <MessageSquare className="w-5 h-5 text-emerald-500" />,
+                iconBg: "bg-emerald-500/10 text-emerald-500",
+              },
+              {
+                label: "Booked Enterprise Demos",
+                value: "4 Demos",
+                change: "₦28M Pipeline",
+                sub: "Today: 6 discovery calls",
+                icon: <Calendar className="w-5 h-5 text-amber-500" />,
+                iconBg: "bg-amber-500/10 text-amber-500",
+              },
+            ]}
+          />
         </div>
 
         {/* Live AI Workforce Floor */}

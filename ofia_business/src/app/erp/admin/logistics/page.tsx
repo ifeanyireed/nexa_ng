@@ -20,6 +20,7 @@ import {
   Users,
 } from "lucide-react";
 import { BusinessShell } from "@/components/business/BusinessShell";
+import { ErpStatGrid } from "@/components/erp/ErpStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
@@ -57,43 +58,42 @@ export default function LogisticsDashboardPage() {
     >
       <div className="space-y-8">
         {/* KPI CARDS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#1A56DB]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Active In-Transit Orders</span>
-              <Truck className="w-4 h-4 text-[#1A56DB]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">14 Shipments</div>
-            <div className="text-[11px] text-[#1A56DB] font-bold">11 Intra-Lagos • 3 Interstate</div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#0E9F6E]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">On-Time SLA Delivery</span>
-              <CheckCircle2 className="w-4 h-4 text-[#0E9F6E]" />
-            </div>
-            <div className="text-2xl font-black text-[#0E9F6E]">98.2% SLA</div>
-            <div className="text-[11px] text-[#0E9F6E] font-semibold">Avg. Delivery: 2h 45m</div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#9061F9]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Active Fleet Couriers</span>
-              <Users className="w-4 h-4 text-[#9061F9]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">8 Online</div>
-            <div className="text-[11px] text-[#9061F9] font-mono">6 Bikes • 2 Vans</div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#F59E0B]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Delivery Fee Revenue</span>
-              <DollarSign className="w-4 h-4 text-[#F59E0B]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">₦485,000</div>
-            <div className="text-[11px] text-[#F59E0B] font-bold">This Billing Week</div>
-          </NexaCard>
-        </div>
+        <ErpStatGrid
+          stats={[
+            {
+              label: "Active In-Transit Orders",
+              value: "14 Shipments",
+              change: "11 Intra • 3 Interstate",
+              sub: "Live GPS Tracking Active",
+              icon: <Truck className="w-5 h-5 text-blue-500" />,
+              iconBg: "bg-blue-500/10 text-blue-500",
+            },
+            {
+              label: "On-Time SLA Delivery",
+              value: "98.2% SLA",
+              change: "Avg. 2h 45m",
+              sub: "Within guaranteed SLA window",
+              icon: <CheckCircle2 className="w-5 h-5 text-emerald-500" />,
+              iconBg: "bg-emerald-500/10 text-emerald-500",
+            },
+            {
+              label: "Active Fleet Couriers",
+              value: "8 Online",
+              change: "6 Bikes • 2 Vans",
+              sub: "Assigned & dispatched",
+              icon: <Users className="w-5 h-5 text-purple-500" />,
+              iconBg: "bg-purple-500/10 text-purple-500",
+            },
+            {
+              label: "Delivery Fee Revenue",
+              value: "₦485,000",
+              change: "+12% This Week",
+              sub: "Automated Paystack settlement",
+              icon: <DollarSign className="w-5 h-5 text-amber-500" />,
+              iconBg: "bg-amber-500/10 text-amber-500",
+            },
+          ]}
+        />
 
         {/* ACTIVE SHIPMENTS LIVE TABLE */}
         <div className="space-y-4">

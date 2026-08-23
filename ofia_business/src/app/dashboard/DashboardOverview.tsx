@@ -23,6 +23,7 @@ import {
 import { cn, getProLink } from "@/lib/utils";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
+import { ErpStatGrid } from "@/components/erp/ErpStatCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaAvatar } from "@/components/nexa/NexaAvatar";
 import { getNicheData } from "@/lib/niche-data";
@@ -75,15 +76,15 @@ export default function DashboardOverview() {
   };
   
   const kpis = isPro ? [
-    { label: "Profile Views", value: analytics.profileViews.toLocaleString(), change: "+12%", trend: "up", icon: <Eye className="w-5 h-5 text-blue-500" /> },
-    { label: "New Leads", value: analytics.newLeads.toLocaleString(), change: "+5%", trend: "up", icon: <Zap className="w-5 h-5 text-amber-500" /> },
-    { label: "Bookings", value: bookings.length.toString(), change: "0%", trend: "neutral", icon: <Calendar className="w-5 h-5 text-emerald-500" /> },
-    { label: "Wallet Balance", value: `₦${wallet?.balance?.toLocaleString() || "0"}`, change: "+8%", trend: "up", icon: <TrendingUp className="w-5 h-5 text-fuchsia-500" /> },
+    { label: "Profile Views", value: analytics.profileViews.toLocaleString(), change: "+12%", trend: "up" as const, icon: <Eye className="w-5 h-5 text-blue-500" />, iconBg: "bg-blue-500/10 text-blue-500", sub: "Unique prospective buyers" },
+    { label: "New Leads", value: analytics.newLeads.toLocaleString(), change: "+5%", trend: "up" as const, icon: <Zap className="w-5 h-5 text-amber-500" />, iconBg: "bg-amber-500/10 text-amber-500", sub: "Verified service enquiries" },
+    { label: "Bookings", value: bookings.length.toString(), change: "0%", trend: "neutral" as const, icon: <Calendar className="w-5 h-5 text-emerald-500" />, iconBg: "bg-emerald-500/10 text-emerald-500", sub: "Scheduled appointments" },
+    { label: "Wallet Balance", value: `₦${wallet?.balance?.toLocaleString() || "0"}`, change: "+8%", trend: "up" as const, icon: <TrendingUp className="w-5 h-5 text-fuchsia-500" />, iconBg: "bg-fuchsia-500/10 text-fuchsia-500", sub: "Escrow funds ready" },
   ] : [
-    { label: "Active Bookings", value: bookings.filter(b => b.status.toLowerCase() === "pending" || b.status.toLowerCase() === "confirmed").length.toString(), change: "0%", trend: "neutral", icon: <Calendar className="w-5 h-5 text-emerald-500" /> },
-    { label: "Completed Bookings", value: bookings.filter(b => b.status.toLowerCase() === "completed").length.toString(), change: "0%", trend: "neutral", icon: <CheckCircle2 className="w-5 h-5 text-blue-500" /> },
-    { label: "Total Bookings", value: bookings.length.toString(), change: "0%", trend: "neutral", icon: <Clock className="w-5 h-5 text-amber-500" /> },
-    { label: "Wallet Balance", value: `₦${wallet?.balance?.toLocaleString() || "0"}`, change: "0%", trend: "neutral", icon: <TrendingUp className="w-5 h-5 text-fuchsia-500" /> },
+    { label: "Active Bookings", value: bookings.filter(b => b.status.toLowerCase() === "pending" || b.status.toLowerCase() === "confirmed").length.toString(), change: "0%", trend: "neutral" as const, icon: <Calendar className="w-5 h-5 text-emerald-500" />, iconBg: "bg-emerald-500/10 text-emerald-500", sub: "In-progress services" },
+    { label: "Completed Bookings", value: bookings.filter(b => b.status.toLowerCase() === "completed").length.toString(), change: "0%", trend: "neutral" as const, icon: <CheckCircle2 className="w-5 h-5 text-blue-500" />, iconBg: "bg-blue-500/10 text-blue-500", sub: "Successful orders" },
+    { label: "Total Bookings", value: bookings.length.toString(), change: "0%", trend: "neutral" as const, icon: <Clock className="w-5 h-5 text-amber-500" />, iconBg: "bg-amber-500/10 text-amber-500", sub: "Lifetime store history" },
+    { label: "Wallet Balance", value: `₦${wallet?.balance?.toLocaleString() || "0"}`, change: "0%", trend: "neutral" as const, icon: <TrendingUp className="w-5 h-5 text-fuchsia-500" />, iconBg: "bg-fuchsia-500/10 text-fuchsia-500", sub: "Available credits" },
   ];
 
   const quickActions = isPro ? [
@@ -151,25 +152,7 @@ export default function DashboardOverview() {
       </NexaCard>
 
       {/* KPI GRID */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-6">
-         {kpis.map((kpi, i) => (
-           <NexaCard key={i} variant="glass" className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                 <div className="w-10 h-10 rounded-xl bg-nexa-bg-base flex items-center justify-center">
-                   {kpi.icon}
-                 </div>
-                 <div className={cn(
-                   "flex items-center text-[10px] font-extrabold px-2 py-0.5 rounded-full",
-                   kpi.trend === "up" ? "bg-emerald-500/10 text-emerald-500" : "bg-slate-500/10 text-slate-500"
-                 )}>
-                   {kpi.change}
-                 </div>
-              </div>
-              <p className="text-nexa-text-faint text-[10px] font-bold uppercase tracking-[0.2em] mb-1">{kpi.label}</p>
-              <h3 className="text-2xl font-extrabold">{kpi.value}</h3>
-           </NexaCard>
-         ))}
-      </section>
+      <ErpStatGrid stats={kpis} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
          

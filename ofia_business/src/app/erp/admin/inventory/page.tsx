@@ -22,6 +22,7 @@ import {
   Warehouse,
 } from "lucide-react";
 import { BusinessShell } from "@/components/business/BusinessShell";
+import { ErpStatGrid } from "@/components/erp/ErpStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
@@ -61,43 +62,43 @@ export default function InventoryDashboardPage() {
     >
       <div className="space-y-8">
         {/* KPI CARDS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#1A56DB]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Total Stock Valuation</span>
-              <DollarSign className="w-4 h-4 text-[#1A56DB]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">₦48,650,000</div>
-            <div className="text-[11px] text-[#1A56DB] font-bold">142 Unique SKUs Across 3 Hubs</div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#E02424]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Low Stock Warnings</span>
-              <AlertTriangle className="w-4 h-4 text-[#E02424]" />
-            </div>
-            <div className="text-2xl font-black text-[#E02424]">3 Items Critical</div>
-            <div className="text-[11px] text-[#E02424] font-semibold">Below Safety Thresholds</div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#0E9F6E]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Stock Turnover Rate</span>
-              <TrendingUp className="w-4 h-4 text-[#0E9F6E]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">6.4x / year</div>
-            <div className="text-[11px] text-[#0E9F6E] font-bold">+18% Efficiency vs Q1</div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#9061F9]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Warehouses Active</span>
-              <Warehouse className="w-4 h-4 text-[#9061F9]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">3 Locations</div>
-            <div className="text-[11px] text-[#9061F9] font-mono">Ikeja • Lekki • Abuja</div>
-          </NexaCard>
-        </div>
+        <ErpStatGrid
+          stats={[
+            {
+              label: "Total Stock Valuation",
+              value: "₦48,650,000",
+              change: "142 Active SKUs",
+              sub: "Across 3 Depot Warehouses",
+              icon: <Boxes className="w-5 h-5 text-emerald-500" />,
+              iconBg: "bg-emerald-500/10 text-emerald-500",
+            },
+            {
+              label: "Low Stock Warnings",
+              value: "3 Items Critical",
+              change: "Action Required",
+              changeType: "danger",
+              sub: "Below safety threshold limits",
+              icon: <AlertTriangle className="w-5 h-5 text-red-500" />,
+              iconBg: "bg-red-500/10 text-red-500",
+            },
+            {
+              label: "Stock Turnover Rate",
+              value: "6.4x / year",
+              change: "+18% vs Q1",
+              sub: "Strong inventory velocity",
+              icon: <TrendingUp className="w-5 h-5 text-blue-500" />,
+              iconBg: "bg-blue-500/10 text-blue-500",
+            },
+            {
+              label: "Active Warehouses",
+              value: "3 Locations",
+              change: "100% Online",
+              sub: "Ikeja • Lekki • Abuja Hubs",
+              icon: <Warehouse className="w-5 h-5 text-purple-500" />,
+              iconBg: "bg-purple-500/10 text-purple-500",
+            },
+          ]}
+        />
 
         {/* LOW STOCK ALERTS SECTION */}
         <div className="space-y-4">

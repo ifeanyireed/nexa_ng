@@ -7,7 +7,7 @@ export default function AccountantRoot() {
 	const router = useRouter();
 
 	useEffect(() => {
-		router.replace("/accountant/overview");
+		router.replace("/erp/accountant/overview");
 	}, [router]);
 
 	return (

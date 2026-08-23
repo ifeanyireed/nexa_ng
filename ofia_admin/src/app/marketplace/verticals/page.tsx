@@ -35,6 +35,7 @@ import {
   UtensilsCrossed,
   MapPin,
   ShieldCheck,
+  Wrench,
   X,
 } from "lucide-react";
 
@@ -223,6 +224,10 @@ export default function VerticalsAndSubcategoriesPage() {
         return <UtensilsCrossed className="w-5 h-5" />;
       case "Building2":
         return <Building2 className="w-5 h-5" />;
+      case "Wrench":
+        return <Wrench className="w-5 h-5" />;
+      case "ShieldCheck":
+        return <ShieldCheck className="w-5 h-5" />;
       default:
         return <Layers className="w-5 h-5" />;
     }

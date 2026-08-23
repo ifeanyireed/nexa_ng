@@ -487,7 +487,7 @@ export function BusinessShell({
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-extrabold text-sm tracking-tight text-[var(--nexa-text-primary)]">
-                  Ofia Business
+                  Ofia Compass
                 </span>
                 <NexaBadge variant="brand" className="text-[9px] py-0 px-1.5 font-mono uppercase">
                   Enterprise

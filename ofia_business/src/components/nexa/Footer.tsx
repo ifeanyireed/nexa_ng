@@ -52,8 +52,9 @@ export const Footer = () => {
           </div>
 
           <div>
-            <h4 className="font-bold mb-6 text-display tracking-widest uppercase text-[10px]">Business</h4>
+            <h4 className="font-bold mb-6 text-display tracking-widest uppercase text-[10px]">Business & ERP</h4>
             <ul className="space-y-4 text-sm text-nexa-text-secondary">
+              <Link href="/erp"><li className="hover:text-nexa-brand cursor-pointer transition-colors font-bold text-[#1A56DB]">Enterprise ERP Suite</li></Link>
               <Link href="/join">
                 <li className="hover:text-nexa-brand cursor-pointer transition-colors font-bold text-nexa-brand">List your Business</li>
               </Link>

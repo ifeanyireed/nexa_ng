@@ -1,550 +1,340 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { PublicNav } from "@/components/public/PublicNav";
-import { PublicFooter } from "@/components/public/PublicFooter";
-import { NexaButton } from "@/components/nexa/NexaButton";
-import { NexaBadge } from "@/components/nexa/NexaBadge";
-import { NexaCard } from "@/components/nexa/NexaCard";
+import { motion, useSpring, useTransform } from "framer-motion";
 import {
+  Layers,
   Boxes,
   ShoppingCart,
-  Gift,
   Truck,
   PieChart,
   Users,
-  Trophy,
-  ArrowRight,
-  CheckCircle2,
-  Sparkles,
-  Shield,
-  Bot,
-  Zap,
-  Globe,
-  DollarSign,
-  TrendingUp,
-  Receipt,
-  FileSpreadsheet,
-  Tv,
-  Target,
-  Clock,
-  Layers,
-  ChevronRight,
+  Gift,
   ShieldCheck,
+  ArrowRight,
+  ChevronDown,
   Building2,
-  Check,
-  Star,
+  CheckCircle2,
+  BarChart3,
+  Globe2,
+  Sparkles,
 } from "lucide-react";
+import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
+import { NexaButton } from "@/components/nexa/NexaButton";
+import { Footer } from "@/components/nexa/Footer";
+import { cn } from "@/lib/utils";
 
-export default function ERPMarketingPage() {
-  const [activeModule, setActiveModule] = useState(0);
+const Counter = ({ value, label }: { value: string; label: string }) => {
+  const displayValue = value.replace(/[,+★₦%M]/g, "");
+  const numValue = parseInt(displayValue, 10) || 0;
+  const spring = useSpring(0, { stiffness: 40, damping: 20 });
+  const display = useTransform(spring, (current) => {
+    const formatted = Math.floor(current).toLocaleString();
+    return value.replace(displayValue, formatted);
+  });
 
-  const modules = [
-    {
-      id: "ims",
-      title: "Inventory Management (IMS)",
-      badge: "Asset Control",
-      icon: Boxes,
-      color: "#0E9F6E",
-      headline: "Multi-Warehouse Stock Tracking & Automated Restock POs",
-      desc: "Gain total visibility over every SKU across nationwide fulfillment hubs, store branches, and transit depots with real-time stock balance alerts and barcode verification.",
-      features: [
-        "Multi-warehouse hub & bin mapping with aisle-level precision",
-        "Inter-branch Good Received Notes (GRN) & transfer tracking",
-        "Automated vendor Purchase Orders with predictive reorder points",
-        "Shrinkage audits, stock adjustment ledgers & write-off tracking",
-      ],
-      metrics: "₦48.6M Inventory Value Tracked",
-      demoLink: "/erp/admin/inventory",
-    },
-    {
-      id: "pos",
-      title: "Point of Sale (POS)",
-      badge: "Fast Checkout",
-      icon: ShoppingCart,
-      color: "#1A56DB",
-      headline: "Lightning-Fast Touch Cashier & Multi-Tender Checkout",
-      desc: "Empower retail branch staff with an intuitive touch terminal that handles barcode scanning, customer profiles, split tender payments, and automated shift Z-report audits.",
-      features: [
-        "Split payments: Cash, Debit Card (POS Terminal), and Direct Bank Transfer",
-        "Barcode & SKU rapid search with customizable quick-action tiles",
-        "Automated cashier shift sessions with opening float & closing Z-reports",
-        "Instant thermal receipt printing, WhatsApp e-receipts & PDF dispatch",
-      ],
-      metrics: "0.8s Average Checkout Time",
-      demoLink: "/erp/admin/pos",
-    },
-    {
-      id: "referrals",
-      title: "Viral Referrals & Affiliates",
-      badge: "Viral Growth",
-      icon: Gift,
-      color: "#9061F9",
-      headline: "Automated Referral Engine & Paystack Instant Payouts",
-      desc: "Turn your customers and staff into a high-octane growth workforce with custom referral links, tiered reward rules, viral coefficient analytics, and automated wallet disbursements.",
-      features: [
-        "Dynamic referral reward rules (e.g. Give ₦5,000 / Get ₦5,000)",
-        "Automated fraud detection, duplicate device & IP ring prevention",
-        "Integrated Paystack & Flutterwave bank wallet batch payouts",
-        "Real-time K-factor and viral funnel conversion telemetry",
-      ],
-      metrics: "K = 1.48 Viral Growth Multiplier",
-      demoLink: "/erp/admin/referrals",
-    },
-    {
-      id: "logistics",
-      title: "Logistics & Dispatch",
-      badge: "Fleet GPS",
-      icon: Truck,
-      color: "#F59E0B",
-      headline: "Waybill Generation, Courier GPS & Nigerian Rate Engine",
-      desc: "Automate delivery operations with digital waybills, nearest-courier dispatch assignment, live transit waypoint checkpoints, and multi-state delivery rate matrices.",
-      features: [
-        "Instant barcode waybill generation and dispatch slip printing",
-        "Live courier & dispatch rider GPS location tracking",
-        "Checkpoint waypoint scanning with photo proof-of-delivery",
-        "Configurable Nigerian zonal pricing matrix (Intra-state, Inter-state, Express)",
-      ],
-      metrics: "98.2% On-Time Delivery SLA",
-      demoLink: "/erp/admin/logistics",
-    },
-    {
-      id: "finance",
-      title: "Finance & General Ledger",
-      badge: "Full GAAP / IFRS",
-      icon: PieChart,
-      color: "#3F83F8",
-      headline: "Double-Entry Accounting, P&L, Invoices & Bank Feeds",
-      desc: "Automate financial operations with compliant Chart of Accounts, recurring journal entries, aging receivables/payables, statutory VAT/PAYE remittances, and bank statement reconciliations.",
-      features: [
-        "Double-entry General Ledger with automated journal audit trails",
-        "Real-time Income Statement (P&L), Balance Sheet & Cash Flow reports",
-        "Accounts Receivable (Invoices, Estimates) & Accounts Payable (Vendor Bills)",
-        "Statutory tax calculation & automated PAYE/WHT remittance exports",
-      ],
-      metrics: "₦184.2M Reconciled Transactions",
-      demoLink: "/erp/accountant",
-    },
-    {
-      id: "hr",
-      title: "HR & 360 Appraisals",
-      badge: "Talent & OKRs",
-      icon: Users,
-      color: "#0694A2",
-      headline: "Staff Roster, Objective Bank & Automated Review Cycles",
-      desc: "Manage your workforce lifecycle from onboarding to performance appraisal cycles with department objective alignments, peer reviews, and executive rating trendlines.",
-      features: [
-        "Centralized employee directory with grade levels, designations & roles",
-        "Company-wide & departmental OKR / Objective Bank repository",
-        "Structured 360 appraisal review cycles with automated manager workflows",
-        "Employee self-service portal for reviews, profiles & goal submissions",
-      ],
-      metrics: "100% Appraisal Compliance",
-      demoLink: "/erp/hr",
-    },
-    {
-      id: "quests",
-      title: "Team Quests Engine",
-      badge: "Gamification",
-      icon: Trophy,
-      color: "#D97706",
-      headline: "Corporate Retreats, Innovation Hackathons & Live TV Scoreboards",
-      desc: "Ignite internal team competition and camaraderie with multi-day quests, photo/video evidence review desks, transactional score ledgers, and zero-login stage projector displays.",
-      features: [
-        "Multi-day quest builder with squad assignments & secret claim codes",
-        "Generic challenge engine: Speed Trivia, Evidence Uploads, Pitch Panels",
-        "Judge control room with live review desk and 1-click score awards",
-        "Zero-login stage TV live scoreboard with full-screen auto-refresh mode",
-      ],
-      metrics: "8 Squads · 120 Staff Engaged",
-      demoLink: "/erp/admin/quests",
-    },
-  ];
-
-  const comparisonFeatures = [
-    { name: "Unified Inventory & Multi-Warehouse IMS", ofia: true, traditional: "Add-on Plugin ($$$)" },
-    { name: "Fast POS Touch Terminal with Split Tenders", ofia: true, traditional: "Separate Hardware Vendor" },
-    { name: "Viral Referral & Affiliate Commission Payouts", ofia: true, traditional: "Not Supported" },
-    { name: "Automated Waybill & Nigerian Zonal Logistics", ofia: true, traditional: "Third-party Integration" },
-    { name: "Full Double-Entry General Ledger & Tax Reports", ofia: true, traditional: true },
-    { name: "360 Performance Appraisals & OKR Bank", ofia: true, traditional: "Separate HR App" },
-    { name: "Retreat Quests & Stage TV Live Scoreboard", ofia: true, traditional: "Not Supported" },
-    { name: "Autonomous AI Cold Outreach & GTM Swarm", ofia: true, traditional: "Not Supported" },
-    { name: "Local Nigerian Payment Rails (Paystack, Transfers)", ofia: true, traditional: "USD Cards Only" },
-    { name: "Subdomain Tenant Isolation (tenant.ofia.ng)", ofia: true, traditional: "Complex Setup" },
-  ];
+  React.useEffect(() => {
+    spring.set(numValue);
+  }, [numValue, spring]);
 
   return (
-    <div className="min-h-screen bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] font-sans">
-      <PublicNav />
-
-      {/* HERO SECTION */}
-      <section className="relative pt-20 pb-24 overflow-hidden border-b border-[var(--nexa-border)] bg-gradient-to-b from-[var(--nexa-bg-surface)] via-[var(--nexa-bg-base)] to-[var(--nexa-bg-base)]">
-        <div className="absolute inset-0 bg-[radial-gradient(#1A56DB_1px,transparent_1px)] [background-size:24px_24px] opacity-10 pointer-events-none" />
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-8">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/30 backdrop-blur-md">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>UNIFIED ENTERPRISE OPERATING SYSTEM</span>
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight max-w-4xl mx-auto text-display leading-tight">
-            The Complete ERP Suite Built for{" "}
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-[#1A56DB] via-[#7E3AF2] to-[#0E9F6E]">
-              African Enterprise Scale
-            </span>
-          </h1>
-
-          <p className="text-base sm:text-lg text-[var(--nexa-text-secondary)] max-w-3xl mx-auto leading-relaxed">
-            Eliminate operational fragmentation. Seamlessly orchestrate inventory, point of sale, viral referrals, automated logistics, general ledger accounting, 360 appraisals, and staff retreat quests in one cohesive platform.
-          </p>
-
-          {/* ACTION BUTTONS */}
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-            <Link href="/erp/admin">
-              <NexaButton size="lg" variant="primary" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                Explore Live Sandboxes
-              </NexaButton>
-            </Link>
-            <Link href="/signup">
-              <NexaButton size="lg" variant="outline" leftIcon={<Sparkles className="w-4 h-4 text-[#1A56DB]" />}>
-                Start 14-Day Free Trial
-              </NexaButton>
-            </Link>
-            <Link href="/contact">
-              <NexaButton size="lg" variant="outline" leftIcon={<Building2 className="w-4 h-4" />}>
-                Book Enterprise Walkthrough
-              </NexaButton>
-            </Link>
-          </div>
-
-          {/* KEY METRICS COCKPIT */}
-          <div className="pt-10 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            <NexaCard variant="glass" padding="md" className="text-center space-y-1">
-              <div className="text-2xl sm:text-3xl font-black text-[#1A56DB] font-mono">₦184.2M+</div>
-              <div className="text-xs text-[var(--nexa-text-muted)] font-medium">Reconciled Monthly Volume</div>
-            </NexaCard>
-
-            <NexaCard variant="glass" padding="md" className="text-center space-y-1">
-              <div className="text-2xl sm:text-3xl font-black text-[#0E9F6E] font-mono">142 SKUs</div>
-              <div className="text-xs text-[var(--nexa-text-muted)] font-medium">Live Multi-Warehouse IMS</div>
-            </NexaCard>
-
-            <NexaCard variant="glass" padding="md" className="text-center space-y-1">
-              <div className="text-2xl sm:text-3xl font-black text-[#9061F9] font-mono">98.2% SLA</div>
-              <div className="text-xs text-[var(--nexa-text-muted)] font-medium">On-Time Logistics Dispatch</div>
-            </NexaCard>
-
-            <NexaCard variant="glass" padding="md" className="text-center space-y-1">
-              <div className="text-2xl sm:text-3xl font-black text-[#F59E0B] font-mono">7 Modules</div>
-              <div className="text-xs text-[var(--nexa-text-muted)] font-medium">Single Integrated Database</div>
-            </NexaCard>
-          </div>
-        </div>
-      </section>
-
-      {/* INTERACTIVE 7-MODULE SHOWCASE */}
-      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-        <div className="text-center space-y-3">
-          <NexaBadge variant="brand">MODULAR ARCHITECTURE</NexaBadge>
-          <h2 className="text-3xl sm:text-4xl font-black text-display">
-            7 Specialized Modules. Zero Fragmented Data.
-          </h2>
-          <p className="text-sm text-[var(--nexa-text-secondary)] max-w-2xl mx-auto">
-            Every transaction, barcode scan, dispatch waybill, and appraisal cycle flows seamlessly into your General Ledger in real-time.
-          </p>
-        </div>
-
-        {/* MODULE TABS NAV */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-4 justify-start lg:justify-center no-scrollbar">
-          {modules.map((m, idx) => {
-            const Icon = m.icon;
-            const isSelected = activeModule === idx;
-            return (
-              <button
-                key={m.id}
-                onClick={() => setActiveModule(idx)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
-                  isSelected
-                    ? "bg-[#1A56DB] text-white shadow-lg shadow-blue-500/20"
-                    : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] border border-[var(--nexa-border)] hover:text-[var(--nexa-text-primary)]"
-                }`}
-              >
-                <Icon className="w-4 h-4" />
-                <span>{m.title.split("(")[0]}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* ACTIVE MODULE DETAIL CARD */}
-        {(() => {
-          const m = modules[activeModule];
-          const Icon = m.icon;
-          return (
-            <NexaCard
-              variant="glass"
-              padding="lg"
-              className="border-2 border-[var(--nexa-border)] rounded-3xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center"
-            >
-              <div className="lg:col-span-7 space-y-6">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg"
-                    style={{ backgroundColor: m.color }}
-                  >
-                    <Icon className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <NexaBadge variant="brand">{m.badge}</NexaBadge>
-                    <h3 className="text-xl sm:text-2xl font-black text-[var(--nexa-text-primary)] mt-1">
-                      {m.title}
-                    </h3>
-                  </div>
-                </div>
-
-                <h4 className="text-base sm:text-lg font-bold text-[var(--nexa-text-primary)] leading-snug">
-                  {m.headline}
-                </h4>
-
-                <p className="text-sm text-[var(--nexa-text-secondary)] leading-relaxed">{m.desc}</p>
-
-                <div className="space-y-2.5 pt-2">
-                  {m.features.map((f, fIdx) => (
-                    <div key={fIdx} className="flex items-start gap-2.5 text-xs text-[var(--nexa-text-primary)] font-medium">
-                      <CheckCircle2 className="w-4 h-4 text-[#0E9F6E] shrink-0 mt-0.5" />
-                      <span>{f}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="pt-4 flex items-center gap-4">
-                  <Link href={m.demoLink}>
-                    <NexaButton size="md" variant="primary" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                      Open Module Console
-                    </NexaButton>
-                  </Link>
-                  <span className="text-xs font-mono font-bold text-[var(--nexa-text-muted)] bg-[var(--nexa-bg-base)] px-3 py-1.5 rounded-lg border border-[var(--nexa-border)]">
-                    {m.metrics}
-                  </span>
-                </div>
-              </div>
-
-              <div className="lg:col-span-5 bg-[var(--nexa-bg-base)] p-6 rounded-2xl border border-[var(--nexa-border)] space-y-4 shadow-inner">
-                <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-                    <span className="text-xs font-mono font-bold text-[var(--nexa-text-primary)]">
-                      LIVE TELEMETRY
-                    </span>
-                  </div>
-                  <span className="text-[11px] font-mono text-[var(--nexa-text-muted)]">service_erp :8084</span>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="p-3 bg-[var(--nexa-card-bg)] rounded-xl border border-[var(--nexa-border)] flex items-center justify-between">
-                    <span className="text-xs text-[var(--nexa-text-secondary)] font-medium">Database Sync</span>
-                    <NexaBadge variant="green">GORM v2 Live</NexaBadge>
-                  </div>
-
-                  <div className="p-3 bg-[var(--nexa-card-bg)] rounded-xl border border-[var(--nexa-border)] flex items-center justify-between">
-                    <span className="text-xs text-[var(--nexa-text-secondary)] font-medium">Tenant Scoping</span>
-                    <span className="text-xs font-mono font-bold text-[#1A56DB]">x-tenant-slug</span>
-                  </div>
-
-                  <div className="p-3 bg-[var(--nexa-card-bg)] rounded-xl border border-[var(--nexa-border)] flex items-center justify-between">
-                    <span className="text-xs text-[var(--nexa-text-secondary)] font-medium">GL Transaction Audit</span>
-                    <NexaBadge variant="purple">Double-Entry Immutable</NexaBadge>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-gradient-to-tr from-[#1A56DB]/10 to-indigo-500/5 border border-[#1A56DB]/20 text-center space-y-2">
-                  <div className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                    Ready to experience {m.title}?
-                  </div>
-                  <p className="text-[11px] text-[var(--nexa-text-muted)]">
-                    Test the complete interactive workflow in our sandbox demo environment.
-                  </p>
-                  <Link href={m.demoLink} className="inline-block pt-1">
-                    <NexaButton size="sm" variant="outline">
-                      Launch Interactive Simulator →
-                    </NexaButton>
-                  </Link>
-                </div>
-              </div>
-            </NexaCard>
-          );
-        })()}
-      </section>
-
-      {/* ALL 7 MODULES GRID OVERVIEW */}
-      <section className="py-20 bg-[var(--nexa-bg-surface)]/50 border-y border-[var(--nexa-border)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center space-y-3">
-            <NexaBadge variant="brand">MODULE DIRECTORY</NexaBadge>
-            <h2 className="text-3xl font-black text-display">Explore All Core Enterprise Hubs</h2>
-            <p className="text-sm text-[var(--nexa-text-secondary)] max-w-2xl mx-auto">
-              Each module operates independently or as a unified, synchronizing enterprise brain.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {modules.map((mod) => {
-              const Icon = mod.icon;
-              return (
-                <NexaCard
-                  key={mod.id}
-                  variant="glass"
-                  padding="lg"
-                  className="space-y-4 border border-[var(--nexa-border)] flex flex-col justify-between hover:border-[#1A56DB] transition-all group"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div
-                        className="w-10 h-10 rounded-xl flex items-center justify-center text-white"
-                        style={{ backgroundColor: mod.color }}
-                      >
-                        <Icon className="w-5 h-5" />
-                      </div>
-                      <NexaBadge variant="brand">{mod.badge}</NexaBadge>
-                    </div>
-
-                    <div>
-                      <h3 className="font-black text-base text-[var(--nexa-text-primary)] group-hover:text-[#1A56DB] transition-colors">
-                        {mod.title}
-                      </h3>
-                      <p className="text-xs text-[var(--nexa-text-muted)] mt-1.5 leading-relaxed line-clamp-3">
-                        {mod.desc}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-[var(--nexa-border)] flex items-center justify-between">
-                    <span className="text-xs font-mono font-bold text-[var(--nexa-text-primary)]">
-                      {mod.metrics}
-                    </span>
-                    <Link href={mod.demoLink}>
-                      <NexaButton size="sm" variant="outline" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
-                        Explore
-                      </NexaButton>
-                    </Link>
-                  </div>
-                </NexaCard>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* AFRICAN LOCALIZATION ADVANTAGES */}
-      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-        <div className="text-center space-y-3">
-          <NexaBadge variant="green">AFRICAN ENTERPRISE LOCALIZATION</NexaBadge>
-          <h2 className="text-3xl sm:text-4xl font-black text-display">
-            Built for Local Commerce Realities
-          </h2>
-          <p className="text-sm text-[var(--nexa-text-secondary)] max-w-2xl mx-auto">
-            Traditional Western ERPs struggle with local payment methods, tax regulations, and network connectivity. Ofia is architected from day one for Nigerian and African operational workflows.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <NexaCard variant="glass" padding="lg" className="space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-[#0E9F6E]/10 text-[#0E9F6E] flex items-center justify-center font-bold">
-              ₦
-            </div>
-            <h3 className="font-black text-base text-[var(--nexa-text-primary)]">Multi-Rail Local Payments</h3>
-            <p className="text-xs text-[var(--nexa-text-muted)] leading-relaxed">
-              Native integration with Paystack, Flutterwave, and direct NIBSS bank transfers with automated payment webhook verification and instant wallet disbursements.
-            </p>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="lg" className="space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-[#1A56DB]/10 text-[#1A56DB] flex items-center justify-center font-bold">
-              <ShieldCheck className="w-5 h-5" />
-            </div>
-            <h3 className="font-black text-base text-[var(--nexa-text-primary)]">FIRS Tax & Withholding Ready</h3>
-            <p className="text-xs text-[var(--nexa-text-muted)] leading-relaxed">
-              Automated 7.5% VAT calculation, 5%/10% Withholding Tax (WHT) deductions, and automated monthly statutory remittance schedule exports.
-            </p>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="lg" className="space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-[#9061F9]/10 text-[#9061F9] flex items-center justify-center font-bold">
-              <Bot className="w-5 h-5" />
-            </div>
-            <h3 className="font-black text-base text-[var(--nexa-text-primary)]">Mobile Telegram CRO Approvals</h3>
-            <p className="text-xs text-[var(--nexa-text-muted)] leading-relaxed">
-              Managing Directors and department leads approve expenses, restock POs, and discount exceptions with 1 tap directly inside Telegram on mobile.
-            </p>
-          </NexaCard>
-        </div>
-      </section>
-
-      {/* FEATURE COMPARISON TABLE */}
-      <section className="py-20 bg-[var(--nexa-bg-surface)]/50 border-t border-[var(--nexa-border)]">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          <div className="text-center space-y-3">
-            <NexaBadge variant="brand">THE COMPETITIVE ADVANTAGE</NexaBadge>
-            <h2 className="text-3xl font-black text-display">Why Enterprises Migrate to Ofia ERP</h2>
-          </div>
-
-          <div className="border border-[var(--nexa-border)] rounded-2xl overflow-hidden bg-[var(--nexa-card-bg)] shadow-xl">
-            <div className="grid grid-cols-12 bg-[var(--nexa-bg-surface)] p-4 text-xs font-bold text-[var(--nexa-text-primary)] border-b border-[var(--nexa-border)]">
-              <div className="col-span-6 sm:col-span-7">Capability / Feature</div>
-              <div className="col-span-3 sm:col-span-2 text-center text-[#1A56DB]">Ofia ERP Suite</div>
-              <div className="col-span-3 text-center text-[var(--nexa-text-muted)]">Legacy ERPs</div>
-            </div>
-
-            <div className="divide-y divide-[var(--nexa-border)]">
-              {comparisonFeatures.map((feat, idx) => (
-                <div key={idx} className="grid grid-cols-12 p-4 text-xs items-center hover:bg-[var(--nexa-bg-base)] transition-colors">
-                  <div className="col-span-6 sm:col-span-7 font-medium text-[var(--nexa-text-primary)]">
-                    {feat.name}
-                  </div>
-                  <div className="col-span-3 sm:col-span-2 text-center font-bold text-[#0E9F6E] flex items-center justify-center gap-1">
-                    <Check className="w-4 h-4 text-[#0E9F6E]" /> Included
-                  </div>
-                  <div className="col-span-3 text-center text-[var(--nexa-text-muted)] font-mono text-[11px]">
-                    {typeof feat.traditional === "boolean" ? (
-                      <Check className="w-4 h-4 text-slate-400 mx-auto" />
-                    ) : (
-                      feat.traditional
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FINAL CALL TO ACTION */}
-      <section className="py-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
-        <NexaBadge variant="brand">ELEVATE YOUR BUSINESS</NexaBadge>
-        <h2 className="text-3xl sm:text-4xl font-black text-display">
-          Ready to Modernize Your Operations?
-        </h2>
-        <p className="text-sm text-[var(--nexa-text-secondary)] max-w-xl mx-auto">
-          Join high-growth retailers, multi-branch distributors, and enterprise teams scaling across Africa on Ofia ERP.
-        </p>
-
-        <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
-          <Link href="/signup">
-            <NexaButton size="lg" variant="primary" rightIcon={<ArrowRight className="w-4 h-4" />}>
-              Start 14-Day Free Trial
-            </NexaButton>
-          </Link>
-          <Link href="/erp/admin">
-            <NexaButton size="lg" variant="outline">
-              Explore Live Admin Demo
-            </NexaButton>
-          </Link>
-        </div>
-      </section>
-
-      <PublicFooter />
+    <div className="text-center">
+      <motion.div className="text-3xl lg:text-5xl font-extrabold text-display mb-2 text-[#1A56DB]">
+        <motion.span>{display}</motion.span>
+      </motion.div>
+      <p className="text-xs font-bold text-nexa-text-faint uppercase tracking-widest">{label}</p>
     </div>
+  );
+};
+
+export default function EnterpriseERPLanding() {
+  const corePillars = [
+    {
+      icon: <Boxes />,
+      title: "Multi-Warehouse Inventory (IMS)",
+      body: "Master SKU catalogs, barcode verification, inter-branch Goods Received Notes (GRN), depot bin tracking, and automated restock purchase orders.",
+    },
+    {
+      icon: <ShoppingCart />,
+      title: "Point of Sale (POS) Cashier Register",
+      body: "Touchscreen cashier terminal, barcode scanning, multi-tender split checkout (Cash, Card, Bank Transfer), and automated shift Z-report balancing.",
+    },
+    {
+      icon: <Truck />,
+      title: "Logistics Command & Fleet Dispatch",
+      body: "Automated nearest-courier dispatch, 4x6 QR waybill shipping labels, live GPS rider map, and automated Nigerian regional zonal rate calculator.",
+    },
+    {
+      icon: <PieChart />,
+      title: "General Ledger & Double-Entry Accounting",
+      body: "GAAP/IFRS compliant General Ledger, real-time Balance Sheet & P&L statements, multi-bank feed reconciliation, and automated FIRS 7.5% VAT / WHT ledger.",
+    },
+    {
+      icon: <Users />,
+      title: "HR 360 Appraisals & Enterprise OKRs",
+      body: "Multi-department staff directories, enterprise objective banks, structured KPI appraisal cycles, subordinate grading desks, and staff self-service.",
+    },
+    {
+      icon: <Gift />,
+      title: "Viral Referral & Affiliate Engine",
+      body: "Customizable referral reward campaigns, unique partner vanity links, anti-fraud device fingerprinting, and automated batch Paystack bank commission payouts.",
+    },
+  ];
+
+  const steps = [
+    {
+      title: "Provision Workspace",
+      body: "Setup your isolated enterprise tenant on tenant.ofia.ng with custom branding, user roles, and Nigerian tax parameters.",
+    },
+    {
+      title: "Sync Catalog & Warehouses",
+      body: "Import multi-warehouse SKU inventory, link cashier POS terminals, set regional delivery rate zones, and configure Chart of Accounts.",
+    },
+    {
+      title: "Onboard Staff & Desks",
+      body: "Invite branch accountants, cashier operators, inventory depot managers, and dispatch couriers into their role-scoped workspaces.",
+    },
+    {
+      title: "Scale Autonomous Operations",
+      body: "Watch store sales, restock POs, dispatch waybills, and financial journals balance automatically across all synchronized modules.",
+    },
+  ];
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 },
+  };
+
+  return (
+    <main className="bg-nexa-bg-base min-h-screen">
+      <NexaNavbar />
+
+      {/* HERO SECTION — EXACT /nexa-verified AESTHETIC & TRANSLUCENT OVERLAY */}
+      <section className="relative min-h-screen flex items-center justify-start pt-32 overflow-hidden">
+        {/* Background image & gradient blur overlay */}
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+          <img
+            src="/nexa-guaranteed-1.jpeg"
+            alt="Ofia Enterprise ERP Background"
+            className="absolute inset-0 w-full h-full object-cover object-center"
+          />
+          {/* Water translucent blurry overlay resolving to zero opacity/blur to the right */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backdropFilter: "blur(24px) saturate(220%) brightness(1.05)",
+              WebkitBackdropFilter: "blur(24px) saturate(220%) brightness(1.05)",
+              maskImage: "linear-gradient(to right, black 25%, transparent 75%)",
+              WebkitMaskImage: "linear-gradient(to right, black 25%, transparent 75%)",
+            }}
+          />
+          {/* Vertical gradient tending towards header */}
+          <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white via-white/90 to-transparent" />
+          {/* Left horizontal gradient to shield text content */}
+          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 via-30% to-transparent" />
+        </div>
+
+        <div className="container mx-auto px-4 md:px-12 lg:px-20 relative z-10 text-left flex flex-col items-start">
+          {/* Rotating Badge */}
+          <motion.div
+            initial={{ rotate: 0, scale: 0 }}
+            animate={{ rotate: 360, scale: 1 }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
+            className="w-20 h-20 bg-[#1A56DB]/10 rounded-full flex items-center justify-center mb-8 border border-[#1A56DB]/30 backdrop-blur-md shadow-lg"
+          >
+            <Layers className="w-10 h-10 text-[#1A56DB]" />
+          </motion.div>
+
+          {/* Staggered Animated Headline */}
+          <motion.h1
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+            className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-display text-slate-900 mb-6 tracking-tighter text-left leading-[1.1]"
+          >
+            <span className="block mb-2">
+              {"Your Entire Enterprise.".split(" ").map((word, i) => (
+                <motion.span key={`w1-${i}`} variants={itemVariants} className="inline-block mr-2">
+                  {word}
+                </motion.span>
+              ))}
+            </span>
+            <span className="block">
+              {"Orchestrated by Ofia.".split(" ").map((word, i) => (
+                <motion.span
+                  key={`w2-${i}`}
+                  variants={itemVariants}
+                  className="inline-block mr-2 text-[#1A56DB]"
+                >
+                  {word}
+                </motion.span>
+              ))}
+            </span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1, duration: 1 }}
+            className="text-lg md:text-xl text-slate-700 max-w-2xl text-left mb-12"
+          >
+            Unify multi-warehouse inventory, high-speed POS registers, automated logistics dispatch, double-entry General Ledger, 360 appraisals, and viral referral rewards in one cohesive engine.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.2 }}
+            className="flex flex-col lg:flex-row items-center justify-start gap-6 w-full"
+          >
+            <Link href="/join/register" className="w-full lg:w-auto">
+              <NexaButton
+                size="xl"
+                className="bg-[#1A56DB] text-white font-extrabold hover:bg-[#1545B0] border-none shadow-xl w-full lg:w-auto px-10"
+              >
+                Launch Enterprise Workspace
+              </NexaButton>
+            </Link>
+            <a
+              href="#capabilities"
+              className="flex items-center gap-2 text-slate-700 font-bold uppercase tracking-widest text-xs hover:text-[#1A56DB] transition-colors group"
+            >
+              Explore Capabilities
+              <ChevronDown className="w-4 h-4 group-hover:translate-y-1 transition-transform" />
+            </a>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* CORE PILLARS / CAPABILITY GRID */}
+      <section id="capabilities" className="py-24 lg:py-32 container mx-auto px-4">
+        <div className="text-center mb-16 lg:mb-20">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] font-bold text-xs uppercase tracking-widest mb-4">
+            <Sparkles className="w-3.5 h-3.5" />
+            Complete Operating System
+          </div>
+          <h2 className="text-3xl lg:text-5xl font-extrabold text-display mb-4">
+            Six Critical Systems. Zero Silos.
+          </h2>
+          <p className="text-nexa-text-muted max-w-2xl mx-auto font-medium">
+            Everything your business needs to manage stock, sales, logistics, finance, and people across Nigeria.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {corePillars.map((pillar, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+              className="liquid-glass p-8 rounded-2xl group hover:border-[#1A56DB]/30 transition-all"
+            >
+              <div className="w-12 h-12 rounded-xl bg-[#1A56DB]/10 flex items-center justify-center text-[#1A56DB] mb-6 group-hover:scale-110 transition-transform">
+                {React.cloneElement(pillar.icon as React.ReactElement<any>, {
+                  className: "w-6 h-6",
+                })}
+              </div>
+              <h3 className="text-xl font-extrabold mb-4 text-display">{pillar.title}</h3>
+              <p className="text-sm text-nexa-text-secondary leading-relaxed">{pillar.body}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* HOW IT WORKS / DEPLOYMENT FLOW */}
+      <section className="py-24 lg:py-32 bg-nexa-bg-surface border-y border-nexa-border">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16 lg:mb-24">
+            <h2 className="text-3xl lg:text-5xl font-extrabold text-display mb-6">
+              Simple, Secure, Seamless.
+            </h2>
+            <p className="text-nexa-text-muted max-w-xl mx-auto font-medium">
+              Deploy your entire enterprise stack in four structured, frictionless steps.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-12">
+            {steps.map((step, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.2 }}
+                className="relative"
+              >
+                <div className="text-[120px] font-black text-slate-900/5 dark:text-white/5 absolute -top-6 -right-4 select-none pointer-events-none leading-none">
+                  {i + 1}
+                </div>
+                <div className="relative z-10">
+                  <div className="w-12 h-12 rounded-full bg-[#1A56DB] text-white flex items-center justify-center font-black mb-6 shadow-lg shadow-[#1A56DB]/20">
+                    {i + 1}
+                  </div>
+                  <h4 className="text-lg font-extrabold mb-3 text-display">{step.title}</h4>
+                  <p className="text-sm text-nexa-text-secondary leading-relaxed">{step.body}</p>
+                </div>
+                {i < 3 && (
+                  <div className="hidden lg:block absolute top-6 left-full w-full h-[2px] bg-gradient-to-r from-[#1A56DB]/20 to-transparent -ml-6" />
+                )}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SOCIAL PROOF / COUNTERS */}
+      <section className="py-24 lg:py-32 container mx-auto px-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-24">
+          <Counter value="₦18.4B+" label="Transactions Processed" />
+          <Counter value="99.9%" label="Platform Uptime SLA" />
+          <Counter value="45,000+" label="Active Shifts Closed" />
+        </div>
+
+        <div className="liquid-glass p-12 rounded-3xl bg-[#1A56DB] text-white overflow-hidden relative group max-w-fit mx-auto">
+          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-white/10 rounded-full -mr-64 -mt-64 blur-[100px] group-hover:scale-110 transition-transform duration-1000" />
+
+          <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
+            <div className="max-w-2xl">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full overflow-hidden bg-white/10 border border-white/20 mb-6 w-max">
+                <Building2 className="w-4 h-4 text-white" />
+                <span className="text-[10px] font-extrabold text-white uppercase tracking-wider relative z-10">
+                  Enterprise Infrastructure
+                </span>
+              </div>
+              <h2 className="text-3xl lg:text-5xl font-extrabold text-white mb-6">
+                Ready to modernize your operations?
+              </h2>
+              <p className="text-lg text-white font-medium leading-relaxed">
+                Connect your physical stores, remote fulfillment depots, field delivery fleet, and corporate ledger onto one platform.
+              </p>
+            </div>
+            <Link href="/join/register" className="w-full lg:w-auto">
+              <NexaButton
+                size="xl"
+                variant="secondary"
+                className="bg-white text-[#1A56DB] hover:bg-slate-100 w-full"
+                rightIcon={<ArrowRight className="w-5 h-5" />}
+              >
+                Setup Enterprise Tenant
+              </NexaButton>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+      <NexaBottomBar />
+    </main>
   );
 }

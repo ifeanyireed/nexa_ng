@@ -19,22 +19,22 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ofia AI | Autonomous B2B Go-To-Market & Revenue Platform",
+  title: "Ofia Compass | Nigeria's #1 Business & Service Discovery Marketplace",
   description:
-    "Autonomous B2B Go-To-Market platform powered by 14 specialized AI agents. Verified lead extraction, high-converting multi-channel outreach across Email, WhatsApp, and LinkedIn, with 1-tap Telegram mobile approvals.",
+    "Nigeria's #1 business discovery and navigation platform. Empowering local businesses and consumers to navigate commercial opportunities.",
   metadataBase: new URL("https://ofia.ng"),
   openGraph: {
-    title: "Ofia AI | Autonomous B2B Go-To-Market & Revenue Platform",
+    title: "Ofia Compass | Nigeria's #1 Business & Service Discovery Marketplace",
     description:
-      "Autonomous B2B Go-To-Market platform powered by 14 specialized AI agents. Verified lead extraction, high-converting multi-channel outreach across Email, WhatsApp, and LinkedIn, with 1-tap Telegram mobile approvals.",
+      "Nigeria's #1 business discovery and navigation platform. Empowering local businesses and consumers to navigate commercial opportunities.",
     url: "https://ofia.ng",
-    siteName: "Ofia AI",
+    siteName: "Ofia Compass",
     images: [
       {
         url: "/logo.png",
         width: 800,
         height: 800,
-        alt: "Ofia AI Logo",
+        alt: "Ofia Compass Logo",
       },
     ],
     locale: "en_NG",
@@ -42,9 +42,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Ofia AI | Autonomous B2B Go-To-Market & Revenue Platform",
+    title: "Ofia Compass | Nigeria's #1 Business & Service Discovery Marketplace",
     description:
-      "Autonomous B2B Go-To-Market platform powered by 14 specialized AI agents. Verified lead extraction, high-converting multi-channel outreach across Email, WhatsApp, and LinkedIn, with 1-tap Telegram mobile approvals.",
+      "Nigeria's #1 business discovery and navigation platform. Empowering local businesses and consumers to navigate commercial opportunities.",
     images: ["/logo.png"],
   },
   icons: {

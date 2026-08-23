@@ -2,8 +2,8 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { PublicNav } from "@/components/public/PublicNav";
-import { PublicFooter } from "@/components/public/PublicFooter";
+import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
+import { Footer } from "@/components/nexa/Footer";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
@@ -198,7 +198,7 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)]">
-      <PublicNav />
+      <NexaNavbar />
 
       {/* Hero Header */}
       <section className="pt-20 pb-12 px-4 sm:px-6 lg:px-8 text-center max-w-5xl mx-auto space-y-6">
@@ -573,7 +573,8 @@ export default function PricingPage() {
         )}
       </NexaModal>
 
-      <PublicFooter />
+      <Footer />
+      <NexaBottomBar />
     </div>
   );
 }

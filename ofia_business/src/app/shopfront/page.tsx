@@ -225,7 +225,7 @@ export default function TenantPublicShopfrontPage() {
 
       {/* PUBLIC FOOTER */}
       <footer className="border-t border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] py-6 px-4 sm:px-8 text-center text-xs text-[var(--nexa-text-muted)] space-y-1">
-        <p>Powered by <span className="font-bold text-[var(--nexa-text-primary)]">Ofia Business</span> • Verified Merchant Partner</p>
+        <p>Powered by <span className="font-bold text-[var(--nexa-text-primary)]">Ofia Compass</span> • Verified Merchant Partner</p>
         <p className="text-[11px] font-mono">100% Escrow Protection via Nexa Verified</p>
       </footer>
     </div>

@@ -37,7 +37,7 @@ export default function SignupPage() {
             Create Your Business Workspace
           </h1>
           <p className="text-xs text-[var(--nexa-text-muted)]">
-            Start your 14-day free trial on the unified Ofia Business platform.
+            Start your 14-day free trial on the unified Ofia Compass platform.
           </p>
         </div>
 

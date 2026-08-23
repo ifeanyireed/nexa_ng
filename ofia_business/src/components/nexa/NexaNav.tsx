@@ -46,7 +46,7 @@ export const NexaNavbar = () => {
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2 cursor-pointer group">
               <img src="/logo.png" alt="Ofia Compass Logo" className="w-8 h-8 object-contain transition-all group-hover:scale-110" />
-              <span className="text-xl font-bold text-display text-nexa-text-primary hidden sm:block">
+              <span className="text-xl font-bold text-display text-[var(--nexa-text-primary)] hidden sm:block">
                 Ofia Compass
               </span>
             </Link>
@@ -69,6 +69,10 @@ export const NexaNavbar = () => {
           <div className="flex items-center gap-3">
             <LocationDropdown className="hidden md:block mr-2" />
             
+            <Link href="/erp" className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-blue-500/10 transition-colors group">
+               <span className="text-xs font-black text-[#1A56DB] uppercase tracking-wider">ERP Suite</span>
+            </Link>
+
             <Link href="/nexa-verified" className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl hover:bg-nexa-amber/10 transition-colors group">
                <ShieldCheck className="w-4 h-4 text-nexa-amber" />
                <span className="text-xs font-black text-nexa-amber uppercase tracking-wider">Verified</span>

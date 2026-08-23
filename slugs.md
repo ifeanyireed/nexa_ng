@@ -9,6 +9,7 @@ This document serves as the authoritative map of all route slugs, subdomains, fr
 | Tier | Host Pattern | Target App / Module | Function |
 | :--- | :--- | :--- | :--- |
 | **Tier 1: Apex Domain** | `ofia.ng` / `domain.ng` | `ofia_business` (Public Marketplace) | Public search, nationwide 99+ niche directories, verified merchant pro profiles, booking checkout, and public auth (`/login`, `/signup`, `/join`). |
+| **Tier 1b: Dedicated ERP Subdomain** | `erp.ofia.ng` / `erp.domain.com` | `ofia_business` (ERP Portal & Suite) | Dedicated Enterprise ERP landing page and direct suite routing (`/admin`, `/accountant`, `/hr`, etc.). Non-subdomain `/erp` redirects here. |
 | **Tier 2: Cluster Subdomain** | `cluster.ofia.ng` (e.g. `handyman.ofia.ng`) | `ofia_business` (Cluster Portal) | Broad industry cluster hub with cross-service discovery & regional technician directory. |
 | **Tier 3: Vertical Niche SOC** | `niche.ofia.ng` (e.g. `cars.ofia.ng`, `solar.ofia.ng`) | `ofia_business` (Vertical SOC) | Specialized Operations Center (SOC) with deep category filters, technical specs, and verified pro listings. |
 | **Tier 4: Tenant Workplace** | `client_slug.ofia.ng` (e.g. `edusuite.ofia.ng`) | `ofia_business` (`/tenant/*` & `/erp/*`) | Tenant workspace management, BYOK key vault, team seats, and full enterprise ERP suite (`erp_ext`). |

@@ -1,5 +1,36 @@
 @import "tailwindcss";
 
+@theme {
+  --color-nexa-brand: var(--nexa-brand);
+  --color-nexa-brand-light: var(--nexa-brand-light);
+  --color-nexa-brand-mid: var(--nexa-brand-mid);
+  --color-nexa-brand-glow: var(--nexa-brand-glow);
+  
+  --color-nexa-accent: var(--nexa-accent);
+  --color-nexa-accent-light: var(--nexa-accent-light);
+  
+  --color-nexa-amber: var(--nexa-amber);
+  --color-nexa-amber-light: var(--nexa-amber-light);
+  --color-nexa-coral: var(--nexa-coral);
+  --color-nexa-coral-light: var(--nexa-coral-light);
+
+  --color-nexa-bg-base: var(--nexa-bg-base);
+  --color-nexa-bg-surface: var(--nexa-bg-surface);
+  --color-nexa-bg-overlay: var(--nexa-bg-overlay);
+  --color-nexa-bg-glass: var(--nexa-bg-glass);
+
+  --color-nexa-text-primary: var(--nexa-text-primary);
+  --color-nexa-text-secondary: var(--nexa-text-secondary);
+  --color-nexa-text-muted: var(--nexa-text-muted);
+  --color-nexa-text-faint: var(--nexa-text-faint);
+
+  --color-nexa-border: var(--nexa-border);
+  --color-nexa-border-mid: var(--nexa-border-mid);
+
+  --font-dm-sans: var(--font-dm-sans);
+  --font-jetbrains: var(--font-jetbrains);
+}
+
 :root {
   /* TYPOGRAPHY SCALE */
   --fs-xs: 12px;
@@ -21,16 +52,16 @@
   --r-2xl: 32px;
   --r-full: 9999px;
 
-  /* LIGHT MODE TOKENS */
+  /* LIGHT MODE TOKENS — VIBRANT ELECTRIC BLUE PRIMARY */
   --nexa-bg-base: #F8F9FC;
   --nexa-bg-surface: #FFFFFF;
-  --nexa-bg-overlay: rgba(255, 255, 255, 0.75);
-  --nexa-bg-glass: rgba(255, 255, 255, 0.65);
+  --nexa-bg-overlay: rgba(255, 255, 255, 0.85);
+  --nexa-bg-glass: rgba(255, 255, 255, 0.70);
   
   --nexa-brand: #1A56DB;
   --nexa-brand-light: #EBF5FF;
   --nexa-brand-mid: #3F83F8;
-  --nexa-brand-glow: rgba(26, 86, 219, 0.18);
+  --nexa-brand-glow: rgba(26, 86, 219, 0.20);
   
   --nexa-accent: #0E9F6E;
   --nexa-accent-light: #ECFDF5;
@@ -45,50 +76,50 @@
   --nexa-text-muted: #6B7280;
   --nexa-text-faint: #9CA3AF;
 
-  --nexa-border: rgba(0, 0, 0, 0.08);
-  --nexa-border-mid: rgba(0, 0, 0, 0.14);
+  --nexa-border: rgba(0, 0, 0, 0.09);
+  --nexa-border-mid: rgba(0, 0, 0, 0.15);
   
-  --nexa-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(0, 0, 0, 0.04);
-  --nexa-shadow-md: 0 2px 4px rgba(0, 0, 0, 0.02), 0 10px 20px rgba(0, 0, 0, 0.04), 0 20px 40px rgba(0, 0, 0, 0.04);
-  --nexa-shadow-glass: 0 5px 15px rgba(0, 0, 0, 0.04), 0 15px 35px rgba(0, 0, 0, 0.06), 0 30px 60px rgba(0, 0, 0, 0.03);
+  --nexa-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.04);
+  --nexa-shadow-md: 0 2px 6px rgba(0, 0, 0, 0.05), 0 10px 24px rgba(0, 0, 0, 0.05);
+  --nexa-shadow-glass: 0 5px 20px rgba(0, 0, 0, 0.06), 0 15px 40px rgba(0, 0, 0, 0.08);
   
-  --glass-border: rgba(255, 255, 255, 0.6);
-  --glass-border-top: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(255, 255, 255, 0.7);
+  --glass-border-top: rgba(255, 255, 255, 0.9);
 }
 
 .dark {
-  --nexa-bg-base: #000000;
-  --nexa-bg-surface: #0E0E10;
-  --nexa-bg-overlay: rgba(14, 14, 16, 0.90);
-  --nexa-bg-glass: rgba(14, 14, 16, 0.75);
+  --nexa-bg-base: #0B0F19;
+  --nexa-bg-surface: #111827;
+  --nexa-bg-overlay: rgba(17, 24, 39, 0.90);
+  --nexa-bg-glass: rgba(17, 24, 39, 0.75);
   
   --nexa-brand: #2563EB;
-  --nexa-brand-light: rgba(37, 99, 235, 0.15);
+  --nexa-brand-light: rgba(37, 99, 235, 0.18);
   --nexa-brand-mid: #3B82F6;
-  --nexa-brand-glow: rgba(37, 99, 235, 0.25);
+  --nexa-brand-glow: rgba(37, 99, 235, 0.30);
   
-  --nexa-accent: #059669;
-  --nexa-accent-light: rgba(5, 150, 105, 0.15);
+  --nexa-accent: #0E9F6E;
+  --nexa-accent-light: rgba(14, 159, 110, 0.18);
   
   --nexa-amber: #D97706;
-  --nexa-amber-light: rgba(217, 119, 6, 0.15);
-  --nexa-coral: #DC2626;
-  --nexa-coral-light: rgba(220, 38, 38, 0.15);
+  --nexa-amber-light: rgba(217, 119, 6, 0.18);
+  --nexa-coral: #E02424;
+  --nexa-coral-light: rgba(224, 36, 36, 0.18);
 
-  --nexa-text-primary: #EDEDED;
-  --nexa-text-secondary: #A1A1AA;
-  --nexa-text-muted: #71717A;
-  --nexa-text-faint: #52525B;
+  --nexa-text-primary: #F9FAFB;
+  --nexa-text-secondary: #D1D5DB;
+  --nexa-text-muted: #9CA3AF;
+  --nexa-text-faint: #6B7280;
 
-  --nexa-border: rgba(255, 255, 255, 0.08);
-  --nexa-border-mid: rgba(255, 255, 255, 0.14);
+  --nexa-border: rgba(255, 255, 255, 0.10);
+  --nexa-border-mid: rgba(255, 255, 255, 0.18);
   
-  --nexa-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.6);
-  --nexa-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.7);
-  --nexa-shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.8);
+  --nexa-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --nexa-shadow-md: 0 4px 14px rgba(0, 0, 0, 0.6);
+  --nexa-shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.75);
   
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-border-top: rgba(255, 255, 255, 0.15);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-border-top: rgba(255, 255, 255, 0.18);
 }
 
 body {
@@ -98,7 +129,7 @@ body {
   letter-spacing: -0.022em;
   font-size: var(--fs-base);
   line-height: 1.45;
-  transition: background 250ms ease, color 250ms ease;
+  transition: background 200ms ease, color 200ms ease;
   position: relative;
   overflow-x: hidden;
   min-height: 100vh;
@@ -125,7 +156,7 @@ body {
 
 .text-display {
   font-family: var(--font-dm-sans), sans-serif;
-  letter-spacing: -0.055em;
+  letter-spacing: -0.045em;
   font-weight: 700;
 }
 

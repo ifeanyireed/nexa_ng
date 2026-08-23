@@ -20,7 +20,7 @@ export default function OnboardingPage() {
       <div className="w-full max-w-xl space-y-6">
         <div className="text-center space-y-2">
           <NexaBadge variant="brand" className="font-mono text-xs">Setup Wizard</NexaBadge>
-          <h1 className="text-2xl font-black text-[var(--nexa-text-primary)]">Welcome to Ofia Business</h1>
+          <h1 className="text-2xl font-black text-[var(--nexa-text-primary)]">Welcome to Ofia Compass</h1>
           <p className="text-xs text-[var(--nexa-text-muted)]">Configure your workspace subdomains and active extensions.</p>
         </div>
 

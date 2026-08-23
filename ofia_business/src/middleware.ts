@@ -15,9 +15,53 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 1. TENANT DIGITAL SHOPFRONT: *.domain.shop (e.g. edusuite.ofia.shop or custom .shop)
+  const hostWithoutPort = hostname.split(":")[0].toLowerCase();
+  const port = hostname.includes(":") ? `:${hostname.split(":")[1]}` : "";
+  const isLocal = hostWithoutPort.includes("localhost") || hostWithoutPort.includes("127.0.0.1");
+  const hostParts = hostWithoutPort.split(".");
+
+  let subdomain = "";
+  if (isLocal) {
+    if (hostParts.length > 1 && hostParts[0] !== "localhost" && hostParts[0] !== "www") {
+      subdomain = hostParts[0];
+    }
+  } else {
+    if (hostParts.length > 2) {
+      subdomain = hostParts[0];
+    }
+  }
+
+  // 1. ERP SUBDOMAIN: erp.domain.com / erp.ofia.ng / erp.localhost:3000
+  if (subdomain === "erp") {
+    // If accessing root of erp subdomain -> rewrite to /erp landing page
+    if (url.pathname === "/" || url.pathname === "") {
+      url.pathname = "/erp";
+      return NextResponse.rewrite(url);
+    }
+    // If accessing /admin, /accountant, /hr, etc. directly on erp subdomain -> rewrite to /erp/*
+    if (!url.pathname.startsWith("/erp") && !url.pathname.startsWith("/api")) {
+      url.pathname = `/erp${url.pathname}`;
+      return NextResponse.rewrite(url);
+    }
+    return NextResponse.next();
+  }
+
+  // 2. REDIRECT /erp REQUESTS ON APEX/NON-ERP DOMAINS TO erp.domain.com
+  if (url.pathname.startsWith("/erp") && subdomain !== "erp") {
+    const protocol = request.headers.get("x-forwarded-proto") || (isLocal ? "http" : "https");
+    let targetHost = "";
+    if (isLocal) {
+      targetHost = `erp.localhost${port}`;
+    } else {
+      const baseDomain = hostParts.length > 2 ? hostParts.slice(-2).join(".") : hostWithoutPort;
+      targetHost = `erp.${baseDomain}${port}`;
+    }
+    const targetPath = url.pathname.replace(/^\/erp/, "") || "/";
+    return NextResponse.redirect(new URL(`${protocol}://${targetHost}${targetPath}${url.search}`), 307);
+  }
+
+  // 3. TENANT DIGITAL SHOPFRONT: *.domain.shop (e.g. edusuite.ofia.shop or custom .shop)
   if (hostname.endsWith(".shop") || hostname.includes(".shop:")) {
-    const subdomain = hostname.split(".")[0];
     // If accessing root of .shop, rewrite to /shopfront
     if (url.pathname === "/") {
       url.pathname = "/shopfront";
@@ -25,43 +69,37 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // 2. TENANT WORKPLACE & ERP: client_slug.domain.ng / client_slug.domain.com
-  // If subdomain is present (excluding apex 'ofia', 'www', 'handyman', 'cars', etc.)
+  // 4. TENANT WORKPLACE & INDUSTRY CLUSTERS / NICHES
   const knownClusters = ["handyman", "homeservices", "construction", "health", "creative", "tech"];
   const knownNiches = ["cars", "solar", "cctv", "fashion", "realestate", "cleaning", "auto"];
 
-  const hostParts = hostname.split(":")[0].split(".");
-  if (hostParts.length > 2) {
-    const subdomain = hostParts[0].toLowerCase();
-
-    if (subdomain !== "www" && subdomain !== "app" && subdomain !== "admin") {
-      // Check if cluster subdomain
-      if (knownClusters.includes(subdomain)) {
-        if (url.pathname === "/") {
-          url.pathname = `/${subdomain}`;
-          return NextResponse.rewrite(url);
-        }
+  if (subdomain && subdomain !== "www" && subdomain !== "app" && subdomain !== "admin") {
+    // Check if cluster subdomain
+    if (knownClusters.includes(subdomain)) {
+      if (url.pathname === "/") {
+        url.pathname = `/${subdomain}`;
+        return NextResponse.rewrite(url);
       }
-      // Check if vertical niche subdomain
-      else if (knownNiches.includes(subdomain)) {
-        if (url.pathname === "/") {
-          url.pathname = `/${subdomain}`;
-          return NextResponse.rewrite(url);
-        }
+    }
+    // Check if vertical niche subdomain
+    else if (knownNiches.includes(subdomain)) {
+      if (url.pathname === "/") {
+        url.pathname = `/${subdomain}`;
+        return NextResponse.rewrite(url);
       }
-      // Otherwise, it's a business tenant workplace (e.g. edusuite.ofia.ng)
-      else {
-        // Allow public quest screens without rewriting to /tenant
-        if (url.pathname.startsWith("/quests")) {
-          const response = NextResponse.next();
-          response.headers.set("x-tenant-slug", subdomain);
-          return response;
-        }
+    }
+    // Otherwise, it's a business tenant workplace (e.g. edusuite.ofia.ng)
+    else {
+      // Allow public quest screens without rewriting to /tenant
+      if (url.pathname.startsWith("/quests")) {
+        const response = NextResponse.next();
+        response.headers.set("x-tenant-slug", subdomain);
+        return response;
+      }
 
-        if (url.pathname === "/") {
-          url.pathname = "/tenant";
-          return NextResponse.rewrite(url);
-        }
+      if (url.pathname === "/") {
+        url.pathname = "/tenant";
+        return NextResponse.rewrite(url);
       }
     }
   }

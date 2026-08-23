@@ -80,52 +80,99 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // 4. TENANT WORKPLACE & INDUSTRY CLUSTERS / NICHES
-  const knownClusters = ["handyman", "homeservices", "construction", "health", "creative", "tech"];
-  const knownNiches = ["cars", "solar", "cctv", "fashion", "realestate", "cleaning", "auto"];
+  // 4. INDUSTRY CLUSTER & NICHE DISCOVERY SUBDOMAINS ({niche}.ofia.ng / {cluster}.ofia.ng)
+  const KNOWN_NICHE_SLUGS = new Set([
+    // 10 Master Sectors
+    "home-services", "homeservices",
+    "fashion-grooming", "fashion",
+    "professional-services", "professionals",
+    "education-skills", "education",
+    "events-entertainment", "events",
+    "health-wellness", "health",
+    "logistics-transport", "logistics",
+    "automotive-services", "auto", "cars",
+    "food-agribusiness", "food",
+    "real-estate-construction", "realestate",
+
+    // 24 Canonical One-Word SEO Subcategory Slugs
+    "handyman", "specialists", "cleaning",
+    "beauty", "laundry",
+    "tech", "corporate", "creative", "talent",
+    "tutoring", "vocational",
+    "planning", "entertainment",
+    "medical", "wellness", "caregiving",
+    "dispatch", "transport",
+    "mechanics", "autocare",
+    "culinary", "agriculture",
+    "properties", "construction",
+
+    // Specialized high-intent finders
+    "plumber", "electrician", "carpenter", "painter", "tiler", "welder",
+    "solar", "solar-installer", "generator", "generator-repairer", "ac-technician", "borehole", "inverter",
+    "tailor", "barber", "hairdresser", "makeup", "makeup-artist", "nails",
+    "lawyer", "accountant", "cctv", "mechanic", "car-mechanic", "chef", "caterer"
+  ]);
 
   if (subdomain && subdomain !== "www" && subdomain !== "app" && subdomain !== "admin") {
-    if (knownClusters.includes(subdomain)) {
-      if (url.pathname === "/") {
-        url.pathname = `/${subdomain}`;
-        return NextResponse.rewrite(url);
-      }
-    } else if (knownNiches.includes(subdomain)) {
-      if (url.pathname === "/") {
-        url.pathname = `/${subdomain}`;
-        return NextResponse.rewrite(url);
-      }
-    } else {
-      // Dedicated Tenant Subdomain (e.g. edusuite.ofia.ng / edusuite.localhost:3000)
+    const normalizedSubdomain = subdomain.toLowerCase();
+
+    if (KNOWN_NICHE_SLUGS.has(normalizedSubdomain)) {
       const response = NextResponse.next();
-      response.headers.set("x-tenant-slug", subdomain);
+      response.headers.set("x-niche-slug", normalizedSubdomain);
 
-      // Auth pages stay directly on tenant subdomain (e.g. edusuite.ofia.ng/login)
-      if (
-        url.pathname === "/login" ||
-        url.pathname === "/signup" ||
-        url.pathname === "/forgot-password" ||
-        url.pathname.startsWith("/api") ||
-        url.pathname.startsWith("/erp/reset-password")
-      ) {
-        return response;
-      }
-
-      // Root of tenant subdomain -> rewrite to /tenant dashboard
+      // Root of niche subdomain -> rewrite to /{niche} (e.g. handyman.ofia.ng/ -> /handyman)
       if (url.pathname === "/" || url.pathname === "") {
-        url.pathname = "/tenant";
+        url.pathname = `/${normalizedSubdomain}`;
         return NextResponse.rewrite(url, { headers: response.headers });
       }
 
-      // If accessing ERP shortcuts directly on tenant subdomain (/admin, /accountant, /hr, /md, /employee)
-      const erpShortcuts = ["/admin", "/accountant", "/hr", "/md", "/employee", "/pos", "/inventory", "/logistics", "/referrals"];
-      if (erpShortcuts.some((prefix) => url.pathname === prefix || url.pathname.startsWith(`${prefix}/`))) {
-        url.pathname = `/erp${url.pathname}`;
+      // Niche subpaths (e.g. handyman.ofia.ng/search -> /handyman/search, handyman.ofia.ng/category -> /handyman/category)
+      if (
+        url.pathname.startsWith("/search") ||
+        url.pathname.startsWith("/category") ||
+        url.pathname.startsWith("/services")
+      ) {
+        url.pathname = `/${normalizedSubdomain}${url.pathname}`;
         return NextResponse.rewrite(url, { headers: response.headers });
+      }
+
+      // If already has /{niche} in path (e.g. handyman.ofia.ng/handyman -> rewrite cleanly)
+      if (url.pathname.startsWith(`/${normalizedSubdomain}`)) {
+        return response;
       }
 
       return response;
     }
+
+    // 5. DEDICATED TENANT WORKSPACES (e.g. edusuite.ofia.ng / payflow.ofia.ng)
+    const response = NextResponse.next();
+    response.headers.set("x-tenant-slug", subdomain);
+
+    // Auth pages stay directly on tenant subdomain (e.g. edusuite.ofia.ng/login)
+    if (
+      url.pathname === "/login" ||
+      url.pathname === "/signup" ||
+      url.pathname === "/forgot-password" ||
+      url.pathname.startsWith("/api") ||
+      url.pathname.startsWith("/erp/reset-password")
+    ) {
+      return response;
+    }
+
+    // Root of tenant subdomain -> rewrite to /tenant dashboard
+    if (url.pathname === "/" || url.pathname === "") {
+      url.pathname = "/tenant";
+      return NextResponse.rewrite(url, { headers: response.headers });
+    }
+
+    // If accessing ERP shortcuts directly on tenant subdomain (/admin, /accountant, /hr, /md, /employee, /users)
+    const erpShortcuts = ["/admin", "/accountant", "/hr", "/md", "/employee", "/pos", "/inventory", "/logistics", "/referrals", "/users"];
+    if (erpShortcuts.some((prefix) => url.pathname === prefix || url.pathname.startsWith(`${prefix}/`))) {
+      url.pathname = `/erp${url.pathname}`;
+      return NextResponse.rewrite(url, { headers: response.headers });
+    }
+
+    return response;
   }
 
   return NextResponse.next();

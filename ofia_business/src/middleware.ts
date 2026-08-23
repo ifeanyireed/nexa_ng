@@ -31,11 +31,11 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // 1. ERP SUBDOMAIN: erp.domain.com / erp.ofia.ng / erp.localhost:3000
+  // 1. ERP GENERAL SUBDOMAIN: erp.ofia.ng / erp.localhost:3000 / erp.domain.com
   if (subdomain === "erp") {
-    // If accessing root of erp subdomain -> rewrite to /erp landing page
+    // Accessing root of erp subdomain -> rewrite to /login (general ERP login console)
     if (url.pathname === "/" || url.pathname === "") {
-      url.pathname = "/erp";
+      url.pathname = "/login";
       return NextResponse.rewrite(url);
     }
     // Auth & public utility pages keep their direct route on erp subdomain
@@ -54,8 +54,10 @@ export function middleware(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
-  // 2. REDIRECT /login & /erp REQUESTS ON APEX/NON-ERP DOMAINS TO erp.domain.com
-  if ((url.pathname === "/login" || url.pathname.startsWith("/erp")) && subdomain !== "erp") {
+  // 2. REDIRECT /login & /erp REQUESTS ON APEX/WWW (ofia.ng) TO erp.ofia.ng
+  // Only redirect if accessing from apex / www, NEVER redirect tenant subdomains!
+  const isApexOrWww = !subdomain || subdomain === "www";
+  if (isApexOrWww && (url.pathname === "/login" || url.pathname.startsWith("/erp"))) {
     const protocol = request.headers.get("x-forwarded-proto") || (isLocal ? "http" : "https");
     let targetHost = "";
     if (isLocal) {
@@ -65,7 +67,7 @@ export function middleware(request: NextRequest) {
       targetHost = `erp.${baseDomain}${port}`;
     }
     const targetPath = url.pathname.startsWith("/erp")
-      ? (url.pathname.replace(/^\/erp/, "") || "/")
+      ? (url.pathname.replace(/^\/erp/, "") || "/login")
       : url.pathname;
     return NextResponse.redirect(new URL(`${protocol}://${targetHost}${targetPath}${url.search}`), 307);
   }
@@ -94,15 +96,35 @@ export function middleware(request: NextRequest) {
         return NextResponse.rewrite(url);
       }
     } else {
-      if (url.pathname.startsWith("/quests")) {
-        const response = NextResponse.next();
-        response.headers.set("x-tenant-slug", subdomain);
+      // Dedicated Tenant Subdomain (e.g. edusuite.ofia.ng / edusuite.localhost:3000)
+      const response = NextResponse.next();
+      response.headers.set("x-tenant-slug", subdomain);
+
+      // Auth pages stay directly on tenant subdomain (e.g. edusuite.ofia.ng/login)
+      if (
+        url.pathname === "/login" ||
+        url.pathname === "/signup" ||
+        url.pathname === "/forgot-password" ||
+        url.pathname.startsWith("/api") ||
+        url.pathname.startsWith("/erp/reset-password")
+      ) {
         return response;
       }
-      if (url.pathname === "/") {
+
+      // Root of tenant subdomain -> rewrite to /tenant dashboard
+      if (url.pathname === "/" || url.pathname === "") {
         url.pathname = "/tenant";
-        return NextResponse.rewrite(url);
+        return NextResponse.rewrite(url, { headers: response.headers });
       }
+
+      // If accessing ERP shortcuts directly on tenant subdomain (/admin, /accountant, /hr, /md, /employee)
+      const erpShortcuts = ["/admin", "/accountant", "/hr", "/md", "/employee", "/pos", "/inventory", "/logistics", "/referrals"];
+      if (erpShortcuts.some((prefix) => url.pathname === prefix || url.pathname.startsWith(`${prefix}/`))) {
+        url.pathname = `/erp${url.pathname}`;
+        return NextResponse.rewrite(url, { headers: response.headers });
+      }
+
+      return response;
     }
   }
 

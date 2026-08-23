@@ -232,9 +232,9 @@ export default function DashboardLayout({
         {/* COLLAPSE TOGGLE BUTTON */}
         <button 
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="absolute -right-3 top-24 w-6 h-6 bg-white dark:bg-slate-800 border border-nexa-border rounded-full flex items-center justify-center shadow-lg text-nexa-brand hover:scale-110 transition-transform z-[60]"
+          className="absolute -right-3 top-24 w-6 h-6 !bg-white bg-white border border-slate-200 shadow-md rounded-full flex items-center justify-center text-slate-700 hover:text-[#1A56DB] hover:scale-110 transition-transform z-[60] cursor-pointer"
         >
-          {isSidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          {isSidebarOpen ? <ChevronLeft className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
         </button>
 
         <div className="p-6 flex items-center justify-between">

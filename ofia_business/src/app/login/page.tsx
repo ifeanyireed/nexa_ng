@@ -46,6 +46,25 @@ export default function LoginPage() {
     { label: "Field Tech / POS", email: "tech@edusuite.ng", pass: "password123", role: "FIELD_TECH", route: "/erp/employee" },
   ];
 
+  const [currentTenant, setCurrentTenant] = useState<string>("");
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const host = window.location.host.toLowerCase();
+      const hostParts = host.split(":")[0].split(".");
+      const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
+      let sub = "";
+      if (isLocal && hostParts.length > 1 && hostParts[0] !== "localhost" && hostParts[0] !== "www") {
+        sub = hostParts[0];
+      } else if (!isLocal && hostParts.length > 2) {
+        sub = hostParts[0];
+      }
+      if (sub && sub !== "erp" && sub !== "admin" && sub !== "www" && sub !== "app") {
+        setCurrentTenant(sub);
+      }
+    }
+  }, []);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -80,17 +99,45 @@ export default function LoginPage() {
   };
 
   const navigateUser = (userEmail: string) => {
+    let route = "/erp/admin";
     if (userEmail.includes("accountant")) {
-      router.push("/erp/accountant");
+      route = "/erp/accountant";
     } else if (userEmail.includes("hr")) {
-      router.push("/erp/hr");
+      route = "/erp/hr";
     } else if (userEmail.includes("md")) {
-      router.push("/erp/md");
+      route = "/erp/md";
     } else if (userEmail.includes("tech")) {
-      router.push("/erp/employee");
-    } else {
-      router.push("/erp/admin");
+      route = "/erp/employee";
     }
+
+    // Extract tenant slug from user email (e.g. edusuite from admin@edusuite.ng)
+    let tenantSlug = currentTenant;
+    if (!tenantSlug && userEmail.includes("@")) {
+      const domainPart = userEmail.split("@")[1].toLowerCase();
+      tenantSlug = domainPart.split(".")[0];
+    }
+
+    // If on general erp.ofia.ng / apex and logging into a specific tenant -> redirect to tenant subdomain
+    if (!currentTenant && tenantSlug && tenantSlug !== "ofia" && tenantSlug !== "gmail" && tenantSlug !== "yahoo" && tenantSlug !== "outlook") {
+      if (typeof window !== "undefined") {
+        const host = window.location.host.toLowerCase();
+        const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
+        const port = window.location.port ? `:${window.location.port}` : "";
+        const protocol = window.location.protocol;
+
+        if (isLocal) {
+          window.location.href = `${protocol}//${tenantSlug}.localhost${port}${route}`;
+          return;
+        } else {
+          const hostParts = host.split(":")[0].split(".");
+          const baseDomain = hostParts.length > 2 ? hostParts.slice(-2).join(".") : host.split(":")[0];
+          window.location.href = `https://${tenantSlug}.${baseDomain}${port}${route}`;
+          return;
+        }
+      }
+    }
+
+    router.push(route);
   };
 
   const selectPersona = (pEmail: string, pPass: string) => {
@@ -107,7 +154,7 @@ export default function LoginPage() {
           <span className="font-extrabold text-base text-[var(--nexa-text-primary)] text-display flex items-center gap-2">
             Ofia ERP
             <span className="text-[10px] font-bold uppercase font-mono px-2.5 py-0.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20">
-              Suite
+              {currentTenant ? `${currentTenant}` : "Suite"}
             </span>
           </span>
         </Link>
@@ -127,10 +174,10 @@ export default function LoginPage() {
             <div className="text-center space-y-2">
               <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] text-[11px] font-bold border border-[#1A56DB]/20 shadow-sm">
                 <ShieldCheck className="w-3.5 h-3.5" />
-                Enterprise Operating Console
+                {currentTenant ? `${currentTenant.toUpperCase()} Operating Console` : "Enterprise Operating Console"}
               </div>
               <h1 className="text-2xl font-black text-display text-[var(--nexa-text-primary)] tracking-tight">
-                Sign in to Ofia ERP
+                {currentTenant ? `Sign in to ${currentTenant.toUpperCase()} ERP` : "Sign in to Ofia ERP"}
               </h1>
               <p className="text-xs text-[var(--nexa-text-muted)] leading-relaxed">
                 Access Inventory, POS, Zonal Dispatch, General Ledger, HR Appraisals, and AI Agents.

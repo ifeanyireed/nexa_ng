@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, MapPin, ChevronDown, Menu, User, Home, Grid, PlusSquare, Bell, Compass, LayoutGrid, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { NexaButton } from "./NexaButton";
 import { NexaThemeToggle } from "./NexaThemeToggle";
 import { NexaAvatar } from "./NexaAvatar";
@@ -19,12 +20,22 @@ export const NexaNavbar = () => {
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
   const { mode, setMode } = useNiche();
   const { user, logout } = useAuth();
+  const pathname = usePathname();
+  const [isErp, setIsErp] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 60);
     window.addEventListener("scroll", handleScroll);
+
+    if (typeof window !== "undefined") {
+      const host = window.location.host.toLowerCase();
+      if (host.startsWith("erp.") || host.includes("erp.localhost") || pathname?.startsWith("/erp")) {
+        setIsErp(true);
+      }
+    }
+
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [pathname]);
 
   return (
     <>
@@ -45,9 +56,9 @@ export const NexaNavbar = () => {
           {/* LOGO & NICHE SWITCHER */}
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2 cursor-pointer group">
-              <img src="/logo.png" alt="Ofia Compass Logo" className="w-8 h-8 object-contain transition-all group-hover:scale-110" />
+              <img src="/logo.png" alt={isErp ? "Ofia ERP Logo" : "Ofia Compass Logo"} className="w-8 h-8 object-contain transition-all group-hover:scale-110" />
               <span className="text-xl font-bold text-display text-[var(--nexa-text-primary)] hidden sm:block">
-                Ofia Compass
+                {isErp ? "Ofia ERP" : "Ofia Compass"}
               </span>
             </Link>
             

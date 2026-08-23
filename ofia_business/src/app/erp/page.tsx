@@ -169,7 +169,7 @@ export default function EnterpriseERPLanding() {
               ))}
             </span>
             <span className="block">
-              {"Orchestrated by Ofia.".split(" ").map((word, i) => (
+              {"Orchestrated by Ofia ERP.".split(" ").map((word, i) => (
                 <motion.span
                   key={`w2-${i}`}
                   variants={itemVariants}

@@ -5,6 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useERPStore, User } from "@/lib/erp-store";
 import { motion } from "framer-motion";
 import { BusinessShell } from "@/components/business/BusinessShell";
+import { RoleGuard } from "@/components/auth/RoleGuard";
 import { FinanceContext, Stats, Expense, Invoice, Reconciliation, Transaction } from "./FinanceContext";
 
 const FINANCE_API_URL = process.env.NEXT_PUBLIC_FINANCE_API_URL || "https://nets-erp-m7iw.onrender.com";
@@ -631,10 +632,11 @@ export default function AccountantLayout({ children }: { children: React.ReactNo
 				formatNairaShort
 			}}
 		>
-			<BusinessShell
-				title="Finance & Accounting Hub"
-				subtitle="Corporate financial governance, invoice management, cashbook reconciliations, and Chart of Accounts."
-			>
+			<RoleGuard allowedRoles={["admin", "md", "accountant"]} requiredModule="accounting">
+				<BusinessShell
+					title="Finance & Accounting Hub"
+					subtitle="Corporate financial governance, invoice management, cashbook reconciliations, and Chart of Accounts."
+				>
 				{isClientsPage ? (
 					loading ? (
 						<div className="py-20 flex justify-center items-center">
@@ -1020,8 +1022,8 @@ export default function AccountantLayout({ children }: { children: React.ReactNo
 						</div>
 					</div>
 				)}
-
-			</BusinessShell>
+				</BusinessShell>
+			</RoleGuard>
 		</FinanceContext.Provider>
 	);
 }

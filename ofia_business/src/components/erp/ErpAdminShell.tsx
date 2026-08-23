@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { RoleGuard } from "@/components/auth/RoleGuard";
 import {
   LayoutDashboard,
   Bot,
@@ -120,6 +121,37 @@ export function ErpAdminShell({
   const [tenantName, setTenantName] = useState<string>("EduSuite");
   const [permissionMatrix, setPermissionMatrix] = useState<PermissionMatrix>(DEFAULT_PERMISSION_MATRIX);
   const [currentRole, setCurrentRole] = useState<RoleKey>("admin");
+  const [userName, setUserName] = useState<string>("EduSuite Staff");
+  const [userEmail, setUserEmail] = useState<string>("staff@edusuite.ng");
+
+  const getRoleDisplayName = (role: RoleKey) => {
+    switch (role) {
+      case "admin": return "Tenant Administrator";
+      case "md": return "Managing Director";
+      case "hr": return "HR Director";
+      case "accountant": return "Chief Accountant";
+      case "manager": return "Line Manager";
+      case "employee": return "General Employee";
+      case "cashier": return "POS Cashier";
+      case "inventory_officer": return "Warehouse Officer";
+      case "dispatcher": return "Fleet Dispatcher";
+      default: return `${tenantName} Staff`;
+    }
+  };
+
+  const getRoleBadgeColor = (role: RoleKey) => {
+    switch (role) {
+      case "admin": return "text-[#1A56DB] bg-[#1A56DB]/10 border-[#1A56DB]/20";
+      case "md": return "text-purple-600 bg-purple-500/10 border-purple-500/20";
+      case "hr": return "text-rose-600 bg-rose-500/10 border-rose-500/20";
+      case "accountant": return "text-emerald-600 bg-emerald-500/10 border-emerald-500/20";
+      case "manager": return "text-amber-600 bg-amber-500/10 border-amber-500/20";
+      case "cashier": return "text-cyan-600 bg-cyan-500/10 border-cyan-500/20";
+      case "inventory_officer": return "text-amber-600 bg-amber-500/10 border-amber-500/20";
+      case "dispatcher": return "text-blue-600 bg-blue-500/10 border-blue-500/20";
+      default: return "text-slate-500 bg-slate-500/10 border-slate-500/20";
+    }
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -291,28 +323,45 @@ export function ErpAdminShell({
         }
       }
 
-      // Resolve user role
+      // Resolve user role, name, and email
       let resolvedRole: RoleKey = "admin";
+      let resolvedName = user?.name || `${tName} Admin`;
+      let resolvedEmail = user?.email || "admin@edusuite.ng";
+
       const storedErpUser = localStorage.getItem("erp_current_user");
       if (storedErpUser) {
         try {
           const parsed = JSON.parse(storedErpUser);
-          if (parsed && parsed.role) {
-            resolvedRole = parsed.role as RoleKey;
+          if (parsed) {
+            if (parsed.role) resolvedRole = parsed.role as RoleKey;
+            if (parsed.name) resolvedName = parsed.name;
+            if (parsed.email) resolvedEmail = parsed.email;
           }
         } catch {}
-      } else if (pathname.startsWith("/erp/employee")) {
+      } else {
+        const storedRole = localStorage.getItem("nexa_user_role");
+        const storedName = localStorage.getItem("nexa_user_name");
+        const storedEmail = localStorage.getItem("nexa_user_email");
+        if (storedRole) resolvedRole = storedRole as RoleKey;
+        if (storedName) resolvedName = storedName;
+        if (storedEmail) resolvedEmail = storedEmail;
+      }
+
+      if (pathname.startsWith("/erp/employee") && resolvedRole === "admin") {
         resolvedRole = "employee";
-      } else if (pathname.startsWith("/erp/manager")) {
+      } else if (pathname.startsWith("/erp/manager") && resolvedRole === "admin") {
         resolvedRole = "manager";
-      } else if (pathname.startsWith("/erp/md")) {
+      } else if (pathname.startsWith("/erp/md") && resolvedRole === "admin") {
         resolvedRole = "md";
-      } else if (pathname.startsWith("/erp/hr")) {
+      } else if (pathname.startsWith("/erp/hr") && resolvedRole === "admin") {
         resolvedRole = "hr";
-      } else if (pathname.startsWith("/erp/accountant")) {
+      } else if (pathname.startsWith("/erp/accountant") && resolvedRole === "admin") {
         resolvedRole = "accountant";
       }
+
       setCurrentRole(resolvedRole);
+      setUserName(resolvedName);
+      setUserEmail(resolvedEmail);
 
       // Role Protection Guard:
       // If a non-admin role lands directly on /erp/admin (root admin overview) or /erp/admin/access-control:
@@ -655,13 +704,18 @@ export function ErpAdminShell({
             {isSidebarOpen ? (
               <div className="flex items-center justify-between p-2 rounded-2xl bg-nexa-bg-base/70 border border-nexa-border">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <NexaAvatar size="sm" isOnline name={user?.name || tenantName} />
+                  <NexaAvatar size="sm" isOnline name={userName || user?.name || tenantName} />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-nexa-text-primary truncate">
-                      {user?.name || `${tenantName} Admin`}
+                      {userName || user?.name || `${tenantName} Staff`}
                     </p>
-                    <p className="text-[9px] text-emerald-500 font-extrabold uppercase tracking-wider truncate">
-                      {tenantName} Operator
+                    <p
+                      className={cn(
+                        "text-[9px] font-extrabold uppercase tracking-wider truncate inline-block px-1.5 py-0.5 rounded-full border mt-0.5",
+                        getRoleBadgeColor(currentRole)
+                      )}
+                    >
+                      {getRoleDisplayName(currentRole)}
                     </p>
                   </div>
                 </div>
@@ -683,7 +737,7 @@ export function ErpAdminShell({
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <NexaAvatar size="sm" isOnline name={user?.name || tenantName} />
+                <NexaAvatar size="sm" isOnline name={userName || user?.name || tenantName} />
                 <button
                   type="button"
                   onClick={() => setIsNotifOpen(!isNotifOpen)}
@@ -846,7 +900,11 @@ export function ErpAdminShell({
           )}
 
           {/* PAGE BODY */}
-          <div className="pt-2">{children}</div>
+          <div className="pt-2">
+            <RoleGuard requiredModule={activeModule}>
+              {children}
+            </RoleGuard>
+          </div>
         </div>
       </main>
 

@@ -171,6 +171,8 @@ export default function LoginPage() {
             tenant: "EduSuite",
           })
         );
+        document.cookie = `nexa_user_role=${resolvedRole}; path=/; max-age=2592000; SameSite=Lax`;
+        document.cookie = `nexa_user_email=${encodeURIComponent(email)}; path=/; max-age=2592000; SameSite=Lax`;
       }
       navigateUser(email);
     } catch (err: any) {
@@ -191,6 +193,8 @@ export default function LoginPage() {
             tenant: "EduSuite",
           })
         );
+        document.cookie = `nexa_user_role=${resolvedRole}; path=/; max-age=2592000; SameSite=Lax`;
+        document.cookie = `nexa_user_email=${encodeURIComponent(email)}; path=/; max-age=2592000; SameSite=Lax`;
       }
       navigateUser(email);
     } finally {

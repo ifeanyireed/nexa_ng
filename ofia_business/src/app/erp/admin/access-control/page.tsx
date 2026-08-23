@@ -101,15 +101,13 @@ export default function AccessControlPage() {
 
       setTenantName(tName);
 
-      // Instant local cache render first
-      const cached = getTenantPermissionMatrix(tName);
-      setMatrix(cached);
-
-      // Look up live tenant RBAC matrix from MySQL database table TenantRolePermission on load
+      // Directly query live tenant RBAC matrix from MySQL database table TenantRolePermission
       setIsLoadingDb(true);
       fetchTenantPermissionMatrix(tName)
         .then((remote) => {
-          setMatrix(remote);
+          if (remote && Object.keys(remote).length > 0) {
+            setMatrix(remote);
+          }
         })
         .finally(() => {
           setIsLoadingDb(false);

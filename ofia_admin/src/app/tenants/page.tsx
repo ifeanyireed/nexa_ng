@@ -51,6 +51,9 @@ import {
   Zap,
   ArrowRight,
   ChevronRight,
+  BarChart3,
+  Store,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -61,8 +64,12 @@ const getModuleIcon = (iconName: string) => {
       return <LayoutDashboard className="w-4 h-4" />;
     case "Bot":
       return <Bot className="w-4 h-4" />;
+    case "BarChart3":
+      return <BarChart3 className="w-4 h-4" />;
     case "ShoppingBag":
       return <ShoppingBag className="w-4 h-4" />;
+    case "Store":
+      return <Store className="w-4 h-4" />;
     case "Boxes":
       return <Boxes className="w-4 h-4" />;
     case "ShoppingCart":
@@ -75,6 +82,10 @@ const getModuleIcon = (iconName: string) => {
       return <Trophy className="w-4 h-4" />;
     case "Users":
       return <Users className="w-4 h-4" />;
+    case "ShieldCheck":
+      return <ShieldCheck className="w-4 h-4" />;
+    case "Layers":
+      return <Layers className="w-4 h-4" />;
     default:
       return <Layers className="w-4 h-4" />;
   }
@@ -103,13 +114,13 @@ function TenantManagementContent() {
   const [newPlanTier, setNewPlanTier] = useState<TenantOrg["planTier"]>("GROWTH");
   const [newErpModules, setNewErpModules] = useState<Record<string, boolean>>({
     ai: true,
+    crm: true,
     marketplace: true,
-    inventory: true,
-    pos: true,
+    shop: true,
     logistics: false,
-    referrals: true,
-    quests: true,
+    accounting: true,
     hr: true,
+    access_control: true,
   });
 
   // Quota Override Form state

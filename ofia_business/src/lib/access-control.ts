@@ -390,37 +390,7 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
   },
 };
 
-const STORAGE_PREFIX = "ofia_rbac_matrix_";
-
-export function getTenantStorageKey(tenantId: string): string {
-  const cleanId = (tenantId || "default").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "_");
-  return `${STORAGE_PREFIX}${cleanId}`;
-}
-
 export function getTenantPermissionMatrix(tenantId: string): PermissionMatrix {
-  if (typeof window === "undefined") {
-    return DEFAULT_PERMISSION_MATRIX;
-  }
-
-  const key = getTenantStorageKey(tenantId);
-  try {
-    const raw = localStorage.getItem(key);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      // Merge with defaults so new modules/roles are never undefined
-      const merged: PermissionMatrix = { ...DEFAULT_PERMISSION_MATRIX };
-      for (const role of ERP_ROLES) {
-        merged[role.key] = {
-          ...DEFAULT_PERMISSION_MATRIX[role.key],
-          ...(parsed[role.key] || {}),
-        };
-      }
-      return merged;
-    }
-  } catch (e) {
-    console.error("Failed to parse tenant permissions:", e);
-  }
-
   return DEFAULT_PERMISSION_MATRIX;
 }
 
@@ -429,23 +399,15 @@ export function saveTenantPermissionMatrix(
   matrix: PermissionMatrix
 ): void {
   if (typeof window === "undefined") return;
-  const key = getTenantStorageKey(tenantId);
-  try {
-    localStorage.setItem(key, JSON.stringify(matrix));
-    // Dispatch custom event for real-time reactivity in shells and components
-    window.dispatchEvent(
-      new CustomEvent("ofia_rbac_updated", {
-        detail: { tenantId, matrix },
-      })
-    );
-  } catch (e) {
-    console.error("Failed to save tenant permissions:", e);
-  }
+  // Dispatch in-memory custom event for real-time reactivity in shells and components
+  window.dispatchEvent(
+    new CustomEvent("ofia_rbac_updated", {
+      detail: { tenantId, matrix },
+    })
+  );
 }
 
 export async function fetchTenantPermissionMatrix(tenantId: string): Promise<PermissionMatrix> {
-  const local = getTenantPermissionMatrix(tenantId);
-
   try {
     const res = await USER_API.getTenantRBAC(tenantId);
     if (res && res.matrix && Object.keys(res.matrix).length > 0) {
@@ -481,25 +443,25 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
         }
       }
 
-      // Save to localStorage cache and trigger real-time reactivity
+      // Dispatch in-memory event to update active shell state
       saveTenantPermissionMatrix(tenantId, merged);
       return merged;
     }
   } catch (err) {
-    console.warn(`[RBAC] Using cached matrix for tenant ${tenantId}:`, err);
+    console.warn(`[RBAC] Database lookup for tenant '${tenantId}':`, err);
   }
 
-  return local;
+  return DEFAULT_PERMISSION_MATRIX;
 }
 
 export async function saveTenantPermissionMatrixRemote(
   tenantId: string,
   matrix: PermissionMatrix
 ): Promise<{ success: boolean; message: string }> {
-  // 1. Immediately save to local storage & trigger real-time shell update
+  // 1. Instantly update active components via in-memory event
   saveTenantPermissionMatrix(tenantId, matrix);
 
-  // 2. Persist to MySQL database table TenantRolePermission via API
+  // 2. Persist directly to MySQL database table TenantRolePermission via backend API
   try {
     const res = await USER_API.saveTenantRBAC(tenantId, matrix);
     return {
@@ -507,10 +469,10 @@ export async function saveTenantPermissionMatrixRemote(
       message: res.message || "Permissions successfully persisted to MySQL database u721451974_nexa_db",
     };
   } catch (err: any) {
-    console.warn(`[RBAC] Saved locally; remote DB sync error:`, err);
+    console.error(`[RBAC] Remote database sync failed:`, err);
     return {
-      success: true,
-      message: "Permissions saved in tenant registry & synced with workspace",
+      success: false,
+      message: "Database sync error: " + (err?.message || "Could not reach database"),
     };
   }
 }

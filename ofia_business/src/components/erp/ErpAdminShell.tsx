@@ -379,7 +379,95 @@ export function ErpAdminShell({
         </nav>
 
         {/* FOOTER ACTIONS */}
-        <div className="p-4 border-t border-nexa-border space-y-1.5">
+        <div className="p-4 border-t border-nexa-border space-y-2 relative">
+          {/* USER PROFILE & NOTIFICATION ROW */}
+          <div className="relative" ref={dropdownRef}>
+            {isSidebarOpen ? (
+              <div className="flex items-center justify-between p-2 rounded-2xl bg-nexa-bg-base/70 border border-nexa-border">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <NexaAvatar size="sm" isOnline name={user?.name || tenantName} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-nexa-text-primary truncate">
+                      {user?.name || `${tenantName} Admin`}
+                    </p>
+                    <p className="text-[9px] text-emerald-500 font-extrabold uppercase tracking-wider truncate">
+                      {tenantName} Operator
+                    </p>
+                  </div>
+                </div>
+
+                {/* NOTIFICATION BELL BUTTON */}
+                <button
+                  type="button"
+                  onClick={() => setIsNotifOpen(!isNotifOpen)}
+                  className="relative p-1.5 hover:bg-nexa-bg-surface rounded-full cursor-pointer text-nexa-text-secondary focus:outline-none transition-colors border border-nexa-border shrink-0 ml-1.5"
+                  title="Live Notifications"
+                >
+                  <Bell className="w-4 h-4" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 bg-red-500 rounded-full text-[8px] font-extrabold text-white flex items-center justify-center px-0.5 shadow-sm animate-pulse">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <NexaAvatar size="sm" isOnline name={user?.name || tenantName} />
+                <button
+                  type="button"
+                  onClick={() => setIsNotifOpen(!isNotifOpen)}
+                  className="relative p-2 hover:bg-nexa-bg-base rounded-full cursor-pointer text-nexa-text-secondary focus:outline-none transition-colors border border-nexa-border"
+                  title="Live Notifications"
+                >
+                  <Bell className="w-4 h-4" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-3.5 bg-red-500 rounded-full text-[8px] font-extrabold text-white flex items-center justify-center px-0.5 shadow-sm animate-pulse">
+                      {unreadCount}
+                    </span>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* NOTIFICATION CENTER DROPDOWN */}
+            {isNotifOpen && (
+              <div className="absolute left-full bottom-0 ml-3 w-80 sm:w-96 bg-nexa-bg-surface border border-nexa-border rounded-3xl shadow-2xl z-[100] overflow-hidden flex flex-col max-h-[500px]">
+                <div className="p-4 border-b border-nexa-border flex items-center justify-between bg-nexa-bg-base/50">
+                  <span className="font-extrabold text-sm text-display">ERP Live Alerts</span>
+                  <span className="text-xs text-[#1A56DB] font-bold">Real-Time Sync</span>
+                </div>
+
+                <div className="flex-1 overflow-y-auto divide-y divide-nexa-border max-h-[350px]">
+                  {notifications.map((notif) => (
+                    <div
+                      key={notif.id}
+                      className={cn(
+                        "p-4 transition-colors flex gap-3 items-start relative group hover:bg-nexa-bg-base/30",
+                        !notif.isRead && "bg-nexa-brand/5 dark:bg-nexa-brand/10"
+                      )}
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border uppercase tracking-wider bg-blue-500/10 text-blue-500 border-blue-500/20">
+                            {notif.type}
+                          </span>
+                          <span className="text-[10px] text-nexa-text-faint font-semibold">
+                            {notif.time}
+                          </span>
+                        </div>
+                        <h4 className="text-xs font-bold text-nexa-text-primary">{notif.title}</h4>
+                        <p className="text-xs text-nexa-text-secondary mt-0.5 leading-relaxed">
+                          {notif.message}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           <Link href="/tenant/settings">
             <button
               className={cn(
@@ -411,72 +499,8 @@ export function ErpAdminShell({
             </h2>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
             <NexaThemeToggle />
-
-            {/* NOTIFICATION CENTER */}
-            <div className="relative" ref={dropdownRef}>
-              <button
-                onClick={() => setIsNotifOpen(!isNotifOpen)}
-                className="relative p-2.5 hover:bg-nexa-bg-base rounded-full cursor-pointer text-nexa-text-secondary focus:outline-none transition-colors border border-nexa-border"
-              >
-                <Bell className="w-5 h-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 bg-red-500 rounded-full text-[9px] font-extrabold text-white flex items-center justify-center px-1 shadow-sm animate-pulse">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-
-              {isNotifOpen && (
-                <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-nexa-bg-surface border border-nexa-border rounded-3xl shadow-2xl z-[100] overflow-hidden flex flex-col max-h-[500px]">
-                  <div className="p-4 border-b border-nexa-border flex items-center justify-between bg-nexa-bg-base/50">
-                    <span className="font-extrabold text-sm text-display">ERP Live Alerts</span>
-                    <span className="text-xs text-[#1A56DB] font-bold">Real-Time Sync</span>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto divide-y divide-nexa-border max-h-[350px]">
-                    {notifications.map((notif) => (
-                      <div
-                        key={notif.id}
-                        className={cn(
-                          "p-4 transition-colors flex gap-3 items-start relative group hover:bg-nexa-bg-base/30",
-                          !notif.isRead && "bg-nexa-brand/5 dark:bg-nexa-brand/10"
-                        )}
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border uppercase tracking-wider bg-blue-500/10 text-blue-500 border-blue-500/20">
-                              {notif.type}
-                            </span>
-                            <span className="text-[10px] text-nexa-text-faint font-semibold">
-                              {notif.time}
-                            </span>
-                          </div>
-                          <h4 className="text-xs font-bold text-nexa-text-primary">{notif.title}</h4>
-                          <p className="text-xs text-nexa-text-secondary mt-0.5 leading-relaxed">
-                            {notif.message}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="h-8 w-px bg-nexa-border" />
-
-            {/* USER AVATAR & IDENTITY */}
-            <div className="flex items-center gap-3">
-              <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold">{user?.name || `${tenantName} Admin`}</p>
-                <p className="text-[10px] text-emerald-500 font-extrabold uppercase tracking-wider">
-                  {tenantName} Operator
-                </p>
-              </div>
-              <NexaAvatar size="md" isOnline name={user?.name || tenantName} />
-            </div>
           </div>
         </header>
 

@@ -279,7 +279,7 @@ export function ErpAdminShell({
         </button>
 
         {/* LOGO AREA */}
-        <div className="p-6 flex items-center justify-between">
+        <div className="p-6 pb-2 flex items-center justify-between">
           {isSidebarOpen ? (
             <Link href="/" className="flex items-center gap-2.5">
               <img src="/logo.png" alt="Ofia ERP Logo" className="w-8 h-8 object-contain shrink-0" />
@@ -302,8 +302,41 @@ export function ErpAdminShell({
           )}
         </div>
 
+        {/* SEARCH BAR — DIRECTLY UNDER LOGO AND TITLE */}
+        <div className="px-4 py-2">
+          {isSidebarOpen ? (
+            <div className="flex items-center bg-nexa-bg-base px-3.5 py-2 rounded-full border border-nexa-border gap-2.5 w-full focus-within:border-nexa-brand transition-all">
+              <Search className="w-3.5 h-3.5 text-nexa-text-faint shrink-0" />
+              <input
+                type="text"
+                placeholder="Search modules..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-transparent text-xs outline-none w-full text-nexa-text-primary placeholder:text-nexa-text-faint font-medium"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="text-xs text-nexa-text-faint hover:text-nexa-text-primary cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          ) : (
+            <button
+              onClick={() => setIsSidebarOpen(true)}
+              className="w-10 h-10 mx-auto rounded-full bg-nexa-bg-base border border-nexa-border flex items-center justify-center text-nexa-text-faint hover:text-nexa-brand transition-colors cursor-pointer"
+              title="Search ERP modules"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
         {/* NAV ITEMS */}
-        <nav className="flex-1 px-4 space-y-1.5 mt-4 overflow-y-auto">
+        <nav className="flex-1 px-4 space-y-1.5 mt-2 overflow-y-auto">
           {navItems
             .filter((item) => item.label.toLowerCase().includes(searchQuery.toLowerCase()))
             .map((item, i) => {
@@ -344,39 +377,6 @@ export function ErpAdminShell({
               );
             })}
         </nav>
-
-        {/* SEARCH BAR — ABOVE THE LINE ABOVE 'WORKSPACE SETTINGS' */}
-        <div className="px-4 py-2">
-          {isSidebarOpen ? (
-            <div className="flex items-center bg-nexa-bg-base px-3.5 py-2 rounded-full border border-nexa-border gap-2.5 w-full focus-within:border-nexa-brand transition-all">
-              <Search className="w-3.5 h-3.5 text-nexa-text-faint shrink-0" />
-              <input
-                type="text"
-                placeholder="Search modules..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent text-xs outline-none w-full text-nexa-text-primary placeholder:text-nexa-text-faint font-medium"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="text-xs text-nexa-text-faint hover:text-nexa-text-primary cursor-pointer"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-            </div>
-          ) : (
-            <button
-              onClick={() => setIsSidebarOpen(true)}
-              className="w-10 h-10 mx-auto rounded-full bg-nexa-bg-base border border-nexa-border flex items-center justify-center text-nexa-text-faint hover:text-nexa-brand transition-colors cursor-pointer"
-              title="Search ERP modules"
-            >
-              <Search className="w-4 h-4" />
-            </button>
-          )}
-        </div>
 
         {/* FOOTER ACTIONS */}
         <div className="p-4 border-t border-nexa-border space-y-1.5">

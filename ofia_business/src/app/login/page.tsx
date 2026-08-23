@@ -292,51 +292,30 @@ export default function LoginPage() {
               </p>
             </div>
 
-            {/* Quick Test Persona Switcher (EduSuite 9 Roles) */}
+            {/* Quick Test Persona Switcher */}
             <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-2.5">
               <div className="flex items-center justify-between text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider px-1">
-                <span className="flex items-center gap-1.5">
-                  <Building2 className="w-3.5 h-3.5 text-[#1A56DB]" />
-                  <span>EduSuite 1-Click Role Quick Fill</span>
-                </span>
+                <span>1-Click ERP Role Personas</span>
                 <span className="text-[#0E9F6E] font-extrabold flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#0E9F6E] animate-pulse" />
-                  9 Test Accounts
+                  Quick Fill
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-1.5">
-                {testPersonas.map((p) => {
-                  const isSelected = email === p.email;
-                  return (
-                    <button
-                      key={p.email}
-                      type="button"
-                      onClick={() => selectPersona(p.email, p.pass)}
-                      className={`px-2.5 py-2 rounded-xl text-left border transition-all cursor-pointer shadow-xs flex flex-col justify-between ${
-                        isSelected
-                          ? "bg-[#1A56DB]/10 text-[#1A56DB] border-[#1A56DB] ring-2 ring-[#1A56DB]/20 font-bold"
-                          : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)] hover:border-[#1A56DB]/40 hover:text-[var(--nexa-text-primary)] font-semibold"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between w-full mb-0.5">
-                        <span
-                          className="text-[8px] font-black uppercase px-1.5 py-0.2 rounded-full border"
-                          style={{
-                            backgroundColor: `${p.color}15`,
-                            color: p.color,
-                            borderColor: `${p.color}30`,
-                          }}
-                        >
-                          {p.badge}
-                        </span>
-                        {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-[#1A56DB]" />}
-                      </div>
-                      <span className="text-[10px] truncate block leading-tight">
-                        {p.label}
-                      </span>
-                    </button>
-                  );
-                })}
+              <div className="flex flex-wrap gap-1.5">
+                {testPersonas.map((p) => (
+                  <button
+                    key={p.email}
+                    type="button"
+                    onClick={() => selectPersona(p.email, p.pass)}
+                    className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border transition-all cursor-pointer shadow-sm ${
+                      email === p.email
+                        ? "bg-[#1A56DB] text-white border-[#1A56DB] shadow-[#1A56DB]/30 font-bold"
+                        : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)] hover:border-[#1A56DB] hover:text-[#1A56DB]"
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
               </div>
             </div>
 

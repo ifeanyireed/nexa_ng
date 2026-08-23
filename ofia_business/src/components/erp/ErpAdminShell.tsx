@@ -24,6 +24,7 @@ import {
   TrendingUp,
   Clock,
   ArrowRight,
+  ArrowLeftRight,
   Eye,
   FileText,
   Tag,
@@ -908,7 +909,7 @@ export function ErpAdminShell({
         </div>
       </main>
 
-      {/* FLOATING PERSONA IMPERSONATION & RETURN CONTROLLER */}
+      {/* TOP RIGHT SWITCH TO [ROLE] BUTTON */}
       {originPortal &&
         pathname !== originPortal.path &&
         !pathname.startsWith(originPortal.path + "/") &&
@@ -921,77 +922,29 @@ export function ErpAdminShell({
           pathname.startsWith("/employee") ||
           pathname.startsWith("/accountant") ||
           pathname.startsWith("/manager") ||
-          pathname.startsWith("/md")) &&
-        !isExitBannerDismissed && (
-          <div className="fixed bottom-6 right-6 z-[100] animate-bounce-subtle">
-            <div className="flex items-center gap-3 px-4 py-2.5 rounded-2xl bg-slate-900/95 dark:bg-slate-950/95 text-white border border-slate-700/80 shadow-2xl backdrop-blur-md ring-1 ring-white/10">
-              <div className="flex items-center gap-2.5">
-                <div
-                  className={cn(
-                    "w-8 h-8 rounded-xl bg-gradient-to-tr flex items-center justify-center text-white font-bold shadow-xs shrink-0",
-                    originPortal.iconBg
-                  )}
-                >
-                  <ShieldCheck className="w-4 h-4 text-white" />
-                </div>
-                <div className="text-left">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs font-black text-white">Viewing Subordinate Portal</span>
-                    <span
-                      className={cn(
-                        "text-[9px] font-extrabold px-1.5 py-0.2 rounded-full border uppercase",
-                        originPortal.badgeColor
-                      )}
-                    >
-                      {originPortal.label} Mode
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-slate-300 block font-medium">
-                    {pathname.includes("employee")
-                      ? "General Employee Portal"
-                      : pathname.includes("manager")
-                      ? "Line Manager Portal"
-                      : pathname.includes("hr")
-                      ? "Human Resources (HR) Portal"
-                      : pathname.includes("accountant")
-                      ? "Chief Accountant Portal"
-                      : pathname.includes("md")
-                      ? "MD Executive Portal"
-                      : "Staff Workspace"}
-                  </span>
-                </div>
-              </div>
-
-              <div className="h-6 w-px bg-slate-700 mx-1 shrink-0" />
-
-              <Link href={originPortal.path} className="shrink-0">
-                <button
-                  className={cn(
-                    "flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-white text-xs font-black shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer",
-                    originPortal.roleKey === "hr"
-                      ? "bg-rose-600 hover:bg-rose-500 shadow-rose-600/30"
-                      : originPortal.roleKey === "md"
-                      ? "bg-purple-600 hover:bg-purple-500 shadow-purple-600/30"
-                      : originPortal.roleKey === "accountant"
-                      ? "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/30"
-                      : originPortal.roleKey === "manager"
-                      ? "bg-amber-600 hover:bg-amber-500 shadow-amber-600/30"
-                      : "bg-blue-600 hover:bg-blue-500 shadow-blue-600/30"
-                  )}
-                >
-                  <LogOut className="w-3.5 h-3.5 rotate-180" />
-                  <span>Exit to {originPortal.label}</span>
-                </button>
-              </Link>
-
+          pathname.startsWith("/md")) && (
+          <div className="fixed top-5 right-6 z-[100] animate-fadeIn">
+            <Link href={originPortal.path}>
               <button
-                onClick={() => setIsExitBannerDismissed(true)}
-                className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-                title="Dismiss banner"
+                type="button"
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-full text-white text-xs font-black shadow-xl backdrop-blur-md transition-all hover:scale-105 active:scale-95 cursor-pointer border border-white/25 ring-2 ring-black/10",
+                  originPortal.roleKey === "hr"
+                    ? "bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 shadow-rose-600/30"
+                    : originPortal.roleKey === "md"
+                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-purple-600/30"
+                    : originPortal.roleKey === "accountant"
+                    ? "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-600/30"
+                    : originPortal.roleKey === "manager"
+                    ? "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 shadow-amber-600/30"
+                    : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-600/30"
+                )}
+                title={`Switch to ${originPortal.label}`}
               >
-                <X className="w-3.5 h-3.5" />
+                <ArrowLeftRight className="w-3.5 h-3.5" />
+                <span>Switch to {originPortal.label}</span>
               </button>
-            </div>
+            </Link>
           </div>
         )}
     </div>

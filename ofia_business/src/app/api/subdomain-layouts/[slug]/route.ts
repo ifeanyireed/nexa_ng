@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const MARKETPLACE_BASE = process.env.NEXT_PUBLIC_MARKETPLACE_API_URL || "http://localhost:8083/api/v1";
+const MARKETPLACE_BASE = process.env.MARKETPLACE_SERVICE_URL
+  ? `${process.env.MARKETPLACE_SERVICE_URL}/api/v1`
+  : (process.env.NEXT_PUBLIC_MARKETPLACE_API_URL || "https://ofia-marketplace-service.onrender.com/api/v1");
 
 export async function GET(
   request: NextRequest,

@@ -5,12 +5,12 @@
 // - service_erp (:8084)
 // - service_logistics (:8085)
 
-const USER_BASE = process.env.NEXT_PUBLIC_USER_API_URL || "http://localhost:8081/api/v1";
-const GTM_BASE = process.env.NEXT_PUBLIC_GTM_API_URL || "http://localhost:8082/api/v1/gtm";
-const AUTH_BASE = process.env.NEXT_PUBLIC_AUTH_API_URL || "http://localhost:8081/api/v1/auth";
-const MARKETPLACE_BASE = process.env.NEXT_PUBLIC_MARKETPLACE_API_URL || "http://localhost:8083/api/v1";
-const ERP_BASE = process.env.NEXT_PUBLIC_ERP_API_URL || "http://localhost:8084/api/v1";
-const LOGISTICS_BASE = process.env.NEXT_PUBLIC_LOGISTICS_API_URL || "http://localhost:8085/api/v1/logistics";
+const USER_BASE = process.env.NEXT_PUBLIC_USER_API_URL || "https://ofia-user-service.onrender.com/api/v1";
+const GTM_BASE = process.env.NEXT_PUBLIC_GTM_API_URL || "https://ofia-ai-service.onrender.com/api/v1/gtm";
+const AUTH_BASE = process.env.NEXT_PUBLIC_AUTH_API_URL || "https://ofia-user-service.onrender.com/api/v1/auth";
+const MARKETPLACE_BASE = process.env.NEXT_PUBLIC_MARKETPLACE_API_URL || "https://ofia-marketplace-service.onrender.com/api/v1";
+const ERP_BASE = process.env.NEXT_PUBLIC_ERP_API_URL || "https://ofia-erp-service.onrender.com/api/v1";
+const LOGISTICS_BASE = process.env.NEXT_PUBLIC_LOGISTICS_API_URL || "https://ofia-logistics-service.onrender.com/api/v1/logistics";
 
 async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
   const token = typeof window !== "undefined" ? localStorage.getItem("nexa_auth_token") || localStorage.getItem("nexa_token") : null;

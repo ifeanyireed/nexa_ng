@@ -78,8 +78,9 @@ func main() {
 		// Subdomain & Storefront Availability Check
 		r.Get("/subdomains/check", orgHandler.CheckSubdomainAvailability)
 
-		// Organization & Tenant Profiles
+		// Organization & Tenant Profiles (Public & Admin Discovery)
 		r.Get("/organizations", orgHandler.ListAllAdminOrgs)
+		r.Post("/organizations", orgHandler.CreateOrg)
 		r.Get("/organizations/{orgId}", orgHandler.GetOrgDetails)
 		r.Put("/organizations/{orgId}", orgHandler.UpdateOrgProfile)
 
@@ -96,23 +97,7 @@ func main() {
 			r.Use(middleware.AuthMiddleware)
 
 			r.Get("/auth/me", authHandler.GetMe)
-
-			// Organizations
-			r.Route("/organizations", func(r chi.Router) {
-				r.Get("/", orgHandler.ListUserOrgs)
-				r.Post("/", orgHandler.CreateOrg)
-				r.Get("/{orgId}", orgHandler.GetOrgDetails)
-
-				// Tenant RBAC & Access Control
-				r.Get("/{orgId}/rbac", orgHandler.GetTenantRBAC)
-				r.Put("/{orgId}/rbac", orgHandler.SaveTenantRBAC)
-
-				// Subscription & Limits
-				r.Get("/{orgId}/subscription", subHandler.GetSubscriptionDetails)
-				r.Put("/{orgId}/subscription", subHandler.UpdateTenantSubscription)
-				r.Post("/{orgId}/subscription/override", subHandler.OverrideTenantQuotas)
-				r.Post("/{orgId}/subscription/checkout", subHandler.InitializeCheckout)
-			})
+			r.Get("/user/organizations", orgHandler.ListUserOrgs)
 		})
 	})
 

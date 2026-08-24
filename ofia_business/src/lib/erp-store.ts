@@ -418,7 +418,7 @@ const INITIAL_REVIEWS: PerformanceReview[] = [];
 
 
 
-const API_BASE_URL = typeof window !== "undefined" ? "/api/erp" : (process.env.ERP_SERVICE_URL || process.env.NEXT_PUBLIC_ERP_SERVICE_URL || "http://localhost:8084");
+const API_BASE_URL = typeof window !== "undefined" ? "/api/erp" : (process.env.ERP_SERVICE_URL || process.env.NEXT_PUBLIC_ERP_SERVICE_URL || "https://ofia-erp-service.onrender.com");
 
 async function fetchFromApi<T>(endpoint: string, fallbackData: T): Promise<T> {
   try {

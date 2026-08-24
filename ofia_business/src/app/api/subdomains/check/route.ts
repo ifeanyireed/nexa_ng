@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { validateSubdomainAvailability } from "@/lib/subdomain-checker";
 
-const USER_BASE = process.env.NEXT_PUBLIC_USER_API_URL || "http://localhost:8081/api/v1";
-const GTM_BASE = process.env.NEXT_PUBLIC_GTM_API_URL || "http://localhost:8082/api/v1/gtm";
+const USER_BASE = process.env.USER_SERVICE_URL
+  ? `${process.env.USER_SERVICE_URL}/api/v1`
+  : (process.env.NEXT_PUBLIC_USER_API_URL || "https://ofia-user-service.onrender.com/api/v1");
+const GTM_BASE = process.env.AI_SERVICE_URL
+  ? `${process.env.AI_SERVICE_URL}/api/v1/gtm`
+  : (process.env.NEXT_PUBLIC_GTM_API_URL || "https://ofia-ai-service.onrender.com/api/v1/gtm");
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);

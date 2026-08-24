@@ -120,11 +120,11 @@ export function ErpAdminShell({
     iconBg: "from-blue-600 to-indigo-600",
   });
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [tenantName, setTenantName] = useState<string>("EduSuite");
+  const [tenantName, setTenantName] = useState<string>("New Era Transports");
   const [permissionMatrix, setPermissionMatrix] = useState<PermissionMatrix>(DEFAULT_PERMISSION_MATRIX);
   const [currentRole, setCurrentRole] = useState<RoleKey>("admin");
-  const [userName, setUserName] = useState<string>("EduSuite Staff");
-  const [userEmail, setUserEmail] = useState<string>("staff@edusuite.ng");
+  const [userName, setUserName] = useState<string>("Corporate Staff");
+  const [userEmail, setUserEmail] = useState<string>("staff@neweratransports.com");
 
   const getRoleDisplayName = (role: RoleKey) => {
     switch (role) {
@@ -189,7 +189,7 @@ export function ErpAdminShell({
       const list = await fetchDatabaseTenants();
       if (!isMounted) return;
       const matched = resolveTenantFromList(list, user?.email);
-      const activeName = matched?.name || "Enterprise Workspace";
+      const activeName = matched?.name || "New Era Transports";
       setTenantName(activeName);
       setPermissionMatrix(getTenantPermissionMatrix(activeName));
 
@@ -577,19 +577,17 @@ export function ErpAdminShell({
         {/* LOGO AREA */}
         <div className="p-6 pb-2 flex items-center justify-between">
           {isSidebarOpen ? (
-            <Link href="/" className="flex items-center gap-2.5">
+            <Link href="/" className="flex items-center gap-2.5 min-w-0">
               <img src="/logo.png" alt="Ofia ERP Logo" className="w-8 h-8 object-contain shrink-0" />
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-base font-extrabold text-display leading-tight text-[var(--nexa-text-primary)]">
-                    Ofia ERP
-                  </span>
-                  <span className="text-[10px] font-extrabold font-mono uppercase text-[#1A56DB] bg-[#1A56DB]/10 border border-[#1A56DB]/20 px-2 py-0.5 rounded-full">
-                    {tenantName.toUpperCase()}
-                  </span>
-                </div>
-                <span className="text-[9px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider mt-0.5">
-                  ERP Overview
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-black text-display leading-tight text-[var(--nexa-text-primary)] truncate max-w-[180px]" title={tenantName}>
+                  {tenantName}
+                </span>
+                <span className="text-[11px] font-black text-[#1A56DB] tracking-wide uppercase mt-0.5">
+                  OFIA ERP
+                </span>
+                <span className="text-[9px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider">
+                  Enterprise Workspace
                 </span>
               </div>
             </Link>

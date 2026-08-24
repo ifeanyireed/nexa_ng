@@ -47,6 +47,7 @@ func main() {
 		log.Printf("Warning: MySQL database initialization returned: %v (falling back to graceful handling)", err)
 	} else {
 		handlers.SetGormDB(database)
+		handlers.AutoSeedIfEmpty()
 	}
 
 	// Set up unified router & register all ERP routes (Finance, HR, Team Quests)
@@ -81,6 +82,7 @@ func registerRoutes() {
 
 	// 2. HR & Performance Appraisal Endpoints
 	registerRoute("/users", handlers.HandleUsers)
+	registerRoute("/departments", handlers.HandleDepartments)
 	registerRoute("/objectives", handlers.HandleObjectives)
 	registerRoute("/cycles", handlers.HandleCycles)
 	registerRoute("/reviews", handlers.HandleReviews)
@@ -91,6 +93,7 @@ func registerRoutes() {
 
 	// Prefix aliases for /api/v1/erp/*
 	registerRoute("/api/v1/erp/users", handlers.HandleUsers)
+	registerRoute("/api/v1/erp/departments", handlers.HandleDepartments)
 	registerRoute("/api/v1/erp/objectives", handlers.HandleObjectives)
 	registerRoute("/api/v1/erp/cycles", handlers.HandleCycles)
 	registerRoute("/api/v1/erp/reviews", handlers.HandleReviews)

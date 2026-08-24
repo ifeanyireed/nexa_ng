@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const ERP_BASE = process.env.ERP_SERVICE_URL || process.env.NEXT_PUBLIC_ERP_SERVICE_URL || "http://localhost:8084";
+const ERP_BASE = process.env.ERP_SERVICE_URL || process.env.NEXT_PUBLIC_ERP_SERVICE_URL || "https://ofia-erp-service.onrender.com";
 
 function getTenantSlug(request: Request, url: URL): string {
   const headerSlug = request.headers.get("x-tenant-slug");

@@ -115,7 +115,11 @@ function UserManagementContent() {
         headers["x-tenant-slug"] = activeTenant.slug;
       }
 
-      const res = await fetch("/api/erp/users", {
+      const url = activeTenant?.slug
+        ? `/api/erp/users?tenant=${encodeURIComponent(activeTenant.slug)}`
+        : "/api/erp/users";
+
+      const res = await fetch(url, {
         headers,
         cache: "no-store",
       });

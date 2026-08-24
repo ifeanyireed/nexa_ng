@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -8,12 +8,14 @@ import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaModal } from "@/components/nexa/NexaModal";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaAvatar } from "@/components/nexa/NexaAvatar";
+import { Pagination } from "@/components/nexa/Pagination";
 import {
   INITIAL_ADMIN_USERS,
   RBAC_ROLE_DEFINITIONS,
   AdminUser,
   RBACRoleDefinition,
 } from "@/lib/admin-data";
+import { GTM_API, USER_API } from "@/lib/api-client";
 import {
   Users,
   Search,
@@ -60,6 +62,32 @@ export default function AdminUsersPage() {
   const [newUserTitle, setNewUserTitle] = useState("Campaign Growth Lead");
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 8;
+  const [organizations, setOrganizations] = useState<{ id: string; name: string }[]>([]);
+
+  // Sync live organizations from MySQL database
+  useEffect(() => {
+    let isMounted = true;
+    const fetchOrgs = async () => {
+      try {
+        const remoteOrgs = await GTM_API.getAdminOrganizations().catch(() => null);
+        if (Array.isArray(remoteOrgs) && remoteOrgs.length > 0 && isMounted) {
+          const mapped = remoteOrgs.map((o: any) => ({
+            id: o.id || o.ID,
+            name: o.name || o.Name,
+          }));
+          setOrganizations(mapped);
+        }
+      } catch (err) {
+        console.warn("Could not sync remote orgs:", err);
+      }
+    };
+    fetchOrgs();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -84,6 +112,9 @@ export default function AdminUsersPage() {
     e.preventDefault();
     if (!newUserEmail || !newUserName) return;
 
+    const matchedOrg = organizations.find((o) => o.name === newUserOrg);
+    const orgId = matchedOrg ? matchedOrg.id : (organizations[0]?.id || "org-01");
+
     const avatarIndex = (users.length % 20) + 1;
     const created: AdminUser = {
       id: `usr-${Date.now()}`,
@@ -91,8 +122,8 @@ export default function AdminUsersPage() {
       email: newUserEmail,
       role: newUserRole,
       title: newUserTitle,
-      orgName: newUserOrg,
-      orgId: newUserOrg === "EduSuite Nigeria" ? "org-01" : newUserOrg === "PayFlow Africa" ? "org-02" : "org-03",
+      orgName: newUserOrg || organizations[0]?.name || "Enterprise Workspace",
+      orgId: orgId,
       avatar: `/character${avatarIndex}.jpg`,
       twoFactorEnabled: true,
       status: "Active",
@@ -200,10 +231,15 @@ export default function AdminUsersPage() {
               onChange={(e) => setNewUserOrg(e.target.value)}
               className="w-full h-11 px-3 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
             >
-              <option value="EduSuite Nigeria">EduSuite Nigeria (org-01)</option>
-              <option value="PayFlow Africa">PayFlow Africa (org-02)</option>
-              <option value="HealthBridge Clinics">HealthBridge Clinics (org-03)</option>
-              <option value="Platform Operator">Platform Operator (Root Global)</option>
+              {organizations.length > 0 ? (
+                organizations.map((org) => (
+                  <option key={org.id} value={org.name}>
+                    {org.name} ({org.id})
+                  </option>
+                ))
+              ) : (
+                <option value="Enterprise Workspace">Enterprise Workspace</option>
+              )}
             </select>
           </div>
 
@@ -526,10 +562,11 @@ export default function AdminUsersPage() {
                   className="h-8 px-2.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] font-medium outline-none"
                 >
                   <option value="ALL">All Workspaces</option>
-                  <option value="EduSuite Nigeria">EduSuite Nigeria</option>
-                  <option value="PayFlow Africa">PayFlow Africa</option>
-                  <option value="HealthBridge Clinics">HealthBridge Clinics</option>
-                  <option value="Platform Operator">Platform Operator</option>
+                  {organizations.map((org) => (
+                    <option key={org.id} value={org.name}>
+                      {org.name}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -550,7 +587,9 @@ export default function AdminUsersPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[var(--nexa-border)] text-[var(--nexa-text-primary)] font-medium">
-                    {filteredUsers.map((u) => (
+                    {filteredUsers
+                      .slice((page - 1) * itemsPerPage, (page - 1) * itemsPerPage + itemsPerPage)
+                      .map((u) => (
                       <tr
                         key={u.id}
                         className={`hover:bg-[var(--nexa-bg-base)]/40 transition-colors ${
@@ -648,6 +687,16 @@ export default function AdminUsersPage() {
                   </tbody>
                 </table>
               </div>
+
+              {filteredUsers.length > 0 && (
+                <Pagination
+                  currentPage={page}
+                  totalPages={Math.max(1, Math.ceil(filteredUsers.length / itemsPerPage))}
+                  totalItems={filteredUsers.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setPage}
+                />
+              )}
             </NexaCard>
           </div>
         )}

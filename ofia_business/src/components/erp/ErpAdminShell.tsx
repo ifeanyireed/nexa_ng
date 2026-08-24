@@ -70,6 +70,7 @@ import {
   DEFAULT_PERMISSION_MATRIX,
   RoleKey,
 } from "@/lib/access-control";
+import { fetchDatabaseTenants, resolveTenantFromList } from "@/lib/tenant-context";
 
 export interface SubNavItem {
   label: string;
@@ -183,37 +184,17 @@ export function ErpAdminShell({
   };
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const host = window.location.host.toLowerCase();
-      const hostParts = host.split(":")[0].split(".");
-      const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
-      let sub = "";
-      if (isLocal && hostParts.length > 1 && hostParts[0] !== "localhost" && hostParts[0] !== "www") {
-        sub = hostParts[0];
-      } else if (!isLocal && hostParts.length > 2) {
-        sub = hostParts[0];
-      }
-      let tName = "EduSuite";
-      if (sub && sub !== "erp" && sub !== "admin" && sub !== "www" && sub !== "app") {
-        tName = sub.charAt(0).toUpperCase() + sub.slice(1);
-      } else if (user?.email && user.email.includes("@")) {
-        const domain = user.email.split("@")[1].split(".")[0];
-        if (domain && domain !== "ofia" && domain !== "gmail" && domain !== "yahoo") {
-          tName = domain.charAt(0).toUpperCase() + domain.slice(1);
-        }
-      } else {
-        const stored = localStorage.getItem("nexa_org_name") || localStorage.getItem("nexa_user_email");
-        if (stored && stored.includes("@")) {
-          const domain = stored.split("@")[1].split(".")[0];
-          tName = domain.charAt(0).toUpperCase() + domain.slice(1);
-        }
-      }
-      setTenantName(tName);
-      setPermissionMatrix(getTenantPermissionMatrix(tName));
+    let isMounted = true;
+    const initShell = async () => {
+      const list = await fetchDatabaseTenants();
+      if (!isMounted) return;
+      const matched = resolveTenantFromList(list, user?.email);
+      const activeName = matched?.name || "Enterprise Workspace";
+      setTenantName(activeName);
+      setPermissionMatrix(getTenantPermissionMatrix(activeName));
 
-      // Listen to MySQL database on load to determine Super Admin allowed modules
-      fetchTenantPermissionMatrix(tName).then((remote) => {
-        if (remote && Object.keys(remote).length > 0) {
+      fetchTenantPermissionMatrix(activeName).then((remote) => {
+        if (remote && Object.keys(remote).length > 0 && isMounted) {
           setPermissionMatrix(remote);
         }
       });
@@ -271,6 +252,19 @@ export function ErpAdminShell({
           iconBg: "from-emerald-600 to-teal-600",
         };
       } else if (
+        pathname.startsWith("/erp/marketer") &&
+        !pathname.includes("employee") &&
+        !pathname.includes("manager")
+      ) {
+        origin = {
+          path: "/erp/marketer",
+          label: "CRM",
+          title: "Growth Marketer",
+          roleKey: "marketer",
+          badgeColor: "bg-pink-500/20 text-pink-300 border-pink-400/30",
+          iconBg: "from-pink-600 to-rose-600",
+        };
+      } else if (
         pathname.startsWith("/erp/manager") &&
         !pathname.includes("employee")
       ) {
@@ -282,80 +276,35 @@ export function ErpAdminShell({
           badgeColor: "bg-amber-500/20 text-amber-300 border-amber-400/30",
           iconBg: "from-amber-600 to-orange-600",
         };
+      } else if (pathname.startsWith("/erp/employee")) {
+        origin = {
+          path: "/erp/employee",
+          label: "Employee",
+          title: "General Employee",
+          roleKey: "employee",
+          badgeColor: "bg-slate-500/20 text-slate-300 border-slate-400/30",
+          iconBg: "from-slate-600 to-gray-600",
+        };
       }
 
       if (origin) {
-        sessionStorage.setItem("erp_origin_portal", JSON.stringify(origin));
         setOriginPortal(origin);
+        try {
+          sessionStorage.setItem("erp_origin_portal", JSON.stringify(origin));
+        } catch {}
       } else {
-        const storedOrigin = sessionStorage.getItem("erp_origin_portal");
-        if (storedOrigin) {
-          try {
+        try {
+          const storedOrigin = sessionStorage.getItem("erp_origin_portal");
+          if (storedOrigin) {
             setOriginPortal(JSON.parse(storedOrigin));
-          } catch {}
-        } else {
-          // Default fallback origin based on primary user role
-          const storedUser = localStorage.getItem("erp_current_user");
-          let primary = "admin";
-          if (storedUser) {
-            try {
-              const u = JSON.parse(storedUser);
-              if (u.role) primary = u.role;
-            } catch {}
           }
-          if (primary === "md") {
-            setOriginPortal({
-              path: "/erp/md",
-              label: "MD",
-              title: "Managing Director",
-              roleKey: "md",
-              badgeColor: "bg-purple-500/20 text-purple-300 border-purple-400/30",
-              iconBg: "from-purple-600 to-indigo-600",
-            });
-          } else if (primary === "hr") {
-            setOriginPortal({
-              path: "/erp/hr",
-              label: "HR",
-              title: "Human Resources",
-              roleKey: "hr",
-              badgeColor: "bg-rose-500/20 text-rose-300 border-rose-400/30",
-              iconBg: "from-rose-600 to-pink-600",
-            });
-          } else if (primary === "accountant") {
-            setOriginPortal({
-              path: "/erp/accountant",
-              label: "Accountant",
-              title: "Chief Accountant",
-              roleKey: "accountant",
-              badgeColor: "bg-emerald-500/20 text-emerald-300 border-emerald-400/30",
-              iconBg: "from-emerald-600 to-teal-600",
-            });
-          } else if (primary === "manager") {
-            setOriginPortal({
-              path: "/erp/manager",
-              label: "Manager",
-              title: "Line Manager",
-              roleKey: "manager",
-              badgeColor: "bg-amber-500/20 text-amber-300 border-amber-400/30",
-              iconBg: "from-amber-600 to-orange-600",
-            });
-          } else {
-            setOriginPortal({
-              path: "/erp/admin",
-              label: "Admin",
-              title: "Tenant Administrator",
-              roleKey: "admin",
-              badgeColor: "bg-blue-500/20 text-blue-300 border-blue-400/30",
-              iconBg: "from-blue-600 to-indigo-600",
-            });
-          }
-        }
+        } catch {}
       }
 
       // Resolve user active session role, name, and email
       let resolvedRole: RoleKey = "admin";
-      let resolvedName = user?.name || `${tName} Admin`;
-      let resolvedEmail = user?.email || "admin@edusuite.ng";
+      let resolvedName = user?.name || `${activeName} Staff`;
+      let resolvedEmail = user?.email || (matched?.ownerEmail || "");
       let hasStoredRole = false;
 
       const storedErpUser = localStorage.getItem("erp_current_user");
@@ -425,17 +374,22 @@ export function ErpAdminShell({
           return;
         }
       }
+    };
 
-      const handleRbacUpdate = (e: Event) => {
-        const customEvent = e as CustomEvent;
-        if (customEvent.detail && customEvent.detail.matrix) {
-          setPermissionMatrix(customEvent.detail.matrix);
-        }
-      };
+    initShell();
 
-      window.addEventListener("ofia_rbac_updated", handleRbacUpdate);
-      return () => window.removeEventListener("ofia_rbac_updated", handleRbacUpdate);
-    }
+    const handleRbacUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && customEvent.detail.matrix) {
+        setPermissionMatrix(customEvent.detail.matrix);
+      }
+    };
+
+    window.addEventListener("ofia_rbac_updated", handleRbacUpdate);
+    return () => {
+      isMounted = false;
+      window.removeEventListener("ofia_rbac_updated", handleRbacUpdate);
+    };
   }, [user, pathname]);
 
   const notifications = [

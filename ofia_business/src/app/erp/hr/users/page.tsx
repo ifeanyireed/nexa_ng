@@ -9,9 +9,14 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { Pagination } from "@/components/nexa/Pagination";
-import { Users, Plus, ArrowLeft, Search, Edit, Trash2 } from "lucide-react";
+import { Users, Plus, ArrowLeft, Search, Edit, Trash2, Building2 } from "lucide-react";
+import { useAuth } from "@/components/nexa/AuthContext";
+import { useActiveTenant } from "@/lib/tenant-context";
 
 export default function UserRoleManagement() {
+  const { user } = useAuth();
+  const { activeTenant } = useActiveTenant(user?.email);
+  const tenantName = activeTenant?.name || "Enterprise Workspace";
   const { users, updateUsers } = useERPStore();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -87,11 +92,17 @@ export default function UserRoleManagement() {
       title="Staff Directory & Permissions"
       subtitle="Enterprise user roster, line manager reporting hierarchy, departmental partitioning, and RBAC roles."
       action={
-        <Link href="/erp/hr">
-          <NexaButton size="sm" variant="outline" className="rounded-full" leftIcon={<ArrowLeft className="w-3.5 h-3.5" />}>
-            Back to HR Overview
-          </NexaButton>
-        </Link>
+        <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-xs font-mono">
+            <Building2 className="w-3.5 h-3.5 text-[#1A56DB]" />
+            <span className="font-bold text-[var(--nexa-text-primary)]">{tenantName}</span>
+          </div>
+          <Link href="/erp/hr">
+            <NexaButton size="sm" variant="outline" className="rounded-full" leftIcon={<ArrowLeft className="w-3.5 h-3.5" />}>
+              Back to HR Overview
+            </NexaButton>
+          </Link>
+        </div>
       }
     >
       <div className="space-y-8">

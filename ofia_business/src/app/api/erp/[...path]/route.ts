@@ -2,6 +2,16 @@ import { NextResponse } from "next/server";
 
 const ERP_BASE = process.env.ERP_SERVICE_URL || process.env.NEXT_PUBLIC_ERP_SERVICE_URL || "http://localhost:8084";
 
+function getTenantSlug(request: Request, url: URL): string {
+  const headerSlug = request.headers.get("x-tenant-slug");
+  if (headerSlug) return headerSlug;
+
+  const querySlug = url.searchParams.get("tenant") || url.searchParams.get("tenant_slug");
+  if (querySlug) return querySlug;
+
+  return "";
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ path: string[] }> }
@@ -10,14 +20,19 @@ export async function GET(
   const subPath = path.join("/");
   const url = new URL(request.url);
   const targetUrl = `${ERP_BASE}/${subPath}${url.search}`;
+  const tenantSlug = getTenantSlug(request, url);
 
   try {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (tenantSlug) {
+      headers["x-tenant-slug"] = tenantSlug;
+    }
+
     const res = await fetch(targetUrl, {
       method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "x-tenant-slug": request.headers.get("x-tenant-slug") || "neweratransports",
-      },
+      headers,
       cache: "no-store",
     });
 
@@ -36,15 +51,20 @@ export async function POST(
   const subPath = path.join("/");
   const url = new URL(request.url);
   const targetUrl = `${ERP_BASE}/${subPath}${url.search}`;
+  const tenantSlug = getTenantSlug(request, url);
 
   try {
     const body = await request.text();
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (tenantSlug) {
+      headers["x-tenant-slug"] = tenantSlug;
+    }
+
     const res = await fetch(targetUrl, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-tenant-slug": request.headers.get("x-tenant-slug") || "neweratransports",
-      },
+      headers,
       body: body || "{}",
     });
 
@@ -63,15 +83,20 @@ export async function PUT(
   const subPath = path.join("/");
   const url = new URL(request.url);
   const targetUrl = `${ERP_BASE}/${subPath}${url.search}`;
+  const tenantSlug = getTenantSlug(request, url);
 
   try {
     const body = await request.text();
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (tenantSlug) {
+      headers["x-tenant-slug"] = tenantSlug;
+    }
+
     const res = await fetch(targetUrl, {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        "x-tenant-slug": request.headers.get("x-tenant-slug") || "neweratransports",
-      },
+      headers,
       body: body || "{}",
     });
 
@@ -90,14 +115,19 @@ export async function DELETE(
   const subPath = path.join("/");
   const url = new URL(request.url);
   const targetUrl = `${ERP_BASE}/${subPath}${url.search}`;
+  const tenantSlug = getTenantSlug(request, url);
 
   try {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (tenantSlug) {
+      headers["x-tenant-slug"] = tenantSlug;
+    }
+
     const res = await fetch(targetUrl, {
       method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-        "x-tenant-slug": request.headers.get("x-tenant-slug") || "neweratransports",
-      },
+      headers,
     });
 
     const data = await res.json().catch(() => ({}));

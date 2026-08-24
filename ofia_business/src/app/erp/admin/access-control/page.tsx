@@ -16,6 +16,7 @@ import {
   fetchTenantPermissionMatrix,
   saveTenantPermissionMatrixRemote,
 } from "@/lib/access-control";
+import { fetchDatabaseTenants, resolveTenantFromList } from "@/lib/tenant-context";
 import {
   ShieldCheck,
   Shield,
@@ -46,7 +47,7 @@ import { useRouter } from "next/navigation";
 export default function AccessControlPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const [tenantName, setTenantName] = useState<string>("EduSuite");
+  const [tenantName, setTenantName] = useState<string>("Enterprise Workspace");
   const [selectedRole, setSelectedRole] = useState<RoleKey>("md");
   const [matrix, setMatrix] = useState<PermissionMatrix>(DEFAULT_PERMISSION_MATRIX);
   const [isSavedToast, setIsSavedToast] = useState<boolean>(false);
@@ -57,63 +58,30 @@ export default function AccessControlPage() {
 
   // Determine active tenant name and look up RBAC matrix from MySQL database on load
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      // Role Guard: Redirect non-admin personas away from Access Control
-      const storedUser = localStorage.getItem("erp_current_user");
-      if (storedUser) {
-        try {
-          const u = JSON.parse(storedUser);
-          if (u && u.role && u.role !== "admin") {
-            if (u.role === "md") router.replace("/erp/md");
-            else if (u.role === "hr") router.replace("/erp/hr");
-            else if (u.role === "accountant") router.replace("/erp/accountant");
-            else if (u.role === "manager") router.replace("/erp/manager");
-            else if (u.role === "employee") router.replace("/erp/employee");
-            return;
-          }
-        } catch {}
-      }
-
-      let tName = "EduSuite";
-      const host = window.location.host.toLowerCase();
-      const hostParts = host.split(":")[0].split(".");
-      const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
-      let sub = "";
-      if (isLocal && hostParts.length > 1 && hostParts[0] !== "localhost" && hostParts[0] !== "www") {
-        sub = hostParts[0];
-      } else if (!isLocal && hostParts.length > 2) {
-        sub = hostParts[0];
-      }
-      if (sub && sub !== "erp" && sub !== "admin" && sub !== "www" && sub !== "app") {
-        tName = sub.charAt(0).toUpperCase() + sub.slice(1);
-      } else if (user?.email && user.email.includes("@")) {
-        const domain = user.email.split("@")[1].split(".")[0];
-        if (domain && domain !== "ofia" && domain !== "gmail" && domain !== "yahoo") {
-          tName = domain.charAt(0).toUpperCase() + domain.slice(1);
-        }
-      } else {
-        const stored = localStorage.getItem("nexa_org_name") || localStorage.getItem("nexa_user_email");
-        if (stored && stored.includes("@")) {
-          const domain = stored.split("@")[1].split(".")[0];
-          tName = domain.charAt(0).toUpperCase() + domain.slice(1);
-        }
-      }
-
+    let isMounted = true;
+    setIsLoadingDb(true);
+    fetchDatabaseTenants().then((list) => {
+      if (!isMounted) return;
+      const matched = resolveTenantFromList(list, user?.email);
+      const tName = matched?.name || "Enterprise Workspace";
       setTenantName(tName);
 
       // Directly query live tenant RBAC matrix from MySQL database table TenantRolePermission
-      setIsLoadingDb(true);
       fetchTenantPermissionMatrix(tName)
         .then((remote) => {
-          if (remote && Object.keys(remote).length > 0) {
+          if (remote && Object.keys(remote).length > 0 && isMounted) {
             setMatrix(remote);
           }
         })
         .finally(() => {
-          setIsLoadingDb(false);
+          if (isMounted) setIsLoadingDb(false);
         });
-    }
-  }, [user, router]);
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.email]);
 
   // Handle individual toggle with remote MySQL persistence
   const handleToggleModule = async (moduleKey: string) => {

@@ -43,7 +43,7 @@ export default function TenantSettingsPage() {
       setSlug(activeTenant.slug || "");
       setCustomDomain(activeTenant.domain || "");
       setOwnerEmail(activeTenant.ownerEmail || user?.email || "");
-      setOwnerName(activeTenant.company || user?.name || "");
+      setOwnerName(activeTenant.ownerName || user?.name || "");
     }
   }, [activeTenant, user]);
 
@@ -63,7 +63,10 @@ export default function TenantSettingsPage() {
         name: orgName,
         slug: slug,
         domain: customDomain,
+        ownerName: ownerName,
+        owner_name: ownerName,
         ownerEmail: ownerEmail,
+        owner_email: ownerEmail,
       };
 
       const res = await fetch(`/api/organizations/${encodeURIComponent(targetIdentifier)}`, {

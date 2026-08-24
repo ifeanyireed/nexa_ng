@@ -16,6 +16,7 @@ import {
   Share2,
   CheckCircle2,
   Clock,
+  ArrowRight,
 } from "lucide-react";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -25,11 +26,19 @@ export default function PublicQuestLandingPage() {
   const params = useParams();
   const slug = params?.slug || "2026-staff-retreat";
 
+  const topContestants = [
+    { rank: 1, name: "Haylie", country: "USA", flag: "🇺🇸", avatar: "/avatar1.png", score: 8, team: "Team Alpha (Blue Eagles)" },
+    { rank: 2, name: "Rayna", country: "Japan", flag: "🇯🇵", avatar: "/avatar2.png", score: 8, team: "Team Bravo (Red Vipers)" },
+    { rank: 3, name: "Liam", country: "Canada", flag: "🇨🇦", avatar: "/avatar3.png", score: 7, team: "Team Alpha (Blue Eagles)" },
+    { rank: 4, name: "Sofia", country: "UK", flag: "🇬🇧", avatar: "/avatar4.png", score: 6, team: "Team Delta (Green Lions)" },
+    { rank: 5, name: "Jasper", country: "Australia", flag: "🇦🇺", avatar: "/avatar5.png", score: 5, team: "Team Charlie (Gold Titans)" },
+  ];
+
   const teams = [
-    { name: "Team Alpha (Blue Eagles)", logo: "A", points: 840, rank: 1, motto: "Swift, Strategic, Unstoppable" },
-    { name: "Team Bravo (Red Vipers)", logo: "B", points: 795, rank: 2, motto: "Relentless Speed & Precision" },
-    { name: "Team Delta (Green Lions)", logo: "D", points: 710, rank: 3, motto: "Courage in Every Stride" },
-    { name: "Team Charlie (Gold Titans)", logo: "C", points: 650, rank: 4, motto: "Power, Intellect, Victory" },
+    { name: "Team Alpha (Blue Eagles)", logo: "🦅", points: 840, rank: 1, motto: "Swift, Strategic, Unstoppable", color: "#1A56DB" },
+    { name: "Team Bravo (Red Vipers)", logo: "🐍", points: 795, rank: 2, motto: "Relentless Speed & Precision", color: "#E02424" },
+    { name: "Team Delta (Green Lions)", logo: "🦁", points: 710, rank: 3, motto: "Courage in Every Stride", color: "#0E9F6E" },
+    { name: "Team Charlie (Gold Titans)", logo: "👑", points: 650, rank: 4, motto: "Power, Intellect, Victory", color: "#D97706" },
   ];
 
   const challenges = [
@@ -69,11 +78,11 @@ export default function PublicQuestLandingPage() {
       {/* HERO SECTION */}
       <div className="relative h-80 overflow-hidden bg-gray-950 flex items-end">
         <img
-          src="https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1600&q=80"
-          alt="Retreat"
-          className="absolute inset-0 w-full h-full object-cover opacity-50"
+          src="/background.jpeg"
+          alt="Retreat Background"
+          className="absolute inset-0 w-full h-full object-cover opacity-60"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[var(--nexa-bg-base)] via-[var(--nexa-bg-base)]/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[var(--nexa-bg-base)] via-[var(--nexa-bg-base)]/50 to-black/30" />
 
         <div className="relative max-w-5xl mx-auto px-6 pb-8 w-full space-y-2">
           <div className="flex items-center gap-2">
@@ -93,21 +102,55 @@ export default function PublicQuestLandingPage() {
 
       {/* CONTENT CONTAINER */}
       <main className="max-w-5xl mx-auto px-6 py-8 space-y-8">
-        {/* LEADERBOARD STANDINGS */}
+        {/* TOP INDIVIDUAL CONTESTANTS */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-bold flex items-center gap-2">
-              <Trophy className="w-5 h-5 text-amber-500" /> Current Leaderboard Ranks
+              <Sparkles className="w-5 h-5 text-amber-400" /> Top Contestants (3D Avatars)
             </h2>
-            <Link href={`/quests/${slug}/scoreboard`} className="text-xs text-[#1A56DB] font-bold hover:underline">
-              View Stage Display →
+            <Link href={`/quests/${slug}/scoreboard`} className="text-xs text-[#1A56DB] font-bold hover:underline flex items-center gap-1">
+              <span>View Full Stage TV Scoreboard</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
+            {topContestants.map((c) => (
+              <NexaCard key={c.name} variant="glass" padding="md" className="space-y-3 text-center rounded-3xl relative overflow-hidden group hover:border-amber-400/40 transition-all">
+                <div className="relative w-16 h-16 mx-auto rounded-full overflow-hidden border-2 border-white/20 bg-black/20 shadow-md group-hover:scale-105 transition-transform">
+                  <img src={c.avatar} alt={c.name} className="w-full h-full object-cover" />
+                </div>
+                <div>
+                  <div className="text-sm font-bold text-[var(--nexa-text-primary)] flex items-center justify-center gap-1.5">
+                    <span>{c.flag}</span>
+                    <span>{c.name}</span>
+                  </div>
+                  <div className="text-[11px] text-[var(--nexa-text-muted)] truncate">{c.team}</div>
+                </div>
+                <div className="pt-2 border-t border-[var(--nexa-border)] flex items-center justify-between px-1">
+                  <span className="text-xs text-[var(--nexa-text-muted)] font-medium">Rank #{c.rank}</span>
+                  <span className="text-base font-black text-[#1A56DB] font-mono">{c.score} pts</span>
+                </div>
+              </NexaCard>
+            ))}
+          </div>
+        </div>
+
+        {/* TEAM SQUAD RANKS */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold flex items-center gap-2">
+              <Trophy className="w-5 h-5 text-amber-500" /> Team Squad Standings
+            </h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {teams.map((t) => (
               <NexaCard key={t.name} variant="glass" padding="md" className="space-y-3 text-center rounded-3xl">
-                <div className="w-12 h-12 rounded-2xl bg-[#1A56DB]/10 text-[#1A56DB] font-mono font-black text-lg flex items-center justify-center mx-auto">
+                <div
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl mx-auto shadow-inner border border-white/10"
+                  style={{ backgroundColor: `${t.color}20` }}
+                >
                   {t.logo}
                 </div>
                 <div>

@@ -10,64 +10,423 @@ import {
   Minimize2,
   Sparkles,
   Award,
-  RefreshCw,
   Clock,
   Tv,
   Target,
   Volume2,
+  VolumeX,
+  Search,
+  Users,
+  ChevronRight,
+  Medal,
 } from "lucide-react";
 
-interface TeamStanding {
+export interface Contestant {
   id: string;
-  name: string;
-  motto: string;
-  logo: string;
-  color: string;
-  points: number;
   rank: number;
-  recentGain?: number;
+  name: string;
+  fullName: string;
+  country: string;
+  flag: string;
+  avatar: string;
+  score: number;
+  team: string;
+  recentDelta?: number;
 }
 
-const INITIAL_STANDINGS: TeamStanding[] = [
+export interface TeamStanding {
+  id: string;
+  rank: number;
+  name: string;
+  motto: string;
+  color: string;
+  flag: string;
+  points: number;
+  recentGain?: number;
+  membersCount: number;
+}
+
+// 30 Contestants with 3D avatars (avatar1.png to avatar30.png)
+const ALL_30_CONTESTANTS: Contestant[] = [
+  {
+    id: "c-1",
+    rank: 1,
+    name: "Haylie",
+    fullName: "Haylie Adebayo",
+    country: "USA",
+    flag: "🇺🇸",
+    avatar: "/avatar1.png",
+    score: 8,
+    team: "Team Alpha (Blue Eagles)",
+    recentDelta: 1,
+  },
+  {
+    id: "c-2",
+    rank: 2,
+    name: "Rayna",
+    fullName: "Rayna Okafor",
+    country: "Japan",
+    flag: "🇯🇵",
+    avatar: "/avatar2.png",
+    score: 8,
+    team: "Team Bravo (Red Vipers)",
+    recentDelta: 2,
+  },
+  {
+    id: "c-3",
+    rank: 3,
+    name: "Liam",
+    fullName: "Liam Nwachukwu",
+    country: "Canada",
+    flag: "🇨🇦",
+    avatar: "/avatar3.png",
+    score: 7,
+    team: "Team Alpha (Blue Eagles)",
+    recentDelta: 1,
+  },
+  {
+    id: "c-4",
+    rank: 4,
+    name: "Sofia",
+    fullName: "Sofia Jinadu",
+    country: "UK",
+    flag: "🇬🇧",
+    avatar: "/avatar4.png",
+    score: 6,
+    team: "Team Delta (Green Lions)",
+  },
+  {
+    id: "c-5",
+    rank: 5,
+    name: "Jasper",
+    fullName: "Jasper Aliyu",
+    country: "Australia",
+    flag: "🇦🇺",
+    avatar: "/avatar5.png",
+    score: 5,
+    team: "Team Charlie (Gold Titans)",
+  },
+  {
+    id: "c-6",
+    rank: 6,
+    name: "Amaka",
+    fullName: "Amaka Eze",
+    country: "Nigeria",
+    flag: "🇳🇬",
+    avatar: "/avatar6.png",
+    score: 5,
+    team: "Team Alpha (Blue Eagles)",
+  },
+  {
+    id: "c-7",
+    rank: 7,
+    name: "Kene",
+    fullName: "Kenechukwu Felix",
+    country: "Germany",
+    flag: "🇩🇪",
+    avatar: "/avatar7.png",
+    score: 4,
+    team: "Team Bravo (Red Vipers)",
+  },
+  {
+    id: "c-8",
+    rank: 8,
+    name: "Zainab",
+    fullName: "Zainab Bello",
+    country: "France",
+    flag: "🇫🇷",
+    avatar: "/avatar8.png",
+    score: 4,
+    team: "Team Delta (Green Lions)",
+  },
+  {
+    id: "c-9",
+    rank: 9,
+    name: "Babajide",
+    fullName: "Babajide Sanusi",
+    country: "Kenya",
+    flag: "🇰🇪",
+    avatar: "/avatar9.png",
+    score: 4,
+    team: "Team Charlie (Gold Titans)",
+  },
+  {
+    id: "c-10",
+    rank: 10,
+    name: "Fadekemi",
+    fullName: "Fadekemi Peters",
+    country: "South Africa",
+    flag: "🇿🇦",
+    avatar: "/avatar10.png",
+    score: 4,
+    team: "Team Alpha (Blue Eagles)",
+  },
+  {
+    id: "c-11",
+    rank: 11,
+    name: "Tariq",
+    fullName: "Tariq Mensah",
+    country: "Ghana",
+    flag: "🇬🇭",
+    avatar: "/avatar11.png",
+    score: 3,
+    team: "Team Bravo (Red Vipers)",
+  },
+  {
+    id: "c-12",
+    rank: 12,
+    name: "Elena",
+    fullName: "Elena Silva",
+    country: "Brazil",
+    flag: "🇧🇷",
+    avatar: "/avatar12.png",
+    score: 3,
+    team: "Team Delta (Green Lions)",
+  },
+  {
+    id: "c-13",
+    rank: 13,
+    name: "Chidi",
+    fullName: "Chidiebere Okon",
+    country: "Italy",
+    flag: "🇮🇹",
+    avatar: "/avatar13.png",
+    score: 3,
+    team: "Team Charlie (Gold Titans)",
+  },
+  {
+    id: "c-14",
+    rank: 14,
+    name: "Fatima",
+    fullName: "Fatima Garba",
+    country: "Spain",
+    flag: "🇪🇸",
+    avatar: "/avatar14.png",
+    score: 3,
+    team: "Team Alpha (Blue Eagles)",
+  },
+  {
+    id: "c-15",
+    rank: 15,
+    name: "Seun",
+    fullName: "Oluwaseun Bakare",
+    country: "Netherlands",
+    flag: "🇳🇱",
+    avatar: "/avatar15.png",
+    score: 3,
+    team: "Team Bravo (Red Vipers)",
+  },
+  {
+    id: "c-16",
+    rank: 16,
+    name: "Khadija",
+    fullName: "Khadija Umar",
+    country: "Singapore",
+    flag: "🇸🇬",
+    avatar: "/avatar16.png",
+    score: 2,
+    team: "Team Delta (Green Lions)",
+  },
+  {
+    id: "c-17",
+    rank: 17,
+    name: "Emeka",
+    fullName: "Emeka Daniel",
+    country: "Sweden",
+    flag: "🇸🇪",
+    avatar: "/avatar17.png",
+    score: 2,
+    team: "Team Charlie (Gold Titans)",
+  },
+  {
+    id: "c-18",
+    rank: 18,
+    name: "Blessing",
+    fullName: "Blessing Idowu",
+    country: "Switzerland",
+    flag: "🇨🇭",
+    avatar: "/avatar18.png",
+    score: 2,
+    team: "Team Alpha (Blue Eagles)",
+  },
+  {
+    id: "c-19",
+    rank: 19,
+    name: "Damilola",
+    fullName: "Damilola Lawal",
+    country: "UAE",
+    flag: "🇦🇪",
+    avatar: "/avatar19.png",
+    score: 2,
+    team: "Team Bravo (Red Vipers)",
+  },
+  {
+    id: "c-20",
+    rank: 20,
+    name: "Nkechi",
+    fullName: "Nkechi Obi",
+    country: "Ireland",
+    flag: "🇮🇪",
+    avatar: "/avatar20.png",
+    score: 2,
+    team: "Team Delta (Green Lions)",
+  },
+  {
+    id: "c-21",
+    rank: 21,
+    name: "Temitope",
+    fullName: "Temi Adeleke",
+    country: "New Zealand",
+    flag: "🇳🇿",
+    avatar: "/avatar21.png",
+    score: 2,
+    team: "Team Charlie (Gold Titans)",
+  },
+  {
+    id: "c-22",
+    rank: 22,
+    name: "Ibrahim",
+    fullName: "Ibrahim Musa",
+    country: "Mexico",
+    flag: "🇲🇽",
+    avatar: "/avatar22.png",
+    score: 1,
+    team: "Team Alpha (Blue Eagles)",
+  },
+  {
+    id: "c-23",
+    rank: 23,
+    name: "Halima",
+    fullName: "Halima Sani",
+    country: "South Korea",
+    flag: "🇰🇷",
+    avatar: "/avatar23.png",
+    score: 1,
+    team: "Team Bravo (Red Vipers)",
+  },
+  {
+    id: "c-24",
+    rank: 24,
+    name: "Uchechi",
+    fullName: "Uche Daniels",
+    country: "Norway",
+    flag: "🇳🇴",
+    avatar: "/avatar24.png",
+    score: 1,
+    team: "Team Delta (Green Lions)",
+  },
+  {
+    id: "c-25",
+    rank: 25,
+    name: "Gideon",
+    fullName: "Gideon Kalu",
+    country: "Denmark",
+    flag: "🇩🇰",
+    avatar: "/avatar25.png",
+    score: 1,
+    team: "Team Charlie (Gold Titans)",
+  },
+  {
+    id: "c-26",
+    rank: 26,
+    name: "Amina",
+    fullName: "Amina Yusuf",
+    country: "Portugal",
+    flag: "🇵🇹",
+    avatar: "/avatar26.png",
+    score: 1,
+    team: "Team Alpha (Blue Eagles)",
+  },
+  {
+    id: "c-27",
+    rank: 27,
+    name: "Somto",
+    fullName: "Somtochukwu Ali",
+    country: "Belgium",
+    flag: "🇧🇪",
+    avatar: "/avatar27.png",
+    score: 1,
+    team: "Team Bravo (Red Vipers)",
+  },
+  {
+    id: "c-28",
+    rank: 28,
+    name: "Folashade",
+    fullName: "Shade Akpan",
+    country: "Austria",
+    flag: "🇦🇹",
+    avatar: "/avatar28.png",
+    score: 1,
+    team: "Team Delta (Green Lions)",
+  },
+  {
+    id: "c-29",
+    rank: 29,
+    name: "Chinedu",
+    fullName: "Chinedu Nwosu",
+    country: "Finland",
+    flag: "🇫🇮",
+    avatar: "/avatar29.png",
+    score: 1,
+    team: "Team Charlie (Gold Titans)",
+  },
+  {
+    id: "c-30",
+    rank: 30,
+    name: "Zikora",
+    fullName: "Zikora Martins",
+    country: "India",
+    flag: "🇮🇳",
+    avatar: "/avatar30.png",
+    score: 1,
+    team: "Team Alpha (Blue Eagles)",
+  },
+];
+
+const INITIAL_TEAMS: TeamStanding[] = [
   {
     id: "team-alpha",
+    rank: 1,
     name: "Team Alpha (Blue Eagles)",
     motto: "Swift, Strategic, Unstoppable",
-    logo: "A",
     color: "#1A56DB",
+    flag: "🦅",
     points: 840,
-    rank: 1,
     recentGain: 150,
+    membersCount: 8,
   },
   {
     id: "team-bravo",
+    rank: 2,
     name: "Team Bravo (Red Vipers)",
     motto: "Relentless Speed & Precision",
-    logo: "B",
     color: "#E02424",
+    flag: "🐍",
     points: 795,
-    rank: 2,
     recentGain: 120,
+    membersCount: 7,
   },
   {
     id: "team-delta",
+    rank: 3,
     name: "Team Delta (Green Lions)",
     motto: "Courage in Every Stride",
-    logo: "D",
     color: "#0E9F6E",
+    flag: "🦁",
     points: 710,
-    rank: 3,
     recentGain: 80,
+    membersCount: 8,
   },
   {
     id: "team-charlie",
+    rank: 4,
     name: "Team Charlie (Gold Titans)",
     motto: "Power, Intellect, Victory",
-    logo: "C",
     color: "#D97706",
+    flag: "👑",
     points: 650,
-    rank: 4,
     recentGain: 50,
+    membersCount: 7,
   },
 ];
 
@@ -75,33 +434,12 @@ export default function StageTVScoreboardPage() {
   const params = useParams();
   const slug = params?.slug || "2026-staff-retreat";
 
-  const [standings, setStandings] = useState<TeamStanding[]>(INITIAL_STANDINGS);
+  const [contestants, setContestants] = useState<Contestant[]>(ALL_30_CONTESTANTS);
+  const [teams, setTeams] = useState<TeamStanding[]>(INITIAL_TEAMS);
+  const [viewMode, setViewMode] = useState<"top5" | "top10" | "all30" | "teams">("top5");
+  const [searchQuery, setSearchQuery] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [lastRefreshed, setLastRefreshed] = useState<string>("");
-  const [liveTickerIndex, setLiveTickerIndex] = useState(0);
-
-  const announcements = [
-    "Next Challenge: Best Creative Team Mascot Photo closes in 35 minutes!",
-    "Team Alpha took 1st place in the Executive Company Trivia round (+150 pts)!",
-    "Evening Gala Awards Ceremony begins at 7:30 PM at the Palm Grand Ballroom.",
-  ];
-
-  // Auto-refresh timer for TV display
-  useEffect(() => {
-    setLastRefreshed(new Date().toLocaleTimeString());
-    const interval = setInterval(() => {
-      setLastRefreshed(new Date().toLocaleTimeString());
-    }, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Ticker rotation
-  useEffect(() => {
-    const tickerInterval = setInterval(() => {
-      setLiveTickerIndex((prev) => (prev + 1) % announcements.length);
-    }, 6000);
-    return () => clearInterval(tickerInterval);
-  }, [announcements.length]);
+  const [isSoundMuted, setIsSoundMuted] = useState(true);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -113,130 +451,258 @@ export default function StageTVScoreboardPage() {
     }
   };
 
+  // Filtered contestants list
+  const filteredContestants = contestants.filter((c) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      c.name.toLowerCase().includes(q) ||
+      c.fullName.toLowerCase().includes(q) ||
+      c.country.toLowerCase().includes(q) ||
+      c.team.toLowerCase().includes(q)
+    );
+  });
+
+  const displayedContestants =
+    viewMode === "top5"
+      ? filteredContestants.slice(0, 5)
+      : viewMode === "top10"
+      ? filteredContestants.slice(0, 10)
+      : filteredContestants;
+
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-white flex flex-col justify-between select-none overflow-hidden font-sans">
-      {/* TOP HEADER */}
-      <header className="p-6 border-b border-gray-800/80 bg-gray-950/60 backdrop-blur-xl flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#1A56DB] to-[#7E3AF2] flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <Trophy className="w-6 h-6 text-amber-300" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-mono font-bold tracking-widest text-emerald-400 uppercase bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                LIVE STAGE SCOREBOARD
-              </span>
-              <span className="text-xs text-gray-400 font-medium">Epe Resort & Spa, Lagos</span>
-            </div>
-            <h1 className="text-2xl font-black tracking-tight text-white mt-0.5">
-              2026 Annual Staff Retreat & Innovation Games
-            </h1>
+    <div
+      suppressHydrationWarning
+      className="relative min-h-screen text-white flex flex-col justify-between select-none overflow-x-hidden font-sans bg-black"
+    >
+      {/* BACKGROUND IMAGE WITH BLURRED DARK OVERLAY */}
+      <div
+        className="fixed inset-0 bg-cover bg-center bg-no-repeat z-0 transform scale-105 transition-transform duration-1000"
+        style={{ backgroundImage: `url('/background.jpeg')` }}
+      >
+        {/* Dark blur overlay matching leaderboard reference */}
+        <div className="absolute inset-0 bg-black/45 backdrop-blur-[7px]" />
+        <div className="absolute inset-0 bg-radial from-black/20 via-black/50 to-black/85 pointer-events-none" />
+      </div>
+
+      {/* TOP FLOATING CONTROLS */}
+      <header className="relative z-20 px-6 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Link
+            href={`/quests/${slug}`}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/40 hover:bg-black/60 border border-white/10 text-white/75 hover:text-white text-xs font-medium backdrop-blur-md transition-all shadow-md"
+          >
+            <span>← Quest Hub</span>
+          </Link>
+
+          {/* VIEW SELECTOR PILLS */}
+          <div className="hidden sm:flex items-center gap-1 p-1 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-xs">
+            <button
+              onClick={() => setViewMode("top5")}
+              className={`px-3 py-1 rounded-full transition-all font-medium ${
+                viewMode === "top5"
+                  ? "bg-white/20 text-white shadow-sm"
+                  : "text-white/60 hover:text-white"
+              }`}
+            >
+              Top 5 (Stage View)
+            </button>
+            <button
+              onClick={() => setViewMode("top10")}
+              className={`px-3 py-1 rounded-full transition-all font-medium ${
+                viewMode === "top10"
+                  ? "bg-white/20 text-white shadow-sm"
+                  : "text-white/60 hover:text-white"
+              }`}
+            >
+              Top 10
+            </button>
+            <button
+              onClick={() => setViewMode("all30")}
+              className={`px-3 py-1 rounded-full transition-all font-medium ${
+                viewMode === "all30"
+                  ? "bg-white/20 text-white shadow-sm"
+                  : "text-white/60 hover:text-white"
+              }`}
+            >
+              All 30 Contestants
+            </button>
+            <button
+              onClick={() => setViewMode("teams")}
+              className={`px-3 py-1 rounded-full transition-all font-medium ${
+                viewMode === "teams"
+                  ? "bg-white/20 text-white shadow-sm"
+                  : "text-white/60 hover:text-white"
+              }`}
+            >
+              Team Standings
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="text-right text-xs">
-            <div className="text-gray-400 flex items-center gap-1.5 justify-end">
-              <RefreshCw className="w-3.5 h-3.5 text-blue-400 animate-spin" />
-              Live Sync: <span className="font-mono text-white">{lastRefreshed}</span>
-            </div>
-            <div className="text-gray-500 text-[11px]">Auto-recalculating transactional score ledger</div>
-          </div>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            onClick={() => setIsSoundMuted(!isSoundMuted)}
+            className="p-2.5 rounded-full bg-black/40 hover:bg-black/60 border border-white/10 text-white/75 hover:text-white backdrop-blur-md transition-all shadow-md"
+            title={isSoundMuted ? "Unmute Audio" : "Mute Audio"}
+          >
+            {isSoundMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
+          </button>
 
           <button
             onClick={toggleFullscreen}
-            className="p-3 rounded-xl bg-gray-900 border border-gray-700 text-gray-300 hover:text-white hover:bg-gray-800 transition-all shadow-md"
-            title="Toggle Full Screen (F11)"
+            className="p-2.5 rounded-full bg-black/40 hover:bg-black/60 border border-white/10 text-white/75 hover:text-white backdrop-blur-md transition-all shadow-md"
+            title="Toggle Fullscreen (F11)"
           >
-            {isFullscreen ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
         </div>
       </header>
 
-      {/* MAIN LEADERBOARD DISPLAY */}
-      <main className="flex-1 p-8 flex flex-col justify-center max-w-7xl mx-auto w-full">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {standings.map((team) => (
-            <div
-              key={team.id}
-              className={`relative p-6 rounded-3xl border transition-all transform hover:scale-[1.01] duration-300 shadow-2xl backdrop-blur-xl flex items-center justify-between ${
-                team.rank === 1
-                  ? "bg-gradient-to-r from-[#1A56DB]/20 via-blue-950/40 to-indigo-950/30 border-[#1A56DB] shadow-blue-500/10"
-                  : team.rank === 2
-                  ? "bg-gradient-to-r from-red-950/20 via-gray-900/60 to-gray-900/30 border-red-900/50"
-                  : team.rank === 3
-                  ? "bg-gradient-to-r from-emerald-950/20 via-gray-900/60 to-gray-900/30 border-emerald-900/50"
-                  : "bg-gray-900/40 border-gray-800"
-              }`}
-            >
-              {/* RANK BADGE & LOGO */}
-              <div className="flex items-center gap-5">
-                <div
-                  className={`w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black shadow-inner border ${
-                    team.rank === 1
-                      ? "bg-amber-400 text-black border-amber-300 shadow-amber-500/40"
-                      : team.rank === 2
-                      ? "bg-slate-300 text-black border-slate-200"
-                      : team.rank === 3
-                      ? "bg-amber-700 text-white border-amber-600"
-                      : "bg-gray-800 text-gray-300 border-gray-700"
-                  }`}
-                >
-                  {team.rank === 1 ? (
-                    <Trophy className="w-8 h-8 text-black" />
-                  ) : team.rank === 2 ? (
-                    <Award className="w-8 h-8 text-black" />
-                  ) : team.rank === 3 ? (
-                    <Award className="w-8 h-8 text-white" />
-                  ) : (
-                    `#${team.rank}`
-                  )}
-                </div>
+      {/* MAIN CENTER LEADERBOARD CARD */}
+      <main className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6 my-auto">
+        <div className="w-full max-w-2xl relative rounded-[32px] bg-[#140e0c]/75 backdrop-blur-2xl border border-white/15 shadow-[0_30px_90px_rgba(0,0,0,0.85)] p-6 sm:p-10 overflow-hidden transition-all">
+          {/* TOP WARM GLOW BACKGROUND ACCENT */}
+          <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-48 bg-gradient-to-b from-amber-600/25 via-red-600/10 to-transparent blur-3xl pointer-events-none" />
 
-                <div>
-                  <div className="w-8 h-8 rounded-xl bg-white/10 text-white font-mono font-black text-sm flex items-center justify-center mb-1">
-                    {team.logo}
-                  </div>
-                  <h3 className="text-xl font-black text-white">{team.name}</h3>
-                  <p className="text-xs text-gray-400 font-medium italic">&ldquo;{team.motto}&rdquo;</p>
+          {/* CARD HEADER: RED LIVE DOT + LEADERBOARD TITLE */}
+          <div className="relative text-center mb-6 sm:mb-8 space-y-1.5">
+            <div className="flex items-center justify-center gap-2">
+              <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-red-500 shadow-[0_0_12px_#ef4444] animate-pulse" />
+              <span className="text-xs sm:text-sm font-medium tracking-[0.25em] text-white/95 uppercase">
+                LIVE
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-4xl font-medium tracking-tight text-white drop-shadow-md">
+              {viewMode === "teams" ? "TEAM STANDINGS" : "LEADERBOARD"}
+            </h1>
+          </div>
+
+          {/* CONTESTANTS TABLE VIEW */}
+          {viewMode !== "teams" ? (
+            <div className="space-y-1">
+              {/* SEARCH BAR (FOR ALL 30 VIEW) */}
+              {viewMode === "all30" && (
+                <div className="relative mb-4">
+                  <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
+                  <input
+                    type="text"
+                    placeholder="Search 30 contestants by name or team..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 text-xs rounded-xl bg-black/40 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:border-amber-400 transition-colors"
+                  />
                 </div>
+              )}
+
+              {/* TABLE COLUMN HEADERS */}
+              <div className="grid grid-cols-12 items-center text-xs sm:text-sm font-normal text-white/40 tracking-wider pb-3 border-b border-white/[0.06] px-2 select-none">
+                <div className="col-span-1 text-center"></div>
+                <div className="col-span-4 pl-2">Player</div>
+                <div className="col-span-5">Teams</div>
+                <div className="col-span-2 text-right pr-2">Score</div>
               </div>
 
-              {/* POINTS ACCUMULATOR */}
-              <div className="text-right">
-                <div className="text-4xl font-black tracking-tight text-amber-300 font-mono">
-                  {team.points.toLocaleString()}
-                  <span className="text-lg text-gray-400 font-sans font-bold ml-1">pts</span>
-                </div>
-                {team.recentGain && (
-                  <div className="text-xs font-bold text-emerald-400 mt-1 flex items-center gap-1 justify-end">
-                    <Flame className="w-3.5 h-3.5" /> +{team.recentGain} pts recently
+              {/* TABLE ROWS */}
+              <div
+                className={`divide-y divide-white/[0.04] ${
+                  viewMode === "all30" ? "max-h-[480px] overflow-y-auto pr-1" : ""
+                }`}
+              >
+                {displayedContestants.map((contestant) => (
+                  <div
+                    key={contestant.id}
+                    className="grid grid-cols-12 items-center py-3.5 sm:py-4 px-2 rounded-2xl transition-all duration-200 hover:bg-white/[0.06] group cursor-default"
+                  >
+                    {/* RANK NUMBER */}
+                    <div className="col-span-1 text-center font-normal text-white/70 text-sm sm:text-base">
+                      {contestant.rank}
+                    </div>
+
+                    {/* PLAYER */}
+                    <div className="col-span-4 pl-2 truncate">
+                      <div className="font-medium text-white/95 text-base sm:text-lg tracking-tight group-hover:text-white transition-colors truncate">
+                        {contestant.name}
+                      </div>
+                    </div>
+
+                    {/* TEAM */}
+                    <div className="col-span-5 flex items-center text-white/85 text-sm sm:text-base font-normal truncate pr-2">
+                      <span className="truncate">{contestant.team}</span>
+                    </div>
+
+                    {/* SCORE (INTEGER / POINTS) */}
+                    <div className="col-span-2 text-right pr-2 font-normal text-white/90 text-base sm:text-lg">
+                      {contestant.score}
+                    </div>
                   </div>
-                )}
+                ))}
               </div>
             </div>
-          ))}
+          ) : (
+            /* TEAM STANDINGS VIEW */
+            <div className="space-y-3">
+              <div className="grid grid-cols-12 items-center text-xs sm:text-sm font-normal text-white/40 tracking-wider pb-3 border-b border-white/[0.06] px-2 select-none">
+                <div className="col-span-1 text-center">#</div>
+                <div className="col-span-7 pl-2">Team Squad</div>
+                <div className="col-span-4 text-right pr-2">Total Points</div>
+              </div>
+
+              <div className="divide-y divide-white/[0.04]">
+                {teams.map((t) => (
+                  <div
+                    key={t.id}
+                    className="grid grid-cols-12 items-center py-4 px-2 rounded-2xl transition-all duration-200 hover:bg-white/[0.06] group"
+                  >
+                    <div className="col-span-1 text-center font-normal text-white/70 text-base sm:text-lg">
+                      {t.rank === 1 ? (
+                        <Trophy className="w-5 h-5 text-amber-400 mx-auto" />
+                      ) : t.rank === 2 ? (
+                        <Award className="w-5 h-5 text-slate-300 mx-auto" />
+                      ) : t.rank === 3 ? (
+                        <Award className="w-5 h-5 text-amber-700 mx-auto" />
+                      ) : (
+                        `#${t.rank}`
+                      )}
+                    </div>
+
+                    <div className="col-span-7 flex items-center gap-3 pl-2 truncate">
+                      <div
+                        className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl shrink-0 border border-white/20 shadow-md"
+                        style={{ backgroundColor: `${t.color}25` }}
+                      >
+                        {t.flag}
+                      </div>
+                      <div className="truncate">
+                        <div className="font-medium text-white text-base sm:text-lg tracking-tight group-hover:text-amber-200 transition-colors truncate">
+                          {t.name}
+                        </div>
+                        <div className="text-xs text-white/40 italic truncate">
+                          &ldquo;{t.motto}&rdquo;
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col-span-4 text-right pr-2">
+                      <div className="font-mono font-medium text-amber-300 text-lg sm:text-2xl">
+                        {t.points.toLocaleString()}
+                        <span className="text-xs text-white/50 font-sans font-normal ml-1">
+                          pts
+                        </span>
+                      </div>
+                      {t.recentGain && (
+                        <div className="text-[11px] font-medium text-emerald-400 flex items-center justify-end gap-1">
+                          <Flame className="w-3 h-3" /> +{t.recentGain} pts
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </main>
-
-      {/* BOTTOM TICKER & EVENT BANNER */}
-      <footer className="p-4 bg-gray-950/80 border-t border-gray-800/80 backdrop-blur-xl flex items-center justify-between px-8 text-xs text-gray-400">
-        <div className="flex items-center gap-3 overflow-hidden flex-1">
-          <span className="font-bold text-amber-400 flex items-center gap-1.5 uppercase tracking-wider whitespace-nowrap">
-            <Volume2 className="w-4 h-4 text-amber-400 animate-pulse" /> Live Broadcast:
-          </span>
-          <span className="font-medium text-white truncate text-sm">
-            {announcements[liveTickerIndex]}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-4 text-[11px] text-gray-500 font-mono">
-          <span>OFIA TEAM QUESTS ENGINE</span>
-          <span>·</span>
-          <span>POWERED BY OFIA ERP</span>
-        </div>
-      </footer>
     </div>
   );
 }

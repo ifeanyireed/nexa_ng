@@ -135,16 +135,56 @@ func seedDefaultOrganizations(db *gorm.DB) {
 	var count int64
 	db.Model(&models.Organization{}).Count(&count)
 	if count == 0 {
-		owner := models.User{
-			ID:        "USR-001",
-			Name:      "Ifeanyi Felix",
-			Email:     "ifeanyi.ibeh@neweratransports.com",
-			Role:      models.RoleTenantOwner,
-			Password:  "$2a$10$7EqJtq98hPqEX7fNZaFWoOZhg.6eA5Z9qjS8yG4R.M1P8wG4R.M1P",
-			CreatedAt: time.Now(),
-			UpdatedAt: time.Now(),
+		defaultOwners := []models.User{
+			{
+				ID:        "USR-001",
+				Name:      "Ifeanyi Felix",
+				Email:     "ifeanyi.ibeh@neweratransports.com",
+				Role:      models.RoleTenantOwner,
+				Password:  "$2a$10$7EqJtq98hPqEX7fNZaFWoOZhg.6eA5Z9qjS8yG4R.M1P8wG4R.M1P",
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			},
+			{
+				ID:        "USR-002",
+				Name:      "Chioma Okonkwo",
+				Email:     "chioma@payflow.africa",
+				Role:      models.RoleTenantOwner,
+				Password:  "$2a$10$7EqJtq98hPqEX7fNZaFWoOZhg.6eA5Z9qjS8yG4R.M1P8wG4R.M1P",
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			},
+			{
+				ID:        "USR-003",
+				Name:      "Dr. Babatunde Jinadu",
+				Email:     "babatunde@healthbridge.io",
+				Role:      models.RoleTenantOwner,
+				Password:  "$2a$10$7EqJtq98hPqEX7fNZaFWoOZhg.6eA5Z9qjS8yG4R.M1P8wG4R.M1P",
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			},
+			{
+				ID:        "USR-004",
+				Name:      "Ibrahim Musa",
+				Email:     "ibrahim@apexlogistics.com.ng",
+				Role:      models.RoleTenantOwner,
+				Password:  "$2a$10$7EqJtq98hPqEX7fNZaFWoOZhg.6eA5Z9qjS8yG4R.M1P8wG4R.M1P",
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			},
+			{
+				ID:        "USR-005",
+				Name:      "Ngozi Eze",
+				Email:     "ngozi@zenithrealty.ng",
+				Role:      models.RoleTenantOwner,
+				Password:  "$2a$10$7EqJtq98hPqEX7fNZaFWoOZhg.6eA5Z9qjS8yG4R.M1P8wG4R.M1P",
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			},
 		}
-		db.FirstOrCreate(&owner, models.User{ID: owner.ID})
+		for _, o := range defaultOwners {
+			db.FirstOrCreate(&o, models.User{ID: o.ID})
+		}
 
 		defaultOrgs := []models.Organization{
 			{
@@ -162,7 +202,7 @@ func seedDefaultOrganizations(db *gorm.DB) {
 				ID:           "org-02",
 				Name:         "PayFlow Africa",
 				Slug:         "payflow-africa",
-				OwnerID:      "USR-001",
+				OwnerID:      "USR-002",
 				PlanTier:     models.PlanEnterprise,
 				BillingCycle: "MONTHLY",
 				Status:       "ACTIVE",
@@ -173,7 +213,7 @@ func seedDefaultOrganizations(db *gorm.DB) {
 				ID:           "org-03",
 				Name:         "HealthBridge Clinics",
 				Slug:         "healthbridge",
-				OwnerID:      "USR-001",
+				OwnerID:      "USR-003",
 				PlanTier:     models.PlanStarter,
 				BillingCycle: "MONTHLY",
 				Status:       "ACTIVE",
@@ -184,7 +224,7 @@ func seedDefaultOrganizations(db *gorm.DB) {
 				ID:           "org-04",
 				Name:         "Apex Global Logistics",
 				Slug:         "apex-logistics",
-				OwnerID:      "USR-001",
+				OwnerID:      "USR-004",
 				PlanTier:     models.PlanScale,
 				BillingCycle: "MONTHLY",
 				Status:       "SUSPENDED",
@@ -195,7 +235,7 @@ func seedDefaultOrganizations(db *gorm.DB) {
 				ID:           "org-05",
 				Name:         "Zenith Real Estate Hub",
 				Slug:         "zenith-re",
-				OwnerID:      "USR-001",
+				OwnerID:      "USR-005",
 				PlanTier:     models.PlanFreeTrial,
 				BillingCycle: "MONTHLY",
 				Status:       "ACTIVE",
@@ -262,6 +302,20 @@ func (h *OrgHandler) UpdateOrgProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	updateFields["updated_at"] = time.Now()
 
+	ownerName := ""
+	if v, ok := rawMap["owner_name"].(string); ok && v != "" {
+		ownerName = v
+	} else if v, ok := rawMap["ownerName"].(string); ok && v != "" {
+		ownerName = v
+	}
+
+	ownerEmail := ""
+	if v, ok := rawMap["owner_email"].(string); ok && v != "" {
+		ownerEmail = v
+	} else if v, ok := rawMap["ownerEmail"].(string); ok && v != "" {
+		ownerEmail = v
+	}
+
 	if h.db != nil {
 		var org models.Organization
 		res := h.db.Where("id = ? OR slug = ?", orgID, orgID).First(&org)
@@ -269,6 +323,40 @@ func (h *OrgHandler) UpdateOrgProfile(w http.ResponseWriter, r *http.Request) {
 			if err := h.db.Model(&org).Updates(updateFields).Error; err != nil {
 				http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
 				return
+			}
+
+			// Update Owner (User) if ownerName or ownerEmail provided
+			if ownerName != "" || ownerEmail != "" {
+				if org.OwnerID != "" {
+					userUpdates := make(map[string]interface{})
+					if ownerName != "" {
+						userUpdates["name"] = ownerName
+					}
+					if ownerEmail != "" {
+						userUpdates["email"] = ownerEmail
+					}
+					userUpdates["updated_at"] = time.Now()
+					h.db.Model(&models.User{}).Where("id = ?", org.OwnerID).Updates(userUpdates)
+				} else {
+					newUserID := uuid.New().String()
+					newUser := models.User{
+						ID:        newUserID,
+						Name:      ownerName,
+						Email:     ownerEmail,
+						Role:      models.RoleTenantOwner,
+						CreatedAt: time.Now(),
+						UpdatedAt: time.Now(),
+					}
+					if newUser.Email == "" {
+						newUser.Email = fmt.Sprintf("admin@%s.ng", org.Slug)
+					}
+					if newUser.Name == "" {
+						newUser.Name = "System Admin"
+					}
+					if err := h.db.Create(&newUser).Error; err == nil {
+						h.db.Model(&org).Update("owner_id", newUserID)
+					}
+				}
 			}
 
 			// Also update Subscription table plan_tier & status if provided
@@ -286,7 +374,7 @@ func (h *OrgHandler) UpdateOrgProfile(w http.ResponseWriter, r *http.Request) {
 			}
 
 			var updated models.Organization
-			h.db.Preload("Subscription").First(&updated, "id = ?", org.ID)
+			h.db.Preload("Subscription").Preload("Owner").First(&updated, "id = ?", org.ID)
 			json.NewEncoder(w).Encode(updated)
 			return
 		}
@@ -300,11 +388,28 @@ func (h *OrgHandler) UpdateOrgProfile(w http.ResponseWriter, r *http.Request) {
 			if v, ok := rawMap["slug"].(string); ok && v != "" {
 				slug = v
 			}
+			ownerID := uuid.New().String()
+			adminUser := models.User{
+				ID:        ownerID,
+				Name:      ownerName,
+				Email:     ownerEmail,
+				Role:      models.RoleTenantOwner,
+				CreatedAt: time.Now(),
+				UpdatedAt: time.Now(),
+			}
+			if adminUser.Name == "" {
+				adminUser.Name = "System Admin"
+			}
+			if adminUser.Email == "" {
+				adminUser.Email = fmt.Sprintf("admin@%s.ng", slug)
+			}
+			_ = h.db.Create(&adminUser)
+
 			newOrg := models.Organization{
 				ID:           uuid.New().String(),
 				Name:         name,
 				Slug:         slug,
-				OwnerID:      "USR-ADMIN",
+				OwnerID:      ownerID,
 				PlanTier:     models.PlanTier("ENTERPRISE"),
 				BillingCycle: "MONTHLY",
 				Status:       "ACTIVE",
@@ -323,7 +428,9 @@ func (h *OrgHandler) UpdateOrgProfile(w http.ResponseWriter, r *http.Request) {
 				UpdatedAt:          time.Now(),
 			}
 			_ = h.db.Create(&sub)
-			json.NewEncoder(w).Encode(newOrg)
+			var created models.Organization
+			h.db.Preload("Subscription").Preload("Owner").First(&created, "id = ?", newOrg.ID)
+			json.NewEncoder(w).Encode(created)
 			return
 		}
 

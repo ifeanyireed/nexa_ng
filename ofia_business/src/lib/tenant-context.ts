@@ -8,6 +8,7 @@ export interface DatabaseTenant {
   slug: string;
   domain: string;
   company: string;
+  ownerName?: string;
   ownerEmail?: string;
   status?: string;
   planTier?: string;
@@ -82,13 +83,18 @@ export async function fetchDatabaseTenants(forceRefresh = false): Promise<Databa
           const rawName = org.name || org.Name || slugToTenantName(org.slug || org.Slug || `org-${idx + 1}`);
           const rawSlug = org.slug || org.Slug || rawName.toLowerCase().replace(/[^a-z0-9]/g, "");
           const rawDomain = org.domain || org.Domain || `${rawSlug}.ofia.ng`;
+          const ownerObj = org.owner || org.Owner || {};
+          const rawOwnerName = org.ownerName || org.OwnerName || ownerObj.name || ownerObj.Name || "";
+          const rawOwnerEmail = org.ownerEmail || org.OwnerEmail || org.email || ownerObj.email || ownerObj.Email || "";
+
           return {
             id: org.id || org.ID || `org-${idx + 1}`,
             name: rawName,
             slug: rawSlug,
             domain: rawDomain,
             company: rawName,
-            ownerEmail: org.ownerEmail || org.OwnerEmail || org.email || "",
+            ownerName: rawOwnerName,
+            ownerEmail: rawOwnerEmail,
             status: org.status || org.Status || "Active",
             planTier: org.planTier || org.PlanTier || "Enterprise",
           };

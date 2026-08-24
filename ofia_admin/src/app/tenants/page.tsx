@@ -530,8 +530,8 @@ function TenantManagementContent() {
               name: org.name || org.Name || "Tenant Workspace",
               slug: orgSlug,
               domain: org.domain || org.Domain || `${orgSlug}.ofia.ng`,
-              ownerName: org.ownerName || org.owner_name || org.OwnerName || "System Admin",
-              ownerEmail: org.ownerEmail || org.owner_email || org.OwnerEmail || `admin@${orgSlug}.ng`,
+              ownerName: org.ownerName || org.owner_name || org.OwnerName || org.owner?.name || org.Owner?.Name || "System Admin",
+              ownerEmail: org.ownerEmail || org.owner_email || org.OwnerEmail || org.owner?.email || org.Owner?.Email || `admin@${orgSlug}.ng`,
               planTier,
               status: isSuspended ? "Suspended" : "Active",
               mrr,
@@ -800,8 +800,8 @@ function TenantManagementContent() {
               name: org.name || org.Name || "Tenant Workspace",
               slug: orgSlug,
               domain: org.domain || org.Domain || `${orgSlug}.ofia.ng`,
-              ownerName: org.owner_name || org.OwnerName || "System Admin",
-              ownerEmail: org.owner_email || org.OwnerEmail || `admin@${orgSlug}.ng`,
+              ownerName: org.ownerName || org.owner_name || org.OwnerName || org.owner?.name || org.Owner?.Name || "System Admin",
+              ownerEmail: org.ownerEmail || org.owner_email || org.OwnerEmail || org.owner?.email || org.Owner?.Email || `admin@${orgSlug}.ng`,
               planTier,
               status: isSuspended ? "Suspended" : "Active",
               mrr,
@@ -901,6 +901,10 @@ function TenantManagementContent() {
     try {
       const createdRemote = await GTM_API.createAdminOrganization({
         name: newOrgName,
+        slug,
+        domain: newOrgDomain,
+        owner_name: newOwnerName || "System Admin",
+        owner_email: newOwnerEmail || `admin@${newOrgDomain}`,
         plan_tier: newPlanTier,
         billing_cycle: "MONTHLY",
       });

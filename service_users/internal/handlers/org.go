@@ -366,7 +366,7 @@ func (h *OrgHandler) UpdateOrgProfile(w http.ResponseWriter, r *http.Request) {
 						if newUser.Name == "" {
 							newUser.Name = "System Admin"
 						}
-						if err := h.db.Create(&newUser).Error == nil {
+						if err := h.db.Create(&newUser).Error; err == nil {
 							h.db.Model(&org).Update("owner_id", newUserID)
 						}
 					}

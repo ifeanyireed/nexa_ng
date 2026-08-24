@@ -61,7 +61,7 @@ function SubscriptionManagementContent() {
   const [newPlanName, setNewPlanName] = useState("");
   const [newPlanCategory, setNewPlanCategory] = useState<"OFIA_AI" | "OFIA_SHOP" | "OFIA_ENTERPRISE" | "OFIA_COMPASS">("OFIA_AI");
   const [newPlanTier, setNewPlanTier] = useState("STARTER");
-  const [newPlanPriceNgn, setNewPlanPriceNgn] = useState("500000");
+  const [newPlanPriceNgn, setNewPlanPriceNgn] = useState("13000");
   const [newPlanPeriod, setNewPlanPeriod] = useState("Monthly");
   const [newPlanBadge, setNewPlanBadge] = useState("New Tier");
   const [newPlanDesc, setNewPlanDesc] = useState("");
@@ -75,7 +75,7 @@ function SubscriptionManagementContent() {
   // Edit Plan Form state
   const [editPlanName, setEditPlanName] = useState("");
   const [editPlanCategory, setEditPlanCategory] = useState<"OFIA_AI" | "OFIA_SHOP" | "OFIA_ENTERPRISE" | "OFIA_COMPASS">("OFIA_AI");
-  const [editPlanPriceNgn, setEditPlanPriceNgn] = useState("500000");
+  const [editPlanPriceNgn, setEditPlanPriceNgn] = useState("13000");
   const [editPlanPeriod, setEditPlanPeriod] = useState("Monthly");
   const [editPlanBadge, setEditPlanBadge] = useState("");
   const [editPlanDesc, setEditPlanDesc] = useState("");
@@ -920,10 +920,10 @@ function SubscriptionManagementContent() {
               onChange={(e) => setEditPlanTier(e.target.value as any)}
               className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-bold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
             >
-              <option value="GROWTH">GROWTH (₦1.2M / mo · 5,000 Leads · 10 Campaigns)</option>
-              <option value="ENTERPRISE">ENTERPRISE (₦5.0M / mo · 50,000 Leads · 100 Campaigns)</option>
-              <option value="SCALE">SCALE (₦2.4M / mo · 20,000 Leads · 25 Campaigns)</option>
-              <option value="STARTER">STARTER (₦450k / mo · 1,000 Leads · 3 Campaigns)</option>
+              <option value="GROWTH">GROWTH (₦24,000 / mo · 5,000 Leads · 10 Campaigns)</option>
+              <option value="ENTERPRISE">ENTERPRISE (₦100,000 / mo · 50,000 Leads · 100 Campaigns)</option>
+              <option value="SCALE">SCALE (₦48,000 / mo · 20,000 Leads · 25 Campaigns)</option>
+              <option value="STARTER">STARTER (₦9,000 / mo · 1,000 Leads · 3 Campaigns)</option>
               <option value="FREE_TRIAL">FREE TRIAL (14-Day Pilot · 250 Leads)</option>
             </select>
           </div>

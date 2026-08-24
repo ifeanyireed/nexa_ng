@@ -113,7 +113,7 @@ export const SUBSCRIPTION_TIERS_CATALOG: SubscriptionTierItem[] = [
     categoryLabel: "Ofia AI",
     tier: "STARTER",
     name: "Ofia AI Growth Swarm",
-    priceNgn: 650000,
+    priceNgn: 13000,
     period: "Monthly",
     leadsLimit: 5000,
     campaignsLimit: 5,
@@ -135,7 +135,7 @@ export const SUBSCRIPTION_TIERS_CATALOG: SubscriptionTierItem[] = [
     categoryLabel: "Ofia AI",
     tier: "GROWTH",
     name: "Ofia AI Autonomous Scale",
-    priceNgn: 1800000,
+    priceNgn: 36000,
     period: "Monthly",
     leadsLimit: 25000,
     campaignsLimit: 20,
@@ -157,7 +157,7 @@ export const SUBSCRIPTION_TIERS_CATALOG: SubscriptionTierItem[] = [
     categoryLabel: "Ofia AI",
     tier: "ENTERPRISE",
     name: "Ofia AI Sovereign Cluster",
-    priceNgn: 3500000,
+    priceNgn: 70000,
     period: "Monthly",
     leadsLimit: 100000,
     campaignsLimit: 100,
@@ -181,7 +181,7 @@ export const SUBSCRIPTION_TIERS_CATALOG: SubscriptionTierItem[] = [
     categoryLabel: "Ofia Shop",
     tier: "STARTER",
     name: "Ofia Shop Starter",
-    priceNgn: 150000,
+    priceNgn: 3000,
     period: "Monthly",
     leadsLimit: 500,
     campaignsLimit: 1,
@@ -203,7 +203,7 @@ export const SUBSCRIPTION_TIERS_CATALOG: SubscriptionTierItem[] = [
     categoryLabel: "Ofia Shop",
     tier: "GROWTH",
     name: "Ofia Shop Merchant Pro",
-    priceNgn: 450000,
+    priceNgn: 9000,
     period: "Monthly",
     leadsLimit: 2000,
     campaignsLimit: 5,
@@ -225,7 +225,7 @@ export const SUBSCRIPTION_TIERS_CATALOG: SubscriptionTierItem[] = [
     categoryLabel: "Ofia Shop",
     tier: "SCALE",
     name: "Ofia Shop Multi-Brand Empire",
-    priceNgn: 1200000,
+    priceNgn: 24000,
     period: "Monthly",
     leadsLimit: 10000,
     campaignsLimit: 15,
@@ -249,7 +249,7 @@ export const SUBSCRIPTION_TIERS_CATALOG: SubscriptionTierItem[] = [
     categoryLabel: "Ofia Enterprise Suite",
     tier: "GROWTH",
     name: "Enterprise Core ERP",
-    priceNgn: 1200000,
+    priceNgn: 24000,
     period: "Monthly",
     leadsLimit: 5000,
     campaignsLimit: 10,
@@ -270,7 +270,7 @@ export const SUBSCRIPTION_TIERS_CATALOG: SubscriptionTierItem[] = [
     categoryLabel: "Ofia Enterprise Suite",
     tier: "SCALE",
     name: "Enterprise Omni-Suite",
-    priceNgn: 2400000,
+    priceNgn: 48000,
     period: "Monthly",
     leadsLimit: 20000,
     campaignsLimit: 25,
@@ -291,7 +291,7 @@ export const SUBSCRIPTION_TIERS_CATALOG: SubscriptionTierItem[] = [
     categoryLabel: "Ofia Enterprise Suite",
     tier: "ENTERPRISE",
     name: "Enterprise Sovereign SLA",
-    priceNgn: 5000000,
+    priceNgn: 100000,
     period: "Monthly",
     leadsLimit: 50000,
     campaignsLimit: 100,
@@ -314,7 +314,7 @@ export const SUBSCRIPTION_TIERS_CATALOG: SubscriptionTierItem[] = [
     categoryLabel: "Ofia Compass",
     tier: "STARTER",
     name: "Ofia Compass Essentials",
-    priceNgn: 350000,
+    priceNgn: 7000,
     period: "Monthly",
     leadsLimit: 1000,
     campaignsLimit: 2,
@@ -334,7 +334,7 @@ export const SUBSCRIPTION_TIERS_CATALOG: SubscriptionTierItem[] = [
     categoryLabel: "Ofia Compass",
     tier: "GROWTH",
     name: "Ofia Compass Strategic Pro",
-    priceNgn: 950000,
+    priceNgn: 19000,
     period: "Monthly",
     leadsLimit: 5000,
     campaignsLimit: 10,
@@ -355,7 +355,7 @@ export const SUBSCRIPTION_TIERS_CATALOG: SubscriptionTierItem[] = [
     categoryLabel: "Ofia Compass",
     tier: "ENTERPRISE",
     name: "Ofia Compass Sovereign Radar",
-    priceNgn: 2500000,
+    priceNgn: 50000,
     period: "Monthly",
     leadsLimit: 25000,
     campaignsLimit: 50,
@@ -481,7 +481,7 @@ function TenantManagementContent() {
   const [editTenantOwnerEmail, setEditTenantOwnerEmail] = useState("");
   const [editTenantPlanTier, setEditTenantPlanTier] = useState<TenantOrg["planTier"]>("GROWTH");
   const [editTenantStatus, setEditTenantStatus] = useState<TenantOrg["status"]>("Active");
-  const [editTenantMrr, setEditTenantMrr] = useState("1200000");
+  const [editTenantMrr, setEditTenantMrr] = useState("24000");
   const [editTenantLeadsLimit, setEditTenantLeadsLimit] = useState("5000");
   const [editTenantCampaignsLimit, setEditTenantCampaignsLimit] = useState("10");
 
@@ -518,7 +518,7 @@ function TenantManagementContent() {
               ? rawPlan
               : "GROWTH") as TenantOrg["planTier"];
             const isSuspended = (org.status || org.Status || "").toUpperCase() === "SUSPENDED";
-            const mrr = planTier === "ENTERPRISE" ? 5000000 : planTier === "SCALE" ? 2400000 : 1200000;
+            const mrr = planTier === "ENTERPRISE" ? 100000 : planTier === "SCALE" ? 48000 : planTier === "STARTER" ? 9000 : planTier === "FREE_TRIAL" ? 0 : 24000;
             const orgSlug = org.slug || org.Slug || `org-${idx + 1}`;
 
             return {
@@ -851,7 +851,7 @@ function TenantManagementContent() {
       ownerEmail: newOwnerEmail || `admin@${newOrgDomain}`,
       planTier: newPlanTier,
       status: "Active",
-      mrr: newPlanTier === "ENTERPRISE" ? 5000000 : newPlanTier === "SCALE" ? 2400000 : 1200000,
+      mrr: newPlanTier === "ENTERPRISE" ? 100000 : newPlanTier === "SCALE" ? 48000 : newPlanTier === "STARTER" ? 9000 : newPlanTier === "FREE_TRIAL" ? 0 : 24000,
       activeAgentsCount: 15,
       leadsUsed: 0,
       leadsLimit: newPlanTier === "ENTERPRISE" ? 50000 : 5000,
@@ -1638,10 +1638,10 @@ function TenantManagementContent() {
               className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-bold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
             >
               <option value="FREE_TRIAL">FREE TRIAL (14 Days / 100 Leads)</option>
-              <option value="STARTER">STARTER (₦450k / mo · 1,000 Leads)</option>
-              <option value="GROWTH">GROWTH (₦1.2M / mo · 5,000 Leads)</option>
-              <option value="SCALE">SCALE (₦2.4M / mo · 20,000 Leads)</option>
-              <option value="ENTERPRISE">ENTERPRISE (₦5.0M / mo · 50,000 Leads)</option>
+              <option value="STARTER">STARTER (₦9,000 / mo · 1,000 Leads)</option>
+              <option value="GROWTH">GROWTH (₦24,000 / mo · 5,000 Leads)</option>
+              <option value="SCALE">SCALE (₦48,000 / mo · 20,000 Leads)</option>
+              <option value="ENTERPRISE">ENTERPRISE (₦100,000 / mo · 50,000 Leads)</option>
             </select>
           </div>
 
@@ -1796,10 +1796,10 @@ function TenantManagementContent() {
               onChange={(e) => setNewPlanTier(e.target.value as any)}
               className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-bold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
             >
-              <option value="GROWTH">GROWTH (₦1.2M / mo · 5,000 Leads · 10 Campaigns)</option>
-              <option value="ENTERPRISE">ENTERPRISE (₦5.0M / mo · 50,000 Leads · 100 Campaigns)</option>
-              <option value="SCALE">SCALE (₦2.4M / mo · 20,000 Leads · 25 Campaigns)</option>
-              <option value="STARTER">STARTER (₦450k / mo · 1,000 Leads · 3 Campaigns)</option>
+              <option value="GROWTH">GROWTH (₦24,000 / mo · 5,000 Leads · 10 Campaigns)</option>
+              <option value="ENTERPRISE">ENTERPRISE (₦100,000 / mo · 50,000 Leads · 100 Campaigns)</option>
+              <option value="SCALE">SCALE (₦48,000 / mo · 20,000 Leads · 25 Campaigns)</option>
+              <option value="STARTER">STARTER (₦9,000 / mo · 1,000 Leads · 3 Campaigns)</option>
               <option value="FREE_TRIAL">FREE TRIAL (14-Day Pilot)</option>
             </select>
           </div>
@@ -1910,10 +1910,10 @@ function TenantManagementContent() {
                 className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-bold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
               >
                 <option value="FREE_TRIAL">FREE TRIAL (14-Day Pilot)</option>
-                <option value="STARTER">STARTER (₦450k / mo)</option>
-                <option value="GROWTH">GROWTH (₦1.2M / mo)</option>
-                <option value="SCALE">SCALE (₦2.4M / mo)</option>
-                <option value="ENTERPRISE">ENTERPRISE (₦5.0M / mo)</option>
+                <option value="STARTER">STARTER (₦9,000 / mo)</option>
+                <option value="GROWTH">GROWTH (₦24,000 / mo)</option>
+                <option value="SCALE">SCALE (₦48,000 / mo)</option>
+                <option value="ENTERPRISE">ENTERPRISE (₦100,000 / mo)</option>
               </select>
             </div>
           </div>

@@ -120,7 +120,13 @@ export function ErpAdminShell({
     iconBg: "from-blue-600 to-indigo-600",
   });
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [tenantName, setTenantName] = useState<string>("New Era Transports");
+  const [tenantName, setTenantName] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const matched = resolveTenantFromList([], undefined);
+      return matched?.name || "New Era Transports";
+    }
+    return "New Era Transports";
+  });
   const [permissionMatrix, setPermissionMatrix] = useState<PermissionMatrix>(DEFAULT_PERMISSION_MATRIX);
   const [currentRole, setCurrentRole] = useState<RoleKey>("admin");
   const [userName, setUserName] = useState<string>("Corporate Staff");

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useERPStore, PerformanceReview, User, getParentDept } from "@/lib/erp-store";
+import { useERPStore, PerformanceReview, User, getParentDept, getSignedInERPUser } from "@/lib/erp-store";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -12,32 +12,13 @@ import { Building2, Award, TrendingUp, Users, ArrowRight } from "lucide-react";
 
 export default function MDDashboard() {
   const router = useRouter();
-  const { reviews, users } = useERPStore();
-  const [currentUser, setCurrentUser] = useState<User>({
-    id: "MD001",
-    name: "Executive Director",
-    email: "md@ofia.ng",
-    role: "md",
-    department: "Executive Management",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
-  });
+  const { reviews, users, cycles } = useERPStore();
+  const [currentUser, setCurrentUser] = useState<User>(() => getSignedInERPUser(users));
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("erp_current_user");
-      if (stored) {
-        try {
-          const u = JSON.parse(stored);
-          if (u && u.id) {
-            setCurrentUser(u);
-            return;
-          }
-        } catch {}
-      }
-      if (users.length > 0) {
-        const found = users.find(u => u.role === "md") || users[0];
-        setCurrentUser(found);
-      }
+      const active = getSignedInERPUser(users);
+      setCurrentUser(active);
     }
   }, [users]);
 

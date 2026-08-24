@@ -149,7 +149,7 @@ export function resolveTenantFromList(
   // 2. If targetSlug was found from URL/Subdomain, construct tenant dynamically from the slug
   if (targetSlug) {
     return {
-      id: `org-${targetSlug}`,
+      id: targetSlug,
       name: slugToTenantName(targetSlug),
       slug: targetSlug,
       domain: `${targetSlug}.ofia.ng`,
@@ -165,7 +165,7 @@ export function resolveTenantFromList(
     const domainSlug = domainPart.split(".")[0];
     if (domainSlug && domainSlug !== "gmail" && domainSlug !== "yahoo" && domainSlug !== "outlook" && domainSlug !== "hotmail") {
       return {
-        id: `org-${domainSlug}`,
+        id: domainSlug,
         name: slugToTenantName(domainSlug),
         slug: domainSlug,
         domain: `${domainSlug}.ofia.ng`,

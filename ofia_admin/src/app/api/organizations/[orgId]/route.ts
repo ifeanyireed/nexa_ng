@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
-const USER_BASE = process.env.USER_SERVICE_URL
-  ? `${process.env.USER_SERVICE_URL}/api/v1`
-  : (process.env.NEXT_PUBLIC_USER_SERVICE_URL || "https://ofia-user-service.onrender.com/api/v1");
+const rawUserUrl = process.env.USER_SERVICE_URL || process.env.NEXT_PUBLIC_USER_SERVICE_URL || "https://ofia-user-service.onrender.com";
+const cleanUserUrl = rawUserUrl.replace(/\/+$/, "");
+const USER_BASE = cleanUserUrl.endsWith("/api/v1") ? cleanUserUrl : `${cleanUserUrl}/api/v1`;
 
 export async function GET(
   request: Request,

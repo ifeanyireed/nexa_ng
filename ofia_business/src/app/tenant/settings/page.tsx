@@ -48,7 +48,8 @@ export default function TenantSettingsPage() {
   }, [activeTenant, user]);
 
   const handleSave = async () => {
-    if (!activeTenant?.id) {
+    const targetIdentifier = activeTenant?.id || activeTenant?.slug || slug;
+    if (!targetIdentifier) {
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
       return;
@@ -65,15 +66,18 @@ export default function TenantSettingsPage() {
         ownerEmail: ownerEmail,
       };
 
-      const res = await fetch(`/api/organizations/${encodeURIComponent(activeTenant.id)}`, {
+      const res = await fetch(`/api/organizations/${encodeURIComponent(targetIdentifier)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        console.warn("Server response notice:", errorData);
+        await fetch("/api/organizations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...payload, id: targetIdentifier }),
+        });
       }
 
       setIsSaved(true);

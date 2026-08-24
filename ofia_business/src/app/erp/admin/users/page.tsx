@@ -26,6 +26,7 @@ import {
   Globe,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
+import { ErpStatGrid } from "@/components/erp/ErpStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
@@ -82,6 +83,7 @@ function UserManagementContent() {
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
+  const [deptFilter, setDeptFilter] = useState("");
   const [page, setPage] = useState(1);
   const itemsPerPage = 8;
 
@@ -291,6 +293,8 @@ function UserManagementContent() {
     }
   };
 
+  const departmentsList = Array.from(new Set(users.map((u) => u.department).filter(Boolean))).sort();
+
   const filtered = users.filter((u) => {
     const matchesSearch =
       u.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -298,7 +302,8 @@ function UserManagementContent() {
       u.department.toLowerCase().includes(search.toLowerCase()) ||
       u.designation.toLowerCase().includes(search.toLowerCase());
     const matchesRole = roleFilter === "ALL" || u.role === roleFilter;
-    return matchesSearch && matchesRole;
+    const matchesDept = deptFilter === "" || u.department === deptFilter;
+    return matchesSearch && matchesRole && matchesDept;
   });
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
@@ -312,12 +317,36 @@ function UserManagementContent() {
     return u.role === "manager" || u.role === "md" || u.role === "admin";
   });
 
+  const leadershipCount = users.filter((u) => ["manager", "md", "admin", "hr"].includes(u.role)).length;
+  const departmentsCount = departmentsList.length || DEPARTMENTS.length;
+
+  const getRoleBadge = (role: RoleKey) => {
+    switch (role) {
+      case "admin":
+        return <NexaBadge variant="red" size="sm" className="rounded-full">Admin</NexaBadge>;
+      case "md":
+        return <NexaBadge variant="brand" size="sm" className="rounded-full bg-purple-500/10 text-purple-600 border border-purple-500/20">MD (Exec)</NexaBadge>;
+      case "hr":
+        return <NexaBadge variant="green" size="sm" className="rounded-full">HR Lead</NexaBadge>;
+      case "manager":
+        return <NexaBadge variant="brand" size="sm" className="rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20">Manager</NexaBadge>;
+      case "accountant":
+        return <NexaBadge variant="neutral" size="sm" className="rounded-full bg-teal-500/10 text-teal-600 border border-teal-500/20">Accountant</NexaBadge>;
+      case "marketer":
+        return <NexaBadge variant="neutral" size="sm" className="rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">Marketer</NexaBadge>;
+      case "employee":
+        return <NexaBadge variant="secondary" size="sm" className="rounded-full">Employee</NexaBadge>;
+      default:
+        return <NexaBadge variant="secondary" size="sm" className="rounded-full capitalize">{role.replace("_", " ")}</NexaBadge>;
+    }
+  };
+
   return (
     <ErpAdminShell
       title="User Management & Staff Directory"
       subtitle={`Corporate identity governance and 10-tier RBAC role assignment for tenant '${displayTenantName}' synced directly to MySQL.`}
       action={
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           {/* Dynamic Tenant Selector / Badge */}
           {tenants.length > 1 ? (
             <div className="relative">
@@ -379,234 +408,242 @@ function UserManagementContent() {
         </div>
       )}
 
-      <div className="space-y-4 font-sans">
-        {/* KPI COUNTERS */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-          <div className="p-4 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] shadow-xs">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--nexa-text-muted)]">
-              Total Staff Accounts
-            </span>
-            <p className="text-xl font-black font-mono text-[var(--nexa-text-primary)] mt-1">
-              {isLoadingUsers ? "..." : users.length}
-            </p>
-          </div>
-          <div className="p-4 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] shadow-xs">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--nexa-text-muted)]">
-              Active Status
-            </span>
-            <p className="text-xl font-black font-mono text-emerald-500 mt-1">
-              {isLoadingUsers ? "..." : users.filter((u) => u.status === "ACTIVE").length}
-            </p>
-          </div>
-          <div className="p-4 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] shadow-xs">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--nexa-text-muted)]">
-              Live Database Tenant
-            </span>
-            <p className="text-sm font-black text-[#1A56DB] mt-1 truncate" title={activeTenant?.domain || displayTenantName}>
-              {displayTenantName}
-            </p>
-          </div>
-          <div className="p-4 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] shadow-xs">
-            <span className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--nexa-text-muted)]">
-              Database Persistence
-            </span>
-            <p className="text-xl font-black font-mono text-purple-500 mt-1 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              MySQL Live
-            </p>
-          </div>
-        </div>
+      <div className="space-y-10">
+        {/* TOP 4 KPI CARDS — MATCHING HR & ADMIN VERBATIM */}
+        <ErpStatGrid
+          stats={[
+            {
+              label: "Total Staff",
+              value: `${isLoadingUsers ? "..." : users.length} Accounts`,
+              change: "100% Enrolled",
+              trend: "up",
+              icon: <Users className="w-5 h-5 text-blue-500" />,
+              sub: "Active workspace corporate staff",
+            },
+            {
+              label: "Leadership & Managers",
+              value: `${leadershipCount} Officers`,
+              change: "Direct Hierarchy",
+              trend: "up",
+              icon: <ShieldCheck className="w-5 h-5 text-purple-500" />,
+              sub: "Supervisory & MD tiers",
+            },
+            {
+              label: "Departments",
+              value: `${departmentsCount} Divisions`,
+              change: "Operational",
+              trend: "up",
+              icon: <Briefcase className="w-5 h-5 text-emerald-500" />,
+              sub: "Assigned business units",
+            },
+            {
+              label: "Database Persistence",
+              value: "MySQL Live",
+              change: activeTenant?.slug || "Live Sync",
+              trend: "up",
+              icon: <CheckCircle2 className="w-5 h-5 text-amber-500" />,
+              sub: `${displayTenantName} verified`,
+            },
+          ]}
+        />
 
-        {/* SEARCH AND FILTERS */}
-        <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
-          <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 text-[var(--nexa-text-muted)] absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search staff by name, email, department..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB] transition-colors"
-            />
-          </div>
+        {/* STAFF DIRECTORY TABLE CONTAINER — MATCHING HR PAGE CARD DESIGN */}
+        <NexaCard variant="glass" padding="lg" className="space-y-4 rounded-3xl">
+          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-3 border-b border-[var(--nexa-border)]">
+            <div>
+              <h3 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">
+                Corporate Staff Directory & Access Governance
+              </h3>
+              <p className="text-[11px] text-[var(--nexa-text-muted)] font-medium">
+                Manage workforce accounts, RBAC permissions, and reporting hierarchies
+              </p>
+            </div>
 
-          <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto justify-end">
-            {["ALL", "admin", "md", "hr", "accountant", "marketer", "manager", "employee", "cashier", "inventory_officer", "dispatcher"].map((r) => (
-              <button
-                key={r}
-                onClick={() => {
-                  setRoleFilter(r);
+            {/* Filters matching HR page */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="relative">
+                <Search className="w-3.5 h-3.5 text-[var(--nexa-text-muted)] absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search staff by name, email..."
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setPage(1);
+                  }}
+                  className="pl-8 pr-3 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] font-medium rounded-full text-xs outline-none focus:border-[#1A56DB] transition-all w-48 sm:w-60"
+                />
+              </div>
+
+              <select
+                value={deptFilter}
+                onChange={(e) => {
+                  setDeptFilter(e.target.value);
                   setPage(1);
                 }}
-                className={`px-2.5 py-1 rounded-xl text-xs font-bold capitalize transition-all cursor-pointer ${
-                  roleFilter === r
-                    ? "bg-[#1A56DB] text-white shadow-xs font-bold"
-                    : "text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)]"
-                }`}
+                className="px-3 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] font-bold rounded-full text-xs outline-none cursor-pointer"
               >
-                {r === "md" ? "MD (Exec)" : r.replace("_", " ")}
-              </button>
-            ))}
-          </div>
-        </div>
+                <option value="">All Departments</option>
+                {departmentsList.map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept}
+                  </option>
+                ))}
+              </select>
 
-        {/* USERS TABLE */}
-        <div className="overflow-x-auto rounded-2xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] shadow-xs">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[var(--nexa-bg-base)] text-[var(--nexa-text-muted)] border-b border-[var(--nexa-border)] font-semibold">
-              <tr>
-                <th className="py-3 px-4">Staff Member</th>
-                <th className="py-3 px-3">Department & Designation</th>
-                <th className="py-3 px-3">Reporting Manager</th>
-                <th className="py-3 px-3">Active RBAC Role</th>
-                <th className="py-3 px-3">Tenant Organization</th>
-                <th className="py-3 px-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[var(--nexa-border)] text-[var(--nexa-text-primary)]">
-              {isLoadingUsers ? (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-xs text-[var(--nexa-text-muted)]">
-                    <RefreshCw className="w-5 h-5 mx-auto animate-spin mb-2 text-[#1A56DB]" />
-                    Loading staff records from database...
-                  </td>
+              <select
+                value={roleFilter}
+                onChange={(e) => {
+                  setRoleFilter(e.target.value);
+                  setPage(1);
+                }}
+                className="px-3 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] font-bold rounded-full text-xs outline-none cursor-pointer"
+              >
+                <option value="ALL">All Roles</option>
+                <option value="admin">Admin</option>
+                <option value="md">MD (Executive)</option>
+                <option value="hr">HR</option>
+                <option value="manager">Manager</option>
+                <option value="accountant">Accountant</option>
+                <option value="marketer">Marketer</option>
+                <option value="employee">Employee</option>
+                <option value="cashier">POS Cashier</option>
+                <option value="inventory_officer">Inventory Officer</option>
+                <option value="dispatcher">Dispatcher</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-[var(--nexa-border)] text-[var(--nexa-text-muted)]">
+                  <th className="pb-3 px-3 font-bold uppercase tracking-wider">Employee</th>
+                  <th className="pb-3 px-3 font-bold uppercase tracking-wider">Department</th>
+                  <th className="pb-3 px-3 font-bold uppercase tracking-wider">Designation</th>
+                  <th className="pb-3 px-3 font-bold uppercase tracking-wider">Reporting Manager</th>
+                  <th className="pb-3 px-3 font-bold uppercase tracking-wider">Access Role</th>
+                  <th className="pb-3 px-3 font-bold uppercase tracking-wider text-right">Actions</th>
                 </tr>
-              ) : paginatedUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-xs text-[var(--nexa-text-muted)]">
-                    No staff members match the selected criteria.
-                  </td>
-                </tr>
-              ) : (
-                paginatedUsers.map((u) => (
-                  <tr key={u.id} className="hover:bg-[var(--nexa-bg-base)]/50 transition-colors">
-                    <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-2.5">
+              </thead>
+              <tbody className="divide-y divide-[var(--nexa-border)] text-[var(--nexa-text-primary)]">
+                {isLoadingUsers ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-xs text-[var(--nexa-text-muted)] font-medium">
+                      <RefreshCw className="w-5 h-5 mx-auto animate-spin mb-2 text-[#1A56DB]" />
+                      Loading staff records from database...
+                    </td>
+                  </tr>
+                ) : paginatedUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-[var(--nexa-text-muted)] font-medium">
+                      No staff members match the selected filters.
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedUsers.map((u) => (
+                    <tr key={u.id} className="hover:bg-[var(--nexa-bg-base)]/50 transition-colors">
+                      <td className="py-3.5 px-3 flex items-center gap-3">
                         <img
                           src={u.avatar}
                           alt={u.name}
-                          className="w-9 h-9 rounded-full object-cover shrink-0 ring-2 ring-[#1A56DB]/15 shadow-xs border border-[var(--nexa-border)]"
+                          className="w-8 h-8 rounded-full object-cover border border-[var(--nexa-border)] shadow-xs"
                         />
                         <div>
-                          <div className="font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
-                            {u.name}
+                          <p className="font-bold text-xs">{u.name}</p>
+                          <p className="text-[10px] text-[var(--nexa-text-muted)] font-mono">{u.email} • {u.id}</p>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-3 text-[var(--nexa-text-muted)] font-medium">{u.department}</td>
+                      <td className="py-3.5 px-3 text-[var(--nexa-text-primary)] font-semibold">{u.designation}</td>
+                      <td className="py-3.5 px-3">
+                        {u.managerName ? (
+                          <span className="font-medium text-xs text-[var(--nexa-text-primary)] flex items-center gap-1.5">
+                            <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
+                            {u.managerName}
+                          </span>
+                        ) : (
+                          <span className="text-[var(--nexa-text-muted)] font-medium">—</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-3">
+                        {editingUserId === u.id ? (
+                          <select
+                            value={selectedRole}
+                            onChange={(e) => setSelectedRole(e.target.value as RoleKey)}
+                            className="px-2.5 py-1 text-xs font-bold rounded-full bg-[var(--nexa-bg-base)] border border-[#1A56DB] text-[var(--nexa-text-primary)] outline-none"
+                          >
+                            <option value="admin">Admin</option>
+                            <option value="md">MD (Executive)</option>
+                            <option value="hr">HR</option>
+                            <option value="accountant">Accountant</option>
+                            <option value="marketer">Marketer</option>
+                            <option value="manager">Manager</option>
+                            <option value="employee">Employee</option>
+                            <option value="cashier">POS Cashier</option>
+                            <option value="inventory_officer">Inventory Officer</option>
+                            <option value="dispatcher">Dispatcher</option>
+                          </select>
+                        ) : (
+                          getRoleBadge(u.role)
+                        )}
+                      </td>
+                      <td className="py-3.5 px-3 text-right">
+                        {editingUserId === u.id ? (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => handleRoleChange(u.id, selectedRole)}
+                              disabled={isSaving}
+                              className="px-3 py-1 rounded-full bg-emerald-600 text-white font-bold hover:bg-emerald-700 text-xs cursor-pointer shadow-xs"
+                            >
+                              {isSaving ? "Saving..." : "Save"}
+                            </button>
+                            <button
+                              onClick={() => setEditingUserId(null)}
+                              className="px-3 py-1 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-xs font-semibold cursor-pointer"
+                            >
+                              Cancel
+                            </button>
                           </div>
-                          <div className="text-[11px] text-[var(--nexa-text-muted)] font-mono">{u.email} • {u.id}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-3">
-                      <div className="font-semibold text-[var(--nexa-text-primary)]">{u.department}</div>
-                      <div className="text-[11px] text-[var(--nexa-text-muted)]">{u.designation}</div>
-                    </td>
-                    <td className="py-3.5 px-3 text-[11px] text-[var(--nexa-text-muted)]">
-                      {u.managerName ? (
-                        <span className="flex items-center gap-1 font-medium text-[var(--nexa-text-primary)]">
-                          <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
-                          {u.managerName}
-                        </span>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                    <td className="py-3.5 px-3">
-                      {editingUserId === u.id ? (
-                        <select
-                          value={selectedRole}
-                          onChange={(e) => setSelectedRole(e.target.value as RoleKey)}
-                          className="px-2.5 py-1 text-xs font-bold rounded-lg bg-[var(--nexa-bg-base)] border border-[#1A56DB] text-[var(--nexa-text-primary)] outline-none"
-                        >
-                          <option value="admin">Admin</option>
-                          <option value="md">MD (Executive)</option>
-                          <option value="hr">HR</option>
-                          <option value="accountant">Accountant</option>
-                          <option value="marketer">Marketer</option>
-                          <option value="manager">Manager</option>
-                          <option value="employee">Employee</option>
-                          <option value="cashier">POS Cashier</option>
-                          <option value="inventory_officer">Inventory Officer</option>
-                          <option value="dispatcher">Dispatcher</option>
-                        </select>
-                      ) : (
-                        <span className="text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20">
-                          {u.role.replace("_", " ")}
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-3">
-                      <div className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                        {u.company || displayTenantName}
-                      </div>
-                      <div className="text-[10px] text-[var(--nexa-text-muted)]">
-                        {u.location || "Lagos, Nigeria"}
-                      </div>
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      {editingUserId === u.id ? (
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => handleRoleChange(u.id, selectedRole)}
-                            disabled={isSaving}
-                            className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700 text-xs cursor-pointer shadow-xs"
-                          >
-                            {isSaving ? "Saving..." : "Save"}
-                          </button>
-                          <button
-                            onClick={() => setEditingUserId(null)}
-                            className="px-2.5 py-1 rounded-lg bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-xs font-semibold cursor-pointer"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => {
-                              setEditingUserId(u.id);
-                              setSelectedRole(u.role);
-                            }}
-                            className="p-1.5 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[#1A56DB] hover:border-[#1A56DB] font-semibold transition-colors cursor-pointer"
-                            title="Quick Change Role"
-                          >
-                            <Key className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleOpenEditModal(u)}
-                            className="p-1.5 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[#1A56DB] hover:border-[#1A56DB] font-semibold transition-colors cursor-pointer"
-                            title="Edit Full Staff Profile"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteStaffUser(u.id, u.name)}
-                            className="p-1.5 rounded-lg border border-rose-500/20 bg-rose-500/10 text-rose-600 hover:bg-rose-500 hover:text-white transition-colors cursor-pointer"
-                            title="Delete User"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                        ) : (
+                          <div className="flex items-center justify-end gap-1.5">
+                            <NexaButton
+                              size="sm"
+                              variant="outline"
+                              className="rounded-full text-xs h-7"
+                              onClick={() => handleOpenEditModal(u)}
+                            >
+                              Edit
+                            </NexaButton>
+                            <NexaButton
+                              size="sm"
+                              variant="outline"
+                              className="rounded-full text-xs h-7 hover:border-red-500 hover:text-red-500 text-rose-500"
+                              onClick={() => handleDeleteStaffUser(u.id, u.name)}
+                            >
+                              Delete
+                            </NexaButton>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
 
-        {/* PAGINATION CONTROLLER */}
-        {!isLoadingUsers && filtered.length > 0 && (
-          <Pagination
-            currentPage={page}
-            totalPages={totalPages}
-            totalItems={filtered.length}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setPage}
-          />
-        )}
+          {/* PAGINATION CONTROLLER */}
+          {!isLoadingUsers && filtered.length > 0 && (
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={filtered.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setPage}
+            />
+          )}
+        </NexaCard>
       </div>
 
       {/* ADD / EDIT STAFF USER MODAL */}

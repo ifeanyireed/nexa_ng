@@ -301,6 +301,58 @@ export const MARKETPLACE_API = {
   },
 };
 
+// 4B. 7 MASTER LAYOUT TEMPLATES & SUBDOMAIN MAPPINGS (:8083)
+export const LAYOUTS_API = {
+  getLayoutTemplates: async () => {
+    return fetchJSON<any[]>(`${MARKETPLACE_BASE}/layouts`);
+  },
+
+  getLayoutTemplate: async (key: string) => {
+    return fetchJSON<any>(`${MARKETPLACE_BASE}/layouts/${encodeURIComponent(key)}`);
+  },
+
+  createLayoutTemplate: async (data: any) => {
+    return fetchJSON<any>(`${MARKETPLACE_BASE}/layouts`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateLayoutTemplate: async (key: string, data: any) => {
+    return fetchJSON<any>(`${MARKETPLACE_BASE}/layouts/${encodeURIComponent(key)}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  deleteLayoutTemplate: async (key: string) => {
+    return fetchJSON<any>(`${MARKETPLACE_BASE}/layouts/${encodeURIComponent(key)}`, {
+      method: "DELETE",
+    });
+  },
+
+  getSubdomainLayouts: async () => {
+    return fetchJSON<any[]>(`${MARKETPLACE_BASE}/subdomain-layouts`);
+  },
+
+  getSubdomainLayout: async (slug: string) => {
+    return fetchJSON<any>(`${MARKETPLACE_BASE}/subdomain-layouts/${encodeURIComponent(slug)}`);
+  },
+
+  updateSubdomainLayout: async (slug: string, data: { layout_key: string; custom_title?: string; custom_subtitle?: string; theme_color?: string; vertical_type?: string; is_active?: boolean }) => {
+    return fetchJSON<any>(`${MARKETPLACE_BASE}/subdomain-layouts/${encodeURIComponent(slug)}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  seedSubdomainLayouts: async () => {
+    return fetchJSON<any>(`${MARKETPLACE_BASE}/subdomain-layouts/seed`, {
+      method: "POST",
+    });
+  },
+};
+
 // 5. ENTERPRISE ERP SERVICE (:8084)
 export const ERP_API = {
   getTenants: async () => {

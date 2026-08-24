@@ -258,3 +258,45 @@ func (n *Notification) BeforeCreate(tx *gorm.DB) error {
 	}
 	return nil
 }
+
+type LayoutTemplate struct {
+	ID           string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	Key          string    `gorm:"uniqueIndex;type:varchar(100);not null" json:"key"`
+	Name         string    `gorm:"type:varchar(191);not null" json:"name"`
+	Badge        string    `gorm:"type:varchar(100);not null" json:"badge"`
+	Description  string    `gorm:"type:text" json:"description"`
+	Icon         string    `gorm:"type:varchar(100)" json:"icon"`
+	ComponentKey string    `gorm:"type:varchar(100)" json:"component_key"`
+	ConfigJSON   string    `gorm:"type:text;column:config_json" json:"config_json"`
+	CreatedAt    time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt    time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+func (l *LayoutTemplate) BeforeCreate(tx *gorm.DB) error {
+	if l.ID == "" {
+		l.ID = "lay_" + uuid.New().String()[:12]
+	}
+	return nil
+}
+
+type SubdomainLayout struct {
+	ID            string          `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	SubdomainSlug string          `gorm:"uniqueIndex;type:varchar(191);not null;column:subdomain_slug" json:"subdomain_slug"`
+	LayoutKey     string          `gorm:"type:varchar(100);not null;column:layout_key" json:"layout_key"`
+	Layout        *LayoutTemplate `gorm:"foreignKey:LayoutKey;references:Key" json:"layout,omitempty"`
+	VerticalType  string          `gorm:"type:varchar(50);default:'SUBCATEGORY_NICHE';column:vertical_type" json:"vertical_type"`
+	CustomTitle   string          `gorm:"type:varchar(255);column:custom_title" json:"custom_title"`
+	CustomSubtitle string         `gorm:"type:varchar(500);column:custom_subtitle" json:"custom_subtitle"`
+	ThemeColor    string          `gorm:"type:varchar(100);column:theme_color" json:"theme_color"`
+	IsActive      bool            `gorm:"default:true;column:is_active" json:"is_active"`
+	CreatedAt     time.Time       `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt     time.Time       `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+func (s *SubdomainLayout) BeforeCreate(tx *gorm.DB) error {
+	if s.ID == "" {
+		s.ID = "sublay_" + uuid.New().String()[:12]
+	}
+	return nil
+}
+

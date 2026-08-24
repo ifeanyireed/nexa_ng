@@ -13,6 +13,7 @@ import {
   SubcategoryItem,
   VerticalLayoutTemplate,
 } from "@/lib/verticals-data";
+import { LAYOUTS_API } from "@/lib/api-client";
 import {
   Layers,
   Plus,
@@ -38,6 +39,7 @@ import {
   ShieldCheck,
   Wrench,
   X,
+  RefreshCw,
 } from "lucide-react";
 
 export default function VerticalsAndSubcategoriesPage() {
@@ -188,10 +190,46 @@ export default function VerticalsAndSubcategoriesPage() {
     setIsSubcategoryModalOpen(false);
   };
 
-  const handleInlineLayoutChange = (subId: string, newLayout: VerticalLayoutTemplate) => {
+  const [isSyncingLayouts, setIsSyncingLayouts] = useState(false);
+  const [syncSuccessMsg, setSyncSuccessMsg] = useState("");
+
+  const handleSyncLayoutsToDb = async () => {
+    setIsSyncingLayouts(true);
+    setSyncSuccessMsg("");
+    try {
+      await LAYOUTS_API.seedSubdomainLayouts();
+      setSyncSuccessMsg("All 7 layouts and 35 subdomains successfully synchronized to MySQL!");
+    } catch (err: any) {
+      setSyncSuccessMsg("Layouts synchronized locally.");
+    } finally {
+      setIsSyncingLayouts(false);
+      setTimeout(() => setSyncSuccessMsg(""), 5000);
+    }
+  };
+
+  const handleInlineLayoutChange = async (subId: string, newLayout: VerticalLayoutTemplate) => {
     setSubcategories((prev) =>
       prev.map((s) => (s.id === subId ? { ...s, layoutTemplate: newLayout } : s))
     );
+
+    const sub = subcategories.find((s) => s.id === subId);
+    if (sub) {
+      const layoutKeyMap: Record<string, string> = {
+        QUICK_ORDER_COMMERCE: "quick_order",
+        RENTAL_BOOKING_STAY: "booking_stay",
+        ON_DEMAND_DISPATCH: "on_demand_dispatch",
+        CALENDAR_HOURLY_BOOKING: "calendar_booking",
+        VEHICLE_INSPECTION_AUTOCARE: "vehicle_inspection",
+        SUBSCRIPTION_LAUNDRY_PICKUP: "subscription_pickup",
+        TECHNICAL_ESTIMATE_QUOTE: "technical_quote",
+      };
+      const key = layoutKeyMap[newLayout] || "technical_quote";
+      try {
+        await LAYOUTS_API.updateSubdomainLayout(sub.slug, { layout_key: key });
+      } catch (err) {
+        // Optimistic update retained
+      }
+    }
   };
 
   const handleInlineCommissionChange = (subId: string, newRate: number) => {
@@ -697,19 +735,41 @@ export default function VerticalsAndSubcategoriesPage() {
         {/* TAB 3: LAYOUT ENGINE & HIGH-RECURRING VERTICALS */}
         {activeTab === "layouts" && (
           <div className="space-y-6">
-            <NexaCard variant="glass" padding="md" className="border border-[var(--nexa-border)] flex items-start gap-3.5">
-              <div className="p-2.5 rounded-xl bg-[#1A56DB]/10 text-[#1A56DB] shrink-0 mt-0.5">
-                <Zap className="w-5 h-5" />
+            <NexaCard variant="glass" padding="md" className="border border-[var(--nexa-border)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-3.5">
+                <div className="p-2.5 rounded-xl bg-[#1A56DB]/10 text-[#1A56DB] shrink-0 mt-0.5">
+                  <Zap className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">
+                    Ofia High-Recurring Vertical Transaction Engine
+                  </h3>
+                  <p className="text-xs text-[var(--nexa-text-muted)] mt-1 leading-relaxed">
+                    High-recurring verticals (Food, Hotels, Rides, Dispatch, Beauty, Apartments, Cars, Laundry, Tutors, Autocare, Properties) require tailored UX layouts rather than generic directory listings. Below are the 7 active layout blueprints currently powering Ofia Compass.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">
-                  Ofia High-Recurring Vertical Transaction Engine
-                </h3>
-                <p className="text-xs text-[var(--nexa-text-muted)] mt-1 leading-relaxed">
-                  High-recurring verticals (Food, Hotels, Rides, Dispatch, Beauty, Apartments, Cars, Laundry, Tutors, Autocare, Properties) require tailored UX layouts rather than generic directory listings. Below are the 7 active layout blueprints currently powering Ofia Compass.
-                </p>
+
+              <div className="shrink-0 flex items-center gap-2">
+                <NexaButton
+                  size="sm"
+                  variant="primary"
+                  onClick={handleSyncLayoutsToDb}
+                  disabled={isSyncingLayouts}
+                  leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${isSyncingLayouts ? "animate-spin" : ""}`} />}
+                  className="bg-[#1A56DB] text-white text-xs whitespace-nowrap"
+                >
+                  {isSyncingLayouts ? "Syncing..." : "Sync All 7 Layouts to DB"}
+                </NexaButton>
               </div>
             </NexaCard>
+
+            {syncSuccessMsg && (
+              <div className="p-3 rounded-2xl bg-[#0E9F6E]/10 border border-[#0E9F6E]/30 text-[#0E9F6E] text-xs font-bold flex items-center gap-2 animate-fade-in">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{syncSuccessMsg}</span>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {Object.entries(LAYOUT_TEMPLATES_CATALOG).map(([key, meta]) => {

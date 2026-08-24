@@ -58,6 +58,7 @@ import { useLocation } from "@/components/nexa/LocationContext";
 import { api } from "@/lib/api";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { NicheLayoutRenderer } from "@/components/templates/NicheLayoutRenderer";
 
 // --- HELPERS ---
 
@@ -192,7 +193,12 @@ const BuyerModeLayout = ({ data, nicheSlug, activeSubService, setActiveSubServic
         </div>
       </section>
 
-      <div className="container mx-auto px-4 py-16 space-y-24">
+      <div className="container mx-auto px-4 py-10 space-y-16">
+        {/* DYNAMIC 7-LAYOUT TEMPLATE COCKPIT */}
+        <section>
+          <NicheLayoutRenderer nicheSlug={nicheSlug} />
+        </section>
+
         <section>
           <SectionHeader 
             title={`Top Rated ${activeSubService.replace(" Finder", "s")} Near You`} 

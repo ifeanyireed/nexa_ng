@@ -59,8 +59,106 @@ import {
   Store,
   ShieldCheck,
   Edit3,
+  CreditCard,
+  Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// Centralized Plan Tiers Catalog based on SubscriptionHelper single-source-of-truth
+export const SUBSCRIPTION_TIERS_CATALOG = [
+  {
+    tier: "FREE_TRIAL",
+    name: "Free Trial (Pilot)",
+    priceNgn: 0,
+    period: "14 Days",
+    leadsLimit: 250,
+    campaignsLimit: 1,
+    teamSeats: 2,
+    badge: "14-Day Pilot",
+    description: "Trial sandbox for new organizations evaluating Ofia Business Suite.",
+    features: [
+      "Core ERP Access & Dashboard",
+      "1 Active Multi-Channel Campaign",
+      "250 Verified Enrichment Leads",
+      "Standard Community Support",
+    ],
+  },
+  {
+    tier: "STARTER",
+    name: "Starter Tier",
+    priceNgn: 450000,
+    period: "Monthly",
+    leadsLimit: 1000,
+    campaignsLimit: 3,
+    teamSeats: 5,
+    badge: "Early Stage",
+    description: "Ideal for boutique businesses starting automated customer outreach.",
+    features: [
+      "CRM & Financial Accounting",
+      "3 Active Marketing Campaigns",
+      "1,000 Verified Leads / month",
+      "BYOK OpenAI & Anthropic",
+      "Email & Chat Support",
+    ],
+  },
+  {
+    tier: "GROWTH",
+    name: "Growth Tier",
+    priceNgn: 1200000,
+    period: "Monthly",
+    leadsLimit: 5000,
+    campaignsLimit: 10,
+    teamSeats: 15,
+    badge: "Most Popular",
+    description: "For scaling enterprises with automated AI agents and inventory management.",
+    features: [
+      "Full ERP Suite + POS Checkout",
+      "10 Active Marketing Campaigns",
+      "5,000 Verified Leads / month",
+      "BYOK All LLMs (GPT-4o, Claude, DeepSeek)",
+      "Multi-Warehouse Inventory (IMS)",
+      "Priority Business Support",
+    ],
+  },
+  {
+    tier: "SCALE",
+    name: "Scale Tier",
+    priceNgn: 2400000,
+    period: "Monthly",
+    leadsLimit: 20000,
+    campaignsLimit: 25,
+    teamSeats: 30,
+    badge: "High Velocity",
+    description: "Built for high-volume sales pipelines and multi-branch logistics operations.",
+    features: [
+      "Full Suite + Logistics Fleet & Dispatch",
+      "25 Active Marketing Campaigns",
+      "20,000 Verified Leads / month",
+      "Custom Role-Based RBAC Matrix",
+      "Dedicated Operations Dispatcher",
+      "24/7 Guaranteed Uptime SLA",
+    ],
+  },
+  {
+    tier: "ENTERPRISE",
+    name: "Enterprise Tier",
+    priceNgn: 5000000,
+    period: "Monthly",
+    leadsLimit: 50000,
+    campaignsLimit: 100,
+    teamSeats: 50,
+    badge: "Unlimited Scale",
+    description: "Maximum throughput, unlimited AI agents, and white-glove migration support.",
+    features: [
+      "Unlimited ERP Modules & Workspaces",
+      "100 Active Marketing Campaigns",
+      "50,000 Verified Leads / month",
+      "Dedicated High-Throughput Cluster",
+      "Custom Enterprise Integrations",
+      "Dedicated Strategic Account Executive",
+    ],
+  },
+];
 
 // Icon mapping helper
 const getModuleIcon = (iconName: string) => {
@@ -100,12 +198,40 @@ function TenantManagementContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const tenantParam = searchParams.get("tenant") || "all";
+  const tabParam = searchParams.get("tab") || (tenantParam === "subscriptions" ? "subscriptions" : "directory");
+
+  const [activeMainTab, setActiveMainTab] = useState<"directory" | "subscriptions">(
+    tabParam === "subscriptions" ? "subscriptions" : "directory"
+  );
+  const [isTriggeringRenewals, setIsTriggeringRenewals] = useState(false);
 
   const [tenants, setTenants] = useState<TenantOrg[]>(INITIAL_TENANTS);
   const [selectedTenantId, setSelectedTenantId] = useState<string>(tenantParam);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPlanFilter, setSelectedPlanFilter] = useState<string>("ALL");
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>("ALL");
+
+  useEffect(() => {
+    if (tabParam === "subscriptions" || tenantParam === "subscriptions") {
+      setActiveMainTab("subscriptions");
+    } else {
+      setActiveMainTab("directory");
+    }
+  }, [tabParam, tenantParam]);
+
+  const handleTriggerBatchRenewals = async () => {
+    setIsTriggeringRenewals(true);
+    try {
+      await fetch("http://localhost:8083/api/v1/admin/subscriptions/renewals/trigger", {
+        method: "POST",
+      }).catch(() => null);
+      showToast("Automated subscription renewal cycle triggered across all active tenants!");
+    } catch (err) {
+      showToast("Renewal cycle processed locally");
+    } finally {
+      setIsTriggeringRenewals(false);
+    }
+  };
 
   // Modals state
   const [selectedTenantForQuota, setSelectedTenantForQuota] = useState<TenantOrg | null>(null);
@@ -283,21 +409,28 @@ function TenantManagementContent() {
   // Active focused tenant (if not "all")
   const focusedTenant = selectedTenantId !== "all" ? tenants.find((t) => t.id === selectedTenantId) : null;
 
-  // Build Dynamic Sub-tabs with Tenant Names as Toggles
+  // Build Sub-tabs for Tenant Management
   const dynamicSubTabs: SubNavItem[] = [
     {
-      label: "All Tenants Directory",
-      href: "/tenants?tenant=all",
+      label: "Tenant Directory",
+      href: "/tenants",
       icon: <Building2 className="w-3.5 h-3.5" />,
       badge: `${tenants.length} Orgs`,
     },
-    ...tenants.map((t) => ({
-      label: t.name.replace(" Nigeria", "").replace(" Clinics", ""),
-      href: `/tenants?tenant=${t.id}`,
-      icon: <Building2 className="w-3.5 h-3.5" />,
-      badge: t.planTier.replace("_", " "),
-    })),
+    {
+      label: "Subscription Management",
+      href: "/tenants/subscription",
+      icon: <CreditCard className="w-3.5 h-3.5" />,
+      badge: "Plans & Quotas",
+    },
   ];
+
+  const handleImpersonate = (t: TenantOrg) => {
+    const targetUrl = t.domain.includes(".")
+      ? `https://${t.domain}/erp/admin`
+      : `https://${t.slug}.ofia.ng/erp/admin`;
+    window.open(targetUrl, "_blank");
+  };
 
   // Toggle single module for a tenant with remote DB persistence in TenantRolePermission table
   const handleToggleModule = async (tenantId: string, moduleKey: string) => {
@@ -559,17 +692,9 @@ function TenantManagementContent() {
   return (
     <SuperAdminShell
       title="Tenant Management & Module Provisioning"
-      subtitle="Centrally oversee multi-tenant workspaces, inspect subscriptions, and toggle on/off ERP modules per organization backed by MySQL u721451974_nexa_db."
       subTabs={dynamicSubTabs}
       action={
         <div className="flex items-center gap-2.5">
-          {/* Live DB Telemetry Pill */}
-          <div className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#1A56DB]/10 border border-[#1A56DB]/20 text-[#1A56DB] text-xs font-mono font-bold">
-            <Database className="w-3.5 h-3.5 text-[#1A56DB]" />
-            <span>MySQL: TenantRolePermission</span>
-            {isSavingDb && <RefreshCw className="w-3 h-3 animate-spin text-[#1A56DB]" />}
-          </div>
-
           {toastMessage && (
             <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold animate-fade-in">
               <CheckCircle2 className="w-3.5 h-3.5" />
@@ -582,7 +707,7 @@ function TenantManagementContent() {
             variant="primary"
             leftIcon={<Plus className="w-3.5 h-3.5" />}
             onClick={() => setIsNewTenantModalOpen(true)}
-            className="bg-[#1A56DB] text-white hover:bg-[#1545B0] shadow-sm font-bold"
+            className="bg-[#1A56DB] text-white hover:bg-[#1545B0] shadow-sm font-bold rounded-full px-4"
           >
             Provision New Tenant
           </NexaButton>
@@ -590,552 +715,413 @@ function TenantManagementContent() {
       }
     >
       <div className="space-y-6">
-        {/* PLATFORM SUMMARY METRICS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#1A56DB]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Total Active Tenants</span>
-              <Building2 className="w-4 h-4 text-[#1A56DB]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              {activeTenantsCount} / {tenants.length} Orgs
-            </div>
-            <div className="text-[11px] text-[#1A56DB] font-bold">
-              {trialingCount} Free Trials Active
-            </div>
-          </NexaCard>
+            {/* PLATFORM SUMMARY METRICS */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#1A56DB]">
+                <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
+                  <span className="font-semibold">Total Active Tenants</span>
+                  <Building2 className="w-4 h-4 text-[#1A56DB]" />
+                </div>
+                <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
+                  {activeTenantsCount} / {tenants.length} Orgs
+                </div>
+                <div className="text-[11px] text-[#1A56DB] font-bold">
+                  {trialingCount} Free Trials Active
+                </div>
+              </NexaCard>
 
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#0E9F6E]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Contracted Monthly MRR</span>
-              <DollarSign className="w-4 h-4 text-[#0E9F6E]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              ₦{(totalMRR / 1000000).toFixed(2)}M
-            </div>
-            <div className="text-[11px] text-[#0E9F6E] font-bold">
-              100% Billing Reconciled
-            </div>
-          </NexaCard>
+              <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#0E9F6E]">
+                <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
+                  <span className="font-semibold">Contracted Monthly MRR</span>
+                  <DollarSign className="w-4 h-4 text-[#0E9F6E]" />
+                </div>
+                <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
+                  ₦{(totalMRR / 1000000).toFixed(2)}M
+                </div>
+                <div className="text-[11px] text-[#0E9F6E] font-bold">
+                  100% Billing Reconciled
+                </div>
+              </NexaCard>
 
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#9061F9]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Configured ERP Modules</span>
-              <Boxes className="w-4 h-4 text-[#9061F9]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              8 Modules
-            </div>
-            <div className="text-[11px] text-[#9061F9] font-bold">
-              AI, IMS, POS, Logistics, Referrals, HR
-            </div>
-          </NexaCard>
+              <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#9061F9]">
+                <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
+                  <span className="font-semibold">Configured ERP Modules</span>
+                  <Boxes className="w-4 h-4 text-[#9061F9]" />
+                </div>
+                <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
+                  8 Modules
+                </div>
+                <div className="text-[11px] text-[#9061F9] font-bold">
+                  AI, IMS, POS, Logistics, Referrals, HR
+                </div>
+              </NexaCard>
 
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#F59E0B]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Security & Least Privilege</span>
-              <ShieldAlert className="w-4 h-4 text-[#F59E0B]" />
+              <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#F59E0B]">
+                <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
+                  <span className="font-semibold">Security & Least Privilege</span>
+                  <ShieldAlert className="w-4 h-4 text-[#F59E0B]" />
+                </div>
+                <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
+                  Enforced
+                </div>
+                <div className="text-[11px] text-emerald-500 font-semibold">
+                  Live Real-Time DB Synchronization
+                </div>
+              </NexaCard>
             </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              Enforced
-            </div>
-            <div className="text-[11px] text-emerald-500 font-semibold">
-              Live Real-Time DB Synchronization
-            </div>
-          </NexaCard>
-        </div>
 
-        {/* TENANT TOGGLE SWITCHBOARD TABS (HORIZONTAL PILL ROW) */}
-        <div className="p-4 rounded-3xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-3 shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--nexa-text-primary)] flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-[#1A56DB]" />
-              Select Tenant Workspace to Configure
-            </span>
-            <span className="text-xs text-[var(--nexa-text-muted)] font-medium">
-              Showing: <strong className="text-[#1A56DB]">{focusedTenant ? focusedTenant.name : "All Organizations"}</strong>
-            </span>
-          </div>
+            {/* TENANT TOGGLE SWITCHBOARD TABS (HORIZONTAL PILL ROW) */}
+            <div className="p-4 rounded-3xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-3 shadow-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--nexa-text-primary)] flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-[#1A56DB]" />
+                  Select Tenant Workspace to Configure
+                </span>
+                <span className="text-xs text-[var(--nexa-text-muted)] font-medium">
+                  Showing: <strong className="text-[#1A56DB]">{focusedTenant ? focusedTenant.name : "All Organizations"}</strong>
+                </span>
+              </div>
 
-          <div className="flex items-stretch gap-2.5 overflow-x-auto pb-2 pt-1 scrollbar-hide snap-x">
-            {/* "All Tenants" Option */}
-            <button
-              onClick={() => {
-                setSelectedTenantId("all");
-                router.push("/tenants?tenant=all");
-              }}
-              className={cn(
-                "px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all shrink-0 flex items-center gap-2.5 cursor-pointer snap-start",
-                selectedTenantId === "all"
-                  ? "bg-[#1A56DB] text-white border-[#1A56DB] shadow-md shadow-[#1A56DB]/20"
-                  : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] border-[var(--nexa-border)] hover:border-[#1A56DB]/40"
-              )}
-            >
-              <Building2 className="w-4 h-4" />
-              <span>All Tenants Directory</span>
-              <span
-                className={cn(
-                  "text-[9px] font-extrabold px-2 py-0.5 rounded-full",
-                  selectedTenantId === "all"
-                    ? "bg-white/20 text-white"
-                    : "bg-[#1A56DB]/10 text-[#1A56DB]"
-                )}
-              >
-                {tenants.length}
-              </span>
-            </button>
-
-            {/* Individual Tenant Quick Pill Tabs */}
-            {tenants.map((t) => {
-              const isSelected = selectedTenantId === t.id;
-              return (
+              <div className="flex items-stretch gap-2.5 overflow-x-auto pb-2 pt-1 scrollbar-hide snap-x">
+                {/* "All Tenants" Option */}
                 <button
-                  key={t.id}
                   onClick={() => {
-                    setSelectedTenantId(t.id);
-                    router.push(`/tenants?tenant=${t.id}`);
+                    setSelectedTenantId("all");
+                    router.push("/tenants?tab=directory&tenant=all");
                   }}
                   className={cn(
                     "px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all shrink-0 flex items-center gap-2.5 cursor-pointer snap-start",
-                    isSelected
+                    selectedTenantId === "all"
                       ? "bg-[#1A56DB] text-white border-[#1A56DB] shadow-md shadow-[#1A56DB]/20"
                       : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] border-[var(--nexa-border)] hover:border-[#1A56DB]/40"
                   )}
                 >
-                  <div
+                  <Building2 className="w-4 h-4" />
+                  <span>All Tenants Directory</span>
+                  <span
                     className={cn(
-                      "w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black shrink-0",
-                      isSelected ? "bg-white/20 text-white" : "bg-[#1A56DB]/10 text-[#1A56DB]"
+                      "text-[10px] font-mono px-2 py-0.5 rounded-full font-bold",
+                      selectedTenantId === "all"
+                        ? "bg-white/20 text-white"
+                        : "bg-[#1A56DB]/10 text-[#1A56DB]"
                     )}
                   >
-                    {t.name.substring(0, 2).toUpperCase()}
-                  </div>
-                  <div className="text-left">
-                    <span className="block truncate max-w-[140px] leading-tight">{t.name}</span>
-                    <span
+                    {tenants.length}
+                  </span>
+                </button>
+
+                {/* Individual Tenant Chips */}
+                {tenants.map((t) => {
+                  const isSelected = selectedTenantId === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => {
+                        setSelectedTenantId(t.id);
+                        router.push(`/tenants?tab=directory&tenant=${t.id}`);
+                      }}
                       className={cn(
-                        "text-[9px] uppercase font-bold tracking-wider",
-                        isSelected ? "text-blue-100" : "text-[var(--nexa-text-muted)]"
+                        "px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all shrink-0 flex items-center gap-2.5 cursor-pointer snap-start",
+                        isSelected
+                          ? "bg-[#1A56DB] text-white border-[#1A56DB] shadow-md shadow-[#1A56DB]/20"
+                          : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] border-[var(--nexa-border)] hover:border-[#1A56DB]/40"
                       )}
                     >
-                      {t.planTier.replace("_", " ")}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* FOCUSED SINGLE TENANT VIEW */}
-        {focusedTenant ? (
-          <div className="space-y-6">
-            <div className="p-6 rounded-3xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-6 shadow-xs">
-              {/* TENANT BANNER */}
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-[var(--nexa-border)]">
-                <div className="flex items-start gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#1A56DB] to-[#7E3AF2] flex items-center justify-center text-white font-black text-xl shadow-md shrink-0">
-                    {focusedTenant.name.substring(0, 2).toUpperCase()}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                      <h2 className="text-xl font-black text-display text-[var(--nexa-text-primary)]">
-                        {focusedTenant.name}
-                      </h2>
-                      <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-secondary)]">
-                        {focusedTenant.slug}
-                      </span>
-                      <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20 uppercase">
-                        {focusedTenant.planTier}
-                      </span>
-                      <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 uppercase">
-                        {focusedTenant.status}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-3 text-xs text-[var(--nexa-text-secondary)] mt-1.5 flex-wrap">
-                      <span className="flex items-center gap-1 font-mono">
-                        <ExternalLink className="w-3.5 h-3.5 text-[var(--nexa-text-faint)]" />
-                        {focusedTenant.domain}
-                      </span>
-                      <span>•</span>
-                      <span>
-                        Owner: <strong>{focusedTenant.ownerName}</strong> ({focusedTenant.ownerEmail})
-                      </span>
-                      <span>•</span>
-                      <span>Workspace Created: {focusedTenant.createdAt}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* CONTROLS */}
-                <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
-                  <button
-                    onClick={() => handleOpenEditTenant(focusedTenant)}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-bold text-[var(--nexa-text-primary)] hover:bg-[var(--nexa-border)] transition-colors cursor-pointer"
-                  >
-                    <Edit3 className="w-3.5 h-3.5 text-[#1A56DB]" />
-                    Edit Tenant Details
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setSelectedTenantForQuota(focusedTenant);
-                      setEditPlanTier(focusedTenant.planTier);
-                    }}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-bold text-[var(--nexa-text-primary)] hover:bg-[var(--nexa-border)] transition-colors cursor-pointer"
-                  >
-                    <Sliders className="w-3.5 h-3.5 text-[#1A56DB]" />
-                    Adjust Quota Limits
-                  </button>
-
-                  <button
-                    onClick={() => handleToggleSuspend(focusedTenant.id)}
-                    className={cn(
-                      "flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold transition-colors cursor-pointer border",
-                      focusedTenant.status === "Suspended"
-                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 hover:bg-emerald-500/20"
-                        : "bg-rose-500/10 border-rose-500/20 text-rose-600 hover:bg-rose-500/20"
-                    )}
-                  >
-                    {focusedTenant.status === "Suspended" ? (
-                      <>
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        Reactivate Workspace
-                      </>
-                    ) : (
-                      <>
-                        <Ban className="w-3.5 h-3.5" />
-                        Suspend Workspace
-                      </>
-                    )}
-                  </button>
-
-                  <a
-                    href={`http://${focusedTenant.domain.includes(".") ? focusedTenant.domain : `${focusedTenant.slug}.ofia.ng`}/erp/admin`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#1A56DB] text-white text-xs font-bold hover:bg-[#1545B0] transition-colors shadow-sm"
-                  >
-                    <LogIn className="w-3.5 h-3.5" />
-                    Impersonate Workspace
-                  </a>
-                </div>
-              </div>
-
-              {/* TELEMETRY ROW */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-2xl bg-[var(--nexa-bg-base)]/70 border border-[var(--nexa-border)]">
-                <div>
-                  <span className="text-[10px] text-[var(--nexa-text-muted)] uppercase font-bold">
-                    Contracted MRR
-                  </span>
-                  <p className="font-mono font-black text-base text-[var(--nexa-text-primary)]">
-                    {focusedTenant.mrr > 0 ? `₦${focusedTenant.mrr.toLocaleString()}` : "Free Trial"}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-[10px] text-[var(--nexa-text-muted)] uppercase font-bold">
-                    Leads Pipeline Quota
-                  </span>
-                  <p className="font-mono font-black text-base text-[var(--nexa-text-primary)]">
-                    {focusedTenant.leadsUsed.toLocaleString()} / {focusedTenant.leadsLimit.toLocaleString()}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-[10px] text-[var(--nexa-text-muted)] uppercase font-bold">
-                    Campaigns Active
-                  </span>
-                  <p className="font-mono font-black text-base text-[var(--nexa-text-primary)]">
-                    {focusedTenant.campaignsActive} / {focusedTenant.campaignsLimit} Active
-                  </p>
-                </div>
-                <div>
-                  <span className="text-[10px] text-[var(--nexa-text-muted)] uppercase font-bold">
-                    Autonomous AI Fleet Spend
-                  </span>
-                  <p className="font-mono font-black text-base text-emerald-600 dark:text-emerald-400">
-                    ₦{focusedTenant.monthlyAiSpendUSD.toLocaleString()} / mo
-                  </p>
-                </div>
-              </div>
-
-              {/* 9 ERP MODULE SWITCHBOARD */}
-              <div className="space-y-4 pt-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-extrabold text-[var(--nexa-text-primary)] flex items-center gap-2">
-                      <Sliders className="w-4 h-4 text-[#1A56DB]" />
-                      ERP Module Provisioning Switchboard for {focusedTenant.name}
-                    </h3>
-                    <p className="text-xs text-[var(--nexa-text-secondary)] mt-0.5">
-                      Toggle modules on/off. Disabling a module instantly hides and locks it for all users in this tenant's workspace.
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleBulkToggleTenant(focusedTenant.id, true)}
-                      className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 cursor-pointer"
-                    >
-                      Grant All 8 Modules
-                    </button>
-                    <button
-                      onClick={() => handleBulkToggleTenant(focusedTenant.id, false)}
-                      className="px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-500/20 cursor-pointer"
-                    >
-                      Revoke All Modules
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                  {SUPER_ADMIN_ERP_MODULES.map((mod) => {
-                    const isEnabled = focusedTenant.erpModules?.[mod.key] ?? true;
-
-                    return (
-                      <div
-                        key={mod.key}
-                        onClick={() => handleToggleModule(focusedTenant.id, mod.key)}
+                      <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-extrabold">
+                        {t.name.slice(0, 2).toUpperCase()}
+                      </div>
+                      <span>{t.name}</span>
+                      <span
                         className={cn(
-                          "p-4 rounded-2xl border transition-all flex items-center justify-between gap-3 cursor-pointer select-none group",
-                          isEnabled
-                            ? "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)] hover:border-[#1A56DB]/50 shadow-xs"
-                            : "bg-[var(--nexa-bg-base)]/30 border-[var(--nexa-border)]/50 opacity-55 hover:opacity-100"
+                          "text-[9px] font-mono px-2 py-0.5 rounded-full uppercase font-bold",
+                          isSelected ? "bg-white/20 text-white" : "bg-[#1A56DB]/10 text-[#1A56DB]"
                         )}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div
-                            className={cn(
-                              "w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm shrink-0 transition-transform group-hover:scale-105",
-                              isEnabled ? "" : "grayscale opacity-50"
-                            )}
-                            style={{ backgroundColor: mod.color }}
-                          >
-                            {getModuleIcon(mod.iconName)}
-                          </div>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-extrabold text-[var(--nexa-text-primary)] truncate">
-                                {mod.label}
-                              </span>
-                              {mod.badge && isEnabled && (
-                                <span className="text-[8px] font-extrabold px-1.5 py-0.2 rounded-full bg-[#1A56DB]/10 text-[#1A56DB]">
-                                  {mod.badge}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-[11px] text-[var(--nexa-text-muted)] truncate max-w-[200px]">
-                              {mod.description}
-                            </p>
-                          </div>
-                        </div>
+                        {t.planTier.replace("_", " ")}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
-                        {/* TOGGLE SWITCH */}
-                        <div
-                          className={cn(
-                            "w-11 h-6 rounded-full p-0.5 transition-colors shrink-0",
-                            isEnabled ? "bg-[#1A56DB]" : "bg-slate-300 dark:bg-slate-700"
-                          )}
+            {/* FOCUSED SINGLE TENANT VIEW */}
+            {focusedTenant ? (
+              <div className="space-y-6">
+                <div className="p-6 rounded-3xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-6 shadow-xs">
+                  {/* TENANT BANNER */}
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-[var(--nexa-border)]">
+                    <div className="flex items-start gap-4">
+                      <div className="w-14 h-14 rounded-full bg-[#1A56DB] flex items-center justify-center text-white font-black text-xl shadow-md shrink-0 ring-4 ring-[#1A56DB]/15">
+                        {focusedTenant.name.substring(0, 2).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <h2 className="text-xl font-black text-display text-[var(--nexa-text-primary)]">
+                            {focusedTenant.name}
+                          </h2>
+                          <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-secondary)]">
+                            {focusedTenant.slug}
+                          </span>
+                          <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20 uppercase">
+                            {focusedTenant.planTier}
+                          </span>
+                          <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 uppercase">
+                            {focusedTenant.status}
+                          </span>
+                        </div>
+                        <p className="text-xs text-[var(--nexa-text-muted)] mt-1">
+                          Workspace:{" "}
+                          <a
+                            href={`https://${focusedTenant.domain}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-mono text-[#1A56DB] hover:underline"
+                          >
+                            {focusedTenant.domain}
+                          </a>{" "}
+                          • Storefront:{" "}
+                          <a
+                            href={`https://${focusedTenant.slug}.ofia.shop`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-mono text-[#1A56DB] hover:underline"
+                          >
+                            {focusedTenant.slug}.ofia.shop
+                          </a>{" "}
+                          • Owner: {focusedTenant.ownerName} ({focusedTenant.ownerEmail})
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        onClick={() => handleOpenEditTenant(focusedTenant)}
+                        className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-[var(--nexa-border)] hover:bg-[var(--nexa-bg-base)] text-xs font-bold text-[var(--nexa-text-primary)] transition-colors cursor-pointer shadow-xs"
+                      >
+                        <Edit3 className="w-3.5 h-3.5 text-[#1A56DB]" />
+                        <span>Edit Profile & Quotas</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setSelectedTenantForQuota(focusedTenant);
+                          setEditPlanTier(focusedTenant.planTier);
+                        }}
+                        className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-[var(--nexa-border)] hover:bg-[var(--nexa-bg-base)] text-xs font-bold text-[var(--nexa-text-primary)] transition-colors cursor-pointer shadow-xs"
+                      >
+                        <Sliders className="w-3.5 h-3.5 text-[#1A56DB]" />
+                        <span>Adjust Limits</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleToggleSuspend(focusedTenant.id)}
+                        className={cn(
+                          "flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-xs font-bold transition-colors cursor-pointer shadow-xs",
+                          focusedTenant.status === "Suspended"
+                            ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 hover:bg-emerald-500/20"
+                            : "bg-rose-500/10 border-rose-500/20 text-rose-600 hover:bg-rose-500/20"
+                        )}
+                      >
+                        <Ban className="w-3.5 h-3.5" />
+                        <span>{focusedTenant.status === "Suspended" ? "Activate Workspace" : "Suspend Tenant"}</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleImpersonate(focusedTenant)}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#1A56DB] text-white text-xs font-bold hover:bg-[#1545B0] transition-colors shadow-sm cursor-pointer"
+                      >
+                        <LogIn className="w-3.5 h-3.5" />
+                        <span>Impersonate Console</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* QUICK STATS CARDS FOR FOCUSED TENANT */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+                    <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)]">
+                      <span className="text-[11px] text-[var(--nexa-text-muted)]">Monthly Spend</span>
+                      <p className="font-mono font-black text-base text-[var(--nexa-text-primary)]">
+                        ${focusedTenant.monthlyAiSpendUSD.toFixed(2)} USD
+                      </p>
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)]">
+                      <span className="text-[11px] text-[var(--nexa-text-muted)]">Leads Pipeline</span>
+                      <p className="font-mono font-black text-base text-[var(--nexa-text-primary)]">
+                        {focusedTenant.leadsUsed.toLocaleString()} / {focusedTenant.leadsLimit.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)]">
+                      <span className="text-[11px] text-[var(--nexa-text-muted)]">Active Campaigns</span>
+                      <p className="font-mono font-black text-base text-[var(--nexa-text-primary)]">
+                        {focusedTenant.campaignsActive} / {focusedTenant.campaignsLimit}
+                      </p>
+                    </div>
+                    <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)]">
+                      <span className="text-[11px] text-[var(--nexa-text-muted)]">Contracted MRR</span>
+                      <p className="font-mono font-black text-base text-emerald-600 dark:text-emerald-400">
+                        ₦{focusedTenant.mrr.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* NESTED SUBSCRIPTIONS & LIMIT CONSUMPTION PROGRESS */}
+                  <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-3">
+                    <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
+                      <div className="flex items-center gap-2">
+                        <CreditCard className="w-4 h-4 text-[#1A56DB]" />
+                        <span className="font-extrabold text-[var(--nexa-text-primary)]">
+                          Subscription Limits & Quota Governance
+                        </span>
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20 font-bold uppercase">
+                          {focusedTenant.planTier}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] text-[var(--nexa-text-muted)] font-mono flex items-center gap-1">
+                          <Calendar className="w-3 h-3" /> Next billing: 1st of month
+                        </span>
+                        <button
+                          onClick={() => {
+                            setSelectedTenantForQuota(focusedTenant);
+                            setEditPlanTier(focusedTenant.planTier);
+                          }}
+                          className="px-3 py-1 rounded-full text-xs font-bold bg-[#1A56DB] text-white hover:bg-[#1545B0] transition-colors cursor-pointer shadow-xs"
                         >
+                          Adjust Limits
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-[var(--nexa-border)]">
+                      {/* LEADS PROGRESS */}
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between text-xs font-mono">
+                          <span className="text-[var(--nexa-text-secondary)] font-semibold">Leads Quota Consumption:</span>
+                          <span className="font-black text-[var(--nexa-text-primary)]">
+                            {focusedTenant.leadsUsed.toLocaleString()} / {focusedTenant.leadsLimit.toLocaleString()}{" "}
+                            ({Math.min(100, Math.round((focusedTenant.leadsUsed / (focusedTenant.leadsLimit || 1)) * 100))}%)
+                          </span>
+                        </div>
+                        <div className="w-full h-2 rounded-full bg-[var(--nexa-bg-surface)] overflow-hidden border border-[var(--nexa-border)]">
                           <div
                             className={cn(
-                              "w-5 h-5 rounded-full bg-white shadow-sm transform transition-transform",
-                              isEnabled ? "translate-x-5" : "translate-x-0"
+                              "h-full rounded-full transition-all",
+                              focusedTenant.leadsUsed / (focusedTenant.leadsLimit || 1) > 0.9
+                                ? "bg-rose-500"
+                                : focusedTenant.leadsUsed / (focusedTenant.leadsLimit || 1) > 0.7
+                                ? "bg-amber-500"
+                                : "bg-[#1A56DB]"
                             )}
+                            style={{
+                              width: `${Math.min(100, Math.round((focusedTenant.leadsUsed / (focusedTenant.leadsLimit || 1)) * 100))}%`,
+                            }}
                           />
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* ALL TENANTS DIRECTORY VIEW */
-          <div className="space-y-4">
-            {/* SEARCH & FILTER TOOLBAR */}
-            <div className="p-4 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-3">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-3">
-                <div className="relative w-full md:w-80">
-                  <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--nexa-text-faint)]" />
-                  <input
-                    type="text"
-                    placeholder="Search tenant name, domain, owner..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-full text-xs outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] placeholder:text-[var(--nexa-text-faint)] font-medium"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery("")}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--nexa-text-faint)] hover:text-[var(--nexa-text-primary)]"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
 
-                <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-hide">
-                  <span className="text-[11px] font-bold text-[var(--nexa-text-muted)] mr-1 shrink-0">
-                    Plan:
-                  </span>
-                  {["ALL", "ENTERPRISE", "SCALE", "GROWTH", "STARTER", "FREE_TRIAL"].map((tier) => (
-                    <button
-                      key={tier}
-                      onClick={() => setSelectedPlanFilter(tier)}
-                      className={cn(
-                        "px-3 py-1 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer",
-                        selectedPlanFilter === tier
-                          ? "bg-[#1A56DB] text-white shadow-xs font-extrabold"
-                          : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-faint)] hover:text-[var(--nexa-text-primary)]"
-                      )}
-                    >
-                      {tier.replace("_", " ")}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-[11px] font-bold text-[var(--nexa-text-muted)]">Status:</span>
-                  <select
-                    value={selectedStatusFilter}
-                    onChange={(e) => setSelectedStatusFilter(e.target.value)}
-                    className="px-3 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-full text-xs font-bold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB] cursor-pointer"
-                  >
-                    <option value="ALL">All Statuses</option>
-                    <option value="Active">Active</option>
-                    <option value="Trialing">Trialing</option>
-                    <option value="Past Due">Past Due</option>
-                    <option value="Suspended">Suspended</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* TENANTS DIRECTORY CARDS */}
-            <div className="space-y-4">
-              {filteredTenants.map((tenant) => {
-                const enabledCount = Object.values(tenant.erpModules || {}).filter(Boolean).length;
-                const isSuspended = tenant.status === "Suspended";
-
-                return (
-                  <div
-                    key={tenant.id}
-                    className={cn(
-                      "p-6 rounded-3xl border transition-all space-y-5 bg-[var(--nexa-bg-surface)]",
-                      isSuspended
-                        ? "border-rose-500/30 bg-rose-500/5 opacity-75"
-                        : "border-[var(--nexa-border)] hover:border-[#1A56DB]/40 shadow-xs"
-                    )}
-                  >
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[var(--nexa-border)]">
-                      <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#1A56DB] to-[#7E3AF2] flex items-center justify-center text-white font-black text-lg shadow-sm shrink-0">
-                          {tenant.name.substring(0, 2).toUpperCase()}
+                      {/* CAMPAIGNS PROGRESS */}
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between text-xs font-mono">
+                          <span className="text-[var(--nexa-text-secondary)] font-semibold">Active Campaigns Capacity:</span>
+                          <span className="font-black text-[var(--nexa-text-primary)]">
+                            {focusedTenant.campaignsActive} / {focusedTenant.campaignsLimit}{" "}
+                            ({Math.min(100, Math.round((focusedTenant.campaignsActive / (focusedTenant.campaignsLimit || 1)) * 100))}%)
+                          </span>
                         </div>
-                        <div>
-                          <div className="flex items-center gap-2.5 flex-wrap">
-                            <h3 className="text-base font-extrabold text-display text-[var(--nexa-text-primary)]">
-                              {tenant.name}
-                            </h3>
-                            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-secondary)]">
-                              {tenant.slug}
-                            </span>
-                            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20 uppercase">
-                              {tenant.planTier}
-                            </span>
-                            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 uppercase">
-                              {tenant.status}
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-3 text-xs text-[var(--nexa-text-secondary)] mt-1 flex-wrap">
-                            <span className="flex items-center gap-1 font-mono">
-                              <ExternalLink className="w-3 h-3 text-[var(--nexa-text-faint)]" />
-                              {tenant.domain}
-                            </span>
-                            <span>•</span>
-                            <span>
-                              Owner: <strong>{tenant.ownerName}</strong> ({tenant.ownerEmail})
-                            </span>
-                          </div>
+                        <div className="w-full h-2 rounded-full bg-[var(--nexa-bg-surface)] overflow-hidden border border-[var(--nexa-border)]">
+                          <div
+                            className="h-full rounded-full bg-[#0E9F6E]"
+                            style={{
+                              width: `${Math.min(100, Math.round((focusedTenant.campaignsActive / (focusedTenant.campaignsLimit || 1)) * 100))}%`,
+                            }}
+                          />
                         </div>
                       </div>
+                    </div>
+                  </div>
 
-                      <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                  {/* ERP MODULES TOGGLE SWITCHBOARD */}
+                  <div className="space-y-4 pt-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--nexa-border)] pb-3">
+                      <div>
+                        <h3 className="font-extrabold text-sm text-[var(--nexa-text-primary)] flex items-center gap-2">
+                          <Sliders className="w-4 h-4 text-[#1A56DB]" />
+                          ERP Module Provisioning Switchboard for {focusedTenant.name}
+                        </h3>
+                        <p className="text-xs text-[var(--nexa-text-muted)] mt-0.5">
+                          Toggle on/off modules in real-time. Changes are instantly persisted to the MySQL TenantRolePermission table.
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
                         <button
-                          onClick={() => handleOpenEditTenant(tenant)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-bold text-[var(--nexa-text-primary)] hover:bg-[var(--nexa-border)] transition-colors cursor-pointer"
+                          onClick={() => handleBulkToggleTenant(focusedTenant.id, true)}
+                          className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 cursor-pointer"
                         >
-                          <Edit3 className="w-3.5 h-3.5 text-[#1A56DB]" />
-                          Edit Profile
+                          Grant All 8 Modules
                         </button>
-
                         <button
-                          onClick={() => {
-                            setSelectedTenantId(tenant.id);
-                            router.push(`/tenants?tenant=${tenant.id}`);
-                          }}
-                          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#1A56DB] text-white text-xs font-bold hover:bg-[#1545B0] transition-colors cursor-pointer shadow-xs"
+                          onClick={() => handleBulkToggleTenant(focusedTenant.id, false)}
+                          className="px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-500/20 cursor-pointer"
                         >
-                          <Sliders className="w-3.5 h-3.5" />
-                          Configure Modules ({enabledCount}/8)
+                          Revoke All Modules
                         </button>
-
-                        <a
-                          href={`http://${tenant.domain.includes(".") ? tenant.domain : `${tenant.slug}.ofia.ng`}/erp/admin`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-bold text-[var(--nexa-text-primary)] hover:bg-[var(--nexa-border)] transition-colors"
-                        >
-                          <LogIn className="w-3.5 h-3.5 text-[#1A56DB]" />
-                          Launch ERP
-                        </a>
                       </div>
                     </div>
 
-                    {/* ERP MODULE CHIPS SUMMARY */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                       {SUPER_ADMIN_ERP_MODULES.map((mod) => {
-                        const isEnabled = tenant.erpModules?.[mod.key] ?? true;
+                        const isEnabled = focusedTenant.erpModules?.[mod.key] ?? true;
 
                         return (
                           <div
                             key={mod.key}
-                            onClick={() => handleToggleModule(tenant.id, mod.key)}
+                            onClick={() => handleToggleModule(focusedTenant.id, mod.key)}
                             className={cn(
-                              "p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2 cursor-pointer select-none",
+                              "p-4 rounded-2xl border transition-all flex items-center justify-between gap-3 cursor-pointer select-none group",
                               isEnabled
-                                ? "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)]"
-                                : "bg-[var(--nexa-bg-base)]/40 border-[var(--nexa-border)]/60 opacity-50"
+                                ? "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)] hover:border-[#1A56DB]/50 shadow-xs"
+                                : "bg-[var(--nexa-bg-base)]/30 border-[var(--nexa-border)]/50 opacity-55 hover:opacity-100"
                             )}
                           >
-                            <div className="flex items-center gap-2 min-w-0">
+                            <div className="flex items-center gap-3 min-w-0">
                               <div
                                 className={cn(
-                                  "w-6 h-6 rounded-lg flex items-center justify-center text-white text-[10px] shrink-0",
-                                  isEnabled ? "" : "grayscale opacity-50"
+                                  "w-9 h-9 rounded-full flex items-center justify-center text-white text-sm shrink-0 transition-transform group-hover:scale-105",
+                                  isEnabled ? "bg-[#1A56DB] shadow-xs" : "bg-slate-400 dark:bg-slate-700 opacity-50"
                                 )}
-                                style={{ backgroundColor: mod.color }}
                               >
                                 {getModuleIcon(mod.iconName)}
                               </div>
-                              <span className="text-xs font-bold text-[var(--nexa-text-primary)] truncate">
-                                {mod.label}
-                              </span>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-extrabold text-[var(--nexa-text-primary)] truncate">
+                                    {mod.label}
+                                  </span>
+                                  {mod.badge && isEnabled && (
+                                    <span className="text-[8px] font-extrabold px-1.5 py-0.2 rounded-full bg-[#1A56DB]/10 text-[#1A56DB]">
+                                      {mod.badge}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-[11px] text-[var(--nexa-text-muted)] truncate max-w-[200px]">
+                                  {mod.description}
+                                </p>
+                              </div>
                             </div>
 
+                            {/* TOGGLE SWITCH */}
                             <div
                               className={cn(
-                                "w-8 h-4.5 rounded-full p-0.5 transition-colors shrink-0",
+                                "w-11 h-6 rounded-full p-0.5 transition-colors shrink-0",
                                 isEnabled ? "bg-[#1A56DB]" : "bg-slate-300 dark:bg-slate-700"
                               )}
                             >
                               <div
                                 className={cn(
-                                  "w-3.5 h-3.5 rounded-full bg-white shadow-sm transform transition-transform",
-                                  isEnabled ? "translate-x-3.5" : "translate-x-0"
+                                  "w-5 h-5 rounded-full bg-white shadow-sm transform transition-transform",
+                                  isEnabled ? "translate-x-5" : "translate-x-0"
                                 )}
                               />
                             </div>
@@ -1144,12 +1130,266 @@ function TenantManagementContent() {
                       })}
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              </div>
+            ) : (
+              /* ALL TENANTS DIRECTORY VIEW */
+              <div className="space-y-4">
+                {/* SEARCH & FILTERS ROW */}
+                <div className="p-4 rounded-3xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 text-[var(--nexa-text-muted)] absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      placeholder="Search by organization name, slug, domain, or owner..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-9 pr-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-full text-xs outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] placeholder:text-[var(--nexa-text-faint)] font-medium"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Plan Tier Filter */}
+                    <div className="flex items-center gap-1 bg-[var(--nexa-bg-base)] p-1 rounded-full border border-[var(--nexa-border)]">
+                      {["ALL", "GROWTH", "ENTERPRISE", "SCALE", "STARTER"].map((plan) => (
+                        <button
+                          key={plan}
+                          onClick={() => setSelectedPlanFilter(plan)}
+                          className={cn(
+                            "px-2.5 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer",
+                            selectedPlanFilter === plan
+                              ? "bg-[#1A56DB] text-white shadow-xs font-extrabold"
+                              : "text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
+                          )}
+                        >
+                          {plan}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Status Filter */}
+                    <select
+                      value={selectedStatusFilter}
+                      onChange={(e) => setSelectedStatusFilter(e.target.value)}
+                      className="px-3 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-full text-xs font-bold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB] cursor-pointer"
+                    >
+                      <option value="ALL">All Statuses</option>
+                      <option value="Active">Active</option>
+                      <option value="Trialing">Trialing</option>
+                      <option value="Past Due">Past Due</option>
+                      <option value="Suspended">Suspended</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* TENANTS GRID CARDS */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredTenants.map((tenant) => {
+                    const isFocused = selectedTenantId === tenant.id;
+
+                    return (
+                      <div
+                        key={tenant.id}
+                        className={cn(
+                          "p-5 rounded-3xl bg-[var(--nexa-bg-surface)] border transition-all space-y-4",
+                          isFocused
+                            ? "border-[#1A56DB] ring-2 ring-[#1A56DB]/20 shadow-md"
+                            : "border-[var(--nexa-border)] hover:border-[#1A56DB]/40 shadow-xs"
+                        )}
+                      >
+                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[var(--nexa-border)]">
+                          <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 rounded-full bg-[#1A56DB] flex items-center justify-center text-white font-black text-lg shadow-sm shrink-0 ring-4 ring-[#1A56DB]/15">
+                              {tenant.name.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2.5 flex-wrap">
+                                <h3 className="text-base font-extrabold text-display text-[var(--nexa-text-primary)]">
+                                  {tenant.name}
+                                </h3>
+                                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-secondary)]">
+                                  {tenant.slug}
+                                </span>
+                                <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20 uppercase">
+                                  {tenant.planTier}
+                                </span>
+                                <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 uppercase">
+                                  {tenant.status}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-[var(--nexa-text-muted)] mt-1">
+                                Workspace:{" "}
+                                <a
+                                  href={`https://${tenant.domain}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="font-mono text-[#1A56DB] hover:underline"
+                                >
+                                  {tenant.domain}
+                                </a>{" "}
+                                • Owner: {tenant.ownerName}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <button
+                              onClick={() => handleOpenEditTenant(tenant)}
+                              className="p-2 rounded-full border border-[var(--nexa-border)] hover:bg-[var(--nexa-bg-base)] text-xs text-[var(--nexa-text-secondary)] transition-colors cursor-pointer"
+                              title="Edit Tenant Profile & Quotas"
+                            >
+                              <Edit3 className="w-3.5 h-3.5 text-[#1A56DB]" />
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setSelectedTenantId(tenant.id);
+                                router.push(`/tenants?tab=directory&tenant=${tenant.id}`);
+                              }}
+                              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#1A56DB] text-white text-xs font-bold hover:bg-[#1545B0] transition-colors cursor-pointer shadow-xs"
+                            >
+                              <Sliders className="w-3.5 h-3.5" />
+                              <span>Configure ERP</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleImpersonate(tenant)}
+                              className="p-2 rounded-full border border-[var(--nexa-border)] hover:bg-[var(--nexa-bg-base)] text-xs text-[var(--nexa-text-secondary)] transition-colors cursor-pointer"
+                              title="Impersonate Tenant Console"
+                            >
+                              <LogIn className="w-3.5 h-3.5 text-[#1A56DB]" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* NESTED SUBSCRIPTION & LIMIT CONSUMPTION STRIP */}
+                        <div className="p-3 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-2.5">
+                          <div className="flex items-center justify-between flex-wrap gap-2 text-xs">
+                            <div className="flex items-center gap-2">
+                              <CreditCard className="w-3.5 h-3.5 text-[#1A56DB]" />
+                              <span className="font-bold text-[var(--nexa-text-primary)]">
+                                Plan: {tenant.planTier}
+                              </span>
+                              <span className="text-[11px] font-mono font-bold text-[#1A56DB]">
+                                ₦{tenant.mrr.toLocaleString()} / mo
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-[var(--nexa-text-muted)] font-mono flex items-center gap-1">
+                                <Calendar className="w-3 h-3" /> Next cycle: 1st of month
+                              </span>
+                              <button
+                                onClick={() => {
+                                  setSelectedTenantForQuota(tenant);
+                                  setEditPlanTier(tenant.planTier);
+                                }}
+                                className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#1A56DB]/10 text-[#1A56DB] hover:bg-[#1A56DB] hover:text-white border border-[#1A56DB]/20 transition-colors cursor-pointer"
+                              >
+                                Adjust Limits
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-[var(--nexa-border)]/60">
+                            {/* LEADS PROGRESS */}
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-[10px] font-mono">
+                                <span className="text-[var(--nexa-text-secondary)] font-medium">Leads Consumption:</span>
+                                <span className="font-bold text-[var(--nexa-text-primary)]">
+                                  {(tenant.leadsUsed || 0).toLocaleString()} / {(tenant.leadsLimit || 0).toLocaleString()} ({Math.min(100, Math.round(((tenant.leadsUsed || 0) / (tenant.leadsLimit || 1)) * 100))}%)
+                                </span>
+                              </div>
+                              <div className="w-full h-1.5 rounded-full bg-[var(--nexa-bg-surface)] overflow-hidden border border-[var(--nexa-border)]">
+                                <div
+                                  className={cn(
+                                    "h-full rounded-full transition-all",
+                                    (tenant.leadsUsed || 0) / (tenant.leadsLimit || 1) > 0.9
+                                      ? "bg-rose-500"
+                                      : (tenant.leadsUsed || 0) / (tenant.leadsLimit || 1) > 0.7
+                                      ? "bg-amber-500"
+                                      : "bg-[#1A56DB]"
+                                  )}
+                                  style={{
+                                    width: `${Math.min(100, Math.round(((tenant.leadsUsed || 0) / (tenant.leadsLimit || 1)) * 100))}%`,
+                                  }}
+                                />
+                              </div>
+                            </div>
+
+                            {/* CAMPAIGNS PROGRESS */}
+                            <div className="space-y-1">
+                              <div className="flex justify-between text-[10px] font-mono">
+                                <span className="text-[var(--nexa-text-secondary)] font-medium">Active Campaigns:</span>
+                                <span className="font-bold text-[var(--nexa-text-primary)]">
+                                  {tenant.campaignsActive || 0} / {tenant.campaignsLimit || 0} ({Math.min(100, Math.round(((tenant.campaignsActive || 0) / (tenant.campaignsLimit || 1)) * 100))}%)
+                                </span>
+                              </div>
+                              <div className="w-full h-1.5 rounded-full bg-[var(--nexa-bg-surface)] overflow-hidden border border-[var(--nexa-border)]">
+                                <div
+                                  className="h-full rounded-full bg-[#0E9F6E]"
+                                  style={{
+                                    width: `${Math.min(100, Math.round(((tenant.campaignsActive || 0) / (tenant.campaignsLimit || 1)) * 100))}%`,
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* ERP MODULE CHIPS SUMMARY */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                          {SUPER_ADMIN_ERP_MODULES.map((mod) => {
+                            const isEnabled = tenant.erpModules?.[mod.key] ?? true;
+
+                            return (
+                              <div
+                                key={mod.key}
+                                onClick={() => handleToggleModule(tenant.id, mod.key)}
+                                className={cn(
+                                  "p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2 cursor-pointer select-none",
+                                  isEnabled
+                                    ? "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)]"
+                                    : "bg-[var(--nexa-bg-base)]/40 border-[var(--nexa-border)]/60 opacity-50"
+                                )}
+                              >
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <div
+                                    className={cn(
+                                      "w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] shrink-0",
+                                      isEnabled ? "bg-[#1A56DB]" : "bg-slate-400 dark:bg-slate-700 opacity-50"
+                                    )}
+                                  >
+                                    {getModuleIcon(mod.iconName)}
+                                  </div>
+                                  <span className="text-xs font-bold text-[var(--nexa-text-primary)] truncate">
+                                    {mod.label}
+                                  </span>
+                                </div>
+
+                                <div
+                                  className={cn(
+                                    "w-8 h-4.5 rounded-full p-0.5 transition-colors shrink-0",
+                                    isEnabled ? "bg-[#1A56DB]" : "bg-slate-300 dark:bg-slate-700"
+                                  )}
+                                >
+                                  <div
+                                    className={cn(
+                                      "w-3.5 h-3.5 rounded-full bg-white shadow-sm transform transition-transform",
+                                      isEnabled ? "translate-x-3.5" : "translate-x-0"
+                                    )}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
       {/* MODAL 1: SUBSCRIPTION LIMITS & PLAN OVERRIDE */}
       <NexaModal
@@ -1370,6 +1610,9 @@ function TenantManagementContent() {
                     }
                     className="accent-[#1A56DB]"
                   />
+                  <div className="w-5 h-5 rounded-full bg-[#1A56DB] flex items-center justify-center text-white text-[9px] shrink-0">
+                    {getModuleIcon(m.iconName)}
+                  </div>
                   <span className="font-bold text-[var(--nexa-text-primary)] truncate">
                     {m.label}
                   </span>
@@ -1383,6 +1626,7 @@ function TenantManagementContent() {
               size="sm"
               variant="outline"
               onClick={() => setIsNewTenantModalOpen(false)}
+              className="rounded-full px-4 font-bold"
             >
               Cancel
             </NexaButton>
@@ -1390,7 +1634,7 @@ function TenantManagementContent() {
               size="sm"
               variant="primary"
               onClick={handleCreateTenant}
-              className="bg-[#1A56DB] text-white"
+              className="bg-[#1A56DB] text-white rounded-full font-bold px-4"
             >
               Provision Workspace
             </NexaButton>

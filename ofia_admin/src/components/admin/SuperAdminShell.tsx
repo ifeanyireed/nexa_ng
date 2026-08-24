@@ -122,12 +122,8 @@ export function SuperAdminShell({
 
     if (pathname.startsWith("/tenants")) {
       return [
-        { label: "All Tenants", href: "/tenants?tenant=all", icon: <Building2 className="w-3.5 h-3.5" />, badge: "5 Orgs" },
-        { label: "EduSuite", href: "/tenants?tenant=org-01", icon: <Building2 className="w-3.5 h-3.5" />, badge: "Growth" },
-        { label: "PayFlow Africa", href: "/tenants?tenant=org-02", icon: <Building2 className="w-3.5 h-3.5" />, badge: "Enterprise" },
-        { label: "HealthBridge", href: "/tenants?tenant=org-03", icon: <Building2 className="w-3.5 h-3.5" />, badge: "Starter" },
-        { label: "Apex Logistics", href: "/tenants?tenant=org-04", icon: <Building2 className="w-3.5 h-3.5" />, badge: "Scale" },
-        { label: "Zenith Realty", href: "/tenants?tenant=org-05", icon: <Building2 className="w-3.5 h-3.5" />, badge: "Trial" },
+        { label: "Tenant Directory", href: "/tenants", icon: <Building2 className="w-3.5 h-3.5" />, badge: "Workspaces" },
+        { label: "Subscription Management", href: "/tenants/subscription", icon: <CreditCard className="w-3.5 h-3.5" />, badge: "Plans & Quotas" },
       ];
     }
 
@@ -362,7 +358,7 @@ export function SuperAdminShell({
               {/* LOGOUT BUTTON */}
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl border border-rose-500/20 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold transition-colors cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-full border border-rose-500/20 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold transition-colors cursor-pointer"
                 title="Sign out of SuperAdmin Console"
               >
                 <LogOut className="w-3.5 h-3.5" />
@@ -380,7 +376,7 @@ export function SuperAdminShell({
               <NexaThemeToggle />
               <button
                 onClick={handleLogout}
-                className="w-8 h-8 rounded-xl flex items-center justify-center text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
                 title="Log Out"
               >
                 <LogOut className="w-4 h-4" />
@@ -422,6 +418,7 @@ export function SuperAdminShell({
                   (tab.href !== "/" &&
                     tab.href !== "/ai" &&
                     tab.href !== "/marketplace" &&
+                    tab.href !== "/tenants" &&
                     pathname.startsWith(tab.href));
                 return (
                   <Link href={tab.href} key={idx} className="shrink-0">

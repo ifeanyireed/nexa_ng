@@ -73,6 +73,23 @@ func main() {
 		r.Get("/articles", handlers.ListArticles)
 		r.Get("/articles/{id}", handlers.GetArticle)
 	})
+
+	// 7 Master Layout Templates & Subdomain Assignments
+	r.Route("/api/layouts", func(r chi.Router) {
+		r.Get("/", handlers.ListLayoutTemplates)
+		r.Post("/", handlers.CreateLayoutTemplate)
+		r.Get("/{key}", handlers.GetLayoutTemplate)
+		r.Put("/{key}", handlers.UpdateLayoutTemplate)
+		r.Delete("/{key}", handlers.DeleteLayoutTemplate)
+	})
+
+	r.Route("/api/subdomain-layouts", func(r chi.Router) {
+		r.Get("/", handlers.ListSubdomainLayouts)
+		r.Post("/seed", handlers.SeedDefaultSubdomainLayouts)
+		r.Get("/{slug}", handlers.GetSubdomainLayout)
+		r.Put("/{slug}", handlers.UpdateSubdomainLayout)
+	})
+
 	r.Get("/api/ws", handlers.HandleWSConnection)
 
 	// Protected Routes

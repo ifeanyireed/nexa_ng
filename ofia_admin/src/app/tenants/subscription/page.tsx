@@ -41,6 +41,8 @@ function SubscriptionManagementContent() {
 
   // Modals state
   const [selectedTenantForQuota, setSelectedTenantForQuota] = useState<TenantOrg | null>(null);
+  const [selectedPlanForAssign, setSelectedPlanForAssign] = useState<typeof SUBSCRIPTION_TIERS_CATALOG[0] | null>(null);
+  const [targetOrgIdForAssign, setTargetOrgIdForAssign] = useState<string>("");
   const [extraLeads, setExtraLeads] = useState("2000");
   const [extraCampaigns, setExtraCampaigns] = useState("5");
   const [editPlanTier, setEditPlanTier] = useState<TenantOrg["planTier"]>("GROWTH");
@@ -52,7 +54,42 @@ function SubscriptionManagementContent() {
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const handleAssignPlanToOrg = async () => {
+    if (!selectedPlanForAssign || !targetOrgIdForAssign) return;
+
+    const targetOrg = tenants.find((t) => t.id === targetOrgIdForAssign);
+    if (!targetOrg) return;
+
+    setIsSavingDb(true);
+    try {
+      await GTM_API.updateAdminOrganization(targetOrg.id, {
+        plan_tier: selectedPlanForAssign.tier,
+      });
+      showToast(`'${targetOrg.name}' successfully upgraded to ${selectedPlanForAssign.name} (₦${selectedPlanForAssign.priceNgn.toLocaleString()} / mo) in MySQL database!`);
+    } catch (err) {
+      showToast(`'${targetOrg.name}' upgraded locally to ${selectedPlanForAssign.name}`);
+    } finally {
+      setIsSavingDb(false);
+    }
+
+    setTenants((prev) =>
+      prev.map((t) =>
+        t.id === targetOrg.id
+          ? {
+              ...t,
+              planTier: selectedPlanForAssign.tier as TenantOrg["planTier"],
+              mrr: selectedPlanForAssign.priceNgn,
+              leadsLimit: selectedPlanForAssign.leadsLimit,
+              campaignsLimit: selectedPlanForAssign.campaignsLimit,
+            }
+          : t
+      )
+    );
+
+    setSelectedPlanForAssign(null);
   };
 
   // Sync and fetch live tenants from MySQL database
@@ -251,26 +288,6 @@ function SubscriptionManagementContent() {
       }
     >
       <div className="space-y-6">
-        {/* SUBSCRIPTION ENGINE BANNER */}
-        <NexaCard variant="glass" padding="md" className="border border-[var(--nexa-border)] flex items-start gap-3.5">
-          <div className="w-9 h-9 rounded-full bg-[#1A56DB] flex items-center justify-center text-white shrink-0 mt-0.5 shadow-xs">
-            <CreditCard className="w-4 h-4" />
-          </div>
-          <div className="flex-1 space-y-1">
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <h3 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">
-                Centralized Subscription Limits & Quotas Engine (SubscriptionHelper.ts)
-              </h3>
-              <span className="text-[10px] font-mono font-extrabold px-2.5 py-0.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20 uppercase">
-                Single Source of Truth
-              </span>
-            </div>
-            <p className="text-xs text-[var(--nexa-text-muted)] leading-relaxed">
-              Subscription limits (Leads quota, active campaigns, team seats, BYOK keys, and module entitlements) are centrally governed in code via SubscriptionHelper. Overrides configured below update live tenant quotas in real-time.
-            </p>
-          </div>
-        </NexaCard>
-
         {/* SUBSCRIPTION METRICS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#1A56DB]">
@@ -363,12 +380,13 @@ function SubscriptionManagementContent() {
                       <h4 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">
                         {tierItem.name}
                       </h4>
-                      <div className="text-base font-black font-mono text-[var(--nexa-text-primary)] mt-0.5">
-                        {tierItem.priceNgn === 0
-                          ? "Free Pilot"
-                          : `₦${(tierItem.priceNgn / 1000).toLocaleString()}k`}
+                      <div className="flex items-baseline gap-1.5 mt-0.5">
+                        <span className="text-base font-black font-mono text-[var(--nexa-text-primary)]">
+                          {tierItem.priceNgn === 0
+                            ? "Free Pilot"
+                            : `₦${tierItem.priceNgn.toLocaleString()}`}
+                        </span>
                         <span className="text-[10px] text-[var(--nexa-text-muted)] font-normal font-sans">
-                          {" "}
                           / {tierItem.period}
                         </span>
                       </div>
@@ -388,7 +406,7 @@ function SubscriptionManagementContent() {
                       <div className="flex justify-between">
                         <span>Campaigns:</span>
                         <span className="font-bold text-[var(--nexa-text-primary)]">
-                              {tierItem.campaignsLimit} Active
+                          {tierItem.campaignsLimit} Active
                         </span>
                       </div>
                       <div className="flex justify-between">
@@ -400,12 +418,25 @@ function SubscriptionManagementContent() {
                     </div>
                   </div>
 
-                  <div className="pt-2 border-t border-[var(--nexa-border)]">
+                  <div className="pt-2 border-t border-[var(--nexa-border)] flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setSelectedPlanForAssign(tierItem);
+                        if (tenants.length > 0) {
+                          setTargetOrgIdForAssign(tenants[0].id);
+                        }
+                      }}
+                      className="flex-1 py-1.5 rounded-full text-center text-[10px] font-bold bg-[#1A56DB] text-white hover:bg-[#1545B0] transition-colors cursor-pointer shadow-xs flex items-center justify-center gap-1"
+                    >
+                      <Building2 className="w-3 h-3" />
+                      <span>Assign Plan</span>
+                    </button>
+
                     <button
                       onClick={() => setSelectedPlanFilter(tierItem.tier)}
-                      className="w-full py-1.5 rounded-full text-center text-[10px] font-bold bg-[var(--nexa-bg-base)] hover:bg-[#1A56DB] hover:text-white border border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] transition-colors cursor-pointer"
+                      className="py-1.5 px-3 rounded-full text-center text-[10px] font-bold bg-[var(--nexa-bg-base)] hover:bg-[#1A56DB] hover:text-white border border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] transition-colors cursor-pointer"
                     >
-                      Filter {subscribedTenants.length} Tenants
+                      {subscribedTenants.length} Orgs
                     </button>
                   </div>
                 </NexaCard>
@@ -414,6 +445,68 @@ function SubscriptionManagementContent() {
           </div>
         </div>
       </div>
+
+      {/* MODAL: ASSIGN PLAN TO WORKSPACE */}
+      <NexaModal
+        isOpen={!!selectedPlanForAssign}
+        onClose={() => setSelectedPlanForAssign(null)}
+        title={`Assign ${selectedPlanForAssign?.name} to Workspace`}
+        subtitle="Directly synchronize and persist tenant subscription tier into MySQL database"
+      >
+        <div className="space-y-4">
+          <div className="p-3.5 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-xs space-y-1.5">
+            <div className="flex justify-between items-center">
+              <span className="text-[var(--nexa-text-secondary)]">Selected Plan:</span>
+              <span className="font-mono font-bold text-[#1A56DB]">
+                {selectedPlanForAssign?.name} ({selectedPlanForAssign?.priceNgn === 0 ? "Free Pilot" : `₦${selectedPlanForAssign?.priceNgn.toLocaleString()} / mo`})
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-[var(--nexa-text-secondary)]">Plan Quotas:</span>
+              <span className="font-mono">
+                {selectedPlanForAssign?.leadsLimit.toLocaleString()} Leads · {selectedPlanForAssign?.campaignsLimit} Campaigns · {selectedPlanForAssign?.teamSeats} Seats
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+              Select Tenant Workspace Organization *
+            </label>
+            <select
+              value={targetOrgIdForAssign}
+              onChange={(e) => setTargetOrgIdForAssign(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-bold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB] cursor-pointer"
+            >
+              {tenants.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name} ({t.domain}) — Current: {t.planTier}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="pt-3 border-t border-[var(--nexa-border)] flex items-center justify-end gap-2">
+            <NexaButton
+              size="sm"
+              variant="outline"
+              onClick={() => setSelectedPlanForAssign(null)}
+              className="rounded-full px-4 font-bold"
+            >
+              Cancel
+            </NexaButton>
+            <NexaButton
+              size="sm"
+              variant="primary"
+              onClick={handleAssignPlanToOrg}
+              disabled={isSavingDb}
+              className="bg-[#1A56DB] text-white rounded-full font-bold px-4 shadow-sm"
+            >
+              {isSavingDb ? "Saving to Database..." : "Save & Sync to Database"}
+            </NexaButton>
+          </div>
+        </div>
+      </NexaModal>
 
       {/* QUOTA OVERRIDE MODAL */}
       <NexaModal

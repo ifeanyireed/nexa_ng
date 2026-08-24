@@ -8,6 +8,7 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
+import { Pagination } from "@/components/nexa/Pagination";
 import { Users, Plus, ArrowLeft, Search, Edit, Trash2 } from "lucide-react";
 
 export default function UserRoleManagement() {
@@ -132,12 +133,16 @@ export default function UserRoleManagement() {
                   No matching user accounts found.
                 </div>
               ) : (
-                paginatedUsers.map((u) => (
+                paginatedUsers.map((u, idx) => {
+                  const avatarSrc = u.avatar && u.avatar.startsWith("/character") ? u.avatar : `/character${((startIndex + idx) % 20) + 1}.jpg`;
+                  return (
                 <div key={u.id} className={`p-3.5 bg-[var(--nexa-bg-base)] rounded-2xl border border-[var(--nexa-border)] flex justify-between ${editingUserId === u.id ? "flex-col sm:flex-row gap-4 items-start" : "items-center"}`}>
                   <div className="flex items-center gap-3 w-full">
-                    <div className="w-9 h-9 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] flex items-center justify-center font-bold text-xs font-mono">
-                      {u.name.charAt(0)}
-                    </div>
+                    <img
+                      src={avatarSrc}
+                      alt={u.name}
+                      className="w-9 h-9 rounded-full object-cover border border-[var(--nexa-border)] shadow-xs"
+                    />
                     <div className="flex-1">
                       <p className="font-bold text-[var(--nexa-text-primary)] text-xs">{u.name}</p>
                       {editingUserId === u.id ? (
@@ -254,9 +259,18 @@ export default function UserRoleManagement() {
                     </div>
                   )}
                 </div>
-              ))
+                  );
+                })
               )}
             </div>
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredUsers.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
           </NexaCard>
 
           {/* Provisioning form (5cols) */}

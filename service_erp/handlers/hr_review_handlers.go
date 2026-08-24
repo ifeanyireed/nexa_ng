@@ -144,6 +144,20 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 			"status":  "success",
 			"message": fmt.Sprintf("Successfully upserted %d review(s)", len(reviewsToUpsert)),
 		})
+	} else if r.Method == http.MethodDelete {
+		id := r.URL.Query().Get("id")
+		if id == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Review ID is required"})
+			return
+		}
+		_, err := db.Exec("DELETE FROM PerformanceReview WHERE id = ?", id)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "Performance review deleted successfully"})
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}

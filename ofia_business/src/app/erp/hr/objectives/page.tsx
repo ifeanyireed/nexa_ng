@@ -7,6 +7,7 @@ import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
+import { Pagination } from "@/components/nexa/Pagination";
 import { ArrowLeft } from "lucide-react";
 
 export default function ObjectiveManagement() {
@@ -341,54 +342,13 @@ export default function ObjectiveManagement() {
               </div>
 
               {/* Pagination controls */}
-              {totalPages > 1 && (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-gray-100 mt-2">
-                  <p className="text-[11px] text-slate-450 font-bold">
-                    Showing {startIndex + 1} to {Math.min(startIndex + itemsPerPage, workObjectives.length)} of {workObjectives.length} objectives
-                  </p>
-                  <div className="flex items-center gap-1 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                      disabled={currentPage === 1}
-                      className="px-2.5 py-1.5 bg-gray-50 border border-gray-200 hover:bg-gray-100 text-slate-700 disabled:opacity-40 disabled:hover:bg-gray-50 rounded-xl text-[10px] font-extrabold transition-all cursor-pointer disabled:cursor-not-allowed"
-                    >
-                      Prev
-                    </button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
-                      const shouldShow = page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1;
-                      if (!shouldShow) {
-                        if (page === 2 || page === totalPages - 1) {
-                          return <span key={`dots-${page}`} className="text-[10px] text-slate-400 font-bold px-1">...</span>;
-                        }
-                        return null;
-                      }
-                      return (
-                        <button
-                          key={page}
-                          type="button"
-                          onClick={() => setCurrentPage(page)}
-                          className={`w-6 h-6 flex items-center justify-center rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
-                            currentPage === page
-                              ? "bg-blue-600 text-white shadow-sm"
-                              : "bg-white border border-gray-200 text-slate-600 hover:bg-gray-50"
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      );
-                    })}
-                    <button
-                      type="button"
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                      disabled={currentPage === totalPages}
-                      className="px-2.5 py-1.5 bg-gray-50 border border-gray-200 hover:bg-gray-100 text-slate-700 disabled:opacity-40 disabled:hover:bg-gray-50 rounded-xl text-[10px] font-extrabold transition-all cursor-pointer disabled:cursor-not-allowed"
-                    >
-                      Next
-                    </button>
-                  </div>
-                </div>
-              )}
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalItems={workObjectives.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
             </div>
 
             {/* Core Competency Ratings Table */}

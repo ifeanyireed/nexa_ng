@@ -9,6 +9,7 @@ import { ErpStatGrid } from "@/components/erp/ErpStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
+import { Pagination } from "@/components/nexa/Pagination";
 import {
   ClipboardCheck,
   Star,
@@ -232,14 +233,17 @@ export default function HRDashboard() {
               </thead>
               <tbody className="divide-y divide-[var(--nexa-border)] text-[var(--nexa-text-primary)]">
                 {paginatedPendingReviews.length > 0 ? (
-                  paginatedPendingReviews.map((rev) => {
+                  paginatedPendingReviews.map((rev, idx) => {
                     const emp = users.find((u) => u.id === rev.employeeId);
+                    const avatarSrc = emp?.avatar && emp.avatar.startsWith("/character") ? emp.avatar : `/character${(idx % 20) + 1}.jpg`;
                     return (
                       <tr key={rev.id} className="hover:bg-[var(--nexa-bg-base)]/50 transition-colors">
                         <td className="py-3.5 px-3 flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] flex items-center justify-center font-bold text-xs font-mono">
-                            {rev.employeeName.charAt(0)}
-                          </div>
+                          <img
+                            src={avatarSrc}
+                            alt={rev.employeeName}
+                            className="w-8 h-8 rounded-full object-cover border border-[var(--nexa-border)] shadow-xs"
+                          />
                           <div>
                             <p className="font-bold text-xs">{rev.employeeName}</p>
                             <p className="text-[10px] text-[var(--nexa-text-muted)] font-mono">{rev.employeeId}</p>
@@ -276,6 +280,14 @@ export default function HRDashboard() {
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            currentPage={queuePage}
+            totalPages={queueTotalPages}
+            totalItems={pendingReviews.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setQueuePage}
+          />
         </NexaCard>
 
         {/* ALL REVIEWS SUBMISSIONS STANDINGS */}
@@ -339,37 +351,43 @@ export default function HRDashboard() {
               </thead>
               <tbody className="divide-y divide-[var(--nexa-border)] text-[var(--nexa-text-primary)]">
                 {paginatedReviews.length > 0 ? (
-                  paginatedReviews.map((rev) => (
-                    <tr key={rev.id} className="hover:bg-[var(--nexa-bg-base)]/50 transition-colors">
-                      <td className="py-3.5 px-3 flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] flex items-center justify-center font-bold text-xs font-mono">
-                          {rev.employeeName.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="font-bold text-xs">{rev.employeeName}</p>
-                          <p className="text-[10px] text-[var(--nexa-text-muted)] font-mono">{rev.employeeId}</p>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-3 text-[var(--nexa-text-muted)] font-medium">{rev.department}</td>
-                      <td className="py-3.5 px-3">{getStatusBadge(rev.status)}</td>
-                      <td className="py-3.5 px-3">
-                        {rev.finalScore ? (
-                          <span className="font-extrabold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-2 py-0.5 rounded-full text-xs">
-                            {rev.finalScore.toFixed(1)} / 10
-                          </span>
-                        ) : (
-                          <span className="text-[var(--nexa-text-muted)] font-medium">—</span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-3 text-right">
-                        <Link href={`/erp/hr/review/detail?employeeId=${rev.employeeId}`}>
-                          <NexaButton size="sm" variant="outline" className="rounded-full text-xs h-7">
-                            View Dossier
-                          </NexaButton>
-                        </Link>
-                      </td>
-                    </tr>
-                  ))
+                  paginatedReviews.map((rev, idx) => {
+                    const emp = users.find((u) => u.id === rev.employeeId);
+                    const avatarSrc = emp?.avatar && emp.avatar.startsWith("/character") ? emp.avatar : `/character${(idx % 20) + 1}.jpg`;
+                    return (
+                      <tr key={rev.id} className="hover:bg-[var(--nexa-bg-base)]/50 transition-colors">
+                        <td className="py-3.5 px-3 flex items-center gap-3">
+                          <img
+                            src={avatarSrc}
+                            alt={rev.employeeName}
+                            className="w-8 h-8 rounded-full object-cover border border-[var(--nexa-border)] shadow-xs"
+                          />
+                          <div>
+                            <p className="font-bold text-xs">{rev.employeeName}</p>
+                            <p className="text-[10px] text-[var(--nexa-text-muted)] font-mono">{rev.employeeId}</p>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-3 text-[var(--nexa-text-muted)] font-medium">{rev.department}</td>
+                        <td className="py-3.5 px-3">{getStatusBadge(rev.status)}</td>
+                        <td className="py-3.5 px-3">
+                          {rev.finalScore ? (
+                            <span className="font-extrabold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-2 py-0.5 rounded-full text-xs">
+                              {rev.finalScore.toFixed(1)} / 10
+                            </span>
+                          ) : (
+                            <span className="text-[var(--nexa-text-muted)] font-medium">—</span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-3 text-right">
+                          <Link href={`/erp/hr/review/detail?employeeId=${rev.employeeId}`}>
+                            <NexaButton size="sm" variant="outline" className="rounded-full text-xs h-7">
+                              View Dossier
+                            </NexaButton>
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td colSpan={5} className="py-8 text-center text-[var(--nexa-text-muted)] font-medium">
@@ -380,6 +398,14 @@ export default function HRDashboard() {
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            currentPage={submissionsPage}
+            totalPages={submissionsTotalPages}
+            totalItems={filteredReviews.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setSubmissionsPage}
+          />
         </NexaCard>
       </div>
     </BusinessShell>

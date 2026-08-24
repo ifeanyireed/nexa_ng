@@ -418,15 +418,24 @@ const INITIAL_REVIEWS: PerformanceReview[] = [];
 
 
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://nets-erp-m7iw.onrender.com";
+const API_BASE_URL = typeof window !== "undefined" ? "/api/erp" : (process.env.ERP_SERVICE_URL || process.env.NEXT_PUBLIC_ERP_SERVICE_URL || "http://localhost:8084");
 
 async function fetchFromApi<T>(endpoint: string, fallbackData: T): Promise<T> {
   try {
-    const res = await fetch(`${API_BASE_URL}${endpoint}`, { cache: "no-store" });
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+      cache: "no-store",
+      headers: {
+        "x-tenant-slug": "neweratransports"
+      }
+    });
     if (!res.ok) {
       return fallbackData;
     }
-    return await res.json();
+    const data = await res.json();
+    if (Array.isArray(data) && data.length === 0 && Array.isArray(fallbackData) && fallbackData.length > 0) {
+      return fallbackData;
+    }
+    return data;
   } catch (err) {
     return fallbackData;
   }
@@ -482,7 +491,7 @@ async function ensureReviewsForActiveCycles(
     try {
       await fetch(`${API_BASE_URL}/reviews`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-tenant-slug": "neweratransports" },
         body: JSON.stringify(newReviewsToPost)
       });
     } catch (e) {
@@ -515,7 +524,6 @@ export function useERPStore() {
         setObjectives(objectivesData);
 
         // Auto-initialize reviews for the active cycle
-        // Only run this if ALL data fetches completed successfully from the backend
         try {
           await ensureReviewsForActiveCycles(usersData, cyclesData, reviewsData, objectivesData, (updated) => {
             setReviews(updated);
@@ -524,8 +532,7 @@ export function useERPStore() {
           console.warn("Failed to auto-initialize reviews:", initErr);
         }
       } catch (e) {
-        console.error("Failed to connect to the backend server. Skipping review auto-initialization to protect data integrity.", e);
-        // Fallback to static seeds for frontend UI rendering only in case of complete network outage
+        console.error("Failed to connect to the ERP backend database:", e);
         setUsers(INITIAL_USERS);
         setCycles(INITIAL_CYCLES);
         setReviews(INITIAL_REVIEWS);
@@ -539,69 +546,71 @@ export function useERPStore() {
   }, []);
 
   const updateReview = async (updated: PerformanceReview) => {
-    const exists = reviews.some(r => r.id === updated.id);
-    const list = exists 
-      ? reviews.map(r => r.id === updated.id ? updated : r)
-      : [...reviews, updated];
-    setReviews(list);
     try {
       await fetch(`${API_BASE_URL}/reviews`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-tenant-slug": "neweratransports" },
         body: JSON.stringify(updated)
       });
+      const freshReviews = await fetchFromApi("/reviews", reviews);
+      setReviews(freshReviews);
     } catch (e) {
       console.warn("Failed to sync updateReview with backend database", e);
+      const exists = reviews.some(r => r.id === updated.id);
+      const list = exists 
+        ? reviews.map(r => r.id === updated.id ? updated : r)
+        : [...reviews, updated];
+      setReviews(list);
     }
   };
 
   const addReviewCycle = async (cycle: ReviewCycle) => {
-    const list = [...cycles, cycle];
-    setCycles(list);
     try {
       await fetch(`${API_BASE_URL}/cycles`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-tenant-slug": "neweratransports" },
         body: JSON.stringify(cycle)
       });
-      // Ensure reviews are created if the new cycle is active
+      const freshCycles = await fetchFromApi("/cycles", [...cycles, cycle]);
+      setCycles(freshCycles);
       if (cycle.status === "Active") {
-        await ensureReviewsForActiveCycles(users, list, reviews, objectives, (updated) => {
+        await ensureReviewsForActiveCycles(users, freshCycles, reviews, objectives, (updated) => {
           setReviews(updated);
         });
       }
     } catch (e) {
       console.warn("Failed to sync addReviewCycle with backend database", e);
+      setCycles([...cycles, cycle]);
     }
   };
 
   const updateCycles = async (updatedList: ReviewCycle[]) => {
-    setCycles(updatedList);
     try {
       for (const cycle of updatedList) {
         await fetch(`${API_BASE_URL}/cycles`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "x-tenant-slug": "neweratransports" },
           body: JSON.stringify(cycle)
         });
       }
-      // Ensure reviews are created for the newly activated cycle
-      await ensureReviewsForActiveCycles(users, updatedList, reviews, objectives, (updated) => {
+      const freshCycles = await fetchFromApi("/cycles", updatedList);
+      setCycles(freshCycles);
+      await ensureReviewsForActiveCycles(users, freshCycles, reviews, objectives, (updated) => {
         setReviews(updated);
       });
     } catch (e) {
       console.warn("Failed to sync updateCycles with backend database", e);
+      setCycles(updatedList);
     }
   };
 
   const updateObjectives = async (updatedList: Objective[]) => {
     const previous = [...objectives];
-    setObjectives(updatedList);
     try {
       // Find deleted objectives
       const deleted = previous.filter(p => !updatedList.some(u => u.id === p.id));
       for (const d of deleted) {
-        await fetch(`${API_BASE_URL}/objectives?id=${d.id}`, { method: "DELETE" });
+        await fetch(`${API_BASE_URL}/objectives?id=${encodeURIComponent(d.id)}`, { method: "DELETE" });
       }
       // Find added or updated objectives
       const addedOrUpdated = updatedList.filter(u => {
@@ -611,38 +620,50 @@ export function useERPStore() {
       for (const a of addedOrUpdated) {
         await fetch(`${API_BASE_URL}/objectives`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "x-tenant-slug": "neweratransports" },
           body: JSON.stringify(a)
         });
       }
+      const freshObjectives = await fetchFromApi("/objectives", updatedList);
+      setObjectives(freshObjectives);
     } catch (e) {
       console.warn("Failed to sync updateObjectives with backend database", e);
+      setObjectives(updatedList);
     }
   };
 
   const updateUsers = async (updatedList: User[]) => {
-    // Find the user that was actually changed or added
-    const changedUser = updatedList.find(u => {
-      const prev = users.find(prevUser => prevUser.id === u.id);
-      if (!prev) return true; // New user
-      return JSON.stringify(prev) !== JSON.stringify(u);
-    });
-
-    setUsers(updatedList);
+    const previous = [...users];
     try {
+      // Find deleted users
+      const deleted = previous.filter(p => !updatedList.some(u => u.id === p.id));
+      for (const d of deleted) {
+        await fetch(`${API_BASE_URL}/users?id=${encodeURIComponent(d.id)}`, { method: "DELETE" });
+      }
+
+      // Find changed or added users
+      const changedUser = updatedList.find(u => {
+        const prev = previous.find(prevUser => prevUser.id === u.id);
+        if (!prev) return true;
+        return JSON.stringify(prev) !== JSON.stringify(u);
+      });
+
       if (changedUser) {
         await fetch(`${API_BASE_URL}/users`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "x-tenant-slug": "neweratransports" },
           body: JSON.stringify(changedUser)
         });
       }
-      // Ensure reviews are created for newly created users
-      await ensureReviewsForActiveCycles(updatedList, cycles, reviews, objectives, (updated) => {
+
+      const freshUsers = await fetchFromApi("/users", updatedList);
+      setUsers(freshUsers);
+      await ensureReviewsForActiveCycles(freshUsers, cycles, reviews, objectives, (updated) => {
         setReviews(updated);
       });
     } catch (e) {
       console.warn("Failed to sync updateUsers with backend database", e);
+      setUsers(updatedList);
     }
   };
 

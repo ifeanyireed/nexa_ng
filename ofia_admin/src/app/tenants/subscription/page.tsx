@@ -7,6 +7,7 @@ import { SuperAdminShell, SubNavItem } from "@/components/admin/SuperAdminShell"
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaModal } from "@/components/nexa/NexaModal";
+import { Pagination } from "@/components/nexa/Pagination";
 import { INITIAL_TENANTS, TenantOrg, SUPER_ADMIN_ERP_MODULES } from "@/lib/admin-data";
 import { GTM_API, USER_API, SUBSCRIPTION_API } from "@/lib/api-client";
 import {
@@ -43,6 +44,8 @@ function SubscriptionManagementContent() {
   const [selectedProductCategory, setSelectedProductCategory] = useState<"ALL" | "OFIA_AI" | "OFIA_SHOP" | "OFIA_ENTERPRISE" | "OFIA_COMPASS">("ALL");
   const [selectedPlanFilter, setSelectedPlanFilter] = useState<string>("ALL");
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>("ALL");
+  const [plansPage, setPlansPage] = useState(1);
+  const plansItemsPerPage = 6;
 
   // Modals state
   const [selectedTenantForQuota, setSelectedTenantForQuota] = useState<TenantOrg | null>(null);
@@ -737,155 +740,173 @@ function SubscriptionManagementContent() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {plansCatalog.filter((t) => selectedProductCategory === "ALL" || t.category === selectedProductCategory).map((tierItem) => {
-              const subscribedTenants = tenants.filter((t) => t.planTier === tierItem.tier);
+          {(() => {
+            const filteredPlans = plansCatalog.filter((t) => selectedProductCategory === "ALL" || t.category === selectedProductCategory);
+            const totalPlansPages = Math.max(1, Math.ceil(filteredPlans.length / plansItemsPerPage));
+            const paginatedPlans = filteredPlans.slice((plansPage - 1) * plansItemsPerPage, (plansPage - 1) * plansItemsPerPage + plansItemsPerPage);
 
-              return (
-                <NexaCard
-                  key={tierItem.id}
-                  variant="glass"
-                  padding="md"
-                  className={cn(
-                    "border transition-all flex flex-col justify-between space-y-3.5 hover:shadow-md",
-                    tierItem.category === "OFIA_AI" ? "border-purple-500/20 hover:border-purple-500/40" :
-                    tierItem.category === "OFIA_SHOP" ? "border-amber-500/20 hover:border-amber-500/40" :
-                    tierItem.category === "OFIA_COMPASS" ? "border-cyan-500/20 hover:border-cyan-500/40" :
-                    "border-[var(--nexa-border)] hover:border-[#1A56DB]/40"
-                  )}
-                >
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between gap-1 flex-wrap">
-                      <div className="flex items-center gap-1.5">
-                        <span className={cn(
-                          "text-[9px] font-extrabold px-2 py-0.5 rounded-full border uppercase font-mono",
-                          tierItem.category === "OFIA_AI" ? "bg-purple-500/10 text-purple-600 border-purple-500/20" :
-                          tierItem.category === "OFIA_SHOP" ? "bg-amber-500/10 text-amber-600 border-amber-500/20" :
-                          tierItem.category === "OFIA_COMPASS" ? "bg-cyan-500/10 text-cyan-600 border-cyan-500/20" :
-                          "bg-[#1A56DB]/10 text-[#1A56DB] border-[#1A56DB]/20"
-                        )}>
-                          {tierItem.categoryLabel}
-                        </span>
-                        <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] uppercase">
-                          {tierItem.badge}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => {
-                            setEditingPlan(tierItem);
-                            setEditPlanName(tierItem.name);
-                            setEditPlanCategory(tierItem.category);
-                            setEditPlanPriceNgn(tierItem.priceNgn.toString());
-                            setEditPlanPeriod(tierItem.period);
-                            setEditPlanBadge(tierItem.badge);
-                            setEditPlanDesc(tierItem.description);
-                            setEditPlanLeadsLimit(tierItem.leadsLimit.toString());
-                            setEditPlanCampaignsLimit(tierItem.campaignsLimit.toString());
-                            setEditPlanTeamSeats(tierItem.teamSeats.toString());
-                            setEditPlanTokensLimit((tierItem.tokensLimit || 0).toString());
-                            setEditPlanStorefrontsLimit((tierItem.storefrontsLimit || 0).toString());
-                          }}
-                          className="p-1 rounded-full text-[var(--nexa-text-muted)] hover:text-[#1A56DB] hover:bg-[#1A56DB]/10 transition-colors"
-                          title="Edit Blueprint"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
+            return (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {paginatedPlans.map((tierItem) => {
+                    const subscribedTenants = tenants.filter((t) => t.planTier === tierItem.tier);
 
-                        <button
-                          onClick={() => setPlanToDelete(tierItem)}
-                          className="p-1 rounded-full text-[var(--nexa-text-muted)] hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
-                          title="Delete Blueprint"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
+                    return (
+                      <NexaCard
+                        key={tierItem.id}
+                        variant="glass"
+                        padding="md"
+                        className={cn(
+                          "border transition-all flex flex-col justify-between space-y-3.5 hover:shadow-md",
+                          tierItem.category === "OFIA_AI" ? "border-purple-500/20 hover:border-purple-500/40" :
+                          tierItem.category === "OFIA_SHOP" ? "border-amber-500/20 hover:border-amber-500/40" :
+                          tierItem.category === "OFIA_COMPASS" ? "border-cyan-500/20 hover:border-cyan-500/40" :
+                          "border-[var(--nexa-border)] hover:border-[#1A56DB]/40"
+                        )}
+                      >
+                        <div className="space-y-2.5">
+                          <div className="flex items-center justify-between gap-1 flex-wrap">
+                            <div className="flex items-center gap-1.5">
+                              <span className={cn(
+                                "text-[9px] font-extrabold px-2 py-0.5 rounded-full border uppercase font-mono",
+                                tierItem.category === "OFIA_AI" ? "bg-purple-500/10 text-purple-600 border-purple-500/20" :
+                                tierItem.category === "OFIA_SHOP" ? "bg-amber-500/10 text-amber-600 border-amber-500/20" :
+                                tierItem.category === "OFIA_COMPASS" ? "bg-cyan-500/10 text-cyan-600 border-cyan-500/20" :
+                                "bg-[#1A56DB]/10 text-[#1A56DB] border-[#1A56DB]/20"
+                              )}>
+                                {tierItem.categoryLabel}
+                              </span>
+                              <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] uppercase">
+                                {tierItem.badge}
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => {
+                                  setEditingPlan(tierItem);
+                                  setEditPlanName(tierItem.name);
+                                  setEditPlanCategory(tierItem.category);
+                                  setEditPlanPriceNgn(tierItem.priceNgn.toString());
+                                  setEditPlanPeriod(tierItem.period);
+                                  setEditPlanBadge(tierItem.badge);
+                                  setEditPlanDesc(tierItem.description);
+                                  setEditPlanLeadsLimit(tierItem.leadsLimit.toString());
+                                  setEditPlanCampaignsLimit(tierItem.campaignsLimit.toString());
+                                  setEditPlanTeamSeats(tierItem.teamSeats.toString());
+                                  setEditPlanTokensLimit((tierItem.tokensLimit || 0).toString());
+                                  setEditPlanStorefrontsLimit((tierItem.storefrontsLimit || 0).toString());
+                                }}
+                                className="p-1 rounded-full text-[var(--nexa-text-muted)] hover:text-[#1A56DB] hover:bg-[#1A56DB]/10 transition-colors"
+                                title="Edit Blueprint"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
 
-                    <div>
-                      <h4 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">
-                        {tierItem.name}
-                      </h4>
-                      <div className="flex items-baseline gap-1.5 mt-0.5">
-                        <span className="text-base font-black font-mono text-[var(--nexa-text-primary)]">
-                          {tierItem.priceNgn === 0
-                            ? "Free Pilot"
-                            : `₦${tierItem.priceNgn.toLocaleString()}`}
-                        </span>
-                        <span className="text-[10px] text-[var(--nexa-text-muted)] font-normal font-sans">
-                          / {tierItem.period}
-                        </span>
-                      </div>
-                    </div>
+                              <button
+                                onClick={() => setPlanToDelete(tierItem)}
+                                className="p-1 rounded-full text-[var(--nexa-text-muted)] hover:text-rose-600 hover:bg-rose-500/10 transition-colors"
+                                title="Delete Blueprint"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
 
-                    <p className="text-[11px] text-[var(--nexa-text-secondary)] line-clamp-2 leading-relaxed">
-                      {tierItem.description}
-                    </p>
+                          <div>
+                            <h4 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">
+                              {tierItem.name}
+                            </h4>
+                            <div className="flex items-baseline gap-1.5 mt-0.5">
+                              <span className="text-base font-black font-mono text-[var(--nexa-text-primary)]">
+                                {tierItem.priceNgn === 0
+                                  ? "Free Pilot"
+                                  : `₦${tierItem.priceNgn.toLocaleString()}`}
+                              </span>
+                              <span className="text-[10px] text-[var(--nexa-text-muted)] font-normal font-sans">
+                                / {tierItem.period}
+                              </span>
+                            </div>
+                          </div>
 
-                    <div className="space-y-1.5 pt-2 border-t border-[var(--nexa-border)] text-[10px] font-mono text-[var(--nexa-text-secondary)]">
-                      <div className="flex justify-between">
-                        <span>Leads Pipeline:</span>
-                        <span className="font-bold text-[var(--nexa-text-primary)]">
-                          {tierItem.leadsLimit.toLocaleString()} Leads
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Campaign Concurrency:</span>
-                        <span className="font-bold text-[var(--nexa-text-primary)]">
-                          {tierItem.campaignsLimit} Active
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Team Seats:</span>
-                        <span className="font-bold text-[var(--nexa-text-primary)]">
-                          {tierItem.teamSeats} Seats
-                        </span>
-                      </div>
-                      {tierItem.tokensLimit && (
-                        <div className="flex justify-between text-purple-600 dark:text-purple-400">
-                          <span>AI Tokens / Mo:</span>
-                          <span className="font-bold">
-                            {(tierItem.tokensLimit / 1000000).toFixed(0)}M Tokens
-                          </span>
+                          <p className="text-[11px] text-[var(--nexa-text-secondary)] line-clamp-2 leading-relaxed">
+                            {tierItem.description}
+                          </p>
+
+                          <div className="space-y-1.5 pt-2 border-t border-[var(--nexa-border)] text-[10px] font-mono text-[var(--nexa-text-secondary)]">
+                            <div className="flex justify-between">
+                              <span>Leads Pipeline:</span>
+                              <span className="font-bold text-[var(--nexa-text-primary)]">
+                                {tierItem.leadsLimit.toLocaleString()} Leads
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Campaign Concurrency:</span>
+                              <span className="font-bold text-[var(--nexa-text-primary)]">
+                                {tierItem.campaignsLimit} Active
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Team Seats:</span>
+                              <span className="font-bold text-[var(--nexa-text-primary)]">
+                                {tierItem.teamSeats} Seats
+                              </span>
+                            </div>
+                            {tierItem.tokensLimit && (
+                              <div className="flex justify-between text-purple-600 dark:text-purple-400">
+                                <span>AI Tokens / Mo:</span>
+                                <span className="font-bold">
+                                  {(tierItem.tokensLimit / 1000000).toFixed(0)}M Tokens
+                                </span>
+                              </div>
+                            )}
+                            {tierItem.storefrontsLimit && (
+                              <div className="flex justify-between text-amber-600 dark:text-amber-400">
+                                <span>Storefront Subdomains:</span>
+                                <span className="font-bold">
+                                  {tierItem.storefrontsLimit} Store(s)
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      )}
-                      {tierItem.storefrontsLimit && (
-                        <div className="flex justify-between text-amber-600 dark:text-amber-400">
-                          <span>Storefront Subdomains:</span>
-                          <span className="font-bold">
-                            {tierItem.storefrontsLimit} Store(s)
-                          </span>
+
+                        <div className="pt-2 border-t border-[var(--nexa-border)] flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedPlanForAssign(tierItem);
+                              if (tenants.length > 0) {
+                                setTargetOrgIdForAssign(tenants[0].id);
+                              }
+                            }}
+                            className="flex-1 py-1.5 rounded-full text-center text-[10px] font-bold bg-[#1A56DB] text-white hover:bg-[#1545B0] transition-colors cursor-pointer shadow-xs flex items-center justify-center gap-1"
+                          >
+                            <Building2 className="w-3 h-3" />
+                            <span>Assign Plan</span>
+                          </button>
+
+                          <button
+                            onClick={() => setSelectedPlanFilter(tierItem.tier)}
+                            className="py-1.5 px-3 rounded-full text-center text-[10px] font-bold bg-[var(--nexa-bg-base)] hover:bg-[#1A56DB] hover:text-white border border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] transition-colors cursor-pointer"
+                          >
+                            {subscribedTenants.length} Orgs
+                          </button>
                         </div>
-                      )}
-                    </div>
-                  </div>
+                      </NexaCard>
+                    );
+                  })}
+                </div>
 
-                  <div className="pt-2 border-t border-[var(--nexa-border)] flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        setSelectedPlanForAssign(tierItem);
-                        if (tenants.length > 0) {
-                          setTargetOrgIdForAssign(tenants[0].id);
-                        }
-                      }}
-                      className="flex-1 py-1.5 rounded-full text-center text-[10px] font-bold bg-[#1A56DB] text-white hover:bg-[#1545B0] transition-colors cursor-pointer shadow-xs flex items-center justify-center gap-1"
-                    >
-                      <Building2 className="w-3 h-3" />
-                      <span>Assign Plan</span>
-                    </button>
-
-                    <button
-                      onClick={() => setSelectedPlanFilter(tierItem.tier)}
-                      className="py-1.5 px-3 rounded-full text-center text-[10px] font-bold bg-[var(--nexa-bg-base)] hover:bg-[#1A56DB] hover:text-white border border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] transition-colors cursor-pointer"
-                    >
-                      {subscribedTenants.length} Orgs
-                    </button>
-                  </div>
-                </NexaCard>
-              );
-            })}
-          </div>
+                <Pagination
+                  currentPage={plansPage}
+                  totalPages={totalPlansPages}
+                  totalItems={filteredPlans.length}
+                  itemsPerPage={plansItemsPerPage}
+                  onPageChange={setPlansPage}
+                />
+              </>
+            );
+          })()}
         </div>
       </div>
 

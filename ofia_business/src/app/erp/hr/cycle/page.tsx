@@ -8,6 +8,7 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
+import { Pagination } from "@/components/nexa/Pagination";
 import { Calendar, Plus, CheckCircle2, Clock, AlertCircle, ArrowLeft } from "lucide-react";
 
 export default function ReviewCycleManagement() {
@@ -17,6 +18,8 @@ export default function ReviewCycleManagement() {
   const [endDate, setEndDate] = useState("");
   const [selectedDepts, setSelectedDepts] = useState<string[]>([]);
   const [cycleStatus, setCycleStatus] = useState<"Draft" | "Active">("Draft");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
   
   const depts = DEPARTMENTS;
 
@@ -96,7 +99,7 @@ export default function ReviewCycleManagement() {
             </h3>
             
             <div className="space-y-4">
-              {cycles.map((c) => (
+              {cycles.slice((currentPage - 1) * itemsPerPage, (currentPage - 1) * itemsPerPage + itemsPerPage).map((c) => (
                 <div key={c.id} className="p-4 bg-[var(--nexa-bg-base)] rounded-2xl flex flex-col gap-3 border border-[var(--nexa-border)]">
                   <div className="flex justify-between items-start">
                     <div>
@@ -150,6 +153,14 @@ export default function ReviewCycleManagement() {
                 </div>
               ))}
             </div>
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={Math.max(1, Math.ceil(cycles.length / itemsPerPage))}
+              totalItems={cycles.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
           </NexaCard>
 
           {/* Create Cycle Form (5cols) */}

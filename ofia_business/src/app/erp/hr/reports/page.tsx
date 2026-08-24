@@ -8,6 +8,7 @@ import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
+import { Pagination } from "@/components/nexa/Pagination";
 import { ArrowLeft } from "lucide-react";
 
 export default function HRReportsPage() {
@@ -16,6 +17,8 @@ export default function HRReportsPage() {
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedDept, setSelectedDept] = useState<string>("Fleet");
+  const [deptEmpPage, setDeptEmpPage] = useState(1);
+  const itemsPerPage = 8;
 
   useEffect(() => {
     const stored = localStorage.getItem("erp_current_user");
@@ -330,8 +333,11 @@ export default function HRReportsPage() {
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {deptEmployees.length > 0 ? (
-                      deptEmployees.map(emp => {
+                      deptEmployees
+                        .slice((deptEmpPage - 1) * itemsPerPage, (deptEmpPage - 1) * itemsPerPage + itemsPerPage)
+                        .map((emp, idx) => {
                         const rev = deptReviews.find(r => r.employeeId === emp.id);
+                        const avatarSrc = emp.avatar && emp.avatar.startsWith("/character") ? emp.avatar : `/character${(((deptEmpPage - 1) * itemsPerPage + idx) % 20) + 1}.jpg`;
                         
                         // Calculate self average rating
                         let selfAvgStr = "—";
@@ -344,7 +350,7 @@ export default function HRReportsPage() {
                           <tr key={emp.id} className="hover:bg-slate-50/50 transition-colors">
                             <td className="py-3 flex items-center gap-3">
                               <img
-                                src={emp.avatar || "/character1.jpg"}
+                                src={avatarSrc}
                                 alt={emp.name}
                                 className="w-8 h-8 rounded-full object-cover border border-gray-200"
                               />
@@ -379,7 +385,7 @@ export default function HRReportsPage() {
                             <td className="py-3">
                               {rev ? (
                                 <button
-                                  onClick={() => router.push(`/hr/review/detail?employeeId=${emp.id}`)}
+                                  onClick={() => router.push(`/erp/hr/review/detail?employeeId=${emp.id}`)}
                                   className="px-3 py-1 bg-blue-600 hover:bg-blue-750 text-white font-bold rounded-xl text-[10px] uppercase tracking-wider transition-all shadow-sm cursor-pointer"
                                 >
                                   View Audit
@@ -406,6 +412,14 @@ export default function HRReportsPage() {
                   </tbody>
                 </table>
               </div>
+
+              <Pagination
+                currentPage={deptEmpPage}
+                totalPages={Math.max(1, Math.ceil(deptEmployees.length / itemsPerPage))}
+                totalItems={deptEmployees.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setDeptEmpPage}
+              />
 
             </div>
           </div>

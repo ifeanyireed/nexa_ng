@@ -63,6 +63,20 @@ func HandleCycles(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "Cycle upserted successfully"})
+	} else if r.Method == http.MethodDelete {
+		id := r.URL.Query().Get("id")
+		if id == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Cycle ID is required"})
+			return
+		}
+		_, err := db.Exec("DELETE FROM ReviewCycle WHERE id = ?", id)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "Review cycle deleted successfully"})
 	} else {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}

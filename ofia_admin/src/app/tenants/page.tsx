@@ -8,6 +8,7 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaModal } from "@/components/nexa/NexaModal";
+import { Pagination } from "@/components/nexa/Pagination";
 import {
   INITIAL_TENANTS,
   TenantOrg,
@@ -488,6 +489,8 @@ function TenantManagementContent() {
   // Notifications & Telemetry
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isSavingDb, setIsSavingDb] = useState(false);
+  const [tenantPage, setTenantPage] = useState(1);
+  const tenantItemsPerPage = 5;
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -1428,8 +1431,11 @@ function TenantManagementContent() {
 
                 {/* TENANTS SINGLE COLUMN CARDS */}
                 <div className="grid grid-cols-1 gap-4">
-                  {filteredTenants.map((tenant) => {
+                  {filteredTenants
+                    .slice((tenantPage - 1) * tenantItemsPerPage, (tenantPage - 1) * tenantItemsPerPage + tenantItemsPerPage)
+                    .map((tenant, idx) => {
                     const isFocused = selectedTenantId === tenant.id;
+                    const charNum = (((tenantPage - 1) * tenantItemsPerPage + idx) % 20) + 1;
 
                     return (
                       <div
@@ -1443,9 +1449,11 @@ function TenantManagementContent() {
                       >
                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[var(--nexa-border)]">
                           <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 rounded-full bg-[#1A56DB] flex items-center justify-center text-white font-black text-lg shadow-sm shrink-0 ring-4 ring-[#1A56DB]/15">
-                              {tenant.name.substring(0, 2).toUpperCase()}
-                            </div>
+                            <img
+                              src={`/character${charNum}.jpg`}
+                              alt={tenant.name}
+                              className="w-12 h-12 rounded-full object-cover shadow-sm shrink-0 ring-4 ring-[#1A56DB]/15 border border-[var(--nexa-border)]"
+                            />
                             <div>
                               <div className="flex items-center gap-2.5 flex-wrap">
                                 <h3 className="text-base font-extrabold text-display text-[var(--nexa-text-primary)]">
@@ -1599,21 +1607,28 @@ function TenantManagementContent() {
                                 <div className="flex items-center gap-2 min-w-0">
                                   <div
                                     className={cn(
-                                      "w-6 h-6 rounded-full flex items-center justify-center text-white text-[10px] shrink-0",
-                                      isEnabled ? "bg-[#1A56DB]" : "bg-slate-400 dark:bg-slate-700 opacity-50"
+                                      "w-6 h-6 rounded-lg flex items-center justify-center shrink-0 text-xs",
+                                      isEnabled
+                                        ? "bg-[#1A56DB]/10 text-[#1A56DB]"
+                                        : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-muted)]"
                                     )}
                                   >
                                     {getModuleIcon(mod.iconName)}
                                   </div>
-                                  <span className="text-xs font-bold text-[var(--nexa-text-primary)] truncate">
-                                    {mod.label}
-                                  </span>
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-bold text-[var(--nexa-text-primary)] truncate">
+                                      {mod.label}
+                                    </p>
+                                    <p className="text-[9px] text-[var(--nexa-text-muted)] font-mono truncate">
+                                      /erp/{mod.key}
+                                    </p>
+                                  </div>
                                 </div>
 
                                 <div
                                   className={cn(
                                     "w-8 h-4.5 rounded-full p-0.5 transition-colors shrink-0",
-                                    isEnabled ? "bg-[#1A56DB]" : "bg-slate-300 dark:bg-slate-700"
+                                    isEnabled ? "bg-[#1A56DB]" : "bg-[var(--nexa-border)]"
                                   )}
                                 >
                                   <div
@@ -1631,6 +1646,14 @@ function TenantManagementContent() {
                     );
                   })}
                 </div>
+
+                <Pagination
+                  currentPage={tenantPage}
+                  totalPages={Math.max(1, Math.ceil(filteredTenants.length / tenantItemsPerPage))}
+                  totalItems={filteredTenants.length}
+                  itemsPerPage={tenantItemsPerPage}
+                  onPageChange={setTenantPage}
+                />
               </div>
             )}
           </div>

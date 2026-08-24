@@ -16,10 +16,12 @@ func AutoSeedIfEmpty() {
 		return
 	}
 
-	var userCount int
-	row := db.QueryRow("SELECT COUNT(*) FROM User")
-	if err := row.Scan(&userCount); err == nil && userCount > 0 {
-		log.Printf("ℹ️ Database already contains %d users in User table, skipping automatic seeding", userCount)
+	EnsureHRTables()
+
+	var reviewCount int
+	row := db.QueryRow("SELECT COUNT(*) FROM PerformanceReview")
+	if err := row.Scan(&reviewCount); err == nil && reviewCount > 0 {
+		log.Printf("ℹ️ Database already contains %d reviews in PerformanceReview table, skipping automatic seeding", reviewCount)
 		return
 	}
 
@@ -32,6 +34,8 @@ func AutoSeedIfEmpty() {
 }
 
 func executeSeed() error {
+	EnsureHRTables()
+
 	var data SeedData
 	if err := json.Unmarshal(seedDataBytes, &data); err != nil {
 		return err
@@ -44,14 +48,13 @@ func executeSeed() error {
 	defer tx.Rollback()
 
 	_, _ = tx.Exec("SET FOREIGN_KEY_CHECKS = 0")
-	_, _ = tx.Exec("TRUNCATE TABLE User")
-	_, _ = tx.Exec("TRUNCATE TABLE ReviewCycle")
-	_, _ = tx.Exec("TRUNCATE TABLE Objective")
-	_, _ = tx.Exec("TRUNCATE TABLE PerformanceReview")
-	_, _ = tx.Exec("SET FOREIGN_KEY_CHECKS = 1")
 
 	// 1. Seed Users (15 columns matching database export)
-	userStmt, err := tx.Prepare("INSERT INTO User (id, name, email, role, department, avatar, managerName, ratingTrend, company, designation, employmentDate, gradeLevel, location, password, managerId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+	userStmt, err := tx.Prepare(`INSERT INTO User 
+		(id, name, email, role, department, avatar, managerName, ratingTrend, company, designation, employmentDate, gradeLevel, location, password, managerId) 
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON DUPLICATE KEY UPDATE 
+		name=VALUES(name), department=VALUES(department), avatar=VALUES(avatar), managerName=VALUES(managerName), ratingTrend=VALUES(ratingTrend), company=VALUES(company), designation=VALUES(designation), employmentDate=VALUES(employmentDate), gradeLevel=VALUES(gradeLevel), location=VALUES(location), managerId=VALUES(managerId)`)
 	if err != nil {
 		return err
 	}
@@ -67,7 +70,11 @@ func executeSeed() error {
 	}
 
 	// 2. Seed Cycles (6 columns matching database export)
-	cycleStmt, err := tx.Prepare("INSERT INTO ReviewCycle (id, name, startDate, endDate, status, departments) VALUES (?, ?, ?, ?, ?, ?)")
+	cycleStmt, err := tx.Prepare(`INSERT INTO ReviewCycle 
+		(id, name, startDate, endDate, status, departments) 
+		VALUES (?, ?, ?, ?, ?, ?)
+		ON DUPLICATE KEY UPDATE 
+		name=VALUES(name), startDate=VALUES(startDate), endDate=VALUES(endDate), status=VALUES(status), departments=VALUES(departments)`)
 	if err != nil {
 		return err
 	}
@@ -83,7 +90,11 @@ func executeSeed() error {
 	}
 
 	// 3. Seed Objectives (8 columns matching database export)
-	objStmt, err := tx.Prepare("INSERT INTO Objective (id, text, weight, type, expectedLevel, category, departments, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+	objStmt, err := tx.Prepare(`INSERT INTO Objective 
+		(id, text, weight, type, expectedLevel, category, departments, description) 
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		ON DUPLICATE KEY UPDATE 
+		text=VALUES(text), weight=VALUES(weight), type=VALUES(type), expectedLevel=VALUES(expectedLevel), category=VALUES(category), departments=VALUES(departments), description=VALUES(description)`)
 	if err != nil {
 		return err
 	}
@@ -109,7 +120,11 @@ func executeSeed() error {
 	}
 
 	// 4. Seed Reviews (14 columns matching database export)
-	revStmt, err := tx.Prepare("INSERT INTO PerformanceReview (id, employeeId, employeeName, department, cycleId, cycleName, status, employeeComments, managerComments, hrComments, finalScore, objectivesJson, updatedAt, improvementPlan) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+	revStmt, err := tx.Prepare(`INSERT INTO PerformanceReview 
+		(id, employeeId, employeeName, department, cycleId, cycleName, status, employeeComments, managerComments, hrComments, finalScore, objectivesJson, updatedAt, improvementPlan) 
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		ON DUPLICATE KEY UPDATE 
+		employeeId=VALUES(employeeId), employeeName=VALUES(employeeName), department=VALUES(department), cycleId=VALUES(cycleId), cycleName=VALUES(cycleName), status=VALUES(status), employeeComments=VALUES(employeeComments), managerComments=VALUES(managerComments), hrComments=VALUES(hrComments), finalScore=VALUES(finalScore), objectivesJson=VALUES(objectivesJson), updatedAt=VALUES(updatedAt), improvementPlan=VALUES(improvementPlan)`)
 	if err != nil {
 		return err
 	}
@@ -129,6 +144,7 @@ func executeSeed() error {
 		}
 	}
 
+	_, _ = tx.Exec("SET FOREIGN_KEY_CHECKS = 1")
 	return tx.Commit()
 }
 

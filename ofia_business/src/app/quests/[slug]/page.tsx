@@ -9,7 +9,7 @@ import {
   Target,
   Tv,
   Award,
-  Sparkles,
+  Medal,
   ArrowRight,
 } from "lucide-react";
 import {
@@ -21,9 +21,11 @@ import {
 export default function PublicQuestLandingPage() {
   const params = useParams();
   const slug = params?.slug || "2026-staff-retreat";
+  const [mounted, setMounted] = useState(false);
   const [tenantName, setTenantName] = useState<string>("Ofia Workspace");
 
   useEffect(() => {
+    setMounted(true);
     fetchDatabaseTenants()
       .then((list) => {
         const sub = extractSubdomainOrParam();
@@ -59,6 +61,12 @@ export default function PublicQuestLandingPage() {
     { name: "Best Creative Team Mascot Photo", type: "Evidence Review", winner: "In Review", status: "ACTIVE" },
     { name: "2-Hour Product Innovation Pitch", type: "Panel Pitch", winner: "Starts 5:00 PM", status: "UPCOMING" },
   ];
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-black text-white font-sans" />
+    );
+  }
 
   return (
     <div
@@ -129,7 +137,7 @@ export default function PublicQuestLandingPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold flex items-center gap-2 text-white">
-              <Sparkles className="w-5 h-5 text-[#3B82F6]" /> Top Contestants (3D Avatars)
+              <Medal className="w-5 h-5 text-[#3B82F6]" /> Top Contestants
             </h2>
             <Link href={`/quests/${slug}/scoreboard`} className="text-xs text-[#3B82F6] hover:text-[#60A5FA] font-medium hover:underline flex items-center gap-1">
               <span>View Full Stage TV Scoreboard</span>

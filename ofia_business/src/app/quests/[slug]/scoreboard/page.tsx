@@ -403,6 +403,7 @@ export default function StageTVScoreboardPage() {
   const params = useParams();
   const slug = params?.slug || "2026-staff-retreat";
 
+  const [mounted, setMounted] = useState(false);
   const [contestants, setContestants] = useState<Contestant[]>(ALL_30_CONTESTANTS);
   const [teams, setTeams] = useState<TeamStanding[]>(INITIAL_TEAMS);
   const [viewMode, setViewMode] = useState<"top5" | "top10" | "all30" | "teams">("top5");
@@ -410,13 +411,19 @@ export default function StageTVScoreboardPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSoundMuted, setIsSoundMuted] = useState(true);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-      setIsFullscreen(true);
-    } else {
-      document.exitFullscreen().catch(() => {});
-      setIsFullscreen(false);
+    if (typeof document !== "undefined") {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+        setIsFullscreen(true);
+      } else {
+        document.exitFullscreen().catch(() => {});
+        setIsFullscreen(false);
+      }
     }
   };
 
@@ -438,6 +445,20 @@ export default function StageTVScoreboardPage() {
       : viewMode === "top10"
       ? filteredContestants.slice(0, 10)
       : filteredContestants;
+
+  if (!mounted) {
+    return (
+      <div className="relative min-h-screen text-white flex flex-col justify-between font-sans bg-black">
+        <div
+          className="fixed inset-0 bg-cover bg-center bg-no-repeat z-0"
+          style={{ backgroundImage: `url('/background.jpeg')` }}
+        >
+          <div className="absolute inset-0 bg-black/45 backdrop-blur-[7px]" />
+          <div className="absolute inset-0 bg-radial from-black/20 via-black/50 to-black/85 pointer-events-none" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

@@ -249,6 +249,28 @@ export default function LoginPage() {
       route = "/erp/employee";
     }
 
+    // 1. Identify tenant slug from user email if on general erp.domain.ng
+    let tenantSlug = currentTenant;
+    if (!tenantSlug && userEmail.includes("@")) {
+      const domainPart = userEmail.split("@")[1].toLowerCase();
+      const extracted = domainPart.split(".")[0];
+      if (!["gmail", "yahoo", "outlook", "hotmail", "icloud", "ofia", "erp", "admin", "app"].includes(extracted)) {
+        tenantSlug = extracted;
+      }
+    }
+
+    // 2. If on general erp.domain.ng -> route to tenant_slug.domain.ng
+    if (typeof window !== "undefined" && tenantSlug && !currentTenant) {
+      const host = window.location.host.toLowerCase();
+      const protocol = window.location.protocol;
+      const cleanHost = host.replace(/^erp\./i, "").replace(/^www\./i, "");
+
+      if (cleanHost && !cleanHost.startsWith(tenantSlug)) {
+        window.location.href = `${protocol}//${tenantSlug}.${cleanHost}${route}`;
+        return;
+      }
+    }
+
     router.push(route);
   };
 

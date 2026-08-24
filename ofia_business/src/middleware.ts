@@ -34,11 +34,12 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // 1. ERP GENERAL SUBDOMAIN: erp.ofia.ng / erp.localhost:3000 / erp.domain.com
+  // 1. ERP MARKETING & GENERAL PORTAL: erp.domain.ng / erp.ofia.ng / erp.localhost:3000
+  // Belongs to NO tenant. Serves the marketing showcase at / and general login form at /login
   if (subdomain === "erp") {
-    // Accessing root of erp subdomain -> rewrite to /login (general ERP login console)
+    // Accessing root of erp subdomain -> rewrite to /erp (ERP marketing & showcase page)
     if (url.pathname === "/" || url.pathname === "") {
-      url.pathname = "/login";
+      url.pathname = "/erp";
       return NextResponse.rewrite(url);
     }
     // Auth & public utility pages keep their direct route on erp subdomain

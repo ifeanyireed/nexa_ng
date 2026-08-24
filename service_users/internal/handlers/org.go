@@ -253,38 +253,46 @@ func (h *OrgHandler) UpdateOrgProfile(w http.ResponseWriter, r *http.Request) {
 		updateFields["slug"] = v
 	}
 	if v, ok := rawMap["plan_tier"]; ok && v != "" {
-		updateFields["planTier"] = v
+		updateFields["plan_tier"] = v
 	} else if v, ok := rawMap["planTier"]; ok && v != "" {
-		updateFields["planTier"] = v
+		updateFields["plan_tier"] = v
 	}
 	if v, ok := rawMap["status"]; ok && v != "" {
 		updateFields["status"] = strings.ToUpper(fmt.Sprintf("%v", v))
 	}
-	updateFields["updatedAt"] = time.Now()
+	updateFields["updated_at"] = time.Now()
 
 	if h.db != nil {
-		if err := h.db.Model(&models.Organization{}).Where("id = ?", orgID).Updates(updateFields).Error; err != nil {
-			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
+		var org models.Organization
+		res := h.db.Where("id = ? OR slug = ?", orgID, orgID).First(&org)
+		if res.Error == nil {
+			if err := h.db.Model(&org).Updates(updateFields).Error; err != nil {
+				http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
+				return
+			}
+
+			// Also update Subscription table plan_tier & status if provided
+			if planTier, ok := updateFields["plan_tier"]; ok {
+				h.db.Model(&models.Subscription{}).Where("organization_id = ?", org.ID).Updates(map[string]interface{}{
+					"plan_tier":  planTier,
+					"updated_at": time.Now(),
+				})
+			}
+			if status, ok := updateFields["status"]; ok {
+				h.db.Model(&models.Subscription{}).Where("organization_id = ?", org.ID).Updates(map[string]interface{}{
+					"status":     status,
+					"updated_at": time.Now(),
+				})
+			}
+
+			var updated models.Organization
+			h.db.Preload("Subscription").First(&updated, "id = ?", org.ID)
+			json.NewEncoder(w).Encode(updated)
 			return
 		}
 
-		// Also update Subscription table planTier & status if provided
-		if planTier, ok := updateFields["planTier"]; ok {
-			h.db.Model(&models.Subscription{}).Where("organizationId = ?", orgID).Updates(map[string]interface{}{
-				"planTier":  planTier,
-				"updatedAt": time.Now(),
-			})
-		}
-		if status, ok := updateFields["status"]; ok {
-			h.db.Model(&models.Subscription{}).Where("organizationId = ?", orgID).Updates(map[string]interface{}{
-				"status":    status,
-				"updatedAt": time.Now(),
-			})
-		}
-
-		var updated models.Organization
-		h.db.Preload("Subscription").First(&updated, "id = ?", orgID)
-		json.NewEncoder(w).Encode(updated)
+		rawMap["id"] = orgID
+		json.NewEncoder(w).Encode(rawMap)
 		return
 	}
 

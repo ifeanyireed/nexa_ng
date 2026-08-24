@@ -57,18 +57,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.rewrite(url);
   }
 
-  // 2. REDIRECT /login & /erp REQUESTS ON APEX/WWW (ofia.ng) TO erp.ofia.ng
-  // Only redirect if accessing from apex / www, NEVER redirect tenant subdomains!
-  const isApexOrWww = !subdomain || subdomain === "www";
-  if (isApexOrWww && (url.pathname === "/login" || url.pathname.startsWith("/erp"))) {
-    const protocol = request.headers.get("x-forwarded-proto") || (request.url.startsWith("https") ? "https" : "http");
-    const baseDomain = hostParts.length > 2 ? hostParts.slice(-2).join(".") : hostWithoutPort;
-    const targetHost = `erp.${baseDomain}${port}`;
-    const targetPath = url.pathname.startsWith("/erp")
-      ? (url.pathname.replace(/^\/erp/, "") || "/login")
-      : url.pathname;
-    return NextResponse.redirect(new URL(`${protocol}://${targetHost}${targetPath}${url.search}`), 307);
-  }
+
 
   // 3. TENANT DIGITAL STOREFRONT: *.domain.shop or *.shop (e.g. edusuite.ofia.shop or custom .shop)
   const isShopDomain = hostWithoutPort.endsWith(".shop") || hostWithoutPort.includes(".shop");

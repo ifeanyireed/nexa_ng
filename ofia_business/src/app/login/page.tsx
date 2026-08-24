@@ -249,26 +249,6 @@ export default function LoginPage() {
       route = "/erp/employee";
     }
 
-    // Extract tenant slug from user email (e.g. edusuite from admin@edusuite.ng)
-    let tenantSlug = currentTenant;
-    if (!tenantSlug && userEmail.includes("@")) {
-      const domainPart = userEmail.split("@")[1].toLowerCase();
-      tenantSlug = domainPart.split(".")[0];
-    }
-
-    // If on general erp.ofia.ng / apex and logging into a specific tenant -> redirect to tenant subdomain
-    if (!currentTenant && tenantSlug && tenantSlug !== "ofia" && tenantSlug !== "gmail" && tenantSlug !== "yahoo" && tenantSlug !== "outlook") {
-      if (typeof window !== "undefined") {
-        const protocol = window.location.protocol;
-        const port = window.location.port ? `:${window.location.port}` : "";
-        const host = window.location.host.toLowerCase();
-        const hostParts = host.split(":")[0].split(".");
-        const baseDomain = hostParts.length > 2 ? hostParts.slice(-2).join(".") : host.split(":")[0];
-        window.location.href = `${protocol}//${tenantSlug}.${baseDomain}${port}${route}`;
-        return;
-      }
-    }
-
     router.push(route);
   };
 

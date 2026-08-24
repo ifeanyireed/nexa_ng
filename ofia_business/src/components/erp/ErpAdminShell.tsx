@@ -120,13 +120,8 @@ export function ErpAdminShell({
     iconBg: "from-blue-600 to-indigo-600",
   });
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [tenantName, setTenantName] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      const matched = resolveTenantFromList([], undefined);
-      return matched?.name || "";
-    }
-    return "";
-  });
+  const [tenantName, setTenantName] = useState<string>("");
+  const [isMounted, setIsMounted] = useState<boolean>(false);
   const [permissionMatrix, setPermissionMatrix] = useState<PermissionMatrix>(DEFAULT_PERMISSION_MATRIX);
   const [currentRole, setCurrentRole] = useState<RoleKey>("admin");
   const [userName, setUserName] = useState<string>("");
@@ -190,17 +185,18 @@ export function ErpAdminShell({
   };
 
   useEffect(() => {
-    let isMounted = true;
+    setIsMounted(true);
+    let isCurrent = true;
     const initShell = async () => {
       const list = await fetchDatabaseTenants();
-      if (!isMounted) return;
+      if (!isCurrent) return;
       const matched = resolveTenantFromList(list, user?.email);
       const activeName = matched?.name || "";
       setTenantName(activeName);
       setPermissionMatrix(getTenantPermissionMatrix(activeName));
 
       fetchTenantPermissionMatrix(activeName).then((remote) => {
-        if (remote && Object.keys(remote).length > 0 && isMounted) {
+        if (remote && Object.keys(remote).length > 0 && isCurrent) {
           setPermissionMatrix(remote);
         }
       });
@@ -594,8 +590,12 @@ export function ErpAdminShell({
             <Link href="/" className="flex items-center gap-2.5 min-w-0">
               <img src="/logo.png" alt="Ofia ERP Logo" className="w-8 h-8 object-contain shrink-0" />
               <div className="flex flex-col min-w-0">
-                <span className="text-sm font-black text-display leading-tight text-[var(--nexa-text-primary)] truncate max-w-[180px]" title={tenantName}>
-                  {tenantName}
+                <span
+                  className="text-sm font-black text-display leading-tight text-[var(--nexa-text-primary)] truncate max-w-[180px]"
+                  title={isMounted ? tenantName : ""}
+                  suppressHydrationWarning
+                >
+                  {isMounted ? tenantName : ""}
                 </span>
                 <span className="text-[11px] font-black text-[#1A56DB] tracking-wide uppercase mt-0.5">
                   OFIA ERP
@@ -746,16 +746,17 @@ export function ErpAdminShell({
             {isSidebarOpen ? (
               <div className="flex items-center justify-between p-2 rounded-2xl bg-nexa-bg-base/70 border border-nexa-border">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <NexaAvatar size="sm" isOnline name={userName || user?.name || "Staff"} />
+                  <NexaAvatar size="sm" isOnline name={isMounted ? (userName || user?.name || "Staff") : "Staff"} />
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-nexa-text-primary truncate">
-                      {userName || user?.name || (tenantName ? `${tenantName} Staff` : "Staff")}
+                    <p className="text-xs font-bold text-nexa-text-primary truncate" suppressHydrationWarning>
+                      {isMounted ? (userName || user?.name || (tenantName ? `${tenantName} Staff` : "Staff")) : "Staff"}
                     </p>
                     <p
                       className={cn(
                         "text-[9px] font-extrabold uppercase tracking-wider truncate inline-block px-1.5 py-0.5 rounded-full border mt-0.5",
                         getRoleBadgeColor(currentRole)
                       )}
+                      suppressHydrationWarning
                     >
                       {getRoleDisplayName(currentRole)}
                     </p>

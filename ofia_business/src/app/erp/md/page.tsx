@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useERPStore, PerformanceReview, User, getParentDept, getSignedInERPUser } from "@/lib/erp-store";
 import { BusinessShell } from "@/components/business/BusinessShell";
@@ -14,6 +14,8 @@ export default function MDDashboard() {
   const router = useRouter();
   const { reviews, users, cycles } = useERPStore();
   const [currentUser, setCurrentUser] = useState<User>(() => getSignedInERPUser(users));
+  const [departments, setDepartments] = useState<{ code: string; name: string; costCenter?: string; head?: string }[]>([]);
+  const [isLoadingDepts, setIsLoadingDepts] = useState(true);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -22,17 +24,56 @@ export default function MDDashboard() {
     }
   }, [users]);
 
+  // Dynamically fetch tenant departments from the database / API
+  useEffect(() => {
+    async function loadDepartments() {
+      try {
+        setIsLoadingDepts(true);
+        const res = await fetch("/api/erp/departments", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setDepartments(data);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch departments for MD dashboard:", err);
+      } finally {
+        setIsLoadingDepts(false);
+      }
+    }
+    loadDepartments();
+  }, []);
+
   // Filter completed reviews
   const completedReviews = reviews.filter(r => r.status === "HR Approved");
 
-  // Averages by Department
-  const depts = ["Fleet", "Marketing", "NOC", "Finance & Accounts", "Systems and IT", "Admin/HR", "Human Resources", "Legal", "Workshop", "Internal Control", "KHLC - Skillup"];
-  const deptAverages = depts.map(d => {
-    const deptRevs = completedReviews.filter(r => getParentDept(r.department) === d && r.finalScore !== undefined);
+  // Dynamically compute Department Performance Ratings
+  // If API returns departments, use them; otherwise extract unique departments dynamically from live users
+  const activeDepartmentList = useMemo(() => {
+    if (departments.length > 0) {
+      return departments.map(d => d.name);
+    }
+    // Fallback: extract distinct department names dynamically from live users
+    const userDepts = Array.from(new Set(users.map(u => getParentDept(u.department)).filter(Boolean)));
+    return userDepts.length > 0 ? userDepts : ["Finance & Accounts", "Fleet Operations & Maintenance", "Systems & IT / ERP", "Human Resources & Talent", "Commercial & Growth", "Executive Directorate"];
+  }, [departments, users]);
+
+  const deptAverages = activeDepartmentList.map(deptName => {
+    const deptRevs = completedReviews.filter(r => {
+      const rDept = (r.department || "").toLowerCase().trim();
+      const target = deptName.toLowerCase().trim();
+      return (
+        getParentDept(r.department) === deptName ||
+        rDept.includes(target) ||
+        target.includes(rDept)
+      );
+    });
     const avg = deptRevs.length > 0
-      ? (deptRevs.reduce((sum, r) => sum + (r.finalScore || 0), 0) / deptRevs.length)
+      ? deptRevs.reduce((sum, r) => sum + (r.finalScore || 0), 0) / deptRevs.length
       : 0;
-    return { name: d, average: avg, count: deptRevs.length };
+    return { name: deptName, average: avg, count: deptRevs.length };
   });
 
   // Top and Bottom Performers

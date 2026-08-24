@@ -44,25 +44,24 @@ export default function HRReportsPage() {
     ["Submitted", "Manager Reviewed", "HR Approved"].includes(r.status)
   );
 
-  // Define departments list
-  const depts = [
-    "Fleet",
-    "Marketing",
-    "NOC",
-    "Finance & Accounts",
-    "Systems and IT",
-    "Admin/HR",
-    "Human Resources",
-    "Legal",
-    "Workshop",
-    "Internal Control",
-    "KHLC - Skillup"
-  ];
+  // Dynamically derive departments list from user base and departments API
+  const isDeptMatch = (deptName: string, target: string) => {
+    const d = (deptName || "").toLowerCase().trim();
+    const t = (target || "").toLowerCase().trim();
+    return getParentDept(deptName) === target || d.includes(t) || t.includes(d);
+  };
+
+  const dynamicDepts = Array.from(
+    new Set(users.map(u => getParentDept(u.department)).filter(Boolean))
+  );
+  const depts = dynamicDepts.length > 0
+    ? dynamicDepts
+    : ["Finance & Accounts", "Fleet Operations & Maintenance", "Systems & IT / ERP", "Human Resources & Talent", "Commercial & Growth", "Executive Directorate"];
 
   // Calculate Roster Review Summary (RRS)
   const rosterReviewSummary = depts.map(d => {
     const deptRevs = completedReviews.filter(
-      r => getParentDept(r.department) === d && r.finalScore !== undefined
+      r => isDeptMatch(r.department, d) && r.finalScore !== undefined
     );
     const avg =
       deptRevs.length > 0
@@ -70,7 +69,7 @@ export default function HRReportsPage() {
         : 0;
 
     // Calculate total expected evaluations for this dept (active reviews)
-    const totalDeptRevs = reviews.filter(r => getParentDept(r.department) === d);
+    const totalDeptRevs = reviews.filter(r => isDeptMatch(r.department, d));
     const completedCount = deptRevs.length;
     const completionRate =
       totalDeptRevs.length > 0 ? (completedCount / totalDeptRevs.length) * 100 : 0;
@@ -86,7 +85,7 @@ export default function HRReportsPage() {
 
   // Filter employees and reviews for the selected department
   const deptEmployees = users.filter(
-    u => getParentDept(u.department) === selectedDept && u.role === "employee"
+    u => isDeptMatch(u.department, selectedDept) && u.role === "employee"
   );
   const deptEmpIds = deptEmployees.map(u => u.id);
   const deptReviews = reviews.filter(r => deptEmpIds.includes(r.employeeId));

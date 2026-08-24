@@ -36,14 +36,20 @@ export default function DepartmentPerformancePage() {
   }, []);
 
   // Filter employees and reviews for this department
-  const deptEmployees = users.filter(u => getParentDept(u.department) === deptId && u.role === "employee");
+  const isDeptMatch = (deptName: string, target: string) => {
+    const d = (deptName || "").toLowerCase().trim();
+    const t = (target || "").toLowerCase().trim();
+    return getParentDept(deptName) === target || d.includes(t) || t.includes(d);
+  };
+
+  const deptEmployees = users.filter(u => isDeptMatch(u.department, deptId) && u.role === "employee");
   const deptEmpIds = deptEmployees.map(u => u.id);
   const deptReviews = reviews.filter(r => deptEmpIds.includes(r.employeeId));
 
-  // Averages by Department
-  const depts = ["Fleet", "Marketing", "NOC", "Finance & Accounts", "Systems and IT", "Admin/HR", "Human Resources", "Legal", "Workshop", "Internal Control", "KHLC - Skillup"];
-  const allDeptAverages = depts.map(d => {
-    const deptRevs = reviews.filter(r => getParentDept(r.department) === d && r.status === "HR Approved" && r.finalScore !== undefined);
+  // Dynamically compute unique departments across corporate users
+  const distinctDepts = Array.from(new Set(users.map(u => getParentDept(u.department)).filter(Boolean)));
+  const allDeptAverages = distinctDepts.map(d => {
+    const deptRevs = reviews.filter(r => isDeptMatch(r.department, d) && r.status === "HR Approved" && r.finalScore !== undefined);
     const avg = deptRevs.length > 0
       ? (deptRevs.reduce((sum, r) => sum + (r.finalScore || 0), 0) / deptRevs.length)
       : 0;
@@ -51,8 +57,8 @@ export default function DepartmentPerformancePage() {
   }).sort((a, b) => b.average - a.average);
 
   // Find department rank
-  const rank = allDeptAverages.findIndex(d => d.name === deptId) + 1;
-  const currentDeptAvg = allDeptAverages.find(d => d.name === deptId)?.average || 0;
+  const rank = allDeptAverages.findIndex(d => isDeptMatch(d.name, deptId)) + 1 || 1;
+  const currentDeptAvg = allDeptAverages.find(d => isDeptMatch(d.name, deptId))?.average || 0;
 
   return (
     <BusinessShell

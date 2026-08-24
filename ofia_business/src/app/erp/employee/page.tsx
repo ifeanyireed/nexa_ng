@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useERPStore, PerformanceReview, User, getSignedInERPUser } from "@/lib/erp-store";
+import { useERPStore, PerformanceReview, User, getSignedInERPUser, createReviewForUser } from "@/lib/erp-store";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -12,7 +12,7 @@ import { UserCheck, Star, Award, CheckCircle2, ArrowRight } from "lucide-react";
 
 export default function EmployeeDashboard() {
   const router = useRouter();
-  const { reviews, cycles, users } = useERPStore();
+  const { reviews, cycles, users, objectives, updateReview } = useERPStore();
   const [currentUser, setCurrentUser] = useState<User>(() => getSignedInERPUser(users));
   const [userReviews, setUserReviews] = useState<PerformanceReview[]>([]);
 
@@ -122,12 +122,24 @@ export default function EmployeeDashboard() {
                 </div>
               ) : (
                 <div className="py-8 text-center text-slate-450 font-bold">
-                  No active reviews for this cycle.
+                  {activeCycle ? "You have not started your assessment for this active cycle." : "No active reviews for this cycle."}
                 </div>
               )}
             </div>
 
             {/* Actions button */}
+            {!currentReview && activeCycle && (
+              <button
+                onClick={async () => {
+                  const newRev = createReviewForUser(currentUser, activeCycle, objectives);
+                  await updateReview(newRev);
+                  router.push(`/erp/employee/reviews/detail?id=${newRev.id}`);
+                }}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all text-xs cursor-pointer"
+              >
+                Fill Performance Self-Assessment Form
+              </button>
+            )}
             {currentReview && (currentReview.status === "Draft" || currentReview.status === "Returned") && (
               <button
                 onClick={() => router.push(`/erp/employee/reviews/detail?id=${currentReview.id}`)}

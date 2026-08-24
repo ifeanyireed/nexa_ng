@@ -307,6 +307,10 @@ func (h *OrgHandler) UpdateOrgProfile(w http.ResponseWriter, r *http.Request) {
 		ownerName = v
 	} else if v, ok := rawMap["ownerName"].(string); ok && v != "" {
 		ownerName = v
+	} else if v, ok := rawMap["admin_name"].(string); ok && v != "" {
+		ownerName = v
+	} else if v, ok := rawMap["adminName"].(string); ok && v != "" {
+		ownerName = v
 	}
 
 	ownerEmail := ""
@@ -314,11 +318,15 @@ func (h *OrgHandler) UpdateOrgProfile(w http.ResponseWriter, r *http.Request) {
 		ownerEmail = v
 	} else if v, ok := rawMap["ownerEmail"].(string); ok && v != "" {
 		ownerEmail = v
+	} else if v, ok := rawMap["admin_email"].(string); ok && v != "" {
+		ownerEmail = v
+	} else if v, ok := rawMap["adminEmail"].(string); ok && v != "" {
+		ownerEmail = v
 	}
 
 	if h.db != nil {
 		var org models.Organization
-		res := h.db.Where("id = ? OR slug = ?", orgID, orgID).First(&org)
+		res := h.db.Where("id = ? OR slug = ? OR LOWER(slug) = LOWER(?) OR LOWER(name) = LOWER(?) OR LOWER(id) = LOWER(?)", orgID, orgID, orgID, orgID, orgID).First(&org)
 		if res.Error == nil {
 			if err := h.db.Model(&org).Updates(updateFields).Error; err != nil {
 				http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
@@ -338,23 +346,29 @@ func (h *OrgHandler) UpdateOrgProfile(w http.ResponseWriter, r *http.Request) {
 					userUpdates["updated_at"] = time.Now()
 					h.db.Model(&models.User{}).Where("id = ?", org.OwnerID).Updates(userUpdates)
 				} else {
-					newUserID := uuid.New().String()
-					newUser := models.User{
-						ID:        newUserID,
-						Name:      ownerName,
-						Email:     ownerEmail,
-						Role:      models.RoleTenantOwner,
-						CreatedAt: time.Now(),
-						UpdatedAt: time.Now(),
-					}
-					if newUser.Email == "" {
-						newUser.Email = fmt.Sprintf("admin@%s.ng", org.Slug)
-					}
-					if newUser.Name == "" {
-						newUser.Name = "System Admin"
-					}
-					if err := h.db.Create(&newUser).Error; err == nil {
-						h.db.Model(&org).Update("owner_id", newUserID)
+					var existingUser models.User
+					if ownerEmail != "" && h.db.Where("LOWER(email) = LOWER(?)", ownerEmail).First(&existingUser).Error == nil {
+						h.db.Model(&existingUser).Update("name", ownerName)
+						h.db.Model(&org).Update("owner_id", existingUser.ID)
+					} else {
+						newUserID := uuid.New().String()
+						newUser := models.User{
+							ID:        newUserID,
+							Name:      ownerName,
+							Email:     ownerEmail,
+							Role:      models.RoleTenantOwner,
+							CreatedAt: time.Now(),
+							UpdatedAt: time.Now(),
+						}
+						if newUser.Email == "" {
+							newUser.Email = fmt.Sprintf("admin@%s.ng", org.Slug)
+						}
+						if newUser.Name == "" {
+							newUser.Name = "System Admin"
+						}
+						if err := h.db.Create(&newUser).Error == nil {
+							h.db.Model(&org).Update("owner_id", newUserID)
+						}
 					}
 				}
 			}

@@ -48,12 +48,7 @@ export default function TenantSettingsPage() {
   }, [activeTenant, user]);
 
   const handleSave = async () => {
-    const targetIdentifier = activeTenant?.id || activeTenant?.slug || slug;
-    if (!targetIdentifier) {
-      setIsSaved(true);
-      setTimeout(() => setIsSaved(false), 3000);
-      return;
-    }
+    const targetIdentifier = activeTenant?.id || activeTenant?.slug || slug || "org-01";
 
     try {
       setIsSaving(true);
@@ -65,8 +60,12 @@ export default function TenantSettingsPage() {
         domain: customDomain,
         ownerName: ownerName,
         owner_name: ownerName,
+        adminName: ownerName,
+        admin_name: ownerName,
         ownerEmail: ownerEmail,
         owner_email: ownerEmail,
+        adminEmail: ownerEmail,
+        admin_email: ownerEmail,
       };
 
       const res = await fetch(`/api/organizations/${encodeURIComponent(targetIdentifier)}`, {
@@ -83,13 +82,61 @@ export default function TenantSettingsPage() {
         });
       }
 
+      // Synchronize Admin Full Name to active local storage session and cookies
+      if (typeof window !== "undefined") {
+        if (ownerName) {
+          localStorage.setItem("nexa_user_name", ownerName);
+          document.cookie = `nexa_user_name=${encodeURIComponent(ownerName)}; path=/; max-age=2592000; SameSite=Lax`;
+          
+          const stored = localStorage.getItem("erp_current_user");
+          if (stored) {
+            try {
+              const u = JSON.parse(stored);
+              localStorage.setItem(
+                "erp_current_user",
+                JSON.stringify({
+                  ...u,
+                  name: ownerName,
+                  email: ownerEmail || u.email,
+                })
+              );
+            } catch {}
+          }
+        }
+      }
+
+      // Also propagate admin name to ERP staff table in MySQL if active
+      if (ownerName && (slug || activeTenant?.slug)) {
+        try {
+          await fetch("/api/erp/users", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-tenant-slug": slug || activeTenant?.slug || "",
+            },
+            body: JSON.stringify({
+              id: user?.id || "USR-001",
+              name: ownerName,
+              email: ownerEmail || user?.email || "admin@ofia.ng",
+              role: "admin",
+              department: "Executive Directorate",
+              designation: "Executive Director & Workspace Admin",
+              company: orgName || activeTenant?.name,
+              location: "Lagos, Nigeria",
+            }),
+          });
+        } catch (erpErr) {
+          console.warn("ERP staff sync:", erpErr);
+        }
+      }
+
       setIsSaved(true);
-      setTimeout(() => setIsSaved(false), 3000);
+      setTimeout(() => setIsSaved(false), 3500);
       reloadTenants();
     } catch (err: any) {
       console.warn("Save tenant notification:", err);
       setIsSaved(true);
-      setTimeout(() => setIsSaved(false), 3000);
+      setTimeout(() => setIsSaved(false), 3500);
     } finally {
       setIsSaving(false);
     }

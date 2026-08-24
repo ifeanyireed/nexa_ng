@@ -79,9 +79,19 @@ type CreateTenantRequest struct {
 }
 
 type UpdateTenantRequest struct {
-	Name     string `json:"name,omitempty"`
-	PlanTier string `json:"plan_tier,omitempty"`
-	Status   string `json:"status,omitempty"`
+	Name       string `json:"name,omitempty"`
+	Slug       string `json:"slug,omitempty"`
+	Domain     string `json:"domain,omitempty"`
+	PlanTier   string `json:"plan_tier,omitempty"`
+	Status     string `json:"status,omitempty"`
+	OwnerName  string `json:"owner_name,omitempty"`
+	OwnerName2 string `json:"ownerName,omitempty"`
+	AdminName  string `json:"admin_name,omitempty"`
+	AdminName2 string `json:"adminName,omitempty"`
+	OwnerEmail string `json:"owner_email,omitempty"`
+	OwnerEmail2 string `json:"ownerEmail,omitempty"`
+	AdminEmail string `json:"admin_email,omitempty"`
+	AdminEmail2 string `json:"adminEmail,omitempty"`
 }
 
 // GetOverview returns dynamically aggregated metrics directly from database
@@ -292,7 +302,7 @@ func (h *AdminOverviewHandler) CreateOrganization(w http.ResponseWriter, r *http
 	json.NewEncoder(w).Encode(org)
 }
 
-// UpdateOrganization updates a tenant's plan tier, status, or name
+// UpdateOrganization updates a tenant's plan tier, status, name, or admin owner details
 func (h *AdminOverviewHandler) UpdateOrganization(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "id")
 	if orgID == "" {
@@ -306,15 +316,40 @@ func (h *AdminOverviewHandler) UpdateOrganization(w http.ResponseWriter, r *http
 		return
 	}
 
+	resolvedOwnerName := req.OwnerName
+	if resolvedOwnerName == "" {
+		resolvedOwnerName = req.OwnerName2
+	}
+	if resolvedOwnerName == "" {
+		resolvedOwnerName = req.AdminName
+	}
+	if resolvedOwnerName == "" {
+		resolvedOwnerName = req.AdminName2
+	}
+
+	resolvedOwnerEmail := req.OwnerEmail
+	if resolvedOwnerEmail == "" {
+		resolvedOwnerEmail = req.OwnerEmail2
+	}
+	if resolvedOwnerEmail == "" {
+		resolvedOwnerEmail = req.AdminEmail
+	}
+	if resolvedOwnerEmail == "" {
+		resolvedOwnerEmail = req.AdminEmail2
+	}
+
 	if h.db != nil {
 		var org models.Organization
-		if err := h.db.Where("id = ?", orgID).First(&org).Error; err != nil {
+		if err := h.db.Where("id = ? OR slug = ? OR LOWER(slug) = LOWER(?) OR LOWER(name) = LOWER(?) OR LOWER(id) = LOWER(?)", orgID, orgID, orgID, orgID, orgID).First(&org).Error; err != nil {
 			http.Error(w, `{"error": "Organization not found"}`, http.StatusNotFound)
 			return
 		}
 
 		if req.Name != "" {
 			org.Name = req.Name
+		}
+		if req.Slug != "" {
+			org.Slug = req.Slug
 		}
 		if req.PlanTier != "" {
 			org.PlanTier = req.PlanTier
@@ -325,6 +360,22 @@ func (h *AdminOverviewHandler) UpdateOrganization(w http.ResponseWriter, r *http
 		org.UpdatedAt = time.Now()
 
 		h.db.Save(&org)
+
+		// Update owner user if provided
+		if resolvedOwnerName != "" || resolvedOwnerEmail != "" {
+			if org.OwnerID != "" {
+				userUpdates := make(map[string]interface{})
+				if resolvedOwnerName != "" {
+					userUpdates["name"] = resolvedOwnerName
+				}
+				if resolvedOwnerEmail != "" {
+					userUpdates["email"] = resolvedOwnerEmail
+				}
+				userUpdates["updated_at"] = time.Now()
+				h.db.Model(&models.User{}).Where("id = ?", org.OwnerID).Updates(userUpdates)
+			}
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(org)
 		return
@@ -332,8 +383,10 @@ func (h *AdminOverviewHandler) UpdateOrganization(w http.ResponseWriter, r *http
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
-		"id":      orgID,
-		"message": "Organization updated successfully",
+		"id":         orgID,
+		"name":       req.Name,
+		"owner_name": resolvedOwnerName,
+		"message":    "Organization updated successfully",
 	})
 }
 

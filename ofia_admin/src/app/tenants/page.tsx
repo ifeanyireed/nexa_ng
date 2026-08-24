@@ -501,23 +501,6 @@ function TenantManagementContent() {
     }
   }, [tenantParam]);
 
-  // Load cached tenants immediately on client mount
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem("ofia_admin_tenants");
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setTenants(parsed);
-          }
-        }
-      } catch (e) {
-        console.warn("Cached tenants parse error:", e);
-      }
-    }
-  }, []);
-
   // Sync and fetch live tenants + module RBAC from MySQL database (service_ai & service_users)
   useEffect(() => {
     let isMounted = true;
@@ -601,16 +584,9 @@ function TenantManagementContent() {
             return t;
           });
           setTenants(finalTenants);
-          if (typeof window !== "undefined") {
-            try {
-              localStorage.setItem("ofia_admin_tenants", JSON.stringify(finalTenants));
-            } catch (e) {
-              console.warn("Storage error:", e);
-            }
-          }
         }
       } catch (err) {
-        console.warn("Could not sync remote tenants, operating with local fallback:", err);
+        console.warn("Could not sync remote tenants from database:", err);
       } finally {
         if (isMounted) setIsSavingDb(false);
       }
@@ -802,30 +778,57 @@ function TenantManagementContent() {
 
     setIsSavingDb(true);
     try {
-      await GTM_API.updateAdminOrganization(selectedTenantForEdit.id, updatedData).catch(() => null);
+      await GTM_API.updateAdminOrganization(selectedTenantForEdit.id, updatedData);
       showToast(`Tenant '${editTenantName}' profile updated and synced to database!`);
+      const remoteOrgs = await GTM_API.getAdminOrganizations().catch(() => null);
+      if (Array.isArray(remoteOrgs) && remoteOrgs.length > 0) {
+        setTenants(
+          remoteOrgs.map((org: any, idx: number) => {
+            const rawPlan = org.planTier || org.plan_tier || org.PlanTier || "GROWTH";
+            const planTier = (["FREE_TRIAL", "STARTER", "GROWTH", "SCALE", "ENTERPRISE"].includes(rawPlan)
+              ? rawPlan
+              : "GROWTH") as TenantOrg["planTier"];
+            const isSuspended = (org.status || org.Status || "").toUpperCase() === "SUSPENDED";
+            const mrr = org.mrr !== undefined ? Number(org.mrr) : planTier === "ENTERPRISE" ? 100000 : planTier === "SCALE" ? 48000 : planTier === "STARTER" ? 9000 : planTier === "FREE_TRIAL" ? 0 : 24000;
+            const orgSlug = org.slug || org.Slug || `org-${idx + 1}`;
+
+            return {
+              id: org.id || org.ID || `org-${idx + 1}`,
+              name: org.name || org.Name || "Tenant Workspace",
+              slug: orgSlug,
+              domain: org.domain || org.Domain || `${orgSlug}.ofia.ng`,
+              ownerName: org.owner_name || org.OwnerName || "System Admin",
+              ownerEmail: org.owner_email || org.OwnerEmail || `admin@${orgSlug}.ng`,
+              planTier,
+              status: isSuspended ? "Suspended" : "Active",
+              mrr,
+              activeAgentsCount: 15,
+              leadsUsed: 1200,
+              leadsLimit: planTier === "ENTERPRISE" ? 50000 : 5000,
+              campaignsActive: 2,
+              campaignsLimit: planTier === "ENTERPRISE" ? 100 : 10,
+              monthlyAiSpendUSD: Math.round(mrr * 0.12),
+              integrationHealth: "Healthy",
+              erpModules: { ...INITIAL_TENANTS[0].erpModules },
+              createdAt: org.created_at
+                ? new Date(org.created_at).toISOString().split("T")[0]
+                : new Date().toISOString().split("T")[0],
+            };
+          })
+        );
+      } else {
+        setTenants((prev) =>
+          prev.map((t) => (t.id === selectedTenantForEdit.id ? { ...t, ...updatedData } : t))
+        );
+      }
     } catch (err) {
-      console.warn("Remote tenant update failed, saved locally:", err);
-      showToast(`Tenant profile for '${editTenantName}' saved locally`);
+      console.warn("Remote tenant update failed:", err);
+      showToast(`Tenant profile update error`);
+      setTenants((prev) =>
+        prev.map((t) => (t.id === selectedTenantForEdit.id ? { ...t, ...updatedData } : t))
+      );
     } finally {
       setIsSavingDb(false);
-    }
-
-    const updatedList = tenants.map((t) =>
-      t.id === selectedTenantForEdit.id
-        ? {
-            ...t,
-            ...updatedData,
-          }
-        : t
-    );
-    setTenants(updatedList);
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem("ofia_admin_tenants", JSON.stringify(updatedList));
-      } catch (e) {
-        console.warn("Storage error:", e);
-      }
     }
 
     setSelectedTenantForEdit(null);
@@ -841,23 +844,15 @@ function TenantManagementContent() {
     try {
       await GTM_API.updateAdminOrganization(id, {
         status: nextStatus === "Suspended" ? "SUSPENDED" : "ACTIVE",
-      }).catch(() => null);
+      });
       showToast(`${tenant.name} status updated to ${nextStatus} in MySQL!`);
+      setTenants((prev) => prev.map((t) => (t.id === id ? { ...t, status: nextStatus } : t)));
     } catch (err) {
-      console.warn("Remote status update failed, toggled locally:", err);
-      showToast(`${tenant.name} is now ${nextStatus}`);
+      console.warn("Remote status update failed:", err);
+      showToast(`${tenant.name} status update failed`);
+      setTenants((prev) => prev.map((t) => (t.id === id ? { ...t, status: nextStatus } : t)));
     } finally {
       setIsSavingDb(false);
-    }
-
-    const updatedList = tenants.map((t) => (t.id === id ? { ...t, status: nextStatus } : t));
-    setTenants(updatedList);
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem("ofia_admin_tenants", JSON.stringify(updatedList));
-      } catch (e) {
-        console.warn("Storage error:", e);
-      }
     }
   };
 

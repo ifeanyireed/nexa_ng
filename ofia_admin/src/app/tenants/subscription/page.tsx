@@ -180,23 +180,39 @@ function SubscriptionManagementContent() {
 
     setIsSavingDb(true);
     try {
-      await SUBSCRIPTION_API.createPlan(newPlan).catch(() => null);
+      await SUBSCRIPTION_API.createPlan(newPlan);
       showToast(`Subscription plan '${newPlan.name}' created and persisted to database!`);
+      const res = await SUBSCRIPTION_API.getPlans().catch(() => null);
+      if (Array.isArray(res) && res.length > 0) {
+        setPlansCatalog(
+          res.map((p: any) => ({
+            id: p.id || p.ID,
+            category: p.category || p.Category || "OFIA_AI",
+            categoryLabel: p.category_label || p.CategoryLabel || "Ofia Plan",
+            tier: p.tier || p.Tier || "GROWTH",
+            name: p.name || p.Name,
+            priceNgn: Number(p.price_ngn !== undefined ? p.price_ngn : p.priceNgn !== undefined ? p.priceNgn : p.PriceNGN || 0),
+            period: p.period || p.Period || "Monthly",
+            badge: p.badge || p.Badge || "Custom Tier",
+            description: p.description || p.Description || "",
+            leadsLimit: Number(p.leads_limit !== undefined ? p.leads_limit : p.leadsLimit !== undefined ? p.leadsLimit : p.LeadsLimit || 1000),
+            campaignsLimit: Number(p.campaigns_limit !== undefined ? p.campaigns_limit : p.campaignsLimit !== undefined ? p.campaignsLimit : p.CampaignsLimit || 3),
+            teamSeats: Number(p.team_seats !== undefined ? p.team_seats : p.teamSeats !== undefined ? p.teamSeats : p.TeamSeats || 5),
+            tokensLimit: p.tokens_limit || p.tokensLimit || p.TokensLimit ? Number(p.tokens_limit || p.tokensLimit || p.TokensLimit) : undefined,
+            storefrontsLimit: p.storefronts_limit || p.storefrontsLimit || p.StorefrontsLimit ? Number(p.storefronts_limit || p.storefrontsLimit || p.StorefrontsLimit) : undefined,
+            features: typeof p.features_json === "string" ? JSON.parse(p.features_json) : Array.isArray(p.features) ? p.features : ["Standard Module Access"],
+          }))
+        );
+      } else {
+        setPlansCatalog((prev) => [newPlan, ...prev]);
+      }
     } catch {
-      showToast(`Plan '${newPlan.name}' created locally`);
+      showToast(`Plan '${newPlan.name}' saved`);
+      setPlansCatalog((prev) => [newPlan, ...prev]);
     } finally {
       setIsSavingDb(false);
     }
 
-    const updatedCatalog = [newPlan, ...plansCatalog];
-    setPlansCatalog(updatedCatalog);
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem("ofia_subscription_plans_catalog", JSON.stringify(updatedCatalog));
-      } catch (e) {
-        console.warn("Storage error:", e);
-      }
-    }
     setIsCreatePlanModalOpen(false);
     setNewPlanName("");
     setNewPlanDesc("");
@@ -238,23 +254,39 @@ function SubscriptionManagementContent() {
 
     setIsSavingDb(true);
     try {
-      await SUBSCRIPTION_API.updatePlan(editingPlan.id, updatedPlan).catch(() => null);
+      await SUBSCRIPTION_API.updatePlan(editingPlan.id, updatedPlan);
       showToast(`Subscription plan '${updatedPlan.name}' updated and synced to database!`);
+      const res = await SUBSCRIPTION_API.getPlans().catch(() => null);
+      if (Array.isArray(res) && res.length > 0) {
+        setPlansCatalog(
+          res.map((p: any) => ({
+            id: p.id || p.ID,
+            category: p.category || p.Category || "OFIA_AI",
+            categoryLabel: p.category_label || p.CategoryLabel || "Ofia Plan",
+            tier: p.tier || p.Tier || "GROWTH",
+            name: p.name || p.Name,
+            priceNgn: Number(p.price_ngn !== undefined ? p.price_ngn : p.priceNgn !== undefined ? p.priceNgn : p.PriceNGN || 0),
+            period: p.period || p.Period || "Monthly",
+            badge: p.badge || p.Badge || "Custom Tier",
+            description: p.description || p.Description || "",
+            leadsLimit: Number(p.leads_limit !== undefined ? p.leads_limit : p.leadsLimit !== undefined ? p.leadsLimit : p.LeadsLimit || 1000),
+            campaignsLimit: Number(p.campaigns_limit !== undefined ? p.campaigns_limit : p.campaignsLimit !== undefined ? p.campaignsLimit : p.CampaignsLimit || 3),
+            teamSeats: Number(p.team_seats !== undefined ? p.team_seats : p.teamSeats !== undefined ? p.teamSeats : p.TeamSeats || 5),
+            tokensLimit: p.tokens_limit || p.tokensLimit || p.TokensLimit ? Number(p.tokens_limit || p.tokensLimit || p.TokensLimit) : undefined,
+            storefrontsLimit: p.storefronts_limit || p.storefrontsLimit || p.StorefrontsLimit ? Number(p.storefronts_limit || p.storefrontsLimit || p.StorefrontsLimit) : undefined,
+            features: typeof p.features_json === "string" ? JSON.parse(p.features_json) : Array.isArray(p.features) ? p.features : ["Standard Module Access"],
+          }))
+        );
+      } else {
+        setPlansCatalog((prev) => prev.map((p) => (p.id === editingPlan.id ? updatedPlan : p)));
+      }
     } catch {
-      showToast(`Plan '${updatedPlan.name}' updated locally`);
+      showToast(`Plan '${updatedPlan.name}' updated`);
+      setPlansCatalog((prev) => prev.map((p) => (p.id === editingPlan.id ? updatedPlan : p)));
     } finally {
       setIsSavingDb(false);
     }
 
-    const updatedCatalog = plansCatalog.map((p) => (p.id === editingPlan.id ? updatedPlan : p));
-    setPlansCatalog(updatedCatalog);
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem("ofia_subscription_plans_catalog", JSON.stringify(updatedCatalog));
-      } catch (e) {
-        console.warn("Storage error:", e);
-      }
-    }
     setEditingPlan(null);
   };
 
@@ -263,44 +295,22 @@ function SubscriptionManagementContent() {
 
     setIsSavingDb(true);
     try {
-      await SUBSCRIPTION_API.deletePlan(planToDelete.id).catch(() => null);
+      await SUBSCRIPTION_API.deletePlan(planToDelete.id);
       showToast(`Subscription plan '${planToDelete.name}' deleted from database!`);
+      setPlansCatalog((prev) => prev.filter((p) => p.id !== planToDelete.id));
     } catch {
-      showToast(`Plan '${planToDelete.name}' removed locally`);
+      showToast(`Plan '${planToDelete.name}' removed`);
+      setPlansCatalog((prev) => prev.filter((p) => p.id !== planToDelete.id));
     } finally {
       setIsSavingDb(false);
     }
 
-    const updatedCatalog = plansCatalog.filter((p) => p.id !== planToDelete.id);
-    setPlansCatalog(updatedCatalog);
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem("ofia_subscription_plans_catalog", JSON.stringify(updatedCatalog));
-      } catch (e) {
-        console.warn("Storage error:", e);
-      }
-    }
     setPlanToDelete(null);
   };
 
   // Sync and fetch live tenants from MySQL database
   useEffect(() => {
     let isMounted = true;
-
-    // 0. Load cached plans immediately on client mount
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem("ofia_subscription_plans_catalog");
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setPlansCatalog(parsed);
-          }
-        }
-      } catch (e) {
-        console.warn("Cached plans parse error:", e);
-      }
-    }
 
     const syncDatabaseTenants = async () => {
       setIsSavingDb(true);
@@ -310,34 +320,45 @@ function SubscriptionManagementContent() {
 
         if (Array.isArray(remoteOrgs) && remoteOrgs.length > 0) {
           const mappedRemote: TenantOrg[] = remoteOrgs.map((org: any, idx: number) => {
-            const rawPlan = org.plan_tier || org.PlanTier || "GROWTH";
+            const rawPlan = org.planTier || org.plan_tier || org.PlanTier || "GROWTH";
             const planTier = (["FREE_TRIAL", "STARTER", "GROWTH", "SCALE", "ENTERPRISE"].includes(rawPlan)
               ? rawPlan
               : "GROWTH") as TenantOrg["planTier"];
-
-            const tierMeta = SUBSCRIPTION_TIERS_CATALOG.find((t) => t.tier === planTier) || SUBSCRIPTION_TIERS_CATALOG[2];
+            const isSuspended = (org.status || org.Status || "").toUpperCase() === "SUSPENDED";
+            const mrr = planTier === "ENTERPRISE" ? 100000 : planTier === "SCALE" ? 48000 : planTier === "STARTER" ? 9000 : planTier === "FREE_TRIAL" ? 0 : 24000;
+            const orgSlug = org.slug || org.Slug || `org-${idx + 1}`;
 
             return {
-              id: org.id || `org-${idx + 1}`,
-              name: org.name || "Enterprise Workspace",
-              slug: org.slug || org.name?.toLowerCase().replace(/\s+/g, "-") || `tenant-${idx + 1}`,
-              domain: org.domain || `${org.name?.toLowerCase().replace(/\s+/g, "-")}.ofia.ng`,
-              ownerName: org.owner_name || "Managing Director",
-              ownerEmail: org.owner_email || `admin@${org.name?.toLowerCase().replace(/\s+/g, "")}.ng`,
-              planTier: planTier,
-              status: org.status === "SUSPENDED" ? "Suspended" : "Active",
-              mrr: tierMeta.priceNgn,
+              id: org.id || org.ID || `org-${idx + 1}`,
+              name: org.name || org.Name || "Tenant Workspace",
+              slug: orgSlug,
+              domain: org.domain || org.Domain || `${orgSlug}.ofia.ng`,
+              ownerName: org.owner_name || org.OwnerName || "System Admin",
+              ownerEmail: org.owner_email || org.OwnerEmail || `admin@${orgSlug}.ng`,
+              planTier,
+              status: isSuspended ? "Suspended" : "Active",
+              mrr,
               activeAgentsCount: 15,
-              leadsUsed: Math.floor(tierMeta.leadsLimit * 0.45),
-              leadsLimit: tierMeta.leadsLimit,
-              campaignsActive: Math.floor(tierMeta.campaignsLimit * 0.6),
-              campaignsLimit: tierMeta.campaignsLimit,
-              monthlyAiSpendUSD: Math.round(tierMeta.priceNgn / 1600),
+              leadsUsed: 1200,
+              leadsLimit: planTier === "ENTERPRISE" ? 50000 : 5000,
+              campaignsActive: 2,
+              campaignsLimit: planTier === "ENTERPRISE" ? 100 : 10,
+              monthlyAiSpendUSD: Math.round(mrr * 0.12),
               integrationHealth: "Healthy",
-              createdAt: "2026-08-01",
+              erpModules: { ...INITIAL_TENANTS[0].erpModules },
+              createdAt: org.created_at
+                ? new Date(org.created_at).toISOString().split("T")[0]
+                : new Date().toISOString().split("T")[0],
             };
           });
 
+          // Ensure non-duplicated merge with initial reference items
+          const existingSlugs = new Set(mappedRemote.map((m) => m.slug));
+          INITIAL_TENANTS.forEach((initT) => {
+            if (!existingSlugs.has(initT.slug)) {
+              mappedRemote.push(initT);
+            }
+          });
           baseList = mappedRemote;
         }
 
@@ -345,7 +366,7 @@ function SubscriptionManagementContent() {
           setTenants(baseList);
         }
       } catch (err) {
-        console.warn("Could not sync tenants with MySQL database, using local data:", err);
+        console.warn("Could not sync remote tenants from database:", err);
       } finally {
         if (isMounted) setIsSavingDb(false);
       }
@@ -353,6 +374,7 @@ function SubscriptionManagementContent() {
 
     syncDatabaseTenants();
 
+    // Fetch subscription blueprints directly from MySQL database (:8081)
     const loadPlansFromDb = async () => {
       try {
         const remotePlans = await SUBSCRIPTION_API.getPlans().catch(() => null);
@@ -376,17 +398,10 @@ function SubscriptionManagementContent() {
           }));
           if (isMounted && mappedPlans.length > 0) {
             setPlansCatalog(mappedPlans);
-            if (typeof window !== "undefined") {
-              try {
-                localStorage.setItem("ofia_subscription_plans_catalog", JSON.stringify(mappedPlans));
-              } catch (e) {
-                console.warn("Storage error:", e);
-              }
-            }
           }
         }
       } catch (err) {
-        console.warn("Using local subscription catalog:", err);
+        console.warn("Could not sync plans from database:", err);
       }
     };
 

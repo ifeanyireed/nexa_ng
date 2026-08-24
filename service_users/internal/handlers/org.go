@@ -129,14 +129,110 @@ func (h *OrgHandler) GetOrgDetails(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(org)
 }
 
+func seedDefaultOrganizations(db *gorm.DB) {
+	if db == nil {
+		return
+	}
+	var count int64
+	db.Model(&models.Organization{}).Count(&count)
+	if count == 0 {
+		owner := models.User{
+			ID:        "USR-001",
+			Name:      "Ifeanyi Felix",
+			Email:     "ifeanyi.ibeh@neweratransports.com",
+			Role:      models.RoleTenantOwner,
+			Password:  "$2a$10$7EqJtq98hPqEX7fNZaFWoOZhg.6eA5Z9qjS8yG4R.M1P8wG4R.M1P",
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
+		db.FirstOrCreate(&owner, models.User{ID: owner.ID})
+
+		defaultOrgs := []models.Organization{
+			{
+				ID:           "org-01",
+				Name:         "New Era Transports",
+				Slug:         "neweratransports",
+				OwnerID:      "USR-001",
+				PlanTier:     models.PlanGrowth,
+				BillingCycle: "MONTHLY",
+				Status:       "ACTIVE",
+				CreatedAt:    time.Now(),
+				UpdatedAt:    time.Now(),
+			},
+			{
+				ID:           "org-02",
+				Name:         "PayFlow Africa",
+				Slug:         "payflow-africa",
+				OwnerID:      "USR-001",
+				PlanTier:     models.PlanEnterprise,
+				BillingCycle: "MONTHLY",
+				Status:       "ACTIVE",
+				CreatedAt:    time.Now(),
+				UpdatedAt:    time.Now(),
+			},
+			{
+				ID:           "org-03",
+				Name:         "HealthBridge Clinics",
+				Slug:         "healthbridge",
+				OwnerID:      "USR-001",
+				PlanTier:     models.PlanStarter,
+				BillingCycle: "MONTHLY",
+				Status:       "ACTIVE",
+				CreatedAt:    time.Now(),
+				UpdatedAt:    time.Now(),
+			},
+			{
+				ID:           "org-04",
+				Name:         "Apex Global Logistics",
+				Slug:         "apex-logistics",
+				OwnerID:      "USR-001",
+				PlanTier:     models.PlanScale,
+				BillingCycle: "MONTHLY",
+				Status:       "SUSPENDED",
+				CreatedAt:    time.Now(),
+				UpdatedAt:    time.Now(),
+			},
+			{
+				ID:           "org-05",
+				Name:         "Zenith Real Estate Hub",
+				Slug:         "zenith-re",
+				OwnerID:      "USR-001",
+				PlanTier:     models.PlanFreeTrial,
+				BillingCycle: "MONTHLY",
+				Status:       "ACTIVE",
+				CreatedAt:    time.Now(),
+				UpdatedAt:    time.Now(),
+			},
+		}
+
+		for _, o := range defaultOrgs {
+			db.FirstOrCreate(&o, models.Organization{ID: o.ID})
+			sub := models.Subscription{
+				ID:                 fmt.Sprintf("sub-%s", o.ID),
+				OrganizationID:     o.ID,
+				PlanTier:           o.PlanTier,
+				Status:             o.Status,
+				CurrentPeriodStart: time.Now(),
+				CurrentPeriodEnd:   time.Now().AddDate(0, 1, 0),
+				CreatedAt:          time.Now(),
+				UpdatedAt:          time.Now(),
+			}
+			db.FirstOrCreate(&sub, models.Subscription{OrganizationID: o.ID})
+		}
+	}
+}
+
 // ListAllAdminOrgs returns all organizations for admin portal without requiring user-specific token
 func (h *OrgHandler) ListAllAdminOrgs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var orgs []models.Organization
 	if h.db != nil {
+		seedDefaultOrganizations(h.db)
+		var orgs []models.Organization
 		h.db.Preload("Subscription").Preload("Owner").Find(&orgs)
+		json.NewEncoder(w).Encode(orgs)
+		return
 	}
-	json.NewEncoder(w).Encode(orgs)
+	json.NewEncoder(w).Encode([]models.Organization{})
 }
 
 // UpdateOrgProfile updates tenant organization details (name, slug, domain, ownerName, ownerEmail, planTier, status)

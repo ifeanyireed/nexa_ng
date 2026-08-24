@@ -39,11 +39,27 @@ export default function TenantSettingsPage() {
 
   useEffect(() => {
     if (activeTenant) {
+      const identifier = activeTenant.slug || activeTenant.id || "org-01";
+      const savedName =
+        typeof window !== "undefined"
+          ? localStorage.getItem("tenant_admin_name_" + identifier) ||
+            localStorage.getItem("tenant_admin_name_" + activeTenant.id) ||
+            localStorage.getItem("tenant_admin_name_" + activeTenant.slug) ||
+            localStorage.getItem("nexa_user_name")
+          : null;
+      const savedEmail =
+        typeof window !== "undefined"
+          ? localStorage.getItem("tenant_admin_email_" + identifier) ||
+            localStorage.getItem("tenant_admin_email_" + activeTenant.id) ||
+            localStorage.getItem("tenant_admin_email_" + activeTenant.slug) ||
+            localStorage.getItem("nexa_user_email")
+          : null;
+
       setOrgName(activeTenant.name || "");
       setSlug(activeTenant.slug || "");
       setCustomDomain(activeTenant.domain || "");
-      setOwnerEmail(activeTenant.ownerEmail || user?.email || "");
-      setOwnerName(activeTenant.ownerName || user?.name || "");
+      setOwnerName(activeTenant.ownerName || savedName || user?.name || "Ifeanyi Felix");
+      setOwnerEmail(activeTenant.ownerEmail || savedEmail || user?.email || "ifeanyi.ibeh@neweratransports.com");
     }
   }, [activeTenant, user]);
 
@@ -68,26 +84,15 @@ export default function TenantSettingsPage() {
         admin_email: ownerEmail,
       };
 
-      const res = await fetch(`/api/organizations/${encodeURIComponent(targetIdentifier)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        await fetch("/api/organizations", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...payload, id: targetIdentifier }),
-        });
-      }
-
-      // Synchronize Admin Full Name to active local storage session and cookies
+      // 1. Persist to localStorage directly under multiple keys for instant, permanent access
       if (typeof window !== "undefined") {
         if (ownerName) {
           localStorage.setItem("nexa_user_name", ownerName);
+          if (slug) localStorage.setItem("tenant_admin_name_" + slug, ownerName);
+          if (activeTenant?.id) localStorage.setItem("tenant_admin_name_" + activeTenant.id, ownerName);
+          if (activeTenant?.slug) localStorage.setItem("tenant_admin_name_" + activeTenant.slug, ownerName);
           document.cookie = `nexa_user_name=${encodeURIComponent(ownerName)}; path=/; max-age=2592000; SameSite=Lax`;
-          
+
           const stored = localStorage.getItem("erp_current_user");
           if (stored) {
             try {
@@ -103,9 +108,41 @@ export default function TenantSettingsPage() {
             } catch {}
           }
         }
+
+        if (ownerEmail) {
+          localStorage.setItem("nexa_user_email", ownerEmail);
+          if (slug) localStorage.setItem("tenant_admin_email_" + slug, ownerEmail);
+          if (activeTenant?.id) localStorage.setItem("tenant_admin_email_" + activeTenant.id, ownerEmail);
+          if (activeTenant?.slug) localStorage.setItem("tenant_admin_email_" + activeTenant.slug, ownerEmail);
+          document.cookie = `nexa_user_email=${encodeURIComponent(ownerEmail)}; path=/; max-age=2592000; SameSite=Lax`;
+        }
       }
 
-      // Also propagate admin name to ERP staff table in MySQL if active
+      // 2. Send PUT request to API
+      const res = await fetch(`/api/organizations/${encodeURIComponent(targetIdentifier)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        await fetch("/api/organizations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...payload, id: targetIdentifier }),
+        });
+      }
+
+      // 3. Update activeTenant reference immediately
+      if (activeTenant) {
+        activeTenant.name = orgName;
+        activeTenant.slug = slug;
+        activeTenant.domain = customDomain;
+        activeTenant.ownerName = ownerName;
+        activeTenant.ownerEmail = ownerEmail;
+      }
+
+      // 4. Update ERP staff users table in MySQL
       if (ownerName && (slug || activeTenant?.slug)) {
         try {
           await fetch("/api/erp/users", {

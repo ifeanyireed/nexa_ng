@@ -206,7 +206,7 @@ export default function ManagerReviewClient() {
     };
     updateReview(updatedReview);
     alert("Evaluation submitted! Awaiting HR review.");
-    router.push("/manager");
+    router.push("/erp/manager");
   };
 
   const handleReturn = () => {
@@ -224,7 +224,7 @@ export default function ManagerReviewClient() {
     };
     updateReview(updatedReview);
     alert("Review returned to employee for revision.");
-    router.push("/manager");
+    router.push("/erp/manager");
   };
 
   const workObjectives = objectives.filter(o => o.type === "objective");

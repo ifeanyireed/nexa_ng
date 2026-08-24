@@ -1,45 +1,19 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useERPStore, User, PerformanceReview } from "@/lib/erp-store";
+import { useERPStore, User, PerformanceReview, getSignedInERPUser } from "@/lib/erp-store";
 import { BusinessShell } from "@/components/business/BusinessShell";
 
 export default function EmployeeProfilePage() {
   const { reviews, users } = useERPStore();
-  const [currentUser, setCurrentUser] = useState<User>({
-    id: "EMP001",
-    name: "Jane Doe",
-    email: "jane.doe@ofia.ng",
-    role: "employee",
-    department: "Marketing",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-  });
-  const [profileUser, setProfileUser] = useState<User>({
-    id: "EMP001",
-    name: "Jane Doe",
-    email: "jane.doe@ofia.ng",
-    role: "employee",
-    department: "Marketing",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-  });
+  const [currentUser, setCurrentUser] = useState<User>(() => getSignedInERPUser(users));
+  const [profileUser, setProfileUser] = useState<User>(() => getSignedInERPUser(users));
   const [userReviews, setUserReviews] = useState<PerformanceReview[]>([]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("erp_current_user");
-      let activeUser = currentUser;
-      if (stored) {
-        try {
-          const loggedInUser = JSON.parse(stored);
-          if (loggedInUser && loggedInUser.id) {
-            activeUser = loggedInUser;
-            setCurrentUser(loggedInUser);
-          }
-        } catch {}
-      } else if (users.length > 0) {
-        activeUser = users[0];
-        setCurrentUser(activeUser);
-      }
+      const active = getSignedInERPUser(users);
+      setCurrentUser(active);
 
       // Check if there is an "id" query parameter in the URL (client-side only query read)
       const params = new URLSearchParams(window.location.search);
@@ -54,8 +28,8 @@ export default function EmployeeProfilePage() {
         }
       }
 
-      setProfileUser(activeUser);
-      setUserReviews(reviews.filter(r => r.employeeId === activeUser.id));
+      setProfileUser(active);
+      setUserReviews(reviews.filter(r => r.employeeId === active.id));
     }
   }, [reviews, users]);
 

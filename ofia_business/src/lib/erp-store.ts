@@ -507,6 +507,71 @@ export function getActiveTenantSlug(): string {
   return "";
 }
 
+export function getSignedInERPUser(users: User[]): User {
+  const fallbackUser: User = users.length > 0 ? users[0] : {
+    id: "EMP001",
+    name: "Staff Member",
+    email: "staff@ofia.ng",
+    role: "employee",
+    department: "Operations",
+    avatar: "/character1.jpg",
+  };
+
+  if (typeof window === "undefined") return fallbackUser;
+
+  try {
+    // 1. Try resolving from localStorage erp_current_user
+    const stored = localStorage.getItem("erp_current_user");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed) {
+        // If users list is loaded, match against live database users by id, email, or name
+        if (users && users.length > 0) {
+          const match = users.find(u =>
+            (parsed.id && u.id === parsed.id) ||
+            (parsed.email && u.email && u.email.toLowerCase() === parsed.email.toLowerCase()) ||
+            (parsed.name && u.name && u.name.toLowerCase() === parsed.name.toLowerCase())
+          );
+          if (match) {
+            localStorage.setItem("erp_current_user", JSON.stringify(match));
+            return match;
+          }
+        }
+        if (parsed.id && parsed.name) {
+          return {
+            ...fallbackUser,
+            ...parsed,
+          };
+        }
+      }
+    }
+
+    // 2. Try resolving from nexa_user_email
+    const storedEmail = localStorage.getItem("nexa_user_email");
+    if (storedEmail && users && users.length > 0) {
+      const match = users.find(u => u.email && u.email.toLowerCase() === storedEmail.toLowerCase());
+      if (match) {
+        localStorage.setItem("erp_current_user", JSON.stringify(match));
+        return match;
+      }
+    }
+
+    // 3. Try resolving from nexa_user_name
+    const storedName = localStorage.getItem("nexa_user_name");
+    if (storedName && users && users.length > 0) {
+      const match = users.find(u => u.name && u.name.toLowerCase() === storedName.toLowerCase());
+      if (match) {
+        localStorage.setItem("erp_current_user", JSON.stringify(match));
+        return match;
+      }
+    }
+  } catch (e) {
+    console.warn("Failed to parse signed-in ERP user session:", e);
+  }
+
+  return fallbackUser;
+}
+
 async function fetchFromApi<T>(endpoint: string, fallbackData: T, tenantSlug?: string): Promise<T> {
   const activeSlug = tenantSlug || getActiveTenantSlug();
   const sep = endpoint.includes("?") ? "&" : "?";

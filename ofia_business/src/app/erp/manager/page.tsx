@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useERPStore, PerformanceReview, User, formatSelfAverage } from "@/lib/erp-store";
+import { useERPStore, PerformanceReview, User, formatSelfAverage, getSignedInERPUser } from "@/lib/erp-store";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -13,37 +13,25 @@ import { Users, Star, Clock, CheckCircle2, ArrowRight } from "lucide-react";
 export default function ManagerDashboard() {
   const router = useRouter();
   const { reviews, users, cycles } = useERPStore();
-  const [currentUser, setCurrentUser] = useState<User>({
-    id: "MGR001",
-    name: "John Smith",
-    email: "john.smith@ofia.ng",
-    role: "manager",
-    department: "Marketing",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150",
-  });
+  const [currentUser, setCurrentUser] = useState<User>(() => getSignedInERPUser(users));
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("erp_current_user");
-      if (stored) {
-        try {
-          const u = JSON.parse(stored);
-          if (u && u.id) {
-            setCurrentUser(u);
-            return;
-          }
-        } catch {}
-      }
-      if (users.length > 0) {
-        const found = users.find(u => u.role === "manager") || users[0];
-        setCurrentUser(found);
-      }
+      const active = getSignedInERPUser(users);
+      setCurrentUser(active);
     }
   }, [users]);
 
   // Filter reviews of employees who report to this manager
-  // In our mock store, EMP001, EMP002, EMP003 report to John Smith (MGR001)
-  const reportingEmployees = users.filter(u => u.managerName === currentUser.name);
+  const reportingEmployees = users.filter((u) => {
+    if (u.id === currentUser.id) return false;
+    const matchesManagerName = u.managerName && currentUser.name && u.managerName.toLowerCase().trim() === currentUser.name.toLowerCase().trim();
+    const matchesManagerId = u.managerId && currentUser.id && u.managerId === currentUser.id;
+    const matchesDept = currentUser.role === "manager" && u.department === currentUser.department;
+    const isLeadership = currentUser.role === "md" || currentUser.role === "admin";
+    return matchesManagerName || matchesManagerId || matchesDept || isLeadership;
+  });
+
   const reportingEmpIds = reportingEmployees.map(u => u.id);
   const teamReviews = reviews.filter(r => reportingEmpIds.includes(r.employeeId));
 
@@ -148,8 +136,8 @@ export default function ManagerDashboard() {
                         </td>
                         <td className="py-4">
                           <button
-                            onClick={() => router.push(`/manager/review/detail?employeeId=${rev.employeeId}`)}
-                            className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-all shadow-sm"
+                            onClick={() => router.push(`/erp/manager/review/detail?employeeId=${rev.employeeId}`)}
+                            className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-all shadow-sm cursor-pointer"
                           >
                             Evaluate Performance
                           </button>
@@ -213,8 +201,8 @@ export default function ManagerDashboard() {
                       <td className="py-4">
                         {rev ? (
                           <button
-                            onClick={() => router.push(rev.status === "Submitted" ? `/manager/review/detail?employeeId=${emp.id}` : `/employee/reviews/detail?id=${rev.id}`)}
-                            className="px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-slate-650 font-bold rounded-xl text-xs transition-all border border-gray-200"
+                            onClick={() => router.push(rev.status === "Submitted" ? `/erp/manager/review/detail?employeeId=${emp.id}` : `/erp/employee/reviews/detail?id=${rev.id}`)}
+                            className="px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-slate-650 font-bold rounded-xl text-xs transition-all border border-gray-200 cursor-pointer"
                           >
                             View
                           </button>

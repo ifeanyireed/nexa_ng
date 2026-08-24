@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useERPStore, PerformanceReview, User } from "@/lib/erp-store";
+import { useERPStore, PerformanceReview, User, getSignedInERPUser } from "@/lib/erp-store";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -13,34 +13,14 @@ import { UserCheck, Star, Award, CheckCircle2, ArrowRight } from "lucide-react";
 export default function EmployeeDashboard() {
   const router = useRouter();
   const { reviews, cycles, users } = useERPStore();
-  const [currentUser, setCurrentUser] = useState<User>({
-    id: "EMP001",
-    name: "Jane Doe",
-    email: "jane.doe@ofia.ng",
-    role: "employee",
-    department: "Marketing",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-  });
+  const [currentUser, setCurrentUser] = useState<User>(() => getSignedInERPUser(users));
   const [userReviews, setUserReviews] = useState<PerformanceReview[]>([]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("erp_current_user");
-      if (stored) {
-        try {
-          const u = JSON.parse(stored);
-          if (u && u.id) {
-            setCurrentUser(u);
-            setUserReviews(reviews.filter(r => r.employeeId === u.id));
-            return;
-          }
-        } catch {}
-      }
-      if (users.length > 0) {
-        const found = users.find(u => u.id === "EMP001") || users[0];
-        setCurrentUser(found);
-        setUserReviews(reviews.filter(r => r.employeeId === found.id));
-      }
+      const active = getSignedInERPUser(users);
+      setCurrentUser(active);
+      setUserReviews(reviews.filter(r => r.employeeId === active.id));
     }
   }, [reviews, users]);
 
@@ -83,8 +63,8 @@ export default function EmployeeDashboard() {
             </div>
           </div>
           <button
-            onClick={() => router.push("/employee/profile")}
-            className="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold rounded-xl text-xs transition-all self-start md:self-auto"
+            onClick={() => router.push("/erp/employee/profile")}
+            className="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold rounded-xl text-xs transition-all self-start md:self-auto cursor-pointer"
           >
             View Profile & History
           </button>
@@ -145,8 +125,8 @@ export default function EmployeeDashboard() {
             {/* Actions button */}
             {currentReview && (currentReview.status === "Draft" || currentReview.status === "Returned") && (
               <button
-                onClick={() => router.push(`/employee/reviews/detail?id=${currentReview.id}`)}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all text-xs"
+                onClick={() => router.push(`/erp/employee/reviews/detail?id=${currentReview.id}`)}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all text-xs cursor-pointer"
               >
                 {currentReview.status === "Returned" ? "Edit and Re-submit Review" : "Fill Performance Self-Assessment Form"}
               </button>
@@ -169,8 +149,8 @@ export default function EmployeeDashboard() {
             )}
             {currentReview && currentReview.status === "HR Approved" && (
               <button
-                onClick={() => router.push(`/employee/reviews/detail?id=${currentReview.id}`)}
-                className="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs transition-all text-center"
+                onClick={() => router.push(`/erp/employee/reviews/detail?id=${currentReview.id}`)}
+                className="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs transition-all text-center cursor-pointer"
               >
                 View Final Review Summary
               </button>

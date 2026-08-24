@@ -2,39 +2,20 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useERPStore, PerformanceReview, User } from "@/lib/erp-store";
+import { useERPStore, PerformanceReview, User, getSignedInERPUser } from "@/lib/erp-store";
 import { BusinessShell } from "@/components/business/BusinessShell";
 
 export default function MyPerformanceReviews() {
   const router = useRouter();
   const { reviews, users } = useERPStore();
-  const [currentUser, setCurrentUser] = useState<User>({
-    id: "EMP001",
-    name: "Jane Doe",
-    email: "jane.doe@ofia.ng",
-    role: "employee",
-    department: "Marketing",
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
-  });
+  const [currentUser, setCurrentUser] = useState<User>(() => getSignedInERPUser(users));
   const [userReviews, setUserReviews] = useState<PerformanceReview[]>([]);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("erp_current_user");
-      let activeUser = currentUser;
-      if (stored) {
-        try {
-          const u = JSON.parse(stored);
-          if (u && u.id) {
-            activeUser = u;
-            setCurrentUser(u);
-          }
-        } catch {}
-      } else if (users.length > 0) {
-        activeUser = users[0];
-        setCurrentUser(activeUser);
-      }
-      setUserReviews(reviews.filter(r => r.employeeId === activeUser.id));
+      const active = getSignedInERPUser(users);
+      setCurrentUser(active);
+      setUserReviews(reviews.filter(r => r.employeeId === active.id));
     }
   }, [reviews, users]);
 
@@ -65,7 +46,7 @@ export default function MyPerformanceReviews() {
         {/* Header Block */}
         <div>
           <h2 className="text-[20px] font-black text-slate-800 tracking-tight">My Performance Reviews</h2>
-          <p className="text-xs text-slate-450 font-semibold mt-1">History of all self-assessments and final ratings</p>
+          <p className="text-xs text-slate-450 font-semibold mt-1">History of all self-assessments and final ratings for {currentUser.name}</p>
         </div>
 
         {/* Reviews Table */}
@@ -106,8 +87,8 @@ export default function MyPerformanceReviews() {
                       </td>
                       <td className="px-6 py-4">
                         <button
-                          onClick={() => router.push(`/employee/reviews/detail?id=${rev.id}`)}
-                          className="px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold rounded-xl text-xs transition-all"
+                          onClick={() => router.push(`/erp/employee/reviews/detail?id=${rev.id}`)}
+                          className="px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold rounded-xl text-xs transition-all cursor-pointer"
                         >
                           {rev.status === "Draft" || rev.status === "Returned" ? "Complete" : "View"}
                         </button>

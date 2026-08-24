@@ -345,120 +345,124 @@ function SubscriptionManagementContent() {
           </NexaCard>
         </div>
 
-        {/* PRODUCT FILTER */}
-        <div className="p-3 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] flex items-center justify-between gap-3 shadow-xs flex-wrap">
-          <div className="flex items-center gap-2 text-xs font-bold text-[var(--nexa-text-muted)]">
-            <Sliders className="w-3.5 h-3.5 text-[#1A56DB]" />
-            <span>Product Filter:</span>
-          </div>
-
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button
-              onClick={() => setSelectedProductCategory("ALL")}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
-                selectedProductCategory === "ALL"
-                  ? "bg-[#1A56DB] text-white shadow-xs font-black"
-                  : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)]"
-              )}
-            >
-              <span>All Products</span>
-              <span className={cn(
-                "text-[10px] px-1.5 py-0.2 rounded-full font-mono",
-                selectedProductCategory === "ALL" ? "bg-white/20 text-white" : "bg-[#1A56DB]/10 text-[#1A56DB]"
-              )}>
-                {SUBSCRIPTION_TIERS_CATALOG.length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setSelectedProductCategory("OFIA_AI")}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
-                selectedProductCategory === "OFIA_AI"
-                  ? "bg-[#9061F9] text-white shadow-xs font-black"
-                  : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)]"
-              )}
-            >
-              <Zap className="w-3 h-3" />
-              <span>Ofia AI</span>
-              <span className={cn(
-                "text-[10px] px-1.5 py-0.2 rounded-full font-mono",
-                selectedProductCategory === "OFIA_AI" ? "bg-white/20 text-white" : "bg-[#9061F9]/10 text-[#9061F9]"
-              )}>
-                {SUBSCRIPTION_TIERS_CATALOG.filter((t) => t.category === "OFIA_AI").length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setSelectedProductCategory("OFIA_SHOP")}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
-                selectedProductCategory === "OFIA_SHOP"
-                  ? "bg-[#C88A3A] text-white shadow-xs font-black"
-                  : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)]"
-              )}
-            >
-              <Building2 className="w-3 h-3" />
-              <span>Ofia Shop</span>
-              <span className={cn(
-                "text-[10px] px-1.5 py-0.2 rounded-full font-mono",
-                selectedProductCategory === "OFIA_SHOP" ? "bg-white/20 text-white" : "bg-[#C88A3A]/10 text-[#C88A3A]"
-              )}>
-                {SUBSCRIPTION_TIERS_CATALOG.filter((t) => t.category === "OFIA_SHOP").length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setSelectedProductCategory("OFIA_ENTERPRISE")}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
-                selectedProductCategory === "OFIA_ENTERPRISE"
-                  ? "bg-[#0E9F6E] text-white shadow-xs font-black"
-                  : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)]"
-              )}
-            >
-              <Boxes className="w-3 h-3" />
-              <span>Ofia Enterprise</span>
-              <span className={cn(
-                "text-[10px] px-1.5 py-0.2 rounded-full font-mono",
-                selectedProductCategory === "OFIA_ENTERPRISE" ? "bg-white/20 text-white" : "bg-[#0E9F6E]/10 text-[#0E9F6E]"
-              )}>
-                {SUBSCRIPTION_TIERS_CATALOG.filter((t) => t.category === "OFIA_ENTERPRISE").length}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setSelectedProductCategory("OFIA_COMPASS")}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
-                selectedProductCategory === "OFIA_COMPASS"
-                  ? "bg-[#06B6D4] text-white shadow-xs font-black"
-                  : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)]"
-              )}
-            >
-              <Compass className="w-3 h-3" />
-              <span>Ofia Compass</span>
-              <span className={cn(
-                "text-[10px] px-1.5 py-0.2 rounded-full font-mono",
-                selectedProductCategory === "OFIA_COMPASS" ? "bg-white/20 text-white" : "bg-[#06B6D4]/10 text-[#06B6D4]"
-              )}>
-                {SUBSCRIPTION_TIERS_CATALOG.filter((t) => t.category === "OFIA_COMPASS").length}
-              </span>
-            </button>
-          </div>
-        </div>
-
-        {/* 3-COLUMN PLAN CATALOG SHOWCASE */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-[var(--nexa-text-primary)] flex items-center gap-2">
+        {/* 3-COLUMN PLAN CATALOG SHOWCASE WITH PRODUCT FILTER */}
+        <div className="space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-2 border-b border-[var(--nexa-border)]">
+            <div className="flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-[#1A56DB]" />
-              {selectedProductCategory === "ALL" ? "All Product Offerings" : selectedProductCategory === "OFIA_AI" ? "Ofia AI Swarm Plans" : selectedProductCategory === "OFIA_SHOP" ? "Ofia Shop Storefront Plans" : selectedProductCategory === "OFIA_COMPASS" ? "Ofia Compass Strategic BI Plans" : "Ofia Enterprise Suite ERP Plans"}
-            </h3>
-            <span className="text-xs text-[var(--nexa-text-muted)] font-medium">
-              {SUBSCRIPTION_TIERS_CATALOG.filter((t) => selectedProductCategory === "ALL" || t.category === selectedProductCategory).length} Tiers Available
-            </span>
+              <h3 className="text-xs font-extrabold uppercase tracking-wider text-[var(--nexa-text-primary)]">
+                {selectedProductCategory === "ALL"
+                  ? "All Subscription Blueprints"
+                  : selectedProductCategory === "OFIA_AI"
+                  ? "Ofia AI Swarm Plans"
+                  : selectedProductCategory === "OFIA_SHOP"
+                  ? "Ofia Shop Storefront Plans"
+                  : selectedProductCategory === "OFIA_COMPASS"
+                  ? "Ofia Compass Strategic BI Plans"
+                  : "Ofia Enterprise Suite ERP Plans"}
+              </h3>
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB]">
+                {SUBSCRIPTION_TIERS_CATALOG.filter((t) => selectedProductCategory === "ALL" || t.category === selectedProductCategory).length} Tiers
+              </span>
+            </div>
+
+            {/* PRODUCT FILTER PILLS */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs font-bold text-[var(--nexa-text-muted)] mr-1">Product Filter:</span>
+              <button
+                onClick={() => setSelectedProductCategory("ALL")}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
+                  selectedProductCategory === "ALL"
+                    ? "bg-[#1A56DB] text-white shadow-xs font-black"
+                    : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)]"
+                )}
+              >
+                <span>All</span>
+                <span className={cn(
+                  "text-[10px] px-1.5 py-0.2 rounded-full font-mono",
+                  selectedProductCategory === "ALL" ? "bg-white/20 text-white" : "bg-[#1A56DB]/10 text-[#1A56DB]"
+                )}>
+                  {SUBSCRIPTION_TIERS_CATALOG.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setSelectedProductCategory("OFIA_AI")}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
+                  selectedProductCategory === "OFIA_AI"
+                    ? "bg-[#9061F9] text-white shadow-xs font-black"
+                    : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)]"
+                )}
+              >
+                <Zap className="w-3 h-3" />
+                <span>Ofia AI</span>
+                <span className={cn(
+                  "text-[10px] px-1.5 py-0.2 rounded-full font-mono",
+                  selectedProductCategory === "OFIA_AI" ? "bg-white/20 text-white" : "bg-[#9061F9]/10 text-[#9061F9]"
+                )}>
+                  {SUBSCRIPTION_TIERS_CATALOG.filter((t) => t.category === "OFIA_AI").length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setSelectedProductCategory("OFIA_SHOP")}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
+                  selectedProductCategory === "OFIA_SHOP"
+                    ? "bg-[#C88A3A] text-white shadow-xs font-black"
+                    : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)]"
+                )}
+              >
+                <Building2 className="w-3 h-3" />
+                <span>Ofia Shop</span>
+                <span className={cn(
+                  "text-[10px] px-1.5 py-0.2 rounded-full font-mono",
+                  selectedProductCategory === "OFIA_SHOP" ? "bg-white/20 text-white" : "bg-[#C88A3A]/10 text-[#C88A3A]"
+                )}>
+                  {SUBSCRIPTION_TIERS_CATALOG.filter((t) => t.category === "OFIA_SHOP").length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setSelectedProductCategory("OFIA_ENTERPRISE")}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
+                  selectedProductCategory === "OFIA_ENTERPRISE"
+                    ? "bg-[#0E9F6E] text-white shadow-xs font-black"
+                    : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)]"
+                )}
+              >
+                <Boxes className="w-3 h-3" />
+                <span>Ofia Enterprise</span>
+                <span className={cn(
+                  "text-[10px] px-1.5 py-0.2 rounded-full font-mono",
+                  selectedProductCategory === "OFIA_ENTERPRISE" ? "bg-white/20 text-white" : "bg-[#0E9F6E]/10 text-[#0E9F6E]"
+                )}>
+                  {SUBSCRIPTION_TIERS_CATALOG.filter((t) => t.category === "OFIA_ENTERPRISE").length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setSelectedProductCategory("OFIA_COMPASS")}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
+                  selectedProductCategory === "OFIA_COMPASS"
+                    ? "bg-[#06B6D4] text-white shadow-xs font-black"
+                    : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)]"
+                )}
+              >
+                <Compass className="w-3 h-3" />
+                <span>Ofia Compass</span>
+                <span className={cn(
+                  "text-[10px] px-1.5 py-0.2 rounded-full font-mono",
+                  selectedProductCategory === "OFIA_COMPASS" ? "bg-white/20 text-white" : "bg-[#06B6D4]/10 text-[#06B6D4]"
+                )}>
+                  {SUBSCRIPTION_TIERS_CATALOG.filter((t) => t.category === "OFIA_COMPASS").length}
+                </span>
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

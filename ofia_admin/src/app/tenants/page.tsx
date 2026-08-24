@@ -420,6 +420,7 @@ function TenantManagementContent() {
   const [tenants, setTenants] = useState<TenantOrg[]>(INITIAL_TENANTS);
   const [selectedTenantId, setSelectedTenantId] = useState<string>(tenantParam);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedProductFilter, setSelectedProductFilter] = useState<string>("ALL");
   const [selectedPlanFilter, setSelectedPlanFilter] = useState<string>("ALL");
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>("ALL");
 

@@ -115,52 +115,52 @@ export const USER_API = {
   },
 };
 
-// 2.5 SUBSCRIPTION & PLAN CRUD API (:8081)
+// 2.5 SUBSCRIPTION & PLAN CRUD API (Next.js API proxy & Go backend :8081)
 export const SUBSCRIPTION_API = {
   getPlans: async (category?: string) => {
     const url = category && category !== "ALL"
-      ? `${USER_BASE}/subscriptions/plans?category=${encodeURIComponent(category)}`
-      : `${USER_BASE}/subscriptions/plans`;
+      ? `/api/subscriptions/plans?category=${encodeURIComponent(category)}`
+      : `/api/subscriptions/plans`;
     return fetchJSON<any[]>(url);
   },
 
   getPlan: async (id: string) => {
-    return fetchJSON<any>(`${USER_BASE}/subscriptions/plans/${encodeURIComponent(id)}`);
+    return fetchJSON<any>(`/api/subscriptions/plans/${encodeURIComponent(id)}`);
   },
 
   createPlan: async (planData: any) => {
-    return fetchJSON<any>(`${USER_BASE}/subscriptions/plans`, {
+    return fetchJSON<any>(`/api/subscriptions/plans`, {
       method: "POST",
       body: JSON.stringify(planData),
     });
   },
 
   updatePlan: async (id: string, planData: any) => {
-    return fetchJSON<any>(`${USER_BASE}/subscriptions/plans/${encodeURIComponent(id)}`, {
+    return fetchJSON<any>(`/api/subscriptions/plans/${encodeURIComponent(id)}`, {
       method: "PUT",
       body: JSON.stringify(planData),
     });
   },
 
   deletePlan: async (id: string) => {
-    return fetchJSON<{ success: boolean; message: string }>(`${USER_BASE}/subscriptions/plans/${encodeURIComponent(id)}`, {
+    return fetchJSON<{ success: boolean; message: string }>(`/api/subscriptions/plans/${encodeURIComponent(id)}`, {
       method: "DELETE",
     });
   },
 
   getTenantSubscription: async (orgId: string) => {
-    return fetchJSON<any>(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}/subscription`);
+    return fetchJSON<any>(`/api/subscriptions/organizations/${encodeURIComponent(orgId)}`);
   },
 
   updateTenantSubscription: async (orgId: string, data: { plan_tier: string; plan_id?: string; status?: string }) => {
-    return fetchJSON<any>(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}/subscription`, {
+    return fetchJSON<any>(`/api/subscriptions/organizations/${encodeURIComponent(orgId)}`, {
       method: "PUT",
       body: JSON.stringify(data),
     });
   },
 
   overrideTenantQuotas: async (orgId: string, data: { extra_leads: number; extra_campaigns: number; plan_tier: string }) => {
-    return fetchJSON<any>(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}/subscription/override`, {
+    return fetchJSON<any>(`/api/subscriptions/organizations/${encodeURIComponent(orgId)}`, {
       method: "POST",
       body: JSON.stringify(data),
     });
@@ -242,18 +242,18 @@ export const GTM_API = {
   },
 
   getAdminOrganizations: async () => {
-    return fetchJSON<any[]>(`${GTM_BASE}/admin/organizations`);
+    return fetchJSON<any[]>(`/api/organizations`);
   },
 
-  createAdminOrganization: async (data: { name: string; plan_tier: string; billing_cycle?: string }) => {
-    return fetchJSON<any>(`${GTM_BASE}/admin/organizations`, {
+  createAdminOrganization: async (data: { name: string; plan_tier?: string; planTier?: string; billing_cycle?: string; slug?: string; domain?: string; owner_name?: string; owner_email?: string; mrr?: number; leads_limit?: number; campaigns_limit?: number; erp_modules?: any }) => {
+    return fetchJSON<any>(`/api/organizations`, {
       method: "POST",
       body: JSON.stringify(data),
     });
   },
 
-  updateAdminOrganization: async (id: string, data: { name?: string; plan_tier?: string; status?: string }) => {
-    return fetchJSON<any>(`${GTM_BASE}/admin/organizations/${id}`, {
+  updateAdminOrganization: async (id: string, data: { name?: string; slug?: string; domain?: string; ownerName?: string; ownerEmail?: string; plan_tier?: string; planTier?: string; status?: string; mrr?: number; leadsLimit?: number; campaignsLimit?: number; erpModules?: any }) => {
+    return fetchJSON<any>(`/api/organizations/${encodeURIComponent(id)}`, {
       method: "PUT",
       body: JSON.stringify(data),
     });

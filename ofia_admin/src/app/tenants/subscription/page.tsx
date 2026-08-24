@@ -182,13 +182,21 @@ function SubscriptionManagementContent() {
     try {
       await SUBSCRIPTION_API.createPlan(newPlan).catch(() => null);
       showToast(`Subscription plan '${newPlan.name}' created and persisted to database!`);
-    } catch (err) {
+    } catch {
       showToast(`Plan '${newPlan.name}' created locally`);
     } finally {
       setIsSavingDb(false);
     }
 
-    setPlansCatalog((prev) => [newPlan, ...prev]);
+    const updatedCatalog = [newPlan, ...plansCatalog];
+    setPlansCatalog(updatedCatalog);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("ofia_subscription_plans_catalog", JSON.stringify(updatedCatalog));
+      } catch (e) {
+        console.warn("Storage error:", e);
+      }
+    }
     setIsCreatePlanModalOpen(false);
     setNewPlanName("");
     setNewPlanDesc("");
@@ -232,13 +240,21 @@ function SubscriptionManagementContent() {
     try {
       await SUBSCRIPTION_API.updatePlan(editingPlan.id, updatedPlan).catch(() => null);
       showToast(`Subscription plan '${updatedPlan.name}' updated and synced to database!`);
-    } catch (err) {
+    } catch {
       showToast(`Plan '${updatedPlan.name}' updated locally`);
     } finally {
       setIsSavingDb(false);
     }
 
-    setPlansCatalog((prev) => prev.map((p) => (p.id === editingPlan.id ? updatedPlan : p)));
+    const updatedCatalog = plansCatalog.map((p) => (p.id === editingPlan.id ? updatedPlan : p));
+    setPlansCatalog(updatedCatalog);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("ofia_subscription_plans_catalog", JSON.stringify(updatedCatalog));
+      } catch (e) {
+        console.warn("Storage error:", e);
+      }
+    }
     setEditingPlan(null);
   };
 
@@ -249,19 +265,43 @@ function SubscriptionManagementContent() {
     try {
       await SUBSCRIPTION_API.deletePlan(planToDelete.id).catch(() => null);
       showToast(`Subscription plan '${planToDelete.name}' deleted from database!`);
-    } catch (err) {
+    } catch {
       showToast(`Plan '${planToDelete.name}' removed locally`);
     } finally {
       setIsSavingDb(false);
     }
 
-    setPlansCatalog((prev) => prev.filter((p) => p.id !== planToDelete.id));
+    const updatedCatalog = plansCatalog.filter((p) => p.id !== planToDelete.id);
+    setPlansCatalog(updatedCatalog);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("ofia_subscription_plans_catalog", JSON.stringify(updatedCatalog));
+      } catch (e) {
+        console.warn("Storage error:", e);
+      }
+    }
     setPlanToDelete(null);
   };
 
   // Sync and fetch live tenants from MySQL database
   useEffect(() => {
     let isMounted = true;
+
+    // 0. Load cached plans immediately on client mount
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("ofia_subscription_plans_catalog");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setPlansCatalog(parsed);
+          }
+        }
+      } catch (e) {
+        console.warn("Cached plans parse error:", e);
+      }
+    }
+
     const syncDatabaseTenants = async () => {
       setIsSavingDb(true);
       try {
@@ -309,7 +349,9 @@ function SubscriptionManagementContent() {
       } finally {
         if (isMounted) setIsSavingDb(false);
       }
-    };    syncDatabaseTenants();
+    };
+
+    syncDatabaseTenants();
 
     const loadPlansFromDb = async () => {
       try {
@@ -321,19 +363,26 @@ function SubscriptionManagementContent() {
             categoryLabel: p.category_label || p.CategoryLabel || "Ofia Plan",
             tier: p.tier || p.Tier || "GROWTH",
             name: p.name || p.Name,
-            priceNgn: Number(p.price_ngn !== undefined ? p.price_ngn : p.PriceNGN || 0),
+            priceNgn: Number(p.price_ngn !== undefined ? p.price_ngn : p.priceNgn !== undefined ? p.priceNgn : p.PriceNGN || 0),
             period: p.period || p.Period || "Monthly",
             badge: p.badge || p.Badge || "Custom Tier",
             description: p.description || p.Description || "",
-            leadsLimit: Number(p.leads_limit !== undefined ? p.leads_limit : p.LeadsLimit || 1000),
-            campaignsLimit: Number(p.campaigns_limit !== undefined ? p.campaigns_limit : p.CampaignsLimit || 3),
-            teamSeats: Number(p.team_seats !== undefined ? p.team_seats : p.TeamSeats || 5),
-            tokensLimit: p.tokens_limit || p.TokensLimit ? Number(p.tokens_limit || p.TokensLimit) : undefined,
-            storefrontsLimit: p.storefronts_limit || p.StorefrontsLimit ? Number(p.storefronts_limit || p.StorefrontsLimit) : undefined,
+            leadsLimit: Number(p.leads_limit !== undefined ? p.leads_limit : p.leadsLimit !== undefined ? p.leadsLimit : p.LeadsLimit || 1000),
+            campaignsLimit: Number(p.campaigns_limit !== undefined ? p.campaigns_limit : p.campaignsLimit !== undefined ? p.campaignsLimit : p.CampaignsLimit || 3),
+            teamSeats: Number(p.team_seats !== undefined ? p.team_seats : p.teamSeats !== undefined ? p.teamSeats : p.TeamSeats || 5),
+            tokensLimit: p.tokens_limit || p.tokensLimit || p.TokensLimit ? Number(p.tokens_limit || p.tokensLimit || p.TokensLimit) : undefined,
+            storefrontsLimit: p.storefronts_limit || p.storefrontsLimit || p.StorefrontsLimit ? Number(p.storefronts_limit || p.storefrontsLimit || p.StorefrontsLimit) : undefined,
             features: typeof p.features_json === "string" ? JSON.parse(p.features_json) : Array.isArray(p.features) ? p.features : ["Standard Module Access"],
           }));
           if (isMounted && mappedPlans.length > 0) {
             setPlansCatalog(mappedPlans);
+            if (typeof window !== "undefined") {
+              try {
+                localStorage.setItem("ofia_subscription_plans_catalog", JSON.stringify(mappedPlans));
+              } catch (e) {
+                console.warn("Storage error:", e);
+              }
+            }
           }
         }
       } catch (err) {

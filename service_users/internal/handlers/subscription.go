@@ -164,15 +164,82 @@ func (h *SubscriptionHandler) UpdatePlan(w http.ResponseWriter, r *http.Request)
 	planID := chi.URLParam(r, "id")
 	w.Header().Set("Content-Type", "application/json")
 
-	var updates models.SubscriptionPlan
-	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
+	var rawMap map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&rawMap); err != nil {
 		http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
 		return
 	}
-	updates.UpdatedAt = time.Now()
+
+	updateFields := make(map[string]interface{})
+	if v, ok := rawMap["name"]; ok {
+		updateFields["name"] = v
+	}
+	if v, ok := rawMap["price_ngn"]; ok {
+		updateFields["price_ngn"] = v
+	} else if v, ok := rawMap["priceNgn"]; ok {
+		updateFields["price_ngn"] = v
+	}
+	if v, ok := rawMap["price_usd"]; ok {
+		updateFields["price_usd"] = v
+	} else if v, ok := rawMap["priceUsd"]; ok {
+		updateFields["price_usd"] = v
+	}
+	if v, ok := rawMap["period"]; ok {
+		updateFields["period"] = v
+	}
+	if v, ok := rawMap["badge"]; ok {
+		updateFields["badge"] = v
+	}
+	if v, ok := rawMap["description"]; ok {
+		updateFields["description"] = v
+	}
+	if v, ok := rawMap["category"]; ok {
+		updateFields["category"] = v
+	}
+	if v, ok := rawMap["category_label"]; ok {
+		updateFields["category_label"] = v
+	} else if v, ok := rawMap["categoryLabel"]; ok {
+		updateFields["category_label"] = v
+	}
+	if v, ok := rawMap["tier"]; ok {
+		updateFields["tier"] = v
+	}
+	if v, ok := rawMap["leads_limit"]; ok {
+		updateFields["leads_limit"] = v
+	} else if v, ok := rawMap["leadsLimit"]; ok {
+		updateFields["leads_limit"] = v
+	}
+	if v, ok := rawMap["campaigns_limit"]; ok {
+		updateFields["campaigns_limit"] = v
+	} else if v, ok := rawMap["campaignsLimit"]; ok {
+		updateFields["campaigns_limit"] = v
+	}
+	if v, ok := rawMap["team_seats"]; ok {
+		updateFields["team_seats"] = v
+	} else if v, ok := rawMap["teamSeats"]; ok {
+		updateFields["team_seats"] = v
+	}
+	if v, ok := rawMap["tokens_limit"]; ok {
+		updateFields["tokens_limit"] = v
+	} else if v, ok := rawMap["tokensLimit"]; ok {
+		updateFields["tokens_limit"] = v
+	}
+	if v, ok := rawMap["storefronts_limit"]; ok {
+		updateFields["storefronts_limit"] = v
+	} else if v, ok := rawMap["storefrontsLimit"]; ok {
+		updateFields["storefronts_limit"] = v
+	}
+	if v, ok := rawMap["features_json"]; ok {
+		updateFields["features_json"] = v
+	} else if v, ok := rawMap["features"]; ok {
+		if featBytes, err := json.Marshal(v); err == nil {
+			updateFields["features_json"] = string(featBytes)
+		}
+	}
+	updateFields["updated_at"] = time.Now()
 
 	if h.db != nil {
-		if err := h.db.Model(&models.SubscriptionPlan{}).Where("id = ?", planID).Updates(updates).Error; err != nil {
+		if err := h.db.Model(&models.SubscriptionPlan{}).Where("id = ?", planID).Updates(updateFields).Error; err != nil {
 			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
 			return
 		}
@@ -182,8 +249,8 @@ func (h *SubscriptionHandler) UpdatePlan(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	updates.ID = planID
-	json.NewEncoder(w).Encode(updates)
+	rawMap["id"] = planID
+	json.NewEncoder(w).Encode(rawMap)
 }
 
 // DeletePlan removes a subscription blueprint from MySQL database

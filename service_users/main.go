@@ -78,6 +78,11 @@ func main() {
 		// Subdomain & Storefront Availability Check
 		r.Get("/subdomains/check", orgHandler.CheckSubdomainAvailability)
 
+		// Organization & Tenant Profiles
+		r.Get("/organizations", orgHandler.ListAllAdminOrgs)
+		r.Get("/organizations/{orgId}", orgHandler.GetOrgDetails)
+		r.Put("/organizations/{orgId}", orgHandler.UpdateOrgProfile)
+
 		// Tenant RBAC Access Control Matrix & Subscription Direct
 		r.Get("/organizations/{orgId}/rbac", orgHandler.GetTenantRBAC)
 		r.Put("/organizations/{orgId}/rbac", orgHandler.SaveTenantRBAC)

@@ -129,6 +129,74 @@ func (h *OrgHandler) GetOrgDetails(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(org)
 }
 
+// ListAllAdminOrgs returns all organizations for admin portal without requiring user-specific token
+func (h *OrgHandler) ListAllAdminOrgs(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	var orgs []models.Organization
+	if h.db != nil {
+		h.db.Preload("Subscription").Preload("Owner").Find(&orgs)
+	}
+	json.NewEncoder(w).Encode(orgs)
+}
+
+// UpdateOrgProfile updates tenant organization details (name, slug, domain, ownerName, ownerEmail, planTier, status)
+func (h *OrgHandler) UpdateOrgProfile(w http.ResponseWriter, r *http.Request) {
+	orgID := chi.URLParam(r, "orgId")
+	w.Header().Set("Content-Type", "application/json")
+
+	var rawMap map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&rawMap); err != nil {
+		http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
+		return
+	}
+
+	updateFields := make(map[string]interface{})
+	if v, ok := rawMap["name"]; ok && v != "" {
+		updateFields["name"] = v
+	}
+	if v, ok := rawMap["slug"]; ok && v != "" {
+		updateFields["slug"] = v
+	}
+	if v, ok := rawMap["plan_tier"]; ok && v != "" {
+		updateFields["planTier"] = v
+	} else if v, ok := rawMap["planTier"]; ok && v != "" {
+		updateFields["planTier"] = v
+	}
+	if v, ok := rawMap["status"]; ok && v != "" {
+		updateFields["status"] = strings.ToUpper(fmt.Sprintf("%v", v))
+	}
+	updateFields["updatedAt"] = time.Now()
+
+	if h.db != nil {
+		if err := h.db.Model(&models.Organization{}).Where("id = ?", orgID).Updates(updateFields).Error; err != nil {
+			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
+			return
+		}
+
+		// Also update Subscription table planTier & status if provided
+		if planTier, ok := updateFields["planTier"]; ok {
+			h.db.Model(&models.Subscription{}).Where("organizationId = ?", orgID).Updates(map[string]interface{}{
+				"planTier":  planTier,
+				"updatedAt": time.Now(),
+			})
+		}
+		if status, ok := updateFields["status"]; ok {
+			h.db.Model(&models.Subscription{}).Where("organizationId = ?", orgID).Updates(map[string]interface{}{
+				"status":    status,
+				"updatedAt": time.Now(),
+			})
+		}
+
+		var updated models.Organization
+		h.db.Preload("Subscription").First(&updated, "id = ?", orgID)
+		json.NewEncoder(w).Encode(updated)
+		return
+	}
+
+	rawMap["id"] = orgID
+	json.NewEncoder(w).Encode(rawMap)
+}
+
 type SaveRBACRequest struct {
 	Matrix map[string]map[string]bool `json:"matrix"`
 }

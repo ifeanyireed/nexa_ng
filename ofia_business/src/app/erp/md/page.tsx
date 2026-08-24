@@ -63,10 +63,16 @@ export default function MDDashboard() {
     .filter(r => r.finalScore !== undefined && r.finalScore < 5.0)
     .sort((a, b) => (a.finalScore || 0) - (b.finalScore || 0));
 
-  // Overall Company stats
-  const totalReviewsCount = reviews.length;
-  const auditCompletedCount = completedReviews.length;
-  const auditProgressPercentage = totalReviewsCount > 0 ? (auditCompletedCount / totalReviewsCount) * 100 : 0;
+  // Overall Company stats (Option A: submitted/reviewed evaluations out of active cycle reviews)
+  const activeCycle = cycles.find(c => c.status === "Active");
+  const activeCycleReviews = activeCycle
+    ? reviews.filter(r => r.cycleId === activeCycle.id)
+    : reviews.filter(r => r.cycleId === "CYC001");
+  const totalReviewsCount = activeCycleReviews.length;
+  const cycleCompletedCount = activeCycleReviews.filter(r =>
+    ["Submitted", "Manager Reviewed", "HR Approved"].includes(r.status)
+  ).length;
+  const auditProgressPercentage = totalReviewsCount > 0 ? (cycleCompletedCount / totalReviewsCount) * 100 : 0;
 
   return (
     <BusinessShell

@@ -38,10 +38,10 @@ export default function ManagerDashboard() {
   const pendingApprovals = teamReviews.filter(r => r.status === "Submitted");
   const completedReviews = teamReviews.filter(r => r.status === "HR Approved" || r.status === "Manager Reviewed");
 
-  // Calculate statistics
-  const totalEmployeesCount = reportingEmployees.length;
+  // Calculate statistics (Option A: submitted/calibrated evaluations out of active cycle reviews)
+  const totalEvaluationsCount = teamReviews.length;
   const completedCount = teamReviews.filter(r => ["Submitted", "Manager Reviewed", "HR Approved"].includes(r.status)).length;
-  const completionPercentage = totalEmployeesCount > 0 ? (completedCount / totalEmployeesCount) * 100 : 0;
+  const completionPercentage = totalEvaluationsCount > 0 ? (completedCount / totalEvaluationsCount) * 100 : 0;
 
   // Average team score
   const gradedReviews = teamReviews.filter(r => r.finalScore !== undefined);

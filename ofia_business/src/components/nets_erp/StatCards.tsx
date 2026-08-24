@@ -58,9 +58,11 @@ export default function StatCards() {
     : reviews.filter((r) => r.cycleId === "CYC001");
   const totalEmployeesCount = users.filter((u) => u.role !== "admin").length;
   const totalEvaluations = activeCycleReviews.length;
-  const hrApprovedCount = activeCycleReviews.filter((r) => r.status === "HR Approved").length;
+  const cycleSubmittedCount = activeCycleReviews.filter((r) =>
+    ["Submitted", "Manager Reviewed", "HR Approved"].includes(r.status)
+  ).length;
   const globalCompletionRate =
-    totalEvaluations > 0 ? Math.round((hrApprovedCount / totalEvaluations) * 100) : 0;
+    totalEvaluations > 0 ? Math.round((cycleSubmittedCount / totalEvaluations) * 100) : 0;
 
   const hrScoredReviews = activeCycleReviews.filter(
     (r) => r.finalScore !== undefined && r.finalScore !== null
@@ -83,7 +85,7 @@ export default function StatCards() {
         {
           label: "Completion Rate",
           value: `${globalCompletionRate}%`,
-          change: `${hrApprovedCount}/${totalEvaluations} Done`,
+          change: `${cycleSubmittedCount}/${totalEvaluations} Done`,
           sub: "Company evaluations completed",
           icon: <IconClipboardCheck className="w-5 h-5 text-blue-500" />,
           iconBg: "bg-blue-500/10 text-blue-500",

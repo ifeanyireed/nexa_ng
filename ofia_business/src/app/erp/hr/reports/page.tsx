@@ -39,8 +39,10 @@ export default function HRReportsPage() {
     }
   }, []);
 
-  // Filter completed reviews
-  const completedReviews = reviews.filter(r => r.status === "HR Approved");
+  // Filter completed reviews (Option A: submitted, manager reviewed, or HR approved)
+  const completedReviews = reviews.filter(r =>
+    ["Submitted", "Manager Reviewed", "HR Approved"].includes(r.status)
+  );
 
   // Define departments list
   const depts = [

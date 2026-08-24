@@ -47,11 +47,16 @@ func main() {
 		MaxAge:           300,
 	}))
 
-	// Health Check
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+	// Health & Root Probe Checks
+	healthHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"service": "user-subscription-service", "status": "healthy", "port": 8081, "database": "u721451974_nexa_db"}`))
-	})
+	}
+	r.Get("/", healthHandler)
+	r.Head("/", healthHandler)
+	r.Get("/health", healthHandler)
+	r.Head("/health", healthHandler)
 
 	// Public Routes
 	r.Route("/api/v1", func(r chi.Router) {

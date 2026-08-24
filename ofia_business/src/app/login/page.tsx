@@ -259,6 +259,8 @@ export default function LoginPage() {
     // If on general erp.ofia.ng / apex and logging into a specific tenant -> redirect to tenant subdomain
     if (!currentTenant && tenantSlug && tenantSlug !== "ofia" && tenantSlug !== "gmail" && tenantSlug !== "yahoo" && tenantSlug !== "outlook") {
       if (typeof window !== "undefined") {
+        const protocol = window.location.protocol;
+        const port = window.location.port ? `:${window.location.port}` : "";
         const host = window.location.host.toLowerCase();
         const hostParts = host.split(":")[0].split(".");
         const baseDomain = hostParts.length > 2 ? hostParts.slice(-2).join(".") : host.split(":")[0];

@@ -23,12 +23,12 @@ var (
 )
 
 var defaultDepartments = []DepartmentItem{
-	{Code: "DEPT-FIN", Name: "Finance & Accounts", Head: "Oluwatobiloba Olateju", HeadCount: 8, Budget: "₦42,000,000", CostCenter: "CC-101"},
-	{Code: "DEPT-FLT", Name: "Fleet Operations & Maintenance", Head: "Babajide Sanwo", HeadCount: 28, Budget: "₦95,000,000", CostCenter: "CC-201"},
-	{Code: "DEPT-IT", Name: "Systems & IT / ERP", Head: "Adeyemi Phillips", HeadCount: 6, Budget: "₦28,000,000", CostCenter: "CC-301"},
-	{Code: "DEPT-HR", Name: "Human Resources & Talent", Head: "Goldy Okeke", HeadCount: 5, Budget: "₦18,500,000", CostCenter: "CC-401"},
-	{Code: "DEPT-MKT", Name: "Commercial & Growth", Head: "Chioma Okonkwo", HeadCount: 12, Budget: "₦35,000,000", CostCenter: "CC-501"},
-	{Code: "DEPT-EXE", Name: "Executive Directorate", Head: "Dr. Babatunde Jinadu (MD)", HeadCount: 4, Budget: "₦50,000,000", CostCenter: "CC-001"},
+	{Code: "DEPT-FIN", Name: "Finance & Accounts", Head: "", HeadCount: 0, Budget: "₦0", CostCenter: "CC-101"},
+	{Code: "DEPT-FLT", Name: "Fleet Operations & Maintenance", Head: "", HeadCount: 0, Budget: "₦0", CostCenter: "CC-201"},
+	{Code: "DEPT-IT", Name: "Systems & IT / ERP", Head: "", HeadCount: 0, Budget: "₦0", CostCenter: "CC-301"},
+	{Code: "DEPT-HR", Name: "Human Resources & Talent", Head: "", HeadCount: 0, Budget: "₦0", CostCenter: "CC-401"},
+	{Code: "DEPT-MKT", Name: "Commercial & Growth", Head: "", HeadCount: 0, Budget: "₦0", CostCenter: "CC-501"},
+	{Code: "DEPT-EXE", Name: "Executive Directorate", Head: "", HeadCount: 0, Budget: "₦0", CostCenter: "CC-001"},
 }
 
 func getDepartmentHeadAndCount(deptName string, tenantUsers []User) (string, int) {
@@ -63,9 +63,6 @@ func HandleDepartments(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	tenantSlug := getTenantFilter(r)
-	if tenantSlug == "" {
-		tenantSlug = "neweratransports"
-	}
 
 	if r.Method == http.MethodGet {
 		// Fetch tenant users to calculate dynamic headcount & leadership
@@ -110,9 +107,6 @@ func HandleDepartments(w http.ResponseWriter, r *http.Request) {
 				head = d.Head
 			}
 			headCount := count
-			if headCount == 0 && (tenantSlug == "neweratransports" || tenantSlug == "nets") {
-				headCount = d.HeadCount
-			}
 			results = append(results, DepartmentItem{
 				Code:       d.Code,
 				Name:       d.Name,

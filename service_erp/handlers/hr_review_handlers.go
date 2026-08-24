@@ -34,12 +34,25 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		tenantSlug := getTenantFilter(r)
+
 		var rows *sql.Rows
 		var err error
 		if employeeId != "" {
 			rows, err = db.Query("SELECT id, employeeId, employeeName, department, cycleId, cycleName, status, employeeComments, managerComments, hrComments, improvementPlan, finalScore, objectivesJson, updatedAt FROM PerformanceReview WHERE employeeId = ?", employeeId)
-		} else {
+		} else if tenantSlug == "" || tenantSlug == "all" {
 			rows, err = db.Query("SELECT id, employeeId, employeeName, department, cycleId, cycleName, status, employeeComments, managerComments, hrComments, improvementPlan, finalScore, objectivesJson, updatedAt FROM PerformanceReview")
+		} else if tenantSlug == "neweratransports" || tenantSlug == "nets" || tenantSlug == "new-era-transports" {
+			rows, err = db.Query(`SELECT r.id, r.employeeId, r.employeeName, r.department, r.cycleId, r.cycleName, r.status, r.employeeComments, r.managerComments, r.hrComments, r.improvementPlan, r.finalScore, r.objectivesJson, r.updatedAt 
+				FROM PerformanceReview r
+				LEFT JOIN User u ON r.employeeId = u.id
+				WHERE (u.company = 'NETS' OR LOWER(u.company) LIKE '%new era%' OR LOWER(u.email) LIKE '%@neweratransports.com%' OR u.company IS NULL OR u.company = '')`)
+		} else {
+			rows, err = db.Query(`SELECT r.id, r.employeeId, r.employeeName, r.department, r.cycleId, r.cycleName, r.status, r.employeeComments, r.managerComments, r.hrComments, r.improvementPlan, r.finalScore, r.objectivesJson, r.updatedAt 
+				FROM PerformanceReview r
+				JOIN User u ON r.employeeId = u.id
+				WHERE (LOWER(u.company) = ? OR LOWER(u.company) LIKE ? OR LOWER(u.email) LIKE ?)`,
+				tenantSlug, "%"+tenantSlug+"%", "%@"+tenantSlug+"%")
 		}
 
 		if err != nil {

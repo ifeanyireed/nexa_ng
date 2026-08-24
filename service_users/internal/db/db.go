@@ -75,7 +75,8 @@ func InitDB() *gorm.DB {
 
 	var err error
 	gormDB, err := gorm.Open(mysql.Open(databaseURL), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Warn),
+		DisableForeignKeyConstraintWhenMigrating: true,
+		Logger:                                   logger.Default.LogMode(logger.Warn),
 	})
 	if err != nil {
 		log.Printf("⚠️ Warning: Failed to connect to MySQL database (%s): %v. Proceeding with offline DB readiness mode.", databaseURL, err)

@@ -396,7 +396,7 @@ export function ErpAdminShell({
 
     window.addEventListener("ofia_rbac_updated", handleRbacUpdate);
     return () => {
-      isMounted = false;
+      isCurrent = false;
       window.removeEventListener("ofia_rbac_updated", handleRbacUpdate);
     };
   }, [user, pathname]);

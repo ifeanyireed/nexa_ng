@@ -882,12 +882,12 @@ export function ErpAdminShell({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 {title && (
-                  <h1 className="text-2xl font-black text-display tracking-tight text-nexa-text-primary">
+                  <h1 className="text-2xl font-black text-display tracking-tight text-nexa-text-primary" suppressHydrationWarning>
                     {title}
                   </h1>
                 )}
                 {subtitle && (
-                  <p className="text-xs text-nexa-text-secondary mt-1 leading-relaxed max-w-3xl">
+                  <p className="text-xs text-nexa-text-secondary mt-1 leading-relaxed max-w-3xl" suppressHydrationWarning>
                     {subtitle}
                   </p>
                 )}

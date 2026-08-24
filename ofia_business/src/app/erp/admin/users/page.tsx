@@ -802,11 +802,30 @@ function UserManagementContent() {
 }
 
 export default function UserManagementPage() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-8 text-center text-xs text-[var(--nexa-text-muted)] bg-[var(--nexa-bg-base)]">
+        <div className="flex flex-col items-center gap-2">
+          <RefreshCw className="w-5 h-5 animate-spin text-[#1A56DB]" />
+          <span>Loading tenant user directory...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Suspense fallback={
-      <div className="p-8 text-center text-xs text-[var(--nexa-text-muted)]">
-        <RefreshCw className="w-5 h-5 mx-auto animate-spin mb-2 text-[#1A56DB]" />
-        Loading tenant user directory...
+      <div className="min-h-screen flex items-center justify-center p-8 text-center text-xs text-[var(--nexa-text-muted)] bg-[var(--nexa-bg-base)]">
+        <div className="flex flex-col items-center gap-2">
+          <RefreshCw className="w-5 h-5 animate-spin text-[#1A56DB]" />
+          <span>Loading tenant user directory...</span>
+        </div>
       </div>
     }>
       <UserManagementContent />

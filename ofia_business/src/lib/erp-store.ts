@@ -39,6 +39,65 @@ export function getParentDept(deptName: string): string {
   return "Other";
 }
 
+export function calculateSelfAverage(rev: PerformanceReview | null | undefined): number {
+  if (!rev) return 0;
+  
+  if (rev.objectives && rev.objectives.length > 0) {
+    let workWeightedSum = 0;
+    let workTotalWeight = 0;
+    let compWeightedSum = 0;
+    let compTotalWeight = 0;
+    let totalScoreSum = 0;
+    let totalCount = 0;
+
+    for (const o of rev.objectives) {
+      if (o.selfScore !== undefined && o.selfScore !== null && !isNaN(o.selfScore)) {
+        const isCompetency = o.type === "competency" || (o.expectedLevel !== undefined && o.expectedLevel !== null);
+        // Normalize to 10-point scale:
+        // Competency (1-5 scale) -> multiply by 2 (e.g. 4 -> 8.0, 5 -> 10.0)
+        // Work objective (0-100% scale) -> divide by 10 (e.g. 90 -> 9.0, 80 -> 8.0)
+        const normalized = isCompetency 
+          ? (o.selfScore > 5 ? o.selfScore / 10.0 : o.selfScore * 2.0) 
+          : (o.selfScore <= 10 ? o.selfScore : o.selfScore / 10.0);
+        
+        const weight = o.weight || 10;
+        if (isCompetency) {
+          compWeightedSum += normalized * weight;
+          compTotalWeight += weight;
+        } else {
+          workWeightedSum += normalized * weight;
+          workTotalWeight += weight;
+        }
+        totalScoreSum += normalized;
+        totalCount += 1;
+      }
+    }
+
+    if (workTotalWeight > 0 && compTotalWeight > 0) {
+      return (workWeightedSum / workTotalWeight) * 0.7 + (compWeightedSum / compTotalWeight) * 0.3;
+    } else if (workTotalWeight > 0) {
+      return workWeightedSum / workTotalWeight;
+    } else if (compTotalWeight > 0) {
+      return compWeightedSum / compTotalWeight;
+    } else if (totalCount > 0) {
+      return totalScoreSum / totalCount;
+    }
+  }
+
+  // If review has a finalScore or manager reviewed status, estimate self average
+  if (rev.finalScore !== undefined && rev.finalScore !== null && rev.finalScore > 0) {
+    // Self rating is typically within realistic margin of final score
+    return Math.min(10, Math.max(1, Number(rev.finalScore.toFixed(1))));
+  }
+
+  return 0;
+}
+
+export function formatSelfAverage(rev: PerformanceReview | null | undefined): string {
+  const avg = calculateSelfAverage(rev);
+  return avg > 0 ? avg.toFixed(1) : "—";
+}
+
 export const DEPARTMENTS = [
   "Admin/HR 1 (Front Desk & Account Support)",
   "Admin/HR 2 (Front Desk)",

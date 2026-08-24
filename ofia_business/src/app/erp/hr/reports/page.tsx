@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useERPStore, PerformanceReview, User, getParentDept, Objective } from "@/lib/erp-store";
+import { useERPStore, PerformanceReview, User, getParentDept, Objective, formatSelfAverage } from "@/lib/erp-store";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -340,11 +340,7 @@ export default function HRReportsPage() {
                         const avatarSrc = emp.avatar && emp.avatar.startsWith("/character") ? emp.avatar : `/character${(((deptEmpPage - 1) * itemsPerPage + idx) % 20) + 1}.jpg`;
                         
                         // Calculate self average rating
-                        let selfAvgStr = "—";
-                        if (rev) {
-                          const selfAvg = calculateSelfAverageForReview(rev);
-                          selfAvgStr = selfAvg > 0 ? selfAvg.toFixed(1) : "—";
-                        }
+                        const selfAvgStr = formatSelfAverage(rev);
 
                         return (
                           <tr key={emp.id} className="hover:bg-slate-50/50 transition-colors">
@@ -367,7 +363,7 @@ export default function HRReportsPage() {
                             <td className="py-3">
                               {selfAvgStr !== "—" ? (
                                 <span className="bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded text-xs">
-                                  {selfAvgStr}
+                                  {selfAvgStr} / 10
                                 </span>
                               ) : (
                                 <span className="text-slate-400 font-semibold text-xs">—</span>

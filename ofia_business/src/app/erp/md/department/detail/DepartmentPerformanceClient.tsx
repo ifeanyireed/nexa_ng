@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useERPStore, PerformanceReview, User, getParentDept } from "@/lib/erp-store";
+import { useERPStore, PerformanceReview, User, getParentDept, formatSelfAverage } from "@/lib/erp-store";
 import { BusinessShell } from "@/components/business/BusinessShell";
 
 export default function DepartmentPerformancePage() {
@@ -110,8 +110,7 @@ export default function DepartmentPerformancePage() {
               <tbody className="divide-y divide-gray-100">
                 {deptEmployees.map((emp) => {
                   const rev = deptReviews.find(r => r.employeeId === emp.id);
-                  const selfScores = rev?.objectives.map(o => o.selfScore).filter((s): s is number => s !== undefined) || [];
-                  const selfAvg = selfScores.length > 0 ? (selfScores.reduce((a, b) => a + b, 0) / selfScores.length).toFixed(1) : "—";
+                  const selfAvg = formatSelfAverage(rev);
                   
                   return (
                     <tr key={emp.id} className="hover:bg-slate-50/50 transition-colors">
@@ -132,7 +131,11 @@ export default function DepartmentPerformancePage() {
                         )}
                       </td>
                       <td className="py-4">
-                        <span className="bg-blue-50 text-blue-800 font-black px-2.5 py-0.5 rounded text-xs">{selfAvg}</span>
+                        {selfAvg !== "—" ? (
+                          <span className="bg-blue-50 text-blue-800 font-black px-2.5 py-0.5 rounded text-xs">{selfAvg} / 10</span>
+                        ) : (
+                          <span className="text-slate-400 font-semibold text-xs">—</span>
+                        )}
                       </td>
                       <td className="py-4 font-black text-slate-750">
                         {rev?.finalScore ? (

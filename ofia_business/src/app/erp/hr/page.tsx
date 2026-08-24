@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useERPStore, PerformanceReview, User } from "@/lib/erp-store";
+import { useERPStore, PerformanceReview, User, formatSelfAverage } from "@/lib/erp-store";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -345,7 +345,8 @@ export default function HRDashboard() {
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Employee</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Department</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Status</th>
-                  <th className="pb-3 px-3 font-bold uppercase tracking-wider">Score</th>
+                  <th className="pb-3 px-3 font-bold uppercase tracking-wider">Self Rating</th>
+                  <th className="pb-3 px-3 font-bold uppercase tracking-wider">Final Score</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider text-right">Action</th>
                 </tr>
               </thead>
@@ -354,6 +355,7 @@ export default function HRDashboard() {
                   paginatedReviews.map((rev, idx) => {
                     const emp = users.find((u) => u.id === rev.employeeId);
                     const avatarSrc = emp?.avatar && emp.avatar.startsWith("/character") ? emp.avatar : `/character${(idx % 20) + 1}.jpg`;
+                    const selfAvg = formatSelfAverage(rev);
                     return (
                       <tr key={rev.id} className="hover:bg-[var(--nexa-bg-base)]/50 transition-colors">
                         <td className="py-3.5 px-3 flex items-center gap-3">
@@ -369,6 +371,15 @@ export default function HRDashboard() {
                         </td>
                         <td className="py-3.5 px-3 text-[var(--nexa-text-muted)] font-medium">{rev.department}</td>
                         <td className="py-3.5 px-3">{getStatusBadge(rev.status)}</td>
+                        <td className="py-3.5 px-3">
+                          {selfAvg !== "—" ? (
+                            <span className="font-bold bg-blue-500/10 text-blue-600 border border-blue-500/20 px-2 py-0.5 rounded-full text-xs">
+                              {selfAvg} / 10
+                            </span>
+                          ) : (
+                            <span className="text-[var(--nexa-text-muted)] font-medium">—</span>
+                          )}
+                        </td>
                         <td className="py-3.5 px-3">
                           {rev.finalScore ? (
                             <span className="font-extrabold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 px-2 py-0.5 rounded-full text-xs">
@@ -390,7 +401,7 @@ export default function HRDashboard() {
                   })
                 ) : (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-[var(--nexa-text-muted)] font-medium">
+                    <td colSpan={6} className="py-8 text-center text-[var(--nexa-text-muted)] font-medium">
                       No review submissions found matching the selected filters.
                     </td>
                   </tr>

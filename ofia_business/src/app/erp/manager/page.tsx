@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useERPStore, PerformanceReview, User } from "@/lib/erp-store";
+import { useERPStore, PerformanceReview, User, formatSelfAverage } from "@/lib/erp-store";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -127,8 +127,7 @@ export default function ManagerDashboard() {
                 {pendingApprovals.length > 0 ? (
                   pendingApprovals.map((rev) => {
                     const emp = users.find(u => u.id === rev.employeeId);
-                    const selfScores = rev.objectives.map(o => o.selfScore).filter((s): s is number => s !== undefined);
-                    const selfAvg = selfScores.length > 0 ? (selfScores.reduce((a, b) => a + b, 0) / selfScores.length).toFixed(1) : "—";
+                    const selfAvg = formatSelfAverage(rev);
                     return (
                       <tr key={rev.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="py-4 flex items-center gap-3">
@@ -141,7 +140,11 @@ export default function ManagerDashboard() {
                         <td className="py-4 text-xs font-semibold text-slate-500">{rev.department}</td>
                         <td className="py-4 text-xs font-semibold text-slate-500">{rev.cycleName.split(" ")[0]}</td>
                         <td className="py-4">
-                          <span className="bg-blue-50 text-blue-700 font-black px-2 py-0.5 rounded text-xs">{selfAvg}</span>
+                          {selfAvg !== "—" ? (
+                            <span className="bg-blue-50 text-blue-700 font-black px-2 py-0.5 rounded text-xs">{selfAvg} / 10</span>
+                          ) : (
+                            <span className="text-slate-400 font-semibold text-xs">—</span>
+                          )}
                         </td>
                         <td className="py-4">
                           <button

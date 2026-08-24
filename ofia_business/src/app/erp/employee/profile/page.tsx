@@ -29,7 +29,13 @@ export default function EmployeeProfilePage() {
       }
 
       setProfileUser(active);
-      setUserReviews(reviews.filter(r => r.employeeId === active.id));
+      setUserReviews(
+        reviews.filter(
+          r =>
+            r.employeeId === active.id ||
+            (r.employeeName && active.name && r.employeeName.toLowerCase().trim() === active.name.toLowerCase().trim())
+        )
+      );
     }
   }, [reviews, users]);
 

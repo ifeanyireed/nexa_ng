@@ -508,68 +508,104 @@ export function getActiveTenantSlug(): string {
 }
 
 export function getSignedInERPUser(users: User[]): User {
-  const fallbackUser: User = users.length > 0 ? users[0] : {
-    id: "EMP001",
-    name: "Staff Member",
-    email: "staff@ofia.ng",
-    role: "employee",
-    department: "Operations",
+  const fallbackUser: User = {
+    id: "USR-ADMIN-01",
+    name: "Workspace Admin",
+    email: "admin@ofia.ng",
+    role: "admin",
+    department: "Executive Directorate",
     avatar: "/character1.jpg",
   };
 
-  if (typeof window === "undefined") return fallbackUser;
+  if (typeof window === "undefined") {
+    return users.length > 0 ? users[0] : fallbackUser;
+  }
 
   try {
-    // 1. Try resolving from localStorage erp_current_user
-    const stored = localStorage.getItem("erp_current_user");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (parsed) {
-        // If users list is loaded, match against live database users by id, email, or name
-        if (users && users.length > 0) {
-          const match = users.find(u =>
-            (parsed.id && u.id === parsed.id) ||
-            (parsed.email && u.email && u.email.toLowerCase() === parsed.email.toLowerCase()) ||
-            (parsed.name && u.name && u.name.toLowerCase() === parsed.name.toLowerCase())
-          );
-          if (match) {
-            localStorage.setItem("erp_current_user", JSON.stringify(match));
-            return match;
-          }
-        }
-        if (parsed.id && parsed.name) {
-          return {
-            ...fallbackUser,
-            ...parsed,
-          };
-        }
-      }
-    }
-
-    // 2. Try resolving from nexa_user_email
-    const storedEmail = localStorage.getItem("nexa_user_email");
-    if (storedEmail && users && users.length > 0) {
-      const match = users.find(u => u.email && u.email.toLowerCase() === storedEmail.toLowerCase());
-      if (match) {
-        localStorage.setItem("erp_current_user", JSON.stringify(match));
-        return match;
-      }
-    }
-
-    // 3. Try resolving from nexa_user_name
     const storedName = localStorage.getItem("nexa_user_name");
-    if (storedName && users && users.length > 0) {
-      const match = users.find(u => u.name && u.name.toLowerCase() === storedName.toLowerCase());
+    const storedEmail = localStorage.getItem("nexa_user_email");
+    const storedRole = localStorage.getItem("nexa_user_role") || "admin";
+    const tenantSlug = getActiveTenantSlug() || "neweratransports";
+    const tenantAdminName =
+      localStorage.getItem("tenant_admin_name_" + tenantSlug) ||
+      localStorage.getItem("tenant_admin_name_org-01") ||
+      localStorage.getItem("tenant_admin_name_neweratransports");
+    const tenantAdminEmail =
+      localStorage.getItem("tenant_admin_email_" + tenantSlug) ||
+      localStorage.getItem("tenant_admin_email_org-01") ||
+      localStorage.getItem("tenant_admin_email_neweratransports");
+
+    let parsed: any = null;
+    const storedUser = localStorage.getItem("erp_current_user");
+    if (storedUser) {
+      try {
+        parsed = JSON.parse(storedUser);
+      } catch {}
+    }
+
+    const effectiveName =
+      (storedRole === "admin" && tenantAdminName) ||
+      storedName ||
+      parsed?.name ||
+      tenantAdminName ||
+      (users.length > 0 ? users[0].name : "Workspace Admin");
+
+    const effectiveEmail =
+      storedEmail ||
+      parsed?.email ||
+      tenantAdminEmail ||
+      (users.length > 0 ? users[0].email : "admin@ofia.ng");
+
+    const effectiveRole =
+      storedRole ||
+      parsed?.role ||
+      "admin";
+
+    // 1. If live database users list has a match by ID, Email, or Name
+    if (users && users.length > 0) {
+      const match = users.find(
+        (u) =>
+          (parsed?.id && u.id === parsed.id) ||
+          (effectiveEmail && u.email && u.email.toLowerCase() === effectiveEmail.toLowerCase()) ||
+          (effectiveName && u.name && u.name.toLowerCase() === effectiveName.toLowerCase())
+      );
       if (match) {
-        localStorage.setItem("erp_current_user", JSON.stringify(match));
-        return match;
+        const syncedUser: User = {
+          ...match,
+          name: effectiveName || match.name,
+          email: effectiveEmail || match.email,
+          role: effectiveRole || match.role,
+        };
+        return syncedUser;
       }
+    }
+
+    // 2. If the user is logged in with custom details or as Admin/Manager/Employee
+    if (effectiveName || effectiveEmail) {
+      return {
+        id: parsed?.id || (effectiveRole === "admin" ? "USR-ADMIN-01" : "EMP001"),
+        name: effectiveName,
+        email: effectiveEmail,
+        role: effectiveRole,
+        department: parsed?.department || "Executive Directorate",
+        designation:
+          parsed?.designation ||
+          (effectiveRole === "admin"
+            ? "Executive Director & Workspace Admin"
+            : effectiveRole === "manager"
+            ? "Operations & Line Manager"
+            : "Staff Member"),
+        avatar: parsed?.avatar || "/character1.jpg",
+        company: parsed?.company || "Organization",
+        managerName: parsed?.managerName,
+        managerId: parsed?.managerId,
+      };
     }
   } catch (e) {
     console.warn("Failed to parse signed-in ERP user session:", e);
   }
 
-  return fallbackUser;
+  return users.length > 0 ? users[0] : fallbackUser;
 }
 
 async function fetchFromApi<T>(endpoint: string, fallbackData: T, tenantSlug?: string): Promise<T> {

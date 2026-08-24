@@ -15,7 +15,12 @@ export default function MyPerformanceReviews() {
     if (typeof window !== "undefined") {
       const active = getSignedInERPUser(users);
       setCurrentUser(active);
-      setUserReviews(reviews.filter(r => r.employeeId === active.id));
+      const userRevs = reviews.filter(
+        r =>
+          r.employeeId === active.id ||
+          (r.employeeName && active.name && r.employeeName.toLowerCase().trim() === active.name.toLowerCase().trim())
+      );
+      setUserReviews(userRevs);
     }
   }, [reviews, users]);
 

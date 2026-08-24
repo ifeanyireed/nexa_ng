@@ -18,24 +18,11 @@ let lastFetchTime = 0;
 const CACHE_TTL_MS = 30_000; // 30 seconds
 
 /**
- * Maps known slug keys to formatted tenant brand names
+ * Formats a slug dynamically (e.g. "acme-corp" -> "Acme Corp")
  */
 export function slugToTenantName(slug: string): string {
-  if (!slug) return "New Era Transports";
+  if (!slug) return "";
   const clean = slug.toLowerCase().trim();
-  const known: Record<string, string> = {
-    neweratransports: "New Era Transports",
-    nets: "New Era Transports",
-    "new-era-transports": "New Era Transports",
-    "payflow-africa": "PayFlow Africa",
-    payflow: "PayFlow Africa",
-    healthbridge: "HealthBridge Clinics",
-    "apex-logistics": "Apex Global Logistics",
-    "zenith-re": "Zenith Real Estate Hub",
-  };
-  if (known[clean]) {
-    return known[clean];
-  }
   return clean
     .split(/[-_]/)
     .filter(Boolean)
@@ -44,7 +31,7 @@ export function slugToTenantName(slug: string): string {
 }
 
 /**
- * Extracts the tenant slug from explicit parameter, URL query (?tenant=), or subdomain (e.g. neweratransports.localhost)
+ * Extracts the tenant slug dynamically from URL query (?tenant=) or subdomain
  */
 export function extractSubdomainOrParam(searchParamSlug?: string | null): string {
   if (searchParamSlug) {
@@ -78,7 +65,7 @@ export function extractSubdomainOrParam(searchParamSlug?: string | null): string
 }
 
 /**
- * Batched lookup: Fetches all tenant organizations directly from MySQL via /api/organizations
+ * Batched lookup: Fetches all tenant organizations directly from the database via /api/organizations
  */
 export async function fetchDatabaseTenants(forceRefresh = false): Promise<DatabaseTenant[]> {
   const now = Date.now();
@@ -129,7 +116,7 @@ export function resolveTenantFromList(
 ): DatabaseTenant {
   const targetSlug = extractSubdomainOrParam(searchParamSlug);
 
-  // 1. If tenants are available, try exact matches
+  // 1. If tenants are available from the database, match against them
   if (tenants && tenants.length > 0) {
     if (targetSlug) {
       const found = tenants.find(
@@ -159,7 +146,7 @@ export function resolveTenantFromList(
     }
   }
 
-  // 2. If targetSlug was found from URL/Subdomain, construct tenant dynamically
+  // 2. If targetSlug was found from URL/Subdomain, construct tenant dynamically from the slug
   if (targetSlug) {
     return {
       id: `org-${targetSlug}`,
@@ -176,7 +163,7 @@ export function resolveTenantFromList(
   if (userEmail && userEmail.includes("@")) {
     const domainPart = userEmail.split("@")[1].toLowerCase();
     const domainSlug = domainPart.split(".")[0];
-    if (domainSlug && domainSlug !== "gmail" && domainSlug !== "yahoo" && domainSlug !== "outlook") {
+    if (domainSlug && domainSlug !== "gmail" && domainSlug !== "yahoo" && domainSlug !== "outlook" && domainSlug !== "hotmail") {
       return {
         id: `org-${domainSlug}`,
         name: slugToTenantName(domainSlug),
@@ -190,14 +177,14 @@ export function resolveTenantFromList(
     }
   }
 
-  // 4. Default fallback tenant
+  // 4. Fallback empty structure
   return {
-    id: "org-01",
-    name: "New Era Transports",
-    slug: "neweratransports",
-    domain: "neweratransports.ofia.ng",
-    company: "New Era Transports",
-    status: "ACTIVE",
+    id: "",
+    name: "",
+    slug: "",
+    domain: "",
+    company: "",
+    status: "Active",
     planTier: "Enterprise",
   };
 }

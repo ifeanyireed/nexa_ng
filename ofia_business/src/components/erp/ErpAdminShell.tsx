@@ -114,7 +114,7 @@ export function ErpAdminShell({
   const [originPortal, setOriginPortal] = useState<OriginPortal>({
     path: "/erp/admin",
     label: "Admin",
-    title: "Tenant Administrator",
+    title: "Admin",
     roleKey: "admin",
     badgeColor: "bg-blue-500/20 text-blue-300 border-blue-400/30",
     iconBg: "from-blue-600 to-indigo-600",
@@ -123,19 +123,19 @@ export function ErpAdminShell({
   const [tenantName, setTenantName] = useState<string>(() => {
     if (typeof window !== "undefined") {
       const matched = resolveTenantFromList([], undefined);
-      return matched?.name || "New Era Transports";
+      return matched?.name || "";
     }
-    return "New Era Transports";
+    return "";
   });
   const [permissionMatrix, setPermissionMatrix] = useState<PermissionMatrix>(DEFAULT_PERMISSION_MATRIX);
   const [currentRole, setCurrentRole] = useState<RoleKey>("admin");
-  const [userName, setUserName] = useState<string>("Corporate Staff");
-  const [userEmail, setUserEmail] = useState<string>("staff@neweratransports.com");
+  const [userName, setUserName] = useState<string>("");
+  const [userEmail, setUserEmail] = useState<string>("");
 
   const getRoleDisplayName = (role: RoleKey) => {
     switch (role) {
-      case "admin": return "Tenant Administrator";
-      case "md": return "Managing Director";
+      case "admin": return "Admin";
+      case "md": return "Executive";
       case "hr": return "HR Director";
       case "accountant": return "Chief Accountant";
       case "marketer": return "Growth Marketer";
@@ -144,7 +144,7 @@ export function ErpAdminShell({
       case "cashier": return "POS Cashier";
       case "inventory_officer": return "Warehouse Officer";
       case "dispatcher": return "Fleet Dispatcher";
-      default: return `${tenantName} Staff`;
+      default: return "Staff";
     }
   };
 
@@ -195,7 +195,7 @@ export function ErpAdminShell({
       const list = await fetchDatabaseTenants();
       if (!isMounted) return;
       const matched = resolveTenantFromList(list, user?.email);
-      const activeName = matched?.name || "New Era Transports";
+      const activeName = matched?.name || "";
       setTenantName(activeName);
       setPermissionMatrix(getTenantPermissionMatrix(activeName));
 
@@ -211,7 +211,7 @@ export function ErpAdminShell({
         origin = {
           path: "/erp/admin",
           label: "Admin",
-          title: "Tenant Administrator",
+          title: "Admin",
           roleKey: "admin",
           badgeColor: "bg-blue-500/20 text-blue-300 border-blue-400/30",
           iconBg: "from-blue-600 to-indigo-600",
@@ -309,7 +309,7 @@ export function ErpAdminShell({
 
       // Resolve user active session role, name, and email
       let resolvedRole: RoleKey = "admin";
-      let resolvedName = user?.name || `${activeName} Staff`;
+      let resolvedName = user?.name || (activeName ? `${activeName} Staff` : "Staff");
       let resolvedEmail = user?.email || (matched?.ownerEmail || "");
       let hasStoredRole = false;
 
@@ -338,6 +338,13 @@ export function ErpAdminShell({
         }
         if (storedName) resolvedName = storedName;
         if (storedEmail) resolvedEmail = storedEmail;
+      }
+
+      // Sanitize legacy stored roles or brackets from resolvedName
+      if (resolvedName) {
+        resolvedName = resolvedName
+          .replace(/\s*\((MD\s*\/?\s*Founder|MD|Founder|Admin|Accounts|Fleet Mgr|Client Relations|Retail & POS)\)/gi, "")
+          .trim();
       }
 
       // If no stored role is present in session, fallback to current route
@@ -738,10 +745,10 @@ export function ErpAdminShell({
             {isSidebarOpen ? (
               <div className="flex items-center justify-between p-2 rounded-2xl bg-nexa-bg-base/70 border border-nexa-border">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <NexaAvatar size="sm" isOnline name={userName || user?.name || tenantName} />
+                  <NexaAvatar size="sm" isOnline name={userName || user?.name || "Staff"} />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-nexa-text-primary truncate">
-                      {userName || user?.name || `${tenantName} Staff`}
+                      {userName || user?.name || (tenantName ? `${tenantName} Staff` : "Staff")}
                     </p>
                     <p
                       className={cn(

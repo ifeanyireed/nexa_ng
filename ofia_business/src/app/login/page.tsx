@@ -30,26 +30,28 @@ import { AUTH_API } from "@/lib/api-client";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("ifeanyi.ibeh@neweratransports.com");
-  const [password, setPassword] = useState("password123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
 
-  // 10 Seeded New Era Transports ERP Role Personas for instant 1-click test fill
+  // Seeded ERP Role Personas for quick selection
   const testPersonas = [
     {
-      label: "Ifeanyi Felix (Admin)",
-      email: "ifeanyi.ibeh@neweratransports.com",
+      name: "Admin",
+      label: "Admin",
+      email: "admin@neweratransports.com",
       pass: "password123",
       roleKey: "admin",
-      badge: "Tenant Admin",
+      badge: "Admin",
       color: "#1A56DB",
       route: "/erp/admin",
     },
     {
-      label: "Managing Director",
+      name: "Executive",
+      label: "Executive Portal",
       email: "md@neweratransports.com",
       pass: "password123",
       roleKey: "md",
@@ -58,6 +60,7 @@ export default function LoginPage() {
       route: "/erp/md",
     },
     {
+      name: "HR Officer",
       label: "Human Resources (HR)",
       email: "hr@neweratransports.com",
       pass: "password123",
@@ -67,7 +70,8 @@ export default function LoginPage() {
       route: "/erp/hr",
     },
     {
-      label: "Victoria Otojareri (Accounts)",
+      name: "Accountant",
+      label: "Accounting & Finance",
       email: "accounts@neweratransports.com",
       pass: "password123",
       roleKey: "accountant",
@@ -76,8 +80,9 @@ export default function LoginPage() {
       route: "/erp/accountant",
     },
     {
-      label: "Babalola Adelakun (Fleet Mgr)",
-      email: "babalola.adelakun@neweratransports.com",
+      name: "Operations Manager",
+      label: "Operations & Fleet",
+      email: "manager@neweratransports.com",
       pass: "password123",
       roleKey: "manager",
       badge: "Supervisor",
@@ -85,6 +90,7 @@ export default function LoginPage() {
       route: "/erp/manager",
     },
     {
+      name: "Employee",
       label: "General Employee",
       email: "employee@neweratransports.com",
       pass: "password123",
@@ -94,17 +100,19 @@ export default function LoginPage() {
       route: "/erp/employee",
     },
     {
-      label: "Chioma John (Client Relations)",
-      email: "clientrelations@neweratransports.com",
+      name: "Marketer",
+      label: "Marketing & CRM",
+      email: "marketing@neweratransports.com",
       pass: "password123",
       roleKey: "marketer",
-      badge: "Marketing & CSR",
+      badge: "Marketing",
       color: "#EC4899",
       route: "/erp/marketer",
     },
     {
-      label: "Front Desk / POS Cashier",
-      email: "frontdesk@neweratransports.com",
+      name: "Cashier",
+      label: "POS & Cashier Desk",
+      email: "cashier@neweratransports.com",
       pass: "password123",
       roleKey: "cashier",
       badge: "Retail & POS",
@@ -112,7 +120,8 @@ export default function LoginPage() {
       route: "/erp/admin/shop/pos",
     },
     {
-      label: "Warehouse Officer",
+      name: "Inventory Officer",
+      label: "Warehouse & Inventory",
       email: "inventory@neweratransports.com",
       pass: "password123",
       roleKey: "inventory_officer",
@@ -121,8 +130,9 @@ export default function LoginPage() {
       route: "/erp/admin/shop/inventory",
     },
     {
-      label: "Enugu Zonal Supervisor",
-      email: "enugu.supervisor@neweratransports.com",
+      name: "Dispatcher",
+      label: "Logistics Dispatch Desk",
+      email: "logistics@neweratransports.com",
       pass: "password123",
       roleKey: "dispatcher",
       badge: "Logistics",
@@ -161,6 +171,8 @@ export default function LoginPage() {
 
     const matchingPersona = testPersonas.find((p) => p.email.toLowerCase() === email.toLowerCase());
     const resolvedRole = matchingPersona ? matchingPersona.roleKey : "admin";
+    const resolvedName = matchingPersona?.name || email.split("@")[0] || "User";
+    const emailDomain = email.includes("@") ? email.split("@")[1].split(".")[0] : "";
 
     try {
       const res = await AUTH_API.login({ email, password });
@@ -168,20 +180,20 @@ export default function LoginPage() {
         if (res && res.token) {
           localStorage.setItem("nexa_auth_token", res.token);
         } else {
-          localStorage.setItem("nexa_auth_token", "mock-erp-jwt-token-2026");
+          localStorage.setItem("nexa_auth_token", "jwt-token-active");
         }
         localStorage.setItem("nexa_user_email", email);
         localStorage.setItem("nexa_user_role", resolvedRole);
-        localStorage.setItem("nexa_user_name", matchingPersona?.label || "New Era Staff");
-        localStorage.setItem("nexa_org_id", "neweratransports");
-        localStorage.setItem("nexa_org_name", "New Era Transports");
+        localStorage.setItem("nexa_user_name", resolvedName);
+        if (emailDomain) {
+          localStorage.setItem("nexa_org_id", emailDomain);
+        }
         localStorage.setItem(
           "erp_current_user",
           JSON.stringify({
             email,
             role: resolvedRole,
-            name: matchingPersona?.label || "New Era Staff",
-            tenant: "New Era Transports",
+            name: resolvedName,
           })
         );
         document.cookie = `nexa_user_role=${resolvedRole}; path=/; max-age=2592000; SameSite=Lax`;
@@ -191,19 +203,19 @@ export default function LoginPage() {
     } catch {
       // Fallback simulation for seamless offline/demo access
       if (typeof window !== "undefined") {
-        localStorage.setItem("nexa_auth_token", "mock-erp-jwt-token-2026");
+        localStorage.setItem("nexa_auth_token", "jwt-token-active");
         localStorage.setItem("nexa_user_email", email);
         localStorage.setItem("nexa_user_role", resolvedRole);
-        localStorage.setItem("nexa_user_name", matchingPersona?.label || "New Era Staff");
-        localStorage.setItem("nexa_org_id", "neweratransports");
-        localStorage.setItem("nexa_org_name", "New Era Transports");
+        localStorage.setItem("nexa_user_name", resolvedName);
+        if (emailDomain) {
+          localStorage.setItem("nexa_org_id", emailDomain);
+        }
         localStorage.setItem(
           "erp_current_user",
           JSON.stringify({
             email,
             role: resolvedRole,
-            name: matchingPersona?.label || "New Era Staff",
-            tenant: "New Era Transports",
+            name: resolvedName,
           })
         );
         document.cookie = `nexa_user_role=${resolvedRole}; path=/; max-age=2592000; SameSite=Lax`;

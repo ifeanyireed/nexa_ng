@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import React, { useState, useEffect, useMemo, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Building2,
   CheckCircle2,
@@ -15,11 +15,21 @@ import {
   ChevronDown,
   Search,
   Briefcase,
+  Edit3,
+  Trash2,
+  UserCheck,
+  Shield,
+  ArrowRight,
+  ExternalLink,
+  Mail,
+  AlertTriangle,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
+import { ErpStatGrid } from "@/components/erp/ErpStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
+import { NexaAvatar } from "@/components/nexa/NexaAvatar";
 import { useAuth } from "@/components/nexa/AuthContext";
 import { useActiveTenant } from "@/lib/tenant-context";
 
@@ -31,6 +41,20 @@ interface DepartmentItem {
   budget: string;
   costCenter: string;
   tenantSlug?: string;
+  isCustom?: boolean;
+}
+
+interface StaffUser {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  department: string;
+  designation: string;
+  avatar: string;
+  managerName?: string;
+  managerId?: string;
+  company?: string;
 }
 
 const DEFAULT_DEPARTMENTS: DepartmentItem[] = [
@@ -43,6 +67,7 @@ const DEFAULT_DEPARTMENTS: DepartmentItem[] = [
 ];
 
 function ERPDepartmentsContent() {
+  const router = useRouter();
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const tenantSlugParam = searchParams.get("tenant");
@@ -56,17 +81,28 @@ function ERPDepartmentsContent() {
   } = useActiveTenant(user?.email, tenantSlugParam);
 
   const [departments, setDepartments] = useState<DepartmentItem[]>(DEFAULT_DEPARTMENTS);
+  const [users, setUsers] = useState<StaffUser[]>([]);
   const [isLoadingDepartments, setIsLoadingDepartments] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newCode, setNewCode] = useState("");
-  const [newName, setNewName] = useState("");
-  const [newHead, setNewHead] = useState("");
-  const [newBudget, setNewBudget] = useState("");
-  const [newCostCenter, setNewCostCenter] = useState("");
+  // Modal State for Add & Edit
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [editingDept, setEditingDept] = useState<DepartmentItem | null>(null);
+
+  const [formCode, setFormCode] = useState("");
+  const [formName, setFormName] = useState("");
+  const [formHead, setFormHead] = useState("");
+  const [formBudget, setFormBudget] = useState("");
+  const [formCostCenter, setFormCostCenter] = useState("");
+
+  // Modal State for Viewing Members
+  const [viewingDept, setViewingDept] = useState<DepartmentItem | null>(null);
+  const [memberSearch, setMemberSearch] = useState("");
+
+  // Modal State for Deleting
+  const [deletingDept, setDeletingDept] = useState<DepartmentItem | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -77,57 +113,69 @@ function ERPDepartmentsContent() {
     try {
       setIsLoadingDepartments(true);
       const headers: Record<string, string> = {};
-      if (activeTenant?.slug) {
-        headers["x-tenant-slug"] = activeTenant.slug;
+      const slug = activeTenant?.slug || "";
+      if (slug) {
+        headers["x-tenant-slug"] = slug;
       }
 
-      // 1. Fetch departments from ERP
-      const deptUrl = activeTenant?.slug
-        ? `/api/erp/departments?tenant=${encodeURIComponent(activeTenant.slug)}`
-        : "/api/erp/departments";
+      // 1. Fetch live staff users
+      const userUrl = slug ? `/api/erp/users?tenant=${encodeURIComponent(slug)}` : "/api/erp/users";
+      let loadedUsers: StaffUser[] = [];
+      try {
+        const uRes = await fetch(userUrl, { headers, cache: "no-store" });
+        if (uRes.ok) {
+          const uData = await uRes.json();
+          if (Array.isArray(uData)) {
+            loadedUsers = uData;
+            setUsers(uData);
+          }
+        }
+      } catch (uErr) {
+        console.warn("Failed to fetch users for department mapping:", uErr);
+      }
 
+      // 2. Fetch departments from ERP
+      const deptUrl = slug ? `/api/erp/departments?tenant=${encodeURIComponent(slug)}` : "/api/erp/departments";
       const res = await fetch(deptUrl, { headers, cache: "no-store" });
+
+      let baseDepts: DepartmentItem[] = DEFAULT_DEPARTMENTS;
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
-          setDepartments(data);
-          return;
+          baseDepts = data;
         }
       }
 
-      // 2. Also fetch users to cross-compute live headcount if needed
-      const userUrl = activeTenant?.slug
-        ? `/api/erp/users?tenant=${encodeURIComponent(activeTenant.slug)}`
-        : "/api/erp/users";
+      // 3. Match and compute real-time dynamic headcount and assigned staff
+      const mapped = baseDepts.map((d) => {
+        const matchingStaff = loadedUsers.filter((u) => isUserInDepartment(u, d.name));
+        const computedCount = matchingStaff.length > 0 ? matchingStaff.length : d.headCount;
 
-      const userRes = await fetch(userUrl, { headers, cache: "no-store" });
-      if (userRes.ok) {
-        const users = await userRes.json();
-        if (Array.isArray(users) && users.length > 0) {
-          const updated = DEFAULT_DEPARTMENTS.map((d) => {
-            const count = users.filter((u: any) => {
-              const dept = (u.department || u.Department || "").toLowerCase();
-              const dName = d.name.toLowerCase();
-              return (
-                dept.includes(dName) ||
-                dName.includes(dept) ||
-                (dName.includes("finance") && dept.includes("finance")) ||
-                (dName.includes("fleet") && dept.includes("fleet")) ||
-                (dName.includes("it") && dept.includes("it")) ||
-                (dName.includes("hr") && dept.includes("hr")) ||
-                (dName.includes("market") && dept.includes("market"))
-              );
-            }).length;
-
-            return {
-              ...d,
-              headCount: count > 0 ? count : d.headCount,
-            };
-          });
-          setDepartments(updated);
-          return;
+        // Try to identify head if empty or placeholder
+        let dynamicHead = d.head;
+        if (!dynamicHead || dynamicHead === "Pending Appointment") {
+          const leader = matchingStaff.find(
+            (u) =>
+              u.role === "manager" ||
+              u.role === "admin" ||
+              u.role === "md" ||
+              u.designation?.toLowerCase().includes("head") ||
+              u.designation?.toLowerCase().includes("manager") ||
+              u.designation?.toLowerCase().includes("director")
+          );
+          if (leader) {
+            dynamicHead = leader.name;
+          }
         }
-      }
+
+        return {
+          ...d,
+          head: dynamicHead || d.head || "Pending Appointment",
+          headCount: computedCount,
+        };
+      });
+
+      setDepartments(mapped);
     } catch (e) {
       console.error("Failed to fetch department hierarchy from database:", e);
     } finally {
@@ -139,19 +187,59 @@ function ERPDepartmentsContent() {
     fetchDepartmentData();
   }, [activeTenant?.slug, activeTenant?.id]);
 
-  const handleAddDept = async (e: React.FormEvent) => {
+  const isUserInDepartment = (u: StaffUser, deptName: string): boolean => {
+    const userDept = (u.department || "").toLowerCase().trim();
+    const dName = deptName.toLowerCase().trim();
+    if (!userDept) return false;
+
+    if (userDept.includes(dName) || dName.includes(userDept)) return true;
+
+    if (dName.includes("finance") && userDept.includes("finance")) return true;
+    if (dName.includes("fleet") && userDept.includes("fleet")) return true;
+    if (dName.includes("it") && (userDept.includes("it") || userDept.includes("erp") || userDept.includes("system"))) return true;
+    if (dName.includes("human resources") && (userDept.includes("hr") || userDept.includes("human"))) return true;
+    if (dName.includes("commercial") && (userDept.includes("market") || userDept.includes("commercial") || userDept.includes("growth"))) return true;
+    if (dName.includes("executive") && (userDept.includes("exec") || userDept.includes("admin") || userDept.includes("management"))) return true;
+    if (dName.includes("khlc") && (userDept.includes("khlc") || userDept.includes("skillup"))) return true;
+    if (dName.includes("workshop") && userDept.includes("workshop")) return true;
+    if (dName.includes("noc") && userDept.includes("noc")) return true;
+
+    return false;
+  };
+
+  const handleOpenAddModal = () => {
+    setEditingDept(null);
+    setFormCode(`DEPT-${Math.floor(100 + Math.random() * 900)}`);
+    setFormName("");
+    setFormHead("");
+    setFormBudget("₦25,000,000");
+    setFormCostCenter(`CC-${Math.floor(100 + Math.random() * 900)}`);
+    setIsFormModalOpen(true);
+  };
+
+  const handleOpenEditModal = (dept: DepartmentItem) => {
+    setEditingDept(dept);
+    setFormCode(dept.code);
+    setFormName(dept.name);
+    setFormHead(dept.head);
+    setFormBudget(dept.budget);
+    setFormCostCenter(dept.costCenter);
+    setIsFormModalOpen(true);
+  };
+
+  const handleSaveDepartment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newName || !newCode) return;
+    if (!formName.trim() || !formCode.trim()) return;
 
     try {
       setIsSaving(true);
-      const newDept: DepartmentItem = {
-        code: newCode.toUpperCase().trim(),
-        name: newName.trim(),
-        head: newHead.trim() || "Pending Appointment",
-        headCount: 1,
-        budget: newBudget ? (newBudget.startsWith("₦") ? newBudget : `₦${newBudget}`) : "₦10,000,000",
-        costCenter: newCostCenter.trim() || `CC-${departments.length + 100}`,
+      const payload: DepartmentItem = {
+        code: formCode.toUpperCase().trim(),
+        name: formName.trim(),
+        head: formHead.trim() || "Pending Appointment",
+        headCount: editingDept ? editingDept.headCount : 1,
+        budget: formBudget.trim() ? (formBudget.startsWith("₦") ? formBudget : `₦${formBudget}`) : "₦10,000,000",
+        costCenter: formCostCenter.trim() || `CC-${departments.length + 100}`,
         tenantSlug: activeTenant?.slug || undefined,
       };
 
@@ -161,35 +249,65 @@ function ERPDepartmentsContent() {
           "Content-Type": "application/json",
           ...(activeTenant?.slug ? { "x-tenant-slug": activeTenant.slug } : {}),
         },
-        body: JSON.stringify(newDept),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
-        throw new Error("Failed to persist department");
+        throw new Error("Failed to persist department update");
       }
 
-      showToast(`Department division '${newName}' added to ${activeTenant?.name || "organization"}!`);
-      setIsAddModalOpen(false);
-      setNewCode("");
-      setNewName("");
-      setNewHead("");
-      setNewBudget("");
-      setNewCostCenter("");
+      showToast(
+        editingDept
+          ? `Department '${formName}' successfully updated!`
+          : `New division '${formName}' created for ${activeTenant?.name || "organization"}!`
+      );
+      setIsFormModalOpen(false);
       await fetchDepartmentData();
     } catch (err) {
-      console.error("Error creating department:", err);
-      // Fallback local update
-      const newDept: DepartmentItem = {
-        code: newCode.toUpperCase().trim(),
-        name: newName.trim(),
-        head: newHead.trim() || "Pending Appointment",
-        headCount: 1,
-        budget: newBudget ? (newBudget.startsWith("₦") ? newBudget : `₦${newBudget}`) : "₦10,000,000",
-        costCenter: newCostCenter.trim() || `CC-${departments.length + 100}`,
+      console.error("Error saving department:", err);
+      // Optimistic local state update
+      const updatedItem: DepartmentItem = {
+        code: formCode.toUpperCase().trim(),
+        name: formName.trim(),
+        head: formHead.trim() || "Pending Appointment",
+        headCount: editingDept ? editingDept.headCount : 1,
+        budget: formBudget.trim() ? (formBudget.startsWith("₦") ? formBudget : `₦${formBudget}`) : "₦10,000,000",
+        costCenter: formCostCenter.trim() || `CC-${departments.length + 100}`,
       };
-      setDepartments((prev) => [...prev, newDept]);
-      setIsAddModalOpen(false);
-      showToast(`Department division '${newName}' created!`);
+
+      if (editingDept) {
+        setDepartments((prev) => prev.map((d) => (d.code === editingDept.code ? updatedItem : d)));
+      } else {
+        setDepartments((prev) => [...prev, updatedItem]);
+      }
+      setIsFormModalOpen(false);
+      showToast(`Department division '${formName}' saved!`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteDepartment = async (dept: DepartmentItem) => {
+    try {
+      setIsSaving(true);
+      const res = await fetch(`/api/erp/departments?code=${encodeURIComponent(dept.code)}`, {
+        method: "DELETE",
+        headers: {
+          ...(activeTenant?.slug ? { "x-tenant-slug": activeTenant.slug } : {}),
+        },
+      });
+
+      setDepartments((prev) => prev.filter((d) => d.code !== dept.code));
+      setDeletingDept(null);
+      showToast(`Department '${dept.name}' removed successfully.`);
+      if (res.ok) {
+        await fetchDepartmentData();
+      }
+    } catch (err) {
+      console.error("Failed to delete department:", err);
+      setDepartments((prev) => prev.filter((d) => d.code !== dept.code));
+      setDeletingDept(null);
+      showToast(`Department '${dept.name}' removed.`);
     } finally {
       setIsSaving(false);
     }
@@ -197,23 +315,47 @@ function ERPDepartmentsContent() {
 
   const displayTenantName = activeTenant?.name || "Enterprise Workspace";
 
-  const filteredDepts = departments.filter((d) => {
+  const filteredDepts = useMemo(() => {
     const q = search.toLowerCase().trim();
-    if (!q) return true;
-    return (
-      d.name.toLowerCase().includes(q) ||
-      d.code.toLowerCase().includes(q) ||
-      d.head.toLowerCase().includes(q) ||
-      d.costCenter.toLowerCase().includes(q)
+    if (!q) return departments;
+    return departments.filter(
+      (d) =>
+        d.name.toLowerCase().includes(q) ||
+        d.code.toLowerCase().includes(q) ||
+        d.head.toLowerCase().includes(q) ||
+        d.costCenter.toLowerCase().includes(q)
     );
-  });
+  }, [departments, search]);
 
-  const totalHeadcount = departments.reduce((acc, d) => acc + d.headCount, 0);
+  const totalHeadcount = useMemo(() => {
+    return users.length > 0 ? users.length : departments.reduce((acc, d) => acc + d.headCount, 0);
+  }, [users, departments]);
+
+  const potentialManagers = useMemo(() => {
+    return users
+      .filter((u) => u.name && u.name.trim().length > 0)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [users]);
+
+  // Selected department staff for member modal
+  const departmentMembers = useMemo(() => {
+    if (!viewingDept) return [];
+    const members = users.filter((u) => isUserInDepartment(u, viewingDept.name));
+    if (!memberSearch.trim()) return members;
+    const q = memberSearch.toLowerCase().trim();
+    return members.filter(
+      (m) =>
+        m.name.toLowerCase().includes(q) ||
+        m.email.toLowerCase().includes(q) ||
+        m.designation?.toLowerCase().includes(q) ||
+        m.role?.toLowerCase().includes(q)
+    );
+  }, [viewingDept, users, memberSearch]);
 
   return (
     <ErpAdminShell
       title="Departmental Hierarchy & Cost Centers"
-      subtitle={`Define organizational divisions, leadership reporting lines, and budgetary cost centers for tenant '${displayTenantName}'.`}
+      subtitle={`Define organizational divisions, leadership reporting lines, and budgetary cost centers for ${displayTenantName}.`}
       action={
         <div className="flex items-center gap-2">
           {/* Dynamic Tenant Selector / Badge */}
@@ -260,9 +402,9 @@ function ERPDepartmentsContent() {
           <NexaButton
             size="sm"
             variant="primary"
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={handleOpenAddModal}
             leftIcon={<Plus className="w-4 h-4" />}
-            className="bg-[#1A56DB] text-white rounded-full font-bold shadow-xs"
+            className="bg-[#1A56DB] text-white rounded-full font-bold shadow-xs cursor-pointer"
           >
             Add Department
           </NexaButton>
@@ -344,119 +486,187 @@ function ERPDepartmentsContent() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredDepts.map((d) => (
-              <NexaCard key={d.code} variant="glass" padding="md" className="space-y-3 border border-[var(--nexa-border)] shadow-xs rounded-2xl">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold text-[#1A56DB]">{d.code}</span>
-                  <NexaBadge variant="brand">{d.costCenter}</NexaBadge>
-                </div>
-                <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">{d.name}</h3>
-                <div className="space-y-1.5 text-xs text-[var(--nexa-text-secondary)] font-mono pt-1 border-t border-[var(--nexa-border)]">
-                  <div className="flex justify-between">
-                    <span className="text-[var(--nexa-text-muted)]">Department Head:</span>
-                    <span className="font-bold text-[var(--nexa-text-primary)]">{d.head}</span>
+            {filteredDepts.map((d) => {
+              const matchedStaff = users.filter((u) => isUserInDepartment(u, d.name));
+              const previewAvatars = matchedStaff.slice(0, 3);
+              const extraCount = matchedStaff.length > 3 ? matchedStaff.length - 3 : 0;
+
+              return (
+                <NexaCard
+                  key={d.code}
+                  variant="glass"
+                  padding="md"
+                  className="space-y-3.5 border border-[var(--nexa-border)] shadow-xs rounded-2xl flex flex-col justify-between hover:border-[#1A56DB]/50 transition-all group"
+                >
+                  <div className="space-y-3">
+                    {/* CARD HEADER */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono font-bold text-[#1A56DB]">{d.code}</span>
+                        <NexaBadge variant="brand">{d.costCenter}</NexaBadge>
+                      </div>
+                      <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => handleOpenEditModal(d)}
+                          className="p-1.5 rounded-lg hover:bg-[var(--nexa-bg-base)] text-[var(--nexa-text-muted)] hover:text-[#1A56DB] transition-colors cursor-pointer"
+                          title="Edit Department Details"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setDeletingDept(d)}
+                          className="p-1.5 rounded-lg hover:bg-red-500/10 text-[var(--nexa-text-muted)] hover:text-red-500 transition-colors cursor-pointer"
+                          title="Delete Department"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <h3 className="font-bold text-sm text-[var(--nexa-text-primary)] leading-tight">{d.name}</h3>
+
+                    {/* METRICS & LEAD */}
+                    <div className="space-y-2 text-xs text-[var(--nexa-text-secondary)] font-mono pt-2 border-t border-[var(--nexa-border)]">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[var(--nexa-text-muted)]">Department Lead:</span>
+                        <span className="font-bold text-[var(--nexa-text-primary)] truncate max-w-[170px]" title={d.head}>
+                          {d.head}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[var(--nexa-text-muted)]">Budget Allocation:</span>
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">{d.budget}</span>
+                      </div>
+                      <div className="flex justify-between items-center pt-1">
+                        <span className="text-[var(--nexa-text-muted)]">Staff Enrolled:</span>
+                        <span className="font-bold text-[var(--nexa-text-primary)]">
+                          {matchedStaff.length > 0 ? matchedStaff.length : d.headCount} Members
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-[var(--nexa-text-muted)]">Active Headcount:</span>
-                    <span className="font-bold text-[var(--nexa-text-primary)]">{d.headCount} Staff</span>
+
+                  {/* BOTTOM ACTION & AVATAR PREVIEW */}
+                  <div className="pt-2.5 border-t border-[var(--nexa-border)] flex items-center justify-between gap-2">
+                    <div className="flex items-center -space-x-2 overflow-hidden">
+                      {previewAvatars.map((staff, idx) => (
+                        <div key={idx} className="relative ring-2 ring-[var(--nexa-bg-surface)] rounded-full">
+                          <NexaAvatar size="sm" name={staff.name} src={staff.avatar} className="w-6 h-6 text-[9px]" />
+                        </div>
+                      ))}
+                      {extraCount > 0 && (
+                        <div className="w-6 h-6 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[9px] font-bold text-[var(--nexa-text-muted)] flex items-center justify-center ring-2 ring-[var(--nexa-bg-surface)]">
+                          +{extraCount}
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={() => setViewingDept(d)}
+                      className="px-3 py-1.5 text-xs font-bold text-[#1A56DB] hover:bg-[#1A56DB]/10 rounded-xl transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      <Users className="w-3.5 h-3.5" />
+                      <span>View Roster</span>
+                    </button>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-[var(--nexa-text-muted)]">Budget Allocation:</span>
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">{d.budget}</span>
-                  </div>
-                </div>
-              </NexaCard>
-            ))}
+                </NexaCard>
+              );
+            })}
           </div>
         )}
       </div>
 
-      {/* ADD DEPARTMENT MODAL */}
-      {isAddModalOpen && (
+      {/* ADD / EDIT DEPARTMENT MODAL */}
+      {isFormModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-sans">
-          <div className="w-full max-w-md bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-3xl p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-md bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-3xl p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
               <div>
                 <h2 className="text-base font-black text-[var(--nexa-text-primary)]">
-                  Add Department Division
+                  {editingDept ? "Edit Department Division" : "Add Department Division"}
                 </h2>
                 <p className="text-xs text-[var(--nexa-text-secondary)]">
-                  Create a cost center and assign leadership for &apos;{displayTenantName}&apos;.
+                  Configure organizational division and cost center for &apos;{displayTenantName}&apos;.
                 </p>
               </div>
               <button
-                onClick={() => setIsAddModalOpen(false)}
+                onClick={() => setIsFormModalOpen(false)}
                 className="p-1.5 rounded-full hover:bg-[var(--nexa-bg-base)] text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleAddDept} className="space-y-3.5">
+            <form onSubmit={handleSaveDepartment} className="space-y-3.5">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                    Dept Code *
-                  </label>
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Dept Code *</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. DEPT-OPS"
-                    value={newCode}
-                    onChange={(e) => setNewCode(e.target.value)}
+                    value={formCode}
+                    onChange={(e) => setFormCode(e.target.value)}
                     className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] font-mono text-[var(--nexa-text-primary)]"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                    Cost Center
-                  </label>
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Cost Center</label>
                   <input
                     type="text"
                     placeholder="e.g. CC-601"
-                    value={newCostCenter}
-                    onChange={(e) => setNewCostCenter(e.target.value)}
+                    value={formCostCenter}
+                    onChange={(e) => setFormCostCenter(e.target.value)}
                     className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] font-mono text-[var(--nexa-text-primary)]"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                  Department Full Name *
-                </label>
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Department Full Name *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Customer Support & Success"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
                   className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                    Department Lead
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Samuel Ade"
-                    value={newHead}
-                    onChange={(e) => setNewHead(e.target.value)}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
-                  />
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Department Head</label>
+                  {potentialManagers.length > 0 ? (
+                    <select
+                      value={formHead}
+                      onChange={(e) => setFormHead(e.target.value)}
+                      className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] cursor-pointer"
+                    >
+                      <option value="">-- Select Department Lead --</option>
+                      {potentialManagers.map((m) => (
+                        <option key={m.id} value={m.name}>
+                          {m.name} ({m.designation || m.role})
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      placeholder="e.g. Samuel Ade"
+                      value={formHead}
+                      onChange={(e) => setFormHead(e.target.value)}
+                      className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
+                    />
+                  )}
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                    Annual Budget (₦)
-                  </label>
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Annual Budget</label>
                   <input
                     type="text"
                     placeholder="e.g. 25,000,000"
-                    value={newBudget}
-                    onChange={(e) => setNewBudget(e.target.value)}
+                    value={formBudget}
+                    onChange={(e) => setFormBudget(e.target.value)}
                     className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
                   />
                 </div>
@@ -467,8 +677,8 @@ function ERPDepartmentsContent() {
                   size="sm"
                   variant="outline"
                   type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="rounded-full px-4 font-bold"
+                  onClick={() => setIsFormModalOpen(false)}
+                  className="rounded-full px-4 font-bold cursor-pointer"
                 >
                   Cancel
                 </NexaButton>
@@ -477,12 +687,158 @@ function ERPDepartmentsContent() {
                   variant="primary"
                   type="submit"
                   disabled={isSaving}
-                  className="bg-[#1A56DB] text-white rounded-full font-bold px-4"
+                  className="bg-[#1A56DB] text-white rounded-full font-bold px-4 cursor-pointer"
                 >
-                  {isSaving ? "Creating..." : "Create Department"}
+                  {isSaving ? "Saving..." : editingDept ? "Save Changes" : "Create Department"}
                 </NexaButton>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW DEPARTMENT MEMBERS ROSTER MODAL */}
+      {viewingDept && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-sans">
+          <div className="w-full max-w-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-3xl p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col animate-in fade-in zoom-in-95 duration-150">
+            {/* MODAL HEADER */}
+            <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold text-[#1A56DB]">{viewingDept.code}</span>
+                  <NexaBadge variant="brand">{viewingDept.costCenter}</NexaBadge>
+                </div>
+                <h2 className="text-base font-black text-[var(--nexa-text-primary)] mt-1">
+                  {viewingDept.name} — Staff Roster
+                </h2>
+                <p className="text-xs text-[var(--nexa-text-secondary)]">
+                  {departmentMembers.length} staff enrolled in this division • Head: <span className="font-bold text-[var(--nexa-text-primary)]">{viewingDept.head}</span>
+                </p>
+              </div>
+              <button
+                onClick={() => setViewingDept(null)}
+                className="p-1.5 rounded-full hover:bg-[var(--nexa-bg-base)] text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* SEARCH MEMBERS */}
+            <div className="relative">
+              <Search className="w-4 h-4 text-[var(--nexa-text-muted)] absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search enrolled staff by name, email, or designation..."
+                value={memberSearch}
+                onChange={(e) => setMemberSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
+              />
+            </div>
+
+            {/* MEMBERS LIST */}
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 min-h-[220px]">
+              {departmentMembers.length === 0 ? (
+                <div className="py-12 text-center text-xs text-[var(--nexa-text-muted)] bg-[var(--nexa-bg-base)] rounded-2xl border border-[var(--nexa-border)]">
+                  {memberSearch ? `No staff member matches "${memberSearch}".` : "No staff members are currently assigned to this department."}
+                </div>
+              ) : (
+                departmentMembers.map((m) => (
+                  <div
+                    key={m.id}
+                    className="p-3 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-between gap-3 hover:border-[#1A56DB]/40 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <NexaAvatar size="md" name={m.name} src={m.avatar} isOnline />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-xs font-bold text-[var(--nexa-text-primary)]">{m.name}</h4>
+                          <span className="text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded-md bg-[#1A56DB]/10 text-[#1A56DB]">
+                            {m.role}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[var(--nexa-text-secondary)] font-medium">
+                          {m.designation || "Staff Member"} • <span className="font-mono text-[10px]">{m.email}</span>
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setViewingDept(null);
+                          router.push(`/erp/admin/users?search=${encodeURIComponent(m.name)}`);
+                        }}
+                        className="p-1.5 text-xs text-[var(--nexa-text-muted)] hover:text-[#1A56DB] rounded-lg hover:bg-[var(--nexa-bg-surface)] transition-colors cursor-pointer"
+                        title="Manage User in Staff Directory"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* MODAL FOOTER */}
+            <div className="pt-3 border-t border-[var(--nexa-border)] flex items-center justify-between">
+              <button
+                onClick={() => {
+                  setViewingDept(null);
+                  router.push(`/erp/admin/users?dept=${encodeURIComponent(viewingDept.name)}`);
+                }}
+                className="text-xs font-bold text-[#1A56DB] hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                <span>Manage in Staff Directory</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+
+              <NexaButton
+                size="sm"
+                variant="outline"
+                onClick={() => setViewingDept(null)}
+                className="rounded-full px-4 font-bold cursor-pointer"
+              >
+                Close
+              </NexaButton>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DELETE CONFIRMATION MODAL */}
+      {deletingDept && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-sans">
+          <div className="w-full max-w-sm bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-3xl p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="w-10 h-10 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+
+            <div className="text-center space-y-1">
+              <h3 className="text-base font-black text-[var(--nexa-text-primary)]">Delete Department?</h3>
+              <p className="text-xs text-[var(--nexa-text-secondary)]">
+                Are you sure you want to delete <span className="font-bold text-[var(--nexa-text-primary)]">{deletingDept.name}</span> ({deletingDept.code})?
+              </p>
+            </div>
+
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <NexaButton
+                size="sm"
+                variant="outline"
+                onClick={() => setDeletingDept(null)}
+                className="rounded-full px-4 font-bold cursor-pointer"
+              >
+                Cancel
+              </NexaButton>
+              <NexaButton
+                size="sm"
+                variant="primary"
+                onClick={() => handleDeleteDepartment(deletingDept)}
+                disabled={isSaving}
+                className="bg-red-600 hover:bg-red-700 text-white rounded-full font-bold px-4 cursor-pointer"
+              >
+                {isSaving ? "Deleting..." : "Confirm Delete"}
+              </NexaButton>
+            </div>
           </div>
         </div>
       )}

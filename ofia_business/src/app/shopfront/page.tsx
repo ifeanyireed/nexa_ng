@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -19,24 +20,101 @@ import {
   ShoppingBag,
   Star,
   Zap,
+  Building2,
+  Globe,
 } from "lucide-react";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaThemeToggle } from "@/components/nexa/NexaThemeToggle";
+import { INITIAL_TENANTS, TenantOrg } from "@/lib/admin-data";
 
-export default function TenantPublicShopfrontPage() {
+function TenantPublicShopfrontContent() {
+  const searchParams = useSearchParams();
+  const tenantParam = searchParams.get("tenant") || "";
+
   const [activeTab, setActiveTab] = useState<"featured" | "services" | "products" | "about">("featured");
+  const [currentSlug, setCurrentSlug] = useState(tenantParam || "edusuite");
+
+  useEffect(() => {
+    if (tenantParam) {
+      setCurrentSlug(tenantParam);
+    } else if (typeof window !== "undefined") {
+      const host = window.location.hostname.toLowerCase();
+      const parts = host.split(".");
+      if (parts.length > 1 && parts[0] !== "localhost" && parts[0] !== "www") {
+        setCurrentSlug(parts[0]);
+      }
+    }
+  }, [tenantParam]);
+
+  // Find matching tenant from registry or generate clean profile from slug
+  const matchedTenant = INITIAL_TENANTS.find(
+    (t) => t.slug.toLowerCase() === currentSlug.toLowerCase() || t.id.toLowerCase() === currentSlug.toLowerCase()
+  );
+
+  const tenantName = matchedTenant
+    ? matchedTenant.name
+    : currentSlug
+        .split("-")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ") + " Store";
+
+  const tenantInitials = tenantName
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+
+  const storefrontDomain = `${currentSlug}.ofia.shop`;
+  const workspaceDomain = `${currentSlug}.ofia.ng`;
 
   const sampleProducts = [
-    { id: "p1", name: "Premium Solar Inverter Hybrid 5kVA", price: "₦680,000", badge: "Best Seller", rating: 4.9, reviews: 34, inStock: true },
-    { id: "p2", name: "Commercial CCTV 8-Camera 4K Kit", price: "₦320,000", badge: "Pro Grade", rating: 4.8, reviews: 21, inStock: true },
-    { id: "p3", name: "Lithium Battery Bank 48V 100Ah", price: "₦1,250,000", badge: "Warranty 5Y", rating: 5.0, reviews: 18, inStock: true },
+    {
+      id: "p1",
+      name: "Enterprise Hybrid Power & Inverter Pack 5kVA",
+      price: "₦680,000",
+      badge: "Best Seller",
+      rating: 4.9,
+      reviews: 34,
+      inStock: true,
+    },
+    {
+      id: "p2",
+      name: "Commercial IP Cloud Surveillance 8-Camera Kit",
+      price: "₦320,000",
+      badge: "Pro Grade",
+      rating: 4.8,
+      reviews: 21,
+      inStock: true,
+    },
+    {
+      id: "p3",
+      name: "Lithium LiFePO4 Battery Bank 48V 100Ah",
+      price: "₦1,250,000",
+      badge: "5Y Warranty",
+      rating: 5.0,
+      reviews: 18,
+      inStock: true,
+    },
   ];
 
   const sampleServices = [
-    { id: "s1", name: "Solar Inverter Site Audit & Sizing", price: "₦25,000", duration: "2 Hours", desc: "Complete electrical load assessment and sizing for home/office." },
-    { id: "s2", name: "CCTV Installation & IP Cloud Setup", price: "₦45,000", duration: "4 Hours", desc: "Mounting, cable routing, NVR configuration, and mobile remote view setup." },
+    {
+      id: "s1",
+      name: "On-Site Power Load Audit & Diagnostic Sizing",
+      price: "₦25,000",
+      duration: "2 Hours",
+      desc: "Complete electrical load assessment, peak surge testing, and professional sizing.",
+    },
+    {
+      id: "s2",
+      name: "Smart Security Installation & Cloud Mobile Setup",
+      price: "₦45,000",
+      duration: "4 Hours",
+      desc: "Mounting, structured cable routing, NVR configuration, and mobile remote streaming setup.",
+    },
   ];
 
   return (
@@ -46,23 +124,23 @@ export default function TenantPublicShopfrontPage() {
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#1A56DB] to-[#0E9F6E] p-0.5 shadow-sm">
             <div className="w-full h-full bg-[#0B0F19] rounded-[10px] flex items-center justify-center text-white font-black text-sm">
-              EN
+              {tenantInitials || "OF"}
             </div>
           </div>
           <div>
             <div className="flex items-center gap-1.5">
               <span className="font-extrabold text-sm sm:text-base text-[var(--nexa-text-primary)]">
-                EduSuite Nigeria Pro Store
+                {tenantName}
               </span>
               <NexaBadge variant="green" className="text-[9px] py-0 px-1.5 font-bold uppercase">
                 <BadgeCheck className="w-3 h-3 inline mr-0.5" />
-                Nexa Verified
+                Ofia Verified
               </NexaBadge>
             </div>
             <div className="flex items-center gap-2 text-[11px] text-[var(--nexa-text-muted)]">
               <span className="flex items-center gap-1">
                 <MapPin className="w-3 h-3 text-[#E02424]" />
-                Lekki Phase 1, Lagos
+                Lekki & Nationwide Delivery
               </span>
               <span>•</span>
               <span className="flex items-center gap-1 text-[#C88A3A] font-bold">
@@ -75,9 +153,24 @@ export default function TenantPublicShopfrontPage() {
 
         <div className="flex items-center gap-3">
           <NexaThemeToggle />
+          <Link href={`/erp/admin`}>
+            <NexaButton
+              size="sm"
+              variant="outline"
+              leftIcon={<Building2 className="w-3.5 h-3.5 text-[#1A56DB]" />}
+              className="text-xs font-bold"
+            >
+              Merchant Console
+            </NexaButton>
+          </Link>
           <Link href="/shopfront/book">
-            <NexaButton size="sm" variant="primary" leftIcon={<Calendar className="w-3.5 h-3.5" />} className="bg-[#0E9F6E] text-white hover:bg-[#0B855D]">
-              Book Appointment
+            <NexaButton
+              size="sm"
+              variant="primary"
+              leftIcon={<Calendar className="w-3.5 h-3.5" />}
+              className="bg-[#0E9F6E] text-white hover:bg-[#0B855D]"
+            >
+              Book Service
             </NexaButton>
           </Link>
         </div>
@@ -87,14 +180,19 @@ export default function TenantPublicShopfrontPage() {
       <div className="border-b border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] py-8 px-4 sm:px-8">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="space-y-2 max-w-2xl">
-            <NexaBadge variant="brand" className="font-mono text-xs">
-              Official Digital Shopfront • client_slug.domain.shop
-            </NexaBadge>
+            <div className="flex items-center gap-2 flex-wrap">
+              <NexaBadge variant="brand" className="font-mono text-xs">
+                Official Storefront • {storefrontDomain}
+              </NexaBadge>
+              <NexaBadge variant="neutral" className="font-mono text-[10px]">
+                ERP: {workspaceDomain}
+              </NexaBadge>
+            </div>
             <h1 className="text-2xl sm:text-3xl font-black text-[var(--nexa-text-primary)] tracking-tight">
-              Enterprise Power, Solar Inverters & Security Systems
+              {tenantName} — Direct Catalog & Verified Bookings
             </h1>
             <p className="text-xs sm:text-sm text-[var(--nexa-text-secondary)] leading-relaxed">
-              Certified solar technicians and smart security installations across Lagos and nationwide. Same-day emergency response with 100% verified escrow protection.
+              Certified products, on-demand field services, and instant booking fulfillment. Protected with 100% escrow settlement via Ofia Compass.
             </p>
           </div>
 
@@ -106,7 +204,7 @@ export default function TenantPublicShopfrontPage() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/30 font-bold text-xs hover:bg-[#25D366]/20 transition-all"
             >
               <MessageSquare className="w-4 h-4" />
-              WhatsApp Us
+              WhatsApp Merchant
             </a>
             <Link href="/shopfront/shop">
               <NexaButton variant="outline" size="sm" leftIcon={<ShoppingBag className="w-3.5 h-3.5" />}>
@@ -129,7 +227,7 @@ export default function TenantPublicShopfrontPage() {
                 : "text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
             }`}
           >
-            Featured Products
+            Featured Products ({sampleProducts.length})
           </button>
           <button
             onClick={() => setActiveTab("services")}
@@ -139,7 +237,7 @@ export default function TenantPublicShopfrontPage() {
                 : "text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
             }`}
           >
-            Bookable Services (2)
+            Bookable Services ({sampleServices.length})
           </button>
         </div>
 
@@ -151,7 +249,10 @@ export default function TenantPublicShopfrontPage() {
                 <Package className="w-4 h-4 text-[#1A56DB]" />
                 Top Available Products
               </h2>
-              <Link href="/shopfront/shop" className="text-xs text-[#1A56DB] font-bold hover:underline flex items-center gap-1">
+              <Link
+                href="/shopfront/shop"
+                className="text-xs text-[#1A56DB] font-bold hover:underline flex items-center gap-1"
+              >
                 <span>View Full Catalog</span>
                 <ArrowRight className="w-3 h-3" />
               </Link>
@@ -159,10 +260,17 @@ export default function TenantPublicShopfrontPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {sampleProducts.map((p) => (
-                <NexaCard key={p.id} variant="glass" padding="md" className="space-y-3 border border-[var(--nexa-border)] hover:border-[#1A56DB]/40 transition-all flex flex-col justify-between">
+                <NexaCard
+                  key={p.id}
+                  variant="glass"
+                  padding="md"
+                  className="space-y-3 border border-[var(--nexa-border)] hover:border-[#1A56DB]/40 transition-all flex flex-col justify-between"
+                >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <NexaBadge variant="purple" className="text-[10px]">{p.badge}</NexaBadge>
+                      <NexaBadge variant="purple" className="text-[10px]">
+                        {p.badge}
+                      </NexaBadge>
                       <span className="text-[11px] text-[#0E9F6E] font-bold">In Stock</span>
                     </div>
                     <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">{p.name}</h3>
@@ -196,7 +304,12 @@ export default function TenantPublicShopfrontPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {sampleServices.map((s) => (
-                <NexaCard key={s.id} variant="glass" padding="md" className="space-y-3 border border-[var(--nexa-border)] flex flex-col justify-between">
+                <NexaCard
+                  key={s.id}
+                  variant="glass"
+                  padding="md"
+                  className="space-y-3 border border-[var(--nexa-border)] flex flex-col justify-between"
+                >
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
                       <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">{s.name}</h3>
@@ -225,9 +338,26 @@ export default function TenantPublicShopfrontPage() {
 
       {/* PUBLIC FOOTER */}
       <footer className="border-t border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] py-6 px-4 sm:px-8 text-center text-xs text-[var(--nexa-text-muted)] space-y-1">
-        <p>Powered by <span className="font-bold text-[var(--nexa-text-primary)]">Ofia Compass</span> • Verified Merchant Partner</p>
-        <p className="text-[11px] font-mono">100% Escrow Protection via Nexa Verified</p>
+        <p>
+          Powered by <span className="font-bold text-[var(--nexa-text-primary)]">Ofia Compass</span> • Verified Merchant Partner
+        </p>
+        <p className="text-[11px] font-mono">100% Escrow Protection via Nexa Verified • Serving on {storefrontDomain}</p>
       </footer>
     </div>
   );
 }
+
+export default function TenantPublicShopfrontPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[var(--nexa-bg-base)] flex items-center justify-center text-xs text-[var(--nexa-text-muted)] font-mono">
+          Loading storefront...
+        </div>
+      }
+    >
+      <TenantPublicShopfrontContent />
+    </Suspense>
+  );
+}
+

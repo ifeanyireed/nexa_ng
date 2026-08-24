@@ -28,6 +28,9 @@ export function middleware(request: NextRequest) {
   } else {
     if (hostParts.length > 2) {
       subdomain = hostParts[0];
+    } else if (hostParts.length === 2 && hostParts[1] === "shop") {
+      // Direct 2-level .shop domain like brand.shop
+      subdomain = hostParts[0];
     }
   }
 
@@ -72,12 +75,45 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(`${protocol}://${targetHost}${targetPath}${url.search}`), 307);
   }
 
-  // 3. TENANT DIGITAL SHOPFRONT: *.domain.shop (e.g. edusuite.ofia.shop or custom .shop)
-  if (hostname.endsWith(".shop") || hostname.includes(".shop:")) {
-    if (url.pathname === "/") {
+  // 3. TENANT DIGITAL STOREFRONT: *.domain.shop or *.shop (e.g. edusuite.ofia.shop or custom .shop)
+  const isShopDomain = hostWithoutPort.endsWith(".shop") || hostWithoutPort.includes(".shop");
+  if (isShopDomain) {
+    const tenantShopSlug = subdomain && subdomain !== "www" && subdomain !== "shop" ? subdomain : "default";
+    const response = NextResponse.next();
+    response.headers.set("x-tenant-slug", tenantShopSlug);
+    response.headers.set("x-is-shopfront", "true");
+
+    // Rewrite root to /shopfront with tenant slug
+    if (url.pathname === "/" || url.pathname === "") {
       url.pathname = "/shopfront";
-      return NextResponse.rewrite(url);
+      url.searchParams.set("tenant", tenantShopSlug);
+      return NextResponse.rewrite(url, { headers: response.headers });
     }
+
+    // Preserve static and api paths
+    if (url.pathname.startsWith("/api") || url.pathname.startsWith("/_next")) {
+      return NextResponse.next();
+    }
+
+    // Storefront subpaths (e.g. /shop, /book, /cart, /checkout)
+    if (
+      url.pathname.startsWith("/shopfront") ||
+      url.pathname.startsWith("/book") ||
+      url.pathname.startsWith("/checkout") ||
+      url.pathname.startsWith("/categories")
+    ) {
+      url.searchParams.set("tenant", tenantShopSlug);
+      return NextResponse.rewrite(url, { headers: response.headers });
+    }
+
+    // Default rewrite other pages to shopfront view
+    if (!url.pathname.startsWith("/shopfront")) {
+      url.pathname = `/shopfront${url.pathname}`;
+      url.searchParams.set("tenant", tenantShopSlug);
+      return NextResponse.rewrite(url, { headers: response.headers });
+    }
+
+    return response;
   }
 
   // 4. INDUSTRY CLUSTER & NICHE DISCOVERY SUBDOMAINS ({niche}.ofia.ng / {vertical}.ofia.ng)

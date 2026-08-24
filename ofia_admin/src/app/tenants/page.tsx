@@ -16,6 +16,10 @@ import {
 } from "@/lib/admin-data";
 import { USER_API, GTM_API } from "@/lib/api-client";
 import {
+  validateSubdomainAvailability,
+  normalizeSubdomainSlug,
+} from "@/lib/subdomain-checker";
+import {
   Building2,
   Search,
   Filter,
@@ -482,8 +486,16 @@ function TenantManagementContent() {
       return;
     }
 
+    const slug = normalizeSubdomainSlug(newOrgName);
+    const existingSlugs = new Set(tenants.map((t) => t.slug));
+    const check = validateSubdomainAvailability(slug, existingSlugs);
+
+    if (!check.isAvailable) {
+      alert(`Cannot provision tenant: ${check.message}\nSuggested: ${check.suggestions.join(", ")}`);
+      return;
+    }
+
     setIsSavingDb(true);
-    const slug = newOrgName.toLowerCase().replace(/[^a-z0-9]/g, "-");
     const newTenant: TenantOrg = {
       id: `org-${String(tenants.length + 1).padStart(2, "0")}`,
       name: newOrgName,
@@ -1241,7 +1253,14 @@ function TenantManagementContent() {
               type="text"
               placeholder="e.g. Apex Health Logistics"
               value={newOrgName}
-              onChange={(e) => setNewOrgName(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setNewOrgName(val);
+                if (!newOrgDomain || newOrgDomain.endsWith(".ofia.ng")) {
+                  const s = normalizeSubdomainSlug(val);
+                  setNewOrgDomain(s ? `${s}.ofia.ng` : "");
+                }
+              }}
               className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs outline-none focus:border-[#1A56DB]"
             />
           </div>
@@ -1257,6 +1276,35 @@ function TenantManagementContent() {
               onChange={(e) => setNewOrgDomain(e.target.value)}
               className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs outline-none focus:border-[#1A56DB]"
             />
+            {newOrgName && (
+              <div className="mt-1">
+                {(() => {
+                  const s = normalizeSubdomainSlug(newOrgName);
+                  const existingSlugs = new Set(tenants.map((t) => t.slug));
+                  const res = validateSubdomainAvailability(s, existingSlugs);
+                  return (
+                    <div
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-medium flex items-center gap-1.5 ${
+                        res.isAvailable
+                          ? "bg-[#0E9F6E]/10 text-[#0E9F6E] border border-[#0E9F6E]/20"
+                          : "bg-[#E02424]/10 text-[#E02424] border border-[#E02424]/20"
+                      }`}
+                    >
+                      {res.isAvailable ? (
+                        <CheckCircle2 className="w-3 h-3 shrink-0" />
+                      ) : (
+                        <AlertTriangle className="w-3 h-3 shrink-0" />
+                      )}
+                      <span>
+                        {res.isAvailable
+                          ? `Subdomain '${res.workspaceDomain}' & storefront '${res.storefrontDomain}' are available`
+                          : res.message}
+                      </span>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">

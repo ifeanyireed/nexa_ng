@@ -100,6 +100,18 @@ export const USER_API = {
       }
     );
   },
+  checkSubdomainAvailability: async (slug: string) => {
+    return fetchJSON<{
+      slug: string;
+      is_available: boolean;
+      category: string;
+      message: string;
+      workspace_domain: string;
+      storefront_domain: string;
+      custom_shop_domain: string;
+      suggestions: string[];
+    }>(`${USER_BASE}/subdomains/check?slug=${encodeURIComponent(slug)}`);
+  },
 };
 
 // 3. AUTONOMOUS AI GTM SWARM SERVICE (:8082)

@@ -67,6 +67,9 @@ func main() {
 		// Paystack / Stripe Billing Webhooks
 		r.Post("/webhooks/paystack", subHandler.HandlePaystackWebhook)
 
+		// Subdomain & Storefront Availability Check
+		r.Get("/subdomains/check", orgHandler.CheckSubdomainAvailability)
+
 		// Tenant RBAC Access Control Matrix (Public & Workspace Direct)
 		r.Get("/organizations/{orgId}/rbac", orgHandler.GetTenantRBAC)
 		r.Put("/organizations/{orgId}/rbac", orgHandler.SaveTenantRBAC)

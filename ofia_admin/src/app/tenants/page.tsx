@@ -1182,8 +1182,8 @@ function TenantManagementContent() {
                   </div>
                 </div>
 
-                {/* TENANTS GRID CARDS */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* TENANTS SINGLE COLUMN CARDS */}
+                <div className="grid grid-cols-1 gap-4">
                   {filteredTenants.map((tenant) => {
                     const isFocused = selectedTenantId === tenant.id;
 

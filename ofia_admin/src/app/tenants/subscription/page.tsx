@@ -338,7 +338,7 @@ function SubscriptionManagementContent() {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {SUBSCRIPTION_TIERS_CATALOG.map((tierItem) => {
               const subscribedTenants = tenants.filter((t) => t.planTier === tierItem.tier);
 

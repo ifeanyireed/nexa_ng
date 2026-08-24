@@ -22,6 +22,7 @@ import {
   Calendar,
   Zap,
   Boxes,
+  Compass,
   RefreshCw,
   Ban,
   LogIn,
@@ -36,6 +37,7 @@ function SubscriptionManagementContent() {
 
   const [tenants, setTenants] = useState<TenantOrg[]>(INITIAL_TENANTS);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedProductCategory, setSelectedProductCategory] = useState<"ALL" | "OFIA_AI" | "OFIA_SHOP" | "OFIA_ENTERPRISE" | "OFIA_COMPASS">("ALL");
   const [selectedPlanFilter, setSelectedPlanFilter] = useState<string>("ALL");
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>("ALL");
 
@@ -343,34 +345,155 @@ function SubscriptionManagementContent() {
           </NexaCard>
         </div>
 
-        {/* 5-TIER PLAN CATALOG SHOWCASE (SubscriptionHelper) */}
+        {/* PRODUCT FILTER */}
+        <div className="p-3 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] flex items-center justify-between gap-3 shadow-xs flex-wrap">
+          <div className="flex items-center gap-2 text-xs font-bold text-[var(--nexa-text-muted)]">
+            <Sliders className="w-3.5 h-3.5 text-[#1A56DB]" />
+            <span>Product Filter:</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <button
+              onClick={() => setSelectedProductCategory("ALL")}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
+                selectedProductCategory === "ALL"
+                  ? "bg-[#1A56DB] text-white shadow-xs font-black"
+                  : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)]"
+              )}
+            >
+              <span>All Products</span>
+              <span className={cn(
+                "text-[10px] px-1.5 py-0.2 rounded-full font-mono",
+                selectedProductCategory === "ALL" ? "bg-white/20 text-white" : "bg-[#1A56DB]/10 text-[#1A56DB]"
+              )}>
+                {SUBSCRIPTION_TIERS_CATALOG.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setSelectedProductCategory("OFIA_AI")}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
+                selectedProductCategory === "OFIA_AI"
+                  ? "bg-[#9061F9] text-white shadow-xs font-black"
+                  : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)]"
+              )}
+            >
+              <Zap className="w-3 h-3" />
+              <span>Ofia AI</span>
+              <span className={cn(
+                "text-[10px] px-1.5 py-0.2 rounded-full font-mono",
+                selectedProductCategory === "OFIA_AI" ? "bg-white/20 text-white" : "bg-[#9061F9]/10 text-[#9061F9]"
+              )}>
+                {SUBSCRIPTION_TIERS_CATALOG.filter((t) => t.category === "OFIA_AI").length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setSelectedProductCategory("OFIA_SHOP")}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
+                selectedProductCategory === "OFIA_SHOP"
+                  ? "bg-[#C88A3A] text-white shadow-xs font-black"
+                  : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)]"
+              )}
+            >
+              <Building2 className="w-3 h-3" />
+              <span>Ofia Shop</span>
+              <span className={cn(
+                "text-[10px] px-1.5 py-0.2 rounded-full font-mono",
+                selectedProductCategory === "OFIA_SHOP" ? "bg-white/20 text-white" : "bg-[#C88A3A]/10 text-[#C88A3A]"
+              )}>
+                {SUBSCRIPTION_TIERS_CATALOG.filter((t) => t.category === "OFIA_SHOP").length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setSelectedProductCategory("OFIA_ENTERPRISE")}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
+                selectedProductCategory === "OFIA_ENTERPRISE"
+                  ? "bg-[#0E9F6E] text-white shadow-xs font-black"
+                  : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)]"
+              )}
+            >
+              <Boxes className="w-3 h-3" />
+              <span>Ofia Enterprise</span>
+              <span className={cn(
+                "text-[10px] px-1.5 py-0.2 rounded-full font-mono",
+                selectedProductCategory === "OFIA_ENTERPRISE" ? "bg-white/20 text-white" : "bg-[#0E9F6E]/10 text-[#0E9F6E]"
+              )}>
+                {SUBSCRIPTION_TIERS_CATALOG.filter((t) => t.category === "OFIA_ENTERPRISE").length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setSelectedProductCategory("OFIA_COMPASS")}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer",
+                selectedProductCategory === "OFIA_COMPASS"
+                  ? "bg-[#06B6D4] text-white shadow-xs font-black"
+                  : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)]"
+              )}
+            >
+              <Compass className="w-3 h-3" />
+              <span>Ofia Compass</span>
+              <span className={cn(
+                "text-[10px] px-1.5 py-0.2 rounded-full font-mono",
+                selectedProductCategory === "OFIA_COMPASS" ? "bg-white/20 text-white" : "bg-[#06B6D4]/10 text-[#06B6D4]"
+              )}>
+                {SUBSCRIPTION_TIERS_CATALOG.filter((t) => t.category === "OFIA_COMPASS").length}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* 3-COLUMN PLAN CATALOG SHOWCASE */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-extrabold uppercase tracking-wider text-[var(--nexa-text-primary)] flex items-center gap-2">
               <CreditCard className="w-4 h-4 text-[#1A56DB]" />
-              SubscriptionHelper Entitlement Catalog & Quotas
+              {selectedProductCategory === "ALL" ? "All Product Offerings" : selectedProductCategory === "OFIA_AI" ? "Ofia AI Swarm Plans" : selectedProductCategory === "OFIA_SHOP" ? "Ofia Shop Storefront Plans" : selectedProductCategory === "OFIA_COMPASS" ? "Ofia Compass Strategic BI Plans" : "Ofia Enterprise Suite ERP Plans"}
             </h3>
             <span className="text-xs text-[var(--nexa-text-muted)] font-medium">
-              5 Tier Blueprints Defined
+              {SUBSCRIPTION_TIERS_CATALOG.filter((t) => selectedProductCategory === "ALL" || t.category === selectedProductCategory).length} Tiers Available
             </span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {SUBSCRIPTION_TIERS_CATALOG.map((tierItem) => {
+            {SUBSCRIPTION_TIERS_CATALOG.filter((t) => selectedProductCategory === "ALL" || t.category === selectedProductCategory).map((tierItem) => {
               const subscribedTenants = tenants.filter((t) => t.planTier === tierItem.tier);
 
               return (
                 <NexaCard
-                  key={tierItem.tier}
+                  key={tierItem.id}
                   variant="glass"
                   padding="md"
-                  className="border border-[var(--nexa-border)] hover:border-[#1A56DB]/40 transition-all flex flex-col justify-between space-y-3"
+                  className={cn(
+                    "border transition-all flex flex-col justify-between space-y-3.5 hover:shadow-md",
+                    tierItem.category === "OFIA_AI" ? "border-purple-500/20 hover:border-purple-500/40" :
+                    tierItem.category === "OFIA_SHOP" ? "border-amber-500/20 hover:border-amber-500/40" :
+                    tierItem.category === "OFIA_COMPASS" ? "border-cyan-500/20 hover:border-cyan-500/40" :
+                    "border-[var(--nexa-border)] hover:border-[#1A56DB]/40"
+                  )}
                 >
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20 uppercase">
-                        {tierItem.badge}
-                      </span>
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between gap-1 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        <span className={cn(
+                          "text-[9px] font-extrabold px-2 py-0.5 rounded-full border uppercase font-mono",
+                          tierItem.category === "OFIA_AI" ? "bg-purple-500/10 text-purple-600 border-purple-500/20" :
+                          tierItem.category === "OFIA_SHOP" ? "bg-amber-500/10 text-amber-600 border-amber-500/20" :
+                          tierItem.category === "OFIA_COMPASS" ? "bg-cyan-500/10 text-cyan-600 border-cyan-500/20" :
+                          "bg-[#1A56DB]/10 text-[#1A56DB] border-[#1A56DB]/20"
+                        )}>
+                          {tierItem.categoryLabel}
+                        </span>
+                        <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] uppercase">
+                          {tierItem.badge}
+                        </span>
+                      </div>
                       <span className="text-[11px] font-mono font-bold text-[#0E9F6E]">
                         {subscribedTenants.length} Orgs
                       </span>
@@ -392,19 +515,19 @@ function SubscriptionManagementContent() {
                       </div>
                     </div>
 
-                    <p className="text-[11px] text-[var(--nexa-text-secondary)] line-clamp-2">
+                    <p className="text-[11px] text-[var(--nexa-text-secondary)] line-clamp-2 leading-relaxed">
                       {tierItem.description}
                     </p>
 
-                    <div className="space-y-1 pt-2 border-t border-[var(--nexa-border)] text-[10px] font-mono text-[var(--nexa-text-secondary)]">
+                    <div className="space-y-1.5 pt-2 border-t border-[var(--nexa-border)] text-[10px] font-mono text-[var(--nexa-text-secondary)]">
                       <div className="flex justify-between">
-                        <span>Leads Quota:</span>
+                        <span>Leads Pipeline:</span>
                         <span className="font-bold text-[var(--nexa-text-primary)]">
-                          {tierItem.leadsLimit.toLocaleString()}
+                          {tierItem.leadsLimit.toLocaleString()} Leads
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Campaigns:</span>
+                        <span>Campaign Concurrency:</span>
                         <span className="font-bold text-[var(--nexa-text-primary)]">
                           {tierItem.campaignsLimit} Active
                         </span>
@@ -412,9 +535,25 @@ function SubscriptionManagementContent() {
                       <div className="flex justify-between">
                         <span>Team Seats:</span>
                         <span className="font-bold text-[var(--nexa-text-primary)]">
-                          {tierItem.teamSeats} Users
+                          {tierItem.teamSeats} Seats
                         </span>
                       </div>
+                      {tierItem.tokensLimit && (
+                        <div className="flex justify-between text-purple-600 dark:text-purple-400">
+                          <span>AI Tokens / Mo:</span>
+                          <span className="font-bold">
+                            {(tierItem.tokensLimit / 1000000).toFixed(0)}M Tokens
+                          </span>
+                        </div>
+                      )}
+                      {tierItem.storefrontsLimit && (
+                        <div className="flex justify-between text-amber-600 dark:text-amber-400">
+                          <span>Storefront Subdomains:</span>
+                          <span className="font-bold">
+                            {tierItem.storefrontsLimit} Store(s)
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
 

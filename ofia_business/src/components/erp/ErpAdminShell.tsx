@@ -444,11 +444,12 @@ export function ErpAdminShell({
     { label: "HR & Appraisals", icon: <Users className="w-5 h-5" />, href: "/erp/hr", key: "hr", section: "Ofia Enterprise Suite" },
     { label: "User Management", icon: <UserCheck className="w-5 h-5" />, href: "/erp/admin/users", badge: "Staff", key: "users", section: "Ofia Enterprise Suite" },
     { label: "Access Control", icon: <ShieldCheck className="w-5 h-5" />, href: "/erp/admin/access-control", badge: "RBAC", key: "access_control", section: "Ofia Enterprise Suite" },
+    { label: "Workspace Settings", icon: <Settings className="w-5 h-5" />, href: "/tenant/settings", badge: "Config", key: "settings", section: "Ofia Enterprise Suite" },
 
     // 3. PORTALS & WORKSPACES
     { label: "Employee Portal", icon: <UserCheck className="w-5 h-5" />, href: "/erp/employee", key: "employee", section: "Portals & Team" },
     { label: "Manager Portal", icon: <Sliders className="w-5 h-5" />, href: "/erp/manager", key: "manager", section: "Portals & Team" },
-    { label: "MD Executive", icon: <TrendingUp className="w-5 h-5" />, href: "/erp/md", key: "md", section: "Portals & Team" },
+    { label: "Executive Portal", icon: <TrendingUp className="w-5 h-5" />, href: "/erp/md", key: "md", section: "Portals & Team" },
   ];
 
   // Automatic sub navigation tabs according to current pathname

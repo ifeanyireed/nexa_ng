@@ -67,7 +67,7 @@ func main() {
 	})
 
 	addr := fmt.Sprintf(":%s", port)
-	log.Printf("🚀 service_logistics running on http://localhost%s", addr)
+	log.Printf("🚀 service_logistics listening on %s", addr)
 	if err := http.ListenAndServe(addr, r); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}

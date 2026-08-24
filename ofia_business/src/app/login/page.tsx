@@ -260,19 +260,10 @@ export default function LoginPage() {
     if (!currentTenant && tenantSlug && tenantSlug !== "ofia" && tenantSlug !== "gmail" && tenantSlug !== "yahoo" && tenantSlug !== "outlook") {
       if (typeof window !== "undefined") {
         const host = window.location.host.toLowerCase();
-        const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
-        const port = window.location.port ? `:${window.location.port}` : "";
-        const protocol = window.location.protocol;
-
-        if (isLocal) {
-          window.location.href = `${protocol}//${tenantSlug}.localhost${port}${route}`;
-          return;
-        } else {
-          const hostParts = host.split(":")[0].split(".");
-          const baseDomain = hostParts.length > 2 ? hostParts.slice(-2).join(".") : host.split(":")[0];
-          window.location.href = `https://${tenantSlug}.${baseDomain}${port}${route}`;
-          return;
-        }
+        const hostParts = host.split(":")[0].split(".");
+        const baseDomain = hostParts.length > 2 ? hostParts.slice(-2).join(".") : host.split(":")[0];
+        window.location.href = `${protocol}//${tenantSlug}.${baseDomain}${port}${route}`;
+        return;
       }
     }
 

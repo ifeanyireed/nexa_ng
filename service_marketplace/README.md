@@ -26,4 +26,4 @@ go mod tidy
 go run main.go
 ```
 
-Health check: [http://localhost:8085/health](http://localhost:8085/health)
+Health check: `/health` (or https://ofia-marketplace-service.onrender.com/health)

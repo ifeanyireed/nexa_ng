@@ -16,7 +16,7 @@ export async function generateStaticParams() {
   });
 
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://ofia-marketplace-service.onrender.com";
     const res = await fetch(`${apiUrl}/discovery/articles`, { next: { revalidate: 3600 } });
     if (res.ok) {
       const articles = await res.json();

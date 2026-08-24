@@ -39,3 +39,5 @@ service_logistics/logistics_service
 service_erp/service_erp
 *.exe
 *.test
+*.sql
+*.sql.gz

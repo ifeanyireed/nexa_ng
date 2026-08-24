@@ -1,7 +1,7 @@
 # Nexa_ng API Documentation
 
 ## Base URL
-`http://localhost:8080/api`
+`https://ofia-marketplace-service.onrender.com/api`
 
 ## Authentication
 ### Signup

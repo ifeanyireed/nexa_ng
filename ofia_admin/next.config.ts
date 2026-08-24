@@ -1,10 +1,10 @@
 import type { NextConfig } from "next";
 
-const USER_SERVICE_URL = process.env.USER_SERVICE_URL || "http://localhost:8081";
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "http://localhost:8082";
-const MARKETPLACE_SERVICE_URL = process.env.MARKETPLACE_SERVICE_URL || "http://localhost:8083";
-const ERP_SERVICE_URL = process.env.ERP_SERVICE_URL || "http://localhost:8084";
-const LOGISTICS_SERVICE_URL = process.env.LOGISTICS_SERVICE_URL || "http://localhost:8085";
+const USER_SERVICE_URL = process.env.USER_SERVICE_URL || "https://ofia-user-service.onrender.com";
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || "https://ofia-ai-service.onrender.com";
+const MARKETPLACE_SERVICE_URL = process.env.MARKETPLACE_SERVICE_URL || "https://ofia-marketplace-service.onrender.com";
+const ERP_SERVICE_URL = process.env.ERP_SERVICE_URL || "https://ofia-erp-service.onrender.com";
+const LOGISTICS_SERVICE_URL = process.env.LOGISTICS_SERVICE_URL || "https://ofia-logistics-service.onrender.com";
 
 const nextConfig: NextConfig = {
   images: {

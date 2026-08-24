@@ -437,11 +437,11 @@ export const LOGISTICS_API = {
 export const SYSTEM_HEALTH_API = {
   checkAllServices: async () => {
     const services = [
-      { name: "service_users", port: 8081, url: "http://localhost:8081/healthz" },
-      { name: "service_ai", port: 8082, url: "http://localhost:8082/healthz" },
-      { name: "service_marketplace", port: 8083, url: "http://localhost:8083/healthz" },
-      { name: "service_erp", port: 8084, url: "http://localhost:8084/healthz" },
-      { name: "service_logistics", port: 8085, url: "http://localhost:8085/healthz" },
+      { name: "service_users", port: 8081, url: "https://ofia-user-service.onrender.com/health" },
+      { name: "service_ai", port: 8082, url: "https://ofia-ai-service.onrender.com/health" },
+      { name: "service_marketplace", port: 8083, url: "https://ofia-marketplace-service.onrender.com/health" },
+      { name: "service_erp", port: 8084, url: "https://ofia-erp-service.onrender.com/healthz" },
+      { name: "service_logistics", port: 8085, url: "https://ofia-logistics-service.onrender.com/health" },
     ];
 
     const results = await Promise.allSettled(

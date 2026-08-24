@@ -237,7 +237,7 @@ const CategoryGrid = () => {
     let isMounted = true;
     const fetchNicheStats = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8085/api";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://ofia-marketplace-service.onrender.com";
         const res = await fetch(`${apiUrl}/discovery/stats/niches`, {
           headers: { Accept: "application/json" },
           cache: "no-store",

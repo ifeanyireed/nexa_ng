@@ -61,14 +61,9 @@ export function middleware(request: NextRequest) {
   // Only redirect if accessing from apex / www, NEVER redirect tenant subdomains!
   const isApexOrWww = !subdomain || subdomain === "www";
   if (isApexOrWww && (url.pathname === "/login" || url.pathname.startsWith("/erp"))) {
-    const protocol = request.headers.get("x-forwarded-proto") || (isLocal ? "http" : "https");
-    let targetHost = "";
-    if (isLocal) {
-      targetHost = `erp.localhost${port}`;
-    } else {
-      const baseDomain = hostParts.length > 2 ? hostParts.slice(-2).join(".") : hostWithoutPort;
-      targetHost = `erp.${baseDomain}${port}`;
-    }
+    const protocol = request.headers.get("x-forwarded-proto") || (request.url.startsWith("https") ? "https" : "http");
+    const baseDomain = hostParts.length > 2 ? hostParts.slice(-2).join(".") : hostWithoutPort;
+    const targetHost = `erp.${baseDomain}${port}`;
     const targetPath = url.pathname.startsWith("/erp")
       ? (url.pathname.replace(/^\/erp/, "") || "/login")
       : url.pathname;

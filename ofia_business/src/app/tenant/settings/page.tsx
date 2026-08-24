@@ -149,7 +149,7 @@ export default function TenantSettingsPage() {
                 className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-mono"
               />
               <span className="text-[10px] text-[var(--nexa-text-muted)]">
-                Determines {slug || "tenant"}.localhost and {slug || "tenant"}.ofia.ng routing.
+                Determines {slug || "tenant"}.ofia.ng and custom domain routing.
               </span>
             </div>
           </div>

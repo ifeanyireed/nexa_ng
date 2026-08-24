@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
-const USER_BASE = process.env.NEXT_PUBLIC_USER_SERVICE_URL || "http://localhost:8081/api/v1";
+const USER_BASE = process.env.USER_SERVICE_URL
+  ? `${process.env.USER_SERVICE_URL}/api/v1`
+  : (process.env.NEXT_PUBLIC_USER_SERVICE_URL || "https://ofia-user-service.onrender.com/api/v1");
 
 export async function GET(
   request: Request,

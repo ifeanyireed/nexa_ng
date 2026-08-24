@@ -103,7 +103,7 @@ export default function DashboardLayout({
     const token = getAuthToken();
     if (!token) return;
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8085/api";
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "https://ofia-logistics-service.onrender.com/api/v1";
     const wsUrl = apiUrl.replace("http://", "ws://").replace("https://", "wss://") + `/ws?token=${token}`;
 
     let socket: WebSocket | null = null;

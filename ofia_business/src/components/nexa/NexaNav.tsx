@@ -29,7 +29,7 @@ export const NexaNavbar = () => {
 
     if (typeof window !== "undefined") {
       const host = window.location.host.toLowerCase();
-      if (host.startsWith("erp.") || host.includes("erp.localhost") || pathname?.startsWith("/erp")) {
+      if (host.startsWith("erp.") || pathname?.startsWith("/erp")) {
         setIsErp(true);
       }
     }

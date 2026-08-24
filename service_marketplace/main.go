@@ -40,7 +40,7 @@ func main() {
 	// CORS
 	allowedOrigins := strings.Split(os.Getenv("ALLOWED_ORIGINS"), ",")
 	if len(allowedOrigins) == 0 || allowedOrigins[0] == "" {
-		allowedOrigins = []string{"http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000", "http://127.0.0.1:3001"}
+		allowedOrigins = []string{"https://*", "http://*"}
 	}
 
 	r.Use(cors.Handler(cors.Options{

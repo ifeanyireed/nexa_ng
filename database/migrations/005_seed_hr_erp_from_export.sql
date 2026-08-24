@@ -10,7 +10,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 /*M!999999\- enable the sandbox mode */ 
 -- MariaDB dump 10.19-11.8.8-MariaDB, for Linux (x86_64)
 --
--- Host: localhost    Database: u859677653_hr_service_db
+-- Host: remote    Database: u859677653_hr_service_db
 -- ------------------------------------------------------
 -- Server version	11.8.8-MariaDB-log
 

@@ -453,7 +453,7 @@ function SubscriptionManagementContent() {
   const handleTriggerBatchRenewals = async () => {
     setIsTriggeringRenewals(true);
     try {
-      await fetch("http://localhost:8081/api/v1/subscriptions/renewals/trigger", {
+      await fetch("/api/v1/subscriptions/renewals/trigger", {
         method: "POST",
       }).catch(() => null);
       showToast("Automated subscription renewal cycle triggered across all active tenants!");

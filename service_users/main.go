@@ -55,8 +55,16 @@ func main() {
 
 	// Public Routes
 	r.Route("/api/v1", func(r chi.Router) {
-		// Catalog of plans
-		r.Get("/plans", subHandler.GetAllPlanTiers)
+		// Catalog of plans & CRUD Endpoints
+		r.Get("/plans", subHandler.ListPlans)
+		r.Route("/subscriptions", func(r chi.Router) {
+			r.Get("/plans", subHandler.ListPlans)
+			r.Post("/plans", subHandler.CreatePlan)
+			r.Get("/plans/{id}", subHandler.GetPlan)
+			r.Put("/plans/{id}", subHandler.UpdatePlan)
+			r.Delete("/plans/{id}", subHandler.DeletePlan)
+			r.Get("/tiers", subHandler.GetAllPlanTiers)
+		})
 
 		// Auth
 		r.Route("/auth", func(r chi.Router) {
@@ -70,9 +78,13 @@ func main() {
 		// Subdomain & Storefront Availability Check
 		r.Get("/subdomains/check", orgHandler.CheckSubdomainAvailability)
 
-		// Tenant RBAC Access Control Matrix (Public & Workspace Direct)
+		// Tenant RBAC Access Control Matrix & Subscription Direct
 		r.Get("/organizations/{orgId}/rbac", orgHandler.GetTenantRBAC)
 		r.Put("/organizations/{orgId}/rbac", orgHandler.SaveTenantRBAC)
+		r.Get("/organizations/{orgId}/subscription", subHandler.GetSubscriptionDetails)
+		r.Put("/organizations/{orgId}/subscription", subHandler.UpdateTenantSubscription)
+		r.Post("/organizations/{orgId}/subscription/override", subHandler.OverrideTenantQuotas)
+		r.Post("/organizations/{orgId}/subscription/checkout", subHandler.InitializeCheckout)
 
 		// Protected Workspace & User Routes
 		r.Group(func(r chi.Router) {
@@ -92,6 +104,8 @@ func main() {
 
 				// Subscription & Limits
 				r.Get("/{orgId}/subscription", subHandler.GetSubscriptionDetails)
+				r.Put("/{orgId}/subscription", subHandler.UpdateTenantSubscription)
+				r.Post("/{orgId}/subscription/override", subHandler.OverrideTenantQuotas)
 				r.Post("/{orgId}/subscription/checkout", subHandler.InitializeCheckout)
 			})
 		})

@@ -92,11 +92,14 @@ func InitDB() *gorm.DB {
 		sqlDB.SetConnMaxLifetime(10 * time.Minute)
 	}
 
-	// Auto-migrate tables including User and RBAC matrix
+	// Auto-migrate tables including User, RBAC matrix, and Subscription models
 	_ = DB.AutoMigrate(
 		&models.User{},
 		&models.Organization{},
 		&models.WorkspaceMember{},
+		&models.Subscription{},
+		&models.SubscriptionPlan{},
+		&models.OrganizationUsage{},
 		&models.TenantRolePermission{},
 		&models.TenantPermissionAuditLog{},
 	)

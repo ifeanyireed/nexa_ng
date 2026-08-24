@@ -103,6 +103,33 @@ func (Subscription) TableName() string {
 	return "Subscription"
 }
 
+// SubscriptionPlan represents dynamic subscription blueprints stored in MySQL
+type SubscriptionPlan struct {
+	ID               string    `gorm:"primaryKey;size:191" json:"id"`
+	Category         string    `gorm:"size:50;not null;index" json:"category"` // OFIA_AI, OFIA_SHOP, OFIA_ENTERPRISE, OFIA_COMPASS
+	CategoryLabel    string    `gorm:"size:100;not null" json:"category_label"`
+	Tier             PlanTier  `gorm:"size:50;not null" json:"tier"` // FREE_TRIAL, STARTER, GROWTH, SCALE, ENTERPRISE
+	Name             string    `gorm:"size:191;not null" json:"name"`
+	PriceNGN         float64   `gorm:"not null" json:"price_ngn"`
+	PriceUSD         float64   `gorm:"default:0" json:"price_usd"`
+	Period           string    `gorm:"size:50;default:'Monthly'" json:"period"`
+	Badge            string    `gorm:"size:100" json:"badge"`
+	Description      string    `gorm:"type:text" json:"description"`
+	LeadsLimit       int       `gorm:"default:1000" json:"leads_limit"`
+	CampaignsLimit   int       `gorm:"default:3" json:"campaigns_limit"`
+	TeamSeats        int       `gorm:"default:5" json:"team_seats"`
+	TokensLimit      int64     `gorm:"default:0" json:"tokens_limit"`
+	StorefrontsLimit int       `gorm:"default:0" json:"storefronts_limit"`
+	FeaturesJSON     string    `gorm:"type:text" json:"features_json"` // JSON string array
+	IsActive         bool      `gorm:"default:true" json:"is_active"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
+}
+
+func (SubscriptionPlan) TableName() string {
+	return "SubscriptionPlan"
+}
+
 // OrganizationUsage tracks monthly quota consumption for enforcement
 type OrganizationUsage struct {
 	ID                   string    `gorm:"primaryKey;size:191" json:"id"`

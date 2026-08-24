@@ -115,6 +115,58 @@ export const USER_API = {
   },
 };
 
+// 2.5 SUBSCRIPTION & PLAN CRUD API (:8081)
+export const SUBSCRIPTION_API = {
+  getPlans: async (category?: string) => {
+    const url = category && category !== "ALL"
+      ? `${USER_BASE}/subscriptions/plans?category=${encodeURIComponent(category)}`
+      : `${USER_BASE}/subscriptions/plans`;
+    return fetchJSON<any[]>(url);
+  },
+
+  getPlan: async (id: string) => {
+    return fetchJSON<any>(`${USER_BASE}/subscriptions/plans/${encodeURIComponent(id)}`);
+  },
+
+  createPlan: async (planData: any) => {
+    return fetchJSON<any>(`${USER_BASE}/subscriptions/plans`, {
+      method: "POST",
+      body: JSON.stringify(planData),
+    });
+  },
+
+  updatePlan: async (id: string, planData: any) => {
+    return fetchJSON<any>(`${USER_BASE}/subscriptions/plans/${encodeURIComponent(id)}`, {
+      method: "PUT",
+      body: JSON.stringify(planData),
+    });
+  },
+
+  deletePlan: async (id: string) => {
+    return fetchJSON<{ success: boolean; message: string }>(`${USER_BASE}/subscriptions/plans/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
+  },
+
+  getTenantSubscription: async (orgId: string) => {
+    return fetchJSON<any>(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}/subscription`);
+  },
+
+  updateTenantSubscription: async (orgId: string, data: { plan_tier: string; plan_id?: string; status?: string }) => {
+    return fetchJSON<any>(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}/subscription`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  overrideTenantQuotas: async (orgId: string, data: { extra_leads: number; extra_campaigns: number; plan_tier: string }) => {
+    return fetchJSON<any>(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}/subscription/override`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+};
+
 // 3. AUTONOMOUS AI GTM SWARM SERVICE (:8082)
 export const GTM_API = {
   getAgents: async (orgId = "org-01") => {

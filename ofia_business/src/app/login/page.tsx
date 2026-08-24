@@ -40,7 +40,7 @@ export default function LoginPage() {
   // 10 Seeded New Era Transports ERP Role Personas for instant 1-click test fill
   const testPersonas = [
     {
-      label: "Ifeanyi Felix (MD / Founder)",
+      label: "Ifeanyi Felix (Admin)",
       email: "ifeanyi.ibeh@neweratransports.com",
       pass: "password123",
       roleKey: "admin",

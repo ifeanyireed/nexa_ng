@@ -386,7 +386,7 @@ export const INITIAL_ADMIN_USERS: AdminUser[] = [
     name: "Ifeanyi Felix",
     email: "ifeanyi.ibeh@neweratransports.com",
     role: "TENANT_OWNER",
-    title: "Managing Director / Founder",
+    title: "Admin",
     orgName: "New Era Transports",
     orgId: "org-01",
     avatar: "/character2.jpg",

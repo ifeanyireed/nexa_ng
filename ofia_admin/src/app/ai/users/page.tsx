@@ -841,7 +841,7 @@ export default function AdminUsersPage() {
                     size="sm"
                     variant="outline"
                     className="w-full text-xs"
-                    onClick={() => handleInjectPreset("TENANT_OWNER", "EduSuite Nigeria", "Tariq Ibrahim", "Co-Founder & CEO", "tariq@edusuite.ng")}
+                    onClick={() => handleInjectPreset("TENANT_OWNER", "EduSuite Nigeria", "Tariq Ibrahim", "Admin", "tariq@edusuite.ng")}
                   >
                     Simulate Tenant Owner Persona
                   </NexaButton>

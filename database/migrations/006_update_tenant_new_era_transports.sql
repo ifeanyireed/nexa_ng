@@ -18,7 +18,7 @@ INSERT INTO `User` (
 ) VALUES (
     'USR-001', 'Ifeanyi Felix', 'ifeanyi.ibeh@neweratransports.com', 'admin',
     'Executive Directorate', '/character2.jpg', NULL, NULL,
-    'NETS', 'Managing Director / Founder', '2025-01-01', 'L1', 'Lagos',
+    'NETS', 'Admin', '2025-01-01', 'L1', 'Lagos',
     '12345678', NULL, NOW(3), NOW(3)
 ) ON DUPLICATE KEY UPDATE
     `name` = VALUES(`name`),

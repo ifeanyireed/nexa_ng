@@ -313,7 +313,7 @@ export const INITIAL_ADMIN_USERS: AdminUser[] = [
     name: "Adeyemi Phillips",
     email: "adeyemi@edusuite.ng",
     role: "TENANT_OWNER",
-    title: "Founder & Chief Executive Officer",
+    title: "Admin",
     orgName: "EduSuite Nigeria",
     orgId: "org-01",
     avatar: "/character4.jpg",

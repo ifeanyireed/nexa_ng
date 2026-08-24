@@ -99,6 +99,7 @@ function UserManagementContent() {
   const [formDepartment, setFormDepartment] = useState(DEPARTMENTS[0]);
   const [formDesignation, setFormDesignation] = useState("");
   const [formManager, setFormManager] = useState("");
+  const [formManagerId, setFormManagerId] = useState<string | undefined>(undefined);
   const [formCompany, setFormCompany] = useState("");
   const [formLocation, setFormLocation] = useState("Lagos, Nigeria");
 
@@ -199,6 +200,7 @@ function UserManagementContent() {
     setFormDepartment(DEPARTMENTS[0]);
     setFormDesignation("");
     setFormManager("");
+    setFormManagerId(undefined);
     setFormCompany(activeTenant?.name || "");
     setFormLocation("Lagos, Nigeria");
     setIsAddUserModalOpen(true);
@@ -212,6 +214,7 @@ function UserManagementContent() {
     setFormDepartment(staffUser.department);
     setFormDesignation(staffUser.designation);
     setFormManager(staffUser.managerName || "");
+    setFormManagerId(staffUser.managerId || undefined);
     setFormCompany(staffUser.company || activeTenant?.name || "");
     setFormLocation(staffUser.location || "Lagos, Nigeria");
     setIsAddUserModalOpen(true);
@@ -235,6 +238,7 @@ function UserManagementContent() {
         department: formDepartment,
         designation: formDesignation || "Corporate Officer",
         managerName: formManager || undefined,
+        managerId: formManagerId || undefined,
         avatar: avatarNum,
         company: formCompany || activeTenant?.name || "Corporate Staff",
         location: formLocation,
@@ -301,6 +305,12 @@ function UserManagementContent() {
   const paginatedUsers = filtered.slice((page - 1) * itemsPerPage, (page - 1) * itemsPerPage + itemsPerPage);
 
   const displayTenantName = activeTenant?.name || "Enterprise Workspace";
+
+  // Filter staff members with manager role (excluding the user currently being edited to avoid circular reporting)
+  const managerStaffOptions = users.filter((u) => {
+    if (editingStaffUser && u.id === editingStaffUser.id) return false;
+    return u.role === "manager" || u.role === "md" || u.role === "admin";
+  });
 
   return (
     <ErpAdminShell
@@ -710,13 +720,29 @@ function UserManagementContent() {
                   <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
                     Reporting Manager
                   </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Babajide Sanwo"
+                  <select
                     value={formManager}
-                    onChange={(e) => setFormManager(e.target.value)}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
-                  />
+                    onChange={(e) => {
+                      const selectedName = e.target.value;
+                      setFormManager(selectedName);
+                      const matched = users.find((u) => u.name === selectedName);
+                      setFormManagerId(matched ? matched.id : undefined);
+                    }}
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] cursor-pointer"
+                  >
+                    <option value="">-- No Direct Reporting Manager --</option>
+                    {/* Preserve current manager name if set but not present in manager-filtered array */}
+                    {formManager && !managerStaffOptions.some((m) => m.name === formManager) && (
+                      <option value={formManager}>
+                        {formManager} (Current Manager)
+                      </option>
+                    )}
+                    {managerStaffOptions.map((mgr) => (
+                      <option key={mgr.id} value={mgr.name}>
+                        {mgr.name} — {mgr.designation || mgr.department} ({mgr.role.toUpperCase()})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

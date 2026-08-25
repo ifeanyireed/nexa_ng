@@ -137,17 +137,27 @@ func registerRoutes() {
 	registerRoute("/quests", handlers.HandleQuests)
 	registerRoute("/quests/detail", handlers.HandleQuestDetail)
 	registerRoute("/quests/teams", handlers.HandleQuestTeams)
+	registerRoute("/quests/participants", handlers.HandleQuestParticipants)
+	registerRoute("/quests/participants/auto-assign", handlers.HandleQuestAutoAssign)
 	registerRoute("/quests/challenges", handlers.HandleQuestChallenges)
+	registerRoute("/quests/concepts", handlers.HandleQuestConcepts)
 	registerRoute("/quests/scoreboard", handlers.HandleQuestScoreboard)
 	registerRoute("/quests/scores", handlers.HandleQuestScores)
+	registerRoute("/quests/scores/audit", handlers.HandleQuestScoreAudit)
+	registerRoute("/quests/announcements", handlers.HandleQuestAnnouncements)
 
 	// Prefix aliases for /api/v1/quests/*
 	registerRoute("/api/v1/quests", handlers.HandleQuests)
 	registerRoute("/api/v1/quests/detail", handlers.HandleQuestDetail)
 	registerRoute("/api/v1/quests/teams", handlers.HandleQuestTeams)
+	registerRoute("/api/v1/quests/participants", handlers.HandleQuestParticipants)
+	registerRoute("/api/v1/quests/participants/auto-assign", handlers.HandleQuestAutoAssign)
 	registerRoute("/api/v1/quests/challenges", handlers.HandleQuestChallenges)
+	registerRoute("/api/v1/quests/concepts", handlers.HandleQuestConcepts)
 	registerRoute("/api/v1/quests/scoreboard", handlers.HandleQuestScoreboard)
 	registerRoute("/api/v1/quests/scores", handlers.HandleQuestScores)
+	registerRoute("/api/v1/quests/scores/audit", handlers.HandleQuestScoreAudit)
+	registerRoute("/api/v1/quests/announcements", handlers.HandleQuestAnnouncements)
 }
 
 func enableCORS(next http.HandlerFunc) http.HandlerFunc {

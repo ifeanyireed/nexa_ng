@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useERPStore, PerformanceReview, User, getParentDept, Objective, formatSelfAverage } from "@/lib/erp-store";
+import { useERPStore, PerformanceReview, User, getParentDept, Objective, formatSelfAverage, findReviewForUser } from "@/lib/erp-store";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -88,7 +88,9 @@ export default function HRReportsPage() {
     u => isDeptMatch(u.department, selectedDept) && u.role === "employee"
   );
   const deptEmpIds = deptEmployees.map(u => u.id);
-  const deptReviews = reviews.filter(r => deptEmpIds.includes(r.employeeId));
+  const deptReviews = reviews.filter(
+    r => isDeptMatch(r.department, selectedDept) || deptEmployees.some(u => u.id === r.employeeId || (u.name && r.employeeName && u.name.toLowerCase().trim() === r.employeeName.toLowerCase().trim()))
+  );
 
   // Top & Needs-Attention Performers based on thresholds (> 9.0 and < 5.0)
   const topPerformers = completedReviews
@@ -337,7 +339,7 @@ export default function HRReportsPage() {
                       deptEmployees
                         .slice((deptEmpPage - 1) * itemsPerPage, (deptEmpPage - 1) * itemsPerPage + itemsPerPage)
                         .map((emp, idx) => {
-                        const rev = deptReviews.find(r => r.employeeId === emp.id);
+                        const rev = findReviewForUser(deptReviews, emp);
                         const avatarSrc = emp.avatar && emp.avatar.startsWith("/character") ? emp.avatar : `/character${(((deptEmpPage - 1) * itemsPerPage + idx) % 20) + 1}.jpg`;
                         
                         // Calculate self average rating

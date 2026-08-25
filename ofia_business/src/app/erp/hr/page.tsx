@@ -234,7 +234,7 @@ export default function HRDashboard() {
               <tbody className="divide-y divide-[var(--nexa-border)] text-[var(--nexa-text-primary)]">
                 {paginatedPendingReviews.length > 0 ? (
                   paginatedPendingReviews.map((rev, idx) => {
-                    const emp = users.find((u) => u.id === rev.employeeId);
+                    const emp = users.find((u) => u.id === rev.employeeId || (u.name && rev.employeeName && u.name.toLowerCase().trim() === rev.employeeName.toLowerCase().trim()));
                     const avatarSrc = emp?.avatar && emp.avatar.startsWith("/character") ? emp.avatar : `/character${(idx % 20) + 1}.jpg`;
                     return (
                       <tr key={rev.id} className="hover:bg-[var(--nexa-bg-base)]/50 transition-colors">
@@ -353,7 +353,7 @@ export default function HRDashboard() {
               <tbody className="divide-y divide-[var(--nexa-border)] text-[var(--nexa-text-primary)]">
                 {paginatedReviews.length > 0 ? (
                   paginatedReviews.map((rev, idx) => {
-                    const emp = users.find((u) => u.id === rev.employeeId);
+                    const emp = users.find((u) => u.id === rev.employeeId || (u.name && rev.employeeName && u.name.toLowerCase().trim() === rev.employeeName.toLowerCase().trim()));
                     const avatarSrc = emp?.avatar && emp.avatar.startsWith("/character") ? emp.avatar : `/character${(idx % 20) + 1}.jpg`;
                     const selfAvg = formatSelfAverage(rev);
                     return (

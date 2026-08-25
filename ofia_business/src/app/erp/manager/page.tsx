@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useERPStore, PerformanceReview, User, formatSelfAverage, getSignedInERPUser } from "@/lib/erp-store";
+import { useERPStore, PerformanceReview, User, formatSelfAverage, getSignedInERPUser, findReviewForUser } from "@/lib/erp-store";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -32,8 +32,9 @@ export default function ManagerDashboard() {
     return matchesManagerName || matchesManagerId || matchesDept || isLeadership;
   });
 
-  const reportingEmpIds = reportingEmployees.map(u => u.id);
-  const teamReviews = reviews.filter(r => reportingEmpIds.includes(r.employeeId));
+  const teamReviews = reviews.filter(r =>
+    reportingEmployees.some(u => u.id === r.employeeId || (u.name && r.employeeName && u.name.toLowerCase().trim() === r.employeeName.toLowerCase().trim()))
+  );
 
   const pendingApprovals = teamReviews.filter(r => r.status === "Submitted");
   const completedReviews = teamReviews.filter(r => r.status === "HR Approved" || r.status === "Manager Reviewed");
@@ -177,7 +178,7 @@ export default function ManagerDashboard() {
               <tbody className="divide-y divide-gray-100">
                 {reportingEmployees.map((emp) => {
                   const cycle = cycles.find(c => c.status === "Active");
-                  const rev = teamReviews.find(r => r.employeeId === emp.id && r.cycleId === cycle?.id);
+                  const rev = findReviewForUser(teamReviews, emp, cycle?.id) || findReviewForUser(reviews, emp, cycle?.id);
                   return (
                     <tr key={emp.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="py-4 flex items-center gap-3">

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useERPStore, PerformanceReview, User, getParentDept, formatSelfAverage } from "@/lib/erp-store";
+import { useERPStore, PerformanceReview, User, getParentDept, formatSelfAverage, findReviewForUser } from "@/lib/erp-store";
 import { BusinessShell } from "@/components/business/BusinessShell";
 
 export default function DepartmentPerformancePage() {
@@ -44,7 +44,7 @@ export default function DepartmentPerformancePage() {
 
   const deptEmployees = users.filter(u => isDeptMatch(u.department, deptId) && u.role === "employee");
   const deptEmpIds = deptEmployees.map(u => u.id);
-  const deptReviews = reviews.filter(r => deptEmpIds.includes(r.employeeId));
+  const deptReviews = reviews.filter(r => isDeptMatch(r.department, deptId) || deptEmployees.some(u => u.id === r.employeeId || (u.name && r.employeeName && u.name.toLowerCase().trim() === r.employeeName.toLowerCase().trim())));
 
   // Dynamically compute unique departments across corporate users
   const distinctDepts = Array.from(new Set(users.map(u => getParentDept(u.department)).filter(Boolean)));
@@ -115,7 +115,7 @@ export default function DepartmentPerformancePage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {deptEmployees.map((emp) => {
-                  const rev = deptReviews.find(r => r.employeeId === emp.id);
+                  const rev = findReviewForUser(deptReviews, emp) || findReviewForUser(reviews, emp);
                   const selfAvg = formatSelfAverage(rev);
                   
                   return (

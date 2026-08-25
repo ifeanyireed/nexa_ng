@@ -747,9 +747,9 @@ export default function QuestCommandDeskPage() {
 
   const activeTeams = teams.filter((t) => t.status === "ACTIVE");
   const leadingTeam = [...activeTeams].sort((a, b) => b.total_points - a.total_points)[0] || {
-    id: "team-1",
-    name: "Team 1",
-    custom_name: "Red Phoenix",
+    id: "team-a",
+    name: "Team A",
+    custom_name: "Alpha (Blue Eagles)",
     total_points: 0,
     rank: 1,
   };

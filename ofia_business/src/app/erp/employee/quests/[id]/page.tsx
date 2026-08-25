@@ -199,14 +199,14 @@ export default function EmployeeQuestConsolePage() {
   }, [questId]);
 
   const myParticipant = participants.find((p) => p.user_id === currentUser.id);
-  const myTeamId = myParticipant?.team_id || "team-1";
+  const myTeamId = myParticipant?.team_id || "team-a";
   const myTeam = teams.find((t) => t.id === myTeamId) || teams[0] || {
-    id: "team-1",
-    name: "Team 1",
-    custom_name: "Red Phoenix",
-    logo: "",
-    color: "#EF4444",
-    motto: "Igniting Excellence & Passion",
+    id: "team-a",
+    name: "Team A",
+    custom_name: "Alpha (Blue Eagles)",
+    logo: "🦅",
+    color: "#1A56DB",
+    motto: "Swift, Strategic, Unstoppable",
     total_points: 0,
     rank: 1,
   };

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 )
@@ -287,88 +288,164 @@ var (
 
 	reigniteTeams = []QuestTeam{
 		{
-			ID:          "team-1",
+			ID:          "team-a",
 			QuestID:     "qst-reignite-2026",
 			TenantSlug:  "neweratransports",
-			Name:        "Team 1",
-			CustomName:  "Red Phoenix",
-			Slug:        "team-1",
-			Logo:        "🔥",
-			Color:       "#EF4444",
-			Motto:       "Igniting Excellence & Passion",
+			Name:        "Team A",
+			CustomName:  "Alpha (Blue Eagles)",
+			Initial:     "A",
+			Slug:        "team-a",
+			Logo:        "🦅",
+			Color:       "#1A56DB",
+			Motto:       "Swift, Strategic, Unstoppable",
 			TotalPoints: 0,
 			Rank:        1,
-			MemberCount: 10,
+			MemberCount: 0,
+			Status:      "ACTIVE",
 		},
 		{
-			ID:          "team-2",
+			ID:          "team-b",
 			QuestID:     "qst-reignite-2026",
 			TenantSlug:  "neweratransports",
-			Name:        "Team 2",
-			CustomName:  "Blue Falcons",
-			Slug:        "team-2",
-			Logo:        "🦅",
-			Color:       "#3B82F6",
-			Motto:       "Soaring Above All Limits",
+			Name:        "Team B",
+			CustomName:  "Bravo (Red Vipers)",
+			Initial:     "B",
+			Slug:        "team-b",
+			Logo:        "🐍",
+			Color:       "#EF4444",
+			Motto:       "Relentless Speed & Precision",
 			TotalPoints: 0,
 			Rank:        2,
-			MemberCount: 10,
+			MemberCount: 0,
+			Status:      "ACTIVE",
 		},
 		{
-			ID:          "team-3",
+			ID:          "team-c",
 			QuestID:     "qst-reignite-2026",
 			TenantSlug:  "neweratransports",
-			Name:        "Team 3",
-			CustomName:  "Golden Titans",
-			Slug:        "team-3",
+			Name:        "Team C",
+			CustomName:  "Charlie (Gold Titans)",
+			Initial:     "C",
+			Slug:        "team-c",
 			Logo:        "⚡",
 			Color:       "#F59E0B",
 			Motto:       "Power, Intellect, Victory",
 			TotalPoints: 0,
 			Rank:        3,
-			MemberCount: 10,
+			MemberCount: 0,
+			Status:      "ACTIVE",
 		},
 		{
-			ID:          "team-4",
+			ID:          "team-d",
 			QuestID:     "qst-reignite-2026",
 			TenantSlug:  "neweratransports",
-			Name:        "Team 4",
-			CustomName:  "Emerald Lions",
-			Slug:        "team-4",
+			Name:        "Team D",
+			CustomName:  "Delta (Green Lions)",
+			Initial:     "D",
+			Slug:        "team-d",
 			Logo:        "🦁",
 			Color:       "#10B981",
 			Motto:       "Courage in Every Stride",
 			TotalPoints: 0,
 			Rank:        4,
-			MemberCount: 10,
+			MemberCount: 0,
+			Status:      "ACTIVE",
 		},
 		{
-			ID:          "team-5",
+			ID:          "team-e",
 			QuestID:     "qst-reignite-2026",
 			TenantSlug:  "neweratransports",
-			Name:        "Team 5",
-			CustomName:  "Purple Vipers",
-			Slug:        "team-5",
-			Logo:        "🐍",
-			Color:       "#8B5CF6",
-			Motto:       "Speed, Precision & Synergy",
+			Name:        "Team E",
+			CustomName:  "Echo (Silver Wolves)",
+			Initial:     "E",
+			Slug:        "team-e",
+			Logo:        "🐺",
+			Color:       "#64748B",
+			Motto:       "Silent, United, Lethal",
 			TotalPoints: 0,
 			Rank:        5,
-			MemberCount: 10,
+			MemberCount: 0,
+			Status:      "ACTIVE",
 		},
 		{
-			ID:          "team-6",
+			ID:          "team-f",
 			QuestID:     "qst-reignite-2026",
 			TenantSlug:  "neweratransports",
-			Name:        "Team 6",
-			CustomName:  "Silver Sharks",
-			Slug:        "team-6",
-			Logo:        "🦈",
-			Color:       "#06B6D4",
-			Motto:       "Relentless Focus & Tenacity",
+			Name:        "Team F",
+			CustomName:  "Foxtrot (Iron Rhinos)",
+			Initial:     "F",
+			Slug:        "team-f",
+			Logo:        "🦏",
+			Color:       "#8B5CF6",
+			Motto:       "Unbreakable Resolve",
 			TotalPoints: 0,
 			Rank:        6,
-			MemberCount: 10,
+			MemberCount: 0,
+			Status:      "ACTIVE",
+		},
+		{
+			ID:          "team-g",
+			QuestID:     "qst-reignite-2026",
+			TenantSlug:  "neweratransports",
+			Name:        "Team G",
+			CustomName:  "Golf (Copper Hawks)",
+			Initial:     "G",
+			Slug:        "team-g",
+			Logo:        "🦅",
+			Color:       "#D97706",
+			Motto:       "Precision from Above",
+			TotalPoints: 0,
+			Rank:        7,
+			MemberCount: 0,
+			Status:      "INACTIVE",
+		},
+		{
+			ID:          "team-h",
+			QuestID:     "qst-reignite-2026",
+			TenantSlug:  "neweratransports",
+			Name:        "Team H",
+			CustomName:  "Hotel (Platinum Panthers)",
+			Initial:     "H",
+			Slug:        "team-h",
+			Logo:        "🐆",
+			Color:       "#475569",
+			Motto:       "Prowling with Purpose",
+			TotalPoints: 0,
+			Rank:        8,
+			MemberCount: 0,
+			Status:      "INACTIVE",
+		},
+		{
+			ID:          "team-i",
+			QuestID:     "qst-reignite-2026",
+			TenantSlug:  "neweratransports",
+			Name:        "Team I",
+			CustomName:  "India (Diamond Sharks)",
+			Initial:     "I",
+			Slug:        "team-i",
+			Logo:        "🦈",
+			Color:       "#06B6D4",
+			Motto:       "Unstoppable Force",
+			TotalPoints: 0,
+			Rank:        9,
+			MemberCount: 0,
+			Status:      "INACTIVE",
+		},
+		{
+			ID:          "team-j",
+			QuestID:     "qst-reignite-2026",
+			TenantSlug:  "neweratransports",
+			Name:        "Team J",
+			CustomName:  "Juliet (Emerald Dragons)",
+			Initial:     "J",
+			Slug:        "team-j",
+			Logo:        "🐉",
+			Color:       "#059669",
+			Motto:       "Fiery Spirit & Grace",
+			TotalPoints: 0,
+			Rank:        10,
+			MemberCount: 0,
+			Status:      "INACTIVE",
 		},
 	}
 
@@ -945,7 +1022,9 @@ var (
 func getQuestTenant(r *http.Request) string {
 	slug := getTenantFilter(r)
 	if slug == "" {
-		slug = "neweratransports"
+		if c, err := r.Cookie("tenant_slug"); err == nil && c.Value != "" {
+			slug = strings.ToLower(strings.TrimSpace(c.Value))
+		}
 	}
 	return slug
 }
@@ -962,7 +1041,7 @@ func HandleQuests(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		var list []QuestInstance
 		for _, q := range reigniteQuests {
-			if tenant == "all" || q.TenantSlug == tenant || q.TenantSlug == "neweratransports" {
+			if tenant == "" || tenant == "all" || q.TenantSlug == tenant {
 				list = append(list, q)
 			}
 		}
@@ -1599,9 +1678,17 @@ func HandleQuestAutoAssign(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// 3. Distribute round-robin into the 6 teams
+	// 3. Distribute round-robin into the active teams
 	var newParticipants []QuestParticipant
-	teamIDs := []string{"team-1", "team-2", "team-3", "team-4", "team-5", "team-6"}
+	var teamIDs []string
+	for _, t := range reigniteTeams {
+		if t.QuestID == questId && (t.Status == "" || t.Status == "ACTIVE") {
+			teamIDs = append(teamIDs, t.ID)
+		}
+	}
+	if len(teamIDs) == 0 {
+		teamIDs = []string{"team-a", "team-b", "team-c", "team-d", "team-e", "team-f"}
+	}
 
 	for idx, u := range interleaved {
 		teamID := teamIDs[idx%len(teamIDs)]
@@ -1918,20 +2005,37 @@ func HandleQuestScoreboard(w http.ResponseWriter, r *http.Request) {
 	defer questMu.RUnlock()
 
 	questId := r.URL.Query().Get("quest_id")
+	slug := r.URL.Query().Get("slug")
+
 	var targetQuest *QuestInstance
 	for _, q := range reigniteQuests {
-		if questId == "" || q.ID == questId {
+		if (questId != "" && q.ID == questId) || (slug != "" && q.Slug == slug) || (questId == "" && slug == "" && q.Status == "ACTIVE") {
 			targetQuest = &q
 			break
 		}
 	}
-	if targetQuest == nil && len(reigniteQuests) > 0 {
-		targetQuest = &reigniteQuests[0]
+
+	if targetQuest == nil || targetQuest.Status != "ACTIVE" {
+		response := map[string]any{
+			"quest":            nil,
+			"active":           false,
+			"message":          "No active quest found",
+			"leaderboard":      []QuestTeam{},
+			"participants":     []QuestParticipant{},
+			"active_challenge": nil,
+			"announcements":    []QuestAnnouncement{},
+			"schedule":         []QuestScheduleItem{},
+			"scores":           []QuestScore{},
+			"last_updated":     time.Now().Format(time.RFC3339),
+		}
+		json.NewEncoder(w).Encode(response)
+		return
 	}
 
+	// Filter active squads for this quest only
 	var sortedTeams []QuestTeam
 	for _, t := range reigniteTeams {
-		if targetQuest != nil && t.QuestID == targetQuest.ID {
+		if t.QuestID == targetQuest.ID && (t.Status == "" || t.Status == "ACTIVE") {
 			sortedTeams = append(sortedTeams, t)
 		}
 	}
@@ -1942,9 +2046,17 @@ func HandleQuestScoreboard(w http.ResponseWriter, r *http.Request) {
 		sortedTeams[i].Rank = i + 1
 	}
 
+	// Filter active participants for this quest
+	var participants []QuestParticipant
+	for _, p := range reigniteParticipants {
+		if p.QuestID == targetQuest.ID && (p.Status == "" || p.Status == "ACTIVE") {
+			participants = append(participants, p)
+		}
+	}
+
 	var activeChallenge *QuestChallenge
 	for _, c := range reigniteChallenges {
-		if c.Status == "OPEN" || c.Status == "IN_PROGRESS" {
+		if c.QuestID == targetQuest.ID && (c.Status == "OPEN" || c.Status == "IN_PROGRESS") {
 			activeChallenge = &c
 			break
 		}
@@ -1952,7 +2064,9 @@ func HandleQuestScoreboard(w http.ResponseWriter, r *http.Request) {
 
 	response := map[string]any{
 		"quest":            targetQuest,
+		"active":           true,
 		"leaderboard":      sortedTeams,
+		"participants":     participants,
 		"active_challenge": activeChallenge,
 		"announcements":    reigniteAnnouncements,
 		"schedule":         reigniteSchedule,

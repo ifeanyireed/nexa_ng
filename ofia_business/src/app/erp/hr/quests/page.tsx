@@ -23,6 +23,7 @@ import {
   Layers,
   Award,
   Swords,
+  Edit3,
 } from "lucide-react";
 
 interface QuestCardData {
@@ -301,6 +302,11 @@ export default function TeamQuestsDashboardPage() {
                 <Link href={`/erp/hr/quests/${quest.id}`} className="flex-1">
                   <NexaButton size="sm" variant="primary" className="w-full justify-center rounded-full bg-[#1A56DB]">
                     Manage Quest
+                  </NexaButton>
+                </Link>
+                <Link href={`/erp/hr/quests/${quest.id}`}>
+                  <NexaButton size="sm" variant="outline" className="px-3 rounded-full" title="Edit Quest Settings">
+                    <Edit3 className="w-4 h-4 text-amber-500" />
                   </NexaButton>
                 </Link>
                 <Link href={`/quests/${quest.slug}/scoreboard`} target="_blank">

@@ -19,6 +19,7 @@ type QuestPrize struct {
 	Title       string `json:"title"`
 	AwardType   string `json:"award_type"` // CASH, TROPHY, GIFT, CERTIFICATE
 	Amount      string `json:"amount"`
+	Currency    string `json:"currency,omitempty"`
 	Description string `json:"description"`
 	Icon        string `json:"icon,omitempty"`
 	OrderIndex  int    `json:"order_index"`
@@ -1144,6 +1145,152 @@ func HandleQuests(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.Method == http.MethodPut || r.Method == http.MethodPatch {
+		var payload QuestInstance
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			http.Error(w, `{"error":"Invalid request payload"}`, http.StatusBadRequest)
+			return
+		}
+		if payload.ID == "" && payload.Slug == "" {
+			http.Error(w, `{"error":"Quest ID or Slug is required"}`, http.StatusBadRequest)
+			return
+		}
+
+		for i := range reigniteQuests {
+			if (payload.ID != "" && reigniteQuests[i].ID == payload.ID) || (payload.Slug != "" && reigniteQuests[i].Slug == payload.Slug) {
+				if payload.Name != "" {
+					reigniteQuests[i].Name = payload.Name
+				}
+				if payload.Slug != "" {
+					reigniteQuests[i].Slug = payload.Slug
+				}
+				if payload.Description != "" {
+					reigniteQuests[i].Description = payload.Description
+				}
+				if payload.Location != "" {
+					reigniteQuests[i].Location = payload.Location
+				}
+				if payload.CoverImage != "" {
+					reigniteQuests[i].CoverImage = payload.CoverImage
+				}
+				if payload.Status != "" {
+					reigniteQuests[i].Status = payload.Status
+				}
+				if payload.GrandPrize != "" {
+					reigniteQuests[i].GrandPrize = payload.GrandPrize
+				}
+				if payload.Currency != "" {
+					reigniteQuests[i].Currency = payload.Currency
+				}
+				if payload.StartsAt != "" {
+					reigniteQuests[i].StartsAt = payload.StartsAt
+				}
+				if payload.EndsAt != "" {
+					reigniteQuests[i].EndsAt = payload.EndsAt
+				}
+				if payload.TotalMaxPoints > 0 {
+					reigniteQuests[i].TotalMaxPoints = payload.TotalMaxPoints
+				}
+				if payload.PrimaryColor != "" {
+					reigniteQuests[i].PrimaryColor = payload.PrimaryColor
+				}
+				if payload.AccentColor != "" {
+					reigniteQuests[i].AccentColor = payload.AccentColor
+				}
+				reigniteQuests[i].EnableStageTV = payload.EnableStageTV
+				reigniteQuests[i].ConceptLockEnabled = payload.ConceptLockEnabled
+
+				// Sync Prizes
+				if len(payload.Prizes) > 0 {
+					reigniteQuests[i].Prizes = payload.Prizes
+					if b, err := json.Marshal(payload.Prizes); err == nil {
+						reigniteQuests[i].PrizesJson = string(b)
+					}
+					for idx, p := range payload.Prizes {
+						if p.ID == "" {
+							p.ID = fmt.Sprintf("prz-%s-%d", reigniteQuests[i].ID, idx+1)
+						}
+						p.QuestID = reigniteQuests[i].ID
+						p.TenantSlug = tenant
+						p.OrderIndex = idx + 1
+						if db != nil {
+							_, _ = db.Exec(`INSERT INTO QuestPrize (id, questId, tenantSlug, title, awardType, amount, currency, description, icon, rank, orderIndex)
+								VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+								ON DUPLICATE KEY UPDATE title=VALUES(title), awardType=VALUES(awardType), amount=VALUES(amount), currency=VALUES(currency), description=VALUES(description), icon=VALUES(icon), rank=VALUES(rank)`,
+								p.ID, p.QuestID, p.TenantSlug, p.Title, p.AwardType, p.Amount, p.Currency, p.Description, p.Icon, p.Rank, p.OrderIndex)
+						}
+					}
+				}
+
+				// Sync Teams
+				if len(payload.Teams) > 0 {
+					reigniteQuests[i].Teams = payload.Teams
+					for idx, t := range payload.Teams {
+						if t.ID == "" {
+							t.ID = fmt.Sprintf("team-%s-%d", reigniteQuests[i].ID, idx+1)
+						}
+						t.QuestID = reigniteQuests[i].ID
+						t.TenantSlug = tenant
+						if db != nil {
+							_, _ = db.Exec(`INSERT INTO QuestTeam (id, questId, tenantSlug, name, customName, motto, color, initial, totalPoints, rank, memberCount, status)
+								VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+								ON DUPLICATE KEY UPDATE name=VALUES(name), customName=VALUES(customName), motto=VALUES(motto), color=VALUES(color), initial=VALUES(initial), status=VALUES(status)`,
+								t.ID, t.QuestID, t.TenantSlug, t.Name, t.CustomName, t.Motto, t.Color, t.Initial, t.TotalPoints, t.Rank, t.MemberCount, t.Status)
+						}
+					}
+				}
+
+				// Sync Challenges
+				if len(payload.Challenges) > 0 {
+					reigniteQuests[i].Challenges = payload.Challenges
+					for idx, c := range payload.Challenges {
+						if c.ID == "" {
+							c.ID = fmt.Sprintf("chl-%s-%d", reigniteQuests[i].ID, idx+1)
+						}
+						c.QuestID = reigniteQuests[i].ID
+						c.TenantSlug = tenant
+						if db != nil {
+							_, _ = db.Exec(`INSERT INTO QuestChallenge (id, questId, tenantSlug, name, description, instructions, category, day, engineType, maxScore, status)
+								VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+								ON DUPLICATE KEY UPDATE name=VALUES(name), description=VALUES(description), instructions=VALUES(instructions), category=VALUES(category), day=VALUES(day), engineType=VALUES(engineType), maxScore=VALUES(maxScore), status=VALUES(status)`,
+								c.ID, c.QuestID, c.TenantSlug, c.Name, c.Description, c.Instructions, c.Category, c.Day, c.EngineType, c.MaxScore, c.Status)
+						}
+					}
+				}
+
+				// Sync Schedule
+				if len(payload.Schedule) > 0 {
+					reigniteQuests[i].Schedule = payload.Schedule
+					for idx, s := range payload.Schedule {
+						if s.ID == "" {
+							s.ID = fmt.Sprintf("sch-%s-%d", reigniteQuests[i].ID, idx+1)
+						}
+						s.QuestID = reigniteQuests[i].ID
+						s.TenantSlug = tenant
+						s.OrderIndex = idx + 1
+						if db != nil {
+							_, _ = db.Exec(`INSERT INTO QuestScheduleItem (id, questId, tenantSlug, day, startTime, endTime, title, description, category, location, maxScore, status, orderIndex)
+								VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+								ON DUPLICATE KEY UPDATE day=VALUES(day), startTime=VALUES(startTime), endTime=VALUES(endTime), title=VALUES(title), description=VALUES(description), category=VALUES(category), location=VALUES(location), maxScore=VALUES(maxScore), status=VALUES(status), orderIndex=VALUES(orderIndex)`,
+								s.ID, s.QuestID, s.TenantSlug, s.Day, s.StartTime, s.EndTime, s.Title, s.Description, s.Category, s.Location, s.MaxScore, s.Status, s.OrderIndex)
+						}
+					}
+				}
+
+				if db != nil {
+					_, _ = db.Exec(`UPDATE QuestInstance SET name=?, slug=?, description=?, location=?, coverImage=?, status=?, grandPrize=?, currency=?, totalMaxPoints=?, startsAt=?, endsAt=?, primaryColor=?, accentColor=?, enableStageTV=?, conceptLockEnabled=? WHERE id=?`,
+						reigniteQuests[i].Name, reigniteQuests[i].Slug, reigniteQuests[i].Description, reigniteQuests[i].Location, reigniteQuests[i].CoverImage, reigniteQuests[i].Status, reigniteQuests[i].GrandPrize, reigniteQuests[i].Currency, reigniteQuests[i].TotalMaxPoints, reigniteQuests[i].StartsAt, reigniteQuests[i].EndsAt, reigniteQuests[i].PrimaryColor, reigniteQuests[i].AccentColor, reigniteQuests[i].EnableStageTV, reigniteQuests[i].ConceptLockEnabled, reigniteQuests[i].ID)
+				}
+
+				json.NewEncoder(w).Encode(reigniteQuests[i])
+				return
+			}
+		}
+
+		http.Error(w, `{"error":"Quest not found"}`, http.StatusNotFound)
+		return
+	}
+
 	http.Error(w, `{"error":"Method not allowed"}`, http.StatusMethodNotAllowed)
 }
 
@@ -1209,6 +1356,85 @@ func HandleQuestDetail(w http.ResponseWriter, r *http.Request) {
 	for _, p := range reignitePrizes {
 		if targetQuest != nil && p.QuestID == targetQuest.ID {
 			prizes = append(prizes, p)
+		}
+	}
+
+	// If DB is connected, fetch live records from database tables
+	if db != nil {
+		var q QuestInstance
+		row := db.QueryRow(`SELECT id, tenantSlug, name, slug, description, coverImage, status, grandPrize, currency, totalMaxPoints, location, startsAt, endsAt, primaryColor, accentColor, enableStageTV, conceptLockEnabled FROM QuestInstance WHERE (id = ? OR slug = ?) LIMIT 1`, id, slug)
+		if err := row.Scan(&q.ID, &q.TenantSlug, &q.Name, &q.Slug, &q.Description, &q.CoverImage, &q.Status, &q.GrandPrize, &q.Currency, &q.TotalMaxPoints, &q.Location, &q.StartsAt, &q.EndsAt, &q.PrimaryColor, &q.AccentColor, &q.EnableStageTV, &q.ConceptLockEnabled); err == nil {
+			targetQuest = &q
+
+			// Query Prizes from DB
+			if pRows, err := db.Query(`SELECT id, questId, tenantSlug, prizeRank, title, awardType, amount, description, icon, orderIndex FROM QuestPrize WHERE questId = ? ORDER BY orderIndex ASC`, q.ID); err == nil {
+				var dbPrizes []QuestPrize
+				for pRows.Next() {
+					var p QuestPrize
+					_ = pRows.Scan(&p.ID, &p.QuestID, &p.TenantSlug, &p.Rank, &p.Title, &p.AwardType, &p.Amount, &p.Description, &p.Icon, &p.OrderIndex)
+					dbPrizes = append(dbPrizes, p)
+				}
+				pRows.Close()
+				if len(dbPrizes) > 0 {
+					prizes = dbPrizes
+				}
+			}
+
+			// Query Teams from DB
+			if tRows, err := db.Query(`SELECT id, questId, tenantSlug, name, customName, motto, color, initial, totalPoints, teamRank, memberCount, status FROM QuestTeam WHERE questId = ? ORDER BY teamRank ASC, totalPoints DESC`, q.ID); err == nil {
+				var dbTeams []QuestTeam
+				for tRows.Next() {
+					var t QuestTeam
+					_ = tRows.Scan(&t.ID, &t.QuestID, &t.TenantSlug, &t.Name, &t.CustomName, &t.Motto, &t.Color, &t.Initial, &t.TotalPoints, &t.Rank, &t.MemberCount, &t.Status)
+					dbTeams = append(dbTeams, t)
+				}
+				tRows.Close()
+				if len(dbTeams) > 0 {
+					teams = dbTeams
+				}
+			}
+
+			// Query Challenges from DB
+			if cRows, err := db.Query(`SELECT id, questId, tenantSlug, day, category, engineType, name, description, instructions, maxScore, status FROM QuestChallenge WHERE questId = ? ORDER BY id ASC`, q.ID); err == nil {
+				var dbChallenges []QuestChallenge
+				for cRows.Next() {
+					var c QuestChallenge
+					_ = cRows.Scan(&c.ID, &c.QuestID, &c.TenantSlug, &c.Day, &c.Category, &c.EngineType, &c.Name, &c.Description, &c.Instructions, &c.MaxScore, &c.Status)
+					dbChallenges = append(dbChallenges, c)
+				}
+				cRows.Close()
+				if len(dbChallenges) > 0 {
+					challenges = dbChallenges
+				}
+			}
+
+			// Query Schedule from DB
+			if sRows, err := db.Query(`SELECT id, questId, tenantSlug, day, startTime, endTime, title, description, category, location, maxScore, status, orderIndex FROM QuestScheduleItem WHERE questId = ? ORDER BY orderIndex ASC`, q.ID); err == nil {
+				var dbSchedule []QuestScheduleItem
+				for sRows.Next() {
+					var s QuestScheduleItem
+					_ = sRows.Scan(&s.ID, &s.QuestID, &s.TenantSlug, &s.Day, &s.StartTime, &s.EndTime, &s.Title, &s.Description, &s.Category, &s.Location, &s.MaxScore, &s.Status, &s.OrderIndex)
+					dbSchedule = append(dbSchedule, s)
+				}
+				sRows.Close()
+				if len(dbSchedule) > 0 {
+					schedule = dbSchedule
+				}
+			}
+
+			// Query Participants from DB
+			if partRows, err := db.Query(`SELECT id, questId, tenantSlug, teamId, userId, userName, userEmail, department, avatar, role, status FROM QuestParticipant WHERE questId = ?`, q.ID); err == nil {
+				var dbParticipants []QuestParticipant
+				for partRows.Next() {
+					var p QuestParticipant
+					_ = partRows.Scan(&p.ID, &p.QuestID, &p.TenantSlug, &p.TeamID, &p.UserID, &p.UserName, &p.UserEmail, &p.Department, &p.Avatar, &p.Role, &p.Status)
+					dbParticipants = append(dbParticipants, p)
+				}
+				partRows.Close()
+				if len(dbParticipants) > 0 {
+					participants = dbParticipants
+				}
+			}
 		}
 	}
 

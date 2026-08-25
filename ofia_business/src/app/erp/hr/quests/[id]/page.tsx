@@ -57,16 +57,16 @@ interface TeamItem {
 }
 
 const DEFAULT_TEAMS_A_TO_J: TeamItem[] = [
-  { id: "team-1", name: "Team Alpha (Blue Eagles)", motto: "Swift, Strategic, Unstoppable", logo: "", color: "#1A56DB", total_points: 840, rank: 1, member_count: 10, status: "ACTIVE" },
-  { id: "team-2", name: "Team Bravo (Red Vipers)", motto: "Relentless Speed & Precision", logo: "", color: "#EF4444", total_points: 795, rank: 2, member_count: 10, status: "ACTIVE" },
-  { id: "team-3", name: "Team Delta (Green Lions)", motto: "Courage in Every Stride", logo: "", color: "#10B981", total_points: 710, rank: 3, member_count: 10, status: "ACTIVE" },
-  { id: "team-4", name: "Team Charlie (Gold Titans)", motto: "Power, Intellect, Victory", logo: "", color: "#F59E0B", total_points: 650, rank: 4, member_count: 10, status: "ACTIVE" },
-  { id: "team-5", name: "Team Echo (Silver Wolves)", motto: "Silent, United, Lethal", logo: "", color: "#64748B", total_points: 590, rank: 5, member_count: 10, status: "ACTIVE" },
-  { id: "team-6", name: "Team Foxtrot (Iron Rhinos)", motto: "Unbreakable Resolve", logo: "", color: "#8B5CF6", total_points: 530, rank: 6, member_count: 10, status: "ACTIVE" },
-  { id: "team-7", name: "Team Golf (Shadow Panthers)", motto: "Agile & Stealth Champions", logo: "", color: "#0EA5E9", total_points: 0, rank: 7, member_count: 0, status: "INACTIVE" },
-  { id: "team-8", name: "Team Hotel (Solar Hawks)", motto: "Rising Above All Limits", logo: "", color: "#EC4899", total_points: 0, rank: 8, member_count: 0, status: "INACTIVE" },
-  { id: "team-9", name: "Team India (Thunder Bulls)", motto: "Raw Energy & Team Power", logo: "", color: "#14B8A6", total_points: 0, rank: 9, member_count: 0, status: "INACTIVE" },
-  { id: "team-10", name: "Team Juliet (Cyber Dragons)", motto: "Future Leaders of the Arena", logo: "", color: "#6366F1", total_points: 0, rank: 10, member_count: 0, status: "INACTIVE" },
+  { id: "team-a", name: "Team A", custom_name: "Alpha (Blue Eagles)", motto: "Swift, Strategic, Unstoppable", logo: "", color: "#1A56DB", initial: "A", total_points: 840, rank: 1, member_count: 10, status: "ACTIVE" },
+  { id: "team-b", name: "Team B", custom_name: "Bravo (Red Vipers)", motto: "Relentless Speed & Precision", logo: "", color: "#EF4444", initial: "B", total_points: 795, rank: 2, member_count: 10, status: "ACTIVE" },
+  { id: "team-c", name: "Team C", custom_name: "Charlie (Gold Titans)", motto: "Power, Intellect, Victory", logo: "", color: "#F59E0B", initial: "C", total_points: 650, rank: 3, member_count: 10, status: "ACTIVE" },
+  { id: "team-d", name: "Team D", custom_name: "Delta (Green Lions)", motto: "Courage in Every Stride", logo: "", color: "#10B981", initial: "D", total_points: 710, rank: 4, member_count: 10, status: "ACTIVE" },
+  { id: "team-e", name: "Team E", custom_name: "Echo (Silver Wolves)", motto: "Silent, United, Lethal", logo: "", color: "#64748B", initial: "E", total_points: 590, rank: 5, member_count: 10, status: "ACTIVE" },
+  { id: "team-f", name: "Team F", custom_name: "Foxtrot (Iron Rhinos)", motto: "Unbreakable Resolve", logo: "", color: "#8B5CF6", initial: "F", total_points: 530, rank: 6, member_count: 10, status: "ACTIVE" },
+  { id: "team-g", name: "Team G", custom_name: "Golf (Copper Hawks)", motto: "Precision from Above", logo: "", color: "#D97706", initial: "G", total_points: 0, rank: 7, member_count: 0, status: "INACTIVE" },
+  { id: "team-h", name: "Team H", custom_name: "Hotel (Platinum Panthers)", motto: "Prowling with Purpose", logo: "", color: "#475569", initial: "H", total_points: 0, rank: 8, member_count: 0, status: "INACTIVE" },
+  { id: "team-i", name: "Team I", custom_name: "India (Diamond Sharks)", motto: "Unstoppable Force", logo: "", color: "#06B6D4", initial: "I", total_points: 0, rank: 9, member_count: 0, status: "INACTIVE" },
+  { id: "team-j", name: "Team J", custom_name: "Juliet (Emerald Dragons)", motto: "Fiery Spirit & Grace", logo: "", color: "#059669", initial: "J", total_points: 0, rank: 10, member_count: 0, status: "INACTIVE" },
 ];
 
 interface ParticipantItem {
@@ -326,7 +326,6 @@ export default function QuestCommandDeskPage() {
   const [scoreAudits, setScoreAudits] = useState<ScoreAuditItem[]>([]);
   const [dayFilter, setDayFilter] = useState<string>("ALL");
   const [scheduleDayFilter, setScheduleDayFilter] = useState<string>("Day 1");
-  const [hideInactive, setHideInactive] = useState<boolean>(false);
 
   // Staff Pool Modal State
   const [staffPoolTeam, setStaffPoolTeam] = useState<TeamItem | null>(null);
@@ -384,6 +383,88 @@ export default function QuestCommandDeskPage() {
     status: "UPCOMING",
   });
 
+  const [quest, setQuest] = useState<any>({
+    id: questId,
+    name: "REIGNITE 2026: Annual Staff Retreat & Innovation Games",
+    slug: "reignite-2026",
+    description: "Corporate Team Championship · 60 Staff · Multi-day Retreat Competition",
+    location: "Epe Resort & Spa, Lagos",
+    starts_at: "2026-08-25",
+    ends_at: "2026-08-27",
+    grand_prize: "₦500,000",
+    currency: "NGN",
+    status: "ACTIVE",
+    concept_lock_enabled: true,
+    enable_stage_tv: true,
+  });
+
+  const [isEditQuestOpen, setIsEditQuestOpen] = useState(false);
+  const [isSavingQuest, setIsSavingQuest] = useState(false);
+  const [editQuestForm, setEditQuestForm] = useState({
+    name: "",
+    slug: "",
+    description: "",
+    location: "",
+    starts_at: "",
+    ends_at: "",
+    grand_prize: "",
+    currency: "NGN",
+    status: "ACTIVE",
+    concept_lock_enabled: true,
+    enable_stage_tv: true,
+  });
+
+  const openEditQuestModal = () => {
+    setEditQuestForm({
+      name: quest.name || "",
+      slug: quest.slug || "reignite-2026",
+      description: quest.description || "",
+      location: quest.location || "Epe Resort & Spa, Lagos",
+      starts_at: quest.starts_at ? new Date(quest.starts_at).toISOString().split("T")[0] : "2026-08-25",
+      ends_at: quest.ends_at ? new Date(quest.ends_at).toISOString().split("T")[0] : "2026-08-27",
+      grand_prize: quest.grand_prize || quest.grandPrize || "₦500,000",
+      currency: quest.currency || "NGN",
+      status: quest.status || "ACTIVE",
+      concept_lock_enabled: quest.concept_lock_enabled ?? quest.conceptLockEnabled ?? true,
+      enable_stage_tv: quest.enable_stage_tv ?? quest.enableStageTV ?? true,
+    });
+    setIsEditQuestOpen(true);
+  };
+
+  const handleSaveQuest = async () => {
+    setIsSavingQuest(true);
+    try {
+      const updated = {
+        id: questId,
+        name: editQuestForm.name,
+        slug: editQuestForm.slug,
+        description: editQuestForm.description,
+        location: editQuestForm.location,
+        starts_at: editQuestForm.starts_at ? new Date(editQuestForm.starts_at) : undefined,
+        ends_at: editQuestForm.ends_at ? new Date(editQuestForm.ends_at) : undefined,
+        grand_prize: editQuestForm.grand_prize,
+        currency: editQuestForm.currency,
+        status: editQuestForm.status,
+        concept_lock_enabled: editQuestForm.concept_lock_enabled,
+        enable_stage_tv: editQuestForm.enable_stage_tv,
+      };
+
+      setQuest((prev: any) => ({ ...prev, ...updated }));
+
+      await fetch(`/api/erp/quests`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated),
+      });
+
+      setIsEditQuestOpen(false);
+    } catch (e) {
+      console.error("Failed to update quest:", e);
+    } finally {
+      setIsSavingQuest(false);
+    }
+  };
+
   useEffect(() => {
     async function loadData() {
       try {
@@ -422,6 +503,7 @@ export default function QuestCommandDeskPage() {
             }));
             setChallenges([...mergedChallenges, ...extraChallenges]);
           }
+          if (data.quest) setQuest((prev: any) => ({ ...prev, ...data.quest }));
           if (data.participants) setParticipants(data.participants);
           if (data.concepts) setConcepts(data.concepts);
           if (data.schedule && data.schedule.length > 0) setSchedule(data.schedule);
@@ -765,12 +847,19 @@ export default function QuestCommandDeskPage() {
 
   return (
     <BusinessShell
-      title="REIGNITE 2026: Facilitator Command Center"
-      subtitle={`Corporate Team Championship · 60 Staff · ${activeTeams.length} Active Teams · 11 Quests · 21 Scheduled Events · ₦500,000 Grand Prize`}
+      title={quest.name ? `${quest.name} · Facilitator Desk` : "REIGNITE 2026: Facilitator Command Center"}
+      subtitle={`Corporate Championship · ${quest.location || "Epe Resort & Spa, Lagos"} · ${activeTeams.length} Active Teams · ${challenges.length} Quests · ${schedule.length} Scheduled Events · ${quest.grand_prize || quest.grandPrize || "₦500,000"} Grand Prize`}
       action={
         <div className="flex items-center gap-2.5">
           <Link
-            href="/quests/reignite-2026/scoreboard"
+            href={`/erp/hr/quests/new?edit=${questId}`}
+            className="inline-flex items-center justify-center gap-2 h-8 px-3.5 text-xs font-bold rounded-full border border-nexa-border bg-nexa-bg-base text-nexa-text-primary hover:bg-nexa-bg-surface transition-all shadow-xs cursor-pointer"
+          >
+            <Edit3 className="w-4 h-4 text-amber-500" />
+            <span>Edit Quest</span>
+          </Link>
+          <Link
+            href={`/quests/${quest.slug || "reignite-2026"}/scoreboard`}
             target="_blank"
             className="inline-flex items-center justify-center gap-2 h-8 px-3.5 text-xs font-bold rounded-full border border-nexa-border bg-transparent text-nexa-text-secondary hover:bg-nexa-bg-surface hover:text-nexa-text-primary transition-all shadow-xs"
           >
@@ -1097,21 +1186,6 @@ export default function QuestCommandDeskPage() {
               </div>
 
               <div className="flex items-center gap-3 flex-wrap">
-                {/* HIDE INACTIVE TOGGLE */}
-                <label className="flex items-center gap-2 cursor-pointer bg-white px-3.5 py-1.5 rounded-full border border-gray-200 shadow-xs text-xs font-bold text-slate-700 hover:border-blue-300 transition-colors">
-                  <input
-                    type="checkbox"
-                    checked={hideInactive}
-                    onChange={(e) => setHideInactive(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 rounded cursor-pointer accent-blue-600"
-                  />
-                  <span>Hide Inactive</span>
-                </label>
-
-                <NexaBadge variant="secondary" size="sm" className="rounded-full font-bold">
-                  {teams.filter((t) => t.status === "ACTIVE").length} Active · {teams.filter((t) => t.status === "INACTIVE").length} Standby
-                </NexaBadge>
-
                 <NexaButton
                   size="sm"
                   variant="primary"
@@ -1129,7 +1203,6 @@ export default function QuestCommandDeskPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {teams
                 .slice()
-                .filter((team) => (hideInactive ? team.status === "ACTIVE" : true))
                 .sort((a, b) => {
                   if (a.status === "ACTIVE" && b.status === "INACTIVE") return -1;
                   if (a.status === "INACTIVE" && b.status === "ACTIVE") return 1;
@@ -2298,6 +2371,244 @@ export default function QuestCommandDeskPage() {
                 className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs cursor-pointer shadow-sm"
               >
                 Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT QUEST SETTINGS MODAL */}
+      {isEditQuestOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* MODAL HEADER */}
+            <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-slate-900 to-blue-950 text-white shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center text-amber-400">
+                  <Edit3 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-white">Edit Quest Settings</h3>
+                  <p className="text-xs text-white/70">Update tournament details, venue, dates, and live rules</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsEditQuestOpen(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white/80 hover:text-white flex items-center justify-center text-sm font-bold transition-all cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* MODAL BODY */}
+            <div className="p-6 space-y-5 overflow-y-auto flex-1">
+              {/* QUEST TITLE */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Quest Title
+                </label>
+                <input
+                  type="text"
+                  value={editQuestForm.name}
+                  onChange={(e) => setEditQuestForm({ ...editQuestForm, name: e.target.value })}
+                  placeholder="e.g. 2026 Annual Staff Retreat & Innovation Games"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-900"
+                />
+              </div>
+
+              {/* SLUG & SCOREBOARD PREVIEW */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Tournament Slug (URL)
+                  </label>
+                  <input
+                    type="text"
+                    value={editQuestForm.slug}
+                    onChange={(e) =>
+                      setEditQuestForm({
+                        ...editQuestForm,
+                        slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-"),
+                      })
+                    }
+                    placeholder="e.g. reignite-2026"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Resort / Venue Location
+                  </label>
+                  <input
+                    type="text"
+                    value={editQuestForm.location}
+                    onChange={(e) => setEditQuestForm({ ...editQuestForm, location: e.target.value })}
+                    placeholder="e.g. Epe Resort & Spa, Lagos"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-900"
+                  />
+                </div>
+              </div>
+
+              {/* DATES */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    value={editQuestForm.starts_at}
+                    onChange={(e) => setEditQuestForm({ ...editQuestForm, starts_at: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    value={editQuestForm.ends_at}
+                    onChange={(e) => setEditQuestForm({ ...editQuestForm, ends_at: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-900"
+                  />
+                </div>
+              </div>
+
+              {/* GRAND PRIZE & CURRENCY */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Grand Championship Prize
+                  </label>
+                  <input
+                    type="text"
+                    value={editQuestForm.grand_prize}
+                    onChange={(e) => setEditQuestForm({ ...editQuestForm, grand_prize: e.target.value })}
+                    placeholder="e.g. ₦500,000"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Currency
+                  </label>
+                  <select
+                    value={editQuestForm.currency}
+                    onChange={(e) => setEditQuestForm({ ...editQuestForm, currency: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-900"
+                  >
+                    <option value="NGN">NGN (₦)</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="GBP">GBP (£)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="KES">KES (KSh)</option>
+                    <option value="GHS">GHS (GH₵)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* TOURNAMENT STATUS */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Tournament Status
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { id: "ACTIVE", label: "Live Active", color: "border-emerald-500 bg-emerald-50 text-emerald-700" },
+                    { id: "UPCOMING", label: "Upcoming", color: "border-amber-500 bg-amber-50 text-amber-700" },
+                    { id: "COMPLETED", label: "Completed", color: "border-blue-500 bg-blue-50 text-blue-700" },
+                    { id: "DRAFT", label: "Draft", color: "border-slate-400 bg-slate-50 text-slate-700" },
+                  ].map((st) => (
+                    <button
+                      key={st.id}
+                      type="button"
+                      onClick={() => setEditQuestForm({ ...editQuestForm, status: st.id })}
+                      className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+                        editQuestForm.status === st.id
+                          ? `${st.color} shadow-xs`
+                          : "border-gray-200 text-slate-500 hover:border-gray-300"
+                      }`}
+                    >
+                      {st.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* DESCRIPTION */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Description & Event Motto
+                </label>
+                <textarea
+                  rows={3}
+                  value={editQuestForm.description}
+                  onChange={(e) => setEditQuestForm({ ...editQuestForm, description: e.target.value })}
+                  placeholder="Describe the retreat tournament objectives and spirit..."
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-900"
+                />
+              </div>
+
+              {/* TOGGLES */}
+              <div className="space-y-3 pt-2 border-t border-gray-100">
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-gray-50 border border-gray-100">
+                  <div>
+                    <div className="text-xs font-bold text-slate-800">Concept Lock & Duplicate Topic Prevention</div>
+                    <div className="text-[11px] text-slate-500">First-come, first-served registration for drama/skit topics</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEditQuestForm({ ...editQuestForm, concept_lock_enabled: !editQuestForm.concept_lock_enabled })}
+                    className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
+                      editQuestForm.concept_lock_enabled ? "bg-blue-600 justify-end" : "bg-gray-300 justify-start"
+                    }`}
+                  >
+                    <div className="w-4 h-4 rounded-full bg-white shadow-md" />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between p-3 rounded-2xl bg-gray-50 border border-gray-100">
+                  <div>
+                    <div className="text-xs font-bold text-slate-800">Stage TV Scoreboard Access</div>
+                    <div className="text-[11px] text-slate-500">Enable zero-login projector display at /quests/{editQuestForm.slug}/scoreboard</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setEditQuestForm({ ...editQuestForm, enable_stage_tv: !editQuestForm.enable_stage_tv })}
+                    className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors cursor-pointer ${
+                      editQuestForm.enable_stage_tv ? "bg-blue-600 justify-end" : "bg-gray-300 justify-start"
+                    }`}
+                  >
+                    <div className="w-4 h-4 rounded-full bg-white shadow-md" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* MODAL FOOTER */}
+            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex items-center justify-between shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsEditQuestOpen(false)}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-900 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveQuest}
+                disabled={isSavingQuest}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-md shadow-blue-600/20 transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                {isSavingQuest ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <span>Save Changes</span>
+                )}
               </button>
             </div>
           </div>

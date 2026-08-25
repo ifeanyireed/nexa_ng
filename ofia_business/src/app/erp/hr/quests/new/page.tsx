@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaButton } from "@/components/nexa/NexaButton";
@@ -82,16 +82,16 @@ interface PrizeFormItem {
 }
 
 const DEFAULT_TEAMS: TeamFormItem[] = [
-  { id: "team-1", name: "Team Alpha (Blue Eagles)", custom_name: "Blue Eagles", motto: "Swift, Strategic, Unstoppable", color: "#1A56DB", initial: "A", status: "ACTIVE" },
-  { id: "team-2", name: "Team Bravo (Red Vipers)", custom_name: "Red Vipers", motto: "Relentless Speed & Precision", color: "#EF4444", initial: "B", status: "ACTIVE" },
-  { id: "team-3", name: "Team Delta (Green Lions)", custom_name: "Green Lions", motto: "Courage in Every Stride", color: "#10B981", initial: "D", status: "ACTIVE" },
-  { id: "team-4", name: "Team Charlie (Gold Titans)", custom_name: "Gold Titans", motto: "Power, Intellect, Victory", color: "#F59E0B", initial: "C", status: "ACTIVE" },
-  { id: "team-5", name: "Team Echo (Silver Wolves)", custom_name: "Silver Wolves", motto: "Silent, United, Lethal", color: "#64748B", initial: "E", status: "ACTIVE" },
-  { id: "team-6", name: "Team Foxtrot (Iron Rhinos)", custom_name: "Iron Rhinos", motto: "Unbreakable Resolve", color: "#8B5CF6", initial: "F", status: "ACTIVE" },
-  { id: "team-7", name: "Team Golf (Shadow Panthers)", custom_name: "Shadow Panthers", motto: "Agile & Stealth Champions", color: "#0EA5E9", initial: "G", status: "INACTIVE" },
-  { id: "team-8", name: "Team Hotel (Solar Hawks)", custom_name: "Solar Hawks", motto: "Rising Above All Limits", color: "#EC4899", initial: "H", status: "INACTIVE" },
-  { id: "team-9", name: "Team India (Thunder Bulls)", custom_name: "Thunder Bulls", motto: "Raw Energy & Team Power", color: "#14B8A6", initial: "I", status: "INACTIVE" },
-  { id: "team-10", name: "Team Juliet (Cyber Dragons)", custom_name: "Cyber Dragons", motto: "Future Leaders of the Arena", color: "#6366F1", initial: "J", status: "INACTIVE" },
+  { id: "team-a", name: "Team A", custom_name: "Alpha (Blue Eagles)", motto: "Swift, Strategic, Unstoppable", color: "#1A56DB", initial: "A", status: "ACTIVE" },
+  { id: "team-b", name: "Team B", custom_name: "Bravo (Red Vipers)", motto: "Relentless Speed & Precision", color: "#EF4444", initial: "B", status: "ACTIVE" },
+  { id: "team-c", name: "Team C", custom_name: "Charlie (Gold Titans)", motto: "Power, Intellect, Victory", color: "#F59E0B", initial: "C", status: "ACTIVE" },
+  { id: "team-d", name: "Team D", custom_name: "Delta (Green Lions)", motto: "Courage in Every Stride", color: "#10B981", initial: "D", status: "ACTIVE" },
+  { id: "team-e", name: "Team E", custom_name: "Echo (Silver Wolves)", motto: "Silent, United, Lethal", color: "#64748B", initial: "E", status: "ACTIVE" },
+  { id: "team-f", name: "Team F", custom_name: "Foxtrot (Iron Rhinos)", motto: "Unbreakable Resolve", color: "#8B5CF6", initial: "F", status: "ACTIVE" },
+  { id: "team-g", name: "Team G", custom_name: "Golf (Copper Hawks)", motto: "Precision from Above", color: "#D97706", initial: "G", status: "INACTIVE" },
+  { id: "team-h", name: "Team H", custom_name: "Hotel (Platinum Panthers)", motto: "Prowling with Purpose", color: "#475569", initial: "H", status: "INACTIVE" },
+  { id: "team-i", name: "Team I", custom_name: "India (Diamond Sharks)", motto: "Unstoppable Force", color: "#06B6D4", initial: "I", status: "INACTIVE" },
+  { id: "team-j", name: "Team J", custom_name: "Juliet (Emerald Dragons)", motto: "Fiery Spirit & Grace", color: "#059669", initial: "J", status: "INACTIVE" },
 ];
 
 const DEFAULT_SCHEDULE_PRESETS: ScheduleFormItem[] = [
@@ -128,10 +128,15 @@ const DEFAULT_PRIZES: PrizeFormItem[] = [
   { id: "prz-5", rank: 0, title: "Championship MVP Performer", award_type: "CASH", amount: "25,000", description: "Individual recognition award for exceptional leadership, agility, and participation.", icon: "⭐" },
 ];
 
-export default function CreateQuestWizardPage() {
+function CreateQuestWizardContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editQuestId = searchParams?.get("edit") || searchParams?.get("id") || "";
+  const isEditMode = !!editQuestId;
+
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingQuest, setIsLoadingQuest] = useState(isEditMode);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Form State
@@ -187,6 +192,106 @@ export default function CreateQuestWizardPage() {
   const [newPrizeDesc, setNewPrizeDesc] = useState("");
   const [newPrizeIcon, setNewPrizeIcon] = useState("🎁");
   const [showAddPrize, setShowAddPrize] = useState(false);
+
+  // Load existing quest details when in edit mode
+  useEffect(() => {
+    if (!editQuestId) return;
+
+    async function loadQuestForEdit() {
+      try {
+        setIsLoadingQuest(true);
+        const res = await fetch(`/api/erp/quests/detail?id=${editQuestId}&slug=${editQuestId}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.quest) {
+            const q = data.quest;
+            setFormData({
+              name: q.name || "",
+              slug: q.slug || "",
+              description: q.description || "",
+              coverImage: q.cover_image || q.coverImage || "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80",
+              startsAt: q.starts_at ? new Date(q.starts_at).toISOString().split("T")[0] : "2026-08-25",
+              endsAt: q.ends_at ? new Date(q.ends_at).toISOString().split("T")[0] : "2026-08-27",
+              location: q.location || "",
+              currency: q.currency || "NGN",
+              currencySymbol: q.currency === "USD" ? "$" : q.currency === "GBP" ? "£" : q.currency === "EUR" ? "€" : "₦",
+              participationType: q.participation_type || "BOTH",
+              autoBalance: q.auto_balance ?? true,
+              scoringMode: q.scoring_mode || "AUTOMATIC_WITH_JUDGE_OVERRIDE",
+              allowManualAdjustments: q.allow_manual_adjustments ?? true,
+              conceptLockEnabled: q.concept_lock_enabled ?? true,
+              primaryColor: q.primary_color || "#1A56DB",
+              accentColor: q.accent_color || "#F59E0B",
+              enableStageTV: q.enable_stage_tv ?? true,
+            });
+          }
+
+          if (data.teams && data.teams.length > 0) {
+            const mappedTeams: TeamFormItem[] = data.teams.map((t: any, idx: number) => ({
+              id: t.id || `team-${String.fromCharCode(97 + idx)}`,
+              name: t.name || `Team ${String.fromCharCode(65 + idx)}`,
+              custom_name: t.custom_name || "",
+              motto: t.motto || "Champions of the Arena",
+              color: t.color || "#1A56DB",
+              initial: t.initial || String.fromCharCode(65 + idx),
+              status: t.status === "INACTIVE" ? "INACTIVE" : "ACTIVE",
+            }));
+            setTeams(mappedTeams);
+          }
+
+          if (data.challenges && data.challenges.length > 0) {
+            const mappedChls: ChallengeFormItem[] = data.challenges.map((c: any, idx: number) => ({
+              id: c.id || `chl-${idx + 1}`,
+              day: c.day || "Day 1",
+              category: c.category || "Challenge",
+              engine_type: c.engine_type || c.engineType || "RUBRIC",
+              name: c.name || `Quest ${idx + 1}`,
+              description: c.description || "",
+              instructions: c.instructions || "Facilitator evaluated quest.",
+              max_score: Number(c.max_score) || 50,
+              status: c.status || "LOCKED",
+            }));
+            setChallenges(mappedChls);
+          }
+
+          if (data.schedule && data.schedule.length > 0) {
+            const mappedSch: ScheduleFormItem[] = data.schedule.map((s: any, idx: number) => ({
+              id: s.id || `sch-${idx + 1}`,
+              day: s.day || "Day 1",
+              start_time: s.start_time || "09:00 AM",
+              end_time: s.end_time || "10:30 AM",
+              title: s.title || `Schedule Event ${idx + 1}`,
+              description: s.description || "",
+              category: s.category || "Challenge",
+              location: s.location || "Main Auditorium",
+              max_score: Number(s.max_score) || 0,
+              status: s.status || "UPCOMING",
+            }));
+            setScheduleItems(mappedSch);
+          }
+
+          if (data.prizes && data.prizes.length > 0) {
+            const mappedPrizes: PrizeFormItem[] = data.prizes.map((p: any, idx: number) => ({
+              id: p.id || `prz-${idx + 1}`,
+              rank: p.rank || (idx < 3 ? idx + 1 : 0),
+              title: p.title || `Prize ${idx + 1}`,
+              award_type: p.award_type || "CASH",
+              amount: String(p.amount || "").replace(/[^0-9,.]/g, ""),
+              description: p.description || "",
+              icon: p.icon || (idx === 0 ? "🏆" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : "⭐"),
+            }));
+            setPrizes(mappedPrizes);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to load quest for edit:", err);
+      } finally {
+        setIsLoadingQuest(false);
+      }
+    }
+
+    loadQuestForEdit();
+  }, [editQuestId]);
 
   // Helpers
   const handleToggleTeamStatus = (index: number) => {
@@ -272,7 +377,7 @@ export default function CreateQuestWizardPage() {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      const questId = `qst-${formData.slug || Date.now()}`;
+      const questId = isEditMode ? editQuestId : (formData.slug ? `qst-${formData.slug}` : `qst-${Date.now()}`);
       const payload = {
         id: questId,
         name: formData.name,
@@ -306,11 +411,11 @@ export default function CreateQuestWizardPage() {
           order_index: idx + 1,
         })),
         teams: teams.map((t, idx) => ({
-          id: `team-${idx + 1}`,
+          id: t.id || `team-${String.fromCharCode(97 + idx)}`,
           quest_id: questId,
           name: t.name,
           custom_name: t.custom_name,
-          slug: `team-${idx + 1}`,
+          slug: t.id || `team-${String.fromCharCode(97 + idx)}`,
           logo: "🏆",
           color: t.color,
           initial: t.initial,
@@ -349,19 +454,19 @@ export default function CreateQuestWizardPage() {
       };
 
       const res = await fetch("/api/erp/quests", {
-        method: "POST",
+        method: isEditMode ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
-        throw new Error("Failed to save quest to database");
+        throw new Error(isEditMode ? "Failed to update quest in database" : "Failed to save quest to database");
       }
 
       router.push(`/erp/hr/quests/${questId}`);
     } catch (err: any) {
-      console.error("Create quest error:", err);
-      setSubmitError(err.message || "Failed to create quest. Please check database connection.");
+      console.error("Save quest error:", err);
+      setSubmitError(err.message || "Failed to save quest. Please check database connection.");
       setIsSubmitting(false);
     }
   };
@@ -376,14 +481,28 @@ export default function CreateQuestWizardPage() {
     { num: 7, title: "Launch", icon: CheckCircle2 },
   ];
 
+  if (isLoadingQuest) {
+    return (
+      <BusinessShell
+        title="Loading Quest Configuration..."
+        subtitle="Retrieving multi-squad rosters, timeline schedule, scoring engines, prize pool, and arena scoreboard."
+      >
+        <div className="py-20 text-center space-y-3">
+          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-slate-500 font-medium">Loading tournament data...</p>
+        </div>
+      </BusinessShell>
+    );
+  }
+
   return (
     <BusinessShell
-      title="Create Championship Quest"
-      subtitle="Configure multi-squad rosters, timeline schedule, scoring engines, prize pool, and arena scoreboard."
+      title={isEditMode ? `Edit Quest: ${formData.name}` : "Create Championship Quest"}
+      subtitle={isEditMode ? "Update your 7-step championship configuration, rules, prizes, and schedule." : "Configure multi-squad rosters, timeline schedule, scoring engines, prize pool, and arena scoreboard."}
       action={
-        <Link href="/erp/hr/quests">
+        <Link href={isEditMode ? `/erp/hr/quests/${editQuestId}` : "/erp/hr/quests"}>
           <NexaButton size="sm" variant="outline">
-            Cancel
+            {isEditMode ? "Back to Command Desk" : "Cancel"}
           </NexaButton>
         </Link>
       }
@@ -1263,11 +1382,28 @@ export default function CreateQuestWizardPage() {
               leftIcon={<Flame className="w-4 h-4" />}
               className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
-              Publish & Launch Championship Quest
+              {isEditMode ? "Save & Update Championship Quest" : "Publish & Launch Championship Quest"}
             </NexaButton>
           )}
         </div>
       </div>
     </BusinessShell>
+  );
+}
+
+export default function CreateQuestWizardPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[var(--nexa-bg-base)] text-xs text-slate-500 font-medium">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping" />
+            <span>Loading Quest Wizard...</span>
+          </div>
+        </div>
+      }
+    >
+      <CreateQuestWizardContent />
+    </Suspense>
   );
 }

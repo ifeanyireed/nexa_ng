@@ -562,6 +562,22 @@ export function ErpAdminShell({
       ];
     }
 
+    if (pathname.startsWith("/erp/employee")) {
+      return [
+        { label: "My Overview", href: "/erp/employee", icon: <UserCheck className="w-3.5 h-3.5" /> },
+        { label: "Performance Reviews", href: "/erp/employee/reviews", icon: <Activity className="w-3.5 h-3.5" /> },
+        { label: "My Team Quests", href: "/erp/employee/quests", icon: <Trophy className="w-3.5 h-3.5" /> },
+        { label: "My Profile & Growth", href: "/erp/employee/profile", icon: <Users className="w-3.5 h-3.5" /> },
+      ];
+    }
+
+    if (pathname.startsWith("/erp/manager")) {
+      return [
+        { label: "Manager Overview", href: "/erp/manager", icon: <Sliders className="w-3.5 h-3.5" /> },
+        { label: "Team Reviews", href: "/erp/manager/reviews", icon: <Activity className="w-3.5 h-3.5" /> },
+      ];
+    }
+
     return [];
   };
 
@@ -914,6 +930,8 @@ export function ErpAdminShell({
                     tab.href !== "/erp/admin/marketplace" &&
                     tab.href !== "/erp/accountant" &&
                     tab.href !== "/erp/hr" &&
+                    tab.href !== "/erp/employee" &&
+                    tab.href !== "/erp/manager" &&
                     pathname.startsWith(tab.href));
                 return (
                   <Link href={tab.href} key={idx} className="shrink-0">

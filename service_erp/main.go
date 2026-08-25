@@ -147,12 +147,14 @@ func registerRoutes() {
 	registerRoute("/quests/announcements", handlers.HandleQuestAnnouncements)
 	registerRoute("/quests/schedule", handlers.HandleQuestSchedule)
 	registerRoute("/quests/prizes", handlers.HandleQuestPrizes)
+	registerRoute("/quests/ws", handlers.HandleQuestWS)
 
 	// Prefix aliases for /api/v1/quests/*
 	registerRoute("/api/v1/quests", handlers.HandleQuests)
 	registerRoute("/api/v1/quests/detail", handlers.HandleQuestDetail)
 	registerRoute("/api/v1/quests/teams", handlers.HandleQuestTeams)
 	registerRoute("/api/v1/quests/participants", handlers.HandleQuestParticipants)
+	registerRoute("/api/v1/quests/ws", handlers.HandleQuestWS)
 	registerRoute("/api/v1/quests/participants/auto-assign", handlers.HandleQuestAutoAssign)
 	registerRoute("/api/v1/quests/challenges", handlers.HandleQuestChallenges)
 	registerRoute("/api/v1/quests/concepts", handlers.HandleQuestConcepts)

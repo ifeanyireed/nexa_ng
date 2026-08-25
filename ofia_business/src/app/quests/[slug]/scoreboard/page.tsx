@@ -19,7 +19,9 @@ import {
   Users,
   ChevronRight,
   Medal,
+  Radio
 } from "lucide-react";
+import { useQuestWebSocket } from "@/lib/useQuestWebSocket";
 
 export interface Contestant {
   id: string;
@@ -60,6 +62,16 @@ export default function StageTVScoreboardPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isSoundMuted, setIsSoundMuted] = useState(true);
+
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const handleWsMessage = React.useCallback((msg: any) => {
+    if (msg.type === "SCORE_UPDATED" || msg.type === "ROSTER_UPDATED" || msg.type === "QUEST_UPDATED") {
+      setRefreshTrigger((prev) => prev + 1);
+    }
+  }, []);
+
+  const { isConnected } = useQuestWebSocket(slug, handleWsMessage);
 
   useEffect(() => {
     async function loadScoreboard() {
@@ -190,9 +202,9 @@ export default function StageTVScoreboardPage() {
     }
 
     loadScoreboard();
-    const interval = setInterval(loadScoreboard, 10000);
+    const interval = setInterval(loadScoreboard, 15000);
     return () => clearInterval(interval);
-  }, [slug]);
+  }, [slug, refreshTrigger]);
 
   const toggleFullscreen = () => {
     if (typeof document !== "undefined") {

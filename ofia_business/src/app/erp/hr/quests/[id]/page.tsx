@@ -40,6 +40,7 @@ import {
   ChevronRight,
   Radio
 } from "lucide-react";
+import { useQuestWebSocket } from "@/lib/useQuestWebSocket";
 
 interface TeamItem {
   id: string;
@@ -465,6 +466,22 @@ export default function QuestCommandDeskPage() {
     }
   };
 
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const handleWsMessage = React.useCallback((msg: any) => {
+    if (
+      msg.type === "SCORE_UPDATED" ||
+      msg.type === "SCHEDULE_UPDATED" ||
+      msg.type === "CONCEPT_UPDATED" ||
+      msg.type === "ROSTER_UPDATED" ||
+      msg.type === "QUEST_UPDATED"
+    ) {
+      setRefreshTrigger((prev) => prev + 1);
+    }
+  }, []);
+
+  const { isConnected } = useQuestWebSocket(questId, handleWsMessage);
+
   useEffect(() => {
     async function loadData() {
       try {
@@ -513,7 +530,7 @@ export default function QuestCommandDeskPage() {
       }
     }
     loadData();
-  }, [questId]);
+  }, [questId, refreshTrigger]);
 
   // Toggle active status for team A-J
   const toggleTeamActive = (teamId: string) => {

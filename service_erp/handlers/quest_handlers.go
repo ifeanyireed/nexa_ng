@@ -1617,6 +1617,7 @@ func HandleQuestSchedule(w http.ResponseWriter, r *http.Request) {
 		}
 
 		reigniteSchedule = append(reigniteSchedule, newItem)
+		BroadcastToQuest(newItem.QuestID, "SCHEDULE_UPDATED", newItem)
 		json.NewEncoder(w).Encode(newItem)
 		return
 	}
@@ -1657,6 +1658,7 @@ func HandleQuestSchedule(w http.ResponseWriter, r *http.Request) {
 				if payload.FacilitatorNotes != "" {
 					reigniteSchedule[i].FacilitatorNotes = payload.FacilitatorNotes
 				}
+				BroadcastToQuest(reigniteSchedule[i].QuestID, "SCHEDULE_UPDATED", reigniteSchedule[i])
 				json.NewEncoder(w).Encode(reigniteSchedule[i])
 				return
 			}
@@ -1674,6 +1676,7 @@ func HandleQuestSchedule(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		reigniteSchedule = filtered
+		BroadcastToQuest(questId, "SCHEDULE_UPDATED", map[string]string{"deleted_id": id})
 		json.NewEncoder(w).Encode(map[string]string{"status": "deleted"})
 		return
 	}
@@ -2055,6 +2058,7 @@ func HandleQuestConcepts(w http.ResponseWriter, r *http.Request) {
 		payload.CreatedAt = time.Now()
 
 		reigniteConcepts = append([]QuestConcept{payload}, reigniteConcepts...)
+		BroadcastToQuest(payload.QuestID, "CONCEPT_UPDATED", payload)
 		json.NewEncoder(w).Encode(payload)
 		return
 	}
@@ -2074,6 +2078,7 @@ func HandleQuestConcepts(w http.ResponseWriter, r *http.Request) {
 			if reigniteConcepts[i].ID == payload.ID {
 				reigniteConcepts[i].Status = payload.Status
 				reigniteConcepts[i].LockedBy = payload.LockedBy
+				BroadcastToQuest(reigniteConcepts[i].QuestID, "CONCEPT_UPDATED", reigniteConcepts[i])
 				json.NewEncoder(w).Encode(reigniteConcepts[i])
 				return
 			}
@@ -2170,6 +2175,14 @@ func HandleQuestScores(w http.ResponseWriter, r *http.Request) {
 		reigniteScoreAudits = append([]QuestScoreAudit{auditEntry}, reigniteScoreAudits...)
 
 		recalculateLeaderboard(payload.QuestID)
+
+		// Real-time broadcast to all connected Scoreboards and Player Consoles
+		BroadcastToQuest(payload.QuestID, "SCORE_UPDATED", map[string]any{
+			"challenge_id": payload.ChallengeID,
+			"team_id":      payload.TeamID,
+			"points":       payload.Points,
+			"leaderboard":  reigniteTeams,
+		})
 
 		json.NewEncoder(w).Encode(map[string]any{
 			"status":      "SUCCESS",

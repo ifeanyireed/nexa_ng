@@ -175,6 +175,28 @@ func EnsureQuestTables() {
 		PRIMARY KEY (id),
 		INDEX idx_announcement_quest (questId)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`)
+
+	// 8. QuestScheduleItem Table (Configurable Event Schedule / Calendar)
+	_, _ = db.Exec(`CREATE TABLE IF NOT EXISTS QuestScheduleItem (
+		id varchar(191) NOT NULL,
+		questId varchar(191) NOT NULL,
+		tenantSlug varchar(191) NOT NULL DEFAULT '',
+		day varchar(50) NOT NULL,
+		startTime varchar(50) NOT NULL,
+		endTime varchar(50) NOT NULL,
+		title varchar(255) NOT NULL,
+		description text DEFAULT NULL,
+		category varchar(50) NOT NULL,
+		location varchar(255) NOT NULL,
+		challengeId varchar(191) DEFAULT NULL,
+		maxScore int(11) DEFAULT 0,
+		facilitatorNotes text DEFAULT NULL,
+		status varchar(50) NOT NULL DEFAULT 'UPCOMING',
+		orderIndex int(11) NOT NULL DEFAULT 0,
+		createdAt datetime(3) NOT NULL DEFAULT current_timestamp(3),
+		PRIMARY KEY (id),
+		INDEX idx_schedule_quest (questId)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`)
 }
 
 func EnsureHRTables() {

@@ -34,7 +34,11 @@ import {
   Edit3,
   Trash2,
   RefreshCw,
-  AlertCircle
+  AlertCircle,
+  MapPin,
+  ListOrdered,
+  ChevronRight,
+  Radio
 } from "lucide-react";
 
 interface TeamItem {
@@ -77,6 +81,23 @@ interface ChallengeItem {
   settings?: Record<string, number>;
 }
 
+interface ScheduleItem {
+  id: string;
+  quest_id: string;
+  day: string;
+  start_time: string;
+  end_time: string;
+  title: string;
+  description: string;
+  category: string;
+  location: string;
+  challenge_id?: string;
+  max_score?: number;
+  facilitator_notes?: string;
+  status: "UPCOMING" | "LIVE" | "COMPLETED";
+  order_index: number;
+}
+
 interface ConceptItem {
   id: string;
   challenge_id: string;
@@ -100,162 +121,31 @@ interface ScoreAuditItem {
   created_at: string;
 }
 
-const DEFAULT_CHALLENGES: ChallengeItem[] = [
-  {
-    id: "chl-day1-identity",
-    day: "Day 1",
-    category: "Entertainment",
-    engine_type: "RUBRIC",
-    name: "Team Identity Presentation",
-    description: "Each team presents its custom Team Name, Motto, Pose, and Team Chant / Celebration Song.",
-    instructions: "5-minute stage presentation judged on creativity, teamwork, energy, and overall delivery.",
-    max_score: 50,
-    status: "OPEN",
-    rubric: [
-      { criterion: "Creativity & Originality", max_points: 15 },
-      { criterion: "Teamwork & Cohesion", max_points: 15 },
-      { criterion: "Energy & Stage Presence", max_points: 10 },
-      { criterion: "Presentation Quality", max_points: 10 },
-    ],
-  },
-  {
-    id: "chl-day1-who-are-we",
-    day: "Day 1",
-    category: "Informative",
-    engine_type: "PARTICIPATION",
-    name: "Who Are We? (5 Incredible Things)",
-    description: "Each participant shares 5 incredible facts about themselves and how the company contributed to their journey.",
-    instructions: "Facilitator marks each team member's active contribution. 100% participation yields maximum 50 points.",
-    max_score: 50,
-    status: "LOCKED",
-  },
-  {
-    id: "chl-day1-games",
-    day: "Day 1",
-    category: "Entertainment",
-    engine_type: "RUBRIC",
-    name: "Card Games & Karaoke Fun",
-    description: "Team connection night featuring interactive board/card games, karaoke showdowns, and bonding activities.",
-    instructions: "Facilitators award up to 50 points based on team spirit, participation, creativity, and sportsmanship.",
-    max_score: 50,
-    status: "LOCKED",
-    rubric: [
-      { criterion: "Team Spirit & Vibe", max_points: 15 },
-      { criterion: "Participation Rate", max_points: 15 },
-      { criterion: "Performance & Talent", max_points: 10 },
-      { criterion: "Sportsmanship", max_points: 10 },
-    ],
-  },
-  {
-    id: "chl-day2-core-challenge",
-    day: "Day 2",
-    category: "Conventional / Creative",
-    engine_type: "CONCEPT_AND_RUBRIC",
-    name: "REIGNITE: The Core Challenge",
-    description: "Each team creates and performs a 10-minute original performance bringing the REIGNITE theme to life.",
-    instructions: "Teams must first register and lock their concept. Performances are scored across 6 weighted judging dimensions.",
-    max_score: 200,
-    status: "LOCKED",
-    rubric: [
-      { criterion: "Interpretation of REIGNITE", max_points: 40 },
-      { criterion: "Creativity & Originality", max_points: 40 },
-      { criterion: "Teamwork & Member Involvement", max_points: 30 },
-      { criterion: "Entertainment & Engagement", max_points: 30 },
-      { criterion: "Execution & Pacing", max_points: 30 },
-      { criterion: "Overall Impact & Message", max_points: 30 },
-    ],
-  },
-  {
-    id: "chl-day2-egg-race",
-    day: "Day 2",
-    category: "Entertainment",
-    engine_type: "RANK_TO_POINTS",
-    name: "Egg & Spoon Agility Race",
-    description: "Fast-paced team balance relay requiring agility, coordination, and steady nerves.",
-    instructions: "Facilitators enter finish rankings. Points: 1st=50, 2nd=40, 3rd=30, 4th=20, 5th=10, 6th=5.",
-    max_score: 50,
-    status: "LOCKED",
-    settings: { "1st": 50, "2nd": 40, "3rd": 30, "4th": 20, "5th": 10, "6th": 5 },
-  },
-  {
-    id: "chl-day2-quiz",
-    day: "Day 2",
-    category: "Educative",
-    engine_type: "QUIZ",
-    name: "The Knowledge Quest (10 Questions)",
-    description: "10 objective corporate and industry knowledge questions testing reasoning and operational know-how.",
-    instructions: "10 questions × 10 points = 100 points maximum. Automated marking using the official answer key.",
-    max_score: 100,
-    status: "LOCKED",
-  },
-  {
-    id: "chl-day2-think-fast",
-    day: "Day 2",
-    category: "Educative",
-    engine_type: "QUIZ",
-    name: "Think Fast Rapid-Fire Round",
-    description: "10 rapid-fire buzzer questions asked to all teams concurrently.",
-    instructions: "10 questions × 5 points = 50 points maximum. Instant scoreboard update on facilitator confirmation.",
-    max_score: 50,
-    status: "LOCKED",
-  },
-  {
-    id: "chl-day3-volleyball",
-    day: "Day 3",
-    category: "Sports",
-    engine_type: "RANK_TO_POINTS",
-    name: "Girls' Volleyball Championship",
-    description: "Competitive women's volleyball tournament with group matches and knockout finals.",
-    instructions: "Facilitators enter finish rankings. Points: 1st=75, 2nd=60, 3rd=45, 4th=30, 5th=20, 6th=10.",
-    max_score: 75,
-    status: "LOCKED",
-    settings: { "1st": 75, "2nd": 60, "3rd": 45, "4th": 30, "5th": 20, "6th": 10 },
-  },
-  {
-    id: "chl-day3-football",
-    day: "Day 3",
-    category: "Sports",
-    engine_type: "RANK_TO_POINTS",
-    name: "Corporate Football Championship",
-    description: "Full inter-team football tournament. High intensity, tactics, and team collaboration.",
-    instructions: "Facilitators enter tournament finish rankings. Points: 1st=100, 2nd=75, 3rd=60, 4th=45, 5th=30, 6th=20.",
-    max_score: 100,
-    status: "LOCKED",
-    settings: { "1st": 100, "2nd": 75, "3rd": 60, "4th": 45, "5th": 30, "6th": 20 },
-  },
-  {
-    id: "chl-day3-relay",
-    day: "Day 3",
-    category: "Sports",
-    engine_type: "RANK_TO_POINTS",
-    name: "4×100m Track Relay Race",
-    description: "Speed and baton handover sprint showdown featuring mixed gender relay runners.",
-    instructions: "Facilitators enter sprint rankings. Points: 1st=50, 2nd=40, 3rd=30, 4th=20, 5th=10, 6th=5.",
-    max_score: 50,
-    status: "LOCKED",
-    settings: { "1st": 50, "2nd": 40, "3rd": 30, "4th": 20, "5th": 10, "6th": 5 },
-  },
-  {
-    id: "chl-day3-tug-of-war",
-    day: "Day 3",
-    category: "Sports",
-    engine_type: "RANK_TO_POINTS",
-    name: "Grand Tug of War Final",
-    description: "The ultimate test of collective power, grip, and team resilience.",
-    instructions: "Facilitators enter tournament finish rankings. Points: 1st=75, 2nd=60, 3rd=45, 4th=30, 5th=20, 6th=10.",
-    max_score: 75,
-    status: "LOCKED",
-    settings: { "1st": 75, "2nd": 60, "3rd": 45, "4th": 30, "5th": 20, "6th": 10 },
-  },
-];
-
-const INITIAL_TEAMS: TeamItem[] = [
-  { id: "team-1", name: "Team 1", custom_name: "Red Phoenix", logo: "🔥", color: "#EF4444", motto: "Igniting Excellence & Passion", total_points: 0, rank: 1, member_count: 10 },
-  { id: "team-2", name: "Team 2", custom_name: "Blue Falcons", logo: "🦅", color: "#3B82F6", motto: "Soaring Above All Limits", total_points: 0, rank: 2, member_count: 10 },
-  { id: "team-3", name: "Team 3", custom_name: "Golden Titans", logo: "⚡", color: "#F59E0B", motto: "Power, Intellect, Victory", total_points: 0, rank: 3, member_count: 10 },
-  { id: "team-4", name: "Team 4", custom_name: "Emerald Lions", logo: "🦁", color: "#10B981", motto: "Courage in Every Stride", total_points: 0, rank: 4, member_count: 10 },
-  { id: "team-5", name: "Team 5", custom_name: "Purple Vipers", logo: "🐍", color: "#8B5CF6", motto: "Speed, Precision & Synergy", total_points: 0, rank: 5, member_count: 10 },
-  { id: "team-6", name: "Team 6", custom_name: "Silver Sharks", logo: "🦈", color: "#06B6D4", motto: "Relentless Focus & Tenacity", total_points: 0, rank: 6, member_count: 10 },
+const DEFAULT_SCHEDULE: ScheduleItem[] = [
+  // Day 1
+  { id: "sch-d1-01", quest_id: "qst-reignite-2026", day: "Day 1", start_time: "09:00 AM", end_time: "11:00 AM", title: "Executive Arrival & Hotel Check-in", description: "Delegates arrive at Epe Resort & Conference Centre, pick up badge credentials and retreat kits.", category: "Arrival", location: "Resort Lobby & Reception", status: "COMPLETED", order_index: 1 },
+  { id: "sch-d1-02", quest_id: "qst-reignite-2026", day: "Day 1", start_time: "11:30 AM", end_time: "01:00 PM", title: "Welcome Address & Opening Ceremony", description: "Opening remarks by MD/CEO, unveiling of the REIGNITE 2026 Theme, rules, and grand ₦500,000 prize.", category: "Ceremony", location: "Main Conference Auditorium", status: "COMPLETED", order_index: 2 },
+  { id: "sch-d1-03", quest_id: "qst-reignite-2026", day: "Day 1", start_time: "01:00 PM", end_time: "02:30 PM", title: "Networking Lunch & Squad Formations", description: "Delegates break into assigned 10-person squads across 6 tables for strategy and bonding.", category: "Meal", location: "Dining Pavilion", status: "COMPLETED", order_index: 3 },
+  { id: "sch-d1-04", quest_id: "qst-reignite-2026", day: "Day 1", start_time: "03:00 PM", end_time: "04:30 PM", title: "Quest 1: Team Identity Presentation", description: "Each team takes the stage to present their custom Name, Motto, Pose, and Team Chant.", category: "Challenge", location: "Outdoor Amphitheatre", challenge_id: "chl-day1-identity", max_score: 50, facilitator_notes: "5 minutes per team. Judged across creativity, teamwork, energy, and delivery.", status: "LIVE", order_index: 4 },
+  { id: "sch-d1-05", quest_id: "qst-reignite-2026", day: "Day 1", start_time: "05:00 PM", end_time: "06:30 PM", title: "Quest 2: Who Are We? (5 Incredible Things)", description: "Every team member shares 5 unique facts about their journey and how the company shaped them.", category: "Challenge", location: "Outdoor Amphitheatre", challenge_id: "chl-day1-who-are-we", max_score: 50, facilitator_notes: "Participation engine: 100% active member sharing awards maximum 50 points.", status: "UPCOMING", order_index: 5 },
+  { id: "sch-d1-06", quest_id: "qst-reignite-2026", day: "Day 1", start_time: "07:30 PM", end_time: "10:00 PM", title: "Quest 3: Card Games & Karaoke Fun", description: "Evening bonding featuring interactive board/card games, karaoke battles, and social connection.", category: "Challenge", location: "Poolside Lounge", challenge_id: "chl-day1-games", max_score: 50, facilitator_notes: "Spirit & sportsmanship rubric scoring.", status: "UPCOMING", order_index: 6 },
+  // Day 2
+  { id: "sch-d2-01", quest_id: "qst-reignite-2026", day: "Day 2", start_time: "07:30 AM", end_time: "08:30 AM", title: "Energy Breakfast & Daily Briefing", description: "Full breakfast buffet and facilitator announcements for Day 2 schedule.", category: "Meal", location: "Dining Pavilion", status: "UPCOMING", order_index: 7 },
+  { id: "sch-d2-02", quest_id: "qst-reignite-2026", day: "Day 2", start_time: "09:00 AM", end_time: "09:30 AM", title: "Core Challenge Concept Registration Deadline", description: "Team captains must register and lock their 10-minute performance concepts to avoid topic duplication.", category: "Ceremony", location: "Facilitator Command Desk", facilitator_notes: "Duplicate lock enforced by Chief Facilitator.", status: "UPCOMING", order_index: 8 },
+  { id: "sch-d2-03", quest_id: "qst-reignite-2026", day: "Day 2", start_time: "10:00 AM", end_time: "01:00 PM", title: "Quest 4: REIGNITE — The Core Challenge", description: "10-minute theatrical, musical, or innovation presentations bringing the REIGNITE theme to life.", category: "Challenge", location: "Main Auditorium Stage", challenge_id: "chl-day2-core-challenge", max_score: 200, facilitator_notes: "6 rubric dimensions (40, 40, 30, 30, 30, 30 = 200 pts).", status: "UPCOMING", order_index: 9 },
+  { id: "sch-d2-04", quest_id: "qst-reignite-2026", day: "Day 2", start_time: "01:00 PM", end_time: "02:30 PM", title: "Power Lunch & Mid-Day Recharge", description: "Buffet lunch, rest, and preparation for the afternoon agility and trivia rounds.", category: "Meal", location: "Dining Pavilion", status: "UPCOMING", order_index: 10 },
+  { id: "sch-d2-05", quest_id: "qst-reignite-2026", day: "Day 2", start_time: "03:00 PM", end_time: "04:00 PM", title: "Quest 5: Egg & Spoon Agility Race", description: "Fast-paced team balance relay requiring speed, coordination, and steady teamwork.", category: "Challenge", location: "Lawn Arena", challenge_id: "chl-day2-egg-race", max_score: 50, facilitator_notes: "Rank to points: 1st=50, 2nd=40, 3rd=30, 4th=20, 5th=10, 6th=5.", status: "UPCOMING", order_index: 11 },
+  { id: "sch-d2-06", quest_id: "qst-reignite-2026", day: "Day 2", start_time: "04:30 PM", end_time: "05:30 PM", title: "Quest 6: The Knowledge Quest (10 Questions)", description: "Objective corporate and industry knowledge test. Automated scoring via official answer key.", category: "Challenge", location: "Conference Hall", challenge_id: "chl-day2-quiz", max_score: 100, facilitator_notes: "10 questions × 10 points = 100 points maximum.", status: "UPCOMING", order_index: 12 },
+  { id: "sch-d2-07", quest_id: "qst-reignite-2026", day: "Day 2", start_time: "06:00 PM", end_time: "07:00 PM", title: "Quest 7: Think Fast Rapid-Fire Round", description: "10 rapid-fire buzzer questions asked to all 6 teams simultaneously.", category: "Challenge", location: "Conference Hall", challenge_id: "chl-day2-think-fast", max_score: 50, facilitator_notes: "10 questions × 5 points = 50 points.", status: "UPCOMING", order_index: 13 },
+  { id: "sch-d2-08", quest_id: "qst-reignite-2026", day: "Day 2", start_time: "08:00 PM", end_time: "10:00 PM", title: "Dinner & Mid-Championship Standings Broadcast", description: "Evening banquet and stage broadcast of Day 1 & Day 2 cumulative standings.", category: "Meal", location: "Grand Ballroom", status: "UPCOMING", order_index: 14 },
+  // Day 3
+  { id: "sch-d3-01", quest_id: "qst-reignite-2026", day: "Day 3", start_time: "07:30 AM", end_time: "08:30 AM", title: "Athletes' Warm-up & Light Breakfast", description: "High-protein breakfast and team stretching before outdoor sports championship.", category: "Meal", location: "Sports Pavilion", status: "UPCOMING", order_index: 15 },
+  { id: "sch-d3-02", quest_id: "qst-reignite-2026", day: "Day 3", start_time: "09:00 AM", end_time: "10:30 AM", title: "Quest 8: Girls' Volleyball Championship", description: "Inter-squad women's volleyball tournament with group matches and finals.", category: "Sports", location: "Resort Sports Arena", challenge_id: "chl-day3-volleyball", max_score: 75, facilitator_notes: "Rank to points: 1st=75, 2nd=60, 3rd=45, 4th=30, 5th=20, 6th=10.", status: "UPCOMING", order_index: 16 },
+  { id: "sch-d3-03", quest_id: "qst-reignite-2026", day: "Day 3", start_time: "11:00 AM", end_time: "01:00 PM", title: "Quest 9: Corporate Football Championship", description: "Full inter-squad football tournament. Group stages, semi-finals, and championship final match.", category: "Sports", location: "Football Pitch", challenge_id: "chl-day3-football", max_score: 100, facilitator_notes: "Rank to points: 1st=100, 2nd=75, 3rd=60, 4th=45, 5th=30, 6th=20.", status: "UPCOMING", order_index: 17 },
+  { id: "sch-d3-04", quest_id: "qst-reignite-2026", day: "Day 3", start_time: "01:00 PM", end_time: "02:30 PM", title: "Champions Lunch & Rest Interval", description: "Buffet lunch, rest, and warm-up for track relay and tug of war.", category: "Meal", location: "Dining Pavilion", status: "UPCOMING", order_index: 18 },
+  { id: "sch-d3-05", quest_id: "qst-reignite-2026", day: "Day 3", start_time: "03:00 PM", end_time: "04:00 PM", title: "Quest 10: 4×100m Track Relay Race", description: "Sprint track showdown featuring mixed gender relay runners.", category: "Sports", location: "Running Track", challenge_id: "chl-day3-relay", max_score: 50, facilitator_notes: "Rank to points: 1st=50, 2nd=40, 3rd=30, 4th=20, 5th=10, 6th=5.", status: "UPCOMING", order_index: 19 },
+  { id: "sch-d3-06", quest_id: "qst-reignite-2026", day: "Day 3", start_time: "04:30 PM", end_time: "05:30 PM", title: "Quest 11: Grand Tug of War Final", description: "The ultimate contest of endurance, grip, and team synergy.", category: "Sports", location: "Central Lawn Arena", challenge_id: "chl-day3-tug-of-war", max_score: 75, facilitator_notes: "Rank to points: 1st=75, 2nd=60, 3rd=45, 4th=30, 5th=20, 6th=10.", status: "UPCOMING", order_index: 20 },
+  { id: "sch-d3-07", quest_id: "qst-reignite-2026", day: "Day 3", start_time: "06:30 PM", end_time: "09:00 PM", title: "Gala Awards Dinner & ₦500,000 Grand Trophy Ceremony", description: "Final banquet, leadership remarks, live scoreboard countdown, and trophy award to the Champion Squad.", category: "Awards", location: "Grand Ballroom", facilitator_notes: "Winner takes all: ₦500,000 Grand Prize.", status: "UPCOMING", order_index: 21 },
 ];
 
 export default function QuestCommandDeskPage() {
@@ -263,13 +153,15 @@ export default function QuestCommandDeskPage() {
   const questId = (params?.id as string) || "qst-reignite-2026";
   const { users } = useERPStore();
 
-  const [activeTab, setActiveTab] = useState<"overview" | "roster" | "challenges" | "concepts" | "audit" | "scoreboard">("overview");
-  const [teams, setTeams] = useState<TeamItem[]>(INITIAL_TEAMS);
+  const [activeTab, setActiveTab] = useState<"overview" | "schedule" | "roster" | "challenges" | "concepts" | "audit">("overview");
+  const [teams, setTeams] = useState<TeamItem[]>([]);
   const [participants, setParticipants] = useState<ParticipantItem[]>([]);
-  const [challenges, setChallenges] = useState<ChallengeItem[]>(DEFAULT_CHALLENGES);
+  const [challenges, setChallenges] = useState<ChallengeItem[]>([]);
+  const [schedule, setSchedule] = useState<ScheduleItem[]>(DEFAULT_SCHEDULE);
   const [concepts, setConcepts] = useState<ConceptItem[]>([]);
   const [scoreAudits, setScoreAudits] = useState<ScoreAuditItem[]>([]);
   const [dayFilter, setDayFilter] = useState<string>("ALL");
+  const [scheduleDayFilter, setScheduleDayFilter] = useState<string>("Day 1");
 
   // Scoring Modal State
   const [scoringModal, setScoringModal] = useState<{
@@ -277,7 +169,7 @@ export default function QuestCommandDeskPage() {
     challenge: ChallengeItem | null;
     teamScores: Record<string, number>;
     rankings: Record<string, string>;
-    participation: Record<string, string[]>; // teamId -> list of userId who participated
+    participation: Record<string, string[]>;
     reason: string;
   }>({
     open: false,
@@ -288,40 +180,37 @@ export default function QuestCommandDeskPage() {
     reason: "Facilitator Verified Evaluation",
   });
 
-  // Confirmation Modal
   const [confirmPublishModal, setConfirmPublishModal] = useState(false);
-
-  // Edit Team Modal
   const [editingTeam, setEditingTeam] = useState<TeamItem | null>(null);
-
-  // Manual Assign Modal
-  const [manualAssignModal, setManualAssignModal] = useState<{ open: boolean; selectedUser: User | null; teamId: string }>({
-    open: false,
-    selectedUser: null,
-    teamId: "team-1",
-  });
-
+  const [editingScheduleItem, setEditingScheduleItem] = useState<ScheduleItem | null>(null);
+  const [newScheduleModal, setNewScheduleModal] = useState(false);
   const [isAutoAssigning, setIsAutoAssigning] = useState(false);
 
-  // Load initial quest data from backend / local state
+  // Form state for new schedule item
+  const [newScheduleForm, setNewScheduleForm] = useState<Partial<ScheduleItem>>({
+    day: "Day 1",
+    start_time: "10:00 AM",
+    end_time: "11:00 AM",
+    title: "",
+    description: "",
+    category: "Challenge",
+    location: "Main Auditorium",
+    max_score: 0,
+    facilitator_notes: "",
+    status: "UPCOMING",
+  });
+
   useEffect(() => {
     async function loadData() {
       try {
         const res = await fetch(`/api/erp/quests/detail?id=${questId}`).catch(() => null);
         if (res && res.ok) {
           const data = await res.json();
-          if (data.teams && data.teams.length > 0) {
-            setTeams(data.teams);
-          }
-          if (data.challenges && data.challenges.length > 0) {
-            setChallenges(data.challenges);
-          }
-          if (data.participants) {
-            setParticipants(data.participants);
-          }
-          if (data.concepts) {
-            setConcepts(data.concepts);
-          }
+          if (data.teams && data.teams.length > 0) setTeams(data.teams);
+          if (data.challenges && data.challenges.length > 0) setChallenges(data.challenges);
+          if (data.participants) setParticipants(data.participants);
+          if (data.concepts) setConcepts(data.concepts);
+          if (data.schedule && data.schedule.length > 0) setSchedule(data.schedule);
         }
       } catch (err) {
         console.warn("Failed to fetch live quest details:", err);
@@ -330,7 +219,7 @@ export default function QuestCommandDeskPage() {
     loadData();
   }, [questId]);
 
-  // Handle 1-Click Auto-Balance across staff pool
+  // Handle 1-Click Auto-Balance
   const handleAutoAssign = async () => {
     setIsAutoAssigning(true);
     try {
@@ -339,48 +228,14 @@ export default function QuestCommandDeskPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        if (data.participants) {
-          setParticipants(data.participants);
-        }
-        if (data.teams) {
-          setTeams(data.teams);
-        }
+        if (data.participants) setParticipants(data.participants);
+        if (data.teams) setTeams(data.teams);
         alert(data.message || "Staff successfully balanced across 6 teams!");
       }
     } catch (err) {
       alert("Failed to auto-assign staff: " + err);
     } finally {
       setIsAutoAssigning(false);
-    }
-  };
-
-  // Handle manual staff assignment
-  const handleAssignUser = async (user: User, teamId: string) => {
-    try {
-      const res = await fetch(`/api/erp/quests/participants`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          quest_id: questId,
-          team_id: teamId,
-          user_id: user.id,
-          user_name: user.name,
-          user_email: user.email,
-          department: user.department,
-          avatar: user.avatar || "/character1.jpg",
-          role: "member",
-        }),
-      });
-      if (res.ok) {
-        const newP = await res.json();
-        setParticipants((prev) => [...prev.filter((p) => p.user_id !== user.id), newP]);
-        // Update local team count
-        setTeams((prev) =>
-          prev.map((t) => (t.id === teamId ? { ...t, member_count: t.member_count + 1 } : t))
-        );
-      }
-    } catch (e) {
-      console.error(e);
     }
   };
 
@@ -401,6 +256,80 @@ export default function QuestCommandDeskPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: chl.id, status: newStatus }),
       });
+    } catch (e) {}
+  };
+
+  // Schedule Item Status Trigger (Mark LIVE / UPCOMING / COMPLETED)
+  const handleUpdateScheduleStatus = async (item: ScheduleItem, newStatus: ScheduleItem["status"]) => {
+    setSchedule((prev) =>
+      prev.map((s) => {
+        if (s.id === item.id) {
+          return { ...s, status: newStatus };
+        }
+        // If marking one live, demote previous live to completed if needed
+        if (newStatus === "LIVE" && s.status === "LIVE") {
+          return { ...s, status: "COMPLETED" };
+        }
+        return s;
+      })
+    );
+
+    // If this schedule item is linked to a challenge, automatically sync challenge status!
+    if (item.challenge_id) {
+      const chl = challenges.find((c) => c.id === item.challenge_id);
+      if (chl) {
+        if (newStatus === "LIVE") handleToggleChallengeStatus(chl, "OPEN");
+        if (newStatus === "COMPLETED") handleToggleChallengeStatus(chl, "COMPLETED");
+      }
+    }
+
+    try {
+      await fetch(`/api/erp/quests/schedule`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: item.id, status: newStatus }),
+      });
+    } catch (e) {}
+  };
+
+  // Save new schedule item
+  const handleCreateScheduleItem = async () => {
+    if (!newScheduleForm.title) return;
+    const newItem: ScheduleItem = {
+      id: `sch-${Date.now()}`,
+      quest_id: questId,
+      day: newScheduleForm.day || "Day 1",
+      start_time: newScheduleForm.start_time || "10:00 AM",
+      end_time: newScheduleForm.end_time || "11:00 AM",
+      title: newScheduleForm.title,
+      description: newScheduleForm.description || "",
+      category: newScheduleForm.category || "Challenge",
+      location: newScheduleForm.location || "Main Stage",
+      challenge_id: newScheduleForm.challenge_id || "",
+      max_score: newScheduleForm.max_score || 0,
+      facilitator_notes: newScheduleForm.facilitator_notes || "",
+      status: "UPCOMING",
+      order_index: schedule.length + 1,
+    };
+
+    setSchedule((prev) => [...prev, newItem]);
+    setNewScheduleModal(false);
+    setNewScheduleForm({ day: "Day 1", start_time: "10:00 AM", end_time: "11:00 AM", title: "", description: "", category: "Challenge", location: "Main Auditorium", max_score: 0, facilitator_notes: "", status: "UPCOMING" });
+
+    try {
+      await fetch(`/api/erp/quests/schedule`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newItem),
+      });
+    } catch (e) {}
+  };
+
+  // Delete schedule item
+  const handleDeleteScheduleItem = async (id: string) => {
+    setSchedule((prev) => prev.filter((s) => s.id !== id));
+    try {
+      await fetch(`/api/erp/quests/schedule?id=${id}`, { method: "DELETE" });
     } catch (e) {}
   };
 
@@ -430,13 +359,11 @@ export default function QuestCommandDeskPage() {
     for (const team of teams) {
       let pts = scoringModal.teamScores[team.id] || 0;
 
-      // Handle Rank-to-points
       if (chl.engine_type === "RANK_TO_POINTS" && chl.settings) {
         const rank = scoringModal.rankings[team.id] || "6th";
         pts = chl.settings[rank] || 0;
       }
 
-      // Handle Participation points
       if (chl.engine_type === "PARTICIPATION") {
         const teamParticipants = participants.filter((p) => p.team_id === team.id);
         const count = scoringModal.participation[team.id]?.length || 0;
@@ -462,19 +389,14 @@ export default function QuestCommandDeskPage() {
         });
         if (res.ok) {
           const data = await res.json();
-          if (data.leaderboard) {
-            setTeams(data.leaderboard);
-          }
-          if (data.audit) {
-            setScoreAudits((prev) => [data.audit, ...prev]);
-          }
+          if (data.leaderboard) setTeams(data.leaderboard);
+          if (data.audit) setScoreAudits((prev) => [data.audit, ...prev]);
         }
       } catch (e) {
         console.error(e);
       }
     }
 
-    // Mark challenge completed
     handleToggleChallengeStatus(chl, "COMPLETED");
     setConfirmPublishModal(false);
     setScoringModal((prev) => ({ ...prev, open: false, challenge: null }));
@@ -495,19 +417,27 @@ export default function QuestCommandDeskPage() {
     } catch (e) {}
   };
 
-  // Filtered Challenges
-  const filteredChallenges = challenges.filter((c) => {
-    if (dayFilter === "ALL") return true;
-    return c.day === dayFilter;
+  const leadingTeam = [...teams].sort((a, b) => b.total_points - a.total_points)[0] || {
+    id: "team-1",
+    name: "Team 1",
+    custom_name: "Red Phoenix",
+    total_points: 0,
+    rank: 1,
+  };
+
+  const assignedCount = participants.length;
+
+  const filteredSchedule = schedule.filter((s) => {
+    if (scheduleDayFilter === "ALL") return true;
+    return s.day === scheduleDayFilter;
   });
 
-  const leadingTeam = [...teams].sort((a, b) => b.total_points - a.total_points)[0] || teams[0];
-  const assignedCount = participants.length;
+  const activeLiveScheduleItem = schedule.find((s) => s.status === "LIVE");
 
   return (
     <BusinessShell
       title="REIGNITE 2026: Facilitator Command Center"
-      subtitle="Corporate Team Championship · 60 Staff · 6 Teams · 11 Quests · ₦500,000 Grand Prize"
+      subtitle="Corporate Team Championship · 60 Staff · 6 Teams · 11 Quests · 21 Scheduled Events · ₦500,000 Grand Prize"
       action={
         <div className="flex items-center gap-2.5">
           <Link href="/quests/reignite-2026/scoreboard" target="_blank">
@@ -541,20 +471,20 @@ export default function QuestCommandDeskPage() {
               sub: "850 Total Points Available",
             },
             {
+              label: "Configured Calendar Events",
+              value: `${schedule.length} Schedule Items`,
+              change: `${schedule.filter((s) => s.status === "COMPLETED").length} Completed`,
+              trend: "up",
+              icon: <Calendar className="w-5 h-5 text-indigo-500" />,
+              sub: "3-Day Itinerary Program",
+            },
+            {
               label: "Staff Pool Enrolled",
               value: `${assignedCount} / 60 Staff`,
               change: `${teams.length} Balanced Squads`,
               trend: "up",
               icon: <Users className="w-5 h-5 text-blue-500" />,
               sub: "Live NETS Employee Directory",
-            },
-            {
-              label: "Completed Quests",
-              value: `${challenges.filter((c) => c.status === "COMPLETED").length} of ${challenges.length} Done`,
-              change: "Day 1 to Day 3 Program",
-              trend: "up",
-              icon: <Target className="w-5 h-5 text-purple-500" />,
-              sub: "5 Evaluation Engines Live",
             },
             {
               label: "Grand Championship Prize",
@@ -571,6 +501,7 @@ export default function QuestCommandDeskPage() {
         <div className="flex items-center gap-2 border-b border-gray-200 pb-3 overflow-x-auto">
           {[
             { id: "overview", label: "Live Overview & Arena Standings", icon: Flame },
+            { id: "schedule", label: `Event Calendar & Timeline (${schedule.length})`, icon: Calendar },
             { id: "roster", label: `Staff Pool & Team Builder (${assignedCount}/60)`, icon: Users },
             { id: "challenges", label: `Quest Engine & Scoring (${challenges.length})`, icon: Target },
             { id: "concepts", label: `Concept Lock Desk (${concepts.length})`, icon: Lock },
@@ -609,7 +540,9 @@ export default function QuestCommandDeskPage() {
                 </div>
                 <h2 className="text-2xl font-black">{leadingTeam.custom_name || leadingTeam.name} leads the Board with {leadingTeam.total_points} Points</h2>
                 <p className="text-xs text-white/80 max-w-xl">
-                  Facilitators can open quests, judge rubric performances, record sports rankings, lock team concepts, and broadcast score updates to the Arena Scoreboard.
+                  {activeLiveScheduleItem
+                    ? `Current Active Session: ${activeLiveScheduleItem.title} (${activeLiveScheduleItem.start_time} - ${activeLiveScheduleItem.end_time}) at ${activeLiveScheduleItem.location}`
+                    : "Facilitators can configure calendar schedules, open quests, score rubric performances, and broadcast updates live to the Arena Scoreboard."}
                 </p>
               </div>
 
@@ -657,7 +590,145 @@ export default function QuestCommandDeskPage() {
           </div>
         )}
 
-        {/* TAB 2: STAFF POOL & TEAM BUILDER ROSTER */}
+        {/* TAB 2: CONFIGURABLE EVENT CALENDAR & TIMELINE */}
+        {activeTab === "schedule" && (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-3xl bg-indigo-50/80 border border-indigo-100">
+              <div>
+                <h3 className="font-bold text-indigo-950 text-sm flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-indigo-600" /> Configurable 3-Day Event Calendar & Itinerary
+                </h3>
+                <p className="text-xs text-indigo-700 mt-0.5">
+                  Facilitators can add, reorder, edit, and mark items as "Live Now" to sync with participant countdown timers and the Arena Stage Scoreboard.
+                </p>
+              </div>
+              <NexaButton
+                size="sm"
+                variant="primary"
+                className="rounded-full bg-indigo-600 text-white"
+                onClick={() => setNewScheduleModal(true)}
+                leftIcon={<Plus className="w-3.5 h-3.5" />}
+              >
+                Add Schedule Event
+              </NexaButton>
+            </div>
+
+            {/* DAY SELECTOR FILTER */}
+            <div className="flex items-center justify-between border-b border-gray-200 pb-3">
+              <div className="flex items-center gap-2">
+                {["Day 1", "Day 2", "Day 3", "ALL"].map((day) => (
+                  <button
+                    key={day}
+                    onClick={() => setScheduleDayFilter(day)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                      scheduleDayFilter === day
+                        ? "bg-indigo-600 text-white shadow-sm"
+                        : "text-slate-600 hover:bg-gray-100 border border-transparent hover:border-gray-200"
+                    }`}
+                  >
+                    {day}
+                  </button>
+                ))}
+              </div>
+              <span className="text-xs text-slate-400 font-semibold">
+                {filteredSchedule.length} Scheduled Activities
+              </span>
+            </div>
+
+            {/* TIMELINE LIST */}
+            <div className="space-y-3.5">
+              {filteredSchedule.map((item, idx) => (
+                <div
+                  key={item.id}
+                  className={`p-4 rounded-3xl border transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${
+                    item.status === "LIVE"
+                      ? "bg-emerald-50/70 border-emerald-300 shadow-md shadow-emerald-500/5 ring-2 ring-emerald-500/20"
+                      : item.status === "COMPLETED"
+                      ? "bg-gray-50/50 border-gray-100 opacity-75"
+                      : "bg-white border-gray-100 hover:border-gray-200"
+                  }`}
+                >
+                  <div className="flex items-start gap-3.5 flex-1">
+                    {/* TIME BADGE */}
+                    <div className="px-3 py-2 rounded-2xl bg-indigo-50 border border-indigo-100 text-center shrink-0 min-w-[100px]">
+                      <span className="text-[10px] font-black text-indigo-600 uppercase block">{item.day}</span>
+                      <span className="text-xs font-black text-slate-800 block">{item.start_time}</span>
+                      <span className="text-[10px] text-slate-400 block">{item.end_time}</span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                          item.category === "Challenge" ? "bg-purple-100 text-purple-800" : item.category === "Sports" ? "bg-blue-100 text-blue-800" : item.category === "Awards" ? "bg-amber-100 text-amber-800" : "bg-gray-100 text-slate-600"
+                        }`}>
+                          {item.category}
+                        </span>
+                        <span className="text-xs text-slate-400 flex items-center gap-1 font-medium">
+                          <MapPin className="w-3 h-3 text-slate-400" /> {item.location}
+                        </span>
+                        {item.max_score ? (
+                          <span className="text-xs font-black text-emerald-600">+{item.max_score} pts</span>
+                        ) : null}
+                      </div>
+
+                      <h4 className="font-bold text-sm text-slate-850 flex items-center gap-2">
+                        {item.title}
+                        {item.status === "LIVE" && (
+                          <span className="bg-emerald-500 text-white text-[9px] font-black px-2 py-0.2 rounded-full uppercase animate-pulse">
+                            LIVE NOW
+                          </span>
+                        )}
+                      </h4>
+                      <p className="text-xs text-slate-500">{item.description}</p>
+                      {item.facilitator_notes && (
+                        <p className="text-[11px] text-amber-700 bg-amber-50/80 px-2.5 py-1 rounded-xl border border-amber-100 inline-block font-medium">
+                          📋 Facilitator Guide: {item.facilitator_notes}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* ACTION CONTROLS */}
+                  <div className="flex items-center gap-2 self-end md:self-center shrink-0">
+                    {item.status !== "LIVE" && (
+                      <button
+                        onClick={() => handleUpdateScheduleStatus(item, "LIVE")}
+                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1 cursor-pointer"
+                        title="Broadcast as Live Session on TV"
+                      >
+                        <Radio className="w-3 h-3" /> Mark Live
+                      </button>
+                    )}
+                    {item.status === "LIVE" && (
+                      <button
+                        onClick={() => handleUpdateScheduleStatus(item, "COMPLETED")}
+                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs flex items-center gap-1 cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-3 h-3" /> Finish Event
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setEditingScheduleItem(item)}
+                      className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-gray-100 rounded-lg cursor-pointer"
+                      title="Edit Item"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteScheduleItem(item.id)}
+                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-gray-100 rounded-lg cursor-pointer"
+                      title="Delete Item"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: STAFF POOL & TEAM BUILDER ROSTER */}
         {activeTab === "roster" && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-3xl bg-blue-50 border border-blue-100">
@@ -667,18 +738,16 @@ export default function QuestCommandDeskPage() {
                   Participants are automatically drawn from the active tenant directory. Use 1-Click Auto-Balance to evenly mix 60 staff members across 6 teams by department.
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <NexaButton
-                  size="sm"
-                  variant="primary"
-                  className="rounded-full bg-blue-600 text-white"
-                  onClick={handleAutoAssign}
-                  disabled={isAutoAssigning}
-                  leftIcon={<Sparkles className="w-3.5 h-3.5" />}
-                >
-                  {isAutoAssigning ? "Balancing..." : "1-Click Auto-Distribute (60 Staff)"}
-                </NexaButton>
-              </div>
+              <NexaButton
+                size="sm"
+                variant="primary"
+                className="rounded-full bg-blue-600 text-white"
+                onClick={handleAutoAssign}
+                disabled={isAutoAssigning}
+                leftIcon={<Sparkles className="w-3.5 h-3.5" />}
+              >
+                {isAutoAssigning ? "Balancing..." : "1-Click Auto-Distribute (60 Staff)"}
+              </NexaButton>
             </div>
 
             {/* 6 TEAM COLUMNS */}
@@ -704,7 +773,6 @@ export default function QuestCommandDeskPage() {
                       </button>
                     </div>
 
-                    {/* MEMBER ROSTER LIST */}
                     <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
                       {teamMembers.length > 0 ? (
                         teamMembers.map((m) => (
@@ -721,17 +789,14 @@ export default function QuestCommandDeskPage() {
                                 <p className="text-[9px] text-slate-400 font-medium truncate max-w-[120px]">{m.department}</p>
                               </div>
                             </div>
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={() => handleToggleCaptain(m)}
-                                className={`text-[10px] px-1.5 py-0.5 rounded font-bold cursor-pointer ${
-                                  m.role === "captain" ? "bg-amber-100 text-amber-800" : "text-slate-400 hover:bg-gray-200"
-                                }`}
-                                title="Toggle Captain"
-                              >
-                                {m.role === "captain" ? "Captain" : "Make Captain"}
-                              </button>
-                            </div>
+                            <button
+                              onClick={() => handleToggleCaptain(m)}
+                              className={`text-[10px] px-1.5 py-0.5 rounded font-bold cursor-pointer ${
+                                m.role === "captain" ? "bg-amber-100 text-amber-800" : "text-slate-400 hover:bg-gray-200"
+                              }`}
+                            >
+                              {m.role === "captain" ? "Captain" : "Make Captain"}
+                            </button>
                           </div>
                         ))
                       ) : (
@@ -747,10 +812,9 @@ export default function QuestCommandDeskPage() {
           </div>
         )}
 
-        {/* TAB 3: CHALLENGES & SCORING ENGINES */}
+        {/* TAB 4: CHALLENGES & SCORING ENGINES */}
         {activeTab === "challenges" && (
           <div className="space-y-6">
-            {/* DAY FILTER */}
             <div className="flex items-center justify-between border-b border-gray-200 pb-3">
               <div className="flex items-center gap-2">
                 {["ALL", "Day 1", "Day 2", "Day 3"].map((day) => (
@@ -768,13 +832,12 @@ export default function QuestCommandDeskPage() {
                 ))}
               </div>
               <span className="text-xs text-slate-400 font-semibold">
-                Showing {filteredChallenges.length} Quests ({challenges.reduce((sum, c) => sum + c.max_score, 0)} Total Points)
+                Showing {challenges.filter((c) => dayFilter === "ALL" || c.day === dayFilter).length} Quests ({challenges.reduce((sum, c) => sum + c.max_score, 0)} Total Points)
               </span>
             </div>
 
-            {/* CHALLENGES TABLE / CARDS */}
             <div className="space-y-3.5">
-              {filteredChallenges.map((chl) => (
+              {challenges.filter((c) => dayFilter === "ALL" || c.day === dayFilter).map((chl) => (
                 <NexaCard key={chl.id} variant="glass" padding="md" className="rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                   <div className="space-y-1.5 flex-1">
                     <div className="flex items-center gap-2">
@@ -795,17 +858,15 @@ export default function QuestCommandDeskPage() {
                   </div>
 
                   <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full ${
-                        chl.status === "OPEN" || chl.status === "IN_PROGRESS"
-                          ? "bg-emerald-100 text-emerald-800"
-                          : chl.status === "COMPLETED"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-gray-100 text-slate-400"
-                      }`}>
-                        {chl.status}
-                      </span>
-                    </div>
+                    <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full ${
+                      chl.status === "OPEN" || chl.status === "IN_PROGRESS"
+                        ? "bg-emerald-100 text-emerald-800"
+                        : chl.status === "COMPLETED"
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-gray-100 text-slate-400"
+                    }`}>
+                      {chl.status}
+                    </span>
 
                     <div className="flex items-center gap-2">
                       {chl.status === "LOCKED" ? (
@@ -846,7 +907,7 @@ export default function QuestCommandDeskPage() {
           </div>
         )}
 
-        {/* TAB 4: CONCEPT REGISTRATION DESK */}
+        {/* TAB 5: CONCEPT REGISTRATION DESK */}
         {activeTab === "concepts" && (
           <div className="space-y-6">
             <div className="p-5 rounded-3xl bg-amber-50 border border-amber-100 flex items-start justify-between">
@@ -899,12 +960,12 @@ export default function QuestCommandDeskPage() {
           </div>
         )}
 
-        {/* TAB 5: SCORE AUDIT TRAIL */}
+        {/* TAB 6: SCORE AUDIT TRAIL */}
         {activeTab === "audit" && (
           <div className="space-y-4">
             <h3 className="font-bold text-slate-850 text-sm">Immutable Score Modification Ledger</h3>
             <p className="text-xs text-slate-400">
-              Every score awarded or adjusted is permanently recorded with the facilitator identity and timestamp to protect competition integrity.
+              Every score awarded or adjusted is permanently recorded with facilitator identity and timestamp to protect competition integrity.
             </p>
 
             <div className="overflow-x-auto">
@@ -938,7 +999,7 @@ export default function QuestCommandDeskPage() {
                   ) : (
                     <tr>
                       <td colSpan={8} className="py-8 text-center text-slate-400 font-semibold text-xs">
-                        No scores recorded yet. Scores published will appear here in real time.
+                        No score modifications logged yet.
                       </td>
                     </tr>
                   )}
@@ -948,6 +1009,168 @@ export default function QuestCommandDeskPage() {
           </div>
         )}
       </div>
+
+      {/* CREATE / EDIT SCHEDULE EVENT MODAL */}
+      {(newScheduleModal || editingScheduleItem) && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl">
+            <h3 className="font-bold text-base text-slate-850">
+              {editingScheduleItem ? "Edit Schedule Activity" : "Add Calendar Activity"}
+            </h3>
+
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">Day:</label>
+                  <select
+                    value={editingScheduleItem ? editingScheduleItem.day : newScheduleForm.day}
+                    onChange={(e) => {
+                      if (editingScheduleItem) setEditingScheduleItem({ ...editingScheduleItem, day: e.target.value });
+                      else setNewScheduleForm({ ...newScheduleForm, day: e.target.value });
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs bg-white"
+                  >
+                    <option value="Day 1">Day 1</option>
+                    <option value="Day 2">Day 2</option>
+                    <option value="Day 3">Day 3</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">Start Time:</label>
+                  <input
+                    type="text"
+                    placeholder="09:00 AM"
+                    value={editingScheduleItem ? editingScheduleItem.start_time : newScheduleForm.start_time}
+                    onChange={(e) => {
+                      if (editingScheduleItem) setEditingScheduleItem({ ...editingScheduleItem, start_time: e.target.value });
+                      else setNewScheduleForm({ ...newScheduleForm, start_time: e.target.value });
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">End Time:</label>
+                  <input
+                    type="text"
+                    placeholder="10:30 AM"
+                    value={editingScheduleItem ? editingScheduleItem.end_time : newScheduleForm.end_time}
+                    onChange={(e) => {
+                      if (editingScheduleItem) setEditingScheduleItem({ ...editingScheduleItem, end_time: e.target.value });
+                      else setNewScheduleForm({ ...newScheduleForm, end_time: e.target.value });
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">Activity Title:</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Quest 8: Girls' Volleyball Championship"
+                  value={editingScheduleItem ? editingScheduleItem.title : newScheduleForm.title}
+                  onChange={(e) => {
+                    if (editingScheduleItem) setEditingScheduleItem({ ...editingScheduleItem, title: e.target.value });
+                    else setNewScheduleForm({ ...newScheduleForm, title: e.target.value });
+                  }}
+                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-bold"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">Category:</label>
+                  <select
+                    value={editingScheduleItem ? editingScheduleItem.category : newScheduleForm.category}
+                    onChange={(e) => {
+                      if (editingScheduleItem) setEditingScheduleItem({ ...editingScheduleItem, category: e.target.value });
+                      else setNewScheduleForm({ ...newScheduleForm, category: e.target.value });
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs bg-white"
+                  >
+                    <option value="Challenge">Quest Challenge</option>
+                    <option value="Sports">Sports & Physical</option>
+                    <option value="Ceremony">Ceremony / Briefing</option>
+                    <option value="Meal">Meal / Break</option>
+                    <option value="Arrival">Arrival / Check-in</option>
+                    <option value="Awards">Awards & Grand Finale</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">Venue / Location:</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Lawn Arena"
+                    value={editingScheduleItem ? editingScheduleItem.location : newScheduleForm.location}
+                    onChange={(e) => {
+                      if (editingScheduleItem) setEditingScheduleItem({ ...editingScheduleItem, location: e.target.value });
+                      else setNewScheduleForm({ ...newScheduleForm, location: e.target.value });
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">Description:</label>
+                <textarea
+                  rows={2}
+                  value={editingScheduleItem ? editingScheduleItem.description : newScheduleForm.description}
+                  onChange={(e) => {
+                    if (editingScheduleItem) setEditingScheduleItem({ ...editingScheduleItem, description: e.target.value });
+                    else setNewScheduleForm({ ...newScheduleForm, description: e.target.value });
+                  }}
+                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">Facilitator Notes:</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Official answer key required / 5 min timer"
+                  value={editingScheduleItem ? editingScheduleItem.facilitator_notes : newScheduleForm.facilitator_notes}
+                  onChange={(e) => {
+                    if (editingScheduleItem) setEditingScheduleItem({ ...editingScheduleItem, facilitator_notes: e.target.value });
+                    else setNewScheduleForm({ ...newScheduleForm, facilitator_notes: e.target.value });
+                  }}
+                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                onClick={() => {
+                  setNewScheduleModal(false);
+                  setEditingScheduleItem(null);
+                }}
+                className="px-4 py-2 bg-gray-100 rounded-xl text-xs font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  if (editingScheduleItem) {
+                    setSchedule((prev) => prev.map((s) => (s.id === editingScheduleItem.id ? editingScheduleItem : s)));
+                    await fetch(`/api/erp/quests/schedule`, {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(editingScheduleItem),
+                    }).catch(() => {});
+                    setEditingScheduleItem(null);
+                  } else {
+                    handleCreateScheduleItem();
+                  }
+                }}
+                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold"
+              >
+                Save Schedule Event
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* SCORING MODAL */}
       {scoringModal.open && scoringModal.challenge && (
@@ -964,7 +1187,6 @@ export default function QuestCommandDeskPage() {
               <p className="text-xs text-slate-500">{scoringModal.challenge.instructions}</p>
             </div>
 
-            {/* SCORING INPUTS BASED ON ENGINE TYPE */}
             <div className="space-y-4">
               {scoringModal.challenge.engine_type === "RANK_TO_POINTS" ? (
                 <div className="space-y-3">

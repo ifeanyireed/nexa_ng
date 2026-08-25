@@ -752,3 +752,232 @@ export const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
     timestamp: "Yesterday at 16:30",
   },
 ];
+
+export interface WaitlistLeadItem {
+  id: string;
+  fullName: string;
+  businessName: string;
+  email: string;
+  phone: string;
+  role: "MERCHANT" | "SERVICE_PRO" | "ENTERPRISE" | "CONSUMER";
+  niche: string;
+  businessType?: string;
+  toolType?: string;
+  customBusinessType?: string;
+  customToolType?: string;
+  state: string;
+  city?: string;
+  teamSize?: string;
+  featuresInterest: string[];
+  queueNumber: number;
+  referralCode: string;
+  referredBy?: string | null;
+  status: "PENDING" | "QUALIFIED" | "INVITED" | "ONBOARDED" | "REJECTED";
+  inviteCode?: string | null;
+  notes?: string | null;
+  createdAt: string;
+}
+
+export const INITIAL_WAITLIST_LEADS: WaitlistLeadItem[] = [
+  {
+    id: "wt-001",
+    fullName: "Engr. Nnamdi Eze",
+    businessName: "Eko Horizon Automation & Tech",
+    email: "eze@ekoatlantic.com",
+    phone: "+2348029988776",
+    role: "SERVICE_PRO",
+    niche: "professionals",
+    state: "Lagos",
+    city: "Victoria Island",
+    teamSize: "11-50",
+    featuresInterest: ["ai_agents", "marketplace", "logistics"],
+    queueNumber: 1084,
+    referralCode: "REF-EKO801",
+    referredBy: null,
+    status: "QUALIFIED",
+    inviteCode: "OFIA-VIP-9021",
+    notes: "High value smart home and CCTV engineering firm in Eko Atlantic. Priority wave 1 invitee.",
+    createdAt: "2026-08-21T10:30:00Z",
+  },
+  {
+    id: "wt-002",
+    fullName: "Hajiya Amina Bello",
+    businessName: "Amina Luxury Fabrics & Couture",
+    email: "amina.bello@fabrics.ng",
+    phone: "+2348054433221",
+    role: "MERCHANT",
+    niche: "fashion",
+    state: "Abuja FCT",
+    city: "Maitama",
+    teamSize: "5-10",
+    featuresInterest: ["pos", "marketplace", "escrow"],
+    queueNumber: 1085,
+    referralCode: "REF-AMN402",
+    referredBy: null,
+    status: "INVITED",
+    inviteCode: "OFIA-VIP-4081",
+    notes: "High-end Northern textile merchant with 3 branches in Abuja & Kano. Requested POS + multi-store sync.",
+    createdAt: "2026-08-22T14:15:00Z",
+  },
+  {
+    id: "wt-003",
+    fullName: "Dr. Babatunde Adeyemi",
+    businessName: "Solarking Power Systems Ltd",
+    email: "babatunde@solarking.ng",
+    phone: "+2348031122334",
+    role: "ENTERPRISE",
+    niche: "home",
+    state: "Lagos",
+    city: "Ikeja",
+    teamSize: "50+",
+    featuresInterest: ["ai_agents", "pos", "logistics", "escrow"],
+    queueNumber: 1086,
+    referralCode: "REF-SLR103",
+    referredBy: null,
+    status: "QUALIFIED",
+    inviteCode: null,
+    notes: "Commercial solar installer looking to equip 18 field technicians with Ofia Pro Verified dispatch.",
+    createdAt: "2026-08-23T09:00:00Z",
+  },
+  {
+    id: "wt-004",
+    fullName: "Chidiebere Okonkwo",
+    businessName: "Trans-Niger Cold Chain Logistics",
+    email: "c.okonkwo@transniger.com",
+    phone: "+2348037776655",
+    role: "MERCHANT",
+    niche: "logistics",
+    state: "Rivers",
+    city: "Port Harcourt",
+    teamSize: "11-50",
+    featuresInterest: ["logistics", "escrow", "ai_agents"],
+    queueNumber: 1087,
+    referralCode: "REF-TNG504",
+    referredBy: null,
+    status: "PENDING",
+    inviteCode: null,
+    notes: "Fleet owner in Trans-Amadi industrial layout. Seeking Waybill tracking and automated payments.",
+    createdAt: "2026-08-24T11:45:00Z",
+  },
+  {
+    id: "wt-005",
+    fullName: "Zainab Danjuma",
+    businessName: "Kano Grain & Agro Hub",
+    email: "zainab@kanograins.ng",
+    phone: "+2348061234567",
+    role: "MERCHANT",
+    niche: "agro",
+    state: "Kano",
+    city: "Nassarawa",
+    teamSize: "1-5",
+    featuresInterest: ["marketplace", "pos"],
+    queueNumber: 1088,
+    referralCode: "REF-KNO705",
+    referredBy: null,
+    status: "PENDING",
+    inviteCode: null,
+    notes: "Wholesale grain supplier seeking multi-region marketplace buyers across South-West and East.",
+    createdAt: "2026-08-25T03:20:00Z",
+  },
+  {
+    id: "wt-006",
+    fullName: "Oluwaseun Balogun",
+    businessName: "SwiftBite Gourmet Express",
+    email: "seun@swiftbite.ng",
+    phone: "+2348149876543",
+    role: "MERCHANT",
+    niche: "food",
+    state: "Lagos",
+    city: "Lekki Phase 1",
+    teamSize: "5-10",
+    featuresInterest: ["marketplace", "pos", "logistics"],
+    queueNumber: 1089,
+    referralCode: "REF-SWF906",
+    referredBy: null,
+    status: "ONBOARDED",
+    inviteCode: "OFIA-VIP-1105",
+    notes: "Cloud kitchen & specialty catering. Already tested pilot ordering system.",
+    createdAt: "2026-08-19T08:10:00Z",
+  },
+];
+
+export interface ContactMessageItem {
+  id: string;
+  ticketNumber: string;
+  name: string;
+  email: string;
+  phone?: string;
+  subject: "General Inquiry" | "Technical Issue" | "Business Partnership" | "Billing / Payments" | "Report a Business" | string;
+  message: string;
+  priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+  status: "OPEN" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
+  assignedTo?: string | null;
+  resolutionNotes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const INITIAL_CONTACT_MESSAGES: ContactMessageItem[] = [
+  {
+    id: "cnt-001",
+    ticketNumber: "TKT-8901",
+    name: "Emeka Onwubiko",
+    email: "emeka.o@genesisproperties.ng",
+    phone: "+2348035551234",
+    subject: "Business Partnership",
+    message: "We manage 42 commercial office properties in Lekki and Victoria Island. We want to integrate Ofia's verified technician network into our facility management portal for tenant work orders.",
+    priority: "HIGH",
+    status: "OPEN",
+    assignedTo: "Enterprise BD Team",
+    resolutionNotes: "Inquiry forwarded to growth team. Setting up discovery call for Wednesday.",
+    createdAt: "2026-08-25T03:40:00Z",
+    updatedAt: "2026-08-25T03:40:00Z",
+  },
+  {
+    id: "cnt-002",
+    ticketNumber: "TKT-8902",
+    name: "Kemi Adeleke",
+    email: "kemi@sparkleclean.com",
+    phone: "+2348021118899",
+    subject: "Technical Issue",
+    message: "I am trying to connect our Paystack split subaccount on the merchant dashboard but receiving a webhook timeout error. Please assist.",
+    priority: "MEDIUM",
+    status: "IN_PROGRESS",
+    assignedTo: "Tech Support (Niyi)",
+    resolutionNotes: "Checking Paystack webhook retry queue in user-subscription-service.",
+    createdAt: "2026-08-24T16:15:00Z",
+    updatedAt: "2026-08-24T17:30:00Z",
+  },
+  {
+    id: "cnt-003",
+    ticketNumber: "TKT-8903",
+    name: "Alhaji Garba Shehu",
+    email: "garba@shehutrading.ng",
+    phone: "+2348067772233",
+    subject: "Billing / Payments",
+    message: "We would like to pay for the annual Enterprise AI Swarm license via corporate bank transfer with invoice deduction. Kindly send your corporate bank account details.",
+    priority: "URGENT",
+    status: "OPEN",
+    assignedTo: "Finance & Accounts",
+    resolutionNotes: null,
+    createdAt: "2026-08-24T11:20:00Z",
+    updatedAt: "2026-08-24T11:20:00Z",
+  },
+  {
+    id: "cnt-004",
+    ticketNumber: "TKT-8904",
+    name: "Dr. Funke Akindele",
+    email: "funke@medpluscare.ng",
+    phone: "+2348093334455",
+    subject: "General Inquiry",
+    message: "Can pharmaceutical distributors list cold-chain medications on the Ofia Compass marketplace with prescription verification enabled?",
+    priority: "LOW",
+    status: "RESOLVED",
+    assignedTo: "Product Operations",
+    resolutionNotes: "Replied explaining pharmacy KYC compliance tier and escrow delivery process.",
+    createdAt: "2026-08-23T09:10:00Z",
+    updatedAt: "2026-08-23T14:45:00Z",
+  },
+];
+
+

@@ -24,7 +24,10 @@ import {
   Send,
   HelpCircle,
   Award,
-  ChevronRight
+  ChevronRight,
+  Calendar,
+  MapPin,
+  Radio
 } from "lucide-react";
 
 interface TeamItem {
@@ -61,7 +64,19 @@ interface ChallengeItem {
   status: string;
 }
 
-// 10 Sample Quiz Questions for Day 2 Knowledge Quest
+interface ScheduleItem {
+  id: string;
+  day: string;
+  start_time: string;
+  end_time: string;
+  title: string;
+  description: string;
+  category: string;
+  location: string;
+  max_score?: number;
+  status: "UPCOMING" | "LIVE" | "COMPLETED";
+}
+
 const QUIZ_QUESTIONS = [
   {
     id: "q1",
@@ -144,14 +159,17 @@ export default function EmployeeQuestConsolePage() {
   const [teams, setTeams] = useState<TeamItem[]>([]);
   const [participants, setParticipants] = useState<ParticipantItem[]>([]);
   const [challenges, setChallenges] = useState<ChallengeItem[]>([]);
+  const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
+  const [activeTab, setActiveTab] = useState<"track" | "itinerary">("track");
+  const [scheduleDay, setScheduleDay] = useState<string>("Day 1");
 
-  // Interactive Quiz Modal
+  // Quiz Modal
   const [quizModalOpen, setQuizModalOpen] = useState(false);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState<number | null>(null);
 
-  // Concept Submission Modal
+  // Concept Modal
   const [conceptModalOpen, setConceptModalOpen] = useState(false);
   const [conceptTitle, setConceptTitle] = useState("");
   const [conceptFormat, setConceptFormat] = useState("Drama/Comedy");
@@ -173,13 +191,13 @@ export default function EmployeeQuestConsolePage() {
           if (data.teams) setTeams(data.teams);
           if (data.participants) setParticipants(data.participants);
           if (data.challenges) setChallenges(data.challenges);
+          if (data.schedule) setSchedule(data.schedule);
         }
       } catch (e) {}
     }
     load();
   }, [questId]);
 
-  // Find user's assigned team
   const myParticipant = participants.find((p) => p.user_id === currentUser.id);
   const myTeamId = myParticipant?.team_id || "team-1";
   const myTeam = teams.find((t) => t.id === myTeamId) || teams[0] || {
@@ -194,15 +212,13 @@ export default function EmployeeQuestConsolePage() {
   };
 
   const myTeamMembers = participants.filter((p) => p.team_id === myTeam.id);
+  const liveScheduleItem = schedule.find((s) => s.status === "LIVE");
   const activeChallenge = challenges.find((c) => c.status === "OPEN" || c.status === "IN_PROGRESS") || challenges[0];
 
-  // Submit Quiz
   const handleQuizSubmit = async () => {
     let score = 0;
     QUIZ_QUESTIONS.forEach((q, idx) => {
-      if (quizAnswers[idx] === q.correctIndex) {
-        score += 10;
-      }
+      if (quizAnswers[idx] === q.correctIndex) score += 10;
     });
     setQuizScore(score);
     setQuizSubmitted(true);
@@ -226,7 +242,6 @@ export default function EmployeeQuestConsolePage() {
     } catch (e) {}
   };
 
-  // Submit Concept
   const handleConceptSubmit = async () => {
     if (!conceptTitle.trim()) return;
     try {
@@ -276,13 +291,19 @@ export default function EmployeeQuestConsolePage() {
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border border-emerald-400/30">
-                🟢 LIVE QUEST NOW
+                🟢 LIVE ACTIVITY NOW
               </span>
-              <span className="text-xs font-mono text-white/80">{activeChallenge?.day || "Day 1"} · {activeChallenge?.category || "Championship"}</span>
+              <span className="text-xs font-mono text-white/80">
+                {liveScheduleItem ? `${liveScheduleItem.day} · ${liveScheduleItem.start_time} - ${liveScheduleItem.end_time}` : activeChallenge?.day || "Day 1"}
+              </span>
             </div>
-            <h2 className="text-2xl font-black">{activeChallenge?.name || "Team Identity Presentation"}</h2>
+            <h2 className="text-2xl font-black">
+              {liveScheduleItem ? liveScheduleItem.title : activeChallenge?.name || "Team Identity Presentation"}
+            </h2>
             <p className="text-xs text-white/80 max-w-xl">
-              {activeChallenge?.instructions || "Work closely with your 10 squad teammates. Make sure your team concept and identity are ready!"}
+              {liveScheduleItem
+                ? `${liveScheduleItem.description} Venue: ${liveScheduleItem.location}`
+                : activeChallenge?.instructions || "Work closely with your 10 squad teammates. Make sure your team concept and identity are ready!"}
             </p>
           </div>
 
@@ -317,7 +338,7 @@ export default function EmployeeQuestConsolePage() {
           </div>
         </div>
 
-        {/* 2. TWO COLUMN LAYOUT: MY SQUAD & QUEST TRACK */}
+        {/* 2. TWO COLUMN LAYOUT: MY SQUAD & QUEST/ITINERARY TRACK */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* MY TEAM ROSTER (10 MEMBERS) */}
           <NexaCard variant="glass" padding="md" className="space-y-4 rounded-3xl border-t-4" style={{ borderTopColor: myTeam.color }}>
@@ -343,7 +364,6 @@ export default function EmployeeQuestConsolePage() {
               </div>
             </div>
 
-            {/* SQUAD MEMBERS LIST */}
             <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Squad Teammates</p>
               {myTeamMembers.length > 0 ? (
@@ -384,41 +404,59 @@ export default function EmployeeQuestConsolePage() {
             </div>
           </NexaCard>
 
-          {/* 3. QUEST PROGRESS & SCHEDULE (11 QUESTS) */}
+          {/* 3. QUEST SCHEDULE & ITINERARY (TOGGLE BETWEEN QUESTS & 21-EVENT SCHEDULE) */}
           <NexaCard variant="glass" padding="md" className="space-y-4 lg:col-span-2 rounded-3xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-bold text-sm text-slate-850 flex items-center gap-2">
-                  <Target className="w-4 h-4 text-blue-600" /> 3-Day Championship Quest Schedule
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  11 Quests totaling 850 points. Winning team claims the ₦500,000 Grand Prize.
-                </p>
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setActiveTab("track")}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                    activeTab === "track"
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "text-slate-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Target className="w-3.5 h-3.5" /> 11 Quests Track
+                  </span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("itinerary")}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                    activeTab === "itinerary"
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "text-slate-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <span className="flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5" /> 3-Day Itinerary Schedule ({schedule.length})
+                  </span>
+                </button>
               </div>
             </div>
 
-            <div className="space-y-3">
-              {challenges.map((chl) => (
-                <div
-                  key={chl.id}
-                  className="p-4 rounded-2xl bg-gray-50/70 border border-gray-100 flex items-center justify-between gap-4 hover:border-gray-200 transition-all"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                        {chl.day}
-                      </span>
-                      <span className="bg-purple-100 text-purple-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                        {chl.category}
-                      </span>
-                      <span className="text-xs font-black text-emerald-700">+{chl.max_score} pts</span>
+            {activeTab === "track" && (
+              <div className="space-y-3">
+                {challenges.map((chl) => (
+                  <div
+                    key={chl.id}
+                    className="p-4 rounded-2xl bg-gray-50/70 border border-gray-100 flex items-center justify-between gap-4 hover:border-gray-200 transition-all"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                          {chl.day}
+                        </span>
+                        <span className="bg-purple-100 text-purple-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                          {chl.category}
+                        </span>
+                        <span className="text-xs font-black text-emerald-700">+{chl.max_score} pts</span>
+                      </div>
+                      <h4 className="font-bold text-xs text-slate-850">{chl.name}</h4>
+                      <p className="text-[11px] text-slate-500 line-clamp-1">{chl.description}</p>
                     </div>
-                    <h4 className="font-bold text-xs text-slate-850">{chl.name}</h4>
-                    <p className="text-[11px] text-slate-500 line-clamp-1">{chl.description}</p>
-                  </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full ${
+                    <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full shrink-0 ${
                       chl.status === "OPEN" || chl.status === "IN_PROGRESS"
                         ? "bg-emerald-100 text-emerald-800"
                         : chl.status === "COMPLETED"
@@ -428,14 +466,81 @@ export default function EmployeeQuestConsolePage() {
                       {chl.status}
                     </span>
                   </div>
+                ))}
+              </div>
+            )}
+
+            {activeTab === "itinerary" && (
+              <div className="space-y-3">
+                {/* DAY FILTER */}
+                <div className="flex items-center gap-2 pb-1">
+                  {["Day 1", "Day 2", "Day 3"].map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => setScheduleDay(d)}
+                      className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                        scheduleDay === d ? "bg-indigo-600 text-white" : "bg-gray-100 text-slate-600 hover:bg-gray-200"
+                      }`}
+                    >
+                      {d}
+                    </button>
+                  ))}
                 </div>
-              ))}
-            </div>
+
+                <div className="space-y-2.5">
+                  {schedule
+                    .filter((s) => s.day === scheduleDay)
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        className={`p-3.5 rounded-2xl border flex items-center justify-between gap-3 ${
+                          item.status === "LIVE"
+                            ? "bg-emerald-50 border-emerald-300 ring-2 ring-emerald-500/20"
+                            : item.status === "COMPLETED"
+                            ? "bg-gray-50/50 border-gray-100 opacity-70"
+                            : "bg-white border-gray-100"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="text-center shrink-0 min-w-[70px] bg-indigo-50/80 px-2 py-1 rounded-xl border border-indigo-100">
+                            <span className="text-[10px] font-black text-slate-800 block">{item.start_time}</span>
+                            <span className="text-[9px] text-slate-400 block">{item.end_time}</span>
+                          </div>
+
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <h4 className="font-bold text-xs text-slate-850 flex items-center gap-1.5">
+                                {item.title}
+                                {item.status === "LIVE" && (
+                                  <span className="bg-emerald-500 text-white text-[8px] font-black px-1.5 py-0.2 rounded-full uppercase animate-pulse">
+                                    NOW
+                                  </span>
+                                )}
+                              </h4>
+                            </div>
+                            <p className="text-[11px] text-slate-500 line-clamp-1">{item.description}</p>
+                            <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                              <MapPin className="w-3 h-3 text-slate-400" /> {item.location}
+                              {item.max_score ? <strong className="text-emerald-600 ml-1">+{item.max_score} pts</strong> : null}
+                            </p>
+                          </div>
+                        </div>
+
+                        <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full shrink-0 ${
+                          item.status === "LIVE" ? "bg-emerald-100 text-emerald-800" : item.status === "COMPLETED" ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-slate-500"
+                        }`}>
+                          {item.status}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
           </NexaCard>
         </div>
       </div>
 
-      {/* INTERACTIVE QUIZ MODAL */}
+      {/* QUIZ MODAL */}
       {quizModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto space-y-6 shadow-2xl">

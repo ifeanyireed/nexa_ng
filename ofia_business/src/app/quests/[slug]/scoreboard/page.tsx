@@ -14,7 +14,10 @@ import {
   Tv,
   Target,
   Users,
-  RefreshCw
+  RefreshCw,
+  Calendar,
+  MapPin,
+  Radio
 } from "lucide-react";
 
 interface TeamStanding {
@@ -39,6 +42,19 @@ interface ActiveChallenge {
   status: string;
 }
 
+interface ScheduleItem {
+  id: string;
+  day: string;
+  start_time: string;
+  end_time: string;
+  title: string;
+  description: string;
+  category: string;
+  location: string;
+  max_score?: number;
+  status: "UPCOMING" | "LIVE" | "COMPLETED";
+}
+
 const DEFAULT_TEAMS: TeamStanding[] = [
   { id: "team-1", rank: 1, name: "Team 1", custom_name: "Red Phoenix", motto: "Igniting Excellence & Passion", color: "#EF4444", logo: "🔥", total_points: 0, member_count: 10 },
   { id: "team-2", rank: 2, name: "Team 2", custom_name: "Blue Falcons", motto: "Soaring Above All Limits", color: "#3B82F6", logo: "🦅", total_points: 0, member_count: 10 },
@@ -54,6 +70,7 @@ export default function QuestArenaScoreboardPage() {
 
   const [teams, setTeams] = useState<TeamStanding[]>(DEFAULT_TEAMS);
   const [activeChallenge, setActiveChallenge] = useState<ActiveChallenge | null>(null);
+  const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -69,6 +86,9 @@ export default function QuestArenaScoreboardPage() {
         }
         if (data.active_challenge) {
           setActiveChallenge(data.active_challenge);
+        }
+        if (data.schedule) {
+          setSchedule(data.schedule);
         }
         setLastUpdated(new Date().toLocaleTimeString());
       }
@@ -99,6 +119,9 @@ export default function QuestArenaScoreboardPage() {
   const first = sortedTeams[0] || DEFAULT_TEAMS[0];
   const second = sortedTeams[1] || DEFAULT_TEAMS[1];
   const third = sortedTeams[2] || DEFAULT_TEAMS[2];
+
+  const liveScheduleItem = schedule.find((s) => s.status === "LIVE");
+  const nextUpcoming = schedule.find((s) => s.status === "UPCOMING");
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between p-4 sm:p-8 font-sans select-none overflow-x-hidden">
@@ -139,28 +162,62 @@ export default function QuestArenaScoreboardPage() {
         </div>
       </header>
 
-      {/* 2. ACTIVE STAGE CHALLENGE TICKER */}
-      {activeChallenge && (
-        <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-blue-900/60 via-indigo-900/60 to-purple-900/60 border border-blue-500/30 flex items-center justify-between gap-4 shadow-xl">
+      {/* 2. ACTIVE EVENT & NEXT UPCOMING SCHEDULE TICKER */}
+      <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* LIVE SESSION */}
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/80 via-slate-900 to-slate-900 border border-emerald-500/40 flex items-center justify-between gap-4 shadow-xl">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-black text-xs">
-              <Target className="w-4 h-4" />
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black">
+              <Radio className="w-5 h-5 animate-pulse" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase bg-blue-500/30 text-blue-300 px-2 py-0.2 rounded-full">
-                  CURRENT QUEST
+                <span className="text-[9px] font-black uppercase bg-emerald-500 text-slate-950 px-2 py-0.2 rounded-full">
+                  HAPPENING NOW
                 </span>
-                <span className="text-xs font-bold text-white">{activeChallenge.name} ({activeChallenge.day})</span>
+                <span className="text-xs font-bold text-white">
+                  {liveScheduleItem ? `${liveScheduleItem.title} (${liveScheduleItem.start_time})` : activeChallenge?.name || "Team Identity Presentation"}
+                </span>
               </div>
-              <p className="text-[11px] text-white/70 line-clamp-1">{activeChallenge.instructions}</p>
+              <p className="text-[11px] text-white/70 line-clamp-1">
+                {liveScheduleItem ? `${liveScheduleItem.location} · ${liveScheduleItem.description}` : "Epe Resort Amphitheatre"}
+              </p>
             </div>
           </div>
-          <div className="text-right shrink-0">
-            <span className="text-xs font-black text-emerald-400">+{activeChallenge.max_score} pts available</span>
-          </div>
+          {liveScheduleItem?.max_score ? (
+            <div className="text-right shrink-0">
+              <span className="text-xs font-black text-emerald-400">+{liveScheduleItem.max_score} pts</span>
+            </div>
+          ) : null}
         </div>
-      )}
+
+        {/* NEXT UPCOMING */}
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-950/80 via-slate-900 to-slate-900 border border-blue-500/30 flex items-center justify-between gap-4 shadow-xl">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-black">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[9px] font-black uppercase bg-blue-500/30 text-blue-300 px-2 py-0.2 rounded-full">
+                  UP NEXT
+                </span>
+                <span className="text-xs font-bold text-white">
+                  {nextUpcoming ? `${nextUpcoming.title} (${nextUpcoming.start_time})` : "Card Games & Karaoke Fun (07:30 PM)"}
+                </span>
+              </div>
+              <p className="text-[11px] text-white/70 line-clamp-1">
+                {nextUpcoming ? `${nextUpcoming.location} · ${nextUpcoming.day}` : "Poolside Lounge · Day 1"}
+              </p>
+            </div>
+          </div>
+          {nextUpcoming?.max_score ? (
+            <div className="text-right shrink-0">
+              <span className="text-xs font-black text-blue-400">+{nextUpcoming.max_score} pts</span>
+            </div>
+          ) : null}
+        </div>
+      </div>
 
       {/* 3. PODIUM STANDINGS (TOP 3) */}
       <div className="grid grid-cols-3 gap-4 mb-8 items-end max-w-4xl mx-auto w-full">

@@ -80,6 +80,26 @@ type QuestChallenge struct {
 	EndsAt           time.Time `json:"ends_at,omitempty"`
 }
 
+// QuestScheduleItem Model (Configurable Event Schedule / Calendar Timeline)
+type QuestScheduleItem struct {
+	ID               string    `json:"id"`
+	QuestID          string    `json:"quest_id"`
+	TenantSlug       string    `json:"tenant_slug"`
+	Day              string    `json:"day"` // Day 1, Day 2, Day 3
+	StartTime        string    `json:"start_time"`
+	EndTime          string    `json:"end_time"`
+	Title            string    `json:"title"`
+	Description      string    `json:"description"`
+	Category         string    `json:"category"` // Arrival, Ceremony, Challenge, Meal, Sports, Awards
+	Location         string    `json:"location"`
+	ChallengeID      string    `json:"challenge_id,omitempty"`
+	MaxScore         int       `json:"max_score,omitempty"`
+	FacilitatorNotes string    `json:"facilitator_notes,omitempty"`
+	Status           string    `json:"status"` // UPCOMING, LIVE, COMPLETED
+	OrderIndex       int       `json:"order_index"`
+	CreatedAt        time.Time `json:"created_at"`
+}
+
 // QuestConcept Model (Concept Registration & Duplicate Locking)
 type QuestConcept struct {
 	ID          string    `json:"id"`
@@ -442,6 +462,365 @@ var (
 		},
 	}
 
+	// 21 Pre-seeded Itinerary Schedule Items for REIGNITE 2026
+	reigniteSchedule = []QuestScheduleItem{
+		// DAY 1
+		{
+			ID:          "sch-d1-01",
+			QuestID:     "qst-reignite-2026",
+			TenantSlug:  "neweratransports",
+			Day:         "Day 1",
+			StartTime:   "09:00 AM",
+			EndTime:     "11:00 AM",
+			Title:       "Executive Arrival & Hotel Check-in",
+			Description: "Delegates arrive at Epe Resort & Conference Centre, pick up badge credentials and retreat kits.",
+			Category:    "Arrival",
+			Location:    "Resort Lobby & Reception",
+			Status:      "COMPLETED",
+			OrderIndex:  1,
+			CreatedAt:   time.Now(),
+		},
+		{
+			ID:          "sch-d1-02",
+			QuestID:     "qst-reignite-2026",
+			TenantSlug:  "neweratransports",
+			Day:         "Day 1",
+			StartTime:   "11:30 AM",
+			EndTime:     "01:00 PM",
+			Title:       "Welcome Address & Opening Ceremony",
+			Description: "Opening remarks by MD/CEO, unveiling of the REIGNITE 2026 Theme, rules, and grand ₦500,000 prize.",
+			Category:    "Ceremony",
+			Location:    "Main Conference Auditorium",
+			Status:      "COMPLETED",
+			OrderIndex:  2,
+			CreatedAt:   time.Now(),
+		},
+		{
+			ID:          "sch-d1-03",
+			QuestID:     "qst-reignite-2026",
+			TenantSlug:  "neweratransports",
+			Day:         "Day 1",
+			StartTime:   "01:00 PM",
+			EndTime:     "02:30 PM",
+			Title:       "Networking Lunch & Squad Formations",
+			Description: "Delegates break into assigned 10-person squads across 6 tables for strategy and bonding.",
+			Category:    "Meal",
+			Location:    "Dining Pavilion",
+			Status:      "COMPLETED",
+			OrderIndex:  3,
+			CreatedAt:   time.Now(),
+		},
+		{
+			ID:               "sch-d1-04",
+			QuestID:          "qst-reignite-2026",
+			TenantSlug:       "neweratransports",
+			Day:              "Day 1",
+			StartTime:        "03:00 PM",
+			EndTime:          "04:30 PM",
+			Title:            "Quest 1: Team Identity Presentation",
+			Description:      "Each team takes the stage to present their custom Name, Motto, Pose, and Team Chant.",
+			Category:         "Challenge",
+			Location:         "Outdoor Amphitheatre",
+			ChallengeID:      "chl-day1-identity",
+			MaxScore:         50,
+			FacilitatorNotes: "5 minutes per team. Judged across creativity, teamwork, energy, and delivery.",
+			Status:           "LIVE",
+			OrderIndex:       4,
+			CreatedAt:        time.Now(),
+		},
+		{
+			ID:               "sch-d1-05",
+			QuestID:          "qst-reignite-2026",
+			TenantSlug:       "neweratransports",
+			Day:              "Day 1",
+			StartTime:        "05:00 PM",
+			EndTime:          "06:30 PM",
+			Title:            "Quest 2: Who Are We? (5 Incredible Things)",
+			Description:      "Every team member shares 5 unique facts about their journey and how the company shaped them.",
+			Category:         "Challenge",
+			Location:         "Outdoor Amphitheatre",
+			ChallengeID:      "chl-day1-who-are-we",
+			MaxScore:         50,
+			FacilitatorNotes: "Participation engine: 100% active member sharing awards maximum 50 points.",
+			Status:           "UPCOMING",
+			OrderIndex:       5,
+			CreatedAt:        time.Now(),
+		},
+		{
+			ID:               "sch-d1-06",
+			QuestID:          "qst-reignite-2026",
+			TenantSlug:       "neweratransports",
+			Day:              "Day 1",
+			StartTime:        "07:30 PM",
+			EndTime:          "10:00 PM",
+			Title:            "Quest 3: Card Games & Karaoke Fun",
+			Description:      "Evening bonding featuring interactive board/card games, karaoke battles, and social connection.",
+			Category:         "Challenge",
+			Location:         "Poolside Lounge",
+			ChallengeID:      "chl-day1-games",
+			MaxScore:         50,
+			FacilitatorNotes: "Spirit & sportsmanship rubric scoring.",
+			Status:           "UPCOMING",
+			OrderIndex:       6,
+			CreatedAt:        time.Now(),
+		},
+
+		// DAY 2
+		{
+			ID:          "sch-d2-01",
+			QuestID:     "qst-reignite-2026",
+			TenantSlug:  "neweratransports",
+			Day:         "Day 2",
+			StartTime:   "07:30 AM",
+			EndTime:     "08:30 AM",
+			Title:       "Energy Breakfast & Daily Briefing",
+			Description: "Full breakfast buffet and facilitator announcements for Day 2 schedule.",
+			Category:    "Meal",
+			Location:    "Dining Pavilion",
+			Status:      "UPCOMING",
+			OrderIndex:  7,
+			CreatedAt:   time.Now(),
+		},
+		{
+			ID:               "sch-d2-02",
+			QuestID:          "qst-reignite-2026",
+			TenantSlug:       "neweratransports",
+			Day:              "Day 2",
+			StartTime:        "09:00 AM",
+			EndTime:          "09:30 AM",
+			Title:            "Core Challenge Concept Registration Deadline",
+			Description:      "Team captains must register and lock their 10-minute performance concepts to avoid topic duplication.",
+			Category:         "Ceremony",
+			Location:         "Facilitator Command Desk",
+			FacilitatorNotes: "Duplicate lock enforced by Chief Facilitator.",
+			Status:           "UPCOMING",
+			OrderIndex:       8,
+			CreatedAt:        time.Now(),
+		},
+		{
+			ID:               "sch-d2-03",
+			QuestID:          "qst-reignite-2026",
+			TenantSlug:       "neweratransports",
+			Day:              "Day 2",
+			StartTime:        "10:00 AM",
+			EndTime:          "01:00 PM",
+			Title:            "Quest 4: REIGNITE — The Core Challenge",
+			Description:      "10-minute theatrical, musical, or innovation presentations bringing the REIGNITE theme to life.",
+			Category:         "Challenge",
+			Location:         "Main Auditorium Stage",
+			ChallengeID:      "chl-day2-core-challenge",
+			MaxScore:         200,
+			FacilitatorNotes: "6 rubric dimensions (40, 40, 30, 30, 30, 30 = 200 pts).",
+			Status:           "UPCOMING",
+			OrderIndex:       9,
+			CreatedAt:        time.Now(),
+		},
+		{
+			ID:          "sch-d2-04",
+			QuestID:     "qst-reignite-2026",
+			TenantSlug:  "neweratransports",
+			Day:         "Day 2",
+			StartTime:   "01:00 PM",
+			EndTime:     "02:30 PM",
+			Title:       "Power Lunch & Mid-Day Recharge",
+			Description: "Buffet lunch, rest, and preparation for the afternoon agility and trivia rounds.",
+			Category:    "Meal",
+			Location:    "Dining Pavilion",
+			Status:      "UPCOMING",
+			OrderIndex:  10,
+			CreatedAt:   time.Now(),
+		},
+		{
+			ID:               "sch-d2-05",
+			QuestID:          "qst-reignite-2026",
+			TenantSlug:       "neweratransports",
+			Day:              "Day 2",
+			StartTime:        "03:00 PM",
+			EndTime:          "04:00 PM",
+			Title:            "Quest 5: Egg & Spoon Agility Race",
+			Description:      "Fast-paced team balance relay requiring speed, coordination, and steady teamwork.",
+			Category:         "Challenge",
+			Location:         "Lawn Arena",
+			ChallengeID:      "chl-day2-egg-race",
+			MaxScore:         50,
+			FacilitatorNotes: "Rank to points: 1st=50, 2nd=40, 3rd=30, 4th=20, 5th=10, 6th=5.",
+			Status:           "UPCOMING",
+			OrderIndex:       11,
+			CreatedAt:        time.Now(),
+		},
+		{
+			ID:               "sch-d2-06",
+			QuestID:          "qst-reignite-2026",
+			TenantSlug:       "neweratransports",
+			Day:              "Day 2",
+			StartTime:        "04:30 PM",
+			EndTime:          "05:30 PM",
+			Title:            "Quest 6: The Knowledge Quest (10 Questions)",
+			Description:      "Objective corporate and industry knowledge test. Automated scoring via official answer key.",
+			Category:         "Challenge",
+			Location:         "Conference Hall",
+			ChallengeID:      "chl-day2-quiz",
+			MaxScore:         100,
+			FacilitatorNotes: "10 questions × 10 points = 100 points maximum.",
+			Status:           "UPCOMING",
+			OrderIndex:       12,
+			CreatedAt:        time.Now(),
+		},
+		{
+			ID:               "sch-d2-07",
+			QuestID:          "qst-reignite-2026",
+			TenantSlug:       "neweratransports",
+			Day:              "Day 2",
+			StartTime:        "06:00 PM",
+			EndTime:          "07:00 PM",
+			Title:            "Quest 7: Think Fast Rapid-Fire Round",
+			Description:      "10 rapid-fire buzzer questions asked to all 6 teams simultaneously.",
+			Category:         "Challenge",
+			Location:         "Conference Hall",
+			ChallengeID:      "chl-day2-think-fast",
+			MaxScore:         50,
+			FacilitatorNotes: "10 questions × 5 points = 50 points.",
+			Status:           "UPCOMING",
+			OrderIndex:       13,
+			CreatedAt:        time.Now(),
+		},
+		{
+			ID:          "sch-d2-08",
+			QuestID:     "qst-reignite-2026",
+			TenantSlug:  "neweratransports",
+			Day:         "Day 2",
+			StartTime:   "08:00 PM",
+			EndTime:     "10:00 PM",
+			Title:       "Dinner & Mid-Championship Standings Broadcast",
+			Description: "Evening banquet and stage broadcast of Day 1 & Day 2 cumulative standings.",
+			Category:    "Meal",
+			Location:    "Grand Ballroom",
+			Status:      "UPCOMING",
+			OrderIndex:  14,
+			CreatedAt:   time.Now(),
+		},
+
+		// DAY 3
+		{
+			ID:          "sch-d3-01",
+			QuestID:     "qst-reignite-2026",
+			TenantSlug:  "neweratransports",
+			Day:         "Day 3",
+			StartTime:   "07:30 AM",
+			EndTime:     "08:30 AM",
+			Title:       "Athletes' Warm-up & Light Breakfast",
+			Description: "High-protein breakfast and team stretching before outdoor sports championship.",
+			Category:    "Meal",
+			Location:    "Sports Pavilion",
+			Status:      "UPCOMING",
+			OrderIndex:  15,
+			CreatedAt:   time.Now(),
+		},
+		{
+			ID:               "sch-d3-02",
+			QuestID:          "qst-reignite-2026",
+			TenantSlug:       "neweratransports",
+			Day:              "Day 3",
+			StartTime:        "09:00 AM",
+			EndTime:          "10:30 AM",
+			Title:            "Quest 8: Girls' Volleyball Championship",
+			Description:      "Inter-squad women's volleyball tournament with group matches and finals.",
+			Category:         "Sports",
+			Location:         "Resort Sports Arena",
+			ChallengeID:      "chl-day3-volleyball",
+			MaxScore:         75,
+			FacilitatorNotes: "Rank to points: 1st=75, 2nd=60, 3rd=45, 4th=30, 5th=20, 6th=10.",
+			Status:           "UPCOMING",
+			OrderIndex:       16,
+			CreatedAt:        time.Now(),
+		},
+		{
+			ID:               "sch-d3-03",
+			QuestID:          "qst-reignite-2026",
+			TenantSlug:       "neweratransports",
+			Day:              "Day 3",
+			StartTime:        "11:00 AM",
+			EndTime:          "01:00 PM",
+			Title:            "Quest 9: Corporate Football Championship",
+			Description:      "Full inter-squad football tournament. Group stages, semi-finals, and championship final match.",
+			Category:         "Sports",
+			Location:         "Football Pitch",
+			ChallengeID:      "chl-day3-football",
+			MaxScore:         100,
+			FacilitatorNotes: "Rank to points: 1st=100, 2nd=75, 3rd=60, 4th=45, 5th=30, 6th=20.",
+			Status:           "UPCOMING",
+			OrderIndex:       17,
+			CreatedAt:        time.Now(),
+		},
+		{
+			ID:          "sch-d3-04",
+			QuestID:     "qst-reignite-2026",
+			TenantSlug:  "neweratransports",
+			Day:         "Day 3",
+			StartTime:   "01:00 PM",
+			EndTime:     "02:30 PM",
+			Title:       "Champions Lunch & Rest Interval",
+			Description: "Buffet lunch, rest, and warm-up for track relay and tug of war.",
+			Category:    "Meal",
+			Location:    "Dining Pavilion",
+			Status:      "UPCOMING",
+			OrderIndex:  18,
+			CreatedAt:   time.Now(),
+		},
+		{
+			ID:               "sch-d3-05",
+			QuestID:          "qst-reignite-2026",
+			TenantSlug:       "neweratransports",
+			Day:              "Day 3",
+			StartTime:        "03:00 PM",
+			EndTime:          "04:00 PM",
+			Title:            "Quest 10: 4×100m Track Relay Race",
+			Description:      "Sprint track showdown featuring mixed gender relay runners.",
+			Category:         "Sports",
+			Location:         "Running Track",
+			ChallengeID:      "chl-day3-relay",
+			MaxScore:         50,
+			FacilitatorNotes: "Rank to points: 1st=50, 2nd=40, 3rd=30, 4th=20, 5th=10, 6th=5.",
+			Status:           "UPCOMING",
+			OrderIndex:       19,
+			CreatedAt:        time.Now(),
+		},
+		{
+			ID:               "sch-d3-06",
+			QuestID:          "qst-reignite-2026",
+			TenantSlug:       "neweratransports",
+			Day:              "Day 3",
+			StartTime:        "04:30 PM",
+			EndTime:          "05:30 PM",
+			Title:            "Quest 11: Grand Tug of War Final",
+			Description:      "The ultimate contest of endurance, grip, and team synergy.",
+			Category:         "Sports",
+			Location:         "Central Lawn Arena",
+			ChallengeID:      "chl-day3-tug-of-war",
+			MaxScore:         75,
+			FacilitatorNotes: "Rank to points: 1st=75, 2nd=60, 3rd=45, 4th=30, 5th=20, 6th=10.",
+			Status:           "UPCOMING",
+			OrderIndex:       20,
+			CreatedAt:        time.Now(),
+		},
+		{
+			ID:          "sch-d3-07",
+			QuestID:     "qst-reignite-2026",
+			TenantSlug:  "neweratransports",
+			Day:         "Day 3",
+			StartTime:   "06:30 PM",
+			EndTime:     "09:00 PM",
+			Title:       "Gala Awards Dinner & ₦500,000 Grand Trophy Ceremony",
+			Description: "Final banquet, leadership remarks, live scoreboard countdown, and trophy award to the Champion Squad.",
+			Category:    "Awards",
+			Location:    "Grand Ballroom",
+			FacilitatorNotes: "Winner takes all: ₦500,000 Grand Prize.",
+			Status:      "UPCOMING",
+			OrderIndex:  21,
+			CreatedAt:   time.Now(),
+		},
+	}
+
 	reigniteParticipants  = []QuestParticipant{}
 	reigniteConcepts      = []QuestConcept{}
 	reigniteScores        = []QuestScore{}
@@ -539,7 +918,7 @@ func HandleQuestDetail(w http.ResponseWriter, r *http.Request) {
 		targetQuest = &reigniteQuests[0]
 	}
 
-	// Filter teams, challenges, participants, announcements
+	// Filter teams, challenges, participants, announcements, schedule
 	var teams []QuestTeam
 	for _, t := range reigniteTeams {
 		if targetQuest != nil && t.QuestID == targetQuest.ID {
@@ -568,10 +947,18 @@ func HandleQuestDetail(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	var schedule []QuestScheduleItem
+	for _, s := range reigniteSchedule {
+		if targetQuest != nil && s.QuestID == targetQuest.ID {
+			schedule = append(schedule, s)
+		}
+	}
+
 	response := map[string]any{
 		"quest":         targetQuest,
 		"teams":         teams,
 		"challenges":    challenges,
+		"schedule":      schedule,
 		"participants":  participants,
 		"concepts":      reigniteConcepts,
 		"scores":        reigniteScores,
@@ -579,6 +966,119 @@ func HandleQuestDetail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(response)
+}
+
+// HandleQuestSchedule handles /quests/schedule (GET, POST, PUT, DELETE)
+func HandleQuestSchedule(w http.ResponseWriter, r *http.Request) {
+	EnsureQuestTables()
+	w.Header().Set("Content-Type", "application/json")
+	questMu.Lock()
+	defer questMu.Unlock()
+
+	questId := r.URL.Query().Get("quest_id")
+	if questId == "" && len(reigniteQuests) > 0 {
+		questId = reigniteQuests[0].ID
+	}
+
+	if r.Method == http.MethodGet {
+		day := r.URL.Query().Get("day")
+		var list []QuestScheduleItem
+		for _, s := range reigniteSchedule {
+			if s.QuestID == questId && (day == "" || s.Day == day) {
+				list = append(list, s)
+			}
+		}
+		sort.Slice(list, func(i, j int) bool {
+			return list[i].OrderIndex < list[j].OrderIndex
+		})
+		json.NewEncoder(w).Encode(list)
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		var newItem QuestScheduleItem
+		if err := json.NewDecoder(r.Body).Decode(&newItem); err != nil {
+			http.Error(w, `{"error":"Invalid payload"}`, http.StatusBadRequest)
+			return
+		}
+		if newItem.ID == "" {
+			newItem.ID = fmt.Sprintf("sch-%d", time.Now().UnixNano())
+		}
+		if newItem.QuestID == "" {
+			newItem.QuestID = questId
+		}
+		newItem.TenantSlug = getQuestTenant(r)
+		newItem.CreatedAt = time.Now()
+		if newItem.Status == "" {
+			newItem.Status = "UPCOMING"
+		}
+		if newItem.OrderIndex == 0 {
+			newItem.OrderIndex = len(reigniteSchedule) + 1
+		}
+
+		reigniteSchedule = append(reigniteSchedule, newItem)
+		json.NewEncoder(w).Encode(newItem)
+		return
+	}
+
+	if r.Method == http.MethodPut {
+		var payload QuestScheduleItem
+		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+			http.Error(w, `{"error":"Invalid payload"}`, http.StatusBadRequest)
+			return
+		}
+
+		for i := range reigniteSchedule {
+			if reigniteSchedule[i].ID == payload.ID {
+				if payload.Title != "" {
+					reigniteSchedule[i].Title = payload.Title
+				}
+				if payload.Description != "" {
+					reigniteSchedule[i].Description = payload.Description
+				}
+				if payload.StartTime != "" {
+					reigniteSchedule[i].StartTime = payload.StartTime
+				}
+				if payload.EndTime != "" {
+					reigniteSchedule[i].EndTime = payload.EndTime
+				}
+				if payload.Day != "" {
+					reigniteSchedule[i].Day = payload.Day
+				}
+				if payload.Location != "" {
+					reigniteSchedule[i].Location = payload.Location
+				}
+				if payload.Category != "" {
+					reigniteSchedule[i].Category = payload.Category
+				}
+				if payload.Status != "" {
+					reigniteSchedule[i].Status = payload.Status
+				}
+				if payload.FacilitatorNotes != "" {
+					reigniteSchedule[i].FacilitatorNotes = payload.FacilitatorNotes
+				}
+				json.NewEncoder(w).Encode(reigniteSchedule[i])
+				return
+			}
+		}
+		http.Error(w, `{"error":"Schedule item not found"}`, http.StatusNotFound)
+		return
+	}
+
+	if r.Method == http.MethodDelete {
+		id := r.URL.Query().Get("id")
+		var filtered []QuestScheduleItem
+		for _, s := range reigniteSchedule {
+			if s.ID != id {
+				filtered = append(filtered, s)
+			}
+		}
+		reigniteSchedule = filtered
+		json.NewEncoder(w).Encode(map[string]string{"status": "deleted"})
+		return
+	}
+
+	http.Error(w, `{"error":"Method not allowed"}`, http.StatusMethodNotAllowed)
 }
 
 // HandleQuestTeams handles /quests/teams
@@ -750,7 +1250,6 @@ func HandleQuestParticipants(w http.ResponseWriter, r *http.Request) {
 }
 
 // HandleQuestAutoAssign handles POST /quests/participants/auto-assign
-// Smart 1-click cross-department auto-balance of 60 staff members into 6 teams
 func HandleQuestAutoAssign(w http.ResponseWriter, r *http.Request) {
 	EnsureQuestTables()
 	w.Header().Set("Content-Type", "application/json")
@@ -978,7 +1477,7 @@ func HandleQuestConcepts(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, `{"error":"Method not allowed"}`, http.StatusMethodNotAllowed)
 }
 
-// HandleQuestScores handles /quests/scores (Awards points, recalculates leaderboard, logs audit trail)
+// HandleQuestScores handles /quests/scores
 func HandleQuestScores(w http.ResponseWriter, r *http.Request) {
 	EnsureQuestTables()
 	w.Header().Set("Content-Type", "application/json")
@@ -1161,6 +1660,7 @@ func HandleQuestScoreboard(w http.ResponseWriter, r *http.Request) {
 		"leaderboard":      sortedTeams,
 		"active_challenge": activeChallenge,
 		"announcements":    reigniteAnnouncements,
+		"schedule":         reigniteSchedule,
 		"scores":           reigniteScores,
 		"last_updated":     time.Now().Format(time.RFC3339),
 	}

@@ -153,6 +153,15 @@ export function SuperAdminShell({
       ];
     }
 
+    if (pathname.startsWith("/crm")) {
+      return [
+        { label: "Waitlist Pipeline", href: "/crm/waitlist", icon: <Users className="w-3.5 h-3.5 text-[#1A56DB]" />, badge: "2.8k Leads" },
+        { label: "Contact Inquiries", href: "/crm/contact", icon: <Mail className="w-3.5 h-3.5 text-emerald-600" />, badge: "Support" },
+        { label: "Enterprise Inquiries", href: "/crm/leads", icon: <Building2 className="w-3.5 h-3.5" /> },
+        { label: "Conversion Analytics", href: "/crm/analytics", icon: <TrendingUp className="w-3.5 h-3.5" /> },
+      ];
+    }
+
     return [];
   };
 
@@ -269,6 +278,12 @@ export function SuperAdminShell({
               href: "/marketplace",
               icon: ShoppingBag,
               badge: "PRO",
+            },
+            {
+              label: "CRM & Waitlist",
+              href: "/crm/waitlist",
+              icon: Users,
+              badge: "2.8k",
             },
           ]
             .filter((item) =>

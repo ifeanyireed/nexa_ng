@@ -146,6 +146,7 @@ func registerRoutes() {
 	registerRoute("/quests/scores/audit", handlers.HandleQuestScoreAudit)
 	registerRoute("/quests/announcements", handlers.HandleQuestAnnouncements)
 	registerRoute("/quests/schedule", handlers.HandleQuestSchedule)
+	registerRoute("/quests/prizes", handlers.HandleQuestPrizes)
 
 	// Prefix aliases for /api/v1/quests/*
 	registerRoute("/api/v1/quests", handlers.HandleQuests)
@@ -160,6 +161,7 @@ func registerRoutes() {
 	registerRoute("/api/v1/quests/scores/audit", handlers.HandleQuestScoreAudit)
 	registerRoute("/api/v1/quests/announcements", handlers.HandleQuestAnnouncements)
 	registerRoute("/api/v1/quests/schedule", handlers.HandleQuestSchedule)
+	registerRoute("/api/v1/quests/prizes", handlers.HandleQuestPrizes)
 }
 
 func enableCORS(next http.HandlerFunc) http.HandlerFunc {

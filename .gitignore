@@ -41,3 +41,4 @@ service_erp/service_erp
 *.test
 *.sql
 *.sql.gz
+!database/migrations/*.sql

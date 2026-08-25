@@ -157,13 +157,13 @@ export default function PublicQuestLandingPage() {
                 </div>
                 <div className="space-y-0.5">
                   <div className="text-sm font-medium text-white flex items-center justify-center">
-                    <span>{c.name}</span>
+                    <span className="whitespace-nowrap">{c.name}</span>
                   </div>
-                  <div className="text-[11px] text-white/50 truncate">{c.team}</div>
+                  <div className="text-[11px] text-white/50 truncate whitespace-nowrap">{c.team}</div>
                 </div>
                 <div className="pt-2 border-t border-white/[0.08] flex items-center justify-between px-1">
-                  <span className="text-xs text-white/50 font-normal">Rank #{c.rank}</span>
-                  <span className="text-base font-semibold text-[#3B82F6] font-mono">{c.score} pts</span>
+                  <span className="text-xs text-white/50 font-normal whitespace-nowrap">Rank #{c.rank}</span>
+                  <span className="text-base font-semibold text-[#3B82F6] font-mono whitespace-nowrap">{c.score} pts</span>
                 </div>
               </div>
             ))}
@@ -188,8 +188,8 @@ export default function PublicQuestLandingPage() {
                   {t.initial}
                 </div>
                 <div>
-                  <div className="text-xs font-medium text-white truncate">{t.name}</div>
-                  <div className="text-[11px] text-white/50 italic truncate">&ldquo;{t.motto}&rdquo;</div>
+                  <div className="font-medium text-white text-sm tracking-tight truncate whitespace-nowrap">{t.name}</div>
+                  <div className="text-[11px] text-white/40 italic truncate whitespace-nowrap">&ldquo;{t.motto}&rdquo;</div>
                 </div>
                 <div className="pt-2 border-t border-white/[0.08]">
                   <div className="text-xl font-semibold text-[#3B82F6] font-mono mb-1.5">{t.points} pts</div>

@@ -204,7 +204,7 @@ export default function EmployeeQuestConsolePage() {
     id: "team-1",
     name: "Team 1",
     custom_name: "Red Phoenix",
-    logo: "🔥",
+    logo: "",
     color: "#EF4444",
     motto: "Igniting Excellence & Passion",
     total_points: 0,
@@ -290,8 +290,8 @@ export default function EmployeeQuestConsolePage() {
         <div className="p-6 rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
-              <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border border-emerald-400/30">
-                🟢 LIVE ACTIVITY NOW
+              <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border border-emerald-400/30 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Live Activity Now
               </span>
               <span className="text-xs font-mono text-white/80">
                 {liveScheduleItem ? `${liveScheduleItem.day} · ${liveScheduleItem.start_time} - ${liveScheduleItem.end_time}` : activeChallenge?.day || "Day 1"}
@@ -344,7 +344,12 @@ export default function EmployeeQuestConsolePage() {
           <NexaCard variant="glass" padding="md" className="space-y-4 rounded-3xl border-t-4" style={{ borderTopColor: myTeam.color }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <span className="text-3xl">{myTeam.logo}</span>
+                <div
+                  className="w-10 h-10 rounded-2xl flex items-center justify-center font-black text-base shrink-0 border border-slate-200/60 shadow-xs"
+                  style={{ backgroundColor: `${myTeam.color}18`, color: myTeam.color }}
+                >
+                  {(myTeam.name.replace(/^Team\s+/i, "")[0] || "T").toUpperCase()}
+                </div>
                 <div>
                   <h3 className="font-bold text-sm text-slate-850">{myTeam.custom_name || myTeam.name}</h3>
                   <p className="text-[10px] text-slate-400">{myTeam.motto}</p>
@@ -383,7 +388,9 @@ export default function EmployeeQuestConsolePage() {
                             <span className="text-[9px] bg-blue-600 text-white px-1.5 py-0.2 rounded-full font-bold">You</span>
                           )}
                           {m.role === "captain" && (
-                            <span className="text-amber-500" title="Team Captain">⭐</span>
+                            <span title="Team Captain" className="inline-flex">
+                              <Star className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0" />
+                            </span>
                           )}
                         </p>
                         <p className="text-[9px] text-slate-400 font-medium truncate max-w-[140px]">{m.department}</p>
@@ -412,7 +419,7 @@ export default function EmployeeQuestConsolePage() {
                   onClick={() => setActiveTab("track")}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                     activeTab === "track"
-                      ? "bg-blue-600 text-white shadow-sm"
+                      ? "bg-[#1A56DB] text-white shadow-sm shadow-blue-500/20"
                       : "text-slate-600 hover:bg-gray-100"
                   }`}
                 >
@@ -424,7 +431,7 @@ export default function EmployeeQuestConsolePage() {
                   onClick={() => setActiveTab("itinerary")}
                   className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                     activeTab === "itinerary"
-                      ? "bg-indigo-600 text-white shadow-sm"
+                      ? "bg-[#1A56DB] text-white shadow-sm shadow-blue-500/20"
                       : "text-slate-600 hover:bg-gray-100"
                   }`}
                 >
@@ -473,13 +480,15 @@ export default function EmployeeQuestConsolePage() {
             {activeTab === "itinerary" && (
               <div className="space-y-3">
                 {/* DAY FILTER */}
-                <div className="flex items-center gap-2 pb-1">
+                <div className="flex items-center gap-1.5 pb-2">
                   {["Day 1", "Day 2", "Day 3"].map((d) => (
                     <button
                       key={d}
                       onClick={() => setScheduleDay(d)}
                       className={`px-3 py-1 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                        scheduleDay === d ? "bg-indigo-600 text-white" : "bg-gray-100 text-slate-600 hover:bg-gray-200"
+                        scheduleDay === d
+                          ? "bg-[#1A56DB] text-white shadow-sm shadow-blue-500/20"
+                          : "bg-gray-100 text-slate-600 hover:bg-gray-200"
                       }`}
                     >
                       {d}
@@ -502,9 +511,9 @@ export default function EmployeeQuestConsolePage() {
                         }`}
                       >
                         <div className="flex items-start gap-3">
-                          <div className="text-center shrink-0 min-w-[70px] bg-indigo-50/80 px-2 py-1 rounded-xl border border-indigo-100">
-                            <span className="text-[10px] font-black text-slate-800 block">{item.start_time}</span>
-                            <span className="text-[9px] text-slate-400 block">{item.end_time}</span>
+                          <div className="text-center shrink-0 min-w-[75px] bg-blue-500/10 px-2.5 py-1.5 rounded-xl border border-blue-500/20">
+                            <span className="text-[10px] font-black text-slate-850 block">{item.start_time}</span>
+                            <span className="text-[9px] text-slate-500 font-medium block">{item.end_time}</span>
                           </div>
 
                           <div>

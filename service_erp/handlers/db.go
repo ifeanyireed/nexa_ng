@@ -40,14 +40,43 @@ func EnsureQuestTables() {
 		coverImage varchar(255) DEFAULT NULL,
 		status varchar(50) NOT NULL DEFAULT 'ACTIVE',
 		grandPrize varchar(100) DEFAULT '₦500,000',
+		currency varchar(20) DEFAULT 'NGN',
+		prizesJson text DEFAULT NULL,
 		totalMaxPoints int(11) NOT NULL DEFAULT 850,
 		location varchar(191) DEFAULT NULL,
 		startsAt varchar(100) DEFAULT NULL,
 		endsAt varchar(100) DEFAULT NULL,
+		participationType varchar(50) DEFAULT 'BOTH',
+		autoBalance boolean DEFAULT TRUE,
+		enableStageTV boolean DEFAULT TRUE,
+		allowManualAdjustments boolean DEFAULT TRUE,
+		primaryColor varchar(50) DEFAULT '#1A56DB',
+		accentColor varchar(50) DEFAULT '#F59E0B',
+		scoringMode varchar(100) DEFAULT 'AUTOMATIC_WITH_JUDGE_OVERRIDE',
+		conceptLockEnabled boolean DEFAULT TRUE,
 		createdBy varchar(191) DEFAULT NULL,
 		createdAt datetime(3) NOT NULL DEFAULT current_timestamp(3),
+		updatedAt datetime(3) NOT NULL DEFAULT current_timestamp(3) ON UPDATE current_timestamp(3),
 		PRIMARY KEY (id),
 		INDEX idx_quest_tenant (tenantSlug)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`)
+
+	// 1b. QuestPrize Table
+	_, _ = db.Exec(`CREATE TABLE IF NOT EXISTS QuestPrize (
+		id varchar(191) NOT NULL,
+		questId varchar(191) NOT NULL,
+		tenantSlug varchar(191) NOT NULL DEFAULT '',
+		prizeRank int(11) DEFAULT NULL,
+		title varchar(191) NOT NULL,
+		awardType varchar(50) NOT NULL DEFAULT 'CASH',
+		amount varchar(100) NOT NULL,
+		description text DEFAULT NULL,
+		icon varchar(50) DEFAULT '🏆',
+		orderIndex int(11) NOT NULL DEFAULT 0,
+		createdAt datetime(3) NOT NULL DEFAULT current_timestamp(3),
+		PRIMARY KEY (id),
+		INDEX idx_prize_quest (questId),
+		INDEX idx_prize_tenant (tenantSlug)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`)
 
 	// 2. QuestTeam Table
@@ -60,11 +89,14 @@ func EnsureQuestTables() {
 		slug varchar(191) NOT NULL,
 		logo varchar(100) DEFAULT '🏆',
 		color varchar(50) DEFAULT '#3B82F6',
+		initial varchar(10) DEFAULT 'T',
 		motto varchar(255) DEFAULT NULL,
 		totalPoints int(11) NOT NULL DEFAULT 0,
 		teamRank int(11) NOT NULL DEFAULT 1,
 		captainId varchar(191) DEFAULT NULL,
 		memberCount int(11) NOT NULL DEFAULT 0,
+		status varchar(50) NOT NULL DEFAULT 'ACTIVE',
+		createdAt datetime(3) NOT NULL DEFAULT current_timestamp(3),
 		PRIMARY KEY (id),
 		INDEX idx_team_quest (questId),
 		INDEX idx_team_tenant (tenantSlug)

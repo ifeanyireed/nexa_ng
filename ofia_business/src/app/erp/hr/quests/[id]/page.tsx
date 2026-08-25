@@ -48,11 +48,26 @@ interface TeamItem {
   motto: string;
   logo: string;
   color: string;
+  initial?: string;
   total_points: number;
   rank: number;
   captain_id?: string;
   member_count: number;
+  status?: "ACTIVE" | "INACTIVE";
 }
+
+const DEFAULT_TEAMS_A_TO_J: TeamItem[] = [
+  { id: "team-1", name: "Team Alpha (Blue Eagles)", motto: "Swift, Strategic, Unstoppable", logo: "", color: "#1A56DB", total_points: 840, rank: 1, member_count: 10, status: "ACTIVE" },
+  { id: "team-2", name: "Team Bravo (Red Vipers)", motto: "Relentless Speed & Precision", logo: "", color: "#EF4444", total_points: 795, rank: 2, member_count: 10, status: "ACTIVE" },
+  { id: "team-3", name: "Team Delta (Green Lions)", motto: "Courage in Every Stride", logo: "", color: "#10B981", total_points: 710, rank: 3, member_count: 10, status: "ACTIVE" },
+  { id: "team-4", name: "Team Charlie (Gold Titans)", motto: "Power, Intellect, Victory", logo: "", color: "#F59E0B", total_points: 650, rank: 4, member_count: 10, status: "ACTIVE" },
+  { id: "team-5", name: "Team Echo (Silver Wolves)", motto: "Silent, United, Lethal", logo: "", color: "#64748B", total_points: 590, rank: 5, member_count: 10, status: "ACTIVE" },
+  { id: "team-6", name: "Team Foxtrot (Iron Rhinos)", motto: "Unbreakable Resolve", logo: "", color: "#8B5CF6", total_points: 530, rank: 6, member_count: 10, status: "ACTIVE" },
+  { id: "team-7", name: "Team Golf (Shadow Panthers)", motto: "Agile & Stealth Champions", logo: "", color: "#0EA5E9", total_points: 0, rank: 7, member_count: 0, status: "INACTIVE" },
+  { id: "team-8", name: "Team Hotel (Solar Hawks)", motto: "Rising Above All Limits", logo: "", color: "#EC4899", total_points: 0, rank: 8, member_count: 0, status: "INACTIVE" },
+  { id: "team-9", name: "Team India (Thunder Bulls)", motto: "Raw Energy & Team Power", logo: "", color: "#14B8A6", total_points: 0, rank: 9, member_count: 0, status: "INACTIVE" },
+  { id: "team-10", name: "Team Juliet (Cyber Dragons)", motto: "Future Leaders of the Arena", logo: "", color: "#6366F1", total_points: 0, rank: 10, member_count: 0, status: "INACTIVE" },
+];
 
 interface ParticipantItem {
   id: string;
@@ -148,20 +163,175 @@ const DEFAULT_SCHEDULE: ScheduleItem[] = [
   { id: "sch-d3-07", quest_id: "qst-reignite-2026", day: "Day 3", start_time: "06:30 PM", end_time: "09:00 PM", title: "Gala Awards Dinner & ₦500,000 Grand Trophy Ceremony", description: "Final banquet, leadership remarks, live scoreboard countdown, and trophy award to the Champion Squad.", category: "Awards", location: "Grand Ballroom", facilitator_notes: "Winner takes all: ₦500,000 Grand Prize.", status: "UPCOMING", order_index: 21 },
 ];
 
+const DEFAULT_CHALLENGES: ChallengeItem[] = [
+  // Day 1
+  {
+    id: "chl-day1-identity",
+    day: "Day 1",
+    category: "Challenge",
+    engine_type: "RUBRIC",
+    name: "Quest 1: Team Identity Presentation",
+    description: "Each team takes the stage to present their custom Name, Motto, Pose, and Team Chant.",
+    instructions: "5 minutes per team. Judged across creativity, teamwork, energy, and delivery.",
+    max_score: 50,
+    status: "OPEN",
+    rubric: [
+      { criterion: "Theme Alignment & Custom Identity", max_points: 15 },
+      { criterion: "Team Energy & Delivery", max_points: 15 },
+      { criterion: "Chant & Pose Synchronization", max_points: 20 },
+    ],
+  },
+  {
+    id: "chl-day1-who-are-we",
+    day: "Day 1",
+    category: "Challenge",
+    engine_type: "PARTICIPATION",
+    name: "Quest 2: Who Are We? (5 Incredible Things)",
+    description: "Every team member shares 5 unique facts about their journey and how the company shaped them.",
+    instructions: "Participation engine: 100% active member sharing awards maximum 50 points.",
+    max_score: 50,
+    status: "LOCKED",
+  },
+  {
+    id: "chl-day1-games",
+    day: "Day 1",
+    category: "Challenge",
+    engine_type: "RUBRIC",
+    name: "Quest 3: Card Games & Karaoke Fun",
+    description: "Evening bonding featuring interactive board/card games, karaoke battles, and social connection.",
+    instructions: "Spirit & sportsmanship rubric scoring.",
+    max_score: 50,
+    status: "LOCKED",
+    rubric: [
+      { criterion: "Karaoke Performance & Crowd Engagement", max_points: 25 },
+      { criterion: "Board & Card Game Mastery", max_points: 25 },
+    ],
+  },
+  // Day 2
+  {
+    id: "chl-day2-core-challenge",
+    day: "Day 2",
+    category: "Challenge",
+    engine_type: "RUBRIC",
+    name: "Quest 4: REIGNITE — The Core Challenge",
+    description: "10-minute theatrical, musical, or innovation presentations bringing the REIGNITE theme to life.",
+    instructions: "6 rubric dimensions (40, 40, 30, 30, 30, 30 = 200 pts total).",
+    max_score: 200,
+    status: "LOCKED",
+    rubric: [
+      { criterion: "Creativity & Originality", max_points: 40 },
+      { criterion: "Theme Alignment (REIGNITE)", max_points: 40 },
+      { criterion: "Teamwork & Total Member Participation", max_points: 30 },
+      { criterion: "Stage Execution & Delivery", max_points: 30 },
+      { criterion: "Innovation & Strategic Thinking", max_points: 30 },
+      { criterion: "Overall Audience Impact", max_points: 30 },
+    ],
+  },
+  {
+    id: "chl-day2-egg-race",
+    day: "Day 2",
+    category: "Sports",
+    engine_type: "RANK_TO_POINTS",
+    name: "Quest 5: Egg & Spoon Agility Race",
+    description: "Fast-paced team balance relay requiring speed, coordination, and steady teamwork.",
+    instructions: "Rank to points: 1st=50, 2nd=40, 3rd=30, 4th=20, 5th=10, 6th=5.",
+    max_score: 50,
+    status: "LOCKED",
+    settings: { "1st": 50, "2nd": 40, "3rd": 30, "4th": 20, "5th": 10, "6th": 5 },
+  },
+  {
+    id: "chl-day2-quiz",
+    day: "Day 2",
+    category: "Trivia",
+    engine_type: "QUIZ",
+    name: "Quest 6: The Knowledge Quest (10 Questions)",
+    description: "Objective corporate and industry knowledge test. Automated scoring via official answer key.",
+    instructions: "10 questions × 10 points = 100 points maximum.",
+    max_score: 100,
+    status: "LOCKED",
+  },
+  {
+    id: "chl-day2-think-fast",
+    day: "Day 2",
+    category: "Trivia",
+    engine_type: "QUIZ",
+    name: "Quest 7: Think Fast Rapid-Fire Round",
+    description: "10 rapid-fire buzzer questions asked to all 6 teams simultaneously.",
+    instructions: "10 questions × 5 points = 50 points.",
+    max_score: 50,
+    status: "LOCKED",
+  },
+  // Day 3
+  {
+    id: "chl-day3-volleyball",
+    day: "Day 3",
+    category: "Sports",
+    engine_type: "RANK_TO_POINTS",
+    name: "Quest 8: Girls' Volleyball Championship",
+    description: "Inter-squad women's volleyball tournament with group matches and finals.",
+    instructions: "Rank to points: 1st=75, 2nd=60, 3rd=45, 4th=30, 5th=20, 6th=10.",
+    max_score: 75,
+    status: "LOCKED",
+    settings: { "1st": 75, "2nd": 60, "3rd": 45, "4th": 30, "5th": 20, "6th": 10 },
+  },
+  {
+    id: "chl-day3-football",
+    day: "Day 3",
+    category: "Sports",
+    engine_type: "RANK_TO_POINTS",
+    name: "Quest 9: Corporate Football Championship",
+    description: "Full inter-squad football tournament. Group stages, semi-finals, and championship final match.",
+    instructions: "Rank to points: 1st=100, 2nd=75, 3rd=60, 4th=45, 5th=30, 6th=20.",
+    max_score: 100,
+    status: "LOCKED",
+    settings: { "1st": 100, "2nd": 75, "3rd": 60, "4th": 45, "5th": 30, "6th": 20 },
+  },
+  {
+    id: "chl-day3-relay",
+    day: "Day 3",
+    category: "Sports",
+    engine_type: "RANK_TO_POINTS",
+    name: "Quest 10: 4×100m Track Relay Race",
+    description: "Sprint track showdown featuring mixed gender relay runners.",
+    instructions: "Rank to points: 1st=50, 2nd=40, 3rd=30, 4th=20, 5th=10, 6th=5.",
+    max_score: 50,
+    status: "LOCKED",
+    settings: { "1st": 50, "2nd": 40, "3rd": 30, "4th": 20, "5th": 10, "6th": 5 },
+  },
+  {
+    id: "chl-day3-tug-of-war",
+    day: "Day 3",
+    category: "Sports",
+    engine_type: "RANK_TO_POINTS",
+    name: "Quest 11: Grand Tug of War Final",
+    description: "The ultimate contest of endurance, grip, and team synergy.",
+    instructions: "Rank to points: 1st=75, 2nd=60, 3rd=45, 4th=30, 5th=20, 6th=10.",
+    max_score: 75,
+    status: "LOCKED",
+    settings: { "1st": 75, "2nd": 60, "3rd": 45, "4th": 30, "5th": 20, "6th": 10 },
+  },
+];
+
 export default function QuestCommandDeskPage() {
   const params = useParams();
   const questId = (params?.id as string) || "qst-reignite-2026";
   const { users } = useERPStore();
 
   const [activeTab, setActiveTab] = useState<"overview" | "schedule" | "roster" | "challenges" | "concepts" | "audit">("overview");
-  const [teams, setTeams] = useState<TeamItem[]>([]);
+  const [teams, setTeams] = useState<TeamItem[]>(DEFAULT_TEAMS_A_TO_J);
   const [participants, setParticipants] = useState<ParticipantItem[]>([]);
-  const [challenges, setChallenges] = useState<ChallengeItem[]>([]);
+  const [challenges, setChallenges] = useState<ChallengeItem[]>(DEFAULT_CHALLENGES);
   const [schedule, setSchedule] = useState<ScheduleItem[]>(DEFAULT_SCHEDULE);
   const [concepts, setConcepts] = useState<ConceptItem[]>([]);
   const [scoreAudits, setScoreAudits] = useState<ScoreAuditItem[]>([]);
   const [dayFilter, setDayFilter] = useState<string>("ALL");
   const [scheduleDayFilter, setScheduleDayFilter] = useState<string>("Day 1");
+  const [hideInactive, setHideInactive] = useState<boolean>(false);
+
+  // Staff Pool Modal State
+  const [staffPoolTeam, setStaffPoolTeam] = useState<TeamItem | null>(null);
+  const [staffSearchQuery, setStaffSearchQuery] = useState<string>("");
+  const [staffDeptFilter, setStaffDeptFilter] = useState<string>("ALL");
 
   // Scoring Modal State
   const [scoringModal, setScoringModal] = useState<{
@@ -184,7 +354,21 @@ export default function QuestCommandDeskPage() {
   const [editingTeam, setEditingTeam] = useState<TeamItem | null>(null);
   const [editingScheduleItem, setEditingScheduleItem] = useState<ScheduleItem | null>(null);
   const [newScheduleModal, setNewScheduleModal] = useState(false);
+  const [editingChallenge, setEditingChallenge] = useState<ChallengeItem | null>(null);
+  const [newChallengeModal, setNewChallengeModal] = useState(false);
   const [isAutoAssigning, setIsAutoAssigning] = useState(false);
+
+  // Form state for new challenge item
+  const [newChallengeForm, setNewChallengeForm] = useState<Partial<ChallengeItem>>({
+    day: "Day 1",
+    category: "Challenge",
+    engine_type: "RUBRIC",
+    name: "",
+    description: "",
+    instructions: "",
+    max_score: 50,
+    status: "LOCKED",
+  });
 
   // Form state for new schedule item
   const [newScheduleForm, setNewScheduleForm] = useState<Partial<ScheduleItem>>({
@@ -206,8 +390,38 @@ export default function QuestCommandDeskPage() {
         const res = await fetch(`/api/erp/quests/detail?id=${questId}`).catch(() => null);
         if (res && res.ok) {
           const data = await res.json();
-          if (data.teams && data.teams.length > 0) setTeams(data.teams);
-          if (data.challenges && data.challenges.length > 0) setChallenges(data.challenges);
+          if (data.teams && data.teams.length > 0) {
+            const merged = DEFAULT_TEAMS_A_TO_J.map((def) => {
+              const fromApi = data.teams.find((t: any) => t.id === def.id);
+              return fromApi ? { ...def, ...fromApi, status: fromApi.status || "ACTIVE" } : def;
+            });
+            setTeams(merged);
+          }
+          if (data.challenges && data.challenges.length > 0) {
+            const mergedChallenges = DEFAULT_CHALLENGES.map((def) => {
+              const fromApi = data.challenges.find((c: any) => c.id === def.id || c.name?.toLowerCase().trim() === def.name.toLowerCase().trim());
+              return fromApi
+                ? {
+                    ...def,
+                    ...fromApi,
+                    day: fromApi.day || def.day,
+                    category: fromApi.category || def.category,
+                    engine_type: fromApi.engine_type || fromApi.engineType || def.engine_type,
+                    max_score: fromApi.max_score || def.max_score,
+                  }
+                : def;
+            });
+            const extraChallenges = data.challenges.filter(
+              (c: any) => !DEFAULT_CHALLENGES.some((def) => def.id === c.id || def.name?.toLowerCase().trim() === c.name?.toLowerCase().trim())
+            ).map((c: any) => ({
+              ...c,
+              day: c.day || "Day 1",
+              category: c.category || "Challenge",
+              engine_type: c.engine_type || c.engineType || "RUBRIC",
+              max_score: c.max_score || 50,
+            }));
+            setChallenges([...mergedChallenges, ...extraChallenges]);
+          }
           if (data.participants) setParticipants(data.participants);
           if (data.concepts) setConcepts(data.concepts);
           if (data.schedule && data.schedule.length > 0) setSchedule(data.schedule);
@@ -218,6 +432,61 @@ export default function QuestCommandDeskPage() {
     }
     loadData();
   }, [questId]);
+
+  // Toggle active status for team A-J
+  const toggleTeamActive = (teamId: string) => {
+    setTeams((prev) =>
+      prev.map((t) => {
+        if (t.id === teamId) {
+          const nextStatus = t.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+          return { ...t, status: nextStatus };
+        }
+        return t;
+      })
+    );
+  };
+
+  // Staff Pool Assignment Handlers
+  const handleAssignUserToTeam = (user: User, teamId: string) => {
+    setParticipants((prev) => {
+      const existing = prev.find((p) => p.user_id === user.id);
+      if (existing) {
+        return prev.map((p) => (p.user_id === user.id ? { ...p, team_id: teamId } : p));
+      }
+      const newParticipant: ParticipantItem = {
+        id: `prt-${Date.now()}-${user.id}`,
+        quest_id: questId,
+        team_id: teamId,
+        user_id: user.id,
+        user_name: user.name,
+        user_email: user.email,
+        department: user.department || "General",
+        avatar: user.avatar || `/character${(prev.length % 20) + 1}.jpg`,
+        role: "member",
+        status: "confirmed",
+      };
+      return [...prev, newParticipant];
+    });
+  };
+
+  const handleRemoveUserFromTeam = (userId: string) => {
+    setParticipants((prev) => prev.filter((p) => p.user_id !== userId));
+  };
+
+  const handleToggleCaptainForUser = (userId: string, teamId: string) => {
+    setParticipants((prev) =>
+      prev.map((p) => {
+        if (p.team_id === teamId) {
+          if (p.user_id === userId) {
+            return { ...p, role: p.role === "captain" ? "member" : "captain" };
+          } else if (p.role === "captain") {
+            return { ...p, role: "member" };
+          }
+        }
+        return p;
+      })
+    );
+  };
 
   // Handle 1-Click Auto-Balance
   const handleAutoAssign = async () => {
@@ -230,7 +499,7 @@ export default function QuestCommandDeskPage() {
         const data = await res.json();
         if (data.participants) setParticipants(data.participants);
         if (data.teams) setTeams(data.teams);
-        alert(data.message || "Staff successfully balanced across 6 teams!");
+        alert(data.message || "Staff successfully balanced across active teams!");
       }
     } catch (err) {
       alert("Failed to auto-assign staff: " + err);
@@ -256,6 +525,65 @@ export default function QuestCommandDeskPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: chl.id, status: newStatus }),
       });
+    } catch (e) {}
+  };
+
+  // Create Challenge Item
+  const handleCreateChallenge = async () => {
+    if (!newChallengeForm.name) return;
+    const newChl: ChallengeItem = {
+      id: `chl-${Date.now()}`,
+      day: newChallengeForm.day || "Day 1",
+      category: newChallengeForm.category || "Challenge",
+      engine_type: newChallengeForm.engine_type || "RUBRIC",
+      name: newChallengeForm.name,
+      description: newChallengeForm.description || "",
+      instructions: newChallengeForm.instructions || "",
+      max_score: Number(newChallengeForm.max_score) || 50,
+      status: "LOCKED",
+    };
+
+    setChallenges((prev) => [...prev, newChl]);
+    setNewChallengeModal(false);
+    setNewChallengeForm({
+      day: "Day 1",
+      category: "Challenge",
+      engine_type: "RUBRIC",
+      name: "",
+      description: "",
+      instructions: "",
+      max_score: 50,
+      status: "LOCKED",
+    });
+
+    try {
+      await fetch(`/api/erp/quests/challenges`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newChl),
+      });
+    } catch (e) {}
+  };
+
+  // Update Challenge Item
+  const handleUpdateChallenge = async () => {
+    if (!editingChallenge) return;
+    setChallenges((prev) => prev.map((c) => (c.id === editingChallenge.id ? editingChallenge : c)));
+    try {
+      await fetch(`/api/erp/quests/challenges`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editingChallenge),
+      });
+    } catch (e) {}
+    setEditingChallenge(null);
+  };
+
+  // Delete Challenge Item
+  const handleDeleteChallenge = async (id: string) => {
+    setChallenges((prev) => prev.filter((c) => c.id !== id));
+    try {
+      await fetch(`/api/erp/quests/challenges?id=${id}`, { method: "DELETE" });
     } catch (e) {}
   };
 
@@ -417,7 +745,8 @@ export default function QuestCommandDeskPage() {
     } catch (e) {}
   };
 
-  const leadingTeam = [...teams].sort((a, b) => b.total_points - a.total_points)[0] || {
+  const activeTeams = teams.filter((t) => t.status === "ACTIVE");
+  const leadingTeam = [...activeTeams].sort((a, b) => b.total_points - a.total_points)[0] || {
     id: "team-1",
     name: "Team 1",
     custom_name: "Red Phoenix",
@@ -437,24 +766,17 @@ export default function QuestCommandDeskPage() {
   return (
     <BusinessShell
       title="REIGNITE 2026: Facilitator Command Center"
-      subtitle="Corporate Team Championship · 60 Staff · 6 Teams · 11 Quests · 21 Scheduled Events · ₦500,000 Grand Prize"
+      subtitle={`Corporate Team Championship · 60 Staff · ${activeTeams.length} Active Teams · 11 Quests · 21 Scheduled Events · ₦500,000 Grand Prize`}
       action={
         <div className="flex items-center gap-2.5">
-          <Link href="/quests/reignite-2026/scoreboard" target="_blank">
-            <NexaButton size="sm" variant="outline" className="rounded-full" leftIcon={<Tv className="w-4 h-4 text-blue-600" />}>
-              Arena TV Scoreboard
-            </NexaButton>
-          </Link>
-          <NexaButton
-            size="sm"
-            variant="primary"
-            className="rounded-full bg-blue-600 text-white"
-            onClick={handleAutoAssign}
-            disabled={isAutoAssigning}
-            leftIcon={<Sparkles className="w-4 h-4" />}
+          <Link
+            href="/quests/reignite-2026/scoreboard"
+            target="_blank"
+            className="inline-flex items-center justify-center gap-2 h-8 px-3.5 text-xs font-bold rounded-full border border-nexa-border bg-transparent text-nexa-text-secondary hover:bg-nexa-bg-surface hover:text-nexa-text-primary transition-all shadow-xs"
           >
-            {isAutoAssigning ? "Auto-Balancing..." : "1-Click Auto-Balance 60 Staff"}
-          </NexaButton>
+            <Tv className="w-4 h-4 text-blue-600" />
+            <span>Arena TV Scoreboard</span>
+          </Link>
         </div>
       }
     >
@@ -481,7 +803,7 @@ export default function QuestCommandDeskPage() {
             {
               label: "Staff Pool Enrolled",
               value: `${assignedCount} / 60 Staff`,
-              change: `${teams.length} Balanced Squads`,
+              change: `${activeTeams.length} Active Squads`,
               trend: "up",
               icon: <Users className="w-5 h-5 text-blue-500" />,
               sub: "Live NETS Employee Directory",
@@ -500,12 +822,12 @@ export default function QuestCommandDeskPage() {
         {/* NAVIGATION TABS */}
         <div className="flex items-center gap-2 border-b border-gray-200 pb-3 overflow-x-auto">
           {[
-            { id: "overview", label: "Live Overview & Arena Standings", icon: Flame },
-            { id: "schedule", label: `Event Calendar & Timeline (${schedule.length})`, icon: Calendar },
-            { id: "roster", label: `Staff Pool & Team Builder (${assignedCount}/60)`, icon: Users },
-            { id: "challenges", label: `Quest Engine & Scoring (${challenges.length})`, icon: Target },
-            { id: "concepts", label: `Concept Lock Desk (${concepts.length})`, icon: Lock },
-            { id: "audit", label: `Score Audit Trail (${scoreAudits.length})`, icon: History },
+            { id: "overview", label: "Overview", icon: Flame },
+            { id: "schedule", label: `Schedule (${schedule.length})`, icon: Calendar },
+            { id: "roster", label: `Team Roster (${assignedCount}/60)`, icon: Users },
+            { id: "challenges", label: `Challenges (${challenges.length})`, icon: Target },
+            { id: "concepts", label: `Concept Lock (${concepts.length})`, icon: Lock },
+            { id: "audit", label: `Audit Trail (${scoreAudits.length})`, icon: History },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -529,382 +851,634 @@ export default function QuestCommandDeskPage() {
         {/* TAB 1: OVERVIEW & STANDINGS */}
         {activeTab === "overview" && (
           <div className="space-y-6">
-            {/* HERO BANNER */}
-            <div className="p-6 rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full border border-emerald-400/30">
-                    🟢 CHAMPIONSHIP LIVE
-                  </span>
-                  <span className="text-xs font-mono text-white/80">3 Days · Epe Resort & Spa, Lagos</span>
-                </div>
-                <h2 className="text-2xl font-black">{leadingTeam.custom_name || leadingTeam.name} leads the Board with {leadingTeam.total_points} Points</h2>
-                <p className="text-xs text-white/80 max-w-xl">
-                  {activeLiveScheduleItem
-                    ? `Current Active Session: ${activeLiveScheduleItem.title} (${activeLiveScheduleItem.start_time} - ${activeLiveScheduleItem.end_time}) at ${activeLiveScheduleItem.location}`
-                    : "Facilitators can configure calendar schedules, open quests, score rubric performances, and broadcast updates live to the Arena Scoreboard."}
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Link href="/quests/reignite-2026/scoreboard" target="_blank">
-                  <NexaButton size="md" variant="secondary" className="bg-white text-blue-700 font-bold rounded-full hover:bg-gray-100" leftIcon={<Tv className="w-4 h-4" />}>
-                    Launch Scoreboard TV
-                  </NexaButton>
-                </Link>
-              </div>
-            </div>
-
-            {/* LEADERBOARD CARDS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {teams.map((team, idx) => (
-                <NexaCard key={team.id} variant="glass" padding="md" className="rounded-3xl border-l-4 space-y-3" style={{ borderLeftColor: team.color }}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{team.logo}</span>
-                      <div>
-                        <h4 className="font-bold text-sm text-slate-850">{team.custom_name || team.name}</h4>
-                        <p className="text-[10px] text-slate-400 font-medium">{team.name} · {team.motto}</p>
+            {/* ACTIVE SQUAD SPRINT CARDS — MATCHING ErpStatCard STYLING */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {teams
+                .filter((team) => team.status === "ACTIVE")
+                .slice()
+                .sort((a, b) => b.total_points - a.total_points)
+                .map((team, idx) => {
+                  const teamMembers = participants.filter((p) => p.team_id === team.id);
+                  const initialChar = team.initial || (team.name.replace(/^Team\s+/i, "")[0] || "T").toUpperCase();
+                  return (
+                    <NexaCard
+                      key={team.id}
+                      variant="glass"
+                      className="p-6 relative overflow-hidden group hover:border-[#1A56DB]/40 transition-all rounded-3xl"
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-4">
+                        <div
+                          className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl group-hover:scale-110 transition-transform shadow-xs shrink-0"
+                          style={{ backgroundColor: `${team.color}18`, color: team.color }}
+                        >
+                          {initialChar}
+                        </div>
+                        <span
+                          className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border whitespace-nowrap shrink-0 ${
+                            idx === 0
+                              ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                              : idx === 1
+                              ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                              : idx === 2
+                              ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                              : "bg-slate-500/10 text-slate-600 border-slate-500/20"
+                          }`}
+                        >
+                          Rank #{team.rank} {idx === 0 ? "· Leader" : ""}
+                        </span>
                       </div>
-                    </div>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                      idx === 0 ? "bg-amber-100 text-amber-800" : idx === 1 ? "bg-slate-200 text-slate-700" : idx === 2 ? "bg-amber-50 text-amber-700" : "bg-gray-100 text-slate-500"
-                    }`}>
-                      Rank #{team.rank}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-100 text-xs">
-                    <div>
-                      <span className="text-slate-400 text-[11px]">Total Score:</span>
-                      <p className="font-black text-slate-800 text-sm">{team.total_points} / 850 pts</p>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 text-[11px]">Squad Roster:</span>
-                      <p className="font-bold text-slate-700 text-sm">{participants.filter((p) => p.team_id === team.id).length} Members</p>
-                    </div>
-                  </div>
-                </NexaCard>
-              ))}
+                      <div className="w-full min-w-0 mb-1 overflow-hidden">
+                        <p
+                          className="text-xs font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider whitespace-nowrap overflow-hidden text-ellipsis w-full block"
+                          title={team.name}
+                        >
+                          <span className="whitespace-nowrap inline">{team.name}</span>
+                        </p>
+                      </div>
+                      <h3 className="text-2xl font-extrabold text-[var(--nexa-text-primary)] mb-1 whitespace-nowrap">
+                        {team.total_points} <span className="text-xs font-normal text-[var(--nexa-text-muted)]">/ 850 pts</span>
+                      </h3>
+                      <p className="text-[11px] text-[var(--nexa-text-secondary)] font-medium whitespace-nowrap truncate w-full">
+                        &ldquo;{team.motto}&rdquo; · {teamMembers.length} Staff Assigned
+                      </p>
+                    </NexaCard>
+                  );
+                })}
             </div>
           </div>
         )}
 
         {/* TAB 2: CONFIGURABLE EVENT CALENDAR & TIMELINE */}
         {activeTab === "schedule" && (
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-3xl bg-indigo-50/80 border border-indigo-100">
+          <NexaCard variant="glass" padding="lg" className="space-y-4 rounded-3xl">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-3 border-b border-[var(--nexa-border)]">
               <div>
-                <h3 className="font-bold text-indigo-950 text-sm flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-indigo-600" /> Configurable 3-Day Event Calendar & Itinerary
+                <h3 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">
+                  Event Schedule & Timeline
                 </h3>
-                <p className="text-xs text-indigo-700 mt-0.5">
-                  Facilitators can add, reorder, edit, and mark items as "Live Now" to sync with participant countdown timers and the Arena Stage Scoreboard.
+                <p className="text-[11px] text-[var(--nexa-text-muted)] font-medium">
+                  Facilitators can add, edit, and broadcast live activities to the Stage TV Scoreboard
                 </p>
               </div>
-              <NexaButton
-                size="sm"
-                variant="primary"
-                className="rounded-full bg-indigo-600 text-white"
-                onClick={() => setNewScheduleModal(true)}
-                leftIcon={<Plus className="w-3.5 h-3.5" />}
-              >
-                Add Schedule Event
-              </NexaButton>
-            </div>
 
-            {/* DAY SELECTOR FILTER */}
-            <div className="flex items-center justify-between border-b border-gray-200 pb-3">
-              <div className="flex items-center gap-2">
+              {/* Day filters and Add button */}
+              <div className="flex items-center gap-2 flex-wrap">
                 {["Day 1", "Day 2", "Day 3", "ALL"].map((day) => (
                   <button
                     key={day}
                     onClick={() => setScheduleDayFilter(day)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 border font-bold rounded-full text-xs cursor-pointer transition-all ${
                       scheduleDayFilter === day
-                        ? "bg-indigo-600 text-white shadow-sm"
-                        : "text-slate-600 hover:bg-gray-100 border border-transparent hover:border-gray-200"
+                        ? "bg-[#1A56DB] text-white border-[#1A56DB] shadow-xs"
+                        : "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)] text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
                     }`}
                   >
                     {day}
                   </button>
                 ))}
-              </div>
-              <span className="text-xs text-slate-400 font-semibold">
-                {filteredSchedule.length} Scheduled Activities
-              </span>
-            </div>
-
-            {/* TIMELINE LIST */}
-            <div className="space-y-3.5">
-              {filteredSchedule.map((item, idx) => (
-                <div
-                  key={item.id}
-                  className={`p-4 rounded-3xl border transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-4 ${
-                    item.status === "LIVE"
-                      ? "bg-emerald-50/70 border-emerald-300 shadow-md shadow-emerald-500/5 ring-2 ring-emerald-500/20"
-                      : item.status === "COMPLETED"
-                      ? "bg-gray-50/50 border-gray-100 opacity-75"
-                      : "bg-white border-gray-100 hover:border-gray-200"
-                  }`}
+                <NexaButton
+                  size="sm"
+                  variant="primary"
+                  className="rounded-full bg-[#1A56DB] text-xs h-8 ml-1"
+                  onClick={() => setNewScheduleModal(true)}
+                  leftIcon={<Plus className="w-3.5 h-3.5" />}
                 >
-                  <div className="flex items-start gap-3.5 flex-1">
-                    {/* TIME BADGE */}
-                    <div className="px-3 py-2 rounded-2xl bg-indigo-50 border border-indigo-100 text-center shrink-0 min-w-[100px]">
-                      <span className="text-[10px] font-black text-indigo-600 uppercase block">{item.day}</span>
-                      <span className="text-xs font-black text-slate-800 block">{item.start_time}</span>
-                      <span className="text-[10px] text-slate-400 block">{item.end_time}</span>
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                          item.category === "Challenge" ? "bg-purple-100 text-purple-800" : item.category === "Sports" ? "bg-blue-100 text-blue-800" : item.category === "Awards" ? "bg-amber-100 text-amber-800" : "bg-gray-100 text-slate-600"
-                        }`}>
-                          {item.category}
-                        </span>
-                        <span className="text-xs text-slate-400 flex items-center gap-1 font-medium">
-                          <MapPin className="w-3 h-3 text-slate-400" /> {item.location}
-                        </span>
-                        {item.max_score ? (
-                          <span className="text-xs font-black text-emerald-600">+{item.max_score} pts</span>
-                        ) : null}
-                      </div>
-
-                      <h4 className="font-bold text-sm text-slate-850 flex items-center gap-2">
-                        {item.title}
-                        {item.status === "LIVE" && (
-                          <span className="bg-emerald-500 text-white text-[9px] font-black px-2 py-0.2 rounded-full uppercase animate-pulse">
-                            LIVE NOW
-                          </span>
-                        )}
-                      </h4>
-                      <p className="text-xs text-slate-500">{item.description}</p>
-                      {item.facilitator_notes && (
-                        <p className="text-[11px] text-amber-700 bg-amber-50/80 px-2.5 py-1 rounded-xl border border-amber-100 inline-block font-medium">
-                          📋 Facilitator Guide: {item.facilitator_notes}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* ACTION CONTROLS */}
-                  <div className="flex items-center gap-2 self-end md:self-center shrink-0">
-                    {item.status !== "LIVE" && (
-                      <button
-                        onClick={() => handleUpdateScheduleStatus(item, "LIVE")}
-                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1 cursor-pointer"
-                        title="Broadcast as Live Session on TV"
-                      >
-                        <Radio className="w-3 h-3" /> Mark Live
-                      </button>
-                    )}
-                    {item.status === "LIVE" && (
-                      <button
-                        onClick={() => handleUpdateScheduleStatus(item, "COMPLETED")}
-                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs flex items-center gap-1 cursor-pointer"
-                      >
-                        <CheckCircle2 className="w-3 h-3" /> Finish Event
-                      </button>
-                    )}
-                    <button
-                      onClick={() => setEditingScheduleItem(item)}
-                      className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-gray-100 rounded-lg cursor-pointer"
-                      title="Edit Item"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteScheduleItem(item.id)}
-                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-gray-100 rounded-lg cursor-pointer"
-                      title="Delete Item"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+                  Add Event
+                </NexaButton>
+              </div>
             </div>
-          </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-[var(--nexa-border)] text-[var(--nexa-text-muted)]">
+                    <th className="pb-3 px-3 font-bold uppercase tracking-wider w-[42%] min-w-[340px]">Activity</th>
+                    <th className="pb-3 px-3 font-bold uppercase tracking-wider whitespace-nowrap">Schedule & Location</th>
+                    <th className="pb-3 px-3 font-bold uppercase tracking-wider whitespace-nowrap">Category</th>
+                    <th className="pb-3 px-3 font-bold uppercase tracking-wider whitespace-nowrap">Points</th>
+                    <th className="pb-3 px-3 font-bold uppercase tracking-wider whitespace-nowrap">Status</th>
+                    <th className="pb-3 px-3 font-bold uppercase tracking-wider text-right whitespace-nowrap">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--nexa-border)] text-[var(--nexa-text-primary)]">
+                  {filteredSchedule.length > 0 ? (
+                    filteredSchedule.map((item) => (
+                      <tr key={item.id} className="hover:bg-[var(--nexa-bg-base)]/50 transition-colors">
+                        <td className="py-3.5 px-3 min-w-[340px]">
+                          <div>
+                            <p className="font-bold text-xs flex items-center gap-1.5">
+                              {item.title}
+                              {item.status === "LIVE" && (
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                              )}
+                            </p>
+                            <p className="text-[11px] text-[var(--nexa-text-muted)] font-medium mt-0.5">
+                              {item.description}
+                            </p>
+                            {item.facilitator_notes && (
+                              <p className="text-[10px] text-amber-700 dark:text-amber-400 font-medium mt-1 flex items-center gap-1">
+                                <FileText className="w-3 h-3 text-amber-600 shrink-0" />
+                                <span>Guide: {item.facilitator_notes}</span>
+                              </p>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-3 whitespace-nowrap">
+                          <div>
+                            <p className="font-bold text-xs text-blue-600">
+                              {item.day} · {item.start_time} – {item.end_time}
+                            </p>
+                            <p className="text-[11px] text-[var(--nexa-text-muted)] font-medium flex items-center gap-1 mt-0.5">
+                              <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" /> {item.location}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-3 whitespace-nowrap">
+                          <span
+                            className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
+                              item.category === "Challenge"
+                                ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                                : item.category === "Sports"
+                                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                                : item.category === "Awards"
+                                ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                                : "bg-slate-500/10 text-slate-600 border-slate-500/20"
+                            }`}
+                          >
+                            {item.category}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-3 whitespace-nowrap">
+                          {item.max_score ? (
+                            <span className="bg-emerald-500/10 text-emerald-600 font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-500/20 text-xs">
+                              +{item.max_score} pts
+                            </span>
+                          ) : (
+                            <span className="text-[var(--nexa-text-muted)] font-semibold">—</span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-3 whitespace-nowrap">
+                          {item.status === "LIVE" ? (
+                            <span className="bg-emerald-500/10 text-emerald-600 font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-500/20 text-xs inline-flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live Now
+                            </span>
+                          ) : item.status === "COMPLETED" ? (
+                            <span className="bg-blue-500/10 text-blue-600 font-extrabold px-2.5 py-0.5 rounded-full border border-blue-500/20 text-xs">
+                              Completed
+                            </span>
+                          ) : (
+                            <span className="bg-slate-500/10 text-slate-600 font-extrabold px-2.5 py-0.5 rounded-full border border-slate-500/20 text-xs">
+                              Scheduled
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-3 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {item.status !== "LIVE" && (
+                              <button
+                                onClick={() => handleUpdateScheduleStatus(item, "LIVE")}
+                                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-full text-[11px] flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+                                title="Mark Live"
+                              >
+                                <Radio className="w-3 h-3" /> Live
+                              </button>
+                            )}
+                            {item.status === "LIVE" && (
+                              <button
+                                onClick={() => handleUpdateScheduleStatus(item, "COMPLETED")}
+                                className="px-2.5 py-1 bg-[#1A56DB] hover:bg-blue-700 text-white font-bold rounded-full text-[11px] flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+                              >
+                                <CheckCircle2 className="w-3 h-3" /> Done
+                              </button>
+                            )}
+                            <button
+                              onClick={() => setEditingScheduleItem(item)}
+                              className="p-1.5 text-[var(--nexa-text-muted)] hover:text-[#1A56DB] hover:bg-[var(--nexa-bg-base)] rounded-lg transition-colors cursor-pointer"
+                              title="Edit Item"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteScheduleItem(item.id)}
+                              className="p-1.5 text-[var(--nexa-text-muted)] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                              title="Delete Item"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-[var(--nexa-text-muted)] font-medium">
+                        No scheduled activities found for this filter.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </NexaCard>
         )}
 
         {/* TAB 3: STAFF POOL & TEAM BUILDER ROSTER */}
         {activeTab === "roster" && (
           <div className="space-y-6">
+            {/* HEADER BANNER & CONTROLS */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-3xl bg-blue-50 border border-blue-100">
               <div>
-                <h3 className="font-bold text-slate-850 text-sm">Staff Pool Roster & Team Builder</h3>
+                <h3 className="font-bold text-slate-850 text-sm flex items-center gap-2">
+                  <Users className="w-4 h-4 text-blue-600" /> Team Roster & Staff Pool
+                </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Participants are automatically drawn from the active tenant directory. Use 1-Click Auto-Balance to evenly mix 60 staff members across 6 teams by department.
+                  Configure championship squads (Team A through Team J). Assign staff from the employee pool or use 1-click auto-balance.
                 </p>
               </div>
-              <NexaButton
-                size="sm"
-                variant="primary"
-                className="rounded-full bg-blue-600 text-white"
-                onClick={handleAutoAssign}
-                disabled={isAutoAssigning}
-                leftIcon={<Sparkles className="w-3.5 h-3.5" />}
-              >
-                {isAutoAssigning ? "Balancing..." : "1-Click Auto-Distribute (60 Staff)"}
-              </NexaButton>
+
+              <div className="flex items-center gap-3 flex-wrap">
+                {/* HIDE INACTIVE TOGGLE */}
+                <label className="flex items-center gap-2 cursor-pointer bg-white px-3.5 py-1.5 rounded-full border border-gray-200 shadow-xs text-xs font-bold text-slate-700 hover:border-blue-300 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={hideInactive}
+                    onChange={(e) => setHideInactive(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded cursor-pointer accent-blue-600"
+                  />
+                  <span>Hide Inactive</span>
+                </label>
+
+                <NexaBadge variant="secondary" size="sm" className="rounded-full font-bold">
+                  {teams.filter((t) => t.status === "ACTIVE").length} Active · {teams.filter((t) => t.status === "INACTIVE").length} Standby
+                </NexaBadge>
+
+                <NexaButton
+                  size="sm"
+                  variant="primary"
+                  className="rounded-full bg-blue-600 text-white shadow-xs"
+                  onClick={handleAutoAssign}
+                  disabled={isAutoAssigning}
+                  leftIcon={<Sparkles className="w-3.5 h-3.5" />}
+                >
+                  {isAutoAssigning ? "Balancing..." : "1-Click Auto-Balance"}
+                </NexaButton>
+              </div>
             </div>
 
-            {/* 6 TEAM COLUMNS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {teams.map((team) => {
-                const teamMembers = participants.filter((p) => p.team_id === team.id);
-                return (
-                  <NexaCard key={team.id} variant="glass" padding="md" className="rounded-3xl border-t-4 space-y-4" style={{ borderTopColor: team.color }}>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-2xl">{team.logo}</span>
-                        <div>
-                          <h4 className="font-bold text-xs text-slate-850">{team.custom_name || team.name}</h4>
-                          <p className="text-[10px] text-slate-400">{teamMembers.length} / 10 Members Assigned</p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setEditingTeam(team)}
-                        className="text-slate-400 hover:text-blue-600 p-1.5 rounded-lg hover:bg-gray-100 transition-all cursor-pointer"
-                        title="Edit Team Name / Motto"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+            {/* 3-COLUMN TEAM GRID — EXACT SAME STYLING AS OVERVIEW */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {teams
+                .slice()
+                .filter((team) => (hideInactive ? team.status === "ACTIVE" : true))
+                .sort((a, b) => {
+                  if (a.status === "ACTIVE" && b.status === "INACTIVE") return -1;
+                  if (a.status === "INACTIVE" && b.status === "ACTIVE") return 1;
+                  return b.total_points - a.total_points;
+                })
+                .map((team, idx) => {
+                  const teamMembers = participants.filter((p) => p.team_id === team.id);
+                  const isInactive = team.status === "INACTIVE";
+                  const initialChar = team.initial || (team.name.replace(/^Team\s+/i, "")[0] || "T").toUpperCase();
 
-                    <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-                      {teamMembers.length > 0 ? (
-                        teamMembers.map((m) => (
-                          <div key={m.id} className="p-2 rounded-xl bg-gray-50/80 border border-gray-100 flex items-center justify-between text-xs">
-                            <div className="flex items-center gap-2.5">
-                              <img src={m.avatar} alt={m.user_name} className="w-7 h-7 rounded-full object-cover border border-gray-200" />
-                              <div>
-                                <p className="font-bold text-slate-800 text-[11px] leading-tight flex items-center gap-1">
-                                  {m.user_name}
-                                  {m.role === "captain" && (
-                                    <span className="text-amber-500" title="Team Captain">⭐</span>
-                                  )}
-                                </p>
-                                <p className="text-[9px] text-slate-400 font-medium truncate max-w-[120px]">{m.department}</p>
-                              </div>
+                  if (isInactive) {
+                    return (
+                      <NexaCard
+                        key={team.id}
+                        variant="glass"
+                        className="p-6 relative overflow-hidden group border border-gray-200 opacity-65 hover:opacity-100 transition-all rounded-3xl flex flex-col justify-between"
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-2 mb-4">
+                            <div className="w-12 h-12 rounded-2xl bg-gray-100 text-gray-400 flex items-center justify-center font-black text-xl shrink-0 border border-gray-200">
+                              {initialChar}
                             </div>
-                            <button
-                              onClick={() => handleToggleCaptain(m)}
-                              className={`text-[10px] px-1.5 py-0.5 rounded font-bold cursor-pointer ${
-                                m.role === "captain" ? "bg-amber-100 text-amber-800" : "text-slate-400 hover:bg-gray-200"
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200 whitespace-nowrap shrink-0">
+                                Standby
+                              </span>
+                              {/* SWITCH TOGGLE */}
+                              <button
+                                type="button"
+                                onClick={() => toggleTeamActive(team.id)}
+                                className="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-gray-300 hover:bg-gray-400 transition-colors duration-200 ease-in-out focus:outline-none"
+                                title="Inactive — Click to activate"
+                                role="switch"
+                                aria-checked={false}
+                              >
+                                <span
+                                  aria-hidden="true"
+                                  className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out translate-x-0"
+                                />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="w-full min-w-0 mb-1 overflow-hidden">
+                            <p
+                              className="text-xs font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider whitespace-nowrap overflow-hidden text-ellipsis w-full block"
+                              title={team.name}
+                            >
+                              <span className="whitespace-nowrap inline">{team.name}</span>
+                            </p>
+                          </div>
+
+                          <h3 className="text-2xl font-extrabold text-gray-400 mb-1 whitespace-nowrap">
+                            0 <span className="text-xs font-normal text-gray-400">/ 850 pts</span>
+                          </h3>
+
+                          <p className="text-[11px] text-[var(--nexa-text-secondary)] font-medium whitespace-nowrap truncate w-full mb-4">
+                            Standby Squad · Flip switch to activate
+                          </p>
+                        </div>
+
+                        <button
+                          onClick={() => toggleTeamActive(team.id)}
+                          className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" /> Activate Team
+                        </button>
+                      </NexaCard>
+                    );
+                  }
+
+                  return (
+                    <NexaCard
+                      key={team.id}
+                      variant="glass"
+                      className="p-6 relative overflow-hidden group hover:border-[#1A56DB]/40 transition-all rounded-3xl flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-2 mb-4">
+                          <div
+                            className="w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl group-hover:scale-110 transition-transform shadow-xs shrink-0"
+                            style={{ backgroundColor: `${team.color}18`, color: team.color }}
+                          >
+                            {initialChar}
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span
+                              className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border whitespace-nowrap shrink-0 ${
+                                idx === 0
+                                  ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                                  : idx === 1
+                                  ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                                  : idx === 2
+                                  ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                                  : "bg-slate-500/10 text-slate-600 border-slate-500/20"
                               }`}
                             >
-                              {m.role === "captain" ? "Captain" : "Make Captain"}
+                              Rank #{team.rank} {idx === 0 ? "· Leader" : ""}
+                            </span>
+
+                            {/* SWITCH TOGGLE */}
+                            <button
+                              type="button"
+                              onClick={() => toggleTeamActive(team.id)}
+                              className="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent bg-emerald-500 hover:bg-emerald-600 transition-colors duration-200 ease-in-out focus:outline-none"
+                              title="Active — Click switch to deactivate"
+                              role="switch"
+                              aria-checked={true}
+                            >
+                              <span
+                                aria-hidden="true"
+                                className="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out translate-x-4"
+                              />
+                            </button>
+
+                            <button
+                              onClick={() => setEditingTeam(team)}
+                              className="text-slate-400 hover:text-blue-600 p-1 rounded-lg hover:bg-gray-100 transition-all cursor-pointer"
+                              title="Edit Branding"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
                             </button>
                           </div>
-                        ))
-                      ) : (
-                        <div className="py-6 text-center text-slate-400 text-xs font-semibold">
-                          No staff assigned yet. Click Auto-Balance above.
                         </div>
-                      )}
-                    </div>
-                  </NexaCard>
-                );
-              })}
+
+                        <div className="w-full min-w-0 mb-1 overflow-hidden">
+                          <p
+                            className="text-xs font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider whitespace-nowrap overflow-hidden text-ellipsis w-full block"
+                            title={team.name}
+                          >
+                            <span className="whitespace-nowrap inline">{team.name}</span>
+                          </p>
+                        </div>
+
+                        <h3 className="text-2xl font-extrabold text-[var(--nexa-text-primary)] mb-1 whitespace-nowrap">
+                          {team.total_points} <span className="text-xs font-normal text-[var(--nexa-text-muted)]">/ 850 pts</span>
+                        </h3>
+
+                        <p className="text-[11px] text-[var(--nexa-text-secondary)] font-medium whitespace-nowrap truncate w-full mb-4">
+                          &ldquo;{team.motto}&rdquo; · {teamMembers.length} Staff Assigned
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setStaffPoolTeam(team);
+                          setStaffSearchQuery("");
+                          setStaffDeptFilter("ALL");
+                        }}
+                        className="w-full py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-2xl text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer border border-blue-100 shadow-xs"
+                      >
+                        <Users className="w-3.5 h-3.5" /> Select Staff Pool ({teamMembers.length})
+                      </button>
+                    </NexaCard>
+                  );
+                })}
             </div>
           </div>
         )}
 
         {/* TAB 4: CHALLENGES & SCORING ENGINES */}
         {activeTab === "challenges" && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between border-b border-gray-200 pb-3">
-              <div className="flex items-center gap-2">
-                {["ALL", "Day 1", "Day 2", "Day 3"].map((day) => (
+          <NexaCard variant="glass" padding="lg" className="space-y-4 rounded-3xl">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-3 border-b border-[var(--nexa-border)]">
+              <div>
+                <h3 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">
+                  Championship Challenges & Scoring Engines
+                </h3>
+                <p className="text-[11px] text-[var(--nexa-text-muted)] font-medium">
+                  Official quests, scoring engines, and live facilitator grading
+                </p>
+              </div>
+
+              {/* Day filters & Add Challenge */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {["Day 1", "Day 2", "Day 3", "ALL"].map((day) => (
                   <button
                     key={day}
                     onClick={() => setDayFilter(day)}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                    className={`px-3 py-1.5 border font-bold rounded-full text-xs cursor-pointer transition-all ${
                       dayFilter === day
-                        ? "bg-blue-600 text-white"
-                        : "text-slate-600 hover:bg-gray-100 border border-transparent hover:border-gray-200"
+                        ? "bg-[#1A56DB] text-white border-[#1A56DB] shadow-xs"
+                        : "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)] text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
                     }`}
                   >
                     {day}
                   </button>
                 ))}
+                <NexaButton
+                  size="sm"
+                  variant="primary"
+                  className="rounded-full bg-[#1A56DB] text-xs h-8 ml-1"
+                  onClick={() => setNewChallengeModal(true)}
+                  leftIcon={<Plus className="w-3.5 h-3.5" />}
+                >
+                  Add Challenge
+                </NexaButton>
               </div>
-              <span className="text-xs text-slate-400 font-semibold">
-                Showing {challenges.filter((c) => dayFilter === "ALL" || c.day === dayFilter).length} Quests ({challenges.reduce((sum, c) => sum + c.max_score, 0)} Total Points)
-              </span>
             </div>
 
-            <div className="space-y-3.5">
-              {challenges.filter((c) => dayFilter === "ALL" || c.day === dayFilter).map((chl) => (
-                <NexaCard key={chl.id} variant="glass" padding="md" className="rounded-3xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                  <div className="space-y-1.5 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="bg-blue-100 text-blue-800 text-[10px] font-black uppercase px-2 py-0.5 rounded-full">
-                        {chl.day}
-                      </span>
-                      <span className="bg-slate-100 text-slate-700 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full">
-                        {chl.category}
-                      </span>
-                      <span className="bg-purple-100 text-purple-800 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full">
-                        Engine: {chl.engine_type}
-                      </span>
-                      <span className="font-black text-xs text-emerald-700">+{chl.max_score} pts</span>
-                    </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-[var(--nexa-border)] text-[var(--nexa-text-muted)]">
+                    <th className="pb-3 px-3 font-bold uppercase tracking-wider w-[42%] min-w-[340px]">Challenge Quest</th>
+                    <th className="pb-3 px-3 font-bold uppercase tracking-wider whitespace-nowrap">Schedule & Engine</th>
+                    <th className="pb-3 px-3 font-bold uppercase tracking-wider whitespace-nowrap">Category</th>
+                    <th className="pb-3 px-3 font-bold uppercase tracking-wider whitespace-nowrap">Max Points</th>
+                    <th className="pb-3 px-3 font-bold uppercase tracking-wider whitespace-nowrap">Status</th>
+                    <th className="pb-3 px-3 font-bold uppercase tracking-wider text-right whitespace-nowrap">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--nexa-border)] text-[var(--nexa-text-primary)]">
+                  {challenges.filter((c) => dayFilter === "ALL" || c.day === dayFilter).length > 0 ? (
+                    challenges
+                      .filter((c) => dayFilter === "ALL" || c.day === dayFilter)
+                      .map((chl) => (
+                        <tr key={chl.id} className="hover:bg-[var(--nexa-bg-base)]/50 transition-colors">
+                          <td className="py-3.5 px-3 min-w-[340px]">
+                            <div>
+                              <p className="font-bold text-xs flex items-center gap-1.5">
+                                {chl.name}
+                                {(chl.status === "OPEN" || chl.status === "IN_PROGRESS") && (
+                                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                                )}
+                              </p>
+                              <p className="text-[11px] text-[var(--nexa-text-muted)] font-medium mt-0.5">
+                                {chl.description}
+                              </p>
+                              {chl.instructions && (
+                                <p className="text-[10px] text-amber-700 dark:text-amber-400 font-medium mt-1 flex items-center gap-1">
+                                  <FileText className="w-3 h-3 text-amber-600 shrink-0" />
+                                  <span>Guide: {chl.instructions}</span>
+                                </p>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-3 whitespace-nowrap">
+                            <div>
+                              <p className="font-bold text-xs text-blue-600">{chl.day || "Day 1"}</p>
+                              <p className="text-[10px] text-[var(--nexa-text-muted)] font-mono">
+                                Engine: {chl.engine_type || (chl as any).engineType || "RUBRIC"}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-3 whitespace-nowrap">
+                            <span
+                              className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
+                                (chl.category || "Challenge") === "Challenge"
+                                  ? "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                                  : chl.category === "Sports"
+                                  ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                                  : chl.category === "Awards"
+                                  ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                                  : chl.category === "Trivia"
+                                  ? "bg-purple-500/10 text-purple-600 border-purple-500/20"
+                                  : "bg-slate-500/10 text-slate-600 border-slate-500/20"
+                              }`}
+                            >
+                              {chl.category || "Challenge"}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-3 whitespace-nowrap">
+                            <span className="bg-emerald-500/10 text-emerald-600 font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-500/20 text-xs">
+                              +{chl.max_score} pts
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-3 whitespace-nowrap">
+                            {chl.status === "OPEN" || chl.status === "IN_PROGRESS" ? (
+                              <span className="bg-emerald-500/10 text-emerald-600 font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-500/20 text-xs inline-flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Active
+                              </span>
+                            ) : chl.status === "COMPLETED" ? (
+                              <span className="bg-blue-500/10 text-blue-600 font-extrabold px-2.5 py-0.5 rounded-full border border-blue-500/20 text-xs">
+                                Completed
+                              </span>
+                            ) : (
+                              <span className="bg-slate-500/10 text-slate-600 font-extrabold px-2.5 py-0.5 rounded-full border border-slate-500/20 text-xs">
+                                Locked
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3.5 px-3 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {chl.status === "LOCKED" ? (
+                                <button
+                                  onClick={() => handleToggleChallengeStatus(chl, "OPEN")}
+                                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-full text-[11px] flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+                                  title="Open Quest"
+                                >
+                                  <Unlock className="w-3 h-3" /> Open
+                                </button>
+                              ) : chl.status === "OPEN" || chl.status === "IN_PROGRESS" ? (
+                                <>
+                                  <button
+                                    onClick={() => openScoringModal(chl)}
+                                    className="px-2.5 py-1 bg-[#1A56DB] hover:bg-blue-700 text-white font-bold rounded-full text-[11px] flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
+                                  >
+                                    <Award className="w-3 h-3" /> Score
+                                  </button>
+                                  <button
+                                    onClick={() => handleToggleChallengeStatus(chl, "LOCKED")}
+                                    className="p-1.5 text-[var(--nexa-text-muted)] hover:text-slate-700 hover:bg-[var(--nexa-bg-base)] rounded-lg transition-colors cursor-pointer"
+                                    title="Lock Quest"
+                                  >
+                                    <Lock className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  onClick={() => openScoringModal(chl)}
+                                  className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-slate-700 font-bold rounded-full text-[11px] flex items-center gap-1 cursor-pointer transition-colors"
+                                >
+                                  <History className="w-3 h-3" /> Review
+                                </button>
+                              )}
 
-                    <h4 className="font-bold text-sm text-slate-850">{chl.name}</h4>
-                    <p className="text-xs text-slate-500 line-clamp-1">{chl.description}</p>
-                  </div>
+                              {/* EDIT ACTION */}
+                              <button
+                                onClick={() => setEditingChallenge(chl)}
+                                className="p-1.5 text-[var(--nexa-text-muted)] hover:text-[#1A56DB] hover:bg-[var(--nexa-bg-base)] rounded-lg transition-colors cursor-pointer"
+                                title="Edit Challenge Quest"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
 
-                  <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
-                    <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full ${
-                      chl.status === "OPEN" || chl.status === "IN_PROGRESS"
-                        ? "bg-emerald-100 text-emerald-800"
-                        : chl.status === "COMPLETED"
-                        ? "bg-blue-100 text-blue-800"
-                        : "bg-gray-100 text-slate-400"
-                    }`}>
-                      {chl.status}
-                    </span>
-
-                    <div className="flex items-center gap-2">
-                      {chl.status === "LOCKED" ? (
-                        <button
-                          onClick={() => handleToggleChallengeStatus(chl, "OPEN")}
-                          className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1"
-                        >
-                          <Unlock className="w-3.5 h-3.5" /> Open Quest
-                        </button>
-                      ) : chl.status === "OPEN" || chl.status === "IN_PROGRESS" ? (
-                        <>
-                          <button
-                            onClick={() => openScoringModal(chl)}
-                            className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1"
-                          >
-                            <Award className="w-3.5 h-3.5" /> Score Activity
-                          </button>
-                          <button
-                            onClick={() => handleToggleChallengeStatus(chl, "LOCKED")}
-                            className="px-2.5 py-1.5 bg-gray-100 text-slate-600 hover:bg-gray-200 font-bold rounded-xl text-xs transition-all cursor-pointer"
-                          >
-                            Lock
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          onClick={() => openScoringModal(chl)}
-                          className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-slate-700 font-bold rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1"
-                        >
-                          <History className="w-3.5 h-3.5" /> Review Scores
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </NexaCard>
-              ))}
+                              {/* DELETE ACTION */}
+                              <button
+                                onClick={() => handleDeleteChallenge(chl.id)}
+                                className="p-1.5 text-[var(--nexa-text-muted)] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                title="Delete Challenge Quest"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="py-8 text-center text-[var(--nexa-text-muted)] font-medium">
+                        No challenges found for this filter.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
-          </div>
+          </NexaCard>
         )}
 
         {/* TAB 5: CONCEPT REGISTRATION DESK */}
@@ -912,7 +1486,7 @@ export default function QuestCommandDeskPage() {
           <div className="space-y-6">
             <div className="p-5 rounded-3xl bg-amber-50 border border-amber-100 flex items-start justify-between">
               <div>
-                <h3 className="font-bold text-amber-900 text-sm">Core Challenge Concept Duplicate Prevention Desk</h3>
+                <h3 className="font-bold text-amber-900 text-sm">Concept Lock</h3>
                 <p className="text-xs text-amber-700 mt-0.5">
                   Teams must register and get their performance concept approved before taking the stage. Approved concepts are permanently locked so no other team can copy them.
                 </p>
@@ -963,7 +1537,7 @@ export default function QuestCommandDeskPage() {
         {/* TAB 6: SCORE AUDIT TRAIL */}
         {activeTab === "audit" && (
           <div className="space-y-4">
-            <h3 className="font-bold text-slate-850 text-sm">Immutable Score Modification Ledger</h3>
+            <h3 className="font-bold text-slate-850 text-sm">Audit Trail</h3>
             <p className="text-xs text-slate-400">
               Every score awarded or adjusted is permanently recorded with facilitator identity and timestamp to protect competition integrity.
             </p>
@@ -1172,6 +1746,154 @@ export default function QuestCommandDeskPage() {
         </div>
       )}
 
+      {/* CREATE / EDIT CHALLENGE MODAL */}
+      {(newChallengeModal || editingChallenge) && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full space-y-4 shadow-2xl">
+            <h3 className="font-bold text-base text-slate-850">
+              {editingChallenge ? "Edit Championship Challenge" : "Add New Challenge Quest"}
+            </h3>
+
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">Day:</label>
+                  <select
+                    value={editingChallenge ? editingChallenge.day : newChallengeForm.day}
+                    onChange={(e) => {
+                      if (editingChallenge) setEditingChallenge({ ...editingChallenge, day: e.target.value as any });
+                      else setNewChallengeForm({ ...newChallengeForm, day: e.target.value as any });
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs bg-white"
+                  >
+                    <option value="Day 1">Day 1</option>
+                    <option value="Day 2">Day 2</option>
+                    <option value="Day 3">Day 3</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">Category:</label>
+                  <select
+                    value={editingChallenge ? editingChallenge.category : newChallengeForm.category}
+                    onChange={(e) => {
+                      if (editingChallenge) setEditingChallenge({ ...editingChallenge, category: e.target.value });
+                      else setNewChallengeForm({ ...newChallengeForm, category: e.target.value });
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs bg-white"
+                  >
+                    <option value="Challenge">Challenge Quest</option>
+                    <option value="Sports">Sports & Physical</option>
+                    <option value="Awards">Awards</option>
+                    <option value="Icebreaker">Icebreaker</option>
+                    <option value="Trivia">Trivia / Quiz</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">Max Score (pts):</label>
+                  <input
+                    type="number"
+                    placeholder="50"
+                    value={editingChallenge ? editingChallenge.max_score : newChallengeForm.max_score}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      if (editingChallenge) setEditingChallenge({ ...editingChallenge, max_score: val });
+                      else setNewChallengeForm({ ...newChallengeForm, max_score: val });
+                    }}
+                    className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">Challenge Name / Title:</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Quest 12: Escape Room Cipher Challenge"
+                  value={editingChallenge ? editingChallenge.name : newChallengeForm.name}
+                  onChange={(e) => {
+                    if (editingChallenge) setEditingChallenge({ ...editingChallenge, name: e.target.value });
+                    else setNewChallengeForm({ ...newChallengeForm, name: e.target.value });
+                  }}
+                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">Scoring Engine Type:</label>
+                <select
+                  value={editingChallenge ? editingChallenge.engine_type : newChallengeForm.engine_type}
+                  onChange={(e) => {
+                    const eng = e.target.value as any;
+                    if (editingChallenge) setEditingChallenge({ ...editingChallenge, engine_type: eng });
+                    else setNewChallengeForm({ ...newChallengeForm, engine_type: eng });
+                  }}
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs bg-white font-mono"
+                >
+                  <option value="RUBRIC">RUBRIC (Graded Rubric / Criterion scoring)</option>
+                  <option value="PARTICIPATION">PARTICIPATION (Points per active member attended)</option>
+                  <option value="RANK_TO_POINTS">RANK_TO_POINTS (Rank 1st to 6th mapped point pool)</option>
+                  <option value="QUIZ">QUIZ (Official quiz answers verified)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">Description:</label>
+                <textarea
+                  rows={2}
+                  placeholder="Short description of the quest challenge..."
+                  value={editingChallenge ? editingChallenge.description : newChallengeForm.description}
+                  onChange={(e) => {
+                    if (editingChallenge) setEditingChallenge({ ...editingChallenge, description: e.target.value });
+                    else setNewChallengeForm({ ...newChallengeForm, description: e.target.value });
+                  }}
+                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs"
+                />
+              </div>
+
+              <div>
+                <label className="text-[11px] font-bold text-slate-700 block mb-1">Facilitator Instructions / Rules Guide:</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 5-min timer, strict 3 judges consensus required"
+                  value={editingChallenge ? (editingChallenge.instructions || "") : (newChallengeForm.instructions || "")}
+                  onChange={(e) => {
+                    if (editingChallenge) setEditingChallenge({ ...editingChallenge, instructions: e.target.value });
+                    else setNewChallengeForm({ ...newChallengeForm, instructions: e.target.value });
+                  }}
+                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                onClick={() => {
+                  setNewChallengeModal(false);
+                  setEditingChallenge(null);
+                }}
+                className="px-4 py-2 bg-gray-100 rounded-xl text-xs font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (editingChallenge) {
+                    handleUpdateChallenge();
+                  } else {
+                    handleCreateChallenge();
+                  }
+                }}
+                className="px-5 py-2 bg-[#1A56DB] hover:bg-blue-700 text-white rounded-xl text-xs font-bold"
+              >
+                Save Challenge Quest
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* SCORING MODAL */}
       {scoringModal.open && scoringModal.challenge && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -1194,8 +1916,13 @@ export default function QuestCommandDeskPage() {
                   {teams.map((team) => (
                     <div key={team.id} className="p-3 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-xl">{team.logo}</span>
-                        <span className="font-bold text-xs text-slate-800">{team.custom_name || team.name}</span>
+                        <div
+                          className="w-6 h-6 rounded-lg flex items-center justify-center font-black text-[10px] shrink-0 border border-slate-200/60"
+                          style={{ backgroundColor: `${team.color}18`, color: team.color }}
+                        >
+                          {team.initial || (team.name.replace(/^Team\s+/i, "")[0] || "T").toUpperCase()}
+                        </div>
+                        <span className="font-bold text-xs text-slate-800">{team.name}</span>
                       </div>
                       <select
                         value={scoringModal.rankings[team.id] || "1st"}
@@ -1224,7 +1951,7 @@ export default function QuestCommandDeskPage() {
                     return (
                       <div key={team.id} className="p-3 rounded-2xl bg-gray-50 border border-gray-100 space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="font-bold text-xs text-slate-800">{team.custom_name || team.name}</span>
+                          <span className="font-bold text-xs text-slate-800">{team.name}</span>
                           <span className="text-[10px] font-bold text-emerald-600">{selected.length} / {teamMembers.length} Present</span>
                         </div>
                         <div className="grid grid-cols-2 gap-1.5">
@@ -1257,8 +1984,13 @@ export default function QuestCommandDeskPage() {
                   {teams.map((team) => (
                     <div key={team.id} className="p-3 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-xl">{team.logo}</span>
-                        <span className="font-bold text-xs text-slate-800">{team.custom_name || team.name}</span>
+                        <div
+                          className="w-6 h-6 rounded-lg flex items-center justify-center font-black text-[10px] shrink-0 border border-slate-200/60"
+                          style={{ backgroundColor: `${team.color}18`, color: team.color }}
+                        >
+                          {team.initial || (team.name.replace(/^Team\s+/i, "")[0] || "T").toUpperCase()}
+                        </div>
+                        <span className="font-bold text-xs text-slate-800">{team.name}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <input
@@ -1353,18 +2085,20 @@ export default function QuestCommandDeskPage() {
                 <label className="text-xs font-bold text-slate-700 block mb-1">Custom Team Name:</label>
                 <input
                   type="text"
+                  placeholder="e.g. Red Phoenix or Red Vipers"
                   value={editingTeam.custom_name || ""}
                   onChange={(e) => setEditingTeam({ ...editingTeam, custom_name: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">Team Motto / Chant:</label>
                 <input
                   type="text"
+                  placeholder="e.g. Relentless Speed & Precision"
                   value={editingTeam.motto || ""}
                   onChange={(e) => setEditingTeam({ ...editingTeam, motto: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl border border-gray-200 text-xs"
+                  className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
             </div>
@@ -1385,6 +2119,185 @@ export default function QuestCommandDeskPage() {
                 className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold"
               >
                 Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* STAFF POOL SELECTOR MODAL */}
+      {staffPoolTeam && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-2xl w-full space-y-4 shadow-2xl max-h-[90vh] flex flex-col">
+            {/* MODAL HEADER */}
+            <div className="flex items-start justify-between pb-3 border-b border-gray-100 shrink-0">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-2xl flex items-center justify-center font-black text-base shrink-0 border border-slate-200/50"
+                  style={{ backgroundColor: `${staffPoolTeam.color}18`, color: staffPoolTeam.color }}
+                >
+                  {staffPoolTeam.initial || (staffPoolTeam.name.replace(/^Team\s+/i, "")[0] || "T").toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-850">
+                    Select Staff Pool · {staffPoolTeam.name}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Assign, transfer, or remove staff members from the active tenant directory into this squad.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setStaffPoolTeam(null)}
+                className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* FILTERS & SEARCH */}
+            <div className="flex items-center gap-2 flex-wrap shrink-0">
+              <input
+                type="text"
+                placeholder="Search staff by name or email..."
+                value={staffSearchQuery}
+                onChange={(e) => setStaffSearchQuery(e.target.value)}
+                className="flex-1 min-w-[200px] px-3.5 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-blue-500 transition-colors"
+              />
+              <select
+                value={staffDeptFilter}
+                onChange={(e) => setStaffDeptFilter(e.target.value)}
+                className="px-3 py-2 rounded-xl border border-gray-200 text-xs font-bold text-slate-700 bg-white focus:outline-none focus:border-blue-500 cursor-pointer"
+              >
+                <option value="ALL">All Departments</option>
+                {Array.from(new Set(users.map((u) => u.department).filter(Boolean))).map((dept) => (
+                  <option key={dept} value={dept}>
+                    {dept}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* SQUAD HEADCOUNT STATS */}
+            <div className="flex items-center justify-between text-xs px-1 text-slate-500 shrink-0">
+              <span>
+                <strong className="text-slate-850">
+                  {participants.filter((p) => p.team_id === staffPoolTeam.id).length}
+                </strong>{" "}
+                members in this squad
+              </span>
+              <span>
+                <strong className="text-blue-600">
+                  {users.filter((u) => !participants.some((p) => p.user_id === u.id)).length}
+                </strong>{" "}
+                unassigned in company
+              </span>
+            </div>
+
+            {/* STAFF LIST */}
+            <div className="overflow-y-auto space-y-2 pr-1 flex-1 min-h-0 divide-y divide-gray-50">
+              {users
+                .filter((u) => {
+                  const matchesSearch =
+                    !staffSearchQuery ||
+                    u.name?.toLowerCase().includes(staffSearchQuery.toLowerCase()) ||
+                    u.email?.toLowerCase().includes(staffSearchQuery.toLowerCase());
+                  const matchesDept = staffDeptFilter === "ALL" || u.department === staffDeptFilter;
+                  return matchesSearch && matchesDept;
+                })
+                .map((u, idx) => {
+                  const assignedParticipant = participants.find((p) => p.user_id === u.id);
+                  const isCurrentTeam = assignedParticipant?.team_id === staffPoolTeam.id;
+                  const isOtherTeam = assignedParticipant && !isCurrentTeam;
+                  const otherTeam = isOtherTeam ? teams.find((t) => t.id === assignedParticipant.team_id) : null;
+                  const avatarSrc = u.avatar && u.avatar.startsWith("/character") ? u.avatar : `/character${(idx % 20) + 1}.jpg`;
+
+                  return (
+                    <div
+                      key={u.id}
+                      className={`pt-2 p-2.5 rounded-2xl flex items-center justify-between gap-3 transition-colors ${
+                        isCurrentTeam
+                          ? "bg-blue-50/60 border border-blue-100"
+                          : "hover:bg-gray-50 border border-transparent"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <img
+                          src={avatarSrc}
+                          alt={u.name}
+                          className="w-8 h-8 rounded-full object-cover border border-gray-200 shrink-0"
+                        />
+                        <div className="min-w-0">
+                          <p className="font-bold text-xs text-slate-850 flex items-center gap-1.5 truncate">
+                            {u.name}
+                            {assignedParticipant?.role === "captain" && isCurrentTeam && (
+                              <span className="text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.2 rounded-full border border-amber-200 font-bold flex items-center gap-0.5">
+                                <Star className="w-2.5 h-2.5 fill-amber-500 text-amber-500" /> Captain
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-[11px] text-slate-400 font-medium truncate">
+                            {u.department || "Staff"} · {u.email}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* ACTION BUTTONS */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {isCurrentTeam ? (
+                          <>
+                            <button
+                              onClick={() => handleToggleCaptainForUser(u.id, staffPoolTeam.id)}
+                              className={`text-[10px] font-bold px-2 py-1 rounded-xl cursor-pointer transition-colors ${
+                                assignedParticipant?.role === "captain"
+                                  ? "bg-amber-500 text-white hover:bg-amber-600"
+                                  : "bg-gray-100 text-slate-600 hover:bg-amber-50 hover:text-amber-700"
+                              }`}
+                              title="Toggle Squad Captain"
+                            >
+                              {assignedParticipant?.role === "captain" ? "★ Captain" : "Make Captain"}
+                            </button>
+                            <button
+                              onClick={() => handleRemoveUserFromTeam(u.id)}
+                              className="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-xs cursor-pointer transition-colors"
+                            >
+                              Remove
+                            </button>
+                          </>
+                        ) : isOtherTeam ? (
+                          <>
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-slate-500">
+                              In {otherTeam?.name || "Other Team"}
+                            </span>
+                            <button
+                              onClick={() => handleAssignUserToTeam(u, staffPoolTeam.id)}
+                              className="px-2.5 py-1 bg-blue-50 hover:bg-blue-600 hover:text-white text-blue-700 font-bold rounded-xl text-xs cursor-pointer transition-colors"
+                            >
+                              Move Here
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => handleAssignUserToTeam(u, staffPoolTeam.id)}
+                            className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs cursor-pointer transition-colors shadow-xs"
+                          >
+                            + Add to Squad
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+
+            {/* MODAL FOOTER */}
+            <div className="flex items-center justify-between pt-3 border-t border-gray-100 shrink-0">
+              <span className="text-xs text-slate-400">Changes are applied immediately.</span>
+              <button
+                onClick={() => setStaffPoolTeam(null)}
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs cursor-pointer shadow-sm"
+              >
+                Done
               </button>
             </div>
           </div>

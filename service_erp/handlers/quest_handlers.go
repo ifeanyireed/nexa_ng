@@ -9,22 +9,50 @@ import (
 	"time"
 )
 
+// QuestPrize Model
+type QuestPrize struct {
+	ID          string `json:"id"`
+	QuestID     string `json:"quest_id"`
+	TenantSlug  string `json:"tenant_slug"`
+	Rank        int    `json:"rank,omitempty"`
+	Title       string `json:"title"`
+	AwardType   string `json:"award_type"` // CASH, TROPHY, GIFT, CERTIFICATE
+	Amount      string `json:"amount"`
+	Description string `json:"description"`
+	Icon        string `json:"icon,omitempty"`
+	OrderIndex  int    `json:"order_index"`
+}
+
 // QuestInstance Model
 type QuestInstance struct {
-	ID             string    `json:"id"`
-	TenantSlug     string    `json:"tenant_slug"`
-	Name           string    `json:"name"`
-	Slug           string    `json:"slug"`
-	Description    string    `json:"description"`
-	CoverImage     string    `json:"cover_image"`
-	Status         string    `json:"status"` // DRAFT, ACTIVE, COMPLETED, ARCHIVED
-	GrandPrize     string    `json:"grand_prize"`
-	TotalMaxPoints int       `json:"total_max_points"`
-	Location       string    `json:"location"`
-	StartsAt       string    `json:"starts_at"`
-	EndsAt         string    `json:"ends_at"`
-	CreatedBy      string    `json:"created_by"`
-	CreatedAt      time.Time `json:"created_at"`
+	ID                     string              `json:"id"`
+	TenantSlug             string              `json:"tenant_slug"`
+	Name                   string              `json:"name"`
+	Slug                   string              `json:"slug"`
+	Description            string              `json:"description"`
+	CoverImage             string              `json:"cover_image"`
+	Status                 string              `json:"status"` // DRAFT, ACTIVE, COMPLETED, ARCHIVED
+	GrandPrize             string              `json:"grand_prize"`
+	Currency               string              `json:"currency,omitempty"`
+	Prizes                 []QuestPrize        `json:"prizes,omitempty"`
+	PrizesJson             string              `json:"prizes_json,omitempty"`
+	TotalMaxPoints         int                 `json:"total_max_points"`
+	Location               string              `json:"location"`
+	StartsAt               string              `json:"starts_at"`
+	EndsAt                 string              `json:"ends_at"`
+	ParticipationType      string              `json:"participation_type,omitempty"`
+	AutoBalance            bool                `json:"auto_balance,omitempty"`
+	EnableStageTV          bool                `json:"enable_stage_tv,omitempty"`
+	AllowManualAdjustments bool                `json:"allow_manual_adjustments,omitempty"`
+	PrimaryColor           string              `json:"primary_color,omitempty"`
+	AccentColor            string              `json:"accent_color,omitempty"`
+	ScoringMode            string              `json:"scoring_mode,omitempty"`
+	ConceptLockEnabled     bool                `json:"concept_lock_enabled,omitempty"`
+	Teams                  []QuestTeam         `json:"teams,omitempty"`
+	Challenges             []QuestChallenge    `json:"challenges,omitempty"`
+	Schedule               []QuestScheduleItem `json:"schedule,omitempty"`
+	CreatedBy              string              `json:"created_by"`
+	CreatedAt              time.Time           `json:"created_at"`
 }
 
 // QuestTeam Model
@@ -37,11 +65,13 @@ type QuestTeam struct {
 	Slug        string `json:"slug"`
 	Logo        string `json:"logo"`
 	Color       string `json:"color"`
+	Initial     string `json:"initial,omitempty"`
 	Motto       string `json:"motto"`
 	TotalPoints int    `json:"total_points"`
 	Rank        int    `json:"rank"`
 	CaptainID   string `json:"captain_id,omitempty"`
 	MemberCount int    `json:"member_count"`
+	Status      string `json:"status,omitempty"` // ACTIVE, INACTIVE
 }
 
 // QuestParticipant Model (Foreign Key to live corporate User directory)
@@ -166,20 +196,92 @@ var (
 
 	reigniteQuests = []QuestInstance{
 		{
-			ID:             "qst-reignite-2026",
-			TenantSlug:     "neweratransports",
-			Name:           "REIGNITE 2026: Team Quest & Championship",
-			Slug:           "reignite-2026",
-			Description:    "Annual enterprise retreat, creative innovation pitch, trivia knowledge wars, and physical agility championship.",
-			CoverImage:     "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80",
-			Status:         "ACTIVE",
-			GrandPrize:     "₦500,000",
-			TotalMaxPoints: 850,
-			Location:       "Epe Resort & Conference Centre, Lagos",
-			StartsAt:       "2026-08-25T09:00:00.000Z",
-			EndsAt:         "2026-08-27T18:00:00.000Z",
-			CreatedBy:      "HR Directorate",
-			CreatedAt:      time.Now(),
+			ID:                     "qst-reignite-2026",
+			TenantSlug:             "neweratransports",
+			Name:                   "REIGNITE 2026: Team Quest & Championship",
+			Slug:                   "reignite-2026",
+			Description:            "Annual enterprise retreat, creative innovation pitch, trivia knowledge wars, and physical agility championship.",
+			CoverImage:             "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80",
+			Status:                 "ACTIVE",
+			GrandPrize:             "₦500,000",
+			Currency:               "NGN",
+			TotalMaxPoints:         850,
+			Location:               "Epe Resort & Conference Centre, Lagos",
+			StartsAt:               "2026-08-25T09:00:00.000Z",
+			EndsAt:                 "2026-08-27T18:00:00.000Z",
+			ParticipationType:      "BOTH",
+			AutoBalance:            true,
+			EnableStageTV:          true,
+			AllowManualAdjustments: true,
+			PrimaryColor:           "#1A56DB",
+			AccentColor:            "#F59E0B",
+			ScoringMode:            "AUTOMATIC_WITH_JUDGE_OVERRIDE",
+			ConceptLockEnabled:     true,
+			CreatedBy:              "HR Directorate",
+			CreatedAt:              time.Now(),
+		},
+	}
+
+	reignitePrizes = []QuestPrize{
+		{
+			ID:          "prz-1",
+			QuestID:     "qst-reignite-2026",
+			TenantSlug:  "neweratransports",
+			Rank:        1,
+			Title:       "1st Place Grand Championship Trophy & Cash",
+			AwardType:   "CASH",
+			Amount:      "₦500,000",
+			Description: "Awarded to the squad with the highest cumulative championship points across all 11 quests.",
+			Icon:        "🏆",
+			OrderIndex:  1,
+		},
+		{
+			ID:          "prz-2",
+			QuestID:     "qst-reignite-2026",
+			TenantSlug:  "neweratransports",
+			Rank:        2,
+			Title:       "2nd Place Silver Podium Award",
+			AwardType:   "CASH",
+			Amount:      "₦250,000",
+			Description: "Runner-up squad award for high performance and sportsmanship.",
+			Icon:        "🥈",
+			OrderIndex:  2,
+		},
+		{
+			ID:          "prz-3",
+			QuestID:     "qst-reignite-2026",
+			TenantSlug:  "neweratransports",
+			Rank:        3,
+			Title:       "3rd Place Bronze Podium Award",
+			AwardType:   "CASH",
+			Amount:      "₦100,000",
+			Description: "Bronze medal championship podium squad prize.",
+			Icon:        "🥉",
+			OrderIndex:  3,
+		},
+		{
+			ID:          "prz-4",
+			QuestID:     "qst-reignite-2026",
+			TenantSlug:  "neweratransports",
+			Rank:        0,
+			Title:       "Best Theme Identity & Team Spirit",
+			AwardType:   "CASH",
+			Amount:      "₦50,000",
+			Description: "Special award for the most energetic chant, banner, and synchronized team identity.",
+			Icon:        "🔥",
+			OrderIndex:  4,
+		},
+		{
+			ID:          "prz-5",
+			QuestID:     "qst-reignite-2026",
+			TenantSlug:  "neweratransports",
+			Rank:        0,
+			Title:       "Championship MVP (Most Valuable Performer)",
+			AwardType:   "CASH",
+			Amount:      "₦25,000",
+			Description: "Individual recognition award for exceptional leadership, agility, and participation.",
+			Icon:        "⭐",
+			OrderIndex:  5,
 		},
 	}
 
@@ -888,6 +990,76 @@ func HandleQuests(w http.ResponseWriter, r *http.Request) {
 		if newQuest.GrandPrize == "" {
 			newQuest.GrandPrize = "₦500,000"
 		}
+		if newQuest.Currency == "" {
+			newQuest.Currency = "NGN"
+		}
+
+		// Handle prizes if provided in payload
+		if len(newQuest.Prizes) > 0 {
+			for i, p := range newQuest.Prizes {
+				if p.ID == "" {
+					p.ID = fmt.Sprintf("prz-%s-%d", newQuest.ID, i+1)
+				}
+				p.QuestID = newQuest.ID
+				p.TenantSlug = tenant
+				if p.OrderIndex == 0 {
+					p.OrderIndex = i + 1
+				}
+				newQuest.Prizes[i] = p
+				reignitePrizes = append(reignitePrizes, p)
+			}
+			if b, err := json.Marshal(newQuest.Prizes); err == nil {
+				newQuest.PrizesJson = string(b)
+			}
+		}
+
+		// Handle teams if provided in payload
+		if len(newQuest.Teams) > 0 {
+			for i, t := range newQuest.Teams {
+				if t.ID == "" {
+					t.ID = fmt.Sprintf("team-%s-%d", newQuest.ID, i+1)
+				}
+				t.QuestID = newQuest.ID
+				t.TenantSlug = tenant
+				newQuest.Teams[i] = t
+				reigniteTeams = append(reigniteTeams, t)
+			}
+		}
+
+		// Handle challenges if provided in payload
+		if len(newQuest.Challenges) > 0 {
+			for i, c := range newQuest.Challenges {
+				if c.ID == "" {
+					c.ID = fmt.Sprintf("chl-%s-%d", newQuest.ID, i+1)
+				}
+				c.QuestID = newQuest.ID
+				c.TenantSlug = tenant
+				newQuest.Challenges[i] = c
+				reigniteChallenges = append(reigniteChallenges, c)
+			}
+		}
+
+		// Handle schedule if provided in payload
+		if len(newQuest.Schedule) > 0 {
+			for i, s := range newQuest.Schedule {
+				if s.ID == "" {
+					s.ID = fmt.Sprintf("sch-%s-%d", newQuest.ID, i+1)
+				}
+				s.QuestID = newQuest.ID
+				s.TenantSlug = tenant
+				s.OrderIndex = i + 1
+				newQuest.Schedule[i] = s
+				reigniteSchedule = append(reigniteSchedule, s)
+			}
+		}
+
+		if db != nil {
+			_, _ = db.Exec(`INSERT INTO QuestInstance (id, tenantSlug, name, slug, description, coverImage, status, grandPrize, currency, prizesJson, totalMaxPoints, location, startsAt, endsAt, participationType, autoBalance, enableStageTV, allowManualAdjustments, primaryColor, accentColor, scoringMode, conceptLockEnabled, createdBy)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				ON DUPLICATE KEY UPDATE name=VALUES(name), description=VALUES(description), grandPrize=VALUES(grandPrize), currency=VALUES(currency), prizesJson=VALUES(prizesJson), totalMaxPoints=VALUES(totalMaxPoints), location=VALUES(location), startsAt=VALUES(startsAt), endsAt=VALUES(endsAt)`,
+				newQuest.ID, newQuest.TenantSlug, newQuest.Name, newQuest.Slug, newQuest.Description, newQuest.CoverImage, newQuest.Status, newQuest.GrandPrize, newQuest.Currency, newQuest.PrizesJson, newQuest.TotalMaxPoints, newQuest.Location, newQuest.StartsAt, newQuest.EndsAt, newQuest.ParticipationType, newQuest.AutoBalance, newQuest.EnableStageTV, newQuest.AllowManualAdjustments, newQuest.PrimaryColor, newQuest.AccentColor, newQuest.ScoringMode, newQuest.ConceptLockEnabled, newQuest.CreatedBy)
+		}
+
 		reigniteQuests = append([]QuestInstance{newQuest}, reigniteQuests...)
 		json.NewEncoder(w).Encode(newQuest)
 		return
@@ -918,7 +1090,7 @@ func HandleQuestDetail(w http.ResponseWriter, r *http.Request) {
 		targetQuest = &reigniteQuests[0]
 	}
 
-	// Filter teams, challenges, participants, announcements, schedule
+	// Filter teams, challenges, participants, announcements, schedule, prizes
 	var teams []QuestTeam
 	for _, t := range reigniteTeams {
 		if targetQuest != nil && t.QuestID == targetQuest.ID {
@@ -954,11 +1126,19 @@ func HandleQuestDetail(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	var prizes []QuestPrize
+	for _, p := range reignitePrizes {
+		if targetQuest != nil && p.QuestID == targetQuest.ID {
+			prizes = append(prizes, p)
+		}
+	}
+
 	response := map[string]any{
 		"quest":         targetQuest,
 		"teams":         teams,
 		"challenges":    challenges,
 		"schedule":      schedule,
+		"prizes":        prizes,
 		"participants":  participants,
 		"concepts":      reigniteConcepts,
 		"scores":        reigniteScores,
@@ -966,6 +1146,121 @@ func HandleQuestDetail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(response)
+}
+
+// HandleQuestPrizes handles /quests/prizes (GET, POST, PUT, DELETE)
+func HandleQuestPrizes(w http.ResponseWriter, r *http.Request) {
+	EnsureQuestTables()
+	w.Header().Set("Content-Type", "application/json")
+	questMu.Lock()
+	defer questMu.Unlock()
+
+	tenant := getQuestTenant(r)
+	questID := r.URL.Query().Get("quest_id")
+	if questID == "" && len(reigniteQuests) > 0 {
+		questID = reigniteQuests[0].ID
+	}
+
+	switch r.Method {
+	case http.MethodGet:
+		var list []QuestPrize
+		for _, p := range reignitePrizes {
+			if (tenant == "all" || p.TenantSlug == tenant || p.TenantSlug == "neweratransports") &&
+				(questID == "" || p.QuestID == questID) {
+				list = append(list, p)
+			}
+		}
+		json.NewEncoder(w).Encode(list)
+		return
+
+	case http.MethodPost:
+		var newPrize QuestPrize
+		if err := json.NewDecoder(r.Body).Decode(&newPrize); err != nil {
+			http.Error(w, `{"error":"Invalid request payload"}`, http.StatusBadRequest)
+			return
+		}
+		if newPrize.ID == "" {
+			newPrize.ID = fmt.Sprintf("prz-%d", time.Now().UnixNano())
+		}
+		if newPrize.QuestID == "" {
+			newPrize.QuestID = questID
+		}
+		newPrize.TenantSlug = tenant
+		reignitePrizes = append(reignitePrizes, newPrize)
+
+		if db != nil {
+			_, _ = db.Exec(`INSERT INTO QuestPrize (id, questId, tenantSlug, prizeRank, title, awardType, amount, description, icon, orderIndex)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				ON DUPLICATE KEY UPDATE title=VALUES(title), awardType=VALUES(awardType), amount=VALUES(amount), description=VALUES(description), icon=VALUES(icon), orderIndex=VALUES(orderIndex)`,
+				newPrize.ID, newPrize.QuestID, newPrize.TenantSlug, newPrize.Rank, newPrize.Title, newPrize.AwardType, newPrize.Amount, newPrize.Description, newPrize.Icon, newPrize.OrderIndex)
+		}
+
+		json.NewEncoder(w).Encode(newPrize)
+		return
+
+	case http.MethodPut:
+		var updatedPrize QuestPrize
+		if err := json.NewDecoder(r.Body).Decode(&updatedPrize); err != nil {
+			http.Error(w, `{"error":"Invalid request payload"}`, http.StatusBadRequest)
+			return
+		}
+		found := false
+		for i, p := range reignitePrizes {
+			if p.ID == updatedPrize.ID {
+				if updatedPrize.Title != "" {
+					reignitePrizes[i].Title = updatedPrize.Title
+				}
+				if updatedPrize.Amount != "" {
+					reignitePrizes[i].Amount = updatedPrize.Amount
+				}
+				if updatedPrize.AwardType != "" {
+					reignitePrizes[i].AwardType = updatedPrize.AwardType
+				}
+				if updatedPrize.Description != "" {
+					reignitePrizes[i].Description = updatedPrize.Description
+				}
+				if updatedPrize.Icon != "" {
+					reignitePrizes[i].Icon = updatedPrize.Icon
+				}
+				if updatedPrize.Rank >= 0 {
+					reignitePrizes[i].Rank = updatedPrize.Rank
+				}
+				found = true
+				break
+			}
+		}
+		if db != nil {
+			_, _ = db.Exec(`UPDATE QuestPrize SET title=?, awardType=?, amount=?, description=?, icon=?, prizeRank=? WHERE id=?`,
+				updatedPrize.Title, updatedPrize.AwardType, updatedPrize.Amount, updatedPrize.Description, updatedPrize.Icon, updatedPrize.Rank, updatedPrize.ID)
+		}
+		if !found {
+			http.Error(w, `{"error":"Prize not found"}`, http.StatusNotFound)
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]any{"success": true})
+		return
+
+	case http.MethodDelete:
+		id := r.URL.Query().Get("id")
+		if id == "" {
+			http.Error(w, `{"error":"Missing prize id"}`, http.StatusBadRequest)
+			return
+		}
+		var updated []QuestPrize
+		for _, p := range reignitePrizes {
+			if p.ID != id {
+				updated = append(updated, p)
+			}
+		}
+		reignitePrizes = updated
+		if db != nil {
+			_, _ = db.Exec(`DELETE FROM QuestPrize WHERE id=?`, id)
+		}
+		json.NewEncoder(w).Encode(map[string]any{"success": true})
+		return
+	}
+
+	http.Error(w, `{"error":"Method not allowed"}`, http.StatusMethodNotAllowed)
 }
 
 // HandleQuestSchedule handles /quests/schedule (GET, POST, PUT, DELETE)

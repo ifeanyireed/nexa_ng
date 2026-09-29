@@ -65,7 +65,7 @@ export default function Navbar() {
           </Link>
           <button className="flex items-center gap-2 bg-[#0069ff] hover:bg-[#0056d6] text-white px-5 py-2.5 rounded-full text-sm font-medium shadow-[0_6px_20px_rgba(0,105,255,0.32)] transition-all duration-200 hover:scale-[1.02] active:scale-95 cursor-pointer">
             <span>Book Call</span>
-            <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
+            <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
               <Phone className="w-3 h-3 text-white" />
             </div>
           </button>

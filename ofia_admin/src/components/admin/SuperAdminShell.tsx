@@ -313,11 +313,11 @@ export function SuperAdminShell({
                         isActive ? "text-white" : "text-[#1A56DB]"
                       )}
                     >
-                      <ItemIcon className="w-5 h-5 shrink-0" />
+                      <ItemIcon className="w-6 h-6 shrink-0" />
                     </div>
                     {isSidebarOpen && (
                       <div className="flex-1 flex items-center justify-between text-left">
-                        <span className="text-xs">{item.label}</span>
+                        <span className="text-[15px]">{item.label}</span>
                         {item.badge && (
                           <span
                             className={cn(

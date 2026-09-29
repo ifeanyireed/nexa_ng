@@ -67,7 +67,7 @@ export function GoogleMap({
           if (title || subtitle) {
             const infoWindow = new maps.InfoWindow({
               content: `
-                <div style="padding: 6px; font-family: system-ui, sans-serif;">
+                <div style="padding: 6px; font-family: var(--font-dropa);">
                   <strong style="font-size: 14px; color: #0f172a;">${title || "Location"}</strong>
                   ${subtitle ? `<p style="margin: 4px 0 0; font-size: 12px; color: #64748b;">${subtitle}</p>` : ""}
                 </div>

@@ -25,7 +25,7 @@ export const TechNavbar = () => {
         <div className="flex items-center gap-3">
           <Link href="/tech/dashboard" className="flex items-center gap-2">
             <div className="w-8 h-8 bg-nexa-accent rounded-lg flex items-center justify-center text-white">
-              <Shield className="w-5 h-5" />
+              <Shield className="w-6 h-6" />
             </div>
             <span className="text-lg font-bold text-display hidden sm:block">NexaStaff</span>
           </Link>
@@ -39,7 +39,7 @@ export const TechNavbar = () => {
         <div className="flex items-center gap-4">
           <NexaThemeToggle />
           <div className="relative p-2 hover:bg-nexa-bg-base rounded-xl cursor-pointer">
-             <Bell className="w-5 h-5 text-nexa-text-secondary" />
+             <Bell className="w-6 h-6 text-nexa-text-secondary" />
              <div className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900" />
           </div>
           <NexaAvatar size="sm" isOnline />

@@ -25,9 +25,9 @@ export const OpsSidebar = () => {
   const { logout } = useAuth();
   
   const menuItems = [
-    { label: "Dispatch", icon: <MapIcon className="w-5 h-5" />, href: "/ops/assignments" },
-    { label: "Tech Directory", icon: <Users className="w-5 h-5" />, href: "/ops/technicians" },
-    { label: "Dispute Manager", icon: <ShieldAlert className="w-5 h-5" />, href: "/ops/disputes", badge: "4" },
+    { label: "Dispatch", icon: <MapIcon className="w-6 h-6" />, href: "/ops/assignments" },
+    { label: "Tech Directory", icon: <Users className="w-6 h-6" />, href: "/ops/technicians" },
+    { label: "Dispute Manager", icon: <ShieldAlert className="w-6 h-6" />, href: "/ops/disputes", badge: "4" },
   ];
 
   return (
@@ -72,11 +72,11 @@ export const OpsSidebar = () => {
 
       <div className="p-4 border-t border-white/5 space-y-2">
          <button className="w-full flex items-center gap-4 p-3 rounded-xl text-slate-400 hover:bg-white/5 transition-all">
-            <Settings className="w-5 h-5" />
+            <Settings className="w-6 h-6" />
             <span className="hidden lg:block font-bold text-sm">Settings</span>
          </button>
          <button onClick={logout} className="w-full flex items-center gap-4 p-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-all">
-            <LogOut className="w-5 h-5" />
+            <LogOut className="w-6 h-6" />
             <span className="hidden lg:block font-bold text-sm">Logout</span>
          </button>
       </div>
@@ -100,7 +100,7 @@ export const OpsHeader = () => {
             <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">System Live</span>
          </div>
          <div className="relative p-2 hover:bg-white/5 rounded-xl cursor-pointer">
-            <Bell className="w-5 h-5 text-slate-400" />
+            <Bell className="w-6 h-6 text-slate-400" />
             <div className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-[#0B1120]" />
          </div>
          <div className="h-6 w-px bg-white/10" />

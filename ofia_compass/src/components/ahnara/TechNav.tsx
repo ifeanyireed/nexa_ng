@@ -25,7 +25,7 @@ export const TechNavbar = () => {
         <div className="flex items-center gap-3">
           <Link href="/tech/dashboard" className="flex items-center gap-2">
             <div className="w-8 h-8 bg-ahnara-accent rounded-lg flex items-center justify-center text-white">
-              <Shield className="w-5 h-5" />
+              <Shield className="w-6 h-6" />
             </div>
             <span className="text-lg font-bold text-display hidden sm:block">AhnaraStaff</span>
           </Link>
@@ -39,7 +39,7 @@ export const TechNavbar = () => {
         <div className="flex items-center gap-4">
           <AhnaraThemeToggle />
           <div className="relative p-2 hover:bg-ahnara-bg-base rounded-xl cursor-pointer">
-             <Bell className="w-5 h-5 text-ahnara-text-secondary" />
+             <Bell className="w-6 h-6 text-ahnara-text-secondary" />
              <div className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900" />
           </div>
           <AhnaraAvatar size="sm" isOnline />

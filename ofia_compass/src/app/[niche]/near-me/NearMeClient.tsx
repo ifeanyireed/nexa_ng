@@ -204,7 +204,7 @@ export default function NearMeClient({ data }: { data: any }) {
       });
 
       const infoContent = `
-        <div style="padding: 10px; font-family: system-ui, sans-serif; max-width: 220px;">
+        <div style="padding: 10px; font-family: var(--font-dropa); max-width: 220px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
             <span style="font-size: 11px; font-weight: bold; color: #ff5722; text-transform: uppercase;">${pro.specialties?.split(",")[0] || "Service"}</span>
             <span style="font-size: 11px; font-weight: bold; background: #fef3c7; color: #d97706; padding: 2px 6px; border-radius: 4px;">★ ${pro.rating || "5.0"}</span>

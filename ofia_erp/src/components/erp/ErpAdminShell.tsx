@@ -428,24 +428,24 @@ export function ErpAdminShell({
     section: "Operations" | "Ofia Enterprise Suite" | "Portals & Team";
   }[] = [
     // 1. OPERATIONS & REVENUE APPS
-    { label: "Overview", icon: <LayoutDashboard className="w-5 h-5" />, href: "/erp/admin", key: "overview", section: "Operations" },
-    { label: "Ofia AI Swarm", icon: <Bot className="w-5 h-5" />, href: "/erp/admin/ai", badge: "15 AI", key: "ai", section: "Operations" },
-    { label: "Ofia Compass Manager", icon: <ShoppingBag className="w-5 h-5" />, href: "/erp/admin/marketplace", key: "marketplace", section: "Operations" },
-    { label: "Ofia Shop Manager", icon: <Store className="w-5 h-5" />, href: "/erp/admin/shop", badge: "Retail", key: "shop", section: "Operations" },
-    { label: "Ofia Logistics Manager", icon: <Truck className="w-5 h-5" />, href: "/erp/admin/logistics", key: "logistics", section: "Operations" },
+    { label: "Overview", icon: <LayoutDashboard className="w-6 h-6" />, href: "/erp/admin", key: "overview", section: "Operations" },
+    { label: "Ofia AI Swarm", icon: <Bot className="w-6 h-6" />, href: "/erp/admin/ai", badge: "15 AI", key: "ai", section: "Operations" },
+    { label: "Ofia Compass Manager", icon: <ShoppingBag className="w-6 h-6" />, href: "/erp/admin/marketplace", key: "marketplace", section: "Operations" },
+    { label: "Ofia Shop Manager", icon: <Store className="w-6 h-6" />, href: "/erp/admin/shop", badge: "Retail", key: "shop", section: "Operations" },
+    { label: "Ofia Logistics Manager", icon: <Truck className="w-6 h-6" />, href: "/erp/admin/logistics", key: "logistics", section: "Operations" },
 
     // 2. OFIA ENTERPRISE SUITE
-    { label: "CRM and Sales", icon: <BarChart3 className="w-5 h-5" />, href: "/erp/marketer", badge: "Sales", key: "crm", section: "Ofia Enterprise Suite" },
-    { label: "Accounting & Ledgers", icon: <Layers className="w-5 h-5" />, href: "/erp/accountant", badge: "GL", key: "accounting", section: "Ofia Enterprise Suite" },
-    { label: "HR & Appraisals", icon: <Users className="w-5 h-5" />, href: "/erp/hr", key: "hr", section: "Ofia Enterprise Suite" },
-    { label: "User Management", icon: <UserCheck className="w-5 h-5" />, href: "/erp/admin/users", badge: "Staff", key: "users", section: "Ofia Enterprise Suite" },
-    { label: "Access Control", icon: <ShieldCheck className="w-5 h-5" />, href: "/erp/admin/access-control", badge: "RBAC", key: "access_control", section: "Ofia Enterprise Suite" },
-    { label: "Workspace Settings", icon: <Settings className="w-5 h-5" />, href: "/tenant/settings", badge: "Config", key: "settings", section: "Ofia Enterprise Suite" },
+    { label: "CRM and Sales", icon: <BarChart3 className="w-6 h-6" />, href: "/erp/marketer", badge: "Sales", key: "crm", section: "Ofia Enterprise Suite" },
+    { label: "Accounting & Ledgers", icon: <Layers className="w-6 h-6" />, href: "/erp/accountant", badge: "GL", key: "accounting", section: "Ofia Enterprise Suite" },
+    { label: "HR & Appraisals", icon: <Users className="w-6 h-6" />, href: "/erp/hr", key: "hr", section: "Ofia Enterprise Suite" },
+    { label: "User Management", icon: <UserCheck className="w-6 h-6" />, href: "/erp/admin/users", badge: "Staff", key: "users", section: "Ofia Enterprise Suite" },
+    { label: "Access Control", icon: <ShieldCheck className="w-6 h-6" />, href: "/erp/admin/access-control", badge: "RBAC", key: "access_control", section: "Ofia Enterprise Suite" },
+    { label: "Workspace Settings", icon: <Settings className="w-6 h-6" />, href: "/tenant/settings", badge: "Config", key: "settings", section: "Ofia Enterprise Suite" },
 
     // 3. PORTALS & WORKSPACES
-    { label: "Employee Portal", icon: <UserCheck className="w-5 h-5" />, href: "/erp/employee", key: "employee", section: "Portals & Team" },
-    { label: "Manager Portal", icon: <Sliders className="w-5 h-5" />, href: "/erp/manager", key: "manager", section: "Portals & Team" },
-    { label: "Executive Portal", icon: <TrendingUp className="w-5 h-5" />, href: "/erp/md", key: "md", section: "Portals & Team" },
+    { label: "Employee Portal", icon: <UserCheck className="w-6 h-6" />, href: "/erp/employee", key: "employee", section: "Portals & Team" },
+    { label: "Manager Portal", icon: <Sliders className="w-6 h-6" />, href: "/erp/manager", key: "manager", section: "Portals & Team" },
+    { label: "Executive Portal", icon: <TrendingUp className="w-6 h-6" />, href: "/erp/md", key: "md", section: "Portals & Team" },
   ];
 
   // Automatic sub navigation tabs according to current pathname
@@ -739,7 +739,7 @@ export function ErpAdminShell({
                       </div>
                       {isSidebarOpen && (
                         <div className="flex-1 flex items-center justify-between text-left">
-                          <span className="text-xs">{item.label}</span>
+                          <span className="text-[15px]">{item.label}</span>
                           {item.badge && (
                             <span className="bg-emerald-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full">
                               {item.badge}
@@ -858,7 +858,7 @@ export function ErpAdminShell({
                 pathname === "/tenant/settings" && "bg-nexa-brand text-white shadow-md shadow-nexa-brand/20"
               )}
             >
-              <Settings className="w-5 h-5 text-nexa-brand" />
+              <Settings className="w-6 h-6 text-nexa-brand" />
               {isSidebarOpen && <span className="font-bold text-xs">Workspace Settings</span>}
             </button>
           </Link>
@@ -871,7 +871,7 @@ export function ErpAdminShell({
               )}
               title="Logout"
             >
-              <LogOut className="w-5 h-5 shrink-0" />
+              <LogOut className="w-6 h-6 shrink-0" />
               {isSidebarOpen && <span className="font-bold text-xs">Logout</span>}
             </button>
 

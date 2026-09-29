@@ -1,21 +1,15 @@
 import type { Metadata } from "next";
-import { DM_Sans, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/components/nexa/ThemeProvider";
 import { NicheProvider } from "@/components/nexa/NicheContext";
 import { AuthProvider } from "@/components/nexa/AuthContext";
 import { LocationProvider } from "@/components/nexa/LocationContext";
 
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  variable: "--font-dm-sans",
-  weight: ["400", "500", "600", "700", "800"],
-});
-
-const jetbrains = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains",
-  weight: ["400", "500", "600", "700"],
+const dropa = localFont({
+  src: "../fonts/Dropa-Regular.woff2",
+  variable: "--font-dropa",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -65,7 +59,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${dmSans.variable} ${jetbrains.variable} antialiased selection:bg-[#1A56DB]/20 selection:text-[#1A56DB]`}
+        className={`${dropa.variable} font-sans antialiased selection:bg-[#1A56DB]/20 selection:text-[#1A56DB]`}
         suppressHydrationWarning
       >
         <ThemeProvider>

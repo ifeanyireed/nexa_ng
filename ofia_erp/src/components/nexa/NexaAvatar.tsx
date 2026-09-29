@@ -48,7 +48,7 @@ export const NexaAvatar = ({
       hash = seed.charCodeAt(i) + ((hash << 5) - hash);
     }
     const index = (Math.abs(hash) % 20) + 1;
-    return `https://i.pravatar.cc/150?u=character${index}`;
+    return `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character${index}.jpg`;
   };
 
   const avatarSrc = src || getDeterministicAvatar(displayFallback);

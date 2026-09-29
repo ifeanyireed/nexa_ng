@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     siteName: "Ofia Compass",
     images: [
       {
-        url: "/logo.png",
+        url: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png",
         width: 800,
         height: 800,
         alt: "Ofia Compass Logo",
@@ -39,15 +39,15 @@ export const metadata: Metadata = {
     title: "Ofia Compass | Nigeria's #1 Business & Service Discovery Marketplace",
     description:
       "Nigeria's #1 business discovery and navigation platform. Empowering local businesses and consumers to navigate commercial opportunities.",
-    images: ["/logo.png"],
+    images: ["https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"],
   },
   icons: {
     icon: [
-      { url: "/logo.png" },
-      { url: "/icon.png" },
+      { url: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" },
+      { url: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/aa9nvrmyrc38lbpz1mkp.png" },
     ],
-    apple: "/logo.png",
-    shortcut: "/logo.png",
+    apple: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png",
+    shortcut: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png",
   },
 };
 

@@ -604,7 +604,7 @@ export function ErpAdminShell({
         <div className="p-6 pb-2 flex items-center justify-between">
           {isSidebarOpen ? (
             <Link href="/" className="flex items-center gap-2.5 min-w-0">
-              <img src="/logo.png" alt="Ofia ERP Logo" className="w-8 h-8 object-contain shrink-0" />
+              <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia ERP Logo" className="w-8 h-8 object-contain shrink-0" />
               <div className="flex flex-col min-w-0">
                 <span
                   className="text-sm font-black text-display leading-tight text-[var(--nexa-text-primary)] truncate max-w-[180px]"
@@ -622,7 +622,7 @@ export function ErpAdminShell({
               </div>
             </Link>
           ) : (
-            <img src="/logo.png" alt="Ofia ERP Logo" className="w-8 h-8 mx-auto" />
+            <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia ERP Logo" className="w-8 h-8 mx-auto" />
           )}
         </div>
 

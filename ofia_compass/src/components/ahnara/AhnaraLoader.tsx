@@ -37,7 +37,7 @@ export function AhnaraLoader({ fullScreen = false, size = "md" }: AhnaraLoaderPr
       />
       {/* Central Logo wrapped in circle */}
       <div className={`absolute ${current.logoBg} rounded-full bg-[#D4F475] flex items-center justify-center shadow-md`}>
-        <img src="/logo.png" alt="Ahnara Logo" className={`${current.logoImg} object-contain`} />
+        <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ahnara Logo" className={`${current.logoImg} object-contain`} />
       </div>
     </div>
   );

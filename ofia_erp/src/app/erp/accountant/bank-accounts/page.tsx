@@ -34,7 +34,7 @@ export default function BankAccountsPage() {
 		{
 			id: "acc-1",
 			bankName: "Globus Bank",
-			logo: "/globus.png",
+			logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686477/ofia_ng_assets/bpjix4pspxc4mqpuuf8x.png",
 			holderName: "New Era Transports Services",
 			accountType: "Bank",
 			chartAccount: "1050 - Globus Bank - New Era Transports",
@@ -45,7 +45,7 @@ export default function BankAccountsPage() {
 		{
 			id: "acc-2",
 			bankName: "Keystone Bank",
-			logo: "/keystone.jpg",
+			logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/ym1vvpxrdtfr7apuqg1x.jpg",
 			holderName: "New Era Transports Services",
 			accountType: "Bank",
 			chartAccount: "1020 - Key Stone Bank - New Era Transports",
@@ -56,7 +56,7 @@ export default function BankAccountsPage() {
 		{
 			id: "acc-3",
 			bankName: "GT Bank",
-			logo: "/gtbank.webp",
+			logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686477/ofia_ng_assets/vtvjenon8dlsxn4oradc.webp",
 			holderName: "New Era Transports Services",
 			accountType: "Bank",
 			chartAccount: "1010 - GT Bank - New Era Transports",
@@ -67,7 +67,7 @@ export default function BankAccountsPage() {
 		{
 			id: "acc-4",
 			bankName: "Providus Bank",
-			logo: "/providus.webp",
+			logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686496/ofia_ng_assets/ndlmlmqrsrtwwgf1upeq.webp",
 			holderName: "New Era Transports Services",
 			accountType: "Bank",
 			chartAccount: "1030 - Providus Bank - New Era Transports",
@@ -78,7 +78,7 @@ export default function BankAccountsPage() {
 		{
 			id: "acc-5",
 			bankName: "Monie Point",
-			logo: "/moniepoint.webp",
+			logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686490/ofia_ng_assets/inp6t13gr4uopzthfrrc.webp",
 			holderName: "New Era Transports Services",
 			accountType: "Bank",
 			chartAccount: "1040 - Monie Point - New Era Transports",

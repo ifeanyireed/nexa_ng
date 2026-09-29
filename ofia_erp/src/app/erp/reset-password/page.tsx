@@ -143,7 +143,7 @@ function ResetPasswordForm() {
   return (
     <div 
       className="min-h-screen font-sans flex items-center justify-center p-6 sm:p-12 md:p-20 relative bg-cover bg-center overflow-x-hidden"
-      style={{ backgroundImage: "url('/background.jpeg')" }}
+      style={{ backgroundImage: "url('https://res.cloudinary.com/ihfqdysu/image/upload/v1790686457/ofia_ng_assets/ma7c5yplh2hpmiggorxw.jpg')" }}
     >
       {/* Dark gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-blue-950/95 via-blue-900/80 to-blue-950/70 z-0" />
@@ -153,7 +153,7 @@ function ResetPasswordForm() {
         
         {/* Brand Header */}
         <div className="text-center">
-          <img src="/nets.webp" alt="Nets Logo" className="w-24 h-24 object-contain mx-auto -mt-4" />
+          <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686490/ofia_ng_assets/zbrnzquhno9wcqltmpig.webp" alt="Nets Logo" className="w-24 h-24 object-contain mx-auto -mt-4" />
           <h2 className="text-2xl font-black text-white md:text-slate-800 tracking-tight mt-2">
             {isUpdateMode ? "Reset Password" : "Forgot Password?"}
           </h2>

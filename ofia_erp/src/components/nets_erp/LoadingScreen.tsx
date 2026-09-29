@@ -16,7 +16,7 @@ export default function LoadingScreen({ message = "Synchronizing performance dat
 
           {/* Core Logo Dot in Circle */}
           <div className="relative z-10 w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-sm overflow-hidden p-1.5 border border-slate-100">
-            <img src="/favicon.png" alt="Nets Loading Logo" className="w-full h-full object-contain" />
+            <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686476/ofia_ng_assets/pjmsiobq9getramrg2ym.png" alt="Nets Loading Logo" className="w-full h-full object-contain" />
           </div>
         </div>
 

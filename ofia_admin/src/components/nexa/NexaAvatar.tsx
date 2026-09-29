@@ -13,7 +13,7 @@ interface NexaAvatarProps {
 }
 
 export const getDeterministicAvatar = (seed: string) => {
-  if (!seed) return "/character1.jpg";
+  if (!seed) return "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg";
   let hash = 0;
   for (let i = 0; i < seed.length; i++) {
     hash = seed.charCodeAt(i) + ((hash << 5) - hash);

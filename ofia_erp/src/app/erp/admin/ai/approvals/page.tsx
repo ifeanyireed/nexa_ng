@@ -40,7 +40,7 @@ export default function ApprovalsPage() {
             title: item.title,
             type: (item.type || "Email Campaign") as any,
             creatorAgent: item.creator_agent_key ? item.creator_agent_key.toUpperCase() : "Julian Cross",
-            creatorAvatar: "/character6.jpg",
+            creatorAvatar: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686467/ofia_ng_assets/kxwrjtwftoj5cx0shxdh.jpg",
             riskLevel: (item.risk_level === "HIGH" ? "High" : item.risk_level === "LOW" ? "Low" : "Medium") as any,
             targetChannel: item.target_channel || "Email Outreach",
             scheduledTime: "Queued for immediate dispatch",

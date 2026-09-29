@@ -73,10 +73,10 @@ const HeroSection = () => {
 
   // Background image rotation (hero5.jpeg to hero8.jpeg)
   const heroImages = [
-    "/hero5.jpeg",
-    "/hero6.jpeg",
-    "/hero7.jpeg",
-    "/hero8.jpeg"
+    "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686484/ofia_ng_assets/hgpojftxqtvq9ade6dd2.jpg",
+    "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686484/ofia_ng_assets/bfpylrwnnl7wrzbcbfaa.jpg",
+    "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686485/ofia_ng_assets/hvkuqabglsporl066v42.jpg",
+    "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686485/ofia_ng_assets/rtsyms18tikxcq433tik.jpg"
   ];
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -260,30 +260,30 @@ const CategoryGrid = () => {
   }, []);
 
   const subGroups = [
-    { slug: "handyman-finders", parent: "Home & Maintenance", name: "Handyman Finders", icon: "/handyman.png", color: "bg-home/10", services: ["Plumber Finder", "Electrician Finder", "Carpenter Finder", "Painter Finder", "Tiler Finder", "Welder Finder"], countKey: "home" },
-    { slug: "specialist-finders", parent: "Home & Maintenance", name: "Specialist Finders", icon: "/specialist.png", color: "bg-home/10", services: ["Solar Installer Finder", "Generator Repairer Finder", "AC Technician Finder", "Borehole Driller Finder", "Inverter Repairer Finder"], countKey: "home" },
-    { slug: "sanitation-finders", parent: "Home & Maintenance", name: "Sanitation Finders", icon: "/sanitation.png", color: "bg-home/10", services: ["Home Cleaner Finder", "Fumigator (Pest Control) Finder", "Waste Disposal Finder", "Water Tank Cleaner Finder"], countKey: "home" },
-    { slug: "style-finders", parent: "Fashion & Grooming", name: "Style Finders", icon: "/style.png", color: "bg-fashion/10", services: ["Tailor (Bespoke) Finder", "Hairdresser (Braider) Finder", "Barber Finder", "Makeup Artist Finder", "Manicurist (Nail Tech) Finder"], countKey: "fashion" },
-    { slug: "wardrobe-finders", parent: "Fashion & Grooming", name: "Wardrobe Finders", icon: "/wardrobe.png", color: "bg-fashion/10", services: ["Laundry Finder", "Dry Cleaner Finder", "Personal Shopper Finder", "Cobbler (Shoe Repair) Finder"], countKey: "fashion" },
-    { slug: "tech-finders", parent: "Professional Services", name: "Tech Finders", icon: "/tech.png", color: "bg-professionals/10", services: ["Web Developer Finder", "App Developer Finder", "UI/UX Designer Finder", "SEO Expert Finder", "Cybersecurity Consultant Finder"], countKey: "professionals" },
-    { slug: "corporate-finders", parent: "Professional Services", name: "Corporate Finders", icon: "/corporate.png", color: "bg-professionals/10", services: ["Lawyer Finder", "Accountant Finder", "Tax Consultant Finder", "Business Consultant Finder", "Grant Writer Finder"], countKey: "professionals" },
-    { slug: "content-finders", parent: "Professional Services", name: "Content Finders", icon: "/content.png", color: "bg-professionals/10", services: ["Copywriter Finder", "Social Media Manager Finder", "Graphic Designer Finder", "Video Editor Finder", "Translator Finder"], countKey: "professionals" },
-    { slug: "talent-finders", parent: "Professional Services", name: "Talent Finders", icon: "/talent.png", color: "bg-professionals/10", services: ["Model Finder", "Actor Finder", "Voice-Over Artist Finder"], countKey: "professionals" },
-    { slug: "academic-finders", parent: "Education & Skills", name: "Academic Finders", icon: "/academic.png", color: "bg-education/10", services: ["Home Tutor Finder", "Music Instructor Finder", "Language Teacher Finder", "Exam Prep Tutor Finder", "School Finder"], countKey: "education" },
-    { slug: "vocational-finders", parent: "Education & Skills", name: "Vocational Finders", icon: "/vocational.png", color: "bg-education/10", services: ["Driving School Instructor Finder", "Tech Skill Trainer Finder", "Fashion School Instructor Finder", "Catering School Instructor Finder"], countKey: "education" },
-    { slug: "planning-finders", parent: "Events & Entertainment", name: "Planning Finders", icon: "/planning.png", color: "bg-events/10", services: ["Event Planner Finder", "Decorator Finder", "Souvenir Vendor Finder", "Ushering Agency Finder"], countKey: "events" },
-    { slug: "entertainment-finders", parent: "Events & Entertainment", name: "Entertainment Finders", icon: "/entertain.png", color: "bg-events/10", services: ["DJ Finder", "MC Finder", "Photographer Finder", "Videographer Finder", "Drone Pilot Finder", "Live Band / Musician Finder"], countKey: "events" },
-    { slug: "medical-finders", parent: "Health & Wellness", name: "Medical Finders", icon: "/medical.png", color: "bg-health/10", services: ["Private Nurse Finder", "Physiotherapist Finder", "Dentist Finder", "Optician Finder", "Pharmacy Finder"], countKey: "health" },
-    { slug: "wellness-finders", parent: "Health & Wellness", name: "Wellness Finders", icon: "/wellness.png", color: "bg-health/10", services: ["Gym Instructor Finder", "Yoga Teacher Finder", "Nutritionist Finder", "Massage Therapist Finder"], countKey: "health" },
-    { slug: "care-finders", parent: "Health & Wellness", name: "Care Finders", icon: "/care.png", color: "bg-health/10", services: ["Nanny Finder", "Elderly Companion Finder", "Pet Sitter Finder"], countKey: "health" },
-    { slug: "transport-finders", parent: "Logistics & Transport", name: "Transport Finders", icon: "/transport.png", color: "bg-logistics/10", services: ["Professional Driver Finder", "Towing Van Finder", "Car Rental Finder", "Bus Hire Finder"], countKey: "logistics" },
-    { slug: "delivery-finders", parent: "Logistics & Transport", name: "Delivery Finders", icon: "/delivery.png", color: "bg-logistics/10", services: ["Dispatch Rider (Logistics) Finder", "Errand Runner Finder", "Moving / Relocation Service Finder"], countKey: "logistics" },
-    { slug: "repair-finders", parent: "Automotive Services", name: "Repair Finders", icon: "/repair.png", color: "bg-auto/10", services: ["Car Mechanic Finder", "Vulcanizer Finder", "Panel Beater Finder", "Auto Electrician Finder"], countKey: "auto" },
-    { slug: "auto-care-finders", parent: "Automotive Services", name: "Auto Care Finders", icon: "/auto-care.png", color: "bg-auto/10", services: ["Mobile Car Wash Finder", "Car Tracker Installer Finder", "CCTV / Security Installer Finder"], countKey: "auto" },
-    { slug: "culinary-finders", parent: "Food & Agribusiness", name: "Culinary Finders", icon: "/culinary.png", color: "bg-food/10", services: ["Private Chef Finder", "Caterer Finder", "Cake Baker Finder", "Bulk Food Supplier Finder"], countKey: "food" },
-    { slug: "agro-finders", parent: "Food & Agribusiness", name: "Agro Finders", icon: "/agro.png", color: "bg-food/10", services: ["Farm Manager Finder", "Agro-Processor Finder", "Veterinary Doctor Finder", "Pet Groomer Finder", "Poultry Farmer Finder", "Fish Farmer Finder"], countKey: "food" },
-    { slug: "property-finders", parent: "Real Estate & Construction", name: "Property Finders", icon: "/property.png", color: "bg-realestate/10", services: ["Estate Agent Finder", "Facility Manager Finder", "Surveyor Finder", "Quantity Surveyor Finder"], countKey: "realestate" },
-    { slug: "building-finders", parent: "Real Estate & Construction", name: "Building Finders", icon: "/building.png", color: "bg-realestate/10", services: ["Architect Finder", "Bricklayer Finder", "Aluminum Fitter Finder", "POP Ceiling Installer Finder"], countKey: "realestate" },
+    { slug: "handyman-finders", parent: "Home & Maintenance", name: "Handyman Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686478/ofia_ng_assets/ege6y0pbmbnpvb1nha6d.png", color: "bg-home/10", services: ["Plumber Finder", "Electrician Finder", "Carpenter Finder", "Painter Finder", "Tiler Finder", "Welder Finder"], countKey: "home" },
+    { slug: "specialist-finders", parent: "Home & Maintenance", name: "Specialist Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686497/ofia_ng_assets/hd55dgpuwlq2zo6gzvvs.png", color: "bg-home/10", services: ["Solar Installer Finder", "Generator Repairer Finder", "AC Technician Finder", "Borehole Driller Finder", "Inverter Repairer Finder"], countKey: "home" },
+    { slug: "sanitation-finders", parent: "Home & Maintenance", name: "Sanitation Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686497/ofia_ng_assets/qvo36qya5sdejrxinjhu.png", color: "bg-home/10", services: ["Home Cleaner Finder", "Fumigator (Pest Control) Finder", "Waste Disposal Finder", "Water Tank Cleaner Finder"], countKey: "home" },
+    { slug: "style-finders", parent: "Fashion & Grooming", name: "Style Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686497/ofia_ng_assets/thghoyxae2jobp62ts3m.png", color: "bg-fashion/10", services: ["Tailor (Bespoke) Finder", "Hairdresser (Braider) Finder", "Barber Finder", "Makeup Artist Finder", "Manicurist (Nail Tech) Finder"], countKey: "fashion" },
+    { slug: "wardrobe-finders", parent: "Fashion & Grooming", name: "Wardrobe Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686499/ofia_ng_assets/omdqebop7wap9uzbitbr.png", color: "bg-fashion/10", services: ["Laundry Finder", "Dry Cleaner Finder", "Personal Shopper Finder", "Cobbler (Shoe Repair) Finder"], countKey: "fashion" },
+    { slug: "tech-finders", parent: "Professional Services", name: "Tech Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686498/ofia_ng_assets/a3deivk8ndbkbam2jrpy.png", color: "bg-professionals/10", services: ["Web Developer Finder", "App Developer Finder", "UI/UX Designer Finder", "SEO Expert Finder", "Cybersecurity Consultant Finder"], countKey: "professionals" },
+    { slug: "corporate-finders", parent: "Professional Services", name: "Corporate Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686470/ofia_ng_assets/w3pszbkd6x6evez8i27i.png", color: "bg-professionals/10", services: ["Lawyer Finder", "Accountant Finder", "Tax Consultant Finder", "Business Consultant Finder", "Grant Writer Finder"], countKey: "professionals" },
+    { slug: "content-finders", parent: "Professional Services", name: "Content Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686470/ofia_ng_assets/miowiipdejne0aql08c3.png", color: "bg-professionals/10", services: ["Copywriter Finder", "Social Media Manager Finder", "Graphic Designer Finder", "Video Editor Finder", "Translator Finder"], countKey: "professionals" },
+    { slug: "talent-finders", parent: "Professional Services", name: "Talent Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686497/ofia_ng_assets/v1brcmhmfp55kcoemw8v.png", color: "bg-professionals/10", services: ["Model Finder", "Actor Finder", "Voice-Over Artist Finder"], countKey: "professionals" },
+    { slug: "academic-finders", parent: "Education & Skills", name: "Academic Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790685576/ofia_ng_assets/sljbldwvxdkjbim6yvvg.png", color: "bg-education/10", services: ["Home Tutor Finder", "Music Instructor Finder", "Language Teacher Finder", "Exam Prep Tutor Finder", "School Finder"], countKey: "education" },
+    { slug: "vocational-finders", parent: "Education & Skills", name: "Vocational Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686499/ofia_ng_assets/xdn81wjifjglnnihdtfl.png", color: "bg-education/10", services: ["Driving School Instructor Finder", "Tech Skill Trainer Finder", "Fashion School Instructor Finder", "Catering School Instructor Finder"], countKey: "education" },
+    { slug: "planning-finders", parent: "Events & Entertainment", name: "Planning Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686495/ofia_ng_assets/v831fnhindocfuebipnd.png", color: "bg-events/10", services: ["Event Planner Finder", "Decorator Finder", "Souvenir Vendor Finder", "Ushering Agency Finder"], countKey: "events" },
+    { slug: "entertainment-finders", parent: "Events & Entertainment", name: "Entertainment Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686471/ofia_ng_assets/od5xhmavqxmtffuimqsk.png", color: "bg-events/10", services: ["DJ Finder", "MC Finder", "Photographer Finder", "Videographer Finder", "Drone Pilot Finder", "Live Band / Musician Finder"], countKey: "events" },
+    { slug: "medical-finders", parent: "Health & Wellness", name: "Medical Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686489/ofia_ng_assets/xonksmd6vtw0ghbw90jq.png", color: "bg-health/10", services: ["Private Nurse Finder", "Physiotherapist Finder", "Dentist Finder", "Optician Finder", "Pharmacy Finder"], countKey: "health" },
+    { slug: "wellness-finders", parent: "Health & Wellness", name: "Wellness Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686500/ofia_ng_assets/genewhlhcgkzoifvscip.png", color: "bg-health/10", services: ["Gym Instructor Finder", "Yoga Teacher Finder", "Nutritionist Finder", "Massage Therapist Finder"], countKey: "health" },
+    { slug: "care-finders", parent: "Health & Wellness", name: "Care Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790685623/ofia_ng_assets/twyicmpzne0etqqzvob0.png", color: "bg-health/10", services: ["Nanny Finder", "Elderly Companion Finder", "Pet Sitter Finder"], countKey: "health" },
+    { slug: "transport-finders", parent: "Logistics & Transport", name: "Transport Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686498/ofia_ng_assets/b98ua41f2elyhrxp9t2n.png", color: "bg-logistics/10", services: ["Professional Driver Finder", "Towing Van Finder", "Car Rental Finder", "Bus Hire Finder"], countKey: "logistics" },
+    { slug: "delivery-finders", parent: "Logistics & Transport", name: "Delivery Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686471/ofia_ng_assets/koadt11pab6hdxeypfdp.png", color: "bg-logistics/10", services: ["Dispatch Rider (Logistics) Finder", "Errand Runner Finder", "Moving / Relocation Service Finder"], countKey: "logistics" },
+    { slug: "repair-finders", parent: "Automotive Services", name: "Repair Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686496/ofia_ng_assets/vsdhn3rczwk3wgqknraf.png", color: "bg-auto/10", services: ["Car Mechanic Finder", "Vulcanizer Finder", "Panel Beater Finder", "Auto Electrician Finder"], countKey: "auto" },
+    { slug: "auto-care-finders", parent: "Automotive Services", name: "Auto Care Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790685579/ofia_ng_assets/xrquzpuopdz0yklcbu3d.png", color: "bg-auto/10", services: ["Mobile Car Wash Finder", "Car Tracker Installer Finder", "CCTV / Security Installer Finder"], countKey: "auto" },
+    { slug: "culinary-finders", parent: "Food & Agribusiness", name: "Culinary Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686471/ofia_ng_assets/tolau1rdzv4hvuszqevr.png", color: "bg-food/10", services: ["Private Chef Finder", "Caterer Finder", "Cake Baker Finder", "Bulk Food Supplier Finder"], countKey: "food" },
+    { slug: "agro-finders", parent: "Food & Agribusiness", name: "Agro Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790685578/ofia_ng_assets/aqfnw6r2jkxtvynyicqj.png", color: "bg-food/10", services: ["Farm Manager Finder", "Agro-Processor Finder", "Veterinary Doctor Finder", "Pet Groomer Finder", "Poultry Farmer Finder", "Fish Farmer Finder"], countKey: "food" },
+    { slug: "property-finders", parent: "Real Estate & Construction", name: "Property Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686496/ofia_ng_assets/tzfdq2ouji89iudqhker.png", color: "bg-realestate/10", services: ["Estate Agent Finder", "Facility Manager Finder", "Surveyor Finder", "Quantity Surveyor Finder"], countKey: "realestate" },
+    { slug: "building-finders", parent: "Real Estate & Construction", name: "Building Finders", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790685622/ofia_ng_assets/kev35g3r3gpfw25ekmop.png", color: "bg-realestate/10", services: ["Architect Finder", "Bricklayer Finder", "Aluminum Fitter Finder", "POP Ceiling Installer Finder"], countKey: "realestate" },
   ];
 
   return (
@@ -376,7 +376,7 @@ const BusinessCard = ({ name, category, rating, count, image, isVerified, city, 
             </div>
           )}
           <div className="absolute bottom-3 left-3 w-12 h-12 rounded-xl liquid-glass border border-white/40 flex items-center justify-center shadow-lg p-2">
-            <img src="/logo.png" alt="Nexa" className="w-full h-full object-contain" />
+            <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Nexa" className="w-full h-full object-contain" />
           </div>
         </div>
         <div className="p-5">
@@ -750,7 +750,7 @@ export default function HomePage() {
                       {/* Screen Content - App Image */}
                       <div className="w-full h-full relative">
                         <img 
-                          src="/nexa_app.png" 
+                          src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686493/ofia_ng_assets/ueyroxfqj4otmwsj9vo2.png" 
                           alt="Ofia Compass Mobile App" 
                           className="w-full h-full object-cover object-top select-none"
                         />

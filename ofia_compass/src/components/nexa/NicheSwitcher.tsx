@@ -19,50 +19,50 @@ export interface NicheInfo {
 
 export const NICHES: NicheInfo[] = [
   // 01
-  { id: "handyman-finders", name: "Handyman Finders", tagline: "Expert help for any task", color: "bg-home", icon: "/handyman.png", slug: "handyman-finders" },
-  { id: "specialist-finders", name: "Specialist Finders", tagline: "Technical expert solutions", color: "bg-home", icon: "/specialist.png", slug: "specialist-finders" },
-  { id: "sanitation-finders", name: "Sanitation Finders", tagline: "Professional cleaning help", color: "bg-home", icon: "/sanitation.png", slug: "sanitation-finders" },
-  { id: "cleaning-finders", name: "Cleaning Finders", tagline: "Sparkling clean spaces", color: "bg-home", icon: "/sanitation.png", slug: "sanitation-finders" }, // Extra
+  { id: "handyman-finders", name: "Handyman Finders", tagline: "Expert help for any task", color: "bg-home", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686478/ofia_ng_assets/ege6y0pbmbnpvb1nha6d.png", slug: "handyman-finders" },
+  { id: "specialist-finders", name: "Specialist Finders", tagline: "Technical expert solutions", color: "bg-home", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686497/ofia_ng_assets/hd55dgpuwlq2zo6gzvvs.png", slug: "specialist-finders" },
+  { id: "sanitation-finders", name: "Sanitation Finders", tagline: "Professional cleaning help", color: "bg-home", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686497/ofia_ng_assets/qvo36qya5sdejrxinjhu.png", slug: "sanitation-finders" },
+  { id: "cleaning-finders", name: "Cleaning Finders", tagline: "Sparkling clean spaces", color: "bg-home", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686497/ofia_ng_assets/qvo36qya5sdejrxinjhu.png", slug: "sanitation-finders" }, // Extra
   
   // 02
-  { id: "style-finders", name: "Style Finders", tagline: "Bespoke fashion experts", color: "bg-fashion", icon: "/style.png", slug: "style-finders" },
-  { id: "wardrobe-finders", name: "Wardrobe Finders", tagline: "Care for your apparel", color: "bg-fashion", icon: "/wardrobe.png", slug: "wardrobe-finders" },
+  { id: "style-finders", name: "Style Finders", tagline: "Bespoke fashion experts", color: "bg-fashion", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686497/ofia_ng_assets/thghoyxae2jobp62ts3m.png", slug: "style-finders" },
+  { id: "wardrobe-finders", name: "Wardrobe Finders", tagline: "Care for your apparel", color: "bg-fashion", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686499/ofia_ng_assets/omdqebop7wap9uzbitbr.png", slug: "wardrobe-finders" },
   
   // 03
-  { id: "tech-finders", name: "Tech Finders", tagline: "Innovative digital solutions", color: "bg-professionals", icon: "/tech.png", slug: "tech-finders" },
-  { id: "corporate-finders", name: "Corporate Finders", tagline: "Trusted business advisors", color: "bg-professionals", icon: "/corporate.png", slug: "corporate-finders" },
-  { id: "content-finders", name: "Content Finders", tagline: "Creative content creators", color: "bg-professionals", icon: "/content.png", slug: "content-finders" },
+  { id: "tech-finders", name: "Tech Finders", tagline: "Innovative digital solutions", color: "bg-professionals", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686498/ofia_ng_assets/a3deivk8ndbkbam2jrpy.png", slug: "tech-finders" },
+  { id: "corporate-finders", name: "Corporate Finders", tagline: "Trusted business advisors", color: "bg-professionals", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686470/ofia_ng_assets/w3pszbkd6x6evez8i27i.png", slug: "corporate-finders" },
+  { id: "content-finders", name: "Content Finders", tagline: "Creative content creators", color: "bg-professionals", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686470/ofia_ng_assets/miowiipdejne0aql08c3.png", slug: "content-finders" },
   
   // 04
-  { id: "academic-finders", name: "Academic Finders", tagline: "Excellence in learning", color: "bg-education", icon: "/academic.png", slug: "academic-finders" },
-  { id: "vocational-finders", name: "Vocational Finders", tagline: "Master new practical skills", color: "bg-education", icon: "/vocational.png", slug: "vocational-finders" },
+  { id: "academic-finders", name: "Academic Finders", tagline: "Excellence in learning", color: "bg-education", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790685576/ofia_ng_assets/sljbldwvxdkjbim6yvvg.png", slug: "academic-finders" },
+  { id: "vocational-finders", name: "Vocational Finders", tagline: "Master new practical skills", color: "bg-education", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686499/ofia_ng_assets/xdn81wjifjglnnihdtfl.png", slug: "vocational-finders" },
   
   // 05
-  { id: "planning-finders", name: "Planning Finders", tagline: "Perfectly orchestrated events", color: "bg-events", icon: "/planning.png", slug: "planning-finders" },
-  { id: "entertainment-finders", name: "Entertainment Finders", tagline: "Vibrant event entertainment", color: "bg-events", icon: "/entertain.png", slug: "entertainment-finders" },
-  { id: "talent-finders", name: "Talent Finders", tagline: "Connecting you with top talent", color: "bg-professionals", icon: "/talent.png", slug: "talent-finders" },
+  { id: "planning-finders", name: "Planning Finders", tagline: "Perfectly orchestrated events", color: "bg-events", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686495/ofia_ng_assets/v831fnhindocfuebipnd.png", slug: "planning-finders" },
+  { id: "entertainment-finders", name: "Entertainment Finders", tagline: "Vibrant event entertainment", color: "bg-events", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686471/ofia_ng_assets/od5xhmavqxmtffuimqsk.png", slug: "entertainment-finders" },
+  { id: "talent-finders", name: "Talent Finders", tagline: "Connecting you with top talent", color: "bg-professionals", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686497/ofia_ng_assets/v1brcmhmfp55kcoemw8v.png", slug: "talent-finders" },
   
   // 06
-  { id: "medical-finders", name: "Medical Finders", tagline: "Professional medical care", color: "bg-health", icon: "/medical.png", slug: "medical-finders" },
-  { id: "wellness-finders", name: "Wellness Finders", tagline: "Holistic health & vitality", color: "bg-health", icon: "/wellness.png", slug: "wellness-finders" },
-  { id: "care-finders", name: "Care Finders", tagline: "Compassionate care services", color: "bg-health", icon: "/care.png", slug: "care-finders" },
-  { id: "pet-care-finders", name: "Pet Care Finders", tagline: "Loving care for your pets", color: "bg-health", icon: "/care.png", slug: "care-finders" }, // Extra
+  { id: "medical-finders", name: "Medical Finders", tagline: "Professional medical care", color: "bg-health", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686489/ofia_ng_assets/xonksmd6vtw0ghbw90jq.png", slug: "medical-finders" },
+  { id: "wellness-finders", name: "Wellness Finders", tagline: "Holistic health & vitality", color: "bg-health", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686500/ofia_ng_assets/genewhlhcgkzoifvscip.png", slug: "wellness-finders" },
+  { id: "care-finders", name: "Care Finders", tagline: "Compassionate care services", color: "bg-health", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790685623/ofia_ng_assets/twyicmpzne0etqqzvob0.png", slug: "care-finders" },
+  { id: "pet-care-finders", name: "Pet Care Finders", tagline: "Loving care for your pets", color: "bg-health", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790685623/ofia_ng_assets/twyicmpzne0etqqzvob0.png", slug: "care-finders" }, // Extra
   
   // 07
-  { id: "transport-finders", name: "Transport Finders", tagline: "Seamless travel solutions", color: "bg-logistics", icon: "/transport.png", slug: "transport-finders" },
-  { id: "delivery-finders", name: "Delivery Finders", tagline: "Fast & reliable deliveries", color: "bg-logistics", icon: "/delivery.png", slug: "delivery-finders" },
+  { id: "transport-finders", name: "Transport Finders", tagline: "Seamless travel solutions", color: "bg-logistics", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686498/ofia_ng_assets/b98ua41f2elyhrxp9t2n.png", slug: "transport-finders" },
+  { id: "delivery-finders", name: "Delivery Finders", tagline: "Fast & reliable deliveries", color: "bg-logistics", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686471/ofia_ng_assets/koadt11pab6hdxeypfdp.png", slug: "delivery-finders" },
   
   // 08
-  { id: "repair-finders", name: "Repair Finders", tagline: "Expert auto repair help", color: "bg-auto", icon: "/repair.png", slug: "repair-finders" },
-  { id: "auto-care-finders", name: "Auto Care Finders", tagline: "Pristine auto maintenance", color: "bg-auto", icon: "/auto-care.png", slug: "auto-care-finders" },
+  { id: "repair-finders", name: "Repair Finders", tagline: "Expert auto repair help", color: "bg-auto", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686496/ofia_ng_assets/vsdhn3rczwk3wgqknraf.png", slug: "repair-finders" },
+  { id: "auto-care-finders", name: "Auto Care Finders", tagline: "Pristine auto maintenance", color: "bg-auto", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790685579/ofia_ng_assets/xrquzpuopdz0yklcbu3d.png", slug: "auto-care-finders" },
   
   // 09
-  { id: "culinary-finders", name: "Culinary Finders", tagline: "Exquisite catering tastes", color: "bg-food", icon: "/culinary.png", slug: "culinary-finders" },
-  { id: "agro-finders", name: "Agro Finders", tagline: "Sustainable farming help", color: "bg-food", icon: "/agro.png", slug: "agro-finders" },
+  { id: "culinary-finders", name: "Culinary Finders", tagline: "Exquisite catering tastes", color: "bg-food", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686471/ofia_ng_assets/tolau1rdzv4hvuszqevr.png", slug: "culinary-finders" },
+  { id: "agro-finders", name: "Agro Finders", tagline: "Sustainable farming help", color: "bg-food", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790685578/ofia_ng_assets/aqfnw6r2jkxtvynyicqj.png", slug: "agro-finders" },
   
   // 10
-  { id: "property-finders", name: "Property Finders", tagline: "Find your perfect space", color: "bg-realestate", icon: "/property.png", slug: "property-finders" },
-  { id: "building-finders", name: "Building Finders", tagline: "Expert construction partners", color: "bg-realestate", icon: "/building.png", slug: "building-finders" },
+  { id: "property-finders", name: "Property Finders", tagline: "Find your perfect space", color: "bg-realestate", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686496/ofia_ng_assets/tzfdq2ouji89iudqhker.png", slug: "property-finders" },
+  { id: "building-finders", name: "Building Finders", tagline: "Expert construction partners", color: "bg-realestate", icon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790685622/ofia_ng_assets/kev35g3r3gpfw25ekmop.png", slug: "building-finders" },
 ];
 
 interface NicheSwitcherProps {

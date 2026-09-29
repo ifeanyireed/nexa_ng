@@ -697,7 +697,7 @@ export default function InvoicesPage() {
 									<div className="flex flex-col">
 										<div className="flex items-center gap-3">
 											<img 
-												src="/favicon.png" 
+												src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686476/ofia_ng_assets/pjmsiobq9getramrg2ym.png" 
 												alt="NEW ERA Logo" 
 												className="w-14 h-14 md:w-16 md:h-16 object-contain shrink-0" 
 											/>

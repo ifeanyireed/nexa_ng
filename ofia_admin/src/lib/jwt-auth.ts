@@ -26,7 +26,7 @@ export const SEEDED_SUPER_ADMINS: SeededSuperAdminAccount[] = [
     role: "SUPER_ADMIN",
     scope: "PLATFORM_ROOT",
     department: "Executive Engineering",
-    avatar: "/character1.jpg",
+    avatar: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg",
   },
   {
     id: "admin-secops-02",
@@ -36,7 +36,7 @@ export const SEEDED_SUPER_ADMINS: SeededSuperAdminAccount[] = [
     role: "SECURITY_ADMIN",
     scope: "AUDIT_COMPLIANCE",
     department: "Security & Trust Operations",
-    avatar: "/character2.jpg",
+    avatar: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686464/ofia_ng_assets/dkbgzs7l252oasr7rwpa.jpg",
   },
   {
     id: "admin-viewer-03",
@@ -46,7 +46,7 @@ export const SEEDED_SUPER_ADMINS: SeededSuperAdminAccount[] = [
     role: "VIEWER",
     scope: "READ_ONLY",
     department: "Financial & Systems Audit",
-    avatar: "/character3.jpg",
+    avatar: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686465/ofia_ng_assets/rpiuip9fu0em4wpsrvfm.jpg",
   },
 ];
 

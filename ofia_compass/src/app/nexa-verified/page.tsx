@@ -81,7 +81,7 @@ export default function NexaVerifiedLanding() {
         {/* Background image & gradient blur overlay */}
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
           <img 
-            src="/nexa-guaranteed-1.jpeg" 
+            src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686494/ofia_ng_assets/fscn1gwom9exvkexcyyw.jpg" 
             alt="Nexa Guaranteed background" 
             className="absolute inset-0 w-full h-full object-cover object-center"
           />

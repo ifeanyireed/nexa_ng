@@ -214,7 +214,7 @@ export default function PublicQuestLandingPage() {
       {/* HERO SECTION WITH EXPANDED GRADIENT SPREAD */}
       <div className="relative overflow-hidden bg-black min-h-[460px] flex flex-col justify-between pb-16 pt-2">
         <img
-          src="/background.jpeg"
+          src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686457/ofia_ng_assets/ma7c5yplh2hpmiggorxw.jpg"
           alt="Retreat Background"
           className="absolute inset-0 w-full h-full object-cover object-top opacity-80"
         />
@@ -230,7 +230,7 @@ export default function PublicQuestLandingPage() {
         {/* PUBLIC NAVBAR FLOATING OVER HERO IMAGE */}
         <header className="relative z-40 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Ofia Logo" className="w-9 h-9 object-contain shrink-0" />
+            <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia Logo" className="w-9 h-9 object-contain shrink-0" />
             <div>
               <div className="text-xs font-mono font-medium text-[#3B82F6] uppercase tracking-wider">{tenantName}</div>
               <h1 className="text-sm font-semibold text-white">{quest?.name || "Corporate Championship Quest"}</h1>

@@ -12,7 +12,7 @@ export async function middleware(req: NextRequest) {
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth") ||
     pathname === "/favicon.ico" ||
-    pathname === "/icon.png" ||
+    pathname === "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/aa9nvrmyrc38lbpz1mkp.png" ||
     pathname.includes(".")
   ) {
     return NextResponse.next();

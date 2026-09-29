@@ -120,7 +120,7 @@ export default function ManagerDashboard() {
                     return (
                       <tr key={rev.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="py-4 flex items-center gap-3">
-                          <img src={emp?.avatar || "/character1.jpg"} alt={rev.employeeName} className="w-8 h-8 rounded-full object-cover border" />
+                          <img src={emp?.avatar || "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg"} alt={rev.employeeName} className="w-8 h-8 rounded-full object-cover border" />
                           <div>
                             <p className="font-bold text-slate-800 text-xs">{rev.employeeName}</p>
                             <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{rev.employeeId}</p>

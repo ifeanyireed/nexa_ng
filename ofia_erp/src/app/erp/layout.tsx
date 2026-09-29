@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     siteName: "Ofia ERP",
     images: [
       {
-        url: "/logo.png",
+        url: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png",
         width: 800,
         height: 800,
         alt: "Ofia ERP Logo",
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     title: "Ofia ERP | Enterprise Operating System & Suite",
     description:
       "Complete enterprise operating system orchestrating Multi-Warehouse Inventory (IMS), Touch POS Cashier, Zonal Dispatch Logistics, General Ledger Accounting, HR Appraisals, and Ofia AI Swarm.",
-    images: ["/logo.png"],
+    images: ["https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"],
   },
 };
 

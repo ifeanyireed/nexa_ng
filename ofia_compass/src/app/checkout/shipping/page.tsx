@@ -34,7 +34,7 @@ export default function CheckoutShipping() {
          {/* LEFT PANEL - MAP/VISUAL */}
          <div className="hidden md:flex md:w-1/2 relative overflow-hidden flex-col justify-end p-12 bg-nexa-bg-base border-r border-nexa-border">
             <div className="absolute inset-0 z-0 pointer-events-none">
-               <img src="/nexa-delivery.jpeg" alt="Nexa Delivery" className="w-full h-full object-cover object-center" />
+               <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686492/ofia_ng_assets/tn0aealkdl3ndn8z8q8r.jpg" alt="Nexa Delivery" className="w-full h-full object-cover object-center" />
                <div 
                  className="absolute inset-0"
                  style={{

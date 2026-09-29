@@ -29,10 +29,10 @@ export default function BusinessSolutionsPage() {
 
   // Background image rotation (hero5.jpeg to hero8.jpeg)
   const heroImages = [
-    "/hero5.jpeg",
-    "/hero6.jpeg",
-    "/hero7.jpeg",
-    "/hero8.jpeg"
+    "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686484/ofia_ng_assets/hgpojftxqtvq9ade6dd2.jpg",
+    "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686484/ofia_ng_assets/bfpylrwnnl7wrzbcbfaa.jpg",
+    "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686485/ofia_ng_assets/hvkuqabglsporl066v42.jpg",
+    "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686485/ofia_ng_assets/rtsyms18tikxcq433tik.jpg"
   ];
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 

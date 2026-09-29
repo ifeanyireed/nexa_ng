@@ -24,7 +24,7 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
           <div className="col-span-1 md:col-span-1">
             <div className="flex items-center gap-2 mb-6">
-              <img src="/logo.png" alt="Ofia Compass Logo" className="w-8 h-8 object-contain" />
+              <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia Compass Logo" className="w-8 h-8 object-contain" />
               <span className="text-xl font-bold text-display">Ofia Compass</span>
             </div>
             <p className="text-nexa-text-secondary text-sm mb-6 leading-relaxed">

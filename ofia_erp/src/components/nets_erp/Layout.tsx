@@ -300,7 +300,7 @@ export default function ERPLayout({ children }: { children: React.ReactNode }) {
       {/* MOBILE TOP BAR */}
       <div className="flex md:hidden items-center justify-between bg-white border-b border-[#E2E5E9] px-4 py-3 sticky top-0 z-50 shadow-sm">
         <div className="flex items-center gap-2">
-          <img src="/nets.webp" alt="Nets Logo" className="h-8 w-auto object-contain" />
+          <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686490/ofia_ng_assets/zbrnzquhno9wcqltmpig.webp" alt="Nets Logo" className="h-8 w-auto object-contain" />
         </div>
         <div className="flex items-center gap-3">
           {canSwitchRole && originalRole && (
@@ -341,7 +341,7 @@ export default function ERPLayout({ children }: { children: React.ReactNode }) {
           {/* Logo & Toggle Button */}
           {isCollapsed ? (
             <div className="flex flex-col items-center gap-6 mb-8">
-              <img src="/favicon.png" alt="Nets Icon" className="h-8 w-8 object-contain" />
+              <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686476/ofia_ng_assets/pjmsiobq9getramrg2ym.png" alt="Nets Icon" className="h-8 w-8 object-contain" />
               <button 
                 onClick={toggleCollapse}
                 className="p-1.5 hover:bg-white/55 hover:text-slate-850 text-slate-500 rounded-lg transition-all duration-200 cursor-pointer shadow-sm border border-slate-200 bg-white"
@@ -352,7 +352,7 @@ export default function ERPLayout({ children }: { children: React.ReactNode }) {
             </div>
           ) : (
             <div className="flex items-center justify-between mb-8 px-1">
-              <img src="/nets.webp" alt="Nets Logo" className="h-10 w-auto object-contain" />
+              <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686490/ofia_ng_assets/zbrnzquhno9wcqltmpig.webp" alt="Nets Logo" className="h-10 w-auto object-contain" />
               <button 
                 onClick={toggleCollapse}
                 className="p-1.5 hover:bg-white/55 hover:text-slate-850 text-slate-500 rounded-lg transition-all duration-200 cursor-pointer shadow-sm border border-slate-200 bg-white"

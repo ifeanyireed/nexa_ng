@@ -284,7 +284,7 @@ export default function LoginPage() {
       {/* Top Simple Header */}
       <header className="p-6 flex items-center justify-between max-w-7xl mx-auto w-full">
         <Link href="/" className="flex items-center gap-3">
-          <img src="/logo.png" alt="Ofia ERP Logo" className="w-8 h-8 object-contain shrink-0" />
+          <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia ERP Logo" className="w-8 h-8 object-contain shrink-0" />
           <span className="font-extrabold text-base text-[var(--nexa-text-primary)] text-display flex items-center gap-2">
             Ofia ERP
             <span className="text-[10px] font-extrabold font-mono uppercase px-2.5 py-0.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20">
@@ -307,7 +307,7 @@ export default function LoginPage() {
           <NexaCard variant="glass" padding="lg" className="border-2 border-[#1A56DB]/20 shadow-2xl rounded-3xl space-y-6">
             <div className="text-center space-y-2">
               <div className="flex justify-center mb-1">
-                <img src="/logo.png" alt="Ofia Logo" className="w-12 h-12 object-contain" />
+                <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia Logo" className="w-12 h-12 object-contain" />
               </div>
               <h1 className="text-2xl font-black text-display text-[var(--nexa-text-primary)] tracking-tight">
                 {currentTenant ? `Sign in to ${currentTenant.toUpperCase()} ERP` : "Sign in to Ofia ERP"}

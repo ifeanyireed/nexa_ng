@@ -131,7 +131,7 @@ export default function AdminOverviewPage() {
           role: u.role,
           orgName: u.org_name || "EduSuite Nigeria",
           orgId: u.org_id || "org-01",
-          avatar: u.avatar || "/character12.jpg",
+          avatar: u.avatar || "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686460/ofia_ng_assets/x4djnszz7i5q9aux0gdt.jpg",
           title: u.title || "Team Member",
           twoFactorEnabled: u.two_factor_enabled ?? false,
           status: (u.status || "Active") as any,

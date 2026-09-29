@@ -245,7 +245,7 @@ export default function StageTVScoreboardPage() {
       {/* BACKGROUND IMAGE WITH BLURRED DARK OVERLAY */}
       <div
         className="fixed inset-0 bg-cover bg-center bg-no-repeat z-0 transform scale-105 transition-transform duration-1000"
-        style={{ backgroundImage: `url('/background.jpeg')` }}
+        style={{ backgroundImage: `url('https://res.cloudinary.com/ihfqdysu/image/upload/v1790686457/ofia_ng_assets/ma7c5yplh2hpmiggorxw.jpg')` }}
       >
         {/* Dark blur overlay matching leaderboard reference */}
         <div className="absolute inset-0 bg-black/45 backdrop-blur-[7px]" />

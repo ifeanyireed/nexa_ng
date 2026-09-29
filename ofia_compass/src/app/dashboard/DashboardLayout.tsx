@@ -244,11 +244,11 @@ export default function DashboardLayout({
         <div className="p-6 pb-2 flex items-center justify-between">
            {isSidebarOpen ? (
              <Link href="/" className="flex items-center gap-2">
-                <img src="/logo.png" alt="Ofia Compass" className="w-8 h-8" />
+                <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia Compass" className="w-8 h-8" />
                 <span className="text-xl font-extrabold text-display">Ofia Compass</span>
              </Link>
            ) : (
-             <img src="/logo.png" alt="Ofia Compass" className="w-8 h-8 mx-auto" />
+             <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia Compass" className="w-8 h-8 mx-auto" />
            )}
         </div>
 

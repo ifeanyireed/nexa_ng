@@ -275,7 +275,7 @@ export function getSignedInERPUser(users: User[]): User {
     email: "admin@ofia.ng",
     role: "admin",
     department: "Executive Directorate",
-    avatar: "/character1.jpg",
+    avatar: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg",
   };
 
   if (typeof window === "undefined") {
@@ -356,7 +356,7 @@ export function getSignedInERPUser(users: User[]): User {
             : effectiveRole === "manager"
             ? "Operations & Line Manager"
             : "Staff Member"),
-        avatar: parsed?.avatar || "/character1.jpg",
+        avatar: parsed?.avatar || "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg",
         company: parsed?.company || "Organization",
         managerName: parsed?.managerName,
         managerId: parsed?.managerId,

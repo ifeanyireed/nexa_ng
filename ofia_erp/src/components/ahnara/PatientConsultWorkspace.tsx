@@ -47,8 +47,8 @@ export function PatientConsultWorkspace({ workspaceType }: PatientConsultWorkspa
       badgeTitle: "Maternal Care (Mama)",
       specialistType: "Midwife / Obstetrician",
       specialists: [
-        { name: "Nurse Tyra Reed", specialty: "Certified Midwife", fee: "$30.00", times: ["Today 2:30 PM", "Tomorrow 9:00 AM"], rating: "4.9", image: "/character1.jpg" },
-        { name: "Dr. Ifeanyi Adenuga", specialty: "OB/GYN Consultant", fee: "$45.00", times: ["Today 4:00 PM", "Tomorrow 11:30 AM"], rating: "5.0", image: "/character3.jpg" }
+        { name: "Nurse Tyra Reed", specialty: "Certified Midwife", fee: "$30.00", times: ["Today 2:30 PM", "Tomorrow 9:00 AM"], rating: "4.9", image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg" },
+        { name: "Dr. Ifeanyi Adenuga", specialty: "OB/GYN Consultant", fee: "$45.00", times: ["Today 4:00 PM", "Tomorrow 11:30 AM"], rating: "5.0", image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686465/ofia_ng_assets/rpiuip9fu0em4wpsrvfm.jpg" }
       ],
       defaultSymptom: "Logged contractions - Gestation Week 38"
     },
@@ -61,8 +61,8 @@ export function PatientConsultWorkspace({ workspaceType }: PatientConsultWorkspa
       badgeTitle: "Pediatric Care (Kids)",
       specialistType: "Pediatrician",
       specialists: [
-        { name: "Dr. Donald Kalu", specialty: "Pediatric Specialist", fee: "$40.00", times: ["Today 3:30 PM", "Tomorrow 10:00 AM"], rating: "4.8", image: "/character4.jpg" },
-        { name: "Dr. Sarah Miller", specialty: "Neonatologist", fee: "$50.00", times: ["Tomorrow 1:00 PM", "Monday 9:30 AM"], rating: "4.9", image: "/character2.jpg" }
+        { name: "Dr. Donald Kalu", specialty: "Pediatric Specialist", fee: "$40.00", times: ["Today 3:30 PM", "Tomorrow 10:00 AM"], rating: "4.8", image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686466/ofia_ng_assets/qnozsmdqmclu0kmgmmdv.jpg" },
+        { name: "Dr. Sarah Miller", specialty: "Neonatologist", fee: "$50.00", times: ["Tomorrow 1:00 PM", "Monday 9:30 AM"], rating: "4.9", image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686464/ofia_ng_assets/dkbgzs7l252oasr7rwpa.jpg" }
       ],
       defaultSymptom: "Infant fever spike checkup"
     },
@@ -75,8 +75,8 @@ export function PatientConsultWorkspace({ workspaceType }: PatientConsultWorkspa
       badgeTitle: "Geriatric Care (Seniors)",
       specialistType: "Gerontologist / Care Manager",
       specialists: [
-        { name: "Dr. Sarah Miller", specialty: "Geriatrician", fee: "$45.00", times: ["Today 2:00 PM", "Tomorrow 3:00 PM"], rating: "4.9", image: "/character2.jpg" },
-        { name: "Care Manager Felix Ngozi", specialty: "Cognitive Care Advisor", fee: "$35.00", times: ["Today 5:00 PM", "Monday 11:00 AM"], rating: "4.7", image: "/character3.jpg" }
+        { name: "Dr. Sarah Miller", specialty: "Geriatrician", fee: "$45.00", times: ["Today 2:00 PM", "Tomorrow 3:00 PM"], rating: "4.9", image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686464/ofia_ng_assets/dkbgzs7l252oasr7rwpa.jpg" },
+        { name: "Care Manager Felix Ngozi", specialty: "Cognitive Care Advisor", fee: "$35.00", times: ["Today 5:00 PM", "Monday 11:00 AM"], rating: "4.7", image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686465/ofia_ng_assets/rpiuip9fu0em4wpsrvfm.jpg" }
       ],
       defaultSymptom: "Geriatric safety & Heart-rate telemetry alert"
     },
@@ -89,8 +89,8 @@ export function PatientConsultWorkspace({ workspaceType }: PatientConsultWorkspa
       badgeTitle: "Lady Care (Lady)",
       specialistType: "Gynecologist",
       specialists: [
-        { name: "Dr. Ifeanyi Adenuga", specialty: "Gynecologic Surgeon", fee: "$50.00", times: ["Today 4:30 PM", "Tomorrow 8:30 AM"], rating: "5.0", image: "/character3.jpg" },
-        { name: "Nurse Tyra Reed", specialty: "Reproductive Health Nurse", fee: "$30.00", times: ["Tomorrow 11:00 AM"], rating: "4.9", image: "/character1.jpg" }
+        { name: "Dr. Ifeanyi Adenuga", specialty: "Gynecologic Surgeon", fee: "$50.00", times: ["Today 4:30 PM", "Tomorrow 8:30 AM"], rating: "5.0", image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686465/ofia_ng_assets/rpiuip9fu0em4wpsrvfm.jpg" },
+        { name: "Nurse Tyra Reed", specialty: "Reproductive Health Nurse", fee: "$30.00", times: ["Tomorrow 11:00 AM"], rating: "4.9", image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg" }
       ],
       defaultSymptom: "Routine reproductive screening follow-up"
     },
@@ -103,8 +103,8 @@ export function PatientConsultWorkspace({ workspaceType }: PatientConsultWorkspa
       badgeTitle: "Adolescent Care (Girlie)",
       specialistType: "Teen Counselor / Clinician",
       specialists: [
-        { name: "Counselor Clara Reed", specialty: "Adolescent Psychologist", fee: "$25.00", times: ["Today 3:00 PM", "Tomorrow 4:30 PM"], rating: "4.8", image: "/character1.jpg" },
-        { name: "Dr. Sarah Miller", specialty: "Teen Wellness Pediatrician", fee: "$40.00", times: ["Tomorrow 10:30 AM"], rating: "4.9", image: "/character2.jpg" }
+        { name: "Counselor Clara Reed", specialty: "Adolescent Psychologist", fee: "$25.00", times: ["Today 3:00 PM", "Tomorrow 4:30 PM"], rating: "4.8", image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg" },
+        { name: "Dr. Sarah Miller", specialty: "Teen Wellness Pediatrician", fee: "$40.00", times: ["Tomorrow 10:30 AM"], rating: "4.9", image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686464/ofia_ng_assets/dkbgzs7l252oasr7rwpa.jpg" }
       ],
       defaultSymptom: "AI Coach Cramp Log escalation"
     }

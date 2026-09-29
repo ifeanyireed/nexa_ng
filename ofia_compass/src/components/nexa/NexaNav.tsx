@@ -56,7 +56,7 @@ export const NexaNavbar = () => {
           {/* LOGO & NICHE SWITCHER */}
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2 cursor-pointer group">
-              <img src="/logo.png" alt={isErp ? "Ofia ERP Logo" : "Ofia Compass Logo"} className="w-8 h-8 object-contain transition-all group-hover:scale-110" />
+              <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt={isErp ? "Ofia ERP Logo" : "Ofia Compass Logo"} className="w-8 h-8 object-contain transition-all group-hover:scale-110" />
               <span className="text-xl font-bold text-display text-[var(--nexa-text-primary)] hidden sm:block">
                 {isErp ? "Ofia ERP" : "Ofia Compass"}
               </span>

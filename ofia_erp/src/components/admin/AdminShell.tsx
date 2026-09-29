@@ -82,7 +82,7 @@ export const AdminShell = ({ children }: AdminShellProps) => {
           <div className="h-16 flex items-center justify-between px-5 border-b border-[var(--nexa-border)]">
             <Link href="/admin" className="flex items-center gap-2.5 overflow-hidden">
               <img
-                src="/logo.png"
+                src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"
                 alt="Ofia AI Logo"
                 className="w-8 h-8 object-contain shrink-0"
               />
@@ -159,7 +159,7 @@ export const AdminShell = ({ children }: AdminShellProps) => {
           <div className="p-3 border-t border-[var(--nexa-border)] flex items-center justify-between">
             <div className="flex items-center gap-2.5 overflow-hidden">
               <img
-                src="/character12.jpg"
+                src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686460/ofia_ng_assets/x4djnszz7i5q9aux0gdt.jpg"
                 alt="Platform SuperAdmin Profile"
                 className="w-8 h-8 rounded-xl object-cover shrink-0 border border-[var(--nexa-border)] shadow-sm"
               />

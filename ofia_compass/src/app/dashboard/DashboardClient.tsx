@@ -73,11 +73,11 @@ export default function DashboardClient() {
         <div className="p-6 flex items-center justify-between">
            {isSidebarOpen && (
              <Link href="/" className="flex items-center gap-2">
-                <img src="/logo.png" alt="Nexa" className="w-8 h-8" />
+                <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Nexa" className="w-8 h-8" />
                 <span className="text-xl font-extrabold text-display">Nexa</span>
              </Link>
            )}
-           {!isSidebarOpen && <img src="/logo.png" alt="Nexa" className="w-8 h-8 mx-auto" />}
+           {!isSidebarOpen && <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Nexa" className="w-8 h-8 mx-auto" />}
         </div>
 
         <nav className="flex-1 px-4 space-y-2 mt-8">

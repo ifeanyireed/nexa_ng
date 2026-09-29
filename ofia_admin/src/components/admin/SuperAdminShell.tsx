@@ -190,7 +190,7 @@ export function SuperAdminShell({
           {isSidebarOpen ? (
             <Link href="/" className="flex items-center gap-2.5">
               <img
-                src="/logo.png"
+                src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"
                 alt="Ofia Business Suite SUPER-ADMIN"
                 className="w-8 h-8 object-contain shrink-0"
               />
@@ -211,7 +211,7 @@ export function SuperAdminShell({
           ) : (
             <Link href="/" className="mx-auto">
               <img
-                src="/logo.png"
+                src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"
                 alt="Ofia Business Suite SUPER-ADMIN"
                 className="w-8 h-8 object-contain mx-auto"
               />

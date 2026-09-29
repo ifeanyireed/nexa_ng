@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   description:
     "Unified Super Admin & Multi-App Governance for Ofia AI Swarm, Ofia Compass, and Multi-Tenant Workspaces.",
   icons: {
-    icon: [{ url: "/logo.png" }, { url: "/icon.png" }],
+    icon: [{ url: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" }, { url: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/aa9nvrmyrc38lbpz1mkp.png" }],
   },
 };
 

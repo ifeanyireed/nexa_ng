@@ -58,7 +58,7 @@ export default function Hero() {
             {/* Inline architectural house badge */}
             <span className="inline-block relative h-8 sm:h-11 w-14 sm:w-20 rounded-xl sm:rounded-2xl overflow-hidden shadow-sm align-middle -translate-y-0.5 sm:-translate-y-1 hover:scale-105 transition-transform duration-300">
               <Image
-                src="/house-badge.png"
+                src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686502/ofia_ng_assets/usto1bnehtvsvyzwylav.png"
                 alt="Architectural Villa"
                 fill
                 className="object-cover"
@@ -71,7 +71,7 @@ export default function Hero() {
             {/* Overlapping client social proof badge */}
             <span className="inline-block relative h-6 sm:h-9 w-20 sm:w-28 rounded-full overflow-hidden align-middle -translate-y-0.5 sm:-translate-y-1 ml-0.5 sm:ml-1">
               <Image
-                src="/avatars-badge.png"
+                src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686502/ofia_ng_assets/agcjipf9ork4gixb7fib.png"
                 alt="50k+ Trusted Clients"
                 fill
                 className="object-contain"
@@ -92,7 +92,7 @@ export default function Hero() {
       <div className="relative w-full rounded-2xl sm:rounded-[32px] overflow-hidden shadow-[0_20px_50px_-15px_rgba(0,0,0,0.14)] border border-stone-200/60 h-[480px] sm:h-[540px] md:h-[580px]">
         {/* Background Image: Coastal Dunes Luxury Residences */}
         <Image
-          src="/hero.jpg"
+          src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686504/ofia_ng_assets/wuuq3envwns5v2hbkjr3.jpg"
           alt="Coastal Modern Residences and Villas"
           fill
           priority

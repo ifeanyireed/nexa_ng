@@ -32,16 +32,16 @@ export default function ProductsPage() {
 	const router = useRouter();
 
 	const [products, setProducts] = useState<Product[]>([
-		{ id: "p1", name: "GAIO - Leasing Services", image: "/favicon.png", sku: "", type: "Service", salePrice: 0, purchasePrice: 0, quantity: 0, canPurchase: false },
-		{ id: "p2", name: "Cooperate Bus Services", image: "/favicon.png", sku: "", type: "Service", salePrice: 0, purchasePrice: 0, quantity: 0, canPurchase: false },
-		{ id: "p3", name: "Bus Rentals", image: "/favicon.png", sku: "", type: "Service", salePrice: 0, purchasePrice: 0, quantity: 0, canPurchase: false },
-		{ id: "p4", name: "Shuttle", image: "/favicon.png", sku: "", type: "Service", salePrice: 0, purchasePrice: 0, quantity: 0, canPurchase: false },
-		{ id: "p5", name: "NBC - Recovery & Intervention", image: "/favicon.png", sku: "", type: "Service", salePrice: 0, purchasePrice: 0, quantity: 0, canPurchase: false },
-		{ id: "p6", name: "NBC - Outsourcing Drivers", image: "/favicon.png", sku: "", type: "Service", salePrice: 0, purchasePrice: 0, quantity: 0, canPurchase: false },
-		{ id: "p7", name: "Bus Rentals - OLAM", image: "/favicon.png", sku: "", type: "Product", salePrice: 0, purchasePrice: 0, quantity: 0, canPurchase: false },
-		{ id: "p8", name: "Haulage - DULUX", image: "/favicon.png", sku: "", type: "Product", salePrice: 0, purchasePrice: 0, quantity: 0, canPurchase: false },
-		{ id: "p9", name: "Haulage - 7UP", image: "/favicon.png", sku: "", type: "Service", salePrice: 0, purchasePrice: 0, quantity: 0, canPurchase: false },
-		{ id: "p10", name: "IHS - Fleet Management Service", image: "/favicon.png", sku: "", type: "Service", salePrice: 0, purchasePrice: 0, quantity: 0, canPurchase: false }
+		{ id: "p1", name: "GAIO - Leasing Services", image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686476/ofia_ng_assets/pjmsiobq9getramrg2ym.png", sku: "", type: "Service", salePrice: 0, purchasePrice: 0, quantity: 0, canPurchase: false },
+		{ id: "p2", name: "Cooperate Bus Services", image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686476/ofia_ng_assets/pjmsiobq9getramrg2ym.png", sku: "", type: "Service", salePrice: 0, purchasePrice: 0, quantity: 0, canPurchase: false },
+		{ id: "p3", name: "Bus Rentals", image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686476/ofia_ng_assets/pjmsiobq9getramrg2ym.png", sku: "", type: "Service", salePrice: 0, purchasePrice: 0, quantity: 0, canPurchase: false },
+		{ id: "p4", name: "Shuttle", image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686476/ofia_ng_assets/pjmsiobq9getramrg2ym.png", sku: "", type: "Service", salePrice: 0, purchasePrice: 0, quantity: 0, canPurchase: false },
+		{ id: "p5", name: "NBC - Recovery & Intervention", image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686476/ofia_ng_assets/pjmsiobq9getramrg2ym.png", sku: "", type: "Service", salePrice: 0, purchasePrice: 0, quantity: 0, canPurchase: false },
+		{ id: "p6", name: "NBC - Outsourcing Drivers", image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686476/ofia_ng_assets/pjmsiobq9getramrg2ym.png", sku: "", type: "Service", salePrice: 0, purchasePrice: 0, quantity: 0, canPurchase: false },
+		{ id: "p7", name: "Bus Rentals - OLAM", image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686476/ofia_ng_assets/pjmsiobq9getramrg2ym.png", sku: "", type: "Product", salePrice: 0, purchasePrice: 0, quantity: 0, canPurchase: false },
+		{ id: "p8", name: "Haulage - DULUX", image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686476/ofia_ng_assets/pjmsiobq9getramrg2ym.png", sku: "", type: "Product", salePrice: 0, purchasePrice: 0, quantity: 0, canPurchase: false },
+		{ id: "p9", name: "Haulage - 7UP", image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686476/ofia_ng_assets/pjmsiobq9getramrg2ym.png", sku: "", type: "Service", salePrice: 0, purchasePrice: 0, quantity: 0, canPurchase: false },
+		{ id: "p10", name: "IHS - Fleet Management Service", image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686476/ofia_ng_assets/pjmsiobq9getramrg2ym.png", sku: "", type: "Service", salePrice: 0, purchasePrice: 0, quantity: 0, canPurchase: false }
 	]);
 
 	const [searchQuery, setSearchQuery] = useState("");
@@ -85,7 +85,7 @@ export default function ProductsPage() {
 		const pData: Product = {
 			id: `p-${Date.now()}`,
 			name: newProduct.name,
-			image: "/favicon.png",
+			image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686476/ofia_ng_assets/pjmsiobq9getramrg2ym.png",
 			sku: newProduct.sku,
 			type: newProduct.type,
 			salePrice: parseFloat(newProduct.salePrice) || 0,

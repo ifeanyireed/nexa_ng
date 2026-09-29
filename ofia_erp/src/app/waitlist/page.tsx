@@ -81,10 +81,10 @@ const TOOL_TYPES = [
 
 export default function WaitlistPage() {
   const heroImages = [
-    "/hero5.jpeg",
-    "/hero6.jpeg",
-    "/hero7.jpeg",
-    "/hero8.jpeg",
+    "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686484/ofia_ng_assets/hgpojftxqtvq9ade6dd2.jpg",
+    "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686484/ofia_ng_assets/bfpylrwnnl7wrzbcbfaa.jpg",
+    "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686485/ofia_ng_assets/hvkuqabglsporl066v42.jpg",
+    "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686485/ofia_ng_assets/rtsyms18tikxcq433tik.jpg",
   ];
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -234,7 +234,7 @@ export default function WaitlistPage() {
 
       {/* Top Left Brand Anchor */}
       <div className="absolute top-6 left-6 md:top-8 md:left-12 z-20 flex items-center gap-2.5">
-        <img src="/logo.png" alt="Ofia" className="w-8 h-8 object-contain" />
+        <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia" className="w-8 h-8 object-contain" />
         <span className="text-base font-extrabold tracking-tight text-slate-900">
           Ofia
         </span>

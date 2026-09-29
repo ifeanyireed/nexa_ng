@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ofia — Master Product, Engineering &amp; Business Blueprint</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --canvas:#FAF9F6;
+  --surface:#FFFFFF;
+  --surface-2:#F2F0E9;
+  --ink:#14151F;
+  --ink-soft:#5C5E6B;
+  --ink-faint:#9A9CAA;
+  --line:#E7E4DC;
+  --signal:#2A6BE0;
+  --signal-2:#5C93F0;
+  --signal-soft:#EAF1FD;
+  --ember:#EF8B3C;
+  --ember-soft:#FCEBDA;
+  --growth:#1E9E6B;
+  --growth-soft:#E3F5EC;
+  --rose:#D9555C;
+  --rose-soft:#FBEAEA;
+  --radius-sm:10px;
+  --radius-md:16px;
+  --radius-lg:24px;
+  --shadow-sm:0 1px 2px rgba(20,21,31,.05), 0 1px 1px rgba(20,21,31,.03);
+  --shadow-md:0 10px 26px rgba(20,21,31,.07), 0 2px 8px rgba(20,21,31,.04);
+  --shadow-lg:0 28px 64px rgba(20,21,31,.12), 0 10px 22px rgba(20,21,31,.06);
+}
+*,*::before,*::after{box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto;} *{animation-duration:.001ms !important; transition-duration:.001ms !important;} }
+body{
+  margin:0; background:var(--canvas); color:var(--ink);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  font-size:16px; line-height:1.65; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{ font-family:'Space Grotesk',sans-serif; font-weight:600; letter-spacing:-0.01em; color:var(--ink); line-height:1.15; }
+p{ margin:0; }
+a{ color:inherit; text-decoration:none; }
+.mono{ font-family:'IBM Plex Mono',monospace; }
+ul{ margin:0; padding:0; }
+img,svg{ display:block; max-width:100%; }
+::selection{ background:var(--signal-soft); color:var(--signal); }
+:focus-visible{ outline:2px solid var(--signal); outline-offset:2px; border-radius:4px; }
+
+.shell{ display:grid; grid-template-columns:280px 1fr; max-width:1480px; margin:0 auto; }
+.sidebar{
+  position:sticky; top:0; align-self:start; height:100vh; overflow-y:auto;
+  padding:28px 20px 40px; border-right:1px solid var(--line);
+  scrollbar-width:thin;
+}
+.sidebar::-webkit-scrollbar{ width:6px; }
+.sidebar::-webkit-scrollbar-thumb{ background:var(--line); border-radius:6px; }
+.brand{ display:flex; align-items:center; gap:10px; padding:6px 10px 22px; }
+.brand-mark{ width:30px; height:30px; border-radius:9px; background:linear-gradient(135deg,var(--signal),var(--signal-2)); position:relative; flex:none; }
+.brand-mark::after{ content:""; position:absolute; inset:8px; border:2px solid rgba(255,255,255,.85); border-radius:4px; }
+.brand-name{ font-family:'Space Grotesk'; font-weight:700; font-size:15px; letter-spacing:-0.01em; }
+.brand-sub{ font-family:'IBM Plex Mono'; font-size:10px; color:var(--ink-faint); letter-spacing:.04em; }
+
+.nav-group{ margin-bottom:20px; }
+.nav-group-label{ font-family:'IBM Plex Mono'; font-size:10px; text-transform:uppercase; letter-spacing:.09em; color:var(--ink-faint); padding:0 10px; margin-bottom:8px; display:block; }
+.nav-link{
+  display:flex; align-items:center; gap:9px; padding:7px 10px; border-radius:9px;
+  font-size:13px; color:var(--ink-soft); font-weight:500; transition:background .15s ease,color .15s ease;
+  border-left:2px solid transparent;
+}
+.nav-link .dot{ width:5px; height:5px; border-radius:50%; background:var(--ink-faint); flex:none; transition:background .15s ease,transform .15s ease; }
+.nav-link:hover{ background:var(--surface-2); color:var(--ink); }
+.nav-link.active{ background:var(--signal-soft); color:var(--signal); font-weight:600; }
+.nav-link.active .dot{ background:var(--signal); transform:scale(1.4); }
+
+.mobile-bar{ display:none; }
+
+.main{ padding:0 56px 140px; min-width:0; }
+.section{ padding:64px 0; border-bottom:1px solid var(--line); scroll-margin-top:20px; }
+.section:last-of-type{ border-bottom:none; }
+.section-head{ margin-bottom:34px; }
+.eyebrow{ display:inline-flex; align-items:center; gap:8px; font-family:'IBM Plex Mono'; font-size:11.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:16px; }
+.eyebrow .dot{ width:6px; height:6px; border-radius:50%; background:var(--signal); }
+.eyebrow.ember .dot{ background:var(--ember); }
+.eyebrow.growth .dot{ background:var(--growth); }
+.section h2{ font-size:clamp(1.5rem,2.6vw,2.05rem); margin-bottom:14px; }
+.section-lede{ color:var(--ink-soft); max-width:72ch; font-size:1.01rem; }
+
+.reveal{ opacity:0; transform:translateY(14px); transition:opacity .6s ease, transform .6s ease; }
+.reveal.in-view{ opacity:1; transform:translateY(0); }
+
+.hero{ padding:60px 0 52px; border-bottom:1px solid var(--line); display:grid; grid-template-columns:1.15fr .85fr; gap:52px; align-items:center; }
+.hero-eyebrow{ display:inline-flex; align-items:center; gap:8px; font-family:'IBM Plex Mono'; font-size:11.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--signal); background:var(--signal-soft); padding:7px 13px; border-radius:999px; }
+.hero-eyebrow .pulse{ width:6px; height:6px; border-radius:50%; background:var(--signal); animation:pulse 2s infinite; }
+@keyframes pulse{ 0%,100%{ opacity:1; } 50%{ opacity:.35; } }
+.hero h1{ font-size:clamp(2.2rem,3.8vw,3.3rem); margin:20px 0 18px; }
+.hero h1 em{ font-style:normal; color:var(--signal); }
+.hero .lede{ font-size:1.1rem; color:var(--ink-soft); max-width:58ch; }
+.hero-meta{ display:flex; gap:10px; margin-top:28px; flex-wrap:wrap; }
+.meta-chip{ border:1px solid var(--line); background:var(--surface); border-radius:10px; padding:9px 14px; font-size:12.5px; font-family:'IBM Plex Mono'; color:var(--ink-soft); }
+.meta-chip b{ color:var(--ink); }
+
+.dash-preview{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); padding:18px; position:relative; }
+.dash-chrome{ display:flex; align-items:center; gap:6px; margin-bottom:14px; padding:0 2px; }
+.dash-chrome .cdot{ width:8px; height:8px; border-radius:50%; background:var(--line); }
+.dash-chrome .clabel{ margin-left:8px; font-family:'IBM Plex Mono'; font-size:10.5px; color:var(--ink-faint); letter-spacing:.05em; }
+.dash-card{ background:var(--surface-2); border-radius:var(--radius-md); padding:14px 16px; }
+.dash-row{ display:flex; gap:10px; margin-bottom:10px; }
+.dash-row:last-child{ margin-bottom:0; }
+.avatar-stack{ display:flex; align-items:center; }
+.avatar{ width:26px; height:26px; border-radius:50%; border:2px solid var(--surface-2); margin-left:-8px; position:relative; flex:none; }
+.avatar:first-child{ margin-left:0; }
+.avatar.a1{ background:var(--signal); } .avatar.a2{ background:var(--ember); } .avatar.a3{ background:var(--growth); } .avatar.a4{ background:#B7C8F0; }
+.avatar .live{ position:absolute; bottom:-1px; right:-1px; width:8px; height:8px; border-radius:50%; background:var(--growth); border:2px solid var(--surface-2); }
+.presence-text{ font-size:12px; color:var(--ink-soft); margin-left:10px; align-self:center; }
+.presence-text b{ color:var(--ink); }
+.dash-card.split{ flex:1; display:flex; flex-direction:column; gap:2px; }
+.streak-flame{ display:flex; align-items:center; gap:8px; }
+.streak-num{ font-family:'Space Grotesk'; font-size:20px; font-weight:700; color:var(--ink); }
+.streak-label{ font-size:11px; color:var(--ink-soft); }
+.lb-row{ display:flex; justify-content:space-between; font-size:12px; padding:5px 0; color:var(--ink-soft); }
+.lb-row.me{ background:var(--signal-soft); border-radius:8px; padding:5px 8px; color:var(--signal); font-weight:600; margin:0 -8px; }
+.mentor-quote{ font-size:12.5px; color:var(--ink-soft); font-style:italic; line-height:1.5; }
+.mentor-who{ display:flex; align-items:center; gap:8px; margin-top:8px; }
+.mentor-who .avatar{ margin-left:0; width:20px; height:20px; }
+.mentor-who span{ font-size:11px; color:var(--ink-faint); }
+
+.grid-2{ display:grid; grid-template-columns:repeat(2,1fr); gap:20px; }
+.grid-3{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+.grid-4{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+.card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-md); padding:24px; box-shadow:var(--shadow-sm); transition:transform .18s ease, box-shadow .18s ease; }
+.card:hover{ transform:translateY(-2px); box-shadow:var(--shadow-md); }
+.card h3{ font-size:1.02rem; margin-bottom:8px; }
+.card p{ color:var(--ink-soft); font-size:.92rem; }
+.card .card-tag{ display:inline-block; font-family:'IBM Plex Mono'; font-size:10.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--signal); background:var(--signal-soft); padding:3px 9px; border-radius:6px; margin-bottom:12px; }
+
+.tag{ display:inline-block; font-family:'IBM Plex Mono'; font-size:11px; padding:4px 10px; border-radius:6px; background:var(--surface-2); color:var(--ink-soft); margin:0 6px 6px 0; }
+
+table{ width:100%; border-collapse:collapse; font-size:.88rem; }
+th,td{ padding:12px 14px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+th{ font-family:'IBM Plex Mono'; font-size:10.5px; text-transform:uppercase; color:var(--ink-faint); letter-spacing:.06em; font-weight:500; }
+tr:last-child td{ border-bottom:none; }
+.table-wrap{ overflow-x:auto; border:1px solid var(--line); border-radius:var(--radius-md); background:var(--surface); }
+.table-wrap table{ min-width:640px; }
+
+.chip{ font-family:'IBM Plex Mono'; font-size:10.5px; padding:3px 9px; border-radius:6px; display:inline-block; white-space:nowrap; }
+.chip.high{ background:var(--rose-soft); color:var(--rose); }
+.chip.med{ background:var(--ember-soft); color:var(--ember); }
+.chip.low{ background:var(--growth-soft); color:var(--growth); }
+.check{ color:var(--growth); font-weight:700; }
+.cross{ color:var(--rose); font-weight:700; }
+.partial{ color:var(--ember); font-weight:700; }
+
+footer{ padding:56px; border-top:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
+footer .fbrand{ display:flex; align-items:center; gap:10px; }
+footer p{ color:var(--ink-faint); font-size:12.5px; font-family:'IBM Plex Mono'; }
+
+.flow{ display:flex; align-items:stretch; gap:0; margin-top:20px; flex-wrap:wrap; }
+.flow-step{ flex:1; min-width:140px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-md); padding:16px 16px; }
+.flow-step .num{ font-family:'IBM Plex Mono'; font-size:11px; color:var(--signal); margin-bottom:6px; display:block; }
+.flow-step p{ font-size:.82rem; color:var(--ink-soft); margin-top:6px; }
+.flow-arrow{ display:flex; align-items:center; justify-content:center; width:30px; color:var(--ink-faint); font-size:16px; flex:none; }
+.flow-branch-label{ font-family:'IBM Plex Mono'; font-size:11px; text-transform:uppercase; letter-spacing:.06em; margin:22px 0 4px; display:block; }
+
+.screen-category{ margin-bottom:36px; }
+.screen-category:last-child{ margin-bottom:0; }
+.screen-category-head{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+.screen-category-head .num-badge{ width:26px; height:26px; border-radius:8px; background:var(--signal-soft); color:var(--signal); font-family:'IBM Plex Mono'; font-size:11px; display:flex; align-items:center; justify-content:center; flex:none; }
+.screen-category-head h3{ font-size:1.0rem; }
+.screen-list{ display:grid; grid-template-columns:repeat(2,1fr); gap:0 32px; margin-top:10px; }
+.screen-item{ display:flex; gap:14px; padding:11px 0; border-bottom:1px dashed var(--line); }
+.screen-item .name{ min-width:150px; max-width:150px; font-weight:600; font-size:.85rem; flex:none; }
+.screen-item .desc{ color:var(--ink-soft); font-size:.83rem; }
+
+.module-card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-md); padding:22px; margin-bottom:16px; }
+.module-card-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:10px; flex-wrap:wrap; }
+.module-card h3{ font-size:1.04rem; }
+.module-card .desc{ color:var(--ink-soft); font-size:.89rem; margin-bottom:14px; }
+.module-feature-list{ list-style:none; display:grid; grid-template-columns:repeat(2,1fr); gap:6px 24px; }
+.module-feature-list li{ font-size:.83rem; color:var(--ink-soft); padding-left:14px; position:relative; }
+.module-feature-list li::before{ content:"–"; position:absolute; left:0; color:var(--ink-faint); }
+
+.schema-domain{ margin-bottom:34px; }
+.schema-domain:last-child{ margin-bottom:0; }
+.schema-domain-label{ font-family:'IBM Plex Mono'; font-size:11.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-faint); margin-bottom:14px; display:block; }
+.schema-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+.schema-card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-md); padding:18px; }
+.schema-card h4{ font-family:'IBM Plex Mono'; font-size:.86rem; color:var(--signal); margin-bottom:4px; font-weight:600; }
+.schema-card .schema-desc{ font-size:.75rem; color:var(--ink-faint); margin-bottom:10px; }
+.schema-fields{ list-style:none; font-family:'IBM Plex Mono'; font-size:.73rem; color:var(--ink-soft); line-height:1.85; }
+.schema-fields b{ color:var(--ink); font-weight:600; }
+
+.arch-diagram{ display:flex; flex-direction:column; gap:8px; margin-top:24px; }
+.arch-layer{ border:1px solid var(--line); border-radius:var(--radius-md); padding:16px 20px; background:var(--surface); }
+.arch-layer .layer-label{ font-family:'IBM Plex Mono'; font-size:10.5px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.06em; margin-bottom:10px; display:block; }
+.arch-layer .layer-items{ display:flex; gap:8px; flex-wrap:wrap; }
+.arch-layer .layer-items span{ font-family:'IBM Plex Mono'; font-size:11.5px; background:var(--surface-2); border-radius:6px; padding:5px 10px; color:var(--ink); }
+.arch-layer.accent{ border-color:var(--signal); background:var(--signal-soft); }
+.arch-layer.accent .layer-items span{ background:var(--surface); }
+.stack-col-title{ font-size:.82rem; font-weight:600; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+.stack-col-title .sw{ width:8px; height:8px; border-radius:2px; }
+
+.price-card{ border:1px solid var(--line); border-radius:var(--radius-lg); padding:26px; background:var(--surface); position:relative; }
+.price-card.featured{ border-color:var(--signal); box-shadow:var(--shadow-md); }
+.price-card .fplan{ position:absolute; top:-11px; right:22px; background:var(--signal); color:#fff; font-family:'IBM Plex Mono'; font-size:10px; padding:4px 10px; border-radius:999px; letter-spacing:.04em; }
+.price-card .plan-name{ font-family:'IBM Plex Mono'; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-faint); }
+.price-card .price{ font-family:'Space Grotesk'; font-size:1.7rem; margin:10px 0 4px; }
+.price-card .price span{ font-size:.85rem; color:var(--ink-faint); font-family:'Inter'; font-weight:400; }
+.price-card .price-note{ font-size:.75rem; color:var(--ink-faint); margin-bottom:16px; display:block; }
+.price-card ul{ list-style:none; font-size:.83rem; color:var(--ink-soft); line-height:2.1; }
+.price-card ul li::before{ content:"✓"; color:var(--growth); margin-right:8px; font-weight:700; }
+
+.timeline{ position:relative; margin-top:30px; padding-left:34px; border-left:2px solid var(--line); }
+.timeline-item{ position:relative; padding-bottom:42px; }
+.timeline-item:last-child{ padding-bottom:0; }
+.timeline-item::before{ content:""; position:absolute; left:-42px; top:3px; width:14px; height:14px; border-radius:50%; background:var(--signal); box-shadow:0 0 0 4px var(--signal-soft); }
+.timeline-item .phase-tag{ font-family:'IBM Plex Mono'; font-size:11.5px; color:var(--signal); font-weight:600; letter-spacing:.03em; }
+.timeline-item h3{ margin:6px 0 6px; font-size:1.06rem; }
+.timeline-item .when{ color:var(--ink-faint); font-size:.8rem; margin-bottom:12px; font-family:'IBM Plex Mono'; }
+.timeline-item .desc{ color:var(--ink-soft); font-size:.89rem; margin-bottom:12px; max-width:72ch; }
+
+.funnel{ display:flex; flex-direction:column; gap:8px; margin-top:22px; }
+.funnel-row{ background:var(--signal-soft); border-radius:9px; padding:13px 20px; font-size:.86rem; display:flex; justify-content:space-between; color:var(--signal); font-weight:600; }
+.funnel-row span:last-child{ font-family:'IBM Plex Mono'; font-weight:400; color:var(--ink-soft); font-size:.8rem; }
+.channel-card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-md); padding:20px; }
+.channel-card .ch-tag{ font-family:'IBM Plex Mono'; font-size:10.5px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; display:block; }
+
+.bar-chart{ display:flex; align-items:flex-end; gap:28px; height:220px; margin-top:26px; padding:0 12px 0; border-bottom:1px solid var(--line); }
+.bar-col{ flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; max-width:120px; }
+.bar-col .value{ font-family:'IBM Plex Mono'; font-size:12px; margin-bottom:8px; color:var(--ink); font-weight:600; }
+.bar{ width:100%; background:linear-gradient(180deg,var(--signal-2),var(--signal)); border-radius:8px 8px 0 0; }
+.bar-col .label{ margin-top:10px; font-size:.8rem; color:var(--ink-soft); font-family:'IBM Plex Mono'; }
+.unit-econ-card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-md); padding:18px; text-align:center; }
+.unit-econ-card .ue-val{ font-family:'Space Grotesk'; font-size:1.4rem; color:var(--signal); }
+.unit-econ-card .ue-label{ font-size:.75rem; color:var(--ink-soft); margin-top:4px; }
+
+.kpi-card{ border:1px solid var(--line); border-radius:var(--radius-md); padding:20px; background:var(--surface); }
+.kpi-card .kpi-value{ font-family:'Space Grotesk'; font-size:1.6rem; color:var(--signal); }
+.kpi-card .kpi-label{ font-size:.81rem; color:var(--ink-soft); margin-top:4px; }
+.kpi-card .kpi-target{ font-family:'IBM Plex Mono'; font-size:.68rem; color:var(--ink-faint); margin-top:10px; padding-top:10px; border-top:1px dashed var(--line); }
+
+.glossary-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:0 32px; }
+.glossary-item{ padding:14px 0; border-bottom:1px dashed var(--line); }
+.glossary-item .term{ font-weight:600; font-size:.89rem; margin-bottom:3px; }
+.glossary-item .def{ font-size:.83rem; color:var(--ink-soft); }
+.glossary-item .not{ font-family:'IBM Plex Mono'; font-size:.71rem; color:var(--ink-faint); }
+
+.code-block{ background:#14151F; color:#D8DAE6; border-radius:var(--radius-md); padding:18px 20px; font-family:'IBM Plex Mono'; font-size:.78rem; line-height:1.75; overflow-x:auto; white-space:pre; }
+.code-block .cm{ color:#7B8095; }
+.code-block .kw{ color:#7FB4FF; }
+
+.gov-q{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-md); padding:16px 18px; display:flex; gap:14px; align-items:flex-start; margin-bottom:10px; }
+.gov-q .qnum{ font-family:'Space Grotesk'; font-size:1.1rem; color:var(--signal); flex:none; width:26px; }
+.gov-q p{ font-size:.86rem; color:var(--ink-soft); }
+.gov-q b{ color:var(--ink); font-weight:600; }
+
+.subgroup-domain{ display:flex; flex-wrap:wrap; gap:6px; }
+.subgroup-domain span{ font-family:'IBM Plex Mono'; font-size:11.5px; background:var(--surface-2); border-radius:6px; padding:5px 10px; color:var(--ink); }
+.subgroup-domain span.root{ background:var(--signal); color:#fff; }
+
+@media (max-width:980px){
+  .shell{ grid-template-columns:1fr; }
+  .sidebar{ position:fixed; top:0; left:0; right:0; height:auto; max-height:100vh; z-index:50; background:var(--canvas); border-right:none; border-bottom:1px solid var(--line); transform:translateY(-100%); transition:transform .25s ease; padding-top:70px; }
+  .sidebar.open{ transform:translateY(0); overflow-y:auto; }
+  .mobile-bar{ display:flex; position:fixed; top:0; left:0; right:0; height:56px; background:var(--canvas); border-bottom:1px solid var(--line); z-index:60; align-items:center; justify-content:space-between; padding:0 18px; }
+  .mobile-bar .brand{ padding:0; }
+  .menu-btn{ width:36px; height:36px; border-radius:9px; border:1px solid var(--line); background:var(--surface); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; }
+  .menu-btn span{ width:16px; height:2px; background:var(--ink); border-radius:2px; }
+  .main{ padding:70px 22px 100px; }
+  .hero{ grid-template-columns:1fr; padding-top:24px; }
+  .grid-2,.grid-3,.grid-4{ grid-template-columns:1fr; }
+  .screen-list{ grid-template-columns:1fr; }
+  .screen-item .name{ min-width:130px; max-width:130px; }
+  .module-feature-list{ grid-template-columns:1fr; }
+  .schema-grid{ grid-template-columns:1fr; }
+  .glossary-grid{ grid-template-columns:1fr; }
+  .flow{ flex-direction:column; }
+  .flow-arrow{ width:100%; height:22px; transform:rotate(90deg); }
+  .bar-chart{ gap:14px; }
+  footer{ padding:32px 22px; }
+}
+</style>
+</head>
+<body>
+
+<div class="mobile-bar">
+  <div class="brand"><div class="brand-mark"></div><div><div class="brand-name">Ofia</div></div></div>
+  <button class="menu-btn" id="menuBtn" aria-label="Toggle navigation"><span></span><span></span><span></span></button>
+</div>
+
+<div class="shell">
+<nav class="sidebar" id="sidebar">
+  <div class="brand">
+    <div class="brand-mark"></div>
+    <div>
+      <div class="brand-name">Ofia</div>
+      <div class="brand-sub">MASTER BLUEPRINT</div>
+    </div>
+  </div>
+
+  <div class="nav-group">
+    <span class="nav-group-label">Part I · Foundation</span>
+    <a class="nav-link" href="#vision"><span class="dot"></span>Executive summary &amp; vision</a>
+    <a class="nav-link" href="#problem"><span class="dot"></span>Problem &amp; proposition</a>
+    <a class="nav-link" href="#ecosystem-map"><span class="dot"></span>Ecosystem map</a>
+  </div>
+
+  <div class="nav-group">
+    <span class="nav-group-label">Part III · Product families</span>
+    <a class="nav-link" href="#compass"><span class="dot"></span>Ofia Compass</a>
+    <a class="nav-link" href="#verticals"><span class="dot"></span>Vertical Experience Engine</a>
+    <a class="nav-link" href="#shops"><span class="dot"></span>Ofia Shops</a>
+    <a class="nav-link" href="#merchant"><span class="dot"></span>Ofia Merchant App</a>
+    <a class="nav-link" href="#customer-app"><span class="dot"></span>Customer / Compass App</a>
+    <a class="nav-link" href="#follow"><span class="dot"></span>Follow Business System</a>
+    <a class="nav-link" href="#erp"><span class="dot"></span>Ofia ERP</a>
+    <a class="nav-link" href="#ai"><span class="dot"></span>Ofia AI</a>
+    <a class="nav-link" href="#logistics"><span class="dot"></span>Ofia Logistics</a>
+    <a class="nav-link" href="#virtual-office"><span class="dot"></span>Virtual Office</a>
+    <a class="nav-link" href="#business-hub"><span class="dot"></span>Business Hub</a>
+  </div>
+
+  <div class="nav-group">
+    <span class="nav-group-label">Part IV–VII · Engineering</span>
+    <a class="nav-link" href="#tenancy"><span class="dot"></span>Multi-tenancy &amp; identity</a>
+    <a class="nav-link" href="#microservices"><span class="dot"></span>Microservices &amp; data flow</a>
+    <a class="nav-link" href="#events"><span class="dot"></span>Event architecture</a>
+    <a class="nav-link" href="#frontend-architecture"><span class="dot"></span>Frontend architecture</a>
+    <a class="nav-link" href="#screens"><span class="dot"></span>Screen inventory framework</a>
+    <a class="nav-link" href="#schema"><span class="dot"></span>Database &amp; schema</a>
+  </div>
+
+  <div class="nav-group">
+    <span class="nav-group-label">Part VIII–XII · Business</span>
+    <a class="nav-link" href="#business-model"><span class="dot"></span>Revenue &amp; pricing</a>
+    <a class="nav-link" href="#gtm"><span class="dot"></span>Go-to-market strategy</a>
+    <a class="nav-link" href="#marketing"><span class="dot"></span>Social &amp; paid ads</a>
+    <a class="nav-link" href="#financials"><span class="dot"></span>Financial projections</a>
+  </div>
+
+  <div class="nav-group">
+    <span class="nav-group-label">Part XIII–XV · Reference</span>
+    <a class="nav-link" href="#roadmap"><span class="dot"></span>Product roadmap</a>
+    <a class="nav-link" href="#kpis"><span class="dot"></span>Success metrics</a>
+    <a class="nav-link" href="#governance"><span class="dot"></span>Governance framework</a>
+    <a class="nav-link" href="#glossary"><span class="dot"></span>Glossary</a>
+  </div>
+</nav>
+
+<main class="main">
+
+  <section class="hero">
+    <div>
+      <span class="hero-eyebrow"><span class="pulse"></span>Master Product Blueprint · v1.0</span>
+      <h1>Ofia is the operating system Nigerian businesses <em>run on.</em></h1>
+      <p class="lede">Not a marketplace. A multi-tenant business ecosystem — storefront, ERP, AI, logistics, and discovery, all under one login — so a business enters its data once and it renders everywhere that's relevant.</p>
+      <div class="hero-meta">
+        <span class="meta-chip"><b>Prepared for</b> · Reed Breed Technologies</span>
+        <span class="meta-chip"><b>Category</b> · Multi-tenant Commerce OS</span>
+        <span class="meta-chip"><b>Market</b> · Nigeria → Africa</span>
+        <span class="meta-chip"><b>Date</b> · September 2026</span>
+      </div>
+    </div>
+    <div class="dash-preview">
+      <div class="dash-chrome"><span class="cdot"></span><span class="cdot"></span><span class="cdot"></span><span class="clabel">MERCHANT DASHBOARD · LIVE</span></div>
+      <div class="dash-row">
+        <div class="dash-card" style="flex:1;display:flex;align-items:center;">
+          <div class="avatar-stack">
+            <div class="avatar a1"><span class="live"></span></div>
+            <div class="avatar a2"><span class="live"></span></div>
+            <div class="avatar a3"></div>
+          </div>
+          <span class="presence-text"><b>3 team members</b> online across Shop &amp; ERP</span>
+        </div>
+      </div>
+      <div class="dash-row">
+        <div class="dash-card split">
+          <span class="streak-label">TODAY'S REVENUE</span>
+          <div class="streak-flame"><span class="streak-num">₦482,300</span></div>
+          <span class="streak-label">+18% vs. yesterday</span>
+        </div>
+        <div class="dash-card split">
+          <span class="streak-label">NEW FOLLOWERS</span>
+          <div class="streak-flame"><span class="streak-num" style="color:var(--signal);">126</span></div>
+          <span class="streak-label">via Ofia Compass</span>
+        </div>
+      </div>
+      <div class="dash-row">
+        <div class="dash-card" style="flex:1;">
+          <span class="streak-label">ENABLED MODULES</span>
+          <div class="lb-row"><span>Ofia Shop</span><span class="mono check">✓</span></div>
+          <div class="lb-row me"><span>Ofia AI — Marketing</span><span class="mono">Active</span></div>
+          <div class="lb-row"><span>Advanced Analytics</span><span class="mono">Locked</span></div>
+        </div>
+      </div>
+      <div class="dash-row">
+        <div class="dash-card" style="flex:1;">
+          <p class="mentor-quote">"Your 'Ankara Wrap Dress' sells 3× faster with a video thumbnail — want me to generate one?"</p>
+          <div class="mentor-who"><div class="avatar a1" style="width:20px;height:20px;"></div><span>Ofia AI · Marketing Assistant</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal" id="vision">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Part I · 01 Foundation</span>
+      <h2>Executive summary &amp; vision</h2>
+      <p class="section-lede">Anyone joining Ofia — product manager, engineer, designer, marketer, investor, or operations lead — should be able to read this document and understand what Ofia is, how it works, how it makes money, and what gets built next.</p>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:20px;">
+      <div class="card">
+        <span class="card-tag">Not this</span>
+        <h3>"A marketplace"</h3>
+        <p>A place that just lists businesses and takes a commission undersells what Ofia actually gives a business — and misframes every downstream product decision.</p>
+      </div>
+      <div class="card" style="border-color:var(--signal);">
+        <span class="card-tag">This</span>
+        <h3>A multi-tenant business operating ecosystem</h3>
+        <p>Businesses receive digital tools, a storefront, operational software, customer relationships, and access to a wider discovery network — all under one tenant record.</p>
+      </div>
+    </div>
+
+    <div class="card" style="background:var(--surface-2); border:none; box-shadow:none; margin-bottom:20px;">
+      <p style="font-family:'Space Grotesk'; font-size:1.1rem; color:var(--ink); line-height:1.5;">"Build the digital infrastructure through which businesses can establish, operate, grow, and connect with customers." — <span style="color:var(--ink-soft); font-family:'Inter'; font-size:.93rem; font-weight:400;">Ofia's core vision statement, in one line.</span></p>
+    </div>
+
+    <span class="eyebrow ember"><span class="dot"></span>What Ofia does for a business</span>
+    <div class="grid-4">
+      <div class="card"><h3>Establish</h3><p>Online presence, a storefront, and a discoverable Compass profile.</p></div>
+      <div class="card"><h3>Operate</h3><p>POS, inventory, HR, accounting, and industry-specific ERP modules.</p></div>
+      <div class="card"><h3>Sell &amp; connect</h3><p>Products, services, bookings, payments, logistics, and customer relationships.</p></div>
+      <div class="card"><h3>Grow</h3><p>AI-powered marketing, marketplace discovery, and business infrastructure like a virtual office or hub.</p></div>
+    </div>
+
+    <div style="margin-top:28px;">
+      <span class="eyebrow"><span class="dot"></span>The twelve product families</span>
+      <div style="display:flex; flex-wrap:wrap; gap:8px;">
+        <span class="tag" style="background:var(--signal-soft); color:var(--signal);">Ofia Compass</span>
+        <span class="tag">Ofia Shops</span><span class="tag">Ofia Merchant</span><span class="tag">Ofia ERP</span>
+        <span class="tag">Vertical Experiences</span><span class="tag">Ofia AI</span><span class="tag">Ofia Logistics</span>
+        <span class="tag">Virtual Office</span><span class="tag">Business Hub</span><span class="tag">Payments &amp; Financial Infra</span>
+        <span class="tag">Customer Mobile Experience</span><span class="tag">Platform Administration</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal" id="problem">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Foundation</span>
+      <h2>Problem statement &amp; proposition</h2>
+      <p class="section-lede">Nigerian SMEs don't lack ambition — they lack an affordable, unified way to run a business digitally. Ofia's proposition is deliberately blunt: one business, one ecosystem, multiple tools.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>What businesses currently juggle</h3>
+        <ul class="module-feature-list" style="grid-template-columns:1fr;">
+          <li>Paying developers separately for a website</li>
+          <li>A separate POS system, inventory system, and accounting tool</li>
+          <li>Separate HR software and separate logistics arrangements</li>
+          <li>Separate marketing tools with no shared customer data</li>
+          <li>Difficulty building or affording a mobile app</li>
+          <li>Difficulty acquiring and retaining customer relationships</li>
+          <li>High staffing costs to manage fragmented subscriptions</li>
+          <li>No access to major commercial locations or business credibility</li>
+        </ul>
+      </div>
+      <div class="card" style="border-color:var(--signal);">
+        <h3>Ofia's proposition</h3>
+        <p style="font-family:'Space Grotesk'; font-size:1.3rem; margin-bottom:14px;">One business. One ecosystem. Multiple tools.</p>
+        <p>A single tenant record gives a business a storefront, operational software, a Compass discovery profile, payments, logistics, and AI — configured through feature flags, not custom development.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal" id="ecosystem-map">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Foundation</span>
+      <h2>Ofia product architecture</h2>
+      <p class="section-lede">Three sides of the platform, one shared tenant underneath.</p>
+    </div>
+    <div class="code-block"><span class="cm">                         </span><span class="kw">OFIA PLATFORM</span>
+                               │
+        ┌──────────────────────┼──────────────────────┐
+        │                      │                      │
+   <span class="kw">BUSINESS SIDE</span>          <span class="kw">CUSTOMER SIDE</span>         <span class="kw">PLATFORM SIDE</span>
+        │                      │                      │
+   Ofia Merchant          Ofia Compass         Ofia Admin
+   Ofia ERP               Customer App         Billing
+   Shop Management        Vertical Apps        Feature Access
+   Business Tools                              Tenant Management
+        │
+        ├── Shop        ├── Inventory    ├── Marketing
+        ├── ERP          ├── POS          ├── Payments
+        ├── AI            ├── HR           ├── Virtual Office
+        └── Logistics     └── Accounting   └── Business Hub</div>
+    <p style="color:var(--ink-soft); font-size:.86rem; margin-top:16px; max-width:74ch;">Every business side module writes to the same tenant-scoped data — that's what makes "enter data once, render it everywhere" possible instead of aspirational.</p>
+  </section>
+
+  <section class="section reveal" id="compass">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Part III · 02 Product families</span>
+      <h2>Ofia Compass</h2>
+      <p class="section-lede">Compass is the business discovery and marketplace layer — every business's public face across the wider Ofia network, independent of whether it also runs a Shop.</p>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:24px;">
+      <div class="card">
+        <h3>Business profile fields</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">
+          <span class="tag">Name</span><span class="tag">Logo</span><span class="tag">Cover image</span><span class="tag">Description</span>
+          <span class="tag">Industry</span><span class="tag">Subgroup</span><span class="tag">Location</span><span class="tag">Operating hours</span>
+          <span class="tag">Contact info</span><span class="tag">Products</span><span class="tag">Services</span><span class="tag">Reviews</span>
+          <span class="tag">Followers</span><span class="tag">Promotions</span><span class="tag">Social links</span><span class="tag">Shop link</span><span class="tag">Booking options</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>What a Compass profile enables</h3>
+        <ul class="module-feature-list" style="grid-template-columns:1fr;">
+          <li>Discovery by customers browsing a category or searching</li>
+          <li>Displaying products and services without needing a Shop</li>
+          <li>Receiving bookings and inquiries directly</li>
+          <li>Linking customers through to a dedicated Shop storefront</li>
+        </ul>
+      </div>
+    </div>
+
+    <span class="eyebrow ember"><span class="dot"></span>Compass subgroup structure</span>
+    <p style="color:var(--ink-soft); font-size:.88rem; margin:6px 0 14px;">Approximately 24 major subgroups, 100+ business categories, and 120+ service categories — each capable of its own subdomain, search experience, filters, layout, and interaction model.</p>
+    <div class="subgroup-domain">
+      <span class="root">ofia.ng</span>
+      <span>beauty.ofia.ng</span><span>cars.ofia.ng</span><span>food.ofia.ng</span>
+      <span>hotels.ofia.ng</span><span>property.ofia.ng</span><span>services.ofia.ng</span>
+      <span>fashion.ofia.ng</span><span>events.ofia.ng</span><span>health.ofia.ng</span>
+    </div>
+  </section>
+
+  <section class="section reveal" id="verticals">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Product families</span>
+      <h2>Vertical Experience Engine</h2>
+      <p class="section-lede">One of Ofia's biggest differentiators: the platform cannot use identical filtering and business logic for every category, so each vertical is a registered, configurable experience rather than a hardcoded page.</p>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <h3>Cars</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:6px;"><span class="tag">Make</span><span class="tag">Model</span><span class="tag">Year</span><span class="tag">Mileage</span><span class="tag">Transmission</span><span class="tag">Fuel</span><span class="tag">Condition</span><span class="tag">Price</span><span class="tag">Location</span></div>
+      </div>
+      <div class="card">
+        <h3>Food</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:6px;"><span class="tag">Restaurant</span><span class="tag">Menu</span><span class="tag">Delivery</span><span class="tag">Pickup</span><span class="tag">Prep time</span><span class="tag">Dietary prefs</span></div>
+      </div>
+      <div class="card">
+        <h3>Hotels</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:6px;"><span class="tag">Location</span><span class="tag">Dates</span><span class="tag">Rooms</span><span class="tag">Guests</span><span class="tag">Amenities</span><span class="tag">Availability</span></div>
+      </div>
+    </div>
+
+    <div style="margin-top:28px;">
+      <span class="eyebrow"><span class="dot"></span>Vertical registry — conceptual schema</span>
+      <div class="code-block">Vertical
+--------
+id
+name
+slug
+domain
+template
+listing_schema
+filter_schema
+search_schema
+enabled_features
+status
+
+<span class="cm">// example</span>
+cars    → template: <span class="kw">CarVerticalTemplate</span>  → filters: car_filters    → schema: vehicle_schema
+fashion → template: <span class="kw">FashionTemplate</span>      → filters: fashion_filters → schema: product_schema</div>
+    </div>
+
+    <div style="margin-top:28px;">
+      <span class="eyebrow ember"><span class="dot"></span>What every vertical must define</span>
+      <div class="module-feature-list" style="grid-template-columns:repeat(2,1fr);">
+        <li>Listing schema</li><li>Filter schema</li>
+        <li>Search schema</li><li>Card components</li>
+        <li>Detail page</li><li>Checkout / booking flow</li>
+        <li>Required backend services</li><li>Mobile experience requirements</li>
+        <li>SEO configuration</li><li>Default images</li>
+        <li>Theme options</li><li>Enabled feature flags</li>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal" id="shops">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Product families</span>
+      <h2>Ofia Shops</h2>
+      <p class="section-lede">Every eligible business gets a dedicated digital storefront — the commerce-focused counterpart to a business's operational presence.</p>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:24px;">
+      <div class="card">
+        <span class="card-tag">.ofia.ng</span>
+        <h3>Your Office</h3>
+        <p>Business operations and digital presence — the ERP- and Compass-facing side of a business's identity.</p>
+      </div>
+      <div class="card" style="border-color:var(--signal);">
+        <span class="card-tag" style="background:var(--signal-soft);">.ofia.shop</span>
+        <h3>Your Shop</h3>
+        <p>Commerce-focused customer storefront — where a shopper actually browses, carts, and checks out.</p>
+      </div>
+    </div>
+
+    <span class="eyebrow ember"><span class="dot"></span>Fashion Shop template — first launch vertical</span>
+    <div class="screen-list" style="margin-top:10px;">
+      <div class="screen-item"><span class="name">Home</span><span class="desc">Brand banner, featured collections, promotions.</span></div>
+      <div class="screen-item"><span class="name">Collection</span><span class="desc">Grouped products by season, drop, or theme.</span></div>
+      <div class="screen-item"><span class="name">Product Listing</span><span class="desc">Filterable grid across a category.</span></div>
+      <div class="screen-item"><span class="name">Product Detail</span><span class="desc">Gallery, sizing, price, reviews, add-to-cart.</span></div>
+      <div class="screen-item"><span class="name">Search</span><span class="desc">Full-text and filtered product search.</span></div>
+      <div class="screen-item"><span class="name">Filters</span><span class="desc">Category, size, color, price range.</span></div>
+      <div class="screen-item"><span class="name">Cart</span><span class="desc">Line items, promo codes, delivery estimate.</span></div>
+      <div class="screen-item"><span class="name">Checkout</span><span class="desc">Address, payment, order confirmation.</span></div>
+      <div class="screen-item"><span class="name">Order Tracking</span><span class="desc">Status from confirmed through delivered.</span></div>
+      <div class="screen-item"><span class="name">Customer Profile</span><span class="desc">Order history, saved addresses, payment methods.</span></div>
+      <div class="screen-item"><span class="name">Favorites</span><span class="desc">Saved products across sessions.</span></div>
+      <div class="screen-item"><span class="name">Promotions</span><span class="desc">Active discounts and deals.</span></div>
+      <div class="screen-item"><span class="name">About Brand</span><span class="desc">Story, values, brand imagery.</span></div>
+      <div class="screen-item"><span class="name">Contact</span><span class="desc">Support channels and business hours.</span></div>
+      <div class="screen-item"><span class="name">Lookbook</span><span class="desc">Editorial styling content tied to products.</span></div>
+    </div>
+
+    <div class="grid-4" style="margin-top:28px;">
+      <div class="card"><h3>Branding</h3><p>Logo, primary/secondary color, typography, banner, images, layout selection.</p></div>
+      <div class="card"><h3>Commerce</h3><p>Products, categories, inventory, prices, discounts, deals, pre-orders.</p></div>
+      <div class="card"><h3>Customer experience</h3><p>Reviews, wishlist, loyalty, follow, notifications.</p></div>
+      <div class="card"><h3>Integrations</h3><p>Payments, SMS, email, delivery, analytics.</p></div>
+    </div>
+  </section>
+
+  <section class="section reveal" id="merchant">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Product families</span>
+      <h2>Ofia Merchant App</h2>
+      <p class="section-lede">The business owner's mobile operating environment — where a merchant runs their day, not just checks in on it.</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3>Merchant capabilities</h3>
+        <ul class="module-feature-list" style="grid-template-columns:1fr;">
+          <li>Manage Shop, products, orders, bookings</li>
+          <li>Manage customers and Compass profile</li>
+          <li>Manage employees and configure modules</li>
+          <li>View analytics, promotions, and AI recommendations</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Notifications</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">
+          <span class="tag">New Order</span><span class="tag">New Booking</span><span class="tag">Low Inventory</span>
+          <span class="tag">New Customer Message</span><span class="tag">Payment Received</span><span class="tag">New Follower</span>
+          <span class="tag">Delivery Update</span><span class="tag">Employee Request</span>
+        </div>
+      </div>
+    </div>
+
+    <span class="eyebrow ember"><span class="dot"></span>Merchant dashboard widgets</span>
+    <div class="grid-4" style="margin-top:10px;">
+      <div class="card"><h3 style="font-size:.92rem;">Today's revenue</h3></div>
+      <div class="card"><h3 style="font-size:.92rem;">Orders</h3></div>
+      <div class="card"><h3 style="font-size:.92rem;">Bookings</h3></div>
+      <div class="card"><h3 style="font-size:.92rem;">Customers</h3></div>
+      <div class="card"><h3 style="font-size:.92rem;">Inventory alerts</h3></div>
+      <div class="card"><h3 style="font-size:.92rem;">Followers</h3></div>
+      <div class="card"><h3 style="font-size:.92rem;">Campaign performance</h3></div>
+      <div class="card"><h3 style="font-size:.92rem;">AI recommendations</h3></div>
+    </div>
+  </section>
+
+  <section class="section reveal" id="customer-app">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Product families</span>
+      <h2>Customer / Compass App</h2>
+      <p class="section-lede">The primary customer-facing application — the discovery counterpart to a merchant's operating environment.</p>
+    </div>
+    <div class="module-feature-list" style="grid-template-columns:repeat(2,1fr);">
+      <li>Discover businesses across categories and verticals</li>
+      <li>Browse services and follow favorite businesses</li>
+      <li>Buy products and book services directly</li>
+      <li>Reserve hotels and contact businesses in-app</li>
+      <li>Receive promotions and track order status</li>
+      <li>Save businesses for later discovery</li>
+    </div>
+  </section>
+
+  <section class="section reveal" id="follow">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Product families</span>
+      <h2>Follow Business System</h2>
+      <p class="section-lede">Instead of "download Ada Fashion's app," the model becomes "follow Ada Fashion on Ofia" — every business gets an owned audience without building its own app.</p>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:24px;">
+      <div class="card">
+        <h3>What a follower receives</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">
+          <span class="tag">New product alerts</span><span class="tag">Promotions</span><span class="tag">New collections</span>
+          <span class="tag">Booking reminders</span><span class="tag">Order updates</span><span class="tag">Loyalty rewards</span><span class="tag">Business announcements</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Follow schema</h3>
+        <div class="code-block">follow_id
+user_id
+business_id
+notification_preferences
+created_at</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal" id="erp">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Product families</span>
+      <h2>Ofia ERP</h2>
+      <p class="section-lede">Operational software powering the back office — modules are independently deployable so a small shop isn't forced to configure HR and payroll it doesn't need.</p>
+    </div>
+
+    <div class="grid-4">
+      <div class="card"><h3>Core</h3><p>Dashboard, users, roles, permissions, business configuration.</p></div>
+      <div class="card"><h3>Sales</h3><p>POS, orders, invoices, customers.</p></div>
+      <div class="card"><h3>Inventory</h3><p>Products, stock, warehouses, suppliers.</p></div>
+      <div class="card"><h3>HR</h3><p>Employees, attendance, leave, payroll integrations.</p></div>
+      <div class="card"><h3>Accounting</h3><p>Income, expenses, invoices, reports.</p></div>
+      <div class="card"><h3>Hotel module</h3><p>Rooms, availability, reservations.</p></div>
+      <div class="card"><h3>Restaurant module</h3><p>Menu, tables, kitchen orders.</p></div>
+      <div class="card"><h3>Pharmacy / hospital / retail / logistics</h3><p>Industry-specific extensions on the same core.</p></div>
+    </div>
+  </section>
+
+  <section class="section reveal" id="ai">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Product families</span>
+      <h2>Ofia AI</h2>
+      <p class="section-lede">Shared AI infrastructure — a feature deployed once becomes available to every tenant, rather than being rebuilt per business.</p>
+    </div>
+    <div class="grid-3">
+      <div class="card"><h3>Marketing assistant</h3><p>Campaign drafts, promotional copy, and send-time recommendations.</p></div>
+      <div class="card"><h3>Content generation</h3><p>Product descriptions, images, and video thumbnails from existing catalog data.</p></div>
+      <div class="card"><h3>Customer communication</h3><p>Auto-drafted replies and FAQ handling across channels.</p></div>
+      <div class="card"><h3>Sales assistant</h3><p>Upsell and cross-sell suggestions surfaced at checkout and in the merchant dashboard.</p></div>
+      <div class="card"><h3>Analytics</h3><p>Plain-language summaries of what's driving or hurting revenue.</p></div>
+      <div class="card"><h3>GTM engine &amp; recommendations</h3><p>Suggested pricing, channel, and timing decisions per business.</p></div>
+    </div>
+  </section>
+
+  <section class="section reveal" id="logistics">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Product families</span>
+      <h2>Ofia Logistics</h2>
+      <p class="section-lede">Delivery infrastructure shared across every tenant's Shop and ERP orders.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Core services</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">
+          <span class="tag">Delivery assignment</span><span class="tag">Rider management</span><span class="tag">Delivery tracking</span>
+          <span class="tag">Order integration</span><span class="tag">Pickup</span><span class="tag">Drop-off</span><span class="tag">Logistics pricing</span>
+        </div>
+      </div>
+      <div class="card">
+        <span class="card-tag">Future app</span>
+        <h3>Ofia Driver</h3>
+        <p>For riders, drivers, and logistics operators — delivery requests, navigation, status updates, earnings, and delivery history.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal" id="virtual-office">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Product families</span>
+      <h2>Ofia Virtual Office</h2>
+      <p class="section-lede">For startups, remote businesses, and entrepreneurs outside Lagos who need a credible business presence without a physical lease.</p>
+    </div>
+    <div class="grid-4">
+      <div class="card"><h3>Business address</h3></div>
+      <div class="card"><h3>Mail handling</h3></div>
+      <div class="card"><h3>Call handling</h3></div>
+      <div class="card"><h3>Meeting rooms &amp; office access</h3></div>
+    </div>
+  </section>
+
+  <section class="section reveal" id="business-hub">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Product families</span>
+      <h2>Ofia Business Hub</h2>
+      <p class="section-lede">Ofia's physical-commercial extension — a business without a Lagos store still gets a pickup point customers can trust.</p>
+    </div>
+    <div class="card" style="margin-bottom:20px; background:var(--surface-2); border:none; box-shadow:none;">
+      <p style="font-family:'Space Grotesk'; font-size:1.05rem;">Order online → select pickup → collect from an Ofia Hub.</p>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <h3>Hub features</h3>
+        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">
+          <span class="tag">Storage</span><span class="tag">Pickup point</span><span class="tag">Drop-off</span>
+          <span class="tag">Product receiving</span><span class="tag">Vendor space</span><span class="tag">Meeting point</span>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Potential locations</h3>
+        <p>Major commercial centers, Alaba, and other established trade hubs where footfall and trust already exist.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal" id="tenancy">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Part IV · 03 Engineering</span>
+      <h2>Multi-tenancy &amp; identity</h2>
+      <p class="section-lede">One person can simultaneously be a customer, employee, merchant, and administrator — identity stays singular, roles stay contextual.</p>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:24px;">
+      <div class="card">
+        <h3>Tenant record</h3>
+        <div class="code-block">Tenant
+------
+id
+business_name
+vertical_id
+subscription_plan
+enabled_modules
+theme_id
+status</div>
+      </div>
+      <div class="card">
+        <h3>Contextual roles, one identity</h3>
+        <div class="code-block">User A
+
+Customer → Fashion Shop A
+Employee → Company B
+Merchant → Company C
+
+<span class="cm">// Identity remains one user.</span>
+<span class="cm">// Roles are contextual.</span></div>
+      </div>
+    </div>
+    <p style="color:var(--ink-soft); font-size:.87rem; max-width:74ch;">Centralized identity service handles authentication once; every other service resolves tenant and role context from that single user record rather than maintaining parallel logins.</p>
+  </section>
+
+  <section class="section reveal" id="microservices">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Engineering</span>
+      <h2>Core microservices &amp; data flow</h2>
+      <p class="section-lede">Service boundaries are drawn around business capability, not around individual product families — Shop and Compass both read from the same catalog service, for example.</p>
+    </div>
+
+    <div class="table-wrap" style="margin-bottom:28px;">
+      <table>
+        <thead><tr><th>Service</th><th>Owns</th></tr></thead>
+        <tbody>
+          <tr><td>Identity Service</td><td>Authentication and users</td></tr>
+          <tr><td>Tenant Service</td><td>Tenant resolution and subscriptions</td></tr>
+          <tr><td>ERP Service</td><td>Business operations</td></tr>
+          <tr><td>Shop Service</td><td>Customer storefront experience</td></tr>
+          <tr><td>Compass Service</td><td>Marketplace and discovery</td></tr>
+          <tr><td>AI Service</td><td>Shared AI infrastructure</td></tr>
+          <tr><td>Logistics Service</td><td>Delivery infrastructure</td></tr>
+          <tr><td>Payment Service</td><td>Payments and transactions</td></tr>
+          <tr><td>Notification Service</td><td>SMS, email, push notifications</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <span class="eyebrow ember"><span class="dot"></span>The core principle: enter data once, render it everywhere</span>
+    <div class="flow" style="margin-top:10px;">
+      <div class="flow-step"><span class="num">01</span><h4 style="font-size:.9rem;">Merchant adds product</h4></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span class="num">02</span><h4 style="font-size:.9rem;">Product Service</h4></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span class="num">03</span><h4 style="font-size:.9rem;">Inventory Service</h4></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span class="num">04</span><h4 style="font-size:.9rem;">Shop renders product</h4></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><span class="num">05</span><h4 style="font-size:.9rem;">Compass indexes it</h4></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="border-color:var(--signal);"><span class="num">06</span><h4 style="font-size:.9rem;">Followers notified</h4></div>
+    </div>
+  </section>
+
+  <section class="section reveal" id="events">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Engineering</span>
+      <h2>Event architecture</h2>
+      <p class="section-lede">Major actions emit events; services subscribe where relevant instead of calling each other directly — this is what keeps twelve product families from becoming one tangled monolith.</p>
+    </div>
+    <div class="code-block">ProductCreated
+ProductUpdated
+OrderCreated
+BookingCreated
+PaymentCompleted
+CustomerFollowed
+InventoryUpdated</div>
+    <p style="color:var(--ink-soft); font-size:.87rem; margin-top:14px; max-width:74ch;">A new module can subscribe to existing events (e.g. AI Service listening for <span class="mono">OrderCreated</span> to trigger a reorder suggestion) without the Order service knowing AI exists.</p>
+  </section>
+
+  <section class="section reveal" id="frontend-architecture">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Part V · Engineering</span>
+      <h2>Frontend architecture</h2>
+      <p class="section-lede">Templates never fork per tenant — configuration, theming, and feature flags compose a tenant's experience on top of one shared template.</p>
+    </div>
+
+    <div class="card" style="background:var(--surface-2); border:none; box-shadow:none; margin-bottom:24px;">
+      <div class="code-block" style="background:transparent; color:var(--ink); padding:0;">Template
++
+Tenant Configuration
++
+Theme
++
+Feature Flags
++
+Data
+<span class="kw">=</span>
+Tenant Experience</div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <h3>Design system</h3>
+        <p>Shared buttons, inputs, cards, modals, navigation, typography, icons, and design tokens across every product surface.</p>
+      </div>
+      <div class="card">
+        <h3>Theme engine</h3>
+        <div class="code-block" style="font-size:.72rem;">primary_color
+secondary_color
+font
+border_radius
+button_style
+layout_variant</div>
+      </div>
+      <div class="card">
+        <h3>Feature flag system</h3>
+        <div class="code-block" style="font-size:.72rem;">Tenant
+│
+├── Payments ✓
+├── Preorders ✓
+├── Loyalty ✗
+├── AI Marketing ✓
+├── SMS ✓
+└── Advanced Analytics ✗</div>
+      </div>
+    </div>
+    <p style="color:var(--ink-soft); font-size:.86rem; margin-top:16px; max-width:74ch;">The backend must enforce these permissions, not just hide buttons in the UI — a disabled module should reject the API call, not merely be invisible.</p>
+  </section>
+
+  <section class="section reveal" id="screens">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Part VI · Engineering</span>
+      <h2>Screen inventory framework</h2>
+      <p class="section-lede">Every module maintains its own dedicated screen inventory, documented to this template so any team can pick up a screen without reverse-engineering intent.</p>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Field</th><th>Captures</th></tr></thead>
+        <tbody>
+          <tr><td>Screen name</td><td>Unique, human-readable identifier</td></tr>
+          <tr><td>Purpose</td><td>What the screen exists to accomplish</td></tr>
+          <tr><td>User</td><td>Which role(s) can reach it</td></tr>
+          <tr><td>Entry point</td><td>How a user arrives here</td></tr>
+          <tr><td>API dependencies</td><td>Which services it calls</td></tr>
+          <tr><td>Components</td><td>Shared design-system pieces used</td></tr>
+          <tr><td>States</td><td>Loading, empty, error, and success states</td></tr>
+          <tr><td>Permissions</td><td>Feature flags and role checks that gate it</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section reveal" id="schema">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Part VII · Engineering</span>
+      <h2>Database &amp; schema</h2>
+      <p class="section-lede">Core entities every service touches — each carries tenant scope, ownership, and permission boundaries as first-class fields, not an afterthought.</p>
+    </div>
+
+    <div class="schema-domain">
+      <span class="schema-domain-label">Identity &amp; tenancy</span>
+      <div class="schema-grid">
+        <div class="schema-card"><h4>User</h4><span class="schema-desc">One identity, contextual roles</span>
+          <ul class="schema-fields"><li><b>id</b> uuid pk</li><li>name, email, phone</li><li>roles: jsonb (per-tenant context)</li></ul>
+        </div>
+        <div class="schema-card"><h4>Tenant</h4><span class="schema-desc">A business's root record</span>
+          <ul class="schema-fields"><li><b>id</b> uuid pk</li><li>vertical_id, subscription_plan</li><li>enabled_modules, theme_id, status</li></ul>
+        </div>
+        <div class="schema-card"><h4>Employee</h4><span class="schema-desc">A user's staff role within a tenant</span>
+          <ul class="schema-fields"><li><b>id</b> uuid pk</li><li>user_id, tenant_id fk</li><li>role, permissions</li></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="schema-domain">
+      <span class="schema-domain-label">Business &amp; catalog</span>
+      <div class="schema-grid">
+        <div class="schema-card"><h4>Business</h4><span class="schema-desc">Compass-facing profile</span>
+          <ul class="schema-fields"><li><b>id</b> uuid pk</li><li>tenant_id fk, name, industry</li><li>location, subgroup</li></ul>
+        </div>
+        <div class="schema-card"><h4>Vertical</h4><span class="schema-desc">Registered category experience</span>
+          <ul class="schema-fields"><li><b>id</b> uuid pk</li><li>slug, template, listing_schema</li><li>filter_schema, enabled_features</li></ul>
+        </div>
+        <div class="schema-card"><h4>Product / Service</h4><span class="schema-desc">Sellable or bookable unit</span>
+          <ul class="schema-fields"><li><b>id</b> uuid pk</li><li>tenant_id fk, vertical_id fk</li><li>price, attributes jsonb</li></ul>
+        </div>
+        <div class="schema-card"><h4>Inventory</h4><span class="schema-desc">Stock across warehouses</span>
+          <ul class="schema-fields"><li><b>id</b> uuid pk</li><li>product_id fk, warehouse_id</li><li>quantity, reorder_level</li></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="schema-domain">
+      <span class="schema-domain-label">Commerce &amp; relationships</span>
+      <div class="schema-grid">
+        <div class="schema-card"><h4>Order</h4><span class="schema-desc">A completed or in-progress purchase</span>
+          <ul class="schema-fields"><li><b>id</b> uuid pk</li><li>tenant_id, customer_id fk</li><li>status, total, items jsonb</li></ul>
+        </div>
+        <div class="schema-card"><h4>Booking</h4><span class="schema-desc">A scheduled service reservation</span>
+          <ul class="schema-fields"><li><b>id</b> uuid pk</li><li>tenant_id, customer_id fk</li><li>service_id, scheduled_at</li></ul>
+        </div>
+        <div class="schema-card"><h4>Follow relationship</h4><span class="schema-desc">Customer following a business</span>
+          <ul class="schema-fields"><li><b>follow_id</b> uuid pk</li><li>user_id, business_id fk</li><li>notification_preferences</li></ul>
+        </div>
+        <div class="schema-card"><h4>Payment</h4><span class="schema-desc">A transaction record</span>
+          <ul class="schema-fields"><li><b>id</b> uuid pk</li><li>tenant_id, order_id fk</li><li>amount, status, provider_ref</li></ul>
+        </div>
+        <div class="schema-card"><h4>Customer</h4><span class="schema-desc">A tenant's view of a user</span>
+          <ul class="schema-fields"><li><b>id</b> uuid pk</li><li>tenant_id, user_id fk</li><li>lifetime_value, tags</li></ul>
+        </div>
+        <div class="schema-card"><h4>Notification</h4><span class="schema-desc">Event-driven, per user</span>
+          <ul class="schema-fields"><li><b>id</b> uuid pk</li><li>user_id fk, type</li><li>payload jsonb, read_at</li></ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal" id="business-model">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Part VIII · 04 Business</span>
+      <h2>Revenue streams &amp; pricing strategy</h2>
+      <p class="section-lede">Ofia earns from subscriptions first, with premium modules, enterprise, white-label, logistics, virtual office, and Business Hub as expansion revenue.</p>
+    </div>
+
+    <div class="grid-4" style="margin-bottom:28px;">
+      <div class="card"><h3>Subscription</h3><p>Monthly access to the core platform tier.</p></div>
+      <div class="card"><h3>Premium modules</h3><p>Additional paid modules layered onto a base plan.</p></div>
+      <div class="card"><h3>Enterprise</h3><p>Custom configurations for larger operators.</p></div>
+      <div class="card"><h3>White-label</h3><p>Premium offering for partners wanting Ofia under their own brand.</p></div>
+    </div>
+
+    <div class="grid-3" style="align-items:stretch;">
+      <div class="price-card">
+        <span class="plan-name">Entry plan</span>
+        <div class="price">₦5,000<span>/mo</span></div>
+        <span class="price-note">Founding-offer pricing, first 500 businesses</span>
+        <ul><li>Compass profile</li><li>Basic Shop</li><li>Core ERP dashboard</li></ul>
+      </div>
+      <div class="price-card featured">
+        <span class="fplan">SME plan</span>
+        <span class="plan-name">SME plan</span>
+        <div class="price">₦25,000<span>/mo</span></div>
+        <span class="price-note">Full Shop + core ERP modules</span>
+        <ul><li>Full Shop customization</li><li>Sales, inventory, accounting modules</li><li>AI Marketing assistant</li></ul>
+      </div>
+      <div class="price-card">
+        <span class="plan-name">Growth plan</span>
+        <div class="price">₦75,000<span>/mo</span></div>
+        <span class="price-note">Multi-location + advanced analytics</span>
+        <ul><li>HR &amp; payroll integrations</li><li>Advanced analytics</li><li>Priority Compass placement</li></ul>
+      </div>
+    </div>
+    <p style="color:var(--ink-soft); font-size:.85rem; margin-top:16px;">Enterprise and module add-ons priced individually; Logistics, Virtual Office, and Business Hub billed as separate subscriptions on top of any plan.</p>
+  </section>
+
+  <section class="section reveal" id="gtm">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Part IX · Business</span>
+      <h2>Go-to-market strategy</h2>
+      <p class="section-lede">Fashion is the first vertical — existing clientele, highly visual, and easy to demonstrate value on: add a product, watch it appear on the Shop and on Compass.</p>
+    </div>
+
+    <div class="grid-2" style="margin-bottom:24px;">
+      <div class="card">
+        <h3>Primary proposition</h3>
+        <p style="font-family:'Space Grotesk'; font-size:1.1rem;">Launch your business online without paying someone to build everything from scratch.</p>
+      </div>
+      <div class="card">
+        <h3>Supporting proposition</h3>
+        <p>Get your own digital shop, business tools, customer management, and marketplace visibility in one ecosystem.</p>
+      </div>
+    </div>
+
+    <span class="eyebrow ember"><span class="dot"></span>Founding business strategy</span>
+    <div class="grid-4" style="margin-top:10px;">
+      <div class="card"><h3 style="font-size:.94rem;">Early pricing</h3></div>
+      <div class="card"><h3 style="font-size:.94rem;">Priority features</h3></div>
+      <div class="card"><h3 style="font-size:.94rem;">Early access</h3></div>
+      <div class="card"><h3 style="font-size:.94rem;">Featured marketplace placement</h3></div>
+    </div>
+
+    <div style="margin-top:32px;">
+      <h3 style="font-size:1rem; margin-bottom:6px;">Founding-cohort funnel</h3>
+      <div class="funnel">
+        <div class="funnel-row"><span>Fashion businesses reached</span><span>5,000</span></div>
+        <div class="funnel-row" style="width:40%;"><span>Sign-ups (Entry plan)</span><span>1,200</span></div>
+        <div class="funnel-row" style="width:18%;"><span>Active shops within 30 days</span><span>500</span></div>
+        <div class="funnel-row" style="width:9%;"><span>First sale processed</span><span>260</span></div>
+      </div>
+      <p style="font-size:.78rem; color:var(--ink-faint); margin-top:10px;" class="mono">Illustrative founding-cohort funnel — target: first 500 businesses onboarded</p>
+    </div>
+  </section>
+
+  <section class="section reveal" id="marketing">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Part X–XI · Business</span>
+      <h2>Social &amp; paid ads strategy</h2>
+      <p class="section-lede">Content pillars built around real transformation stories, not abstract platform features.</p>
+    </div>
+
+    <div class="grid-3" style="margin-bottom:28px;">
+      <div class="card"><h3>Business transformation</h3><p>Before/after stories of a business going digital on Ofia.</p></div>
+      <div class="card"><h3>Merchant stories</h3><p>Real businesses, real names, real results.</p></div>
+      <div class="card"><h3>Product demonstrations</h3><p>Add product → appears on Shop → appears on Compass, shown live.</p></div>
+      <div class="card"><h3>Founder content</h3><p>Building in public, sharing decisions and milestones.</p></div>
+      <div class="card"><h3>Educational content</h3><p>How to sell online, manage customers, and reduce staffing costs.</p></div>
+      <div class="card"><h3>Ofia vision</h3><p>Explaining the ecosystem beyond any single feature.</p></div>
+    </div>
+
+    <span class="eyebrow ember"><span class="dot"></span>Paid ads — phase one</span>
+    <div class="card" style="margin-top:10px;">
+      <p><b style="color:var(--ink);">Target:</b> Fashion designers, fashion stores, clothing brands, boutique owners.</p>
+      <p style="margin-top:8px;"><b style="color:var(--ink);">Ad hook:</b> "You don't need to pay someone to build an app or website from scratch."</p>
+      <p style="margin-top:8px;"><b style="color:var(--ink);">Landing CTA:</b> "Join the first 500 businesses."</p>
+    </div>
+  </section>
+
+  <section class="section reveal" id="financials">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Part XII · Business</span>
+      <h2>Financial projections</h2>
+      <p class="section-lede">Illustrative planning estimates in Naira (₦), driven by active businesses × average revenue per business. To be replaced with real numbers after the founding cohort.</p>
+    </div>
+
+    <div class="bar-chart">
+      <div class="bar-col"><span class="value">₦62.0M</span><div class="bar" style="height:18%;"></div><span class="label">Year 1</span></div>
+      <div class="bar-col"><span class="value">₦280.0M</span><div class="bar" style="height:55%;"></div><span class="label">Year 2</span></div>
+      <div class="bar-col"><span class="value">₦910.0M</span><div class="bar" style="height:100%;"></div><span class="label">Year 3</span></div>
+    </div>
+    <p style="font-size:.76rem; color:var(--ink-faint); margin-top:8px;" class="mono">Total revenue by year, bar height relative to Year 3</p>
+
+    <div class="table-wrap" style="margin-top:32px;">
+      <table>
+        <thead><tr><th>Metric</th><th>Year 1</th><th>Year 2</th><th>Year 3</th></tr></thead>
+        <tbody>
+          <tr><td>Active tenants</td><td>500</td><td>2,400</td><td>7,500</td></tr>
+          <tr><td>Average revenue per business (ARPU) / mo</td><td>₦10,300</td><td>₦9,700</td><td>₦10,100</td></tr>
+          <tr><td>Subscription MRR (exit)</td><td>₦5.2M</td><td>₦23.3M</td><td>₦75.8M</td></tr>
+          <tr><td>Logistics + Hub + Virtual Office revenue</td><td>₦6.0M</td><td>₦31.0M</td><td>₦112.0M</td></tr>
+          <tr><td><b>Total revenue</b></td><td><b>₦62.0M</b></td><td><b>₦280.0M</b></td><td><b>₦910.0M</b></td></tr>
+          <tr><td>Infra, engineering &amp; support costs</td><td>₦48.0M</td><td>₦165.0M</td><td>₦440.0M</td></tr>
+          <tr><td>Gross margin</td><td>~23%</td><td>~41%</td><td>~52%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid-4" style="margin-top:28px;">
+      <div class="unit-econ-card"><div class="ue-val">₦10.1k</div><div class="ue-label">Blended ARPU / month, Year 3</div></div>
+      <div class="unit-econ-card"><div class="ue-val">₦18k</div><div class="ue-label">Blended CAC per active tenant</div></div>
+      <div class="unit-econ-card"><div class="ue-val">~4×</div><div class="ue-label">Target LTV : CAC by Year 2</div></div>
+      <div class="unit-econ-card"><div class="ue-val">&lt;6%</div><div class="ue-label">Monthly logo churn target</div></div>
+    </div>
+
+    <div style="margin-top:28px;">
+      <span class="eyebrow"><span class="dot"></span>Cost categories tracked</span>
+      <div style="display:flex; flex-wrap:wrap; gap:6px;">
+        <span class="tag">Infrastructure</span><span class="tag">Cloud</span><span class="tag">Object storage</span><span class="tag">CDN</span>
+        <span class="tag">SMS</span><span class="tag">Email</span><span class="tag">Payment processing</span><span class="tag">Engineering</span>
+        <span class="tag">Design</span><span class="tag">Marketing</span><span class="tag">Customer support</span><span class="tag">Physical hubs</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal" id="roadmap">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Part XIII · 05 Reference</span>
+      <h2>Product roadmap</h2>
+      <p class="section-lede">Four phases from a sellable Fashion MVP to a fully multi-vertical, international ecosystem.</p>
+    </div>
+    <div class="timeline">
+      <div class="timeline-item">
+        <span class="phase-tag">PHASE 1 · SELLABLE MVP</span>
+        <h3>Fashion storefront &amp; core commerce</h3>
+        <span class="when">Q4 2026</span>
+        <p class="desc">Fashion storefront, merchant management, product management, payments, Compass listing, customer follow, basic notifications.</p>
+        <div style="display:flex; flex-wrap:wrap; gap:6px;"><span class="tag">Fashion Shop</span><span class="tag">Merchant web dashboard</span><span class="tag">Compass listing</span><span class="tag">Payments</span></div>
+      </div>
+      <div class="timeline-item">
+        <span class="phase-tag">PHASE 2 · APPS + AI</span>
+        <h3>Mobile-first, AI-assisted</h3>
+        <span class="when">Q1 – Q2 2027</span>
+        <p class="desc">Customer app, Merchant app, expanded verticals beyond fashion, and the first Ofia AI modules.</p>
+        <div style="display:flex; flex-wrap:wrap; gap:6px;"><span class="tag">Customer app</span><span class="tag">Merchant app</span><span class="tag">New verticals</span><span class="tag">Ofia AI</span></div>
+      </div>
+      <div class="timeline-item">
+        <span class="phase-tag">PHASE 3 · INFRASTRUCTURE</span>
+        <h3>Beyond the storefront</h3>
+        <span class="when">Q3 – Q4 2027</span>
+        <p class="desc">Logistics, advanced ERP modules, Business Hubs, and Virtual Office.</p>
+        <div style="display:flex; flex-wrap:wrap; gap:6px;"><span class="tag">Ofia Logistics</span><span class="tag">Advanced ERP</span><span class="tag">Business Hubs</span><span class="tag">Virtual Office</span></div>
+      </div>
+      <div class="timeline-item">
+        <span class="phase-tag">PHASE 4 · SCALE</span>
+        <h3>Vertical depth &amp; international</h3>
+        <span class="when">2028 →</span>
+        <p class="desc">Dedicated vertical applications, enterprise accounts, white-label experiences, and international expansion.</p>
+        <div style="display:flex; flex-wrap:wrap; gap:6px;"><span class="tag">Vertical apps</span><span class="tag">Enterprise</span><span class="tag">White-label</span><span class="tag">International expansion</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal" id="kpis">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Part XIV · Reference</span>
+      <h2>Success metrics</h2>
+      <p class="section-lede">Tracked across the business, marketplace, merchant, and customer layers — no single metric tells the whole story.</p>
+    </div>
+
+    <div class="grid-4">
+      <div class="kpi-card"><div class="kpi-value">7,500</div><div class="kpi-label">Active tenants by Year 3</div><div class="kpi-target mono">Business layer</div></div>
+      <div class="kpi-card"><div class="kpi-value">₦75.8M</div><div class="kpi-label">Subscription MRR (exit, Year 3)</div><div class="kpi-target mono">Business layer</div></div>
+      <div class="kpi-card"><div class="kpi-value">&lt;6%</div><div class="kpi-label">Monthly logo churn</div><div class="kpi-target mono">Business layer</div></div>
+      <div class="kpi-card"><div class="kpi-value">₦10.1k</div><div class="kpi-label">ARPU / month</div><div class="kpi-target mono">Business layer</div></div>
+      <div class="kpi-card"><div class="kpi-value">↑ MoM</div><div class="kpi-label">Searches &amp; business views</div><div class="kpi-target mono">Marketplace layer</div></div>
+      <div class="kpi-card"><div class="kpi-value">≥8%</div><div class="kpi-label">Product view → purchase conversion</div><div class="kpi-target mono">Marketplace layer</div></div>
+      <div class="kpi-card"><div class="kpi-value">≥70%</div><div class="kpi-label">Monthly active merchants</div><div class="kpi-target mono">Merchant layer</div></div>
+      <div class="kpi-card"><div class="kpi-value">≥40%</div><div class="kpi-label">Customer 90-day retention</div><div class="kpi-target mono">Customer layer</div></div>
+    </div>
+  </section>
+
+  <section class="section reveal" id="governance">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Part XV · Reference</span>
+      <h2>Governance framework</h2>
+      <p class="section-lede">Every future feature request should answer these eight questions before a single line of code is written.</p>
+    </div>
+    <div class="gov-q"><span class="qnum">01</span><p><b>Which Ofia user</b> needs this?</p></div>
+    <div class="gov-q"><span class="qnum">02</span><p><b>Which service</b> owns the data?</p></div>
+    <div class="gov-q"><span class="qnum">03</span><p><b>Which tenant</b> can access it?</p></div>
+    <div class="gov-q"><span class="qnum">04</span><p><b>Which module</b> configures it?</p></div>
+    <div class="gov-q"><span class="qnum">05</span><p><b>Where</b> does it render?</p></div>
+    <div class="gov-q"><span class="qnum">06</span><p><b>What subscription</b> unlocks it?</p></div>
+    <div class="gov-q"><span class="qnum">07</span><p><b>What events</b> does it emit?</p></div>
+    <div class="gov-q"><span class="qnum">08</span><p>Does it work <b>without a tenant-specific code fork</b>?</p></div>
+
+    <div class="card" style="margin-top:24px; background:var(--surface-2); border:none; box-shadow:none;">
+      <h3 style="font-size:1rem; margin-bottom:10px;">Document family under this master blueprint</h3>
+      <div style="display:flex; flex-wrap:wrap; gap:6px;">
+        <span class="tag" style="background:var(--signal-soft); color:var(--signal);">Ofia Master Product Blueprint</span>
+        <span class="tag">Compass PRD</span><span class="tag">Shop PRD</span><span class="tag">Merchant App PRD</span>
+        <span class="tag">Customer App PRD</span><span class="tag">Fashion Vertical PRD</span><span class="tag">ERP PRD</span>
+        <span class="tag">AI PRD</span><span class="tag">Logistics PRD</span><span class="tag">Virtual Office PRD</span>
+        <span class="tag">Business Hub PRD</span><span class="tag">Platform Engineering Architecture</span>
+        <span class="tag">GTM Strategy</span><span class="tag">Financial Model</span>
+      </div>
+      <p style="color:var(--ink-soft); font-size:.85rem; margin-top:14px;">This structure lets Ofia grow large without the documentation becoming one impossible document to manage. The next document to build from here: the detailed Fashion Shop + Merchant Workflow PRD — the fastest route to a real, sellable product and the first paying cohort.</p>
+    </div>
+  </section>
+
+  <section class="section reveal" id="glossary">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Reference</span>
+      <h2>Glossary</h2>
+      <p class="section-lede">Ofia's own vocabulary — naming choices that carry the ecosystem philosophy, not just labels.</p>
+    </div>
+    <div class="glossary-grid">
+      <div class="glossary-item"><div class="term">Tenant</div><div class="def">A single business's root record — the unit every module scopes access to.</div><div class="not mono">not: account</div></div>
+      <div class="glossary-item"><div class="term">Vertical</div><div class="def">A registered, context-specific marketplace experience (cars, food, hotels).</div><div class="not mono">not: category</div></div>
+      <div class="glossary-item"><div class="term">Compass</div><div class="def">The business discovery and marketplace layer, independent of a Shop.</div><div class="not mono">not: directory</div></div>
+      <div class="glossary-item"><div class="term">Shop</div><div class="def">The commerce-focused, customer-facing storefront on .ofia.shop.</div><div class="not mono">not: store page</div></div>
+      <div class="glossary-item"><div class="term">Office</div><div class="def">A business's operational and digital presence on .ofia.ng.</div><div class="not mono">not: dashboard</div></div>
+      <div class="glossary-item"><div class="term">Follow</div><div class="def">A customer's subscribed relationship to a business, replacing the need for that business's own app.</div><div class="not mono">not: subscribe / like</div></div>
+      <div class="glossary-item"><div class="term">Module</div><div class="def">An independently deployable ERP or platform capability, gated by a feature flag.</div><div class="not mono">not: plugin</div></div>
+      <div class="glossary-item"><div class="term">Business Hub</div><div class="def">A physical pickup, storage, and vendor space extending the platform offline.</div><div class="not mono">not: warehouse</div></div>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<footer>
+  <div class="fbrand">
+    <div class="brand-mark" style="width:26px;height:26px;"></div>
+    <div>
+      <div class="brand-name" style="font-size:13px;">Ofia</div>
+      <div class="brand-sub">A MULTI-TENANT BUSINESS OPERATING ECOSYSTEM</div>
+    </div>
+  </div>
+  <p>MASTER BLUEPRINT · V1.0 · REED BREED TECHNOLOGIES · SEPTEMBER 2026</p>
+</footer>
+
+<script>
+const menuBtn = document.getElementById('menuBtn');
+const sidebar = document.getElementById('sidebar');
+if (menuBtn) {
+  menuBtn.addEventListener('click', () => sidebar.classList.toggle('open'));
+  document.querySelectorAll('.nav-link').forEach(l => l.addEventListener('click', () => sidebar.classList.remove('open')));
+}
+
+const navLinks = Array.from(document.querySelectorAll('.nav-link'));
+const sections = navLinks.map(l => document.querySelector(l.getAttribute('href'))).filter(Boolean);
+const spy = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    const id = '#' + entry.target.id;
+    const link = navLinks.find(l => l.getAttribute('href') === id);
+    if (!link) return;
+    if (entry.isIntersecting) {
+      navLinks.forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+    }
+  });
+}, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
+sections.forEach(s => spy.observe(s));
+
+const reveals = document.querySelectorAll('.reveal');
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('in-view');
+      revealObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.08 });
+reveals.forEach(r => revealObserver.observe(r));
+</script>
+</body>
+</html>

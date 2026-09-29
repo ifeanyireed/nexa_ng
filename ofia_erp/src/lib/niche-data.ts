@@ -1,0 +1,964 @@
+import { NicheId } from "@/components/nexa/NicheContext";
+
+export interface NicheData {
+  id: NicheId;
+  name: string;
+  heroTitle: string;
+  colorClass: string;
+  darkColorClass: string;
+  personality: string;
+  subServices: string[];
+  products: { name: string; price: string; image: string }[];
+  parentNicheId?: string; // To link back to main niche if it's a subgroup
+}
+
+export const NICHE_DETAILS: Record<string, NicheData> = {
+  "home-services": {
+    id: "home-services",
+    name: "Home & Maintenance",
+    heroTitle: "Reliable Help for Your Home",
+    colorClass: "bg-home",
+    darkColorClass: "dark:bg-home",
+    personality: "Reliable, hands-on, functional",
+    subServices: ["Plumber Finder", "Electrician Finder", "Carpenter Finder", "Painter Finder", "Tiler Finder", "Welder Finder"],
+    products: [
+      { name: "Premium Emulsion Paint", price: "₦45,000", image: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&q=80&w=400" },
+      { name: "Heavy Duty Drill", price: "₦120,000", image: "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&q=80&w=400" }
+    ]
+  },
+  "handyman-finders": {
+    id: "home-services",
+    name: "Handyman Finders",
+    heroTitle: "Expert Handymen for Every Task",
+    colorClass: "bg-home",
+    darkColorClass: "dark:bg-home",
+    personality: "Reliable, hands-on, functional",
+    subServices: ["Plumber Finder", "Electrician Finder", "Carpenter Finder", "Painter Finder", "Tiler Finder", "Welder Finder"],
+    products: [
+      { name: "Heavy Duty Drill", price: "₦120,000", image: "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "home-services"
+  },
+  "specialist-finders": {
+    id: "home-services",
+    name: "Specialist Finders",
+    heroTitle: "Highly Skilled Technical Specialists",
+    colorClass: "bg-home",
+    darkColorClass: "dark:bg-home",
+    personality: "Technical, specialized, expert",
+    subServices: ["Solar Installer Finder", "Generator Repairer Finder", "AC Technician Finder", "Borehole Driller Finder", "Inverter Repairer Finder"],
+    products: [
+      { name: "Solar Inverter 5KVA", price: "₦850,000", image: "https://images.unsplash.com/photo-1509391366360-feaffa648bd8?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "home-services"
+  },
+  "sanitation-finders": {
+    id: "home-services",
+    name: "Sanitation Finders",
+    heroTitle: "Professional Cleaning & Hygiene",
+    colorClass: "bg-home",
+    darkColorClass: "dark:bg-home",
+    personality: "Clean, thorough, reliable",
+    subServices: ["Home Cleaner Finder", "Fumigator (Pest Control) Finder", "Waste Disposal Finder", "Water Tank Cleaner Finder"],
+    products: [
+      { name: "Industrial Vacuum Cleaner", price: "₦75,000", image: "https://images.unsplash.com/photo-1581578731548-c64695cc6958?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "home-services"
+  },
+  "fashion-grooming": {
+    id: "fashion",
+    name: "Fashion & Grooming",
+    heroTitle: "Style & Personal Care",
+    colorClass: "bg-fashion",
+    darkColorClass: "dark:bg-fashion",
+    personality: "Stylish, aspirational, personal",
+    subServices: ["Tailor (Bespoke) Finder", "Hairdresser (Braider) Finder", "Barber Finder", "Makeup Artist Finder", "Manicurist (Nail Tech) Finder"],
+    products: [
+      { name: "Bespoke Suit Fabric", price: "₦85,000", image: "https://images.unsplash.com/photo-1594932224828-b4b059b6f68d?auto=format&fit=crop&q=80&w=400" },
+      { name: "Organic Hair Serum", price: "₦12,500", image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&q=80&w=400" }
+    ]
+  },
+  "style-finders": {
+    id: "fashion",
+    name: "Style Finders",
+    heroTitle: "Premium Fashion & Beauty Experts",
+    colorClass: "bg-fashion",
+    darkColorClass: "dark:bg-fashion",
+    personality: "Stylish, aspirational, personal",
+    subServices: ["Tailor (Bespoke) Finder", "Hairdresser (Braider) Finder", "Barber Finder", "Makeup Artist Finder", "Manicurist (Nail Tech) Finder"],
+    products: [
+      { name: "Bespoke Suit Fabric", price: "₦85,000", image: "https://images.unsplash.com/photo-1594932224828-b4b059b6f68d?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "fashion-grooming"
+  },
+  "wardrobe-finders": {
+    id: "fashion",
+    name: "Wardrobe Finders",
+    heroTitle: "Care for Your Apparel",
+    colorClass: "bg-fashion",
+    darkColorClass: "dark:bg-fashion",
+    personality: "Meticulous, organized, helpful",
+    subServices: ["Laundry Finder", "Dry Cleaner Finder", "Personal Shopper Finder", "Cobbler (Shoe Repair) Finder"],
+    products: [
+      { name: "Premium Leather Polish", price: "₦3,500", image: "https://images.unsplash.com/photo-1614786413234-73d1576d91d4?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "fashion-grooming"
+  },
+  "professional-services": {
+    id: "professionals",
+    name: "Professional Services",
+    heroTitle: "Expert Business Solutions",
+    colorClass: "bg-professionals",
+    darkColorClass: "dark:bg-professionals",
+    personality: "Authoritative, trusted, corporate",
+    subServices: ["Web Developer Finder", "App Developer Finder", "UI/UX Designer Finder", "SEO Expert Finder", "Cybersecurity Consultant Finder"],
+    products: [
+      { name: "Business Consultation", price: "₦50,000/hr", image: "https://images.unsplash.com/photo-1454165833767-027ffea9e77b?auto=format&fit=crop&q=80&w=400" }
+    ]
+  },
+  "tech-finders": {
+    id: "professionals",
+    name: "Tech Finders",
+    heroTitle: "Innovative Digital Solutions",
+    colorClass: "bg-professionals",
+    darkColorClass: "dark:bg-professionals",
+    personality: "Cutting-edge, precise, innovative",
+    subServices: ["Web Developer Finder", "App Developer Finder", "UI/UX Designer Finder", "SEO Expert Finder", "Cybersecurity Consultant Finder"],
+    products: [
+      { name: "Software Development Kit", price: "₦150,000", image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "professional-services"
+  },
+  "corporate-finders": {
+    id: "professionals",
+    name: "Corporate Finders",
+    heroTitle: "Trusted Business Advisors",
+    colorClass: "bg-professionals",
+    darkColorClass: "dark:bg-professionals",
+    personality: "Corporate, reliable, professional",
+    subServices: ["Lawyer Finder", "Accountant Finder", "Tax Consultant Finder", "Business Consultant Finder", "Grant Writer Finder"],
+    products: [
+      { name: "Corporate Legal Template", price: "₦25,000", image: "https://images.unsplash.com/photo-1505664194779-8beaceb93744?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "professional-services"
+  },
+  "content-finders": {
+    id: "professionals",
+    name: "Content Finders",
+    heroTitle: "Creative Content Creators",
+    colorClass: "bg-professionals",
+    darkColorClass: "dark:bg-professionals",
+    personality: "Creative, visual, engaging",
+    subServices: ["Copywriter Finder", "Social Media Manager Finder", "Graphic Designer Finder", "Video Editor Finder", "Translator Finder"],
+    products: [
+      { name: "Vlog Lighting Set", price: "₦45,000", image: "https://images.unsplash.com/photo-1594465919760-441fe5908ab0?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "professional-services"
+  },
+  "talent-finders": {
+    id: "professionals",
+    name: "Talent Finders",
+    heroTitle: "Connecting You with Top Talent",
+    colorClass: "bg-professionals",
+    darkColorClass: "dark:bg-professionals",
+    personality: "Charismatic, professional, diverse",
+    subServices: ["Model Finder", "Actor Finder", "Voice-Over Artist Finder"],
+    products: [
+      { name: "Professional Headshot Session", price: "₦35,000", image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "professional-services"
+  },
+  "education-skills": {
+    id: "education",
+    name: "Education & Skills",
+    heroTitle: "Learn and Grow",
+    colorClass: "bg-education",
+    darkColorClass: "dark:bg-education",
+    personality: "Inspiring, growth-oriented, warm",
+    subServices: ["Home Tutor Finder", "Music Instructor Finder", "Language Teacher Finder", "Exam Prep Tutor Finder", "School Finder"],
+    products: [
+      { name: "Piano Lesson Book", price: "₦5,000", image: "https://images.unsplash.com/photo-1520529611443-d220497235d7?auto=format&fit=crop&q=80&w=400" }
+    ]
+  },
+  "academic-finders": {
+    id: "education",
+    name: "Academic Finders",
+    heroTitle: "Excellence in Learning",
+    colorClass: "bg-education",
+    darkColorClass: "dark:bg-education",
+    personality: "Academic, focused, nurturing",
+    subServices: ["Home Tutor Finder", "Music Instructor Finder", "Language Teacher Finder", "Exam Prep Tutor Finder", "School Finder"],
+    products: [
+      { name: "Mathematics Textbook", price: "₦4,500", image: "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "education-skills"
+  },
+  "vocational-finders": {
+    id: "education",
+    name: "Vocational Finders",
+    heroTitle: "Master New Skills",
+    colorClass: "bg-education",
+    darkColorClass: "dark:bg-education",
+    personality: "Practical, skill-focused, empowering",
+    subServices: ["Driving School Instructor Finder", "Tech Skill Trainer Finder", "Fashion School Instructor Finder", "Catering School Instructor Finder"],
+    products: [
+      { name: "Beginner Design Kit", price: "₦15,000", image: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "education-skills"
+  },
+  "events-entertainment": {
+    id: "events",
+    name: "Events & Entertainment",
+    heroTitle: "Celebrate Life's Moments",
+    colorClass: "bg-events",
+    darkColorClass: "dark:bg-events",
+    personality: "Vibrant, celebratory, energetic",
+    subServices: ["Event Planner Finder", "Decorator Finder", "Souvenir Vendor Finder", "Ushering Agency Finder"],
+    products: [
+      { name: "Party Lighting Kit", price: "₦250,000", image: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&q=80&w=400" }
+    ]
+  },
+  "planning-finders": {
+    id: "events",
+    name: "Planning Finders",
+    heroTitle: "Perfectly Orchestrated Events",
+    colorClass: "bg-events",
+    darkColorClass: "dark:bg-events",
+    personality: "Organized, creative, reliable",
+    subServices: ["Event Planner Finder", "Decorator Finder", "Souvenir Vendor Finder", "Ushering Agency Finder"],
+    products: [
+      { name: "Event Planning Guide", price: "₦10,000", image: "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "events-entertainment"
+  },
+  "entertainment-finders": {
+    id: "events",
+    name: "Entertainment Finders",
+    heroTitle: "Unforgettable Event Entertainment",
+    colorClass: "bg-events",
+    darkColorClass: "dark:bg-events",
+    personality: "Vibrant, energetic, entertaining",
+    subServices: ["DJ Finder", "MC Finder", "Photographer Finder", "Videographer Finder", "Drone Pilot Finder", "Live Band / Musician Finder"],
+    products: [
+      { name: "Premium Party Speaker", price: "₦150,000", image: "https://images.unsplash.com/photo-1545454671-1b3a02766039?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "events-entertainment"
+  },
+  "health-wellness": {
+    id: "health",
+    name: "Health & Wellness",
+    heroTitle: "Your Well-being First",
+    colorClass: "bg-health",
+    darkColorClass: "dark:bg-health",
+    personality: "Clean, clinical, trustworthy",
+    subServices: ["Private Nurse Finder", "Physiotherapist Finder", "Dentist Finder", "Optician Finder", "Pharmacy Finder"],
+    products: [
+      { name: "Yoga Mat Pro", price: "₦18,000", image: "https://images.unsplash.com/photo-1592432678016-e910b452f9a2?auto=format&fit=crop&q=80&w=400" }
+    ]
+  },
+  "medical-finders": {
+    id: "health",
+    name: "Medical Finders",
+    heroTitle: "Professional Medical Care",
+    colorClass: "bg-health",
+    darkColorClass: "dark:bg-health",
+    personality: "Clinical, professional, caring",
+    subServices: ["Private Nurse Finder", "Physiotherapist Finder", "Dentist Finder", "Optician Finder", "Pharmacy Finder"],
+    products: [
+      { name: "First Aid Kit", price: "₦12,000", image: "https://images.unsplash.com/photo-1603398938378-e54eab446ddd?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "health-wellness"
+  },
+  "wellness-finders": {
+    id: "health",
+    name: "Wellness Finders",
+    heroTitle: "Holistic Health & Vitality",
+    colorClass: "bg-health",
+    darkColorClass: "dark:bg-health",
+    personality: "Zen, rejuvenating, calm",
+    subServices: ["Gym Instructor Finder", "Yoga Teacher Finder", "Nutritionist Finder", "Massage Therapist Finder"],
+    products: [
+      { name: "Essential Oil Set", price: "₦8,500", image: "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "health-wellness"
+  },
+  "care-finders": {
+    id: "health",
+    name: "Care Finders",
+    heroTitle: "Compassionate Care Services",
+    colorClass: "bg-health",
+    darkColorClass: "dark:bg-health",
+    personality: "Caring, responsible, warm",
+    subServices: ["Nanny Finder", "Elderly Companion Finder", "Pet Sitter Finder"],
+    products: [
+      { name: "Nanny Selection Guide", price: "₦5,000", image: "https://images.unsplash.com/photo-1516627145497-ae6968895b74?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "health-wellness"
+  },
+  "logistics-transport": {
+    id: "logistics",
+    name: "Logistics & Transport",
+    heroTitle: "Move Anything, Anywhere",
+    colorClass: "bg-logistics",
+    darkColorClass: "dark:bg-logistics",
+    personality: "Fast, direct, operational",
+    subServices: ["Professional Driver Finder", "Towing Van Finder", "Car Rental Finder", "Bus Hire Finder"],
+    products: [
+      { name: "Heavy Duty Packing Boxes", price: "₦2,500", image: "https://images.unsplash.com/photo-1524514587686-e2909d726e9b?auto=format&fit=crop&q=80&w=400" }
+    ]
+  },
+  "delivery-finders": {
+    id: "logistics",
+    name: "Delivery Finders",
+    heroTitle: "Fast & Reliable Deliveries",
+    colorClass: "bg-logistics",
+    darkColorClass: "dark:bg-logistics",
+    personality: "Swift, efficient, trackable",
+    subServices: ["Dispatch Rider (Logistics) Finder", "Errand Runner Finder", "Moving / Relocation Service Finder"],
+    products: [
+      { name: "Protective Bubble Wrap", price: "₦4,000", image: "https://images.unsplash.com/photo-1530543787849-128d94430c6a?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "logistics-transport"
+  },
+  "transport-finders": {
+    id: "logistics",
+    name: "Transport Finders",
+    heroTitle: "Seamless Travel Solutions",
+    colorClass: "bg-logistics",
+    darkColorClass: "dark:bg-logistics",
+    personality: "Mobile, reliable, widespread",
+    subServices: ["Professional Driver Finder", "Towing Van Finder", "Car Rental Finder", "Bus Hire Finder"],
+    products: [
+      { name: "Travel Organizer", price: "₦6,500", image: "https://images.unsplash.com/photo-1553913861-c0fddf2619ee?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "logistics-transport"
+  },
+  "automotive-services": {
+    id: "auto",
+    name: "Automotive Services",
+    heroTitle: "Keep Your Wheels Turning",
+    colorClass: "bg-auto",
+    darkColorClass: "dark:bg-auto",
+    personality: "Technical, masculine, mechanical",
+    subServices: ["Car Mechanic Finder", "Vulcanizer Finder", "Panel Beater Finder", "Auto Electrician Finder"],
+    products: [
+      { name: "Synthetic Engine Oil", price: "₦15,000", image: "https://images.unsplash.com/photo-1486006920555-c77dcf18193c?auto=format&fit=crop&q=80&w=400" }
+    ]
+  },
+  "repair-finders": {
+    id: "auto",
+    name: "Repair Finders",
+    heroTitle: "Expert Auto Repairs",
+    colorClass: "bg-auto",
+    darkColorClass: "dark:bg-auto",
+    personality: "Technical, mechanical, reliable",
+    subServices: ["Car Mechanic Finder", "Vulcanizer Finder", "Panel Beater Finder", "Auto Electrician Finder"],
+    products: [
+      { name: "Diagnostic Scan Tool", price: "₦45,000", image: "https://images.unsplash.com/photo-1544265852-a41551cb418b?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "automotive-services"
+  },
+  "auto-care-finders": {
+    id: "auto",
+    name: "Auto Care Finders",
+    heroTitle: "Pristine Auto Maintenance",
+    colorClass: "bg-auto",
+    darkColorClass: "dark:bg-auto",
+    personality: "Detailed, protective, aesthetic",
+    subServices: ["Mobile Car Wash Finder", "Car Tracker Installer Finder", "CCTV / Security Installer Finder"],
+    products: [
+      { name: "Premium Car Wax", price: "₦12,000", image: "https://images.unsplash.com/photo-1563911194472-50974b6094fe?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "automotive-services"
+  },
+  "food-agribusiness": {
+    id: "food",
+    name: "Food & Agribusiness",
+    heroTitle: "Farm to Table",
+    colorClass: "bg-food",
+    darkColorClass: "dark:bg-food",
+    personality: "Warm, appetising, community",
+    subServices: ["Private Chef Finder", "Caterer Finder", "Cake Baker Finder", "Bulk Food Supplier Finder"],
+    products: [
+      { name: "Fresh Basket of Yam", price: "₦12,000", image: "https://images.unsplash.com/photo-1590779033100-9f60705a2f3b?auto=format&fit=crop&q=80&w=400" }
+    ]
+  },
+  "culinary-finders": {
+    id: "food",
+    name: "Culinary Finders",
+    heroTitle: "Exquisite Tastes & Catering",
+    colorClass: "bg-food",
+    darkColorClass: "dark:bg-food",
+    personality: "Gourmet, professional, delicious",
+    subServices: ["Private Chef Finder", "Caterer Finder", "Cake Baker Finder", "Bulk Food Supplier Finder"],
+    products: [
+      { name: "Chef's Knife Set", price: "₦55,000", image: "https://images.unsplash.com/photo-1593618998160-e34014e67546?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "food-agribusiness"
+  },
+  "agro-finders": {
+    id: "food",
+    name: "Agro Finders",
+    heroTitle: "Sustainable Farming & Produce",
+    colorClass: "bg-food",
+    darkColorClass: "dark:bg-food",
+    personality: "Earth, productive, vital",
+    subServices: ["Farm Manager Finder", "Agro-Processor Finder", "Veterinary Doctor Finder", "Pet Groomer Finder", "Poultry Farmer Finder", "Fish Farmer Finder"],
+    products: [
+      { name: "Organic Fertilizer", price: "₦8,000", image: "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "food-agribusiness"
+  },
+  "real-estate-construction": {
+    id: "realestate",
+    name: "Real Estate & Construction",
+    heroTitle: "Build Your Dream",
+    colorClass: "bg-realestate",
+    darkColorClass: "dark:bg-realestate",
+    personality: "Earthy, aspirational, solid",
+    subServices: ["Estate Agent Finder", "Facility Manager Finder", "Surveyor Finder", "Quantity Surveyor Finder"],
+    products: [
+      { name: "Architectural Blueprint", price: "₦150,000", image: "https://images.unsplash.com/photo-1503387762-592dea58ef23?auto=format&fit=crop&q=80&w=400" }
+    ]
+  },
+  "property-finders": {
+    id: "realestate",
+    name: "Property Finders",
+    heroTitle: "Find Your Perfect Space",
+    colorClass: "bg-realestate",
+    darkColorClass: "dark:bg-realestate",
+    personality: "Professional, knowledgeable, direct",
+    subServices: ["Estate Agent Finder", "Facility Manager Finder", "Surveyor Finder", "Quantity Surveyor Finder"],
+    products: [
+      { name: "Property Valuation Report", price: "₦40,000", image: "https://images.unsplash.com/photo-1560514196-46c8242ad059?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "real-estate-construction"
+  },
+  "building-finders": {
+    id: "realestate",
+    name: "Building Finders",
+    heroTitle: "Expert Construction Partners",
+    colorClass: "bg-realestate",
+    darkColorClass: "dark:bg-realestate",
+    personality: "Solid, technical, creative",
+    subServices: ["Architect Finder", "Bricklayer Finder", "Aluminum Fitter Finder", "POP Ceiling Installer Finder"],
+    products: [
+      { name: "Construction Safety Helmet", price: "₦5,500", image: "https://images.unsplash.com/photo-1516937941344-00b4e0337589?auto=format&fit=crop&q=80&w=400" }
+    ],
+    parentNicheId: "real-estate-construction"
+  }
+};
+
+export const SPECIALTY_TO_NICHE_MAP: Record<string, string> = {
+    "fashion": "fashion-grooming",
+    "professionals": "professional-services",
+    "education": "education-skills",
+    "events": "events-entertainment",
+    "health": "health-wellness",
+    "logistics": "logistics-transport",
+    "auto": "automotive-services",
+    "food": "food-agribusiness",
+    "realestate": "real-estate-construction",
+
+    // 11 Master High-Recurring Verticals
+    "hotels": "real-estate-construction",
+    "rides": "logistics-transport",
+    "apartments": "real-estate-construction",
+    "cars": "automotive-services",
+    "tutors": "education-skills",
+
+    // Canonical One-Word SEO Subcategory Slugs
+    "handyman": "handyman-finders",
+    "specialists": "specialist-finders",
+    "cleaning": "sanitation-finders",
+    "beauty": "style-finders",
+    "laundry": "wardrobe-finders",
+    "tech": "tech-finders",
+    "corporate": "corporate-finders",
+    "creative": "content-finders",
+    "talent": "talent-finders",
+    "tutoring": "academic-finders",
+    "vocational": "vocational-finders",
+    "planning": "planning-finders",
+    "entertainment": "entertainment-finders",
+    "medical": "medical-finders",
+    "wellness": "wellness-finders",
+    "caregiving": "care-finders",
+    "dispatch": "delivery-finders",
+    "transport": "transport-finders",
+    "mechanics": "repair-finders",
+    "autocare": "auto-care-finders",
+    "culinary": "culinary-finders",
+    "agriculture": "agro-finders",
+    "properties": "property-finders",
+    "construction": "building-finders",
+
+    // Home Services
+    "plumber": "home-services",
+    "electrician": "home-services",
+    "carpenter": "home-services",
+    "painter": "home-services",
+    "tiler": "home-services",
+    "welder": "home-services",
+    "solar-installer": "home-services",
+    "generator-repairer": "home-services",
+    "ac-technician": "home-services",
+    "borehole-driller": "home-services",
+    "inverter-repairer": "home-services",
+    "home-cleaner": "home-services",
+    "fumigator": "home-services",
+
+    // Fashion
+    "tailor": "fashion-grooming",
+    "barber": "fashion-grooming",
+    "hairdresser": "fashion-grooming",
+    "makeup-artist": "fashion-grooming",
+    "manicurist": "fashion-grooming",
+
+    // Professionals
+    "web-developer": "professional-services",
+    "uiux-designer": "professional-services",
+    "lawyer": "professional-services",
+    "accountant": "professional-services",
+    "copywriter": "professional-services",
+    "social-media-manager": "professional-services",
+    "model": "professional-services",
+    "voiceover-artist": "professional-services",
+    "voice-over-artist": "professional-services",
+
+    // Education
+    "home-tutor": "education-skills",
+    "music-instructor": "education-skills",
+    "driving-school": "education-skills",
+    "tech-skill-trainer": "education-skills",
+
+    // Events
+    "event-planner": "events-entertainment",
+    "decorator": "events-entertainment",
+    "dj": "events-entertainment",
+    "photographer": "events-entertainment",
+
+    // Health
+    "private-nurse": "health-wellness",
+    "physiotherapist": "health-wellness",
+    "gym-instructor": "health-wellness",
+    "yoga-teacher": "health-wellness",
+    "nanny": "health-wellness",
+    "elderly-companion": "health-wellness",
+
+    // Logistics
+    "professional-driver": "logistics-transport",
+    "towing-van": "logistics-transport",
+    "dispatch-rider": "logistics-transport",
+    "moving-service": "logistics-transport",
+
+    // Auto
+    "car-mechanic": "automotive-services",
+    "vulcanizer": "automotive-services",
+    "mobile-car-wash": "automotive-services",
+    "car-tracker-installer": "automotive-services",
+
+    // Food
+    "private-chef": "food-agribusiness",
+    "cake-maker": "food-agribusiness",
+    "cake-baker": "food-agribusiness",
+    "farm-manager": "food-agribusiness",
+    "veterinary-doctor": "food-agribusiness",
+
+    // Real Estate
+    "estate-agent": "real-estate-construction",
+    "facility-manager": "real-estate-construction",
+    "architect": "real-estate-construction",
+    "bricklayer": "real-estate-construction"
+};
+
+export interface SubcategoryGroup {
+  slug: string;
+  name: string;
+  parentCategory: string;
+  parentCategorySlug: string;
+  description: string;
+  services: {
+    name: string;
+    slug: string;
+  }[];
+}
+
+export const SUBCATEGORY_GROUPS: SubcategoryGroup[] = [
+  // 1. Home & Maintenance
+  {
+    slug: "handyman",
+    name: "Handyman Finders",
+    parentCategory: "Home & Maintenance",
+    parentCategorySlug: "home-services",
+    description: "General household repairs, electrical, plumbing, carpentry, tiling, and welding.",
+    services: [
+      { name: "Plumber Finder", slug: "plumber" },
+      { name: "Electrician Finder", slug: "electrician" },
+      { name: "Carpenter Finder", slug: "carpenter" },
+      { name: "Painter Finder", slug: "painter" },
+      { name: "Tiler Finder", slug: "tiler" },
+      { name: "Welder Finder", slug: "welder" },
+    ],
+  },
+  {
+    slug: "specialists",
+    name: "Specialist Finders",
+    parentCategory: "Home & Maintenance",
+    parentCategorySlug: "home-services",
+    description: "Technical home systems, solar power, inverters, HVAC, and borehole engineering.",
+    services: [
+      { name: "Solar Installer Finder", slug: "solar-installer" },
+      { name: "Generator Repairer Finder", slug: "generator-repairer" },
+      { name: "AC Technician Finder", slug: "ac-technician" },
+      { name: "Borehole Driller Finder", slug: "borehole-driller" },
+      { name: "Inverter Repairer Finder", slug: "inverter-repairer" },
+    ],
+  },
+  {
+    slug: "cleaning",
+    name: "Sanitation Finders",
+    parentCategory: "Home & Maintenance",
+    parentCategorySlug: "home-services",
+    description: "Residential and commercial deep cleaning, fumigation, pest control, and water tank sanitation.",
+    services: [
+      { name: "Home Cleaner Finder", slug: "home-cleaner" },
+      { name: "Fumigator (Pest Control) Finder", slug: "fumigator" },
+      { name: "Waste Disposal Finder", slug: "waste-disposal" },
+      { name: "Water Tank Cleaner Finder", slug: "water-tank-cleaner" },
+    ],
+  },
+
+  // 2. Fashion & Grooming
+  {
+    slug: "beauty",
+    name: "Style Finders",
+    parentCategory: "Fashion & Grooming",
+    parentCategorySlug: "fashion-grooming",
+    description: "Bespoke tailoring, barbering, hair braiding, nails, and professional makeup artistry.",
+    services: [
+      { name: "Bespoke Tailor Finder", slug: "tailor" },
+      { name: "Hairdresser / Braider Finder", slug: "hairdresser" },
+      { name: "Barber Finder", slug: "barber" },
+      { name: "Makeup Artist Finder", slug: "makeup-artist" },
+      { name: "Manicurist / Nail Tech Finder", slug: "manicurist" },
+    ],
+  },
+  {
+    slug: "laundry",
+    name: "Wardrobe Finders",
+    parentCategory: "Fashion & Grooming",
+    parentCategorySlug: "fashion-grooming",
+    description: "Garment maintenance, laundry, dry cleaning, personal shopping, and shoe repair.",
+    services: [
+      { name: "Laundry Finder", slug: "laundry" },
+      { name: "Dry Cleaner Finder", slug: "dry-cleaner" },
+      { name: "Personal Shopper Finder", slug: "personal-shopper" },
+      { name: "Cobbler (Shoe Repair) Finder", slug: "cobbler" },
+    ],
+  },
+
+  // 3. Professional Services
+  {
+    slug: "tech",
+    name: "Tech Finders",
+    parentCategory: "Professional Services",
+    parentCategorySlug: "professional-services",
+    description: "Software engineering, mobile app development, UI/UX design, SEO, and cybersecurity.",
+    services: [
+      { name: "Web Developer Finder", slug: "web-developer" },
+      { name: "App Developer Finder", slug: "app-developer" },
+      { name: "UI/UX Designer Finder", slug: "uiux-designer" },
+      { name: "SEO Expert Finder", slug: "seo-expert" },
+      { name: "Cybersecurity Consultant Finder", slug: "cybersecurity" },
+    ],
+  },
+  {
+    slug: "corporate",
+    name: "Corporate Finders",
+    parentCategory: "Professional Services",
+    parentCategorySlug: "professional-services",
+    description: "Legal representation, accounting, tax consultancy, business strategy, and grant writing.",
+    services: [
+      { name: "Lawyer Finder", slug: "lawyer" },
+      { name: "Accountant Finder", slug: "accountant" },
+      { name: "Tax Consultant Finder", slug: "tax-consultant" },
+      { name: "Business Consultant Finder", slug: "business-consultant" },
+      { name: "Grant Writer Finder", slug: "grant-writer" },
+    ],
+  },
+  {
+    slug: "creative",
+    name: "Content Finders",
+    parentCategory: "Professional Services",
+    parentCategorySlug: "professional-services",
+    description: "Copywriting, social media growth, graphic design, video editing, and language translation.",
+    services: [
+      { name: "Copywriter Finder", slug: "copywriter" },
+      { name: "Social Media Manager Finder", slug: "social-media-manager" },
+      { name: "Graphic Designer Finder", slug: "graphic-designer" },
+      { name: "Video Editor Finder", slug: "video-editor" },
+      { name: "Translator Finder", slug: "translator" },
+    ],
+  },
+  {
+    slug: "talent",
+    name: "Talent Finders",
+    parentCategory: "Professional Services",
+    parentCategorySlug: "professional-services",
+    description: "Commercial models, actors, voice-over artists, and media performers.",
+    services: [
+      { name: "Model Finder", slug: "model" },
+      { name: "Actor Finder", slug: "actor" },
+      { name: "Voice-Over Artist Finder", slug: "voiceover-artist" },
+    ],
+  },
+
+  // 4. Education & Skills
+  {
+    slug: "tutoring",
+    name: "Academic Finders",
+    parentCategory: "Education & Skills",
+    parentCategorySlug: "education-skills",
+    description: "Home tutoring, exam preparation, language instruction, and private schools.",
+    services: [
+      { name: "Home Tutor Finder", slug: "home-tutor" },
+      { name: "Exam Prep Tutor Finder", slug: "exam-prep" },
+      { name: "Language Teacher Finder", slug: "language-teacher" },
+      { name: "Music Instructor Finder", slug: "music-instructor" },
+      { name: "Private School Finder", slug: "school" },
+    ],
+  },
+  {
+    slug: "vocational",
+    name: "Vocational Finders",
+    parentCategory: "Education & Skills",
+    parentCategorySlug: "education-skills",
+    description: "Hands-on vocational instruction: driving, software coding, fashion design, and catering.",
+    services: [
+      { name: "Driving School Instructor Finder", slug: "driving-school" },
+      { name: "Tech Skill Trainer Finder", slug: "tech-skill-trainer" },
+      { name: "Fashion School Instructor Finder", slug: "fashion-school" },
+      { name: "Catering School Instructor Finder", slug: "catering-school" },
+    ],
+  },
+
+  // 5. Events & Entertainment
+  {
+    slug: "planning",
+    name: "Planning Finders",
+    parentCategory: "Events & Entertainment",
+    parentCategorySlug: "events-entertainment",
+    description: "Event planning, decoration, venue styling, souvenirs, and ushering services.",
+    services: [
+      { name: "Event Planner Finder", slug: "event-planner" },
+      { name: "Decorator Finder", slug: "decorator" },
+      { name: "Souvenir Vendor Finder", slug: "souvenir-vendor" },
+      { name: "Ushering Agency Finder", slug: "ushering-agency" },
+    ],
+  },
+  {
+    slug: "entertainment",
+    name: "Entertainment Finders",
+    parentCategory: "Events & Entertainment",
+    parentCategorySlug: "events-entertainment",
+    description: "DJs, MCs, event photographers, videographers, drone pilots, and live musical bands.",
+    services: [
+      { name: "DJ Finder", slug: "dj" },
+      { name: "MC Finder", slug: "mc" },
+      { name: "Photographer Finder", slug: "photographer" },
+      { name: "Videographer Finder", slug: "videographer" },
+      { name: "Drone Pilot Finder", slug: "drone-pilot" },
+      { name: "Live Band Finder", slug: "live-band" },
+    ],
+  },
+
+  // 6. Health & Wellness
+  {
+    slug: "medical",
+    name: "Medical Finders",
+    parentCategory: "Health & Wellness",
+    parentCategorySlug: "health-wellness",
+    description: "Private duty nursing, physiotherapy, dentistry, optometry, and retail pharmacies.",
+    services: [
+      { name: "Private Nurse Finder", slug: "private-nurse" },
+      { name: "Physiotherapist Finder", slug: "physiotherapist" },
+      { name: "Dentist Finder", slug: "dentist" },
+      { name: "Optician Finder", slug: "optician" },
+      { name: "Pharmacy Finder", slug: "pharmacy" },
+    ],
+  },
+  {
+    slug: "wellness",
+    name: "Wellness Finders",
+    parentCategory: "Health & Wellness",
+    parentCategorySlug: "health-wellness",
+    description: "Personal fitness training, yoga, clinical nutrition, and therapeutic massage.",
+    services: [
+      { name: "Gym Instructor Finder", slug: "gym-instructor" },
+      { name: "Yoga Teacher Finder", slug: "yoga-teacher" },
+      { name: "Nutritionist Finder", slug: "nutritionist" },
+      { name: "Massage Therapist Finder", slug: "massage-therapist" },
+    ],
+  },
+  {
+    slug: "caregiving",
+    name: "Care Finders",
+    parentCategory: "Health & Wellness",
+    parentCategorySlug: "health-wellness",
+    description: "Nannies, infant care, elderly companions, and domestic pet sitting.",
+    services: [
+      { name: "Nanny Finder", slug: "nanny" },
+      { name: "Elderly Companion Finder", slug: "elderly-companion" },
+      { name: "Pet Sitter Finder", slug: "pet-sitter" },
+    ],
+  },
+
+  // 7. Logistics & Transport
+  {
+    slug: "dispatch",
+    name: "Delivery Finders",
+    parentCategory: "Logistics & Transport",
+    parentCategorySlug: "logistics-transport",
+    description: "Same-day dispatch riders, on-demand errand runners, and home/office relocations.",
+    services: [
+      { name: "Dispatch Rider Finder", slug: "dispatch-rider" },
+      { name: "Errand Runner Finder", slug: "errand-runner" },
+      { name: "Moving / Relocation Service Finder", slug: "moving-service" },
+    ],
+  },
+  {
+    slug: "transport",
+    name: "Transport Finders",
+    parentCategory: "Logistics & Transport",
+    parentCategorySlug: "logistics-transport",
+    description: "Professional drivers, emergency towing vans, car rentals, and charter buses.",
+    services: [
+      { name: "Professional Driver Finder", slug: "professional-driver" },
+      { name: "Towing Van Finder", slug: "towing-van" },
+      { name: "Car Rental Finder", slug: "car-rental" },
+      { name: "Bus Hire Finder", slug: "bus-hire" },
+    ],
+  },
+
+  // 8. Automotive Services
+  {
+    slug: "mechanics",
+    name: "Repair Finders",
+    parentCategory: "Automotive Services",
+    parentCategorySlug: "automotive-services",
+    description: "Auto mechanical repair, vulcanizing, panel beating, and auto electrical diagnostics.",
+    services: [
+      { name: "Car Mechanic Finder", slug: "car-mechanic" },
+      { name: "Vulcanizer Finder", slug: "vulcanizer" },
+      { name: "Panel Beater Finder", slug: "panel-beater" },
+      { name: "Auto Electrician Finder", slug: "auto-electrician" },
+    ],
+  },
+  {
+    slug: "autocare",
+    name: "Auto Care Finders",
+    parentCategory: "Automotive Services",
+    parentCategorySlug: "automotive-services",
+    description: "Mobile auto detailing, GPS vehicle trackers, and vehicular security dashcam installation.",
+    services: [
+      { name: "Mobile Car Wash Finder", slug: "mobile-car-wash" },
+      { name: "Car Tracker Installer Finder", slug: "car-tracker-installer" },
+      { name: "Vehicle CCTV / Dashcam Installer Finder", slug: "auto-cctv-installer" },
+    ],
+  },
+
+  // 9. Food & Agribusiness
+  {
+    slug: "culinary",
+    name: "Culinary Finders",
+    parentCategory: "Food & Agribusiness",
+    parentCategorySlug: "food-agribusiness",
+    description: "Private home chefs, event catering, celebration cakes, and wholesale foodstuff supply.",
+    services: [
+      { name: "Private Chef Finder", slug: "private-chef" },
+      { name: "Event Caterer Finder", slug: "caterer" },
+      { name: "Cake Baker Finder", slug: "cake-baker" },
+      { name: "Bulk Food Supplier Finder", slug: "bulk-food-supplier" },
+    ],
+  },
+  {
+    slug: "agriculture",
+    name: "Agro Finders",
+    parentCategory: "Food & Agribusiness",
+    parentCategorySlug: "food-agribusiness",
+    description: "Farm management, agro-processing, veterinary medicine, pet grooming, poultry, and fish farming.",
+    services: [
+      { name: "Farm Manager Finder", slug: "farm-manager" },
+      { name: "Agro-Processor Finder", slug: "agro-processor" },
+      { name: "Veterinary Doctor Finder", slug: "veterinary-doctor" },
+      { name: "Pet Groomer Finder", slug: "pet-groomer" },
+      { name: "Poultry Farmer Finder", slug: "poultry-farmer" },
+      { name: "Fish Farmer Finder", slug: "fish-farmer" },
+    ],
+  },
+
+  // 10. Real Estate & Construction
+  {
+    slug: "properties",
+    name: "Property Finders",
+    parentCategory: "Real Estate & Construction",
+    parentCategorySlug: "real-estate-construction",
+    description: "Real estate agency, facility management, land surveying, and quantity surveying.",
+    services: [
+      { name: "Estate Agent Finder", slug: "estate-agent" },
+      { name: "Facility Manager Finder", slug: "facility-manager" },
+      { name: "Land Surveyor Finder", slug: "surveyor" },
+      { name: "Quantity Surveyor Finder", slug: "quantity-surveyor" },
+    ],
+  },
+  {
+    slug: "construction",
+    name: "Building Finders",
+    parentCategory: "Real Estate & Construction",
+    parentCategorySlug: "real-estate-construction",
+    description: "Architectural design, bricklaying, aluminum & glass fabrication, and POP ceiling installation.",
+    services: [
+      { name: "Architect Finder", slug: "architect" },
+      { name: "Bricklayer Finder", slug: "bricklayer" },
+      { name: "Aluminum & Glass Fitter Finder", slug: "aluminum-fitter" },
+      { name: "POP Ceiling Installer Finder", slug: "pop-installer" },
+    ],
+  },
+];
+
+export function getSubcategoryGroupBySlug(slug: string): SubcategoryGroup | undefined {
+  return SUBCATEGORY_GROUPS.find((g) => g.slug === slug);
+}
+
+export function getSubcategoryGroupsByParent(parentSlug: string): SubcategoryGroup[] {
+  return SUBCATEGORY_GROUPS.filter(
+    (g) => g.parentCategorySlug === parentSlug || g.parentCategorySlug === SPECIALTY_TO_NICHE_MAP[parentSlug]
+  );
+}
+
+export function getNicheData(slug: string): NicheData {
+  const targetKey = SPECIALTY_TO_NICHE_MAP[slug] || slug;
+  return NICHE_DETAILS[targetKey] || NICHE_DETAILS["home-services"];
+}
+
+export function getAllNicheSlugs(): string[] {
+  const shortSlugs = [
+    "fashion",
+    "professionals",
+    "education",
+    "events",
+    "health",
+    "logistics",
+    "auto",
+    "food",
+    "realestate"
+  ];
+  return Array.from(new Set([
+    ...Object.keys(NICHE_DETAILS),
+    ...shortSlugs,
+    ...Object.keys(SPECIALTY_TO_NICHE_MAP),
+    ...SUBCATEGORY_GROUPS.map((g) => g.slug)
+  ]));
+}
+

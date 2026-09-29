@@ -116,14 +116,14 @@ services:
         value: "production"
 
   # ==========================================
-  # 6. OFIA BUSINESS FRONTEND (:3000)
+  # 6. OFIA COMPASS (MARKETPLACE) FRONTEND (:3000)
   # ==========================================
   - type: web
-    name: ofia-business-frontend
+    name: ofia-compass-frontend
     env: node
     plan: starter
     region: frankfurt
-    rootDir: ofia_business
+    rootDir: ofia_compass
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
@@ -148,3 +148,20 @@ services:
         value: "production"
       - key: PORT
         value: "3001"
+
+  # ==========================================
+  # 8. OFIA ERP FRONTEND (:3002)
+  # ==========================================
+  - type: web
+    name: ofia-erp-frontend
+    env: node
+    plan: starter
+    region: frankfurt
+    rootDir: ofia_erp
+    buildCommand: npm install && npm run build
+    startCommand: npm start -p 3002
+    envVars:
+      - key: NODE_ENV
+        value: "production"
+      - key: PORT
+        value: "3002"

@@ -2,9 +2,9 @@
 
 help:
 	@echo "Available commands:"
-	@echo "  make build          - Build all 5 Go microservices and 2 Next.js apps"
+	@echo "  make build          - Build all 5 Go microservices and 3 Next.js apps"
 	@echo "  make build-backend  - Build all 5 Go backend microservices"
-	@echo "  make build-frontend - Build ofia_business and ofia_admin"
+	@echo "  make build-frontend - Build ofia_compass, ofia_erp, and ofia_admin"
 	@echo "  make dev            - Start all 5 Go microservices and Next.js frontends in dev mode"
 	@echo "  make start          - Start compiled microservices in background"
 	@echo "  make clean          - Remove compiled binaries and build artifacts"
@@ -25,11 +25,13 @@ build-backend:
 	@echo "✅ All 5 Go microservices built successfully!"
 
 build-frontend:
-	@echo "🔨 Building ofia_business (:3000)..."
-	@cd ofia_business && npm run build
+	@echo "🔨 Building ofia_compass (:3000)..."
+	@cd ofia_compass && npm run build
+	@echo "🔨 Building ofia_erp (:3002)..."
+	@cd ofia_erp && npm run build
 	@echo "🔨 Building ofia_admin (:3001)..."
 	@cd ofia_admin && npm run build
-	@echo "✅ Both frontend apps built successfully!"
+	@echo "✅ All 3 frontend apps built successfully!"
 
 dev:
 	@echo "🚀 Launching all services in development mode..."

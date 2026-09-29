@@ -1,80 +1,21 @@
-import mysql from "mysql2/promise";
+import { Pool } from "@neondatabase/serverless";
 
-let pool: mysql.Pool | null = null;
+let pool: Pool | null = null;
 let isInitialized = false;
 
-function getDatabaseConfig(): mysql.PoolOptions {
-  const databaseURL =
+function getConnectionString(): string {
+  return (
     process.env.DATABASE_URL ||
-    process.env.DB_DSN ||
-    process.env.MYSQL_URL ||
-    "mysql://u721451974_nexa:*Reedb4b4@srv2113.hstgr.io:3306/u721451974_nexa_db";
-
-  try {
-    // If standard mysql:// URL
-    if (databaseURL.startsWith("mysql://") || databaseURL.startsWith("mariadb://")) {
-      const url = new URL(databaseURL);
-      return {
-        host: url.hostname,
-        port: parseInt(url.port || "3306", 10),
-        user: decodeURIComponent(url.username),
-        password: decodeURIComponent(url.password),
-        database: url.pathname.replace(/^\//, ""),
-        waitForConnections: true,
-        connectionLimit: 10,
-        maxIdle: 5,
-        idleTimeout: 60000,
-        queueLimit: 0,
-        enableKeepAlive: true,
-        keepAliveInitialDelay: 10000,
-      };
-    }
-
-    // If Go DSN format: user:pass@tcp(host:port)/dbname
-    if (databaseURL.includes("@tcp(")) {
-      const parts = databaseURL.split("@tcp(");
-      const userPass = parts[0].split(":");
-      const hostDb = parts[1].split(")/");
-      const hostPort = hostDb[0].split(":");
-      const dbAndParams = hostDb[1].split("?")[0];
-
-      return {
-        host: hostPort[0],
-        port: parseInt(hostPort[1] || "3306", 10),
-        user: userPass[0],
-        password: userPass[1],
-        database: dbAndParams,
-        waitForConnections: true,
-        connectionLimit: 10,
-        maxIdle: 5,
-        idleTimeout: 60000,
-        queueLimit: 0,
-      };
-    }
-  } catch (err) {
-    console.warn("⚠️ Failed to parse database URL, using fallback parameters:", err);
-  }
-
-  return {
-    host: process.env.DB_HOST || "srv2113.hstgr.io",
-    port: parseInt(process.env.DB_PORT || "3306", 10),
-    user: process.env.DB_USER || "u721451974_nexa",
-    password: process.env.DB_PASSWORD || "*Reedb4b4",
-    database: process.env.DB_NAME || "u721451974_nexa_db",
-    waitForConnections: true,
-    connectionLimit: 10,
-  };
+    process.env.POSTGRES_URL ||
+    process.env.NEON_DATABASE_URL ||
+    "postgresql://neondb_owner:npg_t6UQAzVEqBO4@ep-falling-star-b4lrdr76-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+  );
 }
 
-export function getDbPool(): mysql.Pool | null {
+export function getDbPool(): Pool {
   if (!pool) {
-    try {
-      const config = getDatabaseConfig();
-      pool = mysql.createPool(config);
-    } catch (err) {
-      console.warn("⚠️ Failed to initialize MySQL Pool:", err);
-      pool = null;
-    }
+    const connectionString = getConnectionString();
+    pool = new Pool({ connectionString });
   }
   return pool;
 }
@@ -85,10 +26,10 @@ export async function ensureTablesExist(): Promise<boolean> {
   if (!db) return false;
 
   try {
-    const connection = await db.getConnection();
+    const client = await db.connect();
     try {
       // 1. waitlist_leads table
-      await connection.query(`
+      await client.query(`
         CREATE TABLE IF NOT EXISTS waitlist_leads (
           id VARCHAR(64) PRIMARY KEY,
           queue_number INT NOT NULL,
@@ -99,57 +40,63 @@ export async function ensureTablesExist(): Promise<boolean> {
           role VARCHAR(50) DEFAULT 'MERCHANT',
           business_type VARCHAR(100) DEFAULT 'Retail Store',
           tool_type VARCHAR(100) DEFAULT 'Full Ecosystem',
-          custom_business_type VARCHAR(200) NULL,
-          custom_tool_type VARCHAR(200) NULL,
+          custom_business_type VARCHAR(200),
+          custom_tool_type VARCHAR(200),
           niche VARCHAR(50) DEFAULT 'general',
           state VARCHAR(50) DEFAULT 'Lagos',
           city VARCHAR(100) DEFAULT 'Ikeja',
           team_size VARCHAR(50) DEFAULT '1-5',
-          features_interest TEXT NULL,
+          features_interest TEXT,
           referral_code VARCHAR(32) UNIQUE NOT NULL,
-          referred_by VARCHAR(32) NULL,
+          referred_by VARCHAR(32),
           status VARCHAR(30) DEFAULT 'PENDING',
-          invite_code VARCHAR(64) NULL,
-          notes TEXT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          INDEX idx_waitlist_email (email),
-          INDEX idx_waitlist_phone (phone),
-          INDEX idx_waitlist_status (status),
-          INDEX idx_waitlist_referral (referral_code),
-          INDEX idx_waitlist_queue (queue_number)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+          invite_code VARCHAR(64),
+          notes TEXT,
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_waitlist_email ON waitlist_leads (email);
+        CREATE INDEX IF NOT EXISTS idx_waitlist_phone ON waitlist_leads (phone);
+        CREATE INDEX IF NOT EXISTS idx_waitlist_status ON waitlist_leads (status);
+        CREATE INDEX IF NOT EXISTS idx_waitlist_referral ON waitlist_leads (referral_code);
+        CREATE INDEX IF NOT EXISTS idx_waitlist_queue ON waitlist_leads (queue_number);
       `);
 
       // 2. contact_inquiries table
-      await connection.query(`
+      await client.query(`
         CREATE TABLE IF NOT EXISTS contact_inquiries (
           id VARCHAR(64) PRIMARY KEY,
           ticket_number VARCHAR(32) UNIQUE NOT NULL,
           name VARCHAR(150) NOT NULL,
           email VARCHAR(150) NOT NULL,
-          phone VARCHAR(50) NULL,
+          phone VARCHAR(50),
           subject VARCHAR(150) NOT NULL,
           message TEXT NOT NULL,
           priority VARCHAR(20) DEFAULT 'MEDIUM',
           status VARCHAR(20) DEFAULT 'OPEN',
-          assigned_to VARCHAR(100) NULL,
-          resolution_notes TEXT NULL,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          INDEX idx_contact_status (status),
-          INDEX idx_contact_ticket (ticket_number),
-          INDEX idx_contact_email (email)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+          assigned_to VARCHAR(100),
+          resolution_notes TEXT,
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      await client.query(`
+        CREATE INDEX IF NOT EXISTS idx_contact_status ON contact_inquiries (status);
+        CREATE INDEX IF NOT EXISTS idx_contact_ticket ON contact_inquiries (ticket_number);
+        CREATE INDEX IF NOT EXISTS idx_contact_email ON contact_inquiries (email);
       `);
 
       isInitialized = true;
       return true;
     } finally {
-      connection.release();
+      client.release();
     }
   } catch (err) {
-    console.warn("⚠️ MySQL database connection check:", err);
+    console.warn("⚠️ Neon PostgreSQL table verification check:", err);
     return false;
   }
 }
@@ -160,10 +107,15 @@ export async function executeQuery<T = any>(sql: string, params: any[] = []): Pr
 
   try {
     await ensureTablesExist();
-    const [results] = await db.query(sql, params);
-    return results as T;
+
+    // Map MySQL '?' placeholders to PostgreSQL '$1, $2, ...'
+    let paramIdx = 1;
+    const pgSql = sql.replace(/\?/g, () => `$${paramIdx++}`);
+
+    const res = await db.query(pgSql, params);
+    return (res.rows as unknown) as T;
   } catch (err) {
-    console.warn("⚠️ MySQL query execution failed, falling back to memory:", err);
+    console.warn("⚠️ Neon PostgreSQL query execution failed, falling back to memory:", err);
     return null;
   }
 }

@@ -9,13 +9,13 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
     "@tabler/icons-react": "^3.46.0",
     "canvas-confetti": "^1.9.4",
     "clsx": "^2.1.1",
     "framer-motion": "^13.1.0",
     "jose": "^6.2.10",
     "lucide-react": "^1.31.0",
-    "mysql2": "^3.24.2",
     "next": "16.3.1",
     "react": "19.2.8",
     "react-dom": "19.2.8",

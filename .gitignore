@@ -44,6 +44,7 @@ service_erp/service_erp
 !database/migrations/*.sql
 
 # Neon & Agents local configs
+.neon
 .neon/
 .agents/
 skills-lock.json

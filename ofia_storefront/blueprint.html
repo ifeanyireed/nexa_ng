@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ofia Commerce & Logistics Ecosystem — Product Blueprint V1.0</title>
+<style>
+:root{--ink:#17212b;--muted:#5d6b78;--line:#e2e8ee;--soft:#f5f8fa;--blue:#1769aa;--green:#16835d;--purple:#7354b5}
+*{box-sizing:border-box} body{margin:0;font:16px/1.65 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:#fff}
+header{background:linear-gradient(135deg,#102b3f,#1769aa);color:white;padding:64px max(24px,calc((100% - 1080px)/2))}
+header .eyebrow{letter-spacing:.12em;text-transform:uppercase;font-size:.78rem;font-weight:700;opacity:.8}
+header h1{font-size:clamp(2rem,5vw,3.6rem);line-height:1.12;max-width:900px;margin:.6rem 0 1rem}
+header p{font-size:1.15rem;max-width:800px;color:#e4f1fa}
+main{max-width:1080px;margin:auto;padding:32px 24px 80px}
+h2{font-size:1.8rem;margin:3rem 0 1rem;padding-bottom:.5rem;border-bottom:1px solid var(--line)}
+h3{font-size:1.25rem;margin:1.8rem 0 .5rem} h4{margin:1rem 0 .35rem}
+p{margin:.6rem 0 1rem} ul,ol{padding-left:1.4rem} li{margin:.28rem 0}
+.lead{font-size:1.15rem;color:#34495a}
+.callout{border-left:4px solid var(--blue);background:#f2f8fc;padding:16px 20px;margin:22px 0;border-radius:0 8px 8px 0}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.pill{font-size:.78rem;font-weight:700;padding:4px 10px;border-radius:999px;background:#eaf3fa;color:#155b8c}.pill.green{background:#e8f6ef;color:#146747}.pill.purple{background:#f1edfa;color:#6245a0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.card{border:1px solid var(--line);border-radius:12px;padding:18px;background:white}
+.card h3{margin-top:0}.muted{color:var(--muted)}
+table{border-collapse:collapse;width:100%;margin:16px 0 24px;font-size:.94rem}
+th,td{text-align:left;vertical-align:top;padding:11px 12px;border:1px solid var(--line)}
+th{background:var(--soft);font-weight:700}
+.toc{background:var(--soft);border:1px solid var(--line);padding:20px 24px;border-radius:12px}
+.toc ol{columns:2;column-gap:36px}.toc li{break-inside:avoid}
+.app{border:1px solid var(--line);border-radius:12px;padding:20px;margin:20px 0}
+.app h3{margin-top:0}.app-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--blue);font-weight:800}
+.flow{background:#f7f9fb;border:1px solid var(--line);padding:16px;border-radius:10px;font-family:ui-monospace,monospace;white-space:normal}
+.checklist li{list-style:"□  ";padding-left:5px}
+footer{border-top:1px solid var(--line);padding:28px 24px;color:var(--muted);text-align:center;font-size:.9rem}
+@media(max-width:640px){main{padding:22px 16px 60px}header{padding:42px 20px}.toc ol{columns:1}table{display:block;overflow-x:auto;white-space:normal}}
+@media print{header{background:#fff;color:#111;padding:30px 0}header p{color:#333}main{padding:0}a{color:inherit;text-decoration:none}.card,.app,.toc{break-inside:avoid}h2{break-after:avoid}}
+</style>
+</head>
+<body>
+<header>
+<div class="eyebrow">Product Strategy & Architecture · V1.0</div>
+<h1>Ofia Commerce & Logistics Ecosystem</h1>
+<p>One platform. Six applications. Seven vertical experiences. One simple experience for every business.</p>
+<div class="pills"><span class="pill">Six applications</span><span class="pill">Multi-vertical commerce</span><span class="pill">Integrated logistics</span></div>
+</header>
+<main>
+<p class="lead"><strong>Product vision:</strong> Build a unified commerce and logistics ecosystem that gives every business a storefront and operating experience tailored to its industry, while giving customers one simple place to discover businesses, shop, book services, and arrange deliveries.</p>
+<div class="callout"><strong>Core principle:</strong> A car dealer should feel like they are using a platform designed for car dealers. A food vendor should feel like they are using a platform designed for food businesses. Both operate through the same shared platform.</div>
+
+<nav class="toc"><strong>Contents</strong><ol>
+<li><a href="#foundation">Product foundation</a></li><li><a href="#verticals">Seven vertical templates</a></li><li><a href="#storefront">Storefront web</a></li><li><a href="#vendorweb">Vendor web dashboard</a></li><li><a href="#agent">Logistics agent dashboard</a></li><li><a href="#customer">Customer mobile app</a></li><li><a href="#vendormobile">Vendor mobile app</a></li><li><a href="#rider">Rider mobile app</a></li><li><a href="#capabilities">Shared capabilities</a></li><li><a href="#architecture">Template architecture</a></li><li><a href="#journeys">User journeys</a></li><li><a href="#admin">Administration</a></li><li><a href="#quality">Non-functional requirements</a></li><li><a href="#roadmap">V1 roadmap</a></li><li><a href="#acceptance">Acceptance criteria</a></li><li><a href="#principles">Design principles</a></li>
+</ol></nav>
+
+<section id="foundation"><h2>1. Product Foundation</h2>
+<h3>1.1 Product promises</h3><ul>
+<li><strong>Industry-native experience:</strong> Each business gets a storefront and management interface suited to its industry.</li>
+<li><strong>Simple onboarding:</strong> Select a vertical, configure the store, and start selling.</li>
+<li><strong>Unified commerce:</strong> Products, services, bookings, orders, payments, and customer relationships work together.</li>
+<li><strong>Integrated logistics:</strong> Customers and vendors can independently arrange dispatch and pickup services.</li>
+<li><strong>Omnichannel access:</strong> Businesses manage operations through web and mobile applications.</li>
+<li><strong>Flexible growth:</strong> Vendors can enable additional capabilities as their businesses expand.</li></ul>
+<h3>1.2 Six applications in V1</h3>
+<div class="grid">
+<div class="card"><span class="pill">WEB 01</span><h3>Ofia Storefront</h3><p>Customer-facing business storefronts rendered through vertical-specific web templates.</p></div>
+<div class="card"><span class="pill">WEB 02</span><h3>Ofia Vendor Dashboard</h3><p>Business management, store customization, products, services, orders, payments, and operations.</p></div>
+<div class="card"><span class="pill">WEB 03</span><h3>Ofia Logistics Agent Dashboard</h3><p>Dispatch management, delivery coordination, rider assignment, and operational monitoring.</p></div>
+<div class="card"><span class="pill green">MOBILE 01</span><h3>Ofia Customer App</h3><p>Native shopping, vendor storefronts, service booking, order tracking, and independent logistics requests.</p></div>
+<div class="card"><span class="pill green">MOBILE 02</span><h3>Ofia Vendor App</h3><p>Mobile-first business management with vertical-specific product, service, order, and store customization interfaces.</p></div>
+<div class="card"><span class="pill green">MOBILE 03</span><h3>Ofia Rider App</h3><p>Rider onboarding, job assignments, pickup and delivery execution, navigation, and earnings.</p></div>
+</div>
+<h3>1.3 Separate public website</h3><p>Ofia.ng remains the public platform entry point: ecosystem overview, product information, business registration, vendor acquisition, app links, pricing, contact, and support forms. Ofia Compass and broader marketplace discovery can be developed later without making them a dependency for the initial storefront and commerce release.</p>
+</section>
+
+<section id="verticals"><h2>2. Seven Vertical Experience Templates</h2>
+<p>Each vertical is supported in the storefront web app, customer mobile app, vendor web dashboard, and vendor mobile app. A vertical defines the default experience—not a restriction on what a vendor can sell or offer.</p>
+<table><thead><tr><th>Vertical</th><th>Products / Listings</th><th>Distinct UI</th><th>Optional services and workflows</th></tr></thead><tbody>
+<tr><td><strong>1. Fashion & Apparel</strong></td><td>Clothing, footwear, bags, accessories</td><td>Collections, lookbooks, size/color variants, seasonal drops</td><td>Tailoring, alterations, custom fitting, styling appointments</td></tr>
+<tr><td><strong>2. Cars & Automotive</strong></td><td>New/used/imported vehicles, parts, accessories</td><td>Vehicle galleries, make/model/year, mileage, condition, specifications</td><td>Inspection, mechanic bookings, servicing, test drives, vehicle sourcing</td></tr>
+<tr><td><strong>3. Food & Groceries</strong></td><td>Meals, snacks, groceries, baked goods, drinks</td><td>Menus, add-ons, portions, availability, preparation times</td><td>Catering, event orders, custom cakes, bulk orders, meal subscriptions</td></tr>
+<tr><td><strong>4. Property Rentals</strong></td><td>Apartments, short-lets, houses, rooms, commercial spaces</td><td>Location, property type, rent, amenities, availability, galleries</td><td>Viewings, inspections, cleaning, relocation support</td></tr>
+<tr><td><strong>5. Gadgets & Electronics</strong></td><td>Phones, laptops, accessories, electronics, appliances</td><td>Specifications, model comparisons, compatibility, warranty</td><td>Repairs, installation, device setup, diagnostics, technical support</td></tr>
+<tr><td><strong>6. Beauty & Personal Care</strong></td><td>Skincare, cosmetics, hair products, fragrance, accessories</td><td>Beauty categories, routines, brands, product collections</td><td>Hair, nails, makeup, facials, spa treatments, consultations</td></tr>
+<tr><td><strong>7. Home & Living</strong></td><td>Furniture, mattresses, lighting, decor, kitchenware, household goods</td><td>Lifestyle imagery, room collections, dimensions, materials, finishes</td><td>Vendor-defined installation, assembly, custom furniture, interior consultation</td></tr>
+</tbody></table>
+<p><strong>Design rule:</strong> Products are central, while services, appointments, and requests are flexible capabilities. Vendors enable only the services they actually offer.</p>
+<h3>2.1 Capability matrix</h3><table><thead><tr><th>Vertical</th><th>Core interaction</th><th>Special workflow</th></tr></thead><tbody>
+<tr><td>Fashion</td><td>Product catalog</td><td>Size/color selection</td></tr><tr><td>Cars</td><td>Listings and inquiries</td><td>Inspection/test-drive requests</td></tr><tr><td>Food</td><td>Menu and order</td><td>Preparation time and custom orders</td></tr><tr><td>Property</td><td>Listings and inquiries</td><td>Availability and viewing</td></tr><tr><td>Gadgets</td><td>Product catalog</td><td>Specifications and warranty</td></tr><tr><td>Beauty</td><td>Products and services</td><td>Appointments</td></tr><tr><td>Home & Living</td><td>Visual product catalog</td><td>Dimensions/materials and delivery options</td></tr>
+</tbody></table>
+</section>
+
+<section id="storefront"><h2>3. Application 1 — Ofia Storefront Web</h2><div class="pills"><span class="pill">Web application</span><span class="pill purple">Vertical templates required</span></div>
+<p><strong>Purpose:</strong> The public-facing digital shop of each business. Each vendor receives a unique storefront URL, such as <code>businessname.ofia.ng</code> or <code>businessname.ofia.shop</code>. The storefront should feel like the vendor's own business website, not a generic marketplace listing.</p>
+<h3>3.1 Screen inventory</h3><table><thead><tr><th>Screen</th><th>Main components</th></tr></thead><tbody>
+<tr><td>Store homepage</td><td>Hero banner, logo, navigation, featured products, collections, service highlights</td></tr>
+<tr><td>Product listing</td><td>Category filters, search, sorting, product cards</td></tr><tr><td>Product details</td><td>Gallery, price, variants, availability, description, add-to-cart</td></tr>
+<tr><td>Service listing/details</td><td>Service cards, descriptions, pricing, duration, provider, booking CTA</td></tr>
+<tr><td>Booking</td><td>Calendar, available slots, customer details, confirmation</td></tr><tr><td>Cart</td><td>Items, quantities, subtotal, delivery option</td></tr>
+<tr><td>Checkout</td><td>Contact, address, payment, delivery selection</td></tr><tr><td>Order confirmation</td><td>Order reference, payment status, tracking CTA</td></tr>
+<tr><td>Customer account</td><td>Profile, addresses, orders, bookings</td></tr><tr><td>Order tracking</td><td>Order status, dispatch information, delivery progress</td></tr>
+<tr><td>Store information</td><td>About, contact, policies, operating hours</td></tr><tr><td>Search results</td><td>Search input, category filters, results</td></tr>
+<tr><td>Store not found</td><td>Branded error and return-to-home action</td></tr></tbody></table>
+<h3>3.2 Shared storefront components</h3><ul><li>Store header/navigation, logo and brand identity, hero/banner</li><li>Product and service cards, category navigation, search and filtering</li><li>Image gallery, price display, variant and quantity selectors</li><li>Availability indicator, add-to-cart and booking CTA</li><li>Reviews (when enabled), contact/social links, responsive footer</li><li>Cart drawer, checkout form, payment status, delivery/pickup selector</li></ul>
+<h3>3.3 Vertical-specific components</h3>
+<div class="grid">
+<div class="card"><h3>Fashion</h3><ul><li>Collection grids/lookbooks</li><li>Size and color selectors</li><li>Recommendations, seasonal collections</li><li>Size guide</li></ul></div>
+<div class="card"><h3>Cars</h3><ul><li>Vehicle cards and filters</li><li>Specifications and condition badges</li><li>Inspection/test-drive inquiry</li><li>Dealer contact CTA</li></ul></div>
+<div class="card"><h3>Food</h3><ul><li>Menu category tabs</li><li>Meal cards, portions, add-ons</li><li>Preparation time and availability</li><li>Catering inquiry</li></ul></div>
+<div class="card"><h3>Property</h3><ul><li>Listing cards and amenity filters</li><li>Rental pricing and galleries</li><li>Availability status</li><li>Viewing request</li></ul></div>
+<div class="card"><h3>Gadgets</h3><ul><li>Specification highlights</li><li>Model/variant selector</li><li>Warranty and compatibility</li><li>Compare products, repair CTA</li></ul></div>
+<div class="card"><h3>Beauty</h3><ul><li>Product collections/categories</li><li>Brand filters</li><li>Service menu and appointment CTA</li><li>Treatment details</li></ul></div>
+<div class="card"><h3>Home & Living</h3><ul><li>Lifestyle and room collections</li><li>Furniture galleries</li><li>Dimensions/materials/finishes</li><li>Delivery/installation information</li></ul></div>
+</div>
+<h3>3.4 Storefront customization</h3><p>Vendors configure store name/logo, brand colors, cover images, description, contact information, featured products, categories, homepage sections, policies, social links, and enabled capabilities. The template supplies structure; customization supplies identity and content.</p>
+</section>
+
+<section id="vendorweb"><h2>4. Application 2 — Ofia Vendor Web Dashboard</h2><div class="pills"><span class="pill">Web application</span><span class="pill purple">Vertical-aware workspace</span></div>
+<p><strong>Purpose:</strong> The primary business operating environment. Car dealers see vehicle tools; food vendors see menus and orders. Core navigation such as orders, customers, payments, and logistics remains consistent.</p>
+<h3>4.1 Common navigation</h3><ul><li>Overview</li><li>My Store</li><li>Products / Listings</li><li>Services & Bookings</li><li>Orders & Requests</li><li>Customers</li><li>Payments & Transactions</li><li>Logistics</li><li>Analytics</li><li>Settings</li></ul>
+<h3>4.2 Screen inventory</h3><table><thead><tr><th>Screen</th><th>Components</th></tr></thead><tbody>
+<tr><td>Login</td><td>Email/phone, password, recovery</td></tr><tr><td>Business onboarding</td><td>Business details, vertical selection</td></tr>
+<tr><td>Store setup</td><td>Logo, banner, description, location</td></tr><tr><td>Template selection</td><td>Vertical template previews</td></tr>
+<tr><td>Template customization</td><td>Theme, sections, brand settings</td></tr><tr><td>Dashboard overview</td><td>Sales, orders, activity, quick actions</td></tr>
+<tr><td>Product management</td><td>Product table/grid, search, filters</td></tr><tr><td>Add/edit product</td><td>Dynamic vertical-specific form</td></tr>
+<tr><td>Category management</td><td>Categories, ordering, visibility</td></tr><tr><td>Inventory</td><td>Stock levels, availability, variants</td></tr>
+<tr><td>Service management</td><td>Service list, pricing, status</td></tr><tr><td>Add/edit service</td><td>Description, duration, pricing</td></tr>
+<tr><td>Booking management</td><td>Calendar, bookings, statuses</td></tr><tr><td>Order management</td><td>Order queue, details, status updates</td></tr>
+<tr><td>Customer management</td><td>Profiles, order history</td></tr><tr><td>Payments</td><td>Transactions, balances, payment status</td></tr>
+<tr><td>Logistics</td><td>Dispatch booking, shipment tracking</td></tr><tr><td>Analytics</td><td>Sales, products, customer trends</td></tr>
+<tr><td>Store preview</td><td>Live storefront preview</td></tr><tr><td>Notifications</td><td>Orders, bookings, payments, alerts</td></tr>
+<tr><td>Team management</td><td>Staff and permissions</td></tr><tr><td>Business settings</td><td>Contact, location, operating hours</td></tr><tr><td>Support</td><td>Help center and support tickets</td></tr></tbody></table>
+<h3>4.3 Vertical-specific management</h3><ul>
+<li><strong>Fashion:</strong> apparel editor, size/color variants, collections, variant stock, tailoring service editor.</li>
+<li><strong>Cars:</strong> vehicle inventory/editor, make/model/year, mileage/condition/specifications, inquiry management, test-drive scheduling, inspection requests, parts catalog.</li>
+<li><strong>Food:</strong> menu management, item editor, add-ons/portions, preparation time, availability/out-of-stock, catering/custom orders.</li>
+<li><strong>Property:</strong> property inventory/editor, amenities, availability calendar, viewing requests, rental inquiries.</li>
+<li><strong>Gadgets:</strong> electronics catalog, specifications, model/variant, warranty, repair services/requests.</li>
+<li><strong>Beauty:</strong> product catalog, service menu, provider configuration, appointment calendar, duration/pricing, booking management.</li>
+<li><strong>Home & Living:</strong> furniture catalog, dimensions/materials, finish/color variants, collections, delivery/installation, custom-order requests.</li></ul>
+<h3>4.4 Quick actions</h3><p>Add product, add service, view new orders, manage bookings, book dispatch, request pickup, view payments, and preview storefront. The set adapts to the vendor's vertical and enabled capabilities.</p>
+</section>
+
+<section id="agent"><h2>5. Application 3 — Ofia Logistics Agent Dashboard</h2><div class="pills"><span class="pill">Web application</span><span class="pill">Horizontal — no vertical templates</span></div>
+<p><strong>Purpose:</strong> Operational control center for dispatch agents and logistics operators. It handles store-order deliveries, vendor dispatches, and independent customer/vendor pickup requests through one logistics workflow.</p>
+<h3>5.1 Screen inventory</h3><table><thead><tr><th>Screen</th><th>Components</th></tr></thead><tbody>
+<tr><td>Login</td><td>Authentication and role-based access</td></tr><tr><td>Operations overview</td><td>Active, pending, completed jobs</td></tr>
+<tr><td>Dispatch queue</td><td>Job list, filters, priority, status</td></tr><tr><td>Job details</td><td>Pickup/drop-off, contacts, parcel details</td></tr>
+<tr><td>Live map</td><td>Rider locations, pickup/drop-off markers</td></tr><tr><td>Rider management</td><td>Rider list, availability, profiles</td></tr>
+<tr><td>Rider assignment</td><td>Available riders and assignment controls</td></tr><tr><td>Pickup requests</td><td>Queue, pickup details</td></tr>
+<tr><td>Delivery requests</td><td>Queue and destination information</td></tr><tr><td>Active deliveries</td><td>Current jobs and status</td></tr>
+<tr><td>Completed jobs</td><td>History and delivery confirmation</td></tr><tr><td>Exceptions</td><td>Failed delivery, cancellation, reassignment</td></tr>
+<tr><td>Customer/vendor directory</td><td>Contacts and job history</td></tr><tr><td>Logistics pricing</td><td>Service zones and fees</td></tr>
+<tr><td>Reports</td><td>Delivery volume, completion rates, exceptions</td></tr><tr><td>Notifications/settings</td><td>New requests, rider updates, hours, zones, permissions</td></tr></tbody></table>
+<h3>5.2 Dispatch job card</h3><ul><li>Job reference and job type</li><li>Initiator</li><li>Pickup and destination</li><li>Parcel description</li><li>Customer/vendor contact</li><li>Requested time and estimated fee</li><li>Current status and assigned rider</li><li>Assignment action</li></ul>
+<h3>5.3 Job types</h3><ol><li><strong>Store order delivery:</strong> checkout with delivery creates a dispatch job.</li><li><strong>Vendor-initiated dispatch:</strong> vendor creates a delivery request independently of checkout.</li><li><strong>Customer pickup request:</strong> customer asks a rider to collect an item and deliver it to a destination.</li><li><strong>Vendor pickup request:</strong> vendor requests collection from a supplier, customer, warehouse, or other location.</li></ol>
+</section>
+
+<section id="customer"><h2>6. Application 4 — Ofia Customer Mobile App</h2><div class="pills"><span class="pill green">Mobile application</span><span class="pill purple">Native vertical storefront rendering</span></div>
+<p><strong>Purpose:</strong> A native commerce app—not a browser or web wrapper. Customers interact with businesses across verticals inside one app. The app renders the appropriate coded mobile template based on the store's vertical and configuration.</p>
+<h3>6.1 Main navigation</h3><p>Home · Discover · Orders · Logistics · Account. Storefront navigation is contextual when a customer enters a vendor's shop.</p>
+<h3>6.2 Screen inventory</h3><table><thead><tr><th>Screen</th><th>Components</th></tr></thead><tbody>
+<tr><td>Splash/onboarding</td><td>Branding and introduction</td></tr><tr><td>Sign up/login</td><td>Email, phone, social login</td></tr>
+<tr><td>Home</td><td>Search, categories, featured stores</td></tr><tr><td>Discover</td><td>Vendor discovery and filters</td></tr>
+<tr><td>Search results</td><td>Search, results, sorting</td></tr><tr><td>Storefront</td><td>Dynamic vertical template</td></tr>
+<tr><td>Product details</td><td>Vertical-specific product interface</td></tr><tr><td>Service details</td><td>Description, pricing, booking CTA</td></tr>
+<tr><td>Booking flow</td><td>Date, time, customer details</td></tr><tr><td>Cart</td><td>Items, quantities, totals</td></tr>
+<tr><td>Checkout</td><td>Address, payment, delivery</td></tr><tr><td>Payment status</td><td>Success, pending, failed</td></tr>
+<tr><td>Orders/order details</td><td>Order list, status, vendor, payment, tracking</td></tr><tr><td>Logistics home</td><td>Delivery and pickup options</td></tr>
+<tr><td>Create pickup request</td><td>Pickup/drop-off, parcel details</td></tr><tr><td>Logistics quote</td><td>Fee and delivery estimate</td></tr>
+<tr><td>Active delivery</td><td>Rider details, status, tracking</td></tr><tr><td>Booking history</td><td>Service appointments</td></tr>
+<tr><td>Notifications</td><td>Orders, bookings, dispatch updates</td></tr><tr><td>Favorites/following</td><td>Saved vendors/stores</td></tr>
+<tr><td>Profile/address book</td><td>Personal information and saved locations</td></tr><tr><td>Help/support</td><td>FAQs and support requests</td></tr></tbody></table>
+<h3>6.3 Native vertical templates</h3><ul>
+<li><strong>Fashion:</strong> collection banners, product grids, size/color selectors, image carousel, wishlist/cart.</li>
+<li><strong>Cars:</strong> vehicle gallery, specifications, make/model/year, inquiry/test-drive actions, optional parts/services.</li>
+<li><strong>Food:</strong> menu categories, meal cards, add-ons/portions, preparation time, cart/delivery controls.</li>
+<li><strong>Property:</strong> property gallery, rental price, amenities, location, viewing request.</li>
+<li><strong>Gadgets:</strong> gallery, specifications, variants, warranty, repair/service actions.</li>
+<li><strong>Beauty:</strong> product collections, categories, service menu, appointment booking.</li>
+<li><strong>Home & Living:</strong> lifestyle imagery, room collections, furniture cards, dimensions/materials, delivery/installation details.</li></ul>
+<h3>6.4 Independent logistics flow</h3><div class="flow">Open Logistics → Choose Pickup Request → Enter Pickup Location → Enter Destination → Parcel Details → View Quote → Confirm Request → Payment → Rider Assignment → Track Pickup and Delivery → Delivery Confirmation</div>
+<p>Request fields: pickup and destination addresses; sender and recipient contacts; parcel description and size/weight where applicable; pickup instructions; delivery timing; payment method.</p>
+</section>
+
+<section id="vendormobile"><h2>7. Application 5 — Ofia Vendor Mobile App</h2><div class="pills"><span class="pill green">Mobile application</span><span class="pill purple">Vertical-aware store management</span></div>
+<p><strong>Purpose:</strong> Mobile counterpart to the vendor web dashboard, optimized for quick operational tasks and store management from a phone.</p>
+<h3>7.1 Main navigation</h3><p>Home · Catalog · Orders · Logistics · Account. Bookings and services can appear as dedicated items when enabled.</p>
+<h3>7.2 Screen inventory</h3><table><thead><tr><th>Screen</th><th>Components</th></tr></thead><tbody>
+<tr><td>Login/business selection</td><td>Authentication and store selection</td></tr><tr><td>Onboarding</td><td>Business details and vertical</td></tr>
+<tr><td>Dashboard</td><td>Sales, orders, quick actions</td></tr><tr><td>Notifications</td><td>New order, booking, payment</td></tr>
+<tr><td>Product list</td><td>Search, filters, stock</td></tr><tr><td>Add/edit product</td><td>Vertical-specific form</td></tr>
+<tr><td>Category management</td><td>Categories and visibility</td></tr><tr><td>Inventory</td><td>Stock and availability</td></tr>
+<tr><td>Service list/editor</td><td>Services, pricing, duration, description</td></tr><tr><td>Booking calendar</td><td>Schedule and booking queue</td></tr>
+<tr><td>Order list/details</td><td>Order cards, customer, items, status, fulfillment</td></tr><tr><td>Customer details</td><td>Contact and history</td></tr>
+<tr><td>Payments</td><td>Transaction history</td></tr><tr><td>Logistics</td><td>Dispatch and pickup requests</td></tr>
+<tr><td>Store customization</td><td>Template and branding</td></tr><tr><td>Store preview</td><td>Customer-facing preview</td></tr>
+<tr><td>Profile/settings/support</td><td>Business details, preferences, help/tickets</td></tr></tbody></table>
+<h3>7.3 Vertical-specific mobile management</h3><table><thead><tr><th>Vertical</th><th>Mobile management</th></tr></thead><tbody>
+<tr><td>Fashion</td><td>Add apparel, photos, variants, sizes, collections</td></tr><tr><td>Cars</td><td>Add vehicle, gallery, specifications, inquiry status</td></tr>
+<tr><td>Food</td><td>Add menu item, availability, preparation time, add-ons</td></tr><tr><td>Property</td><td>Add listing, photos, amenities, viewing availability</td></tr>
+<tr><td>Gadgets</td><td>Add device, specifications, warranty, stock</td></tr><tr><td>Beauty</td><td>Add product/service, manage appointments</td></tr>
+<tr><td>Home & Living</td><td>Add furniture, dimensions, materials, variants</td></tr></tbody></table>
+<h3>7.4 Mobile store customization</h3><p>Select and preview template; upload branding; change banner/logo; choose and reorder homepage sections; feature products/services; enable supported capabilities; preview as customer. Web and mobile changes use the same store configuration.</p>
+</section>
+
+<section id="rider"><h2>8. Application 6 — Ofia Rider Mobile App</h2><div class="pills"><span class="pill green">Mobile application</span><span class="pill">Horizontal — no vertical templates</span></div>
+<p><strong>Purpose:</strong> A focused, job-oriented logistics application. It should avoid unnecessary commerce features and make delivery tasks clear and reliable.</p>
+<h3>8.1 Screen inventory</h3><table><thead><tr><th>Screen</th><th>Components</th></tr></thead><tbody>
+<tr><td>Onboarding/verification</td><td>Registration, identity and required documents</td></tr><tr><td>Login</td><td>Authentication</td></tr>
+<tr><td>Rider dashboard</td><td>Availability and assigned jobs</td></tr><tr><td>Job offers</td><td>Job cards, accept/reject</td></tr>
+<tr><td>Job details</td><td>Pickup, destination, parcel</td></tr><tr><td>Navigation</td><td>Map, directions, location</td></tr>
+<tr><td>Pickup confirmation</td><td>Pickup code and confirmation</td></tr><tr><td>Parcel details</td><td>Description and handling instructions</td></tr>
+<tr><td>In-transit</td><td>Destination and recipient contact</td></tr><tr><td>Delivery confirmation</td><td>OTP/PIN and proof of delivery</td></tr>
+<tr><td>Failed delivery</td><td>Reason, notes, escalation</td></tr><tr><td>Job history</td><td>Completed/cancelled jobs</td></tr>
+<tr><td>Earnings</td><td>Completed jobs and earnings summary</td></tr><tr><td>Notifications</td><td>New jobs and reassignment</td></tr>
+<tr><td>Profile/support</td><td>Rider information and operations contact</td></tr></tbody></table>
+<h3>8.2 Job lifecycle</h3><div class="flow">Job Available → Accept Job → Navigate to Pickup → Confirm Pickup → Transport Parcel → Arrive at Destination → Confirm Delivery → Job Completed<br><br>Exceptions: Pickup issue or delivery issue → Notify Agent → Resolution or Reassignment</div>
+<h3>8.3 Rider experience principles</h3><ul><li>Minimal steps and large touch targets</li><li>Clear pickup/destination details and navigation</li><li>Reliable status updates and exception reporting</li><li>Delivery confirmation and proof</li><li>Low-bandwidth resilience where practical</li></ul>
+</section>
+
+<section id="capabilities"><h2>9. Shared Product Capabilities</h2>
+<p>These are shared product capabilities; they do not imply a requirement to create one microservice per application.</p>
+<div class="grid">
+<div class="card"><h3>Identity & access</h3><p>Customer, vendor, rider, agent, staff accounts; roles, permissions, sessions, recovery. A user may hold multiple roles.</p></div>
+<div class="card"><h3>Business & stores</h3><p>Registration, verification, store creation, vertical/template selection, URL assignment, branding, configuration, publishing.</p></div>
+<div class="card"><h3>Product catalog</h3><p>Products, categories, images, pricing, variants, stock, availability, attributes, vertical metadata.</p></div>
+<div class="card"><h3>Services & bookings</h3><p>Service listings, pricing, duration, availability, calendar, requests, confirmations, cancellations, provider assignment.</p></div>
+<div class="card"><h3>Commerce & orders</h3><p>Cart, checkout, order creation/status, fulfillment, cancellation, refunds, customer history.</p></div>
+<div class="card"><h3>Payments & billing</h3><p>Payment initiation/confirmation, transactions, settlements, refunds, platform fees, billing configuration.</p></div>
+<div class="card"><h3>Logistics & dispatch</h3><p>Delivery jobs, pickup requests, rider assignment, pricing, tracking, proof of pickup/delivery, exceptions, reports.</p></div>
+<div class="card"><h3>Notifications</h3><p>Push, in-app, email, SMS/OTP where needed; order, booking, dispatch, and payment alerts.</p></div>
+<div class="card"><h3>Customer relationships</h3><p>Profiles, order history, inquiries, communication, saved stores, reviews/feedback where enabled.</p></div>
+</div>
+</section>
+
+<section id="architecture"><h2>10. Vertical Template Architecture</h2>
+<h3>10.1 Template principle</h3><p>Do not build seven independent applications. Each relevant app contains a vertical experience layer that selects the appropriate interface using the store's vertical and configuration.</p>
+<div class="flow">Vendor creates store → Selects vertical → Chooses template → Configures brand/sections → Enables products/services/bookings → Publishes store<br><br>Published configuration feeds: Storefront Web Renderer · Customer Mobile Renderer · Vendor Web Workspace · Vendor Mobile Workspace</div>
+<h3>10.2 Store template configuration</h3><ul><li>Vertical identifier and template identifier</li><li>Theme settings and homepage section order</li><li>Enabled capabilities and catalog fields</li><li>Enabled service types</li><li>Branding and store policies</li><li>Feature visibility</li></ul>
+<h3>10.3 Each template defines</h3><ol><li>Storefront homepage layout</li><li>Product/listing card design</li><li>Product detail layout</li><li>Service presentation</li><li>Search/filter behavior</li><li>Checkout or inquiry behavior</li><li>Vendor catalog editor</li><li>Vendor dashboard widgets</li><li>Mobile-specific layouts</li><li>Customization options</li></ol>
+<h3>10.4 Shared vs. vertical-specific components</h3><table><thead><tr><th>Shared foundations</th><th>Vertical-specific components</th></tr></thead><tbody><tr><td>Header/navigation, product-card foundation, image gallery, search/filter engine, cart/checkout, payment status, booking engine, order management</td><td>Vehicle specification panel, food menu item, property listing, apparel variant selector, gadget comparison, beauty service menu, furniture dimensions</td></tr></tbody></table>
+<p><strong>Build shared foundations once, then compose vertical experiences from them.</strong></p>
+</section>
+
+<section id="journeys"><h2>11. End-to-End User Journeys</h2>
+<h3>11.1 Vendor onboarding</h3><ol><li>Visit Ofia.ng and select business registration.</li><li>Create account and enter business information.</li><li>Select one of seven verticals and a storefront template.</li><li>Configure brand identity and add products/services.</li><li>Configure delivery and payment options.</li><li>Preview and publish the store.</li><li>Manage operations through web or mobile.</li></ol>
+<h3>11.2 Customer shopping</h3><ol><li>Open Customer App and search/discover a vendor.</li><li>Open storefront; app renders the correct vertical template.</li><li>Browse products/services; add to cart or initiate booking.</li><li>Complete checkout/payment and receive confirmation.</li><li>Track order or booking and receive updates.</li></ol>
+<h3>11.3 Independent logistics</h3><ol><li>Open Logistics and select pickup request.</li><li>Enter pickup/destination and parcel details.</li><li>Receive quote, confirm, and pay as configured.</li><li>Operator receives job and assigns rider.</li><li>Customer tracks pickup/delivery; delivery is confirmed.</li></ol>
+<h3>11.4 Vendor dispatch</h3><ol><li>Open vendor app/dashboard and choose Book Dispatch or Request Pickup.</li><li>Enter locations and parcel details; confirm request.</li><li>Operator receives job and assigns rider.</li><li>Vendor tracks progress until completion.</li></ol>
+</section>
+
+<section id="admin"><h2>12. Product Administration & Operations</h2><p>Internal operational controls can initially live in a protected admin interface rather than becoming another customer-facing application.</p><ul><li>Business/vendor management and verification</li><li>Store approval, suspension, and template configuration/publishing</li><li>User and role management</li><li>Logistics agent management and rider verification</li><li>Payment monitoring, reconciliation, refunds, disputes</li><li>Support ticket management</li><li>Platform configuration and audit logs</li></ul>
+</section>
+
+<section id="quality"><h2>13. Non-Functional Requirements</h2>
+<h3>Performance</h3><ul><li>Fast storefront loading and optimized images</li><li>Lazy-loaded galleries and responsive layouts</li><li>Efficient mobile data usage and paginated catalogs</li></ul>
+<h3>Reliability</h3><ul><li>Reliable order creation and payment reconciliation</li><li>Duplicate-payment protection</li><li>Consistent order/delivery status</li><li>Retry handling for failed notifications and audit trails</li></ul>
+<h3>Security</h3><ul><li>Role-based authorization and business data isolation</li><li>Secure payment integration</li><li>Protected vendor/rider endpoints</li><li>Account verification and sensitive-data protection</li></ul>
+<h3>Mobile usability</h3><ul><li>Touch-friendly interfaces, push notifications, clear loading/error states</li><li>Network interruption handling</li><li>Location permissions for logistics</li><li>Camera/photo uploads for products and delivery proof</li></ul>
+<h3>Extensibility</h3><ul><li>Additional verticals, product attributes, service capabilities, payment methods, logistics providers, storefront sections, and vendor roles</li></ul>
+</section>
+
+<section id="roadmap"><h2>14. V1 Delivery Roadmap</h2>
+<div class="card"><h3>Phase 1 — Platform foundation</h3><p>Identity/business onboarding; store creation and vertical selection; store configuration; shared catalog; service/booking capability; core order/payment workflows; initial logistics job model.</p></div>
+<div class="card"><h3>Phase 2 — Commerce experience</h3><p>Storefront web, customer mobile, vendor web/mobile; first vertical templates; product browsing and checkout; store customization and publishing.</p></div>
+<div class="card"><h3>Phase 3 — Logistics experience</h3><p>Agent dashboard and rider app; store-order delivery; independent customer pickup; vendor dispatch/pickup; assignment, tracking, delivery confirmation.</p></div>
+<div class="card"><h3>Phase 4 — Complete V1 vertical coverage</h3><p>Fashion, Cars, Food, Property Rentals, Gadgets, Beauty, Home & Living; vertical-specific vendor management; service and booking enhancements.</p></div>
+<div class="card"><h3>Phase 5 — Optimization and growth</h3><p>Advanced analytics, reviews, following/loyalty, promotions, logistics automation, and expanded storefront customization.</p></div>
+</section>
+
+<section id="acceptance"><h2>15. V1 Acceptance Criteria</h2><ul class="checklist">
+<li>A vendor can register and create a store.</li><li>A vendor can select one of the seven vertical templates.</li><li>Storefront web renders the selected vertical correctly.</li><li>Customer mobile renders the same store natively, without a web wrapper.</li><li>Vendor manages products/services from web and mobile.</li><li>Customization is reflected consistently across customer interfaces.</li><li>Customers browse, purchase, and track orders.</li><li>Customers book enabled services.</li><li>Customers create independent pickup requests.</li><li>Vendors create dispatch and pickup requests independently.</li><li>Logistics dashboard receives and assigns jobs.</li><li>Riders accept, execute, and complete jobs.</li><li>Customers/vendors receive relevant notifications.</li><li>Payment and order statuses remain consistent across apps.</li><li>Multiple businesses operate independently.</li></ul>
+</section>
+
+<section id="principles"><h2>16. Final Product Design Principles</h2><ol>
+<li><strong>One business, one coherent experience.</strong> Avoid disconnected tools.</li>
+<li><strong>Vertical-specific interfaces, shared foundations.</strong> Tailor experiences without duplicating the platform.</li>
+<li><strong>Native mobile rendering.</strong> Customer app uses coded mobile templates, not embedded web pages.</li>
+<li><strong>Consistent vendor operations.</strong> Web and mobile share configuration, data, and workflows.</li>
+<li><strong>Commerce first, services where relevant.</strong> Products are central; services, appointments, and requests are flexible capabilities.</li>
+<li><strong>Logistics is independent.</strong> Dispatch can be requested without a store purchase.</li>
+<li><strong>Simple by default.</strong> Show businesses the controls they need, not every platform feature.</li>
+<li><strong>Progressive capability.</strong> Vendors enable features as they grow.</li>
+<li><strong>Brand flexibility.</strong> Each storefront should feel like the vendor's own digital shop.</li>
+<li><strong>Build for extension.</strong> Add verticals through reusable templates and configuration rather than extensive rewrites.</li></ol>
+<div class="callout"><strong>Defining competitive experience:</strong> Ofia does not merely give every business an online store. It gives every business an online store and management experience that feels familiar to the way that business operates.</div>
+</section>
+</main>
+<footer>Ofia Commerce & Logistics Ecosystem · Product Blueprint V1.0</footer>
+</body>
+</html>

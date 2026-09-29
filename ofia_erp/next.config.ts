@@ -7,14 +7,14 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: "/:path*",
+        source: "/",
         has: [
           {
             type: "host",
-            value: "(?<tenant>[^.]+)\\..*",
+            value: "(?!www|app|admin|erp)(?<tenant>[^.]+)\\..*",
           }
         ],
-        destination: "/erp/admin", // Simplified root fallback for tenants
+        destination: "/erp/admin",
       },
       { source: '/admin', destination: '/erp/admin' },
       { source: '/admin/:path*', destination: '/erp/admin/:path*' },

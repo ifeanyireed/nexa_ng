@@ -82,6 +82,55 @@ const DEFAULT_TENANT_ADMINS: Record<string, { name: string; email: string }> = {
   "org-05": { name: "Ngozi Eze", email: "ngozi@zenithrealty.ng" },
 };
 
+export const DEFAULT_TENANT_BRANDING: Record<
+  string,
+  { logo?: string; favicon?: string; primaryColor?: string; secondaryColor?: string }
+> = {
+  neweratransports: {
+    logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png",
+    favicon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png",
+    primaryColor: "#1A56DB",
+    secondaryColor: "#0E9F6E",
+  },
+  "org-01": {
+    logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png",
+    favicon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png",
+    primaryColor: "#1A56DB",
+    secondaryColor: "#0E9F6E",
+  },
+};
+
+/**
+ * Dynamically applies a tenant's brand colors to CSS variables and updates the browser tab favicon
+ */
+export function applyTenantBranding(tenant: DatabaseTenant | null | undefined) {
+  if (typeof window === "undefined" || !tenant) return;
+
+  // 1. Dynamic Primary and Secondary Colors
+  if (tenant.primaryColor) {
+    const hex = tenant.primaryColor;
+    document.documentElement.style.setProperty("--nexa-brand", hex);
+    document.documentElement.style.setProperty("--color-nexa-brand", hex);
+    document.documentElement.style.setProperty("--nexa-brand-light", `${hex}1a`);
+    document.documentElement.style.setProperty("--nexa-brand-glow", `${hex}33`);
+  }
+  if (tenant.secondaryColor) {
+    const hex = tenant.secondaryColor;
+    document.documentElement.style.setProperty("--nexa-accent", hex);
+    document.documentElement.style.setProperty("--color-nexa-accent", hex);
+  }
+
+  // 2. Dynamic Browser Tab Favicon
+  const faviconUrl = tenant.favicon || tenant.logo;
+  if (faviconUrl) {
+    const selectors = ["link[rel='icon']", "link[rel='shortcut icon']", "link[rel='apple-touch-icon']"];
+    selectors.forEach((sel) => {
+      const el = document.querySelector(sel) as HTMLLinkElement | null;
+      if (el) el.href = faviconUrl;
+    });
+  }
+}
+
 /**
  * Batched lookup: Fetches all tenant organizations directly from the database via /api/organizations
  */
@@ -138,6 +187,55 @@ export async function fetchDatabaseTenants(forceRefresh = false): Promise<Databa
               : null) ||
             fallbackAdmin.email;
 
+          const defaultBranding = DEFAULT_TENANT_BRANDING[rawSlug] || DEFAULT_TENANT_BRANDING[org.id || ""] || {};
+
+          const rawLogo =
+            org.logo ||
+            org.Logo ||
+            (typeof window !== "undefined"
+              ? localStorage.getItem("tenant_logo_" + rawSlug) ||
+                localStorage.getItem("tenant_logo_" + org.id) ||
+                localStorage.getItem("nexa_tenant_logo")
+              : null) ||
+            defaultBranding.logo ||
+            "";
+
+          const rawFavicon =
+            org.favicon ||
+            org.Favicon ||
+            (typeof window !== "undefined"
+              ? localStorage.getItem("tenant_favicon_" + rawSlug) ||
+                localStorage.getItem("tenant_favicon_" + org.id) ||
+                localStorage.getItem("tenant_logo_" + rawSlug)
+              : null) ||
+            defaultBranding.favicon ||
+            rawLogo ||
+            "";
+
+          const rawPrimaryColor =
+            org.primaryColor ||
+            org.primary_color ||
+            org.PrimaryColor ||
+            (typeof window !== "undefined"
+              ? localStorage.getItem("tenant_primary_color_" + rawSlug) ||
+                localStorage.getItem("tenant_primary_color_" + org.id) ||
+                localStorage.getItem("nexa_tenant_primary_color")
+              : null) ||
+            defaultBranding.primaryColor ||
+            "#1A56DB";
+
+          const rawSecondaryColor =
+            org.secondaryColor ||
+            org.secondary_color ||
+            org.SecondaryColor ||
+            (typeof window !== "undefined"
+              ? localStorage.getItem("tenant_secondary_color_" + rawSlug) ||
+                localStorage.getItem("tenant_secondary_color_" + org.id) ||
+                localStorage.getItem("nexa_tenant_secondary_color")
+              : null) ||
+            defaultBranding.secondaryColor ||
+            "#0E9F6E";
+
           return {
             id: org.id || org.ID || `org-${idx + 1}`,
             name: rawName,
@@ -148,10 +246,10 @@ export async function fetchDatabaseTenants(forceRefresh = false): Promise<Databa
             ownerEmail: rawOwnerEmail,
             status: org.status || org.Status || "Active",
             planTier: org.planTier || org.PlanTier || "Enterprise",
-            logo: org.logo || org.Logo || "",
-            favicon: org.favicon || org.Favicon || "",
-            primaryColor: org.primaryColor || org.PrimaryColor || "#1A56DB",
-            secondaryColor: org.secondaryColor || org.SecondaryColor || "#0E9F6E",
+            logo: rawLogo,
+            favicon: rawFavicon,
+            primaryColor: rawPrimaryColor,
+            secondaryColor: rawSecondaryColor,
           };
         });
 
@@ -308,6 +406,12 @@ export function useActiveTenant(userEmail?: string | null, searchParamSlug?: str
   useEffect(() => {
     loadTenants();
   }, [loadTenants]);
+
+  useEffect(() => {
+    if (activeTenant) {
+      applyTenantBranding(activeTenant);
+    }
+  }, [activeTenant]);
 
   return {
     tenants,

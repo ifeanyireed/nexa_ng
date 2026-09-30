@@ -23,7 +23,7 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { useAuth } from "@/components/nexa/AuthContext";
-import { useActiveTenant } from "@/lib/tenant-context";
+import { useActiveTenant, applyTenantBranding } from "@/lib/tenant-context";
 
 export default function TenantSettingsPage() {
   const { user } = useAuth();
@@ -139,6 +139,36 @@ export default function TenantSettingsPage() {
 
       // 1. Persist to localStorage directly under multiple keys for instant, permanent access
       if (typeof window !== "undefined") {
+        if (logoUrl) {
+          localStorage.setItem("tenant_logo_" + slug, logoUrl);
+          if (activeTenant?.id) localStorage.setItem("tenant_logo_" + activeTenant.id, logoUrl);
+          if (activeTenant?.slug) localStorage.setItem("tenant_logo_" + activeTenant.slug, logoUrl);
+          localStorage.setItem("nexa_tenant_logo", logoUrl);
+        }
+
+        if (primaryColor) {
+          localStorage.setItem("tenant_primary_color_" + slug, primaryColor);
+          if (activeTenant?.id) localStorage.setItem("tenant_primary_color_" + activeTenant.id, primaryColor);
+          if (activeTenant?.slug) localStorage.setItem("tenant_primary_color_" + activeTenant.slug, primaryColor);
+          localStorage.setItem("nexa_tenant_primary_color", primaryColor);
+        }
+
+        if (secondaryColor) {
+          localStorage.setItem("tenant_secondary_color_" + slug, secondaryColor);
+          if (activeTenant?.id) localStorage.setItem("tenant_secondary_color_" + activeTenant.id, secondaryColor);
+          if (activeTenant?.slug) localStorage.setItem("tenant_secondary_color_" + activeTenant.slug, secondaryColor);
+          localStorage.setItem("nexa_tenant_secondary_color", secondaryColor);
+        }
+
+        // Immediately apply branding to the active document without needing a refresh
+        applyTenantBranding({
+          ...activeTenant,
+          logo: logoUrl,
+          favicon: logoUrl,
+          primaryColor,
+          secondaryColor,
+        });
+
         if (ownerName) {
           localStorage.setItem("nexa_user_name", ownerName);
           if (slug) localStorage.setItem("tenant_admin_name_" + slug, ownerName);

@@ -162,7 +162,7 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 		if employeeId != "" {
 			rows, err = db.Query("SELECT id, employeeId, employeeName, department, cycleId, cycleName, status, employeeComments, managerComments, hrComments, improvementPlan, finalScore, objectivesJson, updatedAt FROM PerformanceReview WHERE employeeId = ?", employeeId)
 		} else if tenantSlug == "" || tenantSlug == "all" || tenantSlug == "neweratransports" || tenantSlug == "nets" || tenantSlug == "new-era-transports" {
-			rows, err = db.Query("SELECT id, employeeId, employeeName, department, cycleId, cycleName, status, employeeComments, managerComments, hrComments, improvementPlan, finalScore, objectivesJson, updatedAt FROM PerformanceReview")
+			rows, err = db.Query("SELECT id, employeeId, employeeName, department, cycleId, cycleName, status, employeeComments, managerComments, hrComments, improvementPlan, finalScore, objectivesJson, updatedAt FROM PerformanceReview WHERE tenantSlug = ? OR tenantSlug = ''", tenantSlug)
 		} else {
 			rows, err = db.Query(`SELECT r.id, r.employeeId, r.employeeName, r.department, r.cycleId, r.cycleName, r.status, r.employeeComments, r.managerComments, r.hrComments, r.improvementPlan, r.finalScore, r.objectivesJson, r.updatedAt 
 				FROM PerformanceReview r
@@ -240,8 +240,8 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 		}
 
 		stmt, err := tx.Prepare(`INSERT INTO PerformanceReview 
-			(id, employeeId, employeeName, department, cycleId, cycleName, status, employeeComments, managerComments, hrComments, improvementPlan, finalScore, objectivesJson, updatedAt) 
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+			(id, tenantSlug, employeeId, employeeName, department, cycleId, cycleName, status, employeeComments, managerComments, hrComments, improvementPlan, finalScore, objectivesJson, updatedAt) 
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
 			ON DUPLICATE KEY UPDATE 
 			status = VALUES(status), employeeComments = VALUES(employeeComments), managerComments = VALUES(managerComments), hrComments = VALUES(hrComments), improvementPlan = VALUES(improvementPlan),
 			finalScore = VALUES(finalScore), objectivesJson = VALUES(objectivesJson), updatedAt = NOW()`)
@@ -266,7 +266,7 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 				objJSONStr = string(*pr.Objectives)
 			}
 
-			_, err = stmt.Exec(pr.ID, pr.EmployeeID, pr.EmployeeName, pr.Department, pr.CycleID, pr.CycleName, pr.Status, pr.EmployeeComments, pr.ManagerComments, pr.HRComments, pr.ImprovementPlan, pr.FinalScore, objJSONStr)
+			_, err = stmt.Exec(pr.ID, tenantSlug, pr.EmployeeID, pr.EmployeeName, pr.Department, pr.CycleID, pr.CycleName, pr.Status, pr.EmployeeComments, pr.ManagerComments, pr.HRComments, pr.ImprovementPlan, pr.FinalScore, objJSONStr)
 			if err != nil {
 				tx.Rollback()
 				w.WriteHeader(http.StatusInternalServerError)

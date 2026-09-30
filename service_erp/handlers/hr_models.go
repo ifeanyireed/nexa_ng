@@ -21,6 +21,7 @@ type User struct {
 }
 
 type Objective struct {
+	TenantSlug    string           `json:"tenantSlug,omitempty"`
 	ID            string           `json:"id"`
 	Text          string           `json:"text"`
 	Weight        int              `json:"weight"`
@@ -32,6 +33,7 @@ type Objective struct {
 }
 
 type ReviewCycle struct {
+	TenantSlug  string           `json:"tenantSlug,omitempty"`
 	ID          string           `json:"id"`
 	Name        string           `json:"name"`
 	StartDate   string           `json:"startDate"`
@@ -41,6 +43,7 @@ type ReviewCycle struct {
 }
 
 type PerformanceReview struct {
+	TenantSlug       string           `json:"tenantSlug,omitempty"`
 	ID               string           `json:"id"`
 	EmployeeID       string           `json:"employeeId"`
 	EmployeeName     string           `json:"employeeName"`

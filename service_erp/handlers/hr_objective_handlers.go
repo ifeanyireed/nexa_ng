@@ -7,8 +7,10 @@ import (
 )
 
 func HandleObjectives(w http.ResponseWriter, r *http.Request) {
+	tenantSlug := getTenantFilter(r)
+
 	if r.Method == http.MethodGet {
-		rows, err := db.Query("SELECT id, text, weight, type, expectedLevel, category, departments, description FROM Objective")
+		rows, err := db.Query("SELECT id, text, weight, type, expectedLevel, category, departments, description FROM Objective WHERE tenantSlug = ? OR tenantSlug = ''", tenantSlug)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
@@ -60,11 +62,11 @@ func HandleObjectives(w http.ResponseWriter, r *http.Request) {
 			descStr = &s
 		}
 
-		_, err := db.Exec(`INSERT INTO Objective (id, text, weight, type, expectedLevel, category, departments, description) 
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		_, err := db.Exec(`INSERT INTO Objective (id, tenantSlug, text, weight, type, expectedLevel, category, departments, description) 
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 			ON DUPLICATE KEY UPDATE text = VALUES(text), weight = VALUES(weight), type = VALUES(type), 
 			expectedLevel = VALUES(expectedLevel), category = VALUES(category), departments = VALUES(departments), description = VALUES(description)`,
-			o.ID, o.Text, o.Weight, o.Type, o.ExpectedLevel, o.Category, deptsStr, descStr)
+			o.ID, tenantSlug, o.Text, o.Weight, o.Type, o.ExpectedLevel, o.Category, deptsStr, descStr)
 
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -80,7 +82,7 @@ func HandleObjectives(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(map[string]string{"error": "Objective ID required"})
 			return
 		}
-		_, err := db.Exec("DELETE FROM Objective WHERE id = ?", id)
+		_, err := db.Exec("DELETE FROM Objective WHERE id = ? AND tenantSlug = ?", id, tenantSlug)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

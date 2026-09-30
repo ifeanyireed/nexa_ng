@@ -253,9 +253,21 @@ func EnsureHRTables() {
 		_, _ = db.Exec(q)
 	}
 
+	
+	// 1.5. Ensure HR tables have tenantSlug (Migration)
+	hr_migrations := []string{
+		"ALTER TABLE \`ReviewCycle\` ADD COLUMN \`tenantSlug\` varchar(191) NOT NULL DEFAULT ''",
+		"ALTER TABLE \`Objective\` ADD COLUMN \`tenantSlug\` varchar(191) NOT NULL DEFAULT ''",
+		"ALTER TABLE \`PerformanceReview\` ADD COLUMN \`tenantSlug\` varchar(191) NOT NULL DEFAULT ''",
+	}
+	for _, q := range hr_migrations {
+		_, _ = db.Exec(q)
+	}
+
 	// 2. Ensure ReviewCycle table exists
 	_, _ = db.Exec(`CREATE TABLE IF NOT EXISTS ReviewCycle (
 		id varchar(191) NOT NULL,
+		tenantSlug varchar(191) NOT NULL DEFAULT '',
 		name varchar(191) NOT NULL,
 		startDate varchar(191) NOT NULL,
 		endDate varchar(191) NOT NULL,
@@ -267,6 +279,7 @@ func EnsureHRTables() {
 	// 3. Ensure Objective table exists
 	_, _ = db.Exec(`CREATE TABLE IF NOT EXISTS Objective (
 		id varchar(191) NOT NULL,
+		tenantSlug varchar(191) NOT NULL DEFAULT '',
 		text varchar(191) NOT NULL,
 		weight int(11) NOT NULL,
 		type varchar(191) NOT NULL,
@@ -280,6 +293,7 @@ func EnsureHRTables() {
 	// 4. Ensure PerformanceReview table exists
 	_, _ = db.Exec(`CREATE TABLE IF NOT EXISTS PerformanceReview (
 		id varchar(191) NOT NULL,
+		tenantSlug varchar(191) NOT NULL DEFAULT '',
 		employeeId varchar(191) NOT NULL,
 		employeeName varchar(191) NOT NULL,
 		department varchar(191) NOT NULL,

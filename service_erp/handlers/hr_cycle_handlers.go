@@ -7,10 +7,12 @@ import (
 )
 
 func HandleCycles(w http.ResponseWriter, r *http.Request) {
+	tenantSlug := getTenantFilter(r)
+
 	EnsureHRTables()
 
 	if r.Method == http.MethodGet {
-		rows, err := db.Query("SELECT id, name, startDate, endDate, status, departments FROM ReviewCycle")
+		rows, err := db.Query("SELECT id, name, startDate, endDate, status, departments FROM ReviewCycle WHERE tenantSlug = ? OR tenantSlug = ''", tenantSlug)
 		if err != nil {
 			var data SeedData
 			if len(seedDataBytes) > 0 && json.Unmarshal(seedDataBytes, &data) == nil {
@@ -116,11 +118,11 @@ func HandleCycles(w http.ResponseWriter, r *http.Request) {
 			deptsStr = string(*c.Departments)
 		}
 
-		_, err := db.Exec(`INSERT INTO ReviewCycle (id, name, startDate, endDate, status, departments) 
-			VALUES (?, ?, ?, ?, ?, ?)
+		_, err := db.Exec(`INSERT INTO ReviewCycle (id, tenantSlug, name, startDate, endDate, status, departments) 
+			VALUES (?, ?, ?, ?, ?, ?, ?)
 			ON DUPLICATE KEY UPDATE 
 			name = VALUES(name), startDate = VALUES(startDate), endDate = VALUES(endDate), status = VALUES(status), departments = VALUES(departments)`,
-			c.ID, c.Name, c.StartDate, c.EndDate, c.Status, deptsStr)
+			c.ID, tenantSlug, c.Name, c.StartDate, c.EndDate, c.Status, deptsStr)
 
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -135,7 +137,7 @@ func HandleCycles(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(map[string]string{"error": "Cycle ID is required"})
 			return
 		}
-		_, err := db.Exec("DELETE FROM ReviewCycle WHERE id = ?", id)
+		_, err := db.Exec("DELETE FROM ReviewCycle WHERE id = ? AND tenantSlug = ?", id, tenantSlug)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

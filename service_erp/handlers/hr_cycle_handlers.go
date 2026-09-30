@@ -50,14 +50,15 @@ func HandleCycles(w http.ResponseWriter, r *http.Request) {
 		var cycles []ReviewCycle
 
 		if db != nil {
-			query := `SELECT id, name, "startDate", "endDate", status, departments FROM "ReviewCycle"`
+			query := `SELECT id, "tenantSlug", name, "startDate", "endDate", status, departments FROM "ReviewCycle"`
 			var rows *sql.Rows
 			var err error
 
 			if tenantSlug != "" && tenantSlug != "all" {
-				query += ` WHERE "tenantSlug" = $1 OR "tenantSlug" = '' OR "tenantSlug" IS NULL`
+				query += ` WHERE "tenantSlug" = $1 OR "tenantSlug" = '' OR "tenantSlug" IS NULL ORDER BY id ASC`
 				rows, err = db.Query(query, tenantSlug)
 			} else {
+				query += ` ORDER BY id ASC`
 				rows, err = db.Query(query)
 			}
 
@@ -66,7 +67,11 @@ func HandleCycles(w http.ResponseWriter, r *http.Request) {
 				for rows.Next() {
 					var c ReviewCycle
 					var depts sql.NullString
-					if err := rows.Scan(&c.ID, &c.Name, &c.StartDate, &c.EndDate, &c.Status, &depts); err == nil {
+					var tSlug sql.NullString
+					if err := rows.Scan(&c.ID, &tSlug, &c.Name, &c.StartDate, &c.EndDate, &c.Status, &depts); err == nil {
+						if tSlug.Valid {
+							c.TenantSlug = tSlug.String
+						}
 						if depts.Valid && depts.String != "" {
 							raw := json.RawMessage(depts.String)
 							c.Departments = &raw
@@ -101,6 +106,14 @@ func HandleCycles(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		effectiveTenant := tenantSlug
+		if effectiveTenant == "" {
+			effectiveTenant = c.TenantSlug
+		}
+		if effectiveTenant == "" {
+			effectiveTenant = "neweratransports"
+		}
+
 		var deptsStr string = "[]"
 		if c.Departments != nil {
 			deptsStr = string(*c.Departments)
@@ -115,8 +128,8 @@ func HandleCycles(w http.ResponseWriter, r *http.Request) {
 					"endDate" = EXCLUDED."endDate", 
 					status = EXCLUDED.status, 
 					departments = EXCLUDED.departments,
-					"tenantSlug" = EXCLUDED."tenantSlug"`,
-				c.ID, tenantSlug, c.Name, c.StartDate, c.EndDate, c.Status, deptsStr)
+					"tenantSlug" = CASE WHEN EXCLUDED."tenantSlug" != '' THEN EXCLUDED."tenantSlug" ELSE "ReviewCycle"."tenantSlug" END`,
+				c.ID, effectiveTenant, c.Name, c.StartDate, c.EndDate, c.Status, deptsStr)
 
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
@@ -134,7 +147,12 @@ func HandleCycles(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if db != nil {
-			_, err := db.Exec(`DELETE FROM "ReviewCycle" WHERE id = $1 AND ("tenantSlug" = $2 OR "tenantSlug" = '' OR "tenantSlug" IS NULL)`, id, tenantSlug)
+			var err error
+			if tenantSlug != "" && tenantSlug != "all" {
+				_, err = db.Exec(`DELETE FROM "ReviewCycle" WHERE id = $1 AND ("tenantSlug" = $2 OR "tenantSlug" = '' OR "tenantSlug" IS NULL)`, id, tenantSlug)
+			} else {
+				_, err = db.Exec(`DELETE FROM "ReviewCycle" WHERE id = $1`, id)
+			}
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

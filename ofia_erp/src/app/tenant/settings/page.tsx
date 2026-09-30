@@ -83,6 +83,10 @@ export default function TenantSettingsPage() {
         name: orgName,
         slug: slug,
         domain: customDomain,
+        logo: logoUrl,
+        favicon: logoUrl,
+        primaryColor: primaryColor,
+        secondaryColor: secondaryColor,
         ownerName: ownerName,
         owner_name: ownerName,
         adminName: ownerName,
@@ -147,6 +151,10 @@ export default function TenantSettingsPage() {
         activeTenant.name = orgName;
         activeTenant.slug = slug;
         activeTenant.domain = customDomain;
+        activeTenant.logo = logoUrl;
+        activeTenant.favicon = logoUrl;
+        activeTenant.primaryColor = primaryColor;
+        activeTenant.secondaryColor = secondaryColor;
         activeTenant.ownerName = ownerName;
         activeTenant.ownerEmail = ownerEmail;
       }

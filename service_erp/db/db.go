@@ -6,59 +6,12 @@ import (
 	"os"
 	"strings"
 	"time"
-
-	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
 var DB *gorm.DB
-
-func ParseDatabaseDSN(rawURL string) string {
-	if rawURL == "" {
-		return ""
-	}
-
-	rawURL = strings.TrimSpace(rawURL)
-
-	// If it already contains standard Go MySQL TCP format: user:pass@tcp(host:port)/dbname
-	if strings.Contains(rawURL, "@tcp(") {
-		return rawURL
-	}
-
-	// Strip mysql:// or mariadb:// prefix if present
-	clean := strings.TrimPrefix(rawURL, "mysql://")
-	clean = strings.TrimPrefix(clean, "mariadb://")
-
-	lastAtIndex := strings.LastIndex(clean, "@")
-	if lastAtIndex != -1 {
-		userInfo := clean[:lastAtIndex]
-		hostAndDb := clean[lastAtIndex+1:]
-
-		slashIndex := strings.Index(hostAndDb, "/")
-		if slashIndex != -1 {
-			hostPort := hostAndDb[:slashIndex]
-			dbAndParams := hostAndDb[slashIndex+1:]
-
-			if !strings.Contains(hostPort, ":") {
-				hostPort = hostPort + ":3306"
-			}
-
-			if !strings.Contains(dbAndParams, "parseTime=") {
-				if strings.Contains(dbAndParams, "?") {
-					dbAndParams += "&charset=utf8mb4&parseTime=True&loc=Local&tls=preferred"
-				} else {
-					dbAndParams += "?charset=utf8mb4&parseTime=True&loc=Local&tls=preferred"
-				}
-			}
-
-			return fmt.Sprintf("%s@tcp(%s)/%s", userInfo, hostPort, dbAndParams)
-		}
-	}
-
-	return rawURL
-}
 
 func InitDB() (*gorm.DB, error) {
 	databaseURL := os.Getenv("DATABASE_URL")
@@ -83,6 +36,7 @@ func InitDB() (*gorm.DB, error) {
 
 	var err error
 	gormDB, err := gorm.Open(dialector, &gorm.Config{
+		PrepareStmt: true,
 		Logger: logger.Default.LogMode(logger.Warn),
 	})
 	if err != nil {

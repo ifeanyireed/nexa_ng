@@ -6,10 +6,7 @@ import (
 	"fmt"
 	"log"
 	"time"
-
-	driverMysql "github.com/go-sql-driver/mysql"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 
@@ -33,7 +30,7 @@ func connectDB() (*gorm.DB, error) {
 	var lastErr error
 	for i, dsn := range dsnList {
 		log.Printf("Connecting with attempt %d...", i+1)
-		sqlDB, err := sql.Open("mysql", dsn)
+		sqlDB, err := sql.Open("postgres", dsn)
 		if err != nil {
 			lastErr = err
 			continue
@@ -43,7 +40,7 @@ func connectDB() (*gorm.DB, error) {
 		if err == nil {
 			log.Printf("✅ SQL Ping successful on attempt %d!", i+1)
 			sqlDB.Close()
-			return gorm.Open(mysql.Open(dsn), &gorm.Config{
+			return gorm.Open(postgres.Open(dsn), &gorm.Config{
 				Logger: logger.Default.LogMode(logger.Warn),
 			})
 		}

@@ -3,13 +3,12 @@ package main
 import (
 	"fmt"
 	"log"
-	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
 func main() {
 	dsn := "u721451974_nexa:*Reedb4b4@tcp(srv2113.hstgr.io:3306)/u721451974_nexa_db?charset=utf8mb4&parseTime=True&loc=Local&tls=preferred"
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)
 	}

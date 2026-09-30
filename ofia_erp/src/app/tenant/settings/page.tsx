@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Image as ImageIcon,
   Upload,
+  Palette,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -31,6 +32,8 @@ export default function TenantSettingsPage() {
   const [orgName, setOrgName] = useState("");
   const [slug, setSlug] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [primaryColor, setPrimaryColor] = useState("#1A56DB");
+  const [secondaryColor, setSecondaryColor] = useState("#0E9F6E");
   const [customDomain, setCustomDomain] = useState("");
   const [ownerName, setOwnerName] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
@@ -61,6 +64,8 @@ export default function TenantSettingsPage() {
       setOrgName(activeTenant.name || "");
       setSlug(activeTenant.slug || "");
       setLogoUrl(activeTenant.logo || "");
+      setPrimaryColor(activeTenant.primaryColor || "#1A56DB");
+      setSecondaryColor(activeTenant.secondaryColor || "#0E9F6E");
       setCustomDomain(activeTenant.domain || "");
       setOwnerName(activeTenant.ownerName || savedName || user?.name || "Ifeanyi Felix");
       setOwnerEmail(activeTenant.ownerEmail || savedEmail || user?.email || "ifeanyi.ibeh@neweratransports.com");
@@ -250,22 +255,22 @@ export default function TenantSettingsPage() {
           </div>
         </NexaCard>
 
-        {/* WORKSPACE BRANDING */}
+                {/* WORKSPACE BRANDING */}
         <NexaCard variant="glass" padding="lg" className="space-y-4 border border-[var(--nexa-border)] shadow-xs rounded-3xl">
           <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
             <h3 className="font-bold text-sm text-[var(--nexa-text-primary)] flex items-center gap-2">
-              <ImageIcon className="w-4 h-4 text-[#F59E0B]" />
+              <Palette className="w-4 h-4 text-[#F59E0B]" />
               Workspace Branding
             </h3>
             <NexaBadge variant="amber">Design</NexaBadge>
           </div>
 
-          <div className="pt-2 max-w-md">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
             <div className="space-y-2">
               <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
                 Tenant Logo & Favicon
               </label>
-              <div className="border-2 border-dashed border-[var(--nexa-border)] rounded-2xl p-4 flex flex-col items-center justify-center text-center hover:bg-[var(--nexa-bg-base)]/50 transition-colors cursor-pointer group">
+              <div className="border-2 border-dashed border-[var(--nexa-border)] rounded-2xl p-4 flex flex-col items-center justify-center text-center hover:bg-[var(--nexa-bg-base)]/50 transition-colors cursor-pointer group h-[190px]">
                 <div className="w-16 h-16 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
                   {logoUrl ? (
                     <img src={logoUrl} alt="Logo" className="w-12 h-12 object-contain" />
@@ -275,10 +280,38 @@ export default function TenantSettingsPage() {
                 </div>
                 <h4 className="text-xs font-bold text-[var(--nexa-text-primary)] mb-1">Upload Workspace Logo</h4>
                 <p className="text-[10px] text-[var(--nexa-text-muted)] max-w-[250px]">
-                  PNG, JPG or SVG (Max 2MB). This image will automatically be used as your browser favicon.
+                  PNG, JPG or SVG. This image will automatically be used as your browser favicon.
                 </p>
                 <div className="mt-3 bg-[#1A56DB] text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5">
                   <Upload className="w-3 h-3" /> Select File
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                Brand Colors
+              </label>
+              
+              <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="text-xs font-bold text-[var(--nexa-text-primary)]">Primary Color</div>
+                  <div className="text-[10px] text-[var(--nexa-text-muted)]">Main buttons and active states</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono text-[var(--nexa-text-muted)] uppercase">{primaryColor}</span>
+                  <input type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent" />
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="text-xs font-bold text-[var(--nexa-text-primary)]">Secondary Color</div>
+                  <div className="text-[10px] text-[var(--nexa-text-muted)]">Badges, highlights, and success states</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono text-[var(--nexa-text-muted)] uppercase">{secondaryColor}</span>
+                  <input type="color" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent" />
                 </div>
               </div>
             </div>

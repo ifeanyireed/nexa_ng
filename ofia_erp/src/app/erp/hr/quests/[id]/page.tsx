@@ -2300,7 +2300,7 @@ export default function QuestCommandDeskPage() {
                   const isCurrentTeam = assignedParticipant?.team_id === staffPoolTeam.id;
                   const isOtherTeam = assignedParticipant && !isCurrentTeam;
                   const otherTeam = isOtherTeam ? teams.find((t) => t.id === assignedParticipant.team_id) : null;
-                  const avatarSrc = u.avatar && u.avatar.includes("character") ? u.avatar : `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character${(idx % 20) + 1}.jpg`;
+                  const avatarSrc = u.avatar && u.avatar.includes("character") ? (u.avatar.startsWith("/") ? `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets${u.avatar}` : u.avatar) : `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character${(idx % 20) + 1}.jpg`;
 
                   return (
                     <div

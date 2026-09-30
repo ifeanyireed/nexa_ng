@@ -145,7 +145,7 @@ export default function UserRoleManagement() {
                 </div>
               ) : (
                 paginatedUsers.map((u, idx) => {
-                  const avatarSrc = u.avatar && u.avatar.includes("character") ? u.avatar : `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character${((startIndex + idx) % 20) + 1}.jpg`;
+                  const avatarSrc = u.avatar && u.avatar.includes("character") ? (u.avatar.startsWith("/") ? `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets${u.avatar}` : u.avatar) : `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character${((startIndex + idx) % 20) + 1}.jpg`;
                   return (
                 <div key={u.id} className={`p-3.5 bg-[var(--nexa-bg-base)] rounded-2xl border border-[var(--nexa-border)] flex justify-between ${editingUserId === u.id ? "flex-col sm:flex-row gap-4 items-start" : "items-center"}`}>
                   <div className="flex items-center gap-3 w-full">

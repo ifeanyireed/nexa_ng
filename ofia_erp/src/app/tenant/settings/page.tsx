@@ -31,7 +31,6 @@ export default function TenantSettingsPage() {
   const [orgName, setOrgName] = useState("");
   const [slug, setSlug] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
-  const [faviconUrl, setFaviconUrl] = useState("");
   const [customDomain, setCustomDomain] = useState("");
   const [ownerName, setOwnerName] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
@@ -62,7 +61,6 @@ export default function TenantSettingsPage() {
       setOrgName(activeTenant.name || "");
       setSlug(activeTenant.slug || "");
       setLogoUrl(activeTenant.logo || "");
-      setFaviconUrl(activeTenant.favicon || "");
       setCustomDomain(activeTenant.domain || "");
       setOwnerName(activeTenant.ownerName || savedName || user?.name || "Ifeanyi Felix");
       setOwnerEmail(activeTenant.ownerEmail || savedEmail || user?.email || "ifeanyi.ibeh@neweratransports.com");
@@ -262,10 +260,10 @@ export default function TenantSettingsPage() {
             <NexaBadge variant="amber">Design</NexaBadge>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+          <div className="pt-2 max-w-md">
             <div className="space-y-2">
               <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                Tenant Logo (Dark/Light)
+                Tenant Logo & Favicon
               </label>
               <div className="border-2 border-dashed border-[var(--nexa-border)] rounded-2xl p-4 flex flex-col items-center justify-center text-center hover:bg-[var(--nexa-bg-base)]/50 transition-colors cursor-pointer group">
                 <div className="w-16 h-16 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
@@ -276,28 +274,10 @@ export default function TenantSettingsPage() {
                   )}
                 </div>
                 <h4 className="text-xs font-bold text-[var(--nexa-text-primary)] mb-1">Upload Workspace Logo</h4>
-                <p className="text-[10px] text-[var(--nexa-text-muted)]">PNG, JPG or SVG (Max 2MB)</p>
+                <p className="text-[10px] text-[var(--nexa-text-muted)] max-w-[250px]">
+                  PNG, JPG or SVG (Max 2MB). This image will automatically be used as your browser favicon.
+                </p>
                 <div className="mt-3 bg-[#1A56DB] text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5">
-                  <Upload className="w-3 h-3" /> Select File
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                Tenant Favicon
-              </label>
-              <div className="border-2 border-dashed border-[var(--nexa-border)] rounded-2xl p-4 flex flex-col items-center justify-center text-center hover:bg-[var(--nexa-bg-base)]/50 transition-colors cursor-pointer group">
-                <div className="w-12 h-12 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-center mb-3 overflow-hidden group-hover:scale-105 transition-transform">
-                  {faviconUrl ? (
-                    <img src={faviconUrl} alt="Favicon" className="w-full h-full object-cover" />
-                  ) : (
-                    <Globe className="w-5 h-5 text-[var(--nexa-text-muted)]" />
-                  )}
-                </div>
-                <h4 className="text-xs font-bold text-[var(--nexa-text-primary)] mb-1">Upload Favicon (.ico/.png)</h4>
-                <p className="text-[10px] text-[var(--nexa-text-muted)]">Displays in browser tabs (32x32px)</p>
-                <div className="mt-3 bg-[#0E9F6E] text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5">
                   <Upload className="w-3 h-3" /> Select File
                 </div>
               </div>

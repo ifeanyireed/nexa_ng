@@ -32,6 +32,7 @@ export default function TenantSettingsPage() {
   const [orgName, setOrgName] = useState("");
   const [slug, setSlug] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [primaryColor, setPrimaryColor] = useState("#1A56DB");
   const [secondaryColor, setSecondaryColor] = useState("#0E9F6E");
   const [customDomain, setCustomDomain] = useState("");
@@ -71,6 +72,45 @@ export default function TenantSettingsPage() {
       setOwnerEmail(activeTenant.ownerEmail || savedEmail || user?.email || "ifeanyi.ibeh@neweratransports.com");
     }
   }, [activeTenant, user]);
+
+  
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setErrorMessage("Image exceeds 2MB limit.");
+      return;
+    }
+
+    try {
+      setIsUploadingLogo(true);
+      setErrorMessage("");
+
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onloadend = async () => {
+        const base64Image = reader.result;
+
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: base64Image }),
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          setLogoUrl(data.url);
+        } else {
+          setErrorMessage(data.error || "Upload failed");
+        }
+        setIsUploadingLogo(false);
+      };
+    } catch (err: any) {
+      setErrorMessage(err.message || "Upload failed");
+      setIsUploadingLogo(false);
+    }
+  };
 
   const handleSave = async () => {
     const targetIdentifier = activeTenant?.id || activeTenant?.slug || slug || "org-01";
@@ -278,9 +318,18 @@ export default function TenantSettingsPage() {
               <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
                 Tenant Logo & Favicon
               </label>
-              <div className="border-2 border-dashed border-[var(--nexa-border)] rounded-2xl p-4 flex flex-col items-center justify-center text-center hover:bg-[var(--nexa-bg-base)]/50 transition-colors cursor-pointer group h-[190px]">
+                            <div className="border-2 border-dashed border-[var(--nexa-border)] rounded-2xl p-4 flex flex-col items-center justify-center text-center hover:bg-[var(--nexa-bg-base)]/50 transition-colors cursor-pointer group h-[190px] relative">
+                <input 
+                  type="file" 
+                  accept="image/png, image/jpeg, image/svg+xml" 
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  onChange={handleLogoUpload}
+                  disabled={isUploadingLogo}
+                />
                 <div className="w-16 h-16 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
-                  {logoUrl ? (
+                  {isUploadingLogo ? (
+                    <RefreshCw className="w-6 h-6 text-[var(--nexa-text-muted)] animate-spin" />
+                  ) : logoUrl ? (
                     <img src={logoUrl} alt="Logo" className="w-12 h-12 object-contain" />
                   ) : (
                     <ImageIcon className="w-6 h-6 text-[var(--nexa-text-muted)]" />
@@ -290,8 +339,9 @@ export default function TenantSettingsPage() {
                 <p className="text-[10px] text-[var(--nexa-text-muted)] max-w-[250px]">
                   PNG, JPG or SVG. This image will automatically be used as your browser favicon.
                 </p>
-                <div className="mt-3 bg-[#1A56DB] text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5">
-                  <Upload className="w-3 h-3" /> Select File
+                <div className="mt-3 bg-[#1A56DB] text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 group-hover:bg-blue-700 transition-colors">
+                  {isUploadingLogo ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />} 
+                  {isUploadingLogo ? "Uploading..." : "Select File"}
                 </div>
               </div>
             </div>

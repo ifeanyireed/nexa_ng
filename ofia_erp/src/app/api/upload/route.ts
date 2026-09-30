@@ -14,7 +14,7 @@ if (process.env.CLOUDINARY_URL) {
 
 export async function POST(request: Request) {
   try {
-    const { image } = await request.json();
+    const { image, tenantId } = await request.json();
 
     if (!image) {
       return NextResponse.json({ error: "No image provided" }, { status: 400 });
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
 
     // Upload the base64 image to Cloudinary
     const uploadResponse = await cloudinary.uploader.upload(image, {
-      folder: "ofia_ng_assets",
+      folder: tenantId ? `ofia_ng_assets/${tenantId}` : "ofia_ng_assets",
       resource_type: "image",
     });
 

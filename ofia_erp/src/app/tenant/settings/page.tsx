@@ -95,7 +95,7 @@ export default function TenantSettingsPage() {
         const res = await fetch("/api/upload", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image: base64Image }),
+          body: JSON.stringify({ image: base64Image, tenantId: activeTenant?.slug || activeTenant?.id || "default" }),
         });
 
         const data = await res.json();

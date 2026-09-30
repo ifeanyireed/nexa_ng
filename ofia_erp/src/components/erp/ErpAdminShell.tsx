@@ -857,7 +857,7 @@ export function ErpAdminShell({
                 pathname === "/tenant/settings" && "bg-nexa-brand text-white shadow-md shadow-nexa-brand/20"
               )}
             >
-              <Settings className="w-6 h-6 text-nexa-brand" />
+              <Settings className="w-6 h-6" />
               {isSidebarOpen && <span className="font-bold text-xs">Workspace Settings</span>}
             </button>
           </Link>

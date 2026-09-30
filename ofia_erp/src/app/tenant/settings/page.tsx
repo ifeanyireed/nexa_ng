@@ -30,6 +30,8 @@ export default function TenantSettingsPage() {
 
   const [orgName, setOrgName] = useState("");
   const [slug, setSlug] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [faviconUrl, setFaviconUrl] = useState("");
   const [customDomain, setCustomDomain] = useState("");
   const [ownerName, setOwnerName] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
@@ -59,6 +61,8 @@ export default function TenantSettingsPage() {
 
       setOrgName(activeTenant.name || "");
       setSlug(activeTenant.slug || "");
+      setLogoUrl(activeTenant.logo || "");
+      setFaviconUrl(activeTenant.favicon || "");
       setCustomDomain(activeTenant.domain || "");
       setOwnerName(activeTenant.ownerName || savedName || user?.name || "Ifeanyi Felix");
       setOwnerEmail(activeTenant.ownerEmail || savedEmail || user?.email || "ifeanyi.ibeh@neweratransports.com");

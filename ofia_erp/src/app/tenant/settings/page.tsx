@@ -13,6 +13,8 @@ import {
   UserCheck,
   Building2,
   RefreshCw,
+  Image as ImageIcon,
+  Upload,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -242,6 +244,59 @@ export default function TenantSettingsPage() {
               <span className="text-[10px] text-[var(--nexa-text-muted)]">
                 Determines {slug || "tenant"}.ofia.ng and custom domain routing.
               </span>
+            </div>
+          </div>
+        </NexaCard>
+
+        {/* WORKSPACE BRANDING */}
+        <NexaCard variant="glass" padding="lg" className="space-y-4 border border-[var(--nexa-border)] shadow-xs rounded-3xl">
+          <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
+            <h3 className="font-bold text-sm text-[var(--nexa-text-primary)] flex items-center gap-2">
+              <ImageIcon className="w-4 h-4 text-[#F59E0B]" />
+              Workspace Branding
+            </h3>
+            <NexaBadge variant="amber">Design</NexaBadge>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                Tenant Logo (Dark/Light)
+              </label>
+              <div className="border-2 border-dashed border-[var(--nexa-border)] rounded-2xl p-4 flex flex-col items-center justify-center text-center hover:bg-[var(--nexa-bg-base)]/50 transition-colors cursor-pointer group">
+                <div className="w-16 h-16 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                  {logoUrl ? (
+                    <img src={logoUrl} alt="Logo" className="w-12 h-12 object-contain" />
+                  ) : (
+                    <ImageIcon className="w-6 h-6 text-[var(--nexa-text-muted)]" />
+                  )}
+                </div>
+                <h4 className="text-xs font-bold text-[var(--nexa-text-primary)] mb-1">Upload Workspace Logo</h4>
+                <p className="text-[10px] text-[var(--nexa-text-muted)]">PNG, JPG or SVG (Max 2MB)</p>
+                <div className="mt-3 bg-[#1A56DB] text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5">
+                  <Upload className="w-3 h-3" /> Select File
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                Tenant Favicon
+              </label>
+              <div className="border-2 border-dashed border-[var(--nexa-border)] rounded-2xl p-4 flex flex-col items-center justify-center text-center hover:bg-[var(--nexa-bg-base)]/50 transition-colors cursor-pointer group">
+                <div className="w-12 h-12 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-center mb-3 overflow-hidden group-hover:scale-105 transition-transform">
+                  {faviconUrl ? (
+                    <img src={faviconUrl} alt="Favicon" className="w-full h-full object-cover" />
+                  ) : (
+                    <Globe className="w-5 h-5 text-[var(--nexa-text-muted)]" />
+                  )}
+                </div>
+                <h4 className="text-xs font-bold text-[var(--nexa-text-primary)] mb-1">Upload Favicon (.ico/.png)</h4>
+                <p className="text-[10px] text-[var(--nexa-text-muted)]">Displays in browser tabs (32x32px)</p>
+                <div className="mt-3 bg-[#0E9F6E] text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5">
+                  <Upload className="w-3 h-3" /> Select File
+                </div>
+              </div>
             </div>
           </div>
         </NexaCard>

@@ -9,10 +9,10 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { Pagination } from "@/components/nexa/Pagination";
-import { Calendar, Plus, CheckCircle2, Clock, AlertCircle, ArrowLeft } from "lucide-react";
+import { Calendar, Plus, CheckCircle2, Clock, AlertCircle, ArrowLeft, Trash2 } from "lucide-react";
 
 export default function ReviewCycleManagement() {
-  const { cycles, addReviewCycle, updateCycles } = useERPStore();
+  const { cycles, addReviewCycle, updateCycles, deleteReviewCycle } = useERPStore();
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -64,6 +64,13 @@ export default function ReviewCycleManagement() {
     }
   };
 
+  
+  const handleDelete = (cycleId: string) => {
+    if (confirm("Are you sure you want to completely delete this review cycle and all associated data? This action cannot be undone.")) {
+      deleteReviewCycle(cycleId);
+    }
+  };
+
   const handleUpdateStatus = (cycleId: string, newStatus: "Draft" | "Active" | "Completed") => {
     const list = cycles.map(c => {
       if (c.id === cycleId) {
@@ -109,7 +116,16 @@ export default function ReviewCycleManagement() {
                       </span>
                     </div>
 
+                    
                     <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => handleDelete(c.id)}
+                        className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-full transition-colors mr-1"
+                        title="Delete Cycle"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+
                       {c.status === "Active" ? (
                         <NexaBadge variant="green" size="sm" className="rounded-full">Active</NexaBadge>
                       ) : c.status === "Completed" ? (

@@ -536,6 +536,24 @@ export function useERPStore(explicitTenantSlug?: string) {
     }
   };
 
+  
+  const deleteReviewCycle = async (cycleId: string) => {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (activeTenantSlug) headers["x-tenant-slug"] = activeTenantSlug;
+
+    try {
+      await fetch(`${API_BASE_URL}/cycles?id=${encodeURIComponent(cycleId)}${activeTenantSlug ? `&tenant=${encodeURIComponent(activeTenantSlug)}` : ""}`, {
+        method: "DELETE",
+        headers
+      });
+      const freshCycles = await fetchFromApi<ReviewCycle[]>("/cycles", cycles.filter(c => c.id !== cycleId), activeTenantSlug);
+      setCycles(freshCycles || []);
+    } catch (e) {
+      console.warn("Failed to sync deleteReviewCycle with backend database", e);
+      setCycles(cycles.filter(c => c.id !== cycleId));
+    }
+  };
+
   const updateCycles = async (updatedList: ReviewCycle[]) => {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (activeTenantSlug) headers["x-tenant-slug"] = activeTenantSlug;
@@ -638,6 +656,7 @@ export function useERPStore(explicitTenantSlug?: string) {
     updateReview,
     addReviewCycle,
     updateCycles,
+    deleteReviewCycle,
     updateObjectives,
     updateUsers
   };

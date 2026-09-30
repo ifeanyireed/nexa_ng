@@ -55,6 +55,10 @@ type Organization struct {
 	PlanTier     PlanTier  `gorm:"size:50;not null;default:'STARTER'" json:"plan_tier"`
 	BillingCycle string    `gorm:"size:20;not null;default:'MONTHLY'" json:"billing_cycle"`
 	Status       string    `gorm:"size:30;not null;default:'ACTIVE'" json:"status"` // ACTIVE, PAST_DUE, SUSPENDED
+	Logo           string    `gorm:"type:text" json:"logo,omitempty"`
+	PrimaryColor   string    `gorm:"size:20" json:"primaryColor,omitempty"`
+	SecondaryColor string    `gorm:"size:20" json:"secondaryColor,omitempty"`
+
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 

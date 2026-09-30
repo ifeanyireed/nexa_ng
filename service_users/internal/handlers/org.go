@@ -300,6 +300,15 @@ func (h *OrgHandler) UpdateOrgProfile(w http.ResponseWriter, r *http.Request) {
 	if v, ok := rawMap["status"]; ok && v != "" {
 		updateFields["status"] = strings.ToUpper(fmt.Sprintf("%v", v))
 	}
+		if v, ok := rawMap["logo"]; ok && v != "" {
+		updateFields["logo"] = v
+	}
+	if v, ok := rawMap["primaryColor"]; ok && v != "" {
+		updateFields["primary_color"] = v
+	}
+	if v, ok := rawMap["secondaryColor"]; ok && v != "" {
+		updateFields["secondary_color"] = v
+	}
 	updateFields["updated_at"] = time.Now()
 
 	ownerName := ""

@@ -55,7 +55,7 @@ export default function SettingsPage() {
       title: inviteTitle || "Team Member",
       orgName: "EduSuite Nigeria",
       orgId: "org-01",
-      avatar: `/character${avatarIndex}.jpg`,
+      avatar: `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character${avatarIndex}.jpg`,
       twoFactorEnabled: true,
       status: "Active",
       lastLogin: "Active right now",

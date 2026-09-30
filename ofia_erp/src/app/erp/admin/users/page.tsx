@@ -145,7 +145,7 @@ function UserManagementContent() {
               designation: u.designation || u.Designation || "Corporate Officer",
               managerName: u.managerName || u.ManagerName || undefined,
               managerId: u.managerId || u.ManagerId || undefined,
-              avatar: u.avatar || `/character${(idx % 20) + 1}.jpg`,
+              avatar: u.avatar || `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character${(idx % 20) + 1}.jpg`,
               company: u.company || u.Company || activeTenant?.name || "Corporate Staff",
               location: u.location || u.Location || "Lagos, Nigeria",
               status: "ACTIVE",
@@ -230,7 +230,7 @@ function UserManagementContent() {
       setIsSaving(true);
       const avatarNum = editingStaffUser
         ? editingStaffUser.avatar
-        : `/character${(users.length % 20) + 1}.jpg`;
+        : `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character${(users.length % 20) + 1}.jpg`;
 
       const payload = {
         id: editingStaffUser ? editingStaffUser.id : `USR-${Date.now()}`,

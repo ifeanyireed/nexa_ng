@@ -340,7 +340,7 @@ export default function HRReportsPage() {
                         .slice((deptEmpPage - 1) * itemsPerPage, (deptEmpPage - 1) * itemsPerPage + itemsPerPage)
                         .map((emp, idx) => {
                         const rev = findReviewForUser(deptReviews, emp);
-                        const avatarSrc = emp.avatar && emp.avatar.startsWith("/character") ? emp.avatar : `/character${(((deptEmpPage - 1) * itemsPerPage + idx) % 20) + 1}.jpg`;
+                        const avatarSrc = emp.avatar && emp.avatar.includes("character") ? emp.avatar : `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character${(((deptEmpPage - 1) * itemsPerPage + idx) % 20) + 1}.jpg`;
                         
                         // Calculate self average rating
                         const selfAvgStr = formatSelfAverage(rev);

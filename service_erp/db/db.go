@@ -1,10 +1,8 @@
 package db
 
 import (
-	"fmt"
 	"log"
 	"os"
-	"strings"
 	"time"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -19,20 +17,8 @@ func InitDB() (*gorm.DB, error) {
 		databaseURL = os.Getenv("DB_DSN")
 	}
 
-	var dialector gorm.Dialector
-	isPostgres := strings.HasPrefix(databaseURL, "postgres://") || strings.HasPrefix(databaseURL, "postgresql://")
-
-	if isPostgres {
-		log.Println("🐘 Connecting to PostgreSQL / Neon database for service_erp...")
-		dialector = postgres.Open(databaseURL)
-	} else {
-		if databaseURL == "" {
-			databaseURL = "u721451974_nexa:*Reedb4b4@tcp(srv2113.hstgr.io:3306)/u721451974_nexa_db?charset=utf8mb4&parseTime=True&loc=Local&tls=preferred"
-		} else {
-			databaseURL = ParseDatabaseDSN(databaseURL)
-		}
-		dialector = mysql.Open(databaseURL)
-	}
+	log.Println("🐘 Connecting to PostgreSQL / Neon database for service_erp...")
+	dialector := postgres.Open(databaseURL)
 
 	var err error
 	gormDB, err := gorm.Open(dialector, &gorm.Config{

@@ -12,6 +12,10 @@ export interface DatabaseTenant {
   ownerEmail?: string;
   status?: string;
   planTier?: string;
+  logo?: string;
+  favicon?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
 }
 
 let cachedTenants: DatabaseTenant[] | null = null;
@@ -144,6 +148,10 @@ export async function fetchDatabaseTenants(forceRefresh = false): Promise<Databa
             ownerEmail: rawOwnerEmail,
             status: org.status || org.Status || "Active",
             planTier: org.planTier || org.PlanTier || "Enterprise",
+            logo: org.logo || org.Logo || "",
+            favicon: org.favicon || org.Favicon || "",
+            primaryColor: org.primaryColor || org.PrimaryColor || "#1A56DB",
+            secondaryColor: org.secondaryColor || org.SecondaryColor || "#0E9F6E",
           };
         });
 
@@ -221,6 +229,10 @@ export function resolveTenantFromList(
       ownerEmail: savedEmail || userEmail || fallbackAdmin.email,
       status: "ACTIVE",
       planTier: "Enterprise",
+      logo: "",
+      favicon: "",
+      primaryColor: "#1A56DB",
+      secondaryColor: "#0E9F6E",
     };
   }
 
@@ -245,6 +257,10 @@ export function resolveTenantFromList(
         ownerEmail: userEmail,
         status: "ACTIVE",
         planTier: "Enterprise",
+        logo: "",
+        favicon: "",
+        primaryColor: "#1A56DB",
+        secondaryColor: "#0E9F6E",
       };
     }
   }
@@ -258,6 +274,10 @@ export function resolveTenantFromList(
     company: "",
     status: "Active",
     planTier: "Enterprise",
+    logo: "",
+    favicon: "",
+    primaryColor: "#1A56DB",
+    secondaryColor: "#0E9F6E",
   };
 }
 

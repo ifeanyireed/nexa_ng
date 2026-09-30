@@ -256,9 +256,9 @@ func EnsureHRTables() {
 	
 	// 1.5. Ensure HR tables have tenantSlug (Migration)
 	hr_migrations := []string{
-		"ALTER TABLE \`ReviewCycle\` ADD COLUMN \`tenantSlug\` varchar(191) NOT NULL DEFAULT ''",
-		"ALTER TABLE \`Objective\` ADD COLUMN \`tenantSlug\` varchar(191) NOT NULL DEFAULT ''",
-		"ALTER TABLE \`PerformanceReview\` ADD COLUMN \`tenantSlug\` varchar(191) NOT NULL DEFAULT ''",
+		"ALTER TABLE `ReviewCycle` ADD COLUMN `tenantSlug` varchar(191) NOT NULL DEFAULT ''",
+		"ALTER TABLE `Objective` ADD COLUMN `tenantSlug` varchar(191) NOT NULL DEFAULT ''",
+		"ALTER TABLE `PerformanceReview` ADD COLUMN `tenantSlug` varchar(191) NOT NULL DEFAULT ''",
 	}
 	for _, q := range hr_migrations {
 		_, _ = db.Exec(q)

@@ -114,6 +114,7 @@ func filterReviews(list []PerformanceReview, employeeId, tenantSlug string) []Pe
 
 func HandleReviews(w http.ResponseWriter, r *http.Request) {
 	EnsureHRTables()
+	tenantSlug := getTenantFilter(r)
 
 	if r.Method == http.MethodGet {
 		id := r.URL.Query().Get("id")
@@ -154,8 +155,6 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(pr)
 			return
 		}
-
-		tenantSlug := getTenantFilter(r)
 
 		var rows *sql.Rows
 		var err error

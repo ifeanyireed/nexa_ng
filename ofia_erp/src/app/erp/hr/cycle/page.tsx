@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useERPStore, ReviewCycle, DEPARTMENTS } from "@/lib/erp-store";
+import { useActiveTenant } from "@/lib/tenant-context";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -12,7 +13,10 @@ import { Pagination } from "@/components/nexa/Pagination";
 import { Calendar, Plus, CheckCircle2, Clock, AlertCircle, ArrowLeft, Trash2, Edit2 } from "lucide-react";
 
 export default function ReviewCycleManagement() {
-  const { cycles, addReviewCycle, updateCycles, deleteReviewCycle } = useERPStore();
+  const { activeTenant } = useActiveTenant();
+  const tenantSlug = activeTenant?.slug || activeTenant?.id || "";
+  const { cycles, addReviewCycle, updateCycles, deleteReviewCycle, isLoading } = useERPStore(tenantSlug);
+
   const [editingCycleId, setEditingCycleId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState("");
@@ -20,6 +24,7 @@ export default function ReviewCycleManagement() {
   const [selectedDepts, setSelectedDepts] = useState<string[]>([]);
   const [cycleStatus, setCycleStatus] = useState<"Draft" | "Active">("Draft");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const itemsPerPage = 5;
   
   const depts = DEPARTMENTS;
@@ -32,40 +37,58 @@ export default function ReviewCycleManagement() {
     }
   };
 
-  
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !startDate || !endDate) {
-      alert("Please fill in all required fields.");
+    if (!name.trim() || !startDate || !endDate) {
+      alert("Please fill in all required fields (Cycle Name, Start Date, and End Date).");
       return;
     }
 
-    const cycleId = editingCycleId || `CYC00${cycles.length + 1}`;
+    setIsSubmitting(true);
+    try {
+      let cycleId = editingCycleId;
+      if (!cycleId) {
+        let maxNum = 0;
+        cycles.forEach((c) => {
+          const match = c.id.match(/\d+/);
+          if (match) {
+            const n = parseInt(match[0], 10);
+            if (n > maxNum) maxNum = n;
+          }
+        });
+        cycleId = `CYC${String(maxNum + 1).padStart(3, "0")}`;
+      }
 
-    const payload: ReviewCycle = {
-      id: cycleId,
-      name,
-      startDate,
-      endDate,
-      status: cycleStatus,
-      departments: selectedDepts,
-    };
+      const payload: ReviewCycle = {
+        id: cycleId,
+        name: name.trim(),
+        startDate,
+        endDate,
+        status: cycleStatus,
+        departments: selectedDepts.length > 0 ? selectedDepts : [...depts],
+        tenantSlug: tenantSlug || "neweratransports",
+      };
 
-    if (editingCycleId) {
-      const list = cycles.map(c => c.id === editingCycleId ? payload : c);
-      updateCycles(list);
-      alert("Review Cycle updated successfully!");
-    } else {
-      addReviewCycle(payload);
-      alert("Review Cycle created successfully!");
+      if (editingCycleId) {
+        const list = cycles.map(c => c.id === editingCycleId ? payload : c);
+        await updateCycles(list);
+        alert("Review Cycle updated successfully!");
+      } else {
+        await addReviewCycle(payload);
+        alert("Review Cycle created successfully!");
+      }
+
+      setName("");
+      setStartDate("");
+      setEndDate("");
+      setSelectedDepts([]);
+      setCycleStatus("Draft");
+      setEditingCycleId(null);
+    } catch (err: any) {
+      alert("Failed to save review cycle: " + (err.message || "Error"));
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setName("");
-    setStartDate("");
-    setEndDate("");
-    setSelectedDepts([]);
-    setCycleStatus("Draft");
-    setEditingCycleId(null);
   };
 
   const cancelEdit = () => {
@@ -77,7 +100,6 @@ export default function ReviewCycleManagement() {
     setEditingCycleId(null);
   };
 
-
   const handleToggleDept = (dept: string) => {
     if (selectedDepts.includes(dept)) {
       setSelectedDepts(selectedDepts.filter(d => d !== dept));
@@ -86,8 +108,6 @@ export default function ReviewCycleManagement() {
     }
   };
 
-  
-  
   const handleEdit = (cycle: ReviewCycle) => {
     setEditingCycleId(cycle.id);
     setName(cycle.name);
@@ -100,23 +120,35 @@ export default function ReviewCycleManagement() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleDelete = (cycleId: string) => {
+  const handleDelete = async (cycleId: string) => {
     if (confirm("Are you sure you want to completely delete this review cycle and all associated data? This action cannot be undone.")) {
-      deleteReviewCycle(cycleId);
+      setIsSubmitting(true);
+      try {
+        await deleteReviewCycle(cycleId);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
-  const handleUpdateStatus = (cycleId: string, newStatus: "Draft" | "Active" | "Completed") => {
-    const list = cycles.map(c => {
-      if (c.id === cycleId) {
-        return { ...c, status: newStatus };
-      }
-      if (newStatus === "Active" && c.status === "Active") {
-        return { ...c, status: "Completed" as const };
-      }
-      return c;
-    });
-    updateCycles(list);
+  const handleUpdateStatus = async (cycleId: string, newStatus: "Draft" | "Active" | "Completed") => {
+    setIsSubmitting(true);
+    try {
+      const list = cycles.map(c => {
+        if (c.id === cycleId) {
+          return { ...c, status: newStatus, tenantSlug: c.tenantSlug || tenantSlug || "neweratransports" };
+        }
+        if (newStatus === "Active" && c.status === "Active") {
+          return { ...c, status: "Completed" as const, tenantSlug: c.tenantSlug || tenantSlug || "neweratransports" };
+        }
+        return c;
+      });
+      await updateCycles(list);
+    } catch (err: any) {
+      alert("Failed to update cycle status: " + (err.message || "Error"));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -136,9 +168,14 @@ export default function ReviewCycleManagement() {
           
           {/* Active Cycles List (7cols) */}
           <NexaCard variant="glass" padding="lg" className="lg:col-span-7 space-y-4 rounded-3xl">
-            <h3 className="font-extrabold text-[var(--nexa-text-primary)] text-sm pb-2 border-b border-[var(--nexa-border)]">
-              Configured Review Cycles
-            </h3>
+            <div className="flex justify-between items-center pb-2 border-b border-[var(--nexa-border)]">
+              <h3 className="font-extrabold text-[var(--nexa-text-primary)] text-sm">
+                Configured Review Cycles {tenantSlug ? `(${tenantSlug})` : ""}
+              </h3>
+              <span className="text-[10px] font-bold text-[var(--nexa-text-muted)]">
+                {cycles.length} {cycles.length === 1 ? "Cycle" : "Cycles"} Registered
+              </span>
+            </div>
             
             <div className="space-y-4">
               {cycles.slice((currentPage - 1) * itemsPerPage, (currentPage - 1) * itemsPerPage + itemsPerPage).map((c) => (
@@ -151,18 +188,17 @@ export default function ReviewCycleManagement() {
                       </span>
                     </div>
 
-                    
                     <div className="flex items-center gap-2">
                       <button 
                         onClick={() => handleEdit(c)}
-                        className="p-1.5 text-blue-500 hover:bg-blue-500/10 rounded-full transition-colors"
+                        className="p-1.5 text-blue-500 hover:bg-blue-500/10 rounded-full transition-colors cursor-pointer"
                         title="Edit Cycle"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button 
                         onClick={() => handleDelete(c.id)}
-                        className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-full transition-colors mr-1"
+                        className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-full transition-colors mr-1 cursor-pointer"
                         title="Delete Cycle"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -192,7 +228,8 @@ export default function ReviewCycleManagement() {
                         size="sm"
                         variant="primary"
                         onClick={() => handleUpdateStatus(c.id, "Active")}
-                        className="rounded-full bg-[#1A56DB] text-xs h-7"
+                        isLoading={isSubmitting}
+                        className="rounded-full bg-[#1A56DB] text-xs h-7 cursor-pointer"
                       >
                         Publish Cycle
                       </NexaButton>
@@ -202,7 +239,8 @@ export default function ReviewCycleManagement() {
                         size="sm"
                         variant="outline"
                         onClick={() => handleUpdateStatus(c.id, "Completed")}
-                        className="rounded-full text-xs h-7"
+                        isLoading={isSubmitting}
+                        className="rounded-full text-xs h-7 cursor-pointer hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300"
                       >
                         Complete Cycle
                       </NexaButton>
@@ -237,7 +275,7 @@ export default function ReviewCycleManagement() {
                   placeholder="e.g. 2026 Annual Performance Review"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-3 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-semibold text-[var(--nexa-text-primary)] outline-none"
+                  className="w-full px-3 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-semibold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
                 />
               </div>
 
@@ -250,7 +288,7 @@ export default function ReviewCycleManagement() {
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-semibold text-[var(--nexa-text-primary)] outline-none"
+                    className="w-full px-3 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-semibold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
                   />
                 </div>
                 <div>
@@ -261,7 +299,7 @@ export default function ReviewCycleManagement() {
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-semibold text-[var(--nexa-text-primary)] outline-none"
+                    className="w-full px-3 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-semibold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
                   />
                 </div>
               </div>
@@ -325,14 +363,28 @@ export default function ReviewCycleManagement() {
                 </div>
               </div>
 
-              <NexaButton
-                type="submit"
-                size="md"
-                variant="primary"
-                className="w-full rounded-full bg-[#1A56DB] text-white"
-              >
-                Create Cycle
-              </NexaButton>
+              <div className="flex gap-2">
+                <NexaButton
+                  type="submit"
+                  size="md"
+                  variant="primary"
+                  isLoading={isSubmitting}
+                  className="flex-1 rounded-full bg-[#1A56DB] text-white cursor-pointer"
+                >
+                  {editingCycleId ? "Save Changes" : "Create Cycle"}
+                </NexaButton>
+                {editingCycleId && (
+                  <NexaButton
+                    type="button"
+                    size="md"
+                    variant="outline"
+                    onClick={cancelEdit}
+                    className="rounded-full cursor-pointer"
+                  >
+                    Cancel
+                  </NexaButton>
+                )}
+              </div>
             </form>
           </NexaCard>
 

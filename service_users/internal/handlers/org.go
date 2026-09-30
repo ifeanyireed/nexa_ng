@@ -541,7 +541,7 @@ func (h *OrgHandler) SaveTenantRBAC(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"success":   true,
-		"message":   "Tenant RBAC matrix successfully persisted to MySQL database",
+		"message":   "Tenant RBAC matrix successfully persisted to Neon Postgres database",
 		"tenant_id": orgID,
 		"matrix":    req.Matrix,
 	})
@@ -698,7 +698,7 @@ func (h *OrgHandler) CheckSubdomainAvailability(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	// 5. Look up existing tenant in MySQL database table `Organization`
+	// 5. Look up existing tenant in Neon Postgres database table `Organization`
 	if h.db != nil {
 		var count int64
 		h.db.Model(&models.Organization{}).Where("slug = ?", slug).Count(&count)

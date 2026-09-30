@@ -82,7 +82,7 @@ func (h *SubscriptionHandler) GetAllPlanTiers(w http.ResponseWriter, r *http.Req
 	json.NewEncoder(w).Encode(subscription.PlanLimits)
 }
 
-// ListPlans returns all subscription plan blueprints stored in MySQL database
+// ListPlans returns all subscription plan blueprints stored in Neon Postgres database
 func (h *SubscriptionHandler) ListPlans(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -90,7 +90,7 @@ func (h *SubscriptionHandler) ListPlans(w http.ResponseWriter, r *http.Request) 
 		var count int64
 		h.db.Model(&models.SubscriptionPlan{}).Count(&count)
 		if count == 0 {
-			// Auto-seed default catalog into MySQL database
+			// Auto-seed default catalog into Neon Postgres database
 			seedDefaultSubscriptionPlans(h.db)
 		}
 
@@ -133,7 +133,7 @@ func (h *SubscriptionHandler) GetPlan(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, `{"error": "Subscription plan not found"}`, http.StatusNotFound)
 }
 
-// CreatePlan adds a new plan blueprint to MySQL database
+// CreatePlan adds a new plan blueprint to Neon Postgres database
 func (h *SubscriptionHandler) CreatePlan(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var plan models.SubscriptionPlan
@@ -159,7 +159,7 @@ func (h *SubscriptionHandler) CreatePlan(w http.ResponseWriter, r *http.Request)
 	json.NewEncoder(w).Encode(plan)
 }
 
-// UpdatePlan modifies an existing subscription blueprint in MySQL database
+// UpdatePlan modifies an existing subscription blueprint in Neon Postgres database
 func (h *SubscriptionHandler) UpdatePlan(w http.ResponseWriter, r *http.Request) {
 	planID := chi.URLParam(r, "id")
 	w.Header().Set("Content-Type", "application/json")
@@ -253,7 +253,7 @@ func (h *SubscriptionHandler) UpdatePlan(w http.ResponseWriter, r *http.Request)
 	json.NewEncoder(w).Encode(rawMap)
 }
 
-// DeletePlan removes a subscription blueprint from MySQL database
+// DeletePlan removes a subscription blueprint from Neon Postgres database
 func (h *SubscriptionHandler) DeletePlan(w http.ResponseWriter, r *http.Request) {
 	planID := chi.URLParam(r, "id")
 	w.Header().Set("Content-Type", "application/json")
@@ -271,7 +271,7 @@ func (h *SubscriptionHandler) DeletePlan(w http.ResponseWriter, r *http.Request)
 	})
 }
 
-// UpdateTenantSubscription updates a tenant's active subscription tier in MySQL
+// UpdateTenantSubscription updates a tenant's active subscription tier in Neon Postgres
 func (h *SubscriptionHandler) UpdateTenantSubscription(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgId")
 	w.Header().Set("Content-Type", "application/json")
@@ -586,7 +586,7 @@ func getDefaultSeedPlans() []models.SubscriptionPlan {
 			LeadsLimit:    50000,
 			CampaignsLimit: 100,
 			TeamSeats:     999,
-			FeaturesJSON:  `["Dedicated MySQL & Redis Instances","99.99% Guaranteed SLA Uptime","Unlimited Seats & Workspaces","Custom Enterprise ERP Integrations","Dedicated Strategic Technical Lead"]`,
+			FeaturesJSON:  `["Dedicated Neon Postgres & Redis Instances","99.99% Guaranteed SLA Uptime","Unlimited Seats & Workspaces","Custom Enterprise ERP Integrations","Dedicated Strategic Technical Lead"]`,
 			IsActive:      true,
 		},
 

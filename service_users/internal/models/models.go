@@ -108,7 +108,7 @@ func (Subscription) TableName() string {
 	return "Subscription"
 }
 
-// SubscriptionPlan represents dynamic subscription blueprints stored in MySQL
+// SubscriptionPlan represents dynamic subscription blueprints stored in Neon Postgres
 type SubscriptionPlan struct {
 	ID               string    `gorm:"primaryKey;size:191" json:"id"`
 	Category         string    `gorm:"size:50;not null;index" json:"category"` // OFIA_AI, OFIA_SHOP, OFIA_ENTERPRISE, OFIA_COMPASS

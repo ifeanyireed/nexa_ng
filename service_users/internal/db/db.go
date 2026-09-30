@@ -1,14 +1,11 @@
 package db
 
 import (
-	"fmt"
 	"log"
 	"os"
-	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -17,79 +14,24 @@ import (
 
 var DB *gorm.DB
 
-func ParseDatabaseDSN(rawURL string) string {
-	if rawURL == "" {
-		return ""
-	}
-
-	rawURL = strings.TrimSpace(rawURL)
-
-	// If it already contains standard Go MySQL TCP format: user:pass@tcp(host:port)/dbname
-	if strings.Contains(rawURL, "@tcp(") {
-		return rawURL
-	}
-
-	// Strip mysql:// or mariadb:// prefix if present
-	clean := strings.TrimPrefix(rawURL, "mysql://")
-	clean = strings.TrimPrefix(clean, "mariadb://")
-
-	lastAtIndex := strings.LastIndex(clean, "@")
-	if lastAtIndex != -1 {
-		userInfo := clean[:lastAtIndex]
-		hostAndDb := clean[lastAtIndex+1:]
-
-		slashIndex := strings.Index(hostAndDb, "/")
-		if slashIndex != -1 {
-			hostPort := hostAndDb[:slashIndex]
-			dbAndParams := hostAndDb[slashIndex+1:]
-
-			if !strings.Contains(hostPort, ":") {
-				hostPort = hostPort + ":3306"
-			}
-
-			if !strings.Contains(dbAndParams, "parseTime=") {
-				if strings.Contains(dbAndParams, "?") {
-					dbAndParams += "&charset=utf8mb4&parseTime=True&loc=Local&tls=preferred"
-				} else {
-					dbAndParams += "?charset=utf8mb4&parseTime=True&loc=Local&tls=preferred"
-				}
-			}
-
-			return fmt.Sprintf("%s@tcp(%s)/%s", userInfo, hostPort, dbAndParams)
-		}
-	}
-
-	return rawURL
-}
-
 func InitDB() *gorm.DB {
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" {
 		databaseURL = os.Getenv("DB_DSN")
 	}
 
-	var dialector gorm.Dialector
-	isPostgres := strings.HasPrefix(databaseURL, "postgres://") || strings.HasPrefix(databaseURL, "postgresql://")
+	log.Println("🐘 Connecting to Neon Postgres database...")
 
-	if isPostgres {
-		log.Println("🐘 Connecting to PostgreSQL / Neon database...")
-		dialector = postgres.Open(databaseURL)
-	} else {
-		if databaseURL == "" {
-			databaseURL = "u721451974_nexa:*Reedb4b4@tcp(srv2113.hstgr.io:3306)/u721451974_nexa_db?charset=utf8mb4&parseTime=True&loc=Local&tls=preferred"
-		} else {
-			databaseURL = ParseDatabaseDSN(databaseURL)
-		}
-		dialector = mysql.Open(databaseURL)
-	}
+	dialector := postgres.Open(databaseURL)
 
 	var err error
 	gormDB, err := gorm.Open(dialector, &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true,
 		Logger:                                   logger.Default.LogMode(logger.Warn),
+		PrepareStmt:                              true, // Optimizes execution for Postgres
 	})
 	if err != nil {
-		log.Printf("⚠️ Warning: Failed to connect to database (%s): %v. Proceeding with offline DB readiness mode.", databaseURL, err)
+		log.Printf("⚠️ Warning: Failed to connect to Neon database: %v. Proceeding with offline DB readiness mode.", err)
 		DB = nil
 		return nil
 	}
@@ -103,7 +45,7 @@ func InitDB() *gorm.DB {
 		sqlDB.SetConnMaxLifetime(10 * time.Minute)
 	}
 
-	// Auto-migrate tables including User, RBAC matrix, and Subscription models
+	// Auto-migrate tables
 	_ = DB.AutoMigrate(
 		&models.User{},
 		&models.Organization{},
@@ -115,7 +57,6 @@ func InitDB() *gorm.DB {
 		&models.TenantPermissionAuditLog{},
 	)
 
-	// Seed Super Admin users into MySQL database
 	seedSuperAdmins(DB)
 
 	log.Println("Database connection initialized successfully for service_users")
@@ -173,7 +114,7 @@ func seedSuperAdmins(db *gorm.DB) {
 					UpdatedAt: time.Now(),
 				}
 				if err := db.Create(&user).Error; err == nil {
-					log.Printf("✅ Seeded SuperAdmin user in MySQL: %s (%s)", sa.Name, sa.Email)
+					log.Printf("✅ Seeded SuperAdmin user in Neon Postgres: %s (%s)", sa.Name, sa.Email)
 				}
 			}
 		}

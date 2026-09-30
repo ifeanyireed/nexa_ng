@@ -3,7 +3,7 @@
 Standalone backend service for identity, multi-tenant organizations, and subscription limit management.
 
 * **Port:** `8081`
-* **Database:** `u721451974_nexa_db` (MySQL)
+* **Database:** `u721451974_nexa_db` (Neon Postgres)
 
 ---
 

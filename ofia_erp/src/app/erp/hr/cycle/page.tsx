@@ -9,10 +9,11 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { Pagination } from "@/components/nexa/Pagination";
-import { Calendar, Plus, CheckCircle2, Clock, AlertCircle, ArrowLeft, Trash2 } from "lucide-react";
+import { Calendar, Plus, CheckCircle2, Clock, AlertCircle, ArrowLeft, Trash2, Edit2 } from "lucide-react";
 
 export default function ReviewCycleManagement() {
   const { cycles, addReviewCycle, updateCycles, deleteReviewCycle } = useERPStore();
+  const [editingCycleId, setEditingCycleId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -31,15 +32,18 @@ export default function ReviewCycleManagement() {
     }
   };
 
+  
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !startDate || !endDate || selectedDepts.length === 0) {
-      alert("Please fill in all cycle details and select at least one department.");
+    if (!name || !startDate || !endDate) {
+      alert("Please fill in all required fields.");
       return;
     }
 
-    const newCycle: ReviewCycle = {
-      id: `CYC00${cycles.length + 1}`,
+    const cycleId = editingCycleId || `CYC00${cycles.length + 1}`;
+
+    const payload: ReviewCycle = {
+      id: cycleId,
       name,
       startDate,
       endDate,
@@ -47,14 +51,32 @@ export default function ReviewCycleManagement() {
       departments: selectedDepts,
     };
 
-    addReviewCycle(newCycle);
+    if (editingCycleId) {
+      const list = cycles.map(c => c.id === editingCycleId ? payload : c);
+      updateCycles(list);
+      alert("Review Cycle updated successfully!");
+    } else {
+      addReviewCycle(payload);
+      alert("Review Cycle created successfully!");
+    }
+
     setName("");
     setStartDate("");
     setEndDate("");
     setSelectedDepts([]);
     setCycleStatus("Draft");
-    alert("Review Cycle created successfully!");
+    setEditingCycleId(null);
   };
+
+  const cancelEdit = () => {
+    setName("");
+    setStartDate("");
+    setEndDate("");
+    setSelectedDepts([]);
+    setCycleStatus("Draft");
+    setEditingCycleId(null);
+  };
+
 
   const handleToggleDept = (dept: string) => {
     if (selectedDepts.includes(dept)) {
@@ -65,6 +87,19 @@ export default function ReviewCycleManagement() {
   };
 
   
+  
+  const handleEdit = (cycle: ReviewCycle) => {
+    setEditingCycleId(cycle.id);
+    setName(cycle.name);
+    setStartDate(cycle.startDate);
+    setEndDate(cycle.endDate);
+    setCycleStatus(cycle.status as any);
+    setSelectedDepts(cycle.departments || []);
+    
+    // Scroll to form smoothly
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleDelete = (cycleId: string) => {
     if (confirm("Are you sure you want to completely delete this review cycle and all associated data? This action cannot be undone.")) {
       deleteReviewCycle(cycleId);
@@ -118,6 +153,13 @@ export default function ReviewCycleManagement() {
 
                     
                     <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => handleEdit(c)}
+                        className="p-1.5 text-blue-500 hover:bg-blue-500/10 rounded-full transition-colors"
+                        title="Edit Cycle"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
                       <button 
                         onClick={() => handleDelete(c.id)}
                         className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-full transition-colors mr-1"
@@ -182,7 +224,7 @@ export default function ReviewCycleManagement() {
           {/* Create Cycle Form (5cols) */}
           <NexaCard variant="glass" padding="lg" className="lg:col-span-5 rounded-3xl">
             <h3 className="font-extrabold text-[var(--nexa-text-primary)] text-sm pb-2 border-b border-[var(--nexa-border)] mb-4">
-              Create New Review Cycle
+              {editingCycleId ? "Edit Review Cycle" : "Create New Review Cycle"}
             </h3>
             
             <form onSubmit={handleCreate} className="space-y-4">

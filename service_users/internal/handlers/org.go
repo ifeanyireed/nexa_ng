@@ -118,7 +118,7 @@ func (h *OrgHandler) GetOrgDetails(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgId")
 	var org models.Organization
 	if h.db != nil {
-		if err := h.db.Preload("Members.User").Preload("Subscription").Preload("Owner").First(&org, "id = ?", orgID).Error; err != nil {
+		if err := h.db.Preload("Members.User").Preload("Subscription").Preload("Owner").First(&org, "id = ? OR slug = ? OR LOWER(slug) = LOWER(?)", orgID, orgID, orgID).Error; err != nil {
 			http.Error(w, `{"error": "Organization not found"}`, http.StatusNotFound)
 			return
 		}
@@ -291,6 +291,9 @@ func (h *OrgHandler) UpdateOrgProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	if v, ok := rawMap["slug"]; ok && v != "" {
 		updateFields["slug"] = v
+	}
+	if v, ok := rawMap["domain"]; ok && v != "" {
+		updateFields["domain"] = v
 	}
 	if v, ok := rawMap["plan_tier"]; ok && v != "" {
 		updateFields["plan_tier"] = v

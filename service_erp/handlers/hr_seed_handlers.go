@@ -19,7 +19,7 @@ func AutoSeedIfEmpty() {
 	EnsureHRTables()
 
 	var reviewCount int
-	row := db.QueryRow("SELECT COUNT(*) FROM PerformanceReview")
+	row := db.QueryRow(`SELECT COUNT(*) FROM "PerformanceReview"`)
 	if err := row.Scan(&reviewCount); err == nil && reviewCount > 0 {
 		log.Printf("ℹ️ Database already contains %d reviews in PerformanceReview table, skipping automatic seeding", reviewCount)
 		return
@@ -47,14 +47,12 @@ func executeSeed() error {
 	}
 	defer tx.Rollback()
 
-	_, _ = tx.Exec("SET FOREIGN_KEY_CHECKS = 0")
-
 	// 1. Seed Users (15 columns matching database export)
-	userStmt, err := tx.Prepare(`INSERT INTO User 
-		(id, name, email, role, department, avatar, managerName, ratingTrend, company, designation, employmentDate, gradeLevel, location, password, managerId) 
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		ON DUPLICATE KEY UPDATE 
-		name=VALUES(name), department=VALUES(department), avatar=VALUES(avatar), managerName=VALUES(managerName), ratingTrend=VALUES(ratingTrend), company=VALUES(company), designation=VALUES(designation), employmentDate=VALUES(employmentDate), gradeLevel=VALUES(gradeLevel), location=VALUES(location), managerId=VALUES(managerId)`)
+	userStmt, err := tx.Prepare(`INSERT INTO "User" 
+		(id, name, email, role, department, avatar, "managerName", "ratingTrend", company, designation, "employmentDate", "gradeLevel", location, password, "managerId") 
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+		ON CONFLICT (id) DO UPDATE SET 
+		name=EXCLUDED.name, department=EXCLUDED.department, avatar=EXCLUDED.avatar, "managerName"=EXCLUDED."managerName", "ratingTrend"=EXCLUDED."ratingTrend", company=EXCLUDED.company, designation=EXCLUDED.designation, "employmentDate"=EXCLUDED."employmentDate", "gradeLevel"=EXCLUDED."gradeLevel", location=EXCLUDED.location, "managerId"=EXCLUDED."managerId"`)
 	if err != nil {
 		return err
 	}
@@ -70,11 +68,11 @@ func executeSeed() error {
 	}
 
 	// 2. Seed Cycles (6 columns matching database export)
-	cycleStmt, err := tx.Prepare(`INSERT INTO ReviewCycle 
-		(id, name, startDate, endDate, status, departments) 
-		VALUES (?, ?, ?, ?, ?, ?)
-		ON DUPLICATE KEY UPDATE 
-		name=VALUES(name), startDate=VALUES(startDate), endDate=VALUES(endDate), status=VALUES(status), departments=VALUES(departments)`)
+	cycleStmt, err := tx.Prepare(`INSERT INTO "ReviewCycle" 
+		(id, name, "startDate", "endDate", status, departments) 
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (id) DO UPDATE SET 
+		name=EXCLUDED.name, "startDate"=EXCLUDED."startDate", "endDate"=EXCLUDED."endDate", status=EXCLUDED.status, departments=EXCLUDED.departments`)
 	if err != nil {
 		return err
 	}
@@ -90,11 +88,11 @@ func executeSeed() error {
 	}
 
 	// 3. Seed Objectives (8 columns matching database export)
-	objStmt, err := tx.Prepare(`INSERT INTO Objective 
-		(id, text, weight, type, expectedLevel, category, departments, description) 
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-		ON DUPLICATE KEY UPDATE 
-		text=VALUES(text), weight=VALUES(weight), type=VALUES(type), expectedLevel=VALUES(expectedLevel), category=VALUES(category), departments=VALUES(departments), description=VALUES(description)`)
+	objStmt, err := tx.Prepare(`INSERT INTO "Objective" 
+		(id, text, weight, type, "expectedLevel", category, departments, description) 
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		ON CONFLICT (id) DO UPDATE SET 
+		text=EXCLUDED.text, weight=EXCLUDED.weight, type=EXCLUDED.type, "expectedLevel"=EXCLUDED."expectedLevel", category=EXCLUDED.category, departments=EXCLUDED.departments, description=EXCLUDED.description`)
 	if err != nil {
 		return err
 	}
@@ -120,11 +118,11 @@ func executeSeed() error {
 	}
 
 	// 4. Seed Reviews (14 columns matching database export)
-	revStmt, err := tx.Prepare(`INSERT INTO PerformanceReview 
-		(id, employeeId, employeeName, department, cycleId, cycleName, status, employeeComments, managerComments, hrComments, finalScore, objectivesJson, updatedAt, improvementPlan) 
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		ON DUPLICATE KEY UPDATE 
-		employeeId=VALUES(employeeId), employeeName=VALUES(employeeName), department=VALUES(department), cycleId=VALUES(cycleId), cycleName=VALUES(cycleName), status=VALUES(status), employeeComments=VALUES(employeeComments), managerComments=VALUES(managerComments), hrComments=VALUES(hrComments), finalScore=VALUES(finalScore), objectivesJson=VALUES(objectivesJson), updatedAt=VALUES(updatedAt), improvementPlan=VALUES(improvementPlan)`)
+	revStmt, err := tx.Prepare(`INSERT INTO "PerformanceReview" 
+		(id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "finalScore", "objectivesJson", "updatedAt", "improvementPlan") 
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+		ON CONFLICT (id) DO UPDATE SET 
+		"employeeId"=EXCLUDED."employeeId", "employeeName"=EXCLUDED."employeeName", department=EXCLUDED.department, "cycleId"=EXCLUDED."cycleId", "cycleName"=EXCLUDED."cycleName", status=EXCLUDED.status, "employeeComments"=EXCLUDED."employeeComments", "managerComments"=EXCLUDED."managerComments", "hrComments"=EXCLUDED."hrComments", "finalScore"=EXCLUDED."finalScore", "objectivesJson"=EXCLUDED."objectivesJson", "updatedAt"=EXCLUDED."updatedAt", "improvementPlan"=EXCLUDED."improvementPlan"`)
 	if err != nil {
 		return err
 	}
@@ -144,7 +142,6 @@ func executeSeed() error {
 		}
 	}
 
-	_, _ = tx.Exec("SET FOREIGN_KEY_CHECKS = 1")
 	return tx.Commit()
 }
 

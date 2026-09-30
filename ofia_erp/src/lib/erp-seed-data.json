@@ -1180,7 +1180,7 @@
       "employeeComments": null,
       "managerComments": null,
       "hrComments": null,
-      "finalScore": 0.0,
+      "finalScore": 0,
       "objectives": [
         {
           "id": "OBJ_COMP_1",
@@ -1275,7 +1275,7 @@
       "employeeComments": null,
       "managerComments": null,
       "hrComments": null,
-      "finalScore": 0.0,
+      "finalScore": 0,
       "objectives": [
         {
           "id": "OBJ_COMP_1",
@@ -1398,7 +1398,7 @@
           ],
           "description": [
             "Maintain at least 95% operational uptime of all critical facility systems (electricity supply, generators, water systems, air-conditioning, and lighting)",
-            "Ensure all facility faults are logged and addressed within 24\u201348 hours of reporting",
+            "Ensure all facility faults are logged and addressed within 24–48 hours of reporting",
             "Keep facility-related operational disruptions below 5% per quarter"
           ],
           "selfScore": 90,
@@ -1447,7 +1447,7 @@
           ],
           "description": [
             "Maintain facility expenses within approved operational budgets each quarter",
-            "Achieve 5\u201310% annual improvement in utility efficiency (electricity, water, fuel usage) through monitoring and optimization"
+            "Achieve 5–10% annual improvement in utility efficiency (electricity, water, fuel usage) through monitoring and optimization"
           ],
           "selfScore": 100,
           "comments": "he reduces cost to the best of his capacity",
@@ -1610,7 +1610,7 @@
       "cycleName": "2026 Mid-Year Performance Cycle",
       "status": "HR Approved",
       "employeeComments": "I remained committed to achieving my responsibilities, improving fleet operations, supporting my team, and ensuring compliance with company standards.",
-      "managerComments": "Overall performance shows effort in accountability and self\u2011improvement, but several areas remain below expectation. Tasks are often delayed until prompted, with reliance on excuses rather than proactive ownership. Reporting and compliance deadlines are inconsistently met, and leadership tends to be reactive rather than forward\u2011planning.\n\nTo improve, stronger initiative, consistency, and planning discipline are required. Proactive task execution, timely reporting, and reduced dependence on follow\u2011ups will enhance reliability. Emotional stability and clearer leadership presence will also build trust and set a better example for colleagues.\n\nWith focused effort on these areas, performance can progress from average to exemplary, positively impacting team outcomes and organizational objectives.",
+      "managerComments": "Overall performance shows effort in accountability and self‑improvement, but several areas remain below expectation. Tasks are often delayed until prompted, with reliance on excuses rather than proactive ownership. Reporting and compliance deadlines are inconsistently met, and leadership tends to be reactive rather than forward‑planning.\n\nTo improve, stronger initiative, consistency, and planning discipline are required. Proactive task execution, timely reporting, and reduced dependence on follow‑ups will enhance reliability. Emotional stability and clearer leadership presence will also build trust and set a better example for colleagues.\n\nWith focused effort on these areas, performance can progress from average to exemplary, positively impacting team outcomes and organizational objectives.",
       "hrComments": "The employee has shown commitment to assigned responsibilities during the review period. HR encourages greater ownership, proactive planning, and improved consistency in task execution and reporting. Strengthening leadership presence, meeting deadlines without follow-up, and maintaining a solution-oriented approach will contribute to improved performance and greater impact in the next review period.",
       "finalScore": 5.424499999999998,
       "objectives": [],
@@ -1868,7 +1868,7 @@
       "finalScore": 8.89,
       "objectives": [],
       "updatedAt": "2026-07-17 12:50:32.000",
-      "improvementPlan": "* Follower Growth: Increased from 2,000 to 3,000+ followers \u2014 50% growth\\\n* Social Media Reach: Achieved 100,000+ impressions/reach across platforms\\\n* Customer Engagement: Managed 500+ social media enquiries/DMs\\\n* Lead Conversion: Achieved approximately 50% conversion rate from qualified enquiries to potential customers.\\\n\\\nGoals and Actions for Improvement (Next Review Cycle):\\\n\\\n* Strengthen digital strategy execution: Gain deeper insights into content performance, audience behavior, and industry trends to identify what drives engagement, leads, and conversions.\\\n* Enhance professional expertise: Continue developing skills in digital marketing, analytics, AI tools, automation, and content strategy to improve efficiency and deliver stronger results.\\\n* Drive business growth through social media: Develop more conversion-focused campaigns, improve lead generation processes, and strengthen engagement strategies to support sales objectives.\\\n* Optimize LinkedIn and YouTube growth: Implement targeted strategies to increase brand visibility, audience growth, thought leadership, and business opportunities across both platforms.\\\n\\\n"
+      "improvementPlan": "* Follower Growth: Increased from 2,000 to 3,000+ followers — 50% growth\\\n* Social Media Reach: Achieved 100,000+ impressions/reach across platforms\\\n* Customer Engagement: Managed 500+ social media enquiries/DMs\\\n* Lead Conversion: Achieved approximately 50% conversion rate from qualified enquiries to potential customers.\\\n\\\nGoals and Actions for Improvement (Next Review Cycle):\\\n\\\n* Strengthen digital strategy execution: Gain deeper insights into content performance, audience behavior, and industry trends to identify what drives engagement, leads, and conversions.\\\n* Enhance professional expertise: Continue developing skills in digital marketing, analytics, AI tools, automation, and content strategy to improve efficiency and deliver stronger results.\\\n* Drive business growth through social media: Develop more conversion-focused campaigns, improve lead generation processes, and strengthen engagement strategies to support sales objectives.\\\n* Optimize LinkedIn and YouTube growth: Implement targeted strategies to increase brand visibility, audience growth, thought leadership, and business opportunities across both platforms.\\\n\\\n"
     },
     {
       "id": "REV001EMP008",
@@ -1881,7 +1881,7 @@
       "employeeComments": null,
       "managerComments": null,
       "hrComments": null,
-      "finalScore": 0.0,
+      "finalScore": 0,
       "objectives": [
         {
           "id": "OBJ_HUMAN_RESOURCES_3",
@@ -2234,13 +2234,13 @@
       "cycleId": "CYC001",
       "cycleName": "2026 Mid-Year Performance Cycle",
       "status": "HR Approved",
-      "employeeComments": "During this review period, I consistently demonstrated commitment, accountability, and professionalism in carrying out my responsibilities as a Fleet Monitoring Officer. I contributed to improved fleet utilization, driver compliance, timely incident detection, and accurate reporting through proactive monitoring, effective communication, and prompt issue escalation. I adapted well to operational demands, collaborated effectively with colleagues, and remained focused on achieving team and organizational objectives. Going forward, I am committed to further improving my technical skills, enhancing operational efficiency, and continuing to deliver high-quality results that support the company\u2019s goals.",
+      "employeeComments": "During this review period, I consistently demonstrated commitment, accountability, and professionalism in carrying out my responsibilities as a Fleet Monitoring Officer. I contributed to improved fleet utilization, driver compliance, timely incident detection, and accurate reporting through proactive monitoring, effective communication, and prompt issue escalation. I adapted well to operational demands, collaborated effectively with colleagues, and remained focused on achieving team and organizational objectives. Going forward, I am committed to further improving my technical skills, enhancing operational efficiency, and continuing to deliver high-quality results that support the company’s goals.",
       "managerComments": "During the review period, the employee consistently demonstrated commitment, accountability, and professionalism in carrying out her responsibilities as a Fleet Monitoring Officer. She made significant contributions to fleet efficiency through effective real-time monitoring, timely incident detection and escalation, accurate reporting, and strong communication with drivers and stakeholders. Her dedication to operational excellence improved fleet visibility, supported driver compliance, and minimized operational disruptions.\n\nShe also exhibited strong teamwork, reliability, and a willingness to learn and adapt to changing operational demands. Going forward, further development in analytical, problem-solving, and technical skills will enhance her effectiveness and enable her to contribute even more strategically to the achievement of organizational objectives. Overall, she is a dependable team member who consistently delivers value and positively impacts fleet operations.",
       "hrComments": null,
       "finalScore": 8.8625,
       "objectives": [],
       "updatedAt": "2026-07-20 09:09:01.000",
-      "improvementPlan": "Over the next review period, I plan to further improve my efficiency in fleet monitoring by strengthening my analytical and problem-solving skills, enhancing the accuracy and timeliness of operational reporting, and deepening my knowledge of the fleet management systems used by the organization. I also aim to improve my communication and incident management skills through continuous feedback, learning opportunities, and relevant training. My goal is to contribute more effectively to operational excellence, safety, and the achievement of the company\u2019s performance objectives."
+      "improvementPlan": "Over the next review period, I plan to further improve my efficiency in fleet monitoring by strengthening my analytical and problem-solving skills, enhancing the accuracy and timeliness of operational reporting, and deepening my knowledge of the fleet management systems used by the organization. I also aim to improve my communication and incident management skills through continuous feedback, learning opportunities, and relevant training. My goal is to contribute more effectively to operational excellence, safety, and the achievement of the company’s performance objectives."
     },
     {
       "id": "REV001EMP012",
@@ -2251,7 +2251,7 @@
       "cycleName": "2026 Mid-Year Performance Cycle",
       "status": "HR Approved",
       "employeeComments": "During the 2026 mid-year review period, I consistently demonstrated commitment, accountability, and professionalism in carrying out my responsibilities as a Fleet Supervisor. I successfully managed key fleet operations by ensuring timely vehicle maintenance coordination, monitoring driver documentation and compliance, submitting operational and incident reports within required timelines, and supporting the overall efficiency and safety of fleet activities. I also maintained effective communication with drivers, colleagues, and management while proactively resolving operational challenges and promoting teamwork.\\\nSome of my key highlights include maintaining accurate fleet records, improving compliance with document renewals, supporting preventive maintenance initiatives to reduce vehicle downtime and maintenance costs, and providing regular feedback on driver performance and welfare. I remained focused on delivering quality results, meeting organizational expectations, and contributing to the achievement of departmental objectives.\\\nGoing forward, my career development goals are to strengthen my leadership and fleet management capabilities, enhance my knowledge of fleet optimization, preventive maintenance, and compliance management, and pursue relevant professional training and certifications. I also aim to improve data analysis and reporting skills, develop more efficient operational processes, and take on greater leadership responsibilities that will contribute to the continued success and growth of the organization.",
-      "managerComments": "The Fleet Supervisor has demonstrated strong commitment and professionalism across key performance areas, including JCC preparation, document renewal, driver welfare, regulatory compliance, leadership, initiative, KPI deployment, and self\u2011improvement. Their proactive approach, attention to detail, and willingness to learn have contributed positively to fleet operations, driver engagement, and compliance standards.\n\nWhile performance is commendable, some gaps remain in areas such as timely JCC sign\u2011off, expired vehicle documents, missing LASDRI certifications, and the need for deeper technical knowledge in fleet management and vehicle maintenance. With structured support from the maintenance and accounts teams, and continued focus on empowering colleagues, they are well\u2011positioned to achieve and sustain 100% compliance and operational efficiency.\n\nOverall, the Fleet Supervisor is a motivated and resilient team member who consistently strives to be the best, seeks continuous improvement, and shows strong potential for growth. With targeted development and collaborative support, they will further strengthen leadership impact and deliver even greater value to the organization.",
+      "managerComments": "The Fleet Supervisor has demonstrated strong commitment and professionalism across key performance areas, including JCC preparation, document renewal, driver welfare, regulatory compliance, leadership, initiative, KPI deployment, and self‑improvement. Their proactive approach, attention to detail, and willingness to learn have contributed positively to fleet operations, driver engagement, and compliance standards.\n\nWhile performance is commendable, some gaps remain in areas such as timely JCC sign‑off, expired vehicle documents, missing LASDRI certifications, and the need for deeper technical knowledge in fleet management and vehicle maintenance. With structured support from the maintenance and accounts teams, and continued focus on empowering colleagues, they are well‑positioned to achieve and sustain 100% compliance and operational efficiency.\n\nOverall, the Fleet Supervisor is a motivated and resilient team member who consistently strives to be the best, seeks continuous improvement, and shows strong potential for growth. With targeted development and collaborative support, they will further strengthen leadership impact and deliver even greater value to the organization.",
       "hrComments": "The employee has demonstrated commitment and a strong desire to grow in the role. The development goals outlined are well aligned with the manager's feedback and the organization's objectives. HR encourages the employee to continue building leadership capability, strengthen operational efficiency and compliance, and pursue relevant training to maximize performance and contribute greater value to the organization.",
       "finalScore": 9.09525,
       "objectives": [],
@@ -2436,7 +2436,7 @@
       "employeeComments": null,
       "managerComments": null,
       "hrComments": null,
-      "finalScore": 0.0,
+      "finalScore": 0,
       "objectives": [
         {
           "id": "OBJ_FLEET_16",
@@ -2449,7 +2449,7 @@
           "description": [
             "30% reduction in repairs and running costs within the region",
             "Timeliness in reporting and resolving repair issues within 24 hours",
-            "All-time truck availability for the client\u2019s use"
+            "All-time truck availability for the client’s use"
           ],
           "selfScore": 70
         },
@@ -2549,7 +2549,7 @@
       "cycleId": "CYC001",
       "cycleName": "2026 Mid-Year Performance Cycle",
       "status": "Submitted",
-      "employeeComments": "I\u2019ve focused on keeping our front office professional, organized, and reliable. Balancing visitor management with hands-on finance support has given me a great view of our daily operations. I'm proud of the work ethic and consistency I\u2019ve brought to the team, and I\u2019m excited to keep raising the bar.\"\\\n\u200bImprovement Plan",
+      "employeeComments": "I’ve focused on keeping our front office professional, organized, and reliable. Balancing visitor management with hands-on finance support has given me a great view of our daily operations. I'm proud of the work ethic and consistency I’ve brought to the team, and I’m excited to keep raising the bar.\"\\\n​Improvement Plan",
       "managerComments": null,
       "hrComments": null,
       "finalScore": 2.94,
@@ -2627,7 +2627,7 @@
             "Listen actively and cooperate well with others",
             "Build constructive work relationships"
           ],
-          "comments": "I make sure my communication is clear, polite, and direct, whether I\u2019m talking to visitors, suppliers, or colleagues. I focus on listening carefully to what people actually need, which has helped me build strong, easy working relationships across different departments.",
+          "comments": "I make sure my communication is clear, polite, and direct, whether I’m talking to visitors, suppliers, or colleagues. I focus on listening carefully to what people actually need, which has helped me build strong, easy working relationships across different departments.",
           "selfScore": 5
         },
         {
@@ -2672,12 +2672,12 @@
             "Actively seek feedback and opportunities to learn",
             "Complete training courses or obtain professional certifications"
           ],
-          "comments": "I actively look for ways to grow and bring more value to the team. Recently, I have focused on building my industry knowledge by completing professional self-study, including an Introduction to Supply Chain Management course on Alison. I\u2019ve also spent time improving how I handle our daily reporting and tracking templates to make our administrative and financial data processing much faster and more accurate.",
+          "comments": "I actively look for ways to grow and bring more value to the team. Recently, I have focused on building my industry knowledge by completing professional self-study, including an Introduction to Supply Chain Management course on Alison. I’ve also spent time improving how I handle our daily reporting and tracking templates to make our administrative and financial data processing much faster and more accurate.",
           "selfScore": 5
         }
       ],
       "updatedAt": "2026-07-15 15:47:30.000",
-      "improvementPlan": "To apply my recent supply chain training to find ways to optimize our physical asset tracking and inventory workflows.\\\n\u200bWork on streamlining our daily reports and administrative files to save time and reduce manual errors.\\\n\u200bEnroll in and complete further professional logistics training specifically targeting Logistics Management and Inventory Control, and a Diploma in Logistics to build my operational skills.\\\n\u200bTake on more coordination tasks to help streamline how information flows between the front desk and the finance/operations teams."
+      "improvementPlan": "To apply my recent supply chain training to find ways to optimize our physical asset tracking and inventory workflows.\\\n​Work on streamlining our daily reports and administrative files to save time and reduce manual errors.\\\n​Enroll in and complete further professional logistics training specifically targeting Logistics Management and Inventory Control, and a Diploma in Logistics to build my operational skills.\\\n​Take on more coordination tasks to help streamline how information flows between the front desk and the finance/operations teams."
     },
     {
       "id": "REV001EMP017",
@@ -2703,7 +2703,7 @@
       "cycleId": "CYC001",
       "cycleName": "2026 Mid-Year Performance Cycle",
       "status": "HR Approved",
-      "employeeComments": "A very satisfactory Effort is being put into the job and I\u2019m open to being better.",
+      "employeeComments": "A very satisfactory Effort is being put into the job and I’m open to being better.",
       "managerComments": "During the review period, the employee showed steady performance and commitment to achieving operational goals. He worked collaboratively with colleagues, supported drivers effectively, and demonstrated a strong desire for self-improvement. Continued investment in skill development will enhance his overall contribution and prepare him for greater responsibilities.",
       "hrComments": "The employee demonstrated commitment and steady performance during the review period. HR encourages him to continue developing his skills, maintain effective support for drivers, and focus on improving fleet efficiency. Continued learning and consistency will prepare him for greater responsibilities and enhance his overall contribution to the organization.",
       "finalScore": 8.4775,
@@ -3176,7 +3176,7 @@
       "employeeComments": null,
       "managerComments": null,
       "hrComments": null,
-      "finalScore": 0.0,
+      "finalScore": 0,
       "objectives": [
         {
           "id": "OBJ_HUMAN_RESOURCES_5",
@@ -3310,7 +3310,7 @@
       "cycleId": "CYC001",
       "cycleName": "2026 Mid-Year Performance Cycle",
       "status": "HR Approved",
-      "employeeComments": "My performance has been highly satisfactory \u2014 I\u2019ve consistently delivered quality work as Legal Counsel/Executive Assistant.\n\nKey Highlights:\n - Quashed challenging tasks with impressive results\n - Ensured seamless operations and exceeded expectations\n\nCareer Development Goals:\n - Continue tackling high-impact projects with excellence\n - Receive formal recognition for hard work and contributions\n - Advance my skills, drive growth, and increase income\n\nLooking Forward: To keep delivering value and growing in my role",
+      "employeeComments": "My performance has been highly satisfactory — I’ve consistently delivered quality work as Legal Counsel/Executive Assistant.\n\nKey Highlights:\n - Quashed challenging tasks with impressive results\n - Ensured seamless operations and exceeded expectations\n\nCareer Development Goals:\n - Continue tackling high-impact projects with excellence\n - Receive formal recognition for hard work and contributions\n - Advance my skills, drive growth, and increase income\n\nLooking Forward: To keep delivering value and growing in my role",
       "managerComments": "Sandra is very proactive, self driven and have a high level of task completion. She also has a great attitude to work",
       "hrComments": null,
       "finalScore": 8.61,
@@ -3568,7 +3568,7 @@
       "employeeComments": null,
       "managerComments": null,
       "hrComments": null,
-      "finalScore": 0.0,
+      "finalScore": 0,
       "objectives": [
         {
           "id": "OBJ_ERP_IT_1",
@@ -3701,8 +3701,8 @@
             "Finance 1 (Acc Payable)"
           ],
           "description": [
-            "Ensure 100% of approved payments are processed within 24\u201372 hours of approval",
-            "Maintain payment processing accuracy rate of 98\u2013100%",
+            "Ensure 100% of approved payments are processed within 24–72 hours of approval",
+            "Maintain payment processing accuracy rate of 98–100%",
             "Record zero unauthorized or duplicate payments"
           ],
           "comments": "Processed approved vendor payments promptly after recieving management approvals while maintaining a high level of accuracy . Ensured all payments followed the required approval workflow, with no unauthorized or duplicate payments recorded. Regularly followed up on pending approvals to prevent delays in vendor payments",
@@ -3720,7 +3720,7 @@
           ],
           "description": [
             "Maintain 100% accurate accounts payable records",
-            "Ensure at least 90\u201395% of vendor payments are made within agreed terms",
+            "Ensure at least 90–95% of vendor payments are made within agreed terms",
             "Keep overdue payables within acceptable thresholds"
           ],
           "comments": "Maintained accurate accounts payable records and ensured vendor payments were processes in line with company procedures and agreed timelines. Monitored outstanding payment requests and communicated with relevant departments to facilitate timely settlement of vendor obligations.",
@@ -3756,7 +3756,7 @@
           ],
           "description": [
             "Submit 100% of financial reports on schedule (weekly/monthly)",
-            "Maintain 98\u2013100% accuracy in financial statements and payable reports"
+            "Maintain 98–100% accuracy in financial statements and payable reports"
           ],
           "comments": "Prepared and submitted monthly accounts payable reports and expenses analyses within reporting deadlines. Supported financial reporting through bank statement reconciliations and maintained accurate records that contributed to management reporting.",
           "selfScore": 100,
@@ -3789,7 +3789,7 @@
             "Finance 1 (Acc Payable)"
           ],
           "description": [
-            "Identify and report at least 3\u20135 cost or process improvement opportunities annually",
+            "Identify and report at least 3–5 cost or process improvement opportunities annually",
             "Ensure 100% proper classification of transactions (approved, pending, paid)",
             "Perform other duties as assigned by management"
           ],
@@ -3918,7 +3918,7 @@
       "finalScore": 8.465,
       "objectives": [],
       "updatedAt": "2026-07-20 12:39:07.000",
-      "improvementPlan": "Going forward, I will focus on further enhancing fleet performance by leveraging data analytics to identify trends, improve vehicle utilization, and strengthen proactive decision-making. I will continue to improve driver safety and compliance through regular coaching, closer monitoring, and timely interventions to further reduce operational risks and violations.\n\nI also plan to enhance the quality and efficiency of reporting by improving data validation processes and reducing incident response times. Additionally, I will strengthen my leadership and coaching capabilities by providing more structured performance feedback, mentoring team members, and fostering a culture of accountability and continuous improvement. To support my professional growth, I will actively pursue relevant training and certifications, stay updated on industry best practices, and seek opportunities to improve operational processes that contribute to the organization\u2019s strategic objectives."
+      "improvementPlan": "Going forward, I will focus on further enhancing fleet performance by leveraging data analytics to identify trends, improve vehicle utilization, and strengthen proactive decision-making. I will continue to improve driver safety and compliance through regular coaching, closer monitoring, and timely interventions to further reduce operational risks and violations.\n\nI also plan to enhance the quality and efficiency of reporting by improving data validation processes and reducing incident response times. Additionally, I will strengthen my leadership and coaching capabilities by providing more structured performance feedback, mentoring team members, and fostering a culture of accountability and continuous improvement. To support my professional growth, I will actively pursue relevant training and certifications, stay updated on industry best practices, and seek opportunities to improve operational processes that contribute to the organization’s strategic objectives."
     },
     {
       "id": "REV001EMP028",
@@ -3963,7 +3963,7 @@
       "employeeComments": "I joined the Company on 18 May 2026 and quickly adapted to the role, providing timely and practical legal support across contract management, compliance, corporate governance, property management, and dispute resolution. During the review period, I consistently met key deliverables, collaborated effectively with stakeholders, and remained committed to protecting the Company's legal and commercial interests. I look forward to further strengthening legal processes and contributing to the Company's continued growth.",
       "managerComments": null,
       "hrComments": null,
-      "finalScore": 3.0,
+      "finalScore": 3,
       "objectives": [
         {
           "id": "OBJ_LEGAL_3",
@@ -4003,7 +4003,7 @@
             "Legal 2 (Legal Counsel & PM)"
           ],
           "description": [
-            "Reduce potential legal exposure by 10 \u2013 15% annually through proactive measures.",
+            "Reduce potential legal exposure by 10 – 15% annually through proactive measures.",
             "Maintain a regulatory compliance rate of 100%, with no material fines or penalties within the next 12 months."
           ],
           "selfScore": 100,
@@ -4203,8 +4203,8 @@
             "Finance 2 (Acc Receivable)"
           ],
           "description": [
-            "Ensure 100% of invoices are generated within 24\u201372 hours of service completion or receipt of required documentation",
-            "Maintain invoice accuracy rate of 98\u2013100% (minimal errors or rework required)",
+            "Ensure 100% of invoices are generated within 24–72 hours of service completion or receipt of required documentation",
+            "Maintain invoice accuracy rate of 98–100% (minimal errors or rework required)",
             "Ensure 100% of invoices are supported by valid PO/SES and documentation"
           ],
           "selfScore": 70,
@@ -4221,9 +4221,9 @@
             "Finance 2 (Acc Receivable)"
           ],
           "description": [
-            "Achieve at least 85\u201395% collection of receivables within agreed credit terms",
-            "Maintain accounts receivable aging within approved thresholds (e.g., \u226420% beyond 30 days overdue)",
-            "Reduce overdue receivables by at least 10\u201315% annually"
+            "Achieve at least 85–95% collection of receivables within agreed credit terms",
+            "Maintain accounts receivable aging within approved thresholds (e.g., ≤20% beyond 30 days overdue)",
+            "Reduce overdue receivables by at least 10–15% annually"
           ],
           "selfScore": 70,
           "comments": "i have implemented a tracker which has heled me to reduse overdue of all my receivable",
@@ -4240,7 +4240,7 @@
           ],
           "description": [
             "Submit weekly and monthly financial and receivables reports 100% on schedule",
-            "Maintain 98\u2013100% accuracy in financial reports and receivable schedules",
+            "Maintain 98–100% accuracy in financial reports and receivable schedules",
             "Ensure monthly receivable schedules are completed within the first 5 working days of each month"
           ],
           "selfScore": 70,
@@ -4273,7 +4273,7 @@
             "Finance 2 (Acc Receivable)"
           ],
           "description": [
-            "Resolve at least 90% of invoice-related discrepancies within 5\u20137 working days",
+            "Resolve at least 90% of invoice-related discrepancies within 5–7 working days",
             "Ensure 100% timely follow-up on outstanding customer balances"
           ],
           "selfScore": 60,
@@ -4655,7 +4655,7 @@
       "cycleId": "CYC001",
       "cycleName": "2026 Mid-Year Performance Cycle",
       "status": "Manager Reviewed",
-      "employeeComments": "During the first half of the year, I have demonstrated strong commitment and ownership in coordinating SkillUp Academy\u2019s programs and daily operations. I successfully supported the delivery and completion of training programs by coordinating instructors, managing learner communication, monitoring progress, facilitating project submissions and defenses, and ensuring smooth cohort activities. I also contributed to the planning and ongoing execution of the Summer Tech Camp through registration coordination, parent engagement, marketing collaboration, and operational preparation.\\\n\\\nI have continued to develop my coordination, communication, and leadership skills by taking initiative, managing responsibilities effectively, and working collaboratively with team members and management. Moving forward, I remain committed to improving processes, strengthening learner experiences, and contributing to the continued growth and success of SkillUp Academy.",
+      "employeeComments": "During the first half of the year, I have demonstrated strong commitment and ownership in coordinating SkillUp Academy’s programs and daily operations. I successfully supported the delivery and completion of training programs by coordinating instructors, managing learner communication, monitoring progress, facilitating project submissions and defenses, and ensuring smooth cohort activities. I also contributed to the planning and ongoing execution of the Summer Tech Camp through registration coordination, parent engagement, marketing collaboration, and operational preparation.\\\n\\\nI have continued to develop my coordination, communication, and leadership skills by taking initiative, managing responsibilities effectively, and working collaboratively with team members and management. Moving forward, I remain committed to improving processes, strengthening learner experiences, and contributing to the continued growth and success of SkillUp Academy.",
       "managerComments": "You have demonstrated strong commitment to the day-to-day operations of SkillUp Academy and have contributed significantly to ensuring that training programs run smoothly. Your organization, coordination, and dedication are appreciated and have had a positive impact on the Academy's operations. As you continue to grow in your role, I encourage you to become more proactive in areas that require strategic ownership, particularly learner feedback, performance reporting, and partnership development. Taking initiative in these areas will strengthen decision-making, improve the learner experience, and contribute to the long-term growth of SkillUp Academy. I am confident that with greater consistency and intentionality, you can make an even greater impact.\n\nImprovement Plan>\n1. Submit learner performance and end-of-cohort reports promptly without requiring follow-up.\n2. Conduct regular learner feedback sessions and use insights to improve program delivery.\n3. Develop and execute a partnership engagement plan, targeting potential industry partners each month.\n4. Continue strengthening operational excellence while taking greater ownership of strategic responsibilities.",
       "hrComments": null,
       "finalScore": 7.286,
@@ -4953,7 +4953,7 @@
             "KHLC 1 (Instructor)"
           ],
           "description": [
-            "Submit accurate profile form for the term on the 5th \u2013 6th week"
+            "Submit accurate profile form for the term on the 5th – 6th week"
           ],
           "selfScore": 100,
           "managerScore": 80,
@@ -4995,7 +4995,7 @@
       "employeeComments": "I have done well so far, but I believe I can do better",
       "managerComments": null,
       "hrComments": null,
-      "finalScore": 0.0,
+      "finalScore": 0,
       "objectives": [
         {
           "id": "OBJ_COMP_1",
@@ -5206,7 +5206,7 @@
       "cycleName": "2026 Mid-Year Performance Cycle",
       "status": "Manager Reviewed",
       "employeeComments": "I consistently carried out my responsibilities with professionalism and dedication, delivered lessons effectively, and supported students' learning and development. I remain committed to continuous improvement and contributing positively to the school's goals.",
-      "managerComments": "The Instructor has consistently carried out his responsibilities with professionalism and dedication. He delivers lessons effectively, follows lesson plans, and supports students\u2019 learning and development. Beyond classroom delivery, he contributes to the school by handling projects such as automated waste bin , automated car demonstrating initiative and technical skill.\\\nHe takes proactive steps to resolve classroom issues without waiting for instructions and persists in overcoming obstacles to ensure learning outcomes are achieved. He also seeks continuous improvement in his teaching methods.\\\nOverall, the Instructor shows potential and commitment to contributing positively to the company\u2019s goals.\\\n",
+      "managerComments": "The Instructor has consistently carried out his responsibilities with professionalism and dedication. He delivers lessons effectively, follows lesson plans, and supports students’ learning and development. Beyond classroom delivery, he contributes to the school by handling projects such as automated waste bin , automated car demonstrating initiative and technical skill.\\\nHe takes proactive steps to resolve classroom issues without waiting for instructions and persists in overcoming obstacles to ensure learning outcomes are achieved. He also seeks continuous improvement in his teaching methods.\\\nOverall, the Instructor shows potential and commitment to contributing positively to the company’s goals.\\\n",
       "hrComments": null,
       "finalScore": 8.7,
       "objectives": [],
@@ -5503,7 +5503,7 @@
             "KHLC 1 (Instructor)"
           ],
           "description": [
-            "Submit accurate profile form for the term on the 5th \u2013 6th week"
+            "Submit accurate profile form for the term on the 5th – 6th week"
           ],
           "selfScore": 80,
           "managerScore": 70,
@@ -5824,7 +5824,7 @@
             "KHLC 1 (Instructor)"
           ],
           "description": [
-            "Submit accurate profile form for the term on the 5th \u2013 6th week"
+            "Submit accurate profile form for the term on the 5th – 6th week"
           ],
           "selfScore": 100,
           "managerScore": 90,
@@ -6145,7 +6145,7 @@
             "KHLC 1 (Instructor)"
           ],
           "description": [
-            "Submit accurate profile form for the term on the 5th \u2013 6th week"
+            "Submit accurate profile form for the term on the 5th – 6th week"
           ],
           "selfScore": null,
           "managerScore": null,
@@ -6482,7 +6482,7 @@
             "KHLC 1 (Instructor)"
           ],
           "description": [
-            "Submit accurate profile form for the term on the 5th \u2013 6th week"
+            "Submit accurate profile form for the term on the 5th – 6th week"
           ],
           "selfScore": null,
           "managerScore": null,
@@ -6803,7 +6803,7 @@
             "KHLC 1 (Instructor)"
           ],
           "description": [
-            "Submit accurate profile form for the term on the 5th \u2013 6th week"
+            "Submit accurate profile form for the term on the 5th – 6th week"
           ],
           "selfScore": 90,
           "managerScore": 70,
@@ -7124,7 +7124,7 @@
             "KHLC 1 (Instructor)"
           ],
           "description": [
-            "Submit accurate profile form for the term on the 5th \u2013 6th week"
+            "Submit accurate profile form for the term on the 5th – 6th week"
           ],
           "selfScore": null,
           "managerScore": 80,
@@ -7445,7 +7445,7 @@
             "KHLC 1 (Instructor)"
           ],
           "description": [
-            "Submit accurate profile form for the term on the 5th \u2013 6th week"
+            "Submit accurate profile form for the term on the 5th – 6th week"
           ],
           "selfScore": null,
           "managerScore": 80,
@@ -7485,7 +7485,7 @@
       "cycleName": "2026 Mid-Year Performance Cycle",
       "status": "Manager Reviewed",
       "employeeComments": null,
-      "managerComments": "Deborah, you are doing well, and I commend your efforts. However, I believe you have the potential to do even better. Remember, every step you take toward improving yourself is an investment in your future.\nMake it a habit to develop yourself every day by learning new skills, seeking knowledge, and giving your best in all you do. Consistent growth and determination will open doors to greater opportunities and help you achieve even greater heights. Keep pushing yourself\u2014you have what it takes to excel.",
+      "managerComments": "Deborah, you are doing well, and I commend your efforts. However, I believe you have the potential to do even better. Remember, every step you take toward improving yourself is an investment in your future.\nMake it a habit to develop yourself every day by learning new skills, seeking knowledge, and giving your best in all you do. Consistent growth and determination will open doors to greater opportunities and help you achieve even greater heights. Keep pushing yourself—you have what it takes to excel.",
       "hrComments": null,
       "finalScore": 5.276,
       "objectives": [],
@@ -7782,7 +7782,7 @@
             "KHLC 1 (Instructor)"
           ],
           "description": [
-            "Submit accurate profile form for the term on the 5th \u2013 6th week"
+            "Submit accurate profile form for the term on the 5th – 6th week"
           ],
           "selfScore": null,
           "managerScore": 90,
@@ -7824,7 +7824,7 @@
       "employeeComments": null,
       "managerComments": null,
       "hrComments": null,
-      "finalScore": 0.0,
+      "finalScore": 0,
       "objectives": [
         {
           "id": "OBJ_COMP_1",
@@ -8103,7 +8103,7 @@
             "KHLC 1 (Instructor)"
           ],
           "description": [
-            "Submit accurate profile form for the term on the 5th \u2013 6th week"
+            "Submit accurate profile form for the term on the 5th – 6th week"
           ],
           "selfScore": null,
           "managerScore": null,
@@ -8424,7 +8424,7 @@
             "KHLC 1 (Instructor)"
           ],
           "description": [
-            "Submit accurate profile form for the term on the 5th \u2013 6th week"
+            "Submit accurate profile form for the term on the 5th – 6th week"
           ],
           "selfScore": 100,
           "managerScore": 80,
@@ -8466,7 +8466,7 @@
       "employeeComments": null,
       "managerComments": null,
       "hrComments": null,
-      "finalScore": 0.0,
+      "finalScore": 0,
       "objectives": [],
       "updatedAt": "2026-07-30 15:23:44.000",
       "improvementPlan": null
@@ -8496,7 +8496,7 @@
       "cycleName": "2026 Mid-Year Performance Cycle",
       "status": "Manager Reviewed",
       "employeeComments": "I successfully delivered engaging coding lessons to primary and secondary school students, using practical, project-based learning to improve programming, problem-solving, and computational thinking skills. I maintained a positive learning environment, monitored students' progress, and continuously enhanced my teaching through self-development.",
-      "managerComments": "Well done! You have done an excellent job, and I sincerely appreciate your dedication, commitment, and valuable contributions. Your efforts have not gone unnoticed, and I commend you for the positive impact you continue to make. Keep up the good work and never stop striving for excellence.\n\nAs you continue to grow, I encourage you to pay closer attention to a few important areas that will further enhance your performance. Please make it a priority to attend every training session whenever it is scheduled. These trainings are organized to equip you with new knowledge, improve your skills, and help you remain effective and up to date in your responsibilities. Likewise, your active participation in our online meetings is very important, as they provide essential information, guidance, and opportunities to learn, contribute, and stay connected with the team.\n\nIn addition, cultivate the habit of arriving early for all meetings, trainings, and assigned activities. Punctuality reflects discipline, professionalism, responsibility, and respect for other people's time. Being early gives you enough time to settle in, prepare adequately, and participate fully from the beginning. It also sets a positive example for others to follow.\n\nFinally, please make it a habit to submit your daily reports consistently, accompanied by clear pictures or videos of your activities. These reports are essential for monitoring progress, documenting achievements, and ensuring proper accountability. Timely and accurate reporting demonstrates commitment, responsibility, and attention to detail.\n\nI believe you have the ability and potential to achieve even greater success. Stay focused, remain teachable, embrace every opportunity to learn, and continue giving your very best. With consistency, punctuality, active participation, and a commitment to continuous improvement, you will keep growing professionally and reach even greater heights. Keep up the excellent work\u2014I am confident that your best is still ahead of you.",
+      "managerComments": "Well done! You have done an excellent job, and I sincerely appreciate your dedication, commitment, and valuable contributions. Your efforts have not gone unnoticed, and I commend you for the positive impact you continue to make. Keep up the good work and never stop striving for excellence.\n\nAs you continue to grow, I encourage you to pay closer attention to a few important areas that will further enhance your performance. Please make it a priority to attend every training session whenever it is scheduled. These trainings are organized to equip you with new knowledge, improve your skills, and help you remain effective and up to date in your responsibilities. Likewise, your active participation in our online meetings is very important, as they provide essential information, guidance, and opportunities to learn, contribute, and stay connected with the team.\n\nIn addition, cultivate the habit of arriving early for all meetings, trainings, and assigned activities. Punctuality reflects discipline, professionalism, responsibility, and respect for other people's time. Being early gives you enough time to settle in, prepare adequately, and participate fully from the beginning. It also sets a positive example for others to follow.\n\nFinally, please make it a habit to submit your daily reports consistently, accompanied by clear pictures or videos of your activities. These reports are essential for monitoring progress, documenting achievements, and ensuring proper accountability. Timely and accurate reporting demonstrates commitment, responsibility, and attention to detail.\n\nI believe you have the ability and potential to achieve even greater success. Stay focused, remain teachable, embrace every opportunity to learn, and continue giving your very best. With consistency, punctuality, active participation, and a commitment to continuous improvement, you will keep growing professionally and reach even greater heights. Keep up the excellent work—I am confident that your best is still ahead of you.",
       "hrComments": null,
       "finalScore": 6.855999999999998,
       "objectives": [
@@ -8777,7 +8777,7 @@
             "KHLC 1 (Instructor)"
           ],
           "description": [
-            "Submit accurate profile form for the term on the 5th \u2013 6th week"
+            "Submit accurate profile form for the term on the 5th – 6th week"
           ],
           "selfScore": 90,
           "managerScore": 70,
@@ -9098,7 +9098,7 @@
             "KHLC 1 (Instructor)"
           ],
           "description": [
-            "Submit accurate profile form for the term on the 5th \u2013 6th week"
+            "Submit accurate profile form for the term on the 5th – 6th week"
           ],
           "selfScore": null,
           "managerScore": 80,
@@ -9419,7 +9419,7 @@
             "KHLC 1 (Instructor)"
           ],
           "description": [
-            "Submit accurate profile form for the term on the 5th \u2013 6th week"
+            "Submit accurate profile form for the term on the 5th – 6th week"
           ],
           "selfScore": 90,
           "managerScore": 80,
@@ -9509,7 +9509,7 @@
       "employeeComments": null,
       "managerComments": null,
       "hrComments": null,
-      "finalScore": 0.0,
+      "finalScore": 0,
       "objectives": [
         {
           "id": "OBJ_COMP_1",
@@ -9604,7 +9604,7 @@
       "employeeComments": null,
       "managerComments": null,
       "hrComments": null,
-      "finalScore": 0.0,
+      "finalScore": 0,
       "objectives": [
         {
           "id": "OBJ_COMP_1",
@@ -9699,7 +9699,7 @@
       "employeeComments": "I have learnt to be flexible to adapt and adapt to any new development within the company's operations and deliver at the best required. ",
       "managerComments": null,
       "hrComments": null,
-      "finalScore": 0.0,
+      "finalScore": 0,
       "objectives": [
         {
           "id": "OBJ_OTHER_1",
@@ -9887,7 +9887,7 @@
             "Fleet 6 (Fleet Operations Manager)"
           ],
           "description": [
-            "Ensure \u2265 80% of the operation team members complete at least one professional development program related to transport by December 2025",
+            "Ensure ≥ 80% of the operation team members complete at least one professional development program related to transport by December 2025",
             "Retain at least 85% of drivers annually",
             "Budget Management"
           ],
@@ -10101,7 +10101,7 @@
             "Fleet 6 (Fleet Operations Manager)"
           ],
           "description": [
-            "Ensure \u2265 80% of the operation team members complete at least one professional development program related to transport by December 2025",
+            "Ensure ≥ 80% of the operation team members complete at least one professional development program related to transport by December 2025",
             "Retain at least 85% of drivers annually",
             "Budget Management"
           ],
@@ -10236,7 +10236,7 @@
         }
       ],
       "updatedAt": "2026-07-16 10:03:08.000",
-      "improvementPlan": "As a Fleet Operations Manager, my primary focus for the next review cycle is to shift our fleet from reactive firefighting to a proactive, data-driven operation. \n\nBy focusing on cost containment, asset uptime, and safety, I will directly support our organization\u2019s New Era Transport Services with bottom-line growth.\n\n- Optimize Fleet Maintenance and Reduce Unplanned Downtime\n\n- Control and Reduce Fleet Operational Costs\n\n-Elevate Driver Safety and Behavioral Compliance"
+      "improvementPlan": "As a Fleet Operations Manager, my primary focus for the next review cycle is to shift our fleet from reactive firefighting to a proactive, data-driven operation. \n\nBy focusing on cost containment, asset uptime, and safety, I will directly support our organization’s New Era Transport Services with bottom-line growth.\n\n- Optimize Fleet Maintenance and Reduce Unplanned Downtime\n\n- Control and Reduce Fleet Operational Costs\n\n-Elevate Driver Safety and Behavioral Compliance"
     },
     {
       "id": "REV001MGR004",
@@ -10246,7 +10246,7 @@
       "cycleId": "CYC001",
       "cycleName": "2026 Mid-Year Performance Cycle",
       "status": "Manager Reviewed",
-      "employeeComments": "I consistently demonstrated commitment, reliability, and accountability in carrying out my responsibilities. I achieved timely incident reporting and escalation, maintained accurate monitoring logs and reports, ensured effective communication with my line manager and various NBC supervisors, and contributed to seamless NOC operations through proactive problem-solving and teamwork. I upheld high standards of professionalism, punctuality, and adherence to company policies while fostering positive working relationships and supporting team objectives. My ability to take initiative, communicate effectively, and maintain operational excellence contributed significantly to the achievement of departmental and organizational goals.\\\n\\\nCareer Development Goals\\\n\\\nGoing forward, I aim to further strengthen my technical and leadership capabilities by pursuing relevant training and professional certifications, enhancing my incident management and monitoring expertise, and developing stronger people management and coaching skills. I will continue to seek feedback, embrace learning opportunities, and identify process improvement initiatives that drive operational efficiency and support the organization\u2019s strategic objectives. My goal is to grow into a higher leadership role while consistently delivering value and contributing to the success of the organization.",
+      "employeeComments": "I consistently demonstrated commitment, reliability, and accountability in carrying out my responsibilities. I achieved timely incident reporting and escalation, maintained accurate monitoring logs and reports, ensured effective communication with my line manager and various NBC supervisors, and contributed to seamless NOC operations through proactive problem-solving and teamwork. I upheld high standards of professionalism, punctuality, and adherence to company policies while fostering positive working relationships and supporting team objectives. My ability to take initiative, communicate effectively, and maintain operational excellence contributed significantly to the achievement of departmental and organizational goals.\\\n\\\nCareer Development Goals\\\n\\\nGoing forward, I aim to further strengthen my technical and leadership capabilities by pursuing relevant training and professional certifications, enhancing my incident management and monitoring expertise, and developing stronger people management and coaching skills. I will continue to seek feedback, embrace learning opportunities, and identify process improvement initiatives that drive operational efficiency and support the organization’s strategic objectives. My goal is to grow into a higher leadership role while consistently delivering value and contributing to the success of the organization.",
       "managerComments": null,
       "hrComments": null,
       "finalScore": 8.017,
@@ -10262,13 +10262,13 @@
       "cycleId": "CYC001",
       "cycleName": "2026 Mid-Year Performance Cycle",
       "status": "Submitted",
-      "employeeComments": "I have consistently delivered strong results across service delivery, safety compliance, and staff performance, while demonstrating leadership, accountability, and initiative in overcoming operational challenges. My focus on clear communication, constructive relationships, and proactive problem\u2011solving has supported team efficiency and improved workflow outcomes.\n\nOn personal development, I completed courses in emotional intelligence and conflict resolution, which enhanced my ability to manage relationships and resolve issues effectively. I continue to actively seek feedback, refine my skills, and align my growth with organizational objectives to sustain high achievement levels and contribute meaningfully to overall success.",
+      "employeeComments": "I have consistently delivered strong results across service delivery, safety compliance, and staff performance, while demonstrating leadership, accountability, and initiative in overcoming operational challenges. My focus on clear communication, constructive relationships, and proactive problem‑solving has supported team efficiency and improved workflow outcomes.\n\nOn personal development, I completed courses in emotional intelligence and conflict resolution, which enhanced my ability to manage relationships and resolve issues effectively. I continue to actively seek feedback, refine my skills, and align my growth with organizational objectives to sustain high achievement levels and contribute meaningfully to overall success.",
       "managerComments": null,
       "hrComments": null,
       "finalScore": 2.94,
       "objectives": [],
       "updatedAt": "2026-07-16 12:17:37.000",
-      "improvementPlan": "Service Delivery & Timeliness: Maintain current strong performance and continue leveraging route optimization and preventive maintenance to sustain >95% on\u2011time delivery.\n\nPolicy Compliance: Develop a structured system of daily, weekly, and monthly reports tracking each operation\u2019s expenses versus revenue, boosting financial accountability and strengthening compliance oversight.\n\nLeadership & Accountability: Enhance delegation and mentorship to build stronger team ownership of deliverables.\n\nInitiative & Perseverance: Establish contingency plans for recurring challenges and embed resilience practices across the team.\n\nCommunication & Interpersonal Ability: Adopt digital collaboration tools and schedule regular stakeholder reviews to improve clarity and trust.\n\nWork Ethics & Attendance: Reinforce punctuality and task prioritization while maintaining strict adherence to codes of conduct.\n\nKPI Deployment: Refine KPI frameworks, monitor performance with dashboards, and provide timely coaching to sustain high achievement.\n\nSelf\u2011Improvement: Continue applying emotional intelligence and conflict resolution skills, seek feedback actively, and pursue further certifications to align with organizational objectives."
+      "improvementPlan": "Service Delivery & Timeliness: Maintain current strong performance and continue leveraging route optimization and preventive maintenance to sustain >95% on‑time delivery.\n\nPolicy Compliance: Develop a structured system of daily, weekly, and monthly reports tracking each operation’s expenses versus revenue, boosting financial accountability and strengthening compliance oversight.\n\nLeadership & Accountability: Enhance delegation and mentorship to build stronger team ownership of deliverables.\n\nInitiative & Perseverance: Establish contingency plans for recurring challenges and embed resilience practices across the team.\n\nCommunication & Interpersonal Ability: Adopt digital collaboration tools and schedule regular stakeholder reviews to improve clarity and trust.\n\nWork Ethics & Attendance: Reinforce punctuality and task prioritization while maintaining strict adherence to codes of conduct.\n\nKPI Deployment: Refine KPI frameworks, monitor performance with dashboards, and provide timely coaching to sustain high achievement.\n\nSelf‑Improvement: Continue applying emotional intelligence and conflict resolution skills, seek feedback actively, and pursue further certifications to align with organizational objectives."
     },
     {
       "id": "REV001MGR006",
@@ -10308,7 +10308,7 @@
             "Finance 5 (Head of Finance)"
           ],
           "description": [
-            "Maintain a minimum cash reserve of \u20a6100 million at all times to ensure liquidity and financial stability",
+            "Maintain a minimum cash reserve of ₦100 million at all times to ensure liquidity and financial stability",
             "Cash Flow Management",
             "Maintain a minimum cash reserve equivalent to 3 months of operating expenses by ensuring effective receivables and payables management every quarter"
           ],
@@ -10787,7 +10787,7 @@
       "employeeComments": null,
       "managerComments": null,
       "hrComments": null,
-      "finalScore": 0.0,
+      "finalScore": 0,
       "objectives": [
         {
           "id": "OBJ_SU_SKILLUP_1",
@@ -11186,6 +11186,2473 @@
       ],
       "updatedAt": "2026-07-15 15:49:17.000",
       "improvementPlan": "\\\n\\\nImprovement Plan\\\n1. Submit weekly activity and marketing reports consistently and on time.\\\n2. Provide regular updates on team progress, challenges, and achievements.\\\n3. Improve communication by proactively sharing information and escalating issues early.\\\n4.  Maintain accurate documentation of marketing activities and outcomes to support performance tracking and decision-making."
+    }
+  ],
+  "objectives": [
+    {
+      "id": "OBJ_COMP_1",
+      "text": "Leadership and Accountability",
+      "weight": 10,
+      "type": "competency",
+      "expectedLevel": 4,
+      "category": "Leadership",
+      "description": [
+        "Demonstrate responsibility and ownership of task outcomes",
+        "Lead by example and guide colleagues",
+        "Maintain accountability for deliverables"
+      ]
+    },
+    {
+      "id": "OBJ_COMP_2",
+      "text": "Initiative and Perseverance",
+      "weight": 10,
+      "type": "competency",
+      "expectedLevel": 4,
+      "category": "Behavioural",
+      "description": [
+        "Take proactive steps to resolve issues without waiting for instructions",
+        "Persist in overcoming obstacles and difficulties",
+        "Seek continuous improvements in workflows"
+      ]
+    },
+    {
+      "id": "OBJ_COMP_3",
+      "text": "Communication and Interpersonal Ability",
+      "weight": 10,
+      "type": "competency",
+      "expectedLevel": 4,
+      "category": "Behavioural",
+      "description": [
+        "Communicate clearly and effectively with team members and stakeholders",
+        "Listen actively and cooperate well with others",
+        "Build constructive work relationships"
+      ]
+    },
+    {
+      "id": "OBJ_COMP_4",
+      "text": "Work Ethics and Attendance",
+      "weight": 10,
+      "type": "competency",
+      "expectedLevel": 4,
+      "category": "Culture",
+      "description": [
+        "Show high reliability and commitment to work tasks",
+        "Maintain consistent punctuality and attendance",
+        "Adhere strictly to corporate codes of conduct"
+      ]
+    },
+    {
+      "id": "OBJ_COMP_5",
+      "text": "KPI Deployment for Team Members",
+      "weight": 10,
+      "type": "competency",
+      "expectedLevel": 4,
+      "category": "Leadership",
+      "description": [
+        "Clearly define and assign KPIs to direct reports",
+        "Regularly monitor and evaluate team member performance",
+        "Provide feedback and coaching to help team members achieve targets"
+      ]
+    },
+    {
+      "id": "OBJ_COMP_6",
+      "text": "Self Improvement",
+      "weight": 10,
+      "type": "competency",
+      "expectedLevel": 4,
+      "category": "Self-Development",
+      "description": [
+        "Set personal development goals aligned with organizational objectives",
+        "Actively seek feedback and opportunities to learn",
+        "Complete training courses or obtain professional certifications"
+      ]
+    },
+    {
+      "id": "OBJ_ERP_IT_1",
+      "text": "ERP System Adoption",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "ERP/IT 1 (ERP/IT Officer)"
+      ],
+      "description": [
+        "Percentage of employees actively using the enterprise system",
+        "Percentage of time internet services are available in the office without interruptions",
+        "Percentage of IT Incidents Resolved within First Attempt without the need for escalation"
+      ]
+    },
+    {
+      "id": "OBJ_ERP_IT_2",
+      "text": "ERP Upgrades & Implementations",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "ERP/IT 1 (ERP/IT Officer)"
+      ],
+      "description": [
+        "Percentage of Successful ERP Upgrades & System Implementations"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_1",
+      "text": "Payment Timeliness & Accuracy",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Finance 1 (Acc Payable)"
+      ],
+      "description": [
+        "Ensure 100% of approved payments are processed within 24–72 hours of approval",
+        "Maintain payment processing accuracy rate of 98–100%",
+        "Record zero unauthorized or duplicate payments"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_10",
+      "text": "Documentation & Compliance",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Finance 2 (Acc Receivable)"
+      ],
+      "description": [
+        "Maintain 100% proper filing and documentation of receivables and invoice records",
+        "Ensure zero audit queries arising from incomplete or missing documentation"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_11",
+      "text": "Dispute Resolution & Coordination",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Finance 2 (Acc Receivable)"
+      ],
+      "description": [
+        "Resolve at least 90% of invoice-related discrepancies within 5–7 working days",
+        "Ensure 100% timely follow-up on outstanding customer balances"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_12",
+      "text": "Cash Application & Reconciliation",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Finance 2 (Acc Receivable)"
+      ],
+      "description": [
+        "Ensure 100% accurate posting of received payments into customer accounts",
+        "Complete monthly customer account reconciliations with zero unresolved discrepancies beyond one reporting cycle"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_13",
+      "text": "Logistics & Business Reconciliation",
+      "weight": 8,
+      "type": "objective",
+      "departments": [
+        "Finance 3 (Accountant)"
+      ],
+      "description": [
+        "Weekly reconciliation of New Era/Nets Logistics/ KHLC/ Shuttle/ Rental Bus before the close of work on Mondays",
+        "Monthly reconciliation of New Era/Nets Logistics/ KHLC/ Shuttle/ Rental Bus before the end of the month",
+        "Invoicing"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_14",
+      "text": "Invoicing & Customer Account Monitoring",
+      "weight": 8,
+      "type": "objective",
+      "departments": [
+        "Finance 3 (Accountant)"
+      ],
+      "description": [
+        "Cycle time to prepare all invoices within 48 hours of receiving the Purchasing Order/Schedule",
+        "Ensure monthly monitoring of customers' account details and give a report within one week",
+        "From the invoice prepared, resolve all account payment discrepancies within 24 hours"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_15",
+      "text": "Financial & Fleet Expense Reporting",
+      "weight": 8,
+      "type": "objective",
+      "departments": [
+        "Finance 3 (Accountant)"
+      ],
+      "description": [
+        "Reporting",
+        "Prepare the weekly financial report for New Era/Nets Logistics/ KHLC/ Shuttle/ Rental",
+        "Bus and submit before the close of work on Mondays"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_16",
+      "text": "Petty Cash & Imprest Disbursement",
+      "weight": 8,
+      "type": "objective",
+      "departments": [
+        "Finance 3 (Accountant)"
+      ],
+      "description": [
+        "Prepare the weekly fleet expenses report in view of the weekly Friday fleet meetings",
+        "Imprest",
+        "Effective management of petty cash disbursement"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_17",
+      "text": "Payment Processing Speed",
+      "weight": 8,
+      "type": "objective",
+      "departments": [
+        "Finance 3 (Accountant)"
+      ],
+      "description": [
+        "All approved payment requests must be paid within 24 hours, except on weekends"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_18",
+      "text": "Timeliness of Financial Reporting",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Finance 4 (Finance Analyst)"
+      ],
+      "description": [
+        "Submit 100% of monthly management reports within the first 5 working days of the following month"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_19",
+      "text": "Financial Reporting Accuracy",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Finance 4 (Finance Analyst)"
+      ],
+      "description": [
+        "Maintain less than 2% reporting adjustment rate after management review",
+        "Maintain 98–100% accuracy in financial reporting."
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_2",
+      "text": "Payables Management",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Finance 1 (Acc Payable)"
+      ],
+      "description": [
+        "Maintain 100% accurate accounts payable records",
+        "Ensure at least 90–95% of vendor payments are made within agreed terms",
+        "Keep overdue payables within acceptable thresholds"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_20",
+      "text": "Financial Report Reconciliation",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Finance 4 (Finance Analyst)"
+      ],
+      "description": [
+        "Ensure 100% reconciliation of financial reports before submission"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_21",
+      "text": "Financial Analysis & Profitability Reporting",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Finance 4 (Finance Analyst)"
+      ],
+      "description": [
+        "Prepare quarterly profitability reports for all subsidiaries"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_22",
+      "text": "Management Reporting & Dashboard Delivery",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Finance 4 (Finance Analyst)"
+      ],
+      "description": [
+        "Submit all management dashboards and executive reports on schedule"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_23",
+      "text": "Budget Variance Analysis & Monitoring",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Finance 4 (Finance Analyst)"
+      ],
+      "description": [
+        "Complete all budget variance analyses within agreed timelines"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_24",
+      "text": "Operational Cost Reduction",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Finance 5 (Head of Finance)"
+      ],
+      "description": [
+        "Reduce operating costs by 10% across the board by Q4 through process optimization and vendor negotiations",
+        "Cost Savings Ratio: Percentage of costs saved compared to the previous period",
+        "Financial Management"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_25",
+      "text": "Liquidity & Cash Flow Management",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Finance 5 (Head of Finance)"
+      ],
+      "description": [
+        "Maintain a minimum cash reserve of ₦100 million at all times to ensure liquidity and financial stability",
+        "Cash Flow Management",
+        "Maintain a minimum cash reserve equivalent to 3 months of operating expenses by ensuring effective receivables and payables management every quarter"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_26",
+      "text": "Budget Adherence & Control",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Finance 5 (Head of Finance)"
+      ],
+      "description": [
+        "Budget Adherence",
+        "Ensure 95% adherence to the annual operating budget with monthly variance analysis reports submitted by the 5th of each month",
+        "Debt Management"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_27",
+      "text": "Debt Collection & Recovery",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Finance 5 (Head of Finance)"
+      ],
+      "description": [
+        "Reduce outstanding debts by 15% by the end of FY 2025 by improving collection efficiency and renegotiating payment terms with clients and suppliers",
+        "Employee Development",
+        "Ensure 80% of finance team members complete at least one professional development program related to transport finance by the end of the year"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_28",
+      "text": "Risk Management And Compliance",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Finance 5 (Head of Finance)"
+      ],
+      "description": [
+        "Risk Management and Compliance",
+        "Implement a robust risk management framework within the next 6 months to identify, assess, and mitigate financial risks",
+        "Achieve 100% compliance with financial regulations and laws within the next 3 months by conducting regular audits and reviews"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_29",
+      "text": "Reporting",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Finance 5 (Head of Finance)"
+      ],
+      "description": [
+        "Reporting",
+        "Prepare and submit the weekly financial performance report (FPRs) for New Era/Nets Logistics/ KHLC/ Shuttle/ Rental Bus in the first week of the new month"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_3",
+      "text": "Statutory Compliance",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Finance 1 (Acc Payable)"
+      ],
+      "description": [
+        "Ensure 100% timely remittance of statutory deductions (PAYE, VAT, pension, HMO, etc.)",
+        "Maintain zero penalties arising from late or incorrect tax filings",
+        "Ensure 100% accuracy in tax reporting and documentation"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_4",
+      "text": "Financial Reporting",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Finance 1 (Acc Payable)"
+      ],
+      "description": [
+        "Submit 100% of financial reports on schedule (weekly/monthly)",
+        "Maintain 98–100% accuracy in financial statements and payable reports"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_5",
+      "text": "Reconciliation & Audit Readiness",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Finance 1 (Acc Payable)"
+      ],
+      "description": [
+        "Complete monthly vendor reconciliations with zero unresolved discrepancies beyond one reporting cycle",
+        "Maintain 100% audit-ready documentation for all payments and statutory remittances"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_6",
+      "text": "Expense Monitoring & Control",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Finance 1 (Acc Payable)"
+      ],
+      "description": [
+        "Identify and report at least 3–5 cost or process improvement opportunities annually",
+        "Ensure 100% proper classification of transactions (approved, pending, paid)",
+        "Perform other duties as assigned by management"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_7",
+      "text": "Invoicing Efficiency & Accuracy",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Finance 2 (Acc Receivable)"
+      ],
+      "description": [
+        "Ensure 100% of invoices are generated within 24–72 hours of service completion or receipt of required documentation",
+        "Maintain invoice accuracy rate of 98–100% (minimal errors or rework required)",
+        "Ensure 100% of invoices are supported by valid PO/SES and documentation"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_8",
+      "text": "Receivables Collection Performance",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Finance 2 (Acc Receivable)"
+      ],
+      "description": [
+        "Achieve at least 85–95% collection of receivables within agreed credit terms",
+        "Maintain accounts receivable aging within approved thresholds (e.g., ≤20% beyond 30 days overdue)",
+        "Reduce overdue receivables by at least 10–15% annually"
+      ]
+    },
+    {
+      "id": "OBJ_FINANCE_ACCOUNTS_9",
+      "text": "Reporting Timeliness & Accuracy",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Finance 2 (Acc Receivable)"
+      ],
+      "description": [
+        "Submit weekly and monthly financial and receivables reports 100% on schedule",
+        "Maintain 98–100% accuracy in financial reports and receivable schedules",
+        "Ensure monthly receivable schedules are completed within the first 5 working days of each month"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_1",
+      "text": "High Passenger Satisfaction Levels (85–90%)",
+      "weight": 40,
+      "type": "objective",
+      "departments": [
+        "Fleet 1 (Bus Assistant)"
+      ],
+      "description": [
+        "Ensure 100% compliance with passenger safety procedures",
+        "Maintain a clean and orderly vehicle environment for every trip",
+        "Report 100% of incidents or passenger issues promptly"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_10",
+      "text": "Facility Functionality & Uptime",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Fleet 4 (Facility Manager)"
+      ],
+      "description": [
+        "Maintain at least 95% operational uptime of all critical facility systems (electricity supply, generators, water systems, air-conditioning, and lighting)",
+        "Ensure all facility faults are logged and addressed within 24–48 hours of reporting",
+        "Keep facility-related operational disruptions below 5% per quarter"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_11",
+      "text": "Preventive Maintenance Compliance",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Fleet 4 (Facility Manager)"
+      ],
+      "description": [
+        "Maintain accurate maintenance records for all facility equipment",
+        "Reduce emergency maintenance incidents by at least 20% annually through preventive maintenance planning"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_12",
+      "text": "Repair Response Time",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Fleet 4 (Facility Manager)"
+      ],
+      "description": [
+        "Ensure minor repairs are resolved within 24 hours and major repairs within 72 hours where feasible",
+        "Maintain at least 90% on-time completion rate for repair requests"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_13",
+      "text": "Facility Cost & Resource Management",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Fleet 4 (Facility Manager)"
+      ],
+      "description": [
+        "Maintain facility expenses within approved operational budgets each quarter",
+        "Achieve 5–10% annual improvement in utility efficiency (electricity, water, fuel usage) through monitoring and optimization"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_14",
+      "text": "Safety & Compliance",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Fleet 4 (Facility Manager)"
+      ],
+      "description": [
+        "Ensure 100% availability and accessibility of facility safety equipment (fire extinguishers, emergency exits, alarms)",
+        "Record zero major safety violations or incidents caused by facility negligence"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_15",
+      "text": "Reporting & Documentation",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Fleet 4 (Facility Manager)"
+      ],
+      "description": [
+        "Submit 100% of monthly facility management reports on schedule",
+        "Ensure 100% documentation of facility-related expenses and vendor services"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_16",
+      "text": "Fleet Records Accuracy",
+      "weight": 40,
+      "type": "objective",
+      "departments": [
+        "Fleet 5 (Fleet Maintenance North)"
+      ],
+      "description": [
+        "30% reduction in repairs and running costs within the region",
+        "Timeliness in reporting and resolving repair issues within 24 hours",
+        "All-time truck availability for the client’s use"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_17",
+      "text": "Fleet Utilization Rate",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Fleet 6 (Fleet Operations Manager)"
+      ],
+      "description": [
+        "Maintain a utilization rate of at least 90% of the available fleet",
+        "Reduce vehicle downtime to less than 5% of operational hours",
+        "Safety, Maintenance, and Compliance"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_18",
+      "text": "Fleet Accident Reduction",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Fleet 6 (Fleet Operations Manager)"
+      ],
+      "description": [
+        "Reduce accident rate by 20% within the next 12 months",
+        "Achieve 100% compliance with all regulatory transport requirements within the next 6 months by conducting regular audits",
+        "Ensure 100% adherence to scheduled maintenance for all vehicles"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_19",
+      "text": "Operational Efficiency",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Fleet 6 (Fleet Operations Manager)"
+      ],
+      "description": [
+        "Operational Efficiency",
+        "Increase the on-time delivery rate by 15% within the year by optimizing routes and providing driver training",
+        "Employee Management and Development"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_2",
+      "text": "Driver Verification Compliance",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Fleet 2 (Fleet Officer)"
+      ],
+      "description": [
+        "Maintain zero incidents of unverified drivers operating company vehicles",
+        "Achieve 95% accuracy in driver and guarantor documentation and database records",
+        "Ensure all fleet reports are submitted on schedule each month"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_20",
+      "text": "Operations Team Professional Development",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Fleet 6 (Fleet Operations Manager)"
+      ],
+      "description": [
+        "Ensure ≥ 80% of the operation team members complete at least one professional development program related to transport by December 2025",
+        "Retain at least 85% of drivers annually",
+        "Budget Management"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_21",
+      "text": "Marketing Budget Compliance",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Fleet 6 (Fleet Operations Manager)"
+      ],
+      "description": [
+        "Percentage compliance with the allocated marketing budget with a variance of no more than 5%",
+        "Business Growth",
+        "Achieve a 15% year-over-year growth in revenue from logistics operations"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_22",
+      "text": "Client Retention & Service Delivery",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "Fleet 6 (Fleet Operations Manager)"
+      ],
+      "description": [
+        "Retain 90% of existing clients annually through excellent service delivery",
+        "Corporate Bus Deployment",
+        "Achieve 100% deployment of staff buses for corporate use before the end of Q4 of the current year"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_23",
+      "text": "Shuttle Fleet Deployment & Scale",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "Fleet 6 (Fleet Operations Manager)"
+      ],
+      "description": [
+        "Deploy and maintain a fleet of at least 50 buses for shuttle services between your assigned region before the end of Q4 of the current year"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_24",
+      "text": "Incident Report Submission Speed",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Fleet 7 (HSE Executive)"
+      ],
+      "description": [
+        "Incidence report submission not more than 12 hours after the occurrence",
+        "Monthly incidence rate and near miss not more than 2",
+        "100% availability of First Aid box items at all times"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_25",
+      "text": "HSE Incident Action Closure",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Fleet 7 (HSE Executive)"
+      ],
+      "description": [
+        "Corrective action closure plans submission within 24 hours of incidence",
+        "80% all time customer satisfaction majorly from driver performance metrics",
+        "Zero tolerance for security breaches or theft incidents"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_26",
+      "text": "JCC Preparation & Sign-off",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Fleet 8 (Fleet Supervisor)"
+      ],
+      "description": [
+        "Prepare JCC for intervention and other in-house repairs within 24 hours of disbursement of funds"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_27",
+      "text": "Document Renewal & Record Keeping",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Fleet 8 (Fleet Supervisor)"
+      ],
+      "description": [
+        "Ensure that driver particulars, such as licenses, etc., are renewed monthly"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_28",
+      "text": "Driver Welfare & Grievance Resolution",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Fleet 8 (Fleet Supervisor)"
+      ],
+      "description": [
+        "Weekly feedback report on driver competency and welfare",
+        "Reduce maintenance costs by 15% within the next 12 months, optimizing maintenance schedules and procedures"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_29",
+      "text": "Regulatory Compliance & Deadlines",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Fleet 8 (Fleet Supervisor)"
+      ],
+      "description": [
+        "Maintain 100% regulatory compliance, ensuring that all vehicles and drivers meet relevant laws and regulations within the next 12 months"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_3",
+      "text": "Driver Incident Reduction",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Fleet 2 (Fleet Officer)"
+      ],
+      "description": [
+        "Reduce driver-related operational incidents by at least 10% annually through verification and monitoring"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_30",
+      "text": "Monthly Operational Reporting",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Fleet 8 (Fleet Supervisor)"
+      ],
+      "description": [
+        "Prepare A Monthly Report And Submit It On Or Before The 25Th Of Each Month"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_31",
+      "text": "Quarterly Compliance Audit & Reporting",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "Fleet 8 (Fleet Supervisor)"
+      ],
+      "description": [
+        "Quarterly Compliance Audit & Reporting"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_32",
+      "text": "Weekly Incident Reporting",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "Fleet 8 (Fleet Supervisor)"
+      ],
+      "description": [
+        "Complete Incident Report Weekly On Mondays"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_4",
+      "text": "Vehicle Deployment & Trip Records",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Fleet 3 (Fleet Support Officer)"
+      ],
+      "description": [
+        "Support 95% on-time vehicle deployment for scheduled operations",
+        "Maintain accurate daily records for 100% of vehicle assignments and trips",
+        "Documentation & Compliance"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_5",
+      "text": "Fleet Documentation & License Compliance",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Fleet 3 (Fleet Support Officer)"
+      ],
+      "description": [
+        "Ensure 100% validity and proper filing of fleet documentation (licenses, insurance, permits)",
+        "Track and flag 100% of expiring documents at least 30 days before expiry",
+        "Driver Coordination"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_6",
+      "text": "Driver Allocation & Schedule Adherence",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Fleet 3 (Fleet Support Officer)"
+      ],
+      "description": [
+        "Maintain 100% updated driver records and assignment logs",
+        "Ensure 95% adherence to driver schedules and trip assignments",
+        "Fuel & Maintenance Support"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_7",
+      "text": "Fuel Management & Vehicle Servicing",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Fleet 3 (Fleet Support Officer)"
+      ],
+      "description": [
+        "Ensure 100% proper documentation of fuel allocation records",
+        "Support timely servicing of vehicles with at least 95% adherence to maintenance schedules",
+        "Data Accuracy & Reporting"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_8",
+      "text": "Fleet Operational Logs & Reporting",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Fleet 3 (Fleet Support Officer)"
+      ],
+      "description": [
+        "Maintain 98–100% accuracy in fleet records and operational logs",
+        "Submit 100% of required reports within agreed timelines",
+        "Issue Resolution & Support"
+      ]
+    },
+    {
+      "id": "OBJ_FLEET_9",
+      "text": "Incident Escalation & Operational Resolution",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Fleet 3 (Fleet Support Officer)"
+      ],
+      "description": [
+        "Escalate 100% of operational issues (vehicle faults, driver issues, delays) within 1–2 hours of identification",
+        "Support resolution of at least 90% of routine operational issues within the same day"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_1",
+      "text": "Visitor Management & Professional Appearance",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Admin/HR 1 (Front Desk & Account Support)"
+      ],
+      "description": [
+        "Maintain 100% accurate front desk and visitor records",
+        "Ensure financial documentation accuracy above 98%",
+        "Provide timely administrative support for finance operations"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_10",
+      "text": "Confirmation Letter Distribution",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "HR 1 (HR Executive 1)"
+      ],
+      "description": [
+        "Ensure employees receive confirmation letters by the first week of the 7th month",
+        "Payroll Management and Statutory Compliance",
+        "Achieve a payroll accuracy rate of 99.5% or better, with no more than 0.5% errors in payroll processing within the next 6 months"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_11",
+      "text": "Statutory Payments & Payroll Processing",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "HR 1 (HR Executive 1)"
+      ],
+      "description": [
+        "Ensure a monthly schedule of all (Pension, Tax, NSITF, etc.) statutory payments on or before the last day of every month",
+        "Ensure submission of payroll approval for salaries on the 22nd of the month",
+        "Ensure payment of monthly salaries on the 26th of the month for all staff and on the 24th for NBC"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_12",
+      "text": "Employee Engagement & Satisfaction",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "HR 1 (HR Executive 1)"
+      ],
+      "description": [
+        "Employee Engagement and Satisfaction",
+        "Bi-annual Execution of Employee Satisfaction Survey – Timeline 3weeks",
+        "Ensure 75% participation rate in the surveys"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_13",
+      "text": "Employee Engagement & Satisfaction",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "HR 1 (HR Executive 1)"
+      ],
+      "description": [
+        "Achieve a 75% engagement score by the end of the year",
+        "Exit Management",
+        "Average Time-to-Exit: Average time taken to complete the exit process"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_14",
+      "text": "Exit Process Completion Rate",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "HR 1 (HR Executive 1)"
+      ],
+      "description": [
+        "Exit Process Completion Rate: Percentage of exit processes completed within a specified timeframe"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_15",
+      "text": "Employee Grievance Resolution",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "HR 2 (HR Executive 2)"
+      ],
+      "description": [
+        "Resolve 90% of employee grievances within 5 working days within the next 6 months",
+        "Achieve a conflict resolution rate of 90% or better, with no unresolved conflicts lasting more than 30 days within the next 12 months",
+        "Performance Management"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_16",
+      "text": "Performance Review Compliance",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "HR 2 (HR Executive 2)"
+      ],
+      "description": [
+        "Ensuring 100% compliance regarding the quarterly performance review",
+        "Execution of the result of the bi-annual performance appraisal on or before the 2nd week of the next half-year",
+        "Recruitment and Retention"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_17",
+      "text": "Staff Turnover Reduction",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "HR 2 (HR Executive 2)"
+      ],
+      "description": [
+        "Reduce the overall employee turnover rate to 10% or less within the next 12 months",
+        "Time-to-Hire: Reduce average time (2months) taken to fill open positions within the next 12months",
+        "Onboarding: Within one week of resumption"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_18",
+      "text": "Confirmation Letter Distribution",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "HR 2 (HR Executive 2)"
+      ],
+      "description": [
+        "Ensure employees receive confirmation letters by the first week of the 7th month",
+        "Payroll Management and Statutory Compliance",
+        "Achieve a payroll accuracy rate of 99.5% or better, with no more than 0.5% errors in payroll processing within the next 6 months"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_19",
+      "text": "Statutory Payments & Payroll Processing",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "HR 2 (HR Executive 2)"
+      ],
+      "description": [
+        "Ensure a monthly schedule of all (Pension, Tax, NSITF, etc.) statutory payments on or before the last day of every month",
+        "Ensure submission of payroll approval for salaries on the 22nd of the month",
+        "Ensure payment of monthly salaries on the 26th of the month for all staff and on the 24th for NBC"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_2",
+      "text": "Front Desk Office Supplies & Task Execution",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Admin/HR 1 (Front Desk & Account Support)"
+      ],
+      "description": [
+        "Ensure 100% professional demeanour and appearance at all times",
+        "Timeliness in restocking of office supplies"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_20",
+      "text": "Employee Engagement & Satisfaction",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "HR 2 (HR Executive 2)"
+      ],
+      "description": [
+        "Employee Engagement and Satisfaction",
+        "Bi-annual Execution of Employee Satisfaction Survey – Timeline 3weeks",
+        "Ensure 75% participation rate in the surveys"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_21",
+      "text": "Employee Engagement & Satisfaction",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "HR 2 (HR Executive 2)"
+      ],
+      "description": [
+        "Achieve an 75% engagement score by the end of the year",
+        "Exit Management",
+        "Average Time-to-Exit: Average time taken to complete the exit process"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_22",
+      "text": "Exit Process Completion Rate",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "HR 2 (HR Executive 2)"
+      ],
+      "description": [
+        "Exit Process Completion Rate: Percentage of exit processes completed within a specified timeframe"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_23",
+      "text": "Employee Engagement",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "HR 3 (Head of HR)"
+      ],
+      "description": [
+        "Increase employee engagement score by 10% as measured by an annual employee satisfaction survey",
+        "Reduce employee turnover rate by 5% year-over-year",
+        "Increase the number of employees receiving formal recognition for their contributions by 20%."
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_24",
+      "text": "Learning and Manpower Development",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "HR 3 (Head of HR)"
+      ],
+      "description": [
+        "Training Completion Rate: Achieve a 95% employee participation rate in mandatory training programs (e.g., safety, compliance)",
+        "Employee Skill Improvement: Measured through assessments before and after training",
+        "Achieve a 95% utilization rate of the allocated L&D budget",
+        "%tage number of quarterly trainings for external clients (in collaboration with LASTMA, FRSC) etc executed"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_25",
+      "text": "Strategic Workforce Management",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "HR 3 (Head of HR)"
+      ],
+      "description": [
+        "Workforce Planning Accuracy: Percentage accuracy of forecasting workforce needs across the group.",
+        "Succession Planning Coverage: Percentage of key roles with identified successors ready within a set timeframe."
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_26",
+      "text": "Oversee Performance Management Process",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "HR 3 (Head of HR)"
+      ],
+      "description": [
+        "Ensuring 100% compliance regarding quarterly performance review",
+        "Execution of result of bi-annual performance appraisal on or before the 2nd week of the next half year"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_27",
+      "text": "Recruitment and Retention at the Group Level",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "HR 3 (Head of HR)"
+      ],
+      "description": [
+        "Group-Wide Turnover Rate: Aggregate employee turnover across all business units",
+        "Diversity and Inclusion Metrics: Percentage representation of diverse groups in leadership and across the organization."
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_28",
+      "text": "Health, Safety, and Well-Being",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "HR 3 (Head of HR)"
+      ],
+      "description": [
+        "Group Incident Reduction Rate: Reduction in workplace incidents across the group by 0% - 5%",
+        "Employee Well-Being Participation: Percentage of employees engaging in group-wide wellness programs",
+        "Health and Safety Audit Compliance: Percentage of units compliant with health and safety regulations."
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_29",
+      "text": "HR Operational Efficiency",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "HR 3 (Head of HR)"
+      ],
+      "description": [
+        "HR Budget Utilization: Percentage of the HR budget effectively used.",
+        "Policy Update Frequency: Ensuring policies are updated on schedule to match industry standards and legal requirements."
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_3",
+      "text": "Visitor Management & Professional Appearance",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Admin/HR 2 (Front Desk)"
+      ],
+      "description": [
+        "Ensure 100% registration and direction of visitors to their destination within 5 minutes of arrival",
+        "Professional Appearance",
+        "Ensure 100% professional demeanor and appearance at all times"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_4",
+      "text": "Front Desk Office Supplies & Task Execution",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Admin/HR 2 (Front Desk)"
+      ],
+      "description": [
+        "Administrative Task",
+        "Ensure constant supply/restock of toiletries and stationery each week",
+        "Timely execution of all given tasks"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_5",
+      "text": "Convenience Area Cleanliness",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Admin/HR 3 (Office Assistant)"
+      ],
+      "description": [
+        "Ensure all convenience areas (restrooms) are cleaned at least 3 times per day",
+        "Timeliness and reliability in completing errands and tasks",
+        "Proper handling of office items and supplies"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_6",
+      "text": "Office Operations Support",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Admin/HR 3 (Office Assistant)"
+      ],
+      "description": [
+        "General support effectiveness in office operations"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_7",
+      "text": "Employee Grievance Resolution",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "HR 1 (HR Executive 1)"
+      ],
+      "description": [
+        "Resolve 90% of employee grievances within 5 working days within the next 6 months",
+        "Achieve a conflict resolution rate of 90% or better, with no unresolved conflicts lasting more than 30 days within the next 12 months",
+        "Performance Management"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_8",
+      "text": "Performance Review Compliance",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "HR 1 (HR Executive 1)"
+      ],
+      "description": [
+        "Ensuring 100% compliance regarding the quarterly performance review",
+        "Execution of the result of the bi-annual performance appraisal on or before the 2nd week of the next half-year",
+        "Recruitment and Retention"
+      ]
+    },
+    {
+      "id": "OBJ_HUMAN_RESOURCES_9",
+      "text": "Staff Turnover Reduction",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "HR 1 (HR Executive 1)"
+      ],
+      "description": [
+        "Reduce the overall employee turnover rate to 10% or less within the next 12 months",
+        "Time-to-Hire: Reduce average time (2months) taken to fill open positions within the next 12months",
+        "Onboarding: Within one week of resumption"
+      ]
+    },
+    {
+      "id": "OBJ_INTERNAL_CONTROL_1",
+      "text": "Completing Audit Reports",
+      "weight": 14,
+      "type": "objective",
+      "departments": [
+        "Internal Control 1 (Internal Control)"
+      ],
+      "description": [
+        "Completing Audit Reports",
+        "Cycle time for completing Draft Audit Reports",
+        "Cycle time for completing Final Audit Reports"
+      ]
+    },
+    {
+      "id": "OBJ_INTERNAL_CONTROL_2",
+      "text": "Audit Accuracy & Fraud Detection",
+      "weight": 13,
+      "type": "objective",
+      "departments": [
+        "Internal Control 1 (Internal Control)"
+      ],
+      "description": [
+        "Number of cases of fraud issues detected by 3rd parties (External Auditors) during audit exercises (but not detected by Internal Auditors)",
+        "Percentage of transport-related regulations and laws complied with",
+        "Percentage of reports completed within timelines"
+      ]
+    },
+    {
+      "id": "OBJ_INTERNAL_CONTROL_3",
+      "text": "Asset Utilization Optimization",
+      "weight": 13,
+      "type": "objective",
+      "departments": [
+        "Internal Control 1 (Internal Control)"
+      ],
+      "description": [
+        "Percentage of Optimal Asset Utilization"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_1_1",
+      "text": "Resource Adherence & Lesson Plans",
+      "weight": 4,
+      "type": "objective",
+      "departments": [
+        "KHLC 1 (Instructor)"
+      ],
+      "description": [
+        "Ensure instructors use the resources (Lesson plan) 100% of the time during sessions"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_1_10",
+      "text": "Punctuality & Arrival Rate",
+      "weight": 4,
+      "type": "objective",
+      "departments": [
+        "KHLC 1 (Instructor)"
+      ],
+      "description": [
+        "Achieve a 95% on-time arrival rate for all scheduled classes"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_1_2",
+      "text": "Dress Code & Professional compliance",
+      "weight": 4,
+      "type": "objective",
+      "departments": [
+        "KHLC 1 (Instructor)"
+      ],
+      "description": [
+        "Ensure a compliance rate of 100% with the organization's professional dress code for all training sessions"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_1_3",
+      "text": "Stakeholder Relationships",
+      "weight": 4,
+      "type": "objective",
+      "departments": [
+        "KHLC 1 (Instructor)"
+      ],
+      "description": [
+        "Achieve an average stakeholder relationship rating of 4/5 or higher"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_1_4",
+      "text": "Practical Training Ratio",
+      "weight": 4,
+      "type": "objective",
+      "departments": [
+        "KHLC 1 (Instructor)"
+      ],
+      "description": [
+        "Ensure instructors train students using 80% practical session, 20% theory"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_1_5",
+      "text": "Instructor Clarity & Engagement Feedback",
+      "weight": 4,
+      "type": "objective",
+      "departments": [
+        "KHLC 1 (Instructor)"
+      ],
+      "description": [
+        "Maintain an average feedback score of 4.5/5 for clarity of instruction and session engagement on post- training evaluations each term."
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_1_6",
+      "text": "Professional Development",
+      "weight": 4,
+      "type": "objective",
+      "departments": [
+        "KHLC 1 (Instructor)"
+      ],
+      "description": [
+        "Complete at least 2 professional courses annually to improve skills and knowledge relevant to program coordination."
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_1_7",
+      "text": "Daily Activity & Attendance Reporting",
+      "weight": 4,
+      "type": "objective",
+      "departments": [
+        "KHLC 1 (Instructor)"
+      ],
+      "description": [
+        "Submit accurate daily reports(/attendance) before close of business"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_1_8",
+      "text": "Term Reporting",
+      "weight": 4,
+      "type": "objective",
+      "departments": [
+        "KHLC 1 (Instructor)"
+      ],
+      "description": [
+        "Submit accurate report for the term on the 12th week of the term"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_1_9",
+      "text": "Profile Updates",
+      "weight": 4,
+      "type": "objective",
+      "departments": [
+        "KHLC 1 (Instructor)"
+      ],
+      "description": [
+        "Submit accurate profile form for the term on the 5th – 6th week"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_2_1",
+      "text": "Program Execution & Delivery",
+      "weight": 8,
+      "type": "objective",
+      "departments": [
+        "KHLC 2 (Supervisor)"
+      ],
+      "description": [
+        "Ensure timely execution of all learning programmes within the term by delivering >=95% of programs"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_2_2",
+      "text": "Participant Engagement & Attendance",
+      "weight": 8,
+      "type": "objective",
+      "departments": [
+        "KHLC 2 (Supervisor)"
+      ],
+      "description": [
+        "Ensure at least 90% participation (internal and external teams) in the execution of each program"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_2_3",
+      "text": "Professional Development",
+      "weight": 8,
+      "type": "objective",
+      "departments": [
+        "KHLC 2 (Supervisor)"
+      ],
+      "description": [
+        "Complete at least 2 professional courses annually to improve skills and knowledge relevant to program coordination."
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_2_4",
+      "text": "Instructor Management & Quality Assurance",
+      "weight": 8,
+      "type": "objective",
+      "departments": [
+        "KHLC 2 (Supervisor)"
+      ],
+      "description": [
+        "90% participant satisfaction ratings in post-session feedback on subject matter expertise",
+        "95% adherence to class schedules without significant delays or cancellations",
+        "Zero incidents of reported unprofessional conduct during the term",
+        "Problem solving/ Thinking outside the box during execution of programs"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_2_5",
+      "text": "Team Performance Feedback",
+      "weight": 8,
+      "type": "objective",
+      "departments": [
+        "KHLC 2 (Supervisor)"
+      ],
+      "description": [
+        "Ensure 100% of team members receive formal performance feedback at least once per quarter"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_3_1",
+      "text": "Instructor Resource & Equipment Readiness",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "KHLC 3 (Program Coordinator)"
+      ],
+      "description": [
+        "Ensure instructors are 80% – 90% (i.e., notes, laptops, instructional materials, retooling) equipped, 2 weeks before the commencement of every academic session"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_3_2",
+      "text": "Project Execution & Budget Management",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "KHLC 3 (Program Coordinator)"
+      ],
+      "description": [
+        "Successfully execute 95% of assigned projects within the agreed timeline and budget"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_3_3",
+      "text": "Feedback Scores & Post-Training Evaluations",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "KHLC 3 (Program Coordinator)"
+      ],
+      "description": [
+        "Maintain an average feedback score between 80% - 90% on post-training evaluations each quarter"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_3_4",
+      "text": "Project Task Timelines",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "KHLC 3 (Program Coordinator)"
+      ],
+      "description": [
+        "Ensure 100% of assigned project-related tasks are completed within the agreed timelines for each program"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_3_5",
+      "text": "Deliverable Tracking & Coordination",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "KHLC 3 (Program Coordinator)"
+      ],
+      "description": [
+        "Achieve the target of 100% deliverable tracking and coordination by the end of each quarter/ session"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_3_6",
+      "text": "Stakeholder Relationships",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "KHLC 3 (Program Coordinator)"
+      ],
+      "description": [
+        "Achieve an average stakeholder relationship rating of 4/5 or higher (>=90%)"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_3_7",
+      "text": "Reporting and Documentation",
+      "weight": 4,
+      "type": "objective",
+      "departments": [
+        "KHLC 3 (Program Coordinator)"
+      ],
+      "description": [
+        "Submit accurate quarterly report before end of term",
+        "Ensure 100% of documents are filed (physical and digital) in the appropriate systems within 24 hours of receipt, maintaining 98% accuracy."
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_SKILLUP_10",
+      "text": "Stakeholder Relationships",
+      "weight": 8,
+      "type": "objective",
+      "departments": [
+        "KHLC 4 (Admin Officer)"
+      ],
+      "description": [
+        "Achieve an average stakeholder relationship rating of 4/5 or higher (>=90%)"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_SKILLUP_11",
+      "text": "Professional Compliance",
+      "weight": 8,
+      "type": "objective",
+      "departments": [
+        "KHLC 4 (Admin Officer)"
+      ],
+      "description": [
+        "Ensure a compliance rate of 100% with regards to professionalism from all instructors, supervisor"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_SKILLUP_12",
+      "text": "Client Invoicing",
+      "weight": 8,
+      "type": "objective",
+      "departments": [
+        "KHLC 4 (Admin Officer)"
+      ],
+      "description": [
+        "Ensure accurate invoicing of clients on or before 5th week of the term"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_SKILLUP_13",
+      "text": "Receivables Management",
+      "weight": 8,
+      "type": "objective",
+      "departments": [
+        "KHLC 4 (Admin Officer)"
+      ],
+      "description": [
+        "Ensure 85% – 90% receivables of all client invoices before 11th week of the term"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_SKILLUP_14",
+      "text": "Reporting and Documentation",
+      "weight": 8,
+      "type": "objective",
+      "departments": [
+        "KHLC 4 (Admin Officer)"
+      ],
+      "description": [
+        "Submit accurate quarterly report before end of term",
+        "Ensure 100% of documents are filed (physical and digital) in the appropriate systems within 24 hours of receipt, maintaining 98% accuracy."
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_SKILLUP_15",
+      "text": "Curriculum Updates",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "KHLC 5 (Head of C&R/CBT)"
+      ],
+      "description": [
+        "Percentage of curriculum updated annually based on industry trends."
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_SKILLUP_16",
+      "text": "Stakeholder Feedback",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "KHLC 5 (Head of C&R/CBT)"
+      ],
+      "description": [
+        "Positive feedback from students and instructors."
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_SKILLUP_17",
+      "text": "Student Enrollment",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "KHLC 5 (Head of C&R/CBT)"
+      ],
+      "description": [
+        "Percentage increase in student enrollment compared to the previous period."
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_SKILLUP_18",
+      "text": "Student Retention",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "KHLC 5 (Head of C&R/CBT)"
+      ],
+      "description": [
+        "Retention rate for students advancing to higher-level courses."
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_SKILLUP_19",
+      "text": "Instructor Ratings",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "KHLC 5 (Head of C&R/CBT)"
+      ],
+      "description": [
+        "Percentage of instructors rated 4+ out of 5 in student feedback surveys."
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_SKILLUP_20",
+      "text": "Instructor Development",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "KHLC 5 (Head of C&R/CBT)"
+      ],
+      "description": [
+        "Percentage of instructors completing professional development programs annually."
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_SKILLUP_21",
+      "text": "Course Tools Utilization",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "KHLC 5 (Head of C&R/CBT)"
+      ],
+      "description": [
+        "Percentage of courses utilizing the latest coding and robotics tools."
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_SKILLUP_22",
+      "text": "Event Participation",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "KHLC 5 (Head of C&R/CBT)"
+      ],
+      "description": [
+        "Percentage increase in students participating in coding-related events."
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_SKILLUP_23",
+      "text": "System Readiness",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "KHLC 6 (IT/Technical Support)"
+      ],
+      "description": [
+        "All CBT computers functional before training/exams",
+        "100% readiness before every session (Frequency: Every CBT session)"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_SKILLUP_24",
+      "text": "System Uptime",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "KHLC 6 (IT/Technical Support)"
+      ],
+      "description": [
+        "Availability of systems during training/exams",
+        "99% uptime (Frequency: Monthly)"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_SKILLUP_25",
+      "text": "Preventive Maintenance",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "KHLC 6 (IT/Technical Support)"
+      ],
+      "description": [
+        "Completion of scheduled system maintenance checks",
+        "100% completion (Frequency: Monthly)"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_SKILLUP_26",
+      "text": "User Support",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "KHLC 6 (IT/Technical Support)"
+      ],
+      "description": [
+        "Satisfaction level from students and instructors",
+        "Minimum 90% satisfaction (Frequency: Quarterly)"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_SKILLUP_27",
+      "text": "IT Asset Management",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "KHLC 6 (IT/Technical Support)"
+      ],
+      "description": [
+        "Accuracy of equipment inventory records",
+        "100% accurate inventory (Frequency: Quarterly)"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_SKILLUP_28",
+      "text": "Security Compliance",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "KHLC 6 (IT/Technical Support)"
+      ],
+      "description": [
+        "Systems protected with updated antivirus and security protocols",
+        "100% compliance (Frequency: Monthly)"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_SKILLUP_29",
+      "text": "Incident Reporting",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "KHLC 6 (IT/Technical Support)"
+      ],
+      "description": [
+        "Documentation of technical incidents and resolutions",
+        "Report submitted within 24 hours (Frequency: Per incident)"
+      ]
+    },
+    {
+      "id": "OBJ_KHLC_SKILLUP_30",
+      "text": "CBT Session Support",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "KHLC 6 (IT/Technical Support)"
+      ],
+      "description": [
+        "Number of CBT sessions conducted without technical disruption",
+        "95% disruption-free sessions (Frequency: Monthly)"
+      ]
+    },
+    {
+      "id": "OBJ_LEGAL_1",
+      "text": "Regulatory Compliance & Deadlines",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Legal 1 (Legal Counsel & EA)"
+      ],
+      "description": [
+        "Maintain 100% compliance with required regulatory filings and legal documentation deadlines",
+        "Achieve 95%+ timeliness in responding to executive and legal requests",
+        "Ensure accurate documentation and secure handling of confidential information"
+      ]
+    },
+    {
+      "id": "OBJ_LEGAL_2",
+      "text": "Executive Action Item Follow-Up",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Legal 1 (Legal Counsel & EA)"
+      ],
+      "description": [
+        "Provide timely coordination and follow-up on executive action items"
+      ]
+    },
+    {
+      "id": "OBJ_LEGAL_3",
+      "text": "Cycle time for executing contractual agreements",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Legal 2 (Legal Counsel & PM)"
+      ],
+      "description": [
+        "Reduce the average contract review time to 3 business days or less within the next 12 months."
+      ]
+    },
+    {
+      "id": "OBJ_LEGAL_4",
+      "text": "Cycle time for drafting agreements",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Legal 2 (Legal Counsel & PM)"
+      ],
+      "description": [
+        "Maintain a draft accuracy rate of 95% or better, with no material errors, within the next 12 months.",
+        "Reviewing contracts and drafting legal documents within 24 hours of receiving the request."
+      ]
+    },
+    {
+      "id": "OBJ_LEGAL_5",
+      "text": "Risk Management and Compliance",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Legal 2 (Legal Counsel & PM)"
+      ],
+      "description": [
+        "Reduce potential legal exposure by 10 – 15% annually through proactive measures.",
+        "Maintain a regulatory compliance rate of 100%, with no material fines or penalties within the next 12 months."
+      ]
+    },
+    {
+      "id": "OBJ_LEGAL_6",
+      "text": "Policy and Procedure Updates",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Legal 2 (Legal Counsel & PM)"
+      ],
+      "description": [
+        "Quarterly review of policy document to ensure 100% adherence to relevant laws and regulations.",
+        "Draft new company policy documents that are in line with new legislative laws within 5 working days."
+      ]
+    },
+    {
+      "id": "OBJ_LEGAL_7",
+      "text": "Reporting and Document Management",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Legal 2 (Legal Counsel & PM)"
+      ],
+      "description": [
+        "Submit an accurate weekly/ activity report before the close of business on Fridays.",
+        "Submit an accurate quarterly report before the quarterly review.",
+        "Conduct quarterly audit and maintenance of legal documents with a 90% accuracy.",
+        "Maintain accurate and up-to-date documents and records, with 100% compliance with document management policies within the next 6 months."
+      ]
+    },
+    {
+      "id": "OBJ_LEGAL_8",
+      "text": "Legal Counsel",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "Legal 2 (Legal Counsel & PM)"
+      ],
+      "description": [
+        "Represent the company periodically in legal proceedings/meetings."
+      ]
+    },
+    {
+      "id": "OBJ_LEGAL_9",
+      "text": "Property Management",
+      "weight": 5,
+      "type": "objective",
+      "departments": [
+        "Legal 2 (Legal Counsel & PM)"
+      ],
+      "description": [
+        "Ensure timely renewal of leases, permits, and property documentation.",
+        "Conduct regular facility inspections and ensure prompt resolution of maintenance issues.",
+        "Maintain company properties in safe and functional condition within approved budgets."
+      ]
+    },
+    {
+      "id": "OBJ_MARKETING_1",
+      "text": "Marketing Revenue Growth",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Marketing 1 (Head of Marketing)"
+      ],
+      "description": [
+        "Achieve at least 25–35% annual growth in marketing-generated revenue across business units",
+        "Ensure a minimum of 40–50% of total company leads originate from marketing activities",
+        "Lead Generation & Conversion"
+      ]
+    },
+    {
+      "id": "OBJ_MARKETING_10",
+      "text": "Brand Visibility & Campaign Quality",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Marketing 3 (Marketing Executive)"
+      ],
+      "description": [
+        "Timely delivery and quality of marketing materials and campaigns"
+      ]
+    },
+    {
+      "id": "OBJ_MARKETING_11",
+      "text": "Marketing Campaign Execution",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Marketing 4 (Marketing Manager)"
+      ],
+      "description": [
+        "Successful execution of marketing campaigns within agreed timelines and budgets",
+        "Improvement in brand visibility and engagement across marketing platforms",
+        "Contribution of marketing initiatives to sales, enrollment, and revenue growth"
+      ]
+    },
+    {
+      "id": "OBJ_MARKETING_12",
+      "text": "Marketing Team Productivity",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Marketing 4 (Marketing Manager)"
+      ],
+      "description": [
+        "Performance and productivity of the marketing team"
+      ]
+    },
+    {
+      "id": "OBJ_MARKETING_13",
+      "text": "Social Media Reach & Analytics",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Marketing 5 (Social Media Executive)"
+      ],
+      "description": [
+        "Respond to 95% of social media enquiries within 24 hours",
+        "Ensure all posts adhere to brand guidelines and are published as scheduled (100%)",
+        "Track campaign results and deliver monthly reports with actionable insights"
+      ]
+    },
+    {
+      "id": "OBJ_MARKETING_14",
+      "text": "Social Media Reach & Analytics",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Marketing 5 (Social Media Executive)"
+      ],
+      "description": [
+        "Generate at least 10 qualified customer leads per month from social media interactions"
+      ]
+    },
+    {
+      "id": "OBJ_MARKETING_15",
+      "text": "Sales Deal Closure",
+      "weight": 40,
+      "type": "objective",
+      "departments": [
+        "Marketing 6 (Sales Closer)"
+      ],
+      "description": [
+        "Revenue generated across business units",
+        "Lead-to-sale conversion rate (This will be based on the amount communicated per time)",
+        "Client retention, repeat business, and referrals"
+      ]
+    },
+    {
+      "id": "OBJ_MARKETING_2",
+      "text": "Qualified Lead Generation",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Marketing 1 (Head of Marketing)"
+      ],
+      "description": [
+        "Increase qualified lead generation by at least 20–30% annually",
+        "Maintain lead-to-customer conversion rate of at least 10–20% in collaboration with the sales team",
+        "Brand Visibility & Engagement"
+      ]
+    },
+    {
+      "id": "OBJ_MARKETING_3",
+      "text": "Social Media Reach & Analytics",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Marketing 1 (Head of Marketing)"
+      ],
+      "description": [
+        "Achieve a minimum of 30% annual growth in social media reach and engagement across platforms",
+        "Increase website traffic by at least 25% year-on-year",
+        "Maintain consistent brand presence across all major marketing channels"
+      ]
+    },
+    {
+      "id": "OBJ_MARKETING_4",
+      "text": "Campaign Performance",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "Marketing 1 (Head of Marketing)"
+      ],
+      "description": [
+        "Campaign Performance",
+        "Deliver 90–95% of marketing campaigns on schedule and within approved budgets",
+        "Ensure minimum ROI ratio of 3:1 on major marketing campaigns (where measurable)"
+      ]
+    },
+    {
+      "id": "OBJ_MARKETING_5",
+      "text": "Team Performance & Productivity",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Marketing 1 (Head of Marketing)"
+      ],
+      "description": [
+        "Team Performance & Productivity",
+        "Ensure 100% completion of marketing team performance reviews annually",
+        "Maintain high team productivity and campaign output across marketing staff"
+      ]
+    },
+    {
+      "id": "OBJ_MARKETING_6",
+      "text": "Marketing Objectives Completion Rate",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "Marketing 1 (Head of Marketing)"
+      ],
+      "description": [
+        "Achieve 90%+ completion rate of departmental marketing objectives each quarter"
+      ]
+    },
+    {
+      "id": "OBJ_MARKETING_7",
+      "text": "Customer Satisfaction & Inquiry Management",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Marketing 2 (Marketing Executive & CSR)"
+      ],
+      "description": [
+        "Maintain customer satisfaction rating of 85–90% or higher (where feedback is collected)",
+        "Ensure 100% accurate logging of customer enquiries and leads",
+        "Support generation of qualified leads through marketing interactions and follow-ups"
+      ]
+    },
+    {
+      "id": "OBJ_MARKETING_8",
+      "text": "Client Communications Quality",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Marketing 2 (Marketing Executive & CSR)"
+      ],
+      "description": [
+        "Maintain professional and courteous communication with all customers"
+      ]
+    },
+    {
+      "id": "OBJ_MARKETING_9",
+      "text": "Digital Engagement & Campaign Performance",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Marketing 3 (Marketing Executive)"
+      ],
+      "description": [
+        "Growth in marketing-generated leads and customer enquiries",
+        "Engagement performance across digital platforms",
+        "Contribution of marketing activities to sales and brand visibility"
+      ]
+    },
+    {
+      "id": "OBJ_NOC_1",
+      "text": "Fleet Visibility & Monitoring",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "NOC 1 (Fleet Monitoring & NOC Supervisor)"
+      ],
+      "description": [
+        "Maintain 100% real-time tracking visibility for all active fleet vehicles",
+        "Ensure all vehicle movements are logged and monitored without gaps"
+      ]
+    },
+    {
+      "id": "OBJ_NOC_10",
+      "text": "Alarm Detection & Monitoring",
+      "weight": 10,
+      "type": "objective",
+      "departments": [
+        "NOC 2 (Fleet Monitoring Officer)"
+      ],
+      "description": [
+        "Alarm Detection & Monitoring"
+      ]
+    },
+    {
+      "id": "OBJ_NOC_2",
+      "text": "Driver Compliance",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "NOC 1 (Fleet Monitoring & NOC Supervisor)"
+      ],
+      "description": [
+        "Detect and report 100% of major driver violations (speeding, route deviation, unauthorized stops)",
+        "Achieve at least 90–95% driver compliance with approved routes and policies"
+      ]
+    },
+    {
+      "id": "OBJ_NOC_3",
+      "text": "Incident Response",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "NOC 1 (Fleet Monitoring & NOC Supervisor)"
+      ],
+      "description": [
+        "Ensure 100% of incidents are reported and escalated within 10–15 minutes of detection",
+        "Maintain complete and accurate incident logs for all reported cases"
+      ]
+    },
+    {
+      "id": "OBJ_NOC_4",
+      "text": "Fuel Monitoring Support",
+      "weight": 7,
+      "type": "objective",
+      "departments": [
+        "NOC 1 (Fleet Monitoring & NOC Supervisor)"
+      ],
+      "description": [
+        "Identify and report 100% of fuel anomalies within 24 hours",
+        "Support reduction of fuel-related inefficiencies by 5–10% annually"
+      ]
+    },
+    {
+      "id": "OBJ_NOC_5",
+      "text": "Reporting & Data Accuracy",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "NOC 1 (Fleet Monitoring & NOC Supervisor)"
+      ],
+      "description": [
+        "Submit 100% of required monitoring reports on schedule",
+        "Maintain data accuracy rate of at least 98–100% across monitoring logs and reports"
+      ]
+    },
+    {
+      "id": "OBJ_NOC_6",
+      "text": "Team Performance",
+      "weight": 6,
+      "type": "objective",
+      "departments": [
+        "NOC 1 (Fleet Monitoring & NOC Supervisor)"
+      ],
+      "description": [
+        "Ensure 100% NOC shift coverage as scheduled",
+        "Achieve at least 90% adherence to monitoring and escalation procedures by team members"
+      ]
+    },
+    {
+      "id": "OBJ_NOC_7",
+      "text": "Vehicle Utilization & Efficiency",
+      "weight": 10,
+      "type": "objective",
+      "departments": [
+        "NOC 2 (Fleet Monitoring Officer)"
+      ],
+      "description": [
+        "Fleet Utilization Rate: Increased by 30% Percent due to proper monitoring and frequent call outs",
+        "30% Reduction in Idle Time: Decrease in unnecessary vehicle idling time"
+      ]
+    },
+    {
+      "id": "OBJ_NOC_8",
+      "text": "Driver Performance & Safety",
+      "weight": 10,
+      "type": "objective",
+      "departments": [
+        "NOC 2 (Fleet Monitoring Officer)"
+      ],
+      "description": [
+        "Driver Compliance Rate: Increase the number of averted risks due to call-outs",
+        "Number of Violations: Reduce cases of speeding, harsh braking, and long parking"
+      ]
+    },
+    {
+      "id": "OBJ_NOC_9",
+      "text": "Reporting & Monitoring Accuracy",
+      "weight": 10,
+      "type": "objective",
+      "departments": [
+        "NOC 2 (Fleet Monitoring Officer)"
+      ],
+      "description": [
+        "Report Timeliness: Percentage of reports submitted on time (daily, weekly, monthly)",
+        "Data Accuracy Rate: Accuracy and reliability of fleet reports generated",
+        "Incident Reporting Response Time: Average time taken to detect and escalate issues"
+      ]
+    },
+    {
+      "id": "OBJ_OTHER_1",
+      "text": "Service Delivery & Timeliness",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Head of Operations"
+      ],
+      "description": [
+        "Ensure 95% on-time service delivery for scheduled operations",
+        "Reduce vehicle downtime to less than 10% per month",
+        "Ensure 100% compliance with operational safety and regulatory standards"
+      ]
+    },
+    {
+      "id": "OBJ_OTHER_2",
+      "text": "Operational Staff Policy Compliance",
+      "weight": 20,
+      "type": "objective",
+      "departments": [
+        "Head of Operations"
+      ],
+      "description": [
+        "Achieve 90%+ operational staff performance compliance with company policies"
+      ]
+    },
+    {
+      "id": "OBJ_SU_SKILLUP_1",
+      "text": "Program Planning & Coordination",
+      "weight": 8,
+      "type": "objective",
+      "departments": [
+        "SU 1 (Program Coordinator)"
+      ],
+      "description": [
+        "Develop and implement training schedules and skill-up calendars for various cohorts, as well as courses offered at the Academy. Teach and coordinate soft and technical skills programs in line with Academy objectives.",
+        "Manage enrollment and payment processes and class rosters and ensure learners have access to relevant resources.",
+        "Organize in-person and virtual training sessions to accommodate learners' different demands.",
+        "Assist in recruiting and onboarding new instructors to meet program demands. Manage daily operations of Skill-up Academy, including scheduling, resource allocation, and staff management."
+      ]
+    },
+    {
+      "id": "OBJ_SU_SKILLUP_2",
+      "text": "Instructor & Learner Engagement",
+      "weight": 8,
+      "type": "objective",
+      "departments": [
+        "SU 1 (Program Coordinator)"
+      ],
+      "description": [
+        "Work closely with instructors to ensure smooth course delivery and learning experiences.",
+        "Serves as a point of contact for learners, addressing any issues related to course content, schedules, or resources. Conduct regular feedback sessions with instructors and learners to monitor progress and areas of improvement.",
+        "Motivate learners by tracking their progress and celebrating achievements."
+      ]
+    },
+    {
+      "id": "OBJ_SU_SKILLUP_3",
+      "text": "Resource Management",
+      "weight": 8,
+      "type": "objective",
+      "departments": [
+        "SU 1 (Program Coordinator)"
+      ],
+      "description": [
+        "Ensure all training materials, equipment, and resources are available during training sessions.",
+        "Collaborate with instructors to update and improve course materials as needed."
+      ]
+    },
+    {
+      "id": "OBJ_SU_SKILLUP_4",
+      "text": "Performance Tracking & Reporting",
+      "weight": 8,
+      "type": "objective",
+      "departments": [
+        "SU 1 (Program Coordinator)"
+      ],
+      "description": [
+        "Analyze learner performance data and generate reports to measure the effectiveness of the training programs.",
+        "Identify trends and suggest improvements to enhance the learning experience and overall program effectiveness.",
+        "Report key performance metrics and end-of-cohort activities to the Program Coordinator at the end of every cohort training."
+      ]
+    },
+    {
+      "id": "OBJ_SU_SKILLUP_5",
+      "text": "Partnership Development",
+      "weight": 8,
+      "type": "objective",
+      "departments": [
+        "SU 1 (Program Coordinator)"
+      ],
+      "description": [
+        "Establish partnerships with industry professionals, organizations, and companies to provide learners with opportunities for internships, job placements, and real-world experience."
+      ]
+    },
+    {
+      "id": "OBJ_WORKSHOP_1",
+      "text": "Repair Quality & Accuracy",
+      "weight": 40,
+      "type": "objective",
+      "departments": [
+        "Workshop 1 (Mechanic)"
+      ],
+      "description": [
+        "Ensure vehicle servicing tasks are completed within scheduled timelines",
+        "Contribute to maintaining fleet availability above 90%",
+        "Maintain 100% compliance with workshop safety procedures"
+      ]
+    },
+    {
+      "id": "OBJ_WORKSHOP_2",
+      "text": "Workshop Safety & Compliance",
+      "weight": 40,
+      "type": "objective",
+      "departments": [
+        "Workshop 2 (Workshop Assistant)"
+      ],
+      "description": [
+        "Support completion of 95% of assigned workshop tasks within expected timelines",
+        "Ensure daily cleanliness and proper organization of workshop space",
+        "Record zero safety incidents caused by negligence"
+      ]
+    },
+    {
+      "id": "OBJ_WORKSHOP_3",
+      "text": "Repair Turnaround Time & Availability",
+      "weight": 40,
+      "type": "objective",
+      "departments": [
+        "Workshop 3 (Workshop Manager)"
+      ],
+      "description": [
+        "Quality of completed jobs and reduction in repeat faults",
+        "Ensure fleet and workshop equipment availability remains at or above 90%",
+        "Ensure 100% compliance with safety and maintenance standards"
+      ]
     }
   ]
 }

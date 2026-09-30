@@ -113,6 +113,7 @@ func filterReviews(list []PerformanceReview, employeeId, tenantSlug string) []Pe
 }
 
 func HandleReviews(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	EnsureHRTables()
 	tenantSlug := getTenantFilter(r)
 
@@ -121,90 +122,75 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 		employeeId := r.URL.Query().Get("employeeId")
 
 		if id != "" {
-			var pr PerformanceReview
-			var objJSON sql.NullString
-			err := db.QueryRow("SELECT id, employeeId, employeeName, department, cycleId, cycleName, status, employeeComments, managerComments, hrComments, improvementPlan, finalScore, objectivesJson, updatedAt FROM PerformanceReview WHERE id = ?", id).
-				Scan(&pr.ID, &pr.EmployeeID, &pr.EmployeeName, &pr.Department, &pr.CycleID, &pr.CycleName, &pr.Status, &pr.EmployeeComments, &pr.ManagerComments, &pr.HRComments, &pr.ImprovementPlan, &pr.FinalScore, &objJSON, &pr.UpdatedAt)
-			if err == sql.ErrNoRows {
-				fallback := getFallbackReviews("", "")
-				for _, fb := range fallback {
-					if fb.ID == id {
-						json.NewEncoder(w).Encode(fb)
-						return
+			if db != nil {
+				var pr PerformanceReview
+				var objJSON sql.NullString
+				err := db.QueryRow(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", "updatedAt" FROM "PerformanceReview" WHERE id = $1`, id).
+					Scan(&pr.ID, &pr.EmployeeID, &pr.EmployeeName, &pr.Department, &pr.CycleID, &pr.CycleName, &pr.Status, &pr.EmployeeComments, &pr.ManagerComments, &pr.HRComments, &pr.ImprovementPlan, &pr.FinalScore, &objJSON, &pr.UpdatedAt)
+				if err == nil {
+					if objJSON.Valid && objJSON.String != "" {
+						raw := json.RawMessage(objJSON.String)
+						pr.Objectives = &raw
 					}
+					json.NewEncoder(w).Encode(pr)
+					return
 				}
-				w.WriteHeader(http.StatusNotFound)
-				json.NewEncoder(w).Encode(map[string]string{"message": "Review not found"})
-				return
-			} else if err != nil {
-				fallback := getFallbackReviews("", "")
-				for _, fb := range fallback {
-					if fb.ID == id {
-						json.NewEncoder(w).Encode(fb)
-						return
-					}
+			}
+
+			fallback := getFallbackReviews("", "")
+			for _, fb := range fallback {
+				if fb.ID == id {
+					json.NewEncoder(w).Encode(fb)
+					return
 				}
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-				return
 			}
-			if objJSON.Valid && objJSON.String != "" {
-				raw := json.RawMessage(objJSON.String)
-				pr.Objectives = &raw
-			}
-			json.NewEncoder(w).Encode(pr)
+			w.WriteHeader(http.StatusNotFound)
+			json.NewEncoder(w).Encode(map[string]string{"message": "Review not found"})
 			return
 		}
 
-		var rows *sql.Rows
-		var err error
-		if employeeId != "" {
-			rows, err = db.Query("SELECT id, employeeId, employeeName, department, cycleId, cycleName, status, employeeComments, managerComments, hrComments, improvementPlan, finalScore, objectivesJson, updatedAt FROM PerformanceReview WHERE employeeId = ?", employeeId)
-		} else if tenantSlug == "" || tenantSlug == "all" || tenantSlug == "neweratransports" || tenantSlug == "nets" || tenantSlug == "new-era-transports" {
-			rows, err = db.Query("SELECT id, employeeId, employeeName, department, cycleId, cycleName, status, employeeComments, managerComments, hrComments, improvementPlan, finalScore, objectivesJson, updatedAt FROM PerformanceReview WHERE tenantSlug = ? OR tenantSlug = ''", tenantSlug)
-		} else {
-			rows, err = db.Query(`SELECT r.id, r.employeeId, r.employeeName, r.department, r.cycleId, r.cycleName, r.status, r.employeeComments, r.managerComments, r.hrComments, r.improvementPlan, r.finalScore, r.objectivesJson, r.updatedAt 
-				FROM PerformanceReview r
-				LEFT JOIN User u ON r.employeeId = u.id
-				WHERE (LOWER(u.company) = ? OR LOWER(u.company) LIKE ? OR LOWER(u.email) LIKE ?)`,
-				tenantSlug, "%"+tenantSlug+"%", "%@"+tenantSlug+"%")
-		}
+		var reviews []PerformanceReview
+		if db != nil {
+			var rows *sql.Rows
+			var err error
+			if employeeId != "" {
+				rows, err = db.Query(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", "updatedAt" FROM "PerformanceReview" WHERE "employeeId" = $1`, employeeId)
+			} else if tenantSlug == "" || tenantSlug == "all" || tenantSlug == "neweratransports" || tenantSlug == "nets" || tenantSlug == "new-era-transports" {
+				rows, err = db.Query(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", "updatedAt" FROM "PerformanceReview" WHERE "tenantSlug" = $1 OR "tenantSlug" = '' OR "tenantSlug" IS NULL`, tenantSlug)
+			} else {
+				rows, err = db.Query(`SELECT r.id, r."employeeId", r."employeeName", r.department, r."cycleId", r."cycleName", r.status, r."employeeComments", r."managerComments", r."hrComments", r."improvementPlan", r."finalScore", r."objectivesJson", r."updatedAt" 
+					FROM "PerformanceReview" r
+					LEFT JOIN "User" u ON r."employeeId" = u.id
+					WHERE (LOWER(u.company) = $1 OR LOWER(u.company) LIKE $2 OR LOWER(u.email) LIKE $3 OR r."tenantSlug" = $1)`,
+					tenantSlug, "%"+tenantSlug+"%", "%@"+tenantSlug+"%")
+			}
 
-		if err != nil {
-			fallback := getFallbackReviews(employeeId, tenantSlug)
-			if len(fallback) > 0 {
-				json.NewEncoder(w).Encode(fallback)
-				return
+			if err == nil {
+				defer rows.Close()
+				for rows.Next() {
+					var pr PerformanceReview
+					var objJSON sql.NullString
+					if err := rows.Scan(&pr.ID, &pr.EmployeeID, &pr.EmployeeName, &pr.Department, &pr.CycleID, &pr.CycleName, &pr.Status, &pr.EmployeeComments, &pr.ManagerComments, &pr.HRComments, &pr.ImprovementPlan, &pr.FinalScore, &objJSON, &pr.UpdatedAt); err == nil {
+						if objJSON.Valid && objJSON.String != "" {
+							raw := json.RawMessage(objJSON.String)
+							pr.Objectives = &raw
+						}
+						reviews = append(reviews, pr)
+					}
+				}
 			}
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
-		}
-		defer rows.Close()
-
-		reviews := []PerformanceReview{}
-		for rows.Next() {
-			var pr PerformanceReview
-			var objJSON sql.NullString
-			if err := rows.Scan(&pr.ID, &pr.EmployeeID, &pr.EmployeeName, &pr.Department, &pr.CycleID, &pr.CycleName, &pr.Status, &pr.EmployeeComments, &pr.ManagerComments, &pr.HRComments, &pr.ImprovementPlan, &pr.FinalScore, &objJSON, &pr.UpdatedAt); err != nil {
-				continue
-			}
-			if objJSON.Valid && objJSON.String != "" {
-				raw := json.RawMessage(objJSON.String)
-				pr.Objectives = &raw
-			}
-			reviews = append(reviews, pr)
 		}
 
 		if len(reviews) == 0 {
-			fallback := getFallbackReviews(employeeId, tenantSlug)
-			if len(fallback) > 0 {
-				json.NewEncoder(w).Encode(fallback)
-				return
-			}
+			reviews = getFallbackReviews(employeeId, tenantSlug)
+		}
+
+		if reviews == nil {
+			reviews = []PerformanceReview{}
 		}
 
 		json.NewEncoder(w).Encode(reviews)
+		return
 
 	} else if r.Method == http.MethodPost || r.Method == http.MethodPut {
 		var rawBody json.RawMessage
@@ -231,59 +217,69 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 			reviewsToUpsert = append(reviewsToUpsert, pr)
 		}
 
-		tx, err := db.Begin()
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Transaction start failed: " + err.Error()})
-			return
-		}
-
-		stmt, err := tx.Prepare(`INSERT INTO PerformanceReview 
-			(id, tenantSlug, employeeId, employeeName, department, cycleId, cycleName, status, employeeComments, managerComments, hrComments, improvementPlan, finalScore, objectivesJson, updatedAt) 
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-			ON DUPLICATE KEY UPDATE 
-			status = VALUES(status), employeeComments = VALUES(employeeComments), managerComments = VALUES(managerComments), hrComments = VALUES(hrComments), improvementPlan = VALUES(improvementPlan),
-			finalScore = VALUES(finalScore), objectivesJson = VALUES(objectivesJson), updatedAt = NOW()`)
-		if err != nil {
-			tx.Rollback()
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Prepare statement failed: " + err.Error()})
-			return
-		}
-		defer stmt.Close()
-
-		for _, pr := range reviewsToUpsert {
-			if pr.ID == "" || pr.EmployeeID == "" || pr.CycleID == "" {
-				tx.Rollback()
-				w.WriteHeader(http.StatusBadRequest)
-				json.NewEncoder(w).Encode(map[string]string{"error": "Incomplete parameters in one of the reviews"})
+		if db != nil {
+			tx, err := db.Begin()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Transaction start failed: " + err.Error()})
 				return
 			}
 
-			var objJSONStr string = "[]"
-			if pr.Objectives != nil {
-				objJSONStr = string(*pr.Objectives)
-			}
-
-			_, err = stmt.Exec(pr.ID, tenantSlug, pr.EmployeeID, pr.EmployeeName, pr.Department, pr.CycleID, pr.CycleName, pr.Status, pr.EmployeeComments, pr.ManagerComments, pr.HRComments, pr.ImprovementPlan, pr.FinalScore, objJSONStr)
+			stmt, err := tx.Prepare(`INSERT INTO "PerformanceReview" 
+				(id, "tenantSlug", "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", "updatedAt") 
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
+				ON CONFLICT (id) DO UPDATE SET 
+				status = EXCLUDED.status, 
+				"employeeComments" = EXCLUDED."employeeComments", 
+				"managerComments" = EXCLUDED."managerComments", 
+				"hrComments" = EXCLUDED."hrComments", 
+				"improvementPlan" = EXCLUDED."improvementPlan",
+				"finalScore" = EXCLUDED."finalScore", 
+				"objectivesJson" = EXCLUDED."objectivesJson", 
+				"tenantSlug" = EXCLUDED."tenantSlug",
+				"updatedAt" = NOW()`)
 			if err != nil {
 				tx.Rollback()
 				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(map[string]string{"error": "Database execute failed: " + err.Error()})
+				json.NewEncoder(w).Encode(map[string]string{"error": "Prepare statement failed: " + err.Error()})
 				return
 			}
-		}
+			defer stmt.Close()
 
-		if err := tx.Commit(); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": "Transaction commit failed: " + err.Error()})
-			return
+			for _, pr := range reviewsToUpsert {
+				if pr.ID == "" || pr.EmployeeID == "" || pr.CycleID == "" {
+					tx.Rollback()
+					w.WriteHeader(http.StatusBadRequest)
+					json.NewEncoder(w).Encode(map[string]string{"error": "Incomplete parameters in one of the reviews"})
+					return
+				}
+
+				var objJSONStr string = "[]"
+				if pr.Objectives != nil {
+					objJSONStr = string(*pr.Objectives)
+				}
+
+				_, err = stmt.Exec(pr.ID, tenantSlug, pr.EmployeeID, pr.EmployeeName, pr.Department, pr.CycleID, pr.CycleName, pr.Status, pr.EmployeeComments, pr.ManagerComments, pr.HRComments, pr.ImprovementPlan, pr.FinalScore, objJSONStr)
+				if err != nil {
+					tx.Rollback()
+					w.WriteHeader(http.StatusInternalServerError)
+					json.NewEncoder(w).Encode(map[string]string{"error": "Database execute failed: " + err.Error()})
+					return
+				}
+			}
+
+			if err := tx.Commit(); err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{"error": "Transaction commit failed: " + err.Error()})
+				return
+			}
 		}
 
 		json.NewEncoder(w).Encode(map[string]string{
 			"status":  "success",
 			"message": fmt.Sprintf("Successfully upserted %d review(s)", len(reviewsToUpsert)),
 		})
+
 	} else if r.Method == http.MethodDelete {
 		id := r.URL.Query().Get("id")
 		if id == "" {
@@ -291,11 +287,13 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(map[string]string{"error": "Review ID is required"})
 			return
 		}
-		_, err := db.Exec("DELETE FROM PerformanceReview WHERE id = ?", id)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-			return
+		if db != nil {
+			_, err := db.Exec(`DELETE FROM "PerformanceReview" WHERE id = $1`, id)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				return
+			}
 		}
 		json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "Performance review deleted successfully"})
 	} else {

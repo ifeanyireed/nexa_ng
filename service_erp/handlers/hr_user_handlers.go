@@ -135,7 +135,7 @@ func HandleUsers(w http.ResponseWriter, r *http.Request) {
 			if db != nil {
 				var u User
 				var ratingTrend sql.NullString
-				err := db.QueryRow("SELECT id, name, email, role, department, avatar, managerName, managerId, ratingTrend, designation, gradeLevel, employmentDate, company, location, password FROM User WHERE id = ?", id).
+				err := db.QueryRow(`SELECT id, name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" WHERE id = $1`, id).
 					Scan(&u.ID, &u.Name, &u.Email, &u.Role, &u.Department, &u.Avatar, &u.ManagerName, &u.ManagerID, &ratingTrend, &u.Designation, &u.GradeLevel, &u.EmploymentDate, &u.Company, &u.Location, &u.Password)
 				if err == nil {
 					if ratingTrend.Valid && ratingTrend.String != "" {
@@ -167,11 +167,11 @@ func HandleUsers(w http.ResponseWriter, r *http.Request) {
 			var args []interface{}
 
 			if tenantSlug == "" || tenantSlug == "all" {
-				query = "SELECT id, name, email, role, department, avatar, managerName, managerId, ratingTrend, designation, gradeLevel, employmentDate, company, location, password FROM User ORDER BY name ASC"
+				query = `SELECT id, name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" ORDER BY name ASC`
 			} else if tenantSlug == "neweratransports" || tenantSlug == "nets" || tenantSlug == "new-era-transports" {
-				query = "SELECT id, name, email, role, department, avatar, managerName, managerId, ratingTrend, designation, gradeLevel, employmentDate, company, location, password FROM User WHERE (company = 'NETS' OR LOWER(company) LIKE '%new era%' OR LOWER(email) LIKE '%@neweratransports.com%' OR company IS NULL OR company = '') ORDER BY name ASC"
+				query = `SELECT id, name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" WHERE (company = 'NETS' OR LOWER(company) LIKE '%new era%' OR LOWER(email) LIKE '%@neweratransports.com%' OR company IS NULL OR company = '') ORDER BY name ASC`
 			} else {
-				query = "SELECT id, name, email, role, department, avatar, managerName, managerId, ratingTrend, designation, gradeLevel, employmentDate, company, location, password FROM User WHERE (LOWER(company) = ? OR LOWER(company) LIKE ? OR LOWER(email) LIKE ?) ORDER BY name ASC"
+				query = `SELECT id, name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" WHERE (LOWER(company) = $1 OR LOWER(company) LIKE $2 OR LOWER(email) LIKE $3) ORDER BY name ASC`
 				args = append(args, tenantSlug, "%"+tenantSlug+"%", "%@"+tenantSlug+"%")
 			}
 
@@ -237,13 +237,13 @@ func HandleUsers(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if db != nil {
-			_, err := db.Exec(`INSERT INTO User (id, name, email, role, department, avatar, managerName, managerId, ratingTrend, designation, gradeLevel, employmentDate, company, location, password) 
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-				ON DUPLICATE KEY UPDATE 
-				name = VALUES(name), email = VALUES(email), role = VALUES(role), department = VALUES(department), 
-				avatar = VALUES(avatar), managerName = VALUES(managerName), managerId = VALUES(managerId), ratingTrend = VALUES(ratingTrend),
-				designation = VALUES(designation), gradeLevel = VALUES(gradeLevel), employmentDate = VALUES(employmentDate),
-				company = VALUES(company), location = VALUES(location), password = VALUES(password)`,
+			_, err := db.Exec(`INSERT INTO "User" (id, name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password) 
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+				ON CONFLICT (id) DO UPDATE SET 
+				name = EXCLUDED.name, email = EXCLUDED.email, role = EXCLUDED.role, department = EXCLUDED.department, 
+				avatar = EXCLUDED.avatar, "managerName" = EXCLUDED."managerName", "managerId" = EXCLUDED."managerId", "ratingTrend" = EXCLUDED."ratingTrend",
+				designation = EXCLUDED.designation, "gradeLevel" = EXCLUDED."gradeLevel", "employmentDate" = EXCLUDED."employmentDate",
+				company = EXCLUDED.company, location = EXCLUDED.location, password = EXCLUDED.password`,
 				u.ID, u.Name, u.Email, u.Role, u.Department, u.Avatar, u.ManagerName, u.ManagerID, ratingTrendStr, u.Designation, u.GradeLevel, u.EmploymentDate, u.Company, u.Location, u.Password)
 
 			if err != nil {
@@ -278,7 +278,7 @@ func HandleUsers(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if db != nil {
-			_, _ = db.Exec("DELETE FROM User WHERE id = ?", id)
+			_, _ = db.Exec(`DELETE FROM "User" WHERE id = $1`, id)
 		}
 
 		memoryUsersLock.Lock()

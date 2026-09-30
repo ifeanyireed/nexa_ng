@@ -228,7 +228,7 @@ export function findReviewForUser(
   });
 }
 
-const DEFAULT_OBJECTIVES: Objective[] = [];
+const DEFAULT_OBJECTIVES: Objective[] = (seedData.objectives as any[]) || [];
 
 const API_BASE_URL = typeof window !== "undefined" ? "/api/erp" : (process.env.ERP_SERVICE_URL || process.env.NEXT_PUBLIC_ERP_SERVICE_URL || "https://ofia-erp-service.onrender.com");
 

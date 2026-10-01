@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminStatGrid } from "@/components/admin/AdminStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
@@ -372,54 +373,50 @@ export default function AdminEmailPage() {
         )}
 
         {/* Cross-Tenant Telemetry Top Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <NexaCard variant="glass" padding="md">
-            <div className="text-[11px] text-[var(--nexa-text-muted)] font-semibold flex items-center gap-1.5">
-              <Send className="w-3.5 h-3.5 text-[#1A56DB]" />
-              Total Dispatched Today
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)] mt-1 font-mono">
-              {(analytics?.total_emails_today || 0).toLocaleString()}
-            </div>
-            <div className="text-[10px] text-[#0E9F6E] mt-1 font-semibold">Across 42 Active Workspaces</div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md">
-            <div className="text-[11px] text-[var(--nexa-text-muted)] font-semibold flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#0E9F6E]" />
-              Deliverability Rate
-            </div>
-            <div className="text-2xl font-black text-[#0E9F6E] mt-1 font-mono">
-              {analytics.delivered_rate}%
-            </div>
-            <div className="text-[10px] text-[var(--nexa-text-muted)] mt-1">Inbox Placement: Excellent</div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md">
-            <div className="text-[11px] text-[var(--nexa-text-muted)] font-semibold flex items-center gap-1.5">
-              <AlertTriangle className="w-3.5 h-3.5 text-[#E02424]" />
-              Global Bounce Rate
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)] mt-1 font-mono">
-              {analytics.bounce_rate_pct}%
-            </div>
-            <div className="text-[10px] text-[var(--nexa-text-muted)] mt-1">Threshold Limit: 5.0%</div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md">
-            <div className="text-[11px] text-[var(--nexa-text-muted)] font-semibold flex items-center gap-1.5">
-              <Server className="w-3.5 h-3.5 text-[#1A56DB]" />
-              Connected Domains
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)] mt-1 font-mono">
-              {analytics.connected_domains_count}
-            </div>
-            <div className="text-[10px] text-[#1A56DB] mt-1 font-semibold">DKIM/SPF Verified</div>
-          </NexaCard>
-        </div>
+        <AdminStatGrid
+          stats={[
+            {
+              label: "Total Dispatched Today",
+              value: (analytics?.total_emails_today || 0).toLocaleString(),
+              change: "Across 42 Orgs",
+              trend: "up",
+              changeType: "info",
+              icon: <Send className="w-5 h-5 text-blue-500" />,
+              sub: "Across all active workspaces",
+            },
+            {
+              label: "Deliverability Rate",
+              value: `${analytics.delivered_rate}%`,
+              change: "Excellent",
+              trend: "up",
+              changeType: "success",
+              icon: <CheckCircle2 className="w-5 h-5 text-emerald-500" />,
+              sub: "Zero spam traps or blacklists",
+            },
+            {
+              label: "Global Bounce Rate",
+              value: `${analytics.bounce_rate_pct}%`,
+              change: "Limit: 5.0%",
+              trend: "neutral",
+              changeType: analytics.bounce_rate_pct > 3 ? "danger" : "warning",
+              icon: <AlertTriangle className="w-5 h-5 text-amber-500" />,
+              sub: "Global bounce threshold safe",
+            },
+            {
+              label: "Connected Domains",
+              value: `${analytics.connected_domains_count} Domains`,
+              change: "DKIM/SPF Verified",
+              trend: "up",
+              changeType: "purple",
+              icon: <Server className="w-5 h-5 text-purple-500" />,
+              sub: "Relay DNS records active",
+            },
+          ]}
+          columns={4}
+        />
 
         {/* SECTION 1: PLATFORM SHARED INFRASTRUCTURE POOL */}
-        <NexaCard variant="glass" padding="lg" className="space-y-6">
+        <NexaCard variant="glass" className="p-7 space-y-6 border border-nexa-border rounded-3xl">
           <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
             <div>
               <div className="flex items-center gap-2">
@@ -704,7 +701,7 @@ export default function AdminEmailPage() {
         </NexaCard>
 
         {/* SECTION 2: GLOBAL TIER DAILY DISPATCH LIMITS */}
-        <NexaCard variant="glass" padding="lg" className="space-y-6">
+        <NexaCard variant="glass" className="p-7 space-y-6 border border-nexa-border rounded-3xl">
           <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
             <div>
               <div className="flex items-center gap-2">
@@ -796,7 +793,7 @@ export default function AdminEmailPage() {
         {/* SECTION 3: DELIVERABILITY GUARDRAILS & CIRCUIT BREAKERS */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Deliverability Policies */}
-          <NexaCard variant="glass" padding="lg" className="space-y-5">
+          <NexaCard variant="glass" className="p-7 space-y-5 border border-nexa-border rounded-3xl">
             <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
               <h3 className="font-bold text-base text-[var(--nexa-text-primary)] text-display flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-[#0E9F6E]" />
@@ -864,7 +861,7 @@ export default function AdminEmailPage() {
           </NexaCard>
 
           {/* Global Domain Blacklist & Suppression */}
-          <NexaCard variant="glass" padding="lg" className="space-y-5">
+          <NexaCard variant="glass" className="p-7 space-y-5 border border-nexa-border rounded-3xl">
             <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
               <h3 className="font-bold text-base text-[var(--nexa-text-primary)] text-display flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-[#E02424]" />
@@ -911,7 +908,7 @@ export default function AdminEmailPage() {
         </div>
 
         {/* BOTTOM GLOBAL SAVE ACTIONS CARD */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="p-6 rounded-3xl bg-nexa-bg-surface border border-nexa-border shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
           <div>
             <h4 className="font-bold text-sm text-[var(--nexa-text-primary)] flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-[#1A56DB]" />

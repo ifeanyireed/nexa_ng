@@ -21,10 +21,6 @@ import {
   Briefcase,
   Layers,
 } from "lucide-react";
-import {
-  IconBrandGoogle,
-  IconBrandWindows,
-} from "@tabler/icons-react";
 
 import { AUTH_API } from "@/lib/api-client";
 import { useActiveTenant, slugToTenantName, extractSubdomainOrParam } from "@/lib/tenant-context";
@@ -210,7 +206,7 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
             <img
               src={tenantLogo}
               alt={`${tenantName} Logo`}
-              className="w-9 h-9 rounded-xl object-contain shrink-0 p-1 bg-white/5 border border-white/10 shadow-sm"
+              className="h-10 sm:h-11 w-auto max-w-[160px] object-contain shrink-0"
               onError={(e) => {
                 (e.target as HTMLImageElement).src =
                   "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
@@ -218,7 +214,7 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
             />
           ) : isCustomTenant ? (
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs text-white shrink-0 shadow-md border"
+              className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs text-white shrink-0 shadow-md border"
               style={{
                 background: `linear-gradient(135deg, ${primaryColor}, #020617)`,
                 borderColor: `${primaryColor}40`,
@@ -236,7 +232,7 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
             <img
               src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"
               alt="Ofia ERP Logo"
-              className="w-8 h-8 object-contain shrink-0"
+              className="w-10 h-10 object-contain shrink-0"
             />
           )}
           <div className="flex flex-col">
@@ -291,20 +287,18 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
               {/* Tenant Logo or Branded Emblem */}
               <div className="flex justify-center mb-1">
                 {tenantLogo ? (
-                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10 shadow-inner inline-flex items-center justify-center">
-                    <img
-                      src={tenantLogo}
-                      alt={`${tenantName} Logo`}
-                      className="h-12 w-auto max-w-[200px] object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
-                      }}
-                    />
-                  </div>
+                  <img
+                    src={tenantLogo}
+                    alt={`${tenantName} Logo`}
+                    className="h-16 sm:h-20 w-auto max-w-[240px] object-contain"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
+                    }}
+                  />
                 ) : isCustomTenant ? (
                   <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl text-white shadow-lg border"
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl text-white shadow-lg border"
                     style={{
                       background: `linear-gradient(135deg, ${primaryColor}, #020617)`,
                       borderColor: `${primaryColor}50`,
@@ -323,7 +317,7 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
                   <img
                     src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"
                     alt="Ofia Logo"
-                    className="w-12 h-12 object-contain"
+                    className="h-16 w-16 object-contain"
                   />
                 )}
               </div>
@@ -334,24 +328,10 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
                 </h1>
                 <p className="text-xs text-[var(--nexa-text-muted)] leading-relaxed mt-1">
                   {isCustomTenant
-                    ? `Enterprise Workspace • Access Inventory, POS, Dispatch, General Ledger & HR.`
+                    ? "Enterprise Workspace"
                     : "Access Inventory, POS, Zonal Dispatch, General Ledger, HR Appraisals, and AI Agents."}
                 </p>
               </div>
-
-              {isCustomTenant && (
-                <div
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold border"
-                  style={{
-                    backgroundColor: `${primaryColor}10`,
-                    borderColor: `${primaryColor}30`,
-                    color: primaryColor,
-                  }}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
-                  <span>{tenantDomain}</span>
-                </div>
-              )}
             </div>
 
             {error && (
@@ -369,7 +349,7 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
                   <input
                     type="email"
                     required
-                    placeholder={`admin@${tenantDomain}`}
+                    placeholder="name@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full h-11 pl-10 pr-4 text-xs rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none transition-all"
@@ -447,32 +427,7 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
               </button>
             </form>
 
-            <div className="relative flex py-1 items-center">
-              <div className="flex-grow border-t border-[var(--nexa-border)]"></div>
-              <span className="flex-shrink mx-3 text-[10px] uppercase font-bold text-[var(--nexa-text-muted)] tracking-wider">
-                Or Enterprise SSO
-              </span>
-              <div className="flex-grow border-t border-[var(--nexa-border)]"></div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => handleLogin({ preventDefault: () => {} } as any)}
-                className="h-10 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-white/30 text-xs font-semibold text-[var(--nexa-text-primary)] flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow"
-              >
-                <IconBrandGoogle className="w-4 h-4" />
-                Google Workspace
-              </button>
-              <button
-                type="button"
-                onClick={() => handleLogin({ preventDefault: () => {} } as any)}
-                className="h-10 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-white/30 text-xs font-semibold text-[var(--nexa-text-primary)] flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow"
-              >
-                <IconBrandWindows className="w-4 h-4" />
-                Microsoft Entra
-              </button>
-            </div>
           </NexaCard>
         </div>
       </main>

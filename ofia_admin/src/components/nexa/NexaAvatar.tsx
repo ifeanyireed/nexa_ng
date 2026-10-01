@@ -3,12 +3,13 @@
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 
-interface NexaAvatarProps {
+export interface NexaAvatarProps {
   name: string;
   src?: string;
   role?: string;
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   status?: "online" | "working" | "idle" | "offline";
+  isOnline?: boolean;
   className?: string;
 }
 
@@ -28,9 +29,11 @@ export const NexaAvatar = ({
   role,
   size = "md",
   status,
+  isOnline,
   className,
 }: NexaAvatarProps) => {
   const [hasError, setHasError] = useState(false);
+  const effectiveStatus = status || (isOnline ? "online" : undefined);
 
   const sizes = {
     xs: "w-6 h-6 text-[10px]",
@@ -86,14 +89,14 @@ export const NexaAvatar = ({
         )}
       </div>
 
-      {status && (
+      {effectiveStatus && (
         <span
           className={cn(
             "absolute bottom-0 right-0 rounded-full ring-[var(--nexa-bg-surface)]",
-            statusColors[status],
+            statusColors[effectiveStatus],
             statusSizes[size]
           )}
-          title={`Status: ${status}`}
+          title={`Status: ${effectiveStatus}`}
         />
       )}
     </div>

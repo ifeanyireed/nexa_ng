@@ -744,13 +744,12 @@ function SubscriptionManagementContent() {
                       <NexaCard
                         key={tierItem.id}
                         variant="glass"
-                        padding="md"
                         className={cn(
-                          "border transition-all flex flex-col justify-between space-y-3.5 hover:shadow-md",
+                          "p-6 rounded-3xl border transition-all flex flex-col justify-between space-y-4 hover:shadow-lg",
                           tierItem.category === "OFIA_AI" ? "border-purple-500/20 hover:border-purple-500/40" :
                           tierItem.category === "OFIA_SHOP" ? "border-amber-500/20 hover:border-amber-500/40" :
                           tierItem.category === "OFIA_COMPASS" ? "border-cyan-500/20 hover:border-cyan-500/40" :
-                          "border-[var(--nexa-border)] hover:border-[#1A56DB]/40"
+                          "border-nexa-border hover:border-nexa-brand/40"
                         )}
                       >
                         <div className="space-y-2.5">

@@ -6,8 +6,10 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { INITIAL_SWARM_HEALTH, AgentHealthMetric } from "@/lib/admin-data";
+import { cn } from "@/lib/utils";
 import {
   Activity,
+  Bot,
   Power,
   Zap,
   CheckCircle2,

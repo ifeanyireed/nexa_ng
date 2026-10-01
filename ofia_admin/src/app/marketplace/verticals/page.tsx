@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { SuperAdminShell } from "@/components/admin/SuperAdminShell";
+import { AdminStatGrid } from "@/components/admin/AdminStatCard";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -302,71 +303,49 @@ export default function VerticalsAndSubcategoriesPage() {
         </div>
       }
     >
-      <div className="space-y-6 font-sans">
+      <div className="space-y-8 font-sans">
         {/* KPI SUMMARY METRICS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <NexaCard variant="glass" padding="md" className="space-y-2 border border-[var(--nexa-border)]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold uppercase tracking-wider text-[11px]">Master Verticals</span>
-              <div className="p-2.5 rounded-xl bg-[#1A56DB]/10 text-[#1A56DB]">
-                <Layers className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              {totalVerts} Sectors
-            </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-[#0E9F6E] font-semibold">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>100% Operational Status</span>
-            </div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md" className="space-y-2 border border-[var(--nexa-border)]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold uppercase tracking-wider text-[11px]">Subcategory Groups</span>
-              <div className="p-2.5 rounded-xl bg-[#7E3AF2]/10 text-[#7E3AF2]">
-                <Globe className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              {totalSubcats} Subcategories
-            </div>
-            <div className="text-[11px] text-[var(--nexa-text-muted)]">
-              All mapped to 1-word SEO slugs
-            </div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md" className="space-y-2 border border-[var(--nexa-border)]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold uppercase tracking-wider text-[11px]">High-Recurring Verticals</span>
-              <div className="p-2.5 rounded-xl bg-[#F59E0B]/10 text-[#D97706] dark:text-[#F59E0B]">
-                <Zap className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              {highRecurringCount} Verticals
-            </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-[#D97706] dark:text-[#F59E0B] font-semibold">
-              <Zap className="w-3.5 h-3.5" />
-              <span>Fast transaction UX engine</span>
-            </div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md" className="space-y-2 border border-[var(--nexa-border)]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold uppercase tracking-wider text-[11px]">Edge Subdomains</span>
-              <div className="p-2.5 rounded-xl bg-[#0E9F6E]/10 text-[#0E9F6E]">
-                <ShieldCheck className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              {totalActiveSubdomains} / {totalPossibleSubdomains} Live
-            </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-[#0E9F6E] font-medium font-mono">
-              <span>{"{slug}.ofia.ng"} active</span>
-            </div>
-          </NexaCard>
-        </div>
+        <AdminStatGrid
+          stats={[
+            {
+              label: "Master Verticals",
+              value: `${totalVerts} Sectors`,
+              change: "100% Active",
+              trend: "up",
+              changeType: "info",
+              icon: <Layers className="w-5 h-5 text-blue-500" />,
+              sub: "100% operational status",
+            },
+            {
+              label: "Subcategory Groups",
+              value: `${totalSubcats} Subcategories`,
+              change: "SEO Slugs",
+              trend: "up",
+              changeType: "purple",
+              icon: <Globe className="w-5 h-5 text-purple-500" />,
+              sub: "All mapped to 1-word SEO slugs",
+            },
+            {
+              label: "High-Recurring Verticals",
+              value: `${highRecurringCount} Verticals`,
+              change: "Fast UX Engine",
+              trend: "up",
+              changeType: "warning",
+              icon: <Zap className="w-5 h-5 text-amber-500" />,
+              sub: "Instant quote & booking enabled",
+            },
+            {
+              label: "Edge Subdomains",
+              value: `${totalActiveSubdomains} / ${totalPossibleSubdomains} Live`,
+              change: "Edge Deployed",
+              trend: "up",
+              changeType: "success",
+              icon: <ShieldCheck className="w-5 h-5 text-emerald-500" />,
+              sub: "{slug}.ofia.ng live resolution",
+            },
+          ]}
+          columns={4}
+        />
 
         {/* NAVIGATION PILL TABS */}
         <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">

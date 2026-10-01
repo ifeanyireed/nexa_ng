@@ -21,10 +21,6 @@ import {
   Briefcase,
   Layers,
 } from "lucide-react";
-import {
-  IconBrandGoogle,
-  IconBrandWindows,
-} from "@tabler/icons-react";
 
 import { AUTH_API } from "@/lib/api-client";
 import { useActiveTenant } from "@/lib/tenant-context";
@@ -223,7 +219,7 @@ export default function LoginPage() {
                   <input
                     type="email"
                     required
-                    placeholder="admin@edusuite.ng"
+                    placeholder="name@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full h-11 pl-10 pr-4 text-xs rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB] focus:ring-2 focus:ring-[#1A56DB]/20 transition-all"
@@ -292,32 +288,7 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <div className="relative flex py-1 items-center">
-              <div className="flex-grow border-t border-[var(--nexa-border)]"></div>
-              <span className="flex-shrink mx-3 text-[10px] uppercase font-bold text-[var(--nexa-text-muted)] tracking-wider">
-                Or Enterprise SSO
-              </span>
-              <div className="flex-grow border-t border-[var(--nexa-border)]"></div>
-            </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => handleLogin({ preventDefault: () => {} } as any)}
-                className="h-10 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-[#1A56DB] text-xs font-semibold text-[var(--nexa-text-primary)] flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow"
-              >
-                <IconBrandGoogle className="w-4 h-4" />
-                Google Workspace
-              </button>
-              <button
-                type="button"
-                onClick={() => handleLogin({ preventDefault: () => {} } as any)}
-                className="h-10 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-[#1A56DB] text-xs font-semibold text-[var(--nexa-text-primary)] flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow"
-              >
-                <IconBrandWindows className="w-4 h-4" />
-                Microsoft Entra
-              </button>
-            </div>
           </NexaCard>
         </div>
       </main>

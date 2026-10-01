@@ -27,12 +27,43 @@ import {
 } from "@tabler/icons-react";
 
 import { AUTH_API } from "@/lib/api-client";
-import { useActiveTenant } from "@/lib/tenant-context";
+import { useActiveTenant, slugToTenantName, extractSubdomainOrParam } from "@/lib/tenant-context";
 
-export default function LoginPage() {
+export interface LoginPageProps {
+  initialTenantSlug?: string;
+}
+
+export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
   const router = useRouter();
-  const { activeTenant } = useActiveTenant();
-  const tenantDomain = activeTenant?.domain || (activeTenant?.slug ? `${activeTenant.slug}.ofia.ng` : "ofia.ng");
+  const { activeTenant, isLoading: isTenantLoading } = useActiveTenant(null, initialTenantSlug);
+
+  // Dynamic host & tenant resolution
+  const [mountedHostTenant, setMountedHostTenant] = useState<string>("");
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      const extracted = extractSubdomainOrParam(initialTenantSlug);
+      setMountedHostTenant(extracted);
+    }
+  }, [initialTenantSlug]);
+
+  const resolvedSlug = initialTenantSlug || activeTenant?.slug || mountedHostTenant || "";
+  const isCustomTenant = Boolean(
+    resolvedSlug && !["www", "ofia", "app", "nexa", "erp", "admin"].includes(resolvedSlug.toLowerCase())
+  );
+
+  const tenantName = (isCustomTenant && (activeTenant?.name || slugToTenantName(resolvedSlug))) || "Ofia ERP";
+  const tenantSlug = isCustomTenant ? resolvedSlug : "";
+  const tenantLogo = isCustomTenant ? (activeTenant?.logo || "") : "";
+  const primaryColor = (isCustomTenant && activeTenant?.primaryColor) || "#1A56DB";
+  const secondaryColor = (isCustomTenant && activeTenant?.secondaryColor) || "#0E9F6E";
+  const tenantDomain = (isCustomTenant && (activeTenant?.domain || `${resolvedSlug}.ofia.ng`)) || "ofia.ng";
+
+  React.useEffect(() => {
+    if (typeof document !== "undefined" && isCustomTenant && tenantName) {
+      document.title = `${tenantName} — Sign In | Ofia ERP`;
+    }
+  }, [isCustomTenant, tenantName]);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -50,7 +81,7 @@ export default function LoginPage() {
       pass: "password123",
       roleKey: "admin",
       badge: "Admin",
-      color: "#1A56DB",
+      color: primaryColor,
       route: "/erp/admin",
     },
     {
@@ -80,7 +111,7 @@ export default function LoginPage() {
       pass: "password123",
       roleKey: "accountant",
       badge: "Finance",
-      color: "#0E9F6E",
+      color: secondaryColor,
       route: "/erp/accountant",
     },
     {
@@ -144,23 +175,6 @@ export default function LoginPage() {
       route: "/erp/admin/logistics",
     },
   ];
-
-  const [currentTenant, setCurrentTenant] = useState<string>("");
-
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      const host = window.location.host.toLowerCase();
-      const hostParts = host.split(":")[0].split(".");
-      const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
-
-      if (!isLocal && hostParts.length >= 3) {
-        const sub = hostParts[0];
-        if (!["www", "ofia", "app", "nexa"].includes(sub)) {
-          setCurrentTenant(sub);
-        }
-      }
-    }
-  }, []);
 
   const handlePersonaClick = (persona: (typeof testPersonas)[0]) => {
     setEmail(persona.email);
@@ -254,23 +268,23 @@ export default function LoginPage() {
     }
 
     // 1. Identify tenant slug from user email if on general erp.domain.ng
-    let tenantSlug = currentTenant;
-    if (!tenantSlug && userEmail.includes("@")) {
+    let targetTenantSlug = tenantSlug;
+    if (!targetTenantSlug && userEmail.includes("@")) {
       const domainPart = userEmail.split("@")[1].toLowerCase();
       const extracted = domainPart.split(".")[0];
       if (!["gmail", "yahoo", "outlook", "hotmail", "icloud", "ofia", "erp", "admin", "app"].includes(extracted)) {
-        tenantSlug = extracted;
+        targetTenantSlug = extracted;
       }
     }
 
     // 2. If on general erp.domain.ng -> route to tenant_slug.domain.ng
-    if (typeof window !== "undefined" && tenantSlug && !currentTenant) {
+    if (typeof window !== "undefined" && targetTenantSlug && !tenantSlug) {
       const host = window.location.host.toLowerCase();
       const protocol = window.location.protocol;
       const cleanHost = host.replace(/^erp\./i, "").replace(/^www\./i, "");
 
-      if (cleanHost && !cleanHost.startsWith(tenantSlug)) {
-        window.location.href = `${protocol}//${tenantSlug}.${cleanHost}${route}`;
+      if (cleanHost && !cleanHost.startsWith(targetTenantSlug)) {
+        window.location.href = `${protocol}//${targetTenantSlug}.${cleanHost}${route}`;
         return;
       }
     }
@@ -287,19 +301,71 @@ export default function LoginPage() {
     <div className="min-h-screen bg-[var(--nexa-bg-base)] flex flex-col justify-between text-[var(--nexa-text-primary)]">
       {/* Top Simple Header */}
       <header className="p-6 flex items-center justify-between max-w-7xl mx-auto w-full">
-        <Link href="/" className="flex items-center gap-3">
-          <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia ERP Logo" className="w-8 h-8 object-contain shrink-0" />
-          <span className="font-extrabold text-base text-[var(--nexa-text-primary)] text-display flex items-center gap-2">
-            Ofia ERP
-            <span className="text-[10px] font-extrabold font-mono uppercase px-2.5 py-0.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20">
-              {currentTenant ? currentTenant.toUpperCase() : "SUITE"}
+        <Link href="/" className="flex items-center gap-3 group">
+          {tenantLogo ? (
+            <img
+              src={tenantLogo}
+              alt={`${tenantName} Logo`}
+              className="w-9 h-9 rounded-xl object-contain shrink-0 p-1 bg-white/5 border border-white/10 shadow-sm"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src =
+                  "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
+              }}
+            />
+          ) : isCustomTenant ? (
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs text-white shrink-0 shadow-md border"
+              style={{
+                background: `linear-gradient(135deg, ${primaryColor}, #020617)`,
+                borderColor: `${primaryColor}40`,
+              }}
+            >
+              {tenantName
+                .split(" ")
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((w) => w[0])
+                .join("")
+                .toUpperCase() || "WP"}
+            </div>
+          ) : (
+            <img
+              src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"
+              alt="Ofia ERP Logo"
+              className="w-8 h-8 object-contain shrink-0"
+            />
+          )}
+          <div className="flex flex-col">
+            <span className="font-extrabold text-base text-[var(--nexa-text-primary)] text-display flex items-center gap-2">
+              {tenantName}
+              <span
+                className="text-[10px] font-extrabold font-mono uppercase px-2.5 py-0.5 rounded-full border"
+                style={{
+                  backgroundColor: `${primaryColor}1a`,
+                  color: primaryColor,
+                  borderColor: `${primaryColor}33`,
+                }}
+              >
+                {tenantSlug ? tenantSlug.toUpperCase() : "SUITE"}
+              </span>
             </span>
-          </span>
+            {isCustomTenant && (
+              <span className="text-[10px] font-medium text-[var(--nexa-text-muted)] tracking-wider">
+                Enterprise Workspace • Powered by Ofia ERP
+              </span>
+            )}
+          </div>
         </Link>
 
         <div className="flex items-center gap-2 text-xs">
-          <span className="text-[var(--nexa-text-muted)]">Don't have an enterprise tenant?</span>
-          <Link href="/join/register" className="font-bold text-[#1A56DB] hover:underline px-3 py-1 rounded-full hover:bg-[#1A56DB]/10 transition-colors">
+          <span className="text-[var(--nexa-text-muted)]">
+            {isCustomTenant ? "Need another organization?" : "Don't have an enterprise tenant?"}
+          </span>
+          <Link
+            href="/join/register"
+            className="font-bold hover:underline px-3 py-1 rounded-full transition-colors"
+            style={{ color: primaryColor }}
+          >
             Setup Workspace →
           </Link>
         </div>

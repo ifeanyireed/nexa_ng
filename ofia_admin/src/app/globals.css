@@ -1,9 +1,37 @@
 @import "tailwindcss";
 
 @theme {
+  --color-nexa-brand: var(--nexa-brand);
+  --color-nexa-brand-light: var(--nexa-brand-light);
+  --color-nexa-brand-mid: var(--nexa-brand-mid);
+  --color-nexa-brand-glow: var(--nexa-brand-glow);
+  
+  --color-nexa-accent: var(--nexa-accent);
+  --color-nexa-accent-light: var(--nexa-accent-light);
+  
+  --color-nexa-amber: var(--nexa-amber);
+  --color-nexa-amber-light: var(--nexa-amber-light);
+  --color-nexa-coral: var(--nexa-coral);
+  --color-nexa-coral-light: var(--nexa-coral-light);
+
+  --color-nexa-bg-base: var(--nexa-bg-base);
+  --color-nexa-bg-surface: var(--nexa-bg-surface);
+  --color-nexa-bg-overlay: var(--nexa-bg-overlay);
+  --color-nexa-bg-glass: var(--nexa-bg-glass);
+
+  --color-nexa-text-primary: var(--nexa-text-primary);
+  --color-nexa-text-secondary: var(--nexa-text-secondary);
+  --color-nexa-text-muted: var(--nexa-text-muted);
+  --color-nexa-text-faint: var(--nexa-text-faint);
+
+  --color-nexa-border: var(--nexa-border);
+  --color-nexa-border-mid: var(--nexa-border-mid);
+
   --font-sans: var(--font-dropa);
   --font-mono: var(--font-dropa);
   --font-serif: var(--font-dropa);
+  --font-dm-sans: var(--font-dropa);
+  --font-jetbrains: var(--font-dropa);
 }
 :root {
   /* TYPOGRAPHY SCALE */

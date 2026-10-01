@@ -37,6 +37,7 @@ import {
   Zap,
 } from "lucide-react";
 import { SuperAdminShell } from "@/components/admin/SuperAdminShell";
+import { AdminStatGrid, AdminStatItem } from "@/components/admin/AdminStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge, NexaBadgeVariant } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
@@ -316,6 +317,45 @@ export default function WaitlistCRMPage() {
     }
   };
 
+  const kpis: AdminStatItem[] = [
+    {
+      label: "Total Waitlist Signups",
+      value: "2,848 Leads",
+      change: "+18.4% WoW",
+      trend: "up",
+      changeType: "success",
+      icon: <Users className="w-5 h-5 text-blue-500" />,
+      sub: "Active Inbound Pipeline",
+    },
+    {
+      label: "Verified Pro & Enterprise",
+      value: "1,642 Businesses",
+      change: "57.6% Pool",
+      trend: "up",
+      changeType: "info",
+      icon: <Store className="w-5 h-5 text-emerald-500" />,
+      sub: "High-Intent Commercial Prospects",
+    },
+    {
+      label: "Wave 1 VIP Invites",
+      value: "414 Dispatched",
+      change: "14.5% Conv",
+      trend: "up",
+      changeType: "info",
+      icon: <Sparkles className="w-5 h-5 text-purple-500" />,
+      sub: "Early Access Onboarding Active",
+    },
+    {
+      label: "Top Regional Cluster",
+      value: "Lagos (46%)",
+      change: "36 States",
+      trend: "neutral",
+      changeType: "warning",
+      icon: <MapPin className="w-5 h-5 text-amber-500" />,
+      sub: "Abuja (22%) & Rivers (14%)",
+    },
+  ];
+
   return (
     <SuperAdminShell
       title="Platform Waitlist & Growth CRM"
@@ -327,6 +367,7 @@ export default function WaitlistCRMPage() {
               size="sm"
               variant="outline"
               leftIcon={<Download className="w-3.5 h-3.5" />}
+              className="rounded-full border-nexa-border font-bold px-4"
             >
               Export CSV
             </NexaButton>
@@ -336,19 +377,19 @@ export default function WaitlistCRMPage() {
             variant="primary"
             leftIcon={<Plus className="w-3.5 h-3.5" />}
             onClick={() => setIsAddModalOpen(true)}
-            className="bg-[#1A56DB] text-white hover:bg-[#1545B0] shadow-sm cursor-pointer"
+            className="bg-nexa-brand hover:bg-nexa-brand/90 text-white font-bold rounded-full px-4 shadow-md shadow-nexa-brand/20 cursor-pointer"
           >
             Add Inbound Lead
           </NexaButton>
         </div>
       }
     >
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* TOAST FEEDBACK NOTIFICATION */}
         {feedbackMessage && (
-          <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center justify-between shadow-sm animate-in fade-in">
+          <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center justify-between shadow-xs animate-in fade-in">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
               <span>{feedbackMessage}</span>
             </div>
             <button
@@ -361,77 +402,20 @@ export default function WaitlistCRMPage() {
         )}
 
         {/* EXECUTIVE KPI BANNER */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Total Waitlist Signups */}
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#1A56DB]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Total Waitlist Signups</span>
-              <Users className="w-4 h-4 text-[#1A56DB]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              2,848 Leads
-            </div>
-            <div className="flex items-center gap-1 text-[11px] text-[#0E9F6E] font-bold">
-              <TrendingUp className="w-3.5 h-3.5" />
-              <span>+18.4% Week-over-Week</span>
-            </div>
-          </NexaCard>
-
-          {/* Pro Merchants & Storefronts */}
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#0E9F6E]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Verified Pro & Enterprise</span>
-              <Store className="w-4 h-4 text-[#0E9F6E]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              1,642 Businesses
-            </div>
-            <div className="text-[11px] text-[#0E9F6E] font-semibold">
-              57.6% of entire waitlist pool
-            </div>
-          </NexaCard>
-
-          {/* Wave 1 VIP Invites Sent */}
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#7E22CE]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Wave 1 VIP Invites</span>
-              <Sparkles className="w-4 h-4 text-[#7E22CE]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              414 Dispatched
-            </div>
-            <div className="text-[11px] text-[#7E22CE] font-semibold">
-              14.5% Early Activation Rate
-            </div>
-          </NexaCard>
-
-          {/* Regional Hubs */}
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#C88A3A]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Top Regional Cluster</span>
-              <MapPin className="w-4 h-4 text-[#C88A3A]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              Lagos (46%)
-            </div>
-            <div className="text-[11px] text-[var(--nexa-text-muted)] font-semibold">
-              Followed by Abuja (22%) & Rivers (14%)
-            </div>
-          </NexaCard>
-        </div>
+        <AdminStatGrid stats={kpis} columns={4} />
 
         {/* SEARCH & MULTI-FILTER TOOLBAR */}
-        <NexaCard variant="glass" padding="sm">
-          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 p-1">
+        <NexaCard variant="glass" className="p-4 rounded-3xl border border-nexa-border shadow-xs">
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
             {/* Search Input */}
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+              <Search className="w-4 h-4 text-nexa-text-faint absolute left-3.5 top-3" />
               <input
                 type="text"
                 placeholder="Search applicant, business type, requested tool, phone, email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-10 pl-10 pr-4 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-xs text-[var(--nexa-text-primary)] focus:outline-none focus:border-[#1A56DB] transition-all placeholder:text-[var(--nexa-text-faint)]"
+                className="w-full h-10 pl-10 pr-4 rounded-full bg-nexa-bg-base border border-nexa-border text-xs text-nexa-text-primary focus:outline-none focus:border-nexa-brand transition-all placeholder:text-nexa-text-faint"
               />
             </div>
 
@@ -441,7 +425,7 @@ export default function WaitlistCRMPage() {
               <select
                 value={selectedStatus}
                 onChange={(e) => setSelectedStatus(e.target.value)}
-                className="h-10 px-3 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-xs font-semibold text-[var(--nexa-text-primary)] focus:outline-none focus:border-[#1A56DB] cursor-pointer"
+                className="h-10 px-3.5 rounded-full bg-nexa-bg-base border border-nexa-border text-xs font-semibold text-nexa-text-primary focus:outline-none focus:border-nexa-brand cursor-pointer"
               >
                 <option value="ALL">All Statuses</option>
                 {STATUSES.filter((s) => s !== "ALL").map((s) => (
@@ -455,7 +439,7 @@ export default function WaitlistCRMPage() {
               <select
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value)}
-                className="h-10 px-3 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-xs font-semibold text-[var(--nexa-text-primary)] focus:outline-none focus:border-[#1A56DB] cursor-pointer"
+                className="h-10 px-3.5 rounded-full bg-nexa-bg-base border border-nexa-border text-xs font-semibold text-nexa-text-primary focus:outline-none focus:border-nexa-brand cursor-pointer"
               >
                 <option value="ALL">All Roles</option>
                 {ROLES.filter((r) => r !== "ALL").map((r) => (
@@ -469,7 +453,7 @@ export default function WaitlistCRMPage() {
               <select
                 value={selectedBusinessType}
                 onChange={(e) => setSelectedBusinessType(e.target.value)}
-                className="h-10 px-3 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-xs font-semibold text-[var(--nexa-text-primary)] focus:outline-none focus:border-[#1A56DB] cursor-pointer max-w-[170px] truncate"
+                className="h-10 px-3.5 rounded-full bg-nexa-bg-base border border-nexa-border text-xs font-semibold text-nexa-text-primary focus:outline-none focus:border-nexa-brand cursor-pointer max-w-[170px] truncate"
               >
                 <option value="ALL">All Business Types</option>
                 {EXHAUSTIVE_BUSINESS_TYPES.filter((n) => n !== "ALL").map((n) => (
@@ -483,7 +467,7 @@ export default function WaitlistCRMPage() {
               <select
                 value={selectedToolType}
                 onChange={(e) => setSelectedToolType(e.target.value)}
-                className="h-10 px-3 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-xs font-semibold text-[var(--nexa-text-primary)] focus:outline-none focus:border-[#1A56DB] cursor-pointer max-w-[170px] truncate"
+                className="h-10 px-3.5 rounded-full bg-nexa-bg-base border border-nexa-border text-xs font-semibold text-nexa-text-primary focus:outline-none focus:border-nexa-brand cursor-pointer max-w-[170px] truncate"
               >
                 <option value="ALL">All Tools of Interest</option>
                 {EXHAUSTIVE_TOOL_TYPES.filter((t) => t !== "ALL").map((t) => (
@@ -497,7 +481,7 @@ export default function WaitlistCRMPage() {
               <select
                 value={selectedState}
                 onChange={(e) => setSelectedState(e.target.value)}
-                className="h-10 px-3 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-xs font-semibold text-[var(--nexa-text-primary)] focus:outline-none focus:border-[#1A56DB] cursor-pointer"
+                className="h-10 px-3.5 rounded-full bg-nexa-bg-base border border-nexa-border text-xs font-semibold text-nexa-text-primary focus:outline-none focus:border-nexa-brand cursor-pointer"
               >
                 <option value="ALL">All States</option>
                 {NIGERIAN_STATES.filter((st) => st !== "ALL").map((st) => (
@@ -510,7 +494,7 @@ export default function WaitlistCRMPage() {
               <button
                 type="button"
                 onClick={fetchLeads}
-                className="h-10 px-3 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] hover:text-[#1A56DB] flex items-center justify-center transition-colors cursor-pointer"
+                className="h-10 px-3 rounded-full bg-nexa-bg-base border border-nexa-border text-nexa-text-secondary hover:text-nexa-brand flex items-center justify-center transition-colors cursor-pointer"
                 title="Refresh Table"
               >
                 <RefreshCw className={cn("w-3.5 h-3.5", loading && "animate-spin")} />
@@ -520,10 +504,10 @@ export default function WaitlistCRMPage() {
         </NexaCard>
 
         {/* LEADS CRM PIPELINE TABLE */}
-        <div className="rounded-2xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] overflow-hidden shadow-sm">
+        <div className="rounded-3xl border border-nexa-border bg-nexa-bg-surface overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[var(--nexa-bg-base)] text-[var(--nexa-text-muted)] border-b border-[var(--nexa-border)] font-bold uppercase tracking-wider">
+              <thead className="bg-nexa-bg-base/70 text-nexa-text-muted border-b border-nexa-border font-bold uppercase tracking-wider">
                 <tr>
                   <th className="py-3.5 px-4">Queue & Applicant</th>
                   <th className="py-3.5 px-4">Business & Location</th>

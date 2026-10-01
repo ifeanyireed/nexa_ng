@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion, useSpring, useTransform } from "framer-motion";
 import {
@@ -24,6 +24,8 @@ import { NexaNavbar, NexaBottomBar } from "@/components/nexa/NexaNav";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { Footer } from "@/components/nexa/Footer";
 import { cn } from "@/lib/utils";
+import LoginPage from "./login/page";
+import { extractSubdomainOrParam } from "@/lib/tenant-context";
 
 const Counter = ({ value, label }: { value: string; label: string }) => {
   const displayValue = value.replace(/[,+★₦%M]/g, "");
@@ -48,7 +50,7 @@ const Counter = ({ value, label }: { value: string; label: string }) => {
   );
 };
 
-export default function EnterpriseERPLanding() {
+export function EnterpriseERPLanding() {
   const corePillars = [
     {
       icon: <Boxes />,
@@ -337,4 +339,31 @@ export default function EnterpriseERPLanding() {
       <NexaBottomBar />
     </main>
   );
+}
+
+export default function RootPage() {
+  const [tenantSlug, setTenantSlug] = useState<string>("");
+  const [isReady, setIsReady] = useState<boolean>(false);
+
+  useEffect(() => {
+    const slug = extractSubdomainOrParam();
+    setTenantSlug(slug);
+    setIsReady(true);
+  }, []);
+
+  if (!isReady) {
+    return (
+      <div className="min-h-screen bg-[var(--nexa-bg-base,#020617)] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-[#1A56DB] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // If accessed on a tenant subdomain (e.g. {tenantslug}.ofia.ng), display their login page
+  if (tenantSlug) {
+    return <LoginPage />;
+  }
+
+  // Only erp.ofia.ng (or root domain) displays the public enterprise marketing landing page
+  return <EnterpriseERPLanding />;
 }

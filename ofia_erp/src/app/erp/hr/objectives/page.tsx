@@ -22,7 +22,7 @@ export default function ObjectiveManagement() {
   const [category, setCategory] = useState<string>("Behavioural");
   const [selectedDepts, setSelectedDepts] = useState<string[]>([]);
   const [filterDept, setFilterDept] = useState<string>("All");
-  const [depts, setDepts] = useState<string[]>([]);
+  const [depts, setDepts] = useState<string[]>([...DEPARTMENTS]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [isAddingDept, setIsAddingDept] = useState(false);
@@ -36,12 +36,13 @@ export default function ObjectiveManagement() {
   const [editObjCategory, setEditObjCategory] = useState<string>("Behavioural");
   const [editObjExpectedLevel, setEditObjExpectedLevel] = useState<number>(3);
 
-  // Load persistent departments from backend API
+  // Load persistent departments from backend API and combine with operational & objective departments
   useEffect(() => {
     const slug = getActiveTenantSlug();
     setActiveTenantSlug(slug);
 
     const loadDepts = async () => {
+      let apiNames: string[] = [];
       try {
         const url = slug ? `/api/erp/departments?tenant=${encodeURIComponent(slug)}` : "/api/erp/departments";
         const res = await fetch(url, {
@@ -51,29 +52,27 @@ export default function ObjectiveManagement() {
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
-            const apiNames = data.map((d: any) => d.name || d.Name).filter(Boolean);
-            if (apiNames.length > 0) {
-              setDepts(apiNames);
-              return;
-            }
+            apiNames = data.map((d: any) => d.name || d.Name).filter(Boolean);
           }
         }
       } catch (err) {
         console.warn("Failed to load departments from API:", err);
       }
 
-      // Fallback only if API returned no departments
-      setDepts([
-        "Finance & Accounts",
-        "Operations & Maintenance",
-        "Systems & IT / ERP",
-        "Human Resources & Talent",
-        "Commercial & Growth",
-        "Executive Directorate"
-      ]);
+      // Collect departments actively assigned to loaded objectives
+      const fromObjectives = objectives.flatMap(o => o.departments || []).filter(Boolean);
+
+      // Base departments: use API names or loaded objectives if present, otherwise default fallback
+      const baseDepts = (apiNames.length > 0 || fromObjectives.length > 0)
+        ? []
+        : Array.from(DEPARTMENTS);
+
+      const merged = Array.from(new Set([...baseDepts, ...apiNames, ...fromObjectives]));
+      setDepts(merged);
     };
+
     loadDepts();
-  }, []);
+  }, [objectives]);
 
   // Automatically enforce 100% aggregation per department
   useEffect(() => {

@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { SuperAdminShell, SubNavItem } from "@/components/admin/SuperAdminShell";
+import { AdminStatGrid, AdminStatItem } from "@/components/admin/AdminStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
@@ -958,78 +959,66 @@ function TenantManagementContent() {
             variant="primary"
             leftIcon={<Plus className="w-3.5 h-3.5" />}
             onClick={() => setIsNewTenantModalOpen(true)}
-            className="bg-[#1A56DB] text-white hover:bg-[#1545B0] shadow-sm font-bold rounded-full px-4"
+            className="bg-nexa-brand hover:bg-nexa-brand/90 text-white shadow-md shadow-nexa-brand/20 font-bold rounded-full px-4"
           >
             Provision New Tenant
           </NexaButton>
         </div>
       }
     >
-      <div className="space-y-6">
+      <div className="space-y-8">
             {/* PLATFORM SUMMARY METRICS */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#1A56DB]">
-                <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-                  <span className="font-semibold">Total Active Tenants</span>
-                  <Building2 className="w-4 h-4 text-[#1A56DB]" />
-                </div>
-                <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-                  {activeTenantsCount} / {tenants.length} Orgs
-                </div>
-                <div className="text-[11px] text-[#1A56DB] font-bold">
-                  {trialingCount} Free Trials Active
-                </div>
-              </NexaCard>
-
-              <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#0E9F6E]">
-                <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-                  <span className="font-semibold">Contracted Monthly MRR</span>
-                  <DollarSign className="w-4 h-4 text-[#0E9F6E]" />
-                </div>
-                <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-                  ₦{(totalMRR / 1000000).toFixed(2)}M
-                </div>
-                <div className="text-[11px] text-[#0E9F6E] font-bold">
-                  100% Billing Reconciled
-                </div>
-              </NexaCard>
-
-              <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#9061F9]">
-                <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-                  <span className="font-semibold">Configured ERP Modules</span>
-                  <Boxes className="w-4 h-4 text-[#9061F9]" />
-                </div>
-                <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-                  8 Modules
-                </div>
-                <div className="text-[11px] text-[#9061F9] font-bold">
-                  AI, IMS, POS, Logistics, Referrals, HR
-                </div>
-              </NexaCard>
-
-              <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#F59E0B]">
-                <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-                  <span className="font-semibold">Security & Least Privilege</span>
-                  <ShieldAlert className="w-4 h-4 text-[#F59E0B]" />
-                </div>
-                <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-                  Enforced
-                </div>
-                <div className="text-[11px] text-emerald-500 font-semibold">
-                  Live Real-Time DB Synchronization
-                </div>
-              </NexaCard>
-            </div>
+            <AdminStatGrid
+              stats={[
+                {
+                  label: "Total Active Tenants",
+                  value: `${activeTenantsCount} / ${tenants.length} Orgs`,
+                  change: `${trialingCount} Trials Active`,
+                  trend: "up",
+                  changeType: "info",
+                  icon: <Building2 className="w-5 h-5 text-blue-500" />,
+                  sub: "Enterprise & Free Workspaces",
+                },
+                {
+                  label: "Contracted Monthly MRR",
+                  value: `₦${(totalMRR / 1000000).toFixed(2)}M`,
+                  change: "100% Reconciled",
+                  trend: "up",
+                  changeType: "success",
+                  icon: <DollarSign className="w-5 h-5 text-emerald-500" />,
+                  sub: "Paystack & Invoiced Accounts",
+                },
+                {
+                  label: "Configured ERP Modules",
+                  value: "8 Modules",
+                  change: "Active Matrix",
+                  trend: "up",
+                  changeType: "info",
+                  icon: <Boxes className="w-5 h-5 text-purple-500" />,
+                  sub: "AI, IMS, POS, Logistics, Referrals, HR",
+                },
+                {
+                  label: "Security & RBAC Enforcement",
+                  value: "Enforced",
+                  change: "Live DB Sync",
+                  trend: "up",
+                  changeType: "warning",
+                  icon: <ShieldCheck className="w-5 h-5 text-amber-500" />,
+                  sub: "Multi-Tenant Least Privilege",
+                },
+              ]}
+              columns={4}
+            />
 
             {/* TENANT TOGGLE SWITCHBOARD TABS (HORIZONTAL PILL ROW) */}
-            <div className="p-4 rounded-3xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-3 shadow-xs">
+            <div className="p-5 rounded-3xl bg-nexa-bg-surface border border-nexa-border space-y-3.5 shadow-xs">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--nexa-text-primary)] flex items-center gap-2">
-                  <Building2 className="w-4 h-4 text-[#1A56DB]" />
+                <span className="text-xs font-extrabold uppercase tracking-wider text-nexa-text-primary flex items-center gap-2 text-display">
+                  <Building2 className="w-4 h-4 text-nexa-brand" />
                   Select Tenant Workspace to Configure
                 </span>
-                <span className="text-xs text-[var(--nexa-text-muted)] font-medium">
-                  Showing: <strong className="text-[#1A56DB]">{focusedTenant ? focusedTenant.name : "All Organizations"}</strong>
+                <span className="text-xs text-nexa-text-muted font-medium">
+                  Showing: <strong className="text-nexa-brand font-bold">{focusedTenant ? focusedTenant.name : "All Organizations"}</strong>
                 </span>
               </div>
 
@@ -1041,10 +1030,10 @@ function TenantManagementContent() {
                     router.push("/tenants?tab=directory&tenant=all");
                   }}
                   className={cn(
-                    "px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all shrink-0 flex items-center gap-2.5 cursor-pointer snap-start",
+                    "px-4 py-2.5 rounded-full border text-xs font-bold transition-all shrink-0 flex items-center gap-2.5 cursor-pointer snap-start",
                     selectedTenantId === "all"
-                      ? "bg-[#1A56DB] text-white border-[#1A56DB] shadow-md shadow-[#1A56DB]/20"
-                      : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] border-[var(--nexa-border)] hover:border-[#1A56DB]/40"
+                      ? "bg-nexa-brand text-white border-nexa-brand shadow-md shadow-nexa-brand/20"
+                      : "bg-nexa-bg-base text-nexa-text-primary border-nexa-border hover:border-nexa-brand/40"
                   )}
                 >
                   <Building2 className="w-4 h-4" />
@@ -1054,7 +1043,7 @@ function TenantManagementContent() {
                       "text-[10px] font-mono px-2 py-0.5 rounded-full font-bold",
                       selectedTenantId === "all"
                         ? "bg-white/20 text-white"
-                        : "bg-[#1A56DB]/10 text-[#1A56DB]"
+                        : "bg-nexa-brand/10 text-nexa-brand"
                     )}
                   >
                     {tenants.length}
@@ -1072,10 +1061,10 @@ function TenantManagementContent() {
                         router.push(`/tenants?tab=directory&tenant=${t.id}`);
                       }}
                       className={cn(
-                        "px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all shrink-0 flex items-center gap-2.5 cursor-pointer snap-start",
+                        "px-4 py-2.5 rounded-full border text-xs font-bold transition-all shrink-0 flex items-center gap-2.5 cursor-pointer snap-start",
                         isSelected
-                          ? "bg-[#1A56DB] text-white border-[#1A56DB] shadow-md shadow-[#1A56DB]/20"
-                          : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] border-[var(--nexa-border)] hover:border-[#1A56DB]/40"
+                          ? "bg-nexa-brand text-white border-nexa-brand shadow-md shadow-nexa-brand/20"
+                          : "bg-nexa-bg-base text-nexa-text-primary border-nexa-border hover:border-nexa-brand/40"
                       )}
                     >
                       <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-extrabold">
@@ -1085,7 +1074,7 @@ function TenantManagementContent() {
                       <span
                         className={cn(
                           "text-[9px] font-mono px-2 py-0.5 rounded-full uppercase font-bold",
-                          isSelected ? "bg-white/20 text-white" : "bg-[#1A56DB]/10 text-[#1A56DB]"
+                          isSelected ? "bg-white/20 text-white" : "bg-nexa-brand/10 text-nexa-brand"
                         )}
                       >
                         {t.planTier.replace("_", " ")}

@@ -139,6 +139,13 @@ export default function TenantSettingsPage() {
 
       // 1. Persist to localStorage directly under multiple keys for instant, permanent access
       if (typeof window !== "undefined") {
+        if (orgName) {
+          localStorage.setItem("tenant_name_" + slug, orgName);
+          if (activeTenant?.id) localStorage.setItem("tenant_name_" + activeTenant.id, orgName);
+          if (activeTenant?.slug) localStorage.setItem("tenant_name_" + activeTenant.slug, orgName);
+          localStorage.setItem("nexa_tenant_name", orgName);
+        }
+
         if (logoUrl) {
           localStorage.setItem("tenant_logo_" + slug, logoUrl);
           if (activeTenant?.id) localStorage.setItem("tenant_logo_" + activeTenant.id, logoUrl);

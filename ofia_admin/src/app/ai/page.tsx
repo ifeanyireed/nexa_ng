@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminStatGrid, AdminStatItem } from "@/components/admin/AdminStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
@@ -371,66 +372,50 @@ export default function AdminOverviewPage() {
         </div>
 
         {/* Platform Vital Signs Metric Bar */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {/* Card 1: Platform MRR */}
-          <NexaCard variant="glass" padding="md" className="space-y-1 border-l-4 border-l-[#0E9F6E]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span>Platform MRR</span>
-              <DollarSign className="w-4 h-4 text-[#0E9F6E]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)] text-mono">
-              ₦{Number(totalMRR).toLocaleString()}
-            </div>
-            <div className="text-xs text-[#0E9F6E] flex items-center gap-1 font-semibold">
-              <TrendingUp className="w-3.5 h-3.5" /> +24% MoM organic growth
-            </div>
-          </NexaCard>
-
-          {/* Card 2: Active Tenants */}
-          <NexaCard variant="glass" padding="md" className="space-y-1 border-l-4 border-l-[#1A56DB]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span>Workspaces & Seats</span>
-              <Building2 className="w-4 h-4 text-[#1A56DB]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)] text-mono">
-              {totalOrgs} Orgs
-            </div>
-            <div className="text-xs text-[var(--nexa-text-muted)] font-mono">
-              {totalUsers} registered user seats
-            </div>
-          </NexaCard>
-
-          {/* Card 3: AI Inference Spend */}
-          <NexaCard variant="glass" padding="md" className="space-y-1 border-l-4 border-l-[#1A56DB]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span>Monthly AI Inference</span>
-              <Cpu className="w-4 h-4 text-[#1A56DB]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)] text-mono">
-              ₦{Math.round(Number(totalAiSpend)).toLocaleString()}
-            </div>
-            <div className="text-xs text-[#0E9F6E] font-semibold">
-              88.4% Gross SaaS Margin
-            </div>
-          </NexaCard>
-
-          {/* Card 4: Circuit Breakers */}
-          <NexaCard variant="glass" padding="md" className="space-y-1 border-l-4 border-l-[#C88A3A]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span>Circuit Breakers</span>
-              <Activity className="w-4 h-4 text-[#C88A3A]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)] text-mono">
-              {trippedBreakers} Tripped
-            </div>
-            <div className="text-xs text-[#0E9F6E] font-semibold">
-              15/15 Specialists Operational
-            </div>
-          </NexaCard>
-        </div>
+        <AdminStatGrid
+          stats={[
+            {
+              label: "Platform MRR",
+              value: `₦${Number(totalMRR).toLocaleString()}`,
+              change: "+24% MoM",
+              trend: "up",
+              changeType: "success",
+              icon: <DollarSign className="w-5 h-5 text-emerald-500" />,
+              sub: "88.4% Gross SaaS Margin",
+            },
+            {
+              label: "Workspaces & Seats",
+              value: `${totalOrgs} Orgs`,
+              change: `${totalUsers} Users`,
+              trend: "up",
+              changeType: "info",
+              icon: <Building2 className="w-5 h-5 text-blue-500" />,
+              sub: "Multi-Tenant Enterprise Workspaces",
+            },
+            {
+              label: "Monthly AI Inference",
+              value: `₦${Math.round(Number(totalAiSpend)).toLocaleString()}`,
+              change: "Telemetry Sync",
+              trend: "up",
+              changeType: "info",
+              icon: <Cpu className="w-5 h-5 text-purple-500" />,
+              sub: "Tokens & Cold Email Relay",
+            },
+            {
+              label: "Circuit Breakers",
+              value: `${trippedBreakers} Tripped`,
+              change: "15/15 Online",
+              trend: "up",
+              changeType: trippedBreakers > 0 ? "danger" : "warning",
+              icon: <Activity className="w-5 h-5 text-amber-500" />,
+              sub: "Autonomous Swarm Fleet",
+            },
+          ]}
+          columns={4}
+        />
 
         {/* Comprehensive Navigation Tab Strip */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-[var(--nexa-border)] scrollbar-hide">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-nexa-border scrollbar-hide pt-1">
           {tabItems.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -438,20 +423,20 @@ export default function AdminOverviewPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer shadow-xs ${
                   isActive
-                    ? "bg-[#1A56DB] text-white shadow-md shadow-[#1A56DB]/20"
-                    : "text-[var(--nexa-text-secondary)] hover:bg-[var(--nexa-bg-surface)] hover:text-[var(--nexa-text-primary)]"
+                    ? "bg-nexa-brand text-white shadow-md shadow-nexa-brand/20 border border-nexa-brand"
+                    : "bg-nexa-bg-surface hover:bg-nexa-bg-surface/80 text-nexa-text-secondary hover:text-nexa-text-primary border border-nexa-border hover:border-nexa-brand/30"
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
                 <span>{tab.label}</span>
                 {tab.count !== undefined && (
                   <span
-                    className={`text-[10px] px-1.5 py-0.5 rounded-md font-mono ${
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
                       isActive
                         ? "bg-white/20 text-white"
-                        : "bg-[var(--nexa-border)] text-[var(--nexa-text-muted)]"
+                        : "bg-nexa-brand/10 text-nexa-brand"
                     }`}
                   >
                     {tab.count}

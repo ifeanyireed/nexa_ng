@@ -122,8 +122,14 @@ export async function fetchDatabaseTenants(forceRefresh = false): Promise<Databa
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
         const mapped: DatabaseTenant[] = data.map((org: any, idx: number) => {
-          const rawName = org.name || org.Name || slugToTenantName(org.slug || org.Slug || `org-${idx + 1}`);
-          const rawSlug = org.slug || org.Slug || rawName.toLowerCase().replace(/[^a-z0-9]/g, "");
+          const rawSlug = org.slug || org.Slug || (org.name || org.Name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+          const savedTenantName =
+            typeof window !== "undefined"
+              ? localStorage.getItem("tenant_name_" + rawSlug) ||
+                localStorage.getItem("tenant_name_" + (org.id || "")) ||
+                localStorage.getItem("nexa_tenant_name")
+              : null;
+          const rawName = savedTenantName || org.name || org.Name || slugToTenantName(rawSlug || `org-${idx + 1}`);
           const rawDomain = org.domain || org.Domain || `${rawSlug}.ofia.ng`;
           const ownerObj = org.owner || org.Owner || {};
           const fallbackAdmin = DEFAULT_TENANT_ADMINS[rawSlug] || DEFAULT_TENANT_ADMINS[org.id || ""] || {
@@ -276,8 +282,20 @@ export function resolveTenantFromList(
       if (found) return found;
     }
 
-    if (!targetSlug) {
-      return tenants[0];
+    if (!targetSlug && !userEmail) {
+      return {
+        id: "",
+        name: "Ofia ERP",
+        slug: "",
+        domain: "erp.ofia.ng",
+        company: "Ofia ERP",
+        status: "ACTIVE",
+        planTier: "Enterprise",
+        logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png",
+        favicon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png",
+        primaryColor: "#1A56DB",
+        secondaryColor: "#0E9F6E",
+      };
     }
   }
 
@@ -292,21 +310,39 @@ export function resolveTenantFromList(
       typeof window !== "undefined"
         ? localStorage.getItem("tenant_admin_email_" + targetSlug) || localStorage.getItem("nexa_user_email")
         : null;
+    const savedTenantName =
+      typeof window !== "undefined"
+        ? localStorage.getItem("tenant_name_" + targetSlug) || localStorage.getItem("nexa_tenant_name")
+        : null;
+    const savedLogo =
+      typeof window !== "undefined"
+        ? localStorage.getItem("tenant_logo_" + targetSlug) || localStorage.getItem("nexa_tenant_logo")
+        : null;
+    const savedPrimaryColor =
+      typeof window !== "undefined"
+        ? localStorage.getItem("tenant_primary_color_" + targetSlug) || localStorage.getItem("nexa_tenant_primary_color")
+        : null;
+    const savedSecondaryColor =
+      typeof window !== "undefined"
+        ? localStorage.getItem("tenant_secondary_color_" + targetSlug) || localStorage.getItem("nexa_tenant_secondary_color")
+        : null;
+
+    const resolvedName = savedTenantName || slugToTenantName(targetSlug);
 
     return {
       id: targetSlug,
-      name: slugToTenantName(targetSlug),
+      name: resolvedName,
       slug: targetSlug,
       domain: `${targetSlug}.ofia.ng`,
-      company: slugToTenantName(targetSlug),
+      company: resolvedName,
       ownerName: savedName || fallbackAdmin.name,
       ownerEmail: savedEmail || userEmail || fallbackAdmin.email,
       status: "ACTIVE",
       planTier: "Enterprise",
-      logo: "",
-      favicon: "",
-      primaryColor: "#1A56DB",
-      secondaryColor: "#0E9F6E",
+      logo: savedLogo || "",
+      favicon: savedLogo || "",
+      primaryColor: savedPrimaryColor || "#1A56DB",
+      secondaryColor: savedSecondaryColor || "#0E9F6E",
     };
   }
 

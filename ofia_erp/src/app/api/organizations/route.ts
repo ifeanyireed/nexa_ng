@@ -39,6 +39,8 @@ export async function GET() {
       primaryColor: t.primaryColor,
       secondaryColor: t.secondaryColor,
       loginImage: t.loginImage,
+      heroTitle: t.heroTitle,
+      heroSubtitle: t.heroSubtitle,
       planTier: t.planTier,
       status: t.status,
     }));
@@ -63,6 +65,8 @@ export async function GET() {
           primaryColor: org.primaryColor || initialMatch.primaryColor,
           secondaryColor: org.secondaryColor || initialMatch.secondaryColor,
           loginImage: org.loginImage || initialMatch.loginImage,
+          heroTitle: org.heroTitle || initialMatch.heroTitle,
+          heroSubtitle: org.heroSubtitle || initialMatch.heroSubtitle,
         }
       : org;
 

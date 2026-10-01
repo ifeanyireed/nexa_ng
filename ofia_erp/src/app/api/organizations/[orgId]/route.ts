@@ -38,6 +38,8 @@ export async function GET(
             primaryColor: data.primaryColor || initialMatch.primaryColor,
             secondaryColor: data.secondaryColor || initialMatch.secondaryColor,
             loginImage: data.loginImage || initialMatch.loginImage,
+            heroTitle: data.heroTitle || initialMatch.heroTitle,
+            heroSubtitle: data.heroSubtitle || initialMatch.heroSubtitle,
           }
         : data;
       const override =

@@ -16,6 +16,8 @@ export interface TenantOrg {
   monthlyAiSpendUSD: number;
   integrationHealth: "Healthy" | "Degraded" | "Error";
   loginImage?: string;
+  heroTitle?: string;
+  heroSubtitle?: string;
   logo?: string;
   favicon?: string;
   primaryColor?: string;
@@ -122,6 +124,8 @@ export const INITIAL_TENANTS: TenantOrg[] = [
     ownerName: "Ifeanyi Felix",
     ownerEmail: "ifeanyi.ibeh@neweratransports.com",
     loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
+    heroTitle: "Powering next-generation transport, logistics & fleet intelligence.",
+    heroSubtitle: "Real-time zonal dispatch, fleet telemetry, manifest auditing, and ledger reconciliation in one synchronized ecosystem.",
     logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
     favicon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
     primaryColor: "#1A56DB",

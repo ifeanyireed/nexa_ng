@@ -16,6 +16,7 @@ import {
   Image as ImageIcon,
   Upload,
   Palette,
+  Sparkles,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -37,6 +38,8 @@ export default function TenantSettingsPage() {
   const [isUploadingLoginImage, setIsUploadingLoginImage] = useState(false);
   const [primaryColor, setPrimaryColor] = useState("#1A56DB");
   const [secondaryColor, setSecondaryColor] = useState("#0E9F6E");
+  const [heroTitle, setHeroTitle] = useState("");
+  const [heroSubtitle, setHeroSubtitle] = useState("");
   const [customDomain, setCustomDomain] = useState("");
   const [ownerName, setOwnerName] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
@@ -70,6 +73,26 @@ export default function TenantSettingsPage() {
             localStorage.getItem("tenant_login_image_" + activeTenant.slug) ||
             localStorage.getItem("nexa_tenant_login_image")
           : null;
+      const savedHeroTitle =
+        typeof window !== "undefined"
+          ? localStorage.getItem("tenant_hero_title_" + identifier) ||
+            localStorage.getItem("tenant_hero_title_" + activeTenant.id) ||
+            localStorage.getItem("tenant_hero_title_" + activeTenant.slug) ||
+            localStorage.getItem("nexa_tenant_hero_title") ||
+            DEFAULT_TENANT_BRANDING[activeTenant.slug]?.heroTitle ||
+            DEFAULT_TENANT_BRANDING[activeTenant.id]?.heroTitle ||
+            DEFAULT_TENANT_BRANDING[identifier]?.heroTitle
+          : null;
+      const savedHeroSubtitle =
+        typeof window !== "undefined"
+          ? localStorage.getItem("tenant_hero_subtitle_" + identifier) ||
+            localStorage.getItem("tenant_hero_subtitle_" + activeTenant.id) ||
+            localStorage.getItem("tenant_hero_subtitle_" + activeTenant.slug) ||
+            localStorage.getItem("nexa_tenant_hero_subtitle") ||
+            DEFAULT_TENANT_BRANDING[activeTenant.slug]?.heroSubtitle ||
+            DEFAULT_TENANT_BRANDING[activeTenant.id]?.heroSubtitle ||
+            DEFAULT_TENANT_BRANDING[identifier]?.heroSubtitle
+          : null;
       const savedLogo =
         typeof window !== "undefined"
           ? localStorage.getItem("tenant_logo_" + identifier) ||
@@ -85,6 +108,8 @@ export default function TenantSettingsPage() {
       setSlug(activeTenant.slug || "");
       setLogoUrl(activeTenant.logo || savedLogo || "");
       setLoginImageUrl(activeTenant.loginImage || savedLoginImage || "");
+      setHeroTitle(activeTenant.heroTitle || savedHeroTitle || "");
+      setHeroSubtitle(activeTenant.heroSubtitle || savedHeroSubtitle || "");
       setPrimaryColor(activeTenant.primaryColor || "#1A56DB");
       setSecondaryColor(activeTenant.secondaryColor || "#0E9F6E");
       setCustomDomain(activeTenant.domain || "");
@@ -186,6 +211,10 @@ export default function TenantSettingsPage() {
         login_image: loginImageUrl,
         loginBgUrl: loginImageUrl,
         backgroundImage: loginImageUrl,
+        heroTitle: heroTitle,
+        hero_title: heroTitle,
+        heroSubtitle: heroSubtitle,
+        hero_subtitle: heroSubtitle,
         primaryColor: primaryColor,
         secondaryColor: secondaryColor,
         ownerName: ownerName,
@@ -219,6 +248,20 @@ export default function TenantSettingsPage() {
           if (activeTenant?.id) localStorage.setItem("tenant_login_image_" + activeTenant.id, loginImageUrl);
           if (activeTenant?.slug) localStorage.setItem("tenant_login_image_" + activeTenant.slug, loginImageUrl);
           localStorage.setItem("nexa_tenant_login_image", loginImageUrl);
+        }
+
+        if (heroTitle) {
+          localStorage.setItem("tenant_hero_title_" + slug, heroTitle);
+          if (activeTenant?.id) localStorage.setItem("tenant_hero_title_" + activeTenant.id, heroTitle);
+          if (activeTenant?.slug) localStorage.setItem("tenant_hero_title_" + activeTenant.slug, heroTitle);
+          localStorage.setItem("nexa_tenant_hero_title", heroTitle);
+        }
+
+        if (heroSubtitle) {
+          localStorage.setItem("tenant_hero_subtitle_" + slug, heroSubtitle);
+          if (activeTenant?.id) localStorage.setItem("tenant_hero_subtitle_" + activeTenant.id, heroSubtitle);
+          if (activeTenant?.slug) localStorage.setItem("tenant_hero_subtitle_" + activeTenant.slug, heroSubtitle);
+          localStorage.setItem("nexa_tenant_hero_subtitle", heroSubtitle);
         }
 
         if (primaryColor) {
@@ -529,6 +572,55 @@ export default function TenantSettingsPage() {
                 <span className="text-[10px] font-mono text-[var(--nexa-text-muted)] uppercase">{secondaryColor}</span>
                 <input type="color" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent" />
               </div>
+            </div>
+          </div>
+        </NexaCard>
+
+        {/* LOGIN PAGE HERO MESSAGING (CUSTOMIZABLE PER TENANT) */}
+        <NexaCard variant="glass" padding="lg" className="space-y-4 border border-[var(--nexa-border)] shadow-xs rounded-3xl">
+          <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
+            <h3 className="font-bold text-sm text-[var(--nexa-text-primary)] flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#1A56DB]" />
+              Login Page Hero Messaging
+            </h3>
+            <NexaBadge variant="brand">Split-Screen</NexaBadge>
+          </div>
+
+          <p className="text-xs text-[var(--nexa-text-muted)] leading-relaxed">
+            Customize the hero headline and subtitle displayed on the left half of your tenant&apos;s split-screen login page (<code className="font-mono text-[11px] text-[#1A56DB]">{slug || "tenant"}.ofia.ng/login</code>).
+          </p>
+
+          <div className="space-y-4 pt-1">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                Hero Headline
+              </label>
+              <input
+                type="text"
+                value={heroTitle}
+                onChange={(e) => setHeroTitle(e.target.value)}
+                placeholder="e.g. Powering next-generation transport, logistics & fleet intelligence."
+                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold"
+              />
+              <span className="text-[10px] text-[var(--nexa-text-muted)]">
+                Main bold headline on the left side over your wallpaper.
+              </span>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                Hero Subtext / Paragraph
+              </label>
+              <textarea
+                rows={3}
+                value={heroSubtitle}
+                onChange={(e) => setHeroSubtitle(e.target.value)}
+                placeholder="e.g. Real-time zonal dispatch, fleet telemetry, manifest auditing, and ledger reconciliation in one synchronized ecosystem."
+                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] leading-relaxed resize-none"
+              />
+              <span className="text-[10px] text-[var(--nexa-text-muted)]">
+                Descriptive tagline explaining your enterprise value propositions.
+              </span>
             </div>
           </div>
         </NexaCard>

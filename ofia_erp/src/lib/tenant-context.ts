@@ -17,6 +17,8 @@ export interface DatabaseTenant {
   primaryColor?: string;
   secondaryColor?: string;
   loginImage?: string;
+  heroTitle?: string;
+  heroSubtitle?: string;
 }
 
 let cachedTenants: DatabaseTenant[] | null = null;
@@ -104,7 +106,15 @@ const DEFAULT_TENANT_ADMINS: Record<string, { name: string; email: string }> = {
 
 export const DEFAULT_TENANT_BRANDING: Record<
   string,
-  { logo?: string; favicon?: string; primaryColor?: string; secondaryColor?: string; loginImage?: string }
+  {
+    logo?: string;
+    favicon?: string;
+    primaryColor?: string;
+    secondaryColor?: string;
+    loginImage?: string;
+    heroTitle?: string;
+    heroSubtitle?: string;
+  }
 > = {
   neweratransports: {
     logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
@@ -112,6 +122,8 @@ export const DEFAULT_TENANT_BRANDING: Record<
     primaryColor: "#1A56DB",
     secondaryColor: "#0E9F6E",
     loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
+    heroTitle: "Powering next-generation transport, logistics & fleet intelligence.",
+    heroSubtitle: "Real-time zonal dispatch, fleet telemetry, manifest auditing, and ledger reconciliation in one synchronized ecosystem.",
   },
   "org-01": {
     logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
@@ -119,6 +131,8 @@ export const DEFAULT_TENANT_BRANDING: Record<
     primaryColor: "#1A56DB",
     secondaryColor: "#0E9F6E",
     loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
+    heroTitle: "Powering next-generation transport, logistics & fleet intelligence.",
+    heroSubtitle: "Real-time zonal dispatch, fleet telemetry, manifest auditing, and ledger reconciliation in one synchronized ecosystem.",
   },
   "edusuite-ng": {
     logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
@@ -126,6 +140,8 @@ export const DEFAULT_TENANT_BRANDING: Record<
     primaryColor: "#1A56DB",
     secondaryColor: "#0E9F6E",
     loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
+    heroTitle: "Empowering schools, educators & learners across Africa.",
+    heroSubtitle: "Automated student grading, fee collections, biometric attendance, and curriculum tracking.",
   },
   "1aa8c687-b71d-4188-9de2-371aa5dfa9e6": {
     logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
@@ -133,6 +149,8 @@ export const DEFAULT_TENANT_BRANDING: Record<
     primaryColor: "#1A56DB",
     secondaryColor: "#0E9F6E",
     loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
+    heroTitle: "Powering next-generation transport, logistics & fleet intelligence.",
+    heroSubtitle: "Real-time zonal dispatch, fleet telemetry, manifest auditing, and ledger reconciliation in one synchronized ecosystem.",
   },
 };
 
@@ -164,6 +182,22 @@ export function applyTenantBranding(tenant: DatabaseTenant | null | undefined) {
       const el = document.querySelector(sel) as HTMLLinkElement | null;
       if (el) el.href = faviconUrl;
     });
+  }
+
+  // 3. Dynamic Browser Tab Title ensuring Tenant Name is always first
+  if (tenant.name && typeof document !== "undefined") {
+    if (!document.title.startsWith(tenant.name)) {
+      const parts = document.title.split(/\s+[|—–]\s+/);
+      const suffix =
+        parts.length > 1
+          ? parts.filter((p) => !p.toLowerCase().includes("ofia erp")).join(" — ")
+          : parts[0];
+      const pagePart =
+        suffix && !suffix.toLowerCase().includes("ofia")
+          ? suffix
+          : "Enterprise Workspace";
+      document.title = `${tenant.name} — ${pagePart} | Ofia ERP`;
+    }
   }
 }
 
@@ -292,6 +326,28 @@ export async function fetchDatabaseTenants(forceRefresh = false): Promise<Databa
             defaultBranding.loginImage ||
             "";
 
+          const rawHeroTitle =
+            org.heroTitle ||
+            org.hero_title ||
+            (typeof window !== "undefined"
+              ? localStorage.getItem("tenant_hero_title_" + rawSlug) ||
+                localStorage.getItem("tenant_hero_title_" + (org.id || "")) ||
+                localStorage.getItem("nexa_tenant_hero_title")
+              : null) ||
+            defaultBranding.heroTitle ||
+            "";
+
+          const rawHeroSubtitle =
+            org.heroSubtitle ||
+            org.hero_subtitle ||
+            (typeof window !== "undefined"
+              ? localStorage.getItem("tenant_hero_subtitle_" + rawSlug) ||
+                localStorage.getItem("tenant_hero_subtitle_" + (org.id || "")) ||
+                localStorage.getItem("nexa_tenant_hero_subtitle")
+              : null) ||
+            defaultBranding.heroSubtitle ||
+            "";
+
           return {
             id: org.id || org.ID || `org-${idx + 1}`,
             name: rawName,
@@ -307,6 +363,8 @@ export async function fetchDatabaseTenants(forceRefresh = false): Promise<Databa
             primaryColor: rawPrimaryColor,
             secondaryColor: rawSecondaryColor,
             loginImage: rawLoginImage,
+            heroTitle: rawHeroTitle,
+            heroSubtitle: rawHeroSubtitle,
           };
         });
 
@@ -368,6 +426,24 @@ export function resolveTenantFromList(
           primaryColor: found.primaryColor || DEFAULT_TENANT_BRANDING[found.slug]?.primaryColor || "#1A56DB",
           secondaryColor: found.secondaryColor || DEFAULT_TENANT_BRANDING[found.slug]?.secondaryColor || "#0E9F6E",
           loginImage: found.loginImage || DEFAULT_TENANT_BRANDING[found.slug]?.loginImage || "",
+          heroTitle:
+            found.heroTitle ||
+            (typeof window !== "undefined"
+              ? localStorage.getItem("tenant_hero_title_" + found.slug) ||
+                localStorage.getItem("tenant_hero_title_" + found.id) ||
+                localStorage.getItem("nexa_tenant_hero_title")
+              : null) ||
+            DEFAULT_TENANT_BRANDING[found.slug]?.heroTitle ||
+            "",
+          heroSubtitle:
+            found.heroSubtitle ||
+            (typeof window !== "undefined"
+              ? localStorage.getItem("tenant_hero_subtitle_" + found.slug) ||
+                localStorage.getItem("tenant_hero_subtitle_" + found.id) ||
+                localStorage.getItem("nexa_tenant_hero_subtitle")
+              : null) ||
+            DEFAULT_TENANT_BRANDING[found.slug]?.heroSubtitle ||
+            "",
         };
       }
     }
@@ -404,6 +480,25 @@ export function resolveTenantFromList(
           favicon: found.favicon || resolvedLogo,
           primaryColor: found.primaryColor || DEFAULT_TENANT_BRANDING[found.slug]?.primaryColor || "#1A56DB",
           secondaryColor: found.secondaryColor || DEFAULT_TENANT_BRANDING[found.slug]?.secondaryColor || "#0E9F6E",
+          loginImage: found.loginImage || DEFAULT_TENANT_BRANDING[found.slug]?.loginImage || "",
+          heroTitle:
+            found.heroTitle ||
+            (typeof window !== "undefined"
+              ? localStorage.getItem("tenant_hero_title_" + found.slug) ||
+                localStorage.getItem("tenant_hero_title_" + domainSlug) ||
+                localStorage.getItem("nexa_tenant_hero_title")
+              : null) ||
+            DEFAULT_TENANT_BRANDING[found.slug]?.heroTitle ||
+            "",
+          heroSubtitle:
+            found.heroSubtitle ||
+            (typeof window !== "undefined"
+              ? localStorage.getItem("tenant_hero_subtitle_" + found.slug) ||
+                localStorage.getItem("tenant_hero_subtitle_" + domainSlug) ||
+                localStorage.getItem("nexa_tenant_hero_subtitle")
+              : null) ||
+            DEFAULT_TENANT_BRANDING[found.slug]?.heroSubtitle ||
+            "",
         };
       }
     }
@@ -457,6 +552,14 @@ export function resolveTenantFromList(
       typeof window !== "undefined"
         ? localStorage.getItem("tenant_login_image_" + targetSlug) || localStorage.getItem("nexa_tenant_login_image")
         : null;
+    const savedHeroTitle =
+      typeof window !== "undefined"
+        ? localStorage.getItem("tenant_hero_title_" + targetSlug) || localStorage.getItem("nexa_tenant_hero_title")
+        : null;
+    const savedHeroSubtitle =
+      typeof window !== "undefined"
+        ? localStorage.getItem("tenant_hero_subtitle_" + targetSlug) || localStorage.getItem("nexa_tenant_hero_subtitle")
+        : null;
 
     const resolvedName = savedTenantName || slugToTenantName(targetSlug);
     const resolvedLogo = savedLogo || defaultBranding.logo || "";
@@ -476,6 +579,8 @@ export function resolveTenantFromList(
       primaryColor: savedPrimaryColor || defaultBranding.primaryColor || "#1A56DB",
       secondaryColor: savedSecondaryColor || defaultBranding.secondaryColor || "#0E9F6E",
       loginImage: savedLoginImage || defaultBranding.loginImage || "",
+      heroTitle: savedHeroTitle || defaultBranding.heroTitle || "",
+      heroSubtitle: savedHeroSubtitle || defaultBranding.heroSubtitle || "",
     };
   }
 

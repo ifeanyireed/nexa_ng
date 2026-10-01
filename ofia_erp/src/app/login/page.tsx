@@ -29,6 +29,7 @@ import {
   extractSubdomainOrParam,
   DEFAULT_TENANT_BRANDING,
 } from "@/lib/tenant-context";
+import { detectImageBrightness } from "@/lib/image-brightness";
 
 export interface LoginPageProps {
   initialTenantSlug?: string;
@@ -149,6 +150,27 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
       DEFAULT_TENANT_BRANDING[resolvedSlug]?.loginImage ||
       ""
     : "";
+
+  // Dynamic automatic image brightness detection (ITU-R BT.709 perceived luminance)
+  const [imageBrightness, setImageBrightness] = useState<"dark" | "light">("dark");
+
+  React.useEffect(() => {
+    if (!loginImage || typeof window === "undefined") {
+      setImageBrightness("light");
+      return;
+    }
+    let active = true;
+    detectImageBrightness(loginImage).then((brightness) => {
+      if (active) {
+        setImageBrightness(brightness);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [loginImage]);
+
+  const isDarkBg = Boolean(loginImage && imageBrightness === "dark");
 
   React.useEffect(() => {
     if (typeof document !== "undefined" && isCustomTenant && tenantName) {
@@ -299,7 +321,11 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
   };
 
   return (
-    <div className="min-h-screen bg-[var(--nexa-bg-base)] flex flex-col justify-between text-[var(--nexa-text-primary)] relative overflow-hidden">
+    <div
+      className={`min-h-screen flex flex-col justify-between relative overflow-hidden transition-colors duration-500 ${
+        isDarkBg ? "bg-slate-950 text-white" : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)]"
+      }`}
+    >
       {/* Background Image Wallpaper under login form */}
       {loginImage && (
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
@@ -308,7 +334,14 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
             alt={`${tenantName} Wallpaper`}
             className="w-full h-full object-cover object-center filter transition-all duration-700"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-[var(--nexa-bg-base)]/40 via-[var(--nexa-bg-base)]/20 to-[var(--nexa-bg-base)]/45 backdrop-blur-[0.5px]" />
+          {/* Ultra-transparent sheer overlay to keep wallpaper vibrant while preserving contrast */}
+          <div
+            className={`absolute inset-0 transition-all duration-500 backdrop-blur-[0.5px] ${
+              isDarkBg
+                ? "bg-gradient-to-b from-black/20 via-black/5 to-black/35"
+                : "bg-gradient-to-b from-white/20 via-transparent to-white/25"
+            }`}
+          />
         </div>
       )}
 
@@ -316,25 +349,33 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
       <header className="relative z-10 p-6 flex items-center justify-between max-w-7xl mx-auto w-full">
         <Link href="/" className="flex items-center gap-3 group">
           {tenantLogo ? (
-            <img
-              src={tenantLogo}
-              alt={`${tenantName} Logo`}
-              className="h-10 sm:h-11 w-auto max-w-[160px] object-contain shrink-0"
-              onError={(e) => {
-                const fallback =
-                  DEFAULT_TENANT_BRANDING[resolvedSlug]?.logo ||
-                  (resolvedSlug.toLowerCase().includes("newera")
-                    ? "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png"
-                    : "");
-                const target = e.target as HTMLImageElement;
-                if (fallback && target.src !== fallback) {
-                  target.src = fallback;
-                } else if (!isCustomTenant) {
-                  target.src =
-                    "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
-                }
-              }}
-            />
+            <div
+              className={
+                isDarkBg
+                  ? "p-1.5 px-2.5 rounded-xl bg-white/95 backdrop-blur-md shadow-sm border border-white/40 flex items-center justify-center shrink-0 transition-all"
+                  : "shrink-0 flex items-center justify-center"
+              }
+            >
+              <img
+                src={tenantLogo}
+                alt={`${tenantName} Logo`}
+                className="h-9 sm:h-10 w-auto max-w-[160px] object-contain shrink-0"
+                onError={(e) => {
+                  const fallback =
+                    DEFAULT_TENANT_BRANDING[resolvedSlug]?.logo ||
+                    (resolvedSlug.toLowerCase().includes("newera")
+                      ? "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png"
+                      : "");
+                  const target = e.target as HTMLImageElement;
+                  if (fallback && target.src !== fallback) {
+                    target.src = fallback;
+                  } else if (!isCustomTenant) {
+                    target.src =
+                      "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
+                  }
+                }}
+              />
+            </div>
           ) : isCustomTenant ? (
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs text-white shrink-0 shadow-md border"
@@ -359,21 +400,38 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
             />
           )}
           <div className="flex flex-col">
-            <span className="font-extrabold text-base text-[var(--nexa-text-primary)] text-display flex items-center gap-2">
+            <span
+              className={`font-extrabold text-base text-display flex items-center gap-2 transition-colors ${
+                isDarkBg ? "text-white drop-shadow-md" : "text-[var(--nexa-text-primary)]"
+              }`}
+            >
               {tenantName}
               <span
-                className="text-[10px] font-extrabold font-mono uppercase px-2.5 py-0.5 rounded-full border"
-                style={{
-                  backgroundColor: `${primaryColor}1a`,
-                  color: primaryColor,
-                  borderColor: `${primaryColor}33`,
-                }}
+                className="text-[10px] font-extrabold font-mono uppercase px-2.5 py-0.5 rounded-full border transition-all"
+                style={
+                  isDarkBg
+                    ? {
+                        backgroundColor: "rgba(255, 255, 255, 0.15)",
+                        color: "#FFFFFF",
+                        borderColor: "rgba(255, 255, 255, 0.3)",
+                        backdropFilter: "blur(8px)",
+                      }
+                    : {
+                        backgroundColor: `${primaryColor}1a`,
+                        color: primaryColor,
+                        borderColor: `${primaryColor}33`,
+                      }
+                }
               >
                 {tenantSlug ? tenantSlug.toUpperCase() : "SUITE"}
               </span>
             </span>
             {isCustomTenant && (
-              <span className="text-[10px] font-medium text-[var(--nexa-text-muted)] tracking-wider">
+              <span
+                className={`text-[10px] font-medium tracking-wider transition-colors ${
+                  isDarkBg ? "text-white/80 drop-shadow-sm" : "text-[var(--nexa-text-muted)]"
+                }`}
+              >
                 Enterprise Workspace • Powered by Ofia ERP
               </span>
             )}
@@ -381,13 +439,21 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
         </Link>
 
         <div className="flex items-center gap-2 text-xs">
-          <span className="text-[var(--nexa-text-muted)]">
+          <span
+            className={`transition-colors ${
+              isDarkBg ? "text-white/85 drop-shadow-sm font-medium" : "text-[var(--nexa-text-muted)]"
+            }`}
+          >
             {isCustomTenant ? "Need another organization?" : "Don't have an enterprise tenant?"}
           </span>
           <Link
             href="/join/register"
-            className="font-bold hover:underline px-3 py-1 rounded-full transition-colors"
-            style={{ color: primaryColor }}
+            className={`font-bold px-3 py-1 rounded-full transition-all ${
+              isDarkBg
+                ? "bg-white/15 hover:bg-white/25 text-white border border-white/30 backdrop-blur-md shadow-sm"
+                : "hover:underline"
+            }`}
+            style={isDarkBg ? {} : { color: primaryColor }}
           >
             Setup Workspace →
           </Link>
@@ -400,35 +466,49 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
           <NexaCard
             variant="glass"
             padding="lg"
-            className="border-2 shadow-2xl rounded-3xl space-y-6 transition-all backdrop-blur-xl bg-[var(--nexa-bg-surface)]/85"
+            className={`border-2 shadow-2xl rounded-3xl space-y-6 transition-all backdrop-blur-2xl ${
+              isDarkBg
+                ? "bg-slate-950/75 border-white/15 text-white shadow-black/60"
+                : "bg-white/90 border-slate-200 text-slate-900 shadow-slate-200/50"
+            }`}
             style={{
-              borderColor: `${primaryColor}33`,
-              boxShadow: `0 20px 50px -10px ${primaryColor}20`,
+              borderColor: isDarkBg ? "rgba(255, 255, 255, 0.15)" : `${primaryColor}33`,
+              boxShadow: isDarkBg
+                ? `0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 35px -5px ${primaryColor}30`
+                : `0 20px 50px -10px ${primaryColor}20`,
             }}
           >
             <div className="text-center space-y-3">
               {/* Tenant Logo or Branded Emblem */}
               <div className="flex justify-center mb-1">
                 {tenantLogo ? (
-                  <img
-                    src={tenantLogo}
-                    alt={`${tenantName} Logo`}
-                    className="h-16 sm:h-20 w-auto max-w-[240px] object-contain"
-                    onError={(e) => {
-                      const fallback =
-                        DEFAULT_TENANT_BRANDING[resolvedSlug]?.logo ||
-                        (resolvedSlug.toLowerCase().includes("newera")
-                          ? "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png"
-                          : "");
-                      const target = e.target as HTMLImageElement;
-                      if (fallback && target.src !== fallback) {
-                        target.src = fallback;
-                      } else if (!isCustomTenant) {
-                        target.src =
-                          "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
-                      }
-                    }}
-                  />
+                  <div
+                    className={
+                      isDarkBg
+                        ? "p-2.5 px-4 rounded-2xl bg-white/95 backdrop-blur-md shadow-md border border-white/40 flex items-center justify-center transition-all"
+                        : "flex items-center justify-center"
+                    }
+                  >
+                    <img
+                      src={tenantLogo}
+                      alt={`${tenantName} Logo`}
+                      className="h-16 sm:h-20 w-auto max-w-[240px] object-contain"
+                      onError={(e) => {
+                        const fallback =
+                          DEFAULT_TENANT_BRANDING[resolvedSlug]?.logo ||
+                          (resolvedSlug.toLowerCase().includes("newera")
+                            ? "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png"
+                            : "");
+                        const target = e.target as HTMLImageElement;
+                        if (fallback && target.src !== fallback) {
+                          target.src = fallback;
+                        } else if (!isCustomTenant) {
+                          target.src =
+                            "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
+                        }
+                      }}
+                    />
+                  </div>
                 ) : isCustomTenant ? (
                   <div
                     className="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl text-white shadow-lg border"
@@ -456,10 +536,18 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
               </div>
 
               <div>
-                <h1 className="text-2xl font-black text-display text-[var(--nexa-text-primary)] tracking-tight">
+                <h1
+                  className={`text-2xl font-black text-display tracking-tight transition-colors ${
+                    isDarkBg ? "text-white" : "text-[var(--nexa-text-primary)]"
+                  }`}
+                >
                   {isCustomTenant ? `Sign in to ${tenantName}` : "Sign in to Ofia ERP"}
                 </h1>
-                <p className="text-xs text-[var(--nexa-text-muted)] leading-relaxed mt-1">
+                <p
+                  className={`text-xs leading-relaxed mt-1 transition-colors ${
+                    isDarkBg ? "text-slate-300" : "text-[var(--nexa-text-muted)]"
+                  }`}
+                >
                   {isCustomTenant
                     ? "Enterprise Workspace"
                     : "Access Inventory, POS, Zonal Dispatch, General Ledger, HR Appraisals, and AI Agents."}
@@ -475,7 +563,11 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
 
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-[var(--nexa-text-secondary)] px-1">
+                <label
+                  className={`text-xs font-semibold px-1 transition-colors ${
+                    isDarkBg ? "text-slate-200" : "text-[var(--nexa-text-secondary)]"
+                  }`}
+                >
                   Enterprise Email
                 </label>
                 <div className="relative">
@@ -485,21 +577,33 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
                     placeholder="name@company.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full h-11 pl-10 pr-4 text-xs rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none transition-all"
+                    className={`w-full h-11 pl-10 pr-4 text-xs rounded-full outline-none transition-all ${
+                      isDarkBg
+                        ? "bg-slate-900/80 border border-slate-700 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        : "bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)]"
+                    }`}
                   />
-                  <Mail className="w-4 h-4 text-[var(--nexa-text-muted)] absolute left-3.5 top-3.5" />
+                  <Mail
+                    className={`w-4 h-4 absolute left-3.5 top-3.5 transition-colors ${
+                      isDarkBg ? "text-slate-400" : "text-[var(--nexa-text-muted)]"
+                    }`}
+                  />
                 </div>
               </div>
 
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between px-1">
-                  <label className="text-xs font-semibold text-[var(--nexa-text-secondary)]">
+                  <label
+                    className={`text-xs font-semibold transition-colors ${
+                      isDarkBg ? "text-slate-200" : "text-[var(--nexa-text-secondary)]"
+                    }`}
+                  >
                     Password
                   </label>
                   <Link
                     href="/erp/reset-password"
-                    className="text-[11px] font-bold hover:underline"
-                    style={{ color: primaryColor }}
+                    className="text-[11px] font-bold hover:underline transition-colors"
+                    style={{ color: isDarkBg ? "#60A5FA" : primaryColor }}
                   >
                     Forgot Password?
                   </Link>
@@ -511,13 +615,25 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full h-11 pl-10 pr-10 text-xs rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none transition-all"
+                    className={`w-full h-11 pl-10 pr-10 text-xs rounded-full outline-none transition-all ${
+                      isDarkBg
+                        ? "bg-slate-900/80 border border-slate-700 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        : "bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)]"
+                    }`}
                   />
-                  <Lock className="w-4 h-4 text-[var(--nexa-text-muted)] absolute left-3.5 top-3.5" />
+                  <Lock
+                    className={`w-4 h-4 absolute left-3.5 top-3.5 transition-colors ${
+                      isDarkBg ? "text-slate-400" : "text-[var(--nexa-text-muted)]"
+                    }`}
+                  />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3.5 top-3.5 text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] p-0.5 rounded-full"
+                    className={`absolute right-3.5 top-3.5 p-0.5 rounded-full transition-colors ${
+                      isDarkBg
+                        ? "text-slate-400 hover:text-white"
+                        : "text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
+                    }`}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -533,9 +649,21 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
                     className="rounded-full border-[var(--nexa-border)]"
                     style={{ accentColor: primaryColor }}
                   />
-                  <span className="text-[var(--nexa-text-secondary)]">Remember this device</span>
+                  <span
+                    className={`transition-colors ${
+                      isDarkBg ? "text-slate-200" : "text-[var(--nexa-text-secondary)]"
+                    }`}
+                  >
+                    Remember this device
+                  </span>
                 </label>
-                <span className="text-[10px] text-[var(--nexa-text-muted)] font-medium px-2 py-0.5 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)]">
+                <span
+                  className={`text-[10px] font-medium px-2 py-0.5 rounded-full border transition-all ${
+                    isDarkBg
+                      ? "bg-slate-800/90 text-slate-300 border-slate-700"
+                      : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-muted)] border-[var(--nexa-border)]"
+                  }`}
+                >
                   2FA Enforced
                 </span>
               </div>
@@ -546,7 +674,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
                 className="w-full h-12 rounded-full text-white font-extrabold text-sm shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 hover:brightness-110 active:scale-[0.99]"
                 style={{
                   backgroundColor: primaryColor,
-                  boxShadow: `0 10px 25px -5px ${primaryColor}40`,
+                  boxShadow: `0 10px 25px -5px ${primaryColor}50`,
                 }}
               >
                 {isLoading ? (
@@ -564,9 +692,14 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
       </main>
 
       {/* Simple Bottom Bar */}
-      <footer className="relative z-10 p-6 text-center text-xs text-[var(--nexa-text-muted)]">
+      <footer
+        className={`relative z-10 p-6 text-center text-xs transition-colors ${
+          isDarkBg ? "text-white/70 drop-shadow-sm font-medium" : "text-[var(--nexa-text-muted)]"
+        }`}
+      >
         © 2026 Ofia ERP. Protected by SOC2 Type II & 256-bit AES encryption.
       </footer>
     </div>
   );
 }
+

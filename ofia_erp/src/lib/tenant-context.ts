@@ -573,3 +573,5 @@ export function useActiveTenant(userEmail?: string | null, searchParamSlug?: str
     reloadTenants: () => loadTenants(true),
   };
 }
+
+export { detectImageBrightness } from "./image-brightness";

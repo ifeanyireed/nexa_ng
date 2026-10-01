@@ -361,7 +361,7 @@ export default function RootPage() {
 
   // If accessed on a tenant subdomain (e.g. {tenantslug}.ofia.ng), display their login page
   if (tenantSlug) {
-    return <LoginPage />;
+    return <LoginPage initialTenantSlug={tenantSlug} />;
   }
 
   // Only erp.ofia.ng (or root domain) displays the public enterprise marketing landing page

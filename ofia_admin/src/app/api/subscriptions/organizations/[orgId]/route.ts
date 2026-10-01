@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { authenticateApiRequest } from "@/lib/jwt-auth";
 
 const USER_BASE = process.env.USER_SERVICE_URL
   ? `${process.env.USER_SERVICE_URL}/api/v1`
@@ -8,6 +9,9 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ orgId: string }> }
 ) {
+  const { errorResponse } = await authenticateApiRequest(request);
+  if (errorResponse) return errorResponse;
+
   const { orgId } = await params;
   try {
     const res = await fetch(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}/subscription`, {
@@ -37,6 +41,12 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ orgId: string }> }
 ) {
+  const { errorResponse } = await authenticateApiRequest(request, {
+    allowedRoles: ["SUPER_ADMIN"],
+    requirePermission: "canManagePlans",
+  });
+  if (errorResponse) return errorResponse;
+
   const { orgId } = await params;
   let body: any = {};
   try {
@@ -68,6 +78,12 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ orgId: string }> }
 ) {
+  const { errorResponse } = await authenticateApiRequest(request, {
+    allowedRoles: ["SUPER_ADMIN"],
+    requirePermission: "canManagePlans",
+  });
+  if (errorResponse) return errorResponse;
+
   const { orgId } = await params;
   let body: any = {};
   try {

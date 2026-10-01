@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { authenticateApiRequest } from "@/lib/jwt-auth";
 
 const rawUserUrl = process.env.USER_SERVICE_URL || process.env.NEXT_PUBLIC_USER_SERVICE_URL || "https://ofia-user-service.onrender.com";
 const cleanUserUrl = rawUserUrl.replace(/\/+$/, "");
@@ -8,6 +9,9 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ orgId: string }> }
 ) {
+  const { errorResponse } = await authenticateApiRequest(request);
+  if (errorResponse) return errorResponse;
+
   const { orgId } = await params;
   try {
     const res = await fetch(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}`, {
@@ -28,6 +32,12 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ orgId: string }> }
 ) {
+  const { errorResponse } = await authenticateApiRequest(request, {
+    allowedRoles: ["SUPER_ADMIN"],
+    requirePermission: "canManageTenants",
+  });
+  if (errorResponse) return errorResponse;
+
   const { orgId } = await params;
   try {
     const body = await request.json();
@@ -52,6 +62,12 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ orgId: string }> }
 ) {
+  const { errorResponse } = await authenticateApiRequest(request, {
+    allowedRoles: ["SUPER_ADMIN"],
+    requirePermission: "canManageTenants",
+  });
+  if (errorResponse) return errorResponse;
+
   const { orgId } = await params;
   try {
     const res = await fetch(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}`, {

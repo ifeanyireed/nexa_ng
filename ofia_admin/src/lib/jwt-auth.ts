@@ -1,13 +1,56 @@
 import { SignJWT, jwtVerify } from "jose";
+import { NextResponse } from "next/server";
 
 export const JWT_SECRET_KEY = process.env.JWT_SECRET || "nexa-jwt-secret-key-production-2026";
 export const AUTH_COOKIE_NAME = "ofia_superadmin_jwt";
+
+export type AdminRole = "SUPER_ADMIN" | "SECURITY_ADMIN" | "VIEWER";
+
+export interface RolePermissions {
+  canManageTenants: boolean;     // create, update, delete tenant orgs
+  canManagePlans: boolean;       // create, update subscription plans & tiers
+  canManageSecurity: boolean;    // feature flags, email relays, system metrics, audit logs
+  canResolveDisputes: boolean;   // mediate and release escrow in marketplace
+  canExportData: boolean;        // export waitlist and CRM pipelines to CSV
+  canMutate: boolean;            // general create/update/delete actions across console
+}
+
+export const ROLE_PERMISSIONS: Record<AdminRole, RolePermissions> = {
+  SUPER_ADMIN: {
+    canManageTenants: true,
+    canManagePlans: true,
+    canManageSecurity: true,
+    canResolveDisputes: true,
+    canExportData: true,
+    canMutate: true,
+  },
+  SECURITY_ADMIN: {
+    canManageTenants: false,
+    canManagePlans: false,
+    canManageSecurity: true,
+    canResolveDisputes: false,
+    canExportData: true,
+    canMutate: false,
+  },
+  VIEWER: {
+    canManageTenants: false,
+    canManagePlans: false,
+    canManageSecurity: false,
+    canResolveDisputes: false,
+    canExportData: false,
+    canMutate: false,
+  },
+};
+
+export function getPermissionsForRole(role: AdminRole): RolePermissions {
+  return ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS.VIEWER;
+}
 
 export interface SuperAdminUser {
   id: string;
   name: string;
   email: string;
-  role: "SUPER_ADMIN" | "SECURITY_ADMIN" | "VIEWER";
+  role: AdminRole;
   scope: string;
   department: string;
   avatar?: string;
@@ -59,6 +102,7 @@ export async function signSuperAdminJWT(user: SuperAdminUser): Promise<string> {
     role: user.role,
     scope: user.scope,
     department: user.department,
+    avatar: user.avatar,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -74,11 +118,12 @@ export async function verifySuperAdminJWT(token: string): Promise<SuperAdminUser
       id: payload.sub as string,
       email: payload.email as string,
       name: payload.name as string,
-      role: payload.role as SuperAdminUser["role"],
-      scope: payload.scope as string,
-      department: payload.department as string,
+      role: (payload.role as AdminRole) || "VIEWER",
+      scope: (payload.scope as string) || "READ_ONLY",
+      department: (payload.department as string) || "General",
+      avatar: (payload.avatar as string) || undefined,
     };
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -93,4 +138,99 @@ export function findSuperAdminByCredentials(email: string, password: string): Su
 
   const { passwordHash, ...safeUser } = found;
   return safeUser;
+}
+
+export async function authenticateApiRequest(
+  req: Request,
+  options?: {
+    allowedRoles?: AdminRole[];
+    requireMutation?: boolean;
+    requirePermission?: keyof RolePermissions;
+  }
+): Promise<{ user: SuperAdminUser | null; errorResponse: NextResponse | null }> {
+  let token: string | undefined;
+
+  // 1. Check Cookie header
+  const cookieHeader = req.headers.get("cookie");
+  if (cookieHeader) {
+    const match = cookieHeader
+      .split(";")
+      .map((c) => c.trim())
+      .find((c) => c.startsWith(`${AUTH_COOKIE_NAME}=`));
+    if (match) {
+      token = decodeURIComponent(match.substring(AUTH_COOKIE_NAME.length + 1));
+    }
+  }
+
+  // 2. Check Authorization header
+  if (!token) {
+    const authHeader = req.headers.get("authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+      token = authHeader.substring(7).trim();
+    }
+  }
+
+  if (!token) {
+    return {
+      user: null,
+      errorResponse: NextResponse.json(
+        { error: "Unauthorized: Missing session token" },
+        { status: 401 }
+      ),
+    };
+  }
+
+  const user = await verifySuperAdminJWT(token);
+  if (!user) {
+    return {
+      user: null,
+      errorResponse: NextResponse.json(
+        { error: "Unauthorized: Invalid or expired session token" },
+        { status: 401 }
+      ),
+    };
+  }
+
+  // Role checks
+  if (options?.allowedRoles && !options.allowedRoles.includes(user.role)) {
+    return {
+      user,
+      errorResponse: NextResponse.json(
+        {
+          error: `Forbidden: Role '${user.role}' lacks permission for this action`,
+          requiredRoles: options.allowedRoles,
+        },
+        { status: 403 }
+      ),
+    };
+  }
+
+  // Mutation permission checks
+  if (options?.requireMutation && user.role === "VIEWER") {
+    return {
+      user,
+      errorResponse: NextResponse.json(
+        { error: "Forbidden: Viewer role has read-only privileges" },
+        { status: 403 }
+      ),
+    };
+  }
+
+  // Specific granular permission check
+  if (options?.requirePermission) {
+    const permissions = getPermissionsForRole(user.role);
+    if (!permissions[options.requirePermission]) {
+      return {
+        user,
+        errorResponse: NextResponse.json(
+          {
+            error: `Forbidden: Missing required permission '${options.requirePermission}'`,
+          },
+          { status: 403 }
+        ),
+      };
+    }
+  }
+
+  return { user, errorResponse: null };
 }

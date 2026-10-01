@@ -82,7 +82,7 @@ export const USER_API = {
     return fetchJSON<any>(`${USER_BASE}/organizations/${orgId}`);
   },
 
-  getOrgSubscription: async (orgId = "org-01") => {
+  getOrgSubscription: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6") => {
     return fetchJSON<any>(`${USER_BASE}/organizations/${orgId}/subscription`);
   },
 
@@ -179,15 +179,15 @@ export const SUBSCRIPTION_API = {
 
 // 3. AUTONOMOUS AI GTM SWARM SERVICE (:8082)
 export const GTM_API = {
-  getAgents: async (orgId = "org-01") => {
+  getAgents: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6") => {
     return fetchJSON<any[]>(`${GTM_BASE}/${orgId}/agents`);
   },
 
-  getAgent: async (orgId = "org-01", agentKey: string) => {
+  getAgent: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6", agentKey: string) => {
     return fetchJSON<any>(`${GTM_BASE}/${orgId}/agents/${agentKey}`);
   },
 
-  chatWithAgent: async (orgId = "org-01", agentKey: string, message: string) => {
+  chatWithAgent: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6", agentKey: string, message: string) => {
     return fetchJSON<{ sender: string; text: string; model_used: string; latency_ms: number }>(
       `${GTM_BASE}/${orgId}/agents/${agentKey}/chat`,
       {
@@ -197,36 +197,36 @@ export const GTM_API = {
     );
   },
 
-  getStrategy: async (orgId = "org-01") => {
+  getStrategy: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6") => {
     return fetchJSON<any>(`${GTM_BASE}/${orgId}/strategy`);
   },
 
-  getCampaigns: async (orgId = "org-01") => {
+  getCampaigns: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6") => {
     return fetchJSON<any[]>(`${GTM_BASE}/${orgId}/campaigns`);
   },
 
-  createCampaign: async (orgId = "org-01", data: { name: string; target_audience: string; channels: string[]; initial_goal?: string }) => {
+  createCampaign: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6", data: { name: string; target_audience: string; channels: string[]; initial_goal?: string }) => {
     return fetchJSON<any>(`${GTM_BASE}/${orgId}/campaigns`, {
       method: "POST",
       body: JSON.stringify(data),
     });
   },
 
-  getLeads: async (orgId = "org-01") => {
+  getLeads: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6") => {
     return fetchJSON<any[]>(`${GTM_BASE}/${orgId}/leads`);
   },
 
-  getApprovals: async (orgId = "org-01") => {
+  getApprovals: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6") => {
     return fetchJSON<any[]>(`${GTM_BASE}/${orgId}/approvals`);
   },
 
-  authorizeApproval: async (orgId = "org-01", id: string) => {
+  authorizeApproval: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6", id: string) => {
     return fetchJSON<{ status: string; id: string }>(`${GTM_BASE}/${orgId}/approvals/${id}/authorize`, {
       method: "POST",
     });
   },
 
-  rejectApproval: async (orgId = "org-01", id: string) => {
+  rejectApproval: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6", id: string) => {
     return fetchJSON<{ status: string; id: string }>(`${GTM_BASE}/${orgId}/approvals/${id}/reject`, {
       method: "POST",
     });

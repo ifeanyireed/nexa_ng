@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { INITIAL_WAITLIST_LEADS } from "@/lib/admin-data";
+import { authenticateApiRequest } from "@/lib/jwt-auth";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { errorResponse } = await authenticateApiRequest(request, {
+    requirePermission: "canExportData",
+  });
+  if (errorResponse) return errorResponse;
+
   try {
     const headers = [
       "Queue Number",

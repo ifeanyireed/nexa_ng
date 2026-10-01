@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/components/nexa/ThemeProvider";
+import { AdminAuthProvider } from "@/lib/auth-context";
 
 const dropa = localFont({
   src: "../fonts/Dropa-Regular.woff2",
@@ -29,7 +30,9 @@ export default function RootLayout({
         className={`${dropa.variable} font-sans antialiased bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] min-h-screen selection:bg-[#1A56DB]/20 selection:text-[#1A56DB]`}
         suppressHydrationWarning
       >
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <AdminAuthProvider>{children}</AdminAuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

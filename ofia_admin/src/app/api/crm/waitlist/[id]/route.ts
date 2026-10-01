@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { executeQuery } from "@/lib/db";
 import { INITIAL_WAITLIST_LEADS, WaitlistLeadItem } from "@/lib/admin-data";
+import { authenticateApiRequest } from "@/lib/jwt-auth";
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { errorResponse } = await authenticateApiRequest(request, { requireMutation: true });
+  if (errorResponse) return errorResponse;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -81,6 +85,9 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { errorResponse } = await authenticateApiRequest(request, { requireMutation: true });
+  if (errorResponse) return errorResponse;
+
   try {
     const { id } = await params;
     await executeQuery("DELETE FROM waitlist_leads WHERE id = ?", [id]);

@@ -54,6 +54,7 @@ import { NexaAvatar } from "@/components/nexa/NexaAvatar";
 import { NexaThemeToggle } from "@/components/nexa/NexaThemeToggle";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { SuperAdminUser } from "@/lib/jwt-auth";
+import { useAdminAuth } from "@/lib/auth-context";
 
 export interface SubNavItem {
   label: string;
@@ -80,32 +81,16 @@ export function SuperAdminShell({
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentUser, setCurrentUser] = useState<SuperAdminUser | null>(null);
+  const {
+    user: currentUser,
+    role,
+    permissions,
+    isLoading,
+    isAuthenticated,
+    logout: handleLogout,
+  } = useAdminAuth();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = sessionStorage.getItem("ofia_superadmin_user");
-      if (stored) {
-        try {
-          setCurrentUser(JSON.parse(stored));
-        } catch {}
-      }
-    }
-
-    fetch("/api/auth/me")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data && data.user) {
-          setCurrentUser(data.user);
-          if (typeof window !== "undefined") {
-            sessionStorage.setItem("ofia_superadmin_user", JSON.stringify(data.user));
-          }
-        }
-      })
-      .catch(() => {});
-  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -116,16 +101,6 @@ export function SuperAdminShell({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } catch {}
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem("ofia_superadmin_user");
-    }
-    window.location.href = "/login";
-  };
 
   const notifications = [
     {
@@ -165,10 +140,11 @@ export function SuperAdminShell({
     }
 
     if (pathname.startsWith("/tenants")) {
-      return [
-        { label: "Tenant Directory", href: "/tenants", icon: <Building2 className="w-3.5 h-3.5" />, badge: "5 Orgs" },
-        { label: "Subscriptions & Plans", href: "/tenants/subscription", icon: <CreditCard className="w-3.5 h-3.5" />, badge: "Quotas" },
-      ];
+      return [];
+    }
+
+    if (pathname.startsWith("/subscriptions")) {
+      return [];
     }
 
     if (pathname.startsWith("/ai")) {
@@ -227,13 +203,6 @@ export function SuperAdminShell({
       key: "overview",
       section: "Governance & Hub",
     },
-    {
-      label: "Security & Audit",
-      icon: <ShieldAlert className="w-6 h-6" />,
-      href: "/ai/audit-logs",
-      key: "audit",
-      section: "Governance & Hub",
-    },
 
     // 2. TENANTS & SUBSCRIPTIONS
     {
@@ -247,7 +216,7 @@ export function SuperAdminShell({
     {
       label: "Plan Tiers & Quotas",
       icon: <CreditCard className="w-6 h-6" />,
-      href: "/tenants/subscription",
+      href: "/subscriptions",
       badge: "Billing",
       key: "subscriptions",
       section: "Tenants & Subscriptions",
@@ -262,21 +231,6 @@ export function SuperAdminShell({
       key: "ai",
       section: "Autonomous AI Swarm",
     },
-    {
-      label: "Email Infrastructure",
-      icon: <Mail className="w-6 h-6" />,
-      href: "/ai/email",
-      badge: "GTM",
-      key: "email",
-      section: "Autonomous AI Swarm",
-    },
-    {
-      label: "LLM Observability",
-      icon: <Activity className="w-6 h-6" />,
-      href: "/ai/observability",
-      key: "observability",
-      section: "Autonomous AI Swarm",
-    },
 
     // 4. OFIA COMPASS & COMMERCE
     {
@@ -287,46 +241,29 @@ export function SuperAdminShell({
       key: "marketplace",
       section: "Ofia Compass & Commerce",
     },
-    {
-      label: "Merchants & Pros",
-      icon: <Store className="w-6 h-6" />,
-      href: "/marketplace/merchants",
-      key: "merchants",
-      section: "Ofia Compass & Commerce",
-    },
-    {
-      label: "Disputes & Escrow",
-      icon: <ShieldCheck className="w-6 h-6 text-rose-500" />,
-      href: "/marketplace/disputes",
-      badge: "Queue",
-      key: "disputes",
-      section: "Ofia Compass & Commerce",
-    },
 
     // 5. CRM & GROWTH
     {
-      label: "Waitlist Registry",
+      label: "CRM & Growth",
       icon: <Users className="w-6 h-6" />,
-      href: "/crm/waitlist",
+      href: "/crm",
       badge: "2.8k",
-      key: "waitlist",
-      section: "CRM & Growth",
-    },
-    {
-      label: "Inbound Support",
-      icon: <Send className="w-6 h-6" />,
-      href: "/crm/contact",
-      key: "contact",
-      section: "CRM & Growth",
-    },
-    {
-      label: "Growth Analytics",
-      icon: <TrendingUp className="w-6 h-6" />,
-      href: "/crm/analytics",
-      key: "crm_analytics",
+      key: "crm",
       section: "CRM & Growth",
     },
   ];
+
+  if (isLoading && !currentUser) {
+    return (
+      <div className="min-h-screen bg-nexa-bg-base flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-12 h-12 rounded-2xl bg-nexa-brand/10 border border-nexa-brand/20 flex items-center justify-center animate-pulse mb-4">
+          <Shield className="w-6 h-6 text-nexa-brand" />
+        </div>
+        <p className="text-sm font-black text-display text-nexa-text-primary">Verifying SuperAdmin Session...</p>
+        <p className="text-xs text-nexa-text-muted mt-1">Evaluating cryptographic operator token and RBAC claims</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-nexa-bg-base text-nexa-text-primary flex relative font-sans">
@@ -505,8 +442,17 @@ export function SuperAdminShell({
                       {currentUser?.name || "Super Admin"}
                     </p>
                     <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className="text-[8px] font-extrabold px-1.5 py-0.2 rounded-full bg-nexa-brand/10 text-nexa-brand uppercase border border-nexa-brand/20">
-                        {currentUser?.role || "SUPER ADMIN"}
+                      <span
+                        className={cn(
+                          "text-[8px] font-extrabold px-1.5 py-0.2 rounded-full uppercase border",
+                          role === "SUPER_ADMIN"
+                            ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                            : role === "SECURITY_ADMIN"
+                            ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                            : "bg-slate-500/10 text-slate-500 border-slate-500/20"
+                        )}
+                      >
+                        {role ? role.replace("_", " ") : "SUPER ADMIN"}
                       </span>
                       <span className="text-[8px] text-emerald-500 font-bold truncate">
                         • Live
@@ -623,6 +569,34 @@ export function SuperAdminShell({
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         <div className="p-8 space-y-6 flex-1">
+          {/* RBAC ROLE BANNER FOR AUDITOR / VIEWER */}
+          {role === "VIEWER" && (
+            <div className="px-4 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 text-amber-600 dark:text-amber-400">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <ShieldAlert className="w-4 h-4 shrink-0 text-amber-500" />
+                <p className="text-xs font-semibold truncate">
+                  <strong className="font-extrabold">Read-Only Mode:</strong> Signed in as <span className="font-mono underline">{currentUser?.name}</span> (VIEWER / Auditor). All tenant and infrastructure mutations are restricted.
+                </p>
+              </div>
+              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/30 shrink-0">
+                AUDIT COMPLIANCE
+              </span>
+            </div>
+          )}
+
+          {/* RBAC ROLE BANNER FOR SECURITY ADMIN */}
+          {role === "SECURITY_ADMIN" && (
+            <div className="px-4 py-2.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-between gap-3 text-blue-600 dark:text-blue-400 text-xs">
+              <div className="flex items-center gap-2 min-w-0">
+                <ShieldCheck className="w-4 h-4 shrink-0 text-blue-500" />
+                <span className="font-medium truncate">SecOps & Trust Scope ({currentUser?.department}) — Tenant mutation restricted</span>
+              </div>
+              <span className="text-[9px] font-mono font-extrabold px-2 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 shrink-0">
+                SECOPS SCOPE
+              </span>
+            </div>
+          )}
+
           {/* HEADER TITLE & ACTIONS */}
           {(title || action) && (
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

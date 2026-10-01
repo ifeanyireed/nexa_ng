@@ -73,10 +73,10 @@ function LoginContent() {
       // Store in memory / session storage for UI convenience
       if (typeof window !== "undefined") {
         sessionStorage.setItem("ofia_superadmin_user", JSON.stringify(data.user));
+        window.location.href = decodeURIComponent(returnUrl);
+      } else {
+        router.push(decodeURIComponent(returnUrl));
       }
-
-      router.push(decodeURIComponent(returnUrl));
-      router.refresh();
     } catch (err: any) {
       setError(err.message || "Invalid operator credentials");
     } finally {

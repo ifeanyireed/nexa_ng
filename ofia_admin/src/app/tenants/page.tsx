@@ -57,6 +57,7 @@ import {
   Zap,
   ArrowRight,
   ChevronRight,
+  ChevronDown,
   BarChart3,
   Store,
   ShieldCheck,
@@ -66,313 +67,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Centralized Plan Tiers Catalog based on SubscriptionHelper single-source-of-truth
-// Centralized Plan Tiers Catalog categorized by Product Track (Ofia AI, Ofia Shop, Ofia Enterprise Suite, Ofia Compass)
-export interface SubscriptionTierItem {
-  id: string;
-  category: "OFIA_AI" | "OFIA_SHOP" | "OFIA_ENTERPRISE" | "OFIA_COMPASS";
-  categoryLabel: string;
-  tier: string;
-  name: string;
-  priceNgn: number;
-  period: string;
-  badge: string;
-  description: string;
-  leadsLimit: number;
-  campaignsLimit: number;
-  teamSeats: number;
-  tokensLimit?: number;
-  storefrontsLimit?: number;
-  features: string[];
-}
-
-export const SUBSCRIPTION_TIERS_CATALOG: SubscriptionTierItem[] = [
-  // 1. OFIA AI SUBSCRIPTIONS
-  {
-    id: "ofia-ai-pilot",
-    category: "OFIA_AI",
-    categoryLabel: "Ofia AI",
-    tier: "FREE_TRIAL",
-    name: "Ofia AI Pilot",
-    priceNgn: 0,
-    period: "14 Days",
-    leadsLimit: 250,
-    campaignsLimit: 1,
-    teamSeats: 2,
-    tokensLimit: 250000,
-    badge: "14-Day Pilot",
-    description: "Sandbox for testing autonomous AI SDR agents and lead discovery.",
-    features: [
-      "1 Autonomous AI Outreach Agent",
-      "250 Verified Enrichment Leads",
-      "250k Monthly AI Tokens Quota",
-      "Email Discovery Channel",
-    ],
-  },
-  {
-    id: "ofia-ai-growth",
-    category: "OFIA_AI",
-    categoryLabel: "Ofia AI",
-    tier: "STARTER",
-    name: "Ofia AI Growth Swarm",
-    priceNgn: 13000,
-    period: "Monthly",
-    leadsLimit: 5000,
-    campaignsLimit: 5,
-    teamSeats: 5,
-    tokensLimit: 10000000,
-    badge: "Most Popular AI",
-    description: "Autonomous GTM swarm for multi-channel sales and WhatsApp agents.",
-    features: [
-      "5 Autonomous AI Swarm Agents",
-      "5,000 Verified Enrichment Leads / mo",
-      "10M Monthly AI Tokens Quota",
-      "Email + WhatsApp SDR Pipelines",
-      "BYOK OpenAI & Anthropic",
-    ],
-  },
-  {
-    id: "ofia-ai-scale",
-    category: "OFIA_AI",
-    categoryLabel: "Ofia AI",
-    tier: "GROWTH",
-    name: "Ofia AI Autonomous Scale",
-    priceNgn: 36000,
-    period: "Monthly",
-    leadsLimit: 25000,
-    campaignsLimit: 20,
-    teamSeats: 15,
-    tokensLimit: 50000000,
-    badge: "High Velocity AI",
-    description: "Enterprise swarm intelligence for high-velocity revenue generation.",
-    features: [
-      "20 Autonomous Swarm Agents",
-      "25,000 Verified Leads / mo",
-      "50M Monthly AI Tokens Quota",
-      "LinkedIn + Meta Ads + Voice AI SDRs",
-      "Custom Brand Tone Fine-Tuning",
-    ],
-  },
-  {
-    id: "ofia-ai-sovereign",
-    category: "OFIA_AI",
-    categoryLabel: "Ofia AI",
-    tier: "ENTERPRISE",
-    name: "Ofia AI Sovereign Cluster",
-    priceNgn: 70000,
-    period: "Monthly",
-    leadsLimit: 100000,
-    campaignsLimit: 100,
-    teamSeats: 50,
-    tokensLimit: 200000000,
-    badge: "Dedicated AI",
-    description: "Dedicated GPU clusters, unlimited AI agents, and private vector storage.",
-    features: [
-      "Unlimited Autonomous AI Swarms",
-      "100,000 Verified Leads / mo",
-      "200M Monthly AI Tokens Quota",
-      "Dedicated Inference GPU Cluster",
-      "Private Vector Database & RAG",
-    ],
-  },
-
-  // 2. OFIA SHOP SUBSCRIPTIONS
-  {
-    id: "ofia-shop-starter",
-    category: "OFIA_SHOP",
-    categoryLabel: "Ofia Shop",
-    tier: "STARTER",
-    name: "Ofia Shop Starter",
-    priceNgn: 3000,
-    period: "Monthly",
-    leadsLimit: 500,
-    campaignsLimit: 1,
-    teamSeats: 2,
-    storefrontsLimit: 1,
-    badge: "Fast Launch",
-    description: "Deploy branded storefront on slug.ofia.shop with POS checkout.",
-    features: [
-      "1 Custom Storefront on slug.ofia.shop",
-      "Up to 100 Products Listed",
-      "Integrated POS Terminal Checkout",
-      "Automated Paystack Payment Gateway",
-      "Standard Customer Support",
-    ],
-  },
-  {
-    id: "ofia-shop-pro",
-    category: "OFIA_SHOP",
-    categoryLabel: "Ofia Shop",
-    tier: "GROWTH",
-    name: "Ofia Shop Merchant Pro",
-    priceNgn: 9000,
-    period: "Monthly",
-    leadsLimit: 2000,
-    campaignsLimit: 5,
-    teamSeats: 10,
-    storefrontsLimit: 3,
-    badge: "Commerce Scale",
-    description: "Custom domain connection, multi-branch POS, and logistics courier dispatch.",
-    features: [
-      "Custom Domain Connection + Wildcard",
-      "3 Storefront Subdomains",
-      "Multi-Branch POS Terminal Checkout",
-      "Automated Courier & Rider Dispatch",
-      "Inventory Sync (IMS Integration)",
-    ],
-  },
-  {
-    id: "ofia-shop-empire",
-    category: "OFIA_SHOP",
-    categoryLabel: "Ofia Shop",
-    tier: "SCALE",
-    name: "Ofia Shop Multi-Brand Empire",
-    priceNgn: 24000,
-    period: "Monthly",
-    leadsLimit: 10000,
-    campaignsLimit: 15,
-    teamSeats: 25,
-    storefrontsLimit: 10,
-    badge: "Multi-Vendor",
-    description: "Multi-storefront empire architecture with automated warehouse fulfillment.",
-    features: [
-      "10 Custom Storefront Subdomains",
-      "Multi-Vendor Sub-Account Routing",
-      "Automated Warehouse Fulfillment",
-      "Zero Commission Surcharge (0%)",
-      "24/7 Dedicated Support",
-    ],
-  },
-
-  // 3. OFIA ENTERPRISE SUITE SUBSCRIPTIONS
-  {
-    id: "ofia-ent-core",
-    category: "OFIA_ENTERPRISE",
-    categoryLabel: "Ofia Enterprise Suite",
-    tier: "GROWTH",
-    name: "Enterprise Core ERP",
-    priceNgn: 24000,
-    period: "Monthly",
-    leadsLimit: 5000,
-    campaignsLimit: 10,
-    teamSeats: 15,
-    badge: "Core Operations",
-    description: "Full back-office ERP suite: CRM, Financial Accounting, IMS, and HR.",
-    features: [
-      "All 8 Core ERP Modules",
-      "Multi-Warehouse Inventory Control (IMS)",
-      "Double-Entry Financial Accounting",
-      "HRM Payroll & Attendance Logs",
-      "15 Concurrent User Seats",
-    ],
-  },
-  {
-    id: "ofia-ent-omni",
-    category: "OFIA_ENTERPRISE",
-    categoryLabel: "Ofia Enterprise Suite",
-    tier: "SCALE",
-    name: "Enterprise Omni-Suite",
-    priceNgn: 48000,
-    period: "Monthly",
-    leadsLimit: 20000,
-    campaignsLimit: 25,
-    teamSeats: 30,
-    badge: "Full Ecosystem",
-    description: "Complete unified ecosystem: Full ERP Suite + Ofia Shop Storefronts + AI Swarms.",
-    features: [
-      "Full ERP + Shop Storefronts + AI Swarms",
-      "30 Concurrent User Seats",
-      "20,000 Leads Pipeline / month",
-      "Custom Role-Based RBAC Permissions",
-      "Integrated Fleet & Dispatch Logistics",
-    ],
-  },
-  {
-    id: "ofia-ent-sovereign",
-    category: "OFIA_ENTERPRISE",
-    categoryLabel: "Ofia Enterprise Suite",
-    tier: "ENTERPRISE",
-    name: "Enterprise Sovereign SLA",
-    priceNgn: 100000,
-    period: "Monthly",
-    leadsLimit: 50000,
-    campaignsLimit: 100,
-    teamSeats: 999,
-    badge: "Dedicated Cloud",
-    description: "Maximum throughput, dedicated cloud infrastructure, and 24/7 SLA.",
-    features: [
-      "Dedicated MySQL & Redis Instances",
-      "99.99% Guaranteed SLA Uptime",
-      "Unlimited Seats & Workspaces",
-      "Custom Enterprise ERP Integrations",
-      "Dedicated Strategic Technical Lead",
-    ],
-  },
-
-  // 4. OFIA COMPASS SUBSCRIPTIONS (Executive Strategic BI)
-  {
-    id: "ofia-compass-starter",
-    category: "OFIA_COMPASS",
-    categoryLabel: "Ofia Compass",
-    tier: "STARTER",
-    name: "Ofia Compass Essentials",
-    priceNgn: 7000,
-    period: "Monthly",
-    leadsLimit: 1000,
-    campaignsLimit: 2,
-    teamSeats: 3,
-    badge: "Executive Radar",
-    description: "Real-time executive dashboards, anomaly tracking, and automated revenue digests.",
-    features: [
-      "Real-Time Executive KPI Dashboard",
-      "Automated Revenue & Churn Forecasts",
-      "Weekly AI Market Digest Reports",
-      "3 Executive / Leadership Seats",
-    ],
-  },
-  {
-    id: "ofia-compass-pro",
-    category: "OFIA_COMPASS",
-    categoryLabel: "Ofia Compass",
-    tier: "GROWTH",
-    name: "Ofia Compass Strategic Pro",
-    priceNgn: 19000,
-    period: "Monthly",
-    leadsLimit: 5000,
-    campaignsLimit: 10,
-    teamSeats: 10,
-    badge: "Predictive BI",
-    description: "Cross-organization predictive analytics, anomaly alerts, and market trend radar.",
-    features: [
-      "Cross-Channel Market Trend Radar",
-      "Automated Anomaly Detection & Alerts",
-      "Predictive Cash Flow & Supply Models",
-      "10 Executive Decision-Maker Seats",
-      "Custom Dashboard Metrics Builder",
-    ],
-  },
-  {
-    id: "ofia-compass-sovereign",
-    category: "OFIA_COMPASS",
-    categoryLabel: "Ofia Compass",
-    tier: "ENTERPRISE",
-    name: "Ofia Compass Sovereign Radar",
-    priceNgn: 50000,
-    period: "Monthly",
-    leadsLimit: 25000,
-    campaignsLimit: 50,
-    teamSeats: 50,
-    badge: "Boardroom Intelligence",
-    description: "Boardroom-ready automated presentations, strategic benchmarking, and dedicated BI analysts.",
-    features: [
-      "Board-Ready Automated Strategic Decks",
-      "Industry Competitor Benchmarking Radar",
-      "Dedicated Strategic BI Data Analyst",
-      "Unlimited Executive & Board Seats",
-      "24/7 Strategic Alert Notification",
-    ],
-  },
-];
+// Centralized Plan Tiers Catalog re-exported from subscription-data
+export { type SubscriptionTierItem, SUBSCRIPTION_TIERS_CATALOG } from "@/lib/subscription-data";
 
 // Icon mapping helper
 const getModuleIcon = (iconName: string) => {
@@ -412,12 +108,6 @@ function TenantManagementContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const tenantParam = searchParams.get("tenant") || "all";
-  const tabParam = searchParams.get("tab") || (tenantParam === "subscriptions" ? "subscriptions" : "directory");
-
-  const [activeMainTab, setActiveMainTab] = useState<"directory" | "subscriptions">(
-    tabParam === "subscriptions" ? "subscriptions" : "directory"
-  );
-  const [isTriggeringRenewals, setIsTriggeringRenewals] = useState(false);
 
   const [tenants, setTenants] = useState<TenantOrg[]>(INITIAL_TENANTS);
   const [selectedTenantId, setSelectedTenantId] = useState<string>(tenantParam);
@@ -425,28 +115,6 @@ function TenantManagementContent() {
   const [selectedProductFilter, setSelectedProductFilter] = useState<string>("ALL");
   const [selectedPlanFilter, setSelectedPlanFilter] = useState<string>("ALL");
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>("ALL");
-
-  useEffect(() => {
-    if (tabParam === "subscriptions" || tenantParam === "subscriptions") {
-      setActiveMainTab("subscriptions");
-    } else {
-      setActiveMainTab("directory");
-    }
-  }, [tabParam, tenantParam]);
-
-  const handleTriggerBatchRenewals = async () => {
-    setIsTriggeringRenewals(true);
-    try {
-      await fetch("/api/v1/admin/subscriptions/renewals/trigger", {
-        method: "POST",
-      }).catch(() => null);
-      showToast("Automated subscription renewal cycle triggered across all active tenants!");
-    } catch (err) {
-      showToast("Renewal cycle processed locally");
-    } finally {
-      setIsTriggeringRenewals(false);
-    }
-  };
 
   // Modals state
   const [selectedTenantForQuota, setSelectedTenantForQuota] = useState<TenantOrg | null>(null);
@@ -625,22 +293,6 @@ function TenantManagementContent() {
 
   // Active focused tenant (if not "all")
   const focusedTenant = selectedTenantId !== "all" ? tenants.find((t) => t.id === selectedTenantId) : null;
-
-  // Build Sub-tabs for Tenant Management
-  const dynamicSubTabs: SubNavItem[] = [
-    {
-      label: "Tenant Directory",
-      href: "/tenants",
-      icon: <Building2 className="w-3.5 h-3.5" />,
-      badge: `${tenants.length} Orgs`,
-    },
-    {
-      label: "Subscription Management",
-      href: "/tenants/subscription",
-      icon: <CreditCard className="w-3.5 h-3.5" />,
-      badge: "Plans & Quotas",
-    },
-  ];
 
   const handleImpersonate = (t: TenantOrg) => {
     const targetUrl = t.domain.includes(".")
@@ -944,7 +596,7 @@ function TenantManagementContent() {
   return (
     <SuperAdminShell
       title="Tenant Management & Module Provisioning"
-      subTabs={dynamicSubTabs}
+      subTabs={[]}
       action={
         <div className="flex items-center gap-2.5">
           {toastMessage && (
@@ -1010,78 +662,131 @@ function TenantManagementContent() {
               columns={4}
             />
 
-            {/* TENANT TOGGLE SWITCHBOARD TABS (HORIZONTAL PILL ROW) */}
-            <div className="p-5 rounded-3xl bg-nexa-bg-surface border border-nexa-border space-y-3.5 shadow-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-nexa-text-primary flex items-center gap-2 text-display">
-                  <Building2 className="w-4 h-4 text-nexa-brand" />
-                  Select Tenant Workspace to Configure
-                </span>
-                <span className="text-xs text-nexa-text-muted font-medium">
-                  Showing: <strong className="text-nexa-brand font-bold">{focusedTenant ? focusedTenant.name : "All Organizations"}</strong>
-                </span>
-              </div>
+            {/* UNIFIED WORKSPACE SELECTOR & SEARCH/FILTERS CARD */}
+            <div className="p-4 sm:p-5 rounded-3xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] shadow-xs space-y-3">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                {/* 1. SELECT TENANT WORKSPACE DROPDOWN */}
+                <div className="relative min-w-[280px] sm:min-w-[340px]">
+                  <div className="flex items-center gap-2.5 px-4 py-2.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-[#1A56DB] rounded-full transition-all group focus-within:border-[#1A56DB] focus-within:ring-2 focus-within:ring-[#1A56DB]/15">
+                    <Building2 className="w-4 h-4 text-[#1A56DB] shrink-0" />
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="text-[9px] font-extrabold uppercase tracking-wider text-[var(--nexa-text-muted)] leading-none">
+                        Select Tenant Workspace to Configure
+                      </span>
+                      <select
+                        value={selectedTenantId}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setSelectedTenantId(val);
+                          router.push(`/tenants?tenant=${val}`);
+                        }}
+                        aria-label="Select Tenant Workspace to Configure"
+                        className="bg-transparent text-xs font-bold text-[var(--nexa-text-primary)] outline-none cursor-pointer appearance-none truncate mt-0.5 pr-4"
+                      >
+                        <option value="all" className="bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-primary)] font-bold">
+                          All Organizations Directory ({tenants.length} Tenants)
+                        </option>
+                        <optgroup label="Tenant Workspaces" className="bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-primary)] font-bold">
+                          {tenants.map((t) => (
+                            <option key={t.id} value={t.id} className="bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-primary)] font-semibold">
+                              {t.name} ({t.planTier.replace("_", " ")}) — {t.domain}
+                            </option>
+                          ))}
+                        </optgroup>
+                      </select>
+                    </div>
+                    <ChevronDown className="w-4 h-4 text-[var(--nexa-text-muted)] pointer-events-none shrink-0 group-hover:text-[#1A56DB]" />
+                  </div>
+                </div>
 
-              <div className="flex items-stretch gap-2.5 overflow-x-auto pb-2 pt-1 scrollbar-hide snap-x">
-                {/* "All Tenants" Option */}
-                <button
-                  onClick={() => {
-                    setSelectedTenantId("all");
-                    router.push("/tenants?tab=directory&tenant=all");
-                  }}
-                  className={cn(
-                    "px-4 py-2.5 rounded-full border text-xs font-bold transition-all shrink-0 flex items-center gap-2.5 cursor-pointer snap-start",
-                    selectedTenantId === "all"
-                      ? "bg-nexa-brand text-white border-nexa-brand shadow-md shadow-nexa-brand/20"
-                      : "bg-nexa-bg-base text-nexa-text-primary border-nexa-border hover:border-nexa-brand/40"
-                  )}
-                >
-                  <Building2 className="w-4 h-4" />
-                  <span>All Tenants Directory</span>
-                  <span
-                    className={cn(
-                      "text-[10px] font-mono px-2 py-0.5 rounded-full font-bold",
-                      selectedTenantId === "all"
-                        ? "bg-white/20 text-white"
-                        : "bg-nexa-brand/10 text-nexa-brand"
-                    )}
-                  >
-                    {tenants.length}
-                  </span>
-                </button>
-
-                {/* Individual Tenant Chips */}
-                {tenants.map((t) => {
-                  const isSelected = selectedTenantId === t.id;
-                  return (
+                {/* 2. SEARCH INPUT */}
+                <div className="relative flex-1 min-w-[220px]">
+                  <Search className="w-4 h-4 text-[var(--nexa-text-muted)] absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Search by organization name, slug, domain, or owner..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      if (selectedTenantId !== "all" && e.target.value.trim().length > 0) {
+                        setSelectedTenantId("all");
+                        router.push(`/tenants?tenant=all`);
+                      }
+                    }}
+                    className="w-full pl-9 pr-3.5 py-2.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-full text-xs outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] placeholder:text-[var(--nexa-text-faint)] font-medium transition-all"
+                  />
+                  {searchQuery && (
                     <button
-                      key={t.id}
-                      onClick={() => {
-                        setSelectedTenantId(t.id);
-                        router.push(`/tenants?tab=directory&tenant=${t.id}`);
-                      }}
-                      className={cn(
-                        "px-4 py-2.5 rounded-full border text-xs font-bold transition-all shrink-0 flex items-center gap-2.5 cursor-pointer snap-start",
-                        isSelected
-                          ? "bg-nexa-brand text-white border-nexa-brand shadow-md shadow-nexa-brand/20"
-                          : "bg-nexa-bg-base text-nexa-text-primary border-nexa-border hover:border-nexa-brand/40"
-                      )}
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] cursor-pointer"
                     >
-                      <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-[10px] font-extrabold">
-                        {t.name.slice(0, 2).toUpperCase()}
-                      </div>
-                      <span>{t.name}</span>
-                      <span
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* 3. FILTERS (Plan Tier & Status) */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Plan Tier Filter */}
+                  <div className="flex items-center gap-1 bg-[var(--nexa-bg-base)] p-1 rounded-full border border-[var(--nexa-border)]">
+                    {["ALL", "GROWTH", "ENTERPRISE", "SCALE", "STARTER"].map((plan) => (
+                      <button
+                        key={plan}
+                        type="button"
+                        onClick={() => {
+                          setSelectedPlanFilter(plan);
+                          if (selectedTenantId !== "all") {
+                            setSelectedTenantId("all");
+                            router.push(`/tenants?tenant=all`);
+                          }
+                        }}
                         className={cn(
-                          "text-[9px] font-mono px-2 py-0.5 rounded-full uppercase font-bold",
-                          isSelected ? "bg-white/20 text-white" : "bg-nexa-brand/10 text-nexa-brand"
+                          "px-2.5 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer",
+                          selectedPlanFilter === plan
+                            ? "bg-[#1A56DB] text-white shadow-xs font-extrabold"
+                            : "text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
                         )}
                       >
-                        {t.planTier.replace("_", " ")}
-                      </span>
+                        {plan}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Status Filter */}
+                  <select
+                    value={selectedStatusFilter}
+                    onChange={(e) => {
+                      setSelectedStatusFilter(e.target.value);
+                      if (selectedTenantId !== "all") {
+                        setSelectedTenantId("all");
+                        router.push(`/tenants?tenant=all`);
+                      }
+                    }}
+                    className="px-3 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-full text-xs font-bold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB] cursor-pointer"
+                  >
+                    <option value="ALL">All Statuses</option>
+                    <option value="Active">Active</option>
+                    <option value="Trialing">Trialing</option>
+                    <option value="Past Due">Past Due</option>
+                    <option value="Suspended">Suspended</option>
+                  </select>
+
+                  {/* Quick 'Back to All' pill if currently focused on a single tenant */}
+                  {selectedTenantId !== "all" && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedTenantId("all");
+                        router.push("/tenants?tenant=all");
+                      }}
+                      className="px-3 py-1.5 rounded-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 border border-rose-500/20 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>Back to All</span>
                     </button>
-                  );
-                })}
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1375,53 +1080,6 @@ function TenantManagementContent() {
             ) : (
               /* ALL TENANTS DIRECTORY VIEW */
               <div className="space-y-4">
-                {/* SEARCH & FILTERS ROW */}
-                <div className="p-4 rounded-3xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
-                  <div className="relative flex-1">
-                    <Search className="w-4 h-4 text-[var(--nexa-text-muted)] absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      placeholder="Search by organization name, slug, domain, or owner..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-9 pr-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-full text-xs outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] placeholder:text-[var(--nexa-text-faint)] font-medium"
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {/* Plan Tier Filter */}
-                    <div className="flex items-center gap-1 bg-[var(--nexa-bg-base)] p-1 rounded-full border border-[var(--nexa-border)]">
-                      {["ALL", "GROWTH", "ENTERPRISE", "SCALE", "STARTER"].map((plan) => (
-                        <button
-                          key={plan}
-                          onClick={() => setSelectedPlanFilter(plan)}
-                          className={cn(
-                            "px-2.5 py-1 rounded-full text-[10px] font-bold transition-all cursor-pointer",
-                            selectedPlanFilter === plan
-                              ? "bg-[#1A56DB] text-white shadow-xs font-extrabold"
-                              : "text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
-                          )}
-                        >
-                          {plan}
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* Status Filter */}
-                    <select
-                      value={selectedStatusFilter}
-                      onChange={(e) => setSelectedStatusFilter(e.target.value)}
-                      className="px-3 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-full text-xs font-bold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB] cursor-pointer"
-                    >
-                      <option value="ALL">All Statuses</option>
-                      <option value="Active">Active</option>
-                      <option value="Trialing">Trialing</option>
-                      <option value="Past Due">Past Due</option>
-                      <option value="Suspended">Suspended</option>
-                    </select>
-                  </div>
-                </div>
-
                 {/* TENANTS SINGLE COLUMN CARDS */}
                 <div className="grid grid-cols-1 gap-4">
                   {filteredTenants
@@ -1489,7 +1147,7 @@ function TenantManagementContent() {
                             <button
                               onClick={() => {
                                 setSelectedTenantId(tenant.id);
-                                router.push(`/tenants?tab=directory&tenant=${tenant.id}`);
+                                router.push(`/tenants?tenant=${tenant.id}`);
                               }}
                               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#1A56DB] text-white text-xs font-bold hover:bg-[#1545B0] transition-colors cursor-pointer shadow-xs"
                             >

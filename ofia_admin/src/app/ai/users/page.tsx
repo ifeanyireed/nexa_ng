@@ -113,7 +113,7 @@ export default function AdminUsersPage() {
     if (!newUserEmail || !newUserName) return;
 
     const matchedOrg = organizations.find((o) => o.name === newUserOrg);
-    const orgId = matchedOrg ? matchedOrg.id : (organizations[0]?.id || "org-01");
+    const orgId = matchedOrg ? matchedOrg.id : (organizations[0]?.id || "1aa8c687-b71d-4188-9de2-371aa5dfa9e6");
 
     const avatarIndex = (users.length % 20) + 1;
     const created: AdminUser = {
@@ -159,7 +159,7 @@ export default function AdminUsersPage() {
       role: presetRole,
       title,
       orgName,
-      orgId: orgName === "EduSuite Nigeria" ? "org-01" : "org-02",
+      orgId: orgName === "Reed Breed Systems" ? "2bb399db-3689-5129-9b64-e53f0419fa07" : "1aa8c687-b71d-4188-9de2-371aa5dfa9e6",
       avatar: `/character${avatarIndex}.jpg`,
       twoFactorEnabled: true,
       status: "Active",
@@ -210,7 +210,7 @@ export default function AdminUsersPage() {
           <NexaInput
             label="Email Address"
             type="email"
-            placeholder="e.g. victor@edusuite.ng"
+            placeholder="e.g. victor@neweratransports.com"
             value={newUserEmail}
             onChange={(e) => setNewUserEmail(e.target.value)}
             required
@@ -841,7 +841,7 @@ export default function AdminUsersPage() {
                     size="sm"
                     variant="outline"
                     className="w-full text-xs"
-                    onClick={() => handleInjectPreset("TENANT_OWNER", "EduSuite Nigeria", "Tariq Ibrahim", "Admin", "tariq@edusuite.ng")}
+                    onClick={() => handleInjectPreset("TENANT_OWNER", "Reed Breed Systems", "Ifeanyi Reed", "Managing Director & CEO", "ifeanyireed@gmail.com")}
                   >
                     Simulate Tenant Owner Persona
                   </NexaButton>
@@ -863,7 +863,7 @@ export default function AdminUsersPage() {
                     size="sm"
                     variant="outline"
                     className="w-full text-xs"
-                    onClick={() => handleInjectPreset("GROWTH_LEAD", "EduSuite Nigeria", "Oluwaseun Bakare", "Head of Growth", "seun@edusuite.ng")}
+                    onClick={() => handleInjectPreset("GROWTH_LEAD", "New Era Transports", "Victoria Aghogho Otojareri", "Chief Accountant & Financial Controller", "accounts@neweratransports.com")}
                   >
                     Simulate Growth Lead Persona
                   </NexaButton>
@@ -885,7 +885,7 @@ export default function AdminUsersPage() {
                     size="sm"
                     variant="outline"
                     className="w-full text-xs"
-                    onClick={() => handleInjectPreset("SALES_REP", "PayFlow Africa", "Blessing Eze", "Outbound SDR", "blessing@payflow.africa")}
+                    onClick={() => handleInjectPreset("SALES_REP", "New Era Transports", "Babalola Imoleayo Adelakun", "Fleet Operations Manager", "babalola.adelakun@neweratransports.com")}
                   >
                     Simulate Sales Rep Persona
                   </NexaButton>

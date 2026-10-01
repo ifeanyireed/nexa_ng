@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { executeQuery } from "@/lib/db";
 import { INITIAL_CONTACT_MESSAGES, ContactMessageItem } from "@/lib/admin-data";
+import { authenticateApiRequest } from "@/lib/jwt-auth";
 
 export async function GET(request: Request) {
+  const { errorResponse } = await authenticateApiRequest(request);
+  if (errorResponse) return errorResponse;
+
   try {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search")?.toLowerCase();

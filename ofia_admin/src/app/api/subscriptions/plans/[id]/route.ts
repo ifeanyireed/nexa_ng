@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { authenticateApiRequest } from "@/lib/jwt-auth";
 
 const USER_BASE = process.env.USER_SERVICE_URL
   ? `${process.env.USER_SERVICE_URL}/api/v1`
@@ -8,6 +9,9 @@ export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { errorResponse } = await authenticateApiRequest(request);
+  if (errorResponse) return errorResponse;
+
   const { id } = await params;
   try {
     const res = await fetch(`${USER_BASE}/subscriptions/plans/${encodeURIComponent(id)}`, {
@@ -28,6 +32,12 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { errorResponse } = await authenticateApiRequest(request, {
+    allowedRoles: ["SUPER_ADMIN"],
+    requirePermission: "canManagePlans",
+  });
+  if (errorResponse) return errorResponse;
+
   const { id } = await params;
   try {
     const body = await request.json();
@@ -52,6 +62,12 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { errorResponse } = await authenticateApiRequest(request, {
+    allowedRoles: ["SUPER_ADMIN"],
+    requirePermission: "canManagePlans",
+  });
+  if (errorResponse) return errorResponse;
+
   const { id } = await params;
   try {
     const res = await fetch(`${USER_BASE}/subscriptions/plans/${encodeURIComponent(id)}`, {

@@ -426,8 +426,6 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
                 )}
               </button>
             </form>
-
-
           </NexaCard>
         </div>
       </main>

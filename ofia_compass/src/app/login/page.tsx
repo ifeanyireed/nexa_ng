@@ -287,8 +287,6 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
-
-
           </NexaCard>
         </div>
       </main>

@@ -137,7 +137,7 @@ func seedDefaultOrganizations(db *gorm.DB) {
 	if count == 0 {
 		defaultOwners := []models.User{
 			{
-				ID:        "USR-001",
+				ID:        "1bb299db-2578-4018-8a53-e42e0308fa06",
 				Name:      "Ifeanyi Felix",
 				Email:     "ifeanyi.ibeh@neweratransports.com",
 				Role:      models.RoleTenantOwner,
@@ -146,36 +146,9 @@ func seedDefaultOrganizations(db *gorm.DB) {
 				UpdatedAt: time.Now(),
 			},
 			{
-				ID:        "USR-002",
-				Name:      "Chioma Okonkwo",
-				Email:     "chioma@payflow.africa",
-				Role:      models.RoleTenantOwner,
-				Password:  "$2a$10$7EqJtq98hPqEX7fNZaFWoOZhg.6eA5Z9qjS8yG4R.M1P8wG4R.M1P",
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			},
-			{
-				ID:        "USR-003",
-				Name:      "Dr. Babatunde Jinadu",
-				Email:     "babatunde@healthbridge.io",
-				Role:      models.RoleTenantOwner,
-				Password:  "$2a$10$7EqJtq98hPqEX7fNZaFWoOZhg.6eA5Z9qjS8yG4R.M1P8wG4R.M1P",
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			},
-			{
-				ID:        "USR-004",
-				Name:      "Ibrahim Musa",
-				Email:     "ibrahim@apexlogistics.com.ng",
-				Role:      models.RoleTenantOwner,
-				Password:  "$2a$10$7EqJtq98hPqEX7fNZaFWoOZhg.6eA5Z9qjS8yG4R.M1P8wG4R.M1P",
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			},
-			{
-				ID:        "USR-005",
-				Name:      "Ngozi Eze",
-				Email:     "ngozi@zenithrealty.ng",
+				ID:        "ADM001",
+				Name:      "Ifeanyi Reed",
+				Email:     "ifeanyireed@gmail.com",
 				Role:      models.RoleTenantOwner,
 				Password:  "$2a$10$7EqJtq98hPqEX7fNZaFWoOZhg.6eA5Z9qjS8yG4R.M1P8wG4R.M1P",
 				CreatedAt: time.Now(),
@@ -188,58 +161,36 @@ func seedDefaultOrganizations(db *gorm.DB) {
 
 		defaultOrgs := []models.Organization{
 			{
-				ID:           "org-01",
+				ID:           "1aa8c687-b71d-4188-9de2-371aa5dfa9e6",
 				Name:         "New Era Transports",
 				Slug:         "neweratransports",
-				OwnerID:      "USR-001",
-				PlanTier:     models.PlanGrowth,
-				BillingCycle: "MONTHLY",
-				Status:       "ACTIVE",
-				LoginImage:   "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
-				CreatedAt:    time.Now(),
-				UpdatedAt:    time.Now(),
-			},
-			{
-				ID:           "org-02",
-				Name:         "PayFlow Africa",
-				Slug:         "payflow-africa",
-				OwnerID:      "USR-002",
+				OwnerID:      "1bb299db-2578-4018-8a53-e42e0308fa06",
 				PlanTier:     models.PlanEnterprise,
 				BillingCycle: "MONTHLY",
 				Status:       "ACTIVE",
+				Domain:       "neweratransports.ofia.ng",
+				LoginImage:   "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
+				Logo:         "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
+				PrimaryColor: "#1A56DB",
+				SecondaryColor: "#0E9F6E",
+				HeroTitle: "Powering next-generation transport, logistics & fleet intelligence.",
+				HeroSubtitle: "Real-time zonal dispatch, fleet telemetry, manifest auditing, and ledger reconciliation in one synchronized ecosystem.",
 				CreatedAt:    time.Now(),
 				UpdatedAt:    time.Now(),
 			},
 			{
-				ID:           "org-03",
-				Name:         "HealthBridge Clinics",
-				Slug:         "healthbridge",
-				OwnerID:      "USR-003",
-				PlanTier:     models.PlanStarter,
+				ID:           "2bb399db-3689-5129-9b64-e53f0419fa07",
+				Name:         "Reed Breed Systems",
+				Slug:         "reedbreed",
+				OwnerID:      "ADM001",
+				PlanTier:     models.PlanEnterprise,
 				BillingCycle: "MONTHLY",
 				Status:       "ACTIVE",
-				CreatedAt:    time.Now(),
-				UpdatedAt:    time.Now(),
-			},
-			{
-				ID:           "org-04",
-				Name:         "Apex Global Logistics",
-				Slug:         "apex-logistics",
-				OwnerID:      "USR-004",
-				PlanTier:     models.PlanScale,
-				BillingCycle: "MONTHLY",
-				Status:       "SUSPENDED",
-				CreatedAt:    time.Now(),
-				UpdatedAt:    time.Now(),
-			},
-			{
-				ID:           "org-05",
-				Name:         "Zenith Real Estate Hub",
-				Slug:         "zenith-re",
-				OwnerID:      "USR-005",
-				PlanTier:     models.PlanFreeTrial,
-				BillingCycle: "MONTHLY",
-				Status:       "ACTIVE",
+				Domain:       "reedbreed.cc",
+				LoginImage:   "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg",
+				Logo:         "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg",
+				PrimaryColor: "#1A56DB",
+				SecondaryColor: "#9061F9",
 				CreatedAt:    time.Now(),
 				UpdatedAt:    time.Now(),
 			},
@@ -317,6 +268,16 @@ func (h *OrgHandler) UpdateOrgProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	if v, ok := rawMap["secondaryColor"]; ok && v != "" {
 		updateFields["secondary_color"] = v
+	}
+	if v, ok := rawMap["heroTitle"]; ok && v != "" {
+		updateFields["hero_title"] = v
+	} else if v, ok := rawMap["hero_title"]; ok && v != "" {
+		updateFields["hero_title"] = v
+	}
+	if v, ok := rawMap["heroSubtitle"]; ok && v != "" {
+		updateFields["hero_subtitle"] = v
+	} else if v, ok := rawMap["hero_subtitle"]; ok && v != "" {
+		updateFields["hero_subtitle"] = v
 	}
 	updateFields["updated_at"] = time.Now()
 

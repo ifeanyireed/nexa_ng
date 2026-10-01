@@ -60,6 +60,8 @@ type Organization struct {
 	LoginImage     string    `gorm:"type:text" json:"loginImage,omitempty"`
 	PrimaryColor   string    `gorm:"size:20" json:"primaryColor,omitempty"`
 	SecondaryColor string    `gorm:"size:20" json:"secondaryColor,omitempty"`
+	HeroTitle      string    `gorm:"type:text" json:"heroTitle,omitempty"`
+	HeroSubtitle   string    `gorm:"type:text" json:"heroSubtitle,omitempty"`
 
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`

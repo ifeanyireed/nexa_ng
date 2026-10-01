@@ -214,18 +214,16 @@ func (h *AdminOverviewHandler) GetOverview(w http.ResponseWriter, r *http.Reques
 
 	if len(stats.Tenants) == 0 {
 		stats.Tenants = []TenantOverviewItem{
-			{ID: "org-01", Name: "EduSuite Nigeria", Slug: "edusuite-ng", PlanTier: "GROWTH", Status: "ACTIVE", MRR: 1200000, MemberCount: 4, MonthlyAiSpendNGN: 142500, EmailProvider: "NEXA_MANAGED", CreatedAt: time.Now()},
-			{ID: "org-02", Name: "PayDirect Africa", Slug: "paydirect-africa", PlanTier: "ENTERPRISE", Status: "ACTIVE", MRR: 5000000, MemberCount: 12, MonthlyAiSpendNGN: 680000, EmailProvider: "AWS_SES", CreatedAt: time.Now()},
-			{ID: "org-03", Name: "HealthPulse Diagnostics", Slug: "healthpulse-ng", PlanTier: "STARTER", Status: "ACTIVE", MRR: 450000, MemberCount: 2, MonthlyAiSpendNGN: 45200, EmailProvider: "RESEND", CreatedAt: time.Now()},
-			{ID: "org-04", Name: "LogiTrack Express", Slug: "logitrack-express", PlanTier: "SCALE", Status: "ACTIVE", MRR: 2400000, MemberCount: 8, MonthlyAiSpendNGN: 310800, EmailProvider: "BREVO", CreatedAt: time.Now()},
+			{ID: "1aa8c687-b71d-4188-9de2-371aa5dfa9e6", Name: "New Era Transports", Slug: "neweratransports", PlanTier: "ENTERPRISE", Status: "ACTIVE", MRR: 5000000, MemberCount: 4, MonthlyAiSpendNGN: 350000, EmailProvider: "AWS_SES", CreatedAt: time.Now()},
+			{ID: "2bb399db-3689-5129-9b64-e53f0419fa07", Name: "Reed Breed Systems", Slug: "reedbreed", PlanTier: "ENTERPRISE", Status: "ACTIVE", MRR: 7500000, MemberCount: 2, MonthlyAiSpendNGN: 480000, EmailProvider: "AWS_SES", CreatedAt: time.Now()},
 		}
 	}
 
 	stats.AuditLogs = []AdminAuditLogItem{
-		{ID: "aud-01", Actor: "Amara Okafor (Super Admin)", Action: "Global Deliverability Threshold Adjusted", Target: "gtm_global_email_settings", IP: "102.89.34.12", Timestamp: time.Now().Add(-12 * time.Minute), Status: "SUCCESS"},
-		{ID: "aud-02", Actor: "Adeyemi Adeleke (EduSuite)", Action: "Custom SMTP Relay Configured", Target: "outreach.edusuite.ng", IP: "105.112.45.89", Timestamp: time.Now().Add(-45 * time.Minute), Status: "SUCCESS"},
+		{ID: "aud-01", Actor: "Platform SuperAdmin", Action: "Global Deliverability Threshold Adjusted", Target: "gtm_global_email_settings", IP: "102.89.34.12", Timestamp: time.Now().Add(-12 * time.Minute), Status: "SUCCESS"},
+		{ID: "aud-02", Actor: "Ifeanyi Felix (New Era)", Action: "Custom SMTP Relay Configured", Target: "neweratransports.ofia.ng", IP: "105.112.45.89", Timestamp: time.Now().Add(-45 * time.Minute), Status: "SUCCESS"},
 		{ID: "aud-03", Actor: "System Daemon", Action: "Auto-Recovered Circuit Breaker", Target: "agent:lead_hunter", IP: "127.0.0.1", Timestamp: time.Now().Add(-2 * time.Hour), Status: "RESOLVED"},
-		{ID: "aud-04", Actor: "Femi Bakare (PayDirect)", Action: "Scale Quota Upgrade Applied", Target: "Organization:org-02", IP: "197.210.64.20", Timestamp: time.Now().Add(-5 * time.Hour), Status: "SUCCESS"},
+		{ID: "aud-04", Actor: "Ifeanyi Reed (Reed Breed)", Action: "Enterprise Swarm Scaling Applied", Target: "Organization:2bb399db-3689-5129-9b64-e53f0419fa07", IP: "197.210.64.20", Timestamp: time.Now().Add(-5 * time.Hour), Status: "SUCCESS"},
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -496,13 +494,12 @@ func (h *AdminOverviewHandler) GetUsers(w http.ResponseWriter, r *http.Request) 
 
 	if len(users) == 0 {
 		users = []UserDTO{
-			{ID: "usr-super-01", Name: "Amara Okafor", Email: "admin@ofia.ng", Role: models.RoleSuperAdmin, OrgName: "Ofia AI Platform", OrgID: "org-01", Title: "Chief Platform Architect & Super Admin", Avatar: "/avatar1.png", TwoFactorEnabled: true, Status: "Active", CreatedAt: time.Now()},
-			{ID: "usr-edusuite-01", Name: "Adeyemi Adeleke", Email: "adeyemi@edusuite.ng", Role: models.RoleTenantOwner, OrgName: "EduSuite Nigeria", OrgID: "org-01", Title: "Admin", Avatar: "/avatar12.png", TwoFactorEnabled: true, Status: "Active", CreatedAt: time.Now()},
-			{ID: "usr-edusuite-02", Name: "Khalil Bello", Email: "khalil@edusuite.ng", Role: models.RoleGrowthLead, OrgName: "EduSuite Nigeria", OrgID: "org-01", Title: "Head of Growth & Outreach", Avatar: "/avatar5.png", TwoFactorEnabled: false, Status: "Active", CreatedAt: time.Now()},
-			{ID: "usr-edusuite-03", Name: "Chidinma Eze", Email: "chidinma@edusuite.ng", Role: models.RoleSalesRep, OrgName: "EduSuite Nigeria", OrgID: "org-01", Title: "Senior B2B Sales Associate", Avatar: "/avatar8.png", TwoFactorEnabled: false, Status: "Active", CreatedAt: time.Now()},
-			{ID: "usr-edusuite-04", Name: "Babajide Sanwo", Email: "auditor@edusuite.ng", Role: models.RoleViewer, OrgName: "EduSuite Nigeria", OrgID: "org-01", Title: "Financial & Compliance Auditor", Avatar: "/avatar3.png", TwoFactorEnabled: false, Status: "Active", CreatedAt: time.Now()},
-			{ID: "usr-paydirect-01", Name: "Femi Bakare", Email: "femi@paydirect.africa", Role: models.RoleTenantOwner, OrgName: "PayDirect Africa", OrgID: "org-02", Title: "VP of Commercial Operations", Avatar: "/avatar6.png", TwoFactorEnabled: true, Status: "Active", CreatedAt: time.Now()},
-			{ID: "usr-healthpulse-01", Name: "Dr. Ibrahim Yusuf", Email: "dr.ibrahim@healthpulse.ng", Role: models.RoleTenantOwner, OrgName: "HealthPulse Diagnostics", OrgID: "org-03", Title: "Medical Director & Co-Founder", Avatar: "/avatar9.png", TwoFactorEnabled: false, Status: "Active", CreatedAt: time.Now()},
+			{ID: "admin-root-01", Name: "Adeyemi Phillips", Email: "superadmin@ofia.ng", Role: models.RoleSuperAdmin, OrgName: "Ofia AI Platform", OrgID: "platform-root", Title: "Chief Platform Architect & Super Admin", Avatar: "/avatar1.png", TwoFactorEnabled: true, Status: "Active", CreatedAt: time.Now()},
+			{ID: "1bb299db-2578-4018-8a53-e42e0308fa06", Name: "Ifeanyi Felix", Email: "ifeanyi.ibeh@neweratransports.com", Role: models.RoleTenantOwner, OrgName: "New Era Transports", OrgID: "1aa8c687-b71d-4188-9de2-371aa5dfa9e6", Title: "Admin", Avatar: "/avatar12.png", TwoFactorEnabled: true, Status: "Active", CreatedAt: time.Now()},
+			{ID: "ACC001", Name: "Victoria Aghogho Otojareri", Email: "accounts@neweratransports.com", Role: models.RoleGrowthLead, OrgName: "New Era Transports", OrgID: "1aa8c687-b71d-4188-9de2-371aa5dfa9e6", Title: "Chief Accountant & Financial Controller", Avatar: "/avatar5.png", TwoFactorEnabled: true, Status: "Active", CreatedAt: time.Now()},
+			{ID: "EMP006", Name: "Babalola Imoleayo Adelakun", Email: "babalola.adelakun@neweratransports.com", Role: models.RoleSalesRep, OrgName: "New Era Transports", OrgID: "1aa8c687-b71d-4188-9de2-371aa5dfa9e6", Title: "Fleet Operations Manager", Avatar: "/avatar8.png", TwoFactorEnabled: false, Status: "Active", CreatedAt: time.Now()},
+			{ID: "ADM001", Name: "Ifeanyi Reed", Email: "ifeanyireed@gmail.com", Role: models.RoleTenantOwner, OrgName: "Reed Breed Systems", OrgID: "2bb399db-3689-5129-9b64-e53f0419fa07", Title: "Managing Director & CEO", Avatar: "/avatar3.png", TwoFactorEnabled: true, Status: "Active", CreatedAt: time.Now()},
+			{ID: "ADM002", Name: "David Mbacha", Email: "davidmbacha@gmail.com", Role: models.RoleGrowthLead, OrgName: "Reed Breed Systems", OrgID: "2bb399db-3689-5129-9b64-e53f0419fa07", Title: "Chief Technology Officer", Avatar: "/avatar6.png", TwoFactorEnabled: true, Status: "Active", CreatedAt: time.Now()},
 		}
 	}
 

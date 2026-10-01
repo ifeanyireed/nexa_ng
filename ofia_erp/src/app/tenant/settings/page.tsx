@@ -23,7 +23,7 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { useAuth } from "@/components/nexa/AuthContext";
-import { useActiveTenant, applyTenantBranding } from "@/lib/tenant-context";
+import { useActiveTenant, applyTenantBranding, DEFAULT_TENANT_BRANDING } from "@/lib/tenant-context";
 
 export default function TenantSettingsPage() {
   const { user } = useAuth();
@@ -70,10 +70,20 @@ export default function TenantSettingsPage() {
             localStorage.getItem("tenant_login_image_" + activeTenant.slug) ||
             localStorage.getItem("nexa_tenant_login_image")
           : null;
+      const savedLogo =
+        typeof window !== "undefined"
+          ? localStorage.getItem("tenant_logo_" + identifier) ||
+            localStorage.getItem("tenant_logo_" + activeTenant.id) ||
+            localStorage.getItem("tenant_logo_" + activeTenant.slug) ||
+            localStorage.getItem("nexa_tenant_logo") ||
+            DEFAULT_TENANT_BRANDING[activeTenant.slug]?.logo ||
+            DEFAULT_TENANT_BRANDING[activeTenant.id]?.logo ||
+            DEFAULT_TENANT_BRANDING[identifier]?.logo
+          : null;
 
       setOrgName(activeTenant.name || "");
       setSlug(activeTenant.slug || "");
-      setLogoUrl(activeTenant.logo || "");
+      setLogoUrl(activeTenant.logo || savedLogo || "");
       setLoginImageUrl(activeTenant.loginImage || savedLoginImage || "");
       setPrimaryColor(activeTenant.primaryColor || "#1A56DB");
       setSecondaryColor(activeTenant.secondaryColor || "#0E9F6E");
@@ -223,6 +233,12 @@ export default function TenantSettingsPage() {
           if (activeTenant?.id) localStorage.setItem("tenant_secondary_color_" + activeTenant.id, secondaryColor);
           if (activeTenant?.slug) localStorage.setItem("tenant_secondary_color_" + activeTenant.slug, secondaryColor);
           localStorage.setItem("nexa_tenant_secondary_color", secondaryColor);
+        }
+
+        if (slug) {
+          localStorage.setItem("nexa_tenant_slug", slug);
+          localStorage.setItem("tenant_slug", slug);
+          localStorage.setItem("nexa_org_id", slug);
         }
 
         // Immediately apply branding to the active document without needing a refresh

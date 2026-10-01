@@ -23,45 +23,131 @@ import {
 } from "lucide-react";
 
 import { AUTH_API } from "@/lib/api-client";
-import { useActiveTenant, slugToTenantName, extractSubdomainOrParam } from "@/lib/tenant-context";
+import {
+  useActiveTenant,
+  slugToTenantName,
+  extractSubdomainOrParam,
+  DEFAULT_TENANT_BRANDING,
+} from "@/lib/tenant-context";
 
 export interface LoginPageProps {
   initialTenantSlug?: string;
+  searchParams?: Record<string, string | string[] | undefined> | Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
+export default function LoginPage({ initialTenantSlug, searchParams }: LoginPageProps = {}) {
   const router = useRouter();
-  const { activeTenant, isLoading: isTenantLoading } = useActiveTenant(null, initialTenantSlug);
 
-  // Dynamic host & tenant resolution
-  const [mountedHostTenant, setMountedHostTenant] = useState<string>("");
+  // 1. Unwrap searchParams promise (Next.js 16 / React 19) or plain object
+  let unwrappedParams: Record<string, string | string[] | undefined> = {};
+  if (searchParams) {
+    if (typeof (searchParams as any).then === "function") {
+      try {
+        unwrappedParams = React.use(searchParams as Promise<any>) || {};
+      } catch {
+        unwrappedParams = {};
+      }
+    } else if (typeof searchParams === "object") {
+      unwrappedParams = searchParams as any;
+    }
+  }
+
+  // Synchronous slug resolution from props / searchParams
+  const rawPropSlug =
+    initialTenantSlug ||
+    (typeof unwrappedParams.tenant === "string"
+      ? unwrappedParams.tenant
+      : typeof unwrappedParams.tenant_slug === "string"
+      ? unwrappedParams.tenant_slug
+      : typeof unwrappedParams.company === "string"
+      ? unwrappedParams.company
+      : typeof unwrappedParams.org === "string"
+      ? unwrappedParams.org
+      : undefined);
+
+  // 2. Client-mounted host, subdomain, and tenant detection
+  const [mountedHostTenant, setMountedHostTenant] = useState<string>(rawPropSlug || "");
+  const [clientLogo, setClientLogo] = useState<string>("");
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
-      const extracted = extractSubdomainOrParam(initialTenantSlug);
-      setMountedHostTenant(extracted);
-    }
-  }, [initialTenantSlug]);
+      const extracted = extractSubdomainOrParam(rawPropSlug);
+      if (extracted) {
+        setMountedHostTenant(extracted);
+      }
 
-  const resolvedSlug = initialTenantSlug || activeTenant?.slug || mountedHostTenant || "";
+      const activeSlug = rawPropSlug || extracted || "";
+      const savedLogo =
+        (activeSlug ? localStorage.getItem("tenant_logo_" + activeSlug) : null) ||
+        localStorage.getItem("nexa_tenant_logo") ||
+        (activeSlug ? DEFAULT_TENANT_BRANDING[activeSlug]?.logo : null) ||
+        "";
+      if (savedLogo) {
+        setClientLogo(savedLogo);
+      }
+    }
+  }, [rawPropSlug]);
+
+  const resolvedInitialSlug = rawPropSlug || mountedHostTenant || undefined;
+  const { activeTenant, isLoading: isTenantLoading } = useActiveTenant(null, resolvedInitialSlug);
+
+  const resolvedSlug =
+    rawPropSlug ||
+    activeTenant?.slug ||
+    mountedHostTenant ||
+    (typeof window !== "undefined"
+      ? localStorage.getItem("nexa_tenant_slug") ||
+        localStorage.getItem("tenant_slug") ||
+        localStorage.getItem("nexa_org_id") ||
+        ""
+      : "") ||
+    "";
+
   const isCustomTenant = Boolean(
     resolvedSlug && !["www", "ofia", "app", "nexa", "erp", "admin"].includes(resolvedSlug.toLowerCase())
   );
 
   const tenantName = (isCustomTenant && (activeTenant?.name || slugToTenantName(resolvedSlug))) || "Ofia ERP";
   const tenantSlug = isCustomTenant ? resolvedSlug : "";
-  const tenantLogo = isCustomTenant ? (activeTenant?.logo || "") : "";
-  const primaryColor = (isCustomTenant && activeTenant?.primaryColor) || "#1A56DB";
-  const secondaryColor = (isCustomTenant && activeTenant?.secondaryColor) || "#0E9F6E";
+
+  // Multi-tier logo resolution ensuring tenant's set logo is always displayed:
+  // 1. activeTenant?.logo (from database or resolved tenant object)
+  // 2. clientLogo (from localStorage or default branding)
+  // 3. localStorage keys (tenant_logo_${slug}, nexa_tenant_logo)
+  // 4. DEFAULT_TENANT_BRANDING preset
+  // 5. Cloudinary asset for New Era Transports if applicable
+  const tenantLogo = isCustomTenant
+    ? activeTenant?.logo ||
+      clientLogo ||
+      (typeof window !== "undefined"
+        ? (resolvedSlug ? localStorage.getItem("tenant_logo_" + resolvedSlug) : null) ||
+          (activeTenant?.id ? localStorage.getItem("tenant_logo_" + activeTenant.id) : null) ||
+          (activeTenant?.slug ? localStorage.getItem("tenant_logo_" + activeTenant.slug) : null) ||
+          localStorage.getItem("nexa_tenant_logo") ||
+          ""
+        : "") ||
+      DEFAULT_TENANT_BRANDING[resolvedSlug]?.logo ||
+      DEFAULT_TENANT_BRANDING[activeTenant?.id || ""]?.logo ||
+      (resolvedSlug.toLowerCase().includes("newera")
+        ? "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png"
+        : "")
+    : "";
+
+  const primaryColor =
+    (isCustomTenant && (activeTenant?.primaryColor || DEFAULT_TENANT_BRANDING[resolvedSlug]?.primaryColor)) || "#1A56DB";
+  const secondaryColor =
+    (isCustomTenant && (activeTenant?.secondaryColor || DEFAULT_TENANT_BRANDING[resolvedSlug]?.secondaryColor)) || "#0E9F6E";
   const tenantDomain = (isCustomTenant && (activeTenant?.domain || `${resolvedSlug}.ofia.ng`)) || "ofia.ng";
   const loginImage = isCustomTenant
-    ? (activeTenant?.loginImage ||
-        (typeof window !== "undefined"
-          ? localStorage.getItem("tenant_login_image_" + resolvedSlug) ||
-            localStorage.getItem("tenant_login_image_" + (activeTenant?.id || "")) ||
-            localStorage.getItem("nexa_tenant_login_image")
-          : "") ||
-        "")
+    ? activeTenant?.loginImage ||
+      (typeof window !== "undefined"
+        ? (resolvedSlug ? localStorage.getItem("tenant_login_image_" + resolvedSlug) : null) ||
+          (activeTenant?.id ? localStorage.getItem("tenant_login_image_" + activeTenant.id) : null) ||
+          localStorage.getItem("nexa_tenant_login_image") ||
+          ""
+        : "") ||
+      DEFAULT_TENANT_BRANDING[resolvedSlug]?.loginImage ||
+      ""
     : "";
 
   React.useEffect(() => {
@@ -191,6 +277,12 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
       }
     }
 
+    if (typeof window !== "undefined" && targetTenantSlug) {
+      localStorage.setItem("nexa_tenant_slug", targetTenantSlug);
+      localStorage.setItem("tenant_slug", targetTenantSlug);
+      localStorage.setItem("nexa_org_id", targetTenantSlug);
+    }
+
     // 2. If on general erp.domain.ng -> route to tenant_slug.domain.ng
     if (typeof window !== "undefined" && targetTenantSlug && !tenantSlug) {
       const host = window.location.host.toLowerCase();
@@ -216,7 +308,7 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
             alt={`${tenantName} Wallpaper`}
             className="w-full h-full object-cover object-center filter transition-all duration-700"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-[var(--nexa-bg-base)]/85 via-[var(--nexa-bg-base)]/70 to-[var(--nexa-bg-base)]/90 backdrop-blur-[1px]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[var(--nexa-bg-base)]/40 via-[var(--nexa-bg-base)]/20 to-[var(--nexa-bg-base)]/45 backdrop-blur-[0.5px]" />
         </div>
       )}
 
@@ -229,8 +321,18 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
               alt={`${tenantName} Logo`}
               className="h-10 sm:h-11 w-auto max-w-[160px] object-contain shrink-0"
               onError={(e) => {
-                (e.target as HTMLImageElement).src =
-                  "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
+                const fallback =
+                  DEFAULT_TENANT_BRANDING[resolvedSlug]?.logo ||
+                  (resolvedSlug.toLowerCase().includes("newera")
+                    ? "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png"
+                    : "");
+                const target = e.target as HTMLImageElement;
+                if (fallback && target.src !== fallback) {
+                  target.src = fallback;
+                } else if (!isCustomTenant) {
+                  target.src =
+                    "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
+                }
               }}
             />
           ) : isCustomTenant ? (
@@ -313,8 +415,18 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
                     alt={`${tenantName} Logo`}
                     className="h-16 sm:h-20 w-auto max-w-[240px] object-contain"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
+                      const fallback =
+                        DEFAULT_TENANT_BRANDING[resolvedSlug]?.logo ||
+                        (resolvedSlug.toLowerCase().includes("newera")
+                          ? "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png"
+                          : "");
+                      const target = e.target as HTMLImageElement;
+                      if (fallback && target.src !== fallback) {
+                        target.src = fallback;
+                      } else if (!isCustomTenant) {
+                        target.src =
+                          "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
+                      }
                     }}
                   />
                 ) : isCustomTenant ? (

@@ -16,6 +16,10 @@ export interface TenantOrg {
   monthlyAiSpendUSD: number;
   integrationHealth: "Healthy" | "Degraded" | "Error";
   loginImage?: string;
+  logo?: string;
+  favicon?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
   createdAt: string;
 }
 
@@ -118,6 +122,10 @@ export const INITIAL_TENANTS: TenantOrg[] = [
     ownerName: "Ifeanyi Felix",
     ownerEmail: "ifeanyi.ibeh@neweratransports.com",
     loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
+    logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
+    favicon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
+    primaryColor: "#1A56DB",
+    secondaryColor: "#0E9F6E",
     planTier: "GROWTH",
     status: "Active",
     mrr: 1200000,

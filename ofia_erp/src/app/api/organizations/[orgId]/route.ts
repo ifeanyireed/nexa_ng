@@ -22,11 +22,32 @@ export async function GET(
     });
     if (res.ok) {
       const data = await res.json();
-      const override = globalOrgMap.get(lowerId) || globalOrgMap.get(data.id?.toLowerCase()) || globalOrgMap.get(data.slug?.toLowerCase());
+      const initialMatch = INITIAL_TENANTS.find(
+        (t) =>
+          t.id.toLowerCase() === lowerId ||
+          t.slug.toLowerCase() === lowerId ||
+          t.id.toLowerCase() === data.id?.toLowerCase() ||
+          t.slug.toLowerCase() === data.slug?.toLowerCase()
+      );
+      const merged = initialMatch
+        ? {
+            ...initialMatch,
+            ...data,
+            logo: data.logo || initialMatch.logo,
+            favicon: data.favicon || initialMatch.favicon,
+            primaryColor: data.primaryColor || initialMatch.primaryColor,
+            secondaryColor: data.secondaryColor || initialMatch.secondaryColor,
+            loginImage: data.loginImage || initialMatch.loginImage,
+          }
+        : data;
+      const override =
+        globalOrgMap.get(lowerId) ||
+        globalOrgMap.get(data.id?.toLowerCase()) ||
+        globalOrgMap.get(data.slug?.toLowerCase());
       if (override) {
-        return NextResponse.json({ ...data, ...override });
+        return NextResponse.json({ ...merged, ...override });
       }
-      return NextResponse.json(data);
+      return NextResponse.json(merged);
     }
   } catch (err: any) {
     console.warn("Failed to fetch organization from remote backend:", err.message);

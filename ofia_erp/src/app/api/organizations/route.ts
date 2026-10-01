@@ -34,6 +34,10 @@ export async function GET() {
       domain: t.domain,
       ownerName: t.ownerName,
       ownerEmail: t.ownerEmail,
+      logo: t.logo,
+      favicon: t.favicon,
+      primaryColor: t.primaryColor,
+      secondaryColor: t.secondaryColor,
       loginImage: t.loginImage,
       planTier: t.planTier,
       status: t.status,
@@ -50,7 +54,17 @@ export async function GET() {
       globalOrgMap.get(org.slug?.toLowerCase()) ||
       globalOrgMap.get(org.name?.toLowerCase());
 
-    const base = initialMatch ? { ...initialMatch, ...org } : org;
+    const base = initialMatch
+      ? {
+          ...initialMatch,
+          ...org,
+          logo: org.logo || initialMatch.logo,
+          favicon: org.favicon || initialMatch.favicon,
+          primaryColor: org.primaryColor || initialMatch.primaryColor,
+          secondaryColor: org.secondaryColor || initialMatch.secondaryColor,
+          loginImage: org.loginImage || initialMatch.loginImage,
+        }
+      : org;
 
     if (override) {
       return {

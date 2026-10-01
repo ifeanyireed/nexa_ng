@@ -47,7 +47,14 @@ export function extractSubdomainOrParam(searchParamSlug?: string | null): string
   if (typeof window !== "undefined") {
     // 1. Check URL query params
     const urlParams = new URLSearchParams(window.location.search);
-    const param = urlParams.get("tenant") || urlParams.get("tenant_slug") || urlParams.get("company");
+    const param =
+      urlParams.get("tenant") ||
+      urlParams.get("tenant_slug") ||
+      urlParams.get("company") ||
+      urlParams.get("org") ||
+      urlParams.get("orgId") ||
+      urlParams.get("tenantId") ||
+      urlParams.get("org_id");
     if (param) return param.toLowerCase().trim();
 
     // 2. Check Hostname Subdomain
@@ -65,17 +72,69 @@ export function extractSubdomainOrParam(searchParamSlug?: string | null): string
     if (sub && sub !== "erp" && sub !== "admin" && sub !== "www" && sub !== "app") {
       return sub.toLowerCase().trim();
     }
+
+    // 3. Check for custom domain host (e.g. neweratransports.com)
+    const cleanHost = host.split(":")[0].replace(/^www\./, "");
+    if (cleanHost && cleanHost !== "ofia.ng" && cleanHost !== "localhost" && cleanHost !== "127.0.0.1") {
+      const customPrefix = cleanHost.split(".")[0];
+      if (customPrefix && !["erp", "admin", "app", "www"].includes(customPrefix)) {
+        return customPrefix.toLowerCase().trim();
+      }
+    }
+
+    // 4. Check active tenant persisted in localStorage
+    const storedSlug =
+      localStorage.getItem("nexa_tenant_slug") ||
+      localStorage.getItem("tenant_slug") ||
+      localStorage.getItem("nexa_org_id");
+    if (storedSlug && !["www", "ofia", "app", "nexa", "erp", "admin"].includes(storedSlug.toLowerCase())) {
+      return storedSlug.toLowerCase().trim();
+    }
   }
 
   return "";
 }
 
-const DEFAULT_TENANT_ADMINS: Record<string, { name: string; email: string }> = {};
+const DEFAULT_TENANT_ADMINS: Record<string, { name: string; email: string }> = {
+  neweratransports: { name: "Ifeanyi Felix", email: "ifeanyi.ibeh@neweratransports.com" },
+  "org-01": { name: "Ifeanyi Felix", email: "ifeanyi.ibeh@neweratransports.com" },
+  "edusuite-ng": { name: "Ifeanyi Felix", email: "ifeanyi.ibeh@neweratransports.com" },
+  "1aa8c687-b71d-4188-9de2-371aa5dfa9e6": { name: "Ifeanyi Felix", email: "ifeanyi.ibeh@neweratransports.com" },
+};
 
 export const DEFAULT_TENANT_BRANDING: Record<
   string,
   { logo?: string; favicon?: string; primaryColor?: string; secondaryColor?: string; loginImage?: string }
-> = {};
+> = {
+  neweratransports: {
+    logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
+    favicon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
+    primaryColor: "#1A56DB",
+    secondaryColor: "#0E9F6E",
+    loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
+  },
+  "org-01": {
+    logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
+    favicon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
+    primaryColor: "#1A56DB",
+    secondaryColor: "#0E9F6E",
+    loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
+  },
+  "edusuite-ng": {
+    logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
+    favicon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
+    primaryColor: "#1A56DB",
+    secondaryColor: "#0E9F6E",
+    loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
+  },
+  "1aa8c687-b71d-4188-9de2-371aa5dfa9e6": {
+    logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
+    favicon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
+    primaryColor: "#1A56DB",
+    secondaryColor: "#0E9F6E",
+    loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
+  },
+};
 
 /**
  * Dynamically applies a tenant's brand colors to CSS variables and updates the browser tab favicon
@@ -282,7 +341,35 @@ export function resolveTenantFromList(
           t.id.toLowerCase() === targetSlug ||
           t.name.toLowerCase().replace(/[^a-z0-9]/g, "") === targetSlug.replace(/[^a-z0-9]/g, "")
       );
-      if (found) return found;
+      if (found) {
+        const savedLogo =
+          typeof window !== "undefined"
+            ? localStorage.getItem("tenant_logo_" + targetSlug) ||
+              localStorage.getItem("tenant_logo_" + found.id) ||
+              localStorage.getItem("tenant_logo_" + found.slug) ||
+              localStorage.getItem("nexa_tenant_logo")
+            : null;
+        const defaultLogo =
+          DEFAULT_TENANT_BRANDING[found.slug]?.logo ||
+          DEFAULT_TENANT_BRANDING[found.id]?.logo ||
+          DEFAULT_TENANT_BRANDING[targetSlug]?.logo ||
+          "";
+
+        const resolvedLogo = found.logo || savedLogo || defaultLogo || "";
+        const defaultFavicon =
+          DEFAULT_TENANT_BRANDING[found.slug]?.favicon ||
+          DEFAULT_TENANT_BRANDING[found.id]?.favicon ||
+          resolvedLogo;
+
+        return {
+          ...found,
+          logo: resolvedLogo,
+          favicon: found.favicon || resolvedLogo || defaultFavicon,
+          primaryColor: found.primaryColor || DEFAULT_TENANT_BRANDING[found.slug]?.primaryColor || "#1A56DB",
+          secondaryColor: found.secondaryColor || DEFAULT_TENANT_BRANDING[found.slug]?.secondaryColor || "#0E9F6E",
+          loginImage: found.loginImage || DEFAULT_TENANT_BRANDING[found.slug]?.loginImage || "",
+        };
+      }
     }
 
     // Match from user email domain
@@ -295,7 +382,30 @@ export function resolveTenantFromList(
           t.ownerEmail?.toLowerCase() === userEmail.toLowerCase() ||
           t.domain.toLowerCase().includes(domainPart)
       );
-      if (found) return found;
+      if (found) {
+        const savedLogo =
+          typeof window !== "undefined"
+            ? localStorage.getItem("tenant_logo_" + domainSlug) ||
+              localStorage.getItem("tenant_logo_" + found.id) ||
+              localStorage.getItem("tenant_logo_" + found.slug) ||
+              localStorage.getItem("nexa_tenant_logo")
+            : null;
+        const defaultLogo =
+          DEFAULT_TENANT_BRANDING[found.slug]?.logo ||
+          DEFAULT_TENANT_BRANDING[found.id]?.logo ||
+          DEFAULT_TENANT_BRANDING[domainSlug]?.logo ||
+          "";
+
+        const resolvedLogo = found.logo || savedLogo || defaultLogo || "";
+
+        return {
+          ...found,
+          logo: resolvedLogo,
+          favicon: found.favicon || resolvedLogo,
+          primaryColor: found.primaryColor || DEFAULT_TENANT_BRANDING[found.slug]?.primaryColor || "#1A56DB",
+          secondaryColor: found.secondaryColor || DEFAULT_TENANT_BRANDING[found.slug]?.secondaryColor || "#0E9F6E",
+        };
+      }
     }
 
     if (!targetSlug && !userEmail) {
@@ -318,6 +428,7 @@ export function resolveTenantFromList(
   // 2. If targetSlug was found from URL/Subdomain, construct tenant dynamically from the slug
   if (targetSlug) {
     const fallbackAdmin = DEFAULT_TENANT_ADMINS[targetSlug] || { name: "Workspace Admin", email: `admin@${targetSlug}.ng` };
+    const defaultBranding = DEFAULT_TENANT_BRANDING[targetSlug] || {};
     const savedName =
       typeof window !== "undefined"
         ? localStorage.getItem("tenant_admin_name_" + targetSlug) || localStorage.getItem("nexa_user_name")
@@ -348,6 +459,7 @@ export function resolveTenantFromList(
         : null;
 
     const resolvedName = savedTenantName || slugToTenantName(targetSlug);
+    const resolvedLogo = savedLogo || defaultBranding.logo || "";
 
     return {
       id: targetSlug,
@@ -359,11 +471,11 @@ export function resolveTenantFromList(
       ownerEmail: savedEmail || userEmail || fallbackAdmin.email,
       status: "ACTIVE",
       planTier: "Enterprise",
-      logo: savedLogo || "",
-      favicon: savedLogo || "",
-      primaryColor: savedPrimaryColor || "#1A56DB",
-      secondaryColor: savedSecondaryColor || "#0E9F6E",
-      loginImage: savedLoginImage || DEFAULT_TENANT_BRANDING[targetSlug]?.loginImage || "",
+      logo: resolvedLogo,
+      favicon: resolvedLogo || defaultBranding.favicon || "",
+      primaryColor: savedPrimaryColor || defaultBranding.primaryColor || "#1A56DB",
+      secondaryColor: savedSecondaryColor || defaultBranding.secondaryColor || "#0E9F6E",
+      loginImage: savedLoginImage || defaultBranding.loginImage || "",
     };
   }
 
@@ -373,10 +485,16 @@ export function resolveTenantFromList(
     const domainSlug = domainPart.split(".")[0];
     if (domainSlug && domainSlug !== "gmail" && domainSlug !== "yahoo" && domainSlug !== "outlook" && domainSlug !== "hotmail") {
       const fallbackAdmin = DEFAULT_TENANT_ADMINS[domainSlug] || { name: "Workspace Admin", email: userEmail };
+      const defaultBranding = DEFAULT_TENANT_BRANDING[domainSlug] || {};
       const savedName =
         typeof window !== "undefined"
           ? localStorage.getItem("tenant_admin_name_" + domainSlug) || localStorage.getItem("nexa_user_name")
           : null;
+      const savedLogo =
+        typeof window !== "undefined"
+          ? localStorage.getItem("tenant_logo_" + domainSlug) || localStorage.getItem("nexa_tenant_logo")
+          : null;
+      const resolvedLogo = savedLogo || defaultBranding.logo || "";
 
       return {
         id: domainSlug,
@@ -388,10 +506,11 @@ export function resolveTenantFromList(
         ownerEmail: userEmail,
         status: "ACTIVE",
         planTier: "Enterprise",
-        logo: "",
-        favicon: "",
-        primaryColor: "#1A56DB",
-        secondaryColor: "#0E9F6E",
+        logo: resolvedLogo,
+        favicon: resolvedLogo || defaultBranding.favicon || "",
+        primaryColor: defaultBranding.primaryColor || "#1A56DB",
+        secondaryColor: defaultBranding.secondaryColor || "#0E9F6E",
+        loginImage: defaultBranding.loginImage || "",
       };
     }
   }

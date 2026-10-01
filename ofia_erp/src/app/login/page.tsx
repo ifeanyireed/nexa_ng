@@ -374,43 +374,114 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
       {/* Main Login Card */}
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-md space-y-6">
-          <NexaCard variant="glass" padding="lg" className="border-2 border-[#1A56DB]/20 shadow-2xl rounded-3xl space-y-6">
-            <div className="text-center space-y-2">
+          <NexaCard
+            variant="glass"
+            padding="lg"
+            className="border-2 shadow-2xl rounded-3xl space-y-6 transition-all"
+            style={{
+              borderColor: `${primaryColor}33`,
+              boxShadow: `0 20px 50px -10px ${primaryColor}20`,
+            }}
+          >
+            <div className="text-center space-y-3">
+              {/* Tenant Logo or Branded Emblem */}
               <div className="flex justify-center mb-1">
-                <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia Logo" className="w-12 h-12 object-contain" />
+                {tenantLogo ? (
+                  <div className="p-3 rounded-2xl bg-white/5 border border-white/10 shadow-inner inline-flex items-center justify-center">
+                    <img
+                      src={tenantLogo}
+                      alt={`${tenantName} Logo`}
+                      className="h-12 w-auto max-w-[200px] object-contain"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
+                      }}
+                    />
+                  </div>
+                ) : isCustomTenant ? (
+                  <div
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl text-white shadow-lg border"
+                    style={{
+                      background: `linear-gradient(135deg, ${primaryColor}, #020617)`,
+                      borderColor: `${primaryColor}50`,
+                      boxShadow: `0 10px 25px -5px ${primaryColor}40`,
+                    }}
+                  >
+                    {tenantName
+                      .split(" ")
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((w) => w[0])
+                      .join("")
+                      .toUpperCase() || "WP"}
+                  </div>
+                ) : (
+                  <img
+                    src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"
+                    alt="Ofia Logo"
+                    className="w-12 h-12 object-contain"
+                  />
+                )}
               </div>
-              <h1 className="text-2xl font-black text-display text-[var(--nexa-text-primary)] tracking-tight">
-                {currentTenant ? `Sign in to ${currentTenant.toUpperCase()} ERP` : "Sign in to Ofia ERP"}
-              </h1>
-              <p className="text-xs text-[var(--nexa-text-muted)] leading-relaxed">
-                Access Inventory, POS, Zonal Dispatch, General Ledger, HR Appraisals, and AI Agents.
-              </p>
+
+              <div>
+                <h1 className="text-2xl font-black text-display text-[var(--nexa-text-primary)] tracking-tight">
+                  {isCustomTenant ? `Sign in to ${tenantName}` : "Sign in to Ofia ERP"}
+                </h1>
+                <p className="text-xs text-[var(--nexa-text-muted)] leading-relaxed mt-1">
+                  {isCustomTenant
+                    ? `Enterprise Workspace • Access Inventory, POS, Dispatch, General Ledger & HR.`
+                    : "Access Inventory, POS, Zonal Dispatch, General Ledger, HR Appraisals, and AI Agents."}
+                </p>
+              </div>
+
+              {isCustomTenant && (
+                <div
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold border"
+                  style={{
+                    backgroundColor: `${primaryColor}10`,
+                    borderColor: `${primaryColor}30`,
+                    color: primaryColor,
+                  }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: primaryColor }} />
+                  <span>{tenantDomain}</span>
+                </div>
+              )}
             </div>
 
             {/* Quick Test Persona Switcher */}
             <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-2.5">
               <div className="flex items-center justify-between text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider px-1">
                 <span>1-Click ERP Role Personas</span>
-                <span className="text-[#0E9F6E] font-extrabold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#0E9F6E] animate-pulse" />
+                <span className="font-extrabold flex items-center gap-1" style={{ color: secondaryColor }}>
+                  <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: secondaryColor }} />
                   Quick Fill
                 </span>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {testPersonas.map((p) => (
-                  <button
-                    key={p.email}
-                    type="button"
-                    onClick={() => selectPersona(p.email, p.pass)}
-                    className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border transition-all cursor-pointer shadow-sm ${
-                      email === p.email
-                        ? "bg-[#1A56DB] text-white border-[#1A56DB] shadow-[#1A56DB]/30 font-bold"
-                        : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)] hover:border-[#1A56DB] hover:text-[#1A56DB]"
-                    }`}
-                  >
-                    {p.label}
-                  </button>
-                ))}
+                {testPersonas.map((p) => {
+                  const isSelected = email.toLowerCase() === p.email.toLowerCase();
+                  return (
+                    <button
+                      key={p.email}
+                      type="button"
+                      onClick={() => selectPersona(p.email, p.pass)}
+                      className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border transition-all cursor-pointer shadow-sm ${
+                        isSelected
+                          ? "text-white font-bold"
+                          : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)] hover:text-white"
+                      }`}
+                      style={
+                        isSelected
+                          ? { backgroundColor: primaryColor, borderColor: primaryColor }
+                          : {}
+                      }
+                    >
+                      {p.label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -429,10 +500,10 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
                   <input
                     type="email"
                     required
-                    placeholder="admin@edusuite.ng"
+                    placeholder={`admin@${tenantDomain}`}
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full h-11 pl-10 pr-4 text-xs rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB] focus:ring-2 focus:ring-[#1A56DB]/20 transition-all"
+                    className="w-full h-11 pl-10 pr-4 text-xs rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none transition-all"
                   />
                   <Mail className="w-4 h-4 text-[var(--nexa-text-muted)] absolute left-3.5 top-3.5" />
                 </div>
@@ -443,7 +514,11 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
                   <label className="text-xs font-semibold text-[var(--nexa-text-secondary)]">
                     Password
                   </label>
-                  <Link href="/erp/reset-password" className="text-[11px] font-bold text-[#1A56DB] hover:underline">
+                  <Link
+                    href="/erp/reset-password"
+                    className="text-[11px] font-bold hover:underline"
+                    style={{ color: primaryColor }}
+                  >
                     Forgot Password?
                   </Link>
                 </div>
@@ -454,7 +529,7 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full h-11 pl-10 pr-10 text-xs rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB] focus:ring-2 focus:ring-[#1A56DB]/20 transition-all"
+                    className="w-full h-11 pl-10 pr-10 text-xs rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none transition-all"
                   />
                   <Lock className="w-4 h-4 text-[var(--nexa-text-muted)] absolute left-3.5 top-3.5" />
                   <button
@@ -473,7 +548,8 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className="rounded-full border-[var(--nexa-border)] accent-[#1A56DB]"
+                    className="rounded-full border-[var(--nexa-border)]"
+                    style={{ accentColor: primaryColor }}
                   />
                   <span className="text-[var(--nexa-text-secondary)]">Remember this device</span>
                 </label>
@@ -485,7 +561,11 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-12 rounded-full bg-[#1A56DB] hover:bg-[#1545B0] text-white font-extrabold text-sm shadow-lg shadow-[#1A56DB]/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full h-12 rounded-full text-white font-extrabold text-sm shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 hover:brightness-110 active:scale-[0.99]"
+                style={{
+                  backgroundColor: primaryColor,
+                  boxShadow: `0 10px 25px -5px ${primaryColor}40`,
+                }}
               >
                 {isLoading ? (
                   <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -510,7 +590,7 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
               <button
                 type="button"
                 onClick={() => handleLogin({ preventDefault: () => {} } as any)}
-                className="h-10 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-[#1A56DB] text-xs font-semibold text-[var(--nexa-text-primary)] flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow"
+                className="h-10 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-white/30 text-xs font-semibold text-[var(--nexa-text-primary)] flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow"
               >
                 <IconBrandGoogle className="w-4 h-4" />
                 Google Workspace
@@ -518,7 +598,7 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
               <button
                 type="button"
                 onClick={() => handleLogin({ preventDefault: () => {} } as any)}
-                className="h-10 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-[#1A56DB] text-xs font-semibold text-[var(--nexa-text-primary)] flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow"
+                className="h-10 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-white/30 text-xs font-semibold text-[var(--nexa-text-primary)] flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow"
               >
                 <IconBrandWindows className="w-4 h-4" />
                 Microsoft Entra

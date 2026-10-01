@@ -195,6 +195,7 @@ func seedDefaultOrganizations(db *gorm.DB) {
 				PlanTier:     models.PlanGrowth,
 				BillingCycle: "MONTHLY",
 				Status:       "ACTIVE",
+				LoginImage:   "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
 				CreatedAt:    time.Now(),
 				UpdatedAt:    time.Now(),
 			},
@@ -305,6 +306,11 @@ func (h *OrgHandler) UpdateOrgProfile(w http.ResponseWriter, r *http.Request) {
 	}
 		if v, ok := rawMap["logo"]; ok && v != "" {
 		updateFields["logo"] = v
+	}
+	if v, ok := rawMap["loginImage"]; ok && v != "" {
+		updateFields["login_image"] = v
+	} else if v, ok := rawMap["login_image"]; ok && v != "" {
+		updateFields["login_image"] = v
 	}
 	if v, ok := rawMap["primaryColor"]; ok && v != "" {
 		updateFields["primary_color"] = v

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { INITIAL_TENANTS } from "@/lib/admin-data";
 
 const rawUserUrl = process.env.USER_SERVICE_URL || process.env.NEXT_PUBLIC_USER_SERVICE_URL || "https://ofia-user-service.onrender.com";
 const cleanUserUrl = rawUserUrl.replace(/\/+$/, "");
@@ -35,6 +36,14 @@ export async function GET(
   const override = globalOrgMap.get(lowerId);
   if (override) {
     return NextResponse.json(override);
+  }
+
+  // Check initial tenants seed data
+  const initialMatch = INITIAL_TENANTS.find(
+    (t) => t.id.toLowerCase() === lowerId || t.slug.toLowerCase() === lowerId
+  );
+  if (initialMatch) {
+    return NextResponse.json(initialMatch);
   }
 
   return NextResponse.json({

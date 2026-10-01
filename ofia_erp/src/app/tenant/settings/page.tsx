@@ -33,6 +33,8 @@ export default function TenantSettingsPage() {
   const [slug, setSlug] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [loginImageUrl, setLoginImageUrl] = useState("");
+  const [isUploadingLoginImage, setIsUploadingLoginImage] = useState(false);
   const [primaryColor, setPrimaryColor] = useState("#1A56DB");
   const [secondaryColor, setSecondaryColor] = useState("#0E9F6E");
   const [customDomain, setCustomDomain] = useState("");
@@ -61,10 +63,18 @@ export default function TenantSettingsPage() {
             localStorage.getItem("tenant_admin_email_" + activeTenant.slug) ||
             localStorage.getItem("nexa_user_email")
           : null;
+      const savedLoginImage =
+        typeof window !== "undefined"
+          ? localStorage.getItem("tenant_login_image_" + identifier) ||
+            localStorage.getItem("tenant_login_image_" + activeTenant.id) ||
+            localStorage.getItem("tenant_login_image_" + activeTenant.slug) ||
+            localStorage.getItem("nexa_tenant_login_image")
+          : null;
 
       setOrgName(activeTenant.name || "");
       setSlug(activeTenant.slug || "");
       setLogoUrl(activeTenant.logo || "");
+      setLoginImageUrl(activeTenant.loginImage || savedLoginImage || "");
       setPrimaryColor(activeTenant.primaryColor || "#1A56DB");
       setSecondaryColor(activeTenant.secondaryColor || "#0E9F6E");
       setCustomDomain(activeTenant.domain || "");
@@ -73,7 +83,6 @@ export default function TenantSettingsPage() {
     }
   }, [activeTenant, user]);
 
-  
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -112,6 +121,44 @@ export default function TenantSettingsPage() {
     }
   };
 
+  const handleLoginImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 8 * 1024 * 1024) {
+      setErrorMessage("Image exceeds 8MB limit.");
+      return;
+    }
+
+    try {
+      setIsUploadingLoginImage(true);
+      setErrorMessage("");
+
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onloadend = async () => {
+        const base64Image = reader.result;
+
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: base64Image, tenantId: activeTenant?.slug || activeTenant?.id || "default" }),
+        });
+
+        const data = await res.json();
+        if (res.ok) {
+          setLoginImageUrl(data.url);
+        } else {
+          setErrorMessage(data.error || "Upload failed");
+        }
+        setIsUploadingLoginImage(false);
+      };
+    } catch (err: any) {
+      setErrorMessage(err.message || "Upload failed");
+      setIsUploadingLoginImage(false);
+    }
+  };
+
   const handleSave = async () => {
     const targetIdentifier = activeTenant?.id || activeTenant?.slug || slug || "org-01";
 
@@ -125,6 +172,10 @@ export default function TenantSettingsPage() {
         domain: customDomain,
         logo: logoUrl,
         favicon: logoUrl,
+        loginImage: loginImageUrl,
+        login_image: loginImageUrl,
+        loginBgUrl: loginImageUrl,
+        backgroundImage: loginImageUrl,
         primaryColor: primaryColor,
         secondaryColor: secondaryColor,
         ownerName: ownerName,
@@ -153,6 +204,13 @@ export default function TenantSettingsPage() {
           localStorage.setItem("nexa_tenant_logo", logoUrl);
         }
 
+        if (loginImageUrl) {
+          localStorage.setItem("tenant_login_image_" + slug, loginImageUrl);
+          if (activeTenant?.id) localStorage.setItem("tenant_login_image_" + activeTenant.id, loginImageUrl);
+          if (activeTenant?.slug) localStorage.setItem("tenant_login_image_" + activeTenant.slug, loginImageUrl);
+          localStorage.setItem("nexa_tenant_login_image", loginImageUrl);
+        }
+
         if (primaryColor) {
           localStorage.setItem("tenant_primary_color_" + slug, primaryColor);
           if (activeTenant?.id) localStorage.setItem("tenant_primary_color_" + activeTenant.id, primaryColor);
@@ -172,6 +230,7 @@ export default function TenantSettingsPage() {
           ...activeTenant,
           logo: logoUrl,
           favicon: logoUrl,
+          loginImage: loginImageUrl,
           primaryColor,
           secondaryColor,
         });
@@ -230,6 +289,7 @@ export default function TenantSettingsPage() {
         activeTenant.domain = customDomain;
         activeTenant.logo = logoUrl;
         activeTenant.favicon = logoUrl;
+        activeTenant.loginImage = loginImageUrl;
         activeTenant.primaryColor = primaryColor;
         activeTenant.secondaryColor = secondaryColor;
         activeTenant.ownerName = ownerName;
@@ -355,7 +415,7 @@ export default function TenantSettingsPage() {
               <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
                 Tenant Logo & Favicon
               </label>
-                            <div className="border-2 border-dashed border-[var(--nexa-border)] rounded-2xl p-4 flex flex-col items-center justify-center text-center hover:bg-[var(--nexa-bg-base)]/50 transition-colors cursor-pointer group h-[190px] relative">
+              <div className="border-2 border-dashed border-[var(--nexa-border)] rounded-2xl p-4 flex flex-col items-center justify-center text-center hover:bg-[var(--nexa-bg-base)]/50 transition-colors cursor-pointer group h-[190px] relative">
                 <input 
                   type="file" 
                   accept="image/png, image/jpeg, image/svg+xml" 
@@ -384,30 +444,74 @@ export default function TenantSettingsPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                Brand Colors
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center justify-between">
+                <span>Login Image Wallpaper</span>
+                <span className="text-[10px] text-[var(--nexa-text-muted)] font-normal">Under login form</span>
               </label>
-              
-              <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-between">
-                <div className="space-y-1">
-                  <div className="text-xs font-bold text-[var(--nexa-text-primary)]">Primary Color</div>
-                  <div className="text-[10px] text-[var(--nexa-text-muted)]">Main buttons and active states</div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono text-[var(--nexa-text-muted)] uppercase">{primaryColor}</span>
-                  <input type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent" />
-                </div>
+              <div className="border-2 border-dashed border-[var(--nexa-border)] rounded-2xl p-4 flex flex-col items-center justify-center text-center hover:bg-[var(--nexa-bg-base)]/50 transition-colors cursor-pointer group h-[190px] relative overflow-hidden">
+                <input 
+                  type="file" 
+                  accept="image/png, image/jpeg, image/jpg, image/webp" 
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  onChange={handleLoginImageUpload}
+                  disabled={isUploadingLoginImage}
+                />
+                {loginImageUrl ? (
+                  <div className="relative w-full h-full flex flex-col items-center justify-center">
+                    <img 
+                      src={loginImageUrl} 
+                      alt="Login Background" 
+                      className="absolute inset-0 w-full h-full object-cover rounded-xl opacity-60 group-hover:opacity-40 transition-opacity" 
+                    />
+                    <div className="relative z-10 flex flex-col items-center bg-black/60 backdrop-blur-xs px-3 py-2 rounded-xl border border-white/20">
+                      <ImageIcon className="w-5 h-5 text-white mb-1" />
+                      <span className="text-[11px] font-bold text-white">Change Login Image</span>
+                      <span className="text-[9px] text-white/70">Displayed under workspace login</span>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-16 h-16 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+                      {isUploadingLoginImage ? (
+                        <RefreshCw className="w-6 h-6 text-[var(--nexa-text-muted)] animate-spin" />
+                      ) : (
+                        <ImageIcon className="w-6 h-6 text-[var(--nexa-text-muted)]" />
+                      )}
+                    </div>
+                    <h4 className="text-xs font-bold text-[var(--nexa-text-primary)] mb-1">Upload Login Image</h4>
+                    <p className="text-[10px] text-[var(--nexa-text-muted)] max-w-[250px]">
+                      JPG, PNG or WebP. Appears dynamically under the workspace login form.
+                    </p>
+                    <div className="mt-3 bg-[#1A56DB] text-white px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1.5 group-hover:bg-blue-700 transition-colors">
+                      {isUploadingLoginImage ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />} 
+                      {isUploadingLoginImage ? "Uploading..." : "Select File"}
+                    </div>
+                  </>
+                )}
               </div>
+            </div>
+          </div>
 
-              <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-between">
-                <div className="space-y-1">
-                  <div className="text-xs font-bold text-[var(--nexa-text-primary)]">Secondary Color</div>
-                  <div className="text-[10px] text-[var(--nexa-text-muted)]">Badges, highlights, and success states</div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono text-[var(--nexa-text-muted)] uppercase">{secondaryColor}</span>
-                  <input type="color" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent" />
-                </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-[var(--nexa-border)]">
+            <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-between">
+              <div className="space-y-1">
+                <div className="text-xs font-bold text-[var(--nexa-text-primary)]">Primary Color</div>
+                <div className="text-[10px] text-[var(--nexa-text-muted)]">Main buttons and active states</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono text-[var(--nexa-text-muted)] uppercase">{primaryColor}</span>
+                <input type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent" />
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-between">
+              <div className="space-y-1">
+                <div className="text-xs font-bold text-[var(--nexa-text-primary)]">Secondary Color</div>
+                <div className="text-[10px] text-[var(--nexa-text-muted)]">Badges, highlights, and success states</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-mono text-[var(--nexa-text-muted)] uppercase">{secondaryColor}</span>
+                <input type="color" value={secondaryColor} onChange={(e) => setSecondaryColor(e.target.value)} className="w-8 h-8 rounded cursor-pointer border-0 p-0 bg-transparent" />
               </div>
             </div>
           </div>

@@ -57,6 +57,7 @@ type Organization struct {
 	Status       string    `gorm:"size:30;not null;default:'ACTIVE'" json:"status"` // ACTIVE, PAST_DUE, SUSPENDED
 	Domain       string    `gorm:"size:191;uniqueIndex" json:"domain,omitempty"`
 	Logo           string    `gorm:"type:text" json:"logo,omitempty"`
+	LoginImage     string    `gorm:"type:text" json:"loginImage,omitempty"`
 	PrimaryColor   string    `gorm:"size:20" json:"primaryColor,omitempty"`
 	SecondaryColor string    `gorm:"size:20" json:"secondaryColor,omitempty"`
 

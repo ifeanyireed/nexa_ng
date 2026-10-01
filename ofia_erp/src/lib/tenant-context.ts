@@ -16,6 +16,7 @@ export interface DatabaseTenant {
   favicon?: string;
   primaryColor?: string;
   secondaryColor?: string;
+  loginImage?: string;
 }
 
 let cachedTenants: DatabaseTenant[] | null = null;
@@ -73,7 +74,7 @@ const DEFAULT_TENANT_ADMINS: Record<string, { name: string; email: string }> = {
 
 export const DEFAULT_TENANT_BRANDING: Record<
   string,
-  { logo?: string; favicon?: string; primaryColor?: string; secondaryColor?: string }
+  { logo?: string; favicon?: string; primaryColor?: string; secondaryColor?: string; loginImage?: string }
 > = {};
 
 /**
@@ -218,6 +219,20 @@ export async function fetchDatabaseTenants(forceRefresh = false): Promise<Databa
             defaultBranding.secondaryColor ||
             "#0E9F6E";
 
+          const rawLoginImage =
+            org.loginImage ||
+            org.login_image ||
+            org.loginBgUrl ||
+            org.backgroundImage ||
+            org.background_image ||
+            (typeof window !== "undefined"
+              ? localStorage.getItem("tenant_login_image_" + rawSlug) ||
+                localStorage.getItem("tenant_login_image_" + (org.id || "")) ||
+                localStorage.getItem("nexa_tenant_login_image")
+              : null) ||
+            defaultBranding.loginImage ||
+            "";
+
           return {
             id: org.id || org.ID || `org-${idx + 1}`,
             name: rawName,
@@ -232,6 +247,7 @@ export async function fetchDatabaseTenants(forceRefresh = false): Promise<Databa
             favicon: rawFavicon,
             primaryColor: rawPrimaryColor,
             secondaryColor: rawSecondaryColor,
+            loginImage: rawLoginImage,
           };
         });
 
@@ -326,6 +342,10 @@ export function resolveTenantFromList(
       typeof window !== "undefined"
         ? localStorage.getItem("tenant_secondary_color_" + targetSlug) || localStorage.getItem("nexa_tenant_secondary_color")
         : null;
+    const savedLoginImage =
+      typeof window !== "undefined"
+        ? localStorage.getItem("tenant_login_image_" + targetSlug) || localStorage.getItem("nexa_tenant_login_image")
+        : null;
 
     const resolvedName = savedTenantName || slugToTenantName(targetSlug);
 
@@ -343,6 +363,7 @@ export function resolveTenantFromList(
       favicon: savedLogo || "",
       primaryColor: savedPrimaryColor || "#1A56DB",
       secondaryColor: savedSecondaryColor || "#0E9F6E",
+      loginImage: savedLoginImage || DEFAULT_TENANT_BRANDING[targetSlug]?.loginImage || "",
     };
   }
 

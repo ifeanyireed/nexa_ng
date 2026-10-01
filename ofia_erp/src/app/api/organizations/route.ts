@@ -7,6 +7,8 @@ const USER_BASE = cleanUserUrl.endsWith("/api/v1") ? cleanUserUrl : `${cleanUser
 const globalOrgMap = (globalThis as any).__OFIA_ORG_MAP__ || new Map<string, any>();
 (globalThis as any).__OFIA_ORG_MAP__ = globalOrgMap;
 
+import { INITIAL_TENANTS } from "@/lib/admin-data";
+
 export async function GET() {
   let list: any[] = [];
   try {
@@ -23,30 +25,45 @@ export async function GET() {
     console.warn("Failed to fetch organizations from backend database:", err.message);
   }
 
-  // If list is empty, return empty list
+  // If list is empty, fallback to initial tenants
   if (list.length === 0) {
-    list = [];
+    list = INITIAL_TENANTS.map((t) => ({
+      id: t.id,
+      name: t.name,
+      slug: t.slug,
+      domain: t.domain,
+      ownerName: t.ownerName,
+      ownerEmail: t.ownerEmail,
+      loginImage: t.loginImage,
+      planTier: t.planTier,
+      status: t.status,
+    }));
   }
 
   // Merge any in-memory overrides
   const mergedList = list.map((org) => {
+    const initialMatch = INITIAL_TENANTS.find(
+      (t) => t.id === org.id || t.slug === org.slug
+    );
     const override =
       globalOrgMap.get(org.id?.toLowerCase()) ||
       globalOrgMap.get(org.slug?.toLowerCase()) ||
       globalOrgMap.get(org.name?.toLowerCase());
 
+    const base = initialMatch ? { ...initialMatch, ...org } : org;
+
     if (override) {
       return {
-        ...org,
+        ...base,
         ...override,
         owner: {
-          ...(org.owner || {}),
-          name: override.ownerName || override.owner_name || org.owner?.name,
-          email: override.ownerEmail || override.owner_email || org.owner?.email,
+          ...(base.owner || {}),
+          name: override.ownerName || override.owner_name || base.owner?.name,
+          email: override.ownerEmail || override.owner_email || base.owner?.email,
         },
       };
     }
-    return org;
+    return base;
   });
 
   return NextResponse.json(mergedList);

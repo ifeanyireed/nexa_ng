@@ -16,6 +16,7 @@ export interface TenantOrg {
   monthlyAiSpendUSD: number;
   integrationHealth: "Healthy" | "Degraded" | "Error";
   erpModules?: Record<string, boolean>;
+  loginImage?: string;
   createdAt: string;
 }
 
@@ -139,6 +140,7 @@ export const INITIAL_TENANTS: TenantOrg[] = [
     domain: "neweratransports.com",
     ownerName: "Ifeanyi Felix",
     ownerEmail: "ifeanyi.ibeh@neweratransports.com",
+    loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
     planTier: "GROWTH",
     status: "Active",
     mrr: 24000,

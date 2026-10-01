@@ -54,6 +54,15 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
   const primaryColor = (isCustomTenant && activeTenant?.primaryColor) || "#1A56DB";
   const secondaryColor = (isCustomTenant && activeTenant?.secondaryColor) || "#0E9F6E";
   const tenantDomain = (isCustomTenant && (activeTenant?.domain || `${resolvedSlug}.ofia.ng`)) || "ofia.ng";
+  const loginImage = isCustomTenant
+    ? (activeTenant?.loginImage ||
+        (typeof window !== "undefined"
+          ? localStorage.getItem("tenant_login_image_" + resolvedSlug) ||
+            localStorage.getItem("tenant_login_image_" + (activeTenant?.id || "")) ||
+            localStorage.getItem("nexa_tenant_login_image")
+          : "") ||
+        "")
+    : "";
 
   React.useEffect(() => {
     if (typeof document !== "undefined" && isCustomTenant && tenantName) {
@@ -198,9 +207,21 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--nexa-bg-base)] flex flex-col justify-between text-[var(--nexa-text-primary)]">
+    <div className="min-h-screen bg-[var(--nexa-bg-base)] flex flex-col justify-between text-[var(--nexa-text-primary)] relative overflow-hidden">
+      {/* Background Image Wallpaper under login form */}
+      {loginImage && (
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <img
+            src={loginImage}
+            alt={`${tenantName} Wallpaper`}
+            className="w-full h-full object-cover object-center filter transition-all duration-700"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[var(--nexa-bg-base)]/85 via-[var(--nexa-bg-base)]/70 to-[var(--nexa-bg-base)]/90 backdrop-blur-[1px]" />
+        </div>
+      )}
+
       {/* Top Simple Header */}
-      <header className="p-6 flex items-center justify-between max-w-7xl mx-auto w-full">
+      <header className="relative z-10 p-6 flex items-center justify-between max-w-7xl mx-auto w-full">
         <Link href="/" className="flex items-center gap-3 group">
           {tenantLogo ? (
             <img
@@ -272,12 +293,12 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
       </header>
 
       {/* Main Login Card */}
-      <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
+      <main className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-md space-y-6">
           <NexaCard
             variant="glass"
             padding="lg"
-            className="border-2 shadow-2xl rounded-3xl space-y-6 transition-all"
+            className="border-2 shadow-2xl rounded-3xl space-y-6 transition-all backdrop-blur-xl bg-[var(--nexa-bg-surface)]/85"
             style={{
               borderColor: `${primaryColor}33`,
               boxShadow: `0 20px 50px -10px ${primaryColor}20`,
@@ -431,7 +452,7 @@ export default function LoginPage({ initialTenantSlug }: LoginPageProps = {}) {
       </main>
 
       {/* Simple Bottom Bar */}
-      <footer className="p-6 text-center text-xs text-[var(--nexa-text-muted)]">
+      <footer className="relative z-10 p-6 text-center text-xs text-[var(--nexa-text-muted)]">
         © 2026 Ofia ERP. Protected by SOC2 Type II & 256-bit AES encryption.
       </footer>
     </div>

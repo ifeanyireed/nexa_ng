@@ -320,46 +320,190 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
     router.push(route);
   };
 
-  return (
-    <div
-      className={`min-h-screen flex flex-col justify-between relative overflow-hidden transition-colors duration-500 ${
-        isDarkBg ? "bg-slate-950 text-white" : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)]"
-      }`}
-    >
-      {/* Background Image Wallpaper under login form */}
-      {loginImage && (
-        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-          <img
-            src={loginImage}
-            alt={`${tenantName} Wallpaper`}
-            className="w-full h-full object-cover object-center filter transition-all duration-700"
-          />
-          {/* Ultra-transparent sheer overlay to keep wallpaper vibrant while preserving contrast */}
-          <div
-            className={`absolute inset-0 transition-all duration-500 backdrop-blur-[0.5px] ${
-              isDarkBg
-                ? "bg-gradient-to-b from-black/20 via-black/5 to-black/35"
-                : "bg-gradient-to-b from-white/20 via-transparent to-white/25"
-            }`}
-          />
-        </div>
-      )}
+  const heroTitle = resolvedSlug.toLowerCase().includes("newera")
+    ? "Powering next-generation transport, logistics & fleet intelligence."
+    : isCustomTenant
+    ? `Unified enterprise workspace for ${tenantName}.`
+    : "Intelligent enterprise resource planning for modern business.";
 
-      {/* Top Simple Header */}
-      <header className="relative z-10 p-6 flex items-center justify-between max-w-7xl mx-auto w-full">
-        <Link href="/" className="flex items-center gap-3 group">
-          {tenantLogo ? (
-            <div
-              className={
-                isDarkBg
-                  ? "p-1.5 px-2.5 rounded-xl bg-white/95 backdrop-blur-md shadow-sm border border-white/40 flex items-center justify-center shrink-0 transition-all"
-                  : "shrink-0 flex items-center justify-center"
-              }
-            >
+  const heroSubtitle = resolvedSlug.toLowerCase().includes("newera")
+    ? "Real-time zonal dispatch, fleet telemetry, manifest auditing, and ledger reconciliation in one synchronized ecosystem."
+    : isCustomTenant
+    ? `Streamline operations, financial accounting, inventory, and workforce workflows across ${tenantName}.`
+    : "Empower your teams with real-time operations, inventory distribution, point of sale, and ledger reconciliation.";
+
+  return (
+    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-white text-slate-900 overflow-x-hidden">
+      {/* ======================================================== */}
+      {/* LEFT HALF: HERO BRANDING & WALLPAPER (50% on desktop)    */}
+      {/* ======================================================== */}
+      <div className="relative w-full lg:w-1/2 min-h-[360px] lg:min-h-screen flex flex-col justify-between p-6 sm:p-10 lg:p-14 overflow-hidden bg-slate-950 text-white select-none">
+        {/* Background Wallpaper Image */}
+        {loginImage ? (
+          <div className="absolute inset-0 z-0">
+            <img
+              src={loginImage}
+              alt={`${tenantName} Backdrop`}
+              className="w-full h-full object-cover object-center filter transition-all duration-700 brightness-[0.82]"
+            />
+            {/* Rich gradient overlay ensuring hero text has maximum readability */}
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/65 to-slate-950/35 backdrop-blur-[0.5px]" />
+          </div>
+        ) : (
+          <div
+            className="absolute inset-0 z-0"
+            style={{
+              background: `radial-gradient(circle at 20% 30%, ${primaryColor}66 0%, #020617 100%)`,
+            }}
+          />
+        )}
+
+        {/* Left Top: Tenant Identity & Monogram */}
+        <div className="relative z-10 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3 group">
+            {tenantLogo ? (
+              <div className="p-2 px-3 rounded-2xl bg-white/95 backdrop-blur-md shadow-lg border border-white/20 inline-flex items-center justify-center shrink-0">
+                <img
+                  src={tenantLogo}
+                  alt={`${tenantName} Logo`}
+                  className="h-8 sm:h-9 w-auto max-w-[150px] object-contain"
+                  onError={(e) => {
+                    const fallback =
+                      DEFAULT_TENANT_BRANDING[resolvedSlug]?.logo ||
+                      (resolvedSlug.toLowerCase().includes("newera")
+                        ? "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png"
+                        : "");
+                    const target = e.target as HTMLImageElement;
+                    if (fallback && target.src !== fallback) {
+                      target.src = fallback;
+                    } else if (!isCustomTenant) {
+                      target.src =
+                        "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
+                    }
+                  }}
+                />
+              </div>
+            ) : isCustomTenant ? (
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm text-white shrink-0 shadow-md border"
+                style={{
+                  background: `linear-gradient(135deg, ${primaryColor}, #020617)`,
+                  borderColor: `${primaryColor}40`,
+                }}
+              >
+                {tenantName
+                  .split(" ")
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((w) => w[0])
+                  .join("")
+                  .toUpperCase() || "WP"}
+              </div>
+            ) : (
+              <img
+                src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"
+                alt="Ofia ERP Logo"
+                className="w-9 h-9 object-contain"
+              />
+            )}
+
+            <div className="flex flex-col">
+              <span className="font-extrabold text-base text-white flex items-center gap-2 drop-shadow-md">
+                {tenantName}
+                <span
+                  className="text-[10px] font-mono font-extrabold uppercase px-2.5 py-0.5 rounded-full border backdrop-blur-md"
+                  style={{
+                    backgroundColor: "rgba(255, 255, 255, 0.15)",
+                    borderColor: "rgba(255, 255, 255, 0.25)",
+                    color: "#FFFFFF",
+                  }}
+                >
+                  {tenantSlug ? tenantSlug.toUpperCase() : "ENTERPRISE"}
+                </span>
+              </span>
+              <span className="text-[11px] text-white/80 font-medium tracking-wide drop-shadow-sm">
+                {isCustomTenant ? "Enterprise Workspace" : "Unified Enterprise Suite"}
+              </span>
+            </div>
+          </Link>
+        </div>
+
+        {/* Left Center: Bold Hero Typography & Feature Badges */}
+        <div className="relative z-10 my-auto py-8 sm:py-12 space-y-6 max-w-xl">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 backdrop-blur-md text-xs font-semibold text-white/95">
+            <Sparkles className="w-3.5 h-3.5 text-amber-300 shrink-0" />
+            <span>Enterprise Operations & Management Suite</span>
+          </div>
+
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-[1.15] drop-shadow-lg">
+            {heroTitle}
+          </h1>
+
+          <p className="text-sm sm:text-base text-white/85 leading-relaxed drop-shadow-sm font-normal max-w-lg">
+            {heroSubtitle}
+          </p>
+
+          {/* Feature Highlights Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md shadow-sm">
+              <div className="p-2 rounded-xl bg-white/15 text-white shrink-0">
+                <Zap className="w-4 h-4 text-emerald-400" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-white">Real-Time Dispatch</div>
+                <div className="text-[11px] text-white/70">Zonal manifests & fleet ops</div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md shadow-sm">
+              <div className="p-2 rounded-xl bg-white/15 text-white shrink-0">
+                <ShieldCheck className="w-4 h-4 text-blue-400" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-white">Bank-Grade Ledger</div>
+                <div className="text-[11px] text-white/70">Double-entry automated reconciliation</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Left Bottom: Trust & Security Badges */}
+        <div className="relative z-10 pt-4 border-t border-white/10 flex items-center justify-between text-xs text-white/70">
+          <span className="flex items-center gap-2">
+            <Lock className="w-3.5 h-3.5 text-emerald-400" />
+            SOC2 Type II & 256-Bit AES Encryption
+          </span>
+          <span>© 2026 Ofia ERP</span>
+        </div>
+      </div>
+
+      {/* ======================================================== */}
+      {/* RIGHT HALF: LOGIN FORM OVER CLEAN WHITE BACKGROUND (50%) */}
+      {/* ======================================================== */}
+      <div className="w-full lg:w-1/2 min-h-screen flex flex-col justify-between p-6 sm:p-10 lg:p-14 bg-white text-slate-900">
+        {/* Right Top Bar: Switch tenant / Register workspace */}
+        <div className="flex items-center justify-end gap-2 text-xs">
+          <span className="text-slate-500 font-medium">
+            {isCustomTenant ? "Need another organization?" : "Don't have an enterprise workspace?"}
+          </span>
+          <Link
+            href="/join/register"
+            className="font-bold hover:underline px-3 py-1.5 rounded-full transition-all text-sm"
+            style={{ color: primaryColor }}
+          >
+            Setup Workspace →
+          </Link>
+        </div>
+
+        {/* Right Center: Centered Login Form */}
+        <div className="my-auto w-full max-w-md mx-auto py-8 sm:py-12">
+          {/* Tenant Logo prominently displayed over the crisp white background */}
+          <div className="mb-8">
+            {tenantLogo ? (
               <img
                 src={tenantLogo}
                 alt={`${tenantName} Logo`}
-                className="h-9 sm:h-10 w-auto max-w-[160px] object-contain shrink-0"
+                className="h-14 sm:h-16 w-auto max-w-[240px] object-contain mb-5"
                 onError={(e) => {
                   const fallback =
                     DEFAULT_TENANT_BRANDING[resolvedSlug]?.logo ||
@@ -375,331 +519,152 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
                   }
                 }}
               />
-            </div>
-          ) : isCustomTenant ? (
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs text-white shrink-0 shadow-md border"
-              style={{
-                background: `linear-gradient(135deg, ${primaryColor}, #020617)`,
-                borderColor: `${primaryColor}40`,
-              }}
-            >
-              {tenantName
-                .split(" ")
-                .filter(Boolean)
-                .slice(0, 2)
-                .map((w) => w[0])
-                .join("")
-                .toUpperCase() || "WP"}
-            </div>
-          ) : (
-            <img
-              src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"
-              alt="Ofia ERP Logo"
-              className="w-10 h-10 object-contain shrink-0"
-            />
-          )}
-          <div className="flex flex-col">
-            <span
-              className={`font-extrabold text-base text-display flex items-center gap-2 transition-colors ${
-                isDarkBg ? "text-white drop-shadow-md" : "text-[var(--nexa-text-primary)]"
-              }`}
-            >
-              {tenantName}
-              <span
-                className="text-[10px] font-extrabold font-mono uppercase px-2.5 py-0.5 rounded-full border transition-all"
-                style={
-                  isDarkBg
-                    ? {
-                        backgroundColor: "rgba(255, 255, 255, 0.15)",
-                        color: "#FFFFFF",
-                        borderColor: "rgba(255, 255, 255, 0.3)",
-                        backdropFilter: "blur(8px)",
-                      }
-                    : {
-                        backgroundColor: `${primaryColor}1a`,
-                        color: primaryColor,
-                        borderColor: `${primaryColor}33`,
-                      }
-                }
-              >
-                {tenantSlug ? tenantSlug.toUpperCase() : "SUITE"}
-              </span>
-            </span>
-            {isCustomTenant && (
-              <span
-                className={`text-[10px] font-medium tracking-wider transition-colors ${
-                  isDarkBg ? "text-white/80 drop-shadow-sm" : "text-[var(--nexa-text-muted)]"
-                }`}
-              >
-                Enterprise Workspace • Powered by Ofia ERP
-              </span>
-            )}
-          </div>
-        </Link>
-
-        <div className="flex items-center gap-2 text-xs">
-          <span
-            className={`transition-colors ${
-              isDarkBg ? "text-white/85 drop-shadow-sm font-medium" : "text-[var(--nexa-text-muted)]"
-            }`}
-          >
-            {isCustomTenant ? "Need another organization?" : "Don't have an enterprise tenant?"}
-          </span>
-          <Link
-            href="/join/register"
-            className={`font-bold px-3 py-1 rounded-full transition-all ${
-              isDarkBg
-                ? "bg-white/15 hover:bg-white/25 text-white border border-white/30 backdrop-blur-md shadow-sm"
-                : "hover:underline"
-            }`}
-            style={isDarkBg ? {} : { color: primaryColor }}
-          >
-            Setup Workspace →
-          </Link>
-        </div>
-      </header>
-
-      {/* Main Login Card */}
-      <main className="relative z-10 flex-1 flex items-center justify-center p-4 sm:p-6">
-        <div className="w-full max-w-md space-y-6">
-          <NexaCard
-            variant="glass"
-            padding="lg"
-            className={`border-2 shadow-2xl rounded-3xl space-y-6 transition-all backdrop-blur-2xl ${
-              isDarkBg
-                ? "bg-slate-950/75 border-white/15 text-white shadow-black/60"
-                : "bg-white/90 border-slate-200 text-slate-900 shadow-slate-200/50"
-            }`}
-            style={{
-              borderColor: isDarkBg ? "rgba(255, 255, 255, 0.15)" : `${primaryColor}33`,
-              boxShadow: isDarkBg
-                ? `0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 35px -5px ${primaryColor}30`
-                : `0 20px 50px -10px ${primaryColor}20`,
-            }}
-          >
-            <div className="text-center space-y-3">
-              {/* Tenant Logo or Branded Emblem */}
-              <div className="flex justify-center mb-1">
-                {tenantLogo ? (
-                  <div
-                    className={
-                      isDarkBg
-                        ? "p-2.5 px-4 rounded-2xl bg-white/95 backdrop-blur-md shadow-md border border-white/40 flex items-center justify-center transition-all"
-                        : "flex items-center justify-center"
-                    }
-                  >
-                    <img
-                      src={tenantLogo}
-                      alt={`${tenantName} Logo`}
-                      className="h-16 sm:h-20 w-auto max-w-[240px] object-contain"
-                      onError={(e) => {
-                        const fallback =
-                          DEFAULT_TENANT_BRANDING[resolvedSlug]?.logo ||
-                          (resolvedSlug.toLowerCase().includes("newera")
-                            ? "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png"
-                            : "");
-                        const target = e.target as HTMLImageElement;
-                        if (fallback && target.src !== fallback) {
-                          target.src = fallback;
-                        } else if (!isCustomTenant) {
-                          target.src =
-                            "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
-                        }
-                      }}
-                    />
-                  </div>
-                ) : isCustomTenant ? (
-                  <div
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl text-white shadow-lg border"
-                    style={{
-                      background: `linear-gradient(135deg, ${primaryColor}, #020617)`,
-                      borderColor: `${primaryColor}50`,
-                      boxShadow: `0 10px 25px -5px ${primaryColor}40`,
-                    }}
-                  >
-                    {tenantName
-                      .split(" ")
-                      .filter(Boolean)
-                      .slice(0, 2)
-                      .map((w) => w[0])
-                      .join("")
-                      .toUpperCase() || "WP"}
-                  </div>
-                ) : (
-                  <img
-                    src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"
-                    alt="Ofia Logo"
-                    className="h-16 w-16 object-contain"
-                  />
-                )}
-              </div>
-
-              <div>
-                <h1
-                  className={`text-2xl font-black text-display tracking-tight transition-colors ${
-                    isDarkBg ? "text-white" : "text-[var(--nexa-text-primary)]"
-                  }`}
-                >
-                  {isCustomTenant ? `Sign in to ${tenantName}` : "Sign in to Ofia ERP"}
-                </h1>
-                <p
-                  className={`text-xs leading-relaxed mt-1 transition-colors ${
-                    isDarkBg ? "text-slate-300" : "text-[var(--nexa-text-muted)]"
-                  }`}
-                >
-                  {isCustomTenant
-                    ? "Enterprise Workspace"
-                    : "Access Inventory, POS, Zonal Dispatch, General Ledger, HR Appraisals, and AI Agents."}
-                </p>
-              </div>
-            </div>
-
-            {error && (
-              <div className="p-3 rounded-full bg-red-500/10 border border-red-500/30 text-red-500 text-xs font-semibold text-center">
-                {error}
-              </div>
-            )}
-
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-1.5">
-                <label
-                  className={`text-xs font-semibold px-1 transition-colors ${
-                    isDarkBg ? "text-slate-200" : "text-[var(--nexa-text-secondary)]"
-                  }`}
-                >
-                  Enterprise Email
-                </label>
-                <div className="relative">
-                  <input
-                    type="email"
-                    required
-                    placeholder="name@company.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className={`w-full h-11 pl-10 pr-4 text-xs rounded-full outline-none transition-all ${
-                      isDarkBg
-                        ? "bg-slate-900/80 border border-slate-700 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                        : "bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)]"
-                    }`}
-                  />
-                  <Mail
-                    className={`w-4 h-4 absolute left-3.5 top-3.5 transition-colors ${
-                      isDarkBg ? "text-slate-400" : "text-[var(--nexa-text-muted)]"
-                    }`}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between px-1">
-                  <label
-                    className={`text-xs font-semibold transition-colors ${
-                      isDarkBg ? "text-slate-200" : "text-[var(--nexa-text-secondary)]"
-                    }`}
-                  >
-                    Password
-                  </label>
-                  <Link
-                    href="/erp/reset-password"
-                    className="text-[11px] font-bold hover:underline transition-colors"
-                    style={{ color: isDarkBg ? "#60A5FA" : primaryColor }}
-                  >
-                    Forgot Password?
-                  </Link>
-                </div>
-                <div className="relative">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className={`w-full h-11 pl-10 pr-10 text-xs rounded-full outline-none transition-all ${
-                      isDarkBg
-                        ? "bg-slate-900/80 border border-slate-700 text-white placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                        : "bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)]"
-                    }`}
-                  />
-                  <Lock
-                    className={`w-4 h-4 absolute left-3.5 top-3.5 transition-colors ${
-                      isDarkBg ? "text-slate-400" : "text-[var(--nexa-text-muted)]"
-                    }`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className={`absolute right-3.5 top-3.5 p-0.5 rounded-full transition-colors ${
-                      isDarkBg
-                        ? "text-slate-400 hover:text-white"
-                        : "text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
-                    }`}
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-xs px-1">
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="rounded-full border-[var(--nexa-border)]"
-                    style={{ accentColor: primaryColor }}
-                  />
-                  <span
-                    className={`transition-colors ${
-                      isDarkBg ? "text-slate-200" : "text-[var(--nexa-text-secondary)]"
-                    }`}
-                  >
-                    Remember this device
-                  </span>
-                </label>
-                <span
-                  className={`text-[10px] font-medium px-2 py-0.5 rounded-full border transition-all ${
-                    isDarkBg
-                      ? "bg-slate-800/90 text-slate-300 border-slate-700"
-                      : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-muted)] border-[var(--nexa-border)]"
-                  }`}
-                >
-                  2FA Enforced
-                </span>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full h-12 rounded-full text-white font-extrabold text-sm shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 hover:brightness-110 active:scale-[0.99]"
+            ) : isCustomTenant ? (
+              <div
+                className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl text-white shadow-lg mb-5"
                 style={{
-                  backgroundColor: primaryColor,
-                  boxShadow: `0 10px 25px -5px ${primaryColor}50`,
+                  background: `linear-gradient(135deg, ${primaryColor}, #020617)`,
                 }}
               >
-                {isLoading ? (
-                  <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <>
-                    <span>Authenticate & Enter Workspace</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </button>
-            </form>
-          </NexaCard>
-        </div>
-      </main>
+                {tenantName
+                  .split(" ")
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((w) => w[0])
+                  .join("")
+                  .toUpperCase() || "WP"}
+              </div>
+            ) : (
+              <img
+                src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"
+                alt="Ofia ERP Logo"
+                className="h-12 w-12 object-contain mb-5"
+              />
+            )}
 
-      {/* Simple Bottom Bar */}
-      <footer
-        className={`relative z-10 p-6 text-center text-xs transition-colors ${
-          isDarkBg ? "text-white/70 drop-shadow-sm font-medium" : "text-[var(--nexa-text-muted)]"
-        }`}
-      >
-        © 2026 Ofia ERP. Protected by SOC2 Type II & 256-bit AES encryption.
-      </footer>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              {isCustomTenant ? `Sign in to ${tenantName}` : "Sign in to Ofia ERP"}
+            </h2>
+            <p className="text-sm text-slate-500 mt-2">
+              {isCustomTenant
+                ? `Enterprise Workspace • ${tenantDomain}`
+                : "Access your enterprise workspace, accounting ledger, and AI tools."}
+            </p>
+          </div>
+
+          {error && (
+            <div className="mb-5 p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2">
+              <span>⚠️</span>
+              <span>{error}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            {/* Email Field */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider px-1">
+                Enterprise Email
+              </label>
+              <div className="relative">
+                <input
+                  type="email"
+                  required
+                  placeholder="name@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full h-12 pl-11 pr-4 text-sm rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all outline-none"
+                />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-4 top-4" />
+              </div>
+            </div>
+
+            {/* Password Field */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between px-1">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Password
+                </label>
+                <Link
+                  href="/erp/reset-password"
+                  className="text-xs font-bold hover:underline transition-colors"
+                  style={{ color: primaryColor }}
+                >
+                  Forgot Password?
+                </Link>
+              </div>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full h-12 pl-11 pr-11 text-sm rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all outline-none"
+                />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-4" />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-3.5 p-1 text-slate-400 hover:text-slate-700 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {/* Remember Device & 2FA Badge */}
+            <div className="flex items-center justify-between text-xs px-1 pt-1">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300"
+                  style={{ accentColor: primaryColor }}
+                />
+                <span className="text-slate-600 font-medium">Remember this device</span>
+              </label>
+              <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                2FA Enforced
+              </span>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-12 rounded-xl text-white font-extrabold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 hover:brightness-110 active:scale-[0.99] mt-2"
+              style={{
+                backgroundColor: primaryColor,
+                boxShadow: `0 8px 20px -4px ${primaryColor}40`,
+              }}
+            >
+              {isLoading ? (
+                <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <>
+                  <span>Authenticate & Enter Workspace</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Quick Info Hint */}
+          <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+            <p className="text-xs text-slate-400">
+              Sign in with your enterprise credentials or contact your system administrator.
+            </p>
+          </div>
+        </div>
+
+        {/* Right Bottom Footer */}
+        <div className="pt-4 text-center text-xs text-slate-400">
+          Protected by SOC2 Type II & 256-bit AES encryption • Powered by Ofia ERP
+        </div>
+      </div>
     </div>
   );
 }
+
 

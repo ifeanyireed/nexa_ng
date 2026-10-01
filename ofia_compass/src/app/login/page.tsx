@@ -41,141 +41,33 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
 
-  // Seeded ERP Role Personas for quick selection
-  const testPersonas = [
-    {
-      name: "Admin",
-      label: "Admin",
-      email: `admin@${tenantDomain}`,
-      pass: "password123",
-      roleKey: "admin",
-      badge: "Admin",
-      color: "#1A56DB",
-      route: "/erp/admin",
-    },
-    {
-      name: "Executive",
-      label: "Executive Portal",
-      email: `md@${tenantDomain}`,
-      pass: "password123",
-      roleKey: "md",
-      badge: "Executive",
-      color: "#7E3AF2",
-      route: "/erp/md",
-    },
-    {
-      name: "HR Officer",
-      label: "Human Resources (HR)",
-      email: `hr@${tenantDomain}`,
-      pass: "password123",
-      roleKey: "hr",
-      badge: "People & Culture",
-      color: "#E02424",
-      route: "/erp/hr",
-    },
-    {
-      name: "Accountant",
-      label: "Accounting & Finance",
-      email: `accounts@${tenantDomain}`,
-      pass: "password123",
-      roleKey: "accountant",
-      badge: "Finance",
-      color: "#0E9F6E",
-      route: "/erp/accountant",
-    },
-    {
-      name: "Operations Manager",
-      label: "Operations & Fleet",
-      email: `manager@${tenantDomain}`,
-      pass: "password123",
-      roleKey: "manager",
-      badge: "Supervisor",
-      color: "#D97706",
-      route: "/erp/manager",
-    },
-    {
-      name: "Employee",
-      label: "General Employee",
-      email: `employee@${tenantDomain}`,
-      pass: "password123",
-      roleKey: "employee",
-      badge: "Staff",
-      color: "#4B5563",
-      route: "/erp/employee",
-    },
-    {
-      name: "Marketer",
-      label: "Marketing & CRM",
-      email: `marketing@${tenantDomain}`,
-      pass: "password123",
-      roleKey: "marketer",
-      badge: "Marketing",
-      color: "#EC4899",
-      route: "/erp/marketer",
-    },
-    {
-      name: "Cashier",
-      label: "POS & Cashier Desk",
-      email: `cashier@${tenantDomain}`,
-      pass: "password123",
-      roleKey: "cashier",
-      badge: "Retail & POS",
-      color: "#0694A2",
-      route: "/erp/admin/shop/pos",
-    },
-    {
-      name: "Inventory Officer",
-      label: "Warehouse & Inventory",
-      email: `inventory@${tenantDomain}`,
-      pass: "password123",
-      roleKey: "inventory_officer",
-      badge: "Supply Chain",
-      color: "#F59E0B",
-      route: "/erp/admin/shop/inventory",
-    },
-    {
-      name: "Dispatcher",
-      label: "Logistics Dispatch Desk",
-      email: `logistics@${tenantDomain}`,
-      pass: "password123",
-      roleKey: "dispatcher",
-      badge: "Logistics",
-      color: "#3B82F6",
-      route: "/erp/admin/logistics",
-    },
-  ];
-
-  const [currentTenant, setCurrentTenant] = useState<string>("");
-
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      const host = window.location.host.toLowerCase();
-      const hostParts = host.split(":")[0].split(".");
-      const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
-
-      if (!isLocal && hostParts.length >= 3) {
-        const sub = hostParts[0];
-        if (!["www", "ofia", "app", "nexa"].includes(sub)) {
-          setCurrentTenant(sub);
-        }
-      }
-    }
-  }, []);
-
-  const handlePersonaClick = (persona: (typeof testPersonas)[0]) => {
-    setEmail(persona.email);
-    setPassword(persona.pass);
-    setError("");
-  };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
 
-    const matchingPersona = testPersonas.find((p) => p.email.toLowerCase() === email.toLowerCase());
-    const resolvedRole = matchingPersona ? matchingPersona.roleKey : "admin";
-    const resolvedName = matchingPersona?.name || email.split("@")[0] || "User";
+    const userPrefix = email.split("@")[0].toLowerCase();
+    const resolvedRole = userPrefix.includes("accountant")
+      ? "accountant"
+      : userPrefix.includes("hr")
+      ? "hr"
+      : userPrefix.includes("md")
+      ? "md"
+      : userPrefix.includes("cashier")
+      ? "cashier"
+      : userPrefix.includes("inventory")
+      ? "inventory_officer"
+      : userPrefix.includes("dispatch") || userPrefix.includes("logistics")
+      ? "dispatcher"
+      : userPrefix.includes("manager")
+      ? "manager"
+      : userPrefix.includes("market") || userPrefix.includes("sales")
+      ? "marketer"
+      : userPrefix.includes("employee")
+      ? "employee"
+      : "admin";
+
+    const resolvedName = email.split("@")[0] || "User";
     const emailDomain = email.includes("@") ? email.split("@")[1].split(".")[0] : "";
 
     try {
@@ -278,11 +170,6 @@ export default function LoginPage() {
     router.push(route);
   };
 
-  const selectPersona = (pEmail: string, pPass: string) => {
-    setEmail(pEmail);
-    setPassword(pPass);
-  };
-
   return (
     <div className="min-h-screen bg-[var(--nexa-bg-base)] flex flex-col justify-between text-[var(--nexa-text-primary)]">
       {/* Top Simple Header */}
@@ -319,33 +206,6 @@ export default function LoginPage() {
               <p className="text-xs text-[var(--nexa-text-muted)] leading-relaxed">
                 Access Inventory, POS, Zonal Dispatch, General Ledger, HR Appraisals, and AI Agents.
               </p>
-            </div>
-
-            {/* Quick Test Persona Switcher */}
-            <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-2.5">
-              <div className="flex items-center justify-between text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider px-1">
-                <span>1-Click ERP Role Personas</span>
-                <span className="text-[#0E9F6E] font-extrabold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#0E9F6E] animate-pulse" />
-                  Quick Fill
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {testPersonas.map((p) => (
-                  <button
-                    key={p.email}
-                    type="button"
-                    onClick={() => selectPersona(p.email, p.pass)}
-                    className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border transition-all cursor-pointer shadow-sm ${
-                      email === p.email
-                        ? "bg-[#1A56DB] text-white border-[#1A56DB] shadow-[#1A56DB]/30 font-bold"
-                        : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)] hover:border-[#1A56DB] hover:text-[#1A56DB]"
-                    }`}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-              </div>
             </div>
 
             {error && (

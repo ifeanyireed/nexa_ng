@@ -28,6 +28,7 @@ import {
   Zap,
 } from "lucide-react";
 import { SuperAdminShell } from "@/components/admin/SuperAdminShell";
+import { AdminStatGrid } from "@/components/admin/AdminStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge, NexaBadgeVariant } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
@@ -197,62 +198,50 @@ export default function ContactCRMPage() {
         )}
 
         {/* KPI BANNER */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#1A56DB]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Total Inbound Tickets</span>
-              <Mail className="w-4 h-4 text-[#1A56DB]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              {messages.length} Messages
-            </div>
-            <div className="text-[11px] text-[#1A56DB] font-semibold">
-              Live queue from /contact portal
-            </div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#C88A3A]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Open / Action Required</span>
-              <Clock className="w-4 h-4 text-[#C88A3A]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              {messages.filter((m) => m.status === "OPEN").length} Pending
-            </div>
-            <div className="text-[11px] text-[#C88A3A] font-semibold">
-              Requires immediate triage
-            </div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#0E9F6E]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">In Progress</span>
-              <Sparkles className="w-4 h-4 text-[#0E9F6E]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              {messages.filter((m) => m.status === "IN_PROGRESS").length} Active
-            </div>
-            <div className="text-[11px] text-[#0E9F6E] font-semibold">
-              Assigned to specialist reps
-            </div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#7E22CE]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Resolution Rate</span>
-              <CheckCircle2 className="w-4 h-4 text-[#7E22CE]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              92.4%
-            </div>
-            <div className="text-[11px] text-[#7E22CE] font-semibold">
-              Average response time &lt; 1.5 hrs
-            </div>
-          </NexaCard>
-        </div>
+        <AdminStatGrid
+          stats={[
+            {
+              label: "Total Inbound Tickets",
+              value: `${messages.length} Messages`,
+              change: "100% Synced",
+              trend: "up",
+              changeType: "info",
+              icon: <Mail className="w-5 h-5 text-blue-500" />,
+              sub: "Live queue from /contact portal",
+            },
+            {
+              label: "Open / Action Required",
+              value: `${messages.filter((m) => m.status === "OPEN").length} Pending`,
+              change: "Needs Triage",
+              trend: "up",
+              changeType: "warning",
+              icon: <Clock className="w-5 h-5 text-amber-500" />,
+              sub: "Requires immediate SLA triage",
+            },
+            {
+              label: "In Progress Desk",
+              value: `${messages.filter((m) => m.status === "IN_PROGRESS").length} Active`,
+              change: "Assigned Reps",
+              trend: "up",
+              changeType: "purple",
+              icon: <Sparkles className="w-5 h-5 text-purple-500" />,
+              sub: "Assigned to specialist reps",
+            },
+            {
+              label: "Resolution SLA Rate",
+              value: "92.4%",
+              change: "< 1.5h SLA",
+              trend: "up",
+              changeType: "success",
+              icon: <CheckCircle2 className="w-5 h-5 text-emerald-500" />,
+              sub: "Average resolution speed",
+            },
+          ]}
+          columns={4}
+        />
 
         {/* SEARCH & FILTER CONTROLS */}
-        <NexaCard variant="glass" padding="sm">
+        <NexaCard variant="glass" className="p-4 rounded-3xl border border-nexa-border shadow-xs">
           <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 p-1">
             <div className="relative flex-1">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />

@@ -19,6 +19,7 @@ import {
   Users,
 } from "lucide-react";
 import { SuperAdminShell } from "@/components/admin/SuperAdminShell";
+import { AdminStatGrid } from "@/components/admin/AdminStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
@@ -108,23 +109,38 @@ export default function EnterpriseLeadsPage() {
     >
       <div className="space-y-6">
         {/* KPI Banner */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <NexaCard variant="glass" padding="md" className="border-l-4 border-l-[#1A56DB]">
-            <div className="text-xs text-[var(--nexa-text-muted)] font-semibold">Total Pipeline Value</div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)] mt-1">₦31,100,000</div>
-            <div className="text-[11px] text-[#1A56DB] font-bold mt-1">Across 4 Major B2B Deals</div>
-          </NexaCard>
-          <NexaCard variant="glass" padding="md" className="border-l-4 border-l-[#0E9F6E]">
-            <div className="text-xs text-[var(--nexa-text-muted)] font-semibold">Average Deal Size</div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)] mt-1">₦7,775,000</div>
-            <div className="text-[11px] text-[#0E9F6E] font-bold mt-1">Annual Contract Value (ACV)</div>
-          </NexaCard>
-          <NexaCard variant="glass" padding="md" className="border-l-4 border-l-[#7E22CE]">
-            <div className="text-xs text-[var(--nexa-text-muted)] font-semibold">Conversion Probability</div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)] mt-1">78.5%</div>
-            <div className="text-[11px] text-[#7E22CE] font-bold mt-1">High Intent Enterprise Inquiries</div>
-          </NexaCard>
-        </div>
+        <AdminStatGrid
+          stats={[
+            {
+              label: "Total Pipeline Value",
+              value: "₦31,100,000",
+              change: "4 Major Deals",
+              trend: "up",
+              changeType: "info",
+              icon: <DollarSign className="w-5 h-5 text-blue-500" />,
+              sub: "Across 4 qualified enterprise proposals",
+            },
+            {
+              label: "Average Deal Size (ACV)",
+              value: "₦7,775,000",
+              change: "Annual Contract",
+              trend: "up",
+              changeType: "success",
+              icon: <Building2 className="w-5 h-5 text-emerald-500" />,
+              sub: "Annual Contract Value per organization",
+            },
+            {
+              label: "Conversion Probability",
+              value: "78.5%",
+              change: "High Intent",
+              trend: "up",
+              changeType: "purple",
+              icon: <Sparkles className="w-5 h-5 text-purple-500" />,
+              sub: "High intent enterprise inquiries",
+            },
+          ]}
+          columns={3}
+        />
 
         {/* Search */}
         <div className="w-80">
@@ -133,14 +149,14 @@ export default function EnterpriseLeadsPage() {
             placeholder="Search enterprise company, contact, or email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full h-10 px-3.5 rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-xs text-[var(--nexa-text-primary)] focus:outline-none focus:border-[#1A56DB]"
+            className="w-full h-10 px-4 rounded-full bg-nexa-bg-surface border border-nexa-border text-xs text-nexa-text-primary focus:outline-none focus:border-nexa-brand placeholder:text-nexa-text-faint"
           />
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto rounded-2xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]">
+        <div className="overflow-x-auto rounded-3xl border border-nexa-border bg-nexa-bg-surface shadow-xs">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[var(--nexa-bg-base)] text-[var(--nexa-text-muted)] border-b border-[var(--nexa-border)] font-bold uppercase">
+            <thead className="bg-nexa-bg-base text-nexa-text-muted border-b border-nexa-border font-bold uppercase text-[10px]">
               <tr>
                 <th className="py-3 px-4">Deal ID & Company</th>
                 <th className="py-3 px-3">Lead Contact</th>
@@ -150,22 +166,22 @@ export default function EnterpriseLeadsPage() {
                 <th className="py-3 px-4 text-right">Quick Contact</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[var(--nexa-border)] text-[var(--nexa-text-primary)]">
+            <tbody className="divide-y divide-nexa-border text-nexa-text-primary">
               {filtered.map((deal) => (
-                <tr key={deal.id} className="hover:bg-[var(--nexa-bg-base)]/50 transition-colors">
+                <tr key={deal.id} className="hover:bg-nexa-bg-base/50 transition-colors">
                   <td className="py-3.5 px-4">
                     <div className="font-bold text-xs">{deal.company}</div>
-                    <div className="font-mono text-[10px] text-[var(--nexa-text-muted)]">{deal.id}</div>
+                    <div className="font-mono text-[10px] text-nexa-text-faint">{deal.id}</div>
                   </td>
                   <td className="py-3.5 px-3">
                     <div className="font-semibold">{deal.contactName}</div>
-                    <div className="text-[10px] text-[var(--nexa-text-muted)]">{deal.title}</div>
+                    <div className="text-[10px] text-nexa-text-faint">{deal.title}</div>
                   </td>
                   <td className="py-3.5 px-3">
                     <div>{deal.locations}</div>
-                    <div className="text-[10px] font-bold text-[#1A56DB]">{deal.estimatedSeats}</div>
+                    <div className="text-[10px] font-bold text-nexa-brand">{deal.estimatedSeats}</div>
                   </td>
-                  <td className="py-3.5 px-3 font-bold text-emerald-600">{deal.dealValue}</td>
+                  <td className="py-3.5 px-3 font-bold font-mono text-emerald-500">{deal.dealValue}</td>
                   <td className="py-3.5 px-3">
                     <NexaBadge variant="brand">{deal.status}</NexaBadge>
                   </td>
@@ -175,13 +191,13 @@ export default function EnterpriseLeadsPage() {
                         href={`https://wa.me/${deal.phone.replace(/[^0-9]/g, "")}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950"
+                        className="p-1.5 rounded-full text-emerald-600 hover:bg-emerald-500/10 transition-colors"
                       >
                         <MessageSquare className="w-3.5 h-3.5" />
                       </a>
                       <a
                         href={`mailto:${deal.email}`}
-                        className="p-1.5 rounded-lg text-[#1A56DB] hover:bg-blue-50 dark:hover:bg-blue-950"
+                        className="p-1.5 rounded-full text-nexa-brand hover:bg-nexa-brand/10 transition-colors"
                       >
                         <Mail className="w-3.5 h-3.5" />
                       </a>

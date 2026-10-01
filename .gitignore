@@ -48,3 +48,6 @@ service_erp/service_erp
 .neon/
 .agents/
 skills-lock.json
+
+# Local documentation & credentials
+users.md

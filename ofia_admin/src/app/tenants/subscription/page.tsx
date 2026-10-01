@@ -4,6 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SuperAdminShell, SubNavItem } from "@/components/admin/SuperAdminShell";
+import { AdminStatGrid, AdminStatItem } from "@/components/admin/AdminStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaModal } from "@/components/nexa/NexaModal";
@@ -566,59 +567,47 @@ function SubscriptionManagementContent() {
     >
       <div className="space-y-6">
         {/* SUBSCRIPTION METRICS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#1A56DB]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Contracted Monthly MRR</span>
-              <DollarSign className="w-4 h-4 text-[#1A56DB]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              ₦{(totalMRR / 1000000).toFixed(2)}M
-            </div>
-            <div className="text-[11px] text-[#1A56DB] font-bold">
-              100% Billing Reconciled
-            </div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#0E9F6E]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Paid Subscriptions</span>
-              <CheckCircle2 className="w-4 h-4 text-[#0E9F6E]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              {activeTenantsCount - trialingCount} Orgs
-            </div>
-            <div className="text-[11px] text-[#0E9F6E] font-bold">
-              {trialingCount} Free Trials Active
-            </div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#9061F9]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Platform Lead Quotas</span>
-              <Building2 className="w-4 h-4 text-[#9061F9]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              {tenants.reduce((acc, t) => acc + (t.leadsLimit || 0), 0).toLocaleString()}
-            </div>
-            <div className="text-[11px] text-[#9061F9] font-bold">
-              Monthly Managed Enriched Leads
-            </div>
-          </NexaCard>
-
-          <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#C88A3A]">
-            <div className="flex items-center justify-between text-xs text-[var(--nexa-text-muted)]">
-              <span className="font-semibold">Active Campaigns Capacity</span>
-              <Zap className="w-4 h-4 text-[#C88A3A]" />
-            </div>
-            <div className="text-2xl font-black text-[var(--nexa-text-primary)]">
-              {tenants.reduce((acc, t) => acc + (t.campaignsLimit || 0), 0)} Total
-            </div>
-            <div className="text-[11px] text-[#C88A3A] font-bold">
-              Across All Enterprise Workspaces
-            </div>
-          </NexaCard>
-        </div>
+        <AdminStatGrid
+          stats={[
+            {
+              label: "Contracted Monthly MRR",
+              value: `₦${(totalMRR / 1000000).toFixed(2)}M`,
+              change: "100% Reconciled",
+              trend: "up",
+              changeType: "success",
+              icon: <DollarSign className="w-5 h-5 text-emerald-500" />,
+              sub: "Across all active tenants",
+            },
+            {
+              label: "Paid Subscriptions",
+              value: `${activeTenantsCount - trialingCount} Orgs`,
+              change: `${trialingCount} Trials`,
+              trend: "up",
+              changeType: "info",
+              icon: <CheckCircle2 className="w-5 h-5 text-blue-500" />,
+              sub: "Active billing accounts",
+            },
+            {
+              label: "Platform Lead Quotas",
+              value: tenants.reduce((acc, t) => acc + (t.leadsLimit || 0), 0).toLocaleString(),
+              change: "Enriched",
+              trend: "up",
+              changeType: "purple",
+              icon: <Building2 className="w-5 h-5 text-purple-500" />,
+              sub: "Monthly managed lead volume",
+            },
+            {
+              label: "Active Campaigns Capacity",
+              value: `${tenants.reduce((acc, t) => acc + (t.campaignsLimit || 0), 0)} Total`,
+              change: "Enterprise Ready",
+              trend: "up",
+              changeType: "warning",
+              icon: <Zap className="w-5 h-5 text-amber-500" />,
+              sub: "Across all enterprise workspaces",
+            },
+          ]}
+          columns={4}
+        />
 
         {/* 3-COLUMN PLAN CATALOG SHOWCASE WITH PRODUCT FILTER */}
         <div className="space-y-4">

@@ -1076,25 +1076,38 @@ export default function AdminOverviewPage() {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#1A56DB]">
-                <span className="text-xs text-[var(--nexa-text-muted)]">Managed Deliverability</span>
-                <div className="text-xl font-bold text-[var(--nexa-text-primary)]">99.4% Inbox Rate</div>
-                <p className="text-[11px] text-[var(--nexa-text-muted)]">Zero spam traps triggered</p>
-              </NexaCard>
-
-              <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#0E9F6E]">
-                <span className="text-xs text-[var(--nexa-text-muted)]">Daily Platform Pool</span>
-                <div className="text-xl font-bold text-[var(--nexa-text-primary)]">50,000 Emails / Day</div>
-                <p className="text-[11px] text-[#0E9F6E] font-semibold">Active relay load: 14%</p>
-              </NexaCard>
-
-              <NexaCard variant="glass" padding="md" className="space-y-2 border-l-4 border-l-[#C88A3A]">
-                <span className="text-xs text-[var(--nexa-text-muted)]">Active Relays</span>
-                <div className="text-xl font-bold text-[var(--nexa-text-primary)]">Brevo · Resend · SES</div>
-                <p className="text-[11px] text-[var(--nexa-text-muted)]">Auto-failover enabled</p>
-              </NexaCard>
-            </div>
+            <AdminStatGrid
+              stats={[
+                {
+                  label: "Managed Deliverability",
+                  value: "99.4% Inbox Rate",
+                  change: "Zero Spam Traps",
+                  trend: "up",
+                  changeType: "success",
+                  icon: <CheckCircle2 className="w-5 h-5 text-emerald-500" />,
+                  sub: "Zero spam traps triggered across all pools",
+                },
+                {
+                  label: "Daily Platform Pool",
+                  value: "50,000 Emails / Day",
+                  change: "14% Relay Load",
+                  trend: "up",
+                  changeType: "info",
+                  icon: <Send className="w-5 h-5 text-blue-500" />,
+                  sub: "Active relay load across domains",
+                },
+                {
+                  label: "Active Relays",
+                  value: "Brevo · Resend · SES",
+                  change: "Auto-Failover",
+                  trend: "up",
+                  changeType: "warning",
+                  icon: <Server className="w-5 h-5 text-amber-500" />,
+                  sub: "Multi-provider automatic failover active",
+                },
+              ]}
+              columns={3}
+            />
           </div>
         )}
 

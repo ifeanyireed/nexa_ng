@@ -9,7 +9,7 @@ export interface AdminStatItem {
   value: string | number;
   change?: string;
   trend?: "up" | "down" | "neutral";
-  changeType?: "success" | "warning" | "danger" | "info" | "neutral";
+  changeType?: "success" | "warning" | "danger" | "info" | "purple" | "neutral";
   icon: React.ReactNode;
   sub?: string;
   iconBg?: string;
@@ -38,7 +38,12 @@ export function AdminStatGrid({
           className="p-6 relative overflow-hidden group hover:border-nexa-brand/30 transition-all rounded-3xl"
         >
           <div className="flex items-center justify-between mb-4">
-            <div className="w-11 h-11 rounded-2xl bg-nexa-brand/10 text-nexa-brand flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div
+              className={cn(
+                "w-11 h-11 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform",
+                kpi.iconBg || "bg-nexa-brand/10 text-nexa-brand"
+              )}
+            >
               {kpi.icon}
             </div>
             {kpi.change && (
@@ -49,6 +54,10 @@ export function AdminStatGrid({
                     ? "bg-red-500/10 text-red-500 border-red-500/20"
                     : kpi.changeType === "warning"
                     ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                    : kpi.changeType === "info"
+                    ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                    : kpi.changeType === "purple"
+                    ? "bg-purple-500/10 text-purple-500 border-purple-500/20"
                     : "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
                 )}
               >
@@ -78,7 +87,12 @@ export function AdminStatCard(props: AdminStatItem) {
       className="p-6 relative overflow-hidden group hover:border-nexa-brand/30 transition-all rounded-3xl"
     >
       <div className="flex items-center justify-between mb-4">
-        <div className="w-11 h-11 rounded-2xl bg-nexa-brand/10 text-nexa-brand flex items-center justify-center group-hover:scale-110 transition-transform">
+        <div
+          className={cn(
+            "w-11 h-11 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform",
+            props.iconBg || "bg-nexa-brand/10 text-nexa-brand"
+          )}
+        >
           {props.icon}
         </div>
         {props.change && (
@@ -89,6 +103,10 @@ export function AdminStatCard(props: AdminStatItem) {
                 ? "bg-red-500/10 text-red-500 border-red-500/20"
                 : props.changeType === "warning"
                 ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                : props.changeType === "info"
+                ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                : props.changeType === "purple"
+                ? "bg-purple-500/10 text-purple-500 border-purple-500/20"
                 : "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
             )}
           >

@@ -69,6 +69,8 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
   // 2. Client-mounted host, subdomain, and tenant detection
   const [mountedHostTenant, setMountedHostTenant] = useState<string>(rawPropSlug || "");
   const [clientLogo, setClientLogo] = useState<string>("");
+  const [clientHeroTitle, setClientHeroTitle] = useState<string>("");
+  const [clientHeroSubtitle, setClientHeroSubtitle] = useState<string>("");
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -85,6 +87,24 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
         "";
       if (savedLogo) {
         setClientLogo(savedLogo);
+      }
+
+      const savedHeroTitle =
+        (activeSlug ? localStorage.getItem("tenant_hero_title_" + activeSlug) : null) ||
+        localStorage.getItem("nexa_tenant_hero_title") ||
+        (activeSlug ? DEFAULT_TENANT_BRANDING[activeSlug]?.heroTitle : null) ||
+        "";
+      if (savedHeroTitle) {
+        setClientHeroTitle(savedHeroTitle);
+      }
+
+      const savedHeroSubtitle =
+        (activeSlug ? localStorage.getItem("tenant_hero_subtitle_" + activeSlug) : null) ||
+        localStorage.getItem("nexa_tenant_hero_subtitle") ||
+        (activeSlug ? DEFAULT_TENANT_BRANDING[activeSlug]?.heroSubtitle : null) ||
+        "";
+      if (savedHeroSubtitle) {
+        setClientHeroSubtitle(savedHeroSubtitle);
       }
     }
   }, [rawPropSlug]);
@@ -173,8 +193,9 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
   const isDarkBg = Boolean(loginImage && imageBrightness === "dark");
 
   React.useEffect(() => {
-    if (typeof document !== "undefined" && isCustomTenant && tenantName) {
-      document.title = `${tenantName} — Sign In | Ofia ERP`;
+    if (typeof document !== "undefined") {
+      const activeName = (isCustomTenant && tenantName) ? tenantName : (tenantName || "Ofia ERP");
+      document.title = `${activeName} — Login | Ofia ERP`;
     }
   }, [isCustomTenant, tenantName]);
 
@@ -320,24 +341,44 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
     router.push(route);
   };
 
-  const heroTitle = resolvedSlug.toLowerCase().includes("newera")
-    ? "Powering next-generation transport, logistics & fleet intelligence."
-    : isCustomTenant
-    ? `Unified enterprise workspace for ${tenantName}.`
-    : "Intelligent enterprise resource planning for modern business.";
+  const heroTitle =
+    activeTenant?.heroTitle ||
+    clientHeroTitle ||
+    (typeof window !== "undefined"
+      ? (resolvedSlug ? localStorage.getItem("tenant_hero_title_" + resolvedSlug) : null) ||
+        (activeTenant?.id ? localStorage.getItem("tenant_hero_title_" + activeTenant.id) : null) ||
+        localStorage.getItem("nexa_tenant_hero_title")
+      : null) ||
+    DEFAULT_TENANT_BRANDING[resolvedSlug]?.heroTitle ||
+    DEFAULT_TENANT_BRANDING[activeTenant?.id || ""]?.heroTitle ||
+    (resolvedSlug.toLowerCase().includes("newera")
+      ? "Powering next-generation transport, logistics & fleet intelligence."
+      : isCustomTenant
+      ? `Unified enterprise workspace for ${tenantName}.`
+      : "Intelligent enterprise resource planning for modern business.");
 
-  const heroSubtitle = resolvedSlug.toLowerCase().includes("newera")
-    ? "Real-time zonal dispatch, fleet telemetry, manifest auditing, and ledger reconciliation in one synchronized ecosystem."
-    : isCustomTenant
-    ? `Streamline operations, financial accounting, inventory, and workforce workflows across ${tenantName}.`
-    : "Empower your teams with real-time operations, inventory distribution, point of sale, and ledger reconciliation.";
+  const heroSubtitle =
+    activeTenant?.heroSubtitle ||
+    clientHeroSubtitle ||
+    (typeof window !== "undefined"
+      ? (resolvedSlug ? localStorage.getItem("tenant_hero_subtitle_" + resolvedSlug) : null) ||
+        (activeTenant?.id ? localStorage.getItem("tenant_hero_subtitle_" + activeTenant.id) : null) ||
+        localStorage.getItem("nexa_tenant_hero_subtitle")
+      : null) ||
+    DEFAULT_TENANT_BRANDING[resolvedSlug]?.heroSubtitle ||
+    DEFAULT_TENANT_BRANDING[activeTenant?.id || ""]?.heroSubtitle ||
+    (resolvedSlug.toLowerCase().includes("newera")
+      ? "Real-time zonal dispatch, fleet telemetry, manifest auditing, and ledger reconciliation in one synchronized ecosystem."
+      : isCustomTenant
+      ? `Streamline operations, financial accounting, inventory, and workforce workflows across ${tenantName}.`
+      : "Empower your teams with real-time operations, inventory distribution, point of sale, and ledger reconciliation.");
 
   return (
     <div className="min-h-screen w-full flex flex-col lg:flex-row bg-white text-slate-900 overflow-x-hidden">
       {/* ======================================================== */}
-      {/* LEFT HALF: HERO BRANDING & WALLPAPER (50% on desktop)    */}
+      {/* LEFT: HERO BRANDING & WALLPAPER (Expanded Hero Area)     */}
       {/* ======================================================== */}
-      <div className="relative w-full lg:w-1/2 min-h-[360px] lg:min-h-screen flex flex-col justify-between p-6 sm:p-10 lg:p-14 overflow-hidden bg-slate-950 text-white select-none">
+      <div className="relative w-full lg:w-[58%] xl:w-[62%] min-h-[380px] lg:min-h-screen flex flex-col justify-between p-6 sm:p-10 lg:p-14 xl:p-16 overflow-hidden bg-slate-950 text-white select-none">
         {/* Background Wallpaper Image */}
         {loginImage ? (
           <div className="absolute inset-0 z-0">
@@ -362,27 +403,25 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
         <div className="relative z-10 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
             {tenantLogo ? (
-              <div className="p-2 px-3 rounded-2xl bg-white/95 backdrop-blur-md shadow-lg border border-white/20 inline-flex items-center justify-center shrink-0">
-                <img
-                  src={tenantLogo}
-                  alt={`${tenantName} Logo`}
-                  className="h-8 sm:h-9 w-auto max-w-[150px] object-contain"
-                  onError={(e) => {
-                    const fallback =
-                      DEFAULT_TENANT_BRANDING[resolvedSlug]?.logo ||
-                      (resolvedSlug.toLowerCase().includes("newera")
-                        ? "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png"
-                        : "");
-                    const target = e.target as HTMLImageElement;
-                    if (fallback && target.src !== fallback) {
-                      target.src = fallback;
-                    } else if (!isCustomTenant) {
-                      target.src =
-                        "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
-                    }
-                  }}
-                />
-              </div>
+              <img
+                src={tenantLogo}
+                alt={`${tenantName} Logo`}
+                className="h-9 sm:h-10 w-auto max-w-[170px] object-contain shrink-0 drop-shadow-md"
+                onError={(e) => {
+                  const fallback =
+                    DEFAULT_TENANT_BRANDING[resolvedSlug]?.logo ||
+                    (resolvedSlug.toLowerCase().includes("newera")
+                      ? "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png"
+                      : "");
+                  const target = e.target as HTMLImageElement;
+                  if (fallback && target.src !== fallback) {
+                    target.src = fallback;
+                  } else if (!isCustomTenant) {
+                    target.src =
+                      "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
+                  }
+                }}
+              />
             ) : isCustomTenant ? (
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm text-white shrink-0 shadow-md border"
@@ -478,17 +517,17 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
       </div>
 
       {/* ======================================================== */}
-      {/* RIGHT HALF: LOGIN FORM OVER CLEAN WHITE BACKGROUND (50%) */}
+      {/* RIGHT: COMPACT LOGIN FORM OVER CLEAN WHITE BACKGROUND     */}
       {/* ======================================================== */}
-      <div className="w-full lg:w-1/2 min-h-screen flex flex-col justify-between p-6 sm:p-10 lg:p-14 bg-white text-slate-900">
+      <div className="w-full lg:w-[42%] xl:w-[38%] min-h-screen flex flex-col justify-between p-6 sm:p-8 lg:p-10 xl:p-12 bg-white text-slate-900 shrink-0">
         {/* Right Top Bar: Switch tenant / Register workspace */}
         <div className="flex items-center justify-end gap-2 text-xs">
-          <span className="text-slate-500 font-medium">
+          <span className="text-slate-500 font-medium text-[11px] sm:text-xs">
             {isCustomTenant ? "Need another organization?" : "Don't have an enterprise workspace?"}
           </span>
           <Link
             href="/join/register"
-            className="font-bold hover:underline px-3 py-1.5 rounded-full transition-all text-sm"
+            className="font-bold hover:underline px-2.5 py-1 rounded-full transition-all text-xs"
             style={{ color: primaryColor }}
           >
             Setup Workspace →
@@ -496,7 +535,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
         </div>
 
         {/* Right Center: Centered Login Form */}
-        <div className="my-auto w-full max-w-md mx-auto py-8 sm:py-12">
+        <div className="my-auto w-full max-w-sm sm:max-w-md mx-auto py-6 sm:py-10">
           {/* Tenant Logo prominently displayed over the crisp white background */}
           <div className="mb-8">
             {tenantLogo ? (
@@ -643,7 +682,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
                 <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  <span>Authenticate & Enter Workspace</span>
+                  <span>Login</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}

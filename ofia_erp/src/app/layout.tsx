@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/nexa/ThemeProvider";
 import { NicheProvider } from "@/components/nexa/NicheContext";
 import { AuthProvider } from "@/components/nexa/AuthContext";
 import { LocationProvider } from "@/components/nexa/LocationContext";
+import { TenantMetaTitleSync } from "@/components/nexa/TenantMetaTitleSync";
 
 const dropa = localFont({
   src: "../fonts/Dropa-Regular.woff2",
@@ -65,7 +66,10 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <LocationProvider>
-              <NicheProvider>{children}</NicheProvider>
+              <NicheProvider>
+                <TenantMetaTitleSync />
+                {children}
+              </NicheProvider>
             </LocationProvider>
           </AuthProvider>
         </ThemeProvider>

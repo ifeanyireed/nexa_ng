@@ -403,6 +403,47 @@ export function ErpAdminShell({
     };
   }, [user, pathname]);
 
+  // Synchronize document.title with Tenant Name First across all ERP pages
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      const activeTenantName =
+        tenantName ||
+        (typeof window !== "undefined"
+          ? localStorage.getItem("nexa_tenant_name") ||
+            localStorage.getItem("tenant_name") ||
+            ""
+          : "") ||
+        "Ofia ERP";
+
+      let pageHeading = title;
+      if (!pageHeading) {
+        if (pathname.includes("/admin/shop/inventory")) pageHeading = "Inventory Management";
+        else if (pathname.includes("/admin/shop/pos")) pageHeading = "Point of Sale (POS)";
+        else if (pathname.includes("/admin/shop/referrals")) pageHeading = "Referrals & Rewards";
+        else if (pathname.includes("/admin/shop")) pageHeading = "Shop & Retail";
+        else if (pathname.includes("/admin/logistics")) pageHeading = "Logistics & Fleet Dispatch";
+        else if (pathname.includes("/admin/access-control")) pageHeading = "Access Control & RBAC";
+        else if (pathname.includes("/admin/users")) pageHeading = "Staff Directory & Roles";
+        else if (pathname.includes("/admin/ai")) pageHeading = "AI Swarm & Operations";
+        else if (pathname.includes("/admin/marketplace")) pageHeading = "Marketplace & Compass";
+        else if (pathname.startsWith("/erp/accountant")) pageHeading = "Finance & Accounting";
+        else if (pathname.startsWith("/erp/hr")) pageHeading = "HR & Appraisals";
+        else if (pathname.startsWith("/erp/md")) pageHeading = "Managing Director Command";
+        else if (pathname.startsWith("/erp/manager")) pageHeading = "Line Manager Portal";
+        else if (pathname.startsWith("/erp/employee")) pageHeading = "Employee Workspace";
+        else if (pathname.startsWith("/tenant/settings")) pageHeading = "Workspace Settings";
+        else if (pathname.startsWith("/tenant/billing")) pageHeading = "Billing & Subscriptions";
+        else if (pathname.startsWith("/tenant/team")) pageHeading = "Team Members";
+        else if (pathname.startsWith("/tenant/usage")) pageHeading = "Platform Usage";
+        else if (pathname === "/erp/admin" || pathname === "/erp") pageHeading = "Executive Command Center";
+        else if (originPortal?.title) pageHeading = originPortal.title;
+        else pageHeading = "Enterprise Workspace";
+      }
+
+      document.title = `${activeTenantName} — ${pageHeading} | Ofia ERP`;
+    }
+  }, [tenantName, title, pathname, originPortal]);
+
   const notifications = [
     { id: "1", title: "New AI Lead Qualified", message: "Adeyemi from Lagos verified interest in ERP Enterprise.", type: "AI", time: "2m ago", isRead: false },
     { id: "2", title: "Low Stock Alert: SKU-8492", message: "Solar Inverter 5kVa down to 3 units in Ikeja Depot.", type: "IMS", time: "14m ago", isRead: false },
@@ -608,7 +649,7 @@ export function ErpAdminShell({
               <img
                 src={tenantLogo || "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"}
                 alt={tenantName || "Ofia ERP"}
-                className="w-8 h-8 rounded-lg object-contain shrink-0"
+                className="w-8 h-8 object-contain shrink-0"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src =
                     "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
@@ -634,7 +675,7 @@ export function ErpAdminShell({
             <img
               src={tenantLogo || "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"}
               alt={tenantName || "Ofia ERP"}
-              className="w-8 h-8 rounded-lg object-contain shrink-0 mx-auto"
+              className="w-8 h-8 object-contain shrink-0 mx-auto"
               onError={(e) => {
                 (e.target as HTMLImageElement).src =
                   "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";

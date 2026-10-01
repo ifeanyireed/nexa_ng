@@ -14,6 +14,7 @@ export default function ManagerDashboard() {
   const router = useRouter();
   const { reviews, users, cycles } = useERPStore();
   const [currentUser, setCurrentUser] = useState<User>(() => getSignedInERPUser(users));
+  const [selectedCycleId, setSelectedCycleId] = useState<string>("ACTIVE");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -21,6 +22,9 @@ export default function ManagerDashboard() {
       setCurrentUser(active);
     }
   }, [users]);
+
+  const activeCycle = cycles.find((c) => c.status === "Active") || cycles[0];
+  const effectiveCycleId = selectedCycleId === "ALL" ? null : (selectedCycleId === "ACTIVE" ? activeCycle?.id : selectedCycleId);
 
   // Filter reviews of employees who report to this manager
   const reportingEmployees = users.filter((u) => {
@@ -32,8 +36,12 @@ export default function ManagerDashboard() {
     return matchesManagerName || matchesManagerId || matchesDept || isLeadership;
   });
 
-  const teamReviews = reviews.filter(r =>
+  const allTeamReviews = reviews.filter(r =>
     reportingEmployees.some(u => u.id === r.employeeId || (u.name && r.employeeName && u.name.toLowerCase().trim() === r.employeeName.toLowerCase().trim()))
+  );
+
+  const teamReviews = allTeamReviews.filter(r =>
+    !effectiveCycleId || r.cycleId === effectiveCycleId
   );
 
   const pendingApprovals = teamReviews.filter(r => r.status === "Submitted");
@@ -62,6 +70,8 @@ export default function ManagerDashboard() {
         return <span className="bg-emerald-100 text-emerald-700 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase">Completed</span>;
       case "Returned":
         return <span className="bg-red-100 text-red-700 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase">Revision Requested</span>;
+      case "Closed":
+        return <span className="bg-slate-100 text-slate-500 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase">Closed</span>;
       default:
         return <span className="bg-gray-100 text-gray-700 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase">{status}</span>;
     }
@@ -71,6 +81,24 @@ export default function ManagerDashboard() {
     <BusinessShell
       title={`Line Manager Desk — ${currentUser.name}`}
       subtitle={`${currentUser.department} • Team self-appraisal submissions, scoring verification, and performance feedback.`}
+      action={
+        <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-full px-3 py-1.5 shadow-xs">
+          <span className="text-[11px] font-bold text-slate-500">Cycle:</span>
+          <select
+            value={selectedCycleId}
+            onChange={(e) => setSelectedCycleId(e.target.value)}
+            className="bg-transparent text-xs font-bold text-slate-800 outline-none cursor-pointer"
+          >
+            <option value="ACTIVE">Active Cycle ({activeCycle ? activeCycle.name.split(" ")[0] : "None"})</option>
+            {cycles.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name} ({c.status})
+              </option>
+            ))}
+            <option value="ALL">All Cycles</option>
+          </select>
+        </div>
+      }
     >
       <div className="space-y-6">
         
@@ -137,7 +165,7 @@ export default function ManagerDashboard() {
                         </td>
                         <td className="py-4">
                           <button
-                            onClick={() => router.push(`/erp/manager/review/detail?employeeId=${rev.employeeId}`)}
+                            onClick={() => router.push(`/erp/manager/review/detail?id=${rev.id}&cycleId=${rev.cycleId}&employeeId=${rev.employeeId}`)}
                             className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-all shadow-sm cursor-pointer"
                           >
                             Evaluate Performance
@@ -177,8 +205,8 @@ export default function ManagerDashboard() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {reportingEmployees.map((emp) => {
-                  const cycle = cycles.find(c => c.status === "Active");
-                  const rev = findReviewForUser(teamReviews, emp, cycle?.id) || findReviewForUser(reviews, emp, cycle?.id);
+                  const targetCycleId = effectiveCycleId || activeCycle?.id;
+                  const rev = findReviewForUser(teamReviews, emp, targetCycleId) || findReviewForUser(reviews, emp, targetCycleId);
                   return (
                     <tr key={emp.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="py-4 flex items-center gap-3">
@@ -202,7 +230,7 @@ export default function ManagerDashboard() {
                       <td className="py-4">
                         {rev ? (
                           <button
-                            onClick={() => router.push(rev.status === "Submitted" ? `/erp/manager/review/detail?employeeId=${emp.id}` : `/erp/employee/reviews/detail?id=${rev.id}`)}
+                            onClick={() => router.push(rev.status === "Submitted" ? `/erp/manager/review/detail?id=${rev.id}&cycleId=${rev.cycleId}&employeeId=${emp.id}` : `/erp/employee/reviews/detail?id=${rev.id}`)}
                             className="px-3 py-1.5 bg-gray-50 hover:bg-gray-100 text-slate-650 font-bold rounded-xl text-xs transition-all border border-gray-200 cursor-pointer"
                           >
                             View

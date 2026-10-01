@@ -68,8 +68,8 @@ export default function TenantSettingsPage() {
       setPrimaryColor(activeTenant.primaryColor || "#1A56DB");
       setSecondaryColor(activeTenant.secondaryColor || "#0E9F6E");
       setCustomDomain(activeTenant.domain || "");
-      setOwnerName(activeTenant.ownerName || savedName || user?.name || "Ifeanyi Felix");
-      setOwnerEmail(activeTenant.ownerEmail || savedEmail || user?.email || "ifeanyi.ibeh@neweratransports.com");
+      setOwnerName(activeTenant.ownerName || savedName || user?.name || "Workspace Admin");
+      setOwnerEmail(activeTenant.ownerEmail || savedEmail || user?.email || (activeTenant.slug ? `admin@${activeTenant.slug}.ofia.ng` : ""));
     }
   }, [activeTenant, user]);
 

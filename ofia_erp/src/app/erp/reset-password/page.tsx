@@ -229,7 +229,7 @@ function ResetPasswordForm() {
               <label className="block text-[9px] font-extrabold text-slate-300 md:text-slate-550 uppercase mb-1 tracking-wider">Enter your Email Address</label>
               <input
                 type="email"
-                placeholder="e.g. employee@neweratransports.com"
+                placeholder="e.g. employee@yourcompany.com"
                 value={emailInput}
                 onChange={(e) => { setEmailInput(e.target.value); setStatusMessage(null); }}
                 required

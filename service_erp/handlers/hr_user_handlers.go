@@ -109,21 +109,28 @@ func matchesTenant(u *User, tenantSlug string) bool {
 	if tenantSlug == "" || tenantSlug == "all" {
 		return true
 	}
+	if u.TenantSlug != "" && strings.EqualFold(u.TenantSlug, tenantSlug) {
+		return true
+	}
 	comp := ""
 	if u.Company != nil {
 		comp = strings.ToLower(strings.TrimSpace(*u.Company))
 	}
 	email := strings.ToLower(strings.TrimSpace(u.Email))
 
-	if tenantSlug == "neweratransports" || tenantSlug == "nets" || tenantSlug == "new-era-transports" {
-		return comp == "nets" || strings.Contains(comp, "new era") || strings.Contains(email, "@neweratransports.com") || comp == ""
-	}
-
 	cleanSlug := strings.ReplaceAll(tenantSlug, "-", "")
+	cleanSlug = strings.ReplaceAll(cleanSlug, "_", "")
+	cleanSlug = strings.ReplaceAll(cleanSlug, " ", "")
+
 	cleanComp := strings.ReplaceAll(comp, "-", "")
+	cleanComp = strings.ReplaceAll(cleanComp, "_", "")
 	cleanComp = strings.ReplaceAll(cleanComp, " ", "")
 
-	return strings.Contains(cleanComp, cleanSlug) || strings.Contains(email, "@"+tenantSlug) || strings.Contains(email, cleanSlug)
+	if cleanComp != "" && cleanSlug != "" && (strings.Contains(cleanComp, cleanSlug) || strings.Contains(cleanSlug, cleanComp)) {
+		return true
+	}
+
+	return strings.Contains(email, "@"+tenantSlug) || (cleanSlug != "" && strings.Contains(email, cleanSlug))
 }
 
 func HandleUsers(w http.ResponseWriter, r *http.Request) {
@@ -135,9 +142,13 @@ func HandleUsers(w http.ResponseWriter, r *http.Request) {
 			if db != nil {
 				var u User
 				var ratingTrend sql.NullString
-				err := db.QueryRow(`SELECT id, name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" WHERE id = $1`, id).
-					Scan(&u.ID, &u.Name, &u.Email, &u.Role, &u.Department, &u.Avatar, &u.ManagerName, &u.ManagerID, &ratingTrend, &u.Designation, &u.GradeLevel, &u.EmploymentDate, &u.Company, &u.Location, &u.Password)
+				var tSlug sql.NullString
+				err := db.QueryRow(`SELECT id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" WHERE id = $1`, id).
+					Scan(&u.ID, &tSlug, &u.Name, &u.Email, &u.Role, &u.Department, &u.Avatar, &u.ManagerName, &u.ManagerID, &ratingTrend, &u.Designation, &u.GradeLevel, &u.EmploymentDate, &u.Company, &u.Location, &u.Password)
 				if err == nil {
+					if tSlug.Valid {
+						u.TenantSlug = tSlug.String
+					}
 					if ratingTrend.Valid && ratingTrend.String != "" {
 						raw := json.RawMessage(ratingTrend.String)
 						u.RatingTrend = &raw
@@ -167,11 +178,9 @@ func HandleUsers(w http.ResponseWriter, r *http.Request) {
 			var args []interface{}
 
 			if tenantSlug == "" || tenantSlug == "all" {
-				query = `SELECT id, name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" ORDER BY name ASC`
-			} else if tenantSlug == "neweratransports" || tenantSlug == "nets" || tenantSlug == "new-era-transports" {
-				query = `SELECT id, name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" WHERE (company = 'NETS' OR LOWER(company) LIKE '%new era%' OR LOWER(email) LIKE '%@neweratransports.com%' OR company IS NULL OR company = '') ORDER BY name ASC`
+				query = `SELECT id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" ORDER BY name ASC`
 			} else {
-				query = `SELECT id, name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" WHERE (LOWER(company) = $1 OR LOWER(company) LIKE $2 OR LOWER(email) LIKE $3) ORDER BY name ASC`
+				query = `SELECT id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" WHERE ("tenantSlug" = $1 OR LOWER(company) = $1 OR LOWER(company) LIKE $2 OR LOWER(email) LIKE $3) ORDER BY name ASC`
 				args = append(args, tenantSlug, "%"+tenantSlug+"%", "%@"+tenantSlug+"%")
 			}
 
@@ -182,7 +191,11 @@ func HandleUsers(w http.ResponseWriter, r *http.Request) {
 				for rows.Next() {
 					var u User
 					var ratingTrend sql.NullString
-					if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.Role, &u.Department, &u.Avatar, &u.ManagerName, &u.ManagerID, &ratingTrend, &u.Designation, &u.GradeLevel, &u.EmploymentDate, &u.Company, &u.Location, &u.Password); err == nil {
+					var tSlug sql.NullString
+					if err := rows.Scan(&u.ID, &tSlug, &u.Name, &u.Email, &u.Role, &u.Department, &u.Avatar, &u.ManagerName, &u.ManagerID, &ratingTrend, &u.Designation, &u.GradeLevel, &u.EmploymentDate, &u.Company, &u.Location, &u.Password); err == nil {
+						if tSlug.Valid {
+							u.TenantSlug = tSlug.String
+						}
 						if ratingTrend.Valid && ratingTrend.String != "" {
 							raw := json.RawMessage(ratingTrend.String)
 							u.RatingTrend = &raw
@@ -190,7 +203,7 @@ func HandleUsers(w http.ResponseWriter, r *http.Request) {
 						users = append(users, u)
 					}
 				}
-				if len(users) > 0 || (tenantSlug != "" && tenantSlug != "neweratransports" && tenantSlug != "nets") {
+				if len(users) > 0 {
 					json.NewEncoder(w).Encode(users)
 					return
 				}
@@ -221,13 +234,11 @@ func HandleUsers(w http.ResponseWriter, r *http.Request) {
 		}
 
 		tenantSlug := getTenantFilter(r)
+		if tenantSlug == "" {
+			tenantSlug = u.TenantSlug
+		}
 		if (u.Company == nil || *u.Company == "") && tenantSlug != "" {
-			if tenantSlug == "neweratransports" {
-				c := "New Era Transports"
-				u.Company = &c
-			} else {
-				u.Company = &tenantSlug
-			}
+			u.Company = &tenantSlug
 		}
 
 		var ratingTrendStr *string
@@ -237,14 +248,15 @@ func HandleUsers(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if db != nil {
-			_, err := db.Exec(`INSERT INTO "User" (id, name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password) 
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+			_, err := db.Exec(`INSERT INTO "User" (id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password) 
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 				ON CONFLICT (id) DO UPDATE SET 
+				"tenantSlug" = CASE WHEN EXCLUDED."tenantSlug" != '' THEN EXCLUDED."tenantSlug" ELSE "User"."tenantSlug" END,
 				name = EXCLUDED.name, email = EXCLUDED.email, role = EXCLUDED.role, department = EXCLUDED.department, 
 				avatar = EXCLUDED.avatar, "managerName" = EXCLUDED."managerName", "managerId" = EXCLUDED."managerId", "ratingTrend" = EXCLUDED."ratingTrend",
 				designation = EXCLUDED.designation, "gradeLevel" = EXCLUDED."gradeLevel", "employmentDate" = EXCLUDED."employmentDate",
 				company = EXCLUDED.company, location = EXCLUDED.location, password = EXCLUDED.password`,
-				u.ID, u.Name, u.Email, u.Role, u.Department, u.Avatar, u.ManagerName, u.ManagerID, ratingTrendStr, u.Designation, u.GradeLevel, u.EmploymentDate, u.Company, u.Location, u.Password)
+				u.ID, tenantSlug, u.Name, u.Email, u.Role, u.Department, u.Avatar, u.ManagerName, u.ManagerID, ratingTrendStr, u.Designation, u.GradeLevel, u.EmploymentDate, u.Company, u.Location, u.Password)
 
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)

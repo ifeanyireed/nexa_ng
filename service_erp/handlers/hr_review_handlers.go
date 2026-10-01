@@ -155,13 +155,13 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 			var err error
 			if employeeId != "" {
 				rows, err = db.Query(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", "updatedAt" FROM "PerformanceReview" WHERE "employeeId" = $1`, employeeId)
-			} else if tenantSlug == "" || tenantSlug == "all" || tenantSlug == "neweratransports" || tenantSlug == "nets" || tenantSlug == "new-era-transports" {
-				rows, err = db.Query(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", "updatedAt" FROM "PerformanceReview" WHERE "tenantSlug" = $1 OR "tenantSlug" = '' OR "tenantSlug" IS NULL`, tenantSlug)
+			} else if tenantSlug == "" || tenantSlug == "all" {
+				rows, err = db.Query(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", "updatedAt" FROM "PerformanceReview"`)
 			} else {
 				rows, err = db.Query(`SELECT r.id, r."employeeId", r."employeeName", r.department, r."cycleId", r."cycleName", r.status, r."employeeComments", r."managerComments", r."hrComments", r."improvementPlan", r."finalScore", r."objectivesJson", r."updatedAt" 
 					FROM "PerformanceReview" r
 					LEFT JOIN "User" u ON r."employeeId" = u.id
-					WHERE (LOWER(u.company) = $1 OR LOWER(u.company) LIKE $2 OR LOWER(u.email) LIKE $3 OR r."tenantSlug" = $1)`,
+					WHERE (LOWER(u.company) = $1 OR LOWER(u.company) LIKE $2 OR LOWER(u.email) LIKE $3 OR r."tenantSlug" = $1 OR r."tenantSlug" = '' OR r."tenantSlug" IS NULL)`,
 					tenantSlug, "%"+tenantSlug+"%", "%@"+tenantSlug+"%")
 			}
 

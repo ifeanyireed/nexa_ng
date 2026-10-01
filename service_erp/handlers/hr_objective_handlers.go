@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"net/http"
+	"strings"
 )
 
 func getFallbackObjectives() []Objective {
@@ -121,7 +122,7 @@ func HandleObjectives(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(objs)
 		return
 
-	} else if r.Method == http.MethodPost {
+	} else if r.Method == http.MethodPost || r.Method == http.MethodPut {
 		var o Objective
 		if err := json.NewDecoder(r.Body).Decode(&o); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -132,6 +133,10 @@ func HandleObjectives(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": "Incomplete parameters"})
 			return
+		}
+
+		if tenantSlug == "" && o.TenantSlug != "" {
+			tenantSlug = strings.ToLower(strings.TrimSpace(o.TenantSlug))
 		}
 
 		var deptsStr, descStr *string
@@ -174,7 +179,12 @@ func HandleObjectives(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if db != nil {
-			_, err := db.Exec(`DELETE FROM "Objective" WHERE id = $1 AND ("tenantSlug" = $2 OR "tenantSlug" = '' OR "tenantSlug" IS NULL)`, id, tenantSlug)
+			var err error
+			if tenantSlug != "" && tenantSlug != "all" {
+				_, err = db.Exec(`DELETE FROM "Objective" WHERE id = $1 AND ("tenantSlug" = $2 OR "tenantSlug" = '' OR "tenantSlug" IS NULL)`, id, tenantSlug)
+			} else {
+				_, err = db.Exec(`DELETE FROM "Objective" WHERE id = $1`, id)
+			}
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

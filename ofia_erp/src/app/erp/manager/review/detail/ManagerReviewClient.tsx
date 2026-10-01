@@ -26,8 +26,10 @@ const getCategoryBadgeStyle = (cat?: string) => {
 
 export default function ManagerReviewClient() {
   const router = useRouter();
-  const { reviews, users, updateReview } = useERPStore();
+  const { reviews, users, cycles, updateReview } = useERPStore();
 
+  const [reviewId, setReviewId] = useState<string>("");
+  const [cycleId, setCycleId] = useState<string>("");
   const [employeeId, setEmployeeId] = useState<string>("");
   const [review, setReview] = useState<PerformanceReview | null>(null);
   const [employee, setEmployee] = useState<User | null>(null);
@@ -36,31 +38,54 @@ export default function ManagerReviewClient() {
   const [improvementPlan, setImprovementPlan] = useState("");
 
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const id = searchParams.get("employeeId") || "";
-    setEmployeeId(id);
+    if (typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      setReviewId(searchParams.get("id") || "");
+      setCycleId(searchParams.get("cycleId") || "");
+      setEmployeeId(searchParams.get("employeeId") || "");
+    }
   }, []);
 
   useEffect(() => {
-    if (employeeId) {
-      if (reviews.length > 0) {
-        const activeCycleId = "CYC001"; // current active cycle
-        const foundReview = reviews.find(r => r.employeeId === employeeId && r.cycleId === activeCycleId);
-        if (foundReview) {
-          setReview(foundReview);
-          setObjectives(foundReview.objectives);
-          setManagerComments(foundReview.managerComments || "");
-          setImprovementPlan(foundReview.improvementPlan || "");
+    if (reviews.length > 0) {
+      let foundReview: PerformanceReview | undefined;
+      if (reviewId) {
+        foundReview = reviews.find(r => r.id === reviewId);
+      }
+      if (!foundReview && employeeId && cycleId) {
+        foundReview = reviews.find(r => r.employeeId === employeeId && r.cycleId === cycleId);
+      }
+      if (!foundReview && employeeId) {
+        const activeCycle = cycles.find(c => c.status === "Active");
+        if (activeCycle) {
+          foundReview = reviews.find(r => r.employeeId === employeeId && r.cycleId === activeCycle.id);
+        }
+        if (!foundReview) {
+          foundReview = reviews.find(r => r.employeeId === employeeId);
         }
       }
-      if (users.length > 0) {
-        const foundEmp = users.find(u => u.id === employeeId);
+
+      if (foundReview) {
+        setReview(foundReview);
+        setObjectives(foundReview.objectives || []);
+        setManagerComments(foundReview.managerComments || "");
+        setImprovementPlan(foundReview.improvementPlan || "");
+      }
+    }
+
+    if (users.length > 0) {
+      const targetEmpId = employeeId || review?.employeeId;
+      if (targetEmpId) {
+        const foundEmp = users.find(u => u.id === targetEmpId);
         if (foundEmp) {
           setEmployee(foundEmp);
         }
       }
     }
-  }, [reviews, users, employeeId]);
+  }, [reviews, users, cycles, reviewId, cycleId, employeeId, review?.employeeId]);
+
+  const reviewCycle = cycles.find(c => c.id === review?.cycleId);
+  const isClosed = review?.status === "Closed" || review?.status === "HR Approved" || (reviewCycle && reviewCycle.status === "Completed");
 
   if (!review || !employee) {
     return (
@@ -71,6 +96,7 @@ export default function ManagerReviewClient() {
   }
 
   const handleScoreChange = (originalIndex: number, score: number) => {
+    if (isClosed) return;
     const updated = [...objectives];
     updated[originalIndex].managerScore = score;
     setObjectives(updated);
@@ -86,6 +112,7 @@ export default function ManagerReviewClient() {
   };
 
   const handleFeedbackChange = (originalIndex: number, feedback: string) => {
+    if (isClosed) return;
     const updated = [...objectives];
     updated[originalIndex].managerFeedback = feedback;
     setObjectives(updated);
@@ -187,6 +214,7 @@ export default function ManagerReviewClient() {
   };
 
   const handleApprove = () => {
+    if (isClosed) return;
     // Validate manager scores are filled
     const missing = objectives.some(o => o.managerScore === undefined);
     if (missing) {
@@ -210,6 +238,7 @@ export default function ManagerReviewClient() {
   };
 
   const handleReturn = () => {
+    if (isClosed) return;
     if (!managerComments.trim()) {
       alert("Please provide return comments/feedback in the manager comments section.");
       return;
@@ -287,7 +316,8 @@ export default function ManagerReviewClient() {
               <select
                 value={obj.managerScore ?? ""}
                 onChange={(e) => handleScoreChange(originalIndex, Number(e.target.value))}
-                className="pl-3 pr-8 py-1.5 border border-gray-205 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white"
+                disabled={isClosed}
+                className={`pl-3 pr-8 py-1.5 border border-gray-205 rounded-lg text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-white ${isClosed ? "opacity-60 cursor-not-allowed bg-gray-50" : ""}`}
               >
                 <option value="">Select</option>
                 {isWorkObj ? (
@@ -318,7 +348,9 @@ export default function ManagerReviewClient() {
               placeholder="Provide manager guidance / evaluation feedback..."
               value={obj.managerFeedback || ""}
               onChange={(e) => handleFeedbackChange(originalIndex, e.target.value)}
+              disabled={isClosed}
               onBlur={() => {
+                if (isClosed) return;
                 const updatedReview: PerformanceReview = {
                   ...review,
                   objectives,
@@ -329,7 +361,7 @@ export default function ManagerReviewClient() {
                 updateReview(updatedReview);
               }}
               rows={2}
-              className="w-full px-3.5 py-2.5 bg-white border border-emerald-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-xs font-semibold"
+              className={`w-full px-3.5 py-2.5 bg-white border border-emerald-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-xs font-semibold ${isClosed ? "opacity-60 cursor-not-allowed bg-gray-50" : ""}`}
             />
           </div>
         </div>
@@ -368,6 +400,18 @@ export default function ManagerReviewClient() {
             </span>
           </div>
         </div>
+
+        {isClosed && (
+          <div className="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-2xl flex items-center gap-3 text-xs font-semibold">
+            <svg className="w-5 h-5 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div>
+              <p className="font-bold">Review Cycle Closed ({reviewCycle?.name || review.cycleId})</p>
+              <p className="text-amber-700 text-[11px]">This appraisal belongs to a completed cycle or has been finalized. Manager evaluations are locked in read-only mode.</p>
+            </div>
+          </div>
+        )}
 
         {/* WORK-RELATED OBJECTIVES SECTION */}
         <div className="flex flex-col gap-4">
@@ -420,7 +464,9 @@ export default function ManagerReviewClient() {
                 placeholder="Detail the goals and actions for improvement over the next review cycle..."
                 value={improvementPlan}
                 onChange={(e) => setImprovementPlan(e.target.value)}
+                disabled={isClosed}
                 onBlur={() => {
+                  if (isClosed) return;
                   const updatedReview: PerformanceReview = {
                     ...review,
                     objectives,
@@ -431,7 +477,7 @@ export default function ManagerReviewClient() {
                   updateReview(updatedReview);
                 }}
                 rows={3}
-                className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs"
+                className={`w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs ${isClosed ? "opacity-60 cursor-not-allowed bg-gray-50" : ""}`}
               />
             </div>
           </div>
@@ -442,7 +488,9 @@ export default function ManagerReviewClient() {
               placeholder="Provide a comprehensive evaluation of employee achievements, strengths, and areas requiring development. This comment will be visible to HR/MD audits and employee."
               value={managerComments}
               onChange={(e) => setManagerComments(e.target.value)}
+              disabled={isClosed}
               onBlur={() => {
+                if (isClosed) return;
                 const updatedReview: PerformanceReview = {
                   ...review,
                   objectives,
@@ -453,25 +501,33 @@ export default function ManagerReviewClient() {
                 updateReview(updatedReview);
               }}
               rows={3}
-              className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs"
+              className={`w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-xs ${isClosed ? "opacity-60 cursor-not-allowed bg-gray-50" : ""}`}
             />
           </div>
         </div>
 
         {/* Action buttons */}
         <div className="flex gap-4 items-center justify-end py-2">
-          <button
-            onClick={handleReturn}
-            className="px-6 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-xs transition-all border border-red-200"
-          >
-            Return for Correction
-          </button>
-          <button
-            onClick={handleApprove}
-            className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition-all"
-          >
-            Approve & Submit
-          </button>
+          {isClosed ? (
+            <span className="px-5 py-2.5 bg-slate-100 text-slate-500 font-bold rounded-xl text-xs">
+              Cycle Closed — Read Only
+            </span>
+          ) : (
+            <>
+              <button
+                onClick={handleReturn}
+                className="px-6 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-xs transition-all border border-red-200 cursor-pointer"
+              >
+                Return for Correction
+              </button>
+              <button
+                onClick={handleApprove}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs shadow-md transition-all cursor-pointer"
+              >
+                Approve & Submit
+              </button>
+            </>
+          )}
         </div>
       </div>
     </BusinessShell>

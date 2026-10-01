@@ -236,8 +236,30 @@ func EnsureHRTables() {
 		return
 	}
 
+	// 0. Ensure User table exists
+	_, _ = db.Exec(`CREATE TABLE IF NOT EXISTS "User" (
+		id varchar(191) NOT NULL,
+		"tenantSlug" varchar(191) NOT NULL DEFAULT '',
+		name varchar(191) NOT NULL,
+		email varchar(191) NOT NULL,
+		role varchar(50) NOT NULL DEFAULT 'employee',
+		department varchar(191) NOT NULL DEFAULT '',
+		avatar varchar(191) NOT NULL DEFAULT '/character1.jpg',
+		"managerName" varchar(191) DEFAULT NULL,
+		"managerId" varchar(191) DEFAULT NULL,
+		"ratingTrend" text DEFAULT NULL,
+		designation varchar(191) DEFAULT NULL,
+		"gradeLevel" varchar(191) DEFAULT NULL,
+		"employmentDate" varchar(191) DEFAULT NULL,
+		company varchar(191) DEFAULT NULL,
+		location varchar(191) DEFAULT NULL,
+		password varchar(191) DEFAULT NULL,
+		PRIMARY KEY (id)
+	);`)
+
 	// 1. Ensure User columns exist
 	cols := []string{
+		`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "tenantSlug" varchar(191) NOT NULL DEFAULT ''`,
 		`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "department" varchar(191) NOT NULL DEFAULT ''`,
 		`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "avatar" varchar(191) NOT NULL DEFAULT '/character1.jpg'`,
 		`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "managerName" varchar(191) DEFAULT NULL`,
@@ -307,5 +329,19 @@ func EnsureHRTables() {
 		"updatedAt" timestamp NOT NULL DEFAULT current_timestamp,
 		"improvementPlan" text DEFAULT NULL,
 		PRIMARY KEY (id)
+	);`)
+
+	// 5. Ensure Department table exists
+	_, _ = db.Exec(`CREATE TABLE IF NOT EXISTS "Department" (
+		"code" varchar(191) NOT NULL,
+		"name" varchar(191) NOT NULL,
+		"head" varchar(191) DEFAULT 'Pending Appointment',
+		"headCount" integer DEFAULT 1,
+		"budget" varchar(100) DEFAULT '₦10,000,000',
+		"costCenter" varchar(100) DEFAULT 'CC-601',
+		"tenantSlug" varchar(191) NOT NULL DEFAULT '',
+		"createdAt" timestamptz DEFAULT CURRENT_TIMESTAMP,
+		"updatedAt" timestamptz DEFAULT CURRENT_TIMESTAMP,
+		PRIMARY KEY ("code", "tenantSlug")
 	);`)
 }

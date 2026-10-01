@@ -65,18 +65,7 @@ export function extractSubdomainOrParam(searchParamSlug?: string | null): string
   return "";
 }
 
-const DEFAULT_TENANT_ADMINS: Record<string, { name: string; email: string }> = {
-  neweratransports: { name: "Ifeanyi Felix", email: "ifeanyi.ibeh@neweratransports.com" },
-  "payflow-africa": { name: "Chioma Okonkwo", email: "chioma@payflow.africa" },
-  healthbridge: { name: "Dr. Babatunde Jinadu", email: "babatunde@healthbridge.io" },
-  "apex-logistics": { name: "Ibrahim Musa", email: "ibrahim@apexlogistics.com.ng" },
-  "zenith-re": { name: "Ngozi Eze", email: "ngozi@zenithrealty.ng" },
-  "org-01": { name: "Ifeanyi Felix", email: "ifeanyi.ibeh@neweratransports.com" },
-  "org-02": { name: "Chioma Okonkwo", email: "chioma@payflow.africa" },
-  "org-03": { name: "Dr. Babatunde Jinadu", email: "babatunde@healthbridge.io" },
-  "org-04": { name: "Ibrahim Musa", email: "ibrahim@apexlogistics.com.ng" },
-  "org-05": { name: "Ngozi Eze", email: "ngozi@zenithrealty.ng" },
-};
+const DEFAULT_TENANT_ADMINS: Record<string, { name: string; email: string }> = {};
 
 /**
  * Batched lookup: Fetches all tenant organizations directly from the database via /api/organizations

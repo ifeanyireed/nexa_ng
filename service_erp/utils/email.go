@@ -68,14 +68,14 @@ func SendEmailViaProxy(payload EmailPayload) error {
 			payload.From = os.Getenv("SMTP_FROM_EMAIL")
 		}
 		if payload.From == "" {
-			payload.From = "hr@neweratransports.com"
+			payload.From = "notifications@ofia.ng"
 		}
 	}
 
 	if payload.FromName == "" {
 		payload.FromName = os.Getenv("EMAIL_FROM_NAME")
 		if payload.FromName == "" {
-			payload.FromName = "New Era Finance"
+			payload.FromName = "OFIA ERP"
 		}
 	}
 

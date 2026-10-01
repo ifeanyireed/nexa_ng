@@ -912,7 +912,7 @@ export default function QuestCommandDeskPage() {
               change: `${activeTeams.length} Active Squads`,
               trend: "up",
               icon: <Users className="w-5 h-5 text-blue-500" />,
-              sub: "Live NETS Employee Directory",
+              sub: "Live Organization Directory",
             },
             {
               label: "Grand Championship Prize",

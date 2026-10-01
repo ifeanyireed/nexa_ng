@@ -65,8 +65,8 @@ export default function ReviewCycleManagement() {
         startDate,
         endDate,
         status: cycleStatus,
-        departments: selectedDepts.length > 0 ? selectedDepts : [...depts],
-        tenantSlug: tenantSlug || "neweratransports",
+        departments: selectedDepts,
+        tenantSlug: tenantSlug || activeTenant?.slug || activeTenant?.id || "",
       };
 
       if (editingCycleId) {
@@ -132,14 +132,18 @@ export default function ReviewCycleManagement() {
   };
 
   const handleUpdateStatus = async (cycleId: string, newStatus: "Draft" | "Active" | "Completed") => {
+    if (newStatus === "Completed") {
+      const ok = confirm("Closing this appraisal cycle will automatically finalize and close all pending reviews in this cycle. Do you want to proceed?");
+      if (!ok) return;
+    }
     setIsSubmitting(true);
     try {
       const list = cycles.map(c => {
         if (c.id === cycleId) {
-          return { ...c, status: newStatus, tenantSlug: c.tenantSlug || tenantSlug || "neweratransports" };
+          return { ...c, status: newStatus, tenantSlug: c.tenantSlug || tenantSlug || activeTenant?.slug || activeTenant?.id || "" };
         }
         if (newStatus === "Active" && c.status === "Active") {
-          return { ...c, status: "Completed" as const, tenantSlug: c.tenantSlug || tenantSlug || "neweratransports" };
+          return { ...c, status: "Completed" as const, tenantSlug: c.tenantSlug || tenantSlug || activeTenant?.slug || activeTenant?.id || "" };
         }
         return c;
       });

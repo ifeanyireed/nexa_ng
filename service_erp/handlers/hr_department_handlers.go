@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -62,6 +64,7 @@ func getDepartmentHeadAndCount(deptName string, tenantUsers []User) (string, int
 func HandleDepartments(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
+	EnsureHRTables()
 	tenantSlug := getTenantFilter(r)
 
 	if r.Method == http.MethodGet {
@@ -69,14 +72,15 @@ func HandleDepartments(w http.ResponseWriter, r *http.Request) {
 		users := []User{}
 		if db != nil {
 			var query string
-			var args []interface{}
-			if tenantSlug == "neweratransports" || tenantSlug == "nets" || tenantSlug == "new-era-transports" {
-				query = "SELECT id, name, email, role, department, avatar, managerName, managerId, designation, company FROM User WHERE (company = 'NETS' OR LOWER(company) LIKE '%new era%' OR LOWER(email) LIKE '%@neweratransports.com%' OR company IS NULL OR company = '')"
+			var rows *sql.Rows
+			var err error
+			if tenantSlug == "" || tenantSlug == "all" {
+				query = `SELECT id, name, email, role, department, avatar, "managerName", "managerId", designation, company FROM "User"`
+				rows, err = db.Query(query)
 			} else {
-				query = "SELECT id, name, email, role, department, avatar, managerName, managerId, designation, company FROM User WHERE (LOWER(company) = ? OR LOWER(company) LIKE ? OR LOWER(email) LIKE ?)"
-				args = append(args, tenantSlug, "%"+tenantSlug+"%", "%@"+tenantSlug+"%")
+				query = `SELECT id, name, email, role, department, avatar, "managerName", "managerId", designation, company FROM "User" WHERE ("tenantSlug" = $1 OR LOWER(company) = $1 OR LOWER(company) LIKE $2 OR LOWER(email) LIKE $3)`
+				rows, err = db.Query(query, tenantSlug, "%"+tenantSlug+"%", "%@"+tenantSlug+"%")
 			}
-			rows, err := db.Query(query, args...)
 			if err == nil {
 				defer rows.Close()
 				for rows.Next() {
@@ -96,51 +100,97 @@ func HandleDepartments(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		// Read persistent departments from DB
+		dbDepts := []DepartmentItem{}
+		if db != nil {
+			var dRows *sql.Rows
+			var dErr error
+			if tenantSlug != "" && tenantSlug != "all" {
+				dRows, dErr = db.Query(`SELECT "code", "name", "head", "headCount", "budget", "costCenter", "tenantSlug" FROM "Department" WHERE "tenantSlug" = $1 OR "tenantSlug" = '' OR "tenantSlug" IS NULL ORDER BY "code" ASC`, tenantSlug)
+			} else {
+				dRows, dErr = db.Query(`SELECT "code", "name", "head", "headCount", "budget", "costCenter", "tenantSlug" FROM "Department" ORDER BY "code" ASC`)
+			}
+			if dErr == nil {
+				defer dRows.Close()
+				for dRows.Next() {
+					var item DepartmentItem
+					if err := dRows.Scan(&item.Code, &item.Name, &item.Head, &item.HeadCount, &item.Budget, &item.CostCenter, &item.TenantSlug); err == nil {
+						dbDepts = append(dbDepts, item)
+					}
+				}
+			}
+		}
+
 		deptLock.RLock()
 		customs := customDepts[tenantSlug]
 		deptLock.RUnlock()
 
-		results := make([]DepartmentItem, 0, len(defaultDepartments)+len(customs))
+		// Combine default departments, db departments, and in-memory customs without duplicates
+		deptMap := make(map[string]DepartmentItem)
 		for _, d := range defaultDepartments {
 			head, count := getDepartmentHeadAndCount(d.Name, users)
 			if head == "" {
 				head = d.Head
 			}
-			headCount := count
-			results = append(results, DepartmentItem{
-				Code:       d.Code,
-				Name:       d.Name,
-				Head:       head,
-				HeadCount:  headCount,
-				Budget:     d.Budget,
-				CostCenter: d.CostCenter,
-				TenantSlug: tenantSlug,
-			})
+			d.Head = head
+			d.HeadCount = count
+			d.TenantSlug = tenantSlug
+			deptMap[strings.ToUpper(d.Code)] = d
+		}
+
+		for _, dbD := range dbDepts {
+			head, count := getDepartmentHeadAndCount(dbD.Name, users)
+			if head != "" {
+				dbD.Head = head
+			}
+			if count > 0 {
+				dbD.HeadCount = count
+			}
+			deptMap[strings.ToUpper(dbD.Code)] = dbD
 		}
 
 		for _, c := range customs {
 			head, count := getDepartmentHeadAndCount(c.Name, users)
-			if head == "" {
-				head = c.Head
+			if head != "" {
+				c.Head = head
 			}
-			headCount := count
-			if headCount == 0 {
-				headCount = c.HeadCount
+			if count > 0 {
+				c.HeadCount = count
 			}
-			results = append(results, DepartmentItem{
-				Code:       c.Code,
-				Name:       c.Name,
-				Head:       head,
-				HeadCount:  headCount,
-				Budget:     c.Budget,
-				CostCenter: c.CostCenter,
-				TenantSlug: tenantSlug,
-			})
+			deptMap[strings.ToUpper(c.Code)] = c
+		}
+
+		// Also discover any departments from tenant's users that aren't yet in deptMap
+		for _, u := range users {
+			deptName := strings.TrimSpace(u.Department)
+			if deptName != "" {
+				cleanCode := "DEPT-" + strings.ToUpper(strings.ReplaceAll(deptName, " ", ""))
+				if len(cleanCode) > 16 {
+					cleanCode = cleanCode[:16]
+				}
+				if _, exists := deptMap[cleanCode]; !exists {
+					head, count := getDepartmentHeadAndCount(deptName, users)
+					deptMap[cleanCode] = DepartmentItem{
+						Code:       cleanCode,
+						Name:       deptName,
+						Head:       head,
+						HeadCount:  count,
+						Budget:     "₦10,000,000",
+						CostCenter: "CC-" + cleanCode,
+						TenantSlug: tenantSlug,
+					}
+				}
+			}
+		}
+
+		results := make([]DepartmentItem, 0, len(deptMap))
+		for _, v := range deptMap {
+			results = append(results, v)
 		}
 
 		json.NewEncoder(w).Encode(results)
 
-	} else if r.Method == http.MethodPost {
+	} else if r.Method == http.MethodPost || r.Method == http.MethodPut {
 		var item DepartmentItem
 		if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -166,9 +216,33 @@ func HandleDepartments(w http.ResponseWriter, r *http.Request) {
 		if item.CostCenter == "" {
 			item.CostCenter = "CC-601"
 		}
-		item.TenantSlug = tenantSlug
+
+		if item.TenantSlug == "" && tenantSlug != "" {
+			item.TenantSlug = tenantSlug
+		}
+		if tenantSlug == "" && item.TenantSlug != "" {
+			tenantSlug = strings.ToLower(strings.TrimSpace(item.TenantSlug))
+		}
+
 		if item.HeadCount == 0 {
 			item.HeadCount = 1
+		}
+
+		// Persist to database
+		if db != nil {
+			_, err := db.Exec(`INSERT INTO "Department" ("code", "name", "head", "headCount", "budget", "costCenter", "tenantSlug", "updatedAt")
+				VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+				ON CONFLICT ("code", "tenantSlug") DO UPDATE SET
+					"name" = EXCLUDED."name",
+					"head" = EXCLUDED."head",
+					"headCount" = EXCLUDED."headCount",
+					"budget" = EXCLUDED."budget",
+					"costCenter" = EXCLUDED."costCenter",
+					"updatedAt" = NOW()`,
+				item.Code, item.Name, item.Head, item.HeadCount, item.Budget, item.CostCenter, item.TenantSlug)
+			if err != nil {
+				log.Printf("⚠️ Warning: Failed to persist department to database: %v", err)
+			}
 		}
 
 		deptLock.Lock()
@@ -196,6 +270,14 @@ func HandleDepartments(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			json.NewEncoder(w).Encode(map[string]string{"error": "Department code is required"})
 			return
+		}
+
+		if db != nil {
+			if tenantSlug != "" && tenantSlug != "all" {
+				_, _ = db.Exec(`DELETE FROM "Department" WHERE "code" = $1 AND ("tenantSlug" = $2 OR "tenantSlug" = '' OR "tenantSlug" IS NULL)`, code, tenantSlug)
+			} else {
+				_, _ = db.Exec(`DELETE FROM "Department" WHERE "code" = $1`, code)
+			}
 		}
 
 		deptLock.Lock()

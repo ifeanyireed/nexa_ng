@@ -8,12 +8,14 @@ import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
-import { ArrowLeft, CheckCircle2, XCircle, Star, UserCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, Star, UserCheck, AlertCircle } from "lucide-react";
 
 export default function HRReviewClient() {
   const router = useRouter();
-  const { reviews, users, updateReview } = useERPStore();
+  const { reviews, users, cycles, updateReview } = useERPStore();
 
+  const [reviewId, setReviewId] = useState<string>("");
+  const [cycleId, setCycleId] = useState<string>("");
   const [employeeId, setEmployeeId] = useState<string>("");
   const [review, setReview] = useState<PerformanceReview | null>(null);
   const [employee, setEmployee] = useState<User | null>(null);
@@ -23,32 +25,51 @@ export default function HRReviewClient() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const searchParams = new URLSearchParams(window.location.search);
-      const id = searchParams.get("employeeId") || "EMP001";
-      setEmployeeId(id);
+      setReviewId(searchParams.get("id") || "");
+      setCycleId(searchParams.get("cycleId") || "");
+      setEmployeeId(searchParams.get("employeeId") || "");
     }
   }, []);
 
   useEffect(() => {
-    if (employeeId) {
-      if (reviews.length > 0) {
-        const foundReview = reviews.find(r => r.employeeId === employeeId);
-        if (foundReview) {
-          setReview(foundReview);
-          setHrComments(foundReview.hrComments || "");
-          setImprovementPlan(foundReview.improvementPlan || "");
+    if (reviews.length > 0) {
+      let foundReview: PerformanceReview | undefined;
+      if (reviewId) {
+        foundReview = reviews.find(r => r.id === reviewId);
+      }
+      if (!foundReview && employeeId && cycleId) {
+        foundReview = reviews.find(r => r.employeeId === employeeId && r.cycleId === cycleId);
+      }
+      if (!foundReview && employeeId) {
+        const activeCycle = cycles.find(c => c.status === "Active");
+        if (activeCycle) {
+          foundReview = reviews.find(r => r.employeeId === employeeId && r.cycleId === activeCycle.id);
+        }
+        if (!foundReview) {
+          foundReview = reviews.find(r => r.employeeId === employeeId);
         }
       }
-      if (users.length > 0) {
-        const foundEmp = users.find(u => u.id === employeeId);
+
+      if (foundReview) {
+        setReview(foundReview);
+        setHrComments(foundReview.hrComments || "");
+        setImprovementPlan(foundReview.improvementPlan || "");
+      }
+    }
+
+    if (users.length > 0) {
+      const targetEmpId = employeeId || review?.employeeId;
+      if (targetEmpId) {
+        const foundEmp = users.find(u => u.id === targetEmpId);
         if (foundEmp) {
           setEmployee(foundEmp);
         }
       }
     }
-  }, [reviews, users, employeeId]);
+  }, [reviews, users, cycles, reviewId, cycleId, employeeId, review?.employeeId]);
 
-  const activeEmployee = employee || users.find(u => u.id === "EMP001") || {
-    id: "EMP001",
+  const activeEmployee = employee || users.find(u => u.id === (employeeId || "EMP001")) || {
+    id: employeeId || "EMP001",
     name: "Jane Doe",
     department: "Marketing",
     role: "employee" as const,
@@ -56,9 +77,10 @@ export default function HRReviewClient() {
 
   const activeReview = review || reviews[0] || {
     id: "REV001",
-    employeeId: "EMP001",
+    employeeId: employeeId || "EMP001",
     employeeName: "Jane Doe",
     department: "Marketing",
+    cycleId: "CYC001",
     status: "Manager Reviewed",
     finalScore: 8.5,
     objectives: [],
@@ -66,7 +88,11 @@ export default function HRReviewClient() {
     managerComments: "Outstanding initiative and teamwork throughout the cycle.",
   };
 
+  const reviewCycle = cycles.find(c => c.id === activeReview.cycleId);
+  const isClosed = activeReview.status === "Closed" || (reviewCycle && reviewCycle.status === "Completed" && activeReview.status !== "HR Approved");
+
   const handleApprove = () => {
+    if (isClosed) return;
     const updatedReview: PerformanceReview = {
       ...activeReview,
       status: "HR Approved",
@@ -80,6 +106,7 @@ export default function HRReviewClient() {
   };
 
   const handleReject = () => {
+    if (isClosed) return;
     if (!hrComments.trim()) {
       alert("Please provide audit remarks/reasons in the HR comments section before returning.");
       return;
@@ -103,7 +130,7 @@ export default function HRReviewClient() {
   return (
     <BusinessShell
       title={`Audit Dossier — ${activeEmployee.name}`}
-      subtitle={`${activeEmployee.id} • ${activeEmployee.department} • Normalized Score: ${activeReview.finalScore?.toFixed(1) || "8.5"} / 10`}
+      subtitle={`${activeEmployee.id} • ${activeEmployee.department} • Cycle: ${reviewCycle?.name || activeReview.cycleId} • Normalized Score: ${activeReview.finalScore?.toFixed(1) || "8.5"} / 10`}
       action={
         <Link href="/erp/hr">
           <NexaButton size="sm" variant="outline" className="rounded-full" leftIcon={<ArrowLeft className="w-3.5 h-3.5" />}>
@@ -158,6 +185,16 @@ export default function HRReviewClient() {
           </NexaCard>
         </div>
 
+        {isClosed && (
+          <div className="bg-amber-500/10 border border-amber-500/20 text-amber-800 p-4 rounded-2xl flex items-center gap-3 text-xs font-semibold">
+            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+            <div>
+              <p className="font-bold text-amber-900">Review Cycle Closed</p>
+              <p className="text-amber-700 text-[11px]">This appraisal belongs to a completed cycle ({reviewCycle?.name || activeReview.cycleId}) or has been closed. Verifications are locked in read-only mode.</p>
+            </div>
+          </div>
+        )}
+
         {/* HR REMARKS & ACTIONS */}
         <NexaCard variant="glass" padding="lg" className="space-y-4 rounded-3xl">
           <h3 className="text-xs font-bold text-[var(--nexa-text-primary)] uppercase tracking-wider">
@@ -167,27 +204,36 @@ export default function HRReviewClient() {
             placeholder="Provide HR calibration comments, corporate compliance flags, or audit notes..."
             value={hrComments}
             onChange={(e) => setHrComments(e.target.value)}
+            disabled={isClosed}
             rows={4}
-            className="w-full p-3.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-2xl text-xs text-[var(--nexa-text-primary)] outline-none"
+            className={`w-full p-3.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-2xl text-xs text-[var(--nexa-text-primary)] outline-none ${isClosed ? "opacity-60 cursor-not-allowed" : ""}`}
           />
 
           <div className="flex gap-3 justify-end pt-2 border-t border-[var(--nexa-border)]">
-            <NexaButton
-              size="md"
-              variant="outline"
-              onClick={handleReject}
-              className="rounded-full text-red-500 border-red-500/20 hover:bg-red-500/10"
-            >
-              Return for Correction
-            </NexaButton>
-            <NexaButton
-              size="md"
-              variant="primary"
-              onClick={handleApprove}
-              className="rounded-full bg-[#1A56DB] text-white"
-            >
-              Approve & Sign-Off Appraisal
-            </NexaButton>
+            {isClosed ? (
+              <span className="px-4 py-2 bg-slate-100 text-slate-500 rounded-full font-bold text-xs">
+                Appraisal Closed — Read Only
+              </span>
+            ) : (
+              <>
+                <NexaButton
+                  size="md"
+                  variant="outline"
+                  onClick={handleReject}
+                  className="rounded-full text-red-500 border-red-500/20 hover:bg-red-500/10"
+                >
+                  Return for Correction
+                </NexaButton>
+                <NexaButton
+                  size="md"
+                  variant="primary"
+                  onClick={handleApprove}
+                  className="rounded-full bg-[#1A56DB] text-white"
+                >
+                  Approve & Sign-Off Appraisal
+                </NexaButton>
+              </>
+            )}
           </div>
         </NexaCard>
       </div>

@@ -69,36 +69,12 @@ export function extractSubdomainOrParam(searchParamSlug?: string | null): string
   return "";
 }
 
-const DEFAULT_TENANT_ADMINS: Record<string, { name: string; email: string }> = {
-  neweratransports: { name: "Ifeanyi Felix", email: "ifeanyi.ibeh@neweratransports.com" },
-  "payflow-africa": { name: "Chioma Okonkwo", email: "chioma@payflow.africa" },
-  healthbridge: { name: "Dr. Babatunde Jinadu", email: "babatunde@healthbridge.io" },
-  "apex-logistics": { name: "Ibrahim Musa", email: "ibrahim@apexlogistics.com.ng" },
-  "zenith-re": { name: "Ngozi Eze", email: "ngozi@zenithrealty.ng" },
-  "org-01": { name: "Ifeanyi Felix", email: "ifeanyi.ibeh@neweratransports.com" },
-  "org-02": { name: "Chioma Okonkwo", email: "chioma@payflow.africa" },
-  "org-03": { name: "Dr. Babatunde Jinadu", email: "babatunde@healthbridge.io" },
-  "org-04": { name: "Ibrahim Musa", email: "ibrahim@apexlogistics.com.ng" },
-  "org-05": { name: "Ngozi Eze", email: "ngozi@zenithrealty.ng" },
-};
+const DEFAULT_TENANT_ADMINS: Record<string, { name: string; email: string }> = {};
 
 export const DEFAULT_TENANT_BRANDING: Record<
   string,
   { logo?: string; favicon?: string; primaryColor?: string; secondaryColor?: string }
-> = {
-  neweratransports: {
-    logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png",
-    favicon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png",
-    primaryColor: "#1A56DB",
-    secondaryColor: "#0E9F6E",
-  },
-  "org-01": {
-    logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png",
-    favicon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png",
-    primaryColor: "#1A56DB",
-    secondaryColor: "#0E9F6E",
-  },
-};
+> = {};
 
 /**
  * Dynamically applies a tenant's brand colors to CSS variables and updates the browser tab favicon

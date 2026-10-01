@@ -155,6 +155,7 @@ export interface ReviewCycle {
 
 export interface Objective {
   id: string;
+  tenantSlug?: string;
   text: string;
   weight: number; // percentage
   type: "competency" | "objective"; // Categorized rating
@@ -176,7 +177,7 @@ export interface PerformanceReview {
   department: string;
   cycleId: string;
   cycleName: string;
-  status: "Draft" | "Submitted" | "Manager Reviewed" | "HR Approved" | "Returned";
+  status: "Draft" | "Submitted" | "Manager Reviewed" | "HR Approved" | "Returned" | "Closed";
   objectives: Objective[];
   employeeComments?: string;
   managerComments?: string;
@@ -273,7 +274,7 @@ export function getActiveTenantSlug(): string {
     }
   } catch {}
 
-  return "neweratransports";
+  return "";
 }
 
 export function getSignedInERPUser(users: User[]): User {
@@ -294,15 +295,13 @@ export function getSignedInERPUser(users: User[]): User {
     const storedName = localStorage.getItem("nexa_user_name");
     const storedEmail = localStorage.getItem("nexa_user_email");
     const storedRole = localStorage.getItem("nexa_user_role") || "admin";
-    const tenantSlug = getActiveTenantSlug() || "neweratransports";
+    const tenantSlug = getActiveTenantSlug();
     const tenantAdminName =
-      localStorage.getItem("tenant_admin_name_" + tenantSlug) ||
-      localStorage.getItem("tenant_admin_name_org-01") ||
-      localStorage.getItem("tenant_admin_name_neweratransports");
+      (tenantSlug && localStorage.getItem("tenant_admin_name_" + tenantSlug)) ||
+      localStorage.getItem("nexa_user_name");
     const tenantAdminEmail =
-      localStorage.getItem("tenant_admin_email_" + tenantSlug) ||
-      localStorage.getItem("tenant_admin_email_org-01") ||
-      localStorage.getItem("tenant_admin_email_neweratransports");
+      (tenantSlug && localStorage.getItem("tenant_admin_email_" + tenantSlug)) ||
+      localStorage.getItem("nexa_user_email");
 
     let parsed: any = null;
     const storedUser = localStorage.getItem("erp_current_user");
@@ -401,7 +400,7 @@ async function fetchFromApi<T>(endpoint: string, fallbackData: T, tenantSlug?: s
     }
     const data = await res.json().catch(() => null);
     if (!data) return fallbackData;
-    if (Array.isArray(fallbackData) && (!Array.isArray(data) || data.length === 0)) {
+    if (Array.isArray(fallbackData) && (!Array.isArray(data) || (data.length === 0 && fallbackData.length > 0))) {
       return fallbackData;
     }
     return data;
@@ -464,13 +463,13 @@ export function useERPStore(explicitTenantSlug?: string) {
   const loadData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const usersData = await fetchFromApi<User[]>("/users", INITIAL_USERS, activeTenantSlug);
+      const usersData = await fetchFromApi<User[]>("/users", [], activeTenantSlug);
       setUsers(usersData || []);
 
-      const cyclesData = await fetchFromApi<ReviewCycle[]>("/cycles", INITIAL_CYCLES, activeTenantSlug);
+      const cyclesData = await fetchFromApi<ReviewCycle[]>("/cycles", [], activeTenantSlug);
       setCycles(cyclesData || []);
 
-      const reviewsData = await fetchFromApi<PerformanceReview[]>("/reviews", INITIAL_REVIEWS, activeTenantSlug);
+      const reviewsData = await fetchFromApi<PerformanceReview[]>("/reviews", [], activeTenantSlug);
       setReviews(reviewsData || []);
 
       const objectivesData = await fetchFromApi<Objective[]>("/objectives", DEFAULT_OBJECTIVES, activeTenantSlug);
@@ -522,17 +521,18 @@ export function useERPStore(explicitTenantSlug?: string) {
   };
 
   const addReviewCycle = async (cycle: ReviewCycle) => {
-    const slug = cycle.tenantSlug || activeTenantSlug || "neweratransports";
+    const slug = cycle.tenantSlug || activeTenantSlug || "";
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (slug) headers["x-tenant-slug"] = slug;
 
     const payload: ReviewCycle = {
       ...cycle,
-      tenantSlug: slug,
+      ...(slug ? { tenantSlug: slug } : {}),
     };
 
     try {
-      await fetch(`${API_BASE_URL}/cycles?tenant=${encodeURIComponent(slug)}`, {
+      const url = slug ? `${API_BASE_URL}/cycles?tenant=${encodeURIComponent(slug)}` : `${API_BASE_URL}/cycles`;
+      await fetch(url, {
         method: "POST",
         headers,
         body: JSON.stringify(payload)
@@ -551,12 +551,15 @@ export function useERPStore(explicitTenantSlug?: string) {
   };
 
   const deleteReviewCycle = async (cycleId: string) => {
-    const slug = activeTenantSlug || "neweratransports";
+    const slug = activeTenantSlug || "";
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (slug) headers["x-tenant-slug"] = slug;
 
     try {
-      await fetch(`${API_BASE_URL}/cycles?id=${encodeURIComponent(cycleId)}&tenant=${encodeURIComponent(slug)}`, {
+      const url = slug 
+        ? `${API_BASE_URL}/cycles?id=${encodeURIComponent(cycleId)}&tenant=${encodeURIComponent(slug)}`
+        : `${API_BASE_URL}/cycles?id=${encodeURIComponent(cycleId)}`;
+      await fetch(url, {
         method: "DELETE",
         headers
       });
@@ -569,7 +572,7 @@ export function useERPStore(explicitTenantSlug?: string) {
   };
 
   const updateCycles = async (updatedList: ReviewCycle[]) => {
-    const slug = activeTenantSlug || "neweratransports";
+    const slug = activeTenantSlug || "";
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (slug) headers["x-tenant-slug"] = slug;
 
@@ -577,14 +580,44 @@ export function useERPStore(explicitTenantSlug?: string) {
       for (const cycle of updatedList) {
         const payload: ReviewCycle = {
           ...cycle,
-          tenantSlug: cycle.tenantSlug || slug,
+          ...(slug || cycle.tenantSlug ? { tenantSlug: cycle.tenantSlug || slug } : {}),
         };
-        await fetch(`${API_BASE_URL}/cycles?tenant=${encodeURIComponent(slug)}`, {
+        const url = slug ? `${API_BASE_URL}/cycles?tenant=${encodeURIComponent(slug)}` : `${API_BASE_URL}/cycles`;
+        await fetch(url, {
           method: "POST",
           headers,
           body: JSON.stringify(payload)
         });
       }
+      // If any cycle is marked "Completed", automatically close all pending reviews for that cycle
+      const newlyCompletedCycles = updatedList.filter(c => c.status === "Completed");
+      if (newlyCompletedCycles.length > 0) {
+        const completedIds = newlyCompletedCycles.map(c => c.id);
+        const reviewsToClose = reviews.filter(
+          r => completedIds.includes(r.cycleId) && r.status !== "HR Approved" && r.status !== "Closed"
+        );
+        if (reviewsToClose.length > 0) {
+          const closedList = reviewsToClose.map(r => ({
+            ...r,
+            status: "Closed" as const,
+            updatedAt: new Date().toISOString(),
+          }));
+          for (const cr of closedList) {
+            try {
+              await fetch(`${API_BASE_URL}/reviews${slug ? `?tenant=${encodeURIComponent(slug)}` : ""}`, {
+                method: "POST",
+                headers,
+                body: JSON.stringify(cr),
+              });
+            } catch {}
+          }
+          setReviews(prev => prev.map(r => {
+            const match = closedList.find(c => c.id === r.id);
+            return match || r;
+          }));
+        }
+      }
+
       const freshCycles = await fetchFromApi<ReviewCycle[]>("/cycles", updatedList, slug);
       setCycles(freshCycles || []);
       await ensureReviewsForActiveCycles(users, freshCycles || [], reviews, objectives, slug, (updated) => {
@@ -596,16 +629,25 @@ export function useERPStore(explicitTenantSlug?: string) {
     }
   };
 
+  const closeCycle = async (cycleId: string) => {
+    const list = cycles.map(c => c.id === cycleId ? { ...c, status: "Completed" as const } : c);
+    await updateCycles(list);
+  };
+
   const updateObjectives = async (updatedList: Objective[]) => {
     const previous = [...objectives];
+    const slug = activeTenantSlug || (typeof window !== "undefined" ? getActiveTenantSlug() : "");
     const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (activeTenantSlug) headers["x-tenant-slug"] = activeTenantSlug;
+    if (slug) headers["x-tenant-slug"] = slug;
 
     try {
       // Find deleted objectives
       const deleted = previous.filter(p => !updatedList.some(u => u.id === p.id));
       for (const d of deleted) {
-        await fetch(`${API_BASE_URL}/objectives?id=${encodeURIComponent(d.id)}${activeTenantSlug ? `&tenant=${encodeURIComponent(activeTenantSlug)}` : ""}`, { method: "DELETE" });
+        await fetch(`${API_BASE_URL}/objectives?id=${encodeURIComponent(d.id)}${slug ? `&tenant=${encodeURIComponent(slug)}` : ""}`, {
+          method: "DELETE",
+          headers
+        });
       }
       // Find added or updated objectives
       const addedOrUpdated = updatedList.filter(u => {
@@ -613,14 +655,18 @@ export function useERPStore(explicitTenantSlug?: string) {
         return !p || JSON.stringify(p) !== JSON.stringify(u);
       });
       for (const a of addedOrUpdated) {
-        await fetch(`${API_BASE_URL}/objectives${activeTenantSlug ? `?tenant=${encodeURIComponent(activeTenantSlug)}` : ""}`, {
+        const payload: Objective = {
+          ...a,
+          ...(slug || a.tenantSlug ? { tenantSlug: a.tenantSlug || slug } : {}),
+        };
+        await fetch(`${API_BASE_URL}/objectives${slug ? `?tenant=${encodeURIComponent(slug)}` : ""}`, {
           method: "POST",
           headers,
-          body: JSON.stringify(a)
+          body: JSON.stringify(payload)
         });
       }
-      const freshObjectives = await fetchFromApi<Objective[]>("/objectives", updatedList, activeTenantSlug);
-      setObjectives(freshObjectives || []);
+      const freshObjectives = await fetchFromApi<Objective[]>("/objectives", updatedList, slug);
+      setObjectives(freshObjectives && freshObjectives.length > 0 ? freshObjectives : updatedList);
     } catch (e) {
       console.warn("Failed to sync updateObjectives with backend database", e);
       setObjectives(updatedList);
@@ -675,6 +721,7 @@ export function useERPStore(explicitTenantSlug?: string) {
     updateReview,
     addReviewCycle,
     updateCycles,
+    closeCycle,
     deleteReviewCycle,
     updateObjectives,
     updateUsers

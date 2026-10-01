@@ -29,6 +29,7 @@ export default function HRDashboard() {
   const router = useRouter();
   const { reviews, users, cycles } = useERPStore();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [selectedCycleId, setSelectedCycleId] = useState<string>("ACTIVE");
   const [submissionsPage, setSubmissionsPage] = useState(1);
   const [queuePage, setQueuePage] = useState(1);
   const [submissionsStatusFilter, setSubmissionsStatusFilter] = useState("");
@@ -61,15 +62,21 @@ export default function HRDashboard() {
     .filter(Boolean)
     .sort();
 
-  // Filter reviews awaiting HR action (status = "Manager Reviewed")
-  const pendingReviews = reviews.filter((r) => r.status === "Manager Reviewed");
-  const completedReviews = reviews.filter((r) => r.status === "HR Approved");
+  const activeCycle = cycles.find((c) => c.status === "Active") || cycles[0];
+  const effectiveCycleId = selectedCycleId === "ALL" ? null : (selectedCycleId === "ACTIVE" ? activeCycle?.id : selectedCycleId);
+
+  // Filter reviews awaiting HR action (status = "Manager Reviewed") scoped to effectiveCycleId
+  const pendingReviews = reviews.filter(
+    (r) => r.status === "Manager Reviewed" && (!effectiveCycleId || r.cycleId === effectiveCycleId)
+  );
+  const completedReviews = reviews.filter(
+    (r) => r.status === "HR Approved" && (!effectiveCycleId || r.cycleId === effectiveCycleId)
+  );
 
   // Statistics
-  const activeCycle = cycles.find((c) => c.status === "Active");
-  const activeCycleReviews = activeCycle
-    ? reviews.filter((r) => r.cycleId === activeCycle.id)
-    : reviews.filter((r) => r.cycleId === "CYC001");
+  const activeCycleReviews = effectiveCycleId
+    ? reviews.filter((r) => r.cycleId === effectiveCycleId)
+    : (activeCycle ? reviews.filter((r) => r.cycleId === activeCycle.id) : reviews);
   const totalEmployeesCount = users.filter((u) => u.role !== "admin").length || 15;
   const totalEvaluations = activeCycleReviews.length || 14;
   const cycleSubmitted = activeCycleReviews.filter((r) =>
@@ -90,11 +97,12 @@ export default function HRDashboard() {
 
   // Filter all submissions
   const filteredReviews = reviews.filter((r) => {
+    const matchesCycle = !effectiveCycleId || r.cycleId === effectiveCycleId;
     const matchesStatus =
       submissionsStatusFilter === "" || r.status === submissionsStatusFilter;
     const matchesDept =
       submissionsDeptFilter === "" || r.department === submissionsDeptFilter;
-    return matchesStatus && matchesDept;
+    return matchesCycle && matchesStatus && matchesDept;
   });
 
   const submissionsTotalPages = Math.max(
@@ -140,6 +148,8 @@ export default function HRDashboard() {
         return <NexaBadge variant="green" size="sm" className="rounded-full">HR Approved</NexaBadge>;
       case "Returned":
         return <NexaBadge variant="red" size="sm" className="rounded-full">Returned</NexaBadge>;
+      case "Closed":
+        return <NexaBadge variant="neutral" size="sm" className="rounded-full bg-slate-500/10 text-slate-500 border border-slate-500/20">Closed</NexaBadge>;
       default:
         return <NexaBadge variant="neutral" size="sm" className="rounded-full">{status}</NexaBadge>;
     }
@@ -150,7 +160,27 @@ export default function HRDashboard() {
       title="HR 360 Appraisals & Performance Desk"
       subtitle="Corporate evaluation cycles, line manager score verification, competency rubric libraries, and staff directory."
       action={
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-full px-3 py-1.5 shadow-xs">
+            <span className="text-[11px] font-bold text-[var(--nexa-text-muted)]">Cycle:</span>
+            <select
+              value={selectedCycleId}
+              onChange={(e) => {
+                setSelectedCycleId(e.target.value);
+                setQueuePage(1);
+                setSubmissionsPage(1);
+              }}
+              className="bg-transparent text-xs font-bold text-[var(--nexa-text-primary)] outline-none cursor-pointer"
+            >
+              <option value="ACTIVE">Active Cycle ({activeCycle ? activeCycle.name.split(" ")[0] : "None"})</option>
+              {cycles.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name} ({c.status})
+                </option>
+              ))}
+              <option value="ALL">All Cycles</option>
+            </select>
+          </div>
           <Link href="/erp/hr/reports">
             <NexaButton size="sm" variant="outline" className="rounded-full" leftIcon={<BarChart3 className="w-3.5 h-3.5" />}>
               Analytics & Bell Curve
@@ -226,6 +256,7 @@ export default function HRDashboard() {
                 <tr className="border-b border-[var(--nexa-border)] text-[var(--nexa-text-muted)]">
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Employee</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Department</th>
+                  <th className="pb-3 px-3 font-bold uppercase tracking-wider">Cycle</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Manager Score</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Status</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider text-right">Actions</th>
@@ -251,6 +282,11 @@ export default function HRDashboard() {
                         </td>
                         <td className="py-3.5 px-3 text-[var(--nexa-text-muted)] font-medium">{rev.department}</td>
                         <td className="py-3.5 px-3">
+                          <span className="px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-600 font-semibold border border-slate-500/10 text-[10px]">
+                            {rev.cycleName ? rev.cycleName.split(" ")[0] : rev.cycleId}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-3">
                           {rev.finalScore !== undefined ? (
                             <span className="bg-blue-500/10 text-blue-600 font-extrabold px-2.5 py-0.5 rounded-full border border-blue-500/20 text-xs">
                               {rev.finalScore.toFixed(1)} / 10
@@ -261,7 +297,7 @@ export default function HRDashboard() {
                         </td>
                         <td className="py-3.5 px-3">{getStatusBadge(rev.status)}</td>
                         <td className="py-3.5 px-3 text-right">
-                          <Link href={`/erp/hr/review/detail?employeeId=${rev.employeeId}`}>
+                          <Link href={`/erp/hr/review/detail?id=${rev.id}&cycleId=${rev.cycleId}&employeeId=${rev.employeeId}`}>
                             <NexaButton size="sm" variant="primary" className="rounded-full bg-[#1A56DB] text-xs h-7">
                               Audit & Sign-off
                             </NexaButton>
@@ -272,7 +308,7 @@ export default function HRDashboard() {
                   })
                 ) : (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-[var(--nexa-text-muted)] font-medium">
+                    <td colSpan={6} className="py-8 text-center text-[var(--nexa-text-muted)] font-medium">
                       No reviews currently in HR verification queue. All submissions audited!
                     </td>
                   </tr>
@@ -344,6 +380,7 @@ export default function HRDashboard() {
                 <tr className="border-b border-[var(--nexa-border)] text-[var(--nexa-text-muted)]">
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Employee</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Department</th>
+                  <th className="pb-3 px-3 font-bold uppercase tracking-wider">Cycle</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Status</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Self Rating</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Final Score</th>
@@ -370,6 +407,11 @@ export default function HRDashboard() {
                           </div>
                         </td>
                         <td className="py-3.5 px-3 text-[var(--nexa-text-muted)] font-medium">{rev.department}</td>
+                        <td className="py-3.5 px-3">
+                          <span className="px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-600 font-semibold border border-slate-500/10 text-[10px]">
+                            {rev.cycleName ? rev.cycleName.split(" ")[0] : rev.cycleId}
+                          </span>
+                        </td>
                         <td className="py-3.5 px-3">{getStatusBadge(rev.status)}</td>
                         <td className="py-3.5 px-3">
                           {selfAvg !== "—" ? (
@@ -390,7 +432,7 @@ export default function HRDashboard() {
                           )}
                         </td>
                         <td className="py-3.5 px-3 text-right">
-                          <Link href={`/erp/hr/review/detail?employeeId=${rev.employeeId}`}>
+                          <Link href={`/erp/hr/review/detail?id=${rev.id}&cycleId=${rev.cycleId}&employeeId=${rev.employeeId}`}>
                             <NexaButton size="sm" variant="outline" className="rounded-full text-xs h-7">
                               View Dossier
                             </NexaButton>
@@ -401,7 +443,7 @@ export default function HRDashboard() {
                   })
                 ) : (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-[var(--nexa-text-muted)] font-medium">
+                    <td colSpan={7} className="py-8 text-center text-[var(--nexa-text-muted)] font-medium">
                       No review submissions found matching the selected filters.
                     </td>
                   </tr>

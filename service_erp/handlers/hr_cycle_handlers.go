@@ -110,9 +110,6 @@ func HandleCycles(w http.ResponseWriter, r *http.Request) {
 		if effectiveTenant == "" {
 			effectiveTenant = c.TenantSlug
 		}
-		if effectiveTenant == "" {
-			effectiveTenant = "neweratransports"
-		}
 
 		var deptsStr string = "[]"
 		if c.Departments != nil {
@@ -135,6 +132,11 @@ func HandleCycles(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 				return
+			}
+
+			// If cycle is Completed, automatically close all pending reviews for this cycle
+			if c.Status == "Completed" {
+				_, _ = db.Exec(`UPDATE "PerformanceReview" SET status = 'Closed', "updatedAt" = NOW() WHERE "cycleId" = $1 AND status NOT IN ('HR Approved', 'Closed')`, c.ID)
 			}
 		}
 		json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "Cycle upserted successfully"})

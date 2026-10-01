@@ -199,7 +199,7 @@ var (
 	reigniteQuests = []QuestInstance{
 		{
 			ID:                     "qst-reignite-2026",
-			TenantSlug:             "neweratransports",
+			TenantSlug:             "",
 			Name:                   "REIGNITE 2026: Team Quest & Championship",
 			Slug:                   "reignite-2026",
 			Description:            "Annual enterprise retreat, creative innovation pitch, trivia knowledge wars, and physical agility championship.",
@@ -228,7 +228,7 @@ var (
 		{
 			ID:          "prz-1",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Rank:        1,
 			Title:       "1st Place Grand Championship Trophy & Cash",
 			AwardType:   "CASH",
@@ -240,7 +240,7 @@ var (
 		{
 			ID:          "prz-2",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Rank:        2,
 			Title:       "2nd Place Silver Podium Award",
 			AwardType:   "CASH",
@@ -252,7 +252,7 @@ var (
 		{
 			ID:          "prz-3",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Rank:        3,
 			Title:       "3rd Place Bronze Podium Award",
 			AwardType:   "CASH",
@@ -264,7 +264,7 @@ var (
 		{
 			ID:          "prz-4",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Rank:        0,
 			Title:       "Best Theme Identity & Team Spirit",
 			AwardType:   "CASH",
@@ -276,7 +276,7 @@ var (
 		{
 			ID:          "prz-5",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Rank:        0,
 			Title:       "Championship MVP (Most Valuable Performer)",
 			AwardType:   "CASH",
@@ -291,7 +291,7 @@ var (
 		{
 			ID:          "team-a",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Name:        "Team A",
 			CustomName:  "Alpha (Blue Eagles)",
 			Initial:     "A",
@@ -307,7 +307,7 @@ var (
 		{
 			ID:          "team-b",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Name:        "Team B",
 			CustomName:  "Bravo (Red Vipers)",
 			Initial:     "B",
@@ -323,7 +323,7 @@ var (
 		{
 			ID:          "team-c",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Name:        "Team C",
 			CustomName:  "Charlie (Gold Titans)",
 			Initial:     "C",
@@ -339,7 +339,7 @@ var (
 		{
 			ID:          "team-d",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Name:        "Team D",
 			CustomName:  "Delta (Green Lions)",
 			Initial:     "D",
@@ -355,7 +355,7 @@ var (
 		{
 			ID:          "team-e",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Name:        "Team E",
 			CustomName:  "Echo (Silver Wolves)",
 			Initial:     "E",
@@ -371,7 +371,7 @@ var (
 		{
 			ID:          "team-f",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Name:        "Team F",
 			CustomName:  "Foxtrot (Iron Rhinos)",
 			Initial:     "F",
@@ -387,7 +387,7 @@ var (
 		{
 			ID:          "team-g",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Name:        "Team G",
 			CustomName:  "Golf (Copper Hawks)",
 			Initial:     "G",
@@ -403,7 +403,7 @@ var (
 		{
 			ID:          "team-h",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Name:        "Team H",
 			CustomName:  "Hotel (Platinum Panthers)",
 			Initial:     "H",
@@ -419,7 +419,7 @@ var (
 		{
 			ID:          "team-i",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Name:        "Team I",
 			CustomName:  "India (Diamond Sharks)",
 			Initial:     "I",
@@ -435,7 +435,7 @@ var (
 		{
 			ID:          "team-j",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Name:        "Team J",
 			CustomName:  "Juliet (Emerald Dragons)",
 			Initial:     "J",
@@ -454,7 +454,7 @@ var (
 		{
 			ID:           "chl-day1-identity",
 			QuestID:      "qst-reignite-2026",
-			TenantSlug:   "neweratransports",
+			TenantSlug:   "",
 			Day:          "Day 1",
 			Category:     "Entertainment",
 			EngineType:   "RUBRIC",
@@ -474,7 +474,7 @@ var (
 		{
 			ID:           "chl-day1-who-are-we",
 			QuestID:      "qst-reignite-2026",
-			TenantSlug:   "neweratransports",
+			TenantSlug:   "",
 			Day:          "Day 1",
 			Category:     "Informative",
 			EngineType:   "PARTICIPATION",
@@ -488,7 +488,7 @@ var (
 		{
 			ID:           "chl-day1-games",
 			QuestID:      "qst-reignite-2026",
-			TenantSlug:   "neweratransports",
+			TenantSlug:   "",
 			Day:          "Day 1",
 			Category:     "Entertainment",
 			EngineType:   "RUBRIC",
@@ -508,7 +508,7 @@ var (
 		{
 			ID:           "chl-day2-core-challenge",
 			QuestID:      "qst-reignite-2026",
-			TenantSlug:   "neweratransports",
+			TenantSlug:   "",
 			Day:          "Day 2",
 			Category:     "Conventional / Creative",
 			EngineType:   "CONCEPT_AND_RUBRIC",
@@ -530,7 +530,7 @@ var (
 		{
 			ID:           "chl-day2-egg-race",
 			QuestID:      "qst-reignite-2026",
-			TenantSlug:   "neweratransports",
+			TenantSlug:   "",
 			Day:          "Day 2",
 			Category:     "Entertainment",
 			EngineType:   "RANK_TO_POINTS",
@@ -547,7 +547,7 @@ var (
 		{
 			ID:           "chl-day2-quiz",
 			QuestID:      "qst-reignite-2026",
-			TenantSlug:   "neweratransports",
+			TenantSlug:   "",
 			Day:          "Day 2",
 			Category:     "Educative",
 			EngineType:   "QUIZ",
@@ -561,7 +561,7 @@ var (
 		{
 			ID:           "chl-day2-think-fast",
 			QuestID:      "qst-reignite-2026",
-			TenantSlug:   "neweratransports",
+			TenantSlug:   "",
 			Day:          "Day 2",
 			Category:     "Educative",
 			EngineType:   "QUIZ",
@@ -575,7 +575,7 @@ var (
 		{
 			ID:           "chl-day3-volleyball",
 			QuestID:      "qst-reignite-2026",
-			TenantSlug:   "neweratransports",
+			TenantSlug:   "",
 			Day:          "Day 3",
 			Category:     "Sports",
 			EngineType:   "RANK_TO_POINTS",
@@ -592,7 +592,7 @@ var (
 		{
 			ID:           "chl-day3-football",
 			QuestID:      "qst-reignite-2026",
-			TenantSlug:   "neweratransports",
+			TenantSlug:   "",
 			Day:          "Day 3",
 			Category:     "Sports",
 			EngineType:   "RANK_TO_POINTS",
@@ -609,7 +609,7 @@ var (
 		{
 			ID:           "chl-day3-relay",
 			QuestID:      "qst-reignite-2026",
-			TenantSlug:   "neweratransports",
+			TenantSlug:   "",
 			Day:          "Day 3",
 			Category:     "Sports",
 			EngineType:   "RANK_TO_POINTS",
@@ -626,7 +626,7 @@ var (
 		{
 			ID:           "chl-day3-tug-of-war",
 			QuestID:      "qst-reignite-2026",
-			TenantSlug:   "neweratransports",
+			TenantSlug:   "",
 			Day:          "Day 3",
 			Category:     "Sports",
 			EngineType:   "RANK_TO_POINTS",
@@ -648,7 +648,7 @@ var (
 		{
 			ID:          "sch-d1-01",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Day:         "Day 1",
 			StartTime:   "09:00 AM",
 			EndTime:     "11:00 AM",
@@ -663,7 +663,7 @@ var (
 		{
 			ID:          "sch-d1-02",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Day:         "Day 1",
 			StartTime:   "11:30 AM",
 			EndTime:     "01:00 PM",
@@ -678,7 +678,7 @@ var (
 		{
 			ID:          "sch-d1-03",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Day:         "Day 1",
 			StartTime:   "01:00 PM",
 			EndTime:     "02:30 PM",
@@ -693,7 +693,7 @@ var (
 		{
 			ID:               "sch-d1-04",
 			QuestID:          "qst-reignite-2026",
-			TenantSlug:       "neweratransports",
+			TenantSlug:       "",
 			Day:              "Day 1",
 			StartTime:        "03:00 PM",
 			EndTime:          "04:30 PM",
@@ -711,7 +711,7 @@ var (
 		{
 			ID:               "sch-d1-05",
 			QuestID:          "qst-reignite-2026",
-			TenantSlug:       "neweratransports",
+			TenantSlug:       "",
 			Day:              "Day 1",
 			StartTime:        "05:00 PM",
 			EndTime:          "06:30 PM",
@@ -729,7 +729,7 @@ var (
 		{
 			ID:               "sch-d1-06",
 			QuestID:          "qst-reignite-2026",
-			TenantSlug:       "neweratransports",
+			TenantSlug:       "",
 			Day:              "Day 1",
 			StartTime:        "07:30 PM",
 			EndTime:          "10:00 PM",
@@ -749,7 +749,7 @@ var (
 		{
 			ID:          "sch-d2-01",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Day:         "Day 2",
 			StartTime:   "07:30 AM",
 			EndTime:     "08:30 AM",
@@ -764,7 +764,7 @@ var (
 		{
 			ID:               "sch-d2-02",
 			QuestID:          "qst-reignite-2026",
-			TenantSlug:       "neweratransports",
+			TenantSlug:       "",
 			Day:              "Day 2",
 			StartTime:        "09:00 AM",
 			EndTime:          "09:30 AM",
@@ -780,7 +780,7 @@ var (
 		{
 			ID:               "sch-d2-03",
 			QuestID:          "qst-reignite-2026",
-			TenantSlug:       "neweratransports",
+			TenantSlug:       "",
 			Day:              "Day 2",
 			StartTime:        "10:00 AM",
 			EndTime:          "01:00 PM",
@@ -798,7 +798,7 @@ var (
 		{
 			ID:          "sch-d2-04",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Day:         "Day 2",
 			StartTime:   "01:00 PM",
 			EndTime:     "02:30 PM",
@@ -813,7 +813,7 @@ var (
 		{
 			ID:               "sch-d2-05",
 			QuestID:          "qst-reignite-2026",
-			TenantSlug:       "neweratransports",
+			TenantSlug:       "",
 			Day:              "Day 2",
 			StartTime:        "03:00 PM",
 			EndTime:          "04:00 PM",
@@ -831,7 +831,7 @@ var (
 		{
 			ID:               "sch-d2-06",
 			QuestID:          "qst-reignite-2026",
-			TenantSlug:       "neweratransports",
+			TenantSlug:       "",
 			Day:              "Day 2",
 			StartTime:        "04:30 PM",
 			EndTime:          "05:30 PM",
@@ -849,7 +849,7 @@ var (
 		{
 			ID:               "sch-d2-07",
 			QuestID:          "qst-reignite-2026",
-			TenantSlug:       "neweratransports",
+			TenantSlug:       "",
 			Day:              "Day 2",
 			StartTime:        "06:00 PM",
 			EndTime:          "07:00 PM",
@@ -867,7 +867,7 @@ var (
 		{
 			ID:          "sch-d2-08",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Day:         "Day 2",
 			StartTime:   "08:00 PM",
 			EndTime:     "10:00 PM",
@@ -884,7 +884,7 @@ var (
 		{
 			ID:          "sch-d3-01",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Day:         "Day 3",
 			StartTime:   "07:30 AM",
 			EndTime:     "08:30 AM",
@@ -899,7 +899,7 @@ var (
 		{
 			ID:               "sch-d3-02",
 			QuestID:          "qst-reignite-2026",
-			TenantSlug:       "neweratransports",
+			TenantSlug:       "",
 			Day:              "Day 3",
 			StartTime:        "09:00 AM",
 			EndTime:          "10:30 AM",
@@ -917,7 +917,7 @@ var (
 		{
 			ID:               "sch-d3-03",
 			QuestID:          "qst-reignite-2026",
-			TenantSlug:       "neweratransports",
+			TenantSlug:       "",
 			Day:              "Day 3",
 			StartTime:        "11:00 AM",
 			EndTime:          "01:00 PM",
@@ -935,7 +935,7 @@ var (
 		{
 			ID:          "sch-d3-04",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Day:         "Day 3",
 			StartTime:   "01:00 PM",
 			EndTime:     "02:30 PM",
@@ -950,7 +950,7 @@ var (
 		{
 			ID:               "sch-d3-05",
 			QuestID:          "qst-reignite-2026",
-			TenantSlug:       "neweratransports",
+			TenantSlug:       "",
 			Day:              "Day 3",
 			StartTime:        "03:00 PM",
 			EndTime:          "04:00 PM",
@@ -968,7 +968,7 @@ var (
 		{
 			ID:               "sch-d3-06",
 			QuestID:          "qst-reignite-2026",
-			TenantSlug:       "neweratransports",
+			TenantSlug:       "",
 			Day:              "Day 3",
 			StartTime:        "04:30 PM",
 			EndTime:          "05:30 PM",
@@ -986,7 +986,7 @@ var (
 		{
 			ID:          "sch-d3-07",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Day:         "Day 3",
 			StartTime:   "06:30 PM",
 			EndTime:     "09:00 PM",
@@ -1009,7 +1009,7 @@ var (
 		{
 			ID:          "anc-01",
 			QuestID:     "qst-reignite-2026",
-			TenantSlug:  "neweratransports",
+			TenantSlug:  "",
 			Title:       "🔥 Welcome to REIGNITE 2026!",
 			Body:        "All 6 teams have been initialized. Day 1 Team Identity Presentation is now OPEN. Prepare your custom name, motto, chant, and pose!",
 			MediaURL:    "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=800&q=80",
@@ -1470,7 +1470,7 @@ func HandleQuestPrizes(w http.ResponseWriter, r *http.Request) {
 	case http.MethodGet:
 		var list []QuestPrize
 		for _, p := range reignitePrizes {
-			if (tenant == "all" || p.TenantSlug == tenant || p.TenantSlug == "neweratransports") &&
+			if (tenant == "" || tenant == "all" || p.TenantSlug == tenant || p.TenantSlug == "") &&
 				(questID == "" || p.QuestID == questID) {
 				list = append(list, p)
 			}

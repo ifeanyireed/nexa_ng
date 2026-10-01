@@ -19,7 +19,11 @@ func sendEmail(to, subject, htmlBody string) error {
 
 // SHA256 Token generator for password resets
 func generateResetToken(email, currentPassword string) string {
-	sum := sha256.Sum256([]byte(email + currentPassword + "nets_secret_salt"))
+	salt := os.Getenv("RESET_TOKEN_SALT")
+	if salt == "" {
+		salt = "ofia_erp_secure_token_salt"
+	}
+	sum := sha256.Sum256([]byte(email + currentPassword + salt))
 	return fmt.Sprintf("%x", sum)
 }
 
@@ -41,12 +45,12 @@ func HandleSendResetEmail(w http.ResponseWriter, r *http.Request) {
 	if origin == "" {
 		origin = os.Getenv("PORTAL_URL")
 		if origin == "" {
-			origin = "https://nets.reedbreed.cc"
+			origin = "https://erp.ofia.ng"
 		}
 	}
 
 	// Fetch users from database
-	rows, err := db.Query("SELECT id, name, email, password FROM User")
+	rows, err := db.Query(`SELECT id, name, email, password FROM "User"`)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Database error: " + err.Error()})
@@ -108,20 +112,20 @@ func HandleSendResetEmail(w http.ResponseWriter, r *http.Request) {
     <div style="background-color: #f3f4f6; padding: 40px 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
         <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
             <div style="background-color: #1e3a8a; padding: 30px 20px; text-align: center;">
-                <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.02em;">New Era Transport Services</h1>
+                <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.02em;">OFIA Performance Portal</h1>
             </div>
             <div style="padding: 40px 30px; color: #334155; line-height: 1.6; font-size: 14px;">
                 <h2 style="color: #1e3a8a; font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 16px;">Reset Your Password</h2>
                 <p style="margin: 0 0 16px 0;">Hello %s,</p>
-                <p style="margin: 0 0 24px 0;">A request has been made to reset the password for your account on the New Era Performance Portal. Click the button below to choose a new password:</p>
+                <p style="margin: 0 0 24px 0;">A request has been made to reset the password for your account on the OFIA Performance Portal. Click the button below to choose a new password:</p>
                 <div style="text-align: center; margin: 30px 0;">
                     <a href="%s" style="display: inline-block; padding: 12px 30px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; text-align: center;">Reset Password</a>
                 </div>
                 <p style="margin: 0 0 16px 0;">If you did not request this password reset, please ignore this email or contact HR.</p>
-                <p style="margin: 0;">Best regards,<br><strong style="color: #1e3a8a;">New Era HR Team</strong></p>
+                <p style="margin: 0;">Best regards,<br><strong style="color: #1e3a8a;">HR & People Team</strong></p>
             </div>
             <div style="background-color: #f8fafc; padding: 20px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
-                &copy; 2026 New Era Transport Services. All rights reserved.
+                &copy; 2026 OFIA ERP. All rights reserved.
             </div>
         </div>
     </div>
@@ -142,7 +146,7 @@ func HandleSendResetEmail(w http.ResponseWriter, r *http.Request) {
 				lastErr = err
 				mu.Unlock()
 			}
-		}(u.Email, "Reset Your Password - New Era Performance Portal", htmlBody)
+		}(u.Email, "Reset Your Password - OFIA Performance Portal", htmlBody)
 	}
 	wg.Wait()
 
@@ -184,7 +188,7 @@ func HandleSendBulkNotification(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Fetch users from database
-	rows, err := db.Query("SELECT id, name, email FROM User")
+	rows, err := db.Query(`SELECT id, name, email FROM "User"`)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Database error: " + err.Error()})
@@ -223,16 +227,16 @@ func HandleSendBulkNotification(w http.ResponseWriter, r *http.Request) {
     <div style="background-color: #f3f4f6; padding: 40px 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
         <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
             <div style="background-color: #1e3a8a; padding: 30px 20px; text-align: center;">
-                <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.02em;">New Era Transport Services</h1>
+                <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.02em;">OFIA Performance Portal</h1>
             </div>
             <div style="padding: 40px 30px; color: #334155; line-height: 1.6; font-size: 14px;">
                 <h2 style="color: #1e3a8a; font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 16px;">Notification Alert</h2>
                 <p style="margin: 0 0 16px 0;">Hello %s,</p>
                 <p style="margin: 0 0 24px 0;">%s</p>
-                <p style="margin: 0;">Best regards,<br><strong style="color: #1e3a8a;">New Era Performance Portal Team</strong></p>
+                <p style="margin: 0;">Best regards,<br><strong style="color: #1e3a8a;">HR & Performance Team</strong></p>
             </div>
             <div style="background-color: #f8fafc; padding: 20px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
-                &copy; 2026 New Era Transport Services. All rights reserved.
+                &copy; 2026 OFIA ERP. All rights reserved.
             </div>
         </div>
     </div>
@@ -291,7 +295,7 @@ func HandleUpdatePassword(w http.ResponseWriter, r *http.Request) {
 	defer tx.Rollback()
 
 	var u User
-	err = tx.QueryRow("SELECT id, name, email, password FROM User WHERE email = ?", req.Email).Scan(&u.ID, &u.Name, &u.Email, &u.Password)
+	err = tx.QueryRow(`SELECT id, name, email, password FROM "User" WHERE email = $1`, req.Email).Scan(&u.ID, &u.Name, &u.Email, &u.Password)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		json.NewEncoder(w).Encode(map[string]string{"error": "User not found"})
@@ -312,7 +316,7 @@ func HandleUpdatePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update password in database
-	_, err = tx.Exec("UPDATE User SET password = ? WHERE email = ?", req.NewPassword, req.Email)
+	_, err = tx.Exec(`UPDATE "User" SET password = $1 WHERE email = $2`, req.NewPassword, req.Email)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to update password: " + err.Error()})

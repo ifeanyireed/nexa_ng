@@ -23,60 +23,9 @@ export async function GET() {
     console.warn("Failed to fetch organizations from backend database:", err.message);
   }
 
-  // If list is empty, supply default seed list
+  // If list is empty, return empty list
   if (list.length === 0) {
-    list = [
-      {
-        id: "org-01",
-        name: "New Era Transports",
-        slug: "neweratransports",
-        domain: "neweratransports.ofia.ng",
-        owner_name: "Ifeanyi Felix",
-        owner_email: "ifeanyi.ibeh@neweratransports.com",
-        plan_tier: "GROWTH",
-        status: "ACTIVE",
-      },
-      {
-        id: "org-02",
-        name: "PayFlow Africa",
-        slug: "payflow-africa",
-        domain: "payflow-africa.ofia.ng",
-        owner_name: "Chioma Okonkwo",
-        owner_email: "chioma@payflow.africa",
-        plan_tier: "ENTERPRISE",
-        status: "ACTIVE",
-      },
-      {
-        id: "org-03",
-        name: "HealthBridge Clinics",
-        slug: "healthbridge",
-        domain: "healthbridge.ofia.ng",
-        owner_name: "Dr. Babatunde Jinadu",
-        owner_email: "babatunde@healthbridge.io",
-        plan_tier: "STARTER",
-        status: "ACTIVE",
-      },
-      {
-        id: "org-04",
-        name: "Apex Global Logistics",
-        slug: "apex-logistics",
-        domain: "apex-logistics.ofia.ng",
-        owner_name: "Ibrahim Musa",
-        owner_email: "ibrahim@apexlogistics.com.ng",
-        plan_tier: "SCALE",
-        status: "SUSPENDED",
-      },
-      {
-        id: "org-05",
-        name: "Zenith Real Estate Hub",
-        slug: "zenith-re",
-        domain: "zenith-re.ofia.ng",
-        owner_name: "Ngozi Eze",
-        owner_email: "ngozi@zenithrealty.ng",
-        plan_tier: "FREE_TRIAL",
-        status: "ACTIVE",
-      },
-    ];
+    list = [];
   }
 
   // Merge any in-memory overrides

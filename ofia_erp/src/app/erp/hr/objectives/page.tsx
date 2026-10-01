@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useERPStore, Objective, DEPARTMENTS } from "@/lib/erp-store";
+import { useERPStore, Objective, DEPARTMENTS, getActiveTenantSlug } from "@/lib/erp-store";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -12,6 +12,9 @@ import { ArrowLeft } from "lucide-react";
 
 export default function ObjectiveManagement() {
   const { objectives, updateObjectives } = useERPStore();
+  const [activeTenantSlug, setActiveTenantSlug] = useState<string>("");
+  const [isSavingDept, setIsSavingDept] = useState(false);
+  const [isSubmittingObj, setIsSubmittingObj] = useState(false);
   const [text, setText] = useState("");
   const [weight, setWeight] = useState(15);
   const [objType, setObjType] = useState<"objective" | "competency">("objective");
@@ -19,7 +22,7 @@ export default function ObjectiveManagement() {
   const [category, setCategory] = useState<string>("Behavioural");
   const [selectedDepts, setSelectedDepts] = useState<string[]>([]);
   const [filterDept, setFilterDept] = useState<string>("All");
-  const [depts, setDepts] = useState<string[]>([...DEPARTMENTS]);
+  const [depts, setDepts] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [isAddingDept, setIsAddingDept] = useState(false);
@@ -32,6 +35,45 @@ export default function ObjectiveManagement() {
   const [editObjDepts, setEditObjDepts] = useState<string[]>([]);
   const [editObjCategory, setEditObjCategory] = useState<string>("Behavioural");
   const [editObjExpectedLevel, setEditObjExpectedLevel] = useState<number>(3);
+
+  // Load persistent departments from backend API
+  useEffect(() => {
+    const slug = getActiveTenantSlug();
+    setActiveTenantSlug(slug);
+
+    const loadDepts = async () => {
+      try {
+        const url = slug ? `/api/erp/departments?tenant=${encodeURIComponent(slug)}` : "/api/erp/departments";
+        const res = await fetch(url, {
+          cache: "no-store",
+          headers: slug ? { "x-tenant-slug": slug } : {},
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            const apiNames = data.map((d: any) => d.name || d.Name).filter(Boolean);
+            if (apiNames.length > 0) {
+              setDepts(apiNames);
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to load departments from API:", err);
+      }
+
+      // Fallback only if API returned no departments
+      setDepts([
+        "Finance & Accounts",
+        "Operations & Maintenance",
+        "Systems & IT / ERP",
+        "Human Resources & Talent",
+        "Commercial & Growth",
+        "Executive Directorate"
+      ]);
+    };
+    loadDepts();
+  }, []);
 
   // Automatically enforce 100% aggregation per department
   useEffect(() => {
@@ -74,17 +116,57 @@ export default function ObjectiveManagement() {
     }
   }, [filterDept, objectives, updateObjectives]);
 
-  const handleSaveDept = () => {
+  const handleSaveDept = async () => {
     const trimmed = newDeptText.trim();
     if (!trimmed) return;
     if (depts.map(d => d.toLowerCase()).includes(trimmed.toLowerCase())) {
       alert("This department already exists!");
       return;
     }
-    const updated = [...depts, trimmed];
-    setDepts(updated);
-    setIsAddingDept(false);
-    setNewDeptText("");
+
+    setIsSavingDept(true);
+    const slug = activeTenantSlug || getActiveTenantSlug();
+
+    try {
+      const code = `DEPT-${trimmed.replace(/[^A-Za-z0-9]/g, "").slice(0, 4).toUpperCase()}-${Date.now().toString().slice(-4)}`;
+      const payload = {
+        code,
+        name: trimmed,
+        head: "Pending Appointment",
+        headCount: 1,
+        budget: "₦10,000,000",
+        costCenter: `CC-${depts.length + 100}`,
+        tenantSlug: slug || undefined,
+      };
+
+      const res = await fetch(`/api/erp/departments${slug ? `?tenant=${encodeURIComponent(slug)}` : ""}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(slug ? { "x-tenant-slug": slug } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        console.warn("Backend returned non-OK status when saving department, saving locally");
+      }
+
+      const updated = [...depts, trimmed];
+      setDepts(updated);
+      setSelectedDepts(prev => prev.includes(trimmed) ? prev : [...prev, trimmed]);
+      setIsAddingDept(false);
+      setNewDeptText("");
+    } catch (err) {
+      console.error("Failed to persist department:", err);
+      const updated = [...depts, trimmed];
+      setDepts(updated);
+      setSelectedDepts(prev => prev.includes(trimmed) ? prev : [...prev, trimmed]);
+      setIsAddingDept(false);
+      setNewDeptText("");
+    } finally {
+      setIsSavingDept(false);
+    }
   };
 
   const handleToggleDept = (dept: string) => {
@@ -114,7 +196,7 @@ export default function ObjectiveManagement() {
     }
   };
   
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!text || !weight) {
       alert("Please provide objective details.");
@@ -132,8 +214,13 @@ export default function ObjectiveManagement() {
       return;
     }
 
+    setIsSubmittingObj(true);
+    const slug = activeTenantSlug || getActiveTenantSlug();
+    const timestamp = Date.now();
+
     const newObjs: Objective[] = texts.map((t, idx) => ({
-      id: `OBJ${objectives.length + idx + 1}`,
+      id: `OBJ_${timestamp}_${idx + 1}`,
+      tenantSlug: slug || undefined,
       text: t,
       weight,
       type: objType,
@@ -145,13 +232,20 @@ export default function ObjectiveManagement() {
         : undefined,
     }));
 
-    const updated = [...objectives, ...newObjs];
-    updateObjectives(updated);
-    setText("");
-    setWeight(15);
-    setSelectedDepts([]);
-    setDescriptionText("");
-    alert(texts.length > 1 ? `${texts.length} objectives added successfully!` : "Objective added successfully!");
+    try {
+      const updated = [...objectives, ...newObjs];
+      await updateObjectives(updated);
+      setText("");
+      setWeight(15);
+      setSelectedDepts([]);
+      setDescriptionText("");
+      alert(texts.length > 1 ? `${texts.length} objectives added successfully!` : "Objective added successfully!");
+    } catch (err: any) {
+      console.error("Error saving objective:", err);
+      alert(`Error saving objective: ${err?.message || "Please try again."}`);
+    } finally {
+      setIsSubmittingObj(false);
+    }
   };
 
   const handleDelete = (id: string) => {

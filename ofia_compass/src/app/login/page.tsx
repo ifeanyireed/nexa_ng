@@ -27,9 +27,13 @@ import {
 } from "@tabler/icons-react";
 
 import { AUTH_API } from "@/lib/api-client";
+import { useActiveTenant } from "@/lib/tenant-context";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { activeTenant } = useActiveTenant();
+  const tenantDomain = activeTenant?.domain || (activeTenant?.slug ? `${activeTenant.slug}.ofia.ng` : "ofia.ng");
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -42,7 +46,7 @@ export default function LoginPage() {
     {
       name: "Admin",
       label: "Admin",
-      email: "admin@neweratransports.com",
+      email: `admin@${tenantDomain}`,
       pass: "password123",
       roleKey: "admin",
       badge: "Admin",
@@ -52,7 +56,7 @@ export default function LoginPage() {
     {
       name: "Executive",
       label: "Executive Portal",
-      email: "md@neweratransports.com",
+      email: `md@${tenantDomain}`,
       pass: "password123",
       roleKey: "md",
       badge: "Executive",
@@ -62,7 +66,7 @@ export default function LoginPage() {
     {
       name: "HR Officer",
       label: "Human Resources (HR)",
-      email: "hr@neweratransports.com",
+      email: `hr@${tenantDomain}`,
       pass: "password123",
       roleKey: "hr",
       badge: "People & Culture",
@@ -72,7 +76,7 @@ export default function LoginPage() {
     {
       name: "Accountant",
       label: "Accounting & Finance",
-      email: "accounts@neweratransports.com",
+      email: `accounts@${tenantDomain}`,
       pass: "password123",
       roleKey: "accountant",
       badge: "Finance",
@@ -82,7 +86,7 @@ export default function LoginPage() {
     {
       name: "Operations Manager",
       label: "Operations & Fleet",
-      email: "manager@neweratransports.com",
+      email: `manager@${tenantDomain}`,
       pass: "password123",
       roleKey: "manager",
       badge: "Supervisor",
@@ -92,7 +96,7 @@ export default function LoginPage() {
     {
       name: "Employee",
       label: "General Employee",
-      email: "employee@neweratransports.com",
+      email: `employee@${tenantDomain}`,
       pass: "password123",
       roleKey: "employee",
       badge: "Staff",
@@ -102,7 +106,7 @@ export default function LoginPage() {
     {
       name: "Marketer",
       label: "Marketing & CRM",
-      email: "marketing@neweratransports.com",
+      email: `marketing@${tenantDomain}`,
       pass: "password123",
       roleKey: "marketer",
       badge: "Marketing",
@@ -112,7 +116,7 @@ export default function LoginPage() {
     {
       name: "Cashier",
       label: "POS & Cashier Desk",
-      email: "cashier@neweratransports.com",
+      email: `cashier@${tenantDomain}`,
       pass: "password123",
       roleKey: "cashier",
       badge: "Retail & POS",
@@ -122,7 +126,7 @@ export default function LoginPage() {
     {
       name: "Inventory Officer",
       label: "Warehouse & Inventory",
-      email: "inventory@neweratransports.com",
+      email: `inventory@${tenantDomain}`,
       pass: "password123",
       roleKey: "inventory_officer",
       badge: "Supply Chain",
@@ -132,7 +136,7 @@ export default function LoginPage() {
     {
       name: "Dispatcher",
       label: "Logistics Dispatch Desk",
-      email: "logistics@neweratransports.com",
+      email: `logistics@${tenantDomain}`,
       pass: "password123",
       roleKey: "dispatcher",
       badge: "Logistics",

@@ -42,6 +42,8 @@ export function RoleGuard({
           role = u.role as RoleKey;
         }
       } catch {}
+    } else if (localStorage.getItem("nexa_user_role")) {
+      role = (localStorage.getItem("nexa_user_role") || "admin") as RoleKey;
     } else if (user?.role) {
       role = (user.role.toLowerCase().replace("tenant_", "").replace("_director", "") || "admin") as RoleKey;
     }
@@ -60,6 +62,20 @@ export function RoleGuard({
     else if (role === "dispatcher") home = "/erp/admin/logistics";
 
     setRedirectTarget(fallbackRoute || home);
+
+    // STRICT EMPLOYEE ROLE ISOLATION:
+    // When an employee is logged in, they can ONLY view the employee portal (/erp/employee*)
+    if (role === "employee") {
+      if (!pathname.startsWith("/erp/employee")) {
+        setIsAuthorized(false);
+        if (pathname !== "/erp/employee") {
+          router.replace("/erp/employee");
+        }
+        return;
+      }
+      setIsAuthorized(true);
+      return;
+    }
 
     // 3. Automatic Route Role Rules (if allowedRoles not explicitly provided)
     let effectiveAllowedRoles = allowedRoles;

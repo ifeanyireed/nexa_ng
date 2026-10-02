@@ -390,18 +390,23 @@ export default function AdminCommandCenterPage() {
   // Role Guard: Redirect non-admin personas to their assigned departmental dashboard
   useEffect(() => {
     if (typeof window !== "undefined") {
+      let currentRole = "";
       const stored = localStorage.getItem("erp_current_user");
       if (stored) {
         try {
           const u = JSON.parse(stored);
-          if (u && u.role && u.role !== "admin") {
-            if (u.role === "md") router.replace("/erp/md");
-            else if (u.role === "hr") router.replace("/erp/hr");
-            else if (u.role === "accountant") router.replace("/erp/accountant");
-            else if (u.role === "manager") router.replace("/erp/manager");
-            else if (u.role === "employee") router.replace("/erp/employee");
-          }
+          if (u && u.role) currentRole = u.role;
         } catch {}
+      }
+      if (!currentRole) {
+        currentRole = localStorage.getItem("nexa_user_role") || "";
+      }
+      if (currentRole && currentRole !== "admin") {
+        if (currentRole === "employee") router.replace("/erp/employee");
+        else if (currentRole === "md") router.replace("/erp/md");
+        else if (currentRole === "hr") router.replace("/erp/hr");
+        else if (currentRole === "accountant") router.replace("/erp/accountant");
+        else if (currentRole === "manager") router.replace("/erp/manager");
       }
     }
   }, [router]);

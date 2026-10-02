@@ -26,7 +26,9 @@ const nextConfig: NextConfig = {
       { source: '/observability', destination: '/ai/observability' },
       { source: '/observability/:path*', destination: '/ai/observability/:path*' },
       { source: '/system', destination: '/ai/system' },
-      { source: '/system/:path*', destination: '/ai/system/:path*' }
+      { source: '/system/:path*', destination: '/ai/system/:path*' },
+      { source: '/tenant', destination: '/tenants' },
+      { source: '/tenant/:path*', destination: '/tenants/:path*' }
     ];
   }
 };

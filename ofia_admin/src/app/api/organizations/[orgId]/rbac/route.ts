@@ -150,19 +150,30 @@ export async function PUT(
 
     const targets = Array.from(new Set([canonicalSlug, canonicalId])).filter(Boolean);
 
+    const valuesPlaceholders: string[] = [];
+    const queryParams: any[] = [];
+    let pIdx = 1;
+
     for (const targetTenantId of targets) {
       for (const [role, modules] of Object.entries(matrix)) {
         for (const [moduleKey, isEnabled] of Object.entries(modules)) {
           const permId = `perm_${targetTenantId}_${role}_${moduleKey}`;
-          await pool.query(
-            `INSERT INTO "TenantRolePermission" (id, "tenantId", role, "moduleKey", "isEnabled", "createdAt", "updatedAt")
-             VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-             ON CONFLICT ("tenantId", role, "moduleKey")
-             DO UPDATE SET "isEnabled" = EXCLUDED."isEnabled", "updatedAt" = NOW()`,
-            [permId, targetTenantId, role, moduleKey, Boolean(isEnabled)]
+          valuesPlaceholders.push(
+            `($${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, NOW(), NOW())`
           );
+          queryParams.push(permId, targetTenantId, role, moduleKey, Boolean(isEnabled));
         }
       }
+    }
+
+    if (valuesPlaceholders.length > 0) {
+      const batchSql = `
+        INSERT INTO "TenantRolePermission" (id, "tenantId", role, "moduleKey", "isEnabled", "createdAt", "updatedAt")
+        VALUES ${valuesPlaceholders.join(", ")}
+        ON CONFLICT ("tenantId", role, "moduleKey")
+        DO UPDATE SET "isEnabled" = EXCLUDED."isEnabled", "updatedAt" = NOW()
+      `;
+      await pool.query(batchSql, queryParams);
     }
 
     // Optional: Log audit action

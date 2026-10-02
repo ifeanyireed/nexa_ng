@@ -90,9 +90,9 @@ function LoginContent() {
       <header className="p-6 flex items-center justify-between max-w-7xl mx-auto w-full">
         <Link href="/" className="flex items-center gap-3">
           <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia SuperAdmin Logo" className="w-8 h-8 object-contain shrink-0" />
-          <span className="font-extrabold text-base text-[var(--nexa-text-primary)] text-display flex items-center gap-2">
+          <span className="font-semibold text-base text-[var(--nexa-text-primary)] text-display flex items-center gap-2" style={{ fontWeight: 600 }}>
             Ofia SuperAdmin
-            <span className="text-[10px] font-extrabold font-mono uppercase px-2.5 py-0.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20">
+            <span className="text-[10px] font-semibold font-mono uppercase px-2.5 py-0.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20">
               PLATFORM ROOT
             </span>
           </span>
@@ -117,7 +117,7 @@ function LoginContent() {
               <div className="flex justify-center mb-1">
                 <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia Logo" className="w-12 h-12 object-contain" />
               </div>
-              <h1 className="text-2xl font-black text-display text-[var(--nexa-text-primary)] tracking-tight">
+              <h1 className="text-2xl font-semibold text-display text-[var(--nexa-text-primary)] tracking-tight" style={{ fontWeight: 600 }}>
                 Sign in to Ofia SuperAdmin
               </h1>
               <p className="text-xs text-[var(--nexa-text-muted)] leading-relaxed">
@@ -132,7 +132,7 @@ function LoginContent() {
                   <Key className="w-3 h-3 text-[#1A56DB]" />
                   1-Click Seeded Operator Personas
                 </span>
-                <span className="text-[#0E9F6E] font-extrabold flex items-center gap-1">
+                <span className="text-[#0E9F6E] font-semibold flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#0E9F6E] animate-pulse" />
                   Quick Fill
                 </span>
@@ -227,7 +227,7 @@ function LoginContent() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-12 rounded-full bg-[#1A56DB] hover:bg-[#1545B0] text-white font-extrabold text-sm shadow-lg shadow-[#1A56DB]/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full h-12 rounded-full bg-[#1A56DB] hover:bg-[#1545B0] text-white font-semibold text-sm shadow-lg shadow-[#1A56DB]/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {isLoading ? (
                   <span className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

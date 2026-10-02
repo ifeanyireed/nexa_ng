@@ -332,9 +332,31 @@ function TenantManagementContent() {
       const matrixPayload: Record<string, Record<string, boolean>> = {};
 
       defaultRoleKeys.forEach((role) => {
-        matrixPayload[role] = { ...updatedModules };
-        if (!newStatus) {
-          matrixPayload[role][moduleKey] = false;
+        if (role === "employee") {
+          matrixPayload[role] = {
+            employee: true,
+            quests: updatedModules.quests ?? true,
+            mission: false,
+            ai: false,
+            crm: false,
+            users: false,
+            access_control: false,
+            marketplace: false,
+            shop: false,
+            inventory: false,
+            pos: false,
+            logistics: false,
+            referrals: false,
+            accounting: false,
+            hr: false,
+            manager: false,
+            md: false,
+          };
+        } else {
+          matrixPayload[role] = { ...updatedModules };
+          if (!newStatus) {
+            matrixPayload[role][moduleKey] = false;
+          }
         }
       });
 
@@ -368,7 +390,29 @@ function TenantManagementContent() {
       const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant"];
       const matrixPayload: Record<string, Record<string, boolean>> = {};
       defaultRoleKeys.forEach((role) => {
-        matrixPayload[role] = { ...updatedModules };
+        if (role === "employee") {
+          matrixPayload[role] = {
+            employee: true,
+            quests: enableAll,
+            mission: false,
+            ai: false,
+            crm: false,
+            users: false,
+            access_control: false,
+            marketplace: false,
+            shop: false,
+            inventory: false,
+            pos: false,
+            logistics: false,
+            referrals: false,
+            accounting: false,
+            hr: false,
+            manager: false,
+            md: false,
+          };
+        } else {
+          matrixPayload[role] = { ...updatedModules };
+        }
       });
       await USER_API.saveTenantRBAC(tenant.slug, matrixPayload);
       showToast(`⚡ ${tenant.name}: All modules ${enableAll ? "granted" : "revoked"} in Neon Postgres`);

@@ -148,44 +148,62 @@ export async function authenticateApiRequest(
     requirePermission?: keyof RolePermissions;
   }
 ): Promise<{ user: SuperAdminUser | null; errorResponse: NextResponse | null }> {
-  let token: string | undefined;
+  // 1. Check if edge middleware already verified the operator
+  const operatorRole = req.headers.get("x-operator-role") as AdminRole | null;
+  const operatorId = req.headers.get("x-operator-id");
+  const operatorEmail = req.headers.get("x-operator-email");
 
-  // 1. Check Cookie header
-  const cookieHeader = req.headers.get("cookie");
-  if (cookieHeader) {
-    const match = cookieHeader
-      .split(";")
-      .map((c) => c.trim())
-      .find((c) => c.startsWith(`${AUTH_COOKIE_NAME}=`));
-    if (match) {
-      token = decodeURIComponent(match.substring(AUTH_COOKIE_NAME.length + 1));
-    }
-  }
+  let user: SuperAdminUser | null = null;
 
-  // 2. Check Authorization header
-  if (!token) {
-    const authHeader = req.headers.get("authorization");
-    if (authHeader?.startsWith("Bearer ")) {
-      token = authHeader.substring(7).trim();
-    }
-  }
-
-  if (!token) {
-    return {
-      user: null,
-      errorResponse: NextResponse.json(
-        { error: "Unauthorized: Missing session token" },
-        { status: 401 }
-      ),
+  if (operatorRole && operatorId) {
+    user = {
+      id: operatorId,
+      name: operatorEmail?.split("@")[0] || "SuperAdmin Operator",
+      email: operatorEmail || "superadmin@ofia.ng",
+      role: operatorRole,
+      scope: "PLATFORM_ROOT",
+      department: "Platform Operations",
     };
   }
 
-  const user = await verifySuperAdminJWT(token);
+  let token: string | undefined;
+
+  // 2. Check Cookie header if user not already resolved
+  if (!user) {
+    const cookieHeader = req.headers.get("cookie");
+    if (cookieHeader) {
+      const match = cookieHeader
+        .split(";")
+        .map((c) => c.trim())
+        .find((c) => c.startsWith(`${AUTH_COOKIE_NAME}=`));
+      if (match) {
+        token = decodeURIComponent(match.substring(AUTH_COOKIE_NAME.length + 1));
+      }
+    }
+
+    // 3. Check Authorization header
+    if (!token) {
+      const authHeader = req.headers.get("authorization");
+      if (authHeader?.startsWith("Bearer ")) {
+        token = authHeader.substring(7).trim();
+      }
+    }
+
+    if (token) {
+      user = await verifySuperAdminJWT(token);
+    }
+  }
+
+  // 4. In development mode or local testing, provide fallback operator if no token found
+  if (!user && process.env.NODE_ENV !== "production") {
+    user = SEEDED_SUPER_ADMINS[0];
+  }
+
   if (!user) {
     return {
       user: null,
       errorResponse: NextResponse.json(
-        { error: "Unauthorized: Invalid or expired session token" },
+        { error: "Unauthorized: Missing or invalid session token" },
         { status: 401 }
       ),
     };

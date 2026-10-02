@@ -364,10 +364,16 @@ export function ErpAdminShell({
       setUserName(resolvedName);
       setUserEmail(resolvedEmail);
 
-      // Role Protection Guard:
-      // If a non-admin role lands directly on /erp/admin (root admin overview) or /erp/admin/access-control:
-      // redirect them immediately to their designated home dashboard!
-      if (resolvedRole !== "admin" && (pathname === "/erp/admin" || pathname === "/erp/admin/access-control")) {
+      // Strict Employee Isolation & Role Protection Guard:
+      // If resolvedRole is "employee":
+      // An employee is ONLY allowed to access the Employee Portal (/erp/employee*).
+      // If they land on or attempt to navigate to any other ERP page, immediately redirect them to /erp/employee!
+      if (resolvedRole === "employee") {
+        if (!pathname.startsWith("/erp/employee")) {
+          window.location.href = "/erp/employee";
+          return;
+        }
+      } else if (resolvedRole !== "admin" && (pathname === "/erp/admin" || pathname === "/erp/admin/access-control")) {
         if (resolvedRole === "md") {
           window.location.href = "/erp/md";
           return;
@@ -379,9 +385,6 @@ export function ErpAdminShell({
           return;
         } else if (resolvedRole === "manager") {
           window.location.href = "/erp/manager";
-          return;
-        } else if (resolvedRole === "employee") {
-          window.location.href = "/erp/employee";
           return;
         }
       }
@@ -645,7 +648,14 @@ export function ErpAdminShell({
         {/* LOGO AREA */}
         <div className="p-6 pb-2 flex items-center justify-between">
           {isSidebarOpen ? (
-            <Link href="/" className="flex items-center gap-2.5 min-w-0">
+            <Link
+              href={
+                currentRole === "employee"
+                  ? "/erp/employee"
+                  : getRoleHomePortal(currentRole)?.path || "/erp/admin"
+              }
+              className="flex items-center gap-2.5 min-w-0"
+            >
               <img
                 src={tenantLogo || "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"}
                 alt={tenantName || "Ofia ERP"}
@@ -724,6 +734,16 @@ export function ErpAdminShell({
               const matchesSearch = item.label.toLowerCase().includes(searchQuery.toLowerCase());
               if (!matchesSearch) return false;
 
+              // STAGE 1: Strict Employee Isolation
+              // When employees login to their tenant ERP, they should ONLY see the employee portal!
+              if (currentRole === "employee") {
+                return (
+                  item.key === "employee" ||
+                  item.href === "/erp/employee" ||
+                  item.href.startsWith("/erp/employee/")
+                );
+              }
+
               // The '/erp/admin' Overview page is strictly for the Tenant Administrator
               if (item.key === "overview" || item.href === "/erp/admin") {
                 return currentRole === "admin";
@@ -747,7 +767,7 @@ export function ErpAdminShell({
                 return true;
               }
 
-              // For subordinate staff roles (md, hr, accountant, marketer, manager, employee, etc.):
+              // For subordinate staff roles (md, hr, accountant, marketer, manager, etc.):
               // check if granted in the tenant RBAC matrix
               return Boolean(permissionMatrix[currentRole]?.[item.key]);
             });
@@ -764,6 +784,7 @@ export function ErpAdminShell({
               if (showSectionHeader) {
                 currentSection = item.section;
               }
+              const displaySection = currentRole === "employee" ? "Employee Workspace" : item.section;
 
               return (
                 <React.Fragment key={item.key || i}>
@@ -771,7 +792,7 @@ export function ErpAdminShell({
                     <div className={cn("pt-3 pb-1", i === 0 && "pt-0")}>
                       {isSidebarOpen ? (
                         <div className="text-[10px] font-extrabold uppercase tracking-wider text-nexa-text-faint px-3 flex items-center gap-1.5">
-                          <span>{item.section}</span>
+                          <span>{displaySection}</span>
                         </div>
                       ) : (
                         <div className="w-8 h-[1px] bg-nexa-border mx-auto my-1" />
@@ -909,17 +930,19 @@ export function ErpAdminShell({
             )}
           </div>
 
-          <Link href="/tenant/settings">
-            <button
-              className={cn(
-                "w-full flex items-center gap-3.5 p-3 rounded-full transition-all text-nexa-text-faint hover:bg-nexa-bg-base hover:text-nexa-text-primary cursor-pointer",
-                pathname === "/tenant/settings" && "bg-nexa-brand text-white shadow-md shadow-nexa-brand/20"
-              )}
-            >
-              <Settings className="w-6 h-6" />
-              {isSidebarOpen && <span className="font-bold text-xs">Workspace Settings</span>}
-            </button>
-          </Link>
+          {currentRole === "admin" && (
+            <Link href="/tenant/settings">
+              <button
+                className={cn(
+                  "w-full flex items-center gap-3.5 p-3 rounded-full transition-all text-nexa-text-faint hover:bg-nexa-bg-base hover:text-nexa-text-primary cursor-pointer",
+                  pathname === "/tenant/settings" && "bg-nexa-brand text-white shadow-md shadow-nexa-brand/20"
+                )}
+              >
+                <Settings className="w-6 h-6" />
+                {isSidebarOpen && <span className="font-bold text-xs">Workspace Settings</span>}
+              </button>
+            </Link>
+          )}
           <div className="flex items-center gap-1.5 justify-between">
             <button
               onClick={logout}
@@ -1031,6 +1054,7 @@ export function ErpAdminShell({
 
       {/* BOTTOM RIGHT SWITCH TO [ROLE] BUTTON */}
       {(() => {
+        if (currentRole === "employee") return null;
         const sessionHome = getRoleHomePortal(currentRole);
         const isAwayFromRoleHome =
           sessionHome &&

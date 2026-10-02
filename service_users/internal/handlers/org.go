@@ -449,8 +449,16 @@ func (h *OrgHandler) GetTenantRBAC(w http.ResponseWriter, r *http.Request) {
 	matrix := make(map[string]map[string]bool)
 
 	if h.db != nil {
+		var org models.Organization
+		canonicalSlug := orgID
+		canonicalID := orgID
+		if h.db.Where("id = ? OR slug = ?", orgID, orgID).First(&org).Error == nil {
+			canonicalSlug = org.Slug
+			canonicalID = org.ID
+		}
+
 		var perms []models.TenantRolePermission
-		if err := h.db.Where("tenantId = ?", orgID).Find(&perms).Error; err == nil && len(perms) > 0 {
+		if err := h.db.Where("\"tenantId\" = ? OR \"tenantId\" = ?", canonicalSlug, canonicalID).Find(&perms).Error; err == nil && len(perms) > 0 {
 			for _, p := range perms {
 				if matrix[p.Role] == nil {
 					matrix[p.Role] = make(map[string]bool)
@@ -480,26 +488,41 @@ func (h *OrgHandler) SaveTenantRBAC(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if h.db != nil && req.Matrix != nil {
-		for role, modules := range req.Matrix {
-			for modKey, isEnabled := range modules {
-				var existing models.TenantRolePermission
-				err := h.db.Where("tenantId = ? AND role = ? AND moduleKey = ?", orgID, role, modKey).First(&existing).Error
-				if err != nil {
-					newPerm := models.TenantRolePermission{
-						ID:        uuid.New().String(),
-						TenantID:  orgID,
-						Role:      role,
-						ModuleKey: modKey,
-						IsEnabled: isEnabled,
-						CreatedAt: time.Now(),
-						UpdatedAt: time.Now(),
+		var org models.Organization
+		canonicalSlug := orgID
+		canonicalID := orgID
+		if h.db.Where("id = ? OR slug = ?", orgID, orgID).First(&org).Error == nil {
+			canonicalSlug = org.Slug
+			canonicalID = org.ID
+		}
+
+		targets := []string{canonicalSlug}
+		if canonicalID != canonicalSlug && canonicalID != "" {
+			targets = append(targets, canonicalID)
+		}
+
+		for _, targetID := range targets {
+			for role, modules := range req.Matrix {
+				for modKey, isEnabled := range modules {
+					var existing models.TenantRolePermission
+					err := h.db.Where("\"tenantId\" = ? AND role = ? AND \"moduleKey\" = ?", targetID, role, modKey).First(&existing).Error
+					if err != nil {
+						newPerm := models.TenantRolePermission{
+							ID:        uuid.New().String(),
+							TenantID:  targetID,
+							Role:      role,
+							ModuleKey: modKey,
+							IsEnabled: isEnabled,
+							CreatedAt: time.Now(),
+							UpdatedAt: time.Now(),
+						}
+						h.db.Create(&newPerm)
+					} else {
+						h.db.Model(&existing).Updates(map[string]interface{}{
+							"isEnabled": isEnabled,
+							"updatedAt": time.Now(),
+						})
 					}
-					h.db.Create(&newPerm)
-				} else {
-					h.db.Model(&existing).Updates(map[string]interface{}{
-						"isEnabled": isEnabled,
-						"updatedAt": time.Now(),
-					})
 				}
 			}
 		}

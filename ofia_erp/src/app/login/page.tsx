@@ -212,7 +212,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
     setError("");
 
     const userPrefix = email.split("@")[0].toLowerCase();
-    const resolvedRole = userPrefix.includes("accountant")
+    let resolvedRole = userPrefix.includes("accountant")
       ? "accountant"
       : userPrefix.includes("hr")
       ? "hr"
@@ -228,15 +228,50 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
       ? "manager"
       : userPrefix.includes("market") || userPrefix.includes("sales")
       ? "marketer"
-      : userPrefix.includes("employee")
+      : userPrefix.includes("employee") || userPrefix.includes("staff")
       ? "employee"
       : "admin";
 
-    const resolvedName = email.split("@")[0] || "User";
+    let resolvedName = email.split("@")[0] || "User";
     const emailDomain = email.includes("@") ? email.split("@")[1].split(".")[0] : "";
 
     try {
       const res = await AUTH_API.login({ email, password });
+      if (res && res.user) {
+        if (res.user.role) {
+          const rawRole = String(res.user.role).toLowerCase();
+          if (
+            rawRole.includes("employee") ||
+            rawRole.includes("staff") ||
+            rawRole.includes("viewer") ||
+            rawRole.includes("client")
+          ) {
+            resolvedRole = "employee";
+          } else if (rawRole.includes("accountant")) {
+            resolvedRole = "accountant";
+          } else if (rawRole.includes("hr")) {
+            resolvedRole = "hr";
+          } else if (rawRole.includes("md")) {
+            resolvedRole = "md";
+          } else if (rawRole.includes("manager")) {
+            resolvedRole = "manager";
+          } else if (rawRole.includes("marketer") || rawRole.includes("sales")) {
+            resolvedRole = "marketer";
+          } else if (rawRole.includes("cashier")) {
+            resolvedRole = "cashier";
+          } else if (rawRole.includes("inventory")) {
+            resolvedRole = "inventory_officer";
+          } else if (rawRole.includes("dispatch") || rawRole.includes("logistics")) {
+            resolvedRole = "dispatcher";
+          } else if (rawRole.includes("admin")) {
+            resolvedRole = "admin";
+          }
+        }
+        if (res.user.name) {
+          resolvedName = res.user.name;
+        }
+      }
+
       if (typeof window !== "undefined") {
         if (res && res.token) {
           localStorage.setItem("nexa_auth_token", res.token);
@@ -260,7 +295,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
         document.cookie = `nexa_user_role=${resolvedRole}; path=/; max-age=2592000; SameSite=Lax`;
         document.cookie = `nexa_user_email=${encodeURIComponent(email)}; path=/; max-age=2592000; SameSite=Lax`;
       }
-      navigateUser(email);
+      navigateUser(email, resolvedRole);
     } catch {
       // Fallback simulation for seamless offline/demo access
       if (typeof window !== "undefined") {
@@ -282,32 +317,48 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
         document.cookie = `nexa_user_role=${resolvedRole}; path=/; max-age=2592000; SameSite=Lax`;
         document.cookie = `nexa_user_email=${encodeURIComponent(email)}; path=/; max-age=2592000; SameSite=Lax`;
       }
-      navigateUser(email);
+      navigateUser(email, resolvedRole);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const navigateUser = (userEmail: string) => {
+  const navigateUser = (userEmail: string, userRole?: string) => {
     let route = "/erp/admin";
-    if (userEmail.includes("accountant")) {
-      route = "/erp/accountant";
-    } else if (userEmail.includes("hr")) {
-      route = "/erp/hr";
-    } else if (userEmail.includes("md")) {
-      route = "/erp/md";
-    } else if (userEmail.includes("market") || userEmail.includes("sales") || userEmail.includes("crm")) {
-      route = "/erp/marketer";
-    } else if (userEmail.includes("manager")) {
-      route = "/erp/manager";
-    } else if (userEmail.includes("cashier")) {
-      route = "/erp/admin/shop/pos";
-    } else if (userEmail.includes("inventory")) {
-      route = "/erp/admin/shop/inventory";
-    } else if (userEmail.includes("dispatch")) {
-      route = "/erp/admin/logistics";
-    } else if (userEmail.includes("employee") || userEmail.includes("tech")) {
+    const activeRole =
+      userRole ||
+      (typeof window !== "undefined"
+        ? localStorage.getItem("nexa_user_role") || ""
+        : "");
+
+    if (
+      activeRole === "employee" ||
+      userEmail.toLowerCase().includes("employee") ||
+      userEmail.toLowerCase().includes("staff") ||
+      userEmail.toLowerCase().includes("tech")
+    ) {
       route = "/erp/employee";
+    } else if (activeRole === "accountant" || userEmail.toLowerCase().includes("accountant")) {
+      route = "/erp/accountant";
+    } else if (activeRole === "hr" || userEmail.toLowerCase().includes("hr")) {
+      route = "/erp/hr";
+    } else if (activeRole === "md" || userEmail.toLowerCase().includes("md")) {
+      route = "/erp/md";
+    } else if (
+      activeRole === "marketer" ||
+      userEmail.toLowerCase().includes("market") ||
+      userEmail.toLowerCase().includes("sales") ||
+      userEmail.toLowerCase().includes("crm")
+    ) {
+      route = "/erp/marketer";
+    } else if (activeRole === "manager" || userEmail.toLowerCase().includes("manager")) {
+      route = "/erp/manager";
+    } else if (activeRole === "cashier" || userEmail.toLowerCase().includes("cashier")) {
+      route = "/erp/admin/shop/pos";
+    } else if (activeRole === "inventory_officer" || userEmail.toLowerCase().includes("inventory")) {
+      route = "/erp/admin/shop/inventory";
+    } else if (activeRole === "dispatcher" || userEmail.toLowerCase().includes("dispatch")) {
+      route = "/erp/admin/logistics";
     }
 
     // 1. Identify tenant slug from user email if on general erp.domain.ng
@@ -424,7 +475,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
               />
             ) : isCustomTenant ? (
               <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm text-white shrink-0 shadow-md border"
+                className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm text-white shrink-0 shadow-md border"
                 style={{
                   background: `linear-gradient(135deg, ${primaryColor}, #020617)`,
                   borderColor: `${primaryColor}40`,
@@ -447,10 +498,10 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
             )}
 
             <div className="flex flex-col">
-              <span className="font-extrabold text-base text-white flex items-center gap-2 drop-shadow-md">
+              <span className="font-semibold text-base text-white flex items-center gap-2 drop-shadow-md">
                 {tenantName}
                 <span
-                  className="text-[10px] font-mono font-extrabold uppercase px-2.5 py-0.5 rounded-full border backdrop-blur-md"
+                  className="text-[10px] font-mono font-semibold uppercase px-2.5 py-0.5 rounded-full border backdrop-blur-md"
                   style={{
                     backgroundColor: "rgba(255, 255, 255, 0.15)",
                     borderColor: "rgba(255, 255, 255, 0.25)",
@@ -474,7 +525,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
             <span>Enterprise Operations & Management Suite</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-[1.15] drop-shadow-lg">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-white tracking-tight leading-[1.15] drop-shadow-lg">
             {heroTitle}
           </h1>
 
@@ -560,7 +611,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
               />
             ) : isCustomTenant ? (
               <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl text-white shadow-lg mb-5"
+                className="w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-xl text-white shadow-lg mb-5"
                 style={{
                   background: `linear-gradient(135deg, ${primaryColor}, #020617)`,
                 }}
@@ -581,7 +632,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
               />
             )}
 
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight">
               {isCustomTenant ? `Sign in to ${tenantName}` : "Sign in to Ofia ERP"}
             </h2>
             <p className="text-sm text-slate-500 mt-2">
@@ -601,7 +652,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
           <form onSubmit={handleLogin} className="space-y-4">
             {/* Email Field */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider px-1">
+              <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider px-1">
                 Enterprise Email
               </label>
               <div className="relative">
@@ -620,7 +671,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
             {/* Password Field */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between px-1">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                <label className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
                   Password
                 </label>
                 <Link
@@ -672,7 +723,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full h-12 rounded-xl text-white font-extrabold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 hover:brightness-110 active:scale-[0.99] mt-2"
+              className="w-full h-12 rounded-xl text-white font-semibold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 hover:brightness-110 active:scale-[0.99] mt-2"
               style={{
                 backgroundColor: primaryColor,
                 boxShadow: `0 8px 20px -4px ${primaryColor}40`,

@@ -12,7 +12,7 @@ import { UserCheck, Star, Award, CheckCircle2, ArrowRight } from "lucide-react";
 
 export default function EmployeeDashboard() {
   const router = useRouter();
-  const { reviews, cycles, users, objectives, updateReview } = useERPStore();
+  const { reviews, cycles, users, objectives, updateReview, isLoading } = useERPStore();
   const [currentUser, setCurrentUser] = useState<User>(() => getSignedInERPUser(users));
   const [userReviews, setUserReviews] = useState<PerformanceReview[]>([]);
 
@@ -55,6 +55,7 @@ export default function EmployeeDashboard() {
     <BusinessShell
       title={`Employee Portal — ${currentUser.name}`}
       subtitle={`${currentUser.department} • Self-appraisals, quarterly performance milestones, and competency progression.`}
+      isLoading={isLoading}
     >
       <div className="space-y-6">
         

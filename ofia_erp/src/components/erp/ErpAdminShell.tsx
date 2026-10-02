@@ -908,7 +908,8 @@ export function ErpAdminShell({
                 </React.Fragment>
               );
             });
-          })()}
+          })()
+        )}
         </nav>
 
         {/* FOOTER ACTIONS */}

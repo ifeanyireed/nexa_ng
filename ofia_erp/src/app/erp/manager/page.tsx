@@ -12,7 +12,7 @@ import { Users, Star, Clock, CheckCircle2, ArrowRight } from "lucide-react";
 
 export default function ManagerDashboard() {
   const router = useRouter();
-  const { reviews, users, cycles } = useERPStore();
+  const { reviews, users, cycles, isLoading } = useERPStore();
   const [currentUser, setCurrentUser] = useState<User>(() => getSignedInERPUser(users));
   const [selectedCycleId, setSelectedCycleId] = useState<string>("ACTIVE");
 
@@ -81,6 +81,7 @@ export default function ManagerDashboard() {
     <BusinessShell
       title={`Line Manager Desk — ${currentUser.name}`}
       subtitle={`${currentUser.department} • Team self-appraisal submissions, scoring verification, and performance feedback.`}
+      isLoading={isLoading}
       action={
         <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-full px-3 py-1.5 shadow-xs">
           <span className="text-[11px] font-bold text-slate-500">Cycle:</span>

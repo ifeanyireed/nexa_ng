@@ -12,7 +12,7 @@ import { Building2, Award, TrendingUp, Users, ArrowRight } from "lucide-react";
 
 export default function MDDashboard() {
   const router = useRouter();
-  const { reviews, users, cycles } = useERPStore();
+  const { reviews, users, cycles, isLoading: isStoreLoading } = useERPStore();
   const [currentUser, setCurrentUser] = useState<User>(() => getSignedInERPUser(users));
   const [departments, setDepartments] = useState<{ code: string; name: string; costCenter?: string; head?: string }[]>([]);
   const [isLoadingDepts, setIsLoadingDepts] = useState(true);
@@ -100,6 +100,7 @@ export default function MDDashboard() {
     <BusinessShell
       title="Executive Briefing & MD Governance"
       subtitle="Enterprise-wide appraisal calibrations, department rating benchmarks, and executive talent heatmaps."
+      isLoading={isLoadingDepts || isStoreLoading}
     >
       <div className="space-y-6">
         

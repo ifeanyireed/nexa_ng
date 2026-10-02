@@ -444,7 +444,7 @@ export default function AdminCommandCenterPage() {
   );
 
   return (
-    <ErpAdminShell activeModule="mission">
+    <ErpAdminShell activeModule="mission" isLoading={isLoading}>
       <div className="space-y-8">
         {/* TENANT PROVISIONING BADGE BAR */}
         <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-3xl bg-nexa-bg-surface/50 border border-nexa-border">

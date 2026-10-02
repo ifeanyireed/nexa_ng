@@ -27,7 +27,7 @@ import {
 
 export default function HRDashboard() {
   const router = useRouter();
-  const { reviews, users, cycles } = useERPStore();
+  const { reviews, users, cycles, isLoading } = useERPStore();
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedCycleId, setSelectedCycleId] = useState<string>("ACTIVE");
   const [submissionsPage, setSubmissionsPage] = useState(1);
@@ -159,6 +159,7 @@ export default function HRDashboard() {
     <BusinessShell
       title="HR 360 Appraisals & Performance Desk"
       subtitle="Corporate evaluation cycles, line manager score verification, competency rubric libraries, and staff directory."
+      isLoading={isLoading}
       action={
         <div className="flex items-center gap-2.5 flex-wrap">
           <div className="flex items-center gap-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-full px-3 py-1.5 shadow-xs">

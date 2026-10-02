@@ -40,7 +40,8 @@ import { NexaAvatar } from "@/components/nexa/NexaAvatar";
 import { Pagination } from "@/components/nexa/Pagination";
 import { useAuth } from "@/components/nexa/AuthContext";
 import { useActiveTenant } from "@/lib/tenant-context";
-import { getParentDept } from "@/lib/erp-store";
+import { getParentDept, INITIAL_USERS } from "@/lib/erp-store";
+import { resolveAvatarUrl } from "@/lib/avatar";
 
 interface DepartmentItem {
   code: string;
@@ -155,15 +156,30 @@ function ERPDepartmentsContent() {
       let loadedUsers: StaffUser[] = [];
       try {
         const uRes = await fetch(userUrl, { headers, cache: "no-store" });
+        let rawUsers: any[] = [];
         if (uRes.ok) {
           const uData = await uRes.json();
-          if (Array.isArray(uData)) {
-            loadedUsers = uData;
-            setUsers(uData);
+          if (Array.isArray(uData) && uData.length > 0) {
+            rawUsers = uData;
           }
         }
+        if (rawUsers.length === 0 && INITIAL_USERS && INITIAL_USERS.length > 0) {
+          rawUsers = INITIAL_USERS;
+        }
+        loadedUsers = rawUsers.map((u: any, idx: number) => ({
+          ...u,
+          avatar: resolveAvatarUrl(u.avatar, u.name || u.id, idx),
+        }));
+        setUsers(loadedUsers);
       } catch (uErr) {
         console.warn("Failed to fetch users for department mapping:", uErr);
+        if (INITIAL_USERS && INITIAL_USERS.length > 0) {
+          loadedUsers = INITIAL_USERS.map((u: any, idx: number) => ({
+            ...u,
+            avatar: resolveAvatarUrl(u.avatar, u.name || u.id, idx),
+          }));
+          setUsers(loadedUsers);
+        }
       }
 
       // 2. Fetch departments from ERP

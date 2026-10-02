@@ -12,6 +12,7 @@ import { Pagination } from "@/components/nexa/Pagination";
 import { Users, Plus, ArrowLeft, Search, Edit, Trash2, Building2 } from "lucide-react";
 import { useAuth } from "@/components/nexa/AuthContext";
 import { useActiveTenant } from "@/lib/tenant-context";
+import { resolveAvatarUrl } from "@/lib/avatar";
 
 export default function UserRoleManagement() {
   const { user } = useAuth();
@@ -145,7 +146,7 @@ export default function UserRoleManagement() {
                 </div>
               ) : (
                 paginatedUsers.map((u, idx) => {
-                  const avatarSrc = u.avatar && u.avatar.includes("character") ? (u.avatar.startsWith("/") ? `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets${u.avatar}` : u.avatar) : `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character${((startIndex + idx) % 20) + 1}.jpg`;
+                  const avatarSrc = resolveAvatarUrl(u.avatar, u.name || u.id, startIndex + idx);
                   return (
                 <div key={u.id} className={`p-3.5 bg-[var(--nexa-bg-base)] rounded-2xl border border-[var(--nexa-border)] flex justify-between ${editingUserId === u.id ? "flex-col sm:flex-row gap-4 items-start" : "items-center"}`}>
                   <div className="flex items-center gap-3 w-full">
@@ -153,6 +154,10 @@ export default function UserRoleManagement() {
                       src={avatarSrc}
                       alt={u.name}
                       className="w-9 h-9 rounded-full object-cover border border-[var(--nexa-border)] shadow-xs"
+                      onError={(e) => {
+                        const fallbackIndex = (((startIndex + idx) % 20) + 1);
+                        (e.currentTarget as HTMLImageElement).src = `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character${fallbackIndex}.jpg`;
+                      }}
                     />
                     <div className="flex-1">
                       <p className="font-bold text-[var(--nexa-text-primary)] text-xs">{u.name}</p>

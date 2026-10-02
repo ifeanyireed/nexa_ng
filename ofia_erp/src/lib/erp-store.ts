@@ -208,7 +208,7 @@ const INITIAL_CYCLES: ReviewCycle[] = [
 
 import seedData from "./erp-seed-data.json";
 
-const INITIAL_USERS: User[] = (seedData.users as any[]) || [];
+export const INITIAL_USERS: User[] = (seedData.users as any[]) || [];
 const INITIAL_REVIEWS: PerformanceReview[] = (seedData.reviews as any[]) || [];
 
 export function findReviewForUser(

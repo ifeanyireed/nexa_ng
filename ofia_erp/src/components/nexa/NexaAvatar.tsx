@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
+import { resolveAvatarUrl } from "@/lib/avatar";
 
 export interface NexaAvatarProps {
   src?: string;
@@ -41,17 +42,7 @@ export const NexaAvatar = ({
   };
 
   const displayFallback = fallback || name || "NG";
-
-  const getDeterministicAvatar = (seed: string) => {
-    let hash = 0;
-    for (let i = 0; i < seed.length; i++) {
-      hash = seed.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const index = (Math.abs(hash) % 20) + 1;
-    return `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character${index}.jpg`;
-  };
-
-  const avatarSrc = src || getDeterministicAvatar(displayFallback);
+  const avatarSrc = resolveAvatarUrl(src, displayFallback);
 
   const statusColor =
     status === "working"

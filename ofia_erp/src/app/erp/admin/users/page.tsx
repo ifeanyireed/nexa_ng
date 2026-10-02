@@ -34,6 +34,8 @@ import { Pagination } from "@/components/nexa/Pagination";
 import { RoleKey } from "@/lib/access-control";
 import { useAuth } from "@/components/nexa/AuthContext";
 import { useActiveTenant, DatabaseTenant } from "@/lib/tenant-context";
+import { resolveAvatarUrl } from "@/lib/avatar";
+import { INITIAL_USERS } from "@/lib/erp-store";
 
 interface ERPStaffUser {
   id: string;
@@ -127,36 +129,59 @@ function UserManagementContent() {
         cache: "no-store",
       });
 
+      let rawList: any[] = [];
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data)) {
-          const mapped: ERPStaffUser[] = data.map((u: any, idx: number) => {
-            const rawRole = (u.role || u.Role || "employee").toLowerCase();
-            const validRole = (["admin", "md", "hr", "manager", "accountant", "marketer", "employee", "cashier", "inventory_officer", "dispatcher"].includes(rawRole)
-              ? rawRole
-              : "employee") as RoleKey;
-
-            return {
-              id: u.id || u.ID || `USR-${idx + 1}`,
-              name: u.name || u.Name || "Staff Member",
-              email: u.email || u.Email || "",
-              role: validRole,
-              department: u.department || u.Department || "Executive Directorate",
-              designation: u.designation || u.Designation || "Corporate Officer",
-              managerName: u.managerName || u.ManagerName || undefined,
-              managerId: u.managerId || u.ManagerId || undefined,
-              avatar: u.avatar || `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character${(idx % 20) + 1}.jpg`,
-              company: u.company || u.Company || activeTenant?.name || "Corporate Staff",
-              location: u.location || u.Location || "Lagos, Nigeria",
-              status: "ACTIVE",
-            };
-          });
-          setUsers(mapped);
-          return;
+        if (Array.isArray(data) && data.length > 0) {
+          rawList = data;
         }
       }
+
+      if (rawList.length === 0 && INITIAL_USERS && INITIAL_USERS.length > 0) {
+        rawList = INITIAL_USERS;
+      }
+
+      const mapped: ERPStaffUser[] = rawList.map((u: any, idx: number) => {
+        const rawRole = (u.role || u.Role || "employee").toLowerCase();
+        const validRole = (["admin", "md", "hr", "manager", "accountant", "marketer", "employee", "cashier", "inventory_officer", "dispatcher"].includes(rawRole)
+          ? rawRole
+          : "employee") as RoleKey;
+
+        return {
+          id: u.id || u.ID || `USR-${idx + 1}`,
+          name: u.name || u.Name || "Staff Member",
+          email: u.email || u.Email || "",
+          role: validRole,
+          department: u.department || u.Department || "Executive Directorate",
+          designation: u.designation || u.Designation || "Corporate Officer",
+          managerName: u.managerName || u.ManagerName || undefined,
+          managerId: u.managerId || u.ManagerId || undefined,
+          avatar: resolveAvatarUrl(u.avatar || u.Avatar, u.name || u.email || u.id, idx),
+          company: u.company || u.Company || activeTenant?.name || "Corporate Staff",
+          location: u.location || u.Location || "Lagos, Nigeria",
+          status: "ACTIVE",
+        };
+      });
+      setUsers(mapped);
     } catch (e) {
       console.error("Failed to fetch ERP users from Postgres database:", e);
+      if (INITIAL_USERS && INITIAL_USERS.length > 0) {
+        const mappedFallback: ERPStaffUser[] = INITIAL_USERS.map((u: any, idx: number) => ({
+          id: u.id || `USR-${idx + 1}`,
+          name: u.name || "Staff Member",
+          email: u.email || "",
+          role: (u.role || "employee") as RoleKey,
+          department: u.department || "Executive Directorate",
+          designation: u.designation || "Corporate Officer",
+          managerName: u.managerName,
+          managerId: u.managerId,
+          avatar: resolveAvatarUrl(u.avatar, u.name || u.id, idx),
+          company: u.company || activeTenant?.name || "Corporate Staff",
+          location: u.location || "Lagos, Nigeria",
+          status: "ACTIVE",
+        }));
+        setUsers(mappedFallback);
+      }
     } finally {
       setIsLoadingUsers(false);
     }
@@ -541,19 +566,25 @@ function UserManagementContent() {
                     </td>
                   </tr>
                 ) : (
-                  paginatedUsers.map((u) => (
-                    <tr key={u.id} className="hover:bg-[var(--nexa-bg-base)]/50 transition-colors">
-                      <td className="py-3.5 px-3 flex items-center gap-3">
-                        <img
-                          src={u.avatar}
-                          alt={u.name}
-                          className="w-8 h-8 rounded-full object-cover border border-[var(--nexa-border)] shadow-xs"
-                        />
-                        <div>
-                          <p className="font-bold text-xs">{u.name}</p>
-                          <p className="text-[10px] text-[var(--nexa-text-muted)] font-mono">{u.email} • {u.id}</p>
-                        </div>
-                      </td>
+                  paginatedUsers.map((u, idx) => {
+                    const avatarSrc = resolveAvatarUrl(u.avatar, u.name || u.id, (page - 1) * itemsPerPage + idx);
+                    return (
+                      <tr key={u.id} className="hover:bg-[var(--nexa-bg-base)]/50 transition-colors">
+                        <td className="py-3.5 px-3 flex items-center gap-3">
+                          <img
+                            src={avatarSrc}
+                            alt={u.name}
+                            className="w-8 h-8 rounded-full object-cover border border-[var(--nexa-border)] shadow-xs"
+                            onError={(e) => {
+                              const fallbackIndex = (((page - 1) * itemsPerPage + idx) % 20) + 1;
+                              (e.currentTarget as HTMLImageElement).src = `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character${fallbackIndex}.jpg`;
+                            }}
+                          />
+                          <div>
+                            <p className="font-bold text-xs">{u.name}</p>
+                            <p className="text-[10px] text-[var(--nexa-text-muted)] font-mono">{u.email} • {u.id}</p>
+                          </div>
+                        </td>
                       <td className="py-3.5 px-3 text-[var(--nexa-text-muted)] font-medium">{u.department}</td>
                       <td className="py-3.5 px-3 text-[var(--nexa-text-primary)] font-semibold">{u.designation}</td>
                       <td className="py-3.5 px-3">
@@ -627,8 +658,9 @@ function UserManagementContent() {
                         )}
                       </td>
                     </tr>
-                  ))
-                )}
+                  );
+                })
+              )}
               </tbody>
             </table>
           </div>

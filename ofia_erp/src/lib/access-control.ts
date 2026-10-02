@@ -605,13 +605,14 @@ export function useTenantProvisioning() {
 
   const isModuleProvisioned = useCallback(
     (moduleKey: string): boolean => {
+      if (isLoading) return false;
       if (moduleKey === "mission" || moduleKey === "overview") return true;
       if (moduleKey === "access_control") return true;
       const isAdminAllowed = matrix.admin?.[moduleKey] !== false;
       const isTenantProvisionAllowed = (matrix as any).tenant_provision?.[moduleKey] !== false;
       return isAdminAllowed && isTenantProvisionAllowed;
     },
-    [matrix]
+    [matrix, isLoading]
   );
 
   return {

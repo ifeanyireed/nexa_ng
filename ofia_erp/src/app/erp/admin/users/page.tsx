@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   CheckCircle2,
@@ -64,6 +64,267 @@ const DEPARTMENTS = [
   "Systems & IT",
 ];
 
+// Comprehensive tenant-specific departments and operational units
+const TENANT_SPECIFIC_DEPARTMENTS: Record<string, string[]> = {
+  // New Era Transport Solutions (Transport & Logistics Operations)
+  neweratransports: [
+    "Fleet 1 (Bus Assistant)",
+    "Fleet 2 (Fleet Supervisor)",
+    "Fleet 4 (Facility Manager)",
+    "Fleet 5 (Fleet Maintenance North)",
+    "Fleet 6 (Fleet Operations Manager)",
+    "Fleet 7 (HSE Executive)",
+    "Fleet 8 (Fleet Supervisor)",
+    "NOC 1 (Fleet Monitoring & NOC Supervisor)",
+    "NOC 2 (Fleet Monitoring Officer)",
+    "Workshop 3 (Workshop Manager)",
+    "Finance 1 (Acc Payable)",
+    "Finance 2 (Acc Receivable)",
+    "Finance 3 (Accountant)",
+    "Finance 4 (Finance Analyst)",
+    "Finance 5 (Head of Finance)",
+    "Admin/HR 1 (Front Desk & Account Support)",
+    "Admin/HR 2 (Front Desk)",
+    "Admin/HR 3 (Office Assistant)",
+    "HR 1 (HR Executive 1)",
+    "HR 2 (HR Executive 2)",
+    "HR 3 (Head of HR)",
+    "Marketing 1 (Head of Marketing)",
+    "Marketing 2 (Marketing Executive & CSR)",
+    "Marketing 3 (Marketing Executive)",
+    "Marketing 5 (Social Media Executive)",
+    "Marketing 6 (Sales Closer)",
+    "ERP/IT 1 (ERP/IT Officer)",
+    "Legal 1 (Legal Counsel & EA)",
+    "Legal 2 (Legal Counsel & PM)",
+    "Internal Control 1 (Internal Control)",
+    "Head of Operations",
+    "Regional Head of Operations",
+  ],
+  nets: [
+    "Fleet 1 (Bus Assistant)",
+    "Fleet 2 (Fleet Supervisor)",
+    "Fleet 4 (Facility Manager)",
+    "Fleet 5 (Fleet Maintenance North)",
+    "Fleet 6 (Fleet Operations Manager)",
+    "Fleet 7 (HSE Executive)",
+    "Fleet 8 (Fleet Supervisor)",
+    "NOC 1 (Fleet Monitoring & NOC Supervisor)",
+    "NOC 2 (Fleet Monitoring Officer)",
+    "Workshop 3 (Workshop Manager)",
+    "Finance 1 (Acc Payable)",
+    "Finance 2 (Acc Receivable)",
+    "Finance 3 (Accountant)",
+    "Finance 4 (Finance Analyst)",
+    "Finance 5 (Head of Finance)",
+    "Admin/HR 1 (Front Desk & Account Support)",
+    "Admin/HR 2 (Front Desk)",
+    "Admin/HR 3 (Office Assistant)",
+    "HR 1 (HR Executive 1)",
+    "HR 2 (HR Executive 2)",
+    "HR 3 (Head of HR)",
+    "Marketing 1 (Head of Marketing)",
+    "Marketing 2 (Marketing Executive & CSR)",
+    "Marketing 3 (Marketing Executive)",
+    "Marketing 5 (Social Media Executive)",
+    "Marketing 6 (Sales Closer)",
+    "ERP/IT 1 (ERP/IT Officer)",
+    "Legal 1 (Legal Counsel & EA)",
+    "Legal 2 (Legal Counsel & PM)",
+    "Internal Control 1 (Internal Control)",
+    "Head of Operations",
+    "Regional Head of Operations",
+  ],
+  // Logitrack Express (Logistics & Dispatch)
+  "logitrack-express": [
+    "Express Line-Haul & Dispatch",
+    "Fleet Maintenance & Telematics",
+    "Central Hub & Sortation Center",
+    "Route Optimization & Control",
+    "Safety & Hazardous Materials",
+    "Client Account Management",
+    "Driver Welfare & Training",
+  ],
+  // EduSuite NG / Knowledge Horizons Learning Center (KHLC)
+  "edusuite-ng": [
+    "KHLC 1 (Instructor)",
+    "KHLC 2 (Supervisor)",
+    "KHLC 3 (Program Coordinator)",
+    "KHLC 4 (Admin Officer)",
+    "KHLC 5 (Head of C&R/CBT)",
+    "KHLC 6 (IT/Technical Support)",
+    "SU 1 (Program Coordinator)",
+    "Academic Affairs & Curriculum",
+    "Student Admissions & Records",
+    "Faculty & Instructional Staff",
+    "Bursary & Student Accounts",
+    "ICT & E-Learning Infrastructure",
+  ],
+  khlc: [
+    "KHLC 1 (Instructor)",
+    "KHLC 2 (Supervisor)",
+    "KHLC 3 (Program Coordinator)",
+    "KHLC 4 (Admin Officer)",
+    "KHLC 5 (Head of C&R/CBT)",
+    "KHLC 6 (IT/Technical Support)",
+    "SU 1 (Program Coordinator)",
+    "Academic Affairs & Curriculum",
+    "Student Admissions & Records",
+    "Faculty & Instructional Staff",
+  ],
+  // PayDirect Africa (Fintech & Payment Gateway)
+  "paydirect-africa": [
+    "Payment Operations & Settlement",
+    "Merchant Acquiring & Onboarding",
+    "Compliance, AML & Risk Management",
+    "Core Banking & API Integrations",
+    "Treasury & Financial Accounting",
+    "Fraud Monitoring & Security",
+    "Customer Success & Tier-2 Support",
+  ],
+  // HealthPulse NG (Healthcare & Clinical Diagnostics)
+  "healthpulse-ng": [
+    "Clinical Operations & Nursing",
+    "Medical Records & Diagnostics",
+    "Pharmacy & Inventory Management",
+    "Patient Care & Front Desk",
+    "Health Informatics & Telehealth",
+    "Quality Assurance & Clinical Compliance",
+  ],
+  // ReedBreed Enterprise (Software & Cloud Technology)
+  reedbreed: [
+    "Core Engineering & Architecture",
+    "Product Design & Systems UI",
+    "Cloud Infrastructure & DevOps",
+    "Finance & Corporate Strategy",
+    "Growth & Customer Operations",
+    "Security & Compliance",
+    "Executive Leadership & Governance",
+  ],
+  // Generic / Fallback
+  default: [
+    "Executive Directorate",
+    "Human Resources & Talent",
+    "Finance & Accounts",
+    "Commercial & Growth",
+    "Fleet & Warehouse Operations",
+    "Retail & Front Desk",
+    "Supply Chain & Depot",
+    "Logistics & Fulfillment",
+    "Systems & IT",
+  ],
+};
+
+function mapToParentDepartment(val: string): string {
+  if (!val) return DEPARTMENTS[0];
+  const lower = val.toLowerCase();
+  if (
+    lower.includes("fleet") ||
+    lower.includes("workshop") ||
+    lower.includes("maintenance") ||
+    lower.includes("facility") ||
+    lower.includes("warehouse")
+  ) {
+    return "Fleet & Warehouse Operations";
+  }
+  if (
+    lower.includes("finance") ||
+    lower.includes("acc") ||
+    lower.includes("bursary") ||
+    lower.includes("accountant") ||
+    lower.includes("payable") ||
+    lower.includes("receivable") ||
+    lower.includes("treasury") ||
+    lower.includes("audit") ||
+    lower.includes("tax")
+  ) {
+    return "Finance & Accounts";
+  }
+  if (
+    lower.includes("noc") ||
+    lower.includes("dispatch") ||
+    lower.includes("fulfillment") ||
+    lower.includes("logistics") ||
+    lower.includes("monitoring") ||
+    lower.includes("hub") ||
+    lower.includes("route")
+  ) {
+    return "Logistics & Fulfillment";
+  }
+  if (
+    lower.includes("hr") ||
+    lower.includes("talent") ||
+    lower.includes("human resource") ||
+    lower.includes("people") ||
+    lower.includes("recruitment") ||
+    lower.includes("welfare")
+  ) {
+    return "Human Resources & Talent";
+  }
+  if (
+    lower.includes("market") ||
+    lower.includes("sales") ||
+    lower.includes("growth") ||
+    lower.includes("csr") ||
+    lower.includes("social media") ||
+    lower.includes("commercial") ||
+    lower.includes("merchant")
+  ) {
+    return "Commercial & Growth";
+  }
+  if (
+    lower.includes("it") ||
+    lower.includes("systems") ||
+    lower.includes("erp") ||
+    lower.includes("devops") ||
+    lower.includes("engineering") ||
+    lower.includes("software") ||
+    lower.includes("robotics") ||
+    lower.includes("technical") ||
+    lower.includes("informatics")
+  ) {
+    return "Systems & IT";
+  }
+  if (
+    lower.includes("legal") ||
+    lower.includes("executive") ||
+    lower.includes("internal control") ||
+    lower.includes("operations") ||
+    lower.includes("director") ||
+    lower.includes("general manager") ||
+    lower.includes("governance") ||
+    lower.includes("compliance") ||
+    lower.includes("aml") ||
+    lower.includes("risk")
+  ) {
+    return "Executive Directorate";
+  }
+  if (
+    lower.includes("supply") ||
+    lower.includes("depot") ||
+    lower.includes("procurement") ||
+    lower.includes("inventory") ||
+    lower.includes("pharmacy")
+  ) {
+    return "Supply Chain & Depot";
+  }
+  if (
+    lower.includes("khlc") ||
+    lower.includes("instructor") ||
+    lower.includes("student") ||
+    lower.includes("academic") ||
+    lower.includes("front desk") ||
+    lower.includes("retail") ||
+    lower.includes("desk") ||
+    lower.includes("patient") ||
+    lower.includes("clinical") ||
+    lower.includes("reception")
+  ) {
+    return "Retail & Front Desk";
+  }
+  return DEPARTMENTS[0];
+}
+
 function UserManagementContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
@@ -102,6 +363,8 @@ function UserManagementContent() {
   const [formRole, setFormRole] = useState<RoleKey>("employee");
   const [formDepartment, setFormDepartment] = useState(DEPARTMENTS[0]);
   const [formDesignation, setFormDesignation] = useState("");
+  const [isCustomDesignation, setIsCustomDesignation] = useState(false);
+  const [fetchedDepts, setFetchedDepts] = useState<{ code: string; name: string }[]>([]);
   const [formManager, setFormManager] = useState("");
   const [formManagerId, setFormManagerId] = useState<string | undefined>(undefined);
   const [formCompany, setFormCompany] = useState("");
@@ -118,6 +381,21 @@ function UserManagementContent() {
       const headers: Record<string, string> = {};
       if (activeTenant?.slug) {
         headers["x-tenant-slug"] = activeTenant.slug;
+      }
+
+      // Fetch dynamic departments for the active tenant
+      if (activeTenant?.slug) {
+        fetch(`/api/erp/departments?tenant=${encodeURIComponent(activeTenant.slug)}`, {
+          headers: { "x-tenant-slug": activeTenant.slug },
+          cache: "no-store",
+        })
+          .then((r) => (r.ok ? r.json() : []))
+          .then((d) => {
+            if (Array.isArray(d)) {
+              setFetchedDepts(d);
+            }
+          })
+          .catch(() => {});
       }
 
       const url = activeTenant?.slug
@@ -191,6 +469,40 @@ function UserManagementContent() {
     fetchUsers();
   }, [activeTenant?.slug, activeTenant?.id]);
 
+  // Compute tenant-specific departments list dynamically
+  const tenantDepartments = useMemo(() => {
+    const slugKey = (activeTenant?.slug || "").toLowerCase().replace(/[^a-z0-9_-]/g, "");
+    const presetList =
+      TENANT_SPECIFIC_DEPARTMENTS[slugKey] ||
+      (slugKey.includes("transport") || slugKey.includes("nets")
+        ? TENANT_SPECIFIC_DEPARTMENTS.neweratransports
+        : slugKey.includes("edu") || slugKey.includes("khlc")
+        ? TENANT_SPECIFIC_DEPARTMENTS["edusuite-ng"]
+        : slugKey.includes("paydirect") || slugKey.includes("pay")
+        ? TENANT_SPECIFIC_DEPARTMENTS["paydirect-africa"]
+        : slugKey.includes("health") || slugKey.includes("pulse")
+        ? TENANT_SPECIFIC_DEPARTMENTS["healthpulse-ng"]
+        : slugKey.includes("logi") || slugKey.includes("track")
+        ? TENANT_SPECIFIC_DEPARTMENTS["logitrack-express"]
+        : slugKey.includes("reed")
+        ? TENANT_SPECIFIC_DEPARTMENTS.reedbreed
+        : TENANT_SPECIFIC_DEPARTMENTS.default);
+
+    const set = new Set<string>(presetList);
+
+    // Dynamic departments fetched from database
+    fetchedDepts.forEach((d) => {
+      if (d && d.name && d.name.trim()) set.add(d.name.trim());
+    });
+
+    // Also include unique departments from currently loaded tenant users
+    users.forEach((u) => {
+      if (u.department && u.department.trim()) set.add(u.department.trim());
+    });
+
+    return Array.from(set).filter(Boolean);
+  }, [activeTenant?.slug, fetchedDepts, users]);
+
   const handleRoleChange = async (id: string, updatedRole: RoleKey) => {
     const target = users.find((u) => u.id === id);
     if (!target) return;
@@ -224,12 +536,14 @@ function UserManagementContent() {
     setFormName("");
     setFormEmail("");
     setFormRole("employee");
-    setFormDepartment(DEPARTMENTS[0]);
-    setFormDesignation("");
+    const initialDesignation = tenantDepartments[0] || "";
+    setFormDesignation(initialDesignation);
+    setFormDepartment(mapToParentDepartment(initialDesignation));
     setFormManager("");
     setFormManagerId(undefined);
     setFormCompany(activeTenant?.name || "");
     setFormLocation("Lagos, Nigeria");
+    setIsCustomDesignation(false);
     setIsAddUserModalOpen(true);
   };
 
@@ -239,11 +553,13 @@ function UserManagementContent() {
     setFormEmail(staffUser.email);
     setFormRole(staffUser.role);
     setFormDepartment(staffUser.department);
-    setFormDesignation(staffUser.designation);
+    const initialDesig = staffUser.designation || staffUser.department || "";
+    setFormDesignation(initialDesig);
     setFormManager(staffUser.managerName || "");
     setFormManagerId(staffUser.managerId || undefined);
     setFormCompany(staffUser.company || activeTenant?.name || "");
     setFormLocation(staffUser.location || "Lagos, Nigeria");
+    setIsCustomDesignation(false);
     setIsAddUserModalOpen(true);
   };
 
@@ -741,6 +1057,11 @@ function UserManagementContent() {
                     onChange={(e) => setFormDepartment(e.target.value)}
                     className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] cursor-pointer"
                   >
+                    {formDepartment && !DEPARTMENTS.includes(formDepartment) && (
+                      <option value={formDepartment}>
+                        {formDepartment} (Current Department)
+                      </option>
+                    )}
                     {DEPARTMENTS.map((dept) => (
                       <option key={dept} value={dept}>
                         {dept}
@@ -774,16 +1095,63 @@ function UserManagementContent() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                    Job Title / Designation
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Senior Billing Specialist"
-                    value={formDesignation}
-                    onChange={(e) => setFormDesignation(e.target.value)}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
-                  />
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                      Job Title / Designation
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomDesignation(!isCustomDesignation)}
+                      className="text-[10px] text-[#1A56DB] hover:underline cursor-pointer"
+                    >
+                      {isCustomDesignation ? "Select from list" : "+ Custom"}
+                    </button>
+                  </div>
+                  {isCustomDesignation ? (
+                    <input
+                      type="text"
+                      placeholder="e.g. Senior Operations Officer"
+                      value={formDesignation}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormDesignation(val);
+                        const matched = mapToParentDepartment(val);
+                        if (matched) setFormDepartment(matched);
+                      }}
+                      className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
+                    />
+                  ) : (
+                    <select
+                      value={formDesignation}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "__CUSTOM__") {
+                          setIsCustomDesignation(true);
+                          return;
+                        }
+                        setFormDesignation(val);
+                        const matched = mapToParentDepartment(val);
+                        if (matched) setFormDepartment(matched);
+                      }}
+                      className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] cursor-pointer"
+                    >
+                      <option value="" disabled>
+                        -- Select Tenant Department / Title --
+                      </option>
+                      {/* Preserve current designation if not in preset list */}
+                      {formDesignation && !tenantDepartments.includes(formDesignation) && (
+                        <option value={formDesignation}>
+                          {formDesignation} (Current Designation)
+                        </option>
+                      )}
+                      {tenantDepartments.map((dept) => (
+                        <option key={dept} value={dept}>
+                          {dept}
+                        </option>
+                      ))}
+                      <option value="__CUSTOM__">+ Enter Custom Title / Designation...</option>
+                    </select>
+                  )}
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-[var(--nexa-text-primary)]">

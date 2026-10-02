@@ -70,7 +70,16 @@ import {
   DEFAULT_PERMISSION_MATRIX,
   RoleKey,
 } from "@/lib/access-control";
-import { fetchDatabaseTenants, resolveTenantFromList } from "@/lib/tenant-context";
+import {
+  fetchDatabaseTenants,
+  resolveTenantFromList,
+  extractSubdomainOrParam,
+  DEFAULT_TENANT_BRANDING,
+  slugToTenantName,
+} from "@/lib/tenant-context";
+import { DashboardSkeleton } from "@/components/nexa/PageSkeleton";
+
+export const OFIA_DEFAULT_LOGO = "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
 
 export interface SubNavItem {
   label: string;
@@ -86,6 +95,7 @@ export interface ErpAdminShellProps {
   action?: React.ReactNode;
   activeModule?: "mission" | "ai" | "crm" | "marketplace" | "shop" | "inventory" | "pos" | "referrals" | "logistics" | "quests" | "finance" | "hr" | "md" | "employee" | "access_control";
   subTabs?: SubNavItem[];
+  isLoading?: boolean;
 }
 
 interface OriginPortal {
@@ -104,6 +114,7 @@ export function ErpAdminShell({
   action,
   activeModule,
   subTabs,
+  isLoading,
 }: ErpAdminShellProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const pathname = usePathname();
@@ -120,13 +131,38 @@ export function ErpAdminShell({
     iconBg: "from-blue-600 to-indigo-600",
   });
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [tenantName, setTenantName] = useState<string>("");
-  const [tenantLogo, setTenantLogo] = useState<string>("");
+  const hasInitializedRef = useRef(false);
+  const [isShellReady, setIsShellReady] = useState<boolean>(false);
+  const [tenantName, setTenantName] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const slug = extractSubdomainOrParam();
+      return (
+        localStorage.getItem("tenant_name_" + slug) ||
+        localStorage.getItem("nexa_tenant_name") ||
+        (slug ? slugToTenantName(slug) : "")
+      );
+    }
+    return "";
+  });
+  const [tenantLogo, setTenantLogo] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const slug = extractSubdomainOrParam();
+      return (
+        localStorage.getItem("tenant_logo_" + slug) ||
+        localStorage.getItem("nexa_tenant_logo") ||
+        (slug && DEFAULT_TENANT_BRANDING[slug]?.logo) ||
+        ""
+      );
+    }
+    return "";
+  });
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const [permissionMatrix, setPermissionMatrix] = useState<PermissionMatrix>(DEFAULT_PERMISSION_MATRIX);
   const [currentRole, setCurrentRole] = useState<RoleKey>("admin");
   const [userName, setUserName] = useState<string>("");
   const [userEmail, setUserEmail] = useState<string>("");
+
+  const isEffectiveLoading = !isShellReady || Boolean(isLoading);
 
   const getRoleDisplayName = (role: RoleKey) => {
     switch (role) {
@@ -195,14 +231,21 @@ export function ErpAdminShell({
       const activeName = matched?.name || "";
       const tenantKey = matched?.slug || matched?.id || "neweratransports";
       setTenantName(activeName);
-      setTenantLogo(matched?.logo || "");
-      setPermissionMatrix(getTenantPermissionMatrix(tenantKey));
+      if (matched?.logo) {
+        setTenantLogo(matched.logo);
+      }
 
-      fetchTenantPermissionMatrix(tenantKey).then((remote) => {
+      // Fetch live provisioned matrix from Postgres backend before revealing
+      try {
+        const remote = await fetchTenantPermissionMatrix(tenantKey);
         if (remote && Object.keys(remote).length > 0 && isCurrent) {
           setPermissionMatrix(remote);
+        } else if (isCurrent) {
+          setPermissionMatrix(getTenantPermissionMatrix(tenantKey));
         }
-      });
+      } catch (err) {
+        if (isCurrent) setPermissionMatrix(getTenantPermissionMatrix(tenantKey));
+      }
 
       // Track and remember home/origin portal
       let origin: OriginPortal | null = null;
@@ -388,6 +431,11 @@ export function ErpAdminShell({
           window.location.href = "/erp/manager";
           return;
         }
+      }
+
+      if (isCurrent) {
+        setIsShellReady(true);
+        hasInitializedRef.current = true;
       }
     };
 
@@ -648,7 +696,17 @@ export function ErpAdminShell({
 
         {/* LOGO AREA */}
         <div className="p-6 pb-2 flex items-center justify-between">
-          {isSidebarOpen ? (
+          {!isShellReady && !tenantLogo ? (
+            <div className="flex items-center gap-2.5 min-w-0 w-full animate-pulse">
+              <div className="w-8 h-8 rounded-xl bg-slate-200 dark:bg-slate-700/60 shrink-0" />
+              {isSidebarOpen && (
+                <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+                  <div className="h-3.5 w-28 bg-slate-200 dark:bg-slate-700/60 rounded-md" />
+                  <div className="h-2.5 w-16 bg-blue-100 dark:bg-blue-900/40 rounded-md" />
+                </div>
+              )}
+            </div>
+          ) : isSidebarOpen ? (
             <Link
               href={
                 currentRole === "employee"
@@ -658,21 +716,20 @@ export function ErpAdminShell({
               className="flex items-center gap-2.5 min-w-0"
             >
               <img
-                src={tenantLogo || "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"}
+                src={tenantLogo || (isShellReady ? OFIA_DEFAULT_LOGO : "")}
                 alt={tenantName || "Ofia ERP"}
-                className="w-8 h-8 object-contain shrink-0"
+                className={cn("w-8 h-8 object-contain shrink-0", !tenantLogo && !isShellReady && "hidden")}
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src =
-                    "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
+                  (e.target as HTMLImageElement).src = OFIA_DEFAULT_LOGO;
                 }}
               />
               <div className="flex flex-col min-w-0">
                 <span
                   className="text-sm font-black text-display leading-tight text-[var(--nexa-text-primary)] truncate max-w-[180px]"
-                  title={isMounted ? tenantName : ""}
+                  title={tenantName}
                   suppressHydrationWarning
                 >
-                  {isMounted ? tenantName : ""}
+                  {tenantName || (isShellReady ? "Ofia ERP" : "")}
                 </span>
                 <span className="text-[11px] font-black text-[#1A56DB] tracking-wide uppercase mt-0.5">
                   OFIA ERP
@@ -684,12 +741,11 @@ export function ErpAdminShell({
             </Link>
           ) : (
             <img
-              src={tenantLogo || "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"}
+              src={tenantLogo || (isShellReady ? OFIA_DEFAULT_LOGO : "")}
               alt={tenantName || "Ofia ERP"}
               className="w-8 h-8 object-contain shrink-0 mx-auto"
               onError={(e) => {
-                (e.target as HTMLImageElement).src =
-                  "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
+                (e.target as HTMLImageElement).src = OFIA_DEFAULT_LOGO;
               }}
             />
           )}
@@ -730,8 +786,26 @@ export function ErpAdminShell({
 
         {/* NAV ITEMS WITH SECTION GROUPINGS */}
         <nav className="flex-1 px-4 space-y-1 mt-2 overflow-y-auto">
-          {(() => {
-            const filtered = navItems.filter((item) => {
+          {!isShellReady ? (
+            <div className="space-y-2 py-3 animate-pulse">
+              <div className="px-2 pb-1">
+                <div className="h-2 w-16 bg-slate-200 dark:bg-slate-700/50 rounded" />
+              </div>
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-100/60 dark:bg-slate-800/40"
+                >
+                  <div className="w-5 h-5 rounded-lg bg-slate-200 dark:bg-slate-700/70 shrink-0" />
+                  {isSidebarOpen && (
+                    <div className="h-3 rounded bg-slate-200 dark:bg-slate-700/70 flex-1 max-w-[120px]" />
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            (() => {
+              const filtered = navItems.filter((item) => {
               const matchesSearch = item.label.toLowerCase().includes(searchQuery.toLowerCase());
               if (!matchesSearch) return false;
 
@@ -841,7 +915,17 @@ export function ErpAdminShell({
         <div className="p-4 border-t border-nexa-border space-y-2 relative">
           {/* USER PROFILE & NOTIFICATION ROW */}
           <div className="relative" ref={dropdownRef}>
-            {isSidebarOpen ? (
+            {!isShellReady ? (
+              <div className="flex items-center gap-2.5 p-2 rounded-2xl bg-nexa-bg-base/70 border border-nexa-border animate-pulse">
+                <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700/60 shrink-0" />
+                {isSidebarOpen && (
+                  <div className="flex flex-col gap-1.5 min-w-0 flex-1">
+                    <div className="h-3 w-20 bg-slate-200 dark:bg-slate-700/60 rounded" />
+                    <div className="h-2 w-12 bg-slate-200 dark:bg-slate-700/40 rounded" />
+                  </div>
+                )}
+              </div>
+            ) : isSidebarOpen ? (
               <div className="flex items-center justify-between p-2 rounded-2xl bg-nexa-bg-base/70 border border-nexa-border">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <NexaAvatar size="sm" isOnline name={isMounted ? (userName || user?.name || "Staff") : "Staff"} />
@@ -977,87 +1061,93 @@ export function ErpAdminShell({
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         {/* CONTENT WRAPPER */}
         <div className="p-8 space-y-6 flex-1">
-          {/* HEADER TITLE & ACTIONS (IF PROVIDED) */}
-          {(title || action) && (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                {title && (
-                  <h1 className="text-2xl font-black text-display tracking-tight text-nexa-text-primary" suppressHydrationWarning>
-                    {title}
-                  </h1>
-                )}
-                {subtitle && (
-                  <p className="text-xs text-nexa-text-secondary mt-1 leading-relaxed max-w-3xl" suppressHydrationWarning>
-                    {subtitle}
-                  </p>
-                )}
-              </div>
-              {action && <div className="shrink-0 flex items-center gap-2.5">{action}</div>}
-            </div>
-          )}
+          {isEffectiveLoading ? (
+            <DashboardSkeleton />
+          ) : (
+            <>
+              {/* HEADER TITLE & ACTIONS (IF PROVIDED) */}
+              {(title || action) && (
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    {title && (
+                      <h1 className="text-2xl font-black text-display tracking-tight text-nexa-text-primary" suppressHydrationWarning>
+                        {title}
+                      </h1>
+                    )}
+                    {subtitle && (
+                      <p className="text-xs text-nexa-text-secondary mt-1 leading-relaxed max-w-3xl" suppressHydrationWarning>
+                        {subtitle}
+                      </p>
+                    )}
+                  </div>
+                  {action && <div className="shrink-0 flex items-center gap-2.5">{action}</div>}
+                </div>
+              )}
 
-          {/* HORIZONTAL SUB-NAVIGATION PILL TABS */}
-          {activeSubTabs.length > 0 && (
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide border-b border-nexa-border pt-1">
-              {activeSubTabs.map((tab, idx) => {
-                const isTabActive =
-                  pathname === tab.href ||
-                  (tab.href !== "/erp/admin" &&
-                    tab.href !== "/erp/admin/access-control" &&
-                    tab.href !== "/erp/admin/ai" &&
-                    tab.href !== "/erp/marketer" &&
-                    tab.href !== "/erp/admin/shop" &&
-                    tab.href !== "/erp/admin/shop/inventory" &&
-                    tab.href !== "/erp/admin/shop/pos" &&
-                    tab.href !== "/erp/admin/shop/referrals" &&
-                    tab.href !== "/erp/admin/logistics" &&
-                    tab.href !== "/erp/admin/marketplace" &&
-                    tab.href !== "/erp/accountant" &&
-                    tab.href !== "/erp/hr" &&
-                    tab.href !== "/erp/employee" &&
-                    tab.href !== "/erp/manager" &&
-                    pathname.startsWith(tab.href));
-                return (
-                  <Link href={tab.href} key={idx} className="shrink-0">
-                    <button
-                      className={cn(
-                        "px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-sm",
-                        isTabActive
-                          ? "bg-[#1A56DB] text-white shadow-md shadow-[#1A56DB]/25 font-bold border border-[#1A56DB]"
-                          : "bg-nexa-bg-surface hover:bg-nexa-bg-surface/80 text-nexa-text-secondary hover:text-nexa-text-primary border border-nexa-border hover:border-nexa-brand/30"
-                      )}
-                    >
-                      {tab.icon && <span>{tab.icon}</span>}
-                      <span>{tab.label}</span>
-                      {tab.badge && (
-                        <span
+              {/* HORIZONTAL SUB-NAVIGATION PILL TABS */}
+              {activeSubTabs.length > 0 && (
+                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide border-b border-nexa-border pt-1">
+                  {activeSubTabs.map((tab, idx) => {
+                    const isTabActive =
+                      pathname === tab.href ||
+                      (tab.href !== "/erp/admin" &&
+                        tab.href !== "/erp/admin/access-control" &&
+                        tab.href !== "/erp/admin/ai" &&
+                        tab.href !== "/erp/marketer" &&
+                        tab.href !== "/erp/admin/shop" &&
+                        tab.href !== "/erp/admin/shop/inventory" &&
+                        tab.href !== "/erp/admin/shop/pos" &&
+                        tab.href !== "/erp/admin/shop/referrals" &&
+                        tab.href !== "/erp/admin/logistics" &&
+                        tab.href !== "/erp/admin/marketplace" &&
+                        tab.href !== "/erp/accountant" &&
+                        tab.href !== "/erp/hr" &&
+                        tab.href !== "/erp/employee" &&
+                        tab.href !== "/erp/manager" &&
+                        pathname.startsWith(tab.href));
+                    return (
+                      <Link href={tab.href} key={idx} className="shrink-0">
+                        <button
                           className={cn(
-                            "text-[9px] px-1.5 py-0.2 rounded-full font-extrabold",
-                            isTabActive ? "bg-white text-[#1A56DB]" : "bg-[#1A56DB]/10 text-[#1A56DB]"
+                            "px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-sm",
+                            isTabActive
+                              ? "bg-[#1A56DB] text-white shadow-md shadow-[#1A56DB]/25 font-bold border border-[#1A56DB]"
+                              : "bg-nexa-bg-surface hover:bg-nexa-bg-surface/80 text-nexa-text-secondary hover:text-nexa-text-primary border border-nexa-border hover:border-nexa-brand/30"
                           )}
                         >
-                          {tab.badge}
-                        </span>
-                      )}
-                    </button>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
+                          {tab.icon && <span>{tab.icon}</span>}
+                          <span>{tab.label}</span>
+                          {tab.badge && (
+                            <span
+                              className={cn(
+                                "text-[9px] px-1.5 py-0.2 rounded-full font-extrabold",
+                                isTabActive ? "bg-white text-[#1A56DB]" : "bg-[#1A56DB]/10 text-[#1A56DB]"
+                              )}
+                            >
+                              {tab.badge}
+                            </span>
+                          )}
+                        </button>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
 
-          {/* PAGE BODY */}
-          <div className="pt-2">
-            <RoleGuard requiredModule={activeModule}>
-              {children}
-            </RoleGuard>
-          </div>
+              {/* PAGE BODY */}
+              <div className="pt-2">
+                <RoleGuard requiredModule={activeModule}>
+                  {children}
+                </RoleGuard>
+              </div>
+            </>
+          )}
         </div>
       </main>
 
       {/* BOTTOM RIGHT SWITCH TO [ROLE] BUTTON */}
       {(() => {
-        if (currentRole === "employee") return null;
+        if (isEffectiveLoading || currentRole === "employee") return null;
         const sessionHome = getRoleHomePortal(currentRole);
         const isAwayFromRoleHome =
           sessionHome &&

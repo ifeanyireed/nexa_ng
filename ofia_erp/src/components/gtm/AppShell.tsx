@@ -13,6 +13,7 @@ interface AppShellProps {
   subtitle?: string;
   action?: React.ReactNode;
   subTabs?: SubNavItem[];
+  isLoading?: boolean;
 }
 
 export const AppShell = ({
@@ -21,6 +22,7 @@ export const AppShell = ({
   subtitle = "15 multi-agent LLM worker units coordinating outbound cold outreach, lead scoring, and growth analytics.",
   action,
   subTabs,
+  isLoading,
 }: AppShellProps) => {
   const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<AIAgent | null>(null);
@@ -32,6 +34,7 @@ export const AppShell = ({
       action={action}
       activeModule="ai"
       subTabs={subTabs}
+      isLoading={isLoading}
     >
       {children}
 

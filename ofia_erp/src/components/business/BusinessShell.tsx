@@ -10,6 +10,7 @@ export interface BusinessShellProps {
   action?: React.ReactNode;
   activeModule?: any;
   subTabs?: SubNavItem[];
+  isLoading?: boolean;
 }
 
 export function BusinessShell({
@@ -19,6 +20,7 @@ export function BusinessShell({
   action,
   activeModule,
   subTabs,
+  isLoading,
 }: BusinessShellProps) {
   return (
     <ErpAdminShell
@@ -27,6 +29,7 @@ export function BusinessShell({
       action={action}
       activeModule={activeModule}
       subTabs={subTabs}
+      isLoading={isLoading}
     >
       {children}
     </ErpAdminShell>

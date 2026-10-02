@@ -28,6 +28,7 @@ import { useActiveTenant } from "@/lib/tenant-context";
 export default function LoginPage() {
   const router = useRouter();
   const { activeTenant } = useActiveTenant();
+  const currentTenant = activeTenant?.slug || "";
   const tenantDomain = activeTenant?.domain || (activeTenant?.slug ? `${activeTenant.slug}.ofia.ng` : "ofia.ng");
 
   const [email, setEmail] = useState("");

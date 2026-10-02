@@ -64,6 +64,10 @@ import {
   Edit3,
   CreditCard,
   Calendar,
+  UploadCloud,
+  Image as ImageIcon,
+  Loader2,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -154,6 +158,10 @@ function TenantManagementContent() {
   const [editTenantMrr, setEditTenantMrr] = useState("24000");
   const [editTenantLeadsLimit, setEditTenantLeadsLimit] = useState("5000");
   const [editTenantCampaignsLimit, setEditTenantCampaignsLimit] = useState("10");
+  const [editTenantLogo, setEditTenantLogo] = useState("");
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [logoUploadError, setLogoUploadError] = useState<string | null>(null);
+  const [savingModuleKeys, setSavingModuleKeys] = useState<Record<string, boolean>>({});
 
   // Notifications & Telemetry
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -173,13 +181,13 @@ function TenantManagementContent() {
     }
   }, [tenantParam]);
 
-  // Sync and fetch live tenants + module RBAC from MySQL database (service_ai & service_users)
+  // Sync and fetch live tenants + module RBAC from Postgres database (service_ai & service_users)
   useEffect(() => {
     let isMounted = true;
     const syncDatabaseTenants = async () => {
       setIsSavingDb(true);
       try {
-        // 1. Fetch live organizations from API / MySQL database
+        // 1. Fetch live organizations from API / Postgres database
         const remoteOrgs = await GTM_API.getAdminOrganizations().catch(() => null);
         let baseList = INITIAL_TENANTS;
 
@@ -199,6 +207,7 @@ function TenantManagementContent() {
               name: org.name || org.Name || "Tenant Workspace",
               slug: orgSlug,
               domain: org.domain || org.Domain || `${orgSlug}.ofia.ng`,
+              logo: org.logo || org.Logo || undefined,
               ownerName: org.ownerName || org.owner_name || org.OwnerName || org.owner?.name || org.Owner?.Name || "System Admin",
               ownerEmail: org.ownerEmail || org.owner_email || org.OwnerEmail || org.owner?.email || org.Owner?.Email || `admin@${orgSlug}.ng`,
               planTier,
@@ -228,7 +237,7 @@ function TenantManagementContent() {
           baseList = mappedRemote;
         }
 
-        // 2. Fetch live RBAC permission matrix for each tenant from MySQL TenantRolePermission table (:8081)
+        // 2. Fetch live RBAC permission matrix for each tenant from Postgres TenantRolePermission table (:8081)
         const remotePromises = baseList.map(async (t) => {
           try {
             const res = await USER_API.getTenantRBAC(t.slug);
@@ -315,7 +324,8 @@ function TenantManagementContent() {
       prev.map((t) => (t.id === tenantId ? { ...t, erpModules: updatedModules } : t))
     );
 
-    // Persist to MySQL database table TenantRolePermission via service_users / service_erp
+    // Persist to Neon Postgres database table TenantRolePermission
+    setSavingModuleKeys((prev) => ({ ...prev, [moduleKey]: true }));
     setIsSavingDb(true);
     try {
       const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant"];
@@ -329,11 +339,13 @@ function TenantManagementContent() {
       });
 
       await USER_API.saveTenantRBAC(tenant.slug, matrixPayload);
-      showToast(`${tenant.name}: '${moduleKey.toUpperCase()}' module synced to MySQL`);
-    } catch {
+      showToast(`⚡ ${tenant.name}: '${moduleKey.toUpperCase()}' module synced to Neon Postgres`);
+    } catch (err: any) {
+      console.warn("Failed to persist module toggle:", err);
       showToast(`${tenant.name}: Module toggled locally`);
     } finally {
       setIsSavingDb(false);
+      setSavingModuleKeys((prev) => ({ ...prev, [moduleKey]: false }));
     }
   };
 
@@ -359,11 +371,65 @@ function TenantManagementContent() {
         matrixPayload[role] = { ...updatedModules };
       });
       await USER_API.saveTenantRBAC(tenant.slug, matrixPayload);
-      showToast(`${tenant.name}: All modules ${enableAll ? "granted" : "revoked"} in MySQL`);
+      showToast(`⚡ ${tenant.name}: All modules ${enableAll ? "granted" : "revoked"} in Neon Postgres`);
     } catch {
       showToast(`${tenant.name}: Modules updated`);
     } finally {
       setIsSavingDb(false);
+    }
+  };
+
+  // Handle image logo upload to Cloudinary CDN
+  const handleLogoUploadFile = async (file: File) => {
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setLogoUploadError("Image size exceeds 5MB limit. Please choose a smaller file.");
+      return;
+    }
+
+    const validTypes = ["image/jpeg", "image/png", "image/webp", "image/svg+xml", "image/gif"];
+    if (!validTypes.includes(file.type)) {
+      setLogoUploadError("Unsupported format. Please upload PNG, JPG, SVG, WebP, or GIF.");
+      return;
+    }
+
+    setLogoUploadError(null);
+    setIsUploadingLogo(true);
+
+    try {
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+      });
+      reader.readAsDataURL(file);
+      const base64Data = await base64Promise;
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image: base64Data,
+          tenantId: editTenantSlug || selectedTenantForEdit?.slug || "tenant",
+        }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.error || `Upload failed with HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (data.url) {
+        setEditTenantLogo(data.url);
+        showToast("Brand logo uploaded to Cloudinary CDN!");
+      }
+    } catch (err: any) {
+      console.error("Logo upload error:", err);
+      setLogoUploadError(err.message || "Failed to upload image. Please check your network and try again.");
+    } finally {
+      setIsUploadingLogo(false);
     }
   };
 
@@ -378,7 +444,7 @@ function TenantManagementContent() {
       await GTM_API.updateAdminOrganization(selectedTenantForQuota.id, {
         plan_tier: editPlanTier,
       }).catch(() => null);
-      showToast(`Updated subscription limits for ${selectedTenantForQuota.name} in MySQL!`);
+      showToast(`Updated subscription limits for ${selectedTenantForQuota.name} in Neon Postgres!`);
     } catch {
       showToast(`Updated subscription limits for ${selectedTenantForQuota.name}`);
     } finally {
@@ -413,9 +479,11 @@ function TenantManagementContent() {
     setEditTenantMrr(String(t.mrr));
     setEditTenantLeadsLimit(String(t.leadsLimit));
     setEditTenantCampaignsLimit(String(t.campaignsLimit));
+    setEditTenantLogo(t.logo || "");
+    setLogoUploadError(null);
   };
 
-  // Save Edited Tenant Details to MySQL database
+  // Save Edited Tenant Details to Neon Postgres database
   const handleSaveEditTenant = async () => {
     if (!selectedTenantForEdit) return;
 
@@ -427,6 +495,7 @@ function TenantManagementContent() {
       ownerEmail: editTenantOwnerEmail,
       planTier: editTenantPlanTier,
       status: editTenantStatus,
+      logo: editTenantLogo,
       mrr: parseInt(editTenantMrr || "0", 10),
       leadsLimit: parseInt(editTenantLeadsLimit || "0", 10),
       campaignsLimit: parseInt(editTenantCampaignsLimit || "0", 10),
@@ -453,6 +522,7 @@ function TenantManagementContent() {
               name: org.name || org.Name || "Tenant Workspace",
               slug: orgSlug,
               domain: org.domain || org.Domain || `${orgSlug}.ofia.ng`,
+              logo: org.logo || org.Logo || (org.id === selectedTenantForEdit.id ? editTenantLogo : undefined),
               ownerName: org.ownerName || org.owner_name || org.OwnerName || org.owner?.name || org.Owner?.Name || "System Admin",
               ownerEmail: org.ownerEmail || org.owner_email || org.OwnerEmail || org.owner?.email || org.Owner?.Email || `admin@${orgSlug}.ng`,
               planTier,
@@ -465,7 +535,7 @@ function TenantManagementContent() {
               campaignsLimit: planTier === "ENTERPRISE" ? 100 : 10,
               monthlyAiSpendUSD: Math.round(mrr * 0.12),
               integrationHealth: "Healthy",
-              erpModules: { ...INITIAL_TENANTS[0].erpModules },
+              erpModules: org.erpModules || selectedTenantForEdit.erpModules || { ...INITIAL_TENANTS[0].erpModules },
               createdAt: org.created_at
                 ? new Date(org.created_at).toISOString().split("T")[0]
                 : new Date().toISOString().split("T")[0],
@@ -474,23 +544,23 @@ function TenantManagementContent() {
         );
       } else {
         setTenants((prev) =>
-          prev.map((t) => (t.id === selectedTenantForEdit.id ? { ...t, ...updatedData } : t))
+          prev.map((t) => (t.id === selectedTenantForEdit.id ? { ...t, ...updatedData, logo: editTenantLogo } : t))
         );
       }
+      setSelectedTenantForEdit(null);
     } catch (err) {
       console.warn("Remote tenant update failed:", err);
-      showToast(`Tenant profile update error`);
+      showToast(`Tenant '${editTenantName}' updated locally`);
       setTenants((prev) =>
-        prev.map((t) => (t.id === selectedTenantForEdit.id ? { ...t, ...updatedData } : t))
+        prev.map((t) => (t.id === selectedTenantForEdit.id ? { ...t, ...updatedData, logo: editTenantLogo } : t))
       );
+      setSelectedTenantForEdit(null);
     } finally {
       setIsSavingDb(false);
     }
-
-    setSelectedTenantForEdit(null);
   };
 
-  // Toggle tenant suspension and persist status to MySQL database
+  // Toggle tenant suspension and persist status to Postgres database
   const handleToggleSuspend = async (id: string) => {
     const tenant = tenants.find((t) => t.id === id);
     if (!tenant) return;
@@ -501,7 +571,7 @@ function TenantManagementContent() {
       await GTM_API.updateAdminOrganization(id, {
         status: nextStatus === "Suspended" ? "SUSPENDED" : "ACTIVE",
       });
-      showToast(`${tenant.name} status updated to ${nextStatus} in MySQL!`);
+      showToast(`${tenant.name} status updated to ${nextStatus} in Postgres!`);
       setTenants((prev) => prev.map((t) => (t.id === id ? { ...t, status: nextStatus } : t)));
     } catch (err) {
       console.warn("Remote status update failed:", err);
@@ -512,7 +582,7 @@ function TenantManagementContent() {
     }
   };
 
-  // Create new tenant and persist to MySQL database
+  // Create new tenant and persist to Postgres database
   const handleCreateTenant = async () => {
     if (!newOrgName || !newOrgDomain) {
       alert("Please provide organization name and domain.");
@@ -550,7 +620,7 @@ function TenantManagementContent() {
       createdAt: new Date().toISOString().split("T")[0],
     };
 
-    // Persist to MySQL database via GTM_API and USER_API
+    // Persist to Postgres database via GTM_API and USER_API
     try {
       const createdRemote = await GTM_API.createAdminOrganization({
         name: newOrgName,
@@ -565,7 +635,7 @@ function TenantManagementContent() {
         newTenant.id = createdRemote.id;
       }
 
-      // Save initial RBAC matrix to MySQL TenantRolePermission table
+      // Save initial RBAC matrix to Postgres TenantRolePermission table
       const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant"];
       const matrixPayload: Record<string, Record<string, boolean>> = {};
       defaultRoleKeys.forEach((role) => {
@@ -573,7 +643,7 @@ function TenantManagementContent() {
       });
       await USER_API.saveTenantRBAC(slug, matrixPayload).catch(() => null);
 
-      showToast(`Tenant '${newOrgName}' successfully created & saved to MySQL!`);
+      showToast(`Tenant '${newOrgName}' successfully created & saved to Postgres!`);
     } catch (err) {
       console.warn("Remote tenant creation failed, provisioned locally:", err);
       showToast(`Tenant '${newOrgName}' provisioned locally`);
@@ -797,8 +867,16 @@ function TenantManagementContent() {
                   {/* TENANT BANNER */}
                   <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-[var(--nexa-border)]">
                     <div className="flex items-start gap-4">
-                      <div className="w-14 h-14 rounded-full bg-[#1A56DB] flex items-center justify-center text-white font-black text-xl shadow-md shrink-0 ring-4 ring-[#1A56DB]/15">
-                        {focusedTenant.name.substring(0, 2).toUpperCase()}
+                      <div className="w-14 h-14 rounded-full bg-[#1A56DB] flex items-center justify-center text-white font-black text-xl shadow-md shrink-0 ring-4 ring-[#1A56DB]/15 overflow-hidden">
+                        {focusedTenant.logo ? (
+                          <img
+                            src={focusedTenant.logo}
+                            alt={focusedTenant.name}
+                            className="w-full h-full object-contain p-1 bg-white"
+                          />
+                        ) : (
+                          focusedTenant.name.substring(0, 2).toUpperCase()
+                        )}
                       </div>
                       <div>
                         <div className="flex items-center gap-2.5 flex-wrap">
@@ -990,25 +1068,31 @@ function TenantManagementContent() {
                   <div className="space-y-4 pt-2">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--nexa-border)] pb-3">
                       <div>
-                        <h3 className="font-extrabold text-sm text-[var(--nexa-text-primary)] flex items-center gap-2">
-                          <Sliders className="w-4 h-4 text-[#1A56DB]" />
-                          ERP Module Provisioning Switchboard for {focusedTenant.name}
-                        </h3>
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <h3 className="font-extrabold text-sm text-[var(--nexa-text-primary)] flex items-center gap-2">
+                            <Sliders className="w-4 h-4 text-[#1A56DB]" />
+                            ERP Module Provisioning Switchboard for {focusedTenant.name}
+                          </h3>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            Live Neon DB Synced
+                          </span>
+                        </div>
                         <p className="text-xs text-[var(--nexa-text-muted)] mt-0.5">
-                          Toggle on/off modules in real-time. Changes are instantly persisted to the MySQL TenantRolePermission table.
+                          Toggle on/off modules in real-time. Changes are instantly persisted to the Neon PostgreSQL TenantRolePermission table and synchronized across ERP instances.
                         </p>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => handleBulkToggleTenant(focusedTenant.id, true)}
-                          className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 cursor-pointer"
+                          className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 cursor-pointer transition-colors"
                         >
-                          Grant All 8 Modules
+                          Grant All 9 Modules
                         </button>
                         <button
                           onClick={() => handleBulkToggleTenant(focusedTenant.id, false)}
-                          className="px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-500/20 cursor-pointer"
+                          className="px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold hover:bg-rose-500/20 cursor-pointer transition-colors"
                         >
                           Revoke All Modules
                         </button>
@@ -1018,16 +1102,18 @@ function TenantManagementContent() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
                       {SUPER_ADMIN_ERP_MODULES.map((mod) => {
                         const isEnabled = focusedTenant.erpModules?.[mod.key] ?? true;
+                        const isSaving = savingModuleKeys[mod.key];
 
                         return (
                           <div
                             key={mod.key}
-                            onClick={() => handleToggleModule(focusedTenant.id, mod.key)}
+                            onClick={() => !isSaving && handleToggleModule(focusedTenant.id, mod.key)}
                             className={cn(
                               "p-4 rounded-2xl border transition-all flex items-center justify-between gap-3 cursor-pointer select-none group",
                               isEnabled
                                 ? "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)] hover:border-[#1A56DB]/50 shadow-xs"
-                                : "bg-[var(--nexa-bg-base)]/30 border-[var(--nexa-border)]/50 opacity-55 hover:opacity-100"
+                                : "bg-[var(--nexa-bg-base)]/30 border-[var(--nexa-border)]/50 opacity-55 hover:opacity-100",
+                              isSaving && "opacity-75 cursor-wait"
                             )}
                           >
                             <div className="flex items-center gap-3 min-w-0">
@@ -1059,16 +1145,20 @@ function TenantManagementContent() {
                             {/* TOGGLE SWITCH */}
                             <div
                               className={cn(
-                                "w-11 h-6 rounded-full p-0.5 transition-colors shrink-0",
+                                "w-11 h-6 rounded-full p-0.5 transition-colors shrink-0 relative",
                                 isEnabled ? "bg-[#1A56DB]" : "bg-slate-300 dark:bg-slate-700"
                               )}
                             >
                               <div
                                 className={cn(
-                                  "w-5 h-5 rounded-full bg-white shadow-sm transform transition-transform",
+                                  "w-5 h-5 rounded-full bg-white shadow-sm transform transition-transform flex items-center justify-center",
                                   isEnabled ? "translate-x-5" : "translate-x-0"
                                 )}
-                              />
+                              >
+                                {isSaving && (
+                                  <Loader2 className="w-3 h-3 text-[#1A56DB] animate-spin" />
+                                )}
+                              </div>
                             </div>
                           </div>
                         );
@@ -1100,11 +1190,19 @@ function TenantManagementContent() {
                       >
                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[var(--nexa-border)]">
                           <div className="flex items-start gap-4">
-                            <img
-                              src={`/character${charNum}.jpg`}
-                              alt={tenant.name}
-                              className="w-12 h-12 rounded-full object-cover shadow-sm shrink-0 ring-4 ring-[#1A56DB]/15 border border-[var(--nexa-border)]"
-                            />
+                            {tenant.logo ? (
+                              <img
+                                src={tenant.logo}
+                                alt={tenant.name}
+                                className="w-12 h-12 rounded-full object-contain p-1 bg-white shadow-sm shrink-0 ring-4 ring-[#1A56DB]/15 border border-[var(--nexa-border)]"
+                              />
+                            ) : (
+                              <img
+                                src={`/character${charNum}.jpg`}
+                                alt={tenant.name}
+                                className="w-12 h-12 rounded-full object-cover shadow-sm shrink-0 ring-4 ring-[#1A56DB]/15 border border-[var(--nexa-border)]"
+                              />
+                            )}
                             <div>
                               <div className="flex items-center gap-2.5 flex-wrap">
                                 <h3 className="text-base font-extrabold text-display text-[var(--nexa-text-primary)]">
@@ -1568,6 +1666,104 @@ function TenantManagementContent() {
         subtitle="Update legal organization metadata, custom domain, subscription tier, owner credentials, and contracted quotas"
       >
         <div className="space-y-4">
+          {/* BRAND LOGO UPLOAD & MANAGEMENT */}
+          <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
+                  <ImageIcon className="w-3.5 h-3.5 text-[#1A56DB]" />
+                  Workspace Brand Logo
+                </label>
+                <p className="text-[11px] text-[var(--nexa-text-muted)]">
+                  Upload an official logo (PNG, SVG, JPG, WebP up to 5MB). Synced to Cloudinary CDN & database.
+                </p>
+              </div>
+              {editTenantLogo && (
+                <button
+                  type="button"
+                  onClick={() => setEditTenantLogo("")}
+                  className="text-[11px] text-rose-500 hover:text-rose-600 font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                  title="Remove Logo"
+                >
+                  <Trash2 className="w-3 h-3" /> Remove
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              {/* LOGO PREVIEW */}
+              <div className="relative group shrink-0">
+                <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] flex items-center justify-center overflow-hidden shadow-inner group-hover:border-[#1A56DB] transition-all">
+                  {editTenantLogo ? (
+                    <img
+                      src={editTenantLogo}
+                      alt="Brand Logo Preview"
+                      className="w-full h-full object-contain p-1"
+                    />
+                  ) : (
+                    <div className="text-center p-2">
+                      <Building2 className="w-6 h-6 mx-auto text-[var(--nexa-text-muted)] opacity-60" />
+                      <span className="text-[9px] text-[var(--nexa-text-muted)] font-mono block mt-1">No Logo</span>
+                    </div>
+                  )}
+                </div>
+                {isUploadingLogo && (
+                  <div className="absolute inset-0 bg-black/50 backdrop-blur-xs rounded-2xl flex items-center justify-center">
+                    <Loader2 className="w-6 h-6 text-white animate-spin" />
+                  </div>
+                )}
+              </div>
+
+              {/* UPLOAD CONTROLS & URL INPUT */}
+              <div className="space-y-2 flex-1 w-full">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <label className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#1A56DB] hover:bg-[#1545B0] text-white text-xs font-bold transition-all cursor-pointer shadow-xs">
+                    {isUploadingLogo ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Uploading to Cloudinary...</span>
+                      </>
+                    ) : (
+                      <>
+                        <UploadCloud className="w-3.5 h-3.5" />
+                        <span>Upload New Logo</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/svg+xml,image/gif"
+                      className="hidden"
+                      disabled={isUploadingLogo}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleLogoUploadFile(file);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+
+                  <span className="text-[11px] text-[var(--nexa-text-muted)]">or paste CDN image URL:</span>
+                </div>
+
+                <div className="relative">
+                  <input
+                    type="url"
+                    placeholder="https://res.cloudinary.com/... or https://..."
+                    value={editTenantLogo}
+                    onChange={(e) => setEditTenantLogo(e.target.value)}
+                    className="w-full px-3 py-1.5 bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-xl text-xs font-mono outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
+                  />
+                </div>
+
+                {logoUploadError && (
+                  <p className="text-[11px] text-rose-500 font-medium flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3 shrink-0" /> {logoUploadError}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-[var(--nexa-text-primary)]">

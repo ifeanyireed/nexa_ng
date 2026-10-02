@@ -176,7 +176,7 @@ export async function POST(request: Request) {
 
     const featuresJson = JSON.stringify(featuresInterest);
 
-    // Insert into MySQL
+    // Insert into Postgres
     await executeQuery(
       `INSERT INTO waitlist_leads 
        (id, queue_number, full_name, business_name, email, phone, role, business_type, tool_type, custom_business_type, custom_tool_type, state, city, team_size, features_interest, referral_code, referred_by, status, created_at, updated_at)

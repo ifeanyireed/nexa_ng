@@ -232,7 +232,7 @@ export const SUBSCRIPTION_TIERS_CATALOG: SubscriptionTierItem[] = [
     badge: "Dedicated Cloud",
     description: "Maximum throughput, dedicated cloud infrastructure, and 24/7 SLA.",
     features: [
-      "Dedicated MySQL & Redis Instances",
+      "Dedicated Postgres & Redis Instances",
       "99.99% Guaranteed SLA Uptime",
       "Unlimited Seats & Workspaces",
       "Custom Enterprise ERP Integrations",

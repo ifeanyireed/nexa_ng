@@ -52,7 +52,7 @@ export default function OnboardingPage() {
       return;
     }
 
-    // Debounced remote check against MySQL u721451974_nexa_db Organization table
+    // Debounced remote check against Postgres Organization table
     const timer = setTimeout(async () => {
       setIsCheckingRemote(true);
       try {

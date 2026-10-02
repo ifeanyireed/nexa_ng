@@ -57,14 +57,14 @@ export default function AdminSystemPage() {
                 Infrastructure Telemetry
               </NexaBadge>
               <span className="text-xs text-[var(--nexa-text-muted)]">
-                Shared Database: <strong className="text-mono">u721451974_nexa_db</strong>
+                Shared Database: <strong className="text-mono">Neon Postgres (neondb)</strong>
               </span>
             </div>
             <h1 className="text-2xl font-extrabold text-[var(--nexa-text-primary)] text-display tracking-tight">
               System Health & Worker Queues
             </h1>
             <p className="text-xs text-[var(--nexa-text-muted)] mt-1">
-              Third-party channel quality ratings, Redis worker queue depths, and MySQL connection pools.
+              Third-party channel quality ratings, Redis worker queue depths, and Postgres connection pools.
             </p>
           </div>
 

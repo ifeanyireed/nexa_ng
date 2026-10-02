@@ -244,7 +244,7 @@ export const EmailSetupWizard: React.FC<EmailSetupWizardProps> = ({
               <div className="text-xs space-y-1">
                 <span className="font-bold">Step 2: Obtain & Save Your Master API Key</span>
                 <p className="text-[var(--nexa-text-secondary)] leading-relaxed">
-                  Keys are encrypted with <strong>AES-256-GCM zero-knowledge encryption</strong> in MySQL before storage.
+                  Keys are encrypted with <strong>AES-256-GCM zero-knowledge encryption</strong> in Postgres before storage.
                 </p>
               </div>
             </div>

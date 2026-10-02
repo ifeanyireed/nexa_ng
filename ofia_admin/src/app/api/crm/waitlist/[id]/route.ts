@@ -22,7 +22,7 @@ export async function PATCH(
 
     const now = new Date().toISOString().slice(0, 19).replace("T", " ");
 
-    // Update in MySQL
+    // Update in Postgres
     await executeQuery(
       `UPDATE waitlist_leads 
        SET status = COALESCE(?, status), 
@@ -47,7 +47,7 @@ export async function PATCH(
       return NextResponse.json(updated);
     }
 
-    // Query updated row from MySQL
+    // Query updated row from Postgres
     const dbResult = await executeQuery<any[]>(
       "SELECT * FROM waitlist_leads WHERE id = ? LIMIT 1",
       [id]

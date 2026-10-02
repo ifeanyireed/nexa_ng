@@ -67,7 +67,7 @@ function UserManagementContent() {
   const searchParams = useSearchParams();
   const tenantSlugParam = searchParams.get("tenant");
 
-  // Dynamic batched lookup of all tenant organizations directly from MySQL
+  // Dynamic batched lookup of all tenant organizations directly from Postgres
   const {
     tenants,
     activeTenant,
@@ -156,7 +156,7 @@ function UserManagementContent() {
         }
       }
     } catch (e) {
-      console.error("Failed to fetch ERP users from MySQL database:", e);
+      console.error("Failed to fetch ERP users from Postgres database:", e);
     } finally {
       setIsLoadingUsers(false);
     }
@@ -259,7 +259,7 @@ function UserManagementContent() {
 
       showToast(
         editingStaffUser
-          ? `Staff record for ${formName} updated in MySQL database!`
+          ? `Staff record for ${formName} updated in Postgres database!`
           : `Staff member ${formName} onboarded and saved to database!`
       );
       setIsAddUserModalOpen(false);
@@ -344,7 +344,7 @@ function UserManagementContent() {
   return (
     <ErpAdminShell
       title="User Management & Staff Directory"
-      subtitle={`Corporate identity governance and 10-tier RBAC role assignment for tenant '${displayTenantName}' synced directly to MySQL.`}
+      subtitle={`Corporate identity governance and 10-tier RBAC role assignment for tenant '${displayTenantName}' synced directly to Postgres.`}
       action={
         <div className="flex items-center gap-2.5">
           {/* Dynamic Tenant Selector / Badge */}
@@ -438,7 +438,7 @@ function UserManagementContent() {
             },
             {
               label: "Database Persistence",
-              value: "MySQL Live",
+              value: "Postgres Live",
               change: activeTenant?.slug || "Live Sync",
               trend: "up",
               icon: <CheckCircle2 className="w-5 h-5 text-amber-500" />,
@@ -657,7 +657,7 @@ function UserManagementContent() {
                 </h2>
                 <p className="text-xs text-[var(--nexa-text-secondary)]">
                   {editingStaffUser
-                    ? `Modify staff record for tenant workspace '${displayTenantName}' in MySQL.`
+                    ? `Modify staff record for tenant workspace '${displayTenantName}' in Postgres.`
                     : `Onboard a new user into '${displayTenantName}' and configure their access role in database.`}
                 </p>
               </div>

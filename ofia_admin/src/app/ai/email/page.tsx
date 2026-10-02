@@ -212,7 +212,7 @@ export default function AdminEmailPage() {
       }
 
       await GTM_API.updateAdminEmailSettings(payload);
-      showToast("Global Platform Email settings & credentials saved to MySQL database!");
+      showToast("Global Platform Email settings & credentials saved to Postgres database!");
       await loadSettings();
     } catch {
       showToast("Global Platform Email settings updated successfully!");
@@ -512,7 +512,7 @@ export default function AdminEmailPage() {
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold text-[var(--nexa-text-muted)] flex items-center gap-1.5">
                       AWS Secret Access Key (AES-256 Encrypted)
-                      <span title="Stored using AES-256-GCM zero-knowledge encryption in MySQL database.">
+                      <span title="Stored using AES-256-GCM zero-knowledge encryption in Postgres database.">
                         <HelpCircle className="w-3.5 h-3.5 text-[var(--nexa-text-muted)] cursor-help" />
                       </span>
                     </label>
@@ -538,8 +538,8 @@ export default function AdminEmailPage() {
                   />
                   <p className="text-[10px] text-[var(--nexa-text-muted)]">
                     {hasPlatformAwsSecret
-                      ? "AWS Secret is safely encrypted in MySQL. Leave blank to keep existing key."
-                      : "No AWS Secret saved in MySQL database yet. Enter secret and click Save."}
+                      ? "AWS Secret is safely encrypted in Postgres. Leave blank to keep existing key."
+                      : "No AWS Secret saved in Postgres database yet. Enter secret and click Save."}
                   </p>
                 </div>
               </>
@@ -582,8 +582,8 @@ export default function AdminEmailPage() {
                 />
                 <p className="text-[10px] text-[var(--nexa-text-muted)]">
                   {hasBrevoApiKey
-                    ? "Brevo API key is safely encrypted in MySQL. Leave empty to keep it, or type a new key to update."
-                    : "No Brevo API key found in MySQL database. Paste your key above and click 'Save Global Configuration'."}
+                    ? "Brevo API key is safely encrypted in Postgres. Leave empty to keep it, or type a new key to update."
+                    : "No Brevo API key found in Postgres database. Paste your key above and click 'Save Global Configuration'."}
                 </p>
               </div>
             ) : (
@@ -591,7 +591,7 @@ export default function AdminEmailPage() {
                 <div className="flex items-center justify-between">
                   <label className="text-xs font-semibold text-[var(--nexa-text-muted)] flex items-center gap-1.5">
                     Resend Master API Key (AES-256 Encrypted)
-                    <span title="Generated at resend.com/api-keys. Safely encrypted in MySQL using AES-256-GCM zero-knowledge encryption.">
+                    <span title="Generated at resend.com/api-keys. Safely encrypted in Postgres using AES-256-GCM zero-knowledge encryption.">
                       <HelpCircle className="w-3.5 h-3.5 text-[var(--nexa-text-muted)] cursor-help" />
                     </span>
                     <a
@@ -625,8 +625,8 @@ export default function AdminEmailPage() {
                 />
                 <p className="text-[10px] text-[var(--nexa-text-muted)]">
                   {hasResendApiKey
-                    ? "Resend API key is safely encrypted in MySQL. Leave empty to keep it, or type a new key to update."
-                    : "No Resend key found in MySQL database. Paste your key above and click 'Save Global Configuration'."}
+                    ? "Resend API key is safely encrypted in Postgres. Leave empty to keep it, or type a new key to update."
+                    : "No Resend key found in Postgres database. Paste your key above and click 'Save Global Configuration'."}
                 </p>
               </div>
             )}
@@ -915,7 +915,7 @@ export default function AdminEmailPage() {
               Ready to Apply Global Infrastructure Updates?
             </h4>
             <p className="text-xs text-[var(--nexa-text-muted)] mt-0.5">
-              Changes will be committed directly to MySQL (<code className="font-mono text-[11px] text-[#1A56DB]">gtm_global_email_settings</code>) and enforced across all active tenants.
+              Changes will be committed directly to Postgres (<code className="font-mono text-[11px] text-[#1A56DB]">gtm_global_email_settings</code>) and enforced across all active tenants.
             </p>
           </div>
           <div className="flex items-center gap-3 w-full sm:w-auto justify-end">

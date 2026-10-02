@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const priority = searchParams.get("priority");
     const subject = searchParams.get("subject");
 
-    // Fetch from MySQL
+    // Fetch from Postgres
     const dbMessages = await executeQuery<any[]>(
       "SELECT * FROM contact_inquiries ORDER BY created_at DESC"
     );

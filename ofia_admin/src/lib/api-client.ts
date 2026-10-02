@@ -98,12 +98,12 @@ export const USER_API = {
   },
 
   getTenantRBAC: async (orgId = "default") => {
-    return fetchJSON<{ tenant_id: string; matrix: any }>(`${USER_BASE}/organizations/${orgId}/rbac`);
+    return fetchJSON<{ tenant_id: string; matrix: any }>(`/api/organizations/${encodeURIComponent(orgId)}/rbac`);
   },
 
   saveTenantRBAC: async (orgId = "default", matrix: any) => {
     return fetchJSON<{ success: boolean; message: string; tenant_id: string; matrix: any }>(
-      `${USER_BASE}/organizations/${orgId}/rbac`,
+      `/api/organizations/${encodeURIComponent(orgId)}/rbac`,
       {
         method: "PUT",
         body: JSON.stringify({ matrix }),
@@ -255,14 +255,14 @@ export const GTM_API = {
     return fetchJSON<any[]>(`/api/organizations`);
   },
 
-  createAdminOrganization: async (data: { name: string; plan_tier?: string; planTier?: string; billing_cycle?: string; slug?: string; domain?: string; owner_name?: string; owner_email?: string; mrr?: number; leads_limit?: number; campaigns_limit?: number; erp_modules?: any }) => {
+  createAdminOrganization: async (data: { name: string; plan_tier?: string; planTier?: string; billing_cycle?: string; slug?: string; domain?: string; owner_name?: string; owner_email?: string; mrr?: number; leads_limit?: number; campaigns_limit?: number; erp_modules?: any; logo?: string }) => {
     return fetchJSON<any>(`/api/organizations`, {
       method: "POST",
       body: JSON.stringify(data),
     });
   },
 
-  updateAdminOrganization: async (id: string, data: { name?: string; slug?: string; domain?: string; ownerName?: string; ownerEmail?: string; plan_tier?: string; planTier?: string; status?: string; mrr?: number; leadsLimit?: number; campaignsLimit?: number; erpModules?: any }) => {
+  updateAdminOrganization: async (id: string, data: { name?: string; slug?: string; domain?: string; ownerName?: string; ownerEmail?: string; plan_tier?: string; planTier?: string; status?: string; mrr?: number; leadsLimit?: number; campaignsLimit?: number; erpModules?: any; logo?: string }) => {
     return fetchJSON<any>(`/api/organizations/${encodeURIComponent(id)}`, {
       method: "PUT",
       body: JSON.stringify(data),

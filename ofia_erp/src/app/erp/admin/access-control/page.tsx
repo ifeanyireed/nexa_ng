@@ -51,12 +51,12 @@ export default function AccessControlPage() {
   const [selectedRole, setSelectedRole] = useState<RoleKey>("md");
   const [matrix, setMatrix] = useState<PermissionMatrix>(DEFAULT_PERMISSION_MATRIX);
   const [isSavedToast, setIsSavedToast] = useState<boolean>(false);
-  const [toastMessage, setToastMessage] = useState<string>("Permissions Synchronized with MySQL");
+  const [toastMessage, setToastMessage] = useState<string>("Permissions Synchronized with Postgres");
   const [isLoadingDb, setIsLoadingDb] = useState<boolean>(true);
   const [searchFilter, setSearchFilter] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
-  // Determine active tenant name and look up RBAC matrix from MySQL database on load
+  // Determine active tenant name and look up RBAC matrix from Postgres database on load
   useEffect(() => {
     let isMounted = true;
     setIsLoadingDb(true);
@@ -66,7 +66,7 @@ export default function AccessControlPage() {
       const tName = matched?.name || "Enterprise Workspace";
       setTenantName(tName);
 
-      // Directly query live tenant RBAC matrix from MySQL database table TenantRolePermission
+      // Directly query live tenant RBAC matrix from Postgres database table TenantRolePermission
       fetchTenantPermissionMatrix(tName)
         .then((remote) => {
           if (remote && Object.keys(remote).length > 0 && isMounted) {
@@ -83,7 +83,7 @@ export default function AccessControlPage() {
     };
   }, [user?.email]);
 
-  // Handle individual toggle with remote MySQL persistence
+  // Handle individual toggle with remote Postgres persistence
   const handleToggleModule = async (moduleKey: string) => {
     const currentStatus = matrix[selectedRole]?.[moduleKey] ?? false;
     const updated: PermissionMatrix = {
@@ -95,10 +95,10 @@ export default function AccessControlPage() {
     };
     setMatrix(updated);
     const res = await saveTenantPermissionMatrixRemote(tenantName, updated);
-    triggerSaveToast(res.message || "Permissions Synchronized with MySQL");
+    triggerSaveToast(res.message || "Permissions Synchronized with Postgres");
   };
 
-  // Bulk actions for selected role with remote MySQL persistence
+  // Bulk actions for selected role with remote Postgres persistence
   const handleGrantAll = async () => {
     const allTrue: Record<string, boolean> = {};
     ERP_MODULES.forEach((m) => {
@@ -161,14 +161,14 @@ export default function AccessControlPage() {
   return (
     <BusinessShell
       title="Tenant Access Control & RBAC Matrix"
-      subtitle={`Configure role-based dashboard visibility and module access rules for workspace '${tenantName}'. Looked up directly from MySQL database u721451974_nexa_db.`}
+      subtitle={`Configure role-based dashboard visibility and module access rules for workspace '${tenantName}'. Looked up directly from Neon Postgres database.`}
       subTabs={[]}
       action={
         <div className="flex items-center gap-2.5">
           {/* Database Live Telemetry Pill */}
           <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1A56DB]/10 border border-[#1A56DB]/20 text-[#1A56DB] text-xs font-mono font-bold">
             <Database className="w-3.5 h-3.5 text-[#1A56DB]" />
-            <span>MySQL: TenantRolePermission</span>
+            <span>Postgres: TenantRolePermission</span>
             {isLoadingDb && <RefreshCw className="w-3 h-3 animate-spin text-[#1A56DB]" />}
           </div>
 

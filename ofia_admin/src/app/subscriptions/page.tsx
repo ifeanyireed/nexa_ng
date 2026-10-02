@@ -115,7 +115,7 @@ function SubscriptionManagementContent() {
         plan_id: selectedPlanForAssign.id,
       }).catch(() => null);
 
-      showToast(`'${targetOrg.name}' successfully upgraded to ${selectedPlanForAssign.name} (₦${selectedPlanForAssign.priceNgn.toLocaleString()} / mo) in MySQL database!`);
+      showToast(`'${targetOrg.name}' successfully upgraded to ${selectedPlanForAssign.name} (₦${selectedPlanForAssign.priceNgn.toLocaleString()} / mo) in Postgres database!`);
     } catch (err) {
       showToast(`'${targetOrg.name}' upgraded locally to ${selectedPlanForAssign.name}`);
     } finally {
@@ -312,7 +312,7 @@ function SubscriptionManagementContent() {
     setPlanToDelete(null);
   };
 
-  // Sync and fetch live tenants from MySQL database
+  // Sync and fetch live tenants from Postgres database
   useEffect(() => {
     let isMounted = true;
 
@@ -378,7 +378,7 @@ function SubscriptionManagementContent() {
 
     syncDatabaseTenants();
 
-    // Fetch subscription blueprints directly from MySQL database (:8081)
+    // Fetch subscription blueprints directly from Postgres database (:8081)
     const loadPlansFromDb = async () => {
       try {
         const remotePlans = await SUBSCRIPTION_API.getPlans().catch(() => null);
@@ -466,7 +466,7 @@ function SubscriptionManagementContent() {
         plan_tier: editPlanTier,
       }).catch(() => null);
 
-      showToast(`Subscription limits updated & synced to MySQL database for '${selectedTenantForQuota.name}'!`);
+      showToast(`Subscription limits updated & synced to Postgres database for '${selectedTenantForQuota.name}'!`);
     } catch (err) {
       showToast(`Limits for '${selectedTenantForQuota.name}' updated locally`);
     } finally {
@@ -876,7 +876,7 @@ function SubscriptionManagementContent() {
         isOpen={!!selectedPlanForAssign}
         onClose={() => setSelectedPlanForAssign(null)}
         title={`Assign ${selectedPlanForAssign?.name} to Workspace`}
-        subtitle="Directly synchronize and persist tenant subscription tier into MySQL database"
+        subtitle="Directly synchronize and persist tenant subscription tier into Postgres database"
       >
         <div className="space-y-4">
           <div className="p-3.5 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-xs space-y-1.5">
@@ -1198,7 +1198,7 @@ function SubscriptionManagementContent() {
         isOpen={!!editingPlan}
         onClose={() => setEditingPlan(null)}
         title={`Edit Plan: ${editingPlan?.name}`}
-        subtitle="Update pricing, quotas, limits and synchronize with MySQL database"
+        subtitle="Update pricing, quotas, limits and synchronize with Postgres database"
       >
         <div className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1340,7 +1340,7 @@ function SubscriptionManagementContent() {
         isOpen={!!planToDelete}
         onClose={() => setPlanToDelete(null)}
         title={`Delete Plan: ${planToDelete?.name}`}
-        subtitle="This action will permanently remove this blueprint from MySQL database"
+        subtitle="This action will permanently remove this blueprint from Postgres database"
       >
         <div className="space-y-4">
           <p className="text-xs text-[var(--nexa-text-secondary)]">

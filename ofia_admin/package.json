@@ -12,6 +12,7 @@
     "@neondatabase/serverless": "^1.1.0",
     "@tabler/icons-react": "^3.46.0",
     "canvas-confetti": "^1.9.4",
+    "cloudinary": "^2.11.0",
     "clsx": "^2.1.1",
     "framer-motion": "^13.1.0",
     "jose": "^6.2.10",

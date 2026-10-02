@@ -66,7 +66,7 @@ export default function AdminUsersPage() {
   const itemsPerPage = 8;
   const [organizations, setOrganizations] = useState<{ id: string; name: string }[]>([]);
 
-  // Sync live organizations from MySQL database
+  // Sync live organizations from Postgres database
   useEffect(() => {
     let isMounted = true;
     const fetchOrgs = async () => {

@@ -737,7 +737,7 @@ export function ErpAdminShell({
               // Determine if module is allowed to the tenant by the Super Admin in the database
               const isTenantAllowed = permissionMatrix.admin?.[item.key] !== false;
 
-              // If Super Admin disabled the module for this tenant in MySQL, hide it completely
+              // If Super Admin disabled the module for this tenant in Postgres, hide it completely
               if (!isTenantAllowed) {
                 return false;
               }

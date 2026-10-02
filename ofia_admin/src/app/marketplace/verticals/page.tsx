@@ -199,7 +199,7 @@ export default function VerticalsAndSubcategoriesPage() {
     setSyncSuccessMsg("");
     try {
       await LAYOUTS_API.seedSubdomainLayouts();
-      setSyncSuccessMsg("All 7 layouts and 35 subdomains successfully synchronized to MySQL!");
+      setSyncSuccessMsg("All 7 layouts and 35 subdomains successfully synchronized to Postgres!");
     } catch (err: any) {
       setSyncSuccessMsg("Layouts synchronized locally.");
     } finally {

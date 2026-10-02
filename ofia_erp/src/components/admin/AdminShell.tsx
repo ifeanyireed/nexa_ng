@@ -204,7 +204,7 @@ export const AdminShell = ({ children }: AdminShellProps) => {
                   SUPER ADMIN CONSOLE
                 </NexaBadge>
                 <span className="hidden sm:inline text-xs text-[var(--nexa-text-muted)]">
-                  Database: <strong className="text-mono font-bold text-[var(--nexa-text-primary)]">u721451974_nexa_db</strong>
+                  Database: <strong className="text-mono font-bold text-[var(--nexa-text-primary)]">Neon Postgres (neondb)</strong>
                 </span>
               </div>
             </div>

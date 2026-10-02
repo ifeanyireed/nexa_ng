@@ -1,6 +1,8 @@
 "use client";
 
+import { useState, useEffect, useCallback } from "react";
 import { USER_API } from "./api-client";
+import { fetchDatabaseTenants, resolveTenantFromList, DatabaseTenant } from "./tenant-context";
 
 export type RoleKey =
   | "admin"
@@ -441,7 +443,7 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
         };
       }
 
-      // 1. Tenant Administrator (admin) ALWAYS gets all modules allowed to the tenant by the Super Admin in MySQL
+      // 1. Tenant Administrator (admin) ALWAYS gets all modules allowed to the tenant by the Super Admin in Postgres
       for (const mod of ERP_MODULES) {
         merged.admin[mod.key] = provisioned[mod.key] !== false;
       }
@@ -479,12 +481,12 @@ export async function saveTenantPermissionMatrixRemote(
   // 1. Instantly update active components via in-memory event
   saveTenantPermissionMatrix(tenantId, matrix);
 
-  // 2. Persist directly to MySQL database table TenantRolePermission via backend API
+  // 2. Persist directly to Postgres database table TenantRolePermission via backend API
   try {
     const res = await USER_API.saveTenantRBAC(tenantId, matrix);
     return {
       success: true,
-      message: res.message || "Permissions successfully persisted to MySQL database u721451974_nexa_db",
+      message: res.message || "Permissions successfully persisted to Postgres database",
     };
   } catch (err: any) {
     console.error(`[RBAC] Remote database sync failed:`, err);
@@ -515,5 +517,77 @@ export function isModuleEnabledForRole(
     return DEFAULT_PERMISSION_MATRIX.employee[moduleKey] ?? false;
   }
   return Boolean(matrix[roleKey][moduleKey]);
+}
+
+/**
+ * React hook to reactively track ERP module provisioning for the active tenant.
+ * Pulls from the Postgres database (via USER_API) and updates in real-time when Super Admin toggles permissions.
+ */
+export function useTenantProvisioning() {
+  const [matrix, setMatrix] = useState<PermissionMatrix>(DEFAULT_PERMISSION_MATRIX);
+  const [tenant, setTenant] = useState<DatabaseTenant | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    async function loadProvisioning() {
+      try {
+        const list = await fetchDatabaseTenants();
+        if (!isCurrent) return;
+
+        const matched = resolveTenantFromList(list);
+        setTenant(matched);
+
+        const tenantKey = matched?.slug || matched?.id || matched?.name || "default";
+
+        // Initial sync from local memory matrix
+        setMatrix(getTenantPermissionMatrix(tenantKey));
+
+        // Fetch live provisioned matrix from Postgres backend
+        const remoteMatrix = await fetchTenantPermissionMatrix(tenantKey);
+        if (remoteMatrix && Object.keys(remoteMatrix).length > 0 && isCurrent) {
+          setMatrix(remoteMatrix);
+        }
+      } catch (err) {
+        console.warn("[Provisioning] Failed to fetch tenant provisioning:", err);
+      } finally {
+        if (isCurrent) setIsLoading(false);
+      }
+    }
+
+    loadProvisioning();
+
+    // Listen to real-time RBAC updates from Super Admin / Access Control changes
+    const handleUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.matrix) {
+        setMatrix(customEvent.detail.matrix);
+      }
+    };
+
+    window.addEventListener("ofia_rbac_updated", handleUpdate);
+    return () => {
+      isCurrent = false;
+      window.removeEventListener("ofia_rbac_updated", handleUpdate);
+    };
+  }, []);
+
+  const isModuleProvisioned = useCallback(
+    (moduleKey: string): boolean => {
+      if (moduleKey === "mission" || moduleKey === "overview") return true;
+      if (moduleKey === "access_control") return true;
+      // Super Admin module provisioning is stored under admin or tenant_provision
+      return matrix.admin?.[moduleKey] !== false;
+    },
+    [matrix]
+  );
+
+  return {
+    matrix,
+    tenant,
+    isLoading,
+    isModuleProvisioned,
+  };
 }
 

@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     const toolType = searchParams.get("toolType");
     const state = searchParams.get("state");
 
-    // Fetch from MySQL
+    // Fetch from Postgres
     const dbLeads = await executeQuery<any[]>(
       "SELECT * FROM waitlist_leads ORDER BY queue_number ASC"
     );
@@ -128,7 +128,7 @@ export async function POST(request: Request) {
 
     const featuresJson = JSON.stringify(featuresInterest);
 
-    // Insert into MySQL
+    // Insert into Postgres
     await executeQuery(
       `INSERT INTO waitlist_leads 
        (id, queue_number, full_name, business_name, email, phone, role, business_type, tool_type, custom_business_type, custom_tool_type, state, city, team_size, features_interest, referral_code, status, created_at, updated_at)

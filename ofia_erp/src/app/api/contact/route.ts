@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     const now = new Date().toISOString().slice(0, 19).replace("T", " ");
     const priority = subject === "Billing / Payments" ? "HIGH" : "MEDIUM";
 
-    // Insert into MySQL contact_inquiries table
+    // Insert into Postgres contact_inquiries table
     await executeQuery(
       `INSERT INTO contact_inquiries
        (id, ticket_number, name, email, phone, subject, message, priority, status, created_at, updated_at)

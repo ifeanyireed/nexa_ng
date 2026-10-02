@@ -16,6 +16,7 @@ export interface TenantOrg {
   monthlyAiSpendUSD: number;
   integrationHealth: "Healthy" | "Degraded" | "Error";
   erpModules?: Record<string, boolean>;
+  logo?: string;
   loginImage?: string;
   heroTitle?: string;
   heroSubtitle?: string;
@@ -142,6 +143,7 @@ export const INITIAL_TENANTS: TenantOrg[] = [
     domain: "neweratransports.ofia.ng",
     ownerName: "Ifeanyi Felix",
     ownerEmail: "ifeanyi.ibeh@neweratransports.com",
+    logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
     loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
     heroTitle: "Powering next-generation transport, logistics & fleet intelligence.",
     heroSubtitle: "Real-time zonal dispatch, fleet telemetry, manifest auditing, and ledger reconciliation in one synchronized ecosystem.",
@@ -174,6 +176,7 @@ export const INITIAL_TENANTS: TenantOrg[] = [
     domain: "reedbreed.cc",
     ownerName: "Ifeanyi Reed",
     ownerEmail: "ifeanyireed@gmail.com",
+    logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg",
     loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg",
     planTier: "ENTERPRISE",
     status: "Active",

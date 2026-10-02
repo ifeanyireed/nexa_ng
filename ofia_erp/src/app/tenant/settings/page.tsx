@@ -355,7 +355,7 @@ export default function TenantSettingsPage() {
         activeTenant.ownerEmail = ownerEmail;
       }
 
-      // 4. Update ERP staff users table in MySQL
+      // 4. Update ERP staff users table in Postgres
       if (ownerName && (slug || activeTenant?.slug)) {
         try {
           await fetch("/api/erp/users", {

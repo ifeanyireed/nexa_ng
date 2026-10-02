@@ -163,7 +163,7 @@ export default function AdminOverviewPage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await loadLiveAdminData();
-    showToast("Synchronized live metrics with MySQL database u721451974_nexa_db!");
+    showToast("Synchronized live metrics with Neon Postgres database!");
   };
 
   const handleProvisionTenant = async (e: React.FormEvent) => {
@@ -240,7 +240,7 @@ export default function AdminOverviewPage() {
 
     try {
       await GTM_API.toggleAdminFeatureFlag(flag.key, nextState);
-      showToast(`Feature flag "${flag.name}" updated in MySQL database.`);
+      showToast(`Feature flag "${flag.name}" updated in Postgres database.`);
     } catch {
       showToast(`Feature flag "${flag.name}" state toggled.`);
     }
@@ -278,7 +278,7 @@ export default function AdminOverviewPage() {
         isOpen={isProvisionOpen}
         onClose={() => setIsProvisionOpen(false)}
         title="Provision New Tenant Workspace"
-        subtitle="Registers an organization workspace in MySQL and initializes default GTM settings"
+        subtitle="Registers an organization workspace in Postgres and initializes default GTM settings"
       >
         <form onSubmit={handleProvisionTenant} className="space-y-4">
           <NexaInput
@@ -339,7 +339,7 @@ export default function AdminOverviewPage() {
                 Platform Operator Cockpit
               </NexaBadge>
               <span className="text-xs text-[var(--nexa-text-muted)] flex items-center gap-1.5 font-mono">
-                Database: <strong className="text-[#1A56DB]">u721451974_nexa_db</strong>
+                Database: <strong className="text-[#1A56DB]">Neon Postgres (neondb)</strong>
               </span>
               <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#0E9F6E]/10 text-[#0E9F6E] font-bold">
                 ● Chi Router :8082 Live
@@ -533,7 +533,7 @@ export default function AdminOverviewPage() {
                     Active Tenant Workspaces
                   </h2>
                   <p className="text-xs text-[var(--nexa-text-muted)]">
-                    Workspaces committed directly in MySQL
+                    Workspaces committed directly in Postgres
                   </p>
                 </div>
                 <button

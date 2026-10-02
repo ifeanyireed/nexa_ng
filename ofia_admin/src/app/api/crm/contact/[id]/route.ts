@@ -16,7 +16,7 @@ export async function PATCH(
     const { status, priority, assignedTo, resolutionNotes } = body;
     const now = new Date().toISOString().slice(0, 19).replace("T", " ");
 
-    // Update in MySQL
+    // Update in Postgres
     await executeQuery(
       `UPDATE contact_inquiries
        SET status = COALESCE(?, status),

@@ -25,7 +25,7 @@ export default function AdminObservabilityPage() {
   const sampleTraces = [
     {
       id: "trace-9482",
-      flow: "User Command → CRO (Sterling) → Gemini 1.5 Flash → Lead Extraction Tool → MySQL DB",
+      flow: "User Command → CRO (Sterling) → Gemini 1.5 Flash → Lead Extraction Tool → Postgres DB",
       latency: "380ms",
       cost: "₦2.70",
       tokens: "2,420",

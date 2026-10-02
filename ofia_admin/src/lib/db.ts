@@ -108,7 +108,7 @@ export async function executeQuery<T = any>(sql: string, params: any[] = []): Pr
   try {
     await ensureTablesExist();
 
-    // Map MySQL '?' placeholders to PostgreSQL '$1, $2, ...'
+    // Map legacy '?' placeholders to PostgreSQL '$1, $2, ...'
     let paramIdx = 1;
     const pgSql = sql.replace(/\?/g, () => `$${paramIdx++}`);
 

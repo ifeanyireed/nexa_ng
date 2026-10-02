@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useERPStore, ReviewCycle, DEPARTMENTS } from "@/lib/erp-store";
+import { useERPStore, ReviewCycle, DEPARTMENTS, getActiveTenantSlug } from "@/lib/erp-store";
 import { useActiveTenant } from "@/lib/tenant-context";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -27,7 +27,100 @@ export default function ReviewCycleManagement() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const itemsPerPage = 5;
   
-  const depts = DEPARTMENTS;
+  const [depts, setDepts] = useState<string[]>([...DEPARTMENTS]);
+  const [isAddingDept, setIsAddingDept] = useState(false);
+  const [newDeptText, setNewDeptText] = useState("");
+  const [isSavingDept, setIsSavingDept] = useState(false);
+
+  // Load persistent departments from backend API and combine with operational & cycle departments
+  useEffect(() => {
+    const slug = tenantSlug || getActiveTenantSlug();
+
+    const loadDepts = async () => {
+      let apiNames: string[] = [];
+      try {
+        const url = slug ? `/api/erp/departments?tenant=${encodeURIComponent(slug)}` : "/api/erp/departments";
+        const res = await fetch(url, {
+          cache: "no-store",
+          headers: slug ? { "x-tenant-slug": slug } : {},
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            apiNames = data.map((d: any) => d.name || d.Name).filter(Boolean);
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to load departments from API:", err);
+      }
+
+      // Collect departments actively assigned to loaded cycles
+      const fromCycles = cycles.flatMap(c => c.departments || []).filter(Boolean);
+
+      // Base departments: use API names or loaded cycles if present, otherwise default fallback
+      const baseDepts = (apiNames.length > 0 || fromCycles.length > 0)
+        ? []
+        : Array.from(DEPARTMENTS);
+
+      const merged = Array.from(new Set([...baseDepts, ...apiNames, ...fromCycles]));
+      setDepts(merged);
+    };
+
+    loadDepts();
+  }, [tenantSlug, cycles]);
+
+  const handleSaveDept = async () => {
+    const trimmed = newDeptText.trim();
+    if (!trimmed) return;
+    if (depts.map(d => d.toLowerCase()).includes(trimmed.toLowerCase())) {
+      alert("This department already exists!");
+      return;
+    }
+
+    setIsSavingDept(true);
+    const slug = tenantSlug || getActiveTenantSlug();
+
+    try {
+      const code = `DEPT-${trimmed.replace(/[^A-Za-z0-9]/g, "").slice(0, 4).toUpperCase()}-${Date.now().toString().slice(-4)}`;
+      const payload = {
+        code,
+        name: trimmed,
+        head: "Pending Appointment",
+        headCount: 1,
+        budget: "₦10,000,000",
+        costCenter: `CC-${depts.length + 100}`,
+        tenantSlug: slug || undefined,
+      };
+
+      const res = await fetch(`/api/erp/departments${slug ? `?tenant=${encodeURIComponent(slug)}` : ""}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(slug ? { "x-tenant-slug": slug } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        console.warn("Backend returned non-OK status when saving department, saving locally");
+      }
+
+      const updated = [...depts, trimmed];
+      setDepts(updated);
+      setSelectedDepts(prev => prev.includes(trimmed) ? prev : [...prev, trimmed]);
+      setIsAddingDept(false);
+      setNewDeptText("");
+    } catch (err) {
+      console.error("Failed to persist department:", err);
+      const updated = [...depts, trimmed];
+      setDepts(updated);
+      setSelectedDepts(prev => prev.includes(trimmed) ? prev : [...prev, trimmed]);
+      setIsAddingDept(false);
+      setNewDeptText("");
+    } finally {
+      setIsSavingDept(false);
+    }
+  };
 
   const handleSelectAll = () => {
     if (selectedDepts.length === depts.length) {
@@ -313,14 +406,50 @@ export default function ReviewCycleManagement() {
                   <label className="block text-[10px] font-extrabold text-[var(--nexa-text-muted)] uppercase tracking-wider">
                     Target Departments
                   </label>
-                  <button
-                    type="button"
-                    onClick={handleSelectAll}
-                    className="text-[10px] font-extrabold text-[#1A56DB] hover:underline uppercase cursor-pointer"
-                  >
-                    {selectedDepts.length === depts.length ? "Deselect All" : "Select All"}
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingDept(prev => !prev)}
+                      className="text-[10px] font-extrabold text-[#1A56DB] hover:underline uppercase cursor-pointer flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" /> {isAddingDept ? "Cancel" : "Add Dept"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSelectAll}
+                      className="text-[10px] font-extrabold text-[#1A56DB] hover:underline uppercase cursor-pointer"
+                    >
+                      {selectedDepts.length === depts.length ? "Deselect All" : "Select All"}
+                    </button>
+                  </div>
                 </div>
+
+                {isAddingDept && (
+                  <div className="flex gap-1.5 items-center border border-blue-200 dark:border-blue-800 rounded-xl p-2 bg-blue-50/50 dark:bg-blue-900/20 mb-2">
+                    <input
+                      type="text"
+                      placeholder="New Department Name..."
+                      value={newDeptText}
+                      onChange={(e) => setNewDeptText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleSaveDept();
+                        }
+                      }}
+                      className="px-2.5 py-1 text-xs border border-[var(--nexa-border)] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#1A56DB] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] font-semibold flex-1"
+                    />
+                    <button
+                      type="button"
+                      disabled={isSavingDept}
+                      onClick={handleSaveDept}
+                      className="bg-[#1A56DB] text-white rounded-lg px-2.5 py-1 hover:bg-blue-700 transition-colors shadow-sm text-xs font-bold disabled:opacity-50 cursor-pointer"
+                    >
+                      {isSavingDept ? "Saving..." : "Add"}
+                    </button>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-2 mt-1 max-h-48 overflow-y-auto p-2 border border-[var(--nexa-border)] rounded-xl bg-[var(--nexa-bg-base)]">
                   {depts.map(d => (
                     <button

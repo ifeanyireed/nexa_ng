@@ -51,7 +51,7 @@ func main() {
 	healthHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"service": "user-subscription-service", "status": "healthy", "port": 8081, "database": "u721451974_nexa_db"}`))
+		w.Write([]byte(`{"service": "user-subscription-service", "status": "healthy", "port": 8081, "database": "neondb (postgres)"}`))
 	}
 	r.Get("/", healthHandler)
 	r.Head("/", healthHandler)

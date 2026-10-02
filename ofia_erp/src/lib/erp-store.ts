@@ -466,7 +466,7 @@ export function useERPStore(explicitTenantSlug?: string) {
       const usersData = await fetchFromApi<User[]>("/users", [], activeTenantSlug);
       setUsers(usersData || []);
 
-      const cyclesData = await fetchFromApi<ReviewCycle[]>("/cycles", [], activeTenantSlug);
+      const cyclesData = await fetchFromApi<ReviewCycle[]>("/cycles", INITIAL_CYCLES, activeTenantSlug);
       setCycles(cyclesData || []);
 
       const reviewsData = await fetchFromApi<PerformanceReview[]>("/reviews", [], activeTenantSlug);

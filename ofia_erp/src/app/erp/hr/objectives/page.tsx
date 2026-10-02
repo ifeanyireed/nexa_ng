@@ -62,12 +62,8 @@ export default function ObjectiveManagement() {
       // Collect departments actively assigned to loaded objectives
       const fromObjectives = objectives.flatMap(o => o.departments || []).filter(Boolean);
 
-      // Base departments: use API names or loaded objectives if present, otherwise default fallback
-      const baseDepts = (apiNames.length > 0 || fromObjectives.length > 0)
-        ? []
-        : Array.from(DEPARTMENTS);
-
-      const merged = Array.from(new Set([...baseDepts, ...apiNames, ...fromObjectives]));
+      // Maintain complete master DEPARTMENTS list merged with backend and objective departments
+      const merged = Array.from(new Set([...DEPARTMENTS, ...apiNames, ...fromObjectives]));
       setDepts(merged);
     };
 

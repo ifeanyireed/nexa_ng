@@ -31,6 +31,11 @@ export default function ReviewCycleManagement() {
   const [isAddingDept, setIsAddingDept] = useState(false);
   const [newDeptText, setNewDeptText] = useState("");
   const [isSavingDept, setIsSavingDept] = useState(false);
+  const [expandedCycleIds, setExpandedCycleIds] = useState<Record<string, boolean>>({});
+
+  const toggleExpandCycle = (id: string) => {
+    setExpandedCycleIds(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   // Load persistent departments from backend API and combine with operational & cycle departments
   useEffect(() => {
@@ -57,12 +62,8 @@ export default function ReviewCycleManagement() {
       // Collect departments actively assigned to loaded cycles
       const fromCycles = cycles.flatMap(c => c.departments || []).filter(Boolean);
 
-      // Base departments: use API names or loaded cycles if present, otherwise default fallback
-      const baseDepts = (apiNames.length > 0 || fromCycles.length > 0)
-        ? []
-        : Array.from(DEPARTMENTS);
-
-      const merged = Array.from(new Set([...baseDepts, ...apiNames, ...fromCycles]));
+      // Maintain complete master DEPARTMENTS list merged with backend and cycle departments
+      const merged = Array.from(new Set([...DEPARTMENTS, ...apiNames, ...fromCycles]));
       setDepts(merged);
     };
 
@@ -311,12 +312,43 @@ export default function ReviewCycleManagement() {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-1">
-                    {c.departments.map(d => (
-                      <span key={d} className="bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[10px] font-bold text-[var(--nexa-text-secondary)] px-2 py-0.5 rounded-full">
-                        {d}
+                  <div className="space-y-1.5 pt-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-extrabold text-[var(--nexa-text-muted)] uppercase tracking-wider">
+                        Covered Departments ({c.departments?.length || 0})
                       </span>
-                    ))}
+                      {c.departments && c.departments.length > 8 && (
+                        <button
+                          type="button"
+                          onClick={() => toggleExpandCycle(c.id)}
+                          className="text-[10px] font-bold text-[#1A56DB] hover:underline cursor-pointer"
+                        >
+                          {expandedCycleIds[c.id] ? "Collapse" : `View All (${c.departments.length})`}
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-1 max-h-40 overflow-y-auto p-1.5 rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)]">
+                      {(c.departments && c.departments.length > 0 ? (
+                        (expandedCycleIds[c.id] ? c.departments : c.departments.slice(0, 8)).map(d => (
+                          <span key={d} className="bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[10px] font-bold text-[var(--nexa-text-secondary)] px-2 py-0.5 rounded-full">
+                            {d}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-[10px] text-slate-400 italic">No target departments specified</span>
+                      ))}
+
+                      {!expandedCycleIds[c.id] && c.departments && c.departments.length > 8 && (
+                        <button
+                          type="button"
+                          onClick={() => toggleExpandCycle(c.id)}
+                          className="bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20 text-[10px] font-bold px-2 py-0.5 rounded-full hover:bg-[#1A56DB]/20 cursor-pointer"
+                        >
+                          +{c.departments.length - 8} more
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex gap-2 items-center justify-end pt-2 border-t border-[var(--nexa-border)]">
@@ -404,7 +436,7 @@ export default function ReviewCycleManagement() {
               <div>
                 <div className="flex justify-between items-center mb-1.5">
                   <label className="block text-[10px] font-extrabold text-[var(--nexa-text-muted)] uppercase tracking-wider">
-                    Target Departments
+                    Target Departments ({selectedDepts.length} of {depts.length} Selected)
                   </label>
                   <div className="flex items-center gap-3">
                     <button

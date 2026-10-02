@@ -26,14 +26,14 @@ export function RoleGuard({
   const pathname = usePathname();
   const { user } = useAuth();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
-  const [userRole, setUserRole] = useState<RoleKey>("admin");
+  const [userRole, setUserRole] = useState<RoleKey>("employee");
   const [redirectTarget, setRedirectTarget] = useState<string>("/login");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     // 1. Resolve active user and role
-    let role: RoleKey = "admin";
+    let role: RoleKey = "employee";
     const stored = localStorage.getItem("erp_current_user");
     if (stored) {
       try {
@@ -43,15 +43,18 @@ export function RoleGuard({
         }
       } catch {}
     } else if (localStorage.getItem("nexa_user_role")) {
-      role = (localStorage.getItem("nexa_user_role") || "admin") as RoleKey;
+      role = (localStorage.getItem("nexa_user_role") || "employee") as RoleKey;
     } else if (user?.role) {
-      role = (user.role.toLowerCase().replace("tenant_", "").replace("_director", "") || "admin") as RoleKey;
+      role = (user.role.toLowerCase().replace("tenant_", "").replace("_director", "") || "employee") as RoleKey;
+    } else if (pathname.startsWith("/erp/admin")) {
+      role = "admin";
     }
     setUserRole(role);
 
     // 2. Resolve default home dashboard for this role
-    let home = "/erp/admin";
-    if (role === "md") home = "/erp/md";
+    let home = "/erp/employee";
+    if (role === "admin") home = "/erp/admin";
+    else if (role === "md") home = "/erp/md";
     else if (role === "hr") home = "/erp/hr";
     else if (role === "accountant") home = "/erp/accountant";
     else if (role === "marketer") home = "/erp/marketer";
@@ -80,7 +83,7 @@ export function RoleGuard({
     // 3. Automatic Route Role Rules (if allowedRoles not explicitly provided)
     let effectiveAllowedRoles = allowedRoles;
     if (!effectiveAllowedRoles) {
-      if (pathname.startsWith("/erp/admin/users")) {
+      if (pathname.startsWith("/erp/admin/users") || pathname.startsWith("/erp/admin/departments")) {
         effectiveAllowedRoles = ["admin", "md", "hr"];
       } else if (pathname === "/erp/admin" || pathname.startsWith("/erp/admin/access-control")) {
         effectiveAllowedRoles = ["admin"];

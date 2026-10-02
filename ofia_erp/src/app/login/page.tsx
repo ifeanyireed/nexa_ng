@@ -30,6 +30,24 @@ import {
   DEFAULT_TENANT_BRANDING,
 } from "@/lib/tenant-context";
 import { detectImageBrightness } from "@/lib/image-brightness";
+import { INITIAL_USERS } from "@/lib/erp-store";
+
+// Documented test accounts across tenant workspaces (from users.md)
+const SEEDED_PERSONA_ACCOUNTS: Record<
+  string,
+  { role: string; name: string; department?: string; designation?: string; avatar?: string }
+> = {
+  "adeyemi@edusuite.ng": { role: "admin", name: "Adeyemi Adeleke", designation: "Managing Director & Workspace Owner", department: "Executive Directorate" },
+  "khalil@edusuite.ng": { role: "marketer", name: "Khalil Bello", designation: "Head of Growth & Outreach", department: "Marketing" },
+  "chidinma@edusuite.ng": { role: "marketer", name: "Chidinma Eze", designation: "Senior B2B Sales Associate", department: "Marketing" },
+  "auditor@edusuite.ng": { role: "employee", name: "Babajide Sanwo", designation: "Financial & Compliance Auditor", department: "Finance & Accounts" },
+  "femi@paydirect.africa": { role: "admin", name: "Femi Bakare", designation: "VP of Commercial Operations", department: "Executive Directorate" },
+  "manager@paydirect.africa": { role: "manager", name: "Operations Team", designation: "Settlement & Reconciliations Manager", department: "Operations" },
+  "dr.ibrahim@healthpulse.ng": { role: "md", name: "Dr. Ibrahim Yusuf", designation: "Medical Director & Co-Founder", department: "Executive Directorate" },
+  "admin@healthpulse-ng.ofia.ng": { role: "admin", name: "Diagnostics Desk", designation: "Clinic Systems Administrator", department: "Administration" },
+  "admin@logitrack-express.ofia.ng": { role: "admin", name: "Logistics Admin", designation: "Regional Fleet Operations Lead", department: "Logistics" },
+  "logistics@logitrack-express.ofia.ng": { role: "dispatcher", name: "Dispatch Desk", designation: "Zonal Dispatch Supervisor", department: "Logistics" },
+};
 
 export interface LoginPageProps {
   initialTenantSlug?: string;
@@ -211,60 +229,154 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
     setIsLoading(true);
     setError("");
 
-    const userPrefix = email.split("@")[0].toLowerCase();
-    let resolvedRole = userPrefix.includes("accountant")
-      ? "accountant"
-      : userPrefix.includes("hr")
-      ? "hr"
-      : userPrefix.includes("md")
-      ? "md"
-      : userPrefix.includes("cashier")
-      ? "cashier"
-      : userPrefix.includes("inventory")
-      ? "inventory_officer"
-      : userPrefix.includes("dispatch") || userPrefix.includes("logistics")
-      ? "dispatcher"
-      : userPrefix.includes("manager")
-      ? "manager"
-      : userPrefix.includes("market") || userPrefix.includes("sales")
-      ? "marketer"
-      : userPrefix.includes("employee") || userPrefix.includes("staff")
-      ? "employee"
-      : "admin";
+    const normalizedEmail = email.trim().toLowerCase();
+    const userPrefix = normalizedEmail.split("@")[0] || "";
+    const emailDomain = normalizedEmail.includes("@") ? normalizedEmail.split("@")[1].split(".")[0] : "";
 
+    // 1. Check documented tenant seed personas (e.g. from users.md)
+    const seededPersona = SEEDED_PERSONA_ACCOUNTS[normalizedEmail];
+
+    // 2. Check initial seed users directory (NETS staff directory)
+    const initialUserMatch = INITIAL_USERS.find(
+      (u) => u.email && u.email.trim().toLowerCase() === normalizedEmail
+    );
+
+    // 3. Attempt live directory match if backend is reachable
+    let liveUserMatch: any = null;
+    try {
+      const activeSlugParam = resolvedSlug ? `?tenant=${encodeURIComponent(resolvedSlug)}` : "";
+      const usersRes = await fetch(`/api/erp/users${activeSlugParam}`).catch(() => null);
+      if (usersRes && usersRes.ok) {
+        const usersList = await usersRes.json();
+        if (Array.isArray(usersList)) {
+          liveUserMatch = usersList.find(
+            (u: any) => u.email && u.email.trim().toLowerCase() === normalizedEmail
+          );
+        }
+      }
+    } catch {}
+
+    const matchedDirectoryUser = liveUserMatch || initialUserMatch;
+
+    // Default to least-privilege role: "employee"
+    let resolvedRole = "employee";
     let resolvedName = email.split("@")[0] || "User";
-    const emailDomain = email.includes("@") ? email.split("@")[1].split(".")[0] : "";
+    let resolvedDept = "Operations";
+    let resolvedDesig = "Staff Member";
+    let resolvedAvatar = "/character1.jpg";
+    let resolvedId = "";
+
+    if (matchedDirectoryUser) {
+      resolvedRole = matchedDirectoryUser.role || "employee";
+      resolvedName = matchedDirectoryUser.name || resolvedName;
+      resolvedDept = matchedDirectoryUser.department || resolvedDept;
+      resolvedDesig = matchedDirectoryUser.designation || resolvedDesig;
+      resolvedAvatar = matchedDirectoryUser.avatar || resolvedAvatar;
+      resolvedId = matchedDirectoryUser.id || "";
+    } else if (seededPersona) {
+      resolvedRole = seededPersona.role;
+      resolvedName = seededPersona.name;
+      if (seededPersona.department) resolvedDept = seededPersona.department;
+      if (seededPersona.designation) resolvedDesig = seededPersona.designation;
+      if (seededPersona.avatar) resolvedAvatar = seededPersona.avatar;
+    } else if (activeTenant?.ownerEmail && normalizedEmail === activeTenant.ownerEmail.toLowerCase()) {
+      resolvedRole = "admin";
+      resolvedName = activeTenant.ownerName || `${activeTenant.name} Administrator`;
+      resolvedDept = "Executive Directorate";
+      resolvedDesig = "Workspace Owner & Administrator";
+    } else {
+      // Role persona email prefixes
+      if (userPrefix.startsWith("admin") || userPrefix.startsWith("root") || userPrefix.startsWith("superadmin")) {
+        resolvedRole = "admin";
+        resolvedDesig = "Workspace Administrator";
+        resolvedDept = "Administration";
+      } else if (userPrefix.startsWith("md") || userPrefix.startsWith("director") || userPrefix.startsWith("exec")) {
+        resolvedRole = "md";
+        resolvedDesig = "Managing Director";
+        resolvedDept = "Executive Directorate";
+      } else if (userPrefix.startsWith("hr")) {
+        resolvedRole = "hr";
+        resolvedDesig = "Human Resources Officer";
+        resolvedDept = "Human Resources";
+      } else if (
+        userPrefix.startsWith("accountant") ||
+        userPrefix.startsWith("accounts") ||
+        userPrefix.startsWith("finance")
+      ) {
+        resolvedRole = "accountant";
+        resolvedDesig = "Chief Accountant";
+        resolvedDept = "Finance & Accounts";
+      } else if (
+        userPrefix.startsWith("manager") ||
+        userPrefix.startsWith("supervisor") ||
+        userPrefix.startsWith("lead")
+      ) {
+        resolvedRole = "manager";
+        resolvedDesig = "Operations & Line Manager";
+        resolvedDept = "Operations";
+      } else if (
+        userPrefix.startsWith("market") ||
+        userPrefix.startsWith("sales") ||
+        userPrefix.startsWith("crm") ||
+        userPrefix.startsWith("growth")
+      ) {
+        resolvedRole = "marketer";
+        resolvedDesig = "Growth & Marketing Lead";
+        resolvedDept = "Marketing";
+      } else if (userPrefix.startsWith("cashier") || userPrefix.startsWith("pos")) {
+        resolvedRole = "cashier";
+        resolvedDesig = "POS Cashier";
+        resolvedDept = "Retail & POS";
+      } else if (
+        userPrefix.startsWith("inventory") ||
+        userPrefix.startsWith("stock") ||
+        userPrefix.startsWith("warehouse")
+      ) {
+        resolvedRole = "inventory_officer";
+        resolvedDesig = "Warehouse Inventory Officer";
+        resolvedDept = "Supply Chain";
+      } else if (
+        userPrefix.startsWith("dispatch") ||
+        userPrefix.startsWith("logistics") ||
+        userPrefix.startsWith("fleet")
+      ) {
+        resolvedRole = "dispatcher";
+        resolvedDesig = "Logistics Dispatcher";
+        resolvedDept = "Logistics";
+      } else {
+        // Unknown staff / employee defaults to employee, never admin
+        resolvedRole = "employee";
+        resolvedDesig = "Staff Member";
+        resolvedDept = "Operations";
+      }
+    }
 
     try {
       const res = await AUTH_API.login({ email, password });
       if (res && res.user) {
         if (res.user.role) {
           const rawRole = String(res.user.role).toLowerCase();
-          if (
+          if (rawRole === "super_admin" || rawRole === "admin") {
+            resolvedRole = "admin";
+          } else if (rawRole === "tenant_owner") {
+            if (!matchedDirectoryUser || matchedDirectoryUser.role === "admin") {
+              resolvedRole = "admin";
+            }
+          } else if (rawRole.includes("growth") || rawRole.includes("sales")) {
+            resolvedRole = "marketer";
+          } else if (rawRole.includes("manager")) {
+            resolvedRole = "manager";
+          } else if (rawRole.includes("hr")) {
+            resolvedRole = "hr";
+          } else if (rawRole.includes("accountant")) {
+            resolvedRole = "accountant";
+          } else if (
             rawRole.includes("employee") ||
             rawRole.includes("staff") ||
             rawRole.includes("viewer") ||
             rawRole.includes("client")
           ) {
             resolvedRole = "employee";
-          } else if (rawRole.includes("accountant")) {
-            resolvedRole = "accountant";
-          } else if (rawRole.includes("hr")) {
-            resolvedRole = "hr";
-          } else if (rawRole.includes("md")) {
-            resolvedRole = "md";
-          } else if (rawRole.includes("manager")) {
-            resolvedRole = "manager";
-          } else if (rawRole.includes("marketer") || rawRole.includes("sales")) {
-            resolvedRole = "marketer";
-          } else if (rawRole.includes("cashier")) {
-            resolvedRole = "cashier";
-          } else if (rawRole.includes("inventory")) {
-            resolvedRole = "inventory_officer";
-          } else if (rawRole.includes("dispatch") || rawRole.includes("logistics")) {
-            resolvedRole = "dispatcher";
-          } else if (rawRole.includes("admin")) {
-            resolvedRole = "admin";
           }
         }
         if (res.user.name) {
@@ -287,9 +399,13 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
         localStorage.setItem(
           "erp_current_user",
           JSON.stringify({
+            id: resolvedId || matchedDirectoryUser?.id || (resolvedRole === "admin" ? "USR-ADMIN-01" : "EMP001"),
             email,
             role: resolvedRole,
             name: resolvedName,
+            department: resolvedDept,
+            designation: resolvedDesig,
+            avatar: resolvedAvatar,
           })
         );
         document.cookie = `nexa_user_role=${resolvedRole}; path=/; max-age=2592000; SameSite=Lax`;
@@ -309,9 +425,13 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
         localStorage.setItem(
           "erp_current_user",
           JSON.stringify({
+            id: resolvedId || matchedDirectoryUser?.id || (resolvedRole === "admin" ? "USR-ADMIN-01" : "EMP001"),
             email,
             role: resolvedRole,
             name: resolvedName,
+            department: resolvedDept,
+            designation: resolvedDesig,
+            avatar: resolvedAvatar,
           })
         );
         document.cookie = `nexa_user_role=${resolvedRole}; path=/; max-age=2592000; SameSite=Lax`;
@@ -324,41 +444,33 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
   };
 
   const navigateUser = (userEmail: string, userRole?: string) => {
-    let route = "/erp/admin";
     const activeRole =
       userRole ||
       (typeof window !== "undefined"
-        ? localStorage.getItem("nexa_user_role") || ""
-        : "");
+        ? localStorage.getItem("nexa_user_role") || "employee"
+        : "employee");
 
-    if (
-      activeRole === "employee" ||
-      userEmail.toLowerCase().includes("employee") ||
-      userEmail.toLowerCase().includes("staff") ||
-      userEmail.toLowerCase().includes("tech")
-    ) {
-      route = "/erp/employee";
-    } else if (activeRole === "accountant" || userEmail.toLowerCase().includes("accountant")) {
-      route = "/erp/accountant";
-    } else if (activeRole === "hr" || userEmail.toLowerCase().includes("hr")) {
-      route = "/erp/hr";
-    } else if (activeRole === "md" || userEmail.toLowerCase().includes("md")) {
+    let route = "/erp/employee"; // Default to employee portal (least privilege)
+    if (activeRole === "admin") {
+      route = "/erp/admin";
+    } else if (activeRole === "md") {
       route = "/erp/md";
-    } else if (
-      activeRole === "marketer" ||
-      userEmail.toLowerCase().includes("market") ||
-      userEmail.toLowerCase().includes("sales") ||
-      userEmail.toLowerCase().includes("crm")
-    ) {
+    } else if (activeRole === "hr") {
+      route = "/erp/hr";
+    } else if (activeRole === "accountant") {
+      route = "/erp/accountant";
+    } else if (activeRole === "marketer") {
       route = "/erp/marketer";
-    } else if (activeRole === "manager" || userEmail.toLowerCase().includes("manager")) {
+    } else if (activeRole === "manager") {
       route = "/erp/manager";
-    } else if (activeRole === "cashier" || userEmail.toLowerCase().includes("cashier")) {
+    } else if (activeRole === "cashier") {
       route = "/erp/admin/shop/pos";
-    } else if (activeRole === "inventory_officer" || userEmail.toLowerCase().includes("inventory")) {
+    } else if (activeRole === "inventory_officer") {
       route = "/erp/admin/shop/inventory";
-    } else if (activeRole === "dispatcher" || userEmail.toLowerCase().includes("dispatch")) {
+    } else if (activeRole === "dispatcher") {
       route = "/erp/admin/logistics";
+    } else {
+      route = "/erp/employee";
     }
 
     // 1. Identify tenant slug from user email if on general erp.domain.ng

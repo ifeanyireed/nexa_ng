@@ -256,19 +256,19 @@ export default function DashboardLayout({
         <div className="px-4 py-2">
           {isSidebarOpen ? (
             <div className="flex items-center bg-nexa-bg-base px-3.5 py-2 rounded-full border border-nexa-border gap-2.5 w-full focus-within:border-nexa-brand transition-all">
-              <Search className="w-3.5 h-3.5 text-nexa-text-faint shrink-0" />
+              <Search className="w-3.5 h-3.5 text-nexa-text-muted shrink-0" />
               <input
                 type="text"
                 placeholder="Search dashboard..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent text-xs outline-none w-full text-nexa-text-primary placeholder:text-nexa-text-faint font-medium"
+                className="bg-transparent text-xs outline-none w-full text-nexa-text-primary placeholder:text-nexa-text-muted font-medium"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="text-xs text-nexa-text-faint hover:text-nexa-text-primary cursor-pointer"
+                  className="text-xs text-nexa-text-muted hover:text-nexa-text-primary cursor-pointer"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -277,7 +277,7 @@ export default function DashboardLayout({
           ) : (
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="w-10 h-10 mx-auto rounded-full bg-nexa-bg-base border border-nexa-border flex items-center justify-center text-nexa-text-faint hover:text-nexa-brand transition-colors cursor-pointer"
+              className="w-10 h-10 mx-auto rounded-full bg-nexa-bg-base border border-nexa-border flex items-center justify-center text-nexa-text-muted hover:text-nexa-text-primary hover:border-nexa-brand/30 transition-colors cursor-pointer"
               title="Search dashboard"
             >
               <Search className="w-4 h-4" />
@@ -296,10 +296,10 @@ export default function DashboardLayout({
                  <button
                    className={cn(
                      "w-full flex items-center gap-4 p-3 rounded-full transition-all group mb-1 cursor-pointer",
-                     isActive ? "bg-nexa-brand text-white shadow-lg shadow-nexa-brand/20 font-bold" : "text-nexa-text-faint hover:bg-nexa-bg-base hover:text-nexa-text-primary font-semibold"
+                     isActive ? "bg-nexa-brand text-white shadow-lg shadow-nexa-brand/20 font-bold" : "text-nexa-text-secondary hover:bg-nexa-bg-base hover:text-nexa-text-primary font-semibold"
                    )}
                  >
-                    <div className={cn("transition-transform group-hover:scale-110", isActive ? "text-white" : "text-nexa-brand")}>
+                    <div className={cn("transition-transform group-hover:scale-110", isActive ? "text-white" : "text-nexa-text-muted group-hover:text-nexa-brand transition-colors")}>
                       {item.icon}
                     </div>
                     {isSidebarOpen && (

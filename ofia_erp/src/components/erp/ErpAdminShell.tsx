@@ -93,7 +93,7 @@ export interface ErpAdminShellProps {
   title?: string;
   subtitle?: string;
   action?: React.ReactNode;
-  activeModule?: "mission" | "ai" | "crm" | "marketplace" | "shop" | "inventory" | "pos" | "referrals" | "logistics" | "quests" | "finance" | "hr" | "md" | "employee" | "access_control";
+  activeModule?: "mission" | "ai" | "crm" | "marketplace" | "shop" | "inventory" | "pos" | "referrals" | "logistics" | "quests" | "finance" | "hr" | "md" | "employee" | "access_control" | "users" | "departments";
   subTabs?: SubNavItem[];
   isLoading?: boolean;
 }
@@ -350,9 +350,9 @@ export function ErpAdminShell({
       }
 
       // Resolve user active session role, name, and email
-      let resolvedRole: RoleKey = "admin";
+      let resolvedRole: RoleKey = "employee";
       let resolvedName = user?.name || (activeName ? `${activeName} Staff` : "Staff");
-      let resolvedEmail = user?.email || (matched?.ownerEmail || "");
+      let resolvedEmail = user?.email || "";
       let hasStoredRole = false;
 
       const storedErpUser = localStorage.getItem("erp_current_user");
@@ -382,6 +382,12 @@ export function ErpAdminShell({
         if (storedEmail) resolvedEmail = storedEmail;
       }
 
+      // If user object provides active role
+      if (user?.role && !hasStoredRole) {
+        resolvedRole = user.role as RoleKey;
+        hasStoredRole = true;
+      }
+
       // Sanitize legacy stored roles or brackets from resolvedName
       if (resolvedName) {
         resolvedName = resolvedName
@@ -401,6 +407,10 @@ export function ErpAdminShell({
           resolvedRole = "hr";
         } else if (pathname.startsWith("/erp/accountant")) {
           resolvedRole = "accountant";
+        } else if (pathname.startsWith("/erp/marketer")) {
+          resolvedRole = "marketer";
+        } else if (pathname.startsWith("/erp/admin")) {
+          resolvedRole = "admin";
         }
       }
 
@@ -534,6 +544,7 @@ export function ErpAdminShell({
     { label: "Accounting & Ledgers", icon: <Layers className="w-6 h-6" />, href: "/erp/accountant", badge: "GL", key: "accounting", section: "Ofia Enterprise Suite" },
     { label: "HR & Appraisals", icon: <Users className="w-6 h-6" />, href: "/erp/hr", key: "hr", section: "Ofia Enterprise Suite" },
     { label: "User Management", icon: <UserCheck className="w-6 h-6" />, href: "/erp/admin/users", badge: "Staff", key: "users", section: "Ofia Enterprise Suite" },
+    { label: "Departments", icon: <Building2 className="w-6 h-6" />, href: "/erp/admin/departments", badge: "Org", key: "departments", section: "Ofia Enterprise Suite" },
     { label: "Access Control", icon: <ShieldCheck className="w-6 h-6" />, href: "/erp/admin/access-control", badge: "RBAC", key: "access_control", section: "Ofia Enterprise Suite" },
 
     // 3. PORTALS & WORKSPACES
@@ -547,10 +558,11 @@ export function ErpAdminShell({
     if (subTabs !== undefined) return subTabs;
 
     if (pathname.startsWith("/erp/admin/users")) {
-      return [
-        { label: "Staff Directory", href: "/erp/admin/users", icon: <Users className="w-3.5 h-3.5" /> },
-        { label: "Departments & Cost Centers", href: "/erp/admin/users/departments", icon: <Layers className="w-3.5 h-3.5" /> },
-      ];
+      return [];
+    }
+
+    if (pathname.startsWith("/erp/admin/departments")) {
+      return [];
     }
 
     if (pathname.startsWith("/erp/admin/access-control")) {
@@ -755,19 +767,19 @@ export function ErpAdminShell({
         <div className="px-4 py-2">
           {isSidebarOpen ? (
             <div className="flex items-center bg-nexa-bg-base px-3.5 py-2 rounded-full border border-nexa-border gap-2.5 w-full focus-within:border-nexa-brand transition-all">
-              <Search className="w-3.5 h-3.5 text-nexa-text-faint shrink-0" />
+              <Search className="w-3.5 h-3.5 text-nexa-text-muted shrink-0" />
               <input
                 type="text"
                 placeholder="Search modules..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent text-xs outline-none w-full text-nexa-text-primary placeholder:text-nexa-text-faint font-medium"
+                className="bg-transparent text-xs outline-none w-full text-nexa-text-primary placeholder:text-nexa-text-muted font-medium"
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="text-xs text-nexa-text-faint hover:text-nexa-text-primary cursor-pointer"
+                  className="text-xs text-nexa-text-muted hover:text-nexa-text-primary cursor-pointer"
                 >
                   <X className="w-3 h-3" />
                 </button>
@@ -776,7 +788,7 @@ export function ErpAdminShell({
           ) : (
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="w-10 h-10 mx-auto rounded-full bg-nexa-bg-base border border-nexa-border flex items-center justify-center text-nexa-text-faint hover:text-nexa-brand transition-colors cursor-pointer"
+              className="w-10 h-10 mx-auto rounded-full bg-nexa-bg-base border border-nexa-border flex items-center justify-center text-nexa-text-muted hover:text-nexa-text-primary hover:border-nexa-brand/30 transition-colors cursor-pointer"
               title="Search ERP modules"
             >
               <Search className="w-4 h-4" />
@@ -868,7 +880,7 @@ export function ErpAdminShell({
                   {showSectionHeader && (
                     <div className={cn("pt-3 pb-1", i === 0 && "pt-0")}>
                       {isSidebarOpen ? (
-                        <div className="text-[10px] font-extrabold uppercase tracking-wider text-nexa-text-faint px-3 flex items-center gap-1.5">
+                        <div className="text-[10px] font-extrabold uppercase tracking-wider text-nexa-text-muted px-3 flex items-center gap-1.5">
                           <span>{displaySection}</span>
                         </div>
                       ) : (
@@ -882,13 +894,13 @@ export function ErpAdminShell({
                         "w-full flex items-center gap-3.5 p-3 rounded-full transition-all group mb-1 cursor-pointer",
                         isActive
                           ? "bg-nexa-brand text-white shadow-lg shadow-nexa-brand/20 font-bold"
-                          : "text-nexa-text-faint hover:bg-nexa-bg-base hover:text-nexa-text-primary font-semibold"
+                          : "text-nexa-text-secondary hover:bg-nexa-bg-base hover:text-nexa-text-primary font-semibold"
                       )}
                     >
                       <div
                         className={cn(
                           "transition-transform group-hover:scale-110",
-                          isActive ? "text-white" : "text-nexa-brand"
+                          isActive ? "text-white" : "text-nexa-text-muted group-hover:text-nexa-brand transition-colors"
                         )}
                       >
                         {item.icon}
@@ -1002,7 +1014,7 @@ export function ErpAdminShell({
                           <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border uppercase tracking-wider bg-blue-500/10 text-blue-500 border-blue-500/20">
                             {notif.type}
                           </span>
-                          <span className="text-[10px] text-nexa-text-faint font-semibold">
+                          <span className="text-[10px] text-nexa-text-muted font-semibold">
                             {notif.time}
                           </span>
                         </div>
@@ -1022,11 +1034,22 @@ export function ErpAdminShell({
             <Link href="/tenant/settings">
               <button
                 className={cn(
-                  "w-full flex items-center gap-3.5 p-3 rounded-full transition-all text-nexa-text-faint hover:bg-nexa-bg-base hover:text-nexa-text-primary cursor-pointer",
-                  pathname === "/tenant/settings" && "bg-nexa-brand text-white shadow-md shadow-nexa-brand/20"
+                  "w-full flex items-center gap-3.5 p-3 rounded-full transition-all group cursor-pointer",
+                  pathname === "/tenant/settings"
+                    ? "bg-nexa-brand text-white shadow-md shadow-nexa-brand/20 font-bold"
+                    : "text-nexa-text-secondary hover:bg-nexa-bg-base hover:text-nexa-text-primary font-semibold"
                 )}
               >
-                <Settings className="w-6 h-6" />
+                <div
+                  className={cn(
+                    "transition-transform group-hover:scale-110",
+                    pathname === "/tenant/settings"
+                      ? "text-white"
+                      : "text-nexa-text-muted group-hover:text-nexa-brand transition-colors"
+                  )}
+                >
+                  <Settings className="w-6 h-6" />
+                </div>
                 {isSidebarOpen && <span className="font-bold text-xs">Workspace Settings</span>}
               </button>
             </Link>

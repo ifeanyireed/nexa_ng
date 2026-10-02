@@ -86,10 +86,10 @@ export default function DashboardClient() {
                key={i}
                className={cn(
                  "w-full flex items-center gap-4 p-3 rounded-xl transition-all group",
-                 item.active ? "bg-nexa-brand text-white shadow-lg shadow-nexa-brand/20" : "text-nexa-text-faint hover:bg-nexa-bg-base hover:text-nexa-text-primary"
+                 item.active ? "bg-nexa-brand text-white shadow-lg shadow-nexa-brand/20 font-bold" : "text-nexa-text-secondary hover:bg-nexa-bg-base hover:text-nexa-text-primary font-semibold"
                )}
              >
-                <div className={cn("transition-transform group-hover:scale-110", item.active ? "text-white" : "text-nexa-brand")}>
+                <div className={cn("transition-transform group-hover:scale-110", item.active ? "text-white" : "text-nexa-text-muted group-hover:text-nexa-brand transition-colors")}>
                   {item.icon}
                 </div>
                 {isSidebarOpen && (
@@ -107,8 +107,8 @@ export default function DashboardClient() {
         </nav>
 
         <div className="p-4 border-t border-nexa-border space-y-2">
-           <button className="w-full flex items-center gap-4 p-3 rounded-xl text-nexa-text-faint hover:bg-nexa-bg-base hover:text-nexa-text-primary transition-all">
-              <Settings className="w-5 h-5" />
+           <button className="w-full flex items-center gap-4 p-3 rounded-xl text-nexa-text-secondary hover:bg-nexa-bg-base hover:text-nexa-text-primary transition-all font-semibold group cursor-pointer">
+              <Settings className="w-5 h-5 text-nexa-text-muted group-hover:text-nexa-brand transition-colors" />
               {isSidebarOpen && <span className="font-bold text-sm">Settings</span>}
            </button>
            <button className="w-full flex items-center gap-4 p-3 rounded-xl text-red-500 hover:bg-red-500/10 transition-all">

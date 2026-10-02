@@ -279,11 +279,11 @@ export function getActiveTenantSlug(): string {
 
 export function getSignedInERPUser(users: User[]): User {
   const fallbackUser: User = {
-    id: "USR-ADMIN-01",
-    name: "Workspace Admin",
-    email: "admin@ofia.ng",
-    role: "admin",
-    department: "Executive Directorate",
+    id: "USR-EMP-01",
+    name: "Staff Member",
+    email: "employee@ofia.ng",
+    role: "employee",
+    department: "Operations",
     avatar: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg",
   };
 
@@ -294,14 +294,14 @@ export function getSignedInERPUser(users: User[]): User {
   try {
     const storedName = localStorage.getItem("nexa_user_name");
     const storedEmail = localStorage.getItem("nexa_user_email");
-    const storedRole = localStorage.getItem("nexa_user_role") || "admin";
+    const storedRole = localStorage.getItem("nexa_user_role");
     const tenantSlug = getActiveTenantSlug();
     const tenantAdminName =
       (tenantSlug && localStorage.getItem("tenant_admin_name_" + tenantSlug)) ||
-      localStorage.getItem("nexa_user_name");
+      null;
     const tenantAdminEmail =
       (tenantSlug && localStorage.getItem("tenant_admin_email_" + tenantSlug)) ||
-      localStorage.getItem("nexa_user_email");
+      null;
 
     let parsed: any = null;
     const storedUser = localStorage.getItem("erp_current_user");
@@ -311,23 +311,10 @@ export function getSignedInERPUser(users: User[]): User {
       } catch {}
     }
 
-    const effectiveName =
-      (storedRole === "admin" && tenantAdminName) ||
-      storedName ||
-      parsed?.name ||
-      tenantAdminName ||
-      (users.length > 0 ? users[0].name : "Workspace Admin");
-
     const effectiveEmail =
       storedEmail ||
       parsed?.email ||
-      tenantAdminEmail ||
-      (users.length > 0 ? users[0].email : "admin@ofia.ng");
-
-    const effectiveRole =
-      storedRole ||
-      parsed?.role ||
-      "admin";
+      "";
 
     // 1. If live database users list has a match by ID, Email, or Name
     if (users && users.length > 0) {
@@ -335,27 +322,39 @@ export function getSignedInERPUser(users: User[]): User {
         (u) =>
           (parsed?.id && u.id === parsed.id) ||
           (effectiveEmail && u.email && u.email.toLowerCase() === effectiveEmail.toLowerCase()) ||
-          (effectiveName && u.name && u.name.toLowerCase() === effectiveName.toLowerCase())
+          (storedName && u.name && u.name.toLowerCase() === storedName.toLowerCase())
       );
       if (match) {
+        // Staff assigned role in directory takes priority over ambiguous local storage defaults
+        const actualRole = match.role || (storedRole as Role) || (parsed?.role as Role) || "employee";
         const syncedUser: User = {
           ...match,
-          name: effectiveName || match.name,
+          name: parsed?.name || storedName || match.name,
           email: effectiveEmail || match.email,
-          role: effectiveRole || match.role,
+          role: actualRole,
         };
         return syncedUser;
       }
     }
+
+    const effectiveRole: Role =
+      (storedRole as Role) ||
+      (parsed?.role as Role) ||
+      (effectiveEmail && (effectiveEmail.startsWith("admin@") || effectiveEmail === tenantAdminEmail) ? "admin" : "employee");
+
+    const effectiveName =
+      parsed?.name ||
+      storedName ||
+      (effectiveRole === "admin" && tenantAdminName ? tenantAdminName : "Staff Member");
 
     // 2. If the user is logged in with custom details or as Admin/Manager/Employee
     if (effectiveName || effectiveEmail) {
       return {
         id: parsed?.id || (effectiveRole === "admin" ? "USR-ADMIN-01" : "EMP001"),
         name: effectiveName,
-        email: effectiveEmail,
+        email: effectiveEmail || (effectiveRole === "admin" ? "admin@ofia.ng" : "employee@ofia.ng"),
         role: effectiveRole,
-        department: parsed?.department || "Executive Directorate",
+        department: parsed?.department || "Operations",
         designation:
           parsed?.designation ||
           (effectiveRole === "admin"
@@ -373,7 +372,7 @@ export function getSignedInERPUser(users: User[]): User {
     console.warn("Failed to parse signed-in ERP user session:", e);
   }
 
-  return users.length > 0 ? users[0] : fallbackUser;
+  return fallbackUser;
 }
 
 async function fetchFromApi<T>(endpoint: string, fallbackData: T, tenantSlug?: string): Promise<T> {

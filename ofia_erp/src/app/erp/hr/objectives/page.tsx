@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useERPStore, Objective, DEPARTMENTS, getActiveTenantSlug } from "@/lib/erp-store";
+import { useERPStore, Objective, getActiveTenantSlug } from "@/lib/erp-store";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -22,7 +22,7 @@ export default function ObjectiveManagement() {
   const [category, setCategory] = useState<string>("Behavioural");
   const [selectedDepts, setSelectedDepts] = useState<string[]>([]);
   const [filterDept, setFilterDept] = useState<string>("All");
-  const [depts, setDepts] = useState<string[]>([...DEPARTMENTS]);
+  const [depts, setDepts] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
   const [isAddingDept, setIsAddingDept] = useState(false);
@@ -59,11 +59,11 @@ export default function ObjectiveManagement() {
         console.warn("Failed to load departments from API:", err);
       }
 
-      // Collect departments actively assigned to loaded objectives
+      // Collect departments actively assigned to loaded objectives for this tenant
       const fromObjectives = objectives.flatMap(o => o.departments || []).filter(Boolean);
 
-      // Maintain complete master DEPARTMENTS list merged with backend and objective departments
-      const merged = Array.from(new Set([...DEPARTMENTS, ...apiNames, ...fromObjectives]));
+      // Purely database-driven: only tenant-specific departments
+      const merged = Array.from(new Set([...apiNames, ...fromObjectives]));
       setDepts(merged);
     };
 
@@ -549,20 +549,26 @@ export default function ObjectiveManagement() {
                 <div>
                   <label className="block text-[10px] font-extrabold text-slate-450 uppercase mb-1.5 tracking-wider">Target Departments</label>
                   <div className="grid grid-cols-2 gap-2 mt-1">
-                    {depts.map(d => (
-                      <button
-                        key={d}
-                        type="button"
-                        onClick={() => handleToggleDept(d)}
-                        className={`px-3 py-1.5 rounded-lg border text-left text-[10px] font-bold transition-all ${
-                          selectedDepts.includes(d)
-                            ? "bg-blue-50 border-blue-200 text-blue-700"
-                            : "bg-white border-gray-200 text-slate-500 hover:bg-slate-50"
-                        }`}
-                      >
-                        {d}
-                      </button>
-                    ))}
+                    {depts.length === 0 && !isAddingDept ? (
+                      <p className="col-span-2 text-slate-400 text-xs py-2 italic text-center">
+                        No departments registered for this tenant. Click &ldquo;+&rdquo; below to add one.
+                      </p>
+                    ) : (
+                      depts.map(d => (
+                        <button
+                          key={d}
+                          type="button"
+                          onClick={() => handleToggleDept(d)}
+                          className={`px-3 py-1.5 rounded-lg border text-left text-[10px] font-bold transition-all ${
+                            selectedDepts.includes(d)
+                              ? "bg-blue-50 border-blue-200 text-blue-700"
+                              : "bg-white border-gray-200 text-slate-500 hover:bg-slate-50"
+                          }`}
+                        >
+                          {d}
+                        </button>
+                      ))
+                    )}
 
                     {/* Inline new department adder with plus icon */}
                     {isAddingDept ? (

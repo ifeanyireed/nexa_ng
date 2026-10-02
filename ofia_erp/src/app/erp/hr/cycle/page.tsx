@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useERPStore, ReviewCycle, DEPARTMENTS, getActiveTenantSlug } from "@/lib/erp-store";
+import { useERPStore, ReviewCycle, getActiveTenantSlug } from "@/lib/erp-store";
 import { useActiveTenant } from "@/lib/tenant-context";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -27,7 +27,7 @@ export default function ReviewCycleManagement() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const itemsPerPage = 5;
   
-  const [depts, setDepts] = useState<string[]>([...DEPARTMENTS]);
+  const [depts, setDepts] = useState<string[]>([]);
   const [isAddingDept, setIsAddingDept] = useState(false);
   const [newDeptText, setNewDeptText] = useState("");
   const [isSavingDept, setIsSavingDept] = useState(false);
@@ -62,8 +62,8 @@ export default function ReviewCycleManagement() {
       // Collect departments actively assigned to loaded cycles
       const fromCycles = cycles.flatMap(c => c.departments || []).filter(Boolean);
 
-      // Maintain complete master DEPARTMENTS list merged with backend and cycle departments
-      const merged = Array.from(new Set([...DEPARTMENTS, ...apiNames, ...fromCycles]));
+      // Purely database-driven: only tenant-specific departments and active cycle departments
+      const merged = Array.from(new Set([...apiNames, ...fromCycles]));
       setDepts(merged);
     };
 
@@ -483,20 +483,26 @@ export default function ReviewCycleManagement() {
                 )}
 
                 <div className="grid grid-cols-2 gap-2 mt-1 max-h-48 overflow-y-auto p-2 border border-[var(--nexa-border)] rounded-xl bg-[var(--nexa-bg-base)]">
-                  {depts.map(d => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => handleToggleDept(d)}
-                      className={`px-2.5 py-1.5 rounded-lg border text-left text-[10px] font-bold transition-all cursor-pointer ${
-                        selectedDepts.includes(d)
-                          ? "bg-[#1A56DB]/10 border-[#1A56DB] text-[#1A56DB]"
-                          : "bg-[var(--nexa-bg-surface)] border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] hover:bg-[var(--nexa-bg-base)]"
-                      }`}
-                    >
-                      {d}
-                    </button>
-                  ))}
+                  {depts.length === 0 && !isAddingDept ? (
+                    <div className="col-span-2 text-center py-4 text-xs text-[var(--nexa-text-muted)] font-semibold">
+                      No departments configured for this tenant. Click <strong className="text-[#1A56DB]">+ Add Dept</strong> to create one.
+                    </div>
+                  ) : (
+                    depts.map(d => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => handleToggleDept(d)}
+                        className={`px-2.5 py-1.5 rounded-lg border text-left text-[10px] font-bold transition-all cursor-pointer ${
+                          selectedDepts.includes(d)
+                            ? "bg-[#1A56DB]/10 border-[#1A56DB] text-[#1A56DB]"
+                            : "bg-[var(--nexa-bg-surface)] border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] hover:bg-[var(--nexa-bg-base)]"
+                        }`}
+                      >
+                        {d}
+                      </button>
+                    ))
+                  )}
                 </div>
               </div>
 

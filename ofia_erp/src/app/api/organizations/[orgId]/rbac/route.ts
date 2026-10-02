@@ -41,15 +41,70 @@ function generateDefaultMatrix(): Record<string, Record<string, boolean>> {
   return matrix;
 }
 
+async function resolveCanonicalOrg(pool: any, rawOrgId: string) {
+  const decoded = decodeURIComponent(rawOrgId || "").trim();
+  let canonicalSlug = decoded;
+  let canonicalId = decoded;
+
+  if (pool) {
+    try {
+      let orgRes = await pool.query(
+        `SELECT id, slug FROM "Organization" 
+         WHERE id = $1 
+            OR slug = $1 
+            OR domain = $1 
+            OR LOWER(slug) = LOWER($1)
+            OR LOWER(name) = LOWER($1)
+            OR REPLACE(LOWER(name), ' ', '') = REPLACE(LOWER($1), ' ', '')
+         LIMIT 1`,
+        [decoded]
+      );
+
+      if (orgRes.rows.length === 0 && (
+        !decoded ||
+        decoded === "default" ||
+        decoded === "Ofia ERP" ||
+        decoded.toLowerCase().includes("newera")
+      )) {
+        orgRes = await pool.query(
+          `SELECT id, slug FROM "Organization" 
+           WHERE slug = 'neweratransports' OR id = '1aa8c687-b71d-4188-9de2-371aa5dfa9e6'
+           ORDER BY "created_at" ASC NULLS LAST 
+           LIMIT 1`
+        );
+      }
+
+      if (orgRes.rows.length === 0) {
+        orgRes = await pool.query(
+          `SELECT id, slug FROM "Organization" 
+           ORDER BY "created_at" ASC NULLS LAST 
+           LIMIT 1`
+        );
+      }
+
+      if (orgRes.rows.length > 0) {
+        canonicalSlug = orgRes.rows[0].slug;
+        canonicalId = orgRes.rows[0].id;
+      }
+    } catch (err) {
+      console.warn("Error resolving canonical organization:", err);
+    }
+  }
+
+  return { canonicalSlug, canonicalId };
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ orgId: string }> }
 ) {
   const { orgId } = await params;
+  const pool = getDbPool();
+  const { canonicalSlug, canonicalId } = await resolveCanonicalOrg(pool, orgId);
 
-  // 1. Try remote microservice
+  // 1. Try remote microservice using canonicalSlug
   try {
-    const res = await fetch(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}/rbac`, {
+    const res = await fetch(`${USER_BASE}/organizations/${encodeURIComponent(canonicalSlug)}/rbac`, {
       cache: "no-store",
     });
     if (res.ok) {
@@ -64,15 +119,7 @@ export async function GET(
 
   // 2. Query Neon PostgreSQL directly
   try {
-    const pool = getDbPool();
     if (pool) {
-      const orgRes = await pool.query(
-        `SELECT id, slug FROM "Organization" WHERE id = $1 OR slug = $1 OR domain = $1 LIMIT 1`,
-        [orgId]
-      );
-      const canonicalSlug = orgRes.rows[0]?.slug || orgId;
-      const canonicalId = orgRes.rows[0]?.id || orgId;
-
       const permRes = await pool.query(
         `SELECT role, "moduleKey", "isEnabled" 
          FROM "TenantRolePermission" 
@@ -99,7 +146,7 @@ export async function GET(
   }
 
   return NextResponse.json({
-    tenant_id: orgId,
+    tenant_id: canonicalSlug || orgId,
     matrix: generateDefaultMatrix(),
   });
 }
@@ -121,9 +168,12 @@ export async function PUT(
       );
     }
 
-    // Try remote microservice
+    const pool = getDbPool();
+    const { canonicalSlug, canonicalId } = await resolveCanonicalOrg(pool, orgId);
+
+    // Try remote microservice using canonicalSlug
     try {
-      await fetch(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}/rbac`, {
+      await fetch(`${USER_BASE}/organizations/${encodeURIComponent(canonicalSlug)}/rbac`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ matrix }),
@@ -132,36 +182,41 @@ export async function PUT(
       // service_users is offline, write directly to Neon
     }
 
-    const pool = getDbPool();
     if (pool) {
-      const orgRes = await pool.query(
-        `SELECT id, slug FROM "Organization" WHERE id = $1 OR slug = $1 OR domain = $1 LIMIT 1`,
-        [orgId]
-      );
-      const canonicalSlug = orgRes.rows[0]?.slug || orgId;
-      const canonicalId = orgRes.rows[0]?.id || orgId;
       const targets = Array.from(new Set([canonicalSlug, canonicalId])).filter(Boolean);
+
+      const valuesPlaceholders: string[] = [];
+      const queryParams: any[] = [];
+      let pIdx = 1;
 
       for (const targetTenantId of targets) {
         for (const [role, modules] of Object.entries(matrix as Record<string, Record<string, boolean>>)) {
           for (const [moduleKey, isEnabled] of Object.entries(modules)) {
             const permId = `perm_${targetTenantId}_${role}_${moduleKey}`;
-            await pool.query(
-              `INSERT INTO "TenantRolePermission" (id, "tenantId", role, "moduleKey", "isEnabled", "createdAt", "updatedAt")
-               VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-               ON CONFLICT ("tenantId", role, "moduleKey")
-               DO UPDATE SET "isEnabled" = EXCLUDED."isEnabled", "updatedAt" = NOW()`,
-              [permId, targetTenantId, role, moduleKey, Boolean(isEnabled)]
+            valuesPlaceholders.push(
+              `($${pIdx}, $${pIdx + 1}, $${pIdx + 2}, $${pIdx + 3}, $${pIdx + 4}, NOW(), NOW())`
             );
+            queryParams.push(permId, targetTenantId, role, moduleKey, Boolean(isEnabled));
+            pIdx += 5;
           }
         }
+      }
+
+      if (valuesPlaceholders.length > 0) {
+        const queryText = `
+          INSERT INTO "TenantRolePermission" (id, "tenantId", role, "moduleKey", "isEnabled", "createdAt", "updatedAt")
+          VALUES ${valuesPlaceholders.join(", ")}
+          ON CONFLICT ("tenantId", role, "moduleKey")
+          DO UPDATE SET "isEnabled" = EXCLUDED."isEnabled", "updatedAt" = NOW()
+        `;
+        await pool.query(queryText, queryParams);
       }
     }
 
     return NextResponse.json({
       success: true,
       message: "RBAC matrix updated in Neon PostgreSQL",
-      tenant_id: orgId,
+      tenant_id: canonicalSlug,
       matrix,
     });
   } catch (err: any) {

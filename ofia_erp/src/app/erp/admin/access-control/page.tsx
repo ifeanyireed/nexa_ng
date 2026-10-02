@@ -48,6 +48,7 @@ export default function AccessControlPage() {
   const router = useRouter();
   const { user } = useAuth();
   const [tenantName, setTenantName] = useState<string>("Enterprise Workspace");
+  const [tenantKey, setTenantKey] = useState<string>("neweratransports");
   const [selectedRole, setSelectedRole] = useState<RoleKey>("md");
   const [matrix, setMatrix] = useState<PermissionMatrix>(DEFAULT_PERMISSION_MATRIX);
   const [isSavedToast, setIsSavedToast] = useState<boolean>(false);
@@ -64,10 +65,12 @@ export default function AccessControlPage() {
       if (!isMounted) return;
       const matched = resolveTenantFromList(list, user?.email);
       const tName = matched?.name || "Enterprise Workspace";
+      const key = matched?.slug || matched?.id || "neweratransports";
       setTenantName(tName);
+      setTenantKey(key);
 
       // Directly query live tenant RBAC matrix from Postgres database table TenantRolePermission
-      fetchTenantPermissionMatrix(tName)
+      fetchTenantPermissionMatrix(key)
         .then((remote) => {
           if (remote && Object.keys(remote).length > 0 && isMounted) {
             setMatrix(remote);
@@ -94,7 +97,7 @@ export default function AccessControlPage() {
       },
     };
     setMatrix(updated);
-    const res = await saveTenantPermissionMatrixRemote(tenantName, updated);
+    const res = await saveTenantPermissionMatrixRemote(tenantKey, updated);
     triggerSaveToast(res.message || "Permissions Synchronized with Postgres");
   };
 
@@ -109,7 +112,7 @@ export default function AccessControlPage() {
       [selectedRole]: allTrue,
     };
     setMatrix(updated);
-    const res = await saveTenantPermissionMatrixRemote(tenantName, updated);
+    const res = await saveTenantPermissionMatrixRemote(tenantKey, updated);
     triggerSaveToast(res.message || "All modules granted & saved to database");
   };
 
@@ -123,7 +126,7 @@ export default function AccessControlPage() {
       [selectedRole]: allFalse,
     };
     setMatrix(updated);
-    const res = await saveTenantPermissionMatrixRemote(tenantName, updated);
+    const res = await saveTenantPermissionMatrixRemote(tenantKey, updated);
     triggerSaveToast(res.message || "Modules revoked & saved to database");
   };
 
@@ -133,7 +136,7 @@ export default function AccessControlPage() {
       [selectedRole]: { ...DEFAULT_PERMISSION_MATRIX[selectedRole] },
     };
     setMatrix(updated);
-    const res = await saveTenantPermissionMatrixRemote(tenantName, updated);
+    const res = await saveTenantPermissionMatrixRemote(tenantKey, updated);
     triggerSaveToast(res.message || "Role defaults reset & saved to database");
   };
 

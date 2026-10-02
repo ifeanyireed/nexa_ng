@@ -193,11 +193,12 @@ export function ErpAdminShell({
       if (!isCurrent) return;
       const matched = resolveTenantFromList(list, user?.email);
       const activeName = matched?.name || "";
+      const tenantKey = matched?.slug || matched?.id || "neweratransports";
       setTenantName(activeName);
       setTenantLogo(matched?.logo || "");
-      setPermissionMatrix(getTenantPermissionMatrix(activeName));
+      setPermissionMatrix(getTenantPermissionMatrix(tenantKey));
 
-      fetchTenantPermissionMatrix(activeName).then((remote) => {
+      fetchTenantPermissionMatrix(tenantKey).then((remote) => {
         if (remote && Object.keys(remote).length > 0 && isCurrent) {
           setPermissionMatrix(remote);
         }
@@ -755,7 +756,9 @@ export function ErpAdminShell({
               }
 
               // Determine if module is allowed to the tenant by the Super Admin in the database
-              const isTenantAllowed = permissionMatrix.admin?.[item.key] !== false;
+              const isTenantAllowed =
+                permissionMatrix.admin?.[item.key] !== false &&
+                (permissionMatrix as any).tenant_provision?.[item.key] !== false;
 
               // If Super Admin disabled the module for this tenant in Postgres, hide it completely
               if (!isTenantAllowed) {

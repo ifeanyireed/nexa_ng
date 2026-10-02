@@ -434,7 +434,8 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
       const merged: PermissionMatrix = { ...DEFAULT_PERMISSION_MATRIX };
 
       // Super Admin provisioned module set (stored under 'tenant_provision' or 'admin')
-      const provisioned = res.matrix.tenant_provision || res.matrix.admin || {};
+      const tp = res.matrix.tenant_provision || {};
+      const ad = res.matrix.admin || {};
 
       for (const role of ERP_ROLES) {
         merged[role.key] = {
@@ -443,9 +444,14 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
         };
       }
 
+      if (res.matrix.tenant_provision) {
+        (merged as any).tenant_provision = { ...res.matrix.tenant_provision };
+      }
+
       // 1. Tenant Administrator (admin) ALWAYS gets all modules allowed to the tenant by the Super Admin in Postgres
       for (const mod of ERP_MODULES) {
-        merged.admin[mod.key] = provisioned[mod.key] !== false;
+        const isAllowed = tp[mod.key] !== false && ad[mod.key] !== false;
+        merged.admin[mod.key] = isAllowed;
       }
       merged.admin.access_control = true;
 
@@ -456,7 +462,7 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
         if (role.key !== "admin") {
           merged[role.key].access_control = false;
           for (const mod of ERP_MODULES) {
-            const isTenantAllowed = provisioned[mod.key] !== false;
+            const isTenantAllowed = merged.admin[mod.key] !== false;
             const isRoleGranted = merged[role.key][mod.key] ?? DEFAULT_PERMISSION_MATRIX[role.key]?.[mod.key] ?? false;
             merged[role.key][mod.key] = isTenantAllowed && isRoleGranted;
           }
@@ -536,10 +542,34 @@ export function useTenantProvisioning() {
         const list = await fetchDatabaseTenants();
         if (!isCurrent) return;
 
-        const matched = resolveTenantFromList(list);
+        let userEmail: string | null = null;
+        let searchParamSlug: string | null = null;
+        if (typeof window !== "undefined") {
+          userEmail = localStorage.getItem("nexa_user_email");
+          const storedUser = localStorage.getItem("erp_current_user");
+          if (storedUser) {
+            try {
+              const u = JSON.parse(storedUser);
+              if (u?.email) userEmail = u.email;
+              if (u?.tenantSlug) searchParamSlug = u.tenantSlug;
+              if (u?.company && !searchParamSlug) searchParamSlug = u.company;
+            } catch {}
+          }
+          if (!searchParamSlug) {
+            const urlParams = new URLSearchParams(window.location.search);
+            searchParamSlug =
+              urlParams.get("tenant") ||
+              urlParams.get("tenant_slug") ||
+              urlParams.get("orgId") ||
+              urlParams.get("org") ||
+              urlParams.get("company");
+          }
+        }
+
+        const matched = resolveTenantFromList(list, userEmail, searchParamSlug);
         setTenant(matched);
 
-        const tenantKey = matched?.slug || matched?.id || matched?.name || "default";
+        const tenantKey = matched?.slug || matched?.id || "neweratransports";
 
         // Initial sync from local memory matrix
         setMatrix(getTenantPermissionMatrix(tenantKey));
@@ -577,8 +607,9 @@ export function useTenantProvisioning() {
     (moduleKey: string): boolean => {
       if (moduleKey === "mission" || moduleKey === "overview") return true;
       if (moduleKey === "access_control") return true;
-      // Super Admin module provisioning is stored under admin or tenant_provision
-      return matrix.admin?.[moduleKey] !== false;
+      const isAdminAllowed = matrix.admin?.[moduleKey] !== false;
+      const isTenantProvisionAllowed = (matrix as any).tenant_provision?.[moduleKey] !== false;
+      return isAdminAllowed && isTenantProvisionAllowed;
     },
     [matrix]
   );

@@ -32,15 +32,70 @@ function generateDefaultMatrix(): Record<string, Record<string, boolean>> {
   return matrix;
 }
 
+async function resolveCanonicalOrg(pool: any, rawOrgId: string) {
+  const decoded = decodeURIComponent(rawOrgId || "").trim();
+  let canonicalSlug = decoded;
+  let canonicalId = decoded;
+
+  if (pool) {
+    try {
+      let orgRes = await pool.query(
+        `SELECT id, slug FROM "Organization" 
+         WHERE id = $1 
+            OR slug = $1 
+            OR domain = $1 
+            OR LOWER(slug) = LOWER($1)
+            OR LOWER(name) = LOWER($1)
+            OR REPLACE(LOWER(name), ' ', '') = REPLACE(LOWER($1), ' ', '')
+         LIMIT 1`,
+        [decoded]
+      );
+
+      if (orgRes.rows.length === 0 && (
+        !decoded ||
+        decoded === "default" ||
+        decoded === "Ofia ERP" ||
+        decoded.toLowerCase().includes("newera")
+      )) {
+        orgRes = await pool.query(
+          `SELECT id, slug FROM "Organization" 
+           WHERE slug = 'neweratransports' OR id = '1aa8c687-b71d-4188-9de2-371aa5dfa9e6'
+           ORDER BY "created_at" ASC NULLS LAST 
+           LIMIT 1`
+        );
+      }
+
+      if (orgRes.rows.length === 0) {
+        orgRes = await pool.query(
+          `SELECT id, slug FROM "Organization" 
+           ORDER BY "created_at" ASC NULLS LAST 
+           LIMIT 1`
+        );
+      }
+
+      if (orgRes.rows.length > 0) {
+        canonicalSlug = orgRes.rows[0].slug;
+        canonicalId = orgRes.rows[0].id;
+      }
+    } catch (err) {
+      console.warn("Error resolving canonical organization in ofia_admin:", err);
+    }
+  }
+
+  return { canonicalSlug, canonicalId };
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ orgId: string }> }
 ) {
   const { orgId } = await params;
+  const pool = getDbPool();
+  const { canonicalSlug, canonicalId } = await resolveCanonicalOrg(pool, orgId);
 
-  // 1. Try to fetch from remote Go microservice if available
+  // 1. Try to fetch from remote Go microservice if available using canonicalSlug
   try {
-    const res = await fetch(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}/rbac`, {
+    const res = await fetch(`${USER_BASE}/organizations/${encodeURIComponent(canonicalSlug)}/rbac`, {
       cache: "no-store",
     });
     if (res.ok) {
@@ -55,16 +110,7 @@ export async function GET(
 
   // 2. Fetch directly from Neon PostgreSQL
   try {
-    const pool = getDbPool();
     if (pool) {
-      // Find canonical org id and slug
-      const orgRes = await pool.query(
-        `SELECT id, slug FROM "Organization" WHERE id = $1 OR slug = $1 OR domain = $1 LIMIT 1`,
-        [orgId]
-      );
-      const canonicalSlug = orgRes.rows[0]?.slug || orgId;
-      const canonicalId = orgRes.rows[0]?.id || orgId;
-
       const permRes = await pool.query(
         `SELECT role, "moduleKey", "isEnabled" 
          FROM "TenantRolePermission" 
@@ -121,17 +167,6 @@ export async function PUT(
     }
 
     // 1. Forward to remote microservice if alive
-    try {
-      await fetch(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}/rbac`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ matrix }),
-      });
-    } catch {
-      // service_users is offline, continuing to direct Neon write
-    }
-
-    // 2. Direct persistence to Neon PostgreSQL
     const pool = getDbPool();
     if (!pool) {
       return NextResponse.json(
@@ -140,13 +175,18 @@ export async function PUT(
       );
     }
 
-    // Resolve canonical slug and id
-    const orgRes = await pool.query(
-      `SELECT id, slug FROM "Organization" WHERE id = $1 OR slug = $1 OR domain = $1 LIMIT 1`,
-      [orgId]
-    );
-    const canonicalSlug = orgRes.rows[0]?.slug || orgId;
-    const canonicalId = orgRes.rows[0]?.id || orgId;
+    const { canonicalSlug, canonicalId } = await resolveCanonicalOrg(pool, orgId);
+
+    // 1. Forward to remote microservice if alive
+    try {
+      await fetch(`${USER_BASE}/organizations/${encodeURIComponent(canonicalSlug)}/rbac`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matrix }),
+      });
+    } catch {
+      // service_users is offline, continuing to direct Neon write
+    }
 
     const targets = Array.from(new Set([canonicalSlug, canonicalId])).filter(Boolean);
 

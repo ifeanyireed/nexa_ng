@@ -452,9 +452,14 @@ func (h *OrgHandler) GetTenantRBAC(w http.ResponseWriter, r *http.Request) {
 		var org models.Organization
 		canonicalSlug := orgID
 		canonicalID := orgID
-		if h.db.Where("id = ? OR slug = ?", orgID, orgID).First(&org).Error == nil {
+		if h.db.Where("id = ? OR slug = ? OR LOWER(slug) = LOWER(?) OR LOWER(name) = LOWER(?)", orgID, orgID, orgID, orgID).First(&org).Error == nil {
 			canonicalSlug = org.Slug
 			canonicalID = org.ID
+		} else if orgID == "default" || orgID == "Ofia ERP" || orgID == "" {
+			if h.db.Where("slug = ?", "neweratransports").First(&org).Error == nil {
+				canonicalSlug = org.Slug
+				canonicalID = org.ID
+			}
 		}
 
 		var perms []models.TenantRolePermission
@@ -491,9 +496,14 @@ func (h *OrgHandler) SaveTenantRBAC(w http.ResponseWriter, r *http.Request) {
 		var org models.Organization
 		canonicalSlug := orgID
 		canonicalID := orgID
-		if h.db.Where("id = ? OR slug = ?", orgID, orgID).First(&org).Error == nil {
+		if h.db.Where("id = ? OR slug = ? OR LOWER(slug) = LOWER(?) OR LOWER(name) = LOWER(?)", orgID, orgID, orgID, orgID).First(&org).Error == nil {
 			canonicalSlug = org.Slug
 			canonicalID = org.ID
+		} else if orgID == "default" || orgID == "Ofia ERP" || orgID == "" {
+			if h.db.Where("slug = ?", "neweratransports").First(&org).Error == nil {
+				canonicalSlug = org.Slug
+				canonicalID = org.ID
+			}
 		}
 
 		targets := []string{canonicalSlug}

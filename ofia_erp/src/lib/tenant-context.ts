@@ -92,6 +92,23 @@ export function extractSubdomainOrParam(searchParamSlug?: string | null): string
     if (storedSlug && !["www", "ofia", "app", "nexa", "erp", "admin"].includes(storedSlug.toLowerCase())) {
       return storedSlug.toLowerCase().trim();
     }
+
+    try {
+      const storedUser = localStorage.getItem("erp_current_user");
+      if (storedUser) {
+        const u = JSON.parse(storedUser);
+        if (u?.tenantSlug) return u.tenantSlug.toLowerCase().trim();
+        if (u?.company && !["ofia", "ofia erp", "erp"].includes(u.company.toLowerCase())) {
+          return u.company.toLowerCase().trim().replace(/[^a-z0-9]/g, "");
+        }
+        if (u?.email && u.email.includes("@")) {
+          const dom = u.email.split("@")[1].split(".")[0].toLowerCase().trim();
+          if (!["gmail", "yahoo", "outlook", "hotmail", "icloud", "ofia", "erp", "admin", "app"].includes(dom)) {
+            return dom;
+          }
+        }
+      }
+    } catch {}
   }
 
   return "";
@@ -388,6 +405,20 @@ export function resolveTenantFromList(
   userEmail?: string | null,
   searchParamSlug?: string | null
 ): DatabaseTenant {
+  let effectiveEmail = userEmail;
+  if (!effectiveEmail && typeof window !== "undefined") {
+    effectiveEmail = localStorage.getItem("nexa_user_email");
+    if (!effectiveEmail) {
+      try {
+        const storedUser = localStorage.getItem("erp_current_user");
+        if (storedUser) {
+          const u = JSON.parse(storedUser);
+          if (u?.email) effectiveEmail = u.email;
+        }
+      } catch {}
+    }
+  }
+
   const targetSlug = extractSubdomainOrParam(searchParamSlug);
 
   // 1. If tenants are available from the database, match against them
@@ -449,13 +480,13 @@ export function resolveTenantFromList(
     }
 
     // Match from user email domain
-    if (userEmail && userEmail.includes("@")) {
-      const domainPart = userEmail.split("@")[1].toLowerCase();
+    if (effectiveEmail && effectiveEmail.includes("@")) {
+      const domainPart = effectiveEmail.split("@")[1].toLowerCase();
       const domainSlug = domainPart.split(".")[0];
       const found = tenants.find(
         (t) =>
           t.slug.toLowerCase() === domainSlug ||
-          t.ownerEmail?.toLowerCase() === userEmail.toLowerCase() ||
+          t.ownerEmail?.toLowerCase() === effectiveEmail!.toLowerCase() ||
           t.domain.toLowerCase().includes(domainPart)
       );
       if (found) {
@@ -503,17 +534,35 @@ export function resolveTenantFromList(
       }
     }
 
-    if (!targetSlug && !userEmail) {
+    if (!targetSlug && !effectiveEmail) {
+      const defaultTenant =
+        tenants.find(
+          (t) =>
+            t.slug === "neweratransports" ||
+            t.id === "1aa8c687-b71d-4188-9de2-371aa5dfa9e6"
+        ) || tenants[0];
+
+      if (defaultTenant) {
+        return {
+          ...defaultTenant,
+          primaryColor: defaultTenant.primaryColor || DEFAULT_TENANT_BRANDING[defaultTenant.slug]?.primaryColor || "#1A56DB",
+          secondaryColor: defaultTenant.secondaryColor || DEFAULT_TENANT_BRANDING[defaultTenant.slug]?.secondaryColor || "#0E9F6E",
+          loginImage: defaultTenant.loginImage || DEFAULT_TENANT_BRANDING[defaultTenant.slug]?.loginImage || "",
+          heroTitle: defaultTenant.heroTitle || DEFAULT_TENANT_BRANDING[defaultTenant.slug]?.heroTitle || "",
+          heroSubtitle: defaultTenant.heroSubtitle || DEFAULT_TENANT_BRANDING[defaultTenant.slug]?.heroSubtitle || "",
+        };
+      }
+
       return {
-        id: "",
-        name: "Ofia ERP",
-        slug: "",
-        domain: "erp.ofia.ng",
-        company: "Ofia ERP",
+        id: "1aa8c687-b71d-4188-9de2-371aa5dfa9e6",
+        name: "New Era Transports",
+        slug: "neweratransports",
+        domain: "neweratransports.ofia.ng",
+        company: "New Era Transports",
         status: "ACTIVE",
         planTier: "Enterprise",
-        logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png",
-        favicon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png",
+        logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
+        favicon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
         primaryColor: "#1A56DB",
         secondaryColor: "#0E9F6E",
       };

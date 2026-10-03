@@ -198,7 +198,7 @@ export interface PerformanceReview {
   updatedAt: string;
 }
 
-const INITIAL_CYCLES: ReviewCycle[] = [
+export const INITIAL_CYCLES: ReviewCycle[] = [
   {
     id: "CYC001",
     name: "2026 Mid-Year Performance Cycle",
@@ -215,6 +215,22 @@ const INITIAL_CYCLES: ReviewCycle[] = [
     status: "Completed",
     departments: [...DEPARTMENTS],
   },
+  {
+    id: "CYC003",
+    name: "2025 Mid-Year Performance Cycle",
+    startDate: "2025-05-01",
+    endDate: "2025-07-31",
+    status: "Completed",
+    departments: [...DEPARTMENTS],
+  },
+  {
+    id: "CYC004",
+    name: "2024 Annual Review Cycle",
+    startDate: "2024-11-01",
+    endDate: "2024-12-31",
+    status: "Completed",
+    departments: [...DEPARTMENTS],
+  },
 ];
 
 import seedData from "./erp-seed-data.json";
@@ -223,7 +239,97 @@ export const INITIAL_USERS: User[] = ((seedData.users as any[]) || []).map((u, i
   ...u,
   avatar: resolveAvatarUrl(u.avatar, u.name || u.id, idx),
 }));
-const INITIAL_REVIEWS: PerformanceReview[] = (seedData.reviews as any[]) || [];
+
+export function generateHistoricalReviews(users: User[], baseReviews: PerformanceReview[]): PerformanceReview[] {
+  const historicalCycles = [
+    {
+      cycleId: "CYC004",
+      cycleName: "2024 Annual Review Cycle",
+      updatedAt: "2024-12-19T15:30:00.000Z",
+      scoreOffset: -0.6,
+    },
+    {
+      cycleId: "CYC003",
+      cycleName: "2025 Mid-Year Performance Cycle",
+      updatedAt: "2025-07-22T11:45:00.000Z",
+      scoreOffset: -0.3,
+    },
+    {
+      cycleId: "CYC002",
+      cycleName: "2025 Annual Review Cycle",
+      updatedAt: "2025-12-18T16:20:00.000Z",
+      scoreOffset: 0.0,
+    },
+  ];
+
+  const historical: PerformanceReview[] = [];
+
+  for (const user of users) {
+    let hash = 0;
+    const str = user.id + (user.name || "");
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const baseScore = 7.5 + (Math.abs(hash) % 15) * 0.1; // 7.5 to 8.9
+
+    for (const hc of historicalCycles) {
+      const finalScore = Number(Math.min(9.8, Math.max(6.5, baseScore + hc.scoreOffset)).toFixed(1));
+      
+      historical.push({
+        id: `REV${hc.cycleId.replace("CYC", "")}${user.id}`,
+        employeeId: user.id,
+        employeeName: user.name,
+        department: user.department,
+        cycleId: hc.cycleId,
+        cycleName: hc.cycleName,
+        status: "HR Approved",
+        finalScore,
+        updatedAt: hc.updatedAt,
+        objectives: [
+          {
+            id: `OBJ_${hc.cycleId}_1_${user.id}`,
+            text: "Core Functional Delivery & Departmental Milestones",
+            weight: 35,
+            type: "objective",
+            selfScore: finalScore,
+            managerScore: finalScore,
+            managerFeedback: "Consistently delivered on agreed departmental deliverables and SLAs.",
+          },
+          {
+            id: `OBJ_${hc.cycleId}_2_${user.id}`,
+            text: "Operational Standards, Quality Assurance & Compliance",
+            weight: 35,
+            type: "objective",
+            selfScore: Math.min(10, finalScore + 0.2),
+            managerScore: Math.min(10, finalScore + 0.2),
+            managerFeedback: "High level of attention to regulatory and operational guidelines.",
+          },
+          {
+            id: `OBJ_${hc.cycleId}_3_${user.id}`,
+            text: "Collaboration, Leadership & Professional Competency",
+            weight: 30,
+            type: "competency",
+            expectedLevel: 4,
+            selfScore: Math.min(5, finalScore / 2),
+            managerScore: Math.min(5, finalScore / 2),
+            managerFeedback: "Dependable cross-team engagement and adherence to company leadership standards.",
+          },
+        ],
+        managerComments: `Solid contribution during the ${hc.cycleName}. Met and in key areas exceeded quarterly departmental expectations.`,
+        hrComments: `Calibration validated and approved by Human Resources. Merits designated annual rating step calibration.`,
+      });
+    }
+  }
+
+  const existingIds = new Set(baseReviews.map((r) => r.id));
+  const newHistorical = historical.filter((r) => !existingIds.has(r.id));
+  return [...newHistorical, ...baseReviews];
+}
+
+export const INITIAL_REVIEWS: PerformanceReview[] = generateHistoricalReviews(
+  INITIAL_USERS,
+  (seedData.reviews as any[]) || []
+);
 
 export function findReviewForUser(
   reviewsList: PerformanceReview[],
@@ -483,8 +589,9 @@ export function useERPStore(explicitTenantSlug?: string) {
       const cyclesData = await fetchFromApi<ReviewCycle[]>("/cycles", INITIAL_CYCLES, activeTenantSlug);
       setCycles(cyclesData || []);
 
-      const reviewsData = await fetchFromApi<PerformanceReview[]>("/reviews", [], activeTenantSlug);
-      setReviews(reviewsData || []);
+      const reviewsData = await fetchFromApi<PerformanceReview[]>("/reviews", INITIAL_REVIEWS, activeTenantSlug);
+      const combinedReviews = generateHistoricalReviews(usersData && usersData.length > 0 ? usersData : INITIAL_USERS, reviewsData || []);
+      setReviews(combinedReviews);
 
       const objectivesData = await fetchFromApi<Objective[]>("/objectives", DEFAULT_OBJECTIVES, activeTenantSlug);
       setObjectives(objectivesData || []);

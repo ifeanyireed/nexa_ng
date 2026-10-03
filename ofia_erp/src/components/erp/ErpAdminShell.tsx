@@ -136,29 +136,8 @@ export function ErpAdminShell({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const hasInitializedRef = useRef(false);
   const [isShellReady, setIsShellReady] = useState<boolean>(false);
-  const [tenantName, setTenantName] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      const slug = extractSubdomainOrParam();
-      return (
-        localStorage.getItem("tenant_name_" + slug) ||
-        localStorage.getItem("nexa_tenant_name") ||
-        (slug ? slugToTenantName(slug) : "")
-      );
-    }
-    return "";
-  });
-  const [tenantLogo, setTenantLogo] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      const slug = extractSubdomainOrParam();
-      return (
-        localStorage.getItem("tenant_logo_" + slug) ||
-        localStorage.getItem("nexa_tenant_logo") ||
-        (slug && DEFAULT_TENANT_BRANDING[slug]?.logo) ||
-        ""
-      );
-    }
-    return "";
-  });
+  const [tenantName, setTenantName] = useState<string>("");
+  const [tenantLogo, setTenantLogo] = useState<string>("");
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const [permissionMatrix, setPermissionMatrix] = useState<PermissionMatrix>(DEFAULT_PERMISSION_MATRIX);
   const [currentRole, setCurrentRole] = useState<RoleKey>("admin");
@@ -229,12 +208,27 @@ export function ErpAdminShell({
   useEffect(() => {
     setIsMounted(true);
     let isCurrent = true;
+
+    // Restore cached tenant branding from localStorage upon client mount
+    const slug = extractSubdomainOrParam();
+    const cachedName =
+      localStorage.getItem("tenant_name_" + slug) ||
+      localStorage.getItem("nexa_tenant_name") ||
+      (slug ? slugToTenantName(slug) : "");
+    const cachedLogo =
+      localStorage.getItem("tenant_logo_" + slug) ||
+      localStorage.getItem("nexa_tenant_logo") ||
+      (slug && DEFAULT_TENANT_BRANDING[slug]?.logo) ||
+      "";
+    if (cachedName) setTenantName(cachedName);
+    if (cachedLogo) setTenantLogo(cachedLogo);
+
     const initShell = async () => {
       const list = await fetchDatabaseTenants();
       if (!isCurrent) return;
       const matched = resolveTenantFromList(list, user?.email);
-      const activeName = matched?.name || "";
-      const tenantKey = matched?.slug || matched?.id || "neweratransports";
+      const activeName = matched?.name || cachedName || "";
+      const tenantKey = matched?.slug || matched?.id || slug || "neweratransports";
       setTenantName(activeName);
       if (matched?.logo) {
         setTenantLogo(matched.logo);
@@ -761,7 +755,7 @@ export function ErpAdminShell({
 
         {/* LOGO AREA */}
         <div className="p-6 pb-2 flex items-center justify-between">
-          {!isShellReady && !tenantLogo ? (
+          {!isShellReady ? (
             <div className="flex items-center gap-2.5 min-w-0 w-full animate-pulse">
               <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800/60 shrink-0" />
               {isSidebarOpen && (
@@ -781,9 +775,9 @@ export function ErpAdminShell({
               className="flex items-center gap-2.5 min-w-0"
             >
               <img
-                src={tenantLogo || (isShellReady ? OFIA_DEFAULT_LOGO : "")}
+                src={tenantLogo || OFIA_DEFAULT_LOGO}
                 alt={tenantName || "Ofia ERP"}
-                className={cn("w-8 h-8 object-contain shrink-0", !tenantLogo && !isShellReady && "hidden")}
+                className="w-8 h-8 object-contain shrink-0"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = OFIA_DEFAULT_LOGO;
                 }}
@@ -791,10 +785,9 @@ export function ErpAdminShell({
               <div className="flex flex-col min-w-0">
                 <span
                   className="text-sm font-black text-display leading-tight text-[var(--nexa-text-primary)] truncate max-w-[180px]"
-                  title={tenantName}
-                  suppressHydrationWarning
+                  title={tenantName || "Ofia ERP"}
                 >
-                  {tenantName || (isShellReady ? "Ofia ERP" : "")}
+                  {tenantName || "Ofia ERP"}
                 </span>
                 <span className="text-[11px] font-black text-[#1A56DB] tracking-wide uppercase mt-0.5">
                   OFIA ERP
@@ -806,7 +799,7 @@ export function ErpAdminShell({
             </Link>
           ) : (
             <img
-              src={tenantLogo || (isShellReady ? OFIA_DEFAULT_LOGO : "")}
+              src={tenantLogo || OFIA_DEFAULT_LOGO}
               alt={tenantName || "Ofia ERP"}
               className="w-8 h-8 object-contain shrink-0 mx-auto"
               onError={(e) => {

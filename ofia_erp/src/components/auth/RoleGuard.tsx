@@ -80,15 +80,32 @@ export function RoleGuard({
       return;
     }
 
+    // STRICT LINE MANAGER ROLE ISOLATION:
+    // A line manager can ONLY view the Manager Portal (/erp/manager*) and Employee Portal (/erp/employee*)
+    if (role === "manager") {
+      if (!pathname.startsWith("/erp/manager") && !pathname.startsWith("/erp/employee")) {
+        setIsAuthorized(false);
+        router.replace("/erp/manager");
+        return;
+      }
+      setIsAuthorized(true);
+      return;
+    }
+
+    if (pathname.startsWith("/erp/admin/access-control")) {
+      router.replace("/erp/admin");
+      return;
+    }
+
     // 3. Automatic Route Role Rules (if allowedRoles not explicitly provided)
     let effectiveAllowedRoles = allowedRoles;
     if (!effectiveAllowedRoles) {
       if (pathname.startsWith("/erp/admin/users") || pathname.startsWith("/erp/admin/departments")) {
         effectiveAllowedRoles = ["admin", "md", "hr"];
-      } else if (pathname === "/erp/admin" || pathname.startsWith("/erp/admin/access-control")) {
+      } else if (pathname === "/erp/admin") {
         effectiveAllowedRoles = ["admin"];
       } else if (pathname.startsWith("/erp/marketer") || pathname.startsWith("/erp/admin/crm")) {
-        effectiveAllowedRoles = ["admin", "md", "marketer", "manager"];
+        effectiveAllowedRoles = ["admin", "md", "marketer"];
       } else if (pathname.startsWith("/erp/md")) {
         effectiveAllowedRoles = ["admin", "md"];
       } else if (pathname.startsWith("/erp/hr")) {
@@ -96,7 +113,7 @@ export function RoleGuard({
       } else if (pathname.startsWith("/erp/accountant")) {
         effectiveAllowedRoles = ["admin", "md", "accountant"];
       } else if (pathname.startsWith("/erp/manager")) {
-        effectiveAllowedRoles = ["admin", "md", "hr", "manager"];
+        effectiveAllowedRoles = ["admin", "md", "hr", "accountant", "marketer", "manager"];
       } else if (pathname.startsWith("/erp/employee")) {
         effectiveAllowedRoles = [
           "admin",
@@ -130,11 +147,22 @@ export function RoleGuard({
     // 4. Role Permission Check
     const roleAllowed = !effectiveAllowedRoles || effectiveAllowedRoles.includes(role);
 
-    // 5. Module Database Permission Check
+    // 5. Workspace Module Provisioning Check
     let moduleAllowed = true;
-    if (requiredModule && role !== "admin") {
+    let requiredMod = requiredModule;
+    if (!requiredMod) {
+      if (pathname.startsWith("/erp/accountant")) requiredMod = "accounting";
+      else if (pathname.startsWith("/erp/hr")) requiredMod = "hr";
+      else if (pathname.startsWith("/erp/marketer") || pathname.startsWith("/erp/admin/crm")) requiredMod = "crm";
+      else if (pathname.startsWith("/erp/admin/ai")) requiredMod = "ai";
+      else if (pathname.startsWith("/erp/admin/shop")) requiredMod = "shop";
+      else if (pathname.startsWith("/erp/admin/logistics")) requiredMod = "logistics";
+      else if (pathname.startsWith("/erp/admin/marketplace")) requiredMod = "marketplace";
+    }
+
+    if (requiredMod) {
       const tenantName = localStorage.getItem("nexa_org_name") || "EduSuite";
-      moduleAllowed = isModuleEnabledForRole(tenantName, role, requiredModule);
+      moduleAllowed = isModuleEnabledForRole(tenantName, role, requiredMod);
     }
 
     const permitted = roleAllowed && moduleAllowed;

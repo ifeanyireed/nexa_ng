@@ -8,13 +8,18 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
-import { UserCheck, Star, Award, CheckCircle2, ArrowRight } from "lucide-react";
+import { UserCheck, Star, Award, CheckCircle2, ArrowRight, Store, Briefcase } from "lucide-react";
+import { useTenantProvisioning } from "@/lib/access-control";
 
 export default function EmployeeDashboard() {
   const router = useRouter();
+  const { isModuleProvisioned } = useTenantProvisioning();
   const { reviews, cycles, users, objectives, updateReview, isLoading } = useERPStore();
   const [currentUser, setCurrentUser] = useState<User>(() => getSignedInERPUser(users));
   const [userReviews, setUserReviews] = useState<PerformanceReview[]>([]);
+
+  const hasHrModule = isModuleProvisioned("hr");
+  const hasShopModule = isModuleProvisioned("shop");
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -76,104 +81,166 @@ export default function EmployeeDashboard() {
           </button>
         </div>
 
-        {/* Current Review Stat block */}
+        {/* BAKE SHOP/POS MODULE IF PROVISIONED AND USER IS CASHIER/ADMIN */}
+        {hasShopModule && (currentUser.role === "cashier" || currentUser.role === "admin") && (
+          <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl p-4 text-white flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                <Store className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h4 className="text-sm font-extrabold">Point of Sale Counter Terminal</h4>
+                <p className="text-xs text-emerald-100 mt-0.5">Quick cashiering, customer checkout, and daily register reconciliation.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => router.push("/erp/admin/shop/pos")}
+              className="px-4 py-2 bg-white text-emerald-700 font-bold rounded-xl text-xs hover:bg-emerald-50 transition-colors cursor-pointer shrink-0"
+            >
+              Open POS Register →
+            </button>
+          </div>
+        )}
+
+        {/* Current Review Stat block - BAKED HR MODULE */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
           {/* Main Action Block (8cols) */}
-          <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 lg:col-span-8 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-                <h3 className="font-bold text-slate-800 text-md">Active Review Cycle</h3>
-                {activeCycle && (
-                  <span className="bg-blue-50 text-blue-600 text-xs font-extrabold px-2.5 py-0.5 rounded-md">
-                    Due {new Date(activeCycle.endDate).toLocaleDateString()}
-                  </span>
+          {hasHrModule ? (
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 lg:col-span-8 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+                  <h3 className="font-bold text-slate-800 text-md">Active Review Cycle</h3>
+                  {activeCycle && (
+                    <span className="bg-blue-50 text-blue-600 text-xs font-extrabold px-2.5 py-0.5 rounded-md">
+                      Due {new Date(activeCycle.endDate).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+
+                {currentReview ? (
+                  <div className="py-6 flex flex-col gap-4">
+                    <div className="flex justify-between items-center bg-gray-50 p-4 rounded-2xl">
+                      <div>
+                        <h4 className="font-extrabold text-sm text-slate-700">{currentReview.cycleName}</h4>
+                        <p className="text-xs text-slate-400 font-semibold mt-1">Status details and feedback</p>
+                      </div>
+                      {getStatusBadge(currentReview.status)}
+                    </div>
+
+                    {currentReview.status === "Returned" && (
+                      <div className="bg-red-50 text-red-800 text-xs font-semibold p-4 rounded-2xl border border-red-100">
+                        <span className="font-bold block mb-1">Feedback from Manager:</span>
+                        "{currentReview.managerComments || "Please review and update your scores."}"
+                      </div>
+                    )}
+
+                    {currentReview.status === "HR Approved" && (
+                      <div className="bg-emerald-50 text-emerald-800 text-xs font-semibold p-4 rounded-2xl border border-emerald-100 flex items-center justify-between">
+                        <div>
+                          <span className="font-bold block mb-1">Final Score Approved:</span>
+                          <span className="text-slate-500">Your performance reviews for this cycle are completed.</span>
+                        </div>
+                        <div className="text-center bg-emerald-600 text-white rounded-xl p-2 min-w-16 shadow-sm">
+                          <p className="text-[10px] uppercase font-bold tracking-wider leading-none">Score</p>
+                          <p className="text-lg font-black mt-1 leading-none">{currentReview.finalScore || "N/A"}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="py-8 text-center text-slate-450 font-bold">
+                    {activeCycle ? "You have not started your assessment for this active cycle." : "No active reviews for this cycle."}
+                  </div>
                 )}
               </div>
 
-              {currentReview ? (
-                <div className="py-6 flex flex-col gap-4">
-                  <div className="flex justify-between items-center bg-gray-50 p-4 rounded-2xl">
-                    <div>
-                      <h4 className="font-extrabold text-sm text-slate-700">{currentReview.cycleName}</h4>
-                      <p className="text-xs text-slate-400 font-semibold mt-1">Status details and feedback</p>
-                    </div>
-                    {getStatusBadge(currentReview.status)}
-                  </div>
-
-                  {currentReview.status === "Returned" && (
-                    <div className="bg-red-50 text-red-800 text-xs font-semibold p-4 rounded-2xl border border-red-100">
-                      <span className="font-bold block mb-1">Feedback from Manager:</span>
-                      "{currentReview.managerComments || "Please review and update your scores."}"
-                    </div>
-                  )}
-
-                  {currentReview.status === "HR Approved" && (
-                    <div className="bg-emerald-50 text-emerald-800 text-xs font-semibold p-4 rounded-2xl border border-emerald-100 flex items-center justify-between">
-                      <div>
-                        <span className="font-bold block mb-1">Final Score Approved:</span>
-                        <span className="text-slate-500">Your performance reviews for this cycle are completed.</span>
-                      </div>
-                      <div className="text-center bg-emerald-600 text-white rounded-xl p-2 min-w-16 shadow-sm">
-                        <p className="text-[10px] uppercase font-bold tracking-wider leading-none">Score</p>
-                        <p className="text-lg font-black mt-1 leading-none">{currentReview.finalScore || "N/A"}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="py-8 text-center text-slate-450 font-bold">
-                  {activeCycle ? "You have not started your assessment for this active cycle." : "No active reviews for this cycle."}
-                </div>
+              {/* Actions button */}
+              {!currentReview && activeCycle && (
+                <button
+                  onClick={async () => {
+                    const newRev = createReviewForUser(currentUser, activeCycle, objectives);
+                    await updateReview(newRev);
+                    router.push(`/erp/employee/reviews/detail?id=${newRev.id}`);
+                  }}
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all text-xs cursor-pointer"
+                >
+                  Fill Performance Self-Assessment Form
+                </button>
+              )}
+              {currentReview && (currentReview.status === "Draft" || currentReview.status === "Returned") && (
+                <button
+                  onClick={() => router.push(`/erp/employee/reviews/detail?id=${currentReview.id}`)}
+                  className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all text-xs cursor-pointer"
+                >
+                  {currentReview.status === "Returned" ? "Edit and Re-submit Review" : "Fill Performance Self-Assessment Form"}
+                </button>
+              )}
+              {currentReview && currentReview.status === "Submitted" && (
+                <button
+                  disabled
+                  className="w-full py-3 bg-gray-100 text-gray-400 font-bold rounded-xl text-xs cursor-not-allowed text-center"
+                >
+                  Awaiting Manager Review
+                </button>
+              )}
+              {currentReview && currentReview.status === "Manager Reviewed" && (
+                <button
+                  disabled
+                  className="w-full py-3 bg-gray-100 text-gray-400 font-bold rounded-xl text-xs cursor-not-allowed text-center"
+                >
+                  Awaiting HR Final Verification
+                </button>
+              )}
+              {currentReview && currentReview.status === "HR Approved" && (
+                <button
+                  onClick={() => router.push(`/erp/employee/reviews/detail?id=${currentReview.id}`)}
+                  className="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs transition-all text-center cursor-pointer"
+                >
+                  View Final Review Summary
+                </button>
               )}
             </div>
-
-            {/* Actions button */}
-            {!currentReview && activeCycle && (
+          ) : (
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 lg:col-span-8 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+                  <h3 className="font-bold text-slate-800 text-md">Workspace Self-Service</h3>
+                  <span className="bg-emerald-50 text-emerald-600 text-xs font-extrabold px-2.5 py-0.5 rounded-md">
+                    Active Member
+                  </span>
+                </div>
+                <div className="py-6 space-y-4">
+                  <div className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between">
+                    <div>
+                      <span className="text-xs text-slate-400 font-semibold uppercase block">Designation</span>
+                      <span className="text-sm font-extrabold text-slate-800">{currentUser.designation || currentUser.role}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs text-slate-400 font-semibold uppercase block">Department</span>
+                      <span className="text-sm font-extrabold text-slate-800">{currentUser.department}</span>
+                    </div>
+                  </div>
+                  <div className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between">
+                    <div>
+                      <span className="text-xs text-slate-400 font-semibold uppercase block">Reporting Manager</span>
+                      <span className="text-sm font-extrabold text-slate-800">{currentUser.managerName || "Company Leadership"}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs text-slate-400 font-semibold uppercase block">Work Location</span>
+                      <span className="text-sm font-extrabold text-slate-800">{currentUser.location || "Headquarters"}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <button
-                onClick={async () => {
-                  const newRev = createReviewForUser(currentUser, activeCycle, objectives);
-                  await updateReview(newRev);
-                  router.push(`/erp/employee/reviews/detail?id=${newRev.id}`);
-                }}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all text-xs cursor-pointer"
+                onClick={() => router.push("/erp/employee/profile")}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all text-xs cursor-pointer text-center"
               >
-                Fill Performance Self-Assessment Form
+                View Full Employee Profile & Details
               </button>
-            )}
-            {currentReview && (currentReview.status === "Draft" || currentReview.status === "Returned") && (
-              <button
-                onClick={() => router.push(`/erp/employee/reviews/detail?id=${currentReview.id}`)}
-                className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition-all text-xs cursor-pointer"
-              >
-                {currentReview.status === "Returned" ? "Edit and Re-submit Review" : "Fill Performance Self-Assessment Form"}
-              </button>
-            )}
-            {currentReview && currentReview.status === "Submitted" && (
-              <button
-                disabled
-                className="w-full py-3 bg-gray-100 text-gray-400 font-bold rounded-xl text-xs cursor-not-allowed text-center"
-              >
-                Awaiting Manager Review
-              </button>
-            )}
-            {currentReview && currentReview.status === "Manager Reviewed" && (
-              <button
-                disabled
-                className="w-full py-3 bg-gray-100 text-gray-400 font-bold rounded-xl text-xs cursor-not-allowed text-center"
-              >
-                Awaiting HR Final Verification
-              </button>
-            )}
-            {currentReview && currentReview.status === "HR Approved" && (
-              <button
-                onClick={() => router.push(`/erp/employee/reviews/detail?id=${currentReview.id}`)}
-                className="w-full py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs transition-all text-center cursor-pointer"
-              >
-                View Final Review Summary
-              </button>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Side Info Panel (4cols) - Notifications & Actions */}
           <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 lg:col-span-4 flex flex-col gap-5">

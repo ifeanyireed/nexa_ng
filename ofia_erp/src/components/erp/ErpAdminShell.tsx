@@ -69,6 +69,8 @@ import {
   PermissionMatrix,
   DEFAULT_PERMISSION_MATRIX,
   RoleKey,
+  isNavItemVisibleForRole,
+  isUserLineManager,
 } from "@/lib/access-control";
 import {
   fetchDatabaseTenants,
@@ -159,6 +161,7 @@ export function ErpAdminShell({
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const [permissionMatrix, setPermissionMatrix] = useState<PermissionMatrix>(DEFAULT_PERMISSION_MATRIX);
   const [currentRole, setCurrentRole] = useState<RoleKey>("admin");
+  const [isLineManager, setIsLineManager] = useState<boolean>(false);
   const [userName, setUserName] = useState<string>("");
   const [userEmail, setUserEmail] = useState<string>("");
 
@@ -355,17 +358,23 @@ export function ErpAdminShell({
       let resolvedEmail = user?.email || "";
       let hasStoredRole = false;
 
+      let resolvedLineManager = false;
+      let parsedUser: any = null;
       const storedErpUser = localStorage.getItem("erp_current_user");
       if (storedErpUser) {
         try {
           const parsed = JSON.parse(storedErpUser);
           if (parsed) {
+            parsedUser = parsed;
             if (parsed.role) {
               resolvedRole = parsed.role as RoleKey;
               hasStoredRole = true;
             }
             if (parsed.name) resolvedName = parsed.name;
             if (parsed.email) resolvedEmail = parsed.email;
+            if (parsed.role === "manager" || parsed.isLineManager === true) {
+              resolvedLineManager = true;
+            }
           }
         } catch {}
       }
@@ -414,20 +423,34 @@ export function ErpAdminShell({
         }
       }
 
+      // Check if user is line manager (has direct reports)
+      if (resolvedRole === "manager") {
+        resolvedLineManager = true;
+      } else if (resolvedRole === "md") {
+        // MD is a line manager if they manage direct reports or are configured as such
+        resolvedLineManager = parsedUser?.isLineManager !== false;
+      }
+
       setCurrentRole(resolvedRole);
+      setIsLineManager(resolvedLineManager);
       setUserName(resolvedName);
       setUserEmail(resolvedEmail);
 
-      // Strict Employee Isolation & Role Protection Guard:
-      // If resolvedRole is "employee":
-      // An employee is ONLY allowed to access the Employee Portal (/erp/employee*).
-      // If they land on or attempt to navigate to any other ERP page, immediately redirect them to /erp/employee!
+      // Strict Role & Portal Protection Guard:
       if (resolvedRole === "employee") {
         if (!pathname.startsWith("/erp/employee")) {
           window.location.href = "/erp/employee";
           return;
         }
-      } else if (resolvedRole !== "admin" && (pathname === "/erp/admin" || pathname === "/erp/admin/access-control")) {
+      } else if (resolvedRole === "manager") {
+        if (!pathname.startsWith("/erp/manager") && !pathname.startsWith("/erp/employee")) {
+          window.location.href = "/erp/manager";
+          return;
+        }
+      } else if (pathname === "/erp/admin/access-control") {
+        window.location.href = "/erp/admin";
+        return;
+      } else if (resolvedRole !== "admin" && pathname === "/erp/admin") {
         if (resolvedRole === "md") {
           window.location.href = "/erp/md";
           return;
@@ -437,8 +460,17 @@ export function ErpAdminShell({
         } else if (resolvedRole === "accountant") {
           window.location.href = "/erp/accountant";
           return;
-        } else if (resolvedRole === "manager") {
-          window.location.href = "/erp/manager";
+        } else if (resolvedRole === "marketer") {
+          window.location.href = "/erp/marketer";
+          return;
+        } else if (resolvedRole === "dispatcher") {
+          window.location.href = "/erp/admin/logistics";
+          return;
+        } else if (resolvedRole === "cashier") {
+          window.location.href = "/erp/admin/shop/pos";
+          return;
+        } else if (resolvedRole === "inventory_officer") {
+          window.location.href = "/erp/admin/shop/inventory";
           return;
         }
       }
@@ -545,7 +577,6 @@ export function ErpAdminShell({
     { label: "HR & Appraisals", icon: <Users className="w-6 h-6" />, href: "/erp/hr", key: "hr", section: "Ofia Enterprise Suite" },
     { label: "User Management", icon: <UserCheck className="w-6 h-6" />, href: "/erp/admin/users", badge: "Staff", key: "users", section: "Ofia Enterprise Suite" },
     { label: "Departments", icon: <Building2 className="w-6 h-6" />, href: "/erp/admin/departments", badge: "Org", key: "departments", section: "Ofia Enterprise Suite" },
-    { label: "Access Control", icon: <ShieldCheck className="w-6 h-6" />, href: "/erp/admin/access-control", badge: "RBAC", key: "access_control", section: "Ofia Enterprise Suite" },
 
     // 3. PORTALS & WORKSPACES
     { label: "Employee Portal", icon: <UserCheck className="w-6 h-6" />, href: "/erp/employee", key: "employee", section: "Portals & Team" },
@@ -562,10 +593,6 @@ export function ErpAdminShell({
     }
 
     if (pathname.startsWith("/erp/admin/departments")) {
-      return [];
-    }
-
-    if (pathname.startsWith("/erp/admin/access-control")) {
       return [];
     }
 
@@ -669,19 +696,37 @@ export function ErpAdminShell({
     }
 
     if (pathname.startsWith("/erp/employee")) {
-      return [
+      const tabs: SubNavItem[] = [
         { label: "My Overview", href: "/erp/employee", icon: <UserCheck className="w-3.5 h-3.5" /> },
         { label: "Performance Reviews", href: "/erp/employee/reviews", icon: <Activity className="w-3.5 h-3.5" /> },
         { label: "My Team Quests", href: "/erp/employee/quests", icon: <Trophy className="w-3.5 h-3.5" /> },
         { label: "My Profile & Growth", href: "/erp/employee/profile", icon: <Users className="w-3.5 h-3.5" /> },
       ];
+      if (currentRole === "manager") {
+        tabs.unshift({ label: "← Back to Manager Portal", href: "/erp/manager", icon: <Sliders className="w-3.5 h-3.5" /> });
+      } else if (currentRole === "md") {
+        tabs.unshift({ label: "← Back to MD Portal", href: "/erp/md", icon: <TrendingUp className="w-3.5 h-3.5" /> });
+      }
+      return tabs;
     }
 
     if (pathname.startsWith("/erp/manager")) {
       return [
         { label: "Manager Overview", href: "/erp/manager", icon: <Sliders className="w-3.5 h-3.5" /> },
         { label: "Team Reviews", href: "/erp/manager/reviews", icon: <Activity className="w-3.5 h-3.5" /> },
+        { label: "My Self-Service (Employee Portal)", href: "/erp/employee", icon: <UserCheck className="w-3.5 h-3.5" /> },
       ];
+    }
+
+    if (pathname.startsWith("/erp/md")) {
+      const tabs: SubNavItem[] = [
+        { label: "Executive Cockpit", href: "/erp/md", icon: <TrendingUp className="w-3.5 h-3.5" /> },
+      ];
+      if (isLineManager) {
+        tabs.push({ label: "Team Reviews (Manager Portal)", href: "/erp/manager", icon: <Sliders className="w-3.5 h-3.5" /> });
+      }
+      tabs.push({ label: "My Self-Service (Employee Portal)", href: "/erp/employee", icon: <UserCheck className="w-3.5 h-3.5" /> });
+      return tabs;
     }
 
     return [];
@@ -710,11 +755,11 @@ export function ErpAdminShell({
         <div className="p-6 pb-2 flex items-center justify-between">
           {!isShellReady && !tenantLogo ? (
             <div className="flex items-center gap-2.5 min-w-0 w-full animate-pulse">
-              <div className="w-8 h-8 rounded-xl bg-slate-200 dark:bg-slate-700/60 shrink-0" />
+              <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800/60 shrink-0" />
               {isSidebarOpen && (
                 <div className="flex flex-col gap-1.5 min-w-0 flex-1">
-                  <div className="h-3.5 w-28 bg-slate-200 dark:bg-slate-700/60 rounded-md" />
-                  <div className="h-2.5 w-16 bg-blue-100 dark:bg-blue-900/40 rounded-md" />
+                  <div className="h-3.5 w-28 bg-slate-100 dark:bg-slate-800/60 rounded-md" />
+                  <div className="h-2.5 w-16 bg-slate-100/70 dark:bg-slate-800/40 rounded-md" />
                 </div>
               )}
             </div>
@@ -799,18 +844,18 @@ export function ErpAdminShell({
         {/* NAV ITEMS WITH SECTION GROUPINGS */}
         <nav className="flex-1 px-4 space-y-1 mt-2 overflow-y-auto">
           {!isShellReady ? (
-            <div className="space-y-2 py-3 animate-pulse">
-              <div className="px-2 pb-1">
-                <div className="h-2 w-16 bg-slate-200 dark:bg-slate-700/50 rounded" />
+            <div className="space-y-1.5 py-2 animate-pulse">
+              <div className="px-3 pb-1">
+                <div className="h-2 w-16 bg-slate-100 dark:bg-slate-800/50 rounded-full" />
               </div>
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div
                   key={i}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-100/60 dark:bg-slate-800/40"
+                  className="w-full flex items-center gap-3.5 p-3 rounded-full mb-1"
                 >
-                  <div className="w-5 h-5 rounded-lg bg-slate-200 dark:bg-slate-700/70 shrink-0" />
+                  <div className="w-5 h-5 rounded-lg bg-slate-100 dark:bg-slate-800/60 shrink-0" />
                   {isSidebarOpen && (
-                    <div className="h-3 rounded bg-slate-200 dark:bg-slate-700/70 flex-1 max-w-[120px]" />
+                    <div className="h-3 rounded-full bg-slate-100 dark:bg-slate-800/60 flex-1 max-w-[120px]" />
                   )}
                 </div>
               ))}
@@ -836,29 +881,19 @@ export function ErpAdminShell({
                 return currentRole === "admin";
               }
 
-              // The role access tab is strictly for the Tenant Administrator on the admin portal
-              if (item.key === "access_control") {
-                return currentRole === "admin" && pathname.startsWith("/erp/admin");
-              }
+              const isProvisioned = (key: string) => {
+                if (key === "overview" || key === "employee") return true;
+                const isAdminAllowed = permissionMatrix.admin?.[key] !== false;
+                const isTpAllowed = (permissionMatrix as any).tenant_provision?.[key] !== false;
+                return isAdminAllowed && isTpAllowed;
+              };
 
-              // Determine if module is allowed to the tenant by the Super Admin in the database
-              const isTenantAllowed =
-                permissionMatrix.admin?.[item.key] !== false &&
-                (permissionMatrix as any).tenant_provision?.[item.key] !== false;
-
-              // If Super Admin disabled the module for this tenant in Postgres, hide it completely
-              if (!isTenantAllowed) {
-                return false;
-              }
-
-              // Tenant Administrator receives ALL modules allowed to the tenant by default
-              if (currentRole === "admin") {
-                return true;
-              }
-
-              // For subordinate staff roles (md, hr, accountant, marketer, manager, etc.):
-              // check if granted in the tenant RBAC matrix
-              return Boolean(permissionMatrix[currentRole]?.[item.key]);
+              return isNavItemVisibleForRole(
+                item.key,
+                currentRole,
+                isLineManager,
+                isProvisioned
+              );
             });
 
             let currentSection = "";
@@ -929,12 +964,12 @@ export function ErpAdminShell({
           {/* USER PROFILE & NOTIFICATION ROW */}
           <div className="relative" ref={dropdownRef}>
             {!isShellReady ? (
-              <div className="flex items-center gap-2.5 p-2 rounded-2xl bg-nexa-bg-base/70 border border-nexa-border animate-pulse">
-                <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700/60 shrink-0" />
+              <div className="flex items-center gap-2.5 p-2 rounded-2xl bg-nexa-bg-base/40 border border-nexa-border/60 animate-pulse">
+                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800/60 shrink-0" />
                 {isSidebarOpen && (
                   <div className="flex flex-col gap-1.5 min-w-0 flex-1">
-                    <div className="h-3 w-20 bg-slate-200 dark:bg-slate-700/60 rounded" />
-                    <div className="h-2 w-12 bg-slate-200 dark:bg-slate-700/40 rounded" />
+                    <div className="h-3 w-20 bg-slate-100 dark:bg-slate-800/60 rounded-full" />
+                    <div className="h-2 w-12 bg-slate-100/70 dark:bg-slate-800/40 rounded-full" />
                   </div>
                 )}
               </div>

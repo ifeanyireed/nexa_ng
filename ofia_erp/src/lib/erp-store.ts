@@ -2,7 +2,17 @@
 
 import { useEffect, useState, useCallback } from "react";
 
-export type Role = "employee" | "manager" | "hr" | "md" | "admin" | "accountant";
+export type Role =
+  | "employee"
+  | "manager"
+  | "hr"
+  | "md"
+  | "admin"
+  | "accountant"
+  | "marketer"
+  | "cashier"
+  | "inventory_officer"
+  | "dispatcher";
 
 export interface User {
   id: string;

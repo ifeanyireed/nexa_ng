@@ -193,14 +193,6 @@ export const ERP_MODULES: ErpModuleDef[] = [
     badge: "Org",
   },
   {
-    key: "access_control",
-    label: "Access Control & RBAC",
-    category: "Ofia Enterprise Suite",
-    description: "Multi-tenant role permissions, user-type matrix, and security auditing.",
-    href: "/erp/admin/access-control",
-    badge: "RBAC",
-  },
-  {
     key: "employee",
     label: "Employee Portal",
     category: "Portals & Team",
@@ -639,5 +631,159 @@ export function useTenantProvisioning() {
     isLoading,
     isModuleProvisioned,
   };
+}
+
+export interface RoleCapability {
+  key: RoleKey;
+  label: string;
+  // Main control panels managed by this role:
+  controlPanels: string[];
+  // Portals accessible to this role:
+  portals: ("employee" | "manager" | "md")[];
+  // Default home route:
+  homeRoute: string;
+}
+
+export const ROLE_CAPABILITIES: Record<RoleKey, RoleCapability> = {
+  admin: {
+    key: "admin",
+    label: "Tenant Administrator",
+    controlPanels: ["overview", "ai", "crm", "marketplace", "shop", "logistics", "accounting", "hr", "users", "departments"],
+    portals: ["employee", "manager", "md"],
+    homeRoute: "/erp/admin",
+  },
+  md: {
+    key: "md",
+    label: "Managing Director",
+    controlPanels: ["accounting", "hr", "crm", "shop", "logistics"],
+    portals: ["md", "employee"],
+    homeRoute: "/erp/md",
+  },
+  manager: {
+    key: "manager",
+    label: "Line Manager",
+    controlPanels: [],
+    portals: ["manager", "employee"],
+    homeRoute: "/erp/manager",
+  },
+  employee: {
+    key: "employee",
+    label: "General Employee",
+    controlPanels: [],
+    portals: ["employee"],
+    homeRoute: "/erp/employee",
+  },
+  hr: {
+    key: "hr",
+    label: "HR Lead",
+    controlPanels: ["hr", "users", "departments"],
+    portals: ["manager", "employee"],
+    homeRoute: "/erp/hr",
+  },
+  accountant: {
+    key: "accountant",
+    label: "Finance Lead",
+    controlPanels: ["accounting"],
+    portals: ["manager", "employee"],
+    homeRoute: "/erp/accountant",
+  },
+  marketer: {
+    key: "marketer",
+    label: "Growth & Marketing Lead",
+    controlPanels: ["crm", "ai", "marketplace"],
+    portals: ["manager", "employee"],
+    homeRoute: "/erp/marketer",
+  },
+  dispatcher: {
+    key: "dispatcher",
+    label: "Logistics Lead",
+    controlPanels: ["logistics"],
+    portals: ["employee"],
+    homeRoute: "/erp/admin/logistics",
+  },
+  inventory_officer: {
+    key: "inventory_officer",
+    label: "Warehouse / IMS Officer",
+    controlPanels: ["shop"],
+    portals: ["employee"],
+    homeRoute: "/erp/admin/shop/inventory",
+  },
+  cashier: {
+    key: "cashier",
+    label: "POS Cashier",
+    controlPanels: ["shop"],
+    portals: ["employee"],
+    homeRoute: "/erp/admin/shop/pos",
+  },
+};
+
+export function isUserLineManager(
+  user: { id?: string; name?: string; role?: string; isLineManager?: boolean } | null,
+  allUsers?: any[]
+): boolean {
+  if (!user) return false;
+  if (user.role === "manager") return true;
+  if (user.isLineManager) return true;
+  if (allUsers && allUsers.length > 0) {
+    return allUsers.some(
+      (u) =>
+        u.id !== user.id &&
+        ((user.id && u.managerId === user.id) ||
+          (user.name &&
+            u.managerName &&
+            u.managerName.toLowerCase().trim() === user.name.toLowerCase().trim()))
+    );
+  }
+  return false;
+}
+
+export function isNavItemVisibleForRole(
+  itemKey: string,
+  role: RoleKey,
+  isLineManager: boolean,
+  isModuleProvisioned: (key: string) => boolean
+): boolean {
+  // If the module is not provisioned for the workspace, it's not present for any portal or role
+  if (!isModuleProvisioned(itemKey)) {
+    return false;
+  }
+
+  // Admin gets all active workspace modules & all portals
+  if (role === "admin") {
+    return true;
+  }
+
+  // General employee only sees Employee Portal
+  if (role === "employee") {
+    return itemKey === "employee";
+  }
+
+  // Line Manager sees Manager Portal and Employee Portal
+  if (role === "manager") {
+    return itemKey === "manager" || itemKey === "employee";
+  }
+
+  // MD sees MD Executive Portal, Employee Portal, and Manager Portal if they are a line manager
+  if (role === "md") {
+    if (itemKey === "md" || itemKey === "employee") return true;
+    if (itemKey === "manager") return isLineManager;
+    // MD also has executive control panel visibility into provisioned modules
+    const mdExecutivePanels = ["accounting", "hr", "crm", "shop", "logistics"];
+    return mdExecutivePanels.includes(itemKey);
+  }
+
+  // Functional Leads (HR, Accountant, Marketer, Dispatcher, Inventory, Cashier)
+  const cap = ROLE_CAPABILITIES[role];
+  if (!cap) return itemKey === "employee";
+
+  if (cap.controlPanels.includes(itemKey)) {
+    return true;
+  }
+
+  if (cap.portals.includes(itemKey as any)) {
+    return true;
+  }
+
+  return false;
 }
 

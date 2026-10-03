@@ -282,15 +282,6 @@ const ALL_QUICK_ACTIONS: ModuleQuickAction[] = [
     desc: "Roles & Directory",
     href: "/erp/admin/users",
   },
-  // Access Control & RBAC
-  {
-    id: "qa-rbac",
-    module: "access_control",
-    label: "RBAC Governance",
-    icon: <ShieldCheck className="w-6 h-6" />,
-    desc: "Security Permissions",
-    href: "/erp/admin/access-control",
-  },
 ];
 
 const ALL_OPERATIONS: ModuleOperation[] = [
@@ -471,11 +462,6 @@ export default function AdminCommandCenterPage() {
                 {m.label}
               </span>
             ))}
-            <Link href="/erp/admin/access-control">
-              <span className="text-[10px] font-bold text-nexa-text-faint hover:text-nexa-brand transition-colors cursor-pointer ml-1">
-                Manage Matrix →
-              </span>
-            </Link>
           </div>
         </div>
 
@@ -691,12 +677,12 @@ export default function AdminCommandCenterPage() {
                   <p className="text-xs text-nexa-text-secondary leading-relaxed">
                     Automated ledger entries, performance cycle calibrations, and CRM lead capture pipelines are synchronized and operating normally.
                   </p>
-                  <Link href="/erp/admin/access-control">
+                  <Link href="/erp/admin/users">
                     <NexaButton
                       variant="secondary"
                       className="w-full text-xs font-extrabold uppercase tracking-widest rounded-full mt-2"
                     >
-                      Audit Role Governance
+                      Manage Staff Directory & Roles
                     </NexaButton>
                   </Link>
                 </NexaCard>

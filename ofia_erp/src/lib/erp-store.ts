@@ -194,7 +194,7 @@ export interface PerformanceReview {
   managerComments?: string;
   hrComments?: string;
   improvementPlan?: string;
-  finalScore?: number;
+  finalScore?: number | null;
   updatedAt: string;
 }
 

@@ -292,9 +292,9 @@ export default function HRDashboard() {
                           </span>
                         </td>
                         <td className="py-3.5 px-3">
-                          {rev.finalScore !== undefined ? (
+                          {rev.finalScore != null ? (
                             <span className="bg-blue-500/10 text-blue-600 font-extrabold px-2.5 py-0.5 rounded-full border border-blue-500/20 text-xs">
-                              {rev.finalScore.toFixed(1)} / 10
+                              {Number(rev.finalScore).toFixed(1)} / 10
                             </span>
                           ) : (
                             <span className="text-[var(--nexa-text-muted)] font-semibold">—</span>

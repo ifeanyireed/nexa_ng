@@ -50,7 +50,7 @@ export default function DepartmentPerformancePage() {
   // Dynamically compute unique departments across corporate users
   const distinctDepts = Array.from(new Set(users.map(u => getParentDept(u.department)).filter(Boolean)));
   const allDeptAverages = distinctDepts.map(d => {
-    const deptRevs = reviews.filter(r => isDeptMatch(r.department, d) && r.status === "HR Approved" && r.finalScore !== undefined);
+    const deptRevs = reviews.filter(r => isDeptMatch(r.department, d) && r.status === "HR Approved" && r.finalScore != null);
     const avg = deptRevs.length > 0
       ? (deptRevs.reduce((sum, r) => sum + (r.finalScore || 0), 0) / deptRevs.length)
       : 0;

@@ -95,11 +95,11 @@ export default function HRReportsPage() {
 
   // Top & Needs-Attention Performers based on thresholds (> 9.0 and < 5.0)
   const topPerformers = completedReviews
-    .filter(r => r.finalScore !== undefined && r.finalScore > 9.0)
+    .filter(r => r.finalScore != null && r.finalScore > 9.0)
     .sort((a, b) => (b.finalScore || 0) - (a.finalScore || 0));
 
   const bottomPerformers = completedReviews
-    .filter(r => r.finalScore !== undefined && r.finalScore < 5.0)
+    .filter(r => r.finalScore != null && r.finalScore < 5.0)
     .sort((a, b) => (a.finalScore || 0) - (b.finalScore || 0));
 
   // Helper to calculate self-assessment average using the 70% work / 30% compliance split
@@ -378,9 +378,9 @@ export default function HRReportsPage() {
                               )}
                             </td>
                             <td className="py-3 font-black text-slate-750">
-                              {rev?.finalScore !== undefined ? (
+                              {rev?.finalScore != null ? (
                                 <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded text-xs">
-                                  {rev.finalScore.toFixed(1)} / 10
+                                  {Number(rev.finalScore).toFixed(1)} / 10
                                 </span>
                               ) : (
                                 <span className="text-slate-400 font-semibold text-xs">—</span>

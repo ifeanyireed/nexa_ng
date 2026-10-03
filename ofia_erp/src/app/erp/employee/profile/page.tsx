@@ -349,11 +349,11 @@ export default function EmployeeProfilePage() {
             <div className="mt-3">
               <div className="flex items-baseline gap-2">
                 <h3 className="text-2xl font-black text-slate-800">
-                  {latestCompletedReview?.finalScore !== undefined
-                    ? latestCompletedReview.finalScore.toFixed(1)
+                  {latestCompletedReview?.finalScore != null
+                    ? Number(latestCompletedReview.finalScore).toFixed(1)
                     : "—"}
                 </h3>
-                {latestCompletedReview?.finalScore !== undefined && (
+                {latestCompletedReview?.finalScore != null && (
                   <span className="text-xs font-bold text-slate-400">/ 10</span>
                 )}
                 {latestCompletedReview && (
@@ -504,13 +504,13 @@ export default function EmployeeProfilePage() {
                     Final Approved Rating
                   </span>
                   <span className="text-2xl font-black text-slate-800 mt-0.5 block">
-                    {selectedReview.finalScore !== undefined ? `${selectedReview.finalScore.toFixed(1)} / 10` : "—"}
+                    {selectedReview.finalScore != null ? `${Number(selectedReview.finalScore).toFixed(1)} / 10` : "—"}
                   </span>
                 </div>
                 <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-black text-sm">
-                  {selectedReview.finalScore !== undefined && selectedReview.finalScore >= 8.5
+                  {selectedReview.finalScore != null && selectedReview.finalScore >= 8.5
                     ? "A+"
-                    : selectedReview.finalScore !== undefined && selectedReview.finalScore >= 7.5
+                    : selectedReview.finalScore != null && selectedReview.finalScore >= 7.5
                     ? "A"
                     : "B"}
                 </div>

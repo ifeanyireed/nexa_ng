@@ -58,7 +58,7 @@ export default function ManagerDashboard() {
   const completionPercentage = totalEvaluationsCount > 0 ? (completedCount / totalEvaluationsCount) * 100 : 0;
 
   // Average team score
-  const gradedReviews = teamReviews.filter(r => r.finalScore !== undefined);
+  const gradedReviews = teamReviews.filter(r => r.finalScore != null && r.finalScore > 0);
   const averageTeamScore = gradedReviews.length > 0
     ? (gradedReviews.reduce((sum, r) => sum + (r.finalScore || 0), 0) / gradedReviews.length).toFixed(1)
     : "N/A";

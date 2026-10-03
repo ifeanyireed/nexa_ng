@@ -276,11 +276,11 @@ export default function EmployeeDashboard() {
             <div className="mt-3">
               <div className="flex items-baseline gap-2">
                 <h3 className="text-2xl font-black text-slate-800">
-                  {latestCompletedReview?.finalScore !== undefined
-                    ? `${latestCompletedReview.finalScore.toFixed(1)}`
+                  {latestCompletedReview?.finalScore != null
+                    ? `${Number(latestCompletedReview.finalScore).toFixed(1)}`
                     : "—"}
                 </h3>
-                {latestCompletedReview?.finalScore !== undefined && (
+                {latestCompletedReview?.finalScore != null && (
                   <span className="text-xs font-bold text-slate-400">/ 10</span>
                 )}
                 {latestCompletedReview?.status === "HR Approved" && (
@@ -429,7 +429,7 @@ export default function EmployeeDashboard() {
                             Approved Score
                           </p>
                           <p className="text-xl font-black mt-1 leading-none">
-                            {currentReview.finalScore !== undefined ? currentReview.finalScore.toFixed(1) : "N/A"}
+                            {currentReview.finalScore != null ? Number(currentReview.finalScore).toFixed(1) : "N/A"}
                           </p>
                         </div>
                       </div>
@@ -654,7 +654,7 @@ export default function EmployeeDashboard() {
                         {latestCompletedReview.cycleName} Finalized
                       </h5>
                       <p className="text-[11px] text-slate-500 font-medium mt-0.5">
-                        Approved score: {latestCompletedReview.finalScore?.toFixed(1)} / 10 ({latestCompletedReview.status}).
+                        Approved score: {latestCompletedReview.finalScore != null ? Number(latestCompletedReview.finalScore).toFixed(1) : "—"} / 10 ({latestCompletedReview.status}).
                       </p>
                     </div>
                   </div>

@@ -54,6 +54,7 @@ import {
   Target,
   UserCheck,
   Sparkles,
+  Mail,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -590,12 +591,12 @@ export function ErpAdminShell({
   const getSubTabs = (): SubNavItem[] => {
     if (subTabs !== undefined) return subTabs;
 
-    if (pathname.startsWith("/erp/admin/users")) {
-      return [];
-    }
-
-    if (pathname.startsWith("/erp/admin/departments")) {
-      return [];
+    if (pathname.startsWith("/erp/admin/users") || pathname.startsWith("/erp/admin/departments")) {
+      return [
+        { label: "Staff Directory", href: "/erp/admin/users", icon: <Users className="w-3.5 h-3.5" /> },
+        { label: "Departments", href: "/erp/admin/departments", icon: <Building2 className="w-3.5 h-3.5" /> },
+        { label: "Mass Messaging", href: "/erp/admin/users/mass-messaging", icon: <Mail className="w-3.5 h-3.5" /> },
+      ];
     }
 
     if (pathname.startsWith("/erp/marketer")) {

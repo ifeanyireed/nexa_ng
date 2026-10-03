@@ -85,10 +85,10 @@ export default function MDDashboard() {
   // Top and Bottom Performers
   // Filter by thresholds: Top Rated > 9.0, Needs Development < 5.0
   const topPerformers = completedReviews
-    .filter(r => r.finalScore !== undefined && r.finalScore > 9.0)
+    .filter(r => r.finalScore != null && r.finalScore > 9.0)
     .sort((a, b) => (b.finalScore || 0) - (a.finalScore || 0));
   const bottomPerformers = completedReviews
-    .filter(r => r.finalScore !== undefined && r.finalScore < 5.0)
+    .filter(r => r.finalScore != null && r.finalScore < 5.0)
     .sort((a, b) => (a.finalScore || 0) - (b.finalScore || 0));
 
   // Overall Company stats (Option A: submitted/reviewed evaluations out of active cycle reviews)
@@ -222,7 +222,7 @@ export default function MDDashboard() {
                         <div key={r.id} className="flex items-center justify-between p-2.5 bg-emerald-50/30 border border-emerald-100/50 rounded-xl">
                           <span className="font-bold text-slate-700 text-xs">{r.employeeName}</span>
                           <span className="bg-emerald-100 text-emerald-700 font-black px-2 py-0.5 rounded text-[11px]">
-                            {r.finalScore?.toFixed(1)}
+                            {r.finalScore != null ? Number(r.finalScore).toFixed(1) : "—"}
                           </span>
                         </div>
                       ))
@@ -241,7 +241,7 @@ export default function MDDashboard() {
                         <div key={r.id} className="flex items-center justify-between p-2.5 bg-red-50/20 border border-red-100/35 rounded-xl">
                           <span className="font-bold text-slate-700 text-xs">{r.employeeName}</span>
                           <span className="bg-red-100 text-red-700 font-black px-2 py-0.5 rounded text-[11px]">
-                            {r.finalScore?.toFixed(1)}
+                            {r.finalScore != null ? Number(r.finalScore).toFixed(1) : "—"}
                           </span>
                         </div>
                       ))

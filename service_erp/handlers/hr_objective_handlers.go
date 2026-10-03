@@ -85,7 +85,7 @@ func HandleObjectives(w http.ResponseWriter, r *http.Request) {
 			var err error
 
 			if tenantSlug != "" && tenantSlug != "all" {
-				query += ` WHERE "tenantSlug" = $1 OR "tenantSlug" = '' OR "tenantSlug" IS NULL`
+				query += ` WHERE "tenantSlug" = $1`
 				rows, err = db.Query(query, tenantSlug)
 			} else {
 				rows, err = db.Query(query)
@@ -111,7 +111,7 @@ func HandleObjectives(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		if len(objs) == 0 {
+		if len(objs) == 0 && (tenantSlug == "" || tenantSlug == "all") {
 			objs = getFallbackObjectives()
 		}
 

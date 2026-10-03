@@ -125,7 +125,7 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 			if db != nil {
 				var pr PerformanceReview
 				var objJSON sql.NullString
-				err := db.QueryRow(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", "updatedAt" FROM "PerformanceReview" WHERE id = $1`, id).
+				err := db.QueryRow(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", to_char("updatedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "updatedAt" FROM "PerformanceReview" WHERE id = $1`, id).
 					Scan(&pr.ID, &pr.EmployeeID, &pr.EmployeeName, &pr.Department, &pr.CycleID, &pr.CycleName, &pr.Status, &pr.EmployeeComments, &pr.ManagerComments, &pr.HRComments, &pr.ImprovementPlan, &pr.FinalScore, &objJSON, &pr.UpdatedAt)
 				if err == nil {
 					if objJSON.Valid && objJSON.String != "" {
@@ -137,11 +137,13 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			fallback := getFallbackReviews("", "")
-			for _, fb := range fallback {
-				if fb.ID == id {
-					json.NewEncoder(w).Encode(fb)
-					return
+			if tenantSlug == "" || tenantSlug == "all" {
+				fallback := getFallbackReviews("", "")
+				for _, fb := range fallback {
+					if fb.ID == id {
+						json.NewEncoder(w).Encode(fb)
+						return
+					}
 				}
 			}
 			w.WriteHeader(http.StatusNotFound)
@@ -154,15 +156,17 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 			var rows *sql.Rows
 			var err error
 			if employeeId != "" {
-				rows, err = db.Query(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", "updatedAt" FROM "PerformanceReview" WHERE "employeeId" = $1`, employeeId)
+				if tenantSlug != "" && tenantSlug != "all" {
+					rows, err = db.Query(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", to_char("updatedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "updatedAt" FROM "PerformanceReview" WHERE "employeeId" = $1 AND "tenantSlug" = $2`, employeeId, tenantSlug)
+				} else {
+					rows, err = db.Query(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", to_char("updatedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "updatedAt" FROM "PerformanceReview" WHERE "employeeId" = $1`, employeeId)
+				}
 			} else if tenantSlug == "" || tenantSlug == "all" {
-				rows, err = db.Query(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", "updatedAt" FROM "PerformanceReview"`)
+				rows, err = db.Query(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", to_char("updatedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "updatedAt" FROM "PerformanceReview"`)
 			} else {
-				rows, err = db.Query(`SELECT r.id, r."employeeId", r."employeeName", r.department, r."cycleId", r."cycleName", r.status, r."employeeComments", r."managerComments", r."hrComments", r."improvementPlan", r."finalScore", r."objectivesJson", r."updatedAt" 
-					FROM "PerformanceReview" r
-					LEFT JOIN "User" u ON r."employeeId" = u.id
-					WHERE (LOWER(u.company) = $1 OR LOWER(u.company) LIKE $2 OR LOWER(u.email) LIKE $3 OR r."tenantSlug" = $1 OR r."tenantSlug" = '' OR r."tenantSlug" IS NULL)`,
-					tenantSlug, "%"+tenantSlug+"%", "%@"+tenantSlug+"%")
+				rows, err = db.Query(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", to_char("updatedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "updatedAt" 
+					FROM "PerformanceReview" 
+					WHERE "tenantSlug" = $1`, tenantSlug)
 			}
 
 			if err == nil {
@@ -181,7 +185,7 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		if len(reviews) == 0 {
+		if len(reviews) == 0 && (tenantSlug == "" || tenantSlug == "all") {
 			reviews = getFallbackReviews(employeeId, tenantSlug)
 		}
 
@@ -236,7 +240,7 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 				"improvementPlan" = EXCLUDED."improvementPlan",
 				"finalScore" = EXCLUDED."finalScore", 
 				"objectivesJson" = EXCLUDED."objectivesJson", 
-				"tenantSlug" = EXCLUDED."tenantSlug",
+				"tenantSlug" = CASE WHEN EXCLUDED."tenantSlug" != '' THEN EXCLUDED."tenantSlug" ELSE "PerformanceReview"."tenantSlug" END,
 				"updatedAt" = NOW()`)
 			if err != nil {
 				tx.Rollback()
@@ -254,12 +258,17 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
+				effectiveTenant := tenantSlug
+				if effectiveTenant == "" {
+					effectiveTenant = pr.TenantSlug
+				}
+
 				var objJSONStr string = "[]"
 				if pr.Objectives != nil {
 					objJSONStr = string(*pr.Objectives)
 				}
 
-				_, err = stmt.Exec(pr.ID, tenantSlug, pr.EmployeeID, pr.EmployeeName, pr.Department, pr.CycleID, pr.CycleName, pr.Status, pr.EmployeeComments, pr.ManagerComments, pr.HRComments, pr.ImprovementPlan, pr.FinalScore, objJSONStr)
+				_, err = stmt.Exec(pr.ID, effectiveTenant, pr.EmployeeID, pr.EmployeeName, pr.Department, pr.CycleID, pr.CycleName, pr.Status, pr.EmployeeComments, pr.ManagerComments, pr.HRComments, pr.ImprovementPlan, pr.FinalScore, objJSONStr)
 				if err != nil {
 					tx.Rollback()
 					w.WriteHeader(http.StatusInternalServerError)

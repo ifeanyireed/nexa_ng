@@ -180,8 +180,8 @@ func HandleUsers(w http.ResponseWriter, r *http.Request) {
 			if tenantSlug == "" || tenantSlug == "all" {
 				query = `SELECT id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" ORDER BY name ASC`
 			} else {
-				query = `SELECT id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" WHERE ("tenantSlug" = $1 OR LOWER(company) = $1 OR LOWER(company) LIKE $2 OR LOWER(email) LIKE $3) ORDER BY name ASC`
-				args = append(args, tenantSlug, "%"+tenantSlug+"%", "%@"+tenantSlug+"%")
+				query = `SELECT id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" WHERE "tenantSlug" = $1 ORDER BY name ASC`
+				args = append(args, tenantSlug)
 			}
 
 			rows, err := db.Query(query, args...)
@@ -203,22 +203,20 @@ func HandleUsers(w http.ResponseWriter, r *http.Request) {
 						users = append(users, u)
 					}
 				}
-				if len(users) > 0 {
+				if len(users) > 0 || (tenantSlug != "" && tenantSlug != "all") {
 					json.NewEncoder(w).Encode(users)
 					return
 				}
 			}
 		}
 
-		// Fallback in-memory response
-		fallbacks := getFallbackUsers()
-		filtered := []User{}
-		for _, u := range fallbacks {
-			if matchesTenant(&u, tenantSlug) {
-				filtered = append(filtered, u)
-			}
+		if tenantSlug == "" || tenantSlug == "all" {
+			fallbacks := getFallbackUsers()
+			json.NewEncoder(w).Encode(fallbacks)
+			return
 		}
-		json.NewEncoder(w).Encode(filtered)
+
+		json.NewEncoder(w).Encode([]User{})
 
 	} else if r.Method == http.MethodPost || r.Method == http.MethodPut {
 		var u User

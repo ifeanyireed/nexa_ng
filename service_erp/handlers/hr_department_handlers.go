@@ -106,7 +106,7 @@ func HandleDepartments(w http.ResponseWriter, r *http.Request) {
 			var dRows *sql.Rows
 			var dErr error
 			if tenantSlug != "" && tenantSlug != "all" {
-				dRows, dErr = db.Query(`SELECT "code", "name", "head", "headCount", "budget", "costCenter", "tenantSlug" FROM "Department" WHERE "tenantSlug" = $1 OR "tenantSlug" = '' OR "tenantSlug" IS NULL ORDER BY "code" ASC`, tenantSlug)
+				dRows, dErr = db.Query(`SELECT "code", "name", "head", "headCount", "budget", "costCenter", "tenantSlug" FROM "Department" WHERE "tenantSlug" = $1 ORDER BY "code" ASC`, tenantSlug)
 			} else {
 				dRows, dErr = db.Query(`SELECT "code", "name", "head", "headCount", "budget", "costCenter", "tenantSlug" FROM "Department" ORDER BY "code" ASC`)
 			}
@@ -125,17 +125,19 @@ func HandleDepartments(w http.ResponseWriter, r *http.Request) {
 		customs := customDepts[tenantSlug]
 		deptLock.RUnlock()
 
-		// Combine default departments, db departments, and in-memory customs without duplicates
+		// Combine departments without duplicates
 		deptMap := make(map[string]DepartmentItem)
-		for _, d := range defaultDepartments {
-			head, count := getDepartmentHeadAndCount(d.Name, users)
-			if head == "" {
-				head = d.Head
+		if len(dbDepts) == 0 && len(customs) == 0 && (tenantSlug == "" || tenantSlug == "all") {
+			for _, d := range defaultDepartments {
+				head, count := getDepartmentHeadAndCount(d.Name, users)
+				if head == "" {
+					head = d.Head
+				}
+				d.Head = head
+				d.HeadCount = count
+				d.TenantSlug = tenantSlug
+				deptMap[strings.ToUpper(d.Code)] = d
 			}
-			d.Head = head
-			d.HeadCount = count
-			d.TenantSlug = tenantSlug
-			deptMap[strings.ToUpper(d.Code)] = d
 		}
 
 		for _, dbD := range dbDepts {

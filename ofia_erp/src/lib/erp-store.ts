@@ -198,29 +198,15 @@ export interface PerformanceReview {
   updatedAt: string;
 }
 
-export const INITIAL_CYCLES: ReviewCycle[] = [
-  {
-    id: "CYC001",
-    name: "2026 Mid-Year Performance Cycle",
-    startDate: "2026-06-01",
-    endDate: "2026-08-31",
-    status: "Active",
-    departments: [...DEPARTMENTS],
-  },
-];
+export const INITIAL_CYCLES: ReviewCycle[] = [];
 
-import seedData from "./erp-seed-data.json";
-
-export const INITIAL_USERS: User[] = ((seedData.users as any[]) || []).map((u, idx) => ({
-  ...u,
-  avatar: resolveAvatarUrl(u.avatar, u.name || u.id, idx),
-}));
+export const INITIAL_USERS: User[] = [];
 
 export function generateHistoricalReviews(_users: User[], baseReviews: PerformanceReview[]): PerformanceReview[] {
   return baseReviews || [];
 }
 
-export const INITIAL_REVIEWS: PerformanceReview[] = (seedData.reviews as any[]) || [];
+export const INITIAL_REVIEWS: PerformanceReview[] = [];
 
 export function findReviewForUser(
   reviewsList: PerformanceReview[],
@@ -241,7 +227,7 @@ export function findReviewForUser(
   });
 }
 
-const DEFAULT_OBJECTIVES: Objective[] = (seedData.objectives as any[]) || [];
+const DEFAULT_OBJECTIVES: Objective[] = [];
 
 const API_BASE_URL = typeof window !== "undefined" ? "/api/erp" : (process.env.ERP_SERVICE_URL || process.env.NEXT_PUBLIC_ERP_SERVICE_URL || "https://ofia-erp-service.onrender.com");
 
@@ -289,13 +275,15 @@ export function getActiveTenantSlug(): string {
 }
 
 export function getSignedInERPUser(users: User[]): User {
+  const tenantSlug = typeof window !== "undefined" ? getActiveTenantSlug() : "";
   const fallbackUser: User = {
     id: "USR-EMP-01",
     name: "Staff Member",
-    email: "employee@ofia.ng",
+    email: tenantSlug ? `employee@${tenantSlug}.ng` : "employee@workspace.ng",
     role: "employee",
     department: "Operations",
     avatar: resolveAvatarUrl(null, "Staff Member"),
+    company: tenantSlug ? tenantSlug.toUpperCase() : "Organization",
   };
 
   if (typeof window === "undefined") {
@@ -410,11 +398,8 @@ async function fetchFromApi<T>(endpoint: string, fallbackData: T, tenantSlug?: s
       return fallbackData;
     }
     const data = await res.json().catch(() => null);
-    if (!data) return fallbackData;
-    if (Array.isArray(fallbackData) && (!Array.isArray(data) || (data.length === 0 && fallbackData.length > 0))) {
-      return fallbackData;
-    }
-    return data;
+    if (data === null || data === undefined) return fallbackData;
+    return data as T;
   } catch (err) {
     return fallbackData;
   }
@@ -428,8 +413,7 @@ async function ensureReviewsForActiveCycles(
   _tenantSlug: string,
   _onReviewsCreated: (updated: PerformanceReview[]) => void
 ) {
-  // Do not bulk-inject 32 empty dummy draft review records for non-participating staff in the database,
-  // which previously diluted the real appraisal completion rate from 94% down to 21% after background sync.
+  // Do not bulk-inject empty dummy draft review records for non-participating staff in the database
 }
 
 export function createReviewForUser(
@@ -467,6 +451,7 @@ export function useERPStore(explicitTenantSlug?: string) {
   const [cycles, setCycles] = useState<ReviewCycle[]>([]);
   const [reviews, setReviews] = useState<PerformanceReview[]>([]);
   const [objectives, setObjectives] = useState<Objective[]>([]);
+  const [departments, setDepartments] = useState<string[]>([...DEPARTMENTS]);
   const [isLoading, setIsLoading] = useState(true);
 
   const activeTenantSlug = explicitTenantSlug || (typeof window !== "undefined" ? getActiveTenantSlug() : "");
@@ -477,30 +462,19 @@ export function useERPStore(explicitTenantSlug?: string) {
       const usersData = await fetchFromApi<User[]>("/users", [], activeTenantSlug);
       setUsers(usersData || []);
 
-      const cyclesData = await fetchFromApi<ReviewCycle[]>("/cycles", INITIAL_CYCLES, activeTenantSlug);
+      const cyclesData = await fetchFromApi<ReviewCycle[]>("/cycles", [], activeTenantSlug);
       setCycles(cyclesData || []);
 
-      let reviewsData = await fetchFromApi<PerformanceReview[]>("/reviews", [], activeTenantSlug);
-      if (!reviewsData || reviewsData.length === 0) {
-        // Fallback: if bulk reviews returned empty, fetch reviews directly for the logged-in user
-        try {
-          const storedUser = typeof window !== "undefined" ? localStorage.getItem("erp_current_user") : null;
-          const parsed = storedUser ? JSON.parse(storedUser) : null;
-          if (parsed?.id) {
-            const empReviews = await fetchFromApi<PerformanceReview[]>(`/reviews?employeeId=${encodeURIComponent(parsed.id)}`, [], activeTenantSlug);
-            if (empReviews && empReviews.length > 0) {
-              reviewsData = empReviews;
-            }
-          }
-        } catch {}
-      }
-      if (!reviewsData || reviewsData.length === 0) {
-        reviewsData = INITIAL_REVIEWS;
-      }
+      const reviewsData = await fetchFromApi<PerformanceReview[]>("/reviews", [], activeTenantSlug);
       setReviews(reviewsData || []);
 
-      const objectivesData = await fetchFromApi<Objective[]>("/objectives", DEFAULT_OBJECTIVES, activeTenantSlug);
+      const objectivesData = await fetchFromApi<Objective[]>("/objectives", [], activeTenantSlug);
       setObjectives(objectivesData || []);
+
+      const deptsData = await fetchFromApi<any[]>("/departments", [], activeTenantSlug);
+      if (deptsData && deptsData.length > 0) {
+        setDepartments(deptsData.map((d: any) => d.name || d.code));
+      }
 
       // Auto-initialize reviews for the active cycle if any
       try {
@@ -756,6 +730,7 @@ export function useERPStore(explicitTenantSlug?: string) {
     cycles,
     reviews,
     objectives,
+    departments,
     isLoading,
     reload: loadData,
     updateReview,

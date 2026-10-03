@@ -55,7 +55,7 @@ func HandleCycles(w http.ResponseWriter, r *http.Request) {
 			var err error
 
 			if tenantSlug != "" && tenantSlug != "all" {
-				query += ` WHERE "tenantSlug" = $1 OR "tenantSlug" = '' OR "tenantSlug" IS NULL ORDER BY id ASC`
+				query += ` WHERE "tenantSlug" = $1 ORDER BY id ASC`
 				rows, err = db.Query(query, tenantSlug)
 			} else {
 				query += ` ORDER BY id ASC`
@@ -82,7 +82,7 @@ func HandleCycles(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		if len(cycles) == 0 {
+		if len(cycles) == 0 && (tenantSlug == "" || tenantSlug == "all") {
 			cycles = getFallbackCycles()
 		}
 

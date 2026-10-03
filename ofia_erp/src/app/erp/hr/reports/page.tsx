@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useERPStore, PerformanceReview, User, getParentDept, Objective, formatSelfAverage, findReviewForUser } from "@/lib/erp-store";
+import { resolveAvatarUrl, getAvatarFallbackUrl } from "@/lib/avatar";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -340,7 +341,8 @@ export default function HRReportsPage() {
                         .slice((deptEmpPage - 1) * itemsPerPage, (deptEmpPage - 1) * itemsPerPage + itemsPerPage)
                         .map((emp, idx) => {
                         const rev = findReviewForUser(deptReviews, emp);
-                        const avatarSrc = emp.avatar && emp.avatar.includes("character") ? emp.avatar : `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character${(((deptEmpPage - 1) * itemsPerPage + idx) % 20) + 1}.jpg`;
+                        const itemIndex = (deptEmpPage - 1) * itemsPerPage + idx;
+                        const avatarSrc = resolveAvatarUrl(emp.avatar, emp.name || emp.id, itemIndex);
                         
                         // Calculate self average rating
                         const selfAvgStr = formatSelfAverage(rev);
@@ -351,7 +353,10 @@ export default function HRReportsPage() {
                               <img
                                 src={avatarSrc}
                                 alt={emp.name}
-                                className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                                className="w-8 h-8 rounded-full object-cover border border-[var(--nexa-border)] shadow-xs"
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).src = getAvatarFallbackUrl(emp.name || emp.id, itemIndex);
+                                }}
                               />
                               <div>
                                 <p className="font-bold text-slate-850 text-xs leading-tight">{emp.name}</p>

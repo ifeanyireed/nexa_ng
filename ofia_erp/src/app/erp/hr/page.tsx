@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useERPStore, PerformanceReview, User, formatSelfAverage } from "@/lib/erp-store";
+import { resolveAvatarUrl, getAvatarFallbackUrl } from "@/lib/avatar";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -267,7 +268,7 @@ export default function HRDashboard() {
                 {paginatedPendingReviews.length > 0 ? (
                   paginatedPendingReviews.map((rev, idx) => {
                     const emp = users.find((u) => u.id === rev.employeeId || (u.name && rev.employeeName && u.name.toLowerCase().trim() === rev.employeeName.toLowerCase().trim()));
-                    const avatarSrc = emp?.avatar && emp.avatar.includes("character") ? (emp.avatar.startsWith("/") ? `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets${emp.avatar}` : emp.avatar) : `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character${(idx % 20) + 1}.jpg`;
+                    const avatarSrc = resolveAvatarUrl(emp?.avatar, rev.employeeName || rev.employeeId, idx);
                     return (
                       <tr key={rev.id} className="hover:bg-[var(--nexa-bg-base)]/50 transition-colors">
                         <td className="py-3.5 px-3 flex items-center gap-3">
@@ -275,6 +276,9 @@ export default function HRDashboard() {
                             src={avatarSrc}
                             alt={rev.employeeName}
                             className="w-8 h-8 rounded-full object-cover border border-[var(--nexa-border)] shadow-xs"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = getAvatarFallbackUrl(rev.employeeName || rev.employeeId, idx);
+                            }}
                           />
                           <div>
                             <p className="font-bold text-xs">{rev.employeeName}</p>
@@ -392,7 +396,7 @@ export default function HRDashboard() {
                 {paginatedReviews.length > 0 ? (
                   paginatedReviews.map((rev, idx) => {
                     const emp = users.find((u) => u.id === rev.employeeId || (u.name && rev.employeeName && u.name.toLowerCase().trim() === rev.employeeName.toLowerCase().trim()));
-                    const avatarSrc = emp?.avatar && emp.avatar.includes("character") ? (emp.avatar.startsWith("/") ? `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets${emp.avatar}` : emp.avatar) : `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character${(idx % 20) + 1}.jpg`;
+                    const avatarSrc = resolveAvatarUrl(emp?.avatar, rev.employeeName || rev.employeeId, idx);
                     const selfAvg = formatSelfAverage(rev);
                     return (
                       <tr key={rev.id} className="hover:bg-[var(--nexa-bg-base)]/50 transition-colors">
@@ -401,6 +405,9 @@ export default function HRDashboard() {
                             src={avatarSrc}
                             alt={rev.employeeName}
                             className="w-8 h-8 rounded-full object-cover border border-[var(--nexa-border)] shadow-xs"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = getAvatarFallbackUrl(rev.employeeName || rev.employeeId, idx);
+                            }}
                           />
                           <div>
                             <p className="font-bold text-xs">{rev.employeeName}</p>

@@ -22,6 +22,7 @@ import {
   Radio
 } from "lucide-react";
 import { useQuestWebSocket } from "@/lib/useQuestWebSocket";
+import { resolveAvatarUrl } from "@/lib/avatar";
 
 export interface Contestant {
   id: string;
@@ -129,7 +130,7 @@ export default function StageTVScoreboardPage() {
                     name: p.user_name?.split(" ")[0] || `Player ${idx + 1}`,
                     fullName: p.user_name || `Contestant ${idx + 1}`,
                     country: p.department || "Enterprise",
-                    avatar: p.avatar || `/avatar${(idx % 30) + 1}.png`,
+                    avatar: resolveAvatarUrl(p.avatar, p.user_name || p.id, idx),
                     score: Number(p.score ?? p.points ?? 0),
                     team: teamName,
                     recentDelta: idx < 3 ? 1 : undefined,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { resolveAvatarUrl, getAvatarFallbackUrl } from "./avatar";
 
 export type Role =
   | "employee"
@@ -218,7 +219,10 @@ const INITIAL_CYCLES: ReviewCycle[] = [
 
 import seedData from "./erp-seed-data.json";
 
-export const INITIAL_USERS: User[] = (seedData.users as any[]) || [];
+export const INITIAL_USERS: User[] = ((seedData.users as any[]) || []).map((u, idx) => ({
+  ...u,
+  avatar: resolveAvatarUrl(u.avatar, u.name || u.id, idx),
+}));
 const INITIAL_REVIEWS: PerformanceReview[] = (seedData.reviews as any[]) || [];
 
 export function findReviewForUser(
@@ -294,7 +298,7 @@ export function getSignedInERPUser(users: User[]): User {
     email: "employee@ofia.ng",
     role: "employee",
     department: "Operations",
-    avatar: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg",
+    avatar: resolveAvatarUrl(null, "Staff Member"),
   };
 
   if (typeof window === "undefined") {
@@ -342,6 +346,7 @@ export function getSignedInERPUser(users: User[]): User {
           name: parsed?.name || storedName || match.name,
           email: effectiveEmail || match.email,
           role: actualRole,
+          avatar: resolveAvatarUrl(parsed?.avatar || match.avatar, parsed?.name || storedName || match.name || match.id),
         };
         return syncedUser;
       }
@@ -372,7 +377,7 @@ export function getSignedInERPUser(users: User[]): User {
             : effectiveRole === "manager"
             ? "Operations & Line Manager"
             : "Staff Member"),
-        avatar: parsed?.avatar || "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg",
+        avatar: resolveAvatarUrl(parsed?.avatar, effectiveName || effectiveEmail || "user"),
         company: parsed?.company || "Organization",
         managerName: parsed?.managerName,
         managerId: parsed?.managerId,

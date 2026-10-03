@@ -61,6 +61,7 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaAvatar } from "@/components/nexa/NexaAvatar";
+import { resolveAvatarUrl } from "@/lib/avatar";
 import { NexaThemeToggle } from "@/components/nexa/NexaThemeToggle";
 import { useAuth } from "@/components/nexa/AuthContext";
 import {
@@ -164,6 +165,7 @@ export function ErpAdminShell({
   const [isLineManager, setIsLineManager] = useState<boolean>(false);
   const [userName, setUserName] = useState<string>("");
   const [userEmail, setUserEmail] = useState<string>("");
+  const [userAvatar, setUserAvatar] = useState<string>("");
 
   const isEffectiveLoading = !isShellReady || Boolean(isLoading);
 
@@ -431,10 +433,16 @@ export function ErpAdminShell({
         resolvedLineManager = parsedUser?.isLineManager !== false;
       }
 
+      let resolvedAvatar = "";
+      if (parsedUser?.avatar) resolvedAvatar = parsedUser.avatar;
+      if (!resolvedAvatar && user?.avatar) resolvedAvatar = user.avatar;
+      resolvedAvatar = resolveAvatarUrl(resolvedAvatar, resolvedName || resolvedEmail || "Staff");
+
       setCurrentRole(resolvedRole);
       setIsLineManager(resolvedLineManager);
       setUserName(resolvedName);
       setUserEmail(resolvedEmail);
+      setUserAvatar(resolvedAvatar);
 
       // Strict Role & Portal Protection Guard:
       if (resolvedRole === "employee") {
@@ -976,7 +984,7 @@ export function ErpAdminShell({
             ) : isSidebarOpen ? (
               <div className="flex items-center justify-between p-2 rounded-2xl bg-nexa-bg-base/70 border border-nexa-border">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <NexaAvatar size="sm" isOnline name={isMounted ? (userName || user?.name || "Staff") : "Staff"} />
+                  <NexaAvatar size="sm" isOnline src={userAvatar} name={isMounted ? (userName || user?.name || "Staff") : "Staff"} />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-nexa-text-primary truncate" suppressHydrationWarning>
                       {isMounted ? (userName || user?.name || (tenantName ? `${tenantName} Staff` : "Staff")) : "Staff"}
@@ -1010,7 +1018,7 @@ export function ErpAdminShell({
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <NexaAvatar size="sm" isOnline name={userName || user?.name || tenantName} />
+                <NexaAvatar size="sm" isOnline src={userAvatar} name={userName || user?.name || tenantName} />
                 <button
                   type="button"
                   onClick={() => setIsNotifOpen(!isNotifOpen)}

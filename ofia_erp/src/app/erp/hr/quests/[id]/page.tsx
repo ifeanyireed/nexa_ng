@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useERPStore, User } from "@/lib/erp-store";
+import { resolveAvatarUrl, getAvatarFallbackUrl } from "@/lib/avatar";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -560,7 +561,7 @@ export default function QuestCommandDeskPage() {
         user_name: user.name,
         user_email: user.email,
         department: user.department || "General",
-        avatar: user.avatar || `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character${(prev.length % 20) + 1}.jpg`,
+        avatar: resolveAvatarUrl(user.avatar, user.name || user.email, prev.length),
         role: "member",
         status: "confirmed",
       };
@@ -2300,7 +2301,7 @@ export default function QuestCommandDeskPage() {
                   const isCurrentTeam = assignedParticipant?.team_id === staffPoolTeam.id;
                   const isOtherTeam = assignedParticipant && !isCurrentTeam;
                   const otherTeam = isOtherTeam ? teams.find((t) => t.id === assignedParticipant.team_id) : null;
-                  const avatarSrc = u.avatar && u.avatar.includes("character") ? (u.avatar.startsWith("/") ? `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets${u.avatar}` : u.avatar) : `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character${(idx % 20) + 1}.jpg`;
+                  const avatarSrc = resolveAvatarUrl(u.avatar, u.name || u.id, idx);
 
                   return (
                     <div
@@ -2315,7 +2316,10 @@ export default function QuestCommandDeskPage() {
                         <img
                           src={avatarSrc}
                           alt={u.name}
-                          className="w-8 h-8 rounded-full object-cover border border-gray-200 shrink-0"
+                          className="w-8 h-8 rounded-full object-cover border border-[var(--nexa-border)] shadow-xs shrink-0"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = getAvatarFallbackUrl(u.name || u.id, idx);
+                          }}
                         />
                         <div className="min-w-0">
                           <p className="font-bold text-xs text-slate-850 flex items-center gap-1.5 truncate">

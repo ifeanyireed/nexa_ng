@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useERPStore, PerformanceReview, User, getSignedInERPUser, createReviewForUser } from "@/lib/erp-store";
+import { resolveAvatarUrl, getAvatarFallbackUrl } from "@/lib/avatar";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -67,7 +68,14 @@ export default function EmployeeDashboard() {
         {/* Welcome Section */}
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <img src={currentUser.avatar} alt={currentUser.name} className="w-14 h-14 rounded-full object-cover border-2 border-blue-100" />
+            <img
+              src={resolveAvatarUrl(currentUser.avatar, currentUser.name || currentUser.id)}
+              alt={currentUser.name}
+              className="w-14 h-14 rounded-full object-cover border-2 border-blue-100 shadow-sm"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = getAvatarFallbackUrl(currentUser.name || currentUser.id);
+              }}
+            />
             <div>
               <h2 className="text-lg font-black text-slate-800">Welcome Back, {currentUser.name}!</h2>
               <p className="text-xs text-slate-400 font-semibold">{currentUser.department} • Manager: {currentUser.managerName || "N/A"}</p>

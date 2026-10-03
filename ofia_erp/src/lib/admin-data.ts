@@ -317,7 +317,7 @@ export const INITIAL_ADMIN_USERS: AdminUser[] = [
     title: "Global Platform Operator",
     orgName: "Platform Operator",
     orgId: "platform-root",
-    avatar: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg",
+    avatar: "https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character1.jpg",
     twoFactorEnabled: true,
     status: "Active",
     lastLogin: "10m ago",

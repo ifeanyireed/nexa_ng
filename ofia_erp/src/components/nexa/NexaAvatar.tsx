@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { resolveAvatarUrl } from "@/lib/avatar";
+import { resolveAvatarUrl, getAvatarFallbackUrl } from "@/lib/avatar";
 
 export interface NexaAvatarProps {
   src?: string;
@@ -26,6 +26,12 @@ export const NexaAvatar = ({
   className,
 }: NexaAvatarProps) => {
   const [imgError, setImgError] = useState(false);
+  const [hasTriedFallback, setHasTriedFallback] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+    setHasTriedFallback(false);
+  }, [src]);
 
   const sizes = {
     sm: "w-8 h-8 text-xs",
@@ -68,7 +74,14 @@ export const NexaAvatar = ({
             src={avatarSrc}
             alt={alt || displayFallback}
             className="w-full h-full object-cover object-center rounded-full"
-            onError={() => setImgError(true)}
+            onError={(e) => {
+              if (!hasTriedFallback) {
+                setHasTriedFallback(true);
+                (e.currentTarget as HTMLImageElement).src = getAvatarFallbackUrl(displayFallback);
+              } else {
+                setImgError(true);
+              }
+            }}
           />
         ) : (
           <span className="font-extrabold tracking-wider">{displayFallback.slice(0, 2).toUpperCase()}</span>

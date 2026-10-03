@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useERPStore, Role, User } from "@/lib/erp-store";
+import { resolveAvatarUrl, getAvatarFallbackUrl } from "@/lib/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingScreen from "./LoadingScreen";
 import { IconBuildingBank } from "@tabler/icons-react";
@@ -316,9 +317,12 @@ export default function ERPLayout({ children }: { children: React.ReactNode }) {
           <div className="w-[1px] h-5 bg-gray-200 mx-0.5" />
           
           <img
-            src={currentUser.avatar}
+            src={resolveAvatarUrl(currentUser.avatar, currentUser.name || currentUser.id)}
             alt={currentUser.name}
             className="w-7 h-7 rounded-full object-cover border border-gray-100"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = getAvatarFallbackUrl(currentUser.name || currentUser.id);
+            }}
           />
 
           <button
@@ -496,9 +500,12 @@ export default function ERPLayout({ children }: { children: React.ReactNode }) {
 
             <div className="flex items-center gap-2.5 px-3.5 py-2 bg-white border border-[#E2E5E9] rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
               <img
-                src={currentUser.avatar}
+                src={resolveAvatarUrl(currentUser.avatar, currentUser.name || currentUser.id)}
                 alt={currentUser.name}
                 className="w-7 h-7 rounded-full object-cover border border-gray-100"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = getAvatarFallbackUrl(currentUser.name || currentUser.id);
+                }}
               />
               <span className="text-[12px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md uppercase">
                 {currentUser.role}

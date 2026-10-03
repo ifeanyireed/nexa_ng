@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 
 import { AUTH_API } from "@/lib/api-client";
+import { resolveAvatarUrl } from "@/lib/avatar";
 import {
   useActiveTenant,
   slugToTenantName,
@@ -405,7 +406,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
             name: resolvedName,
             department: resolvedDept,
             designation: resolvedDesig,
-            avatar: resolvedAvatar,
+            avatar: resolveAvatarUrl(resolvedAvatar, resolvedName),
           })
         );
         document.cookie = `nexa_user_role=${resolvedRole}; path=/; max-age=2592000; SameSite=Lax`;

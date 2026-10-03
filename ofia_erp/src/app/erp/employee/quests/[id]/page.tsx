@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useERPStore, getSignedInERPUser, User } from "@/lib/erp-store";
+import { resolveAvatarUrl, getAvatarFallbackUrl } from "@/lib/avatar";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -658,7 +659,14 @@ export default function EmployeeQuestConsolePage() {
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
-                      <img src={m.avatar} alt={m.user_name} className="w-7 h-7 rounded-full object-cover border border-[var(--nexa-border)] shadow-xs" />
+                      <img
+                        src={resolveAvatarUrl(m.avatar, m.user_name || m.user_id)}
+                        alt={m.user_name}
+                        className="w-7 h-7 rounded-full object-cover border border-[var(--nexa-border)] shadow-xs"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = getAvatarFallbackUrl(m.user_name || m.user_id);
+                        }}
+                      />
                       <div>
                         <p className="font-bold text-[var(--nexa-text-primary)] text-xs leading-tight flex items-center gap-1.5">
                           {m.user_name}

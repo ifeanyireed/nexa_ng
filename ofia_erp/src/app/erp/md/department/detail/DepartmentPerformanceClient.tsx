@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useERPStore, PerformanceReview, User, getParentDept, formatSelfAverage, findReviewForUser } from "@/lib/erp-store";
+import { resolveAvatarUrl, getAvatarFallbackUrl } from "@/lib/avatar";
 import { BusinessShell } from "@/components/business/BusinessShell";
 
 export default function DepartmentPerformancePage() {
@@ -16,7 +17,7 @@ export default function DepartmentPerformancePage() {
     email: "md@ofia.ng",
     role: "md",
     department: "Executive Management",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+    avatar: resolveAvatarUrl(null, "Executive Director"),
   });
 
   useEffect(() => {
@@ -114,14 +115,21 @@ export default function DepartmentPerformancePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {deptEmployees.map((emp) => {
+                {deptEmployees.map((emp, idx) => {
                   const rev = findReviewForUser(deptReviews, emp) || findReviewForUser(reviews, emp);
                   const selfAvg = formatSelfAverage(rev);
                   
                   return (
                     <tr key={emp.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="py-4 flex items-center gap-3">
-                        <img src={emp.avatar} alt={emp.name} className="w-8 h-8 rounded-full object-cover border" />
+                        <img
+                          src={resolveAvatarUrl(emp.avatar, emp.name || emp.id, idx)}
+                          alt={emp.name}
+                          className="w-8 h-8 rounded-full object-cover border border-[var(--nexa-border)] shadow-xs"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = getAvatarFallbackUrl(emp.name || emp.id, idx);
+                          }}
+                        />
                         <div>
                           <p className="font-bold text-slate-800 text-xs">{emp.name}</p>
                           <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{emp.id}</p>

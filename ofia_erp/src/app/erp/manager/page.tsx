@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useERPStore, PerformanceReview, User, formatSelfAverage, getSignedInERPUser, findReviewForUser } from "@/lib/erp-store";
+import { resolveAvatarUrl, getAvatarFallbackUrl } from "@/lib/avatar";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -174,7 +175,14 @@ export default function ManagerDashboard() {
                         return (
                           <tr key={rev.id} className="hover:bg-slate-50/50 transition-colors">
                             <td className="py-4 flex items-center gap-3">
-                              <img src={emp?.avatar || "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg"} alt={rev.employeeName} className="w-8 h-8 rounded-full object-cover border" />
+                              <img
+                                src={resolveAvatarUrl(emp?.avatar, rev.employeeName || rev.employeeId)}
+                                alt={rev.employeeName}
+                                className="w-8 h-8 rounded-full object-cover border border-[var(--nexa-border)] shadow-xs"
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).src = getAvatarFallbackUrl(rev.employeeName || rev.employeeId);
+                                }}
+                              />
                               <div>
                                 <p className="font-bold text-slate-800 text-xs">{rev.employeeName}</p>
                                 <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{rev.employeeId}</p>
@@ -230,13 +238,20 @@ export default function ManagerDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {reportingEmployees.map((emp) => {
+                    {reportingEmployees.map((emp, idx) => {
                       const targetCycleId = effectiveCycleId || activeCycle?.id;
                       const rev = findReviewForUser(teamReviews, emp, targetCycleId) || findReviewForUser(reviews, emp, targetCycleId);
                       return (
                         <tr key={emp.id} className="hover:bg-slate-50/50 transition-colors">
                           <td className="py-4 flex items-center gap-3">
-                            <img src={emp.avatar} alt={emp.name} className="w-8 h-8 rounded-full object-cover border" />
+                            <img
+                              src={resolveAvatarUrl(emp.avatar, emp.name || emp.id, idx)}
+                              alt={emp.name}
+                              className="w-8 h-8 rounded-full object-cover border border-[var(--nexa-border)] shadow-xs"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src = getAvatarFallbackUrl(emp.name || emp.id, idx);
+                              }}
+                            />
                             <div>
                               <p className="font-bold text-slate-800 text-xs">{emp.name}</p>
                               <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{emp.id}</p>
@@ -290,10 +305,17 @@ export default function ManagerDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {reportingEmployees.map((emp) => (
+                  {reportingEmployees.map((emp, idx) => (
                     <tr key={emp.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="py-4 flex items-center gap-3">
-                        <img src={emp.avatar} alt={emp.name} className="w-8 h-8 rounded-full object-cover border" />
+                        <img
+                          src={resolveAvatarUrl(emp.avatar, emp.name || emp.id, idx)}
+                          alt={emp.name}
+                          className="w-8 h-8 rounded-full object-cover border border-[var(--nexa-border)] shadow-xs"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = getAvatarFallbackUrl(emp.name || emp.id, idx);
+                          }}
+                        />
                         <div>
                           <p className="font-bold text-slate-800 text-xs">{emp.name}</p>
                           <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{emp.email}</p>

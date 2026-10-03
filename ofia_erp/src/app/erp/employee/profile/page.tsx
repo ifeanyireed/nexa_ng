@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useERPStore, User, PerformanceReview, getSignedInERPUser } from "@/lib/erp-store";
+import { resolveAvatarUrl, getAvatarFallbackUrl } from "@/lib/avatar";
 import { BusinessShell } from "@/components/business/BusinessShell";
 
 export default function EmployeeProfilePage() {
@@ -84,7 +85,14 @@ export default function EmployeeProfilePage() {
         {/* Profile Card Header */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
-            <img src={profileUser.avatar} alt={profileUser.name} className="w-20 h-20 rounded-full object-cover border-4 border-blue-50 shadow-sm" />
+            <img
+              src={resolveAvatarUrl(profileUser.avatar, profileUser.name || profileUser.id)}
+              alt={profileUser.name}
+              className="w-20 h-20 rounded-full object-cover border-4 border-blue-50 shadow-sm"
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).src = getAvatarFallbackUrl(profileUser.name || profileUser.id);
+              }}
+            />
             <div>
               <h2 className="text-xl font-black text-slate-800 leading-tight">{profileUser.name}</h2>
               <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-1">{profileUser.role} • {profileUser.department}</p>

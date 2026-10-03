@@ -18,6 +18,7 @@ import {
   extractSubdomainOrParam,
   slugToTenantName,
 } from "@/lib/tenant-context";
+import { resolveAvatarUrl, getAvatarFallbackUrl } from "@/lib/avatar";
 
 interface TopContestant {
   rank: number;
@@ -123,7 +124,7 @@ export default function PublicQuestLandingPage() {
                   return {
                     rank: idx + 1,
                     name: p.user_name?.split(" ")[0] || `Player ${idx + 1}`,
-                    avatar: p.avatar || `/avatar${(idx % 30) + 1}.png`,
+                    avatar: resolveAvatarUrl(p.avatar, p.user_name || p.id, idx),
                     score: Number(p.score ?? p.points ?? 0),
                     team: teamName,
                   };
@@ -380,6 +381,9 @@ export default function PublicQuestLandingPage() {
                           src={c.avatar}
                           alt={c.name}
                           className="h-full w-auto max-w-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.5)] group-hover:scale-110 transition-transform duration-300"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = getAvatarFallbackUrl(c.name);
+                          }}
                         />
                       </div>
                       <div className="space-y-0.5">

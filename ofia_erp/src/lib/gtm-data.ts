@@ -94,7 +94,7 @@ export const INITIAL_AGENTS: AIAgent[] = [
     name: "Sterling Vance",
     role: "Chief Revenue Officer",
     category: "Executive",
-    avatar: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg",
+    avatar: "https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character3.jpg",
     status: "working",
     currentTask: "Synthesizing cross-channel weekly revenue report & executive briefing",
     taskProgress: 88,

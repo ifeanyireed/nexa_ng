@@ -3,6 +3,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { resolveAvatarUrl, getAvatarFallbackUrl } from "@/lib/avatar";
 
 interface AhnaraAvatarProps {
   src?: string;
@@ -30,17 +31,7 @@ export const AhnaraAvatar = ({ src, alt, fallback, name, size = "md", isOnline, 
   };
 
   const displayFallback = fallback || name || "NG";
-
-  const getDeterministicAvatar = (seed: string) => {
-    let hash = 0;
-    for (let i = 0; i < seed.length; i++) {
-      hash = seed.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const index = (Math.abs(hash) % 20) + 1;
-    return `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character${index}.jpg`;
-  };
-
-  const avatarSrc = src || getDeterministicAvatar(displayFallback);
+  const avatarSrc = resolveAvatarUrl(src, displayFallback);
 
   return (
     <div className={cn("relative inline-block", className)}>
@@ -50,7 +41,14 @@ export const AhnaraAvatar = ({ src, alt, fallback, name, size = "md", isOnline, 
           sizes[size]
         )}
       >
-        <img src={avatarSrc} alt={alt || displayFallback} className="w-full h-full object-cover" />
+        <img
+          src={avatarSrc}
+          alt={alt || displayFallback}
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = getAvatarFallbackUrl(displayFallback);
+          }}
+        />
       </div>
       
       {isOnline && (

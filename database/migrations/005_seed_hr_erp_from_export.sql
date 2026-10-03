@@ -382,8 +382,7 @@ CREATE TABLE `ReviewCycle` (
 SET @OLD_AUTOCOMMIT=@@AUTOCOMMIT, @@AUTOCOMMIT=0;
 /*!40000 ALTER TABLE `ReviewCycle` DISABLE KEYS */;
 INSERT INTO `ReviewCycle` VALUES
-('CYC001','2026 Mid-Year Performance Cycle','2026-06-01 00:00:00.000','2026-07-31 00:00:00.000','Active','[\"KHLC 6 (IT/Technical Support)\",\"SU 1 (Program Coordinator)\"]'),
-('CYC002','2025 Annual Review Cycle','2025-11-01 00:00:00.000','2025-12-15 00:00:00.000','Completed','[\"KHLC 6 (IT/Technical Support)\",\"SU 1 (Program Coordinator)\"]');
+('CYC001','2026 Mid-Year Performance Cycle','2026-06-01 00:00:00.000','2026-07-31 00:00:00.000','Active','[\"KHLC 6 (IT/Technical Support)\",\"SU 1 (Program Coordinator)\"]');
 /*!40000 ALTER TABLE `ReviewCycle` ENABLE KEYS */;
 COMMIT;
 SET AUTOCOMMIT=@OLD_AUTOCOMMIT;

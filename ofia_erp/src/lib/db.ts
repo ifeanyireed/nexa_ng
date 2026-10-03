@@ -84,10 +84,22 @@ export async function ensureTablesExist(): Promise<boolean> {
         );
       `);
 
+      // 3. tenant_smtp_settings table
       await client.query(`
-        CREATE INDEX IF NOT EXISTS idx_contact_status ON contact_inquiries (status);
-        CREATE INDEX IF NOT EXISTS idx_contact_ticket ON contact_inquiries (ticket_number);
-        CREATE INDEX IF NOT EXISTS idx_contact_email ON contact_inquiries (email);
+        CREATE TABLE IF NOT EXISTS tenant_smtp_settings (
+          tenant_slug VARCHAR(100) PRIMARY KEY,
+          provider VARCHAR(50) DEFAULT 'custom',
+          host VARCHAR(255) NOT NULL,
+          port INT NOT NULL DEFAULT 587,
+          encryption VARCHAR(20) DEFAULT 'tls',
+          from_email VARCHAR(255) NOT NULL,
+          from_name VARCHAR(255) NOT NULL,
+          username VARCHAR(255),
+          password TEXT,
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_tenant_smtp_slug ON tenant_smtp_settings (tenant_slug);
       `);
 
       isInitialized = true;

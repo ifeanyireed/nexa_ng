@@ -165,7 +165,7 @@ export default function EmployeeProfilePage() {
 
   const milestones = reviewsWithScores.map((r, idx) => {
     const cycle = cycles.find((c) => c.id === r.cycleId);
-    const dateSource = r.updatedAt || cycle?.endDate || "2025-01-01";
+    const dateSource = r.updatedAt || cycle?.endDate || new Date().toISOString();
     const dateObj = new Date(dateSource);
     const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     const shortDate = !isNaN(dateObj.getTime())

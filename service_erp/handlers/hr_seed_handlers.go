@@ -29,7 +29,7 @@ func AutoSeedIfEmpty() {
 	if err := executeSeed(); err != nil {
 		log.Printf("⚠️ Auto-seed execution failed: %v", err)
 	} else {
-		log.Println("✅ ERP HR database seeded successfully (76 users, 188 objectives, 76 reviews, 2 cycles)!")
+		log.Println("✅ ERP HR database seeded successfully (76 users, 188 objectives, 76 reviews, 1 cycle)!")
 	}
 }
 

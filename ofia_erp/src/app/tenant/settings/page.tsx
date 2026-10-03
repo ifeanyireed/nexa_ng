@@ -17,6 +17,13 @@ import {
   Upload,
   Palette,
   Sparkles,
+  Mail,
+  Send,
+  AlertCircle,
+  Key,
+  Lock,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -48,6 +55,23 @@ export default function TenantSettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  // SMTP Email Dispatch Settings
+  const [smtpProvider, setSmtpProvider] = useState("custom");
+  const [smtpHost, setSmtpHost] = useState("");
+  const [smtpPort, setSmtpPort] = useState("587");
+  const [smtpEncryption, setSmtpEncryption] = useState<"tls" | "ssl" | "none">("tls");
+  const [smtpFromEmail, setSmtpFromEmail] = useState("");
+  const [smtpFromName, setSmtpFromName] = useState("");
+  const [smtpUsername, setSmtpUsername] = useState("");
+  const [smtpPassword, setSmtpPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [smtpHasPassword, setSmtpHasPassword] = useState(false);
+  const [isTestingSmtp, setIsTestingSmtp] = useState(false);
+  const [smtpTestRecipient, setSmtpTestRecipient] = useState("");
+  const [smtpTestStatus, setSmtpTestStatus] = useState<{ success: boolean; message: string } | null>(null);
+  const [isSavingSmtp, setIsSavingSmtp] = useState(false);
+  const [smtpSaveSuccess, setSmtpSaveSuccess] = useState(false);
 
   useEffect(() => {
     if (activeTenant) {
@@ -117,6 +141,176 @@ export default function TenantSettingsPage() {
       setOwnerEmail(activeTenant.ownerEmail || savedEmail || user?.email || (activeTenant.slug ? `admin@${activeTenant.slug}.ofia.ng` : ""));
     }
   }, [activeTenant, user]);
+
+  // Load SMTP Settings from Postgres / API
+  useEffect(() => {
+    const targetSlug = activeTenant?.slug || slug;
+    if (targetSlug) {
+      fetch(`/api/erp/smtp-settings?tenant=${encodeURIComponent(targetSlug)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.configured && data.settings) {
+            setSmtpProvider(data.settings.provider || "custom");
+            setSmtpHost(data.settings.host || "");
+            setSmtpPort(data.settings.port ? String(data.settings.port) : "587");
+            setSmtpEncryption(data.settings.encryption || "tls");
+            setSmtpFromEmail(data.settings.fromEmail || "");
+            setSmtpFromName(data.settings.fromName || "");
+            setSmtpUsername(data.settings.username || "");
+            if (data.settings.hasPassword) {
+              setSmtpPassword("••••••••");
+              setSmtpHasPassword(true);
+            }
+          } else {
+            // Default From Email and From Name if not yet configured
+            if (!smtpFromEmail && ownerEmail) {
+              setSmtpFromEmail(ownerEmail);
+            }
+            if (!smtpFromName && orgName) {
+              setSmtpFromName(orgName);
+            }
+          }
+        })
+        .catch((err) => console.warn("Failed to load SMTP settings:", err));
+    }
+  }, [activeTenant?.slug, slug]);
+
+  const handleProviderSelect = (prov: string) => {
+    setSmtpProvider(prov);
+    switch (prov) {
+      case "gmail":
+        setSmtpHost("smtp.gmail.com");
+        setSmtpPort("587");
+        setSmtpEncryption("tls");
+        break;
+      case "sendgrid":
+        setSmtpHost("smtp.sendgrid.net");
+        setSmtpPort("587");
+        setSmtpEncryption("tls");
+        setSmtpUsername("apikey");
+        break;
+      case "ses":
+        setSmtpHost("email-smtp.us-east-1.amazonaws.com");
+        setSmtpPort("587");
+        setSmtpEncryption("tls");
+        break;
+      case "mailgun":
+        setSmtpHost("smtp.mailgun.org");
+        setSmtpPort("587");
+        setSmtpEncryption("tls");
+        break;
+      case "outlook":
+        setSmtpHost("smtp.office365.com");
+        setSmtpPort("587");
+        setSmtpEncryption("tls");
+        break;
+      case "resend":
+        setSmtpHost("smtp.resend.com");
+        setSmtpPort("465");
+        setSmtpEncryption("ssl");
+        setSmtpUsername("resend");
+        break;
+      case "zoho":
+        setSmtpHost("smtp.zoho.com");
+        setSmtpPort("465");
+        setSmtpEncryption("ssl");
+        break;
+      default:
+        break;
+    }
+  };
+
+  const handleSaveSmtp = async () => {
+    const currentSlug = activeTenant?.slug || slug;
+    if (!currentSlug) {
+      setSmtpTestStatus({ success: false, message: "Workspace slug not found. Please save workspace first." });
+      return;
+    }
+
+    if (!smtpHost.trim() || !smtpFromEmail.trim()) {
+      setSmtpTestStatus({ success: false, message: "Host and From Email are required." });
+      return;
+    }
+
+    setIsSavingSmtp(true);
+    setSmtpTestStatus(null);
+    try {
+      const res = await fetch("/api/erp/smtp-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantSlug: currentSlug,
+          provider: smtpProvider,
+          host: smtpHost.trim(),
+          port: Number(smtpPort) || 587,
+          encryption: smtpEncryption,
+          fromEmail: smtpFromEmail.trim(),
+          fromName: smtpFromName.trim() || orgName || "Workspace Admin",
+          username: smtpUsername.trim() || smtpFromEmail.trim(),
+          password: smtpPassword === "••••••••" ? "" : smtpPassword,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to save SMTP configuration");
+      }
+
+      setSmtpSaveSuccess(true);
+      setSmtpHasPassword(true);
+      setTimeout(() => setSmtpSaveSuccess(false), 3500);
+    } catch (err: any) {
+      setSmtpTestStatus({ success: false, message: err.message });
+    } finally {
+      setIsSavingSmtp(false);
+    }
+  };
+
+  const handleTestSmtp = async () => {
+    const currentSlug = activeTenant?.slug || slug;
+    const recipient = smtpTestRecipient.trim() || ownerEmail || user?.email;
+    if (!recipient) {
+      setSmtpTestStatus({ success: false, message: "Please provide a valid test recipient email address." });
+      return;
+    }
+
+    if (!smtpHost.trim() || !smtpFromEmail.trim()) {
+      setSmtpTestStatus({ success: false, message: "Host and From Email must be provided before sending a test." });
+      return;
+    }
+
+    setIsTestingSmtp(true);
+    setSmtpTestStatus(null);
+    try {
+      const res = await fetch("/api/erp/smtp-settings/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantSlug: currentSlug,
+          testEmail: recipient,
+          provider: smtpProvider,
+          host: smtpHost.trim(),
+          port: Number(smtpPort) || 587,
+          encryption: smtpEncryption,
+          fromEmail: smtpFromEmail.trim(),
+          fromName: smtpFromName.trim() || orgName || "Workspace Admin",
+          username: smtpUsername.trim() || smtpFromEmail.trim(),
+          password: smtpPassword === "••••••••" ? "" : smtpPassword,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "SMTP test failed");
+      }
+
+      setSmtpTestStatus({ success: true, message: data.message });
+    } catch (err: any) {
+      setSmtpTestStatus({ success: false, message: err.message });
+    } finally {
+      setIsTestingSmtp(false);
+    }
+  };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -380,6 +574,29 @@ export default function TenantSettingsPage() {
         }
       }
 
+      // 5. Update SMTP configuration if provided
+      if (smtpHost.trim() && smtpFromEmail.trim() && targetIdentifier) {
+        try {
+          await fetch("/api/erp/smtp-settings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              tenantSlug: targetIdentifier,
+              provider: smtpProvider,
+              host: smtpHost.trim(),
+              port: Number(smtpPort) || 587,
+              encryption: smtpEncryption,
+              fromEmail: smtpFromEmail.trim(),
+              fromName: smtpFromName.trim() || orgName || "Workspace Admin",
+              username: smtpUsername.trim() || smtpFromEmail.trim(),
+              password: smtpPassword === "••••••••" ? "" : smtpPassword,
+            }),
+          });
+        } catch (smtpErr) {
+          console.warn("SMTP save on tenant update:", smtpErr);
+        }
+      }
+
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3500);
       reloadTenants();
@@ -456,6 +673,37 @@ export default function TenantSettingsPage() {
                 Determines {slug || "tenant"}.ofia.ng and custom domain routing.
               </span>
             </div>
+          </div>
+
+          {/* WORKSPACE LOGIN URL DISPLAY */}
+          <div className="mt-2 p-3.5 rounded-2xl bg-blue-500/5 border border-blue-500/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-[#1A56DB]/10 text-[#1A56DB] flex items-center justify-center shrink-0">
+                <Globe className="w-4 h-4" />
+              </div>
+              <div>
+                <span className="text-xs font-bold text-[var(--nexa-text-primary)]">Workspace Login Page URL:</span>
+                <p className="text-[11px] font-mono text-[#1A56DB] font-semibold">
+                  {customDomain
+                    ? (customDomain.startsWith("http") ? `${customDomain}/login` : `https://${customDomain}/login`)
+                    : `https://${slug || activeTenant?.slug || "tenant"}.ofia.ng/login`}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                const url = customDomain
+                  ? (customDomain.startsWith("http") ? `${customDomain}/login` : `https://${customDomain}/login`)
+                  : `https://${slug || activeTenant?.slug || "tenant"}.ofia.ng/login`;
+                navigator.clipboard.writeText(url);
+                alert("Login URL copied to clipboard: " + url);
+              }}
+              className="px-3 py-1.5 text-xs font-bold rounded-xl bg-white dark:bg-black/30 border border-[var(--nexa-border)] hover:bg-[#1A56DB] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer shadow-xs shrink-0"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              <span>Copy Login URL</span>
+            </button>
           </div>
         </NexaCard>
 
@@ -756,6 +1004,266 @@ export default function TenantSettingsPage() {
                 Point your DNS CNAME record to `cname.ofia.ng` to serve your branded ERP portal.
               </span>
             </div>
+          </div>
+        </NexaCard>
+
+        {/* SMTP PROVIDER & EMAIL DISPATCH SETTINGS */}
+        <NexaCard variant="glass" padding="lg" className="space-y-5 border border-[var(--nexa-border)] shadow-xs rounded-3xl">
+          <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-[#1A56DB] flex items-center justify-center">
+                <Mail className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">
+                  SMTP Provider & Email Dispatch Configuration
+                </h3>
+                <p className="text-[11px] text-[var(--nexa-text-muted)]">
+                  Configure corporate SMTP credentials for sending mass emails, notifications, and alerts.
+                </p>
+              </div>
+            </div>
+            {smtpHost && smtpFromEmail ? (
+              <NexaBadge variant="green" className="text-[10px]">
+                <CheckCircle2 className="w-3 h-3 mr-1 inline" />
+                Configured
+              </NexaBadge>
+            ) : (
+              <NexaBadge variant="secondary" className="text-[10px]">
+                Not Configured
+              </NexaBadge>
+            )}
+          </div>
+
+          {/* QUICK PROVIDER SELECTOR */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center justify-between">
+              <span>Email Provider Preset</span>
+              <span className="text-[10px] text-[var(--nexa-text-muted)]">Select provider to auto-fill host & ports</span>
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                { id: "custom", label: "Custom SMTP", desc: "Your mail server" },
+                { id: "gmail", label: "Google / Gmail", desc: "App Password req." },
+                { id: "sendgrid", label: "SendGrid", desc: "API key auth" },
+                { id: "ses", label: "Amazon SES", desc: "AWS SES SMTP" },
+                { id: "mailgun", label: "Mailgun", desc: "Domain credentials" },
+                { id: "outlook", label: "Microsoft 365", desc: "Office 365 SMTP" },
+                { id: "resend", label: "Resend", desc: "Modern developer API" },
+                { id: "zoho", label: "Zoho Mail", desc: "Zoho corporate" },
+              ].map((p) => {
+                const isSelected = smtpProvider === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => handleProviderSelect(p.id)}
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-[#1A56DB]/10 border-[#1A56DB] text-[#1A56DB] font-bold shadow-xs"
+                        : "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] hover:border-slate-400 dark:hover:border-slate-600"
+                    }`}
+                  >
+                    <div className="text-xs font-bold truncate">{p.label}</div>
+                    <div className="text-[10px] text-[var(--nexa-text-muted)] truncate">{p.desc}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* SMTP CREDENTIALS FORM */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                SMTP Server / Host <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={smtpHost}
+                onChange={(e) => setSmtpHost(e.target.value)}
+                placeholder="e.g. smtp.gmail.com, mail.company.com"
+                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                SMTP Port <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                value={smtpPort}
+                onChange={(e) => setSmtpPort(e.target.value)}
+                placeholder="587"
+                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-mono"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                Security / Encryption
+              </label>
+              <select
+                value={smtpEncryption}
+                onChange={(e) => setSmtpEncryption(e.target.value as any)}
+                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] cursor-pointer"
+              >
+                <option value="tls">STARTTLS / TLS (Port 587 recommended)</option>
+                <option value="ssl">SSL / SMTPS (Port 465)</option>
+                <option value="none">None (Port 25 - unencrypted)</option>
+              </select>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                From Email Address <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                value={smtpFromEmail}
+                onChange={(e) => setSmtpFromEmail(e.target.value)}
+                placeholder="e.g. notifications@company.com"
+                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                Sender Display Name
+              </label>
+              <input
+                type="text"
+                value={smtpFromName}
+                onChange={(e) => setSmtpFromName(e.target.value)}
+                placeholder={orgName ? `${orgName} Notifications` : "Workspace Admin"}
+                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
+              />
+            </div>
+
+            <div className="space-y-1 sm:col-span-1">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                SMTP Username
+              </label>
+              <input
+                type="text"
+                value={smtpUsername}
+                onChange={(e) => setSmtpUsername(e.target.value)}
+                placeholder="Username or email address"
+                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
+              />
+            </div>
+
+            <div className="space-y-1 sm:col-span-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                  SMTP Password / App Password
+                </label>
+                {smtpHasPassword && (
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                    Password saved
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={smtpPassword}
+                  onChange={(e) => setSmtpPassword(e.target.value)}
+                  placeholder={smtpHasPassword ? "•••••••• (Leave blank to keep existing password)" : "Enter password or App Password"}
+                  className="w-full px-3.5 py-2.5 pr-10 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* TEST CONNECTION & SAVE ACTIONS */}
+          <div className="pt-3 border-t border-[var(--nexa-border)] space-y-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[var(--nexa-bg-base)] p-3.5 rounded-2xl border border-[var(--nexa-border)]">
+              <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <input
+                  type="email"
+                  value={smtpTestRecipient}
+                  onChange={(e) => setSmtpTestRecipient(e.target.value)}
+                  placeholder={ownerEmail || user?.email || "Recipient email for test..."}
+                  className="px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] flex-1 min-w-[200px]"
+                />
+                <button
+                  type="button"
+                  onClick={handleTestSmtp}
+                  disabled={isTestingSmtp}
+                  className="px-3.5 py-2 text-xs font-bold rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] hover:bg-slate-100 dark:hover:bg-slate-800 text-[var(--nexa-text-primary)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {isTestingSmtp ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      Testing...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-3.5 h-3.5 text-blue-600" />
+                      Send Test Email
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSaveSmtp}
+                disabled={isSavingSmtp}
+                className="px-5 py-2 text-xs font-bold rounded-xl bg-[#1A56DB] hover:bg-blue-700 text-white flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                {isSavingSmtp ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    Saving...
+                  </>
+                ) : smtpSaveSuccess ? (
+                  <>
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
+                    Saved!
+                  </>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" />
+                    Save SMTP Settings
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* STATUS NOTIFICATIONS */}
+            {smtpTestStatus && (
+              <div
+                className={`p-3.5 rounded-xl text-xs flex items-start gap-2.5 border shadow-xs ${
+                  smtpTestStatus.success
+                    ? "bg-emerald-100 text-emerald-950 border-emerald-400 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-500 font-semibold"
+                    : "bg-rose-100 text-rose-950 border-rose-400 dark:bg-rose-950 dark:text-rose-100 dark:border-rose-500 font-semibold"
+                }`}
+              >
+                {smtpTestStatus.success ? (
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-800 dark:text-emerald-300 mt-0.5" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-800 dark:text-rose-300 mt-0.5" />
+                )}
+                <div className="flex-1">
+                  <span>{smtpTestStatus.message}</span>
+                  {smtpTestStatus.success && (
+                    <p className="text-[11px] text-emerald-800 dark:text-emerald-300 font-normal mt-0.5">
+                      Note: If the email does not show up in your Primary Inbox, please check your Spam or Junk folder.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </NexaCard>
       </div>

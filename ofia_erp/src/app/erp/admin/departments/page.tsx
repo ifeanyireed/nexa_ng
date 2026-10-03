@@ -405,35 +405,6 @@ function ERPDepartmentsContent() {
       activeModule="departments"
       action={
         <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Dynamic Tenant Selector / Badge */}
-          {tenants.length > 1 ? (
-            <div className="relative">
-              <select
-                value={activeTenant?.id || ""}
-                onChange={(e) => {
-                  const chosen = tenants.find((t) => t.id === e.target.value);
-                  if (chosen) setActiveTenant(chosen);
-                }}
-                className="appearance-none pl-3.5 pr-8 py-1.5 rounded-full bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-xs font-bold text-[var(--nexa-text-primary)] outline-none cursor-pointer focus:border-[#1A56DB]"
-              >
-                {tenants.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name} ({t.slug})
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--nexa-text-muted)]" />
-            </div>
-          ) : (
-            <div className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-xs font-mono">
-              <Building2 className="w-3.5 h-3.5 text-[#1A56DB]" />
-              <span className="font-bold text-[var(--nexa-text-primary)]">{displayTenantName}</span>
-              {activeTenant?.slug && (
-                <span className="text-[10px] text-[var(--nexa-text-muted)]">({activeTenant.slug})</span>
-              )}
-            </div>
-          )}
-
           <Link href="/erp/hr/reports">
             <NexaButton
               size="sm"

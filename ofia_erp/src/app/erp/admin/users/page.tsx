@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, Suspense } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
   CheckCircle2,
@@ -676,47 +677,25 @@ function UserManagementContent() {
       case "marketer":
         return <NexaBadge variant="neutral" size="sm" className="rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">Marketer</NexaBadge>;
       case "employee":
-        return <NexaBadge variant="secondary" size="sm" className="rounded-full">Employee</NexaBadge>;
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800/50 inline-flex items-center">
+            Employee
+          </span>
+        );
       default:
-        return <NexaBadge variant="secondary" size="sm" className="rounded-full capitalize">{role.replace("_", " ")}</NexaBadge>;
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 inline-flex items-center capitalize">
+            {role.replace("_", " ")}
+          </span>
+        );
     }
   };
 
   return (
     <ErpAdminShell
       title="User Management & Staff Directory"
-      subtitle={`Corporate identity governance and 10-tier RBAC role assignment for tenant '${displayTenantName}' synced directly to Postgres.`}
       action={
         <div className="flex items-center gap-2.5">
-          {/* Dynamic Tenant Selector / Badge */}
-          {tenants.length > 1 ? (
-            <div className="relative">
-              <select
-                value={activeTenant?.id || ""}
-                onChange={(e) => {
-                  const chosen = tenants.find((t) => t.id === e.target.value);
-                  if (chosen) setActiveTenant(chosen);
-                }}
-                className="appearance-none pl-3 pr-8 py-1.5 rounded-full bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-xs font-bold text-[var(--nexa-text-primary)] outline-none cursor-pointer focus:border-[#1A56DB]"
-              >
-                {tenants.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name} ({t.slug})
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--nexa-text-muted)]" />
-            </div>
-          ) : (
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-xs font-mono">
-              <Building2 className="w-3.5 h-3.5 text-[#1A56DB]" />
-              <span className="font-bold text-[var(--nexa-text-primary)]">{displayTenantName}</span>
-              {activeTenant?.slug && (
-                <span className="text-[10px] text-[var(--nexa-text-muted)]">({activeTenant.slug})</span>
-              )}
-            </div>
-          )}
-
           <button
             onClick={() => {
               reloadTenants();
@@ -728,6 +707,17 @@ function UserManagementContent() {
           >
             <RefreshCw className={`w-4 h-4 text-[#1A56DB] ${isLoadingUsers || isTenantLoading ? "animate-spin" : ""}`} />
           </button>
+
+          <Link href="/erp/admin/users/mass-messaging">
+            <NexaButton
+              size="sm"
+              variant="secondary"
+              leftIcon={<Mail className="w-4 h-4 text-[#1A56DB]" />}
+              className="rounded-full font-bold border-[var(--nexa-border)]"
+            >
+              Mass Messaging
+            </NexaButton>
+          </Link>
 
           <NexaButton
             size="sm"

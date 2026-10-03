@@ -579,7 +579,6 @@ export function ErpAdminShell({
     { label: "Accounting & Ledgers", icon: <Layers className="w-6 h-6" />, href: "/erp/accountant", badge: "GL", key: "accounting", section: "Ofia Enterprise Suite" },
     { label: "HR & Appraisals", icon: <Users className="w-6 h-6" />, href: "/erp/hr", key: "hr", section: "Ofia Enterprise Suite" },
     { label: "User Management", icon: <UserCheck className="w-6 h-6" />, href: "/erp/admin/users", badge: "Staff", key: "users", section: "Ofia Enterprise Suite" },
-    { label: "Departments", icon: <Building2 className="w-6 h-6" />, href: "/erp/admin/departments", badge: "Org", key: "departments", section: "Ofia Enterprise Suite" },
 
     // 3. PORTALS & WORKSPACES
     { label: "Employee Portal", icon: <UserCheck className="w-6 h-6" />, href: "/erp/employee", key: "employee", section: "Portals & Team" },
@@ -904,7 +903,8 @@ export function ErpAdminShell({
               const isActive =
                 pathname === item.href ||
                 (item.href !== "/erp/admin" && pathname.startsWith(item.href)) ||
-                (item.href === "/erp/admin" && pathname === "/erp/admin");
+                (item.href === "/erp/admin" && pathname === "/erp/admin") ||
+                (item.key === "users" && pathname.startsWith("/erp/admin/departments"));
 
               const showSectionHeader = item.section && item.section !== currentSection;
               if (showSectionHeader) {
@@ -1165,6 +1165,8 @@ export function ErpAdminShell({
                         tab.href !== "/erp/hr" &&
                         tab.href !== "/erp/employee" &&
                         tab.href !== "/erp/manager" &&
+                        tab.href !== "/erp/admin/users" &&
+                        tab.href !== "/erp/admin/departments" &&
                         pathname.startsWith(tab.href));
                     return (
                       <Link href={tab.href} key={idx} className="shrink-0">

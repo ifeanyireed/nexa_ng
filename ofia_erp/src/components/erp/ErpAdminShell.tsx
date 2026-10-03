@@ -435,7 +435,7 @@ export function ErpAdminShell({
 
       let resolvedAvatar = "";
       if (parsedUser?.avatar) resolvedAvatar = parsedUser.avatar;
-      if (!resolvedAvatar && user?.avatar) resolvedAvatar = user.avatar;
+      if (!resolvedAvatar && (user as any)?.avatar) resolvedAvatar = (user as any).avatar;
       resolvedAvatar = resolveAvatarUrl(resolvedAvatar, resolvedName || resolvedEmail || "Staff");
 
       setCurrentRole(resolvedRole);

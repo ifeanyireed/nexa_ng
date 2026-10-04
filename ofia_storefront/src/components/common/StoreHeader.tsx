@@ -15,6 +15,7 @@ import {
   Scissors,
   ArrowRight,
   Search,
+  Wrench,
 } from "lucide-react";
 import { VendorStore } from "@/types/storefront";
 import { useCart } from "@/context/CartContext";
@@ -153,9 +154,9 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
         };
       case "hardware":
         return {
-          label: "Sizing Calculator",
-          href: "/hardware/calculator",
-          icon: ArrowRight,
+          label: "Book Installation",
+          href: "/hardware/services",
+          icon: Wrench,
         };
       case "retail":
         return {

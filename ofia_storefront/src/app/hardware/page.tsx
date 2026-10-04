@@ -283,7 +283,7 @@ export default function HardwareHomePage() {
 
             <div className="relative w-full md:w-80 aspect-square rounded-2xl overflow-hidden border border-stone-700 shadow-2xl">
               <img
-                src="https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80"
+                src="https://images.unsplash.com/photo-1558449028-b53a39d100fc?auto=format&fit=crop&w=800&q=80"
                 alt="Solar Commissioning"
                 className="w-full h-full object-cover"
               />

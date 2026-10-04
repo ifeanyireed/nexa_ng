@@ -193,7 +193,7 @@ export const MOCK_STORES: Record<string, VendorStore> = {
     tagline: "Solar Systems, Inverters, High-Yield Power & Industrial Supplies",
     description: "Tier-1 solar panels, pure sine wave hybrid inverters, LiFePO4 rack batteries, industrial machinery, and certified power engineering installation.",
     logo: "/ofia-logo.png",
-    coverImage: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=1600&h=600&q=80",
+    coverImage: "https://images.unsplash.com/photo-1558449028-b53a39d100fc?auto=format&fit=crop&w=1600&h=600&q=80",
     primaryColor: "#EA580C",
     accentColor: "#9A3412",
     currency: "₦",
@@ -463,7 +463,7 @@ export const MOCK_PRODUCTS: Product[] = [
     category: "Bakery & Desserts",
     images: [
       "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1535141192574-5d4897c13136?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80",
     ],
     rating: 5.0,
     reviewsCount: 34,
@@ -679,7 +679,7 @@ export const MOCK_PRODUCTS: Product[] = [
     category: "Face Serums & Treatments",
     images: [
       "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1608248597359-5613531b402e?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80",
     ],
     rating: 4.9,
     reviewsCount: 76,
@@ -889,7 +889,7 @@ export const MOCK_PRODUCTS: Product[] = [
     originalPrice: 2050000,
     category: "Solar Inverters",
     images: [
-      "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1589201529153-5297335c1684?auto=format&fit=crop&w=800&q=80",
       "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=800&q=80",
     ],
     rating: 4.9,
@@ -926,8 +926,8 @@ export const MOCK_PRODUCTS: Product[] = [
     originalPrice: 2950000,
     category: "Energy Storage & Batteries",
     images: [
-      "https://images.unsplash.com/photo-1558441719-8b449c6ff673?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1591344011733-2af60f598737?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1589276534126-adef63a95e05?auto=format&fit=crop&w=800&q=80",
     ],
     rating: 5.0,
     reviewsCount: 38,
@@ -962,8 +962,8 @@ export const MOCK_PRODUCTS: Product[] = [
     originalPrice: 680000,
     category: "Solar Panels & PV Arrays",
     images: [
-      "https://images.unsplash.com/photo-1508873696983-2df5293cb32f?auto=format&fit=crop&w=800&q=80",
-      "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1660330589257-813305a4a383?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1594818379496-da1e345b0ded?auto=format&fit=crop&w=800&q=80",
     ],
     rating: 4.9,
     reviewsCount: 71,
@@ -1128,7 +1128,7 @@ export const MOCK_SERVICES: StoreService[] = [
     specialistName: "Engr. Tariq Adeleke",
     specialistRole: "Lead Automotive Diagnostics Engineer",
     specialistAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=120&h=120&q=80",
-    image: "https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=800&q=80",
+    image: "https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80",
   },
   // Beauty Studio Appointments
   {
@@ -1246,7 +1246,7 @@ export const MOCK_SERVICES: StoreService[] = [
     specialistName: "Engr. Kayode Adebayo",
     specialistRole: "Senior Renewable Energy Systems Engineer",
     specialistAvatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=120&h=120&q=80",
-    image: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80",
+    image: "https://images.unsplash.com/photo-1558449028-b53a39d100fc?auto=format&fit=crop&w=800&q=80",
   },
   {
     id: "srv-hdw-02",

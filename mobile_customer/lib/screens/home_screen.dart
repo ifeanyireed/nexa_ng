@@ -1,17 +1,19 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../data/mock_data.dart';
-import '../models/shipment.dart';
-import '../widgets/shipment_card.dart';
+import '../data/commerce_data.dart';
+import '../models/store.dart';
+import '../models/product.dart';
+import '../models/cart.dart';
+import 'discover_screen.dart';
+import 'storefront_screen.dart';
+import 'product_details_screen.dart';
+import 'cart_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(int pageIndex)? onNavigateToTab;
-  final Function(ShipmentItem item)? onSelectShipment;
 
   const HomeScreen({
     super.key,
     this.onNavigateToTab,
-    this.onSelectShipment,
   });
 
   @override
@@ -19,532 +21,856 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  bool _isBalanceVisible = true;
-  int _activeNavIndex = 0;
+  StoreVertical? _selectedVertical;
+  final TextEditingController _searchController = TextEditingController();
+  final CartManager _cart = CartManager();
+
+  @override
+  void initState() {
+    super.initState();
+    _cart.addListener(_onCartChanged);
+  }
+
+  @override
+  void dispose() {
+    _cart.removeListener(_onCartChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onCartChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _openStore(VendorStore store) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => StorefrontScreen(store: store),
+      ),
+    );
+  }
+
+  void _openProduct(Product product) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ProductDetailsScreen(product: product),
+      ),
+    );
+  }
+
+  void _openCart() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const CartScreen(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final filteredStores = _selectedVertical == null
+        ? CommerceData.stores
+        : CommerceData.stores.where((s) => s.vertical == _selectedVertical).toList();
+
+    final filteredProducts = _selectedVertical == null
+        ? CommerceData.products
+        : CommerceData.products.where((p) => p.vertical == _selectedVertical).toList();
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F8FB),
-      body: Stack(
-        children: [
-          // Background Gradient at the top
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 380,
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Color(0xFFD4E6FA),
-                    Color(0xFFE5F0FD),
-                    Color(0xFFF6F8FB),
+      backgroundColor: const Color(0xFFF8FAFC),
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            // TOP APP BAR: Delivery Location + Cart & Notification Actions
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Location Pill
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Text(
+                              'Delivering to',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF64748B),
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              size: 16,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        const Row(
+                          children: [
+                            Icon(
+                              Icons.location_on_rounded,
+                              size: 16,
+                              color: Color(0xFF1B62F0),
+                            ),
+                            SizedBox(width: 4),
+                            Text(
+                              'Victoria Island, Lagos',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+
+                    // Actions: Notifications & Cart
+                    Row(
+                      children: [
+                        // Cart Button with Live Badge
+                        GestureDetector(
+                          onTap: _openCart,
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.04),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.shopping_bag_outlined,
+                                  size: 20,
+                                  color: Color(0xFF0F172A),
+                                ),
+                                if (_cart.totalCount > 0)
+                                  Positioned(
+                                    top: 7,
+                                    right: 7,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFF1B62F0),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Text(
+                                        '${_cart.totalCount}',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                          height: 1,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
-                  stops: [0.0, 0.65, 1.0],
                 ),
               ),
             ),
-          ),
 
-          // Main Scrollable Content
-          SafeArea(
-            bottom: false,
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: const EdgeInsets.only(bottom: 120),
+            // SEARCH BAR
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                child: Container(
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.02),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 14),
+                      const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 22),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: const InputDecoration(
+                            hintText: 'Search 10 verticals, stores, or items...',
+                            hintStyle: TextStyle(
+                              fontSize: 13,
+                              color: Color(0xFF94A3B8),
+                              fontWeight: FontWeight.w400,
+                            ),
+                            border: InputBorder.none,
+                            isDense: true,
+                          ),
+                          onSubmitted: (query) {
+                            if (query.trim().isNotEmpty) {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => DiscoverScreen(initialQuery: query.trim()),
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                      ),
+                      Container(
+                        height: 24,
+                        width: 1,
+                        color: const Color(0xFFE2E8F0),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.tune_rounded, color: Color(0xFF1B62F0), size: 20),
+                        onPressed: () {
+                          widget.onNavigateToTab?.call(1); // Jump to Discover tab
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // 10 VERTICAL CHIPS (Section 6.3)
+            SliverToBoxAdapter(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 16),
-
-                  // Top User Header Bar
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: _buildUserHeader(),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Balance Section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: _buildBalanceCard(),
-                  ),
-                  const SizedBox(height: 22),
-
-                  // Action Buttons: [New track] [Order us]
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: _buildActionButtons(),
-                  ),
-                  const SizedBox(height: 28),
-
-                  // "Current Shipment" Header
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Current Shipment',
+                          'Browse Categories',
                           style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
                             color: Color(0xFF0F172A),
-                            letterSpacing: -0.3,
+                            letterSpacing: -0.2,
                           ),
                         ),
                         GestureDetector(
-                          onTap: () {
-                            if (widget.onNavigateToTab != null) {
-                              widget.onNavigateToTab!(1); // Go to My Shipping
-                            }
-                          },
+                          onTap: () => widget.onNavigateToTab?.call(1),
                           child: const Text(
-                            'See all',
+                            'See All',
                             style: TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF94A3B8),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1B62F0),
                             ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 42,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      itemCount: StoreVertical.values.length + 1,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) {
+                        if (index == 0) {
+                          final isSelected = _selectedVertical == null;
+                          return _buildFilterPill(
+                            label: 'All Verticals',
+                            icon: Icons.apps_rounded,
+                            isSelected: isSelected,
+                            onTap: () {
+                              setState(() => _selectedVertical = null);
+                            },
+                          );
+                        }
 
-                  // Shipment Cards List
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Column(
-                      children: MockData.shipments.take(2).map((item) {
-                        return ShipmentCard(
-                          item: item,
+                        final vert = StoreVertical.values[index - 1];
+                        final isSelected = _selectedVertical == vert;
+                        return _buildFilterPill(
+                          label: vert.shortName,
+                          icon: vert.icon,
+                          isSelected: isSelected,
                           onTap: () {
-                            if (widget.onSelectShipment != null) {
-                              widget.onSelectShipment!(item);
-                            } else if (widget.onNavigateToTab != null) {
-                              widget.onNavigateToTab!(2); // Go to Map
-                            }
+                            setState(() => _selectedVertical = isSelected ? null : vert);
                           },
                         );
-                      }).toList(),
+                      },
                     ),
                   ),
                 ],
               ),
             ),
-          ),
 
-          // Floating Frosted Bottom Navigation Bar
-          Positioned(
-            left: 32,
-            right: 32,
-            bottom: 24,
-            child: _buildFloatingBottomNav(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // User Header (Avatar, Name, Location dropdown, Search, Notification)
-  Widget _buildUserHeader() {
-    return Row(
-      children: [
-        // Avatar
-        Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: const Color(0xFFFEF3C7),
-            border: Border.all(color: Colors.white, width: 2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.06),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: ClipOval(
-            child: Image.asset(
-              'assets/images/sarah.png',
-              fit: BoxFit.cover,
-              errorBuilder: (ctx, err, stack) => Image.asset(
-                'assets/images/avatar1.png',
-                fit: BoxFit.cover,
-                errorBuilder: (ctx, err, stack) => const Icon(
-                  Icons.person,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-
-        // Name & Location
-        const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                MockData.userName,
-                style: TextStyle(
-                  fontSize: 16.5,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F172A),
-                  letterSpacing: -0.2,
-                ),
-              ),
-              SizedBox(height: 2),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    MockData.userLocation,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w400,
-                      color: Color(0xFF64748B),
+            // PROMOTIONAL CAMPAIGN BANNER
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                child: Container(
+                  height: 140,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF0F172A).withOpacity(0.15),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
                   ),
-                  SizedBox(width: 2),
-                  Icon(
-                    Icons.arrow_drop_down,
-                    size: 18,
-                    color: Color(0xFF64748B),
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        right: -20,
+                        bottom: -30,
+                        child: Icon(
+                          Icons.local_shipping_rounded,
+                          size: 170,
+                          color: Colors.white.withOpacity(0.04),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF1B62F0),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Text(
+                                'OFIA COURIER ON-DEMAND',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Instant Pickup & City Delivery',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Send packages across town with live GPS dispatch tracking.',
+                              style: TextStyle(
+                                color: Color(0xFF94A3B8),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            GestureDetector(
+                              onTap: () {
+                                widget.onNavigateToTab?.call(3); // Jump to Logistics tab
+                              },
+                              child: const Row(
+                                children: [
+                                  Text(
+                                    'Request a Rider',
+                                    style: TextStyle(
+                                      color: Color(0xFF60A5FA),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  SizedBox(width: 4),
+                                  Icon(Icons.arrow_forward_rounded, color: Color(0xFF60A5FA), size: 14),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
-            ],
-          ),
-        ),
-
-        // Search Button
-        _circleIconButton(
-          icon: Icons.search,
-          onTap: () {
-            if (widget.onNavigateToTab != null) {
-              widget.onNavigateToTab!(1);
-            }
-          },
-        ),
-        const SizedBox(width: 10),
-
-        // Notification Button with red dot badge
-        Stack(
-          clipBehavior: Clip.none,
-          children: [
-            _circleIconButton(
-              icon: Icons.notifications_none_rounded,
-              onTap: () {},
             ),
-            Positioned(
-              top: 8,
-              right: 10,
-              child: Container(
-                width: 7,
-                height: 7,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFEF4444),
-                  shape: BoxShape.circle,
+
+            // FEATURED VERTICAL STORES (Section 6.3)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _selectedVertical == null
+                          ? 'Featured Stores'
+                          : '${_selectedVertical!.displayName} Stores',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () => widget.onNavigateToTab?.call(1),
+                      child: const Text(
+                        'View All',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1B62F0),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            SliverToBoxAdapter(
+              child: SizedBox(
+                height: 230,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: filteredStores.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 14),
+                  itemBuilder: (context, index) {
+                    final store = filteredStores[index];
+                    return _buildStoreCard(store);
+                  },
+                ),
+              ),
+            ),
+
+            // TRENDING PRODUCTS & NEW DROPS
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 28, 20, 14),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Trending Drops & Products',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    Text(
+                      '${filteredProducts.length} items',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // PRODUCTS GRID
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  childAspectRatio: 0.68,
+                  crossAxisSpacing: 14,
+                  mainAxisSpacing: 16,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final product = filteredProducts[index];
+                    return _buildProductCard(product);
+                  },
+                  childCount: filteredProducts.length,
                 ),
               ),
             ),
           ],
         ),
-      ],
+      ),
     );
   }
 
-  Widget _circleIconButton({required IconData icon, required VoidCallback onTap}) {
+  Widget _buildFilterPill({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF1B62F0) : Colors.white,
+          borderRadius: BorderRadius.circular(100),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF1B62F0) : const Color(0xFFE2E8F0),
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF1B62F0).withOpacity(0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 15,
+              color: isSelected ? Colors.white : const Color(0xFF475569),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
+                color: isSelected ? Colors.white : const Color(0xFF1E293B),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStoreCard(VendorStore store) {
+    return GestureDetector(
+      onTap: () => _openStore(store),
       child: Container(
-        width: 44,
-        height: 44,
+        width: 260,
         decoration: BoxDecoration(
           color: Colors.white,
-          shape: BoxShape.circle,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Cover Image with Badges
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              child: Stack(
+                children: [
+                  Image.network(
+                    store.coverImage,
+                    height: 120,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      height: 120,
+                      color: store.primaryColor.withOpacity(0.2),
+                      child: Icon(store.vertical.icon, color: store.primaryColor, size: 36),
+                    ),
+                  ),
+                  Positioned(
+                    top: 10,
+                    left: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.65),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(store.vertical.icon, size: 12, color: Colors.white),
+                          const SizedBox(width: 4),
+                          Text(
+                            store.vertical.shortName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 4),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.star_rounded, size: 13, color: Color(0xFFF59E0B)),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${store.rating}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Store Info Body
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    store.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    store.tagline,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF94A3B8)),
+                      const SizedBox(width: 3),
+                      Text(
+                        store.distance,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(width: 3, height: 3, decoration: const BoxDecoration(color: Color(0xFFCBD5E1), shape: BoxShape.circle)),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text(
+                          'Verified Store',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF0D9488),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProductCard(Product product) {
+    return GestureDetector(
+      onTap: () => _openProduct(product),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.03),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
           ],
         ),
-        child: Icon(
-          icon,
-          size: 20,
-          color: const Color(0xFF0F172A),
-        ),
-      ),
-    );
-  }
-
-  // Balance Card: "Your balance", "$244.00", Eye toggle, "Top up"
-  Widget _buildBalanceCard() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Column(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Your balance',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w400,
-                color: Color(0xFF64748B),
-              ),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Text(
-                  _isBalanceVisible
-                      ? '\$${MockData.userBalance.toStringAsFixed(2)}'
-                      : '••••••••',
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF0F172A),
-                    letterSpacing: -0.8,
-                  ),
+            // Image with Category Tag
+            Expanded(
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      product.images[0],
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: const Color(0xFFF1F5F9),
+                        child: const Icon(Icons.inventory_2_outlined, color: Color(0xFF94A3B8)),
+                      ),
+                    ),
+                    Positioned(
+                      top: 8,
+                      left: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.6),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          product.vertical.shortName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _isBalanceVisible = !_isBalanceVisible;
-                    });
-                  },
-                  child: Icon(
-                    _isBalanceVisible
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    size: 20,
-                    color: const Color(0xFF94A3B8),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ],
-        ),
 
-        // Top Up Button
-        Container(
-          height: 42,
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.92),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(
-              color: const Color(0xFF2563EB).withOpacity(0.18),
-              width: 1.2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF2563EB).withOpacity(0.08),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: const Center(
-            child: Text(
-              'Top up',
-              style: TextStyle(
-                fontSize: 13.5,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1D64F2),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // Action Buttons: [New track] [Order us]
-  Widget _buildActionButtons() {
-    return Row(
-      children: [
-        // New Track
-        Expanded(
-          child: GestureDetector(
-            onTap: () {
-              if (widget.onNavigateToTab != null) {
-                widget.onNavigateToTab!(1);
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x0A0F172A),
-                    blurRadius: 16,
-                    offset: Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: const Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+            // Product Details
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.crop_free_rounded,
-                    size: 22,
-                    color: Color(0xFF0F172A),
-                  ),
-                  SizedBox(width: 8),
                   Text(
-                    'New track',
-                    style: TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w600,
+                    product.category.toUpperCase(),
+                    maxLines: 1,
+                    style: const TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF1B62F0),
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    product.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
                       color: Color(0xFF0F172A),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 14),
-
-        // Order Us
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x0A0F172A),
-                  blurRadius: 16,
-                  offset: Offset(0, 6),
-                ),
-              ],
-            ),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.local_shipping_outlined,
-                  size: 22,
-                  color: Color(0xFF0F172A),
-                ),
-                SizedBox(width: 8),
-                Text(
-                  'Order us',
-                  style: TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF0F172A),
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        product.formattedPrice,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          _cart.addItem(product);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Added ${product.title} to bag'),
+                              duration: const Duration(seconds: 1),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1B62F0),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.add_rounded,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // Floating Frosted Bottom Navigation Bar
-  Widget _buildFloatingBottomNav() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(30),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.85),
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.9),
-              width: 1.5,
-            ),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x140F172A),
-                blurRadius: 24,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _navItem(
-                index: 0,
-                icon: Icons.home_filled,
-                label: 'Home',
-              ),
-              _navItem(
-                index: 1,
-                icon: Icons.local_shipping_outlined,
-                label: 'Orders',
-              ),
-              _navItem(
-                index: 2,
-                icon: Icons.person_outline,
-                label: 'Profile',
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _navItem({
-    required int index,
-    required IconData icon,
-    required String label,
-  }) {
-    final isSelected = _activeNavIndex == index;
-    final color = isSelected ? const Color(0xFF0F172A) : const Color(0xFF94A3B8);
-
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _activeNavIndex = index;
-        });
-        if (widget.onNavigateToTab != null) {
-          if (index == 0) widget.onNavigateToTab!(0);
-          if (index == 1) widget.onNavigateToTab!(1);
-          if (index == 2) widget.onNavigateToTab!(2);
-        }
-      },
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 22, color: color),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: color,
+                ],
               ),
             ),
           ],

@@ -31,7 +31,7 @@ export const ERP_ROLES: RoleInfo[] = [
     label: "Tenant Administrator",
     badge: "Super Admin",
     description: "Full master privilege across all business modules, financial ledgers, and permissions.",
-    color: "#1A56DB",
+    color: "#0069FF",
     avatarBg: "bg-blue-600",
   },
   {

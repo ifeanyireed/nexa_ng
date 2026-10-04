@@ -31,13 +31,13 @@ export const NexaButton = React.forwardRef<HTMLButtonElement, NexaButtonProps>(
   ) => {
     const variants = {
       primary:
-        "bg-[#1A56DB] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_2px_4px_rgba(0,0,0,0.1),0_1px_2px_rgba(0,0,0,0.06)] border-[0.5px] border-[#1A56DB]/40 hover:bg-[#1A56DB]/90 dark:bg-[#3B82F6] dark:hover:bg-[#3B82F6]/90",
+        "bg-[#0069FF] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_2px_4px_rgba(0,0,0,0.1),0_1px_2px_rgba(0,0,0,0.06)] border-[0.5px] border-[#0069FF]/40 hover:bg-[#005CE0] dark:bg-[#0069FF] dark:hover:bg-[#005CE0]",
       secondary:
         "liquid-glass text-[var(--nexa-text-primary)] shadow-[0_1px_2px_rgba(0,0,0,0.05)] border-[0.5px] border-black/5 dark:border-white/10 hover:bg-white/90 dark:hover:bg-white/10",
       glass:
-        "liquid-glass text-[var(--nexa-text-primary)] hover:border-[#1A56DB]/40 dark:hover:border-[#3B82F6]/40",
+        "liquid-glass text-[var(--nexa-text-primary)] hover:border-[#0069FF]/40 dark:hover:border-[#0069FF]/40",
       ghost:
-        "hover:bg-[#EBF5FF] text-[#1A56DB] dark:text-[#60A5FA] dark:hover:bg-white/5",
+        "hover:bg-[#EBF3FF] text-[#0069FF] dark:text-[#3B82F6] dark:hover:bg-white/5",
       danger:
         "bg-[#E02424] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25),0_2px_4px_rgba(0,0,0,0.1)] border-[0.5px] border-[#E02424]/30 hover:bg-[#E02424]/90",
       outline:
@@ -60,7 +60,7 @@ export const NexaButton = React.forwardRef<HTMLButtonElement, NexaButtonProps>(
         whileTap={{ scale: 0.98 }}
         transition={{ duration: 0.15, ease: "easeOut" }}
         className={cn(
-          "relative flex items-center justify-center font-medium transition-all focus:outline-none focus:ring-2 focus:ring-[#1A56DB]/30 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden select-none cursor-pointer",
+          "relative flex items-center justify-center font-medium transition-all focus:outline-none focus:ring-2 focus:ring-[#0069FF]/30 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden select-none cursor-pointer",
           variants[variant],
           sizes[size],
           className

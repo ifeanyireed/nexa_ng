@@ -61,10 +61,10 @@
   --nexa-bg-overlay: rgba(255, 255, 255, 0.85);
   --nexa-bg-glass: rgba(255, 255, 255, 0.70);
   
-  --nexa-brand: #1A56DB;
-  --nexa-brand-light: #EBF5FF;
-  --nexa-brand-mid: #3F83F8;
-  --nexa-brand-glow: rgba(26, 86, 219, 0.20);
+  --nexa-brand: #0069FF;
+  --nexa-brand-light: #EBF3FF;
+  --nexa-brand-mid: #257CFF;
+  --nexa-brand-glow: rgba(0, 105, 255, 0.20);
   
   --nexa-accent: #0E9F6E;
   --nexa-accent-light: #ECFDF5;
@@ -96,10 +96,10 @@
   --nexa-bg-overlay: rgba(17, 24, 39, 0.90);
   --nexa-bg-glass: rgba(17, 24, 39, 0.75);
   
-  --nexa-brand: #2563EB;
-  --nexa-brand-light: rgba(37, 99, 235, 0.18);
+  --nexa-brand: #0069FF;
+  --nexa-brand-light: rgba(0, 105, 255, 0.18);
   --nexa-brand-mid: #3B82F6;
-  --nexa-brand-glow: rgba(37, 99, 235, 0.30);
+  --nexa-brand-glow: rgba(0, 105, 255, 0.30);
   
   --nexa-accent: #0E9F6E;
   --nexa-accent-light: rgba(14, 159, 110, 0.18);

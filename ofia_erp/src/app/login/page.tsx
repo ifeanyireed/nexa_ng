@@ -581,8 +581,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
                   if (fallback && target.src !== fallback) {
                     target.src = fallback;
                   } else if (!isCustomTenant) {
-                    target.src =
-                      "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
+                    target.src = "/icon.png";
                   }
                 }}
               />
@@ -604,7 +603,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
               </div>
             ) : (
               <img
-                src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"
+                src="/icon.png"
                 alt="Ofia ERP Logo"
                 className="w-9 h-9 object-contain"
               />
@@ -717,8 +716,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
                   if (fallback && target.src !== fallback) {
                     target.src = fallback;
                   } else if (!isCustomTenant) {
-                    target.src =
-                      "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
+                    target.src = "/icon.png";
                   }
                 }}
               />
@@ -739,7 +737,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
               </div>
             ) : (
               <img
-                src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"
+                src="/icon.png"
                 alt="Ofia ERP Logo"
                 className="h-12 w-12 object-contain mb-5"
               />

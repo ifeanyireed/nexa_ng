@@ -83,7 +83,7 @@ import {
 } from "@/lib/tenant-context";
 import { DashboardSkeleton } from "@/components/nexa/PageSkeleton";
 
-export const OFIA_DEFAULT_LOGO = "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png";
+export const OFIA_DEFAULT_LOGO = "/icon.png";
 
 export interface SubNavItem {
   label: string;

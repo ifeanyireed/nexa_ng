@@ -58,7 +58,7 @@ export const NexaInput = React.forwardRef<HTMLInputElement, NexaInputProps>(
           className={cn(
             "relative flex items-center h-11 rounded-xl border-[0.5px] bg-[var(--nexa-bg-surface)] transition-all duration-200",
             isFocused
-              ? "border-[#1A56DB] dark:border-[#3B82F6] shadow-[0_0_0_2px_rgba(26,86,219,0.15)]"
+              ? "border-[#0069FF] dark:border-[#3B82F6] shadow-[0_0_0_2px_rgba(0,105,255,0.15)]"
               : "border-[var(--nexa-border)]",
             error && "border-[#E02424]",
             className
@@ -83,7 +83,7 @@ export const NexaInput = React.forwardRef<HTMLInputElement, NexaInputProps>(
                 animate={{
                   y: isFloating ? -22 : 0,
                   scale: isFloating ? 0.8 : 1,
-                  color: isFocused ? "#1A56DB" : "var(--nexa-text-muted)",
+                  color: isFocused ? "#0069FF" : "var(--nexa-text-muted)",
                   backgroundColor: isFloating ? "var(--nexa-bg-surface)" : "transparent",
                   paddingLeft: isFloating ? "4px" : "0px",
                   paddingRight: isFloating ? "4px" : "0px",

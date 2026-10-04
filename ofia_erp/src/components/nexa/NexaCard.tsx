@@ -28,7 +28,7 @@ export const NexaCard = React.forwardRef<HTMLDivElement, NexaCardProps>(
       flat: "bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)]",
       elevated: "bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] shadow-md",
       interactive:
-        "bg-[var(--nexa-bg-surface)]/80 backdrop-blur-md border border-[var(--nexa-border)] cursor-pointer hover:border-[#1A56DB]/50 transition-all duration-300 shadow-sm hover:shadow-lg",
+        "bg-[var(--nexa-bg-surface)]/80 backdrop-blur-md border border-[var(--nexa-border)] cursor-pointer hover:border-[#0069FF]/50 transition-all duration-300 shadow-sm hover:shadow-lg",
     };
 
     const paddings = {

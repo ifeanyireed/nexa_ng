@@ -13,7 +13,7 @@ export const NexaThemeToggle = () => {
     <button
       onClick={toggleTheme}
       className={cn(
-        "relative w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] hover:border-[#1A56DB]/40 transition-all cursor-pointer overflow-hidden"
+        "relative w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] hover:border-[#0069FF]/40 transition-all cursor-pointer overflow-hidden"
       )}
       title="Toggle Dark/Light Mode"
     >

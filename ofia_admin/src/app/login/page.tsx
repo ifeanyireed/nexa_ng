@@ -89,10 +89,10 @@ function LoginContent() {
       {/* Top Simple Header */}
       <header className="p-6 flex items-center justify-between max-w-7xl mx-auto w-full">
         <Link href="/" className="flex items-center gap-3">
-          <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia SuperAdmin Logo" className="w-8 h-8 object-contain shrink-0" />
+          <img src="/icon.png" alt="Ofia SuperAdmin Logo" className="w-8 h-8 object-contain shrink-0" />
           <span className="font-semibold text-base text-[var(--nexa-text-primary)] text-display flex items-center gap-2" style={{ fontWeight: 600 }}>
             Ofia SuperAdmin
-            <span className="text-[10px] font-semibold font-mono uppercase px-2.5 py-0.5 rounded-full bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20">
+            <span className="text-[10px] font-semibold font-mono uppercase px-2.5 py-0.5 rounded-full bg-[#0069FF]/10 text-[#0069FF] border border-[#0069FF]/20">
               PLATFORM ROOT
             </span>
           </span>
@@ -112,10 +112,10 @@ function LoginContent() {
       {/* Main Login Card */}
       <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-md space-y-6">
-          <NexaCard variant="glass" padding="lg" className="border-2 border-[#1A56DB]/20 shadow-2xl rounded-3xl space-y-6 backdrop-blur-xl">
+          <NexaCard variant="glass" padding="lg" className="border-2 border-[#0069FF]/20 shadow-2xl rounded-3xl space-y-6 backdrop-blur-xl">
             <div className="text-center space-y-2">
               <div className="flex justify-center mb-1">
-                <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia Logo" className="w-12 h-12 object-contain" />
+                <img src="/icon.png" alt="Ofia Logo" className="w-12 h-12 object-contain" />
               </div>
               <h1 className="text-2xl font-semibold text-display text-[var(--nexa-text-primary)] tracking-tight" style={{ fontWeight: 600 }}>
                 Sign in to Ofia SuperAdmin

@@ -136,7 +136,7 @@ export const DEFAULT_TENANT_BRANDING: Record<
   neweratransports: {
     logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
     favicon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
-    primaryColor: "#1A56DB",
+    primaryColor: "#0069FF",
     secondaryColor: "#0E9F6E",
     loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
     heroTitle: "Powering next-generation transport, logistics & fleet intelligence.",
@@ -145,7 +145,7 @@ export const DEFAULT_TENANT_BRANDING: Record<
   "org-01": {
     logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
     favicon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
-    primaryColor: "#1A56DB",
+    primaryColor: "#0069FF",
     secondaryColor: "#0E9F6E",
     loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
     heroTitle: "Powering next-generation transport, logistics & fleet intelligence.",
@@ -154,7 +154,7 @@ export const DEFAULT_TENANT_BRANDING: Record<
   "edusuite-ng": {
     logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
     favicon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
-    primaryColor: "#1A56DB",
+    primaryColor: "#0069FF",
     secondaryColor: "#0E9F6E",
     loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
     heroTitle: "Empowering schools, educators & learners across Africa.",
@@ -163,7 +163,7 @@ export const DEFAULT_TENANT_BRANDING: Record<
   "1aa8c687-b71d-4188-9de2-371aa5dfa9e6": {
     logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
     favicon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
-    primaryColor: "#1A56DB",
+    primaryColor: "#0069FF",
     secondaryColor: "#0E9F6E",
     loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
     heroTitle: "Powering next-generation transport, logistics & fleet intelligence.",
@@ -454,7 +454,7 @@ export function resolveTenantFromList(
           ...found,
           logo: resolvedLogo,
           favicon: found.favicon || resolvedLogo || defaultFavicon,
-          primaryColor: found.primaryColor || DEFAULT_TENANT_BRANDING[found.slug]?.primaryColor || "#1A56DB",
+          primaryColor: found.primaryColor || DEFAULT_TENANT_BRANDING[found.slug]?.primaryColor || "#0069FF",
           secondaryColor: found.secondaryColor || DEFAULT_TENANT_BRANDING[found.slug]?.secondaryColor || "#0E9F6E",
           loginImage: found.loginImage || DEFAULT_TENANT_BRANDING[found.slug]?.loginImage || "",
           heroTitle:
@@ -509,7 +509,7 @@ export function resolveTenantFromList(
           ...found,
           logo: resolvedLogo,
           favicon: found.favicon || resolvedLogo,
-          primaryColor: found.primaryColor || DEFAULT_TENANT_BRANDING[found.slug]?.primaryColor || "#1A56DB",
+          primaryColor: found.primaryColor || DEFAULT_TENANT_BRANDING[found.slug]?.primaryColor || "#0069FF",
           secondaryColor: found.secondaryColor || DEFAULT_TENANT_BRANDING[found.slug]?.secondaryColor || "#0E9F6E",
           loginImage: found.loginImage || DEFAULT_TENANT_BRANDING[found.slug]?.loginImage || "",
           heroTitle:
@@ -545,7 +545,7 @@ export function resolveTenantFromList(
       if (defaultTenant) {
         return {
           ...defaultTenant,
-          primaryColor: defaultTenant.primaryColor || DEFAULT_TENANT_BRANDING[defaultTenant.slug]?.primaryColor || "#1A56DB",
+          primaryColor: defaultTenant.primaryColor || DEFAULT_TENANT_BRANDING[defaultTenant.slug]?.primaryColor || "#0069FF",
           secondaryColor: defaultTenant.secondaryColor || DEFAULT_TENANT_BRANDING[defaultTenant.slug]?.secondaryColor || "#0E9F6E",
           loginImage: defaultTenant.loginImage || DEFAULT_TENANT_BRANDING[defaultTenant.slug]?.loginImage || "",
           heroTitle: defaultTenant.heroTitle || DEFAULT_TENANT_BRANDING[defaultTenant.slug]?.heroTitle || "",
@@ -625,7 +625,7 @@ export function resolveTenantFromList(
       planTier: "Enterprise",
       logo: resolvedLogo,
       favicon: resolvedLogo || defaultBranding.favicon || "",
-      primaryColor: savedPrimaryColor || defaultBranding.primaryColor || "#1A56DB",
+      primaryColor: savedPrimaryColor || defaultBranding.primaryColor || "#0069FF",
       secondaryColor: savedSecondaryColor || defaultBranding.secondaryColor || "#0E9F6E",
       loginImage: savedLoginImage || defaultBranding.loginImage || "",
       heroTitle: savedHeroTitle || defaultBranding.heroTitle || "",
@@ -662,7 +662,7 @@ export function resolveTenantFromList(
         planTier: "Enterprise",
         logo: resolvedLogo,
         favicon: resolvedLogo || defaultBranding.favicon || "",
-        primaryColor: defaultBranding.primaryColor || "#1A56DB",
+        primaryColor: defaultBranding.primaryColor || "#0069FF",
         secondaryColor: defaultBranding.secondaryColor || "#0E9F6E",
         loginImage: defaultBranding.loginImage || "",
       };
@@ -680,7 +680,7 @@ export function resolveTenantFromList(
     planTier: "Enterprise",
     logo: "",
     favicon: "",
-    primaryColor: "#1A56DB",
+    primaryColor: "#0069FF",
     secondaryColor: "#0E9F6E",
   };
 }

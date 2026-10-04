@@ -35,7 +35,7 @@ export const NexaBadge = ({
   className,
 }: NexaBadgeProps) => {
   const variants: Record<string, string> = {
-    brand: "bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20",
+    brand: "bg-[#0069FF]/10 text-[#0069FF] border border-[#0069FF]/20",
     secondary: "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-primary)] border border-[var(--nexa-border)]",
     success: "bg-[#0E9F6E]/10 text-[#0E9F6E] border border-[#0E9F6E]/20",
     green: "bg-[#0E9F6E]/10 text-[#0E9F6E] border border-[#0E9F6E]/20",
@@ -51,7 +51,7 @@ export const NexaBadge = ({
   };
 
   const dotColors: Record<string, string> = {
-    brand: "bg-[#1A56DB]",
+    brand: "bg-[#0069FF]",
     secondary: "bg-[var(--nexa-text-secondary)]",
     success: "bg-[#0E9F6E]",
     green: "bg-[#0E9F6E]",

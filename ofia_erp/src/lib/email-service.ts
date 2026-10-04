@@ -133,11 +133,14 @@ export async function saveTenantSmtpSettings(settings: SmtpSettings): Promise<bo
 }
 
 export function createNodemailerTransporter(settings: SmtpSettings) {
-  const isSecure = settings.encryption === "ssl" || settings.port === 465;
+  // Hostinger requires port 465 with SSL for high-throughput reliability (port 587 drops TCP connections)
+  const isHostinger = settings.host?.toLowerCase().includes("hostinger");
+  const effectivePort = isHostinger && settings.port === 587 ? 465 : settings.port;
+  const isSecure = settings.encryption === "ssl" || effectivePort === 465;
 
   return nodemailer.createTransport({
     host: settings.host,
-    port: settings.port,
+    port: effectivePort,
     secure: isSecure,
     auth: {
       user: settings.username || settings.fromEmail,
@@ -340,9 +343,9 @@ export async function queueMassEmailCampaign(params: QueueCampaignParams): Promi
         const placeholders: string[] = [];
 
         chunk.forEach((rec, idx) => {
-          const offset = idx * 7;
+          const offset = idx * 8;
           const itemId = `q_${campaignId}_${i + idx}`;
-          placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7})`);
+          placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8})`);
           values.push(
             itemId,
             campaignId,
@@ -350,7 +353,8 @@ export async function queueMassEmailCampaign(params: QueueCampaignParams): Promi
             rec.email.trim(),
             rec.name || "",
             rec.role || "",
-            rec.department || ""
+            rec.department || "",
+            "pending"
           );
         });
 
@@ -370,7 +374,7 @@ export async function queueMassEmailCampaign(params: QueueCampaignParams): Promi
       };
     }
   } catch (err) {
-    console.warn("⚠️ Failed to write mass email campaign to PostgreSQL, utilizing memory queue:", err);
+    console.error("⚠️ Failed to write mass email campaign to PostgreSQL, utilizing memory queue:", err);
   }
 
   // 2. In-memory fallback
@@ -452,7 +456,7 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
       const claimQuery = `
         WITH claimed AS (
           SELECT id FROM email_queue
-          WHERE status = 'pending' AND attempts < 3
+          WHERE (status = 'pending' OR (status = 'processing' AND updated_at < CURRENT_TIMESTAMP - INTERVAL '5 minutes')) AND attempts < 3
           ORDER BY created_at ASC
           LIMIT $1
           FOR UPDATE SKIP LOCKED
@@ -516,16 +520,47 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
               `UPDATE email_queue SET status = 'sent', sent_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1`,
               [item.id]
             );
-          } catch (sendErr: any) {
-            failed++;
-            const errMsg = sendErr.message || "Failed to deliver email";
-            errors.push({ email: item.recipient_email, error: errMsg });
 
-            const newStatus = item.attempts >= 3 ? "failed" : "pending";
-            await pool.query(
-              `UPDATE email_queue SET status = $1, error_message = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3`,
-              [newStatus, errMsg, item.id]
-            );
+            // Throttle between dispatches to comply with SMTP rate limits
+            await new Promise((resolve) => setTimeout(resolve, 600));
+          } catch (sendErr: any) {
+            const errMsg = sendErr.message || "Failed to deliver email";
+            const isRateLimit =
+              errMsg.toLowerCase().includes("ratelimit") ||
+              errMsg.includes("451") ||
+              errMsg.toLowerCase().includes("too many");
+
+            if (isRateLimit) {
+              console.warn(`⏳ Outbound SMTP rate limit hit for ${item.tenant_slug}: ${errMsg}. Pausing queue batch.`);
+              // Put current item back to pending without penalty
+              await pool.query(
+                `UPDATE email_queue SET status = 'pending', attempts = GREATEST(0, attempts - 1), error_message = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
+                [errMsg, item.id]
+              );
+
+              // Also release any remaining unprocessed items in this claimed batch back to 'pending'
+              const curIdx = claimedItems.indexOf(item);
+              const remainingUnsent = claimedItems.slice(curIdx + 1);
+              if (remainingUnsent.length > 0) {
+                const remIds = remainingUnsent.map((r) => r.id);
+                await pool.query(
+                  `UPDATE email_queue SET status = 'pending', attempts = GREATEST(0, attempts - 1), updated_at = CURRENT_TIMESTAMP WHERE id = ANY($1)`,
+                  [remIds]
+                );
+              }
+
+              // Break out of this batch to let the provider rate-limit window cool down
+              break;
+            } else {
+              failed++;
+              errors.push({ email: item.recipient_email, error: errMsg });
+
+              const newStatus = item.attempts >= 3 ? "failed" : "pending";
+              await pool.query(
+                `UPDATE email_queue SET status = $1, error_message = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3`,
+                [newStatus, errMsg, item.id]
+              );
+            }
           }
         }
 

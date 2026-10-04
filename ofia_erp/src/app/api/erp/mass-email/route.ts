@@ -111,6 +111,17 @@ export async function GET(request: Request) {
     if (tenantSlug && !campaignId) {
       const limit = Number(searchParams.get("limit")) || 50;
       const campaigns = await listTenantCampaigns(tenantSlug, limit);
+
+      // Accelerate background processing if there are queued/processing campaigns
+      const hasActive = campaigns.some(
+        (c) => c.status === "queued" || c.status === "processing" || (c.sent + c.failed < c.total)
+      );
+      if (hasActive) {
+        processEmailQueueBatch(25).catch((err) => {
+          console.warn("Background auto-drain error on campaigns GET:", err);
+        });
+      }
+
       return NextResponse.json({
         success: true,
         campaigns,
@@ -127,6 +138,13 @@ export async function GET(request: Request) {
             { status: 404 }
           );
         }
+
+        if (fullCampaign.status === "queued" || fullCampaign.status === "processing" || fullCampaign.pending > 0) {
+          processEmailQueueBatch(25).catch((err) => {
+            console.warn("Background auto-drain error on details GET:", err);
+          });
+        }
+
         return NextResponse.json({
           success: true,
           campaign: fullCampaign,
@@ -140,6 +158,12 @@ export async function GET(request: Request) {
           { error: "Campaign not found" },
           { status: 404 }
         );
+      }
+
+      if (progress.status === "queued" || progress.status === "processing" || progress.pending > 0) {
+        processEmailQueueBatch(25).catch((err) => {
+          console.warn("Background auto-drain error on progress GET:", err);
+        });
       }
 
       return NextResponse.json({

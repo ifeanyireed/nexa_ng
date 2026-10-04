@@ -49,7 +49,7 @@ export const NexaButton = React.forwardRef<HTMLButtonElement, NexaButtonProps>(
       >
         {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
         {!isLoading && leftIcon}
-        <span className={cn(isLoading && "opacity-0")}>{children}</span>
+        <span className={cn("inline-flex items-center gap-1.5", isLoading && "opacity-0")}>{children}</span>
         {!isLoading && rightIcon}
         
         {/* Ripple effect placeholder - complex ripple would need a separate component or hook */}

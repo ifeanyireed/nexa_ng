@@ -197,6 +197,18 @@ function MassMessagingContent() {
 
   // Dispatch states
   const [isSending, setIsSending] = useState(false);
+  const [activeCampaignId, setActiveCampaignId] = useState<string | null>(null);
+  const [campaignProgress, setCampaignProgress] = useState<{
+    id: string;
+    total: number;
+    sent: number;
+    failed: number;
+    pending: number;
+    status: string;
+    progressPercent: number;
+    errors: Array<{ email: string; error: string }>;
+  } | null>(null);
+
   const [sendResult, setSendResult] = useState<{
     success: boolean;
     message: string;
@@ -205,6 +217,37 @@ function MassMessagingContent() {
     failed?: number;
     errors?: Array<{ email: string; error: string }>;
   } | null>(null);
+
+  // Poll campaign progress until all queued emails are sent
+  useEffect(() => {
+    if (!activeCampaignId) return;
+
+    let isMounted = true;
+    const pollInterval = setInterval(async () => {
+      try {
+        // Kick cron processor endpoint to accelerate queue dispatch
+        fetch("/api/erp/mass-email/cron", { method: "POST" }).catch(() => {});
+
+        const res = await fetch(`/api/erp/mass-email?campaignId=${encodeURIComponent(activeCampaignId)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!isMounted || !data.campaign) return;
+
+        setCampaignProgress(data.campaign);
+
+        if (data.campaign.status === "completed" || (data.campaign.pending === 0 && data.campaign.total > 0)) {
+          clearInterval(pollInterval);
+        }
+      } catch (err) {
+        console.warn("Campaign progress polling error:", err);
+      }
+    }, 3000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(pollInterval);
+    };
+  }, [activeCampaignId]);
 
   // Test email state
   const [isSendingTest, setIsSendingTest] = useState(false);
@@ -458,12 +501,13 @@ function MassMessagingContent() {
     }
 
     const confirmed = window.confirm(
-      `Are you sure you want to dispatch this email to ${selectedRecipients.length} selected recipient(s)?`
+      `Are you sure you want to dispatch this email to ${selectedRecipients.length} selected recipient(s)? Delivery will be processed safely in the background via the queue.`
     );
     if (!confirmed) return;
 
     setIsSending(true);
     setSendResult(null);
+    setCampaignProgress(null);
 
     try {
       const slug = activeTenant?.slug || "org-01";
@@ -489,18 +533,32 @@ function MassMessagingContent() {
         throw new Error(data.error || "Mass email dispatch failed");
       }
 
+      if (data.campaignId) {
+        setActiveCampaignId(data.campaignId);
+        setCampaignProgress({
+          id: data.campaignId,
+          total: data.total || selectedRecipients.length,
+          sent: data.sent || 0,
+          failed: data.failed || 0,
+          pending: data.pending ?? Math.max(0, (data.total || selectedRecipients.length) - ((data.sent || 0) + (data.failed || 0))),
+          status: data.status || "processing",
+          progressPercent: data.total > 0 ? Math.round((((data.sent || 0) + (data.failed || 0)) / data.total) * 100) : 0,
+          errors: [],
+        });
+      }
+
       setSendResult({
         success: true,
-        message: data.message || `Dispatched to ${data.result?.sent || selectedRecipients.length} staff members!`,
-        total: data.result?.total || selectedRecipients.length,
-        sent: data.result?.sent || selectedRecipients.length,
-        failed: data.result?.failed || 0,
-        errors: data.result?.errors || [],
+        message: data.message || `Queued ${data.total || selectedRecipients.length} staff emails. Background delivery underway.`,
+        total: data.total || selectedRecipients.length,
+        sent: data.sent || 0,
+        failed: data.failed || 0,
+        errors: [],
       });
     } catch (err: any) {
       setSendResult({
         success: false,
-        message: err.message || "An error occurred while sending mass emails.",
+        message: err.message || "An error occurred while queueing mass emails.",
       });
     } finally {
       setIsSending(false);
@@ -1047,38 +1105,99 @@ function MassMessagingContent() {
                   </div>
                 )}
 
-                {/* MASS DISPATCH RESULT */}
-                {sendResult && (
-                  <div
-                    className={`p-4 rounded-2xl text-xs space-y-2 border shadow-xs ${
-                      sendResult.success
-                        ? "bg-emerald-100 text-emerald-950 border-emerald-400 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-500 font-semibold"
-                        : "bg-rose-100 text-rose-950 border-rose-400 dark:bg-rose-950 dark:text-rose-100 dark:border-rose-500 font-semibold"
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 font-bold text-sm">
-                      {sendResult.success ? (
-                        <CheckCircle2 className="w-4 h-4 text-emerald-800 dark:text-emerald-300" />
-                      ) : (
-                        <AlertCircle className="w-4 h-4 text-rose-800 dark:text-rose-300" />
-                      )}
-                      <span>{sendResult.message}</span>
+                {/* MASS DISPATCH QUEUE PROGRESS & RESULT */}
+                {(sendResult || campaignProgress) && (
+                  <div className="p-4 rounded-2xl text-xs space-y-3 border shadow-xs bg-[var(--nexa-bg-base)] border-[var(--nexa-border)]">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 font-bold text-sm text-[var(--nexa-text-primary)]">
+                        {campaignProgress?.status === "completed" ? (
+                          <div className="w-5 h-5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                          </div>
+                        ) : (
+                          <div className="w-5 h-5 rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          </div>
+                        )}
+                        <span>
+                          {campaignProgress?.status === "completed"
+                            ? "All Emails Delivered Successfully!"
+                            : "Background Queue Processing Underway"}
+                        </span>
+                      </div>
+
+                      <span
+                        className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${
+                          campaignProgress?.status === "completed"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                            : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800 animate-pulse"
+                        }`}
+                      >
+                        {campaignProgress?.status || "queued"}
+                      </span>
                     </div>
 
-                    {sendResult.total !== undefined && (
-                      <div className="flex items-center gap-4 text-xs font-semibold pt-1">
-                        <span>Total: {sendResult.total}</span>
-                        <span className="text-emerald-600 dark:text-emerald-400">Delivered: {sendResult.sent}</span>
-                        {sendResult.failed ? (
-                          <span className="text-red-500">Failed: {sendResult.failed}</span>
-                        ) : null}
+                    {/* PROGRESS BAR */}
+                    {campaignProgress && (
+                      <div className="space-y-1.5 pt-1">
+                        <div className="flex justify-between items-center text-[11px] font-bold text-[var(--nexa-text-secondary)]">
+                          <span>
+                            Progress: {campaignProgress.sent} of {campaignProgress.total} delivered
+                          </span>
+                          <span>{campaignProgress.progressPercent}%</span>
+                        </div>
+                        <div className="w-full h-2.5 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              campaignProgress.status === "completed"
+                                ? "bg-emerald-500"
+                                : "bg-gradient-to-r from-blue-600 to-indigo-600"
+                            }`}
+                            style={{ width: `${Math.max(4, campaignProgress.progressPercent)}%` }}
+                          />
+                        </div>
                       </div>
                     )}
 
-                    {sendResult.errors && sendResult.errors.length > 0 && (
+                    {/* METRICS ROW */}
+                    <div className="grid grid-cols-4 gap-2 pt-1 text-center">
+                      <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-900 border border-[var(--nexa-border)]">
+                        <div className="text-[10px] text-[var(--nexa-text-muted)] font-bold uppercase">Total</div>
+                        <div className="text-sm font-black text-[var(--nexa-text-primary)]">
+                          {campaignProgress?.total ?? sendResult?.total ?? 0}
+                        </div>
+                      </div>
+                      <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                        <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold uppercase">Sent</div>
+                        <div className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+                          {campaignProgress?.sent ?? sendResult?.sent ?? 0}
+                        </div>
+                      </div>
+                      <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                        <div className="text-[10px] text-amber-700 dark:text-amber-400 font-bold uppercase">In Queue</div>
+                        <div className="text-sm font-black text-amber-600 dark:text-amber-400">
+                          {campaignProgress?.pending ?? 0}
+                        </div>
+                      </div>
+                      <div className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/20">
+                        <div className="text-[10px] text-rose-700 dark:text-rose-400 font-bold uppercase">Failed</div>
+                        <div className="text-sm font-black text-rose-600 dark:text-rose-400">
+                          {campaignProgress?.failed ?? sendResult?.failed ?? 0}
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-[11px] text-[var(--nexa-text-muted)] italic pt-1">
+                      ℹ️ Safe for production: Email delivery runs as an isolated background queue worker. You may safely close this tab or navigate away.
+                    </p>
+
+                    {/* ERRORS DISPLAY */}
+                    {campaignProgress?.errors && campaignProgress.errors.length > 0 && (
                       <div className="mt-2 pt-2 border-t border-red-200 dark:border-red-900/50 space-y-1">
-                        <div className="font-bold text-[11px]">Delivery Errors:</div>
-                        {sendResult.errors.slice(0, 5).map((e, idx) => (
+                        <div className="font-bold text-[11px] text-red-600 dark:text-red-400">
+                          Failed Recipients ({campaignProgress.errors.length}):
+                        </div>
+                        {campaignProgress.errors.slice(0, 5).map((e, idx) => (
                           <div key={idx} className="text-[10px] font-mono text-red-600 dark:text-red-300">
                             {e.email}: {e.error}
                           </div>

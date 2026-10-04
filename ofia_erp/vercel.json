@@ -4,5 +4,11 @@
       "main": true,
       "dev": false
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/erp/mass-email/cron",
+      "schedule": "* * * * *"
+    }
+  ]
 }

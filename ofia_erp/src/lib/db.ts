@@ -102,6 +102,44 @@ export async function ensureTablesExist(): Promise<boolean> {
         CREATE INDEX IF NOT EXISTS idx_tenant_smtp_slug ON tenant_smtp_settings (tenant_slug);
       `);
 
+      // 4. email_campaigns and email_queue tables for mass email background worker
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS email_campaigns (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(100) NOT NULL,
+          subject VARCHAR(255) NOT NULL,
+          message_html TEXT NOT NULL,
+          login_url TEXT,
+          total_recipients INT NOT NULL DEFAULT 0,
+          sent_count INT NOT NULL DEFAULT 0,
+          failed_count INT NOT NULL DEFAULT 0,
+          status VARCHAR(30) NOT NULL DEFAULT 'queued',
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_email_campaigns_tenant ON email_campaigns (tenant_slug);
+        CREATE INDEX IF NOT EXISTS idx_email_campaigns_status ON email_campaigns (status);
+
+        CREATE TABLE IF NOT EXISTS email_queue (
+          id VARCHAR(64) PRIMARY KEY,
+          campaign_id VARCHAR(64) REFERENCES email_campaigns(id) ON DELETE CASCADE,
+          tenant_slug VARCHAR(100) NOT NULL,
+          recipient_email VARCHAR(255) NOT NULL,
+          recipient_name VARCHAR(255),
+          recipient_role VARCHAR(100),
+          recipient_department VARCHAR(150),
+          status VARCHAR(30) NOT NULL DEFAULT 'pending',
+          attempts INT NOT NULL DEFAULT 0,
+          error_message TEXT,
+          sent_at TIMESTAMPTZ,
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_email_queue_claim ON email_queue (status, attempts);
+        CREATE INDEX IF NOT EXISTS idx_email_queue_campaign ON email_queue (campaign_id);
+        CREATE INDEX IF NOT EXISTS idx_email_queue_tenant ON email_queue (tenant_slug);
+      `);
+
       isInitialized = true;
       return true;
     } finally {

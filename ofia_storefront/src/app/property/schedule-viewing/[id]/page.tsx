@@ -16,7 +16,8 @@ import {
   ChevronLeft,
   CheckCircle2,
   Check,
-  Sparkles,
+  Truck,
+  ShieldCheck,
 } from "lucide-react";
 
 export default function ScheduleViewingPage() {
@@ -31,10 +32,10 @@ export default function ScheduleViewingPage() {
 
   const meta = property.propertyMeta;
 
-  // Form State
-  const [viewingType, setViewingType] = useState<"In-Person Guided Tour" | "Live Video Walkthrough">(
-    "In-Person Guided Tour"
-  );
+  // Form State (Blueprint Section 2 & 3: Viewings, inspections, cleaning, relocation support)
+  const [viewingType, setViewingType] = useState<
+    "In-Person Guided Tour" | "Live Video Walkthrough" | "Move-In Deep Cleaning" | "Relocation & Dispatch Support"
+  >("In-Person Guided Tour");
   const [selectedDate, setSelectedDate] = useState("2026-10-08");
   const [selectedSlot, setSelectedSlot] = useState("11:00 AM - 12:00 PM");
   const [fullName, setFullName] = useState("");
@@ -176,7 +177,7 @@ export default function ScheduleViewingPage() {
               <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
                 <h3 className="font-dropa text-base font-bold text-slate-900 flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">1</span>
-                  <span>Select Tour Format</span>
+                  <span>Select Service / Workflow (Blueprint Section 2 & 3)</span>
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -213,6 +214,42 @@ export default function ScheduleViewingPage() {
                     </div>
                     <p className="text-[11px] text-slate-500 leading-relaxed">
                       Convenient for diaspora or busy executives. Live interactive FaceTime / Zoom walkthrough showing view angles and room dimensions.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setViewingType("Move-In Deep Cleaning")}
+                    className={`p-4 rounded-2xl border text-left transition-all ${
+                      viewingType === "Move-In Deep Cleaning"
+                        ? "border-blue-600 bg-blue-50/50 ring-2 ring-blue-600/20"
+                        : "border-slate-200 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <ShieldCheck className="w-5 h-5 text-amber-600" />
+                      <span className="font-bold text-xs text-slate-900">Move-In Deep Cleaning</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      Pre-occupancy sanitization, window polishing, AC duct disinfection, and post-construction handover clean.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setViewingType("Relocation & Dispatch Support")}
+                    className={`p-4 rounded-2xl border text-left transition-all ${
+                      viewingType === "Relocation & Dispatch Support"
+                        ? "border-blue-600 bg-blue-50/50 ring-2 ring-blue-600/20"
+                        : "border-slate-200 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <Truck className="w-5 h-5 text-purple-600" />
+                      <span className="font-bold text-xs text-slate-900">Relocation & Logistics Support</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      Coordinated dispatch van with 2 professional movers for seamless furniture relocation across Lagos.
                     </p>
                   </button>
                 </div>
@@ -330,7 +367,7 @@ export default function ScheduleViewingPage() {
 
               <button
                 type="submit"
-                className="w-full py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
+                className="w-full py-4 px-6 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
               >
                 <CheckCircle2 className="w-5 h-5" />
                 <span>Confirm Private Viewing Tour</span>

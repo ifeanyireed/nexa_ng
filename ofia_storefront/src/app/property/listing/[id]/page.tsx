@@ -19,7 +19,6 @@ import {
   Share2,
   Phone,
   MessageSquare,
-  Sparkles,
   Send,
   Check,
   Eye,
@@ -197,7 +196,7 @@ export default function PropertyDetailPage() {
               <div className="space-y-2.5">
                 <Link
                   href={`/property/schedule-viewing/${property.id}`}
-                  className="w-full py-3.5 px-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm text-center flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 transition-all"
+                  className="w-full py-3.5 px-4 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm text-center flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 transition-all"
                 >
                   <Calendar className="w-4 h-4" />
                   <span>Schedule Private Viewing Tour</span>
@@ -208,14 +207,14 @@ export default function PropertyDetailPage() {
                     href={`https://wa.me/${store.contact.whatsapp?.replace(/[^0-9]/g, "")}?text=Hi,%20I%20am%20inquiring%20about%20the%20${encodeURIComponent(property.title)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="py-2.5 px-3 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold text-center flex items-center justify-center gap-1.5 transition-colors"
+                    className="py-2.5 px-3 rounded-full border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold text-center flex items-center justify-center gap-1.5 transition-colors"
                   >
                     <MessageSquare className="w-3.5 h-3.5" />
                     <span>WhatsApp Concierge</span>
                   </a>
                   <a
                     href={`tel:${store.contact.phone}`}
-                    className="py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-bold text-center flex items-center justify-center gap-1.5 transition-colors"
+                    className="py-2.5 px-3 rounded-full border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-bold text-center flex items-center justify-center gap-1.5 transition-colors"
                   >
                     <Phone className="w-3.5 h-3.5" />
                     <span>Call Desk</span>
@@ -317,7 +316,7 @@ export default function PropertyDetailPage() {
 
                   <button
                     type="submit"
-                    className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                    className="w-full py-3 px-4 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
                   >
                     <Send className="w-3.5 h-3.5" />
                     <span>Submit Lease Inquiry</span>

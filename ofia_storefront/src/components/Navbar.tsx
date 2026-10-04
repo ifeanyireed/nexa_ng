@@ -74,7 +74,7 @@ export default function Navbar() {
         {/* Mobile menu trigger */}
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden p-2 text-stone-800 hover:text-[#0069ff] rounded-lg transition-colors"
+          className="md:hidden p-2 text-stone-800 hover:text-[#0069ff] rounded-full transition-colors"
           aria-label="Toggle menu"
         >
           {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -83,7 +83,7 @@ export default function Navbar() {
 
       {/* Mobile Dropdown Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden mt-3 p-4 bg-[#111216] text-white rounded-2xl border border-white/10 shadow-2xl flex flex-col gap-2">
+        <div className="md:hidden mt-3 p-4 bg-[#111216] text-white rounded-3xl border border-white/10 shadow-2xl flex flex-col gap-2">
           {navItems.map((item) => (
             <button
               key={item}
@@ -91,7 +91,7 @@ export default function Navbar() {
                 setActiveTab(item);
                 setMobileMenuOpen(false);
               }}
-              className={`flex items-center justify-between px-4 py-2.5 rounded-xl text-left text-sm font-medium transition-all ${
+              className={`flex items-center justify-between px-4 py-2.5 rounded-full text-left text-sm font-medium transition-all ${
                 activeTab === item
                   ? "bg-[#0069ff] text-white"
                   : "text-zinc-300 hover:bg-white/5"

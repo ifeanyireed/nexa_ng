@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Sparkles,
+  Shirt,
   ShoppingBag,
   Car,
   UtensilsCrossed,
@@ -12,6 +12,10 @@ import {
   HeartHandshake,
   Armchair,
   Layers,
+  User,
+  Pill,
+  Zap,
+  Gift,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { VerticalType } from "@/types/storefront";
@@ -29,7 +33,7 @@ const TEMPLATES: Array<{
     label: "Fashion",
     storeName: "Aura & Loom",
     href: "/fashion",
-    icon: Sparkles,
+    icon: Shirt,
     color: "#B45309",
   },
   {
@@ -80,6 +84,30 @@ const TEMPLATES: Array<{
     icon: Armchair,
     color: "#4D7C0F",
   },
+  {
+    id: "pharmacy",
+    label: "Pharmacy",
+    storeName: "Nectar & Cure Dispensary",
+    href: "/pharmacy",
+    icon: Pill,
+    color: "#0D9488",
+  },
+  {
+    id: "hardware",
+    label: "Hardware",
+    storeName: "VoltForge Energy & Tools",
+    href: "/hardware",
+    icon: Zap,
+    color: "#D97706",
+  },
+  {
+    id: "retail",
+    label: "Retail",
+    storeName: "The Artisan Guild",
+    href: "/retail",
+    icon: Gift,
+    color: "#7C3AED",
+  },
 ];
 
 export default function TemplateSwitcher() {
@@ -91,23 +119,23 @@ export default function TemplateSwitcher() {
 
   return (
     <div className="sticky top-0 z-50 w-full bg-[#0F1117]/95 backdrop-blur-md border-b border-white/10 text-white shadow-xl transition-all">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+      <div className="max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-14 py-2.5 flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
         {/* Left: Ecosystem Brand & Template Selector Label */}
         <div className="flex items-center gap-2 shrink-0">
           <Link
             href="/templates"
-            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-bold text-zinc-300 transition-colors"
-            title="Browse all 7 Templates Directory"
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs sm:text-sm font-bold text-zinc-200 transition-colors"
+            title="Browse all 10 Templates Directory"
           >
-            <Layers className="w-3.5 h-3.5 text-[#0069FF]" />
-            <span className="hidden sm:inline">7 Storefront Templates</span>
-            <span className="sm:hidden">7 Templates</span>
+            <Layers className="w-4 h-4 text-[#0069FF]" />
+            <span className="hidden sm:inline">10 Storefront Templates</span>
+            <span className="sm:hidden">10 Templates</span>
           </Link>
           <span className="text-zinc-600 hidden md:inline">|</span>
         </div>
 
         {/* Center: 7 Vertical Template Quick Jump Tabs */}
-        <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto py-0.5">
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-0.5">
           {TEMPLATES.map((t) => {
             const Icon = t.icon;
             const isActive = pathname.startsWith(t.href);
@@ -116,15 +144,15 @@ export default function TemplateSwitcher() {
               <Link
                 key={t.id}
                 href={t.href}
-                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+                className={`flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
                   isActive
                     ? "bg-white text-zinc-900 shadow-md font-bold scale-[1.02]"
-                    : "text-zinc-400 hover:text-white hover:bg-white/5"
+                    : "text-zinc-300 hover:text-white hover:bg-white/10"
                 }`}
               >
                 <Icon
-                  className={`w-3.5 h-3.5 ${
-                    isActive ? "text-[#0069FF]" : "text-zinc-500"
+                  className={`w-4 h-4 ${
+                    isActive ? "text-[#0069FF]" : "text-zinc-400"
                   }`}
                 />
                 <span>{t.label}</span>
@@ -133,16 +161,25 @@ export default function TemplateSwitcher() {
           })}
         </div>
 
-        {/* Right: Cart Button & Directory Hub */}
+        {/* Right: Account & Cart Buttons */}
         <div className="flex items-center gap-2 shrink-0">
+          <Link
+            href="/account"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-medium transition-colors"
+            title="Customer Account: Profile, Addresses, Orders, Bookings"
+          >
+            <User className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Account</span>
+          </Link>
+
           <button
             onClick={() => setIsCartOpen(true)}
-            className="relative flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
+            className="relative flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-bold transition-all shadow-sm cursor-pointer"
           >
-            <ShoppingBag className="w-3.5 h-3.5" />
+            <ShoppingBag className="w-4 h-4" />
             <span className="hidden sm:inline">Bag</span>
             {totalCount > 0 && (
-              <span className="w-4 h-4 rounded-full bg-white text-blue-700 text-[10px] font-black flex items-center justify-center">
+              <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white text-blue-700 text-[10px] sm:text-xs font-black flex items-center justify-center">
                 {totalCount}
               </span>
             )}

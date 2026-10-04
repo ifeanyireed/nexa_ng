@@ -211,14 +211,14 @@ export default function FashionProductDetailPage() {
             <div className="space-y-3 pt-4 border-t border-stone-100">
               <button
                 onClick={handleAddToCart}
-                className="w-full py-3.5 rounded-2xl bg-amber-700 hover:bg-amber-800 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                className="w-full py-4 rounded-full bg-amber-700 hover:bg-amber-800 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
               >
                 <ShoppingBag className="w-4 h-4" />
                 <span>Add to Bag ({selectedSize} · {selectedColor})</span>
               </button>
 
               {addedSuccess && (
-                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+                <div className="p-3 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-center gap-2 animate-in fade-in">
                   <Check className="w-4 h-4 text-emerald-600" />
                   <span>Added to your bag! You can proceed to checkout anytime.</span>
                 </div>
@@ -226,7 +226,7 @@ export default function FashionProductDetailPage() {
 
               <Link
                 href="/fashion/custom-tailoring"
-                className="w-full py-2.5 rounded-xl border border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold text-center block transition-colors"
+                className="w-full py-3 rounded-full border border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold text-center block transition-colors"
               >
                 Need custom measurements? Request Atelier Bespoke Fitting
               </Link>

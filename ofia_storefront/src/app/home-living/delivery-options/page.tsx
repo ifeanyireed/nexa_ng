@@ -235,7 +235,7 @@ export default function HomeLivingDeliveryOptionsPage() {
                 <button
                   type="button"
                   onClick={() => setHasElevator(true)}
-                  className={`py-2 px-2 text-xs font-bold rounded-xl border transition-colors ${
+                  className={`py-2 px-3 text-xs font-bold rounded-full border transition-colors ${
                     hasElevator
                       ? "bg-stone-900 text-white border-stone-900"
                       : "bg-stone-50 text-stone-700 border-stone-200"
@@ -246,7 +246,7 @@ export default function HomeLivingDeliveryOptionsPage() {
                 <button
                   type="button"
                   onClick={() => setHasElevator(false)}
-                  className={`py-2 px-2 text-xs font-bold rounded-xl border transition-colors ${
+                  className={`py-2 px-3 text-xs font-bold rounded-full border transition-colors ${
                     !hasElevator
                       ? "bg-stone-900 text-white border-stone-900"
                       : "bg-stone-50 text-stone-700 border-stone-200"

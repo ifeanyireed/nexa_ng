@@ -14,6 +14,11 @@ const dropa = localFont({
 export const metadata: Metadata = {
   title: "Ofia Storefront · 7 Industry Vertical Experience Templates",
   description: "Industry-native storefronts tailored to Fashion, Cars, Food, Property, Gadgets, Beauty, and Home & Living.",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/ofia-logo.png",
+  },
 };
 
 export default function RootLayout({

@@ -5,7 +5,10 @@ export type VerticalType =
   | "property"
   | "gadgets"
   | "beauty"
-  | "home-living";
+  | "home-living"
+  | "pharmacy"
+  | "hardware"
+  | "retail";
 
 export interface VendorStore {
   id: string;
@@ -135,6 +138,7 @@ export interface Product {
     ingredientsHighlights: string[];
     crueltyFree: boolean;
     organic: boolean;
+    shadeOptions?: Array<{ name: string; hex: string }>;
   };
 
   // 7. Home & Living
@@ -151,6 +155,45 @@ export interface Product {
     finishes: Array<{ name: string; colorCode: string }>;
     assemblyRequired: boolean;
     assemblyTimeMinutes: number;
+  };
+
+  // 8. Health & Pharmacy
+  pharmacyMeta?: {
+    dosageForm: "Tablet" | "Capsule" | "Syrup" | "Topical Cream" | "Drops" | "Medical Device" | "Injection";
+    strength?: string;
+    activeIngredients: string[];
+    prescriptionRequired: boolean;
+    batchNumber?: string;
+    expiryDate: string;
+    packSize: string;
+    nafdacNumber?: string;
+    warnings: string[];
+    usageInstructions: string;
+  };
+
+  // 9. Hardware, Energy & Industrial
+  hardwareMeta?: {
+    powerRating?: string;
+    voltage?: string;
+    capacity?: string;
+    systemType: "Solar Panel" | "Hybrid Inverter" | "Lithium Battery" | "Generator" | "Industrial Tool" | "Electrical Supply";
+    contractorPrice?: number;
+    warrantyYears: number;
+    specSheetUrl?: string;
+    installationEligible: boolean;
+  };
+
+  // 10. General Retail & Specialty Goods
+  retailMeta?: {
+    department: "Books & Stationery" | "Sports & Fitness" | "Baby & Toys" | "Crafts & Hobbies" | "Specialty Gifts";
+    authorOrBrand?: string;
+    isbnOrSku?: string;
+    ageGroup?: string;
+    weightOrDimension?: string;
+    giftWrapAvailable: boolean;
+    customEngravingAvailable: boolean;
+    isPreOrder?: boolean;
+    releaseDate?: string;
   };
 }
 

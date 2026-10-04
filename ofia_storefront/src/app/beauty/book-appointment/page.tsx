@@ -9,7 +9,7 @@ import StoreFooter from "@/components/common/StoreFooter";
 import {
   Calendar,
   Clock,
-  Sparkles,
+  Heart,
   UserCheck,
   ChevronLeft,
   CheckCircle2,
@@ -117,7 +117,7 @@ function AppointmentBookingForm() {
     <div className="space-y-8">
       <div className="space-y-2">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 text-rose-700 text-xs font-bold uppercase tracking-wider">
-          <Sparkles className="w-3.5 h-3.5" />
+          <Heart className="w-3.5 h-3.5" />
           <span>Aesthetic Sanctuary Appointments</span>
         </div>
         <h1 className="font-dropa text-3xl font-bold text-zinc-900">
@@ -278,7 +278,7 @@ function AppointmentBookingForm() {
 
         <button
           type="submit"
-          className="w-full py-4 px-6 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-rose-600/30 transition-all cursor-pointer"
+          className="w-full py-4 px-6 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-rose-600/30 transition-all cursor-pointer"
         >
           <CheckCircle2 className="w-5 h-5" />
           <span>Confirm Studio Booking · {store.currency}{activeService.price.toLocaleString()}</span>

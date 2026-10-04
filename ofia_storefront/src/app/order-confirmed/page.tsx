@@ -9,7 +9,6 @@ import {
   Truck,
   ArrowRight,
   ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 
 function ConfirmationContent() {
@@ -51,17 +50,18 @@ function ConfirmationContent() {
 
       <div className="pt-4 flex flex-wrap items-center justify-center gap-3">
         <Link
-          href="/templates"
+          href={`/order-tracking?ref=${orderRef}`}
           className="px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-blue-600/30 transition-colors"
+        >
+          <Truck className="w-4 h-4" />
+          <span>Track Live Dispatch</span>
+        </Link>
+        <Link
+          href="/templates"
+          className="px-6 py-3 rounded-full border border-stone-300 hover:bg-stone-50 text-stone-700 font-bold text-xs flex items-center gap-2 transition-colors"
         >
           <span>Explore All 7 Templates</span>
           <ArrowRight className="w-4 h-4" />
-        </Link>
-        <Link
-          href="/"
-          className="px-6 py-3 rounded-full border border-stone-300 hover:bg-stone-50 text-stone-700 font-bold text-xs transition-colors"
-        >
-          Return to Overview
         </Link>
       </div>
     </div>

@@ -238,7 +238,7 @@ export default function CheckoutPage() {
               <button
                 type="submit"
                 disabled={items.length === 0 || isProcessing}
-                className="w-full py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 disabled:bg-stone-300 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 transition-all cursor-pointer"
+                className="w-full py-4 px-6 rounded-full bg-blue-600 hover:bg-blue-500 disabled:bg-stone-300 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 transition-all cursor-pointer"
               >
                 {isProcessing ? (
                   <span>Securing Order & Payment...</span>
@@ -267,7 +267,7 @@ export default function CheckoutPage() {
                   <p className="text-xs text-stone-500">Your shopping bag is empty.</p>
                   <Link
                     href="/templates"
-                    className="inline-block px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold"
+                    className="inline-block px-5 py-2.5 rounded-full bg-blue-600 text-white text-xs font-bold"
                   >
                     Explore 7 Templates
                   </Link>

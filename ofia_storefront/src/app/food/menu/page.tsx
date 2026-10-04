@@ -247,7 +247,7 @@ export default function FoodMenuPage() {
 
                     <Link
                       href={`/food/item/${dish.id}`}
-                      className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-amber-600 hover:bg-amber-500 transition-colors flex items-center gap-1.5 shadow-xs"
+                      className="px-5 py-2.5 rounded-full text-xs font-bold text-white bg-amber-600 hover:bg-amber-500 transition-colors flex items-center gap-1.5 shadow-xs"
                     >
                       <ShoppingBag className="w-3.5 h-3.5" />
                       <span>Customize & Add</span>

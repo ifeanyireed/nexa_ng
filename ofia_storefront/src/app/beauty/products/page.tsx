@@ -7,7 +7,6 @@ import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import { useCart } from "@/context/CartContext";
 import {
-  Sparkles,
   Search,
   Filter,
   ShoppingBag,
@@ -204,9 +203,11 @@ export default function BeautyProductsPage() {
                       <span className="text-[10px] font-bold text-rose-700 uppercase tracking-wider">
                         {prod.category}
                       </span>
-                      <h3 className="font-dropa text-lg font-bold text-zinc-900 mt-0.5 line-clamp-1 group-hover:text-rose-600 transition-colors">
-                        {prod.title}
-                      </h3>
+                      <Link href={`/beauty/product/${prod.id}`}>
+                        <h3 className="font-dropa text-lg font-bold text-zinc-900 mt-0.5 line-clamp-1 group-hover:text-rose-600 transition-colors">
+                          {prod.title}
+                        </h3>
+                      </Link>
                     </div>
 
                     <p className="text-xs text-zinc-600 line-clamp-2 leading-relaxed font-light">
@@ -243,7 +244,7 @@ export default function BeautyProductsPage() {
                     type="button"
                     onClick={() => handleQuickAdd(prod)}
                     disabled={isAdded}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
+                    className={`px-5 py-2.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
                       isAdded
                         ? "bg-emerald-600 text-white"
                         : "bg-rose-600 hover:bg-rose-500 text-white"

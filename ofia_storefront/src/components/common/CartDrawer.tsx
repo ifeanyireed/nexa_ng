@@ -31,7 +31,7 @@ export default function CartDrawer() {
           </div>
           <button
             onClick={() => setIsCartOpen(false)}
-            className="p-1.5 rounded-lg text-stone-500 hover:text-zinc-900 hover:bg-stone-200 transition-colors"
+            className="p-1.5 rounded-full text-stone-500 hover:text-zinc-900 hover:bg-stone-200 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -144,7 +144,7 @@ export default function CartDrawer() {
             <Link
               href="/checkout"
               onClick={() => setIsCartOpen(false)}
-              className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+              className="w-full py-3.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
             >
               <span>Proceed to Checkout</span>
               <ArrowRight className="w-4 h-4" />

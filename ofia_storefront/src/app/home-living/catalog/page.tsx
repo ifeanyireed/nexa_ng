@@ -232,7 +232,7 @@ export default function HomeLivingCatalogPage() {
 
                   <Link
                     href={`/home-living/product/${prod.id}`}
-                    className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 transition-colors flex items-center gap-1.5 shadow-xs"
+                    className="px-4 py-2.5 rounded-full text-xs font-bold text-white bg-stone-900 hover:bg-stone-800 transition-colors flex items-center gap-1.5 shadow-xs"
                   >
                     <Ruler className="w-3.5 h-3.5 text-amber-400" />
                     <span>Dimensions & Specs</span>

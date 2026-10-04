@@ -39,7 +39,7 @@ footer{border-top:1px solid var(--line);padding:28px 24px;color:var(--muted);tex
 <header>
 <div class="eyebrow">Product Strategy & Architecture · V1.0</div>
 <h1>Ofia Commerce & Logistics Ecosystem</h1>
-<p>One platform. Six applications. Seven vertical experiences. One simple experience for every business.</p>
+<p>One platform. Six applications. Ten vertical experiences. One simple experience for every business.</p>
 <div class="pills"><span class="pill">Six applications</span><span class="pill">Multi-vertical commerce</span><span class="pill">Integrated logistics</span></div>
 </header>
 <main>
@@ -47,7 +47,7 @@ footer{border-top:1px solid var(--line);padding:28px 24px;color:var(--muted);tex
 <div class="callout"><strong>Core principle:</strong> A car dealer should feel like they are using a platform designed for car dealers. A food vendor should feel like they are using a platform designed for food businesses. Both operate through the same shared platform.</div>
 
 <nav class="toc"><strong>Contents</strong><ol>
-<li><a href="#foundation">Product foundation</a></li><li><a href="#verticals">Seven vertical templates</a></li><li><a href="#storefront">Storefront web</a></li><li><a href="#vendorweb">Vendor web dashboard</a></li><li><a href="#agent">Logistics agent dashboard</a></li><li><a href="#customer">Customer mobile app</a></li><li><a href="#vendormobile">Vendor mobile app</a></li><li><a href="#rider">Rider mobile app</a></li><li><a href="#capabilities">Shared capabilities</a></li><li><a href="#architecture">Template architecture</a></li><li><a href="#journeys">User journeys</a></li><li><a href="#admin">Administration</a></li><li><a href="#quality">Non-functional requirements</a></li><li><a href="#roadmap">V1 roadmap</a></li><li><a href="#acceptance">Acceptance criteria</a></li><li><a href="#principles">Design principles</a></li>
+<li><a href="#foundation">Product foundation</a></li><li><a href="#verticals">Ten vertical templates</a></li><li><a href="#storefront">Storefront web</a></li><li><a href="#vendorweb">Vendor web dashboard</a></li><li><a href="#agent">Logistics agent dashboard</a></li><li><a href="#customer">Customer mobile app</a></li><li><a href="#vendormobile">Vendor mobile app</a></li><li><a href="#rider">Rider mobile app</a></li><li><a href="#capabilities">Shared capabilities</a></li><li><a href="#architecture">Template architecture</a></li><li><a href="#journeys">User journeys</a></li><li><a href="#admin">Administration</a></li><li><a href="#quality">Non-functional requirements</a></li><li><a href="#roadmap">V1 roadmap</a></li><li><a href="#acceptance">Acceptance criteria</a></li><li><a href="#principles">Design principles</a></li>
 </ol></nav>
 
 <section id="foundation"><h2>1. Product Foundation</h2>
@@ -70,7 +70,7 @@ footer{border-top:1px solid var(--line);padding:28px 24px;color:var(--muted);tex
 <h3>1.3 Separate public website</h3><p>Ofia.ng remains the public platform entry point: ecosystem overview, product information, business registration, vendor acquisition, app links, pricing, contact, and support forms. Ofia Compass and broader marketplace discovery can be developed later without making them a dependency for the initial storefront and commerce release.</p>
 </section>
 
-<section id="verticals"><h2>2. Seven Vertical Experience Templates</h2>
+<section id="verticals"><h2>2. Ten Vertical Experience Templates</h2>
 <p>Each vertical is supported in the storefront web app, customer mobile app, vendor web dashboard, and vendor mobile app. A vertical defines the default experience—not a restriction on what a vendor can sell or offer.</p>
 <table><thead><tr><th>Vertical</th><th>Products / Listings</th><th>Distinct UI</th><th>Optional services and workflows</th></tr></thead><tbody>
 <tr><td><strong>1. Fashion & Apparel</strong></td><td>Clothing, footwear, bags, accessories</td><td>Collections, lookbooks, size/color variants, seasonal drops</td><td>Tailoring, alterations, custom fitting, styling appointments</td></tr>
@@ -80,10 +80,14 @@ footer{border-top:1px solid var(--line);padding:28px 24px;color:var(--muted);tex
 <tr><td><strong>5. Gadgets & Electronics</strong></td><td>Phones, laptops, accessories, electronics, appliances</td><td>Specifications, model comparisons, compatibility, warranty</td><td>Repairs, installation, device setup, diagnostics, technical support</td></tr>
 <tr><td><strong>6. Beauty & Personal Care</strong></td><td>Skincare, cosmetics, hair products, fragrance, accessories</td><td>Beauty categories, routines, brands, product collections</td><td>Hair, nails, makeup, facials, spa treatments, consultations</td></tr>
 <tr><td><strong>7. Home & Living</strong></td><td>Furniture, mattresses, lighting, decor, kitchenware, household goods</td><td>Lifestyle imagery, room collections, dimensions, materials, finishes</td><td>Vendor-defined installation, assembly, custom furniture, interior consultation</td></tr>
+<tr><td><strong>8. Health & Pharmacy</strong></td><td>OTC & prescription medications, vitamins & supplements, medical devices, first aid, baby wellness</td><td>Dosage forms, active ingredients, batch/expiry alerts, prescription upload requirement, health advice badges</td><td>Prescription verification, pharmacist consultation, recurring refill schedules, dosage guidance</td></tr>
+<tr><td><strong>9. Hardware, Energy & Industrial</strong></td><td>Solar panels, inverters, deep-cycle batteries, generators, power tools, electrical & plumbing supplies, building materials</td><td>Technical specs (wattage, kVA, voltage, battery chemistry), warranty tiers, bulk/tiered contractor pricing, spec sheets</td><td>Site inspection, solar/inverter installation, maintenance & repairs, warranty registration, contractor RFQ</td></tr>
+<tr><td><strong>10. General Retail & Specialty Goods</strong></td><td>Books & stationery, sports & fitness equipment, baby gear & toys, hobby items, gifts & crafts, musical instruments</td><td>Dynamic multi-attribute tags (author, ISBN, age group, weight capacity), department-level filters, gift registries</td><td>Gift wrapping, personalized engraving/printing, pre-orders & backorders, equipment setup</td></tr>
 </tbody></table>
 <p><strong>Design rule:</strong> Products are central, while services, appointments, and requests are flexible capabilities. Vendors enable only the services they actually offer.</p>
 <h3>2.1 Capability matrix</h3><table><thead><tr><th>Vertical</th><th>Core interaction</th><th>Special workflow</th></tr></thead><tbody>
 <tr><td>Fashion</td><td>Product catalog</td><td>Size/color selection</td></tr><tr><td>Cars</td><td>Listings and inquiries</td><td>Inspection/test-drive requests</td></tr><tr><td>Food</td><td>Menu and order</td><td>Preparation time and custom orders</td></tr><tr><td>Property</td><td>Listings and inquiries</td><td>Availability and viewing</td></tr><tr><td>Gadgets</td><td>Product catalog</td><td>Specifications and warranty</td></tr><tr><td>Beauty</td><td>Products and services</td><td>Appointments</td></tr><tr><td>Home & Living</td><td>Visual product catalog</td><td>Dimensions/materials and delivery options</td></tr>
+<tr><td>Health & Pharmacy</td><td>Regulated product catalog</td><td>Prescription upload & pharmacist verification</td></tr><tr><td>Hardware & Energy</td><td>Technical product catalog</td><td>Power/capacity sizing & installation booking</td></tr><tr><td>General Retail & Specialty</td><td>Multi-department catalog</td><td>Dynamic attributes & personalization requests</td></tr>
 </tbody></table>
 </section>
 
@@ -108,6 +112,9 @@ footer{border-top:1px solid var(--line);padding:28px 24px;color:var(--muted);tex
 <div class="card"><h3>Gadgets</h3><ul><li>Specification highlights</li><li>Model/variant selector</li><li>Warranty and compatibility</li><li>Compare products, repair CTA</li></ul></div>
 <div class="card"><h3>Beauty</h3><ul><li>Product collections/categories</li><li>Brand filters</li><li>Service menu and appointment CTA</li><li>Treatment details</li></ul></div>
 <div class="card"><h3>Home & Living</h3><ul><li>Lifestyle and room collections</li><li>Furniture galleries</li><li>Dimensions/materials/finishes</li><li>Delivery/installation information</li></ul></div>
+<div class="card"><h3>Health & Pharmacy</h3><ul><li>Dosage & active ingredient highlights</li><li>Prescription upload & validation modal</li><li>Expiry date & regulatory warnings</li><li>Pharmacist consultation CTA</li></ul></div>
+<div class="card"><h3>Hardware & Energy</h3><ul><li>Technical specifications table (kVA, Ah, Watts)</li><li>System sizing & compatibility calculator</li><li>Tiered wholesale / contractor pricing</li><li>Professional installation booking CTA</li></ul></div>
+<div class="card"><h3>General Retail & Specialty</h3><ul><li>Dynamic attribute badges (ISBN, author, age)</li><li>Department & brand browsing hubs</li><li>Gift wrapping & custom engraving option</li><li>Pre-order & backorder management</li></ul></div>
 </div>
 <h3>3.4 Storefront customization</h3><p>Vendors configure store name/logo, brand colors, cover images, description, contact information, featured products, categories, homepage sections, policies, social links, and enabled capabilities. The template supplies structure; customization supplies identity and content.</p>
 </section>
@@ -134,7 +141,10 @@ footer{border-top:1px solid var(--line);padding:28px 24px;color:var(--muted);tex
 <li><strong>Property:</strong> property inventory/editor, amenities, availability calendar, viewing requests, rental inquiries.</li>
 <li><strong>Gadgets:</strong> electronics catalog, specifications, model/variant, warranty, repair services/requests.</li>
 <li><strong>Beauty:</strong> product catalog, service menu, provider configuration, appointment calendar, duration/pricing, booking management.</li>
-<li><strong>Home & Living:</strong> furniture catalog, dimensions/materials, finish/color variants, collections, delivery/installation, custom-order requests.</li></ul>
+<li><strong>Home & Living:</strong> furniture catalog, dimensions/materials, finish/color variants, collections, delivery/installation, custom-order requests.</li>
+<li><strong>Health & Pharmacy:</strong> medication catalog, active ingredients, dosage forms, expiry & batch tracking, prescription review & approval queue, consultation schedule.</li>
+<li><strong>Hardware & Energy:</strong> technical spec editor (power ratings, capacity, voltage), tiered volume pricing, spec-sheet attachments, installation quote & service dispatch.</li>
+<li><strong>General Retail & Specialty:</strong> flexible schema / custom attributes editor (author, publisher, age, weight), multi-department hierarchy, bundle builder, personalization options.</li></ul>
 <h3>4.4 Quick actions</h3><p>Add product, add service, view new orders, manage bookings, book dispatch, request pickup, view payments, and preview storefront. The set adapts to the vendor's vertical and enabled capabilities.</p>
 </section>
 
@@ -175,7 +185,10 @@ footer{border-top:1px solid var(--line);padding:28px 24px;color:var(--muted);tex
 <li><strong>Property:</strong> property gallery, rental price, amenities, location, viewing request.</li>
 <li><strong>Gadgets:</strong> gallery, specifications, variants, warranty, repair/service actions.</li>
 <li><strong>Beauty:</strong> product collections, categories, service menu, appointment booking.</li>
-<li><strong>Home & Living:</strong> lifestyle imagery, room collections, furniture cards, dimensions/materials, delivery/installation details.</li></ul>
+<li><strong>Home & Living:</strong> lifestyle imagery, room collections, furniture cards, dimensions/materials, delivery/installation details.</li>
+<li><strong>Health & Pharmacy:</strong> medication listings, dosage tabs, prescription camera capture/upload, pharmacist consultation booking.</li>
+<li><strong>Hardware & Energy:</strong> technical specification cards, capacity filters, contractor bulk pricing badges, installation request flow.</li>
+<li><strong>General Retail & Specialty:</strong> multi-department carousels, dynamic attribute chips, gift option toggles, pre-order badges.</li></ul>
 <h3>6.4 Independent logistics flow</h3><div class="flow">Open Logistics → Choose Pickup Request → Enter Pickup Location → Enter Destination → Parcel Details → View Quote → Confirm Request → Payment → Rider Assignment → Track Pickup and Delivery → Delivery Confirmation</div>
 <p>Request fields: pickup and destination addresses; sender and recipient contacts; parcel description and size/weight where applicable; pickup instructions; delivery timing; payment method.</p>
 </section>
@@ -197,7 +210,10 @@ footer{border-top:1px solid var(--line);padding:28px 24px;color:var(--muted);tex
 <tr><td>Fashion</td><td>Add apparel, photos, variants, sizes, collections</td></tr><tr><td>Cars</td><td>Add vehicle, gallery, specifications, inquiry status</td></tr>
 <tr><td>Food</td><td>Add menu item, availability, preparation time, add-ons</td></tr><tr><td>Property</td><td>Add listing, photos, amenities, viewing availability</td></tr>
 <tr><td>Gadgets</td><td>Add device, specifications, warranty, stock</td></tr><tr><td>Beauty</td><td>Add product/service, manage appointments</td></tr>
-<tr><td>Home & Living</td><td>Add furniture, dimensions, materials, variants</td></tr></tbody></table>
+<tr><td>Home & Living</td><td>Add furniture, dimensions, materials, variants</td></tr>
+<tr><td>Health & Pharmacy</td><td>Add medications, dosage/expiry, review prescriptions</td></tr>
+<tr><td>Hardware & Energy</td><td>Add equipment, technical specs, installation requests</td></tr>
+<tr><td>General Retail & Specialty</td><td>Add items, custom attribute tags, department categories</td></tr></tbody></table>
 <h3>7.4 Mobile store customization</h3><p>Select and preview template; upload branding; change banner/logo; choose and reorder homepage sections; feature products/services; enable supported capabilities; preview as customer. Web and mobile changes use the same store configuration.</p>
 </section>
 
@@ -232,16 +248,16 @@ footer{border-top:1px solid var(--line);padding:28px 24px;color:var(--muted);tex
 </section>
 
 <section id="architecture"><h2>10. Vertical Template Architecture</h2>
-<h3>10.1 Template principle</h3><p>Do not build seven independent applications. Each relevant app contains a vertical experience layer that selects the appropriate interface using the store's vertical and configuration.</p>
+<h3>10.1 Template principle</h3><p>Do not build separate independent applications for each vertical. Each relevant app contains a vertical experience layer that selects the appropriate interface using the store's vertical and configuration.</p>
 <div class="flow">Vendor creates store → Selects vertical → Chooses template → Configures brand/sections → Enables products/services/bookings → Publishes store<br><br>Published configuration feeds: Storefront Web Renderer · Customer Mobile Renderer · Vendor Web Workspace · Vendor Mobile Workspace</div>
 <h3>10.2 Store template configuration</h3><ul><li>Vertical identifier and template identifier</li><li>Theme settings and homepage section order</li><li>Enabled capabilities and catalog fields</li><li>Enabled service types</li><li>Branding and store policies</li><li>Feature visibility</li></ul>
 <h3>10.3 Each template defines</h3><ol><li>Storefront homepage layout</li><li>Product/listing card design</li><li>Product detail layout</li><li>Service presentation</li><li>Search/filter behavior</li><li>Checkout or inquiry behavior</li><li>Vendor catalog editor</li><li>Vendor dashboard widgets</li><li>Mobile-specific layouts</li><li>Customization options</li></ol>
-<h3>10.4 Shared vs. vertical-specific components</h3><table><thead><tr><th>Shared foundations</th><th>Vertical-specific components</th></tr></thead><tbody><tr><td>Header/navigation, product-card foundation, image gallery, search/filter engine, cart/checkout, payment status, booking engine, order management</td><td>Vehicle specification panel, food menu item, property listing, apparel variant selector, gadget comparison, beauty service menu, furniture dimensions</td></tr></tbody></table>
+<h3>10.4 Shared vs. vertical-specific components</h3><table><thead><tr><th>Shared foundations</th><th>Vertical-specific components</th></tr></thead><tbody><tr><td>Header/navigation, product-card foundation, image gallery, search/filter engine, cart/checkout, payment status, booking engine, order management</td><td>Vehicle specification panel, food menu item, property listing, apparel variant selector, gadget comparison, beauty service menu, furniture dimensions, prescription verification & dosage panel, energy capacity & sizing calculator, dynamic attribute badge grid</td></tr></tbody></table>
 <p><strong>Build shared foundations once, then compose vertical experiences from them.</strong></p>
 </section>
 
 <section id="journeys"><h2>11. End-to-End User Journeys</h2>
-<h3>11.1 Vendor onboarding</h3><ol><li>Visit Ofia.ng and select business registration.</li><li>Create account and enter business information.</li><li>Select one of seven verticals and a storefront template.</li><li>Configure brand identity and add products/services.</li><li>Configure delivery and payment options.</li><li>Preview and publish the store.</li><li>Manage operations through web or mobile.</li></ol>
+<h3>11.1 Vendor onboarding</h3><ol><li>Visit Ofia.ng and select business registration.</li><li>Create account and enter business information.</li><li>Select one of ten verticals and a storefront template.</li><li>Configure brand identity and add products/services.</li><li>Configure delivery and payment options.</li><li>Preview and publish the store.</li><li>Manage operations through web or mobile.</li></ol>
 <h3>11.2 Customer shopping</h3><ol><li>Open Customer App and search/discover a vendor.</li><li>Open storefront; app renders the correct vertical template.</li><li>Browse products/services; add to cart or initiate booking.</li><li>Complete checkout/payment and receive confirmation.</li><li>Track order or booking and receive updates.</li></ol>
 <h3>11.3 Independent logistics</h3><ol><li>Open Logistics and select pickup request.</li><li>Enter pickup/destination and parcel details.</li><li>Receive quote, confirm, and pay as configured.</li><li>Operator receives job and assigns rider.</li><li>Customer tracks pickup/delivery; delivery is confirmed.</li></ol>
 <h3>11.4 Vendor dispatch</h3><ol><li>Open vendor app/dashboard and choose Book Dispatch or Request Pickup.</li><li>Enter locations and parcel details; confirm request.</li><li>Operator receives job and assigns rider.</li><li>Vendor tracks progress until completion.</li></ol>
@@ -262,12 +278,12 @@ footer{border-top:1px solid var(--line);padding:28px 24px;color:var(--muted);tex
 <div class="card"><h3>Phase 1 — Platform foundation</h3><p>Identity/business onboarding; store creation and vertical selection; store configuration; shared catalog; service/booking capability; core order/payment workflows; initial logistics job model.</p></div>
 <div class="card"><h3>Phase 2 — Commerce experience</h3><p>Storefront web, customer mobile, vendor web/mobile; first vertical templates; product browsing and checkout; store customization and publishing.</p></div>
 <div class="card"><h3>Phase 3 — Logistics experience</h3><p>Agent dashboard and rider app; store-order delivery; independent customer pickup; vendor dispatch/pickup; assignment, tracking, delivery confirmation.</p></div>
-<div class="card"><h3>Phase 4 — Complete V1 vertical coverage</h3><p>Fashion, Cars, Food, Property Rentals, Gadgets, Beauty, Home & Living; vertical-specific vendor management; service and booking enhancements.</p></div>
+<div class="card"><h3>Phase 4 — Complete V1 vertical coverage</h3><p>Fashion, Cars, Food, Property Rentals, Gadgets, Beauty, Home & Living, Health & Pharmacy, Hardware & Energy, General Retail & Specialty Goods; vertical-specific vendor management; service and booking enhancements.</p></div>
 <div class="card"><h3>Phase 5 — Optimization and growth</h3><p>Advanced analytics, reviews, following/loyalty, promotions, logistics automation, and expanded storefront customization.</p></div>
 </section>
 
 <section id="acceptance"><h2>15. V1 Acceptance Criteria</h2><ul class="checklist">
-<li>A vendor can register and create a store.</li><li>A vendor can select one of the seven vertical templates.</li><li>Storefront web renders the selected vertical correctly.</li><li>Customer mobile renders the same store natively, without a web wrapper.</li><li>Vendor manages products/services from web and mobile.</li><li>Customization is reflected consistently across customer interfaces.</li><li>Customers browse, purchase, and track orders.</li><li>Customers book enabled services.</li><li>Customers create independent pickup requests.</li><li>Vendors create dispatch and pickup requests independently.</li><li>Logistics dashboard receives and assigns jobs.</li><li>Riders accept, execute, and complete jobs.</li><li>Customers/vendors receive relevant notifications.</li><li>Payment and order statuses remain consistent across apps.</li><li>Multiple businesses operate independently.</li></ul>
+<li>A vendor can register and create a store.</li><li>A vendor can select one of the ten vertical templates.</li><li>Storefront web renders the selected vertical correctly.</li><li>Customer mobile renders the same store natively, without a web wrapper.</li><li>Vendor manages products/services from web and mobile.</li><li>Customization is reflected consistently across customer interfaces.</li><li>Customers browse, purchase, and track orders.</li><li>Customers book enabled services.</li><li>Customers create independent pickup requests.</li><li>Vendors create dispatch and pickup requests independently.</li><li>Logistics dashboard receives and assigns jobs.</li><li>Riders accept, execute, and complete jobs.</li><li>Customers/vendors receive relevant notifications.</li><li>Payment and order statuses remain consistent across apps.</li><li>Multiple businesses operate independently.</li></ul>
 </section>
 
 <section id="principles"><h2>16. Final Product Design Principles</h2><ol>

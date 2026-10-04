@@ -10,7 +10,6 @@ import {
   Calendar,
   Users,
   UtensilsCrossed,
-  Sparkles,
   ChevronLeft,
   Check,
   Send,
@@ -311,7 +310,7 @@ export default function FoodCustomOrderPage() {
 
               <button
                 type="submit"
-                className="w-full py-4 px-6 rounded-2xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 transition-all cursor-pointer"
+                className="w-full py-4 px-6 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25 transition-all cursor-pointer"
               >
                 <Send className="w-4 h-4" />
                 <span>Submit Custom Culinary Brief</span>

@@ -5,7 +5,6 @@ import StoreFooter from "@/components/common/StoreFooter";
 import {
   Calendar,
   Clock,
-  Sparkles,
   UserCheck,
   ShieldCheck,
   CheckCircle2,

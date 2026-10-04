@@ -301,21 +301,13 @@ export default function PropertyListingsPage() {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/property/listing/${item.id}`}
-                        className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors"
-                      >
-                        Specs
-                      </Link>
-                      <Link
-                        href={`/property/schedule-viewing/${item.id}`}
-                        className="px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 transition-colors flex items-center gap-1.5 shadow-xs"
-                      >
-                        <Calendar className="w-3.5 h-3.5" />
-                        <span>Viewing</span>
-                      </Link>
-                    </div>
+                    <Link
+                      href={`/property/listing/${item.id}`}
+                      className="px-4 py-2 rounded-full text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 transition-colors flex items-center gap-1.5 shadow-xs"
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>View Residence & Schedule</span>
+                    </Link>
                   </div>
                 </div>
               );

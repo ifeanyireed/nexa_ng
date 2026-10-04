@@ -17,7 +17,6 @@ import {
   Share2,
   Wrench,
   Layers,
-  Sparkles,
   CheckCircle2,
 } from "lucide-react";
 
@@ -231,7 +230,7 @@ export default function HomeLivingProductDetailPage() {
                 type="button"
                 onClick={handleAddToCart}
                 disabled={addedSuccess}
-                className={`w-full py-4 px-6 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                className={`w-full py-4 px-6 rounded-full font-bold text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
                   addedSuccess
                     ? "bg-emerald-600 text-white"
                     : "bg-stone-900 hover:bg-stone-800 text-white shadow-lg"

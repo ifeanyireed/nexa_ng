@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { MOCK_STORES } from "@/data/mockStores";
 import {
-  Sparkles,
+  Shirt,
   ArrowRight,
   Car,
   UtensilsCrossed,
@@ -12,12 +12,15 @@ import {
   Layers,
   ShieldCheck,
   CheckCircle2,
+  Pill,
+  Zap,
+  Gift,
 } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Templates · Ofia Storefront 7 Industry Verticals",
-  description: "Explore the 7 purpose-built storefront templates with tailored workflows and screens.",
+  title: "Templates · Ofia Storefront 10 Industry Verticals",
+  description: "Explore the 10 purpose-built storefront templates with tailored workflows and screens.",
 };
 
 export default function TemplatesDirectoryPage() {
@@ -28,7 +31,7 @@ export default function TemplatesDirectoryPage() {
       slug: "fashion",
       tagline: "Contemporary Afro-Minimalist Silhouettes & Tailoring",
       description: "Apparel catalog with multi-axis size & color matrices, interactive chest/waist size guides, and bespoke made-to-measure tailoring booking.",
-      icon: Sparkles,
+      icon: Shirt,
       cover: MOCK_STORES.fashion.coverImage,
       badge: "Apparel & Luxury",
       screens: [
@@ -167,13 +170,82 @@ export default function TemplatesDirectoryPage() {
         { name: "Architectural Studio Home", href: "/home-living" },
         { name: "Visual Furniture & Room Catalog", href: "/home-living/catalog" },
         { name: "Exact Dimensions Blueprint & Finishes", href: "/home-living/product/hom-001" },
-        { name: "White-Glove Delivery Tiers & Assembly Calculator", href: "/home-living/delivery-options" },
+        { name: "White-Glove Assembly & Custom Furniture", href: "/home-living/services" },
+        { name: "White-Glove Delivery Tiers", href: "/home-living/delivery-options" },
       ],
       features: [
         "Exact blueprint dimensions (H × W × D)",
         "Curbside vs Room vs White-Glove tiers",
         "Interactive assembly & logistics estimator",
         "Tactile fabric & solid timber swatches",
+      ],
+    },
+    {
+      vertical: "pharmacy",
+      title: "Health & Pharmacy",
+      slug: "pharmacy",
+      tagline: "Clinical Dispensary, Regulated Medications & Refill Schedules",
+      description: "Regulated medical catalog with active chemical ingredients, dosage forms, batch/expiry alerts, cold-chain delivery guarantees, prescription script uploads, and pharmacist consultation scheduling.",
+      icon: Pill,
+      cover: MOCK_STORES.pharmacy.coverImage,
+      badge: "Clinical & Regulated",
+      screens: [
+        { name: "Clinical Dispensary Flagship", href: "/pharmacy" },
+        { name: "Medication & Wellness Catalog", href: "/pharmacy/catalog" },
+        { name: "NAFDAC & Active Ingredient Details", href: "/pharmacy/product/phm-001" },
+        { name: "Doctor Prescription (Rx) Upload", href: "/pharmacy/prescription" },
+        { name: "Pharmacist Therapy Consultation Booking", href: "/pharmacy/consultation" },
+      ],
+      features: [
+        "NAFDAC registration & batch tracking",
+        "Prescription (Rx) vs OTC checkout gating",
+        "Automated monthly refill scheduler",
+        "Encrypted prescription upload vault",
+      ],
+    },
+    {
+      vertical: "hardware",
+      title: "Hardware & Energy",
+      slug: "hardware",
+      tagline: "High-Yield Solar, Hybrid Inverters & Industrial Systems",
+      description: "Technical equipment showcase with kVA power ratings, battery Ah capacity, downloadable manufacturer spec sheets, wholesale contractor pricing tiers, and interactive system sizing calculator.",
+      icon: Zap,
+      cover: MOCK_STORES.hardware.coverImage,
+      badge: "Energy & Industrial",
+      screens: [
+        { name: "Industrial & Solar Flagship", href: "/hardware" },
+        { name: "Technical Equipment Spec Catalog", href: "/hardware/catalog" },
+        { name: "Engineering Spec Matrix & Installation Addon", href: "/hardware/product/hdw-001" },
+        { name: "Solar Load & Inverter Sizing Calculator", href: "/hardware/calculator" },
+        { name: "COREN Field Inspection & Contractor RFQ", href: "/hardware/services" },
+      ],
+      features: [
+        "Interactive appliance load sizing calculator",
+        "Tiered wholesale contractor pricing",
+        "Downloadable OEM PDF spec sheets",
+        "COREN installation commissioning booking",
+      ],
+    },
+    {
+      vertical: "retail",
+      title: "General Retail & Specialty",
+      slug: "retail",
+      tagline: "Literature, Athletic Gear, Montessori Toys & Keepsakes",
+      description: "Multi-department retail platform with author, ISBN, age group, and dimension attributes, complimentary laser brass plate engraving, and artisan mulberry wax-sealed gift wrapping.",
+      icon: Gift,
+      cover: MOCK_STORES.retail.coverImage,
+      badge: "Specialty & Gifts",
+      screens: [
+        { name: "Multi-Department Emporium", href: "/retail" },
+        { name: "Department & Brand Filter Catalog", href: "/retail/catalog" },
+        { name: "Dynamic Attributes & Engraving Preview", href: "/retail/product/rtl-001" },
+        { name: "Specialty Gift Registry & Atelier", href: "/retail/customization" },
+      ],
+      features: [
+        "Multi-department hierarchy (Books, Fitness, Baby, Gifts)",
+        "Complimentary brass laser engraving preview",
+        "Handmade mulberry wax-sealed packaging",
+        "Milestone gift registry generator",
       ],
     },
   ];
@@ -189,7 +261,7 @@ export default function TemplatesDirectoryPage() {
               <span>Ofia Storefront Architecture</span>
             </div>
             <h1 className="font-dropa text-3xl sm:text-5xl font-bold tracking-tight text-stone-900">
-              7 Industry-Native Storefront Templates
+              10 Industry-Native Storefront Templates
             </h1>
             <p className="text-sm sm:text-base text-stone-600 font-light leading-relaxed">
               Every vertical on Ofia is engineered with dedicated screens, domain-specific metadata, customized checkouts, and booking workflows tailored to each industry.
@@ -228,9 +300,7 @@ export default function TemplatesDirectoryPage() {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
                       <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-white">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-xs flex items-center justify-center p-1.5 border border-white/20">
-                            <img src="/logo-icon.svg" alt="logo" className="w-full h-full object-contain" />
-                          </div>
+                          <img src="/ofia-logo.png" alt="logo" className="w-7 h-7 object-contain shrink-0" />
                           <div>
                             <span className="text-xs font-bold uppercase tracking-wider block">
                               {tpl.title}

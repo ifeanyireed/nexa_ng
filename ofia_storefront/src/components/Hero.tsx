@@ -47,7 +47,7 @@ export default function Hero() {
     <section className="relative w-full pt-2 sm:pt-4 pb-12">
       {/* Centered Hero Headline & Typography */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center mb-6 sm:mb-8">
-        <h1 className="font-dropa text-3xl sm:text-5xl md:text-[58px] lg:text-[66px] font-normal text-[#111318] tracking-tight leading-[1.12]">
+        <h1 className="font-dropa text-4xl sm:text-6xl md:text-[66px] lg:text-[76px] font-normal text-[#111318] tracking-tight leading-[1.12]">
           <span>Luxury </span>
           <span className="font-cormorant italic text-[#0069ff] font-normal tracking-wide">
             Living
@@ -56,33 +56,33 @@ export default function Hero() {
           <br className="hidden sm:inline" />
           <span className="inline-flex items-center flex-wrap justify-center gap-2 sm:gap-3 mt-1 sm:mt-1">
             {/* Inline architectural house badge */}
-            <span className="inline-block relative h-8 sm:h-11 w-14 sm:w-20 rounded-xl sm:rounded-2xl overflow-hidden shadow-sm align-middle -translate-y-0.5 sm:-translate-y-1 hover:scale-105 transition-transform duration-300">
+            <span className="inline-block relative h-9 sm:h-12 w-16 sm:w-24 rounded-xl sm:rounded-2xl overflow-hidden shadow-sm align-middle -translate-y-0.5 sm:-translate-y-1 hover:scale-105 transition-transform duration-300">
               <Image
                 src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686502/ofia_ng_assets/usto1bnehtvsvyzwylav.png"
                 alt="Architectural Villa"
                 fill
                 className="object-cover"
-                sizes="(max-width: 640px) 56px, 80px"
+                sizes="(max-width: 640px) 64px, 96px"
               />
             </span>
 
             <span>Your Lifestyle</span>
 
             {/* Overlapping client social proof badge */}
-            <span className="inline-block relative h-6 sm:h-9 w-20 sm:w-28 rounded-full overflow-hidden align-middle -translate-y-0.5 sm:-translate-y-1 ml-0.5 sm:ml-1">
+            <span className="inline-block relative h-7 sm:h-10 w-24 sm:w-32 rounded-full overflow-hidden align-middle -translate-y-0.5 sm:-translate-y-1 ml-0.5 sm:ml-1">
               <Image
                 src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686502/ofia_ng_assets/agcjipf9ork4gixb7fib.png"
                 alt="50k+ Trusted Clients"
                 fill
                 className="object-contain"
-                sizes="(max-width: 640px) 80px, 112px"
+                sizes="(max-width: 640px) 96px, 128px"
               />
             </span>
           </span>
         </h1>
 
         {/* Subtitle / Lede */}
-        <p className="max-w-xl mx-auto text-stone-500 text-xs sm:text-sm md:text-base mt-3 sm:mt-4 font-normal leading-relaxed">
+        <p className="max-w-2xl mx-auto text-stone-600 text-sm sm:text-base md:text-lg mt-3 sm:mt-4 font-normal leading-relaxed">
           Discover premium residences, modern architecture, and curated living spaces
           crafted for comfort, prestige, and long-term value.
         </p>
@@ -116,7 +116,7 @@ export default function Hero() {
               </label>
               <div
                 onClick={() => toggleDropdown("location")}
-                className="bg-white/[0.08] hover:bg-white/[0.13] border border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2 sm:py-2.5 flex items-center justify-between cursor-pointer transition-all duration-200 group"
+                className="bg-white/[0.08] hover:bg-white/[0.13] border border-white/15 rounded-full px-4 py-2 sm:py-2.5 flex items-center justify-between cursor-pointer transition-all duration-200 group"
               >
                 <span className="text-xs sm:text-sm font-medium text-white truncate">
                   {location}
@@ -128,7 +128,7 @@ export default function Hero() {
 
               {/* Location Dropdown */}
               {activeDropdown === "location" && (
-                <div className="absolute left-0 right-0 bottom-full mb-2 bg-[#17181F]/95 backdrop-blur-xl border border-white/20 rounded-xl p-1.5 shadow-2xl z-30 space-y-0.5">
+                <div className="absolute left-0 right-0 bottom-full mb-2 bg-[#17181F]/95 backdrop-blur-xl border border-white/20 rounded-2xl p-1.5 shadow-2xl z-30 space-y-0.5">
                   {locations.map((loc) => (
                     <button
                       key={loc}
@@ -136,7 +136,7 @@ export default function Hero() {
                         setLocation(loc);
                         setActiveDropdown(null);
                       }}
-                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs text-zinc-200 hover:text-white hover:bg-[#0069ff]/20 text-left transition-colors"
+                      className="w-full flex items-center justify-between px-3 py-1.5 rounded-full text-xs text-zinc-200 hover:text-white hover:bg-[#0069ff]/20 text-left transition-colors"
                     >
                       <span>{loc}</span>
                       {location === loc && (
@@ -155,7 +155,7 @@ export default function Hero() {
               </label>
               <div
                 onClick={() => toggleDropdown("propertyType")}
-                className="bg-white/[0.08] hover:bg-white/[0.13] border border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2 sm:py-2.5 flex items-center justify-between cursor-pointer transition-all duration-200 group"
+                className="bg-white/[0.08] hover:bg-white/[0.13] border border-white/15 rounded-full px-4 py-2 sm:py-2.5 flex items-center justify-between cursor-pointer transition-all duration-200 group"
               >
                 <span className="text-xs sm:text-sm font-medium text-white truncate">
                   {propertyType}
@@ -167,7 +167,7 @@ export default function Hero() {
 
               {/* Property Type Dropdown */}
               {activeDropdown === "propertyType" && (
-                <div className="absolute left-0 right-0 bottom-full mb-2 bg-[#17181F]/95 backdrop-blur-xl border border-white/20 rounded-xl p-1.5 shadow-2xl z-30 space-y-0.5">
+                <div className="absolute left-0 right-0 bottom-full mb-2 bg-[#17181F]/95 backdrop-blur-xl border border-white/20 rounded-2xl p-1.5 shadow-2xl z-30 space-y-0.5">
                   {propertyTypes.map((type) => (
                     <button
                       key={type}
@@ -175,7 +175,7 @@ export default function Hero() {
                         setPropertyType(type);
                         setActiveDropdown(null);
                       }}
-                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs text-zinc-200 hover:text-white hover:bg-[#0069ff]/20 text-left transition-colors"
+                      className="w-full flex items-center justify-between px-3 py-1.5 rounded-full text-xs text-zinc-200 hover:text-white hover:bg-[#0069ff]/20 text-left transition-colors"
                     >
                       <span>{type}</span>
                       {propertyType === type && (
@@ -194,7 +194,7 @@ export default function Hero() {
               </label>
               <div
                 onClick={() => toggleDropdown("budget")}
-                className="bg-white/[0.08] hover:bg-white/[0.13] border border-white/15 rounded-xl sm:rounded-2xl px-3.5 py-2 sm:py-2.5 flex items-center justify-between cursor-pointer transition-all duration-200 group"
+                className="bg-white/[0.08] hover:bg-white/[0.13] border border-white/15 rounded-full px-4 py-2 sm:py-2.5 flex items-center justify-between cursor-pointer transition-all duration-200 group"
               >
                 <span className="text-xs sm:text-sm font-medium text-white truncate">
                   {budget}
@@ -206,7 +206,7 @@ export default function Hero() {
 
               {/* Budget Dropdown */}
               {activeDropdown === "budget" && (
-                <div className="absolute left-0 right-0 bottom-full mb-2 bg-[#17181F]/95 backdrop-blur-xl border border-white/20 rounded-xl p-1.5 shadow-2xl z-30 space-y-0.5">
+                <div className="absolute left-0 right-0 bottom-full mb-2 bg-[#17181F]/95 backdrop-blur-xl border border-white/20 rounded-2xl p-1.5 shadow-2xl z-30 space-y-0.5">
                   {budgetRanges.map((b) => (
                     <button
                       key={b}
@@ -214,7 +214,7 @@ export default function Hero() {
                         setBudget(b);
                         setActiveDropdown(null);
                       }}
-                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs text-zinc-200 hover:text-white hover:bg-[#0069ff]/20 text-left transition-colors"
+                      className="w-full flex items-center justify-between px-3 py-1.5 rounded-full text-xs text-zinc-200 hover:text-white hover:bg-[#0069ff]/20 text-left transition-colors"
                     >
                       <span>{b}</span>
                       {budget === b && (

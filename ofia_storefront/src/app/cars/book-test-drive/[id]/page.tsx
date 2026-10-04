@@ -18,7 +18,8 @@ import {
   User,
   CreditCard,
   Check,
-  Sparkles,
+  Wrench,
+  Search,
 } from "lucide-react";
 
 export default function BookTestDrivePage() {
@@ -33,8 +34,10 @@ export default function BookTestDrivePage() {
 
   const meta = vehicle.carMeta;
 
-  // Booking Flow State
-  const [driveType, setDriveType] = useState<"Dealership Showroom" | "At-Home Valet">("Dealership Showroom");
+  // Booking Flow State (Blueprint Section 2 & 3: Test drive, inspection, mechanic booking, vehicle sourcing)
+  const [driveType, setDriveType] = useState<
+    "Dealership Showroom" | "At-Home Valet" | "150-Point Mechanic Inspection" | "Vehicle Sourcing & Concierge"
+  >("Dealership Showroom");
   const [selectedDate, setSelectedDate] = useState("2026-10-06");
   const [selectedSlot, setSelectedSlot] = useState("11:00 AM - 12:00 PM");
   const [fullName, setFullName] = useState("");
@@ -179,7 +182,7 @@ export default function BookTestDrivePage() {
               <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-xs space-y-4">
                 <h3 className="font-dropa text-base font-bold text-slate-900 flex items-center gap-2">
                   <span className="w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-bold">1</span>
-                  <span>Select Test-Drive Experience</span>
+                  <span>Select VIP Service / Workflow (Blueprint Section 2 & 3)</span>
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -216,6 +219,42 @@ export default function BookTestDrivePage() {
                     </div>
                     <p className="text-[11px] text-slate-500 leading-relaxed">
                       Our certified specialist drives the car to your residence or office in Lagos for private assessment.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDriveType("150-Point Mechanic Inspection")}
+                    className={`p-4 rounded-2xl border text-left transition-all ${
+                      driveType === "150-Point Mechanic Inspection"
+                        ? "border-blue-600 bg-blue-50/50 ring-2 ring-blue-600/20"
+                        : "border-slate-200 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <Wrench className="w-5 h-5 text-amber-600" />
+                      <span className="font-bold text-xs text-slate-900">150-Point Mechanic Inspection</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      Independent diagnostic scan, compression test, OBD-II telemetry report, and clean title verification.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDriveType("Vehicle Sourcing & Concierge")}
+                    className={`p-4 rounded-2xl border text-left transition-all ${
+                      driveType === "Vehicle Sourcing & Concierge"
+                        ? "border-blue-600 bg-blue-50/50 ring-2 ring-blue-600/20"
+                        : "border-slate-200 hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <Search className="w-5 h-5 text-purple-600" />
+                      <span className="font-bold text-xs text-slate-900">Vehicle Sourcing & Concierge</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      Commission our auto brokers to source, inspect, and import your target spec from US/EU/GCC auctions.
                     </p>
                   </button>
                 </div>
@@ -350,7 +389,7 @@ export default function BookTestDrivePage() {
               {/* Submit CTA */}
               <button
                 type="submit"
-                className="w-full py-4 px-6 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
+                className="w-full py-4 px-6 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
               >
                 <CheckCircle2 className="w-5 h-5" />
                 <span>Confirm VIP Test-Drive Reservation</span>

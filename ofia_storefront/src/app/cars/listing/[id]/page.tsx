@@ -195,7 +195,7 @@ export default function CarDetailPage() {
               <div className="space-y-2.5">
                 <Link
                   href={`/cars/book-test-drive/${car.id}`}
-                  className="w-full py-3.5 px-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm text-center flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 transition-all"
+                  className="w-full py-3.5 px-4 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm text-center flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 transition-all"
                 >
                   <Car className="w-4 h-4" />
                   <span>Book Test-Drive & Inspection</span>
@@ -206,14 +206,14 @@ export default function CarDetailPage() {
                     href={`https://wa.me/${store.contact.whatsapp?.replace(/[^0-9]/g, "")}?text=Hi,%20I%20am%20interested%20in%20the%20${encodeURIComponent(car.title)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="py-2.5 px-3 rounded-xl border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold text-center flex items-center justify-center gap-1.5 transition-colors"
+                    className="py-2.5 px-3 rounded-full border border-emerald-300 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold text-center flex items-center justify-center gap-1.5 transition-colors"
                   >
                     <MessageSquare className="w-3.5 h-3.5" />
                     <span>WhatsApp Desk</span>
                   </a>
                   <a
                     href={`tel:${store.contact.phone}`}
-                    className="py-2.5 px-3 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-bold text-center flex items-center justify-center gap-1.5 transition-colors"
+                    className="py-2.5 px-3 rounded-full border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-800 text-xs font-bold text-center flex items-center justify-center gap-1.5 transition-colors"
                   >
                     <Phone className="w-3.5 h-3.5" />
                     <span>Call Sales Rep</span>

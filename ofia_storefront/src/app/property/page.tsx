@@ -31,9 +31,9 @@ export default function PropertyStorefrontPage() {
     <div className="min-h-screen bg-[#F8F9FA] text-[#111318] flex flex-col justify-between">
       <StoreHeader store={store} />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-16">
-        {/* Editorial Architecture Hero */}
-        <section className="relative rounded-3xl overflow-hidden shadow-2xl bg-zinc-950 text-white min-h-[520px] flex items-end p-6 sm:p-12 border border-zinc-800">
+      <main className="flex-1 w-full space-y-16 pb-12">
+        {/* Editorial Architecture Hero - Spanning Entire Width on Left & Right */}
+        <section className="relative w-full overflow-hidden shadow-2xl bg-zinc-950 text-white min-h-[520px] sm:min-h-[580px] flex items-end p-6 sm:p-12 lg:p-16 border-y border-zinc-800">
           <img
             src={store.coverImage}
             alt={store.name}
@@ -41,42 +41,46 @@ export default function PropertyStorefrontPage() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/60 to-transparent" />
 
-          <div className="relative z-10 max-w-3xl space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-300 text-xs font-bold uppercase tracking-wider backdrop-blur-xs">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Exclusive Waterfront Portfolio</span>
-            </div>
+          <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
+            <div className="max-w-3xl space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-300 text-xs font-bold uppercase tracking-wider backdrop-blur-xs">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Exclusive Waterfront Portfolio</span>
+              </div>
 
-            <h1 className="font-dropa text-3xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-white leading-tight">
-              Architectural Grandeur. <br />
-              <span className="text-blue-400">Pristine</span> Waterfronts.
-            </h1>
+              <h1 className="font-dropa text-3xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-white leading-tight">
+                Architectural Grandeur. <br />
+                <span className="text-blue-400">Pristine</span> Waterfronts.
+              </h1>
 
-            <p className="text-zinc-300 text-sm sm:text-base leading-relaxed font-light max-w-2xl">
-              Curated luxury penthouses, private villas, and high-yield executive residences across Lagos, Dubai, and New York. Verified titles with private concierge service.
-            </p>
+              <p className="text-zinc-300 text-sm sm:text-base leading-relaxed font-light max-w-2xl">
+                Curated luxury penthouses, private villas, and high-yield executive residences across Lagos, Dubai, and New York. Verified titles with private concierge service.
+              </p>
 
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <Link
-                href="/property/listings"
-                className="px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition-colors flex items-center gap-2 shadow-lg shadow-blue-600/30"
-              >
-                <Building2 className="w-4 h-4" />
-                <span>Explore Available Residences</span>
-              </Link>
-              <Link
-                href={`/property/schedule-viewing/${properties[0]?.id || "prp-001"}`}
-                className="px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-xs transition-colors flex items-center gap-2"
-              >
-                <Calendar className="w-4 h-4 text-blue-300" />
-                <span>Schedule Private Viewing</span>
-              </Link>
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <Link
+                  href="/property/listings"
+                  className="px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition-colors flex items-center gap-2 shadow-lg shadow-blue-600/30"
+                >
+                  <Building2 className="w-4 h-4" />
+                  <span>Explore Available Residences</span>
+                </Link>
+                <Link
+                  href={`/property/schedule-viewing/${properties[0]?.id || "prp-001"}`}
+                  className="px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-xs transition-colors flex items-center gap-2"
+                >
+                  <Calendar className="w-4 h-4 text-blue-300" />
+                  <span>Schedule Private Viewing</span>
+                </Link>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Value Badges */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 py-2">
+        {/* Content Container */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+          {/* Value Badges */}
+          <section className="grid grid-cols-2 md:grid-cols-4 gap-4 py-2">
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3">
             <ShieldCheck className="w-6 h-6 text-blue-600 shrink-0" />
             <div>
@@ -228,6 +232,7 @@ export default function PropertyStorefrontPage() {
             })}
           </div>
         </section>
+        </div>
       </main>
 
       <StoreFooter store={store} />

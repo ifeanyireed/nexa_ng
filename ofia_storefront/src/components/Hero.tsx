@@ -44,9 +44,9 @@ export default function Hero() {
   };
 
   return (
-    <section className="relative w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 sm:pt-4 pb-12">
+    <section className="relative w-full pt-2 sm:pt-4 pb-12">
       {/* Centered Hero Headline & Typography */}
-      <div className="max-w-4xl mx-auto text-center mb-6 sm:mb-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center mb-6 sm:mb-8">
         <h1 className="font-dropa text-3xl sm:text-5xl md:text-[58px] lg:text-[66px] font-normal text-[#111318] tracking-tight leading-[1.12]">
           <span>Luxury </span>
           <span className="font-cormorant italic text-[#0069ff] font-normal tracking-wide">
@@ -88,8 +88,8 @@ export default function Hero() {
         </p>
       </div>
 
-      {/* Main Architectural Hero Visual & Floating Filter Card */}
-      <div className="relative w-full rounded-2xl sm:rounded-[32px] overflow-hidden shadow-[0_20px_50px_-15px_rgba(0,0,0,0.14)] border border-stone-200/60 h-[480px] sm:h-[540px] md:h-[580px]">
+      {/* Main Architectural Hero Visual - Spanning Entire Width on Left & Right */}
+      <div className="relative w-full overflow-hidden shadow-[0_20px_50px_-15px_rgba(0,0,0,0.14)] border-y border-stone-200/60 h-[480px] sm:h-[540px] md:h-[600px]">
         {/* Background Image: Coastal Dunes Luxury Residences */}
         <Image
           src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686504/ofia_ng_assets/wuuq3envwns5v2hbkjr3.jpg"
@@ -97,15 +97,17 @@ export default function Hero() {
           fill
           priority
           className="object-cover object-[50%_35%] transition-transform duration-1000 scale-[1.01] hover:scale-105"
-          sizes="(max-width: 1280px) 100vw, 1280px"
+          sizes="100vw"
         />
 
         {/* Subtle Atmospheric Gradient Overlay on Left */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent md:bg-gradient-to-r md:from-black/55 md:via-black/15 md:to-transparent pointer-events-none" />
 
-        {/* Floating Glassmorphism Search & Filter Card */}
-        <div className="absolute left-4 sm:left-8 md:left-10 bottom-4 sm:bottom-6 md:bottom-8 z-20 w-[calc(100%-2rem)] sm:w-[320px] md:w-[350px]">
-          <div className="glass-filter-card rounded-2xl sm:rounded-[24px] p-4 sm:p-5 text-white space-y-2.5 sm:space-y-3">
+        {/* Floating Glassmorphism Search & Filter Card within Grid */}
+        <div className="absolute inset-x-0 bottom-4 sm:bottom-8 z-20 pointer-events-none">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="pointer-events-auto w-full sm:w-[320px] md:w-[350px]">
+              <div className="glass-filter-card rounded-2xl sm:rounded-[24px] p-4 sm:p-5 text-white space-y-2.5 sm:space-y-3">
             
             {/* Field 1: Location */}
             <div className="relative">
@@ -225,11 +227,13 @@ export default function Hero() {
             </div>
 
             {/* Primary Action Button with Electric Blue #0069ff */}
-            <button className="w-full bg-[#0069ff] hover:bg-[#0056d6] active:scale-[0.98] text-white font-medium py-3 px-5 rounded-full text-center transition-all duration-200 shadow-[0_8px_22px_rgba(0,105,255,0.45)] hover:shadow-[0_10px_28px_rgba(0,105,255,0.6)] flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer mt-1">
-              <span>Budget Range</span>
-            </button>
+              <button className="w-full bg-[#0069ff] hover:bg-[#0056d6] active:scale-[0.98] text-white font-medium py-3 px-5 rounded-full text-center transition-all duration-200 shadow-[0_8px_22px_rgba(0,105,255,0.45)] hover:shadow-[0_10px_28px_rgba(0,105,255,0.6)] flex items-center justify-center gap-2 text-xs sm:text-sm cursor-pointer mt-1">
+                <span>Budget Range</span>
+              </button>
+            </div>
           </div>
         </div>
+      </div>
 
         {/* Floating Property Tag on Top-Right */}
         <div className="hidden sm:flex absolute right-6 sm:right-8 top-6 sm:top-8 z-20 items-center gap-2 bg-black/40 backdrop-blur-md border border-white/15 rounded-full py-1.5 px-3.5 text-white text-xs font-medium">

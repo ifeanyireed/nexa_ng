@@ -25,6 +25,13 @@ import {
   ChevronDown,
   Info,
   Globe,
+  History,
+  Clock,
+  RotateCcw,
+  FileText,
+  X,
+  Check,
+  ArrowRight,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -218,6 +225,108 @@ function MassMessagingContent() {
     errors?: Array<{ email: string; error: string }>;
   } | null>(null);
 
+  // Navigation tab state
+  const [activeTab, setActiveTab] = useState<"compose" | "history">("compose");
+
+  // History states
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [isLoadingCampaigns, setIsLoadingCampaigns] = useState(false);
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyStatusFilter, setHistoryStatusFilter] = useState("ALL");
+
+  // Audit modal states
+  const [inspectModalOpen, setInspectModalOpen] = useState(false);
+  const [selectedCampaignDetail, setSelectedCampaignDetail] = useState<any | null>(null);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [detailTab, setDetailTab] = useState<"recipients" | "preview">("recipients");
+  const [recipientSearch, setRecipientSearch] = useState("");
+  const [recipientStatusFilter, setRecipientStatusFilter] = useState("ALL");
+
+  // Fetch campaigns list
+  const fetchCampaigns = async () => {
+    const slug = activeTenant?.slug || "org-01";
+    setIsLoadingCampaigns(true);
+    try {
+      const res = await fetch(`/api/erp/mass-email?tenantSlug=${encodeURIComponent(slug)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setCampaigns(data.campaigns || []);
+      }
+    } catch (err) {
+      console.warn("Failed to load campaigns:", err);
+    } finally {
+      setIsLoadingCampaigns(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCampaigns();
+  }, [activeTenant?.slug]);
+
+  const handleInspectCampaign = async (id: string) => {
+    setInspectModalOpen(true);
+    setIsLoadingDetail(true);
+    setSelectedCampaignDetail(null);
+    setDetailTab("recipients");
+    setRecipientSearch("");
+    setRecipientStatusFilter("ALL");
+
+    try {
+      const res = await fetch(`/api/erp/mass-email?campaignId=${encodeURIComponent(id)}&details=true`);
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedCampaignDetail(data.campaign || null);
+      }
+    } catch (err) {
+      console.warn("Failed to load campaign audit details:", err);
+    } finally {
+      setIsLoadingDetail(false);
+    }
+  };
+
+  const handleRetryFailed = async (id: string) => {
+    if (!id || isRetrying) return;
+    setIsRetrying(true);
+    try {
+      const res = await fetch("/api/erp/mass-email/retry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ campaignId: id }),
+      });
+      if (res.ok) {
+        await handleInspectCampaign(id);
+        await fetchCampaigns();
+      }
+    } catch (err) {
+      console.warn("Failed to retry emails:", err);
+    } finally {
+      setIsRetrying(false);
+    }
+  };
+
+  const handleReuseCampaign = (camp: any) => {
+    if (camp.messageHtml) {
+      setSubject(camp.subject);
+      setBodyHtml(camp.messageHtml);
+      setSelectedTemplate("custom");
+      setActiveTab("compose");
+      setInspectModalOpen(false);
+    } else {
+      fetch(`/api/erp/mass-email?campaignId=${encodeURIComponent(camp.id)}&details=true`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.campaign?.messageHtml) {
+            setSubject(data.campaign.subject);
+            setBodyHtml(data.campaign.messageHtml);
+            setSelectedTemplate("custom");
+          }
+          setActiveTab("compose");
+          setInspectModalOpen(false);
+        });
+    }
+  };
+
   // Poll campaign progress until all queued emails are sent
   useEffect(() => {
     if (!activeCampaignId) return;
@@ -237,6 +346,7 @@ function MassMessagingContent() {
 
         if (data.campaign.status === "completed" || (data.campaign.pending === 0 && data.campaign.total > 0)) {
           clearInterval(pollInterval);
+          fetchCampaigns();
         }
       } catch (err) {
         console.warn("Campaign progress polling error:", err);
@@ -370,6 +480,32 @@ function MassMessagingContent() {
       return matchesDept && matchesSearch;
     });
   }, [users, selectedDepartment, searchQuery]);
+
+  // Filtered campaigns for history tab
+  const filteredCampaigns = useMemo(() => {
+    return campaigns.filter((c) => {
+      const matchesStatus = historyStatusFilter === "ALL" || c.status?.toLowerCase() === historyStatusFilter.toLowerCase();
+      const q = historySearch.toLowerCase();
+      const matchesSearch = !q || c.subject?.toLowerCase().includes(q) || c.id?.toLowerCase().includes(q);
+      return matchesStatus && matchesSearch;
+    });
+  }, [campaigns, historyStatusFilter, historySearch]);
+
+  // Filtered recipients inside audit modal
+  const filteredModalRecipients = useMemo(() => {
+    if (!selectedCampaignDetail?.recipients) return [];
+    return selectedCampaignDetail.recipients.filter((r: any) => {
+      const matchesStatus = recipientStatusFilter === "ALL" || r.status?.toLowerCase() === recipientStatusFilter.toLowerCase();
+      const q = recipientSearch.toLowerCase();
+      const matchesSearch =
+        !q ||
+        r.recipientName?.toLowerCase().includes(q) ||
+        r.recipientEmail?.toLowerCase().includes(q) ||
+        r.recipientDepartment?.toLowerCase().includes(q) ||
+        r.recipientRole?.toLowerCase().includes(q);
+      return matchesStatus && matchesSearch;
+    });
+  }, [selectedCampaignDetail, recipientStatusFilter, recipientSearch]);
 
   // Selection handlers
   const handleToggleUser = (id: string) => {
@@ -607,7 +743,74 @@ function MassMessagingContent() {
       }
     >
       <div className="space-y-6">
-        {/* SMTP STATUS BANNER */}
+        {/* TOP TABS NAVIGATION */}
+        <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3 gap-3 flex-wrap">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab("compose")}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                activeTab === "compose"
+                  ? "bg-[#1A56DB] text-white shadow-xs"
+                  : "text-[var(--nexa-text-secondary)] hover:bg-[var(--nexa-bg-base)] border border-transparent hover:border-[var(--nexa-border)]"
+              }`}
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>Compose & Dispatch</span>
+              {selectedRecipients.length > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-white/20 text-[10px] font-mono">
+                  {selectedRecipients.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("history");
+                fetchCampaigns();
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+                activeTab === "history"
+                  ? "bg-[#1A56DB] text-white shadow-xs"
+                  : "text-[var(--nexa-text-secondary)] hover:bg-[var(--nexa-bg-base)] border border-transparent hover:border-[var(--nexa-border)]"
+              }`}
+            >
+              <History className="w-3.5 h-3.5" />
+              <span>Broadcast History & Logs</span>
+              {campaigns.length > 0 && (
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                    activeTab === "history"
+                      ? "bg-white/20"
+                      : "bg-slate-200 dark:bg-slate-800 text-[var(--nexa-text-primary)]"
+                  }`}
+                >
+                  {campaigns.length}
+                </span>
+              )}
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {activeTab === "history" && (
+              <button
+                type="button"
+                onClick={fetchCampaigns}
+                disabled={isLoadingCampaigns}
+                className="px-3 py-1.5 text-xs font-bold rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] hover:bg-slate-200 dark:hover:bg-slate-800 text-[var(--nexa-text-primary)] flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoadingCampaigns ? "animate-spin" : ""}`} />
+                <span>Refresh Logs</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* COMPOSE TAB VIEW */}
+        {activeTab === "compose" && (
+          <div className="space-y-6">
+            {/* SMTP STATUS BANNER */}
         {smtpConfigured === false && (
           <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-start gap-3">
@@ -1210,6 +1413,484 @@ function MassMessagingContent() {
             </NexaCard>
           </div>
         </div>
+          </div>
+        )}
+
+        {/* BROADCAST HISTORY & LOGS TAB VIEW */}
+        {activeTab === "history" && (
+          <div className="space-y-6">
+            {/* SEARCH & FILTERS BAR */}
+            <NexaCard variant="glass" padding="md" className="border border-[var(--nexa-border)] shadow-xs rounded-2xl">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                <div className="flex items-center bg-[var(--nexa-bg-base)] px-3 py-2 rounded-xl border border-[var(--nexa-border)] gap-2 flex-1 max-w-md">
+                  <Search className="w-3.5 h-3.5 text-[var(--nexa-text-muted)] shrink-0" />
+                  <input
+                    type="text"
+                    value={historySearch}
+                    onChange={(e) => setHistorySearch(e.target.value)}
+                    placeholder="Search broadcasts by subject or ID..."
+                    className="bg-transparent text-xs outline-none w-full text-[var(--nexa-text-primary)]"
+                  />
+                  {historySearch && (
+                    <button
+                      type="button"
+                      onClick={() => setHistorySearch("")}
+                      className="text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {["ALL", "completed", "processing", "failed"].map((st) => {
+                    const isSelected = historyStatusFilter.toLowerCase() === st.toLowerCase();
+                    const count =
+                      st === "ALL"
+                        ? campaigns.length
+                        : campaigns.filter((c) => c.status?.toLowerCase() === st.toLowerCase()).length;
+                    return (
+                      <button
+                        key={st}
+                        type="button"
+                        onClick={() => setHistoryStatusFilter(st)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                          isSelected
+                            ? "bg-[#1A56DB] text-white shadow-xs"
+                            : "bg-[var(--nexa-bg-base)] hover:bg-slate-200 dark:hover:bg-slate-800 text-[var(--nexa-text-secondary)] border border-[var(--nexa-border)]"
+                        }`}
+                      >
+                        <span className="capitalize">{st.toLowerCase()}</span>
+                        <span
+                          className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
+                            isSelected ? "bg-white/20" : "bg-slate-200 dark:bg-slate-800 text-[var(--nexa-text-muted)]"
+                          }`}
+                        >
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </NexaCard>
+
+            {/* CAMPAIGN LIST */}
+            {isLoadingCampaigns && campaigns.length === 0 ? (
+              <div className="p-12 text-center text-xs text-[var(--nexa-text-muted)] flex flex-col items-center gap-3">
+                <RefreshCw className="w-6 h-6 animate-spin text-[#1A56DB]" />
+                <span className="font-bold">Loading broadcast history...</span>
+              </div>
+            ) : filteredCampaigns.length === 0 ? (
+              <NexaCard variant="glass" padding="lg" className="border border-[var(--nexa-border)] shadow-xs rounded-3xl text-center py-14 space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-[#1A56DB] flex items-center justify-center mx-auto">
+                  <History className="w-6 h-6" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-[var(--nexa-text-primary)]">
+                    {campaigns.length === 0 ? "No Broadcasts Dispatched Yet" : "No Matching Campaigns Found"}
+                  </h3>
+                  <p className="text-xs text-[var(--nexa-text-muted)] max-w-sm mx-auto">
+                    {campaigns.length === 0
+                      ? "Compose your first corporate announcement, appraisal directive, or memo to see it tracked here."
+                      : "Try clearing your search query or switching your status filter."}
+                  </p>
+                </div>
+                <NexaButton
+                  variant="primary"
+                  size="sm"
+                  onClick={() => setActiveTab("compose")}
+                  className="rounded-xl mx-auto"
+                >
+                  <Send className="w-3.5 h-3.5 mr-1.5" />
+                  <span>Compose New Broadcast</span>
+                </NexaButton>
+              </NexaCard>
+            ) : (
+              <div className="space-y-4">
+                {filteredCampaigns.map((camp) => {
+                  const isCompleted = camp.status === "completed";
+                  const isProcessing = camp.status === "processing" || camp.status === "queued";
+                  const isFailed = camp.status === "failed";
+
+                  const formattedDate = camp.createdAt
+                    ? new Date(camp.createdAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : "Recently";
+
+                  return (
+                    <NexaCard
+                      key={camp.id}
+                      variant="glass"
+                      padding="md"
+                      className="border border-[var(--nexa-border)] shadow-xs rounded-3xl space-y-4 hover:border-blue-400/50 transition-colors"
+                    >
+                      {/* HEADER */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--nexa-border)] pb-3.5">
+                        <div className="space-y-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-bold text-sm text-[var(--nexa-text-primary)] truncate">
+                              {camp.subject}
+                            </h4>
+                            <span
+                              className={`text-[10px] font-extrabold uppercase px-2.5 py-0.5 rounded-full border ${
+                                isCompleted
+                                  ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                                  : isProcessing
+                                  ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800 animate-pulse"
+                                  : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
+                              }`}
+                            >
+                              {camp.status}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 text-[11px] text-[var(--nexa-text-muted)]">
+                            <span className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              <span>{formattedDate}</span>
+                            </span>
+                            <span>•</span>
+                            <span className="font-mono text-[10px]">ID: {camp.id}</span>
+                          </div>
+                        </div>
+
+                        {/* ACTIONS */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleInspectCampaign(camp.id)}
+                            className="px-3.5 py-2 text-xs font-bold rounded-xl bg-[#1A56DB] hover:bg-blue-700 text-white flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Inspect Delivery</span>
+                          </button>
+
+                          {camp.failed > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRetryFailed(camp.id)}
+                              disabled={isRetrying}
+                              className="px-3 py-2 text-xs font-bold rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                              title="Retry delivery to failed recipients"
+                            >
+                              <RotateCcw className={`w-3.5 h-3.5 ${isRetrying ? "animate-spin" : ""}`} />
+                              <span>Retry ({camp.failed})</span>
+                            </button>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => handleReuseCampaign(camp)}
+                            className="p-2 text-xs font-bold rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] hover:bg-slate-200 dark:hover:bg-slate-800 text-[var(--nexa-text-primary)] transition-colors cursor-pointer"
+                            title="Reuse this email copy in composer"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* PROGRESS BAR & STATS */}
+                      <div className="space-y-3">
+                        <div className="space-y-1.5">
+                          <div className="flex justify-between items-center text-[11px] font-bold text-[var(--nexa-text-secondary)]">
+                            <span>
+                              Delivery Progress: {camp.sent} of {camp.total} delivered
+                            </span>
+                            <span>{camp.progressPercent}%</span>
+                          </div>
+                          <div className="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+                            <div
+                              className={`h-full rounded-full transition-all duration-500 ${
+                                isCompleted
+                                  ? "bg-emerald-500"
+                                  : "bg-gradient-to-r from-blue-600 to-indigo-600"
+                              }`}
+                              style={{ width: `${Math.max(4, camp.progressPercent)}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* METRICS ROW */}
+                        <div className="grid grid-cols-4 gap-2 text-center">
+                          <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-900 border border-[var(--nexa-border)]">
+                            <div className="text-[10px] text-[var(--nexa-text-muted)] font-bold uppercase">Total</div>
+                            <div className="text-sm font-black text-[var(--nexa-text-primary)]">{camp.total}</div>
+                          </div>
+                          <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                            <div className="text-[10px] text-emerald-700 dark:text-emerald-400 font-bold uppercase">Sent</div>
+                            <div className="text-sm font-black text-emerald-600 dark:text-emerald-400">{camp.sent}</div>
+                          </div>
+                          <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                            <div className="text-[10px] text-amber-700 dark:text-amber-400 font-bold uppercase">In Queue</div>
+                            <div className="text-sm font-black text-amber-600 dark:text-amber-400">{camp.pending}</div>
+                          </div>
+                          <div className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/20">
+                            <div className="text-[10px] text-rose-700 dark:text-rose-400 font-bold uppercase">Failed</div>
+                            <div className="text-sm font-black text-rose-600 dark:text-rose-400">{camp.failed}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </NexaCard>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* RECIPIENT DELIVERY AUDIT MODAL */}
+        {inspectModalOpen && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+            <div className="bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] shadow-2xl rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              {/* MODAL HEADER */}
+              <div className="p-5 border-b border-[var(--nexa-border)] flex items-start justify-between gap-4 bg-[var(--nexa-bg-base)]">
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200">
+                      Audit Dossier
+                    </span>
+                    <span className="font-mono text-[10px] text-[var(--nexa-text-muted)]">
+                      {selectedCampaignDetail?.id}
+                    </span>
+                  </div>
+                  <h3 className="font-black text-base text-[var(--nexa-text-primary)] truncate">
+                    {selectedCampaignDetail?.subject || "Campaign Details"}
+                  </h3>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setInspectModalOpen(false)}
+                  className="w-8 h-8 rounded-full border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] hover:bg-slate-200 dark:hover:bg-slate-800 flex items-center justify-center text-[var(--nexa-text-secondary)] transition-colors cursor-pointer shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* MODAL METRICS STRIP */}
+              <div className="p-4 border-b border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-4 text-xs font-semibold">
+                  <div>
+                    <span className="text-[var(--nexa-text-muted)]">Total: </span>
+                    <strong className="text-[var(--nexa-text-primary)]">{selectedCampaignDetail?.total ?? 0}</strong>
+                  </div>
+                  <div>
+                    <span className="text-emerald-600 dark:text-emerald-400">Delivered: </span>
+                    <strong className="text-emerald-600 dark:text-emerald-400">{selectedCampaignDetail?.sent ?? 0}</strong>
+                  </div>
+                  <div>
+                    <span className="text-amber-600 dark:text-amber-400">In Queue: </span>
+                    <strong className="text-amber-600 dark:text-amber-400">{selectedCampaignDetail?.pending ?? 0}</strong>
+                  </div>
+                  <div>
+                    <span className="text-rose-600 dark:text-rose-400">Failed: </span>
+                    <strong className="text-rose-600 dark:text-rose-400">{selectedCampaignDetail?.failed ?? 0}</strong>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {selectedCampaignDetail && selectedCampaignDetail.failed > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => handleRetryFailed(selectedCampaignDetail.id)}
+                      disabled={isRetrying}
+                      className="px-3 py-1.5 text-xs font-bold rounded-xl bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      <RotateCcw className={`w-3.5 h-3.5 ${isRetrying ? "animate-spin" : ""}`} />
+                      <span>Retry All Failed ({selectedCampaignDetail.failed})</span>
+                    </button>
+                  )}
+
+                  {selectedCampaignDetail && (
+                    <button
+                      type="button"
+                      onClick={() => handleReuseCampaign(selectedCampaignDetail)}
+                      className="px-3 py-1.5 text-xs font-bold rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] hover:bg-slate-200 dark:hover:bg-slate-800 text-[var(--nexa-text-primary)] flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>Reuse Copy</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* MODAL TABS */}
+              <div className="px-5 border-b border-[var(--nexa-border)] flex items-center gap-4 bg-[var(--nexa-bg-base)]">
+                <button
+                  type="button"
+                  onClick={() => setDetailTab("recipients")}
+                  className={`py-3 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
+                    detailTab === "recipients"
+                      ? "border-[#1A56DB] text-[#1A56DB]"
+                      : "border-transparent text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
+                  }`}
+                >
+                  <Users className="w-3.5 h-3.5" />
+                  <span>Recipients Audit Log ({selectedCampaignDetail?.recipients?.length || 0})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDetailTab("preview")}
+                  className={`py-3 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
+                    detailTab === "preview"
+                      ? "border-[#1A56DB] text-[#1A56DB]"
+                      : "border-transparent text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Email Copy Preview</span>
+                </button>
+              </div>
+
+              {/* MODAL BODY */}
+              <div className="flex-1 overflow-y-auto p-5">
+                {isLoadingDetail ? (
+                  <div className="p-12 text-center text-xs text-[var(--nexa-text-muted)] flex flex-col items-center gap-3">
+                    <RefreshCw className="w-6 h-6 animate-spin text-[#1A56DB]" />
+                    <span>Loading audit records...</span>
+                  </div>
+                ) : detailTab === "recipients" ? (
+                  <div className="space-y-4">
+                    {/* RECIPIENT SEARCH & STATUS FILTER */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                      <div className="flex items-center bg-[var(--nexa-bg-base)] px-3 py-1.5 rounded-xl border border-[var(--nexa-border)] gap-2 flex-1 max-w-sm">
+                        <Search className="w-3.5 h-3.5 text-[var(--nexa-text-muted)] shrink-0" />
+                        <input
+                          type="text"
+                          value={recipientSearch}
+                          onChange={(e) => setRecipientSearch(e.target.value)}
+                          placeholder="Filter recipients by name, email, department..."
+                          className="bg-transparent text-xs outline-none w-full text-[var(--nexa-text-primary)]"
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        {["ALL", "sent", "failed", "pending"].map((st) => {
+                          const isSel = recipientStatusFilter.toLowerCase() === st.toLowerCase();
+                          const count =
+                            st === "ALL"
+                              ? selectedCampaignDetail?.recipients?.length || 0
+                              : selectedCampaignDetail?.recipients?.filter(
+                                  (r: any) => r.status?.toLowerCase() === st.toLowerCase()
+                                ).length || 0;
+                          return (
+                            <button
+                              key={st}
+                              type="button"
+                              onClick={() => setRecipientStatusFilter(st)}
+                              className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
+                                isSel
+                                  ? "bg-[#1A56DB] text-white"
+                                  : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] border border-[var(--nexa-border)] hover:bg-slate-200 dark:hover:bg-slate-800"
+                              }`}
+                            >
+                              <span className="capitalize">{st.toLowerCase()}</span> ({count})
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* RECIPIENTS AUDIT TABLE */}
+                    <div className="border border-[var(--nexa-border)] rounded-2xl overflow-hidden divide-y divide-[var(--nexa-border)] bg-[var(--nexa-bg-base)]/40">
+                      {filteredModalRecipients.length === 0 ? (
+                        <div className="p-8 text-center text-xs text-[var(--nexa-text-muted)]">
+                          No recipients match your criteria.
+                        </div>
+                      ) : (
+                        filteredModalRecipients.map((rec: any, idx: number) => {
+                          const isDelivered = rec.status === "sent";
+                          const isFailedRec = rec.status === "failed";
+                          const isPendingRec = rec.status === "pending" || rec.status === "processing";
+
+                          const sentDateStr = rec.sentAt
+                            ? new Date(rec.sentAt).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : null;
+
+                          return (
+                            <div key={rec.id || idx} className="p-3.5 space-y-2 hover:bg-[var(--nexa-bg-surface)] transition-colors">
+                              <div className="flex items-center justify-between gap-3 flex-wrap">
+                                <div className="flex items-center gap-3 min-w-0">
+                                  <div className="w-8 h-8 rounded-full bg-blue-500/10 text-blue-700 dark:text-blue-300 font-bold flex items-center justify-center text-xs shrink-0">
+                                    {(rec.recipientName || rec.recipientEmail || "U").charAt(0).toUpperCase()}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="font-bold text-xs text-[var(--nexa-text-primary)] truncate">
+                                      {rec.recipientName || "Staff Member"}
+                                    </div>
+                                    <div className="text-[11px] text-[var(--nexa-text-muted)] truncate">
+                                      {rec.recipientEmail} {rec.recipientDepartment && `• ${rec.recipientDepartment}`}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                  {sentDateStr && (
+                                    <span className="text-[10px] text-[var(--nexa-text-muted)] font-mono">
+                                      {sentDateStr}
+                                    </span>
+                                  )}
+                                  <span
+                                    className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${
+                                      isDelivered
+                                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                                        : isFailedRec
+                                        ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
+                                        : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800"
+                                    }`}
+                                  >
+                                    {rec.status}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {rec.errorMessage && (
+                                <div className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-[11px] text-rose-700 dark:text-rose-300 font-mono flex items-start gap-2">
+                                  <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                                  <span>{rec.errorMessage}</span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  /* EMAIL COPY PREVIEW */
+                  <div className="space-y-4">
+                    <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-1">
+                      <div className="text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider">
+                        Subject Line
+                      </div>
+                      <div className="text-sm font-bold text-[var(--nexa-text-primary)]">
+                        {selectedCampaignDetail?.subject}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-[var(--nexa-border)] bg-white dark:bg-slate-900 p-6 overflow-x-auto shadow-xs">
+                      <div
+                        className="prose prose-sm max-w-none text-slate-800 dark:text-slate-100"
+                        dangerouslySetInnerHTML={{ __html: selectedCampaignDetail?.messageHtml || "" }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </ErpAdminShell>
   );

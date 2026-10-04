@@ -3,6 +3,8 @@ import {
   queueMassEmailCampaign,
   processEmailQueueBatch,
   getCampaignProgress,
+  getCampaignDetailsWithRecipients,
+  listTenantCampaigns,
   MassEmailRecipient,
 } from "@/lib/email-service";
 
@@ -102,29 +104,57 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const campaignId = searchParams.get("campaignId");
+    const tenantSlug = searchParams.get("tenantSlug");
+    const details = searchParams.get("details") === "true";
 
-    if (!campaignId) {
-      return NextResponse.json(
-        { error: "Query parameter campaignId is required" },
-        { status: 400 }
-      );
+    // 1. Fetch campaigns list for workspace
+    if (tenantSlug && !campaignId) {
+      const limit = Number(searchParams.get("limit")) || 50;
+      const campaigns = await listTenantCampaigns(tenantSlug, limit);
+      return NextResponse.json({
+        success: true,
+        campaigns,
+      });
     }
 
-    const progress = await getCampaignProgress(campaignId);
-    if (!progress) {
-      return NextResponse.json(
-        { error: "Campaign not found" },
-        { status: 404 }
-      );
+    // 2. Fetch specific campaign details (with all recipients)
+    if (campaignId) {
+      if (details) {
+        const fullCampaign = await getCampaignDetailsWithRecipients(campaignId);
+        if (!fullCampaign) {
+          return NextResponse.json(
+            { error: "Campaign not found" },
+            { status: 404 }
+          );
+        }
+        return NextResponse.json({
+          success: true,
+          campaign: fullCampaign,
+        });
+      }
+
+      // Fast progress summary
+      const progress = await getCampaignProgress(campaignId);
+      if (!progress) {
+        return NextResponse.json(
+          { error: "Campaign not found" },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        campaign: progress,
+      });
     }
 
-    return NextResponse.json({
-      success: true,
-      campaign: progress,
-    });
+    return NextResponse.json(
+      { error: "Query parameter campaignId or tenantSlug is required" },
+      { status: 400 }
+    );
   } catch (err: any) {
     return NextResponse.json(
-      { error: err.message || "Failed to retrieve campaign progress" },
+      { error: err.message || "Failed to retrieve campaign data" },
       { status: 500 }
     );
   }

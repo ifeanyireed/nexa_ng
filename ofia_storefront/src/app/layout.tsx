@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { CartProvider } from "@/context/CartContext";
+import TemplateSwitcher from "@/components/common/TemplateSwitcher";
+import CartDrawer from "@/components/common/CartDrawer";
 
 const dropa = localFont({
   src: "../fonts/Dropa-Regular.woff2",
@@ -9,8 +12,8 @@ const dropa = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Veloura | Luxury Living Residences",
-  description: "Luxury Living Designed Around Your Lifestyle. Modern architecture, coastal apartments, and curated residences.",
+  title: "Ofia Storefront · 7 Industry Vertical Experience Templates",
+  description: "Industry-native storefronts tailored to Fashion, Cars, Food, Property, Gadgets, Beauty, and Home & Living.",
 };
 
 export default function RootLayout({
@@ -21,7 +24,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${dropa.variable} antialiased`}>
       <body className="min-h-screen bg-[#F8F6F1] text-[#111318] selection:bg-[#0069ff]/20 selection:text-[#0069ff]">
-        {children}
+        <CartProvider>
+          <TemplateSwitcher />
+          {children}
+          <CartDrawer />
+        </CartProvider>
       </body>
     </html>
   );

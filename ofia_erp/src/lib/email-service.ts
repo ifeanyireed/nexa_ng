@@ -763,3 +763,305 @@ export async function sendMassEmailToRecipients(params: SendMassEmailParams): Pr
     errors: allErrors,
   };
 }
+
+export interface QueueRecipientDetail {
+  id: string;
+  recipientEmail: string;
+  recipientName?: string;
+  recipientRole?: string;
+  recipientDepartment?: string;
+  status: "pending" | "processing" | "sent" | "failed";
+  attempts: number;
+  errorMessage?: string;
+  sentAt?: string | null;
+  createdAt: string;
+}
+
+export interface CampaignWithRecipients extends CampaignProgress {
+  messageHtml: string;
+  loginUrl?: string;
+  createdAt: string;
+  updatedAt: string;
+  recipients: QueueRecipientDetail[];
+}
+
+export interface CampaignSummary {
+  id: string;
+  tenantSlug: string;
+  subject: string;
+  total: number;
+  sent: number;
+  failed: number;
+  pending: number;
+  status: "queued" | "processing" | "completed" | "failed";
+  progressPercent: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * List all campaigns for a specific tenant workspace
+ */
+export async function listTenantCampaigns(tenantSlug: string, limit: number = 50): Promise<CampaignSummary[]> {
+  const normalizedSlug = (tenantSlug || "default").trim().toLowerCase();
+
+  // 1. Try PostgreSQL
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      const res = await pool.query(
+        `SELECT id, tenant_slug, subject, total_recipients, sent_count, failed_count, status, created_at, updated_at
+         FROM email_campaigns
+         WHERE LOWER(tenant_slug) = $1
+         ORDER BY created_at DESC
+         LIMIT $2`,
+        [normalizedSlug, limit]
+      );
+
+      return res.rows.map((row) => {
+        const total = Number(row.total_recipients) || 0;
+        const sent = Number(row.sent_count) || 0;
+        const failed = Number(row.failed_count) || 0;
+        const pending = Math.max(0, total - (sent + failed));
+        const progressPercent = total > 0 ? Math.min(100, Math.round(((sent + failed) / total) * 100)) : 100;
+
+        return {
+          id: row.id,
+          tenantSlug: row.tenant_slug,
+          subject: row.subject,
+          total,
+          sent,
+          failed,
+          pending,
+          status: row.status,
+          progressPercent,
+          createdAt: row.created_at?.toISOString ? row.created_at.toISOString() : String(row.created_at),
+          updatedAt: row.updated_at?.toISOString ? row.updated_at.toISOString() : String(row.updated_at),
+        };
+      });
+    }
+  } catch (err) {
+    console.warn("⚠️ Failed to list campaigns from PostgreSQL, falling back to memory:", err);
+  }
+
+  // 2. In-memory fallback
+  const list: CampaignSummary[] = [];
+  memoryCampaigns.forEach((camp) => {
+    if (camp.tenantSlug === normalizedSlug) {
+      const total = camp.totalRecipients;
+      const sent = camp.sentCount;
+      const failed = camp.failedCount;
+      const pending = Math.max(0, total - (sent + failed));
+      const progressPercent = total > 0 ? Math.min(100, Math.round(((sent + failed) / total) * 100)) : 100;
+
+      list.push({
+        id: camp.id,
+        tenantSlug: camp.tenantSlug,
+        subject: camp.subject,
+        total,
+        sent,
+        failed,
+        pending,
+        status: camp.status,
+        progressPercent,
+        createdAt: camp.createdAt.toISOString(),
+        updatedAt: camp.updatedAt.toISOString(),
+      });
+    }
+  });
+
+  return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, limit);
+}
+
+/**
+ * Get comprehensive campaign details including all per-recipient delivery statuses
+ */
+export async function getCampaignDetailsWithRecipients(campaignId: string): Promise<CampaignWithRecipients | null> {
+  if (!campaignId) return null;
+
+  // 1. Try PostgreSQL
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      const campRes = await pool.query(
+        `SELECT id, tenant_slug, subject, message_html, login_url, total_recipients, sent_count, failed_count, status, created_at, updated_at
+         FROM email_campaigns
+         WHERE id = $1 LIMIT 1`,
+        [campaignId]
+      );
+
+      if (campRes.rows.length > 0) {
+        const row = campRes.rows[0];
+        const total = Number(row.total_recipients) || 0;
+        const sent = Number(row.sent_count) || 0;
+        const failed = Number(row.failed_count) || 0;
+        const pending = Math.max(0, total - (sent + failed));
+        const progressPercent = total > 0 ? Math.min(100, Math.round(((sent + failed) / total) * 100)) : 100;
+
+        // Fetch all recipients for audit
+        const queueRes = await pool.query(
+          `SELECT id, recipient_email, recipient_name, recipient_role, recipient_department, status, attempts, error_message, sent_at, created_at
+           FROM email_queue
+           WHERE campaign_id = $1
+           ORDER BY status DESC, recipient_name ASC`,
+          [campaignId]
+        );
+
+        const recipients: QueueRecipientDetail[] = queueRes.rows.map((r) => ({
+          id: r.id,
+          recipientEmail: r.recipient_email,
+          recipientName: r.recipient_name || "",
+          recipientRole: r.recipient_role || "",
+          recipientDepartment: r.recipient_department || "",
+          status: r.status,
+          attempts: Number(r.attempts) || 0,
+          errorMessage: r.error_message || undefined,
+          sentAt: r.sent_at?.toISOString ? r.sent_at.toISOString() : r.sent_at ? String(r.sent_at) : null,
+          createdAt: r.created_at?.toISOString ? r.created_at.toISOString() : String(r.created_at),
+        }));
+
+        const errors = recipients
+          .filter((r) => r.status === "failed" && r.errorMessage)
+          .map((r) => ({ email: r.recipientEmail, error: r.errorMessage! }));
+
+        return {
+          id: row.id,
+          tenantSlug: row.tenant_slug,
+          subject: row.subject,
+          messageHtml: row.message_html,
+          loginUrl: row.login_url || undefined,
+          total,
+          sent,
+          failed,
+          pending,
+          status: row.status,
+          progressPercent,
+          createdAt: row.created_at?.toISOString ? row.created_at.toISOString() : String(row.created_at),
+          updatedAt: row.updated_at?.toISOString ? row.updated_at.toISOString() : String(row.updated_at),
+          errors,
+          recipients,
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("⚠️ Failed to load campaign details from PostgreSQL, checking memory:", err);
+  }
+
+  // 2. In-memory fallback
+  const memCamp = memoryCampaigns.get(campaignId);
+  if (memCamp) {
+    const total = memCamp.totalRecipients;
+    const sent = memCamp.sentCount;
+    const failed = memCamp.failedCount;
+    const pending = Math.max(0, total - (sent + failed));
+    const progressPercent = total > 0 ? Math.min(100, Math.round(((sent + failed) / total) * 100)) : 100;
+
+    const recipients: QueueRecipientDetail[] = memoryQueue
+      .filter((q) => q.campaignId === campaignId)
+      .map((q) => ({
+        id: q.id,
+        recipientEmail: q.recipientEmail,
+        recipientName: q.recipientName,
+        recipientRole: q.recipientRole,
+        recipientDepartment: q.recipientDepartment,
+        status: q.status,
+        attempts: q.attempts,
+        errorMessage: q.errorMessage,
+        sentAt: q.sentAt ? q.sentAt.toISOString() : null,
+        createdAt: memCamp.createdAt.toISOString(),
+      }));
+
+    const errors = recipients
+      .filter((r) => r.status === "failed" && r.errorMessage)
+      .map((r) => ({ email: r.recipientEmail, error: r.errorMessage! }));
+
+    return {
+      id: memCamp.id,
+      tenantSlug: memCamp.tenantSlug,
+      subject: memCamp.subject,
+      messageHtml: memCamp.messageHtml,
+      loginUrl: memCamp.loginUrl,
+      total,
+      sent,
+      failed,
+      pending,
+      status: memCamp.status,
+      progressPercent,
+      createdAt: memCamp.createdAt.toISOString(),
+      updatedAt: memCamp.updatedAt.toISOString(),
+      errors,
+      recipients,
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Re-queue all failed recipients for a campaign so the cron worker can retry them
+ */
+export async function retryFailedCampaignEmails(campaignId: string): Promise<{ retriedCount: number }> {
+  if (!campaignId) return { retriedCount: 0 };
+
+  // 1. Try PostgreSQL
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      const res = await pool.query(
+        `UPDATE email_queue
+         SET status = 'pending', attempts = 0, error_message = NULL, updated_at = CURRENT_TIMESTAMP
+         WHERE campaign_id = $1 AND status = 'failed'
+         RETURNING id`,
+        [campaignId]
+      );
+
+      const retriedCount = res.rowCount || 0;
+
+      if (retriedCount > 0) {
+        await pool.query(
+          `UPDATE email_campaigns
+           SET status = 'processing', failed_count = GREATEST(0, failed_count - $1), updated_at = CURRENT_TIMESTAMP
+           WHERE id = $2`,
+          [retriedCount, campaignId]
+        );
+
+        // Immediately attempt a batch dispatch
+        try {
+          await processEmailQueueBatch(20);
+        } catch {}
+      }
+
+      return { retriedCount };
+    }
+  } catch (err) {
+    console.warn("⚠️ Failed to reset failed emails in PostgreSQL, checking memory:", err);
+  }
+
+  // 2. In-memory fallback
+  let count = 0;
+  memoryQueue.forEach((q) => {
+    if (q.campaignId === campaignId && q.status === "failed") {
+      q.status = "pending";
+      q.attempts = 0;
+      q.errorMessage = undefined;
+      count++;
+    }
+  });
+
+  const memCamp = memoryCampaigns.get(campaignId);
+  if (memCamp && count > 0) {
+    memCamp.status = "processing";
+    memCamp.failedCount = Math.max(0, memCamp.failedCount - count);
+    memCamp.updatedAt = new Date();
+
+    try {
+      await processEmailQueueBatch(20);
+    } catch {}
+  }
+
+  return { retriedCount: count };
+}
+

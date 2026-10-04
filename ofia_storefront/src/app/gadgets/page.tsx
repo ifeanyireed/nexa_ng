@@ -30,9 +30,9 @@ export default function GadgetsStorefrontPage() {
     <div className="min-h-screen bg-[#0F1115] text-[#F3F4F6] flex flex-col justify-between">
       <StoreHeader store={store} />
 
-      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-16">
-        {/* Dark Tech Hero */}
-        <section className="relative rounded-3xl overflow-hidden shadow-2xl bg-zinc-950 text-white min-h-[500px] flex items-end p-6 sm:p-12 border border-zinc-800">
+      <main className="flex-1 w-full space-y-16 pb-12">
+        {/* Dark Tech Hero - Spanning Entire Width on Left & Right */}
+        <section className="relative w-full overflow-hidden shadow-2xl bg-zinc-950 text-white min-h-[520px] sm:min-h-[580px] flex items-end p-6 sm:p-12 lg:p-16 border-y border-zinc-800">
           <img
             src={store.coverImage}
             alt={store.name}
@@ -40,42 +40,46 @@ export default function GadgetsStorefrontPage() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-[#0F1115] via-[#0F1115]/70 to-transparent" />
 
-          <div className="relative z-10 max-w-3xl space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-400 text-xs font-bold uppercase tracking-wider backdrop-blur-xs">
-              <Cpu className="w-3.5 h-3.5" />
-              <span>Next-Gen Silicon & Flagship Hardware</span>
-            </div>
+          <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
+            <div className="max-w-3xl space-y-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-400 text-xs font-bold uppercase tracking-wider backdrop-blur-xs">
+                <Cpu className="w-3.5 h-3.5" />
+                <span>Next-Gen Silicon & Flagship Hardware</span>
+              </div>
 
-            <h1 className="font-dropa text-3xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-white leading-tight">
-              Uncompromising Power. <br />
-              <span className="text-blue-500">2-Year Direct</span> Warranty.
-            </h1>
+              <h1 className="font-dropa text-3xl sm:text-5xl lg:text-6xl font-normal tracking-tight text-white leading-tight">
+                Uncompromising Power. <br />
+                <span className="text-blue-500">2-Year Direct</span> Warranty.
+              </h1>
 
-            <p className="text-zinc-300 text-sm sm:text-base leading-relaxed font-light max-w-xl">
-              Authentic factory-sealed flagship phones, M-series workstations, and audiophile noise-canceling headphones. Backed by official service warranties.
-            </p>
+              <p className="text-zinc-300 text-sm sm:text-base leading-relaxed font-light max-w-xl">
+                Authentic factory-sealed flagship phones, M-series workstations, and audiophile noise-canceling headphones. Backed by official service warranties.
+              </p>
 
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <Link
-                href="/gadgets/catalog"
-                className="px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition-colors flex items-center gap-2 shadow-lg shadow-blue-600/30"
-              >
-                <span>Shop Tech Catalog</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                href="/gadgets/compare"
-                className="px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-xs transition-colors flex items-center gap-2"
-              >
-                <SlidersHorizontal className="w-4 h-4 text-blue-400" />
-                <span>Compare Specs & Diagnostics</span>
-              </Link>
+              <div className="flex flex-wrap items-center gap-3 pt-2">
+                <Link
+                  href="/gadgets/catalog"
+                  className="px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs sm:text-sm transition-colors flex items-center gap-2 shadow-lg shadow-blue-600/30"
+                >
+                  <span>Shop Tech Catalog</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+                <Link
+                  href="/gadgets/compare"
+                  className="px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-xs sm:text-sm backdrop-blur-xs transition-colors flex items-center gap-2"
+                >
+                  <SlidersHorizontal className="w-4 h-4 text-blue-400" />
+                  <span>Compare Specs & Diagnostics</span>
+                </Link>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Tech Guarantees Badges */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 py-2">
+        {/* Content Container */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+          {/* Tech Guarantees Badges */}
+          <section className="grid grid-cols-2 md:grid-cols-4 gap-4 py-2">
           <div className="p-4 rounded-2xl bg-zinc-900 border border-zinc-800 shadow-xs flex items-center gap-3">
             <ShieldCheck className="w-6 h-6 text-blue-500 shrink-0" />
             <div>

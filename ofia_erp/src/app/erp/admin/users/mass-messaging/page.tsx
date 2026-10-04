@@ -181,7 +181,8 @@ function getRoleTagClasses(role: string): string {
 function MassMessagingContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
-  const { activeTenant, tenants, setActiveTenant } = useActiveTenant(user?.email);
+  const tenantSlugParam = searchParams.get("tenant") || searchParams.get("tenantSlug") || "";
+  const { activeTenant, tenants, setActiveTenant } = useActiveTenant(user?.email, tenantSlugParam);
 
   const [users, setUsers] = useState<StaffRecipient[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -245,7 +246,7 @@ function MassMessagingContent() {
 
   // Fetch campaigns list
   const fetchCampaigns = async (silent: boolean = false) => {
-    const slug = activeTenant?.slug || "org-01";
+    const slug = (activeTenant?.slug || tenantSlugParam || "neweratransports").trim();
     if (!silent) setIsLoadingCampaigns(true);
     try {
       const res = await fetch(`/api/erp/mass-email?tenantSlug=${encodeURIComponent(slug)}`);
@@ -262,7 +263,7 @@ function MassMessagingContent() {
 
   useEffect(() => {
     fetchCampaigns();
-  }, [activeTenant?.slug]);
+  }, [activeTenant?.slug, tenantSlugParam]);
 
   const handleInspectCampaign = async (id: string, silent: boolean = false) => {
     setInspectModalOpen(true);

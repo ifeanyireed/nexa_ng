@@ -9,6 +9,7 @@ import 'screens/orders_screen.dart';
 import 'screens/logistics_screen.dart';
 import 'screens/account_screen.dart';
 import 'screens/storefront_screen.dart';
+import 'screens/splash_screen.dart';
 import 'utils/icon_util.dart';
 
 void main() {
@@ -64,7 +65,7 @@ class MobileCustomerApp extends StatelessWidget {
           }),
         ),
       ),
-      home: const MainAppNavigationScaffold(),
+      home: const SplashScreen(),
     );
   }
 }

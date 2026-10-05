@@ -69,8 +69,10 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
   const [clientLogo, setClientLogo] = useState<string>("");
   const [clientHeroTitle, setClientHeroTitle] = useState<string>("");
   const [clientHeroSubtitle, setClientHeroSubtitle] = useState<string>("");
+  const [isMounted, setIsMounted] = useState(false);
 
   React.useEffect(() => {
+    setIsMounted(true);
     if (typeof window !== "undefined") {
       const extracted = extractSubdomainOrParam(rawPropSlug);
       if (extracted) {
@@ -114,7 +116,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
     rawPropSlug ||
     activeTenant?.slug ||
     mountedHostTenant ||
-    (typeof window !== "undefined"
+    (isMounted
       ? localStorage.getItem("nexa_tenant_slug") ||
         localStorage.getItem("tenant_slug") ||
         localStorage.getItem("nexa_org_id") ||
@@ -138,7 +140,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
   const tenantLogo = isCustomTenant
     ? activeTenant?.logo ||
       clientLogo ||
-      (typeof window !== "undefined"
+      (isMounted
         ? (resolvedSlug ? localStorage.getItem("tenant_logo_" + resolvedSlug) : null) ||
           (activeTenant?.id ? localStorage.getItem("tenant_logo_" + activeTenant.id) : null) ||
           (activeTenant?.slug ? localStorage.getItem("tenant_logo_" + activeTenant.slug) : null) ||
@@ -159,7 +161,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
   const tenantDomain = (isCustomTenant && (activeTenant?.domain || `${resolvedSlug}.ofia.ng`)) || "ofia.ng";
   const loginImage = isCustomTenant
     ? activeTenant?.loginImage ||
-      (typeof window !== "undefined"
+      (isMounted
         ? (resolvedSlug ? localStorage.getItem("tenant_login_image_" + resolvedSlug) : null) ||
           (activeTenant?.id ? localStorage.getItem("tenant_login_image_" + activeTenant.id) : null) ||
           localStorage.getItem("nexa_tenant_login_image") ||

@@ -116,12 +116,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           ],
                         ),
                         const SizedBox(height: 2),
-                        const Row(
+                        Row(
                           children: [
                             Icon(
                               fixIcon(FlexIcon.remix.locationPin3),
                               size: 16,
-                              color: Color(0xFF1B62F0),
+                              color: const Color(0xFF1B62F0),
                             ),
                             SizedBox(width: 4),
                             Text(
@@ -409,9 +409,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               onTap: () {
                                 widget.onNavigateToTab?.call(3); // Jump to Logistics tab
                               },
-                              child: const Row(
+                              child: Row(
                                 children: [
-                                  Text(
+                                  const Text(
                                     'Request a Rider',
                                     style: TextStyle(
                                       color: Color(0xFF60A5FA),
@@ -419,8 +419,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
-                                  SizedBox(width: 4),
-                                  Icon(fixIcon(FlexIcon.remix.lineArrowExpand), color: Color(0xFF60A5FA), size: 14),
+                                  const SizedBox(width: 4),
+                                  Icon(fixIcon(FlexIcon.remix.lineArrowExpand), color: const Color(0xFF60A5FA), size: 14),
                                 ],
                               ),
                             ),

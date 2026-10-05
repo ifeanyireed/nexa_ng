@@ -368,11 +368,11 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFA7F3D0)),
             ),
-            child: const Row(
+            child: Row(
               children: [
-                Icon(fixIcon(FlexIcon.remix.flash3), size: 14, color: Color(0xFF059669)),
-                SizedBox(width: 4),
-                Text(
+                Icon(fixIcon(FlexIcon.remix.flash3), size: 14, color: const Color(0xFF059669)),
+                const SizedBox(width: 4),
+                const Text(
                   'Live Dispatch',
                   style: TextStyle(
                       fontSize: 11,

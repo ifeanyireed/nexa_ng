@@ -61,25 +61,25 @@ class _AccountScreenState extends State<AccountScreen> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        const Text(
                           'Sarah Johnson',
                           style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                         ),
-                        SizedBox(height: 2),
-                        Text(
+                        const SizedBox(height: 2),
+                        const Text(
                           'sarah.j@example.ng',
                           style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                         ),
-                        SizedBox(height: 6),
+                        const SizedBox(height: 6),
                         Row(
                           children: [
-                            Icon(fixIcon(FlexIcon.remix.warrantyBadgeHighlight), color: Color(0xFF0D9488), size: 14),
-                            SizedBox(width: 4),
-                            Text(
+                            Icon(fixIcon(FlexIcon.remix.warrantyBadgeHighlight), color: const Color(0xFF0D9488), size: 14),
+                            const SizedBox(width: 4),
+                            const Text(
                               'Verified Customer • Tier 2',
                               style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: Color(0xFF0D9488)),
                             ),

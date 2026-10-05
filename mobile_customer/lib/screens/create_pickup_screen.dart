@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/shipment.dart';
 import '../data/mock_data.dart';
 import 'tracking_screen.dart';
+import 'package:flexicon/flexicon.dart';
+import 'package:mobile_customer/utils/icon_util.dart';
 
 class CreatePickupRequestScreen extends StatefulWidget {
   final VoidCallback? onBack;
@@ -48,12 +50,12 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
   bool _isProcessing = false;
 
   final List<Map<String, dynamic>> _categories = [
-    {'label': 'Documents', 'icon': Icons.description_outlined},
-    {'label': 'Food & Snacks', 'icon': Icons.restaurant_outlined},
-    {'label': 'Gadgets & Tech', 'icon': Icons.devices_other_outlined},
-    {'label': 'Fashion Goods', 'icon': Icons.checkroom_outlined},
-    {'label': 'Fragile Items', 'icon': Icons.warning_amber_rounded},
-    {'label': 'Carton / Box', 'icon': Icons.inventory_2_outlined},
+    {'label': 'Documents', 'icon': fixIcon(FlexIcon.remix.textFile)},
+    {'label': 'Food & Snacks', 'icon': fixIcon(FlexIcon.remix.forkKnife)},
+    {'label': 'Gadgets & Tech', 'icon': fixIcon(FlexIcon.remix.laptop)},
+    {'label': 'Fashion Goods', 'icon': fixIcon(FlexIcon.remix.shirt)},
+    {'label': 'Fragile Items', 'icon': fixIcon(FlexIcon.remix.warningDiamond)},
+    {'label': 'Carton / Box', 'icon': fixIcon(FlexIcon.remix.archiveBox)},
   ];
 
   @override
@@ -157,7 +159,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
                           color: Color(0xFFEFF6FF),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.radar_rounded,
+                        child: Icon(fixIcon(FlexIcon.remix.satelliteDish),
                             size: 34, color: Color(0xFF1B62F0)),
                       ),
                     ],
@@ -194,7 +196,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
                     color: Color(0xFFECFDF5),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.check_circle_rounded,
+                  child: Icon(fixIcon(FlexIcon.remix.checkSquare),
                       size: 40, color: Color(0xFF059669)),
                 ),
                 const SizedBox(height: 16),
@@ -248,7 +250,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
                             ),
                             Row(
                               children: [
-                                const Icon(Icons.star_rounded,
+                                Icon(fixIcon(FlexIcon.remix.starCircle),
                                     size: 13, color: Color(0xFFF59E0B)),
                                 const SizedBox(width: 2),
                                 Text(
@@ -331,7 +333,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
         elevation: 0,
         scrolledUnderElevation: 1,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+          icon: Icon(fixIcon(FlexIcon.remix.lessThanSignCircle),
               size: 18, color: Color(0xFF0F172A)),
           onPressed: () {
             if (widget.onBack != null) {
@@ -368,7 +370,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
             ),
             child: const Row(
               children: [
-                Icon(Icons.bolt_rounded, size: 14, color: Color(0xFF059669)),
+                Icon(fixIcon(FlexIcon.remix.flash3), size: 14, color: Color(0xFF059669)),
                 SizedBox(width: 4),
                 Text(
                   'Live Dispatch',
@@ -389,7 +391,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. ROUTE TIMELINE (PICKUP & DESTINATION)
-            _buildSectionHeader('1. Route & Contacts', Icons.route_rounded),
+            _buildSectionHeader('1. Route & Contacts', fixIcon(FlexIcon.remix.lineArrowRoadmap)),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(18),
@@ -420,7 +422,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
                               color: Color(0xFFEFF6FF),
                               shape: BoxShape.circle,
                             ),
-                            child: const Icon(Icons.circle,
+                            child: Icon(fixIcon(FlexIcon.remix.graphDot),
                                 size: 10, color: Color(0xFF1B62F0)),
                           ),
                           Container(
@@ -447,7 +449,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
                             _buildInputField(
                               controller: _pickupAddressController,
                               hint: 'Enter pickup street address',
-                              icon: Icons.location_on_outlined,
+                              icon: fixIcon(FlexIcon.remix.locationPin3),
                             ),
                             const SizedBox(height: 8),
                             Row(
@@ -456,7 +458,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
                                   child: _buildInputField(
                                     controller: _senderNameController,
                                     hint: 'Sender name',
-                                    icon: Icons.person_outline_rounded,
+                                    icon: fixIcon(FlexIcon.remix.userCircleSingle),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -464,7 +466,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
                                   child: _buildInputField(
                                     controller: _senderPhoneController,
                                     hint: 'Sender phone',
-                                    icon: Icons.phone_outlined,
+                                    icon: fixIcon(FlexIcon.remix.phone),
                                     keyboardType: TextInputType.phone,
                                   ),
                                 ),
@@ -474,7 +476,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
                             _buildInputField(
                               controller: _pickupNotesController,
                               hint: 'Floor, apartment or gate code notes',
-                              icon: Icons.note_outlined,
+                              icon: fixIcon(FlexIcon.remix.newStickyNote),
                             ),
                           ],
                         ),
@@ -493,7 +495,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
                           color: Color(0xFFECFDF5),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.location_on_rounded,
+                        child: Icon(fixIcon(FlexIcon.remix.locationPin3),
                             size: 16, color: Color(0xFF059669)),
                       ),
                       const SizedBox(width: 12),
@@ -513,7 +515,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
                             _buildInputField(
                               controller: _deliveryAddressController,
                               hint: 'Enter destination street address',
-                              icon: Icons.pin_drop_outlined,
+                              icon: fixIcon(FlexIcon.remix.locationPin3),
                             ),
                             const SizedBox(height: 8),
                             Row(
@@ -522,7 +524,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
                                   child: _buildInputField(
                                     controller: _recipientNameController,
                                     hint: 'Recipient name',
-                                    icon: Icons.person_outline_rounded,
+                                    icon: fixIcon(FlexIcon.remix.userCircleSingle),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
@@ -530,7 +532,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
                                   child: _buildInputField(
                                     controller: _recipientPhoneController,
                                     hint: 'Recipient phone',
-                                    icon: Icons.phone_outlined,
+                                    icon: fixIcon(FlexIcon.remix.phone),
                                     keyboardType: TextInputType.phone,
                                   ),
                                 ),
@@ -540,7 +542,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
                             _buildInputField(
                               controller: _deliveryNotesController,
                               hint: 'Drop-off instructions for courier',
-                              icon: Icons.chat_bubble_outline_rounded,
+                              icon: fixIcon(FlexIcon.remix.chatBubbleTextSquare),
                             ),
                           ],
                         ),
@@ -555,7 +557,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
 
             // 2. PARCEL SPECIFICATIONS
             _buildSectionHeader('2. Parcel Attributes & Category',
-                Icons.inventory_2_outlined),
+                fixIcon(FlexIcon.remix.archiveBox)),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(18),
@@ -634,7 +636,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
                   _buildInputField(
                     controller: _parcelDescController,
                     hint: 'Brief description of contents',
-                    icon: Icons.edit_note_rounded,
+                    icon: fixIcon(FlexIcon.remix.pencilSquare),
                   ),
                   const SizedBox(height: 18),
 
@@ -653,28 +655,28 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
                         id: 'light',
                         title: 'Small',
                         sub: '< 1 kg',
-                        icon: Icons.markunread_mailbox_outlined,
+                        icon: fixIcon(FlexIcon.remix.inboxOpen),
                       ),
                       const SizedBox(width: 8),
                       _buildWeightCard(
                         id: 'medium',
                         title: 'Medium',
                         sub: '1 - 5 kg',
-                        icon: Icons.shopping_bag_outlined,
+                        icon: fixIcon(FlexIcon.remix.bag),
                       ),
                       const SizedBox(width: 8),
                       _buildWeightCard(
                         id: 'heavy',
                         title: 'Heavy',
                         sub: '5 - 15 kg',
-                        icon: Icons.inventory_2_outlined,
+                        icon: fixIcon(FlexIcon.remix.archiveBox),
                       ),
                       const SizedBox(width: 8),
                       _buildWeightCard(
                         id: 'bulky',
                         title: 'Bulky',
                         sub: '15+ kg',
-                        icon: Icons.all_inbox_outlined,
+                        icon: fixIcon(FlexIcon.remix.inbox),
                       ),
                     ],
                   ),
@@ -686,7 +688,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
 
             // 3. VEHICLE & DISPATCH SPEED
             _buildSectionHeader(
-                '3. Vehicle & Delivery Speed', Icons.electric_moped_outlined),
+                '3. Vehicle & Delivery Speed', fixIcon(FlexIcon.remix.bicycleBike)),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(18),
@@ -705,7 +707,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
                           isSelected: _selectedVehicle == 'bike',
                           title: 'Express Motorbike',
                           subtitle: 'Fast city lane-splitting • Up to 10kg',
-                          icon: Icons.two_wheeler_rounded,
+                          icon: fixIcon(FlexIcon.remix.bicycleBike),
                           onTap: () => setState(() => _selectedVehicle = 'bike'),
                         ),
                       ),
@@ -715,7 +717,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
                           isSelected: _selectedVehicle == 'van',
                           title: 'Cargo Delivery Van',
                           subtitle: 'Weather-safe, large boxes (+₦2,500)',
-                          icon: Icons.local_shipping_rounded,
+                          icon: fixIcon(FlexIcon.remix.transferTruckTime),
                           onTap: () => setState(() => _selectedVehicle = 'van'),
                         ),
                       ),
@@ -731,7 +733,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
                           isSelected: _selectedSpeed == 'instant',
                           title: 'Instant Dispatch',
                           subtitle: 'Rider matched in ~3m (+₦500)',
-                          icon: Icons.bolt_rounded,
+                          icon: fixIcon(FlexIcon.remix.flash3),
                           accentColor: const Color(0xFF1B62F0),
                           onTap: () => setState(() => _selectedSpeed = 'instant'),
                         ),
@@ -742,7 +744,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
                           isSelected: _selectedSpeed == 'scheduled',
                           title: 'Standard Today',
                           subtitle: 'Delivered before 6:00 PM',
-                          icon: Icons.schedule_rounded,
+                          icon: fixIcon(FlexIcon.remix.countdownTimer),
                           accentColor: const Color(0xFF059669),
                           onTap: () =>
                               setState(() => _selectedSpeed = 'scheduled'),
@@ -757,7 +759,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
             const SizedBox(height: 24),
 
             // 4. REAL-TIME LOGISTICS QUOTE & SUMMARY
-            _buildSectionHeader('4. Logistics Fare Breakdown', Icons.receipt_long_rounded),
+            _buildSectionHeader('4. Logistics Fare Breakdown', fixIcon(FlexIcon.remix.receipt)),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(18),
@@ -817,7 +819,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
             const SizedBox(height: 24),
 
             // 5. PAYMENT METHOD
-            _buildSectionHeader('5. Payment Method', Icons.payments_outlined),
+            _buildSectionHeader('5. Payment Method', fixIcon(FlexIcon.remix.nonCommercialDollars)),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(18),
@@ -832,21 +834,21 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
                     id: 'wallet',
                     title: 'Ofia Digital Wallet (₦244,000)',
                     sub: 'Instant one-tap payment deduction',
-                    icon: Icons.account_balance_wallet_outlined,
+                    icon: fixIcon(FlexIcon.remix.wallet),
                   ),
                   const SizedBox(height: 8),
                   _buildPaymentOption(
                     id: 'card',
                     title: 'Debit Card / Paystack',
                     sub: 'Mastercard, Visa, Verve or USSD transfer',
-                    icon: Icons.credit_card_outlined,
+                    icon: fixIcon(FlexIcon.remix.creditCard4),
                   ),
                   const SizedBox(height: 8),
                   _buildPaymentOption(
                     id: 'recipient',
                     title: 'Recipient Pays on Delivery',
                     sub: 'Recipient pays courier via Cash or POS terminal',
-                    icon: Icons.handshake_outlined,
+                    icon: fixIcon(FlexIcon.remix.userCollaborateGroup),
                   ),
                 ],
               ),
@@ -908,7 +910,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white),
                         )
-                      : const Icon(Icons.flash_on_rounded, size: 18),
+                      : Icon(fixIcon(FlexIcon.remix.flash3), size: 18),
                   label: Text(
                     _isProcessing ? 'Assigning...' : 'Request Dispatch Rider',
                     style: const TextStyle(
@@ -1161,8 +1163,8 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
             ),
             Icon(
               isSelected
-                  ? Icons.radio_button_checked_rounded
-                  : Icons.radio_button_off_rounded,
+                  ? fixIcon(FlexIcon.remix.autoCorrectionCheck)
+                  : fixIcon(FlexIcon.remix.roundAnchorPoint),
               color: isSelected
                   ? const Color(0xFF1B62F0)
                   : const Color(0xFF94A3B8),

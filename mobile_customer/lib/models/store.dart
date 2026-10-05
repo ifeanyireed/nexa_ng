@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flexicon/flexicon.dart';
+import 'package:mobile_customer/utils/icon_util.dart';
 
 enum StoreVertical {
   fashion,
@@ -92,25 +94,25 @@ extension StoreVerticalExtension on StoreVertical {
   IconData get icon {
     switch (this) {
       case StoreVertical.fashion:
-        return Icons.checkroom_outlined;
+        return fixIcon(FlexIcon.remix.shirt);
       case StoreVertical.cars:
-        return Icons.directions_car_outlined;
+        return fixIcon(FlexIcon.remix.carTaxi1);
       case StoreVertical.food:
-        return Icons.restaurant_outlined;
+        return fixIcon(FlexIcon.remix.forkKnife);
       case StoreVertical.property:
-        return Icons.apartment_outlined;
+        return fixIcon(FlexIcon.remix.building1);
       case StoreVertical.gadgets:
-        return Icons.devices_outlined;
+        return fixIcon(FlexIcon.remix.iphone);
       case StoreVertical.beauty:
-        return Icons.spa_outlined;
+        return fixIcon(FlexIcon.remix.flower);
       case StoreVertical.homeLiving:
-        return Icons.chair_outlined;
+        return fixIcon(FlexIcon.remix.sofa);
       case StoreVertical.pharmacy:
-        return Icons.local_pharmacy_outlined;
+        return fixIcon(FlexIcon.remix.hospitalSign);
       case StoreVertical.hardware:
-        return Icons.bolt_outlined;
+        return fixIcon(FlexIcon.remix.flash3);
       case StoreVertical.retail:
-        return Icons.storefront_outlined;
+        return fixIcon(FlexIcon.remix.store2);
     }
   }
 }

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flexicon/flexicon.dart';
+import 'package:mobile_customer/utils/icon_util.dart';
 
 class VectorMapPainter extends CustomPainter {
   @override
@@ -262,8 +264,7 @@ class CourierPinWidget extends StatelessWidget {
                   child: Image.asset(
                     imageAsset,
                     fit: BoxFit.cover,
-                    errorBuilder: (ctx, err, stack) => const Icon(
-                      Icons.person,
+                    errorBuilder: (ctx, err, stack) => Icon(fixIcon(FlexIcon.remix.userFullBody),
                       size: 20,
                       color: Color(0xFF1E293B),
                     ),

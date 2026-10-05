@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/store.dart';
 import '../models/cart.dart';
 import '../data/commerce_data.dart';
+import 'package:flexicon/flexicon.dart';
+import 'package:mobile_customer/utils/icon_util.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -70,7 +72,7 @@ class _CartScreenState extends State<CartScreen> {
                       color: Color(0xFFDCFCE7),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 40),
+                    child: Icon(fixIcon(FlexIcon.remix.checkSquare), color: Color(0xFF16A34A), size: 40),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -144,7 +146,7 @@ class _CartScreenState extends State<CartScreen> {
                       color: Color(0xFFEFF6FF),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.shopping_bag_outlined, size: 54, color: Color(0xFF1B62F0)),
+                    child: Icon(fixIcon(FlexIcon.remix.bag), size: 54, color: Color(0xFF1B62F0)),
                   ),
                   const SizedBox(height: 18),
                   const Text(
@@ -220,7 +222,7 @@ class _CartScreenState extends State<CartScreen> {
                                   color: Color(0xFFEFF6FF),
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(Icons.home_outlined, color: Color(0xFF1B62F0), size: 20),
+                                child: Icon(fixIcon(FlexIcon.remix.home2), color: Color(0xFF1B62F0), size: 20),
                               ),
                               const SizedBox(width: 12),
                               const Expanded(
@@ -233,7 +235,7 @@ class _CartScreenState extends State<CartScreen> {
                                   ],
                                 ),
                               ),
-                              const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF64748B)),
+                              Icon(fixIcon(FlexIcon.remix.pen1), size: 18, color: Color(0xFF64748B)),
                             ],
                           ),
                         ),
@@ -285,11 +287,11 @@ class _CartScreenState extends State<CartScreen> {
                           ),
                           child: Column(
                             children: [
-                              _buildPaymentRadio('card', 'Debit / Credit Card (Paystack)', Icons.credit_card_outlined),
+                              _buildPaymentRadio('card', 'Debit / Credit Card (Paystack)', fixIcon(FlexIcon.remix.creditCard4)),
                               const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                              _buildPaymentRadio('wallet', 'Ofia Wallet (₦244,000)', Icons.account_balance_wallet_outlined),
+                              _buildPaymentRadio('wallet', 'Ofia Wallet (₦244,000)', fixIcon(FlexIcon.remix.wallet)),
                               const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                              _buildPaymentRadio('cod', 'Pay on Delivery', Icons.payments_outlined),
+                              _buildPaymentRadio('cod', 'Pay on Delivery', fixIcon(FlexIcon.remix.nonCommercialDollars)),
                             ],
                           ),
                         ),
@@ -437,7 +439,7 @@ class _CartScreenState extends State<CartScreen> {
             children: [
               IconButton(
                 visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.remove_circle_outline, size: 20, color: Color(0xFF64748B)),
+                icon: Icon(fixIcon(FlexIcon.remix.pathfinderMinusFront2), size: 20, color: Color(0xFF64748B)),
                 onPressed: () {
                   _cart.updateQuantity(item.product.id, item.quantity - 1);
                 },
@@ -445,7 +447,7 @@ class _CartScreenState extends State<CartScreen> {
               Text('${item.quantity}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800)),
               IconButton(
                 visualDensity: VisualDensity.compact,
-                icon: const Icon(Icons.add_circle_outline, size: 20, color: Color(0xFF1B62F0)),
+                icon: Icon(fixIcon(FlexIcon.remix.applicationAdd), size: 20, color: Color(0xFF1B62F0)),
                 onPressed: () {
                   _cart.updateQuantity(item.product.id, item.quantity + 1);
                 },
@@ -496,8 +498,8 @@ class _CartScreenState extends State<CartScreen> {
       leading: Icon(icon, color: isSelected ? const Color(0xFF1B62F0) : const Color(0xFF64748B), size: 20),
       title: Text(label, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600, color: const Color(0xFF0F172A))),
       trailing: isSelected
-          ? const Icon(Icons.check_circle_rounded, color: Color(0xFF1B62F0), size: 18)
-          : const Icon(Icons.radio_button_unchecked_rounded, color: Color(0xFFCBD5E1), size: 18),
+          ? Icon(fixIcon(FlexIcon.remix.checkSquare), color: Color(0xFF1B62F0), size: 18)
+          : Icon(fixIcon(FlexIcon.remix.roundAnchorPoint), color: Color(0xFFCBD5E1), size: 18),
       onTap: () => setState(() => _selectedPayment = id),
     );
   }

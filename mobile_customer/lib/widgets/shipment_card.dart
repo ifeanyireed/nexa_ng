@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/shipment.dart';
 import 'isometric_box.dart';
 import 'shipment_progress.dart';
+import 'package:flexicon/flexicon.dart';
+import 'package:mobile_customer/utils/icon_util.dart';
 
 class ShipmentCard extends StatelessWidget {
   final ShipmentItem item;
@@ -180,22 +182,19 @@ class ShipmentCard extends StatelessWidget {
         );
         break;
       case 'chair':
-        content = const Icon(
-          Icons.chair,
+        content = Icon(fixIcon(FlexIcon.remix.sofa),
           color: Color(0xFFDC2626),
           size: 26,
         );
         break;
       case 'headphone':
-        content = const Icon(
-          Icons.headphones,
+        content = Icon(fixIcon(FlexIcon.remix.earpods),
           color: Color(0xFF64748B),
           size: 26,
         );
         break;
       default:
-        content = const Icon(
-          Icons.inventory_2_outlined,
+        content = Icon(fixIcon(FlexIcon.remix.archiveBox),
           color: Color(0xFF2563EB),
           size: 24,
         );

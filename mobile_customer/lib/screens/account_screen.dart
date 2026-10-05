@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flexicon/flexicon.dart';
+import 'package:mobile_customer/utils/icon_util.dart';
 
 class AccountScreen extends StatefulWidget {
   final Function(int pageIndex)? onNavigateToTab;
@@ -75,7 +77,7 @@ class _AccountScreenState extends State<AccountScreen> {
                         SizedBox(height: 6),
                         Row(
                           children: [
-                            Icon(Icons.verified_user_rounded, color: Color(0xFF0D9488), size: 14),
+                            Icon(fixIcon(FlexIcon.remix.warrantyBadgeHighlight), color: Color(0xFF0D9488), size: 14),
                             SizedBox(width: 4),
                             Text(
                               'Verified Customer • Tier 2',
@@ -87,7 +89,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.edit_outlined, size: 20, color: Color(0xFF94A3B8)),
+                    icon: Icon(fixIcon(FlexIcon.remix.pen1), size: 20, color: Color(0xFF94A3B8)),
                     onPressed: () {},
                   ),
                 ],
@@ -146,7 +148,7 @@ class _AccountScreenState extends State<AccountScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             elevation: 0,
                           ),
-                          icon: const Icon(Icons.add_rounded, size: 16),
+                          icon: Icon(fixIcon(FlexIcon.remix.applicationAdd), size: 16),
                           label: const Text('Top Up', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
                           onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -163,7 +165,7 @@ class _AccountScreenState extends State<AccountScreen> {
                             side: const BorderSide(color: Color(0xFF475569)),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          icon: const Icon(Icons.arrow_outward_rounded, size: 16),
+                          icon: Icon(fixIcon(FlexIcon.remix.lineArrowExpandWindow2), size: 16),
                           label: const Text('Transfer', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
                           onPressed: () {},
                         ),
@@ -187,21 +189,21 @@ class _AccountScreenState extends State<AccountScreen> {
               child: Column(
                 children: [
                   _buildMenuTile(
-                    icon: Icons.location_on_outlined,
+                    icon: fixIcon(FlexIcon.remix.locationPin3),
                     title: 'Saved Address Book',
                     subtitle: 'Home, Office, Lagos Island',
                     onTap: () {},
                   ),
                   const Divider(height: 1, indent: 56, color: Color(0xFFF1F5F9)),
                   _buildMenuTile(
-                    icon: Icons.favorite_border_rounded,
+                    icon: fixIcon(FlexIcon.remix.heart),
                     title: 'Following & Saved Stores',
                     subtitle: 'Lumina Atelier, Volt & Quartz',
                     onTap: () {},
                   ),
                   const Divider(height: 1, indent: 56, color: Color(0xFFF1F5F9)),
                   _buildMenuTile(
-                    icon: Icons.receipt_long_outlined,
+                    icon: fixIcon(FlexIcon.remix.receipt),
                     title: 'My Orders & Invoices',
                     subtitle: 'View receipts & download tax invoices',
                     onTap: () {
@@ -213,7 +215,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     secondary: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: const BoxDecoration(color: Color(0xFFF1F5F9), shape: BoxShape.circle),
-                      child: const Icon(Icons.fingerprint_rounded, size: 20, color: Color(0xFF1E293B)),
+                      child: Icon(fixIcon(FlexIcon.remix.fingerprint1), size: 20, color: Color(0xFF1E293B)),
                     ),
                     title: const Text('Face ID / Fingerprint Auth', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
                     value: _biometricsEnabled,
@@ -225,7 +227,7 @@ class _AccountScreenState extends State<AccountScreen> {
                     secondary: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: const BoxDecoration(color: Color(0xFFF1F5F9), shape: BoxShape.circle),
-                      child: const Icon(Icons.notifications_none_rounded, size: 20, color: Color(0xFF1E293B)),
+                      child: Icon(fixIcon(FlexIcon.remix.bellNotification), size: 20, color: Color(0xFF1E293B)),
                     ),
                     title: const Text('Push & Dispatch Alerts', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
                     value: _pushNotifications,
@@ -249,14 +251,14 @@ class _AccountScreenState extends State<AccountScreen> {
               child: Column(
                 children: [
                   _buildMenuTile(
-                    icon: Icons.help_outline_rounded,
+                    icon: fixIcon(FlexIcon.remix.customerSupport5),
                     title: 'Help Center & Live Chat',
                     subtitle: '24/7 dedicated customer resolution',
                     onTap: () {},
                   ),
                   const Divider(height: 1, indent: 56, color: Color(0xFFF1F5F9)),
                   _buildMenuTile(
-                    icon: Icons.shield_outlined,
+                    icon: fixIcon(FlexIcon.remix.shield1),
                     title: 'Privacy Policy & Terms of Service',
                     subtitle: 'NDPR compliant data handling',
                     onTap: () {},
@@ -277,7 +279,7 @@ class _AccountScreenState extends State<AccountScreen> {
                   side: const BorderSide(color: Color(0xFFFCA5A5)),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                 ),
-                icon: const Icon(Icons.logout_rounded, size: 18),
+                icon: Icon(fixIcon(FlexIcon.remix.logout1), size: 18),
                 label: const Text('Log Out of Account', style: TextStyle(fontWeight: FontWeight.w700)),
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -315,7 +317,7 @@ class _AccountScreenState extends State<AccountScreen> {
         subtitle,
         style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
       ),
-      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 13, color: Color(0xFFCBD5E1)),
+      trailing: Icon(fixIcon(FlexIcon.remix.lineArrowExpand), size: 13, color: Color(0xFFCBD5E1)),
       onTap: onTap,
     );
   }

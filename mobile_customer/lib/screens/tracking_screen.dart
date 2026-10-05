@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../data/mock_data.dart';
 import '../models/shipment.dart';
 import '../widgets/map_painter.dart';
+import 'package:flexicon/flexicon.dart';
+import 'package:mobile_customer/utils/icon_util.dart';
 
 class TrackingScreen extends StatefulWidget {
   final VoidCallback? onBack;
@@ -89,7 +91,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _circleButton(
-                        icon: Icons.arrow_back_rounded,
+                        icon: fixIcon(FlexIcon.remix.lessThanSignCircle),
                         onTap: () {
                           if (widget.onBack != null) {
                             widget.onBack!();
@@ -108,7 +110,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         ),
                       ),
                       _circleButton(
-                        icon: Icons.more_vert_rounded,
+                        icon: fixIcon(FlexIcon.remix.watchSquareMenu),
                         onTap: () {},
                       ),
                     ],
@@ -135,8 +137,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(
-                          Icons.search,
+                        Icon(fixIcon(FlexIcon.remix.magnifyingGlass),
                           size: 22,
                           color: Color(0xFF94A3B8),
                         ),
@@ -224,8 +225,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                           child: Image.asset(
                             _selectedCourier.avatarAsset,
                             fit: BoxFit.cover,
-                            errorBuilder: (ctx, err, stack) => const Icon(
-                              Icons.person,
+                            errorBuilder: (ctx, err, stack) => Icon(fixIcon(FlexIcon.remix.userFullBody),
                               size: 32,
                               color: Color(0xFF64748B),
                             ),
@@ -261,12 +261,12 @@ class _TrackingScreenState extends State<TrackingScreen> {
                             // 5 Gold Stars
                             Row(
                               children: List.generate(5, (index) {
-                                return const Padding(
-                                  padding: EdgeInsets.only(right: 3),
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 3),
                                   child: Icon(
-                                    Icons.star_rounded,
+                                    fixIcon(FlexIcon.remix.starCircle),
                                     size: 17,
-                                    color: Color(0xFFF59E0B),
+                                    color: const Color(0xFFF59E0B),
                                   ),
                                 );
                               }),
@@ -300,9 +300,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
                               ),
                             ],
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Icon(
-                              Icons.phone_rounded,
+                              fixIcon(FlexIcon.remix.phone),
                               color: Colors.white,
                               size: 20,
                             ),

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../data/mock_data.dart';
 import '../models/shipment.dart';
 import '../widgets/shipment_card.dart';
+import 'package:flexicon/flexicon.dart';
+import 'package:mobile_customer/utils/icon_util.dart';
 
 class ShippingScreen extends StatefulWidget {
   final VoidCallback? onBack;
@@ -82,7 +84,7 @@ class _ShippingScreenState extends State<ShippingScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _circleButton(
-                        icon: Icons.arrow_back_rounded,
+                        icon: fixIcon(FlexIcon.remix.lessThanSignCircle),
                         onTap: () {
                           if (widget.onBack != null) {
                             widget.onBack!();
@@ -101,7 +103,7 @@ class _ShippingScreenState extends State<ShippingScreen> {
                         ),
                       ),
                       _circleButton(
-                        icon: Icons.more_vert_rounded,
+                        icon: fixIcon(FlexIcon.remix.watchSquareMenu),
                         onTap: () {},
                       ),
                     ],
@@ -132,8 +134,7 @@ class _ShippingScreenState extends State<ShippingScreen> {
                           ),
                           child: Row(
                             children: [
-                              const Icon(
-                                Icons.search,
+                              Icon(fixIcon(FlexIcon.remix.magnifyingGlass),
                                 size: 22,
                                 color: Color(0xFF94A3B8),
                               ),
@@ -175,9 +176,9 @@ class _ShippingScreenState extends State<ShippingScreen> {
                             ),
                           ],
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Icon(
-                            Icons.crop_free_rounded,
+                            fixIcon(FlexIcon.remix.expandCropResize),
                             color: Colors.white,
                             size: 24,
                           ),

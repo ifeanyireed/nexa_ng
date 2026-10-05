@@ -5,6 +5,8 @@ import '../widgets/shipment_card.dart';
 import 'create_pickup_screen.dart';
 import 'shipping_screen.dart';
 import 'tracking_screen.dart';
+import 'package:flexicon/flexicon.dart';
+import 'package:mobile_customer/utils/icon_util.dart';
 
 class LogisticsScreen extends StatefulWidget {
   final Function(int pageIndex)? onNavigateToTab;
@@ -130,7 +132,7 @@ class _LogisticsScreenState extends State<LogisticsScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         elevation: 0,
                       ),
-                      icon: const Icon(Icons.add_location_alt_outlined, size: 18),
+                      icon: Icon(fixIcon(FlexIcon.remix.mapLocation), size: 18),
                       label: const Text('Create Pickup Request', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
                       onPressed: _openCreateShipment,
                     ),
@@ -236,7 +238,7 @@ class _LogisticsScreenState extends State<LogisticsScreen> {
                               const SizedBox(height: 4),
                               Row(
                                 children: [
-                                  const Icon(Icons.star_rounded, size: 13, color: Color(0xFFF59E0B)),
+                                  Icon(fixIcon(FlexIcon.remix.starCircle), size: 13, color: Color(0xFFF59E0B)),
                                   const SizedBox(width: 2),
                                   Text(
                                     '${courier.rating}',

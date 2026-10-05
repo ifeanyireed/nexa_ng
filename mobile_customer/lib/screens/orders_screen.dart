@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/shipment.dart';
 import '../data/mock_data.dart';
 import 'tracking_screen.dart';
+import 'package:flexicon/flexicon.dart';
+import 'package:mobile_customer/utils/icon_util.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -174,7 +176,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     ),
-                    icon: const Icon(Icons.location_searching_rounded, size: 14),
+                    icon: Icon(fixIcon(FlexIcon.remix.locationTarget2), size: 14),
                     label: const Text('Track Courier', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800)),
                     onPressed: () => _openTracking(shipment),
                   ),
@@ -271,7 +273,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
               const SizedBox(height: 10),
               Row(
                 children: [
-                  const Icon(Icons.access_time_rounded, size: 14, color: Color(0xFF1B62F0)),
+                  Icon(fixIcon(FlexIcon.remix.stopwatch), size: 14, color: Color(0xFF1B62F0)),
                   const SizedBox(width: 4),
                   Text(
                     booking['date'] as String,

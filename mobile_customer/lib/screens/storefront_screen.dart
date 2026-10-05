@@ -5,6 +5,8 @@ import '../models/product.dart';
 import '../models/cart.dart';
 import 'product_details_screen.dart';
 import 'cart_screen.dart';
+import 'package:flexicon/flexicon.dart';
+import 'package:mobile_customer/utils/icon_util.dart';
 
 class StorefrontScreen extends StatefulWidget {
   final VendorStore store;
@@ -120,7 +122,7 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
                 decoration: InputDecoration(
                   labelText: 'Your Full Name',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  prefixIcon: const Icon(Icons.person_outline),
+                  prefixIcon: Icon(fixIcon(FlexIcon.remix.userCircleSingle)),
                 ),
               ),
               const SizedBox(height: 12),
@@ -128,7 +130,7 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
                 decoration: InputDecoration(
                   labelText: 'Phone Number (WhatsApp)',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  prefixIcon: const Icon(Icons.phone_outlined),
+                  prefixIcon: Icon(fixIcon(FlexIcon.remix.phone)),
                 ),
                 keyboardType: TextInputType.phone,
               ),
@@ -137,7 +139,7 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
                 decoration: InputDecoration(
                   labelText: 'Preferred Date & Time',
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  prefixIcon: const Icon(Icons.calendar_today_outlined),
+                  prefixIcon: Icon(fixIcon(FlexIcon.remix.blankCalendar)),
                 ),
               ),
               const SizedBox(height: 20),
@@ -213,7 +215,7 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
                 ),
                 child: Column(
                   children: [
-                    const Icon(Icons.document_scanner_outlined, size: 40, color: Color(0xFF0D9488)),
+                    Icon(fixIcon(FlexIcon.remix.scanner), size: 40, color: Color(0xFF0D9488)),
                     const SizedBox(height: 10),
                     const Text(
                       'Tap to take photo or choose document',
@@ -237,7 +239,7 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
-                  icon: const Icon(Icons.camera_alt_outlined),
+                  icon: Icon(fixIcon(FlexIcon.remix.photoCamera)),
                   label: const Text('Capture with Camera', style: TextStyle(fontWeight: FontWeight.w700)),
                   onPressed: () {
                     Navigator.of(context).pop();
@@ -400,7 +402,7 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
                   color: Colors.black.withOpacity(0.5),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.arrow_back_rounded, color: Colors.white, size: 20),
+                child: Icon(fixIcon(FlexIcon.remix.lessThanSignCircle), color: Colors.white, size: 20),
               ),
               onPressed: () => Navigator.of(context).pop(),
             ),
@@ -413,7 +415,7 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    _isFollowing ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                    _isFollowing ? fixIcon(FlexIcon.remix.heart) : fixIcon(FlexIcon.remix.heart),
                     color: _isFollowing ? Colors.redAccent : Colors.white,
                     size: 20,
                   ),
@@ -439,7 +441,7 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
                   child: Stack(
                     alignment: Alignment.center,
                     children: [
-                      const Icon(Icons.shopping_bag_outlined, color: Colors.white, size: 20),
+                      Icon(fixIcon(FlexIcon.remix.bag), color: Colors.white, size: 20),
                       if (_cart.totalCount > 0)
                         Positioned(
                           top: 0,
@@ -553,7 +555,7 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
                   // Operating Hours & Rating Strip
                   Row(
                     children: [
-                      const Icon(Icons.star_rounded, size: 16, color: Color(0xFFF59E0B)),
+                      Icon(fixIcon(FlexIcon.remix.starCircle), size: 16, color: Color(0xFFF59E0B)),
                       const SizedBox(width: 4),
                       Text(
                         '${widget.store.rating} (${widget.store.reviewsCount} reviews)',
@@ -600,10 +602,10 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
                         ),
                         child: Icon(
                           widget.store.vertical == StoreVertical.hardware
-                              ? Icons.calculate_outlined
+                              ? fixIcon(FlexIcon.remix.calculator1)
                               : widget.store.vertical == StoreVertical.pharmacy
-                                  ? Icons.upload_file_outlined
-                                  : Icons.calendar_month_outlined,
+                                  ? fixIcon(FlexIcon.remix.uploadBox1)
+                                  : fixIcon(FlexIcon.remix.calendarMark),
                           color: Colors.white,
                           size: 20,
                         ),
@@ -639,7 +641,7 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
                           ],
                         ),
                       ),
-                      Icon(Icons.arrow_forward_ios_rounded, size: 14, color: widget.store.primaryColor),
+                      Icon(fixIcon(FlexIcon.remix.lineArrowExpand), size: 14, color: widget.store.primaryColor),
                     ],
                   ),
                 ),
@@ -761,7 +763,7 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
                   width: double.infinity,
                   errorBuilder: (_, __, ___) => Container(
                     color: const Color(0xFFF1F5F9),
-                    child: const Icon(Icons.inventory_2_outlined, color: Color(0xFF94A3B8)),
+                    child: Icon(fixIcon(FlexIcon.remix.archiveBox), color: Color(0xFF94A3B8)),
                   ),
                 ),
               ),
@@ -813,7 +815,7 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
                             color: widget.store.primaryColor,
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(Icons.add_rounded, size: 16, color: Colors.white),
+                          child: Icon(fixIcon(FlexIcon.remix.applicationAdd), size: 16, color: Colors.white),
                         ),
                       ),
                     ],

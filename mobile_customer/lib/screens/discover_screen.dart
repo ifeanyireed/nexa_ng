@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../data/commerce_data.dart';
 import '../models/store.dart';
 import 'storefront_screen.dart';
+import 'package:flexicon/flexicon.dart';
+import 'package:mobile_customer/utils/icon_util.dart';
 
 class DiscoverScreen extends StatefulWidget {
   final String? initialQuery;
@@ -79,7 +81,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         ),
         actions: [
           PopupMenuButton<String>(
-            icon: const Icon(Icons.sort_rounded, color: Color(0xFF0F172A)),
+            icon: Icon(fixIcon(FlexIcon.remix.alignTop1), color: Color(0xFF0F172A)),
             onSelected: (val) {
               setState(() => _selectedSort = val);
             },
@@ -107,7 +109,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
               child: Row(
                 children: [
                   const SizedBox(width: 12),
-                  const Icon(Icons.search_rounded, color: Color(0xFF64748B), size: 20),
+                  Icon(fixIcon(FlexIcon.remix.magnifyingGlass), color: Color(0xFF64748B), size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: TextField(
@@ -123,7 +125,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   ),
                   if (_searchController.text.isNotEmpty)
                     IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 18, color: Color(0xFF94A3B8)),
+                      icon: Icon(fixIcon(FlexIcon.remix.deleteTag), size: 18, color: Color(0xFF94A3B8)),
                       onPressed: () {
                         _searchController.clear();
                         setState(() {});
@@ -173,7 +175,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.store_mall_directory_outlined, size: 54, color: Color(0xFFCBD5E1)),
+                        Icon(fixIcon(FlexIcon.remix.store2), size: 54, color: Color(0xFFCBD5E1)),
                         const SizedBox(height: 12),
                         const Text(
                           'No stores match your search',
@@ -302,7 +304,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                       ),
                       child: Row(
                         children: [
-                          const Icon(Icons.star_rounded, size: 14, color: Color(0xFFF59E0B)),
+                          Icon(fixIcon(FlexIcon.remix.starCircle), size: 14, color: Color(0xFFF59E0B)),
                           const SizedBox(width: 3),
                           Text(
                             '${store.rating}',
@@ -365,7 +367,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             ),
                             const SizedBox(width: 4),
                             Icon(
-                              Icons.arrow_forward_rounded,
+                              fixIcon(FlexIcon.remix.lineArrowExpand),
                               size: 13,
                               color: Theme.of(context).colorScheme.primary,
                             ),
@@ -415,7 +417,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                   // Address & Hours Footer
                   Row(
                     children: [
-                      const Icon(Icons.location_on_outlined, size: 13, color: Color(0xFF94A3B8)),
+                      Icon(fixIcon(FlexIcon.remix.locationPin3), size: 13, color: Color(0xFF94A3B8)),
                       const SizedBox(width: 3),
                       Expanded(
                         child: Text(

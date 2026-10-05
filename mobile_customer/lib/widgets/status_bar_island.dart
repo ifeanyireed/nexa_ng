@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flexicon/flexicon.dart';
+import 'package:mobile_customer/utils/icon_util.dart';
 
 class CustomStatusBar extends StatelessWidget {
   final Color textColor;
@@ -74,7 +76,7 @@ class CustomStatusBar extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               // Wifi
-              Icon(Icons.wifi, size: 15, color: textColor),
+              Icon(fixIcon(FlexIcon.remix.wifiAntenna), size: 15, color: textColor),
               const SizedBox(width: 6),
               // Battery
               Container(

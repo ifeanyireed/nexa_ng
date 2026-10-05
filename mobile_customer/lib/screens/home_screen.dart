@@ -7,6 +7,8 @@ import 'discover_screen.dart';
 import 'storefront_screen.dart';
 import 'product_details_screen.dart';
 import 'cart_screen.dart';
+import 'package:flexicon/flexicon.dart';
+import 'package:mobile_customer/utils/icon_util.dart';
 
 class HomeScreen extends StatefulWidget {
   final Function(int pageIndex)? onNavigateToTab;
@@ -107,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             const SizedBox(width: 4),
                             Icon(
-                              Icons.keyboard_arrow_down_rounded,
+                              fixIcon(FlexIcon.remix.downloadArrow),
                               size: 16,
                               color: Theme.of(context).colorScheme.primary,
                             ),
@@ -117,7 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         const Row(
                           children: [
                             Icon(
-                              Icons.location_on_rounded,
+                              fixIcon(FlexIcon.remix.locationPin3),
                               size: 16,
                               color: Color(0xFF1B62F0),
                             ),
@@ -159,8 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: Stack(
                               alignment: Alignment.center,
                               children: [
-                                const Icon(
-                                  Icons.shopping_bag_outlined,
+                                Icon(fixIcon(FlexIcon.remix.bag),
                                   size: 20,
                                   color: Color(0xFF0F172A),
                                 ),
@@ -217,7 +218,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Row(
                     children: [
                       const SizedBox(width: 14),
-                      const Icon(Icons.search_rounded, color: Color(0xFF94A3B8), size: 22),
+                      Icon(fixIcon(FlexIcon.remix.magnifyingGlass), color: Color(0xFF94A3B8), size: 22),
                       const SizedBox(width: 10),
                       Expanded(
                         child: TextField(
@@ -249,7 +250,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: const Color(0xFFE2E8F0),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.tune_rounded, color: Color(0xFF1B62F0), size: 20),
+                        icon: Icon(fixIcon(FlexIcon.remix.tuneAdjustVolume), color: Color(0xFF1B62F0), size: 20),
                         onPressed: () {
                           widget.onNavigateToTab?.call(1); // Jump to Discover tab
                         },
@@ -306,7 +307,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           final isSelected = _selectedVertical == null;
                           return _buildFilterPill(
                             label: 'All Verticals',
-                            icon: Icons.apps_rounded,
+                            icon: fixIcon(FlexIcon.remix.dashboard3),
                             isSelected: isSelected,
                             onTap: () {
                               setState(() => _selectedVertical = null);
@@ -358,7 +359,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         right: -20,
                         bottom: -30,
                         child: Icon(
-                          Icons.local_shipping_rounded,
+                          fixIcon(FlexIcon.remix.transferTruckTime),
                           size: 170,
                           color: Colors.white.withOpacity(0.04),
                         ),
@@ -419,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                   SizedBox(width: 4),
-                                  Icon(Icons.arrow_forward_rounded, color: Color(0xFF60A5FA), size: 14),
+                                  Icon(fixIcon(FlexIcon.remix.lineArrowExpand), color: Color(0xFF60A5FA), size: 14),
                                 ],
                               ),
                             ),
@@ -664,7 +665,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.star_rounded, size: 13, color: Color(0xFFF59E0B)),
+                          Icon(fixIcon(FlexIcon.remix.starCircle), size: 13, color: Color(0xFFF59E0B)),
                           const SizedBox(width: 2),
                           Text(
                             '${store.rating}',
@@ -711,7 +712,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF94A3B8)),
+                      Icon(fixIcon(FlexIcon.remix.locationPin3), size: 12, color: Color(0xFF94A3B8)),
                       const SizedBox(width: 3),
                       Text(
                         store.distance,
@@ -778,7 +779,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(
                         color: const Color(0xFFF1F5F9),
-                        child: const Icon(Icons.inventory_2_outlined, color: Color(0xFF94A3B8)),
+                        child: Icon(fixIcon(FlexIcon.remix.archiveBox), color: Color(0xFF94A3B8)),
                       ),
                     ),
                     Positioned(
@@ -861,8 +862,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: const Color(0xFF1B62F0),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(
-                            Icons.add_rounded,
+                          child: Icon(fixIcon(FlexIcon.remix.applicationAdd),
                             size: 16,
                             color: Colors.white,
                           ),

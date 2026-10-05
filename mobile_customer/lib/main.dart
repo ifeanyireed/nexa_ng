@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flexicon/flexicon.dart';
 
-
 import 'data/commerce_data.dart';
 import 'screens/home_screen.dart';
 import 'screens/discover_screen.dart';
@@ -10,8 +9,7 @@ import 'screens/orders_screen.dart';
 import 'screens/logistics_screen.dart';
 import 'screens/account_screen.dart';
 import 'screens/storefront_screen.dart';
-
-IconData _fixIcon(IconData icon) => IconData(icon.codePoint, fontFamily: icon.fontFamily, fontPackage: 'flexicon');
+import 'utils/icon_util.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -146,28 +144,28 @@ class _MainAppNavigationScaffoldState extends State<MainAppNavigationScaffold> {
           elevation: 0,
           destinations: [
             NavigationDestination(
-              icon: Icon(_fixIcon(FlexIcon.remix.home2)),
-              selectedIcon: Icon(_fixIcon(FlexIcon.solid.home2)),
+              icon: Icon(fixIcon(FlexIcon.remix.home2)),
+              selectedIcon: Icon(fixIcon(FlexIcon.solid.home2)),
               label: 'Home',
             ),
             NavigationDestination(
-              icon: Icon(_fixIcon(FlexIcon.remix.locationCompass1)),
-              selectedIcon: Icon(_fixIcon(FlexIcon.solid.locationCompass1)),
+              icon: Icon(fixIcon(FlexIcon.remix.locationCompass1)),
+              selectedIcon: Icon(fixIcon(FlexIcon.solid.locationCompass1)),
               label: 'Discover',
             ),
             NavigationDestination(
-              icon: Icon(_fixIcon(FlexIcon.remix.receipt)),
-              selectedIcon: Icon(_fixIcon(FlexIcon.solid.receipt)),
+              icon: Icon(fixIcon(FlexIcon.remix.receipt)),
+              selectedIcon: Icon(fixIcon(FlexIcon.solid.receipt)),
               label: 'Orders',
             ),
             NavigationDestination(
-              icon: Icon(_fixIcon(FlexIcon.remix.transferTruckTime)),
-              selectedIcon: Icon(_fixIcon(FlexIcon.solid.transferTruckTime)),
+              icon: Icon(fixIcon(FlexIcon.remix.transferTruckTime)),
+              selectedIcon: Icon(fixIcon(FlexIcon.solid.transferTruckTime)),
               label: 'Logistics',
             ),
             NavigationDestination(
-              icon: Icon(_fixIcon(FlexIcon.remix.userCircleSingle)),
-              selectedIcon: Icon(_fixIcon(FlexIcon.solid.userCircleSingle)),
+              icon: Icon(fixIcon(FlexIcon.remix.userCircleSingle)),
+              selectedIcon: Icon(fixIcon(FlexIcon.solid.userCircleSingle)),
               label: 'Account',
             ),
           ],
@@ -270,12 +268,12 @@ class _MainAppNavigationScaffoldState extends State<MainAppNavigationScaffold> {
                         ),
                       ],
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.view_carousel_rounded, color: Colors.white, size: 16),
-                        SizedBox(width: 8),
-                        Text(
+                        Icon(fixIcon(FlexIcon.solid.gallery), color: Colors.white, size: 16),
+                        const SizedBox(width: 8),
+                        const Text(
                           '5-Screen Moodboard',
                           style: TextStyle(
                             color: Colors.white,
@@ -343,12 +341,12 @@ class _MainAppNavigationScaffoldState extends State<MainAppNavigationScaffold> {
                       color: const Color(0xFF0F172A),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.smartphone_rounded, color: Colors.white, size: 16),
-                        SizedBox(width: 8),
-                        Text(
+                        Icon(fixIcon(FlexIcon.solid.phone), color: Colors.white, size: 16),
+                        const SizedBox(width: 8),
+                        const Text(
                           'Interactive Device Mode',
                           style: TextStyle(
                             color: Colors.white,

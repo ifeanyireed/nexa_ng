@@ -5,6 +5,8 @@ import '../models/cart.dart';
 import '../data/commerce_data.dart';
 import 'cart_screen.dart';
 import 'storefront_screen.dart';
+import 'package:flexicon/flexicon.dart';
+import 'package:mobile_customer/utils/icon_util.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   final Product product;
@@ -76,12 +78,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         elevation: 0,
         scrolledUnderElevation: 1,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A)),
+          icon: Icon(fixIcon(FlexIcon.remix.lessThanSignCircle), color: Color(0xFF0F172A)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.share_outlined, color: Color(0xFF0F172A)),
+            icon: Icon(fixIcon(FlexIcon.remix.shareLink), color: Color(0xFF0F172A)),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
@@ -96,7 +98,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             icon: Stack(
               alignment: Alignment.center,
               children: [
-                const Icon(Icons.shopping_bag_outlined, color: Color(0xFF0F172A)),
+                Icon(fixIcon(FlexIcon.remix.bag), color: Color(0xFF0F172A)),
                 if (_cart.totalCount > 0)
                   Positioned(
                     top: 0,
@@ -144,7 +146,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                               width: double.infinity,
                               errorBuilder: (_, __, ___) => Container(
                                 color: const Color(0xFFF1F5F9),
-                                child: const Icon(Icons.image_not_supported_outlined, size: 48, color: Color(0xFF94A3B8)),
+                                child: Icon(fixIcon(FlexIcon.remix.imageLocation), size: 48, color: Color(0xFF94A3B8)),
                               ),
                             );
                           },
@@ -226,7 +228,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             const Spacer(),
                             Row(
                               children: [
-                                const Icon(Icons.star_rounded, size: 16, color: Color(0xFFF59E0B)),
+                                Icon(fixIcon(FlexIcon.remix.starCircle), size: 16, color: Color(0xFFF59E0B)),
                                 const SizedBox(width: 3),
                                 Text(
                                   '${widget.product.rating}',
@@ -338,7 +340,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                     ],
                                   ),
                                 ),
-                                const Icon(Icons.arrow_forward_ios_rounded, size: 13, color: Color(0xFF94A3B8)),
+                                Icon(fixIcon(FlexIcon.remix.lineArrowExpand), size: 13, color: Color(0xFF94A3B8)),
                               ],
                             ),
                           ),
@@ -416,7 +418,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                   child: Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.remove_rounded, size: 18),
+                        icon: Icon(fixIcon(FlexIcon.remix.pathfinderMinusFront2), size: 18),
                         onPressed: () {
                           if (_quantity > 1) {
                             setState(() => _quantity--);
@@ -428,7 +430,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.add_rounded, size: 18),
+                        icon: Icon(fixIcon(FlexIcon.remix.applicationAdd), size: 18),
                         onPressed: () {
                           setState(() => _quantity++);
                         },

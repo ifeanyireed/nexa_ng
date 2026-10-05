@@ -7,6 +7,7 @@ import 'screens/dashboard_screen.dart';
 import 'screens/job_offers_screen.dart';
 import 'screens/performance_screen.dart';
 import 'screens/account_screen.dart';
+import 'screens/splash_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -61,7 +62,7 @@ class MobileRiderApp extends StatelessWidget {
           }),
         ),
       ),
-      home: const MainAppNavigationScaffold(),
+      home: const SplashScreen(),
     );
   }
 }

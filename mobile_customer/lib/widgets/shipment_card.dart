@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/shipment.dart';
 import 'isometric_box.dart';
 import 'shipment_progress.dart';
-import 'package:flexicon/flexicon.dart';
-import 'package:mobile_customer/utils/icon_util.dart';
 
 class ShipmentCard extends StatelessWidget {
   final ShipmentItem item;

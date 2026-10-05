@@ -109,12 +109,13 @@ class AccountScreen extends StatelessWidget {
             const SizedBox(height: 32),
             
             // Settings List
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
+            Material(
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                side: const BorderSide(color: Color(0xFFE2E8F0)),
               ),
+              clipBehavior: Clip.antiAlias,
               child: Column(
                 children: [
                   _buildListTile(
@@ -140,12 +141,13 @@ class AccountScreen extends StatelessWidget {
             const SizedBox(height: 24),
             
             // Support List
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
+            Material(
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                side: const BorderSide(color: Color(0xFFE2E8F0)),
               ),
+              clipBehavior: Clip.antiAlias,
               child: Column(
                 children: [
                   _buildListTile(

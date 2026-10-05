@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 
 import 'data/commerce_data.dart';
 import 'screens/home_screen.dart';
@@ -32,9 +32,7 @@ class MobileCustomerApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFFF8FAFC),
-        textTheme: GoogleFonts.plusJakartaSansTextTheme(
-          Theme.of(context).textTheme,
-        ),
+        fontFamily: 'Dropa',
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF1B62F0),
           primary: const Color(0xFF1B62F0),

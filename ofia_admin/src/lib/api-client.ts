@@ -38,8 +38,17 @@ async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
   });
 
   if (!res.ok) {
-    const errorText = await res.text().catch(() => "Unknown server error");
-    throw new Error(`API Error [${res.status}]: ${errorText}`);
+    const rawText = await res.text().catch(() => "Unknown server error");
+    let errorText = rawText;
+    try {
+      const json = JSON.parse(rawText);
+      errorText = json.message || json.error || rawText;
+    } catch {
+      if (rawText.trim().toLowerCase().startsWith("<!doctype html") || rawText.trim().toLowerCase().startsWith("<html")) {
+        errorText = "Service endpoint unavailable or not found.";
+      }
+    }
+    throw new Error(errorText || `API Error [${res.status}]`);
   }
 
   return res.json();

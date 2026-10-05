@@ -48,7 +48,7 @@ async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
         errorText = "Service endpoint unavailable or not found.";
       }
     }
-    throw new Error(`API Error [${res.status}]: ${errorText}`);
+    throw new Error(errorText || `API Error [${res.status}]`);
   }
 
   return res.json();

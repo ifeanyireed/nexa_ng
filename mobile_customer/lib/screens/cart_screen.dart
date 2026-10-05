@@ -276,11 +276,12 @@ class _CartScreenState extends State<CartScreen> {
                           style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
                         ),
                         const SizedBox(height: 10),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
+                        Material(
+                          color: Colors.white,
+                          clipBehavior: Clip.antiAlias,
+                          shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18),
-                            border: Border.all(color: const Color(0xFFE2E8F0)),
+                            side: const BorderSide(color: Color(0xFFE2E8F0)),
                           ),
                           child: Column(
                             children: [

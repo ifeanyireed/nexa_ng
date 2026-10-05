@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flexicon/flexicon.dart';
 
 
 import 'data/commerce_data.dart';
@@ -9,6 +10,8 @@ import 'screens/orders_screen.dart';
 import 'screens/logistics_screen.dart';
 import 'screens/account_screen.dart';
 import 'screens/storefront_screen.dart';
+
+IconData _fixIcon(IconData icon) => IconData(icon.codePoint, fontFamily: icon.fontFamily, fontPackage: 'flexicon');
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,6 +44,12 @@ class MobileCustomerApp extends StatelessWidget {
         navigationBarTheme: NavigationBarThemeData(
           backgroundColor: Colors.white,
           indicatorColor: const Color(0xFFEBF2FE),
+          iconTheme: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return const IconThemeData(color: Color(0xFF1B62F0), size: 23);
+            }
+            return const IconThemeData(color: Color(0xFF64748B), size: 23);
+          }),
           labelTextStyle: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
               return const TextStyle(
@@ -135,30 +144,30 @@ class _MainAppNavigationScaffoldState extends State<MainAppNavigationScaffold> {
           onDestinationSelected: _navigateToTab,
           height: 66,
           elevation: 0,
-          destinations: const [
+          destinations: [
             NavigationDestination(
-              icon: Icon(Icons.home_outlined, size: 23),
-              selectedIcon: Icon(Icons.home_rounded, color: Color(0xFF1B62F0), size: 23),
+              icon: Icon(_fixIcon(FlexIcon.remix.home2)),
+              selectedIcon: Icon(_fixIcon(FlexIcon.solid.home2)),
               label: 'Home',
             ),
             NavigationDestination(
-              icon: Icon(Icons.explore_outlined, size: 23),
-              selectedIcon: Icon(Icons.explore_rounded, color: Color(0xFF1B62F0), size: 23),
+              icon: Icon(_fixIcon(FlexIcon.remix.locationCompass1)),
+              selectedIcon: Icon(_fixIcon(FlexIcon.solid.locationCompass1)),
               label: 'Discover',
             ),
             NavigationDestination(
-              icon: Icon(Icons.receipt_long_outlined, size: 23),
-              selectedIcon: Icon(Icons.receipt_long_rounded, color: Color(0xFF1B62F0), size: 23),
+              icon: Icon(_fixIcon(FlexIcon.remix.receipt)),
+              selectedIcon: Icon(_fixIcon(FlexIcon.solid.receipt)),
               label: 'Orders',
             ),
             NavigationDestination(
-              icon: Icon(Icons.local_shipping_outlined, size: 23),
-              selectedIcon: Icon(Icons.local_shipping_rounded, color: Color(0xFF1B62F0), size: 23),
+              icon: Icon(_fixIcon(FlexIcon.remix.transferTruckTime)),
+              selectedIcon: Icon(_fixIcon(FlexIcon.solid.transferTruckTime)),
               label: 'Logistics',
             ),
             NavigationDestination(
-              icon: Icon(Icons.person_outline_rounded, size: 23),
-              selectedIcon: Icon(Icons.person_rounded, color: Color(0xFF1B62F0), size: 23),
+              icon: Icon(_fixIcon(FlexIcon.remix.userCircleSingle)),
+              selectedIcon: Icon(_fixIcon(FlexIcon.solid.userCircleSingle)),
               label: 'Account',
             ),
           ],

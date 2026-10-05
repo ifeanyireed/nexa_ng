@@ -177,11 +177,12 @@ class _AccountScreenState extends State<AccountScreen> {
             const SizedBox(height: 20),
 
             // PREFERENCES & SETTINGS MENU
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
+            Material(
+              color: Colors.white,
+              clipBehavior: Clip.antiAlias,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                side: const BorderSide(color: Color(0xFFE2E8F0)),
               ),
               child: Column(
                 children: [
@@ -238,11 +239,12 @@ class _AccountScreenState extends State<AccountScreen> {
             const SizedBox(height: 16),
 
             // HELP & SUPPORT
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
+            Material(
+              color: Colors.white,
+              clipBehavior: Clip.antiAlias,
+              shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
+                side: const BorderSide(color: Color(0xFFE2E8F0)),
               ),
               child: Column(
                 children: [

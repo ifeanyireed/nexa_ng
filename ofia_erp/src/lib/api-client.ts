@@ -15,12 +15,12 @@ function getBase(envBinding: string | undefined, path: string): string {
   return path;
 }
 
-const USER_BASE = getBase(process.env.USER_SERVICE_URL, "/api/v1");
-const GTM_BASE = getBase(process.env.AI_SERVICE_URL, "/api/v1/gtm");
-const AUTH_BASE = getBase(process.env.USER_SERVICE_URL, "/api/v1/auth");
-const MARKETPLACE_BASE = getBase(process.env.MARKETPLACE_SERVICE_URL, "/api/v1");
-const ERP_BASE = getBase(process.env.ERP_SERVICE_URL, "/api/v1");
-const LOGISTICS_BASE = getBase(process.env.LOGISTICS_SERVICE_URL, "/api/v1/logistics");
+const USER_BASE = process.env.NEXT_PUBLIC_USER_API_URL || getBase(process.env.USER_SERVICE_URL, "/api/v1");
+const GTM_BASE = process.env.NEXT_PUBLIC_GTM_API_URL || getBase(process.env.AI_SERVICE_URL, "/api/v1/gtm");
+const AUTH_BASE = process.env.NEXT_PUBLIC_AUTH_API_URL || getBase(process.env.USER_SERVICE_URL, "/api/v1/auth");
+const MARKETPLACE_BASE = process.env.NEXT_PUBLIC_MARKETPLACE_API_URL || getBase(process.env.MARKETPLACE_SERVICE_URL, "/api/v1");
+const ERP_BASE = process.env.NEXT_PUBLIC_ERP_API_URL || getBase(process.env.ERP_SERVICE_URL, "/api/v1");
+const LOGISTICS_BASE = process.env.NEXT_PUBLIC_LOGISTICS_API_URL || getBase(process.env.LOGISTICS_SERVICE_URL, "/api/v1/logistics");
 
 async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
   const token = typeof window !== "undefined" ? localStorage.getItem("nexa_auth_token") || localStorage.getItem("nexa_token") : null;
@@ -38,7 +38,16 @@ async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
   });
 
   if (!res.ok) {
-    const errorText = await res.text().catch(() => "Unknown server error");
+    const rawText = await res.text().catch(() => "Unknown server error");
+    let errorText = rawText;
+    try {
+      const json = JSON.parse(rawText);
+      errorText = json.message || json.error || rawText;
+    } catch {
+      if (rawText.trim().toLowerCase().startsWith("<!doctype html") || rawText.trim().toLowerCase().startsWith("<html")) {
+        errorText = "Service endpoint unavailable or not found.";
+      }
+    }
     throw new Error(`API Error [${res.status}]: ${errorText}`);
   }
 

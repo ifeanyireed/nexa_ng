@@ -17,7 +17,7 @@ function getBase(envBinding: string | undefined, path: string): string {
 
 const USER_BASE = getBase(process.env.USER_SERVICE_URL, "/api/v1");
 const GTM_BASE = getBase(process.env.AI_SERVICE_URL, "/api/v1/gtm");
-const AUTH_BASE = getBase(process.env.USER_SERVICE_URL, "/api/v1/auth");
+const AUTH_BASE = "/api/auth";
 const MARKETPLACE_BASE = getBase(process.env.MARKETPLACE_SERVICE_URL, "/api/v1");
 const ERP_BASE = getBase(process.env.ERP_SERVICE_URL, "/api/v1");
 const LOGISTICS_BASE = getBase(process.env.LOGISTICS_SERVICE_URL, "/api/v1/logistics");

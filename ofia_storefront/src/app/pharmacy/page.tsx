@@ -183,11 +183,11 @@ export default function PharmacyHomePage() {
                     className="group bg-white rounded-3xl overflow-hidden border border-stone-200/80 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
                   >
                     <div>
-                      <div className="relative aspect-[4/3] bg-teal-50/40 p-6 flex items-center justify-center overflow-hidden">
+                      <div className="relative aspect-[4/3] bg-teal-50/40 flex items-center justify-center overflow-hidden">
                         <img
                           src={prod.images[0]}
                           alt={prod.title}
-                          className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                         <div className="absolute top-3.5 left-3.5 flex flex-wrap gap-1.5">
                           {meta?.prescriptionRequired ? (

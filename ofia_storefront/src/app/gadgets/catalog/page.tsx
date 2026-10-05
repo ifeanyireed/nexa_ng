@@ -210,11 +210,11 @@ export default function GadgetsCatalogPage() {
                 >
                   <div>
                     {/* Image */}
-                    <div className="relative aspect-16/10 overflow-hidden bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100">
+                    <div className="relative aspect-16/10 overflow-hidden bg-slate-50 flex items-center justify-center border-b border-slate-100">
                       <img
                         src={gadget.images[0]}
                         alt={gadget.title}
-                        className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       <div className="absolute top-3.5 left-3.5 flex flex-wrap gap-1.5">
                         <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white text-slate-700 border border-slate-200 shadow-2xs">

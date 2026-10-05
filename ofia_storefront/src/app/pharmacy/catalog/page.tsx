@@ -190,11 +190,11 @@ function PharmacyCatalogContent() {
                   className="bg-white rounded-3xl border border-teal-100 overflow-hidden shadow-xs hover:shadow-lg transition-all flex flex-col justify-between"
                 >
                   <div>
-                    <div className="relative aspect-4/3 overflow-hidden bg-teal-50/40 p-5 flex items-center justify-center">
+                    <div className="relative aspect-4/3 overflow-hidden bg-teal-50/40 flex items-center justify-center">
                       <img
                         src={prod.images[0]}
                         alt={prod.title}
-                        className="max-h-full max-w-full object-contain"
+                        className="w-full h-full object-cover"
                       />
                       <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
                         {meta?.prescriptionRequired ? (

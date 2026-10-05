@@ -107,11 +107,11 @@ export default function GadgetProductDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Gallery Column (7 cols) */}
           <div className="lg:col-span-7 space-y-4">
-            <div className="relative aspect-16/10 rounded-3xl overflow-hidden bg-slate-50 border border-slate-200/90 p-8 flex items-center justify-center">
+            <div className="relative aspect-16/10 rounded-3xl overflow-hidden bg-slate-50 border border-slate-200/90 flex items-center justify-center">
               <img
                 src={product.images[selectedImage] || product.images[0]}
                 alt={product.title}
-                className="max-h-full max-w-full object-contain"
+                className="w-full h-full object-cover"
               />
               <div className="absolute top-4 left-4 flex flex-wrap gap-2">
                 <span className="px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-white text-slate-700 border border-slate-200 shadow-2xs">
@@ -147,7 +147,7 @@ export default function GadgetProductDetailPage() {
                     <img
                       src={img}
                       alt={`${product.title} preview ${idx + 1}`}
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-cover"
                     />
                   </button>
                 ))}

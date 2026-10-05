@@ -179,11 +179,11 @@ export default function BeautyProductsPage() {
               >
                 <div>
                   {/* Image */}
-                  <div className="relative aspect-square overflow-hidden bg-rose-50/40 p-6 flex items-center justify-center">
+                  <div className="relative aspect-square overflow-hidden bg-rose-50/40 flex items-center justify-center">
                     <img
                       src={prod.images[0]}
                       alt={prod.title}
-                      className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
                       <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-rose-100 text-rose-900 border border-rose-200">

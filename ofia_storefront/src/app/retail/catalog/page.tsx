@@ -141,11 +141,11 @@ function RetailCatalogContent() {
                 className="bg-white rounded-3xl border border-purple-100 overflow-hidden shadow-xs hover:shadow-lg transition-all flex flex-col justify-between"
               >
                 <div>
-                  <div className="relative aspect-4/3 overflow-hidden bg-purple-50/20 p-5 flex items-center justify-center">
+                  <div className="relative aspect-4/3 overflow-hidden bg-purple-50/20 flex items-center justify-center">
                     <img
                       src={prod.images[0]}
                       alt={prod.title}
-                      className="max-h-full max-w-full object-contain"
+                      className="w-full h-full object-cover"
                     />
                     <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
                       <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-900 text-white">

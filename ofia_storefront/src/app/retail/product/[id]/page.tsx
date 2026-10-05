@@ -103,11 +103,11 @@ export default function RetailProductDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Gallery (7 cols) */}
           <div className="lg:col-span-7 space-y-4">
-            <div className="relative aspect-4/3 sm:aspect-16/11 rounded-3xl overflow-hidden bg-white border border-purple-100 p-8 flex items-center justify-center shadow-xs">
+            <div className="relative aspect-4/3 sm:aspect-16/11 rounded-3xl overflow-hidden bg-white border border-purple-100 flex items-center justify-center shadow-xs">
               <img
                 src={product.images[selectedImage] || product.images[0]}
                 alt={product.title}
-                className="max-h-full max-w-full object-contain"
+                className="w-full h-full object-cover"
               />
 
               <div className="absolute top-4 left-4 flex flex-wrap gap-2">
@@ -135,7 +135,7 @@ export default function RetailProductDetailPage() {
                         : "border-purple-100 opacity-70 hover:opacity-100"
                     }`}
                   >
-                    <img src={img} alt="" className="w-full h-full object-contain" />
+                    <img src={img} alt="" className="w-full h-full object-cover" />
                   </button>
                 ))}
               </div>

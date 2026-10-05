@@ -60,7 +60,6 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
         return [
           { label: "Store", href: "/gadgets" },
           { label: "Tech Catalog", href: "/gadgets/catalog" },
-          { label: "Compare Specs", href: "/gadgets/compare" },
           { label: "Repairs & Warranty", href: "/gadgets/repairs" },
         ];
       case "beauty":
@@ -68,7 +67,6 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
           { label: "Sanctuary", href: "/beauty" },
           { label: "Skincare Products", href: "/beauty/products" },
           { label: "Studio Services", href: "/beauty/services" },
-          { label: "Book Appointment", href: "/beauty/book-appointment" },
         ];
       case "home-living":
         return [
@@ -193,14 +191,14 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
         </Link>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-2 bg-stone-100/90 p-2 rounded-full border border-stone-200/80 shadow-xs">
+        <nav className="hidden lg:flex items-center gap-2 bg-stone-100/90 p-2 rounded-full border border-stone-200/80 shadow-xs overflow-x-auto max-w-[50vw] xl:max-w-[60vw] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {navLinks.map((link) => {
             const isActive = pathname === link.href;
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`min-w-[120px] xl:min-w-[145px] px-6 sm:px-8 py-2.5 rounded-full text-sm font-semibold transition-all text-center flex items-center justify-center ${
+                className={`shrink-0 whitespace-nowrap min-w-[120px] xl:min-w-[145px] px-6 sm:px-8 py-2.5 rounded-full text-sm font-semibold transition-all text-center flex items-center justify-center ${
                   isActive
                     ? "bg-zinc-900 text-white shadow-sm"
                     : "text-stone-700 hover:text-zinc-900 hover:bg-stone-200/60"
@@ -213,22 +211,22 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
         </nav>
 
         {/* Right Actions: Phone + CTA + Account + Cart + Mobile Toggle */}
-        <div className="flex items-center gap-2.5 sm:gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
           <a
             href={`tel:${store.contact.phone}`}
-            className="hidden md:flex items-center gap-2 text-sm font-medium text-stone-700 hover:text-zinc-900 px-3.5 py-2 rounded-full hover:bg-stone-200/60 transition-colors"
+            className="hidden md:flex shrink-0 whitespace-nowrap items-center gap-2 text-sm font-medium text-stone-700 hover:text-zinc-900 px-3.5 py-2 rounded-full hover:bg-stone-200/60 transition-colors"
           >
-            <Phone className="w-4 h-4 text-stone-500" />
+            <Phone className="w-4 h-4 shrink-0 text-stone-500" />
             <span>{store.contact.phone}</span>
           </a>
 
           {/* Vertical Primary Action Button */}
           <Link
             href={cta.href}
-            className="hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold text-white transition-all shadow-sm hover:scale-[1.02] active:scale-95 cursor-pointer"
+            className="hidden sm:flex shrink-0 whitespace-nowrap items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold text-white transition-all shadow-sm hover:scale-[1.02] active:scale-95 cursor-pointer"
             style={{ backgroundColor: store.primaryColor }}
           >
-            <CtaIcon className="w-4 h-4" />
+            <CtaIcon className="w-4 h-4 shrink-0" />
             <span>{cta.label}</span>
           </Link>
 

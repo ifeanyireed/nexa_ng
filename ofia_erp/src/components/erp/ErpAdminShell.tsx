@@ -736,12 +736,111 @@ export function ErpAdminShell({
 
   const activeSubTabs = getSubTabs();
 
+  const filteredNavItems = navItems.filter((item) => {
+    const matchesSearch = item.label.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!matchesSearch) return false;
+
+    if (currentRole === "employee") {
+      return (
+        item.key === "employee" ||
+        item.href === "/erp/employee" ||
+        item.href.startsWith("/erp/employee/")
+      );
+    }
+
+    if (item.key === "overview" || item.href === "/erp/admin") {
+      return currentRole === "admin";
+    }
+
+    const isProvisioned = (key: string) => {
+      if (key === "overview" || key === "employee") return true;
+      const isAdminAllowed = permissionMatrix.admin?.[key] !== false;
+      const isTpAllowed = (permissionMatrix as any).tenant_provision?.[key] !== false;
+      return isAdminAllowed && isTpAllowed;
+    };
+
+    return isNavItemVisibleForRole(
+      item.key,
+      currentRole,
+      isLineManager,
+      isProvisioned
+    );
+  });
+
+
   return (
-    <div className="min-h-screen bg-nexa-bg-base text-nexa-text-primary flex relative font-sans">
+    <div className="min-h-screen bg-nexa-bg-base text-nexa-text-primary flex flex-col md:flex-row relative font-sans">
+      {/* MOBILE TOP HEADER */}
+      <header className="md:hidden sticky top-0 left-0 right-0 h-14 bg-nexa-bg-surface border-b border-nexa-border z-40 flex items-center justify-between px-4 shrink-0 shadow-sm">
+        <Link
+          href={currentRole === "employee" ? "/erp/employee" : getRoleHomePortal(currentRole)?.path || "/erp/admin"}
+          className="flex items-center gap-2 min-w-0"
+        >
+          <img
+            src={tenantLogo || OFIA_DEFAULT_LOGO}
+            alt="Logo"
+            className="w-7 h-7 object-contain shrink-0"
+            onError={(e) => { (e.target as HTMLImageElement).src = OFIA_DEFAULT_LOGO; }}
+          />
+          <div className="flex flex-col min-w-0">
+            <span className="font-black text-sm text-[var(--nexa-text-primary)] truncate">{tenantName || "Ofia ERP"}</span>
+            <span className="text-[9px] font-black text-[#1A56DB] uppercase tracking-wider">{currentRole}</span>
+          </div>
+        </Link>
+        <div className="flex items-center gap-3 shrink-0">
+          <NexaThemeToggle />
+          <button
+            onClick={() => setIsNotifOpen(!isNotifOpen)}
+            className="relative p-1.5 rounded-full text-nexa-text-secondary hover:bg-nexa-bg-base"
+          >
+            <Bell className="w-5 h-5" />
+            {notifications.length > 0 && (
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-nexa-bg-surface" />
+            )}
+          </button>
+          <button onClick={logout} className="p-1.5 rounded-full text-red-500 hover:bg-red-500/10">
+            <LogOut className="w-5 h-5" />
+          </button>
+        </div>
+      </header>
+
+      {/* NOTIFICATIONS DROPDOWN ON MOBILE (Absolutely positioned below header) */}
+      {isNotifOpen && (
+        <div className="md:hidden fixed top-14 left-0 right-0 bottom-24 z-30 bg-nexa-bg-surface border-b border-nexa-border overflow-y-auto shadow-lg p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-bold text-sm">Notifications</h3>
+            <button onClick={() => setIsNotifOpen(false)} className="p-1 rounded-lg hover:bg-nexa-bg-base">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          {notifications.length === 0 ? (
+            <div className="text-center py-6 text-nexa-text-muted text-xs">
+              <Bell className="w-8 h-8 mx-auto mb-2 opacity-20" />
+              <p>No new notifications</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {notifications.map((notif) => (
+                <div key={notif.id} className="p-3 rounded-xl bg-nexa-bg-base border border-nexa-border">
+                  <div className="flex items-center gap-2 text-[10px] text-nexa-text-muted mb-1">
+                    <span className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 border font-medium uppercase tracking-wider">
+                      {notif.type}
+                    </span>
+                    <span>{notif.time}</span>
+                  </div>
+                  <h4 className="text-xs font-bold">{notif.title}</h4>
+                  <p className="text-[10px] text-nexa-text-secondary mt-1">{notif.message}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* SIDEBAR — EXACT OFIA MARKETPLACE VERBATIM STYLING */}
       <aside
         className={cn(
-          "bg-nexa-bg-surface border-r border-nexa-border transition-all duration-300 flex flex-col z-50 sticky top-0 h-screen",
+          "hidden md:flex bg-nexa-bg-surface border-r border-nexa-border transition-all duration-300 flex-col z-50 sticky top-0 h-screen",
           isSidebarOpen ? "w-72" : "w-20"
         )}
       >
@@ -863,43 +962,9 @@ export function ErpAdminShell({
             </div>
           ) : (
             (() => {
-              const filtered = navItems.filter((item) => {
-              const matchesSearch = item.label.toLowerCase().includes(searchQuery.toLowerCase());
-              if (!matchesSearch) return false;
-
-              // STAGE 1: Strict Employee Isolation
-              // When employees login to their tenant ERP, they should ONLY see the employee portal!
-              if (currentRole === "employee") {
-                return (
-                  item.key === "employee" ||
-                  item.href === "/erp/employee" ||
-                  item.href.startsWith("/erp/employee/")
-                );
-              }
-
-              // The '/erp/admin' Overview page is strictly for the Tenant Administrator
-              if (item.key === "overview" || item.href === "/erp/admin") {
-                return currentRole === "admin";
-              }
-
-              const isProvisioned = (key: string) => {
-                if (key === "overview" || key === "employee") return true;
-                const isAdminAllowed = permissionMatrix.admin?.[key] !== false;
-                const isTpAllowed = (permissionMatrix as any).tenant_provision?.[key] !== false;
-                return isAdminAllowed && isTpAllowed;
-              };
-
-              return isNavItemVisibleForRole(
-                item.key,
-                currentRole,
-                isLineManager,
-                isProvisioned
-              );
-            });
-
             let currentSection = "";
 
-            return filtered.map((item, i) => {
+            return filteredNavItems.map((item, i) => {
               const isActive =
                 pathname === item.href ||
                 (item.href !== "/erp/admin" && pathname.startsWith(item.href)) ||
@@ -1121,7 +1186,7 @@ export function ErpAdminShell({
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         {/* CONTENT WRAPPER */}
-        <div className="p-8 space-y-6 flex-1">
+        <div className="p-4 md:p-8 pb-24 md:pb-8 space-y-6 flex-1">
           {isEffectiveLoading ? (
             <DashboardSkeleton />
           ) : (
@@ -1234,6 +1299,39 @@ export function ErpAdminShell({
           </div>
         );
       })()}
+
+      {/* MOBILE BOTTOM NAV MENU */}
+      {!isEffectiveLoading && (
+        <nav
+          className="md:hidden fixed left-4 right-4 z-[100] flex items-center overflow-x-auto no-scrollbar px-2 py-2 rounded-3xl bg-white/60 backdrop-blur-2xl border border-white/60 shadow-[inset_0_2px_6px_rgba(255,255,255,1),inset_0_-2px_6px_rgba(255,255,255,0.5),0_10px_30px_rgba(0,0,0,0.15)]"
+          style={{ bottom: "max(1rem, env(safe-area-inset-bottom))" }}
+        >
+          {filteredNavItems.map((item, i) => {
+            const isActive =
+              pathname === item.href ||
+              (item.href !== "/erp/admin" && pathname.startsWith(item.href)) ||
+              (item.href === "/erp/admin" && pathname === "/erp/admin") ||
+              (item.key === "users" && pathname.startsWith("/erp/admin/departments"));
+
+            return (
+              <Link href={item.href} key={i} className={cn("flex flex-col items-center justify-center min-w-[72px] max-w-[80px] shrink-0 p-1.5 rounded-xl gap-1.5 transition-colors cursor-pointer", isActive ? "text-[#1A56DB]" : "text-slate-500 hover:text-slate-800")}>
+                <div className={cn("p-1.5 rounded-lg transition-colors", isActive ? "bg-[#1A56DB]/10" : "")}>
+                  {React.cloneElement(item.icon as any, { className: "w-5 h-5 shrink-0" })}
+                </div>
+                <span className={cn("text-[9px] font-bold truncate w-full text-center tracking-wide", isActive ? "text-[#1A56DB]" : "text-slate-500")}>
+                  {item.label}
+                </span>
+                {item.badge && (
+                  <span className="absolute top-1 right-1 flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#1A56DB] opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#1A56DB]"></span>
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </nav>
+      )}
     </div>
   );
 }

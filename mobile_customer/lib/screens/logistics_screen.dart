@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/shipment.dart';
 import '../data/mock_data.dart';
 import '../widgets/shipment_card.dart';
+import 'create_pickup_screen.dart';
 import 'shipping_screen.dart';
 import 'tracking_screen.dart';
 
@@ -19,6 +20,18 @@ class LogisticsScreen extends StatefulWidget {
 
 class _LogisticsScreenState extends State<LogisticsScreen> {
   void _openCreateShipment() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => CreatePickupRequestScreen(
+          onBack: () => Navigator.of(context).pop(),
+        ),
+      ),
+    ).then((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  void _openAllShipments() {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => ShippingScreen(
@@ -132,13 +145,32 @@ class _LogisticsScreenState extends State<LogisticsScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Active Shipments',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                Row(
+                  children: [
+                    const Text(
+                      'Active Shipments',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '${activeShipments.length}',
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF1B62F0)),
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  '${activeShipments.length} on the road',
-                  style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                GestureDetector(
+                  onTap: _openAllShipments,
+                  child: const Text(
+                    'View History →',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF1B62F0), fontWeight: FontWeight.w700),
+                  ),
                 ),
               ],
             ),

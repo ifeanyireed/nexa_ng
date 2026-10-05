@@ -3,10 +3,8 @@ import '../models/shipment.dart';
 class MockData {
   static const String userName = 'Sarah Johnson';
   static const String userLocation = 'Jakarta, ID';
-  static const double userBalance = 244.00;
-
-  static const List<ShipmentItem> shipments = [
-    ShipmentItem(
+  static final List<ShipmentItem> shipments = [
+    const ShipmentItem(
       id: 'D314315783',
       title: 'Mac Mini M4 Pro',
       category: 'Electronics',
@@ -18,7 +16,7 @@ class MockData {
       currentStep: 3,
       itemIconType: 'mac',
     ),
-    ShipmentItem(
+    const ShipmentItem(
       id: 'D314315783',
       title: 'Premium Chair',
       category: 'Furniture',
@@ -30,7 +28,7 @@ class MockData {
       currentStep: 3,
       itemIconType: 'chair',
     ),
-    ShipmentItem(
+    const ShipmentItem(
       id: 'D314315784',
       title: 'Premium Chair',
       category: 'Furniture',
@@ -42,7 +40,7 @@ class MockData {
       currentStep: 2,
       itemIconType: 'chair',
     ),
-    ShipmentItem(
+    const ShipmentItem(
       id: 'D314315785',
       title: 'Premium Chair',
       category: 'Audio',
@@ -108,4 +106,8 @@ class MockData {
       avatarAsset: 'assets/images/avatar19.png',
     ),
   ];
+
+  static void addShipment(ShipmentItem item) {
+    shipments.insert(0, item);
+  }
 }

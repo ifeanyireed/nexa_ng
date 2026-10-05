@@ -258,18 +258,15 @@ class _TrackingScreenState extends State<TrackingScreen> {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            // 5 Gold Stars
                             Row(
-                              children: List.generate(5, (index) {
-                                return Padding(
-                                  padding: const EdgeInsets.only(right: 3),
-                                  child: Icon(
-                                    fixIcon(FlexIcon.remix.starCircle),
-                                    size: 17,
-                                    color: const Color(0xFFF59E0B),
-                                  ),
-                                );
-                              }),
+                              children: [
+                                Icon(fixIcon(FlexIcon.remix.starCircle), size: 17, color: const Color(0xFFF59E0B)),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${_selectedCourier.rating} Rating',
+                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+                                ),
+                              ],
                             ),
                           ],
                         ),

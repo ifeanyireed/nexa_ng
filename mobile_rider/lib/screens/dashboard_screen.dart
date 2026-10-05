@@ -21,7 +21,7 @@ class DashboardScreen extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            icon: Icon(fixIcon(FlexIcon.remix.notification3), color: const Color(0xFF64748B)),
+            icon: Icon(fixIcon(FlexIcon.remix.bellNotification), color: const Color(0xFF64748B)),
             onPressed: () {},
           ),
           const SizedBox(width: 8),
@@ -91,9 +91,21 @@ class DashboardScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  const Text(
-                    'Welcome back, Rider',
-                    style: TextStyle(color: Color(0xFFDCFCE7), fontSize: 14, fontWeight: FontWeight.w600),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Welcome back, Rider',
+                        style: TextStyle(color: Color(0xFFDCFCE7), fontSize: 14, fontWeight: FontWeight.w600),
+                      ),
+                      Row(
+                        children: [
+                          const Icon(Icons.star, color: Color(0xFFFBBF24), size: 16),
+                          const SizedBox(width: 4),
+                          const Text('4.8', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
+                        ],
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   const Text(
@@ -166,7 +178,7 @@ class DashboardScreen extends StatelessWidget {
                     color: const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(fixIcon(FlexIcon.remix.riding), color: const Color(0xFF16A34A)),
+                  child: Icon(fixIcon(FlexIcon.remix.bicycleBike), color: const Color(0xFF16A34A)),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -214,7 +226,7 @@ class DashboardScreen extends StatelessWidget {
                         elevation: 0,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
-                      icon: Icon(fixIcon(FlexIcon.remix.map2), size: 16),
+                      icon: Icon(fixIcon(FlexIcon.remix.mapLocation), size: 16),
                       label: const Text('Navigate to Drop-off', style: TextStyle(fontWeight: FontWeight.w700)),
                       onPressed: () {},
                     ),

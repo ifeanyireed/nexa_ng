@@ -45,11 +45,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
   let unwrappedParams: Record<string, string | string[] | undefined> = {};
   if (searchParams) {
     if (typeof (searchParams as any).then === "function") {
-      try {
-        unwrappedParams = React.use(searchParams as Promise<any>) || {};
-      } catch {
-        unwrappedParams = {};
-      }
+      unwrappedParams = React.use(searchParams as Promise<any>) || {};
     } else if (typeof searchParams === "object") {
       unwrappedParams = searchParams as any;
     }

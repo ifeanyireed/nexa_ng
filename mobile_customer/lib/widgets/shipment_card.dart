@@ -156,58 +156,33 @@ class ShipmentCard extends StatelessWidget {
   }
 
   Widget _buildProductThumbnail(String type) {
-    Widget content;
-    Color bgColor = const Color(0xFFF1F5F9);
-
+    String imageUrl;
+    
     switch (type) {
       case 'mac':
-        content = Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: const Color(0xFFDDE3EA),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: const Color(0xFFB0BAC5), width: 1),
-          ),
-          child: Center(
-            child: Container(
-              width: 10,
-              height: 10,
-              decoration: const BoxDecoration(
-                color: Color(0xFF1E293B),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-        );
+        imageUrl = 'https://images.unsplash.com/photo-1517059224940-d4af9eec41b7?q=80&w=200&auto=format&fit=crop';
         break;
       case 'chair':
-        content = Icon(fixIcon(FlexIcon.remix.sofa),
-          color: Color(0xFFDC2626),
-          size: 26,
-        );
+        imageUrl = 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?q=80&w=200&auto=format&fit=crop';
         break;
       case 'headphone':
-        content = Icon(fixIcon(FlexIcon.remix.earpods),
-          color: Color(0xFF64748B),
-          size: 26,
-        );
+        imageUrl = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=200&auto=format&fit=crop';
         break;
       default:
-        content = Icon(fixIcon(FlexIcon.remix.archiveBox),
-          color: Color(0xFF2563EB),
-          size: 24,
-        );
+        imageUrl = 'https://images.unsplash.com/photo-1606836591695-4d58436f5407?q=80&w=200&auto=format&fit=crop';
     }
 
     return Container(
       width: 44,
       height: 44,
       decoration: BoxDecoration(
-        color: bgColor,
+        color: const Color(0xFFF1F5F9),
         borderRadius: BorderRadius.circular(14),
+        image: DecorationImage(
+          image: NetworkImage(imageUrl),
+          fit: BoxFit.cover,
+        ),
       ),
-      child: Center(child: content),
     );
   }
 

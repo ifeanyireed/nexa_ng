@@ -110,12 +110,15 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
   }, [rawPropSlug]);
 
   const resolvedInitialSlug = rawPropSlug || mountedHostTenant || undefined;
-  const { activeTenant, isLoading: isTenantLoading } = useActiveTenant(null, resolvedInitialSlug);
+  const { activeTenant: hookActiveTenant, isLoading: isTenantLoading } = useActiveTenant(null, resolvedInitialSlug);
+
+  // Prevent hydration mismatch by suppressing client-only derived tenant data until mounted
+  const activeTenant = isMounted ? hookActiveTenant : undefined;
 
   const resolvedSlug =
     rawPropSlug ||
     activeTenant?.slug ||
-    mountedHostTenant ||
+    (isMounted ? mountedHostTenant : "") ||
     (isMounted
       ? localStorage.getItem("nexa_tenant_slug") ||
         localStorage.getItem("tenant_slug") ||

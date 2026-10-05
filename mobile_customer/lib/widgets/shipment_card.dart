@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/shipment.dart';
-import 'isometric_box.dart';
 import 'shipment_progress.dart';
 
 class ShipmentCard extends StatelessWidget {
@@ -139,11 +138,11 @@ class ShipmentCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                // 3D Isometric Shipping Box
-                const SizedBox(
+                // Shipment Image
+                Image.asset(
+                  'assets/images/shipment.png',
                   width: 64,
                   height: 60,
-                  child: IsometricPackageBox(width: 64, height: 60),
                 ),
               ],
             ),

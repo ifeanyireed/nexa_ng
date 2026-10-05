@@ -34,11 +34,11 @@ export default function ManagerDashboard() {
   // Filter reviews of employees who report to this manager
   const reportingEmployees = users.filter((u) => {
     if (u.id === currentUser.id) return false;
-    const matchesManagerName = u.managerName && currentUser.name && u.managerName.toLowerCase().trim() === currentUser.name.toLowerCase().trim();
-    const matchesManagerId = u.managerId && currentUser.id && u.managerId === currentUser.id;
-    const matchesDept = currentUser.role === "manager" && u.department === currentUser.department;
+    const matchesManagerName = Boolean(u.managerName && currentUser.name && u.managerName.toLowerCase().trim() === currentUser.name.toLowerCase().trim());
+    const matchesManagerId = Boolean(u.managerId && currentUser.id && u.managerId === currentUser.id);
     const isLeadership = currentUser.role === "md" || currentUser.role === "admin";
-    return matchesManagerName || matchesManagerId || matchesDept || isLeadership;
+    
+    return matchesManagerName || matchesManagerId || isLeadership;
   });
 
   const allTeamReviews = reviews.filter(r =>

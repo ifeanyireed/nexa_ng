@@ -213,17 +213,20 @@ export default function StoreFooter({ store }: StoreFooterProps) {
             </div>
           </div>
 
-          <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+          <Link href="/dispatch" className="flex items-start gap-3.5 group hover:bg-white/5 p-2 -m-2 rounded-2xl transition-all">
+            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 group-hover:border-emerald-500/50 flex items-center justify-center shrink-0">
               <Truck className="w-5 h-5 text-emerald-400" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-white">Integrated Logistics Dispatch</h4>
+              <h4 className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors flex items-center gap-1.5">
+                <span>Integrated Logistics Dispatch</span>
+                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/30">Book</span>
+              </h4>
               <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">
                 Automated rider dispatch, express doorstep delivery & live route tracking.
               </p>
             </div>
-          </div>
+          </Link>
 
           <div className="flex items-start gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">

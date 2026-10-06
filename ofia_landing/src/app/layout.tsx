@@ -16,9 +16,11 @@ export const metadata: Metadata = {
     "Storefront, ERP, Autonomous AI, Logistics, and Discovery all in one unified platform for Nigerian and African businesses.",
   icons: {
     icon: [
-      { url: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" },
-      { url: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/aa9nvrmyrc38lbpz1mkp.png" },
+      { url: "/favicon.ico" },
+      { url: "/icon.png", type: "image/png" },
     ],
+    apple: "/icon.png",
+    shortcut: "/favicon.ico",
   },
 };
 

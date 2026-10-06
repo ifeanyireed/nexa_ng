@@ -144,8 +144,10 @@ export default function Home() {
             className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto"
           >
             {stats.map((s, idx) => (
-              <div
+              <motion.div
                 key={idx}
+                whileHover={{ y: -2 }}
+                transition={{ duration: 0.2 }}
                 className="liquid-glass p-5 rounded-2xl border border-[var(--nexa-border)] text-left hover:border-nexa-brand/40 transition-all duration-200"
               >
                 <p className="text-[11px] font-bold uppercase tracking-wider text-nexa-text-muted mb-1">
@@ -157,7 +159,7 @@ export default function Home() {
                 <p className="text-xs text-nexa-text-secondary font-medium truncate">
                   {s.sub}
                 </p>
-              </div>
+              </motion.div>
             ))}
           </motion.div>
         </div>
@@ -166,7 +168,13 @@ export default function Home() {
       {/* 2. THE FOUR PILLARS */}
       <section className="py-24 bg-[var(--nexa-bg-surface)] border-b border-[var(--nexa-border)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.5 }}
+            className="text-center max-w-3xl mx-auto mb-16"
+          >
             <NexaBadge variant="brand" size="md" dot className="mb-4">
               End-to-End Capabilities
             </NexaBadge>
@@ -176,31 +184,39 @@ export default function Home() {
             <p className="text-base sm:text-lg text-nexa-text-secondary">
               Everything required to establish credibility, streamline day-to-day work, sell with trust, and scale aggressively.
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {pillars.map((pillar, i) => (
-              <NexaCard
+              <motion.div
                 key={i}
-                variant="interactive"
-                padding="lg"
-                className="flex flex-col h-full group"
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                className="h-full"
               >
-                <div className="flex items-center justify-between mb-6">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${pillar.bg}`}>
-                    {pillar.icon}
+                <NexaCard
+                  variant="interactive"
+                  padding="lg"
+                  className="flex flex-col h-full group"
+                >
+                  <div className="flex items-center justify-between mb-6">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${pillar.bg}`}>
+                      {pillar.icon}
+                    </div>
+                    <span className={`text-xs font-bold uppercase tracking-wider ${pillar.accent}`}>
+                      {pillar.badge}
+                    </span>
                   </div>
-                  <span className={`text-xs font-bold uppercase tracking-wider ${pillar.accent}`}>
-                    {pillar.badge}
-                  </span>
-                </div>
-                <h3 className="text-2xl font-bold text-display text-[var(--nexa-text-primary)] mb-3">
-                  {pillar.title}
-                </h3>
-                <p className="text-sm text-nexa-text-secondary leading-relaxed flex-1">
-                  {pillar.desc}
-                </p>
-              </NexaCard>
+                  <h3 className="text-2xl font-bold text-display text-[var(--nexa-text-primary)] mb-3">
+                    {pillar.title}
+                  </h3>
+                  <p className="text-sm text-nexa-text-secondary leading-relaxed flex-1">
+                    {pillar.desc}
+                  </p>
+                </NexaCard>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -210,7 +226,13 @@ export default function Home() {
       <section className="py-24 bg-[var(--nexa-bg-base)] border-b border-[var(--nexa-border)] overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-12 gap-12 items-center">
-            <div className="lg:col-span-5 space-y-6">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ duration: 0.5 }}
+              className="lg:col-span-5 space-y-6"
+            >
               <NexaBadge variant="amber" size="md">
                 Cross-Module Synchronization
               </NexaBadge>
@@ -236,7 +258,14 @@ export default function Home() {
                     desc: "Unclosed chat inquiries automatically trigger your AI GTM Swarm to follow up on WhatsApp with personalized product links.",
                   },
                 ].map((item, idx) => (
-                  <div key={idx} className="flex gap-4 items-start">
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: 15 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-40px" }}
+                    transition={{ duration: 0.4, delay: idx * 0.1 }}
+                    className="flex gap-4 items-start"
+                  >
                     <div className="w-6 h-6 rounded-full bg-nexa-brand/10 text-nexa-brand flex items-center justify-center shrink-0 mt-0.5">
                       <CheckCircle2 className="w-4 h-4" />
                     </div>
@@ -244,13 +273,19 @@ export default function Home() {
                       <h4 className="font-bold text-sm text-[var(--nexa-text-primary)]">{item.title}</h4>
                       <p className="text-xs text-nexa-text-secondary leading-relaxed mt-1">{item.desc}</p>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
             {/* Architecture Card Diagram */}
-            <div className="lg:col-span-7">
+            <motion.div
+              initial={{ opacity: 0, x: 30, scale: 0.96 }}
+              whileInView={{ opacity: 1, x: 0, scale: 1 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ duration: 0.6 }}
+              className="lg:col-span-7"
+            >
               <div className="liquid-glass p-8 sm:p-10 rounded-3xl border border-[var(--nexa-border)] shadow-xl relative">
                 <div className="flex items-center justify-between pb-6 border-b border-[var(--nexa-border)] mb-8">
                   <div className="flex items-center gap-3">
@@ -263,21 +298,30 @@ export default function Home() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                  <div className="bg-[var(--nexa-bg-surface)] p-4 rounded-xl border border-[var(--nexa-border)] text-center">
+                  <motion.div
+                    whileHover={{ y: -3 }}
+                    className="bg-[var(--nexa-bg-surface)] p-4 rounded-xl border border-[var(--nexa-border)] text-center transition-all"
+                  >
                     <Store className="w-6 h-6 text-blue-500 mx-auto mb-2" />
                     <p className="font-bold text-xs">Ofia Shop</p>
                     <p className="text-[10px] text-nexa-text-muted">Direct Web Storefront</p>
-                  </div>
-                  <div className="bg-[var(--nexa-bg-surface)] p-4 rounded-xl border border-[var(--nexa-border)] text-center">
+                  </motion.div>
+                  <motion.div
+                    whileHover={{ y: -3 }}
+                    className="bg-[var(--nexa-bg-surface)] p-4 rounded-xl border border-[var(--nexa-border)] text-center transition-all"
+                  >
                     <Layers className="w-6 h-6 text-emerald-500 mx-auto mb-2" />
                     <p className="font-bold text-xs">Ofia ERP</p>
                     <p className="text-[10px] text-nexa-text-muted">POS &amp; Staff Ledger</p>
-                  </div>
-                  <div className="bg-[var(--nexa-bg-surface)] p-4 rounded-xl border border-[var(--nexa-border)] text-center">
+                  </motion.div>
+                  <motion.div
+                    whileHover={{ y: -3 }}
+                    className="bg-[var(--nexa-bg-surface)] p-4 rounded-xl border border-[var(--nexa-border)] text-center transition-all"
+                  >
                     <Compass className="w-6 h-6 text-amber-500 mx-auto mb-2" />
                     <p className="font-bold text-xs">Ofia Compass</p>
                     <p className="text-[10px] text-nexa-text-muted">Marketplace Discovery</p>
-                  </div>
+                  </motion.div>
                 </div>
 
                 <div className="bg-nexa-brand/5 border border-nexa-brand/20 p-5 rounded-2xl flex items-center justify-between">
@@ -291,7 +335,7 @@ export default function Home() {
                   <span className="text-[10px] font-mono font-bold bg-nexa-brand text-white px-2.5 py-1 rounded-md">LIVE</span>
                 </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -299,7 +343,13 @@ export default function Home() {
       {/* 4. FOUNDING OFFER BANNER */}
       <section className="py-20 bg-[var(--nexa-bg-surface)]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative rounded-3xl bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0A101D] text-white p-8 sm:p-14 overflow-hidden shadow-2xl border border-slate-700">
+          <motion.div
+            initial={{ opacity: 0, y: 40, scale: 0.98 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.6 }}
+            className="relative rounded-3xl bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0A101D] text-white p-8 sm:p-14 overflow-hidden shadow-2xl border border-slate-700"
+          >
             {/* Background circular accent */}
             <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/20 blur-[90px] rounded-full pointer-events-none" />
 
@@ -327,7 +377,7 @@ export default function Home() {
                 </Link>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
     </div>

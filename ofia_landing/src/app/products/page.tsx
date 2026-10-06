@@ -368,9 +368,10 @@ export default function ProductsPage() {
           {filteredProducts.map((product, idx) => (
             <motion.div
               key={product.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05, duration: 0.3 }}
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ delay: idx * 0.05, duration: 0.4 }}
               className="h-full"
             >
               <NexaCard
@@ -442,7 +443,13 @@ export default function ProductsPage() {
         </div>
 
         {/* BOTTOM ARCHITECTURE CALLOUT */}
-        <div className="mt-20">
+        <motion.div
+          initial={{ opacity: 0, y: 35, scale: 0.98 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.5 }}
+          className="mt-20"
+        >
           <NexaCard
             variant="glass"
             padding="lg"
@@ -488,7 +495,7 @@ export default function ProductsPage() {
               </div>
             </div>
           </NexaCard>
-        </div>
+        </motion.div>
       </div>
     </main>
   );

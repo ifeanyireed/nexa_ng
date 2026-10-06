@@ -232,9 +232,10 @@ export default function PricingPage() {
             return (
               <motion.div
                 key={plan.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.1, duration: 0.3 }}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ delay: idx * 0.1, duration: 0.4 }}
                 className="h-full flex"
               >
                 <NexaCard
@@ -326,47 +327,67 @@ export default function PricingPage() {
 
         {/* MODULAR ADD-ONS */}
         <div className="mb-24">
-          <div className="text-center max-w-2xl mx-auto mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 25 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.4 }}
+            className="text-center max-w-2xl mx-auto mb-12"
+          >
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-3">
               Modular Infrastructure &amp; Add-Ons
             </h2>
             <p className="text-sm sm:text-base text-nexa-text-secondary">
               Attach specialized physical and operational modules to your plan at any time.
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {addOns.map((addon, idx) => (
-              <NexaCard
+              <motion.div
                 key={idx}
-                variant="glass"
-                padding="md"
-                className="border-nexa-border hover:border-nexa-brand/30 transition-all duration-300 flex flex-col justify-between"
+                initial={{ opacity: 0, y: 25 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ delay: idx * 0.08, duration: 0.4 }}
+                className="h-full"
               >
-                <div>
-                  <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center ${addon.bg} mb-4`}
-                  >
-                    {addon.icon}
+                <NexaCard
+                  variant="glass"
+                  padding="md"
+                  className="h-full border-nexa-border hover:border-nexa-brand/30 transition-all duration-300 flex flex-col justify-between"
+                >
+                  <div>
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center ${addon.bg} mb-4`}
+                    >
+                      {addon.icon}
+                    </div>
+                    <h4 className="text-base font-bold text-slate-900 mb-1">
+                      {addon.name}
+                    </h4>
+                    <div className="text-xs font-extrabold text-nexa-brand mb-2">
+                      {addon.price}
+                    </div>
+                    <p className="text-xs text-nexa-text-secondary leading-relaxed">
+                      {addon.desc}
+                    </p>
                   </div>
-                  <h4 className="text-base font-bold text-slate-900 mb-1">
-                    {addon.name}
-                  </h4>
-                  <div className="text-xs font-extrabold text-nexa-brand mb-2">
-                    {addon.price}
-                  </div>
-                  <p className="text-xs text-nexa-text-secondary leading-relaxed">
-                    {addon.desc}
-                  </p>
-                </div>
-              </NexaCard>
+                </NexaCard>
+              </motion.div>
             ))}
           </div>
         </div>
 
         {/* FREQUENTLY ASKED QUESTIONS ACCORDION */}
         <div className="max-w-3xl mx-auto mb-24">
-          <div className="text-center mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 25 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.4 }}
+            className="text-center mb-12"
+          >
             <div className="inline-flex items-center gap-2 bg-blue-500/10 text-blue-600 px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-widest mb-3">
               <HelpCircle className="w-3.5 h-3.5" />
               Frequently Asked Questions
@@ -374,53 +395,65 @@ export default function PricingPage() {
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
               Got Questions? We&apos;ve Got Answers.
             </h2>
-          </div>
+          </motion.div>
 
           <div className="space-y-4">
             {faqs.map((faq, index) => {
               const isOpen = openFaqIndex === index;
               return (
-                <NexaCard
+                <motion.div
                   key={index}
-                  variant="glass"
-                  padding="none"
-                  className="border-nexa-border overflow-hidden transition-all duration-200"
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-40px" }}
+                  transition={{ delay: index * 0.05, duration: 0.3 }}
                 >
-                  <button
-                    onClick={() => setOpenFaqIndex(isOpen ? null : index)}
-                    className="w-full px-6 py-5 flex items-center justify-between text-left cursor-pointer group"
+                  <NexaCard
+                    variant="glass"
+                    padding="none"
+                    className="border-nexa-border overflow-hidden transition-all duration-200"
                   >
-                    <span className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-nexa-brand transition-colors">
-                      {faq.q}
-                    </span>
-                    <ChevronDown
-                      className={`w-5 h-5 text-slate-400 shrink-0 ml-4 transition-transform duration-200 ${
-                        isOpen ? "rotate-180 text-nexa-brand" : ""
-                      }`}
-                    />
-                  </button>
-                  <AnimatePresence>
-                    {isOpen && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <div className="px-6 pb-5 pt-1 text-xs sm:text-sm text-nexa-text-secondary leading-relaxed border-t border-nexa-border/40">
-                          {faq.a}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </NexaCard>
+                    <button
+                      onClick={() => setOpenFaqIndex(isOpen ? null : index)}
+                      className="w-full px-6 py-5 flex items-center justify-between text-left cursor-pointer group"
+                    >
+                      <span className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-nexa-brand transition-colors">
+                        {faq.q}
+                      </span>
+                      <ChevronDown
+                        className={`w-5 h-5 text-slate-400 shrink-0 ml-4 transition-transform duration-200 ${
+                          isOpen ? "rotate-180 text-nexa-brand" : ""
+                        }`}
+                      />
+                    </button>
+                    <AnimatePresence>
+                      {isOpen && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          <div className="px-6 pb-5 pt-1 text-xs sm:text-sm text-nexa-text-secondary leading-relaxed border-t border-nexa-border/40">
+                            {faq.a}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </NexaCard>
+                </motion.div>
               );
             })}
           </div>
         </div>
 
         {/* ENTERPRISE & ADVISORY BANNER */}
-        <div>
+        <motion.div
+          initial={{ opacity: 0, y: 40, scale: 0.98 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.6 }}
+        >
           <NexaCard
             variant="glass"
             padding="lg"
@@ -465,7 +498,7 @@ export default function PricingPage() {
               </div>
             </div>
           </NexaCard>
-        </div>
+        </motion.div>
       </div>
     </main>
   );

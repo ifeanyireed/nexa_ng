@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transport Operating System — App Architecture Blueprint</title>
+<style>
+:root{--ink:#17212b;--muted:#5d6b78;--line:#e2e8ee;--soft:#f5f8fa;--blue:#1769aa;--green:#16835d;--purple:#7354b5}
+*{box-sizing:border-box} body{margin:0;font:16px/1.65 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink);background:#fff}
+header{background:linear-gradient(135deg,#102b3f,#1769aa);color:white;padding:64px max(24px,calc((100% - 1080px)/2))}
+header .eyebrow{letter-spacing:.12em;text-transform:uppercase;font-size:.78rem;font-weight:700;opacity:.8}
+header h1{font-size:clamp(2rem,5vw,3.6rem);line-height:1.12;max-width:900px;margin:.6rem 0 1rem}
+header p{font-size:1.15rem;max-width:800px;color:#e4f1fa}
+main{max-width:1080px;margin:auto;padding:32px 24px 80px}
+h1.app-header {font-size: 2.2rem; margin-top: 4rem; padding-bottom: 0.5rem; color: var(--blue); border-bottom: 3px solid var(--blue);}
+h2{font-size:1.8rem;margin:3rem 0 1rem;padding-bottom:.5rem;border-bottom:1px solid var(--line)}
+h3{font-size:1.25rem;margin:1.8rem 0 .5rem; color: #23415c;} h4{margin:1rem 0 .35rem}
+p{margin:.6rem 0 1rem} ul,ol{padding-left:1.4rem} li{margin:.28rem 0}
+.lead{font-size:1.15rem;color:#34495a}
+.callout{border-left:4px solid var(--blue);background:#f2f8fc;padding:16px 20px;margin:22px 0;border-radius:0 8px 8px 0}
+.pills{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}.pill{font-size:.78rem;font-weight:700;padding:4px 10px;border-radius:999px;background:#eaf3fa;color:#155b8c}.pill.green{background:#e8f6ef;color:#146747}.pill.purple{background:#f1edfa;color:#6245a0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.card{border:1px solid var(--line);border-radius:12px;padding:18px;background:white; box-shadow: 0 1px 3px rgba(0,0,0,0.05);}
+.card h3{margin-top:0}.muted{color:var(--muted)}
+table{border-collapse:collapse;width:100%;margin:16px 0 24px;font-size:.94rem}
+th,td{text-align:left;vertical-align:top;padding:11px 12px;border:1px solid var(--line)}
+th{background:var(--soft);font-weight:700}
+.toc{background:var(--soft);border:1px solid var(--line);padding:20px 24px;border-radius:12px; margin-bottom: 3rem;}
+.toc ol{columns:1; column-gap:36px; padding-left: 0; list-style: none;} 
+.toc li{break-inside:avoid; margin-bottom: 0.8rem; font-weight: 600; font-size: 1.1rem;}
+.toc li ol { columns: 1; padding-left: 1.5rem; margin-top: 0.5rem; font-weight: normal; font-size: 0.95rem; list-style: decimal; }
+.toc li ol li { margin-bottom: 0.3rem; }
+.app{border:1px solid var(--line);border-radius:12px;padding:20px;margin:20px 0}
+.app h3{margin-top:0}.app-label{font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:var(--blue);font-weight:800}
+.flow{background:#f7f9fb;border:1px solid var(--line);padding:16px;border-radius:10px;font-family:ui-monospace,monospace;white-space:normal; display: inline-block; font-size: 0.95rem;}
+.checklist li{list-style:"□  ";padding-left:5px}
+footer{border-top:1px solid var(--line);padding:28px 24px;color:var(--muted);text-align:center;font-size:.9rem}
+@media(max-width:640px){main{padding:22px 16px 60px}header{padding:42px 20px}table{display:block;overflow-x:auto;white-space:normal}}
+@media print{header{background:#fff;color:#111;padding:30px 0}header p{color:#333}main{padding:0}a{color:inherit;text-decoration:none}.card,.app,.toc{break-inside:avoid}h2{break-after:avoid}}
+</style>
+</head>
+<body>
+<header>
+<div class="eyebrow">Product Strategy & Architecture</div>
+<h1>Transport Operating System</h1>
+<p>Four interconnected codebases forming one complete transportation ecosystem.</p>
+<div class="pills"><span class="pill">Four Codebases</span><span class="pill">Transport OS</span><span class="pill">Shared Infrastructure</span><span class="pill">Admin/ERP/Mobile</span></div>
+</header>
+<main>
+<p class="lead"><strong>Product vision:</strong> I’d structure this as <strong>one transportation operating system with shared core screens plus service-specific screens</strong>, rather than designing independent products.</p>
+<div class="callout"><strong>Core principle:</strong> The key is that the screens should make the architecture obvious: <strong>Super Admin provisions → Transport Company configures → customers book → drivers execute → fleet/operations manages → finance measures.</strong></div>
+
+<nav class="toc"><strong>Contents</strong><ol>
+<li><a href="#architecture">Implementation Plan & Repository Mapping</a></li>
+<li><a href="#ofia-admin">App 1: Ofia Super Admin (ofia_admin)</a>
+    <ol>
+        <li><a href="#super-admin">Super Admin Layer</a></li>
+        <li><a href="#tenant-management">Tenant Management</a></li>
+    </ol>
+</li>
+<li><a href="#ofia-erp">App 2: Company Admin & Ops Console (ofia_erp)</a>
+    <ol>
+        <li><a href="#company-admin">Company Command Centre</a></li>
+        <li><a href="#services-module">Services & Modules (Rental, Shuttle, Staff, etc.)</a></li>
+        <li><a href="#operations">Operations & Live Dispatch</a></li>
+        <li><a href="#fleet">Fleet, Drivers & Maintenance</a></li>
+        <li><a href="#finance">Pricing, Profitability & Finance</a></li>
+    </ol>
+</li>
+<li><a href="#mobile-fleet">App 3: Customer App & Portals (mobile_fleet)</a>
+    <ol>
+        <li><a href="#customer-app">Customer App Flows</a></li>
+        <li><a href="#portals">Corporate & School Portals</a></li>
+        <li><a href="#support-notifs">Notifications & Support</a></li>
+    </ol>
+</li>
+<li><a href="#mobile-driver">App 4: Universal Driver App (mobile_driver)</a>
+    <ol>
+        <li><a href="#driver-app">Driver Interface & Workflows</a></li>
+    </ol>
+</li>
+<li><a href="#core-systems">Shared Core Systems</a>
+    <ol>
+        <li><a href="#shared-systems">Engines & Data Relationships</a></li>
+    </ol>
+</li>
+</ol></nav>
+
+<section id="architecture">
+<h2>Implementation Plan & Repository Mapping</h2>
+<p>The system is consolidated into four major codebases mapped directly into the existing ecosystem:</p>
+<div class="grid">
+<div class="card"><span class="pill">ofia_admin</span><h3>1. Super Admin (/fleet)</h3>
+<p>Controls transport companies, provisioning, subscriptions, and platform-wide data.</p>
+</div>
+<div class="card"><span class="pill">ofia_erp</span><h3>2. Company Admin & Ops</h3>
+<p>The company's command centre (<code>erp/admin/fleet</code>) and real-time operations console (<code>erp/ops/fleet</code>).</p>
+</div>
+<div class="card"><span class="pill green">mobile_fleet</span><h3>3. Customer App & Portals</h3>
+<p>Single app handling passenger booking and specialized portal access (school/corporate tracking).</p>
+</div>
+<div class="card"><span class="pill green">mobile_driver</span><h3>4. Universal Driver App</h3>
+<p>One unified driver application for every transport service type.</p>
+</div>
+</div>
+</section>
+
+<!-- APP 1 -->
+<h1 class="app-header" id="ofia-admin">App 1: Ofia Super Admin (ofia_admin)</h1>
+<p class="lead">Baked into <code>ofia_admin</code> at <code>/fleet</code>. This is the platform's control layer, not the transport company's dashboard.</p>
+
+<section id="super-admin">
+<h2>Platform Administration</h2>
+<h3>Super Admin Login</h3>
+<ul>
+<li>Login, Forgot password, OTP / authentication, Device/session verification, Password reset</li>
+</ul>
+
+<h3>Super Admin Dashboard</h3>
+<div class="grid">
+<div class="card">
+<h4>KPI cards</h4>
+<ul><li>Total companies, Active companies, Pending onboarding, Total vehicles/drivers, Trips today, Active trips, Total bookings, Platform revenue, Failed payments, Open incidents</li></ul>
+</div>
+<div class="card">
+<h4>Tenant activity</h4>
+<ul><li>New companies, Recently activated, Suspended, Approaching plan limits</li></ul>
+</div>
+<div class="card">
+<h4>Live operations</h4>
+<ul><li>Active trips across all tenants, Drivers online, Vehicles moving, Critical incidents</li></ul>
+</div>
+</div>
+</section>
+
+<section id="tenant-management">
+<h2>Tenant Management</h2>
+<h3>Transport Companies</h3>
+<div class="grid">
+<div class="card">
+<h4>List</h4>
+<ul><li>Company name, Logo, Location, Enabled services, Fleet size, Drivers, Status, Subscription</li></ul>
+</div>
+<div class="card">
+<h4>Actions</h4>
+<ul><li>View, Edit, Suspend, Activate, Impersonate/support access, Configure, View usage</li></ul>
+</div>
+</div>
+
+<h3>Create Transport Company</h3>
+<ul>
+<li><strong>Company Info:</strong> Name, Legal name, Registration, Address, Phone, Email, Website, Logo</li>
+<li><strong>Operating Info:</strong> Cities, States, Service areas, Time zone, Currency</li>
+<li><strong>Select Services:</strong> Bus Rental, Shuttle, Staff, Interstate, School, On-Demand</li>
+</ul>
+<div class="callout"><strong>Crucial:</strong> The selected modules determine what appears inside the tenant dashboard and customer app.</div>
+
+<h3>Tenant Provisioning</h3>
+<div class="flow">Provisioning → Configuring → Ready → Active</div>
+<p>Provisions: Tenant ID, Customer app, Driver app access, Web dashboard, Domain/subdomain, Payment config, GPS/tracking, API credentials.</p>
+</section>
+
+
+<!-- APP 2 -->
+<h1 class="app-header" id="ofia-erp">App 2: Company Admin & Ops Console (ofia_erp)</h1>
+<p class="lead">Baked into <code>ofia_erp</code>. <code>erp/admin/fleet</code> is the backend command center. <code>erp/ops/fleet</code> is for live dispatchers.</p>
+
+<section id="company-admin">
+<h2>Company Command Centre (erp/admin/fleet)</h2>
+<h3>Tenant Dashboard</h3>
+<div class="callout">The dashboard should immediately answer: <strong>What is happening with my transport business today?</strong></div>
+<div class="grid">
+<div class="card">
+<h4>Top KPI cards</h4>
+<ul><li>Revenue today, Trips today, Active trips, Bookings, Available vehicles, Vehicles on trip, Drivers available, Drivers on trip</li></ul>
+</div>
+<div class="card">
+<h4>Fleet status</h4>
+<ul><li>Active, Available, Parked, Maintenance, Unavailable</li></ul>
+</div>
+<div class="card">
+<h4>Attention required</h4>
+<ul><li>Document expiring, Overdue for service, Trip without driver/vehicle, Payment failed, No-show, Incident</li></ul>
+</div>
+</div>
+
+<h3>Bookings Engine</h3>
+<ul>
+<li><strong>Booking List:</strong> Booking ID, Customer, Service, Date, Vehicle, Driver, Amount, Payment, Status</li>
+<li><strong>Booking Detail:</strong> Customer, Service, Trip, Vehicle, Driver, Passengers, Payment, Documents, GPS, Expenses, Profit</li>
+</ul>
+</section>
+
+<section id="services-module">
+<h2>Services & Modules</h2>
+<p>Each service has its own management dashboard if enabled.</p>
+<div class="grid">
+<div class="card"><h4>Bus Rental</h4><ul><li>Bookings today, Available buses, Pending requests</li><li>Pricing: Distance + Days + Fuel + Driver + Markup</li></ul></div>
+<div class="card"><h4>Shuttle</h4><ul><li>Routes, Stops, Schedules, Seat maps, Passenger manifests</li><li>Admin can click a seat to see passenger info.</li></ul></div>
+<div class="card"><h4>Staff Transport</h4><ul><li>Corporate Clients, Staff Directory, Pickup points, Schedules, Attendance tracking</li></ul></div>
+<div class="card"><h4>Interstate</h4><ul><li>Terminals, Boarding rules, Seat capacity, Passenger QR manifests</li></ul></div>
+<div class="card"><h4>School Transport</h4><ul><li>School profiles, Student/Parent profiles, Authorized pickup persons, Missed pickups</li></ul></div>
+<div class="card"><h4>On-Demand</h4><ul><li>Service Zones (Boundary, Operating hours, Minimum/Base fare), Peak pricing rules</li></ul></div>
+</div>
+</section>
+
+<section id="operations">
+<h2>Operations Command Centre (erp/ops/fleet)</h2>
+<h3>Live Operations Map</h3>
+<ul>
+<li><strong>Map layers:</strong> Vehicles, Drivers, Active trips, Pickup/Drop-off locations, Incidents, Service zones</li>
+<li><strong>Clicking a vehicle opens:</strong> Bus, Driver, Service, Trip, Destination, ETA, Passenger count</li>
+</ul>
+
+<h3>Today's Operations Timeline</h3>
+<p>Unified table filtering by Service, Route, Driver, Vehicle, and Status showing exact timelines.</p>
+
+<h3>On-Demand Live Dispatch</h3>
+<p>Left panel (Incoming requests), Centre (Live map), Right panel (Selected request details). Dispatcher can assign, reassign, cancel, or contact.</p>
+</section>
+
+<section id="fleet">
+<h2>Fleet, Drivers & Maintenance</h2>
+<div class="grid">
+<div class="card">
+<h4>Fleet Management</h4>
+<ul>
+<li>Vehicle List: Plate, Type, Capacity, Driver, Status, Mileage</li>
+<li>Vehicle Profile: Identity, Status, Operational Performance (Utilization, Fuel), ROI</li>
+</ul>
+</div>
+<div class="card">
+<h4>Driver Management</h4>
+<ul>
+<li>Profiles: Personal, Employment, License, Current assignment</li>
+<li>Performance: Trips, Revenue, Rating, Incidents, Cancellations</li>
+<li>Onboarding: Document review and background verification</li>
+</ul>
+</div>
+<div class="card">
+<h4>Maintenance & Compliance</h4>
+<ul>
+<li>Schedule: Mileage/Date intervals, Next due</li>
+<li>Jobs: Diagnosis, Parts, Labour, Downtime</li>
+<li>Compliance: Insurance/License expiry alerts</li>
+</ul>
+</div>
+</div>
+</section>
+
+<section id="finance">
+<h2>Pricing Engine, Finance & Reports</h2>
+<h3>Pricing Engine & Simulator</h3>
+<div class="flow">Distance × Fuel Cost + Driver Cost + Maintenance + Tolls + Days + Other Costs + Markup = Customer Price</div>
+<p>Simulator allows admins to calculate expected profit and margin for hypothetical trips.</p>
+
+<h3>Fleet Intelligence & Profitability</h3>
+<ul>
+<li><strong>Health Dashboard:</strong> Vehicles scored based on Age, Mileage, Downtime, ROI (Excellent, Healthy, Watch, Replace).</li>
+<li><strong>Profitability:</strong> Calculates if a bus is generating revenue but destroying margin due to maintenance/fuel.</li>
+</ul>
+
+<h3>Finance Dashboard</h3>
+<ul>
+<li>Transactions, Receivables, Payables, Driver Payouts, Refunds, Commissions.</li>
+<li>Customer Payments (Paid, Pending, Failed, Refunded).</li>
+</ul>
+
+<h3>Reports & Settings</h3>
+<ul>
+<li>Operational, Financial, Fleet, Customer, Service comparison reports.</li>
+<li>Global Settings: Roles, Enabled Services, Payment Providers, Notification Templates.</li>
+</ul>
+</section>
+
+
+<!-- APP 3 -->
+<h1 class="app-header" id="mobile-fleet">App 3: Customer App & Portals (mobile_fleet)</h1>
+<p class="lead">Built into a new <code>mobile_fleet</code> directory sharing the <code>mobile_customer</code> UI. Handles individual passengers, corporate clients, and parents.</p>
+
+<section id="customer-app">
+<h2>Customer App & UX Flows</h2>
+<p>The app is fully white-labelled. Interfaces dynamically adapt based on the specific services enabled by the Transport Company.</p>
+
+<h3>Onboarding & Authentication</h3>
+<ul>
+<li><strong>Dynamic Splash:</strong> Instantly loads the tenant's brand colors, logo, and a tailored onboarding carousel highlighting only their enabled modules.</li>
+<li><strong>Guest Preview:</strong> Users can browse routes and pricing without an account, prompting login only at the point of booking.</li>
+<li><strong>Smart Corporate Auth:</strong> Work emails automatically map users to their Corporate Portal/Staff Transport plan without needing a manual toggle.</li>
+<li><strong>Progressive Profiling & Biometrics:</strong> Collects basic details (Phone/SSO) first, prompting for DOB/Gender later via gamified Home screen prompts. Supports FaceID/TouchID for quick re-entry.</li>
+</ul>
+
+<h3>Universal Home & Live Ride</h3>
+<ul>
+<li><strong>Dynamic Service Grid:</strong> A modular layout (e.g., minimal 3-column icons or large dual cards) that scales perfectly depending on how many services the tenant has active.</li>
+<li><strong>Context-Aware Active Trip:</strong> If a ride is ongoing or a shuttle is arriving soon, an interactive widget (ETA, vehicle plate, mini-map) dominates the top of the Home screen so users don't have to dig into their "Bookings" tab.</li>
+<li><strong>Intelligent "Where to?":</strong> Time-and-location-aware quick prompts (e.g., a one-tap "Going to Work?" button at 7:30 AM).</li>
+<li><strong>Wallet & Rewards:</strong> Prominent display of user balances, points, and gamified loyalty progress.</li>
+<li><strong>Live Screen:</strong> Driver photo/rating, Vehicle plate, Live map, Call/Message, Trip status updates.</li>
+</ul>
+
+<h3>Service-Specific Flows</h3>
+<div class="grid">
+<div class="card"><h4>Rental</h4><p>Select vehicle → Enter route → Dates → Pay → Booking QR</p></div>
+<div class="card"><h4>Shuttle</h4><p>Select route/date/stop → Seat map → Select seat → Pay → QR Ticket</p></div>
+<div class="card"><h4>Interstate</h4><p>Origin/Dest → Date → Departures → Select seat → Pay → QR Ticket</p></div>
+<div class="card"><h4>On-Demand</h4><p>Pickup/Dest → View ETA/Fare → Request Ride</p></div>
+</div>
+</section>
+
+<section id="portals">
+<h2>Corporate & School Portals</h2>
+<div class="grid">
+<div class="card">
+<h4>Corporate Client Portal</h4>
+<p>For staff transportation and recurring corporate accounts.</p>
+<ul>
+<li>Dashboard: Active routes, Employees, Today's attendance</li>
+<li>Employees: Assign routes, Suspend transport</li>
+<li>Billing: Monthly invoice, Usage, Contract tracking</li>
+</ul>
+</div>
+<div class="card">
+<h4>School / Parent Portal</h4>
+<p>A parent should not see the transport operator's entire system.</p>
+<ul>
+<li>Child Dashboard: Today's transport, ETA, Pickup status</li>
+<li>Notifications: "Bus is 5 mins away", "Child has boarded", "Child arrived at school"</li>
+</ul>
+</div>
+</div>
+</section>
+
+<section id="support-notifs">
+<h2>Notifications & Customer Profile</h2>
+<ul>
+<li><strong>Channels:</strong> Push, SMS, Email, WhatsApp.</li>
+<li><strong>Events:</strong> Booking confirmation, Driver assigned, Trip started/completed, Delay, School/Corporate alerts.</li>
+<li><strong>Profile:</strong> Saved locations, Payment methods, Tickets, Invoices, Support chat/tickets.</li>
+</ul>
+</section>
+
+
+<!-- APP 4 -->
+<h1 class="app-header" id="mobile-driver">App 4: Universal Driver App (mobile_driver)</h1>
+<p class="lead">Built into a new <code>mobile_driver</code> directory sharing the <code>mobile_rider</code> UI. Extremely simple interface adapting to any service.</p>
+
+<section id="driver-app">
+<h2>Driver Interface & Workflows</h2>
+<h3>Driver Home & Assignment</h3>
+<ul>
+<li>Large status button (<strong>GO ONLINE / OFFLINE</strong>).</li>
+<li>The assignment screen adapts based on the incoming job:
+  <ul>
+  <li><strong>Rental:</strong> Customer name, Time, Destination.</li>
+  <li><strong>Shuttle / Interstate:</strong> Route, Stops, Passenger Manifest.</li>
+  <li><strong>School / Staff:</strong> Employee/Student list, Pickup points.</li>
+  <li><strong>On-Demand:</strong> Passenger, Pickup, Fare.</li>
+  </ul>
+</li>
+</ul>
+
+<h3>Universal Trip Flow</h3>
+<div class="flow">Assigned → Accepted → On the way → Arrived → Boarding → Trip started → Trip in progress → Trip completed</div>
+
+<h3>Boarding & Operations</h3>
+<ul>
+<li><strong>QR Scan:</strong> Passenger presents QR; Driver scans to verify and mark "Boarded".</li>
+<li><strong>School/Staff:</strong> Driver taps "Boarded" or "Dropped Off" next to names on the manifest.</li>
+<li><strong>Incident Report:</strong> Quick actions for Accident, Breakdown, Medical, Police. Operations receives it immediately.</li>
+<li><strong>Earnings:</strong> Today's/Weekly earnings, Commission, Pending payout.</li>
+</ul>
+</section>
+
+
+<!-- SHARED -->
+<h1 class="app-header" id="core-systems">Shared Core Systems</h1>
+<p class="lead">Underlying architecture spanning all four codebases.</p>
+
+<section id="shared-systems">
+<h2>Engines & Data Relationships</h2>
+<h3>Shared Engines</h3>
+<div class="grid">
+<div class="card"><h4>Identity & Document</h4><p>Users, roles, tenants, documents.</p></div>
+<div class="card"><h4>Vehicle & Driver</h4><p>Status, ownership, availability, earnings.</p></div>
+<div class="card"><h4>Booking & Trip</h4><p>All bookings and trips regardless of service.</p></div>
+<div class="card"><h4>Assignment Engine</h4><p>Vehicle + driver + trip.</p></div>
+<div class="card"><h4>Pricing & Payment</h4><p>Calculates price, processes collections/refunds.</p></div>
+<div class="card"><h4>Tracking & Notification</h4><p>GPS, ETA, push/SMS/email.</p></div>
+<div class="card"><h4>Maintenance & Finance</h4><p>Costs, revenue, payouts, profitability.</p></div>
+</div>
+
+<h3>The Core Data Relationship</h3>
+<div class="flow">Tenant → Services → Customers → Bookings → Trips → Vehicles → Drivers → Assignments → Payments → Expenses → Profitability</div>
+<p>The screens may look like many modules, but underneath, they're mostly different views of the <strong>same operational objects</strong>.</p>
+
+<h3>The Big Design Principle</h3>
+<p>I would <strong>not</strong> build Rental, Shuttle, Staff, Interstate, School, or Uber as independent systems.</p>
+<p>I'd build a <strong>Transport Operating System</strong> with configurable service types.</p>
+<div class="flow" style="display: block; margin: 10px 0;">
+Rental = Booking + Vehicle + Driver + Pricing + Trip<br>
+Shuttle = Route + Schedule + Seat + Booking + Vehicle + Driver + Trip<br>
+Staff = Contract + Employees + Route + Schedule + Vehicle + Driver + Trip<br>
+On-Demand = Request + Dispatch + Vehicle + Driver + Trip + Pricing
+</div>
+<div class="callout"><h3>"Bring your transport business. We provide the technology."</h3></div>
+<p>A company can launch with <strong>one service</strong>, such as shuttle, and later activate rental, interstate, school transport or on-demand without replacing its entire technology stack.</p>
+</section>
+
+</main>
+<footer>Transport Operating System · App Architecture Blueprint</footer>
+</body>
+</html>

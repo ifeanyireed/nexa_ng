@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import {
   Boxes,
@@ -24,49 +24,70 @@ import {
   Users,
   Warehouse,
   Zap,
+  Calendar,
+  ClipboardList,
+  Palette,
+  ExternalLink,
+  Eye,
 } from "lucide-react";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
+import { useAuth } from "@/components/nexa/AuthContext";
+import { useActiveTenant } from "@/lib/tenant-context";
+import {
+  VERTICAL_DEFINITIONS,
+  detectTenantVertical,
+  VerticalKey,
+} from "@/lib/verticals";
 
 export default function ShopManagerDashboardPage() {
+  const { user } = useAuth();
+  const { activeTenant } = useActiveTenant(user?.email);
+  const detectedVertical = detectTenantVertical(activeTenant?.slug, activeTenant?.name);
+
+  const [selectedVertical, setSelectedVertical] = useState<VerticalKey>(detectedVertical);
+  const verticalDef = VERTICAL_DEFINITIONS[selectedVertical];
+
   const lowStockAlerts = [
     { id: "sku-101", name: "Hybrid Solar Inverter 5kVA", category: "Solar Power", currentStock: 2, minStock: 5, warehouse: "Ikeja Central Depot", unitCost: "₦420,000" },
     { id: "sku-104", name: "4K IP Bullet Camera 8CH", category: "Security", currentStock: 1, minStock: 10, warehouse: "Lekki Distribution Hub", unitCost: "₦38,000" },
-    { id: "sku-209", name: "Cat6 Outdoor Shielded Cable 305m", category: "Networking", currentStock: 3, minStock: 8, warehouse: "Ikeja Central Depot", unitCost: "₦65,000" },
   ];
 
   const recentSessions = [
     { id: "POS-SES-89", cashier: "Fatima Aliyu", register: "Register 01 (Lekki Flagship)", salesCount: 38, totalAmount: "₦1,845,000", status: "OPEN" },
-    { id: "POS-SES-88", cashier: "Ifeanyi Nwachukwu", register: "Register 02 (Ikeja Depot)", salesCount: 24, totalAmount: "₦920,000", status: "CLOSED" },
-  ];
-
-  const topAffiliates = [
-    { id: "AFF-101", name: "Khalil Ibrahim Tech Ltd", link: "ofia.ng/join?ref=khalil2026", referrals: 142, conversions: 89, totalEarned: "₦1,420,000", tier: "GOLD" },
-    { id: "AFF-102", name: "SolarInstallers Hub NG", link: "ofia.ng/join?ref=solarhub", referrals: 98, conversions: 61, totalEarned: "₦980,000", tier: "SILVER" },
   ];
 
   return (
     <BusinessShell
-      title="Ofia Shop Manager"
-      subtitle="Unified retail command desk: Point of Sale (POS) cashiering, multi-warehouse inventory (IMS), and viral customer referral growth."
+      title="Ofia Shop Manager & Commerce Workspace"
+      subtitle={`Unified operating desk for ${verticalDef.name}: Omnichannel catalog, service bookings, POS counter, multi-warehouse inventory, and storefront studio.`}
       action={
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
+          {/* Vertical Archetype Selector */}
+          <select
+            value={selectedVertical}
+            onChange={(e) => setSelectedVertical(e.target.value as VerticalKey)}
+            className="px-3 py-1.5 bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-full text-xs font-bold text-[var(--nexa-text-primary)] outline-none cursor-pointer"
+          >
+            {Object.values(VERTICAL_DEFINITIONS).map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.name}
+              </option>
+            ))}
+          </select>
+
+          <Link href="/erp/admin/shop/store">
+            <NexaButton size="sm" variant="outline" leftIcon={<Palette className="w-3.5 h-3.5" />} className="rounded-full">
+              My Store Studio
+            </NexaButton>
+          </Link>
+
           <Link href="/erp/admin/shop/pos">
-            <NexaButton size="sm" variant="primary" leftIcon={<ShoppingCart className="w-3.5 h-3.5" />} className="bg-[#1A56DB] text-white">
-              Launch POS Counter
-            </NexaButton>
-          </Link>
-          <Link href="/erp/admin/shop/inventory/items">
-            <NexaButton size="sm" variant="outline" leftIcon={<Boxes className="w-3.5 h-3.5" />}>
-              Master SKUs
-            </NexaButton>
-          </Link>
-          <Link href="/erp/admin/shop/referrals/campaigns">
-            <NexaButton size="sm" variant="outline" leftIcon={<Gift className="w-3.5 h-3.5" />}>
-              Campaigns
+            <NexaButton size="sm" variant="primary" leftIcon={<ShoppingCart className="w-3.5 h-3.5" />} className="bg-[#1A56DB] text-white rounded-full font-bold shadow-xs">
+              Open POS Register
             </NexaButton>
           </Link>
         </div>
@@ -77,193 +98,166 @@ export default function ShopManagerDashboardPage() {
         <ErpStatGrid
           stats={[
             {
-              label: "Today's POS Gross Sales",
-              value: "₦2,765,000",
-              change: "+18.4% vs yesterday",
+              label: "Today's Omnichannel Gross Sales",
+              value: "₦4,610,000",
+              change: "+24.5% vs yesterday",
               trend: "up",
-              icon: <ShoppingCart className="w-5 h-5 text-blue-500" />,
-              sub: "62 successful transactions",
+              icon: <DollarSign className="w-5 h-5 text-emerald-500" />,
+              sub: "Online Storefront + In-Store POS",
             },
             {
-              label: "Total Inventory Valuation",
+              label: "Active Catalog Listings",
+              value: `34 ${verticalDef.productTermPlural}`,
+              change: verticalDef.badge,
+              trend: "up",
+              icon: <Package className="w-5 h-5 text-blue-500" />,
+              sub: "Synced to web and mobile",
+            },
+            {
+              label: "Pending Fulfillment & Bookings",
+              value: "8 Requests",
+              change: "Needs Staff Action",
+              trend: "neutral",
+              icon: <Clock className="w-5 h-5 text-amber-500" />,
+              sub: "3 in prep, 5 appointments",
+            },
+            {
+              label: "Multi-Warehouse Inventory",
               value: "₦48,250,000",
               change: "6 Regional Depots",
-              trend: "neutral",
-              icon: <Boxes className="w-5 h-5 text-emerald-500" />,
-              sub: "1,420 total SKU units in stock",
-            },
-            {
-              label: "Critical Low Stock",
-              value: "3 SKUs",
-              change: "Requires restock PO",
-              trend: "down",
-              icon: <Warehouse className="w-5 h-5 text-amber-500" />,
-              sub: "Below safety threshold",
-            },
-            {
-              label: "Viral Referral Growth",
-              value: "₦4,500,000",
-              change: "K-Factor 1.48x",
               trend: "up",
-              icon: <Gift className="w-5 h-5 text-purple-500" />,
-              sub: "450 promoters, 265 converted",
+              icon: <Boxes className="w-5 h-5 text-purple-500" />,
+              sub: "1,420 total units in stock",
             },
           ]}
         />
 
-        {/* 3 CORE PILLARS GRID */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* PILLAR 1: POINT OF SALE (POS) */}
-          <NexaCard variant="glass" padding="lg" className="border border-[var(--nexa-border)] flex flex-col justify-between space-y-6">
-            <div className="space-y-4">
+        {/* 6 CORE COMMERCE PILLARS GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* PILLAR 1: VERTICAL CATALOG & LISTINGS */}
+          <NexaCard variant="glass" padding="lg" className="border border-[var(--nexa-border)] flex flex-col justify-between space-y-5 rounded-3xl">
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center">
-                    <ShoppingCart className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-bold text-[var(--nexa-text-primary)]">Point of Sale (POS)</h2>
-                    <p className="text-[11px] text-[var(--nexa-text-muted)]">Counter cashiering & sessions</p>
-                  </div>
+                <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center">
+                  <Package className="w-5 h-5" />
                 </div>
-                <NexaBadge variant="brand" size="sm">Active</NexaBadge>
+                <NexaBadge variant="brand" size="sm" className="rounded-full">{verticalDef.badge}</NexaBadge>
               </div>
-
+              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">Catalog & Listings</h3>
               <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-                Fast touchscreen checkout, barcode scanning, split payments, and thermal receipt printing for retail counters.
+                Vertical-native product management with custom attribute schemas ({verticalDef.attributeFields.map(f => f.label).slice(0, 2).join(", ")}).
               </p>
-
-              <div className="space-y-2 pt-2 border-t border-[var(--nexa-border)]">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--nexa-text-muted)]">Active Cashier Shifts</div>
-                {recentSessions.map((ses) => (
-                  <div key={ses.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-xs">
-                    <div>
-                      <div className="font-bold text-[var(--nexa-text-primary)]">{ses.cashier}</div>
-                      <div className="text-[10px] text-[var(--nexa-text-muted)]">{ses.register}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-[#1A56DB]">{ses.totalAmount}</div>
-                      <div className="text-[10px] text-[var(--nexa-text-muted)]">{ses.salesCount} txns</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-2">
-              <Link href="/erp/admin/shop/pos" className="w-full">
-                <NexaButton size="sm" variant="primary" className="w-full bg-[#1A56DB] text-white">
-                  Open Terminal
-                </NexaButton>
-              </Link>
-              <Link href="/erp/admin/shop/pos/sessions" className="w-full">
-                <NexaButton size="sm" variant="outline" className="w-full">
-                  Shift Sessions
-                </NexaButton>
-              </Link>
-            </div>
+            <Link href="/erp/admin/shop/catalog" className="w-full">
+              <NexaButton size="sm" variant="outline" className="w-full rounded-full font-bold">
+                Manage {verticalDef.productTermPlural} →
+              </NexaButton>
+            </Link>
           </NexaCard>
 
-          {/* PILLAR 2: INVENTORY MANAGEMENT (IMS) */}
-          <NexaCard variant="glass" padding="lg" className="border border-[var(--nexa-border)] flex flex-col justify-between space-y-6">
-            <div className="space-y-4">
+          {/* PILLAR 2: SERVICES & APPOINTMENTS */}
+          <NexaCard variant="glass" padding="lg" className="border border-[var(--nexa-border)] flex flex-col justify-between space-y-5 rounded-3xl">
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-                    <Boxes className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-bold text-[var(--nexa-text-primary)]">Inventory (IMS)</h2>
-                    <p className="text-[11px] text-[var(--nexa-text-muted)]">Multi-warehouse stock & SKUs</p>
-                  </div>
+                <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center">
+                  <Calendar className="w-5 h-5" />
                 </div>
-                <NexaBadge variant="amber" size="sm">3 Low Stock</NexaBadge>
+                <NexaBadge variant="purple" size="sm" className="rounded-full">Bookings</NexaBadge>
               </div>
-
+              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">Services & Bookings</h3>
               <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-                Real-time multi-depot stock monitoring, inter-branch transfers, vendor purchase orders, and shrinkage audits.
+                Schedule {verticalDef.serviceTerm.toLowerCase()}, appoint staff providers, and handle client inquiries.
               </p>
-
-              <div className="space-y-2 pt-2 border-t border-[var(--nexa-border)]">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--nexa-text-muted)]">Low Stock Alerts</div>
-                {lowStockAlerts.map((sku) => (
-                  <div key={sku.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-xs">
-                    <div className="truncate max-w-[150px]">
-                      <div className="font-bold text-[var(--nexa-text-primary)] truncate">{sku.name}</div>
-                      <div className="text-[10px] text-[var(--nexa-text-muted)]">{sku.warehouse}</div>
-                    </div>
-                    <div className="text-right shrink-0">
-                      <span className="text-rose-500 font-extrabold">{sku.currentStock} left</span>
-                      <div className="text-[10px] text-[var(--nexa-text-muted)]">Min: {sku.minStock}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-2">
-              <Link href="/erp/admin/shop/inventory" className="w-full">
-                <NexaButton size="sm" variant="outline" className="w-full">
-                  Stock Overview
-                </NexaButton>
-              </Link>
-              <Link href="/erp/admin/shop/inventory/items" className="w-full">
-                <NexaButton size="sm" variant="outline" className="w-full">
-                  Master Catalog
-                </NexaButton>
-              </Link>
-            </div>
+            <Link href="/erp/admin/shop/services" className="w-full">
+              <NexaButton size="sm" variant="outline" className="w-full rounded-full font-bold">
+                Manage Service Schedule →
+              </NexaButton>
+            </Link>
           </NexaCard>
 
-          {/* PILLAR 3: VIRAL REFERRALS */}
-          <NexaCard variant="glass" padding="lg" className="border border-[var(--nexa-border)] flex flex-col justify-between space-y-6">
-            <div className="space-y-4">
+          {/* PILLAR 3: OMNICHANNEL ORDERS */}
+          <NexaCard variant="glass" padding="lg" className="border border-[var(--nexa-border)] flex flex-col justify-between space-y-5 rounded-3xl">
+            <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center">
-                    <Gift className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-bold text-[var(--nexa-text-primary)]">Viral Referrals</h2>
-                    <p className="text-[11px] text-[var(--nexa-text-muted)]">Affiliates & dual-sided rewards</p>
-                  </div>
+                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                  <ClipboardList className="w-5 h-5" />
                 </div>
-                <NexaBadge variant="green" size="sm">K-Factor 1.48</NexaBadge>
+                <NexaBadge variant="green" size="sm" className="rounded-full">Live Feed</NexaBadge>
               </div>
-
+              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">Orders & Fulfillment</h3>
               <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-                Dual-sided customer incentive campaigns (Give ₦5k / Get ₦5k), tiered promoter payouts, and viral attribution loops.
+                Stream orders from online storefront and walk-in counter, assign dispatch riders, and track delivery waybills.
               </p>
+            </div>
+            <Link href="/erp/admin/shop/orders" className="w-full">
+              <NexaButton size="sm" variant="outline" className="w-full rounded-full font-bold">
+                View Orders Stream →
+              </NexaButton>
+            </Link>
+          </NexaCard>
 
-              <div className="space-y-2 pt-2 border-t border-[var(--nexa-border)]">
-                <div className="text-[11px] font-bold uppercase tracking-wider text-[var(--nexa-text-muted)]">Top Promoters</div>
-                {topAffiliates.map((aff) => (
-                  <div key={aff.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-xs">
-                    <div>
-                      <div className="font-bold text-[var(--nexa-text-primary)]">{aff.name}</div>
-                      <div className="text-[10px] text-[var(--nexa-text-muted)]">{aff.referrals} referrals ({aff.conversions} paid)</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-purple-600">{aff.totalEarned}</div>
-                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-600 font-bold font-mono">{aff.tier}</span>
-                    </div>
-                  </div>
-                ))}
+          {/* PILLAR 4: POINT OF SALE (POS) */}
+          <NexaCard variant="glass" padding="lg" className="border border-[var(--nexa-border)] flex flex-col justify-between space-y-5 rounded-3xl">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center">
+                  <ShoppingCart className="w-5 h-5" />
+                </div>
+                <NexaBadge variant="brand" size="sm" className="rounded-full">Cashier Desk</NexaBadge>
               </div>
+              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">Point of Sale (POS)</h3>
+              <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
+                High-speed cashier counter, touchscreen checkout, cash/card/split payments, and thermal receipt printing.
+              </p>
             </div>
+            <Link href="/erp/admin/shop/pos" className="w-full">
+              <NexaButton size="sm" variant="primary" className="w-full bg-[#1A56DB] text-white rounded-full font-bold">
+                Launch POS Terminal →
+              </NexaButton>
+            </Link>
+          </NexaCard>
 
-            <div className="grid grid-cols-2 gap-2 pt-2">
-              <Link href="/erp/admin/shop/referrals" className="w-full">
-                <NexaButton size="sm" variant="outline" className="w-full">
-                  Referral Console
-                </NexaButton>
-              </Link>
-              <Link href="/erp/admin/shop/referrals/campaigns" className="w-full">
-                <NexaButton size="sm" variant="outline" className="w-full">
-                  Reward Rules
-                </NexaButton>
-              </Link>
+          {/* PILLAR 5: INVENTORY MANAGEMENT (IMS) */}
+          <NexaCard variant="glass" padding="lg" className="border border-[var(--nexa-border)] flex flex-col justify-between space-y-5 rounded-3xl">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                  <Boxes className="w-5 h-5" />
+                </div>
+                <NexaBadge variant="amber" size="sm" className="rounded-full">Multi-Depot</NexaBadge>
+              </div>
+              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">Inventory (IMS)</h3>
+              <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
+                Multi-depot stock tracking, inter-branch warehouse transfers, shrinkage adjustments, and reorder alerts.
+              </p>
             </div>
+            <Link href="/erp/admin/shop/inventory" className="w-full">
+              <NexaButton size="sm" variant="outline" className="w-full rounded-full font-bold">
+                Warehouse Stock →
+              </NexaButton>
+            </Link>
+          </NexaCard>
+
+          {/* PILLAR 6: MY STORE STUDIO */}
+          <NexaCard variant="glass" padding="lg" className="border border-[var(--nexa-border)] flex flex-col justify-between space-y-5 rounded-3xl">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center">
+                  <Palette className="w-5 h-5" />
+                </div>
+                <NexaBadge variant="purple" size="sm" className="rounded-full">Storefront Studio</NexaBadge>
+              </div>
+              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">My Store Studio</h3>
+              <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
+                Switch between the 10 Blueprint vertical templates, upload brand identity, and customize homepage sections.
+              </p>
+            </div>
+            <Link href="/erp/admin/shop/store" className="w-full">
+              <NexaButton size="sm" variant="outline" className="w-full rounded-full font-bold">
+                Customize Storefront →
+              </NexaButton>
+            </Link>
           </NexaCard>
         </div>
       </div>

@@ -11,6 +11,9 @@ import {
   Boxes,
   ShoppingCart,
   Gift,
+  Package,
+  ClipboardList,
+  Palette,
   Truck,
   Trophy,
   PieChart,
@@ -626,8 +629,12 @@ export function ErpAdminShell({
     if (pathname.startsWith("/erp/admin/shop")) {
       return [
         { label: "Shop Overview", href: "/erp/admin/shop", icon: <Store className="w-3.5 h-3.5" /> },
-        { label: "Point of Sale (POS)", href: "/erp/admin/shop/pos", icon: <ShoppingCart className="w-3.5 h-3.5" />, badge: "POS" },
+        { label: "Catalog & Listings", href: "/erp/admin/shop/catalog", icon: <Package className="w-3.5 h-3.5" />, badge: "Items" },
+        { label: "Services & Bookings", href: "/erp/admin/shop/services", icon: <Calendar className="w-3.5 h-3.5" />, badge: "Bookings" },
+        { label: "Orders & Requests", href: "/erp/admin/shop/orders", icon: <ClipboardList className="w-3.5 h-3.5" />, badge: "Orders" },
         { label: "Inventory (IMS)", href: "/erp/admin/shop/inventory", icon: <Boxes className="w-3.5 h-3.5" />, badge: "IMS" },
+        { label: "Point of Sale (POS)", href: "/erp/admin/shop/pos", icon: <ShoppingCart className="w-3.5 h-3.5" />, badge: "POS" },
+        { label: "My Store Studio", href: "/erp/admin/shop/store", icon: <Palette className="w-3.5 h-3.5" />, badge: "Studio" },
         { label: "Viral Referrals", href: "/erp/admin/shop/referrals", icon: <Gift className="w-3.5 h-3.5" />, badge: "Growth" },
       ];
     }
@@ -1208,8 +1215,12 @@ export function ErpAdminShell({
                     const isTabActive = (() => {
                       if (pathname === tab.href) return true;
                       if (tab.href === "/erp/admin/shop") return pathname === "/erp/admin/shop";
-                      if (tab.href === "/erp/admin/shop/pos") return pathname.startsWith("/erp/admin/shop/pos");
+                      if (tab.href === "/erp/admin/shop/catalog") return pathname.startsWith("/erp/admin/shop/catalog");
+                      if (tab.href === "/erp/admin/shop/services") return pathname.startsWith("/erp/admin/shop/services");
+                      if (tab.href === "/erp/admin/shop/orders") return pathname.startsWith("/erp/admin/shop/orders");
                       if (tab.href === "/erp/admin/shop/inventory") return pathname.startsWith("/erp/admin/shop/inventory");
+                      if (tab.href === "/erp/admin/shop/pos") return pathname.startsWith("/erp/admin/shop/pos");
+                      if (tab.href === "/erp/admin/shop/store") return pathname.startsWith("/erp/admin/shop/store");
                       if (tab.href === "/erp/admin/shop/referrals") return pathname.startsWith("/erp/admin/shop/referrals");
                       if (tab.href === "/erp/admin/users") return pathname === "/erp/admin/users";
                       if (tab.href === "/erp/admin/departments") return pathname.startsWith("/erp/admin/departments");

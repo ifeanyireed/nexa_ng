@@ -359,6 +359,11 @@ function UserManagementContent() {
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [editingStaffUser, setEditingStaffUser] = useState<ERPStaffUser | null>(null);
 
+  // Password Reset Modal State
+  const [resetModalUser, setResetModalUser] = useState<ERPStaffUser | null>(null);
+  const [resetPasswordValue, setResetPasswordValue] = useState("12345678");
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+
   const [formName, setFormName] = useState("");
   const [formEmail, setFormEmail] = useState("");
   const [formRole, setFormRole] = useState<RoleKey>("employee");
@@ -632,6 +637,46 @@ function UserManagementContent() {
       showToast("Error deleting user from database");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleOpenResetModal = (staffUser: ERPStaffUser) => {
+    setResetModalUser(staffUser);
+    setResetPasswordValue("12345678");
+  };
+
+  const handleConfirmResetPassword = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!resetModalUser) return;
+
+    try {
+      setIsResettingPassword(true);
+      const res = await fetch("/api/erp/users/reset-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(activeTenant?.slug ? { "x-tenant-slug": activeTenant.slug } : {}),
+        },
+        body: JSON.stringify({
+          userId: resetModalUser.id,
+          email: resetModalUser.email,
+          password: resetPasswordValue || "12345678",
+          tenantSlug: activeTenant?.slug,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to reset password");
+      }
+
+      showToast(`Password for ${resetModalUser.name} reset to "${resetPasswordValue || "12345678"}"!`);
+      setResetModalUser(null);
+    } catch (err: any) {
+      console.error("Failed to reset user password:", err);
+      showToast(err.message || "Failed to reset password");
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -947,6 +992,16 @@ function UserManagementContent() {
                             <NexaButton
                               size="sm"
                               variant="outline"
+                              className="rounded-full text-xs h-7 text-amber-600 hover:text-amber-700 hover:border-amber-400 dark:text-amber-400 font-semibold"
+                              onClick={() => handleOpenResetModal(u)}
+                              title="Reset user password in database"
+                              leftIcon={<Key className="w-3 h-3 text-amber-500" />}
+                            >
+                              Reset Password
+                            </NexaButton>
+                            <NexaButton
+                              size="sm"
+                              variant="outline"
                               className="rounded-full text-xs h-7"
                               onClick={() => handleOpenEditModal(u)}
                             >
@@ -1218,6 +1273,106 @@ function UserManagementContent() {
                   className="bg-[#1A56DB] text-white rounded-full font-bold px-4 shadow-sm"
                 >
                   {isSaving ? "Saving to Database..." : editingStaffUser ? "Save Changes" : "Save & Onboard Staff"}
+                </NexaButton>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* RESET PASSWORD MODAL */}
+      {resetModalUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-sans">
+          <div className="w-full max-w-md bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-3xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                  <Key className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-base font-black text-[var(--nexa-text-primary)]">
+                    Reset User Password
+                  </h2>
+                  <p className="text-xs text-[var(--nexa-text-secondary)]">
+                    Update credentials directly in database
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setResetModalUser(null)}
+                className="p-1.5 rounded-full hover:bg-[var(--nexa-bg-base)] text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center gap-3">
+              <img
+                src={resetModalUser.avatar}
+                alt={resetModalUser.name}
+                className="w-10 h-10 rounded-full object-cover border border-[var(--nexa-border)]"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-xs truncate text-[var(--nexa-text-primary)]">
+                  {resetModalUser.name}
+                </p>
+                <p className="text-[11px] text-[var(--nexa-text-muted)] font-mono truncate">
+                  {resetModalUser.email}
+                </p>
+                <p className="text-[10px] text-[var(--nexa-text-secondary)] mt-0.5">
+                  {resetModalUser.designation} • {resetModalUser.department}
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleConfirmResetPassword} className="space-y-3.5">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                    New Password
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setResetPasswordValue("12345678")}
+                    className="text-[10px] font-bold text-[#1A56DB] hover:underline cursor-pointer"
+                  >
+                    Use Default (12345678)
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    value={resetPasswordValue}
+                    onChange={(e) => setResetPasswordValue(e.target.value)}
+                    placeholder="Enter new password (min. 6 chars)"
+                    className="w-full px-3.5 py-2.5 text-xs font-mono font-semibold rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
+                  />
+                </div>
+                <p className="text-[10px] text-[var(--nexa-text-muted)]">
+                  The password will be hashed with bcrypt and updated in the database.
+                </p>
+              </div>
+
+              <div className="pt-3 border-t border-[var(--nexa-border)] flex items-center justify-end gap-2">
+                <NexaButton
+                  size="sm"
+                  variant="outline"
+                  type="button"
+                  onClick={() => setResetModalUser(null)}
+                  className="rounded-full px-4 font-bold"
+                >
+                  Cancel
+                </NexaButton>
+                <NexaButton
+                  size="sm"
+                  variant="primary"
+                  type="submit"
+                  disabled={isResettingPassword}
+                  className="bg-amber-600 hover:bg-amber-700 text-white rounded-full font-bold px-4 shadow-sm"
+                  leftIcon={<Key className="w-3.5 h-3.5" />}
+                >
+                  {isResettingPassword ? "Resetting Password..." : "Reset Password"}
                 </NexaButton>
               </div>
             </form>

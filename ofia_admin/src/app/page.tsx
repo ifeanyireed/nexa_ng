@@ -13,6 +13,7 @@ import {
   Cpu,
   CreditCard,
   Database,
+  Car,
   DollarSign,
   Globe,
   Layers,
@@ -87,6 +88,13 @@ export default function MasterOverviewPage() {
       icon: <Building2 className="w-6 h-6" />,
       desc: "5 Orgs & Workspaces",
       href: "/tenants",
+    },
+    {
+      label: "Fleet Manager",
+      icon: <Car className="w-6 h-6 text-orange-500" />,
+      desc: "Global Routes & Vehicles",
+      href: "/fleet",
+
     },
     {
       label: "Email Infrastructure",

@@ -16,6 +16,8 @@ export interface TenantOrg {
   monthlyAiSpendUSD: number;
   integrationHealth: "Healthy" | "Degraded" | "Error";
   erpModules?: Record<string, boolean>;
+  vertical?: string;
+  shopSubModules?: Record<string, boolean>;
   logo?: string;
   loginImage?: string;
   heroTitle?: string;
@@ -32,6 +34,48 @@ export interface ErpModuleItem {
   color: string;
   badge?: string;
 }
+
+export interface ShopSubModuleItem {
+  key: string;
+  label: string;
+  shortLabel: string;
+  description: string;
+  iconName: string;
+  path: string;
+  badge?: string;
+}
+
+export const SHOP_SUB_MODULES: ShopSubModuleItem[] = [
+  { key: "pos", label: "Point of Sale (POS)", shortLabel: "POS", description: "Cashier counters, barcode scanning & receipt printing", iconName: "ShoppingCart", path: "/erp/admin/shop/pos", badge: "POS" },
+  { key: "inventory", label: "Multi-Warehouse Inventory (IMS)", shortLabel: "IMS", description: "Warehouse stocks, batch serials & reorder triggers", iconName: "Boxes", path: "/erp/admin/shop/inventory", badge: "IMS" },
+  { key: "catalog", label: "Catalog & Listings", shortLabel: "Catalog", description: "Product variants, dynamic attribute schemas & pricing tiers", iconName: "Package", path: "/erp/admin/shop/catalog", badge: "Items" },
+  { key: "services", label: "Services & Bookings", shortLabel: "Services", description: "Appointment slots, specialist provider allocation & schedules", iconName: "Calendar", path: "/erp/admin/shop/services", badge: "Bookings" },
+  { key: "orders", label: "Omnichannel Orders", shortLabel: "Orders", description: "Cross-channel dispatch, payment capture & fulfillment states", iconName: "ClipboardList", path: "/erp/admin/shop/orders", badge: "Orders" },
+  { key: "store", label: "My Store Studio", shortLabel: "Studio", description: "Visual storefront theme customization, banner & section layouts", iconName: "Palette", path: "/erp/admin/shop/store", badge: "Studio" },
+  { key: "referrals", label: "Viral Referrals", shortLabel: "Referrals", description: "Customer affiliate referral codes, commissions & leaderboard", iconName: "Gift", path: "/erp/admin/shop/referrals", badge: "Growth" },
+];
+
+export interface VerticalArchetype {
+  id: string;
+  name: string;
+  badge: string;
+  tagline: string;
+  icon: string;
+  storefrontPath: string;
+}
+
+export const TENANT_VERTICAL_ARCHETYPES: VerticalArchetype[] = [
+  { id: "cars", name: "Cars & Automotive", badge: "Auto & Mobility", tagline: "Vehicle galleries, VIN/specs, inspection & test drives", icon: "Car", storefrontPath: "/cars" },
+  { id: "food", name: "Food & Groceries", badge: "Dining & Pantry", tagline: "Menus, meal portions, kitchen prep time & catering", icon: "Utensils", storefrontPath: "/food" },
+  { id: "fashion", name: "Fashion & Apparel", badge: "Apparel & Style", tagline: "Lookbooks, size/color matrices & seasonal drops", icon: "Shirt", storefrontPath: "/fashion" },
+  { id: "pharmacy", name: "Health & Pharmacy", badge: "Pharma & Wellness", tagline: "Dosages, Rx prescription uploads & pharmacist verify", icon: "Activity", storefrontPath: "/pharmacy" },
+  { id: "hardware", name: "Hardware, Energy & Industrial", badge: "Energy & Industrial", tagline: "Solar inverters, kVA/watt sizing & contractor RFQ", icon: "Zap", storefrontPath: "/hardware" },
+  { id: "property", name: "Property Rentals", badge: "Real Estate & Stays", tagline: "Apartments, short-lets, viewings & amenities", icon: "Building", storefrontPath: "/property" },
+  { id: "gadgets", name: "Gadgets & Tech", badge: "Tech & Electronics", tagline: "Specs, warranty, device setup & repair bookings", icon: "Laptop", storefrontPath: "/gadgets" },
+  { id: "beauty", name: "Beauty & Personal Care", badge: "Beauty & Wellness", tagline: "Product collections, stylist salon & spa appointments", icon: "Sparkles", storefrontPath: "/beauty" },
+  { id: "home-living", name: "Home & Living", badge: "Home & Decor", tagline: "Furniture, dimensions/materials & room collections", icon: "Home", storefrontPath: "/home-living" },
+  { id: "retail", name: "General Retail & Specialty", badge: "Retail & Goods", tagline: "Multi-department catalog, dynamic variants & POS", icon: "ShoppingBag", storefrontPath: "/retail" },
+];
 
 export const SUPER_ADMIN_ERP_MODULES: ErpModuleItem[] = [
   { key: "ai", label: "Ofia AI Swarm", category: "Core", description: "15 autonomous specialist AI agents for marketing, outreach, and operations.", iconName: "Bot", color: "#0069FF", badge: "15 AI" },
@@ -168,6 +212,16 @@ export const INITIAL_TENANTS: TenantOrg[] = [
       hr: true,
       users: true,
     },
+    vertical: "cars",
+    shopSubModules: {
+      pos: true,
+      inventory: true,
+      catalog: true,
+      services: true,
+      orders: true,
+      store: true,
+      referrals: true,
+    },
     createdAt: "2026-06-15",
   },
   {
@@ -198,6 +252,16 @@ export const INITIAL_TENANTS: TenantOrg[] = [
       accounting: true,
       hr: true,
       users: true,
+    },
+    vertical: "gadgets",
+    shopSubModules: {
+      pos: true,
+      inventory: true,
+      catalog: true,
+      services: true,
+      orders: true,
+      store: true,
+      referrals: true,
     },
     createdAt: "2026-05-01",
   },

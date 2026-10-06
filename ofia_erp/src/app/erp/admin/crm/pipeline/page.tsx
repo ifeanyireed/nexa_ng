@@ -150,17 +150,17 @@ export default function DealsPipelinePage() {
         </div>
 
         {/* KANBAN BOARD COLUMNS */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 overflow-x-auto pb-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-5 overflow-x-auto pb-6">
           {STAGES.map((st) => {
             const stageDeals = filteredDeals.filter((d) => d.stage === st.key);
             return (
               <div
                 key={st.key}
-                className="bg-[var(--nexa-bg-surface)]/60 rounded-2xl p-3 border border-[var(--nexa-border)] flex flex-col min-w-[240px]"
+                className="bg-[var(--nexa-bg-surface)]/60 rounded-2xl p-4 border border-[var(--nexa-border)] flex flex-col min-w-[260px]"
               >
                 <div className="flex items-center justify-between pb-3 border-b border-[var(--nexa-border)] mb-3">
                   <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${st.color.split(" ")[1].replace("text-", "bg-")}`} />
+                    <span className={`w-2.5 h-2.5 rounded-full ${st.color.split(" ")[1].replace("text-", "bg-")}`} />
                     <h4 className="text-xs font-extrabold text-[var(--nexa-text-primary)]">{st.label}</h4>
                   </div>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--nexa-bg-base)] text-[var(--nexa-text-muted)] border border-[var(--nexa-border)]">
@@ -168,11 +168,11 @@ export default function DealsPipelinePage() {
                   </span>
                 </div>
 
-                <div className="space-y-3 flex-1 overflow-y-auto max-h-[calc(100vh-320px)]">
+                <div className="space-y-4 p-1.5 flex-1 overflow-y-auto max-h-[calc(100vh-320px)]">
                   {stageDeals.map((deal) => (
                     <NexaCard
                       key={deal.id}
-                      className="p-3.5 hover:border-[#1A56DB] transition-all cursor-pointer group shadow-xs space-y-2.5"
+                      className="p-4 hover:border-[#1A56DB] transition-all cursor-pointer group shadow-xs space-y-3"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <h5 className="text-xs font-bold text-[var(--nexa-text-primary)] line-clamp-2">
@@ -180,20 +180,20 @@ export default function DealsPipelinePage() {
                         </h5>
                       </div>
 
-                      <div className="space-y-1 text-[11px] text-[var(--nexa-text-muted)]">
+                      <div className="space-y-1.5 text-[11px] text-[var(--nexa-text-muted)]">
                         <div className="flex items-center gap-1.5 font-medium truncate">
-                          <Building2 className="w-3 h-3 text-[#1A56DB]" />
+                          <Building2 className="w-3.5 h-3.5 text-[#1A56DB]" />
                           {deal.company}
                         </div>
                         <div className="text-[10px] truncate">{deal.contactName}</div>
                       </div>
 
-                      <div className="pt-2 border-t border-[var(--nexa-border)] flex items-center justify-between">
+                      <div className="pt-2.5 border-t border-[var(--nexa-border)] flex items-center justify-between">
                         <span className="text-xs font-extrabold text-[#1A56DB]">{deal.value}</span>
                         <select
                           value={deal.stage}
                           onChange={(e) => handleStageChange(deal.id, e.target.value as any)}
-                          className="text-[10px] bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-md px-1.5 py-0.5 font-bold cursor-pointer"
+                          className="text-[10px] bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-md px-2 py-1 font-bold cursor-pointer"
                         >
                           <option value="LEAD">LEAD</option>
                           <option value="QUALIFIED">QUALIFIED</option>

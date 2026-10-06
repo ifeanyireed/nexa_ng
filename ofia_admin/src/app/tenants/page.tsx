@@ -68,6 +68,7 @@ import {
   Image as ImageIcon,
   Loader2,
   Trash2,
+  Car,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -103,6 +104,8 @@ const getModuleIcon = (iconName: string) => {
       return <ShieldCheck className="w-4 h-4" />;
     case "Building2":
       return <Building2 className="w-4 h-4" />;
+    case "Car":
+      return <Car className="w-4 h-4" />;
     case "Layers":
       return <Layers className="w-4 h-4" />;
     default:

@@ -101,6 +101,8 @@ const getModuleIcon = (iconName: string) => {
       return <Users className="w-4 h-4" />;
     case "ShieldCheck":
       return <ShieldCheck className="w-4 h-4" />;
+    case "Building2":
+      return <Building2 className="w-4 h-4" />;
     case "Layers":
       return <Layers className="w-4 h-4" />;
     default:
@@ -138,7 +140,8 @@ function TenantManagementContent() {
     logistics: false,
     accounting: true,
     hr: true,
-    access_control: true,
+    users: true,
+    departments: true,
   });
 
   // Quota Override Form state
@@ -340,7 +343,7 @@ function TenantManagementContent() {
             ai: false,
             crm: false,
             users: false,
-            access_control: false,
+            departments: false,
             marketplace: false,
             shop: false,
             inventory: false,
@@ -353,9 +356,15 @@ function TenantManagementContent() {
             md: false,
           };
         } else {
-          matrixPayload[role] = { ...updatedModules };
+          matrixPayload[role] = {
+            ...updatedModules,
+            departments: updatedModules.users ?? true,
+          };
           if (!newStatus) {
             matrixPayload[role][moduleKey] = false;
+            if (moduleKey === "users") {
+              matrixPayload[role]["departments"] = false;
+            }
           }
         }
       });
@@ -398,7 +407,7 @@ function TenantManagementContent() {
             ai: false,
             crm: false,
             users: false,
-            access_control: false,
+            departments: false,
             marketplace: false,
             shop: false,
             inventory: false,
@@ -411,7 +420,10 @@ function TenantManagementContent() {
             md: false,
           };
         } else {
-          matrixPayload[role] = { ...updatedModules };
+          matrixPayload[role] = {
+            ...updatedModules,
+            departments: enableAll,
+          };
         }
       });
       await USER_API.saveTenantRBAC(tenant.slug, matrixPayload);
@@ -683,7 +695,10 @@ function TenantManagementContent() {
       const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant"];
       const matrixPayload: Record<string, Record<string, boolean>> = {};
       defaultRoleKeys.forEach((role) => {
-        matrixPayload[role] = { ...newErpModules };
+        matrixPayload[role] = {
+          ...newErpModules,
+          departments: newErpModules.users ?? true,
+        };
       });
       await USER_API.saveTenantRBAC(slug, matrixPayload).catch(() => null);
 
@@ -1132,7 +1147,7 @@ function TenantManagementContent() {
                           onClick={() => handleBulkToggleTenant(focusedTenant.id, true)}
                           className="px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 cursor-pointer transition-colors"
                         >
-                          Grant All 9 Modules
+                          Grant All {SUPER_ADMIN_ERP_MODULES.length} Modules
                         </button>
                         <button
                           onClick={() => handleBulkToggleTenant(focusedTenant.id, false)}

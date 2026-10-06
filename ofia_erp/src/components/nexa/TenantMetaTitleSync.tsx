@@ -79,8 +79,6 @@ export function TenantMetaTitleSync() {
         pageTitle = "Shop & Retail";
       } else if (pathname.includes("/admin/logistics")) {
         pageTitle = "Logistics & Fleet Dispatch";
-      } else if (pathname.includes("/admin/access-control")) {
-        pageTitle = "Access Control & RBAC";
       } else if (pathname.includes("/admin/users")) {
         pageTitle = "Staff Directory & Roles";
       } else if (pathname.includes("/admin/ai")) {

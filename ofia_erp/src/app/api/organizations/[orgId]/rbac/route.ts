@@ -17,7 +17,6 @@ const DEFAULT_ERP_MODULES = [
   "accounting",
   "hr",
   "users",
-  "access_control",
 ];
 
 const DEFAULT_ROLES = [

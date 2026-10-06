@@ -97,7 +97,7 @@ export interface ErpAdminShellProps {
   title?: string;
   subtitle?: string;
   action?: React.ReactNode;
-  activeModule?: "mission" | "ai" | "crm" | "marketplace" | "shop" | "inventory" | "pos" | "referrals" | "logistics" | "quests" | "finance" | "hr" | "md" | "employee" | "access_control" | "users" | "departments";
+  activeModule?: "mission" | "ai" | "crm" | "marketplace" | "shop" | "inventory" | "pos" | "referrals" | "logistics" | "quests" | "finance" | "hr" | "md" | "employee" | "users" | "departments";
   subTabs?: SubNavItem[];
   isLoading?: boolean;
 }
@@ -450,9 +450,6 @@ export function ErpAdminShell({
           window.location.href = "/erp/manager";
           return;
         }
-      } else if (pathname === "/erp/admin/access-control") {
-        window.location.href = "/erp/admin";
-        return;
       } else if (resolvedRole !== "admin" && pathname === "/erp/admin") {
         if (resolvedRole === "md") {
           window.location.href = "/erp/md";
@@ -519,7 +516,6 @@ export function ErpAdminShell({
         else if (pathname.includes("/admin/shop/referrals")) pageHeading = "Referrals & Rewards";
         else if (pathname.includes("/admin/shop")) pageHeading = "Shop & Retail";
         else if (pathname.includes("/admin/logistics")) pageHeading = "Logistics & Fleet Dispatch";
-        else if (pathname.includes("/admin/access-control")) pageHeading = "Access Control & RBAC";
         else if (pathname.includes("/admin/users")) pageHeading = "Staff Directory & Roles";
         else if (pathname.includes("/admin/ai")) pageHeading = "AI Swarm & Operations";
         else if (pathname.includes("/admin/marketplace")) pageHeading = "Marketplace & Compass";
@@ -575,7 +571,7 @@ export function ErpAdminShell({
     { label: "Ofia Logistics Manager", icon: <Truck className="w-6 h-6" />, href: "/erp/admin/logistics", key: "logistics", section: "Operations" },
 
     // 2. OFIA ENTERPRISE SUITE
-    { label: "CRM and Sales", icon: <BarChart3 className="w-6 h-6" />, href: "/erp/marketer", badge: "Sales", key: "crm", section: "Ofia Enterprise Suite" },
+    { label: "CRM & Marketing", icon: <BarChart3 className="w-6 h-6" />, href: "/erp/admin/crm", badge: "CRM", key: "crm", section: "Ofia Enterprise Suite" },
     { label: "Accounting & Ledgers", icon: <Layers className="w-6 h-6" />, href: "/erp/accountant", badge: "GL", key: "accounting", section: "Ofia Enterprise Suite" },
     { label: "HR & Appraisals", icon: <Users className="w-6 h-6" />, href: "/erp/hr", key: "hr", section: "Ofia Enterprise Suite" },
     { label: "User Management", icon: <UserCheck className="w-6 h-6" />, href: "/erp/admin/users", badge: "Staff", key: "users", section: "Ofia Enterprise Suite" },
@@ -598,13 +594,15 @@ export function ErpAdminShell({
       ];
     }
 
-    if (pathname.startsWith("/erp/marketer")) {
+    if (pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer")) {
       return [
-        { label: "CRM Overview", href: "/erp/marketer", icon: <BarChart3 className="w-3.5 h-3.5" /> },
-        { label: "Deals Pipeline", href: "/erp/marketer/pipeline", icon: <TrendingUp className="w-3.5 h-3.5" /> },
-        { label: "Leads Directory", href: "/erp/marketer/leads", icon: <Users className="w-3.5 h-3.5" /> },
-        { label: "Accounts & Clients", href: "/erp/marketer/accounts", icon: <Building2 className="w-3.5 h-3.5" /> },
-        { label: "Sales Activities", href: "/erp/marketer/activities", icon: <Calendar className="w-3.5 h-3.5" /> },
+        { label: "Command Center", href: "/erp/admin/crm", icon: <BarChart3 className="w-3.5 h-3.5" /> },
+        { label: "Deals Pipeline", href: "/erp/admin/crm/pipeline", icon: <TrendingUp className="w-3.5 h-3.5" /> },
+        { label: "Leads Directory", href: "/erp/admin/crm/leads", icon: <Users className="w-3.5 h-3.5" /> },
+        { label: "Contacts & Accounts", href: "/erp/admin/crm/contacts", icon: <Building2 className="w-3.5 h-3.5" /> },
+        { label: "Email Blasts", href: "/erp/admin/crm/marketing", icon: <Send className="w-3.5 h-3.5" />, badge: "Email" },
+        { label: "Audience Lists", href: "/erp/admin/crm/lists", icon: <Users className="w-3.5 h-3.5" /> },
+        { label: "Sales Activities", href: "/erp/admin/crm/activities", icon: <Calendar className="w-3.5 h-3.5" /> },
       ];
     }
 
@@ -612,7 +610,6 @@ export function ErpAdminShell({
       return [
         { label: "Command Center", href: "/erp/admin/ai", icon: <Bot className="w-3.5 h-3.5" /> },
         { label: "Campaigns", href: "/erp/admin/ai/campaigns", icon: <Send className="w-3.5 h-3.5" /> },
-        { label: "Leads Pipeline", href: "/erp/admin/ai/leads", icon: <Users className="w-3.5 h-3.5" /> },
         { label: "AI Studio", href: "/erp/admin/ai/studio", icon: <Zap className="w-3.5 h-3.5" /> },
         { label: "Strategy", href: "/erp/admin/ai/strategy", icon: <TrendingUp className="w-3.5 h-3.5" /> },
         { label: "Knowledge Base", href: "/erp/admin/ai/knowledge", icon: <Database className="w-3.5 h-3.5" /> },
@@ -629,20 +626,9 @@ export function ErpAdminShell({
     if (pathname.startsWith("/erp/admin/shop")) {
       return [
         { label: "Shop Overview", href: "/erp/admin/shop", icon: <Store className="w-3.5 h-3.5" /> },
-        { label: "Point of Sale (POS)", href: "/erp/admin/shop/pos", icon: <ShoppingCart className="w-3.5 h-3.5" /> },
-        { label: "Shift Sessions", href: "/erp/admin/shop/pos/sessions", icon: <Clock className="w-3.5 h-3.5" /> },
-        { label: "Digital Receipts", href: "/erp/admin/shop/pos/receipts", icon: <Printer className="w-3.5 h-3.5" /> },
-        { label: "Hardware Terminals", href: "/erp/admin/shop/pos/terminals", icon: <Layers className="w-3.5 h-3.5" /> },
-        { label: "Stock Overview", href: "/erp/admin/shop/inventory", icon: <Boxes className="w-3.5 h-3.5" /> },
-        { label: "Master SKUs", href: "/erp/admin/shop/inventory/items", icon: <Tag className="w-3.5 h-3.5" /> },
-        { label: "Warehouses", href: "/erp/admin/shop/inventory/warehouses", icon: <Warehouse className="w-3.5 h-3.5" /> },
-        { label: "Suppliers & Vendors", href: "/erp/admin/shop/inventory/suppliers", icon: <Building2 className="w-3.5 h-3.5" /> },
-        { label: "Branch Transfers", href: "/erp/admin/shop/inventory/transfers", icon: <Truck className="w-3.5 h-3.5" /> },
-        { label: "Stock Adjustments", href: "/erp/admin/shop/inventory/adjustments", icon: <Sliders className="w-3.5 h-3.5" /> },
-        { label: "Viral Referrals", href: "/erp/admin/shop/referrals", icon: <Gift className="w-3.5 h-3.5" /> },
-        { label: "Affiliates", href: "/erp/admin/shop/referrals/affiliates", icon: <Users className="w-3.5 h-3.5" /> },
-        { label: "Campaign Rules", href: "/erp/admin/shop/referrals/campaigns", icon: <Zap className="w-3.5 h-3.5" /> },
-        { label: "Payout Batches", href: "/erp/admin/shop/referrals/payouts", icon: <DollarSign className="w-3.5 h-3.5" /> },
+        { label: "Point of Sale (POS)", href: "/erp/admin/shop/pos", icon: <ShoppingCart className="w-3.5 h-3.5" />, badge: "POS" },
+        { label: "Inventory (IMS)", href: "/erp/admin/shop/inventory", icon: <Boxes className="w-3.5 h-3.5" />, badge: "IMS" },
+        { label: "Viral Referrals", href: "/erp/admin/shop/referrals", icon: <Gift className="w-3.5 h-3.5" />, badge: "Growth" },
       ];
     }
 
@@ -754,6 +740,11 @@ export function ErpAdminShell({
 
     const isProvisioned = (key: string) => {
       if (key === "overview" || key === "employee") return true;
+      if (key === "departments") {
+        const isAdminAllowed = permissionMatrix.admin?.users !== false;
+        const isTpAllowed = (permissionMatrix as any).tenant_provision?.users !== false;
+        return isAdminAllowed && isTpAllowed;
+      }
       const isAdminAllowed = permissionMatrix.admin?.[key] !== false;
       const isTpAllowed = (permissionMatrix as any).tenant_provision?.[key] !== false;
       return isAdminAllowed && isTpAllowed;
@@ -1214,25 +1205,29 @@ export function ErpAdminShell({
               {activeSubTabs.length > 0 && (
                 <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide border-b border-nexa-border pt-1">
                   {activeSubTabs.map((tab, idx) => {
-                    const isTabActive =
-                      pathname === tab.href ||
-                      (tab.href !== "/erp/admin" &&
-                        tab.href !== "/erp/admin/access-control" &&
-                        tab.href !== "/erp/admin/ai" &&
-                        tab.href !== "/erp/marketer" &&
-                        tab.href !== "/erp/admin/shop" &&
-                        tab.href !== "/erp/admin/shop/inventory" &&
-                        tab.href !== "/erp/admin/shop/pos" &&
-                        tab.href !== "/erp/admin/shop/referrals" &&
-                        tab.href !== "/erp/admin/logistics" &&
-                        tab.href !== "/erp/admin/marketplace" &&
-                        tab.href !== "/erp/accountant" &&
-                        tab.href !== "/erp/hr" &&
-                        tab.href !== "/erp/employee" &&
-                        tab.href !== "/erp/manager" &&
-                        tab.href !== "/erp/admin/users" &&
-                        tab.href !== "/erp/admin/departments" &&
-                        pathname.startsWith(tab.href));
+                    const isTabActive = (() => {
+                      if (pathname === tab.href) return true;
+                      if (tab.href === "/erp/admin/shop") return pathname === "/erp/admin/shop";
+                      if (tab.href === "/erp/admin/shop/pos") return pathname.startsWith("/erp/admin/shop/pos");
+                      if (tab.href === "/erp/admin/shop/inventory") return pathname.startsWith("/erp/admin/shop/inventory");
+                      if (tab.href === "/erp/admin/shop/referrals") return pathname.startsWith("/erp/admin/shop/referrals");
+                      if (tab.href === "/erp/admin/users") return pathname === "/erp/admin/users";
+                      if (tab.href === "/erp/admin/departments") return pathname.startsWith("/erp/admin/departments");
+                      if (
+                        tab.href === "/erp/admin" ||
+                        tab.href === "/erp/admin/ai" ||
+                        tab.href === "/erp/marketer" ||
+                        tab.href === "/erp/admin/logistics" ||
+                        tab.href === "/erp/admin/marketplace" ||
+                        tab.href === "/erp/accountant" ||
+                        tab.href === "/erp/hr" ||
+                        tab.href === "/erp/employee" ||
+                        tab.href === "/erp/manager"
+                      ) {
+                        return false;
+                      }
+                      return pathname.startsWith(tab.href);
+                    })();
                     return (
                       <Link href={tab.href} key={idx} className="shrink-0">
                         <button

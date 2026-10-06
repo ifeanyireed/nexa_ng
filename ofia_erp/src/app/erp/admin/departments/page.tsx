@@ -402,7 +402,7 @@ function ERPDepartmentsContent() {
     <ErpAdminShell
       title="Departmental Hierarchy & Cost Centers"
       subtitle={`Corporate organizational divisions, budgetary cost centers, leadership lines, and staff headcount for ${displayTenantName}.`}
-      activeModule="departments"
+      activeModule="users"
       action={
         <div className="flex items-center gap-2.5 flex-wrap">
           <Link href="/erp/hr/reports">

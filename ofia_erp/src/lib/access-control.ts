@@ -133,11 +133,11 @@ export const ERP_MODULES: ErpModuleDef[] = [
   },
   {
     key: "crm",
-    label: "CRM and Sales",
+    label: "CRM & Email Marketing",
     category: "Ofia Enterprise Suite",
-    description: "B2B sales pipelines, customer deals, account contacts, and revenue tracking.",
-    href: "/erp/marketer",
-    badge: "Sales",
+    description: "B2B sales pipelines, contact lists, scheduled email blasts, and lead scoring.",
+    href: "/erp/admin/crm",
+    badge: "CRM",
   },
   {
     key: "marketplace",
@@ -180,17 +180,9 @@ export const ERP_MODULES: ErpModuleDef[] = [
     key: "users",
     label: "User Management",
     category: "Ofia Enterprise Suite",
-    description: "Corporate staff directory, 10-tier role governance, designations, and supervisory reporting.",
+    description: "Corporate staff directory, departmental hierarchy, 10-tier role governance, and mass messaging.",
     href: "/erp/admin/users",
     badge: "Staff",
-  },
-  {
-    key: "departments",
-    label: "Departments",
-    category: "Ofia Enterprise Suite",
-    description: "Corporate organizational divisions, budgetary cost centers, leadership lines, and staff headcount.",
-    href: "/erp/admin/departments",
-    badge: "Org",
   },
   {
     key: "employee",
@@ -224,7 +216,6 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     crm: true,
     users: true,
     departments: true,
-    access_control: true,
     marketplace: true,
     shop: true,
     inventory: true,
@@ -244,7 +235,6 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     crm: true,
     users: true,
     departments: true,
-    access_control: false,
     marketplace: true,
     shop: true,
     inventory: true,
@@ -264,7 +254,6 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     crm: false,
     users: true,
     departments: true,
-    access_control: false,
     marketplace: false,
     shop: false,
     inventory: false,
@@ -284,7 +273,6 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     crm: false,
     users: false,
     departments: false,
-    access_control: false,
     marketplace: false,
     shop: true,
     inventory: true,
@@ -304,7 +292,6 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     crm: true,
     users: false,
     departments: false,
-    access_control: false,
     marketplace: true,
     shop: true,
     inventory: false,
@@ -324,7 +311,6 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     crm: true,
     users: false,
     departments: false,
-    access_control: false,
     marketplace: false,
     shop: true,
     inventory: true,
@@ -344,7 +330,6 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     crm: false,
     users: false,
     departments: false,
-    access_control: false,
     marketplace: false,
     shop: false,
     inventory: false,
@@ -364,7 +349,6 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     crm: false,
     users: false,
     departments: false,
-    access_control: false,
     marketplace: false,
     shop: true,
     inventory: true,
@@ -384,7 +368,6 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     crm: false,
     users: false,
     departments: false,
-    access_control: false,
     marketplace: false,
     shop: true,
     inventory: true,
@@ -404,7 +387,6 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     crm: false,
     users: false,
     departments: false,
-    access_control: false,
     marketplace: false,
     shop: false,
     inventory: false,
@@ -463,14 +445,12 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
         const isAllowed = tp[mod.key] !== false && ad[mod.key] !== false;
         merged.admin[mod.key] = isAllowed;
       }
-      merged.admin.access_control = true;
 
       // 2. For other roles, a module is enabled ONLY IF:
       // a) Super Admin allowed the module for the tenant in the database, AND
       // b) Tenant Admin granted it to that role
       for (const role of ERP_ROLES) {
         if (role.key !== "admin") {
-          merged[role.key].access_control = false;
           for (const mod of ERP_MODULES) {
             const isTenantAllowed = merged.admin[mod.key] !== false;
             const isRoleGranted = merged[role.key][mod.key] ?? DEFAULT_PERMISSION_MATRIX[role.key]?.[mod.key] ?? false;
@@ -518,9 +498,6 @@ export function isModuleEnabledForRole(
   role: string,
   moduleKey: string
 ): boolean {
-  if (moduleKey === "access_control") {
-    return role === "admin";
-  }
   const matrix = getTenantPermissionMatrix(tenantId);
   const roleKey = role as RoleKey;
 
@@ -617,7 +594,11 @@ export function useTenantProvisioning() {
     (moduleKey: string): boolean => {
       if (isLoading) return false;
       if (moduleKey === "mission" || moduleKey === "overview") return true;
-      if (moduleKey === "access_control") return true;
+      if (moduleKey === "departments") {
+        const isAdminAllowed = matrix.admin?.users !== false;
+        const isTenantProvisionAllowed = (matrix as any).tenant_provision?.users !== false;
+        return isAdminAllowed && isTenantProvisionAllowed;
+      }
       const isAdminAllowed = matrix.admin?.[moduleKey] !== false;
       const isTenantProvisionAllowed = (matrix as any).tenant_provision?.[moduleKey] !== false;
       return isAdminAllowed && isTenantProvisionAllowed;

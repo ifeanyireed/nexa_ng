@@ -92,11 +92,6 @@ export function RoleGuard({
       return;
     }
 
-    if (pathname.startsWith("/erp/admin/access-control")) {
-      router.replace("/erp/admin");
-      return;
-    }
-
     // 3. Automatic Route Role Rules (if allowedRoles not explicitly provided)
     let effectiveAllowedRoles = allowedRoles;
     if (!effectiveAllowedRoles) {

@@ -35,14 +35,14 @@ export interface ErpModuleItem {
 
 export const SUPER_ADMIN_ERP_MODULES: ErpModuleItem[] = [
   { key: "ai", label: "Ofia AI Swarm", category: "Core", description: "15 autonomous specialist AI agents for marketing, outreach, and operations.", iconName: "Bot", color: "#0069FF", badge: "15 AI" },
-  { key: "crm", label: "CRM and Sales", category: "Sales & Commerce", description: "B2B sales pipelines, customer deals, account contacts, and revenue tracking.", iconName: "BarChart3", color: "#EC4899", badge: "Sales" },
+  { key: "crm", label: "CRM & Email Marketing", category: "Sales & Commerce", description: "B2B sales pipelines, contact lists, scheduled email blasts, and lead scoring.", iconName: "BarChart3", color: "#EC4899", badge: "CRM" },
   { key: "marketplace", label: "Ofia Compass Manager", category: "Sales & Commerce", description: "Public storefront, listing catalog, and customer direct bookings.", iconName: "ShoppingBag", color: "#0E9F6E" },
   { key: "shop", label: "Ofia Shop Manager", category: "Sales & Commerce", description: "Multi-warehouse inventory (IMS), POS cashier registers, and viral referrals.", iconName: "Store", color: "#10B981", badge: "Retail" },
   { key: "logistics", label: "Ofia Logistics Manager", category: "Operations", description: "Dispatch desk, waybills, courier assignments, and fleet routing.", iconName: "Truck", color: "#6366F1" },
   { key: "accounting", label: "Accounting & Ledgers", category: "People & Finance", description: "General ledger, charts of accounts, trial balance, and tax remittances.", iconName: "Layers", color: "#0E9F6E", badge: "GL" },
   { key: "hr", label: "HR & Appraisals", category: "People & Finance", description: "Employee roster, KPI appraisal cycles, reviews, and team retreat quests.", iconName: "Users", color: "#9061F9" },
   { key: "users", label: "User Management", category: "People & Finance", description: "Corporate staff directory, 10-tier role governance, departmental hierarchy, and cost centers.", iconName: "Users", color: "#0069FF", badge: "Staff" },
-  { key: "access_control", label: "Access Control & RBAC", category: "Core", description: "Tenant role-based access matrix, security permissions, and audit logging.", iconName: "ShieldCheck", color: "#0069FF", badge: "RBAC" },
+  { key: "departments", label: "Departments", category: "People & Finance", description: "Corporate organizational divisions, budgetary cost centers, leadership lines, and staff headcount.", iconName: "Building2", color: "#6366F1", badge: "Org" },
 ];
 
 export interface AdminUser {
@@ -165,7 +165,7 @@ export const INITIAL_TENANTS: TenantOrg[] = [
       logistics: true,
       accounting: true,
       hr: true,
-      access_control: true,
+      users: true,
     },
     createdAt: "2026-06-15",
   },
@@ -196,7 +196,7 @@ export const INITIAL_TENANTS: TenantOrg[] = [
       logistics: true,
       accounting: true,
       hr: true,
-      access_control: true,
+      users: true,
     },
     createdAt: "2026-05-01",
   },

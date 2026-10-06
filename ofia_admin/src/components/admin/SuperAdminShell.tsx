@@ -156,6 +156,7 @@ export function SuperAdminShell({
         { label: "Tenants & Plans", href: "/ai/organizations", icon: <Building2 className="w-3.5 h-3.5" /> },
         { label: "Feature Flags", href: "/ai/features", icon: <Sliders className="w-3.5 h-3.5" /> },
         { label: "System Health", href: "/ai/system", icon: <Server className="w-3.5 h-3.5" /> },
+        { label: "User Management", href: "/ai/users", icon: <Users className="w-3.5 h-3.5" />, badge: "Staff" },
         { label: "Security & Audit", href: "/ai/audit-logs", icon: <ShieldAlert className="w-3.5 h-3.5" /> },
       ];
     }
@@ -178,6 +179,13 @@ export function SuperAdminShell({
         { label: "Contact Inquiries", href: "/crm/contact", icon: <Mail className="w-3.5 h-3.5 text-emerald-500" />, badge: "Support" },
         { label: "Enterprise Inquiries", href: "/crm/leads", icon: <Building2 className="w-3.5 h-3.5" /> },
         { label: "Conversion Analytics", href: "/crm/analytics", icon: <TrendingUp className="w-3.5 h-3.5" /> },
+      ];
+    }
+
+    if (pathname.startsWith("/cms")) {
+      return [
+        { label: "All Posts", href: "/cms/blog", icon: <FileText className="w-3.5 h-3.5" /> },
+        { label: "Create Post", href: "/cms/blog/create", icon: <Zap className="w-3.5 h-3.5" /> },
       ];
     }
 
@@ -249,6 +257,14 @@ export function SuperAdminShell({
       href: "/crm",
       badge: "2.8k",
       key: "crm",
+      section: "CRM & Growth",
+    },
+    {
+      label: "Blog & Content CMS",
+      icon: <FileText className="w-6 h-6" />,
+      href: "/cms/blog",
+      badge: "CMS",
+      key: "cms",
       section: "CRM & Growth",
     },
   ];

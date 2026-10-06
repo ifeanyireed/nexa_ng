@@ -26,17 +26,46 @@ function configureCloudinary() {
 
 export async function POST(request: Request) {
   try {
-    const { image, tenantId } = await request.json();
+    configureCloudinary();
+    const contentType = request.headers.get("content-type") || "";
 
-    if (!image) {
+    let imagePayload: string | null = null;
+    let folder = "ofia_ng_assets/logos";
+
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await request.formData();
+      const file = formData.get("file") as File | null;
+      const targetPath = formData.get("target_path") as string | null;
+      const tenantId = formData.get("tenantId") as string | null;
+
+      if (!file) {
+        return NextResponse.json({ error: "No file provided in form data" }, { status: 400 });
+      }
+
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const mime = file.type || "image/jpeg";
+      imagePayload = `data:${mime};base64,${buffer.toString("base64")}`;
+
+      if (targetPath) {
+        folder = `ofia_ng_assets/${targetPath}`;
+      } else if (tenantId) {
+        folder = `ofia_ng_assets/${tenantId}`;
+      }
+    } else {
+      const body = await request.json();
+      imagePayload = body.image;
+      const tenantId = body.tenantId;
+      if (tenantId) {
+        folder = `ofia_ng_assets/${tenantId}`;
+      }
+    }
+
+    if (!imagePayload) {
       return NextResponse.json({ error: "No image payload provided" }, { status: 400 });
     }
 
-    configureCloudinary();
-
-    const folder = tenantId ? `ofia_ng_assets/${tenantId}` : "ofia_ng_assets/logos";
-
-    const uploadResponse = await cloudinary.uploader.upload(image, {
+    const uploadResponse = await cloudinary.uploader.upload(imagePayload, {
       folder,
       resource_type: "image",
     });

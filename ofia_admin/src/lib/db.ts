@@ -90,6 +90,85 @@ export async function ensureTablesExist(): Promise<boolean> {
         CREATE INDEX IF NOT EXISTS idx_contact_email ON contact_inquiries (email);
       `);
 
+      // 3. Blog CMS tables
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS "BlogCategory" (
+          "id" VARCHAR(191) PRIMARY KEY,
+          "name" VARCHAR(191) NOT NULL UNIQUE,
+          "slug" VARCHAR(191) NOT NULL UNIQUE,
+          "created_at" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS "BlogTag" (
+          "id" VARCHAR(191) PRIMARY KEY,
+          "name" VARCHAR(191) NOT NULL UNIQUE,
+          "slug" VARCHAR(191) NOT NULL UNIQUE,
+          "created_at" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS "BlogPost" (
+          "id" VARCHAR(191) PRIMARY KEY,
+          "title" VARCHAR(255) NOT NULL,
+          "slug" VARCHAR(255) NOT NULL UNIQUE,
+          "excerpt" TEXT,
+          "content" TEXT NOT NULL,
+          "cover_image" TEXT,
+          "category_id" VARCHAR(191),
+          "tags" VARCHAR(255),
+          "status" VARCHAR(50) NOT NULL DEFAULT 'DRAFT',
+          "author_id" VARCHAR(191),
+          "author_name" VARCHAR(191) DEFAULT 'Ofia Editorial Team',
+          "published_at" TIMESTAMPTZ,
+          "created_at" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          "updated_at" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS "BlogComment" (
+          "id" VARCHAR(191) PRIMARY KEY,
+          "post_id" VARCHAR(191) NOT NULL,
+          "user_name" VARCHAR(191) NOT NULL,
+          "email" VARCHAR(191),
+          "content" TEXT NOT NULL,
+          "parent_id" VARCHAR(191),
+          "status" VARCHAR(50) NOT NULL DEFAULT 'APPROVED',
+          "created_at" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS "BlogSubscriber" (
+          "id" VARCHAR(191) PRIMARY KEY,
+          "email" VARCHAR(191) NOT NULL UNIQUE,
+          "status" VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+          "created_at" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_blog_post_slug ON "BlogPost"("slug");
+        CREATE INDEX IF NOT EXISTS idx_blog_post_status ON "BlogPost"("status");
+      `);
+
+      // Seed default categories and posts if empty
+      const catCheck = await client.query('SELECT COUNT(*) as count FROM "BlogCategory"');
+      if (parseInt(catCheck.rows[0]?.count || '0') === 0) {
+        await client.query(`
+          INSERT INTO "BlogCategory" ("id", "name", "slug") VALUES
+          ('cat-eco-01', 'Ecosystem & AI', 'ecosystem-and-ai'),
+          ('cat-ret-02', 'Retail & Commerce', 'retail-and-commerce'),
+          ('cat-log-03', 'Fleet & Logistics', 'fleet-and-logistics'),
+          ('cat-upd-04', 'Platform Updates', 'platform-updates')
+          ON CONFLICT DO NOTHING;
+        `);
+      }
+
+      const postCheck = await client.query('SELECT COUNT(*) as count FROM "BlogPost"');
+      if (parseInt(postCheck.rows[0]?.count || '0') === 0) {
+        await client.query(`
+          INSERT INTO "BlogPost" ("id", "title", "slug", "excerpt", "content", "cover_image", "category_id", "tags", "status", "author_name", "published_at") VALUES
+          ('post-seed-01', 'Unveiling Ofia: Autonomous AI Swarms & Next-Gen African Commerce', 'unveiling-ofia-autonomous-ai-swarms', 'How Ofia is transforming enterprise commerce in Nigeria through autonomous lead qualification, real-time escrow, and intelligent multi-tenant workflows.', '<h2>The Future of African Commerce Has Arrived</h2><p>Today marks a major milestone as Ofia officially unveils our unified suite of enterprise tools built specifically for fast-growing businesses across Nigeria and West Africa.</p><p>From high-volume logistics and distributed point-of-sale systems to autonomous AI agents driving customer acquisition, the Ofia platform removes friction at every step of modern trade.</p><h3>Why Autonomous AI Matters for Emerging Markets</h3><p>Traditional CRM tools require endless manual data entry and disjointed communication channels. In high-velocity commercial environments like Lagos, Kano, and Port Harcourt, deals move rapidly across WhatsApp, direct calls, and store visits.</p><p>Our AI Swarm continuously monitors lead inquiries, automates customer follow-ups, and integrates directly with live inventory and escrow payouts.</p>', 'https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png', 'cat-eco-01', 'AI, Innovation, Ecosystem', 'PUBLISHED', 'Adeyemi Phillips', NOW()),
+          ('post-seed-02', 'How Ofia Compass Bridges Offline Merchants with Escrow Commerce', 'how-ofia-compass-bridges-offline-merchants', 'Empowering brick-and-mortar retailers with digital storefronts, verified technician dispatch, and dispute-free escrow payments.', '<h2>Modernizing the Retail Storefront</h2><p>Thousands of trade merchants across computer villages and open markets rely on word-of-mouth and cash payments. Ofia Compass bridges this gap by providing instantly provisioned custom storefronts backed by verified merchant badges.</p><p>With built-in escrow, buyers across different states can transact confidently knowing their funds are protected until verified delivery.</p>', 'https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/aa9nvrmyrc38lbpz1mkp.png', 'cat-ret-02', 'Commerce, Escrow, Merchants', 'PUBLISHED', 'Ofia Editorial Team', NOW()),
+          ('post-seed-03', 'Real-Time Fleet Dispatch: Scaling Nationwide Last-Mile Logistics', 'real-time-fleet-dispatch-last-mile-logistics', 'Inside Ofia dispatch engine: how automated waybills, rider rating indicators, and smart batching eliminate logistics bottlenecks.', '<h2>Reliable Logistics is the Backbone of Trade</h2><p>Every commercial ecosystem succeeds or stumbles based on its logistics backbone. With the launch of our updated mobile rider and customer tracking applications, Ofia Logistics now offers automated rider dispatch and proof-of-delivery.</p><p>Merchants can track shipments across state corridors with complete transparency, minimizing transit delays and eliminating lost parcels.</p>', 'https://res.cloudinary.com/qsdwzejd/image/upload/v1789250607/landing_page/photo13.jpg', 'cat-log-03', 'Logistics, Dispatch, Riders', 'PUBLISHED', 'Ibrahim Musa', NOW())
+          ON CONFLICT DO NOTHING;
+        `);
+      }
+
       isInitialized = true;
       return true;
     } finally {

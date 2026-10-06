@@ -82,7 +82,7 @@ export default function BlogPostContent({ post }: { post: BlogPost }) {
 
   const handleShare = (platform: 'facebook' | 'twitter' | 'linkedin' | 'email') => {
     const url = encodeURIComponent(window.location.href);
-    const title = encodeURIComponent(post.title || "Check out this post from ResultsPRO");
+    const title = encodeURIComponent(post.title || "Check out this post from Ofia");
     let shareUrl = "";
 
     if (platform === 'facebook') {
@@ -219,9 +219,9 @@ export default function BlogPostContent({ post }: { post: BlogPost }) {
                   <img src="https://res.cloudinary.com/qsdwzejd/image/upload/v1789250545/landing_page/photo04.jpg" className="w-full h-full object-cover" alt={typeof post.author === "string" ? post.author : ((post.author as any)?.full_name || "Admin")} />
                 </div>
                 <div>
-                  <h3 className="text-xl fw-700 text-navy mb-2">{typeof post.author === "string" ? post.author : ((post.author as any)?.full_name || "Admin")} - Author</h3>
+                  <h3 className="text-xl fw-700 text-navy mb-2">{typeof post.author === "string" ? post.author : ((post.author as any)?.full_name || "Ofia Editorial Team")} - Author</h3>
                   <p className="text-sm text-muted mb-4 leading-relaxed">
-                    ResultsPRO's dedicated content team bridging the gap between cutting edge ed-tech and practical classroom implementation.
+                    Ofia's dedicated editorial and engineering team bridging the gap between frontier AI, enterprise commerce, and scalable African logistics.
                   </p>
                   <div className="flex items-center justify-center md:justify-start gap-4">
                     <button className="w-8 h-8 flex items-center justify-center rounded-full bg-nets-light text-navy hover:bg-gray-200 transition-colors">
@@ -316,19 +316,20 @@ export default function BlogPostContent({ post }: { post: BlogPost }) {
                   </div>
                 )}
                 <textarea ref={textareaRef} value={commentContent} onChange={e => setCommentContent(e.target.value)} placeholder="Your Comment" rows={5} className={`w-full px-4 py-3 bg-nets-light border border-gray-200 text-sm focus:outline-none focus:border-blue-500 mb-6 ${replyingTo ? 'rounded-b-lg border-t-0' : 'rounded-lg'}`}></textarea>
-                <button onClick={handleCommentSubmit} disabled={commentLoading} className="btn" style={{ backgroundColor: "var(--color-nets-red)", color: "white", padding: "0.75rem 2rem", opacity: commentLoading ? 0.7 : 1 }}>
+                <button onClick={handleCommentSubmit} disabled={commentLoading} className="btn" style={{ backgroundColor: "#1A56DB", color: "white", padding: "0.75rem 2rem", opacity: commentLoading ? 0.7 : 1 }}>
                   {commentLoading ? "Submitting..." : "Submit your Comment"}
                 </button>
               </div>
+
               {/* Card 6: Subscribe */}
               <div className="bg-white shadow-xl w-full p-8 md:p-12 mb-8 text-center flex flex-col items-center">
                 <h3 className="text-2xl fw-700 text-navy mb-4">Subscribe to our Blog</h3>
                 <p className="text-sm text-muted mb-8 max-w-md mx-auto">
-                  Get the latest educational insights, product updates, and thought leadership delivered straight to your inbox.
+                  Get the latest African commerce insights, product updates, and thought leadership delivered straight to your inbox.
                 </p>
                 <div className="flex w-full max-w-md mx-auto relative">
                   <input type="email" value={subEmail} onChange={e => setSubEmail(e.target.value)} placeholder="Enter email address..." className="w-full px-5 py-3 rounded-full bg-nets-light border border-gray-200 text-sm focus:outline-none focus:border-blue-500 pr-32" />
-                  <button onClick={handleSubscribeSubmit} disabled={subLoading} className="absolute right-1 top-1 bottom-1 px-6 rounded-full text-white text-xs fw-700 transition-colors" style={{ backgroundColor: "var(--color-nets-red)", opacity: subLoading ? 0.7 : 1 }}>
+                  <button onClick={handleSubscribeSubmit} disabled={subLoading} className="absolute right-1 top-1 bottom-1 px-6 rounded-full text-white text-xs fw-700 transition-colors" style={{ backgroundColor: "#1A56DB", opacity: subLoading ? 0.7 : 1 }}>
                     {subLoading ? "..." : "Subscribe"}
                   </button>
                 </div>
@@ -338,44 +339,41 @@ export default function BlogPostContent({ post }: { post: BlogPost }) {
               <div className="w-full mt-8">
                 <h3 className="text-2xl fw-700 text-navy mb-6 text-center">Related Posts</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Dummy Related Post 1 */}
                   <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200 flex flex-col">
                     <div className="h-32 bg-gray-200">
-                      <img src="https://res.cloudinary.com/qsdwzejd/image/upload/v1789250545/landing_page/photo04.jpg" className="w-full h-full object-cover" />
+                      <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" className="w-full h-full object-cover" />
                     </div>
                     <div className="p-5 flex-1 flex flex-col">
-                      <span className="text-[10px] fw-700 text-muted uppercase tracking-widest mb-2">Education</span>
-                      <h4 className="text-sm fw-700 text-navy leading-snug mb-3">Bridging the gap with Edge-Sync Learning</h4>
+                      <span className="text-[10px] fw-700 text-muted uppercase tracking-widest mb-2">Ecosystem &amp; AI</span>
+                      <h4 className="text-sm fw-700 text-navy leading-snug mb-3">Unveiling Ofia: Autonomous AI Swarms</h4>
                       <div className="mt-auto">
-                        <span className="text-xs fw-600 text-red" style={{ color: "var(--color-nets-red)" }}>Read full article</span>
+                        <Link href="/blog/unveiling-ofia-autonomous-ai-swarms" className="text-xs fw-600 text-blue-600 hover:underline">Read full article</Link>
                       </div>
                     </div>
                   </div>
                   
-                  {/* Dummy Related Post 2 */}
+                  <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200 flex flex-col">
+                    <div className="h-32 bg-gray-200">
+                      <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/aa9nvrmyrc38lbpz1mkp.png" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="p-5 flex-1 flex flex-col">
+                      <span className="text-[10px] fw-700 text-muted uppercase tracking-widest mb-2">Retail &amp; Commerce</span>
+                      <h4 className="text-sm fw-700 text-navy leading-snug mb-3">How Ofia Compass Bridges Offline Merchants</h4>
+                      <div className="mt-auto">
+                        <Link href="/blog/how-ofia-compass-bridges-offline-merchants" className="text-xs fw-600 text-blue-600 hover:underline">Read full article</Link>
+                      </div>
+                    </div>
+                  </div>
+                  
                   <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200 flex flex-col">
                     <div className="h-32 bg-gray-200">
                       <img src="https://res.cloudinary.com/qsdwzejd/image/upload/v1789250607/landing_page/photo13.jpg" className="w-full h-full object-cover" />
                     </div>
                     <div className="p-5 flex-1 flex flex-col">
-                      <span className="text-[10px] fw-700 text-muted uppercase tracking-widest mb-2">Product</span>
-                      <h4 className="text-sm fw-700 text-navy leading-snug mb-3">How we built ExamsPRO for offline CBT</h4>
+                      <span className="text-[10px] fw-700 text-muted uppercase tracking-widest mb-2">Fleet &amp; Logistics</span>
+                      <h4 className="text-sm fw-700 text-navy leading-snug mb-3">Real-Time Fleet Dispatch: Scaling Nationwide</h4>
                       <div className="mt-auto">
-                        <span className="text-xs fw-600 text-red" style={{ color: "var(--color-nets-red)" }}>Read full article</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Dummy Related Post 3 */}
-                  <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200 flex flex-col">
-                    <div className="h-32 bg-gray-200">
-                      <img src="https://res.cloudinary.com/qsdwzejd/image/upload/v1789250555/landing_page/photo08.jpg" className="w-full h-full object-cover" />
-                    </div>
-                    <div className="p-5 flex-1 flex flex-col">
-                      <span className="text-[10px] fw-700 text-muted uppercase tracking-widest mb-2">Marketing</span>
-                      <h4 className="text-sm fw-700 text-navy leading-snug mb-3">5 Ways to increase school admissions in 2026</h4>
-                      <div className="mt-auto">
-                        <span className="text-xs fw-600 text-red" style={{ color: "var(--color-nets-red)" }}>Read full article</span>
+                        <Link href="/blog/real-time-fleet-dispatch-last-mile-logistics" className="text-xs fw-600 text-blue-600 hover:underline">Read full article</Link>
                       </div>
                     </div>
                   </div>

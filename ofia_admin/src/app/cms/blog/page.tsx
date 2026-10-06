@@ -9,6 +9,7 @@ import { FileText, CheckCircle2, File, Plus, Tag, MessageSquare, Folder, Users }
 import { fetchBlogPosts } from '@/lib/api';
 import { BlogPost } from '@/lib/types';
 import toast from 'react-hot-toast';
+import { SuperAdminShell } from '@/components/admin/SuperAdminShell';
 
 const TABS = [
   { id: 'posts', name: 'Posts', icon: FileText },
@@ -156,11 +157,60 @@ export default function BlogCMSPage() {
     }
   };
 
+  const handleDeletePost = async (id: string) => {
+    if (!window.confirm("Are you sure you want to delete this article?")) return;
+    try {
+      const USERS_API = process.env.NEXT_PUBLIC_USERS_API || '';
+      const res = await fetch(`${USERS_API}/api/v1/cms/blog/posts?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      if (res.ok) {
+        setPosts(posts.filter((p: any) => p.id !== id));
+        toast.success("Post deleted!");
+      } else {
+        toast.error("Failed to delete post");
+      }
+    } catch (e) {
+      toast.error("Error deleting post");
+    }
+  };
+
+  const handleDeleteCategory = async (id: string) => {
+    if (!window.confirm("Delete this category?")) return;
+    try {
+      const USERS_API = process.env.NEXT_PUBLIC_USERS_API || '';
+      const res = await fetch(`${USERS_API}/api/v1/cms/blog/categories?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      if (res.ok) {
+        setCategories(categories.filter((c: any) => c.id !== id));
+        toast.success("Category deleted!");
+      } else {
+        toast.error("Failed to delete category");
+      }
+    } catch (e) {
+      toast.error("Error deleting category");
+    }
+  };
+
+  const handleDeleteTag = async (id: string) => {
+    if (!window.confirm("Delete this tag?")) return;
+    try {
+      const USERS_API = process.env.NEXT_PUBLIC_USERS_API || '';
+      const res = await fetch(`${USERS_API}/api/v1/cms/blog/tags?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      if (res.ok) {
+        setTagsList(tagsList.filter((t: any) => t.id !== id));
+        toast.success("Tag deleted!");
+      } else {
+        toast.error("Failed to delete tag");
+      }
+    } catch (e) {
+      toast.error("Error deleting tag");
+    }
+  };
+
   const published = posts.filter(p => p.status === 'PUBLISHED').length;
   const drafts = posts.filter(p => p.status === 'DRAFT').length;
 
   return (
-    <div className="w-full">
+    <SuperAdminShell title="Blog & Content CMS" subtitle="Manage articles, categories, comments, and newsletter subscribers">
+      <div className="w-full">
       <div className="p-8 pb-0 border-b border-nexa-border/30">
         <h1 className="text-2xl font-bold text-nexa-text-primary">Suite Blog CMS</h1>
         <p className="text-nexa-text-secondary">Manage global articles, categories, tags, and comments across the suite</p>
@@ -276,7 +326,7 @@ export default function BlogCMSPage() {
                           </td>
                           <td className="px-6 py-4 text-right">
                             <Link href={`/cms/blog/create?edit=${post.id}`} className="text-blue-600 hover:text-blue-800 text-sm font-medium mr-3">Edit</Link>
-                            <button className="text-rose-600 hover:text-rose-800 text-sm font-medium">Delete</button>
+                            <button onClick={() => handleDeletePost(post.id)} className="text-rose-600 hover:text-rose-800 text-sm font-medium">Delete</button>
                           </td>
                         </tr>
                       ))
@@ -313,7 +363,7 @@ export default function BlogCMSPage() {
                       <td className="px-6 py-4 text-slate-500">{cat.slug}</td>
                       <td className="px-6 py-4 text-slate-500">{posts.filter((p: any) => p.category_id === cat.id).length}</td>
                       <td className="px-6 py-4 text-right">
-                        <button className="text-rose-600 hover:text-rose-800 text-sm font-medium">Delete</button>
+                        <button onClick={() => handleDeleteCategory(cat.id)} className="text-rose-600 hover:text-rose-800 text-sm font-medium">Delete</button>
                       </td>
                     </tr>
                   ))
@@ -350,7 +400,7 @@ export default function BlogCMSPage() {
                         {posts.filter((p: any) => p.tags && p.tags.includes(tag.name)).length}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <button className="text-rose-600 hover:text-rose-800 text-sm font-medium">Delete</button>
+                        <button onClick={() => handleDeleteTag(tag.id)} className="text-rose-600 hover:text-rose-800 text-sm font-medium">Delete</button>
                       </td>
                     </tr>
                   ))
@@ -446,5 +496,6 @@ export default function BlogCMSPage() {
 
       </div>
     </div>
+    </SuperAdminShell>
   );
 }

@@ -29,6 +29,7 @@ func main() {
 	authHandler := handlers.NewAuthHandler(database)
 	orgHandler := handlers.NewOrgHandler(database)
 	subHandler := handlers.NewSubscriptionHandler(database)
+	blogHandler := handlers.NewBlogHandler(database)
 
 	r := chi.NewRouter()
 
@@ -96,6 +97,38 @@ func main() {
 		r.Put("/organizations/{orgId}/subscription", subHandler.UpdateTenantSubscription)
 		r.Post("/organizations/{orgId}/subscription/override", subHandler.OverrideTenantQuotas)
 		r.Post("/organizations/{orgId}/subscription/checkout", subHandler.InitializeCheckout)
+
+		// CMS & Blog Engine
+		r.Route("/cms/blog", func(r chi.Router) {
+			r.Get("/posts", blogHandler.ListPosts)
+			r.Post("/posts", blogHandler.CreateOrUpdatePost)
+			r.Put("/posts", blogHandler.CreateOrUpdatePost)
+			r.Get("/posts/{id}", blogHandler.GetPost)
+			r.Put("/posts/{id}", blogHandler.CreateOrUpdatePost)
+			r.Delete("/posts", blogHandler.DeletePost)
+			r.Delete("/posts/{id}", blogHandler.DeletePost)
+
+			r.Get("/categories", blogHandler.ListCategories)
+			r.Post("/categories", blogHandler.CreateCategory)
+			r.Delete("/categories", blogHandler.DeleteCategory)
+			r.Delete("/categories/{id}", blogHandler.DeleteCategory)
+
+			r.Get("/tags", blogHandler.ListTags)
+			r.Post("/tags", blogHandler.CreateTag)
+			r.Delete("/tags", blogHandler.DeleteTag)
+			r.Delete("/tags/{id}", blogHandler.DeleteTag)
+
+			r.Get("/comments", blogHandler.ListComments)
+			r.Post("/comments", blogHandler.CreateComment)
+			r.Put("/comments/status", blogHandler.UpdateCommentStatus)
+			r.Delete("/comments/delete", blogHandler.DeleteComment)
+			r.Delete("/comments/{id}", blogHandler.DeleteComment)
+
+			r.Get("/subscribe", blogHandler.ListSubscribers)
+			r.Post("/subscribe", blogHandler.CreateSubscriber)
+			r.Delete("/subscribe/delete", blogHandler.DeleteSubscriber)
+			r.Delete("/subscribe/{id}", blogHandler.DeleteSubscriber)
+		})
 
 		// Protected Workspace & User Routes
 		r.Group(func(r chi.Router) {

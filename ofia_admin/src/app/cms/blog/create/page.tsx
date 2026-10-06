@@ -8,6 +8,7 @@ import { ArrowLeft, Save, Send } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { SuperAdminShell } from '@/components/admin/SuperAdminShell';
 
 export default function CreateBlogPost() {
   return (
@@ -153,14 +154,15 @@ function CreateBlogPostContent() {
   };
 
   return (
-    <div className="w-full">
-      <div className="p-8 pb-0 border-b border-nexa-border/30">
-        <div className="flex items-center gap-4 mb-2">
-          <Link href="/cms/blog" className="p-2 hover:bg-slate-100 rounded-full transition-colors"><ArrowLeft size={20} /></Link>
-          <h1 className="text-2xl font-bold text-nexa-text-primary">Create Blog Post</h1>
+    <SuperAdminShell title={editId ? "Edit Blog Post" : "Create Blog Post"} subtitle="Write and publish an article to the Ofia blog">
+      <div className="w-full">
+        <div className="p-8 pb-0 border-b border-nexa-border/30">
+          <div className="flex items-center gap-4 mb-2">
+            <Link href="/cms/blog" className="p-2 hover:bg-slate-100 rounded-full transition-colors"><ArrowLeft size={20} /></Link>
+            <h1 className="text-2xl font-bold text-nexa-text-primary">{editId ? "Edit Blog Post" : "Create Blog Post"}</h1>
+          </div>
+          <p className="text-nexa-text-secondary mb-4 ml-12">Write and publish an article to the Ofia platform blog</p>
         </div>
-        <p className="text-nexa-text-secondary mb-4 ml-12">Write and publish a new article to the suite blog</p>
-      </div>
 
       <div className="p-8 space-y-6 max-w-[1200px] mx-auto w-full">
         {/* Actions Header */}
@@ -274,5 +276,6 @@ function CreateBlogPostContent() {
         </div>
       </div>
     </div>
+    </SuperAdminShell>
   );
 }

@@ -15,6 +15,7 @@ import {
   MoreVertical,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
+import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaModal } from "@/components/nexa/NexaModal";
@@ -148,13 +149,13 @@ export default function DealsPipelinePage() {
         </div>
 
         {/* KANBAN BOARD COLUMNS */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 overflow-x-auto pb-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-5 overflow-x-auto pb-6">
           {STAGES.map((st) => {
             const stageDeals = filteredDeals.filter((d) => d.stage === st.key);
             return (
               <div
                 key={st.key}
-                className="bg-slate-100/70 dark:bg-slate-900/50 rounded-2xl p-4 border border-[var(--nexa-border)] flex flex-col min-w-[280px] shadow-2xs"
+                className="bg-[var(--nexa-bg-surface)]/60 rounded-2xl p-4 border border-[var(--nexa-border)] flex flex-col min-w-[260px]"
               >
                 <div className="flex items-center justify-between pb-3 border-b border-[var(--nexa-border)] mb-3">
                   <div className="flex items-center gap-2">
@@ -166,34 +167,27 @@ export default function DealsPipelinePage() {
                   </span>
                 </div>
 
-                <div className="flex flex-col gap-4 p-1 flex-1 overflow-y-auto max-h-[calc(100vh-320px)]">
+                <div className="flex flex-col gap-3.5 flex-1 overflow-y-auto max-h-[calc(100vh-320px)]">
                   {stageDeals.map((deal) => (
-                    <div
+                    <NexaCard
                       key={deal.id}
-                      className="bg-white dark:bg-slate-800/95 rounded-xl p-4 border border-slate-200/90 dark:border-slate-700/80 hover:border-[#1A56DB] transition-all duration-200 cursor-pointer group shadow-sm hover:shadow-md space-y-3"
+                      className="p-4 hover:border-[#1A56DB] transition-all cursor-pointer group shadow-xs space-y-3"
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <h5 className="text-xs font-bold text-[var(--nexa-text-primary)] line-clamp-2 leading-relaxed">
+                        <h5 className="text-xs font-bold text-[var(--nexa-text-primary)] line-clamp-2">
                           {deal.title}
                         </h5>
                       </div>
 
                       <div className="space-y-1.5 text-[11px] text-[var(--nexa-text-muted)]">
                         <div className="flex items-center gap-1.5 font-medium truncate">
-                          <Building2 className="w-3.5 h-3.5 text-[#1A56DB] shrink-0" />
-                          <span className="truncate">{deal.company}</span>
+                          <Building2 className="w-3.5 h-3.5 text-[#1A56DB]" />
+                          {deal.company}
                         </div>
-                        <div className="text-[10px] text-[var(--nexa-text-muted)] truncate flex items-center justify-between">
-                          <span>{deal.contactName}</span>
-                          {deal.owner && (
-                            <span className="text-[9px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700/60 rounded text-[var(--nexa-text-muted)] truncate max-w-[110px]">
-                              {deal.owner.split(" ")[0]}
-                            </span>
-                          )}
-                        </div>
+                        <div className="text-[10px] truncate">{deal.contactName}</div>
                       </div>
 
-                      <div className="pt-2.5 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+                      <div className="pt-2.5 border-t border-[var(--nexa-border)] flex items-center justify-between">
                         <span className="text-xs font-extrabold text-[#1A56DB]">{deal.value}</span>
                         <select
                           value={deal.stage}
@@ -207,11 +201,11 @@ export default function DealsPipelinePage() {
                           <option value="WON">WON</option>
                         </select>
                       </div>
-                    </div>
+                    </NexaCard>
                   ))}
 
                   {stageDeals.length === 0 && (
-                    <div className="h-28 rounded-xl border border-dashed border-[var(--nexa-border)] flex items-center justify-center text-[11px] text-[var(--nexa-text-muted)]">
+                    <div className="h-24 rounded-xl border border-dashed border-[var(--nexa-border)] flex items-center justify-center text-[11px] text-[var(--nexa-text-muted)]">
                       No deals in {st.label}
                     </div>
                   )}

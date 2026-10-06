@@ -138,6 +138,131 @@ export async function ensureTablesExist(): Promise<boolean> {
         CREATE INDEX IF NOT EXISTS idx_email_queue_claim ON email_queue (status, attempts);
         CREATE INDEX IF NOT EXISTS idx_email_queue_campaign ON email_queue (campaign_id);
         CREATE INDEX IF NOT EXISTS idx_email_queue_tenant ON email_queue (tenant_slug);
+
+        -- 5. CRM Tables
+        CREATE TABLE IF NOT EXISTS crm_deals (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(100) NOT NULL,
+          title VARCHAR(255) NOT NULL,
+          company VARCHAR(255) NOT NULL,
+          contact_name VARCHAR(150) NOT NULL,
+          email VARCHAR(150),
+          phone VARCHAR(50),
+          value VARCHAR(50) NOT NULL DEFAULT '₦0',
+          stage VARCHAR(30) NOT NULL DEFAULT 'QUALIFIED',
+          owner VARCHAR(100),
+          probability INT DEFAULT 50,
+          expected_close VARCHAR(50),
+          notes TEXT,
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_crm_deals_tenant ON crm_deals (tenant_slug);
+        CREATE INDEX IF NOT EXISTS idx_crm_deals_stage ON crm_deals (stage);
+
+        CREATE TABLE IF NOT EXISTS crm_leads (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(100) NOT NULL,
+          company_name VARCHAR(255) NOT NULL,
+          website VARCHAR(255),
+          industry VARCHAR(100),
+          location VARCHAR(150),
+          contact_name VARCHAR(150) NOT NULL,
+          contact_title VARCHAR(150),
+          contact_email VARCHAR(150) NOT NULL,
+          contact_phone VARCHAR(50),
+          icp_fit_score INT DEFAULT 80,
+          buying_signals TEXT,
+          status VARCHAR(50) DEFAULT 'QUALIFIED',
+          assigned_rep VARCHAR(100),
+          source VARCHAR(100) DEFAULT 'Direct Outreach',
+          notes TEXT,
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_crm_leads_tenant ON crm_leads (tenant_slug);
+        CREATE INDEX IF NOT EXISTS idx_crm_leads_status ON crm_leads (status);
+
+        CREATE TABLE IF NOT EXISTS crm_accounts (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(100) NOT NULL,
+          company VARCHAR(255) NOT NULL,
+          industry VARCHAR(100),
+          location VARCHAR(150),
+          total_deals VARCHAR(50) DEFAULT '₦0',
+          status VARCHAR(30) DEFAULT 'PROSPECT',
+          key_contact VARCHAR(150),
+          email VARCHAR(150),
+          phone VARCHAR(50),
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_crm_accounts_tenant ON crm_accounts (tenant_slug);
+
+        CREATE TABLE IF NOT EXISTS crm_email_lists (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(100) NOT NULL,
+          name VARCHAR(200) NOT NULL,
+          description TEXT,
+          tags TEXT,
+          subscriber_count INT DEFAULT 0,
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_crm_email_lists_tenant ON crm_email_lists (tenant_slug);
+
+        CREATE TABLE IF NOT EXISTS crm_email_subscribers (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(100) NOT NULL,
+          list_id VARCHAR(64) REFERENCES crm_email_lists(id) ON DELETE CASCADE,
+          email VARCHAR(150) NOT NULL,
+          first_name VARCHAR(100),
+          last_name VARCHAR(100),
+          company VARCHAR(150),
+          phone VARCHAR(50),
+          status VARCHAR(30) DEFAULT 'SUBSCRIBED',
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_crm_subscribers_list ON crm_email_subscribers (list_id);
+        CREATE INDEX IF NOT EXISTS idx_crm_subscribers_email ON crm_email_subscribers (email);
+
+        CREATE TABLE IF NOT EXISTS crm_email_blasts (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(100) NOT NULL,
+          list_id VARCHAR(64),
+          title VARCHAR(255) NOT NULL,
+          subject VARCHAR(255) NOT NULL,
+          preview_text VARCHAR(255),
+          content_html TEXT NOT NULL,
+          sender_name VARCHAR(150),
+          sender_email VARCHAR(150),
+          status VARCHAR(30) NOT NULL DEFAULT 'DRAFT',
+          scheduled_at TIMESTAMPTZ,
+          sent_at TIMESTAMPTZ,
+          total_recipients INT DEFAULT 0,
+          sent_count INT DEFAULT 0,
+          open_count INT DEFAULT 0,
+          click_count INT DEFAULT 0,
+          bounce_count INT DEFAULT 0,
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_crm_blasts_tenant ON crm_email_blasts (tenant_slug);
+        CREATE INDEX IF NOT EXISTS idx_crm_blasts_status ON crm_email_blasts (status);
+
+        CREATE TABLE IF NOT EXISTS crm_activities (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(100) NOT NULL,
+          type VARCHAR(50) NOT NULL DEFAULT 'CALL',
+          title VARCHAR(255) NOT NULL,
+          company VARCHAR(255) NOT NULL,
+          rep VARCHAR(100),
+          date_time VARCHAR(100),
+          status VARCHAR(30) DEFAULT 'UPCOMING',
+          notes TEXT,
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_crm_activities_tenant ON crm_activities (tenant_slug);
       `);
 
       isInitialized = true;

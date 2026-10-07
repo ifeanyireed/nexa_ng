@@ -302,45 +302,49 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         children: [
           const SizedBox(height: 10),
-          SizedBox(
-            height: 160,
-            child: PageView.builder(
-              physics: const BouncingScrollPhysics(),
-              itemCount: 5,
-              onPageChanged: (index) {
-                setState(() {
-                  _currentBannerIndex = index;
-                });
-              },
-              itemBuilder: (context, index) {
-                return Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage('assets/images/banner${index + 1}.png'),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(5, (index) {
-              final isActive = _currentBannerIndex == index;
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                height: 8,
-                width: isActive ? 24 : 8,
-                decoration: BoxDecoration(
-                  color: isActive ? const Color(0xFF1B62F0) : const Color(0xFFCBD5E1),
-                  borderRadius: BorderRadius.circular(4),
+          AspectRatio(
+            aspectRatio: 1463 / 504,
+            child: Stack(
+              children: [
+                PageView.builder(
+                  physics: const BouncingScrollPhysics(),
+                  itemCount: 5,
+                  onPageChanged: (index) {
+                    setState(() {
+                      _currentBannerIndex = index;
+                    });
+                  },
+                  itemBuilder: (context, index) {
+                    return Image.asset(
+                      'assets/images/banner${index + 1}.png',
+                      fit: BoxFit.contain,
+                      width: double.infinity,
+                    );
+                  },
                 ),
-              );
-            }),
+                Positioned(
+                  bottom: 12,
+                  left: 0,
+                  right: 0,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      final isActive = _currentBannerIndex == index;
+                      return AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                        height: 6,
+                        width: isActive ? 16 : 6,
+                        decoration: BoxDecoration(
+                          color: isActive ? const Color(0xFF1B62F0) : Colors.white.withValues(alpha: 0.5),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 20),
         ],

@@ -8,21 +8,21 @@ class AllTripsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1E1E2C),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E1E2C),
+        backgroundColor: const Color(0xFFF8FAFC),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('All Trips', style: TextStyle(color: Colors.white)),
+        title: const Text('All Trips', style: TextStyle(color: Colors.black87)),
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 16, top: 12, bottom: 12),
             padding: const EdgeInsets.symmetric(horizontal: 12),
             decoration: BoxDecoration(
-              color: const Color(0xFF00E676),
+              color: const Color(0xFF1B62F0),
               borderRadius: BorderRadius.circular(20),
             ),
             child: const Row(
@@ -37,7 +37,7 @@ class AllTripsScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          const Text('Dec 22nd, 2022', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+          const Text('Dec 22nd, 2022', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16)),
           const SizedBox(height: 16),
           ...MockData.todaysTrips.map((trip) => _buildTripCard(context, trip)).toList(),
         ],
@@ -50,7 +50,7 @@ class AllTripsScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: const Color(0xFF2D2D3F),
+        color: const Color(0xFFFFFFFF),
         borderRadius: BorderRadius.circular(24),
       ),
       child: Column(
@@ -58,9 +58,9 @@ class AllTripsScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.directions_bus, color: Colors.grey, size: 16),
+              const Icon(Icons.directions_bus, color: Color(0xFF757575), size: 16),
               const SizedBox(width: 8),
-              Text(trip.routeCode, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              Text(trip.routeCode, style: const TextStyle(color: Color(0xFF757575), fontSize: 12)),
             ],
           ),
           const SizedBox(height: 16),
@@ -68,32 +68,32 @@ class AllTripsScreen extends StatelessWidget {
             children: [
               const Icon(Icons.trip_origin, color: Colors.greenAccent, size: 12),
               const SizedBox(width: 12),
-              Text(trip.startLocation, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              Text(trip.startLocation, style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
             ],
           ),
           Container(
             margin: const EdgeInsets.only(left: 5),
             height: 20,
             width: 2,
-            color: Colors.grey.shade800,
+            color: Color(0xFFE0E0E0),
           ),
           Row(
             children: [
               const Icon(Icons.location_on, color: Colors.greenAccent, size: 12),
               const SizedBox(width: 12),
-              Text(trip.endLocation, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              Text(trip.endLocation, style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
             ],
           ),
           const SizedBox(height: 20),
           Row(
             children: [
-              const Icon(Icons.access_time, color: Colors.grey, size: 14),
+              const Icon(Icons.access_time, color: Color(0xFF757575), size: 14),
               const SizedBox(width: 6),
-              Text(trip.time, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              Text(trip.time, style: const TextStyle(color: Color(0xFF757575), fontSize: 12)),
               const SizedBox(width: 16),
-              const Icon(Icons.person, color: Colors.grey, size: 14),
+              const Icon(Icons.person, color: Color(0xFF757575), size: 14),
               const SizedBox(width: 6),
-              Text('${trip.totalPassengers} Passengers', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+              Text('${trip.totalPassengers} Passengers', style: const TextStyle(color: Color(0xFF757575), fontSize: 12)),
             ],
           ),
           const SizedBox(height: 20),
@@ -101,8 +101,8 @@ class AllTripsScreen extends StatelessWidget {
             width: double.infinity,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF00E676),
-                foregroundColor: Colors.black,
+                backgroundColor: const Color(0xFF1B62F0),
+                foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),

@@ -138,7 +138,7 @@ class AccountScreen extends StatelessWidget {
 
   Widget _buildListTile(IconData icon, String title, {String? trailingText, Color? iconColor, bool isDestructive = false}) {
     return ListTile(
-      leading: Icon(icon, color: isDestructive ? Colors.red : (iconColor ?? const Color(0xFF16835d))),
+      leading: Icon(icon, color: isDestructive ? Colors.red : (iconColor ?? const Color(0xFF1B62F0))),
       title: Text(title, style: TextStyle(fontWeight: FontWeight.w500, color: isDestructive ? Colors.red : Colors.black)),
       trailing: trailingText != null 
           ? Text(trailingText, style: TextStyle(color: isDestructive ? Colors.red : Colors.grey.shade400, fontSize: 16)) 

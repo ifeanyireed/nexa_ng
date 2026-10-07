@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flexicon/flexicon.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
+
+// Copy fixIcon since we didn't add icon_util.dart to mobile_driver main_layout.dart
+IconData fixIcon(IconData icon) => IconData(
+      icon.codePoint,
+      fontFamily: icon.fontFamily,
+      fontPackage: 'flexicon',
+    );
 
 class MainLayout extends StatefulWidget {
   const MainLayout({Key? key}) : super(key: key);
@@ -14,7 +22,7 @@ class _MainLayoutState extends State<MainLayout> {
   
   final List<Widget> _screens = [
     const HomeScreen(),
-    const Scaffold(backgroundColor: Color(0xFF1E1E2C), body: Center(child: Text('Map View', style: TextStyle(color: Colors.white)))),
+    const Scaffold(backgroundColor: Color(0xFFF8FAFC), body: Center(child: Text('Map View', style: TextStyle(color: Colors.black87)))),
     const ProfileScreen(),
   ];
 
@@ -22,17 +30,27 @@ class _MainLayoutState extends State<MainLayout> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _screens[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        backgroundColor: const Color(0xFF1E1E2C),
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.grey,
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: ''),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) => setState(() => _currentIndex = index),
+        height: 66,
+        elevation: 0,
+        destinations: [
+          NavigationDestination(
+            icon: Icon(fixIcon(FlexIcon.remix.home2)),
+            selectedIcon: Icon(fixIcon(FlexIcon.solid.home2)),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(fixIcon(FlexIcon.remix.mapLocation)),
+            selectedIcon: Icon(fixIcon(FlexIcon.solid.mapLocation)),
+            label: 'Map',
+          ),
+          NavigationDestination(
+            icon: Icon(fixIcon(FlexIcon.remix.userCircleSingle)),
+            selectedIcon: Icon(fixIcon(FlexIcon.solid.userCircleSingle)),
+            label: 'Profile',
+          ),
         ],
       ),
     );

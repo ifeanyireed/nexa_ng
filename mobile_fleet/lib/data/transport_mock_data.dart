@@ -28,7 +28,7 @@ class TransportMockData {
       description: 'Scheduled shuttles',
       type: ServiceType.shuttle,
       icon: Icons.directions_bus,
-      color: const Color(0xFF16835d),
+      color: const Color(0xFF1B62F0),
     ),
     ServiceModule(
       id: 'srv_3',

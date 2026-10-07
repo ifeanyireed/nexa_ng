@@ -247,7 +247,7 @@ class _ShuttleScreenState extends State<ShuttleScreen> {
             height: 50,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF16835d),
+                backgroundColor: const Color(0xFF1B62F0),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: () {

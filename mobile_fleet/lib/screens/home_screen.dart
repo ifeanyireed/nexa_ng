@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/transport_models.dart';
+import 'package:flexicon/flexicon.dart';
+import '../utils/icon_util.dart';
 import '../data/transport_mock_data.dart';
 import 'services/on_demand_screen.dart';
 import 'services/shuttle_screen.dart';
@@ -59,21 +61,27 @@ class _HomeScreenState extends State<HomeScreen> {
         color: Colors.white,
         border: Border(top: BorderSide(color: Colors.grey.shade200)),
       ),
-      child: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
+      child: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) => setState(() => _currentIndex = index),
+        height: 66,
         elevation: 0,
-        selectedItemColor: const Color(0xFF16835d),
-        unselectedItemColor: const Color(0xFF94A3B8),
-        selectedFontSize: 12,
-        unselectedFontSize: 12,
-        iconSize: 24,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_filled), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.receipt_long), label: 'Bookings'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'My Account'),
+        destinations: [
+          NavigationDestination(
+            icon: Icon(fixIcon(FlexIcon.remix.home2)),
+            selectedIcon: Icon(fixIcon(FlexIcon.solid.home2)),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(fixIcon(FlexIcon.remix.receipt)),
+            selectedIcon: Icon(fixIcon(FlexIcon.solid.receipt)),
+            label: 'Bookings',
+          ),
+          NavigationDestination(
+            icon: Icon(fixIcon(FlexIcon.remix.userCircleSingle)),
+            selectedIcon: Icon(fixIcon(FlexIcon.solid.userCircleSingle)),
+            label: 'My Account',
+          ),
         ],
       ),
     );
@@ -260,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [Color(0xFF16835d), Color(0xFF0F5A40)]),
+            gradient: const LinearGradient(colors: [Color(0xFF1B62F0), Color(0xFF1E3A8A)]),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
@@ -277,7 +285,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                child: const Icon(Icons.arrow_forward, color: Color(0xFF16835d), size: 20),
+                child: const Icon(Icons.arrow_forward, color: Color(0xFF1B62F0), size: 20),
               )
             ],
           ),

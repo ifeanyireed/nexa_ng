@@ -9,12 +9,12 @@ class ProfileScreen extends StatelessWidget {
     final driver = MockData.currentDriver;
     
     return Scaffold(
-      backgroundColor: const Color(0xFF1E1E2C),
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E1E2C),
+        backgroundColor: const Color(0xFFF8FAFC),
         elevation: 0,
         actions: [
-          IconButton(icon: const Icon(Icons.settings, color: Colors.white), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.settings, color: Colors.black87), onPressed: () {}),
         ],
       ),
       body: SingleChildScrollView(
@@ -26,11 +26,11 @@ class ProfileScreen extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 40,
-                    backgroundColor: Colors.grey.shade800,
+                    backgroundColor: Color(0xFFE0E0E0),
                     backgroundImage: const NetworkImage('https://i.pravatar.cc/150?img=11'),
                   ),
                   const SizedBox(height: 16),
-                  Text(driver.name, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                  Text(driver.name, style: const TextStyle(color: Colors.black87, fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -66,12 +66,12 @@ class ProfileScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       child: Row(
         children: [
-          Icon(icon, color: Colors.grey, size: 24),
+          Icon(icon, color: Color(0xFF757575), size: 24),
           const SizedBox(width: 16),
-          Text(title, style: const TextStyle(color: Colors.white, fontSize: 16)),
+          Text(title, style: const TextStyle(color: Colors.black87, fontSize: 16)),
           const Spacer(),
           if (trailing != null)
-            Text(trailing, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+            Text(trailing, style: const TextStyle(color: Color(0xFF757575), fontSize: 12)),
         ],
       ),
     );

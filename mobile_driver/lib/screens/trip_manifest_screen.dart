@@ -16,7 +16,7 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade300,
+      backgroundColor: Color(0xFF757575).shade300,
       body: Stack(
         children: [
           // Map Background Placeholder
@@ -37,7 +37,7 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
                 CircleAvatar(
                   backgroundColor: Colors.black54,
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    icon: const Icon(Icons.arrow_back, color: Colors.black87),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ),
@@ -46,7 +46,7 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(20)),
-                    child: const Text('• Trip has started', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    child: const Text('• Trip has started', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
                   )
               ],
             ),
@@ -62,13 +62,13 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
               child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Next Stop - Yaba Bus stop', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  Text('Next Stop - Yaba Bus stop', style: TextStyle(color: Colors.black54, fontSize: 12)),
                   SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.location_on, color: Colors.white, size: 16),
+                      Icon(Icons.location_on, color: Colors.black87, size: 16),
                       SizedBox(width: 8),
-                      Text('Estimated time of arrival - 17 mins', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      Text('Estimated time of arrival - 17 mins', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
                     ],
                   )
                 ],
@@ -85,7 +85,7 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
               height: MediaQuery.of(context).size.height * 0.55,
               padding: const EdgeInsets.all(20),
               decoration: const BoxDecoration(
-                color: Color(0xFF1E1E2C),
+                color: Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32)),
               ),
               child: Column(
@@ -99,11 +99,11 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
-                              color: isPickup ? Colors.white.withOpacity(0.1) : Colors.transparent,
+                              color: isPickup ? Colors.black87.withOpacity(0.1) : Colors.transparent,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: isPickup ? Colors.white54 : Colors.transparent),
+                              border: Border.all(color: isPickup ? Colors.black54 : Colors.transparent),
                             ),
-                            child: Center(child: Text('Pick up', style: TextStyle(color: isPickup ? Colors.white : Colors.grey, fontWeight: FontWeight.bold))),
+                            child: Center(child: Text('Pick up', style: TextStyle(color: isPickup ? Colors.black87 : Color(0xFF757575), fontWeight: FontWeight.bold))),
                           ),
                         ),
                       ),
@@ -114,11 +114,11 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             decoration: BoxDecoration(
-                              color: !isPickup ? Colors.white.withOpacity(0.1) : Colors.transparent,
+                              color: !isPickup ? Colors.black87.withOpacity(0.1) : Colors.transparent,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: !isPickup ? Colors.white54 : Colors.transparent),
+                              border: Border.all(color: !isPickup ? Colors.black54 : Colors.transparent),
                             ),
-                            child: Center(child: Text('Drop off', style: TextStyle(color: !isPickup ? Colors.white : Colors.grey, fontWeight: FontWeight.bold))),
+                            child: Center(child: Text('Drop off', style: TextStyle(color: !isPickup ? Colors.black87 : Color(0xFF757575), fontWeight: FontWeight.bold))),
                           ),
                         ),
                       ),
@@ -148,8 +148,8 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                 onPressed: () {},
-                icon: const Icon(Icons.shield, color: Colors.white, size: 16),
-                label: const Text('Emergency', style: TextStyle(color: Colors.white)),
+                icon: const Icon(Icons.shield, color: Colors.black87, size: 16),
+                label: const Text('Emergency', style: TextStyle(color: Colors.black87)),
               ),
             ),
         ],
@@ -168,11 +168,11 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
               children: [
                 Icon(Icons.location_on, color: isPickup ? Colors.greenAccent : Colors.redAccent, size: 16),
                 const SizedBox(width: 8),
-                Text(stop.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(stop.name, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16)),
               ],
             ),
             IconButton(
-              icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
+              icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF757575)),
               onPressed: () {},
             )
           ],
@@ -181,7 +181,7 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
           padding: const EdgeInsets.only(left: 24, bottom: 16),
           child: Text(
             isPickup ? 'Picking up ${stop.passengers.length} passengers' : 'Dropping off ${stop.passengers.length} passengers',
-            style: const TextStyle(color: Colors.grey, fontSize: 12),
+            style: const TextStyle(color: Color(0xFF757575), fontSize: 12),
           ),
         ),
         
@@ -202,7 +202,7 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
         margin: const EdgeInsets.only(left: 12, bottom: 16),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: showNavMenu ? Colors.white.withOpacity(0.05) : Colors.transparent,
+          color: showNavMenu ? Colors.black87.withOpacity(0.05) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -217,24 +217,24 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(passenger.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                    Text(passenger.name, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
                     Row(
                       children: [
-                        const Icon(Icons.receipt, color: Colors.grey, size: 12),
+                        const Icon(Icons.receipt, color: Color(0xFF757575), size: 12),
                         const SizedBox(width: 4),
-                        Text(passenger.ticketNumber, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                        Text(passenger.ticketNumber, style: const TextStyle(color: Color(0xFF757575), fontSize: 12)),
                       ],
                     )
                   ],
                 ),
                 const Spacer(),
                 if (!isPickup) 
-                  const Text('Dropped Off', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  const Text('Dropped Off', style: TextStyle(color: Color(0xFF757575), fontSize: 12)),
               ],
             ),
             if (showNavMenu) ...[
               const SizedBox(height: 16),
-              const Divider(color: Colors.white24),
+              const Divider(color: Colors.black26),
               _buildNavMenuItem(Icons.navigation, 'Navigation', Colors.greenAccent),
               _buildNavMenuItem(Icons.qr_code, 'View QR code', Colors.greenAccent),
               _buildNavMenuItem(Icons.add_circle, 'Add Passenger', Colors.greenAccent),
@@ -251,7 +251,7 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: const TextStyle(color: Colors.white, fontSize: 14)),
+          Text(title, style: const TextStyle(color: Colors.black87, fontSize: 14)),
           Icon(icon, color: color, size: 18),
         ],
       ),

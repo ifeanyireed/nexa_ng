@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../models/shipment.dart';
 import '../data/mock_data.dart';
 import '../widgets/shipment_card.dart';
@@ -263,6 +264,6 @@ class _LogisticsScreenState extends State<LogisticsScreen> {
           ],
         ),
       ),
-    );
+    ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.05, end: 0);
   }
 }

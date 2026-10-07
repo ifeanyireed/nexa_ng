@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../data/commerce_data.dart';
 import '../models/store.dart';
 import '../models/product.dart';
@@ -168,7 +169,7 @@ class _StorefrontScreenState extends State<StorefrontScreen> {
               ),
             ],
           ),
-        );
+        ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.05, end: 0);
       },
     );
   }

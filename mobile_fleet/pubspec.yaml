@@ -38,6 +38,7 @@ dependencies:
   google_fonts: 6.2.1
   flexicon: ^0.8.0
   flutter_svg: ^2.3.0
+  flutter_animate: ^4.5.2
 
 dev_dependencies:
   flutter_test:

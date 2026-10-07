@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../models/transport_models.dart';
 import 'package:mobile_fleet/utils/icon_util.dart';
 import 'package:flexicon/flexicon.dart';
@@ -101,7 +102,7 @@ class AccountScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.05, end: 0);
   }
 
   Widget _buildSection(BuildContext context, List<Widget> children) {

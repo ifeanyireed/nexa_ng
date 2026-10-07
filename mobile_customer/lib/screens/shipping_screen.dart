@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../data/mock_data.dart';
 import '../models/shipment.dart';
 import '../widgets/shipment_card.dart';
@@ -265,7 +266,7 @@ class _ShippingScreenState extends State<ShippingScreen> {
           ),
         ],
       ),
-    );
+    ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.05, end: 0);
   }
 
   Widget _circleButton({required IconData icon, required VoidCallback onTap}) {

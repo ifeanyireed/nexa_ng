@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:mobile_fleet/utils/icon_util.dart';
 import 'package:flexicon/flexicon.dart';
 import '../tracking_screen.dart';
@@ -27,7 +28,7 @@ class SchoolScreen extends StatelessWidget {
           _buildNotification('Bus is approaching pickup point.', '07:10 AM', fixIcon(FlexIcon.remix.locationPin3), const Color(0xFFF59E0B)),
         ],
       ),
-    );
+    ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.05, end: 0);
   }
 
   Widget _buildChildCard(BuildContext context, String name, String school, bool isMorningCompleted, String status, String time) {

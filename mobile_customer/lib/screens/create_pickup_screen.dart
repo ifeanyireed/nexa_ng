@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../models/shipment.dart';
 import '../data/mock_data.dart';
 import 'tracking_screen.dart';
@@ -321,7 +322,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
           },
         ),
       ),
-    );
+    ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.05, end: 0);
   }
 
   @override

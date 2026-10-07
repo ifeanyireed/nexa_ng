@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../main.dart'; // Import to access MainAppNavigationScaffold
 
 class SignupScreen extends StatefulWidget {
@@ -153,7 +154,7 @@ class _SignupScreenState extends State<SignupScreen> {
           ),
         ),
       ),
-    );
+    ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.05, end: 0);
   }
 
   @override

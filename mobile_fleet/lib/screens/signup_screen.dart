@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'home_screen.dart';
 import 'package:mobile_fleet/utils/icon_util.dart';
 import 'package:flexicon/flexicon.dart';
@@ -70,6 +71,6 @@ class _SignupScreenState extends State<SignupScreen> {
           ],
         ),
       ),
-    );
+    ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.05, end: 0);
   }
 }

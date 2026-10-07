@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flexicon/flexicon.dart';
 import '../utils/icon_util.dart';
 import '../models/transport_models.dart';
@@ -74,7 +75,7 @@ class BookingsScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
+    ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.05, end: 0);
   }
 
   Widget _buildBookingCard(BuildContext context, Trip trip, {required bool isActive}) {

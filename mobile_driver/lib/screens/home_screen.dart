@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../models/driver_models.dart';
 import '../data/mock_data.dart';
 import 'trip_manifest_screen.dart';
@@ -156,6 +157,6 @@ class HomeScreen extends StatelessWidget {
           const SizedBox(height: 20),
         ],
       ),
-    );
+    ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.05, end: 0);
   }
 }

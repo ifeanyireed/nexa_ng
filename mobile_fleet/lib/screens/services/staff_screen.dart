@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_fleet/utils/icon_util.dart';
+import 'package:flexicon/flexicon.dart';
 
 class StaffScreen extends StatefulWidget {
   const StaffScreen({Key? key}) : super(key: key);
@@ -38,10 +40,10 @@ class _StaffScreenState extends State<StaffScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.trip_origin, size: 16, color: Colors.green.shade600),
+                      Icon(fixIcon(FlexIcon.remix.roundAnchorPoint), size: 16, color: Colors.green.shade600),
                       const SizedBox(width: 12),
                       const Expanded(child: Text('Ogidan Bus Stop', style: TextStyle(fontWeight: FontWeight.w600))),
-                      const Icon(Icons.close, size: 16, color: Colors.grey),
+                      Icon(fixIcon(FlexIcon.remix.deleteTag), size: 16, color: Colors.grey),
                     ],
                   ),
                   Padding(
@@ -50,10 +52,10 @@ class _StaffScreenState extends State<StaffScreen> {
                   ),
                   Row(
                     children: [
-                      Icon(Icons.location_on, size: 16, color: Colors.blue.shade600),
+                      Icon(fixIcon(FlexIcon.remix.locationPin3), size: 16, color: Colors.blue.shade600),
                       const SizedBox(width: 12),
                       const Expanded(child: Text('Sandfill Bus Stop', style: TextStyle(fontWeight: FontWeight.w600))),
-                      const Icon(Icons.close, size: 16, color: Colors.grey),
+                      Icon(fixIcon(FlexIcon.remix.deleteTag), size: 16, color: Colors.grey),
                     ],
                   ),
                 ],
@@ -75,9 +77,9 @@ class _StaffScreenState extends State<StaffScreen> {
                           border: Border.all(color: Colors.grey.shade300),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
-                            Icon(Icons.calendar_today, size: 16, color: Colors.grey),
+                            Icon(fixIcon(FlexIcon.remix.blankCalendar), size: 16, color: Colors.grey),
                             SizedBox(width: 8),
                             Text('Fri, 25 Sep', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                           ],
@@ -99,13 +101,13 @@ class _StaffScreenState extends State<StaffScreen> {
                           border: Border.all(color: Colors.grey.shade300),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Row(
+                        child: Row(
                           children: [
-                            Icon(Icons.access_time, size: 16, color: Colors.grey),
+                            Icon(fixIcon(FlexIcon.remix.countdownTimer), size: 16, color: Colors.grey),
                             SizedBox(width: 8),
                             Text('05:40 AM', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                             Spacer(),
-                            Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.grey),
+                            Icon(fixIcon(FlexIcon.remix.downloadArrow), size: 16, color: Colors.grey),
                           ],
                         ),
                       )
@@ -116,11 +118,11 @@ class _StaffScreenState extends State<StaffScreen> {
             ),
             const SizedBox(height: 24),
             
-            const Row(
+            Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Available vehicles', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                Icon(Icons.keyboard_arrow_up, color: Colors.grey),
+                Icon(fixIcon(FlexIcon.remix.alignTop1), color: Colors.grey),
               ],
             ),
             const SizedBox(height: 12),
@@ -134,14 +136,14 @@ class _StaffScreenState extends State<StaffScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Toyota Coaster • AAA-17JL', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                       SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.event_seat, size: 12, color: Colors.grey),
+                          Icon(fixIcon(FlexIcon.remix.sofa), size: 12, color: Colors.grey),
                           SizedBox(width: 4),
                           Text('26 seats', style: TextStyle(color: Colors.grey, fontSize: 12)),
                         ],
@@ -152,7 +154,7 @@ class _StaffScreenState extends State<StaffScreen> {
                     children: [
                       const Text('₦3,010.00', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 14)),
                       const SizedBox(width: 8),
-                      Icon(Icons.check_circle, color: Colors.green.shade600, size: 20),
+                      Icon(fixIcon(FlexIcon.remix.autoCorrectionCheck), color: Colors.green.shade600, size: 20),
                     ],
                   )
                 ],

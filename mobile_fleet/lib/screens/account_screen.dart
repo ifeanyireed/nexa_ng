@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/transport_models.dart';
+import 'package:mobile_fleet/utils/icon_util.dart';
+import 'package:flexicon/flexicon.dart';
 
 class AccountScreen extends StatelessWidget {
   final UserProfile user;
@@ -42,7 +44,7 @@ class AccountScreen extends StatelessWidget {
                   CircleAvatar(
                     radius: 40,
                     backgroundColor: Colors.grey.shade200,
-                    child: const Icon(Icons.person, size: 40, color: Colors.grey),
+                    child: Icon(fixIcon(FlexIcon.remix.userCircleSingle), size: 40, color: Colors.grey),
                   ),
                   const SizedBox(height: 12),
                   Text(
@@ -66,7 +68,7 @@ class AccountScreen extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.directions_car, color: Colors.orange),
+                        Icon(fixIcon(FlexIcon.remix.carTaxi1), color: Colors.orange),
                         const SizedBox(width: 12),
                         const Expanded(
                           child: Column(
@@ -77,7 +79,7 @@ class AccountScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                        const Icon(Icons.arrow_forward, size: 16, color: Colors.orange),
+                        Icon(fixIcon(FlexIcon.remix.lineArrowExpand), size: 16, color: Colors.orange),
                       ],
                     ),
                   ),
@@ -86,12 +88,12 @@ class AccountScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             _buildSection(context, [
-              _buildListTile(Icons.stars, 'Reward', trailingText: '${user.rewardPoints} pts >', iconColor: Colors.green),
-              _buildListTile(Icons.account_balance_wallet, 'Wallet', trailingText: '>'),
-              _buildListTile(Icons.credit_card, 'Cards', trailingText: '>'),
-              _buildListTile(Icons.card_giftcard, 'Promotions', trailingText: '>'),
-              _buildListTile(Icons.location_on, 'Saved Locations', trailingText: '>'),
-              _buildListTile(Icons.star, 'Favourite routes', trailingText: '>'),
+              _buildListTile(fixIcon(FlexIcon.remix.starCircle), 'Reward', trailingText: '${user.rewardPoints} pts >', iconColor: Colors.green),
+              _buildListTile(fixIcon(FlexIcon.remix.wallet), 'Wallet', trailingText: '>'),
+              _buildListTile(fixIcon(FlexIcon.remix.creditCard4), 'Cards', trailingText: '>'),
+              _buildListTile(fixIcon(FlexIcon.remix.newStickyNote), 'Promotions', trailingText: '>'),
+              _buildListTile(fixIcon(FlexIcon.remix.locationPin3), 'Saved Locations', trailingText: '>'),
+              _buildListTile(fixIcon(FlexIcon.remix.starCircle), 'Favourite routes', trailingText: '>'),
             ]),
             const SizedBox(height: 8),
             const Padding(
@@ -102,9 +104,9 @@ class AccountScreen extends StatelessWidget {
               ),
             ),
             _buildSection(context, [
-              _buildListTile(Icons.headset_mic, 'Support', trailingText: '>'),
-              _buildListTile(Icons.alt_route, 'Suggest route', trailingText: '>'),
-              _buildListTile(Icons.emergency, 'Emergency Contact', trailingText: '>'),
+              _buildListTile(fixIcon(FlexIcon.remix.customerSupport5), 'Support', trailingText: '>'),
+              _buildListTile(fixIcon(FlexIcon.remix.lineArrowRoadmap), 'Suggest route', trailingText: '>'),
+              _buildListTile(fixIcon(FlexIcon.remix.warningDiamond), 'Emergency Contact', trailingText: '>'),
             ]),
             const SizedBox(height: 8),
             const Padding(
@@ -115,8 +117,8 @@ class AccountScreen extends StatelessWidget {
               ),
             ),
             _buildSection(context, [
-              _buildListTile(Icons.security, 'Security', trailingText: '>'),
-              _buildListTile(Icons.logout, 'Logout', trailingText: '>', isDestructive: true),
+              _buildListTile(fixIcon(FlexIcon.remix.shield1), 'Security', trailingText: '>'),
+              _buildListTile(fixIcon(FlexIcon.remix.logout1), 'Logout', trailingText: '>', isDestructive: true),
             ]),
             const SizedBox(height: 24),
             const Text('What\'s new on v2.10.7 ?', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),

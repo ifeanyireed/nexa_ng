@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flexicon/flexicon.dart';
-import '../main.dart'; // Import to access MainAppNavigationScaffold
+import 'home_screen.dart';
 import 'signup_screen.dart';
+import 'package:mobile_fleet/utils/icon_util.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -18,7 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _login() {
     // Basic mock login - navigate to main screen
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const MainAppNavigationScaffold()),
+      MaterialPageRoute(builder: (context) => const HomeScreen()),
     );
   }
 
@@ -63,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 decoration: InputDecoration(
                   labelText: 'Email Address',
                   hintText: 'hello@example.com',
-                  prefixIcon: const Icon(Icons.email_outlined),
+                  prefixIcon: Icon(fixIcon(FlexIcon.remix.inbox)),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -77,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   labelText: 'Password',
-                  prefixIcon: const Icon(Icons.lock_outline),
+                  prefixIcon: Icon(fixIcon(FlexIcon.remix.shield1)),
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword ? Icons.visibility_off : Icons.visibility,

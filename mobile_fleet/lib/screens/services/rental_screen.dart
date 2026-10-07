@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_fleet/utils/icon_util.dart';
+import 'package:flexicon/flexicon.dart';
 
 class RentalScreen extends StatelessWidget {
   const RentalScreen({Key? key}) : super(key: key);
@@ -50,7 +52,7 @@ class RentalScreen extends StatelessWidget {
                   color: Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.directions_bus, size: 40, color: Colors.grey),
+                child: Icon(fixIcon(FlexIcon.remix.transferTruckTime), size: 40, color: Colors.grey),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -71,9 +73,9 @@ class RentalScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              _buildFeatureIcon(Icons.ac_unit, 'AC'),
+              _buildFeatureIcon(fixIcon(FlexIcon.remix.flower), 'AC'),
               const SizedBox(width: 16),
-              _buildFeatureIcon(Icons.electrical_services, 'Charger'),
+              _buildFeatureIcon(fixIcon(FlexIcon.remix.flash3), 'Charger'),
             ],
           )
         ],

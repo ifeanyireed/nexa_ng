@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/driver_models.dart';
+import 'package:mobile_driver/utils/icon_util.dart';
+import 'package:flexicon/flexicon.dart';
 
 class TripManifestScreen extends StatefulWidget {
   final DriverTrip trip;
@@ -16,7 +18,7 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF757575).shade300,
+      backgroundColor: Colors.grey.shade300,
       body: Stack(
         children: [
           // Map Background Placeholder
@@ -37,7 +39,7 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
                 CircleAvatar(
                   backgroundColor: Colors.black54,
                   child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                    icon: Icon(fixIcon(FlexIcon.remix.lessThanSignCircle), color: Colors.black87),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ),
@@ -59,14 +61,14 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(color: Colors.blue.shade700, borderRadius: BorderRadius.circular(12)),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Next Stop - Yaba Bus stop', style: TextStyle(color: Colors.black54, fontSize: 12)),
                   SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(Icons.location_on, color: Colors.black87, size: 16),
+                      Icon(fixIcon(FlexIcon.remix.locationPin3), color: Colors.black87, size: 16),
                       SizedBox(width: 8),
                       Text('Estimated time of arrival - 17 mins', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
                     ],
@@ -148,7 +150,7 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                 onPressed: () {},
-                icon: const Icon(Icons.shield, color: Colors.black87, size: 16),
+                icon: Icon(fixIcon(FlexIcon.remix.shield1), color: Colors.black87, size: 16),
                 label: const Text('Emergency', style: TextStyle(color: Colors.black87)),
               ),
             ),
@@ -166,13 +168,13 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
           children: [
             Row(
               children: [
-                Icon(Icons.location_on, color: isPickup ? Colors.greenAccent : Colors.redAccent, size: 16),
+                Icon(fixIcon(FlexIcon.remix.locationPin3), color: isPickup ? Colors.greenAccent : Colors.redAccent, size: 16),
                 const SizedBox(width: 8),
                 Text(stop.name, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16)),
               ],
             ),
             IconButton(
-              icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF757575)),
+              icon: Icon(fixIcon(FlexIcon.remix.downloadArrow), color: Color(0xFF757575)),
               onPressed: () {},
             )
           ],
@@ -220,7 +222,7 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
                     Text(passenger.name, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w600)),
                     Row(
                       children: [
-                        const Icon(Icons.receipt, color: Color(0xFF757575), size: 12),
+                        Icon(fixIcon(FlexIcon.remix.receipt), color: Color(0xFF757575), size: 12),
                         const SizedBox(width: 4),
                         Text(passenger.ticketNumber, style: const TextStyle(color: Color(0xFF757575), fontSize: 12)),
                       ],
@@ -235,9 +237,9 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
             if (showNavMenu) ...[
               const SizedBox(height: 16),
               const Divider(color: Colors.black26),
-              _buildNavMenuItem(Icons.navigation, 'Navigation', Colors.greenAccent),
-              _buildNavMenuItem(Icons.qr_code, 'View QR code', Colors.greenAccent),
-              _buildNavMenuItem(Icons.add_circle, 'Add Passenger', Colors.greenAccent),
+              _buildNavMenuItem(fixIcon(FlexIcon.remix.locationTarget2), 'Navigation', Colors.greenAccent),
+              _buildNavMenuItem(fixIcon(FlexIcon.remix.scanner), 'View QR code', Colors.greenAccent),
+              _buildNavMenuItem(fixIcon(FlexIcon.remix.applicationAdd), 'Add Passenger', Colors.greenAccent),
             ]
           ],
         ),

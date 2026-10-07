@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_fleet/utils/icon_util.dart';
+import 'package:flexicon/flexicon.dart';
 
 class SchoolScreen extends StatelessWidget {
   const SchoolScreen({Key? key}) : super(key: key);
@@ -19,9 +21,9 @@ class SchoolScreen extends StatelessWidget {
           const SizedBox(height: 32),
           const Text('Recent Notifications', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           const SizedBox(height: 16),
-          _buildNotification('Chisom has arrived at school.', '07:45 AM', Icons.check_circle, Colors.green),
-          _buildNotification('Chisom boarded the bus.', '07:15 AM', Icons.directions_bus, const Color(0xFF1B62F0)),
-          _buildNotification('Bus is approaching pickup point.', '07:10 AM', Icons.location_on, const Color(0xFFF59E0B)),
+          _buildNotification('Chisom has arrived at school.', '07:45 AM', fixIcon(FlexIcon.remix.autoCorrectionCheck), Colors.green),
+          _buildNotification('Chisom boarded the bus.', '07:15 AM', fixIcon(FlexIcon.remix.transferTruckTime), const Color(0xFF1B62F0)),
+          _buildNotification('Bus is approaching pickup point.', '07:10 AM', fixIcon(FlexIcon.remix.locationPin3), const Color(0xFFF59E0B)),
         ],
       ),
     );
@@ -64,7 +66,7 @@ class SchoolScreen extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(isMorningCompleted ? Icons.check_circle : Icons.radio_button_unchecked, 
+                      Icon(isMorningCompleted ? fixIcon(FlexIcon.remix.autoCorrectionCheck) : fixIcon(FlexIcon.remix.roundAnchorPoint), 
                            color: isMorningCompleted ? Colors.green : Colors.grey, size: 16),
                       const SizedBox(width: 6),
                       Text(isMorningCompleted ? 'Completed' : 'Pending', style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -92,7 +94,7 @@ class SchoolScreen extends StatelessWidget {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: () {},
-              icon: const Icon(Icons.map, size: 18),
+              icon: Icon(fixIcon(FlexIcon.remix.mapLocation), size: 18),
               label: const Text('Track Bus'),
             ),
           )

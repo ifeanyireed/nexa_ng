@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../data/mock_data.dart';
 import 'trip_manifest_screen.dart';
+import 'package:mobile_driver/utils/icon_util.dart';
+import 'package:flexicon/flexicon.dart';
 
 class AllTripsScreen extends StatelessWidget {
   const AllTripsScreen({Key? key}) : super(key: key);
@@ -13,7 +15,7 @@ class AllTripsScreen extends StatelessWidget {
         backgroundColor: const Color(0xFFF8FAFC),
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          icon: Icon(fixIcon(FlexIcon.remix.lessThanSignCircle), color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text('All Trips', style: TextStyle(color: Colors.black87)),
@@ -25,10 +27,10 @@ class AllTripsScreen extends StatelessWidget {
               color: const Color(0xFF1B62F0),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: const Row(
+            child: Row(
               children: [
                 Text('Upcoming trips', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12)),
-                Icon(Icons.keyboard_arrow_down, color: Colors.black, size: 16),
+                Icon(fixIcon(FlexIcon.remix.downloadArrow), color: Colors.black, size: 16),
               ],
             ),
           )
@@ -58,7 +60,7 @@ class AllTripsScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.directions_bus, color: Color(0xFF757575), size: 16),
+              Icon(fixIcon(FlexIcon.remix.transferTruckTime), color: Color(0xFF757575), size: 16),
               const SizedBox(width: 8),
               Text(trip.routeCode, style: const TextStyle(color: Color(0xFF757575), fontSize: 12)),
             ],
@@ -66,7 +68,7 @@ class AllTripsScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              const Icon(Icons.trip_origin, color: Colors.greenAccent, size: 12),
+              Icon(fixIcon(FlexIcon.remix.roundAnchorPoint), color: Colors.greenAccent, size: 12),
               const SizedBox(width: 12),
               Text(trip.startLocation, style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
             ],
@@ -79,7 +81,7 @@ class AllTripsScreen extends StatelessWidget {
           ),
           Row(
             children: [
-              const Icon(Icons.location_on, color: Colors.greenAccent, size: 12),
+              Icon(fixIcon(FlexIcon.remix.locationPin3), color: Colors.greenAccent, size: 12),
               const SizedBox(width: 12),
               Text(trip.endLocation, style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
             ],
@@ -87,11 +89,11 @@ class AllTripsScreen extends StatelessWidget {
           const SizedBox(height: 20),
           Row(
             children: [
-              const Icon(Icons.access_time, color: Color(0xFF757575), size: 14),
+              Icon(fixIcon(FlexIcon.remix.countdownTimer), color: Color(0xFF757575), size: 14),
               const SizedBox(width: 6),
               Text(trip.time, style: const TextStyle(color: Color(0xFF757575), fontSize: 12)),
               const SizedBox(width: 16),
-              const Icon(Icons.person, color: Color(0xFF757575), size: 14),
+              Icon(fixIcon(FlexIcon.remix.userCircleSingle), color: Color(0xFF757575), size: 14),
               const SizedBox(width: 6),
               Text('${trip.totalPassengers} Passengers', style: const TextStyle(color: Color(0xFF757575), fontSize: 12)),
             ],
@@ -109,12 +111,12 @@ class AllTripsScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => TripManifestScreen(trip: trip)));
               },
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text('More Details', style: TextStyle(fontWeight: FontWeight.bold)),
                   SizedBox(width: 8),
-                  Icon(Icons.arrow_forward, size: 16),
+                  Icon(fixIcon(FlexIcon.remix.lineArrowExpand), size: 16),
                 ],
               ),
             ),

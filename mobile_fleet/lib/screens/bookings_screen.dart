@@ -104,7 +104,7 @@ class BookingsScreen extends StatelessWidget {
                         color: const Color(0xFF1B62F0).withOpacity(0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(Icons.directions_car, color: const Color(0xFF1B62F0), size: 16),
+                      child: Icon(fixIcon(FlexIcon.remix.carTaxi1), color: const Color(0xFF1B62F0), size: 16),
                     ),
                     const SizedBox(width: 12),
                     Text(
@@ -135,9 +135,9 @@ class BookingsScreen extends StatelessWidget {
               children: [
                 Column(
                   children: [
-                    Icon(Icons.my_location, color: const Color(0xFF94A3B8), size: 16),
+                    Icon(fixIcon(FlexIcon.remix.locationTarget2), color: const Color(0xFF94A3B8), size: 16),
                     Container(height: 20, width: 2, color: const Color(0xFFE2E8F0)),
-                    Icon(Icons.location_on, color: const Color(0xFFF59E0B), size: 16),
+                    Icon(fixIcon(FlexIcon.remix.locationPin3), color: const Color(0xFFF59E0B), size: 16),
                   ],
                 ),
                 const SizedBox(width: 12),

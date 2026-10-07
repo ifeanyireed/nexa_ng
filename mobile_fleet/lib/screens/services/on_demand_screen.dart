@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_fleet/utils/icon_util.dart';
+import 'package:flexicon/flexicon.dart';
 
 class OnDemandScreen extends StatelessWidget {
   const OnDemandScreen({Key? key}) : super(key: key);
@@ -11,8 +13,8 @@ class OnDemandScreen extends StatelessWidget {
           // Simulated Map Background
           Container(
             color: const Color(0xFFE2E8F0),
-            child: const Center(
-              child: Icon(Icons.map, size: 100, color: Color(0xFFCBD5E1)),
+            child: Center(
+              child: Icon(fixIcon(FlexIcon.remix.mapLocation), size: 100, color: Color(0xFFCBD5E1)),
             ),
           ),
           
@@ -25,7 +27,7 @@ class OnDemandScreen extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                child: const Icon(Icons.arrow_back, color: Colors.black),
+                child: Icon(fixIcon(FlexIcon.remix.lessThanSignCircle), color: Colors.black),
               ),
             ),
           ),
@@ -56,9 +58,9 @@ class OnDemandScreen extends StatelessWidget {
                     ),
                     child: Column(
                       children: [
-                        const Row(
+                        Row(
                           children: [
-                            Icon(Icons.my_location, color: Color(0xFF1B62F0), size: 20),
+                            Icon(fixIcon(FlexIcon.remix.locationTarget2), color: Color(0xFF1B62F0), size: 20),
                             SizedBox(width: 12),
                             Text('Current Location', style: TextStyle(fontWeight: FontWeight.w600)),
                           ],
@@ -69,7 +71,7 @@ class OnDemandScreen extends StatelessWidget {
                         ),
                         Row(
                           children: [
-                            const Icon(Icons.search, color: Color(0xFF64748B), size: 20),
+                            Icon(fixIcon(FlexIcon.remix.magnifyingGlass), color: Color(0xFF64748B), size: 20),
                             const SizedBox(width: 12),
                             Text('Search destination...', style: TextStyle(color: Colors.grey.shade500)),
                           ],
@@ -83,9 +85,9 @@ class OnDemandScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildVehicleOption('Economy', '₦1,500', Icons.local_taxi, true),
-                      _buildVehicleOption('Standard', '₦2,500', Icons.directions_car, false),
-                      _buildVehicleOption('SUV', '₦4,000', Icons.car_rental, false),
+                      _buildVehicleOption('Economy', '₦1,500', fixIcon(FlexIcon.remix.carTaxi1), true),
+                      _buildVehicleOption('Standard', '₦2,500', fixIcon(FlexIcon.remix.carTaxi1), false),
+                      _buildVehicleOption('SUV', '₦4,000', fixIcon(FlexIcon.remix.carTaxi1), false),
                     ],
                   ),
                   const SizedBox(height: 24),

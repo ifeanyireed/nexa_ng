@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
+import 'package:mobile_fleet/utils/icon_util.dart';
+import 'package:flexicon/flexicon.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({Key? key}) : super(key: key);
@@ -46,9 +48,9 @@ class _SignupScreenState extends State<SignupScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(8)),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.check_circle, color: Colors.green),
+                    Icon(fixIcon(FlexIcon.remix.autoCorrectionCheck), color: Colors.green),
                     SizedBox(width: 8),
                     Expanded(child: Text('Corporate account detected. You will be linked to your Staff Transport Plan.', style: TextStyle(color: Colors.green))),
                   ],

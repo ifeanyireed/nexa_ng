@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/transport_models.dart';
+import 'package:mobile_fleet/utils/icon_util.dart';
+import 'package:flexicon/flexicon.dart';
 
 class TransportMockData {
   static final UserProfile currentUser = UserProfile(
@@ -19,7 +21,7 @@ class TransportMockData {
       name: 'Ride',
       description: 'On-demand rides',
       type: ServiceType.onDemand,
-      icon: Icons.local_taxi,
+      icon: fixIcon(FlexIcon.remix.carTaxi1),
       color: const Color(0xFF1769aa),
     ),
     ServiceModule(
@@ -27,7 +29,7 @@ class TransportMockData {
       name: 'Shuttle',
       description: 'Scheduled shuttles',
       type: ServiceType.shuttle,
-      icon: Icons.directions_bus,
+      icon: fixIcon(FlexIcon.remix.transferTruckTime),
       color: const Color(0xFF1B62F0),
     ),
     ServiceModule(
@@ -35,7 +37,7 @@ class TransportMockData {
       name: 'Rent',
       description: 'Hire any vehicle',
       type: ServiceType.rental,
-      icon: Icons.car_rental,
+      icon: fixIcon(FlexIcon.remix.carTaxi1),
       color: const Color(0xFF7354b5),
     ),
     ServiceModule(
@@ -43,7 +45,7 @@ class TransportMockData {
       name: 'Staff Transport',
       description: 'Corporate commute',
       type: ServiceType.staff,
-      icon: Icons.business_center,
+      icon: fixIcon(FlexIcon.remix.store2),
       color: const Color(0xFFe65100),
     ),
     ServiceModule(
@@ -51,7 +53,7 @@ class TransportMockData {
       name: 'Interstate',
       description: 'Travel between cities',
       type: ServiceType.interstate,
-      icon: Icons.map,
+      icon: fixIcon(FlexIcon.remix.mapLocation),
       color: const Color(0xFFF59E0B),
     ),
     ServiceModule(
@@ -59,7 +61,7 @@ class TransportMockData {
       name: 'School',
       description: 'School transport',
       type: ServiceType.school,
-      icon: Icons.school,
+      icon: fixIcon(FlexIcon.remix.building1),
       color: const Color(0xFF10B981),
     ),
   ];

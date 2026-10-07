@@ -101,16 +101,16 @@ class _HomeScreenState extends State<HomeScreen> {
                 Row(
                   children: [
                     const Text('Lagos, Nigeria', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 14)),
-                    const Icon(Icons.keyboard_arrow_down, size: 20),
+                    Icon(fixIcon(FlexIcon.remix.downloadArrow), size: 20),
                   ],
                 ),
                 Row(
                   children: [
-                    const Icon(Icons.headset_mic_outlined, color: Colors.black),
+                    Icon(fixIcon(FlexIcon.remix.customerSupport5), color: Colors.black),
                     const SizedBox(width: 16),
                     Stack(
                       children: [
-                        const Icon(Icons.notifications_outlined, color: Colors.black),
+                        Icon(fixIcon(FlexIcon.remix.bellNotification), color: Colors.black),
                         Positioned(
                           right: 0,
                           top: 0,
@@ -139,7 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(12)),
                   child: Row(
                     children: [
-                      const Icon(Icons.stars, color: Colors.orange, size: 14),
+                      Icon(fixIcon(FlexIcon.remix.starCircle), color: Colors.orange, size: 14),
                       const SizedBox(width: 4),
                       Text('${user.rewardPoints}', style: const TextStyle(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.bold)),
                     ],
@@ -155,9 +155,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: Colors.grey.shade300),
               ),
-              child: const TextField(
+              child: TextField(
                 decoration: InputDecoration(
-                  icon: Icon(Icons.search, color: Colors.grey),
+                  icon: Icon(fixIcon(FlexIcon.remix.magnifyingGlass), color: Colors.grey),
                   hintText: 'Where would you like to go?',
                   border: InputBorder.none,
                 ),
@@ -213,7 +213,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(height: 16),
               Row(
                 children: [
-                  _buildTimelineIcon(Icons.my_location, Colors.white),
+                  _buildTimelineIcon(fixIcon(FlexIcon.remix.locationTarget2), Colors.white),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -233,7 +233,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               Row(
                 children: [
-                  _buildTimelineIcon(Icons.location_on, Colors.white),
+                  _buildTimelineIcon(fixIcon(FlexIcon.remix.locationPin3), Colors.white),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -286,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                child: const Icon(Icons.arrow_forward, color: Color(0xFF1B62F0), size: 20),
+                child: Icon(fixIcon(FlexIcon.remix.lineArrowExpand), color: Color(0xFF1B62F0), size: 20),
               )
             ],
           ),

@@ -3,6 +3,8 @@ import '../models/driver_models.dart';
 import '../data/mock_data.dart';
 import 'trip_manifest_screen.dart';
 import 'all_trips_screen.dart';
+import 'package:mobile_driver/utils/icon_util.dart';
+import 'package:flexicon/flexicon.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -33,7 +35,7 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: 20),
                 Row(
                   children: [
-                    const Icon(Icons.wb_sunny, color: Colors.orange, size: 24),
+                    Icon(fixIcon(FlexIcon.remix.flower), color: Colors.orange, size: 24),
                     const SizedBox(width: 8),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -43,7 +45,7 @@ class HomeScreen extends StatelessWidget {
                           children: [
                             Text(driver.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
                             const SizedBox(width: 8),
-                            const Icon(Icons.star, color: Colors.greenAccent, size: 14),
+                            Icon(fixIcon(FlexIcon.remix.starCircle), color: Colors.greenAccent, size: 14),
                             Text(' ${driver.rating} ratings', style: const TextStyle(color: Colors.white70, fontSize: 12)),
                           ],
                         )
@@ -72,7 +74,7 @@ class HomeScreen extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.directions_bus, color: Color(0xFF757575), size: 16),
+                      Icon(fixIcon(FlexIcon.remix.transferTruckTime), color: Color(0xFF757575), size: 16),
                       const SizedBox(width: 8),
                       Text(nextTrip.routeCode, style: const TextStyle(color: Color(0xFF757575), fontSize: 12)),
                     ],
@@ -80,7 +82,7 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      const Icon(Icons.trip_origin, color: Colors.greenAccent, size: 12),
+                      Icon(fixIcon(FlexIcon.remix.roundAnchorPoint), color: Colors.greenAccent, size: 12),
                       const SizedBox(width: 12),
                       Text(nextTrip.startLocation, style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
                     ],
@@ -93,7 +95,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                   Row(
                     children: [
-                      const Icon(Icons.location_on, color: Colors.greenAccent, size: 12),
+                      Icon(fixIcon(FlexIcon.remix.locationPin3), color: Colors.greenAccent, size: 12),
                       const SizedBox(width: 12),
                       Text(nextTrip.endLocation, style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
                     ],
@@ -101,11 +103,11 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Icon(Icons.access_time, color: Color(0xFF757575), size: 14),
+                      Icon(fixIcon(FlexIcon.remix.countdownTimer), color: Color(0xFF757575), size: 14),
                       const SizedBox(width: 6),
                       Text(nextTrip.time, style: const TextStyle(color: Color(0xFF757575), fontSize: 12)),
                       const SizedBox(width: 16),
-                      const Icon(Icons.person, color: Color(0xFF757575), size: 14),
+                      Icon(fixIcon(FlexIcon.remix.userCircleSingle), color: Color(0xFF757575), size: 14),
                       const SizedBox(width: 6),
                       Text('${nextTrip.totalPassengers} Passengers', style: const TextStyle(color: Color(0xFF757575), fontSize: 12)),
                     ],
@@ -123,12 +125,12 @@ class HomeScreen extends StatelessWidget {
                       onPressed: () {
                         Navigator.push(context, MaterialPageRoute(builder: (_) => TripManifestScreen(trip: nextTrip)));
                       },
-                      child: const Row(
+                      child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text('More Details', style: TextStyle(fontWeight: FontWeight.bold)),
                           SizedBox(width: 8),
-                          Icon(Icons.arrow_forward, size: 16),
+                          Icon(fixIcon(FlexIcon.remix.lineArrowExpand), size: 16),
                         ],
                       ),
                     ),
@@ -141,7 +143,7 @@ class HomeScreen extends StatelessWidget {
           const Spacer(),
           Column(
             children: [
-              const Icon(Icons.keyboard_arrow_down, color: Color(0xFF757575)),
+              Icon(fixIcon(FlexIcon.remix.downloadArrow), color: Color(0xFF757575)),
               const Text('4 More Trips', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
               TextButton(
                 onPressed: () {

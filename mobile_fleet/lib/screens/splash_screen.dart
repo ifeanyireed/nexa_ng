@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
+import 'package:mobile_fleet/utils/icon_util.dart';
+import 'package:flexicon/flexicon.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -26,8 +28,8 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.directions_transit, size: 80, color: Colors.white),
+          children: [
+            Icon(fixIcon(FlexIcon.remix.transferTruckTime), size: 80, color: Colors.white),
             SizedBox(height: 20),
             Text(
               'Transport OS',

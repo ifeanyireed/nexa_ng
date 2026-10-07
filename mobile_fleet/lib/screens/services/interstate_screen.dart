@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mobile_fleet/utils/icon_util.dart';
+import 'package:flexicon/flexicon.dart';
 
 class InterstateScreen extends StatelessWidget {
   const InterstateScreen({Key? key}) : super(key: key);
@@ -25,7 +27,7 @@ class InterstateScreen extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.circle_outlined, color: Color(0xFF1B62F0), size: 16),
+                      Icon(fixIcon(FlexIcon.remix.roundAnchorPoint), color: Color(0xFF1B62F0), size: 16),
                       const SizedBox(width: 12),
                       Expanded(
                         child: DropdownButtonFormField<String>(
@@ -39,7 +41,7 @@ class InterstateScreen extends StatelessWidget {
                   const Divider(),
                   Row(
                     children: [
-                      const Icon(Icons.location_on, color: Color(0xFFE11D48), size: 18),
+                      Icon(fixIcon(FlexIcon.remix.locationPin3), color: Color(0xFFE11D48), size: 18),
                       const SizedBox(width: 12),
                       Expanded(
                         child: DropdownButtonFormField<String>(
@@ -53,7 +55,7 @@ class InterstateScreen extends StatelessWidget {
                   const Divider(),
                   Row(
                     children: [
-                      const Icon(Icons.calendar_month, color: Color(0xFF64748B), size: 18),
+                      Icon(fixIcon(FlexIcon.remix.calendarMark), color: Color(0xFF64748B), size: 18),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text('Tomorrow, ${DateTime.now().add(const Duration(days: 1)).day}/${DateTime.now().month}', style: const TextStyle(fontWeight: FontWeight.w600)),
@@ -144,7 +146,7 @@ class InterstateScreen extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.directions_bus, size: 16, color: Color(0xFF64748B)),
+                  Icon(fixIcon(FlexIcon.remix.transferTruckTime), size: 16, color: Color(0xFF64748B)),
                   const SizedBox(width: 6),
                   Text(busType, style: const TextStyle(color: Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.w600)),
                 ],

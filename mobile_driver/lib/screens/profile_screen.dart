@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/mock_data.dart';
+import 'package:mobile_driver/utils/icon_util.dart';
+import 'package:flexicon/flexicon.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -14,7 +16,7 @@ class ProfileScreen extends StatelessWidget {
         backgroundColor: const Color(0xFFF8FAFC),
         elevation: 0,
         actions: [
-          IconButton(icon: const Icon(Icons.settings, color: Colors.black87), onPressed: () {}),
+          IconButton(icon: Icon(fixIcon(FlexIcon.remix.tuneAdjustVolume), color: Colors.black87), onPressed: () {}),
         ],
       ),
       body: SingleChildScrollView(
@@ -38,7 +40,7 @@ class ProfileScreen extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.stars, color: Colors.orange, size: 16),
+                        Icon(fixIcon(FlexIcon.remix.starCircle), color: Colors.orange, size: 16),
                         const SizedBox(width: 4),
                         Text('${driver.points} points', style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
                       ],
@@ -49,12 +51,12 @@ class ProfileScreen extends StatelessWidget {
             ),
             const SizedBox(height: 40),
             
-            _buildMenuItem(Icons.person_outline, 'Account'),
-            _buildMenuItem(Icons.card_giftcard, 'Rewards'),
-            _buildMenuItem(Icons.directions_car, 'Vehicles', trailing: '${driver.activeVehiclesCount} Active Vehicles'),
-            _buildMenuItem(Icons.route, 'Routes'),
-            _buildMenuItem(Icons.security, 'Security'),
-            _buildMenuItem(Icons.headset_mic, 'Support'),
+            _buildMenuItem(fixIcon(FlexIcon.remix.userCircleSingle), 'Account'),
+            _buildMenuItem(fixIcon(FlexIcon.remix.newStickyNote), 'Rewards'),
+            _buildMenuItem(fixIcon(FlexIcon.remix.carTaxi1), 'Vehicles', trailing: '${driver.activeVehiclesCount} Active Vehicles'),
+            _buildMenuItem(fixIcon(FlexIcon.remix.lineArrowRoadmap), 'Routes'),
+            _buildMenuItem(fixIcon(FlexIcon.remix.shield1), 'Security'),
+            _buildMenuItem(fixIcon(FlexIcon.remix.customerSupport5), 'Support'),
           ],
         ),
       ),

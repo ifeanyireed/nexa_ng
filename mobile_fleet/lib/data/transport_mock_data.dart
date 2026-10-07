@@ -37,7 +37,7 @@ class TransportMockData {
       name: 'Rent',
       description: 'Hire any vehicle',
       type: ServiceType.rental,
-      icon: fixIcon(FlexIcon.remix.bicycleBike),
+      icon: fixIcon(FlexIcon.remix.calendarMark),
       color: const Color(0xFF7354b5),
     ),
     ServiceModule(

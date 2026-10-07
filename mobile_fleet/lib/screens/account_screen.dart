@@ -68,7 +68,7 @@ class AccountScreen extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        Icon(fixIcon(FlexIcon.remix.carTaxi1), color: Colors.orange),
+                        Icon(Icons.directions_car, color: Colors.orange),
                         const SizedBox(width: 12),
                         const Expanded(
                           child: Column(

@@ -47,10 +47,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return CustomScrollView(
       slivers: [
         _buildHeader(),
-        if (activeTrip != null) _buildActiveTripWidget(),
-        // Removed _buildWalletAndRewards() since it is moved to Account Screen in the new mockups
-        _buildIntelligentPrompt(),
         _buildDynamicServiceGrid(),
+        if (activeTrip != null) _buildActiveTripWidget(),
+        _buildIntelligentPrompt(),
         const SliverPadding(padding: EdgeInsets.only(bottom: 40)),
       ],
     );

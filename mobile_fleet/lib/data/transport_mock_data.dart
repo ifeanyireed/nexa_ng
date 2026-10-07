@@ -21,7 +21,7 @@ class TransportMockData {
       name: 'Ride',
       description: 'On-demand rides',
       type: ServiceType.onDemand,
-      icon: fixIcon(FlexIcon.remix.carTaxi1),
+      icon: Icons.directions_car,
       color: const Color(0xFF1769aa),
     ),
     ServiceModule(
@@ -37,7 +37,7 @@ class TransportMockData {
       name: 'Rent',
       description: 'Hire any vehicle',
       type: ServiceType.rental,
-      icon: fixIcon(FlexIcon.remix.carTaxi1),
+      icon: Icons.car_rental,
       color: const Color(0xFF7354b5),
     ),
     ServiceModule(

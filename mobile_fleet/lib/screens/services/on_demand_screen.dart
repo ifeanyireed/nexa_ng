@@ -85,9 +85,9 @@ class OnDemandScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildVehicleOption('Economy', '₦1,500', fixIcon(FlexIcon.remix.carTaxi1), true),
-                      _buildVehicleOption('Standard', '₦2,500', fixIcon(FlexIcon.remix.carTaxi1), false),
-                      _buildVehicleOption('SUV', '₦4,000', fixIcon(FlexIcon.remix.carTaxi1), false),
+                      _buildVehicleOption('Economy', '₦1,500', Icons.directions_car, true),
+                      _buildVehicleOption('Standard', '₦2,500', Icons.directions_car, false),
+                      _buildVehicleOption('SUV', '₦4,000', Icons.directions_car, false),
                     ],
                   ),
                   const SizedBox(height: 24),

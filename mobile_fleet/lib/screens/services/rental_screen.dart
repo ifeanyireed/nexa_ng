@@ -20,7 +20,7 @@ class RentalScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            _buildVehicleCard('Shuttlers Black', 'Experience travel like never before with the Jet Mover. Equipped...', '₦250,000.00', true),
+            _buildVehicleCard('Premium Black', 'Experience travel like never before with the Jet Mover. Equipped...', '₦250,000.00', true),
             const SizedBox(height: 16),
             _buildVehicleCard('Coaster Bus - New Shape', '(2017 - Present)', '₦350,000.00', false),
             const SizedBox(height: 16),

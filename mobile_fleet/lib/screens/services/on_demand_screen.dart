@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_fleet/utils/icon_util.dart';
 import 'package:flexicon/flexicon.dart';
+import '../../widgets/map_painter.dart';
 
 class OnDemandScreen extends StatelessWidget {
   const OnDemandScreen({Key? key}) : super(key: key);
@@ -10,11 +11,10 @@ class OnDemandScreen extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Simulated Map Background
-          Container(
-            color: const Color(0xFFE2E8F0),
-            child: Center(
-              child: Icon(fixIcon(FlexIcon.remix.mapLocation), size: 100, color: Color(0xFFCBD5E1)),
+          // Map Background
+          Positioned.fill(
+            child: CustomPaint(
+              painter: VectorMapPainter(),
             ),
           ),
           

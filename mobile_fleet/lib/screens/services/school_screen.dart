@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_fleet/utils/icon_util.dart';
 import 'package:flexicon/flexicon.dart';
+import '../tracking_screen.dart';
 
 class SchoolScreen extends StatelessWidget {
   const SchoolScreen({Key? key}) : super(key: key);
@@ -15,8 +16,8 @@ class SchoolScreen extends StatelessWidget {
         children: [
           const Text('Your Children', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           const SizedBox(height: 16),
-          _buildChildCard('Chisom Okafor', 'Grade 4 - Greenoak International', true, 'Arrived at School', '07:45 AM'),
-          _buildChildCard('David Okafor', 'Grade 2 - Greenoak International', false, 'Bus is 5 mins away', 'Pickup: 02:30 PM'),
+          _buildChildCard(context, 'Chisom Okafor', 'Grade 4 - Greenoak International', true, 'Arrived at School', '07:45 AM'),
+          _buildChildCard(context, 'David Okafor', 'Grade 2 - Greenoak International', false, 'Bus is 5 mins away', 'Pickup: 02:30 PM'),
           
           const SizedBox(height: 32),
           const Text('Recent Notifications', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
@@ -29,7 +30,7 @@ class SchoolScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildChildCard(String name, String school, bool isMorningCompleted, String status, String time) {
+  Widget _buildChildCard(BuildContext context, String name, String school, bool isMorningCompleted, String status, String time) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -93,7 +94,9 @@ class SchoolScreen extends StatelessWidget {
                 side: const BorderSide(color: Color(0xFF1B62F0)),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              onPressed: () {},
+              onPressed: () {
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TrackingScreen()));
+              },
               icon: Icon(fixIcon(FlexIcon.remix.mapLocation), size: 18),
               label: const Text('Track Bus'),
             ),

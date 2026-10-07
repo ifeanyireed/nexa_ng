@@ -57,32 +57,7 @@ class AccountScreen extends StatelessWidget {
                     style: TextStyle(color: Colors.grey.shade600),
                   ),
                   const SizedBox(height: 20),
-                  // Turn vehicle into earnings banner
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.orange.shade100),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(fixIcon(FlexIcon.remix.carTaxi1), color: Colors.orange),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Turn your vehicle into earnings', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                              Text('List your vehicle on Shuttlers and start making money', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                            ],
-                          ),
-                        ),
-                        Icon(Icons.chevron_right, size: 16, color: Colors.orange),
-                      ],
-                    ),
-                  ),
+
                 ],
               ),
             ),
@@ -130,7 +105,7 @@ class AccountScreen extends StatelessWidget {
   }
 
   Widget _buildSection(BuildContext context, List<Widget> children) {
-    return Container(
+    return Material(
       color: Colors.white,
       child: Column(
         children: children,

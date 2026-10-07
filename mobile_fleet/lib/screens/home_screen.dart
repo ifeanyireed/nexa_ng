@@ -11,6 +11,7 @@ import 'services/interstate_screen.dart';
 import 'services/school_screen.dart';
 import 'account_screen.dart';
 import 'bookings_screen.dart'; // Add Account Screen import
+import 'tracking_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -176,9 +177,18 @@ class _HomeScreenState extends State<HomeScreen> {
     return SliverToBoxAdapter(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
+        child: GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => TrackingScreen(trip: activeTrip),
+              ),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
             color: const Color(0xFF1B62F0),
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
@@ -252,6 +262,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 
@@ -446,16 +457,5 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
+

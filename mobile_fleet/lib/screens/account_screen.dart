@@ -3,6 +3,17 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../models/transport_models.dart';
 import 'package:mobile_fleet/utils/icon_util.dart';
 import 'package:flexicon/flexicon.dart';
+import 'profile/reward_screen.dart';
+import 'profile/wallet_screen.dart';
+import 'profile/cards_screen.dart';
+import 'profile/promotions_screen.dart';
+import 'profile/saved_locations_screen.dart';
+import 'profile/favourite_routes_screen.dart';
+import 'profile/support_screen.dart';
+import 'profile/suggest_route_screen.dart';
+import 'profile/emergency_contact_screen.dart';
+import 'profile/security_screen.dart';
+
 
 class AccountScreen extends StatelessWidget {
   final UserProfile user;
@@ -64,12 +75,12 @@ class AccountScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             _buildSection(context, [
-              _buildListTile(fixIcon(FlexIcon.remix.starCircle), 'Reward', trailingText: '${user.rewardPoints} pts >', iconColor: Colors.green),
-              _buildListTile(fixIcon(FlexIcon.remix.wallet), 'Wallet', trailingText: '>'),
-              _buildListTile(fixIcon(FlexIcon.remix.creditCard4), 'Cards', trailingText: '>'),
-              _buildListTile(fixIcon(FlexIcon.remix.newStickyNote), 'Promotions', trailingText: '>'),
-              _buildListTile(fixIcon(FlexIcon.remix.locationPin3), 'Saved Locations', trailingText: '>'),
-              _buildListTile(fixIcon(FlexIcon.remix.starCircle), 'Favourite routes', trailingText: '>'),
+              _buildListTile(context, fixIcon(FlexIcon.remix.starCircle), 'Reward', destination: RewardScreen(points: user.rewardPoints), trailingText: '${user.rewardPoints} pts >', iconColor: Colors.green),
+              _buildListTile(context, fixIcon(FlexIcon.remix.wallet), 'Wallet', destination: const WalletScreen(), trailingText: '>'),
+              _buildListTile(context, fixIcon(FlexIcon.remix.creditCard4), 'Cards', destination: const CardsScreen(), trailingText: '>'),
+              _buildListTile(context, fixIcon(FlexIcon.remix.newStickyNote), 'Promotions', destination: const PromotionsScreen(), trailingText: '>'),
+              _buildListTile(context, fixIcon(FlexIcon.remix.locationPin3), 'Saved Locations', destination: const SavedLocationsScreen(), trailingText: '>'),
+              _buildListTile(context, fixIcon(FlexIcon.remix.starCircle), 'Favourite routes', destination: const FavouriteRoutesScreen(), trailingText: '>'),
             ]),
             const SizedBox(height: 8),
             const Padding(
@@ -80,9 +91,9 @@ class AccountScreen extends StatelessWidget {
               ),
             ),
             _buildSection(context, [
-              _buildListTile(fixIcon(FlexIcon.remix.customerSupport5), 'Support', trailingText: '>'),
-              _buildListTile(fixIcon(FlexIcon.remix.lineArrowRoadmap), 'Suggest route', trailingText: '>'),
-              _buildListTile(fixIcon(FlexIcon.remix.warningDiamond), 'Emergency Contact', trailingText: '>'),
+              _buildListTile(context, fixIcon(FlexIcon.remix.customerSupport5), 'Support', destination: const SupportScreen(), trailingText: '>'),
+              _buildListTile(context, fixIcon(FlexIcon.remix.lineArrowRoadmap), 'Suggest route', destination: const SuggestRouteScreen(), trailingText: '>'),
+              _buildListTile(context, fixIcon(FlexIcon.remix.warningDiamond), 'Emergency Contact', destination: const EmergencyContactScreen(), trailingText: '>'),
             ]),
             const SizedBox(height: 8),
             const Padding(
@@ -93,8 +104,8 @@ class AccountScreen extends StatelessWidget {
               ),
             ),
             _buildSection(context, [
-              _buildListTile(fixIcon(FlexIcon.remix.shield1), 'Security', trailingText: '>'),
-              _buildListTile(fixIcon(FlexIcon.remix.logout1), 'Logout', trailingText: '>', isDestructive: true),
+              _buildListTile(context, fixIcon(FlexIcon.remix.shield1), 'Security', destination: const SecurityScreen(), trailingText: '>'),
+              _buildListTile(context, fixIcon(FlexIcon.remix.logout1), 'Logout', trailingText: '>', isDestructive: true),
             ]),
             const SizedBox(height: 24),
             const Text('What\'s new on v2.10.7 ?', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
@@ -114,14 +125,18 @@ class AccountScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildListTile(IconData icon, String title, {String? trailingText, Color? iconColor, bool isDestructive = false}) {
+  Widget _buildListTile(BuildContext context, IconData icon, String title, {String? trailingText, Color? iconColor, bool isDestructive = false, Widget? destination}) {
     return ListTile(
       leading: Icon(icon, color: isDestructive ? Colors.red : (iconColor ?? const Color(0xFF1B62F0))),
       title: Text(title, style: TextStyle(fontWeight: FontWeight.w500, color: isDestructive ? Colors.red : Colors.black)),
       trailing: trailingText != null 
           ? Text(trailingText, style: TextStyle(color: isDestructive ? Colors.red : Colors.grey.shade400, fontSize: 16)) 
           : null,
-      onTap: () {},
+      onTap: () {
+        if (destination != null) {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => destination));
+        }
+      },
     );
   }
 }

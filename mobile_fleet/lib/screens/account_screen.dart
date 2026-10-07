@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/transport_models.dart';
 
 class AccountScreen extends StatelessWidget {
-  final User user;
+  final UserProfile user;
   const AccountScreen({Key? key, required this.user}) : super(key: key);
 
   @override
@@ -86,7 +86,7 @@ class AccountScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             _buildSection(context, [
-              _buildListTile(Icons.stars, 'Reward', trailingText: '${user.loyaltyPoints} pts >', iconColor: Colors.green),
+              _buildListTile(Icons.stars, 'Reward', trailingText: '${user.rewardPoints} pts >', iconColor: Colors.green),
               _buildListTile(Icons.account_balance_wallet, 'Wallet', trailingText: '>'),
               _buildListTile(Icons.credit_card, 'Cards', trailingText: '>'),
               _buildListTile(Icons.card_giftcard, 'Promotions', trailingText: '>'),

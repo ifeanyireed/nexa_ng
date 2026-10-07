@@ -38,15 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_currentIndex == 1) {
       return const Center(child: Text("Bookings Flow (Coming Soon)"));
     } else if (_currentIndex == 2) {
-      return AccountScreen(user: User(
-        id: user.id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        phone: user.phone,
-        walletBalance: user.walletBalance,
-        loyaltyPoints: user.rewardPoints,
-      ));
+      return AccountScreen(user: user);
     }
 
     return CustomScrollView(
@@ -204,7 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   Text(
-                    activeTrip!.status,
+                    activeTrip!.status.name.toUpperCase(),
                     style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800),
                   ),
                 ],
@@ -223,7 +215,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ],
                     ),
                   ),
-                  Text(activeTrip!.scheduledTime.substring(11, 16), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  Text(activeTrip!.pickupTime.toString().substring(11, 16), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 ],
               ),
               Padding(
@@ -239,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text('Drop-off', style: TextStyle(color: Colors.white70, fontSize: 11)),
-                        Text(activeTrip!.dropoffLocation, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
+                        Text(activeTrip!.destination, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
                       ],
                     ),
                   ),

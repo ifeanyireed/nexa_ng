@@ -78,7 +78,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         elevation: 0,
         scrolledUnderElevation: 1,
         leading: IconButton(
-          icon: Icon(fixIcon(FlexIcon.remix.lessThanSignCircle), color: Color(0xFF0F172A)),
+          icon: Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
           onPressed: () => Navigator.of(context).pop(),
         ),
         actions: [
@@ -340,7 +340,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                                     ],
                                   ),
                                 ),
-                                Icon(fixIcon(FlexIcon.remix.lineArrowExpand), size: 13, color: Color(0xFF94A3B8)),
+                                Icon(Icons.chevron_right, size: 13, color: Color(0xFF94A3B8)),
                               ],
                             ),
                           ),

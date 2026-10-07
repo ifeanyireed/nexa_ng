@@ -130,7 +130,7 @@ class HomeScreen extends StatelessWidget {
                         children: [
                           Text('More Details', style: TextStyle(fontWeight: FontWeight.bold)),
                           SizedBox(width: 8),
-                          Icon(fixIcon(FlexIcon.remix.lineArrowExpand), size: 16),
+                          Icon(Icons.chevron_right, size: 16),
                         ],
                       ),
                     ),
@@ -143,7 +143,7 @@ class HomeScreen extends StatelessWidget {
           const Spacer(),
           Column(
             children: [
-              Icon(fixIcon(FlexIcon.remix.downloadArrow), color: Color(0xFF757575)),
+              Icon(Icons.keyboard_arrow_down, color: Color(0xFF757575)),
               const Text('4 More Trips', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
               TextButton(
                 onPressed: () {

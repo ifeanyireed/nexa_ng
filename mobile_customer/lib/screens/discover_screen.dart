@@ -367,7 +367,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                             ),
                             const SizedBox(width: 4),
                             Icon(
-                              fixIcon(FlexIcon.remix.lineArrowExpand),
+                              Icons.chevron_right,
                               size: 13,
                               color: Theme.of(context).colorScheme.primary,
                             ),

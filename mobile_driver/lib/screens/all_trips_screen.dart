@@ -15,7 +15,7 @@ class AllTripsScreen extends StatelessWidget {
         backgroundColor: const Color(0xFFF8FAFC),
         elevation: 0,
         leading: IconButton(
-          icon: Icon(fixIcon(FlexIcon.remix.lessThanSignCircle), color: Colors.black87),
+          icon: Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text('All Trips', style: TextStyle(color: Colors.black87)),
@@ -30,7 +30,7 @@ class AllTripsScreen extends StatelessWidget {
             child: Row(
               children: [
                 Text('Upcoming trips', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12)),
-                Icon(fixIcon(FlexIcon.remix.downloadArrow), color: Colors.black, size: 16),
+                Icon(Icons.keyboard_arrow_down, color: Colors.black, size: 16),
               ],
             ),
           )
@@ -116,7 +116,7 @@ class AllTripsScreen extends StatelessWidget {
                 children: [
                   Text('More Details', style: TextStyle(fontWeight: FontWeight.bold)),
                   SizedBox(width: 8),
-                  Icon(fixIcon(FlexIcon.remix.lineArrowExpand), size: 16),
+                  Icon(Icons.chevron_right, size: 16),
                 ],
               ),
             ),

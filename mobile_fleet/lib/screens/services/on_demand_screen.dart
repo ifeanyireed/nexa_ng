@@ -27,7 +27,7 @@ class OnDemandScreen extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                child: Icon(fixIcon(FlexIcon.remix.lessThanSignCircle), color: Colors.black),
+                child: Icon(Icons.arrow_back, color: Colors.black),
               ),
             ),
           ),

@@ -333,7 +333,7 @@ class _CreatePickupRequestScreenState extends State<CreatePickupRequestScreen> {
         elevation: 0,
         scrolledUnderElevation: 1,
         leading: IconButton(
-          icon: Icon(fixIcon(FlexIcon.remix.lessThanSignCircle),
+          icon: Icon(Icons.arrow_back,
               size: 18, color: Color(0xFF0F172A)),
           onPressed: () {
             if (widget.onBack != null) {

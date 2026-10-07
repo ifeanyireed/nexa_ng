@@ -39,7 +39,7 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
                 CircleAvatar(
                   backgroundColor: Colors.black54,
                   child: IconButton(
-                    icon: Icon(fixIcon(FlexIcon.remix.lessThanSignCircle), color: Colors.black87),
+                    icon: Icon(Icons.arrow_back, color: Colors.black87),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ),
@@ -174,7 +174,7 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
               ],
             ),
             IconButton(
-              icon: Icon(fixIcon(FlexIcon.remix.downloadArrow), color: Color(0xFF757575)),
+              icon: Icon(Icons.keyboard_arrow_down, color: Color(0xFF757575)),
               onPressed: () {},
             )
           ],

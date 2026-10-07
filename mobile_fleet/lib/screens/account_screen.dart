@@ -79,7 +79,7 @@ class AccountScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                        Icon(fixIcon(FlexIcon.remix.lineArrowExpand), size: 16, color: Colors.orange),
+                        Icon(Icons.chevron_right, size: 16, color: Colors.orange),
                       ],
                     ),
                   ),

@@ -118,7 +118,7 @@ class _ShuttleScreenState extends State<ShuttleScreen> {
                             SizedBox(width: 8),
                             Text('05:40 AM', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                             Spacer(),
-                            Icon(fixIcon(FlexIcon.remix.downloadArrow), size: 16, color: Colors.grey),
+                            Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.grey),
                           ],
                         ),
                       )

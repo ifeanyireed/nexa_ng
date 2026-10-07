@@ -109,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                             const SizedBox(width: 4),
                             Icon(
-                              fixIcon(FlexIcon.remix.downloadArrow),
+                              Icons.keyboard_arrow_down,
                               size: 16,
                               color: Theme.of(context).colorScheme.primary,
                             ),
@@ -420,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 4),
-                                  Icon(fixIcon(FlexIcon.remix.lineArrowExpand), color: const Color(0xFF60A5FA), size: 14),
+                                  Icon(Icons.chevron_right, color: const Color(0xFF60A5FA), size: 14),
                                 ],
                               ),
                             ),

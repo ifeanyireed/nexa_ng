@@ -84,7 +84,7 @@ class _ShippingScreenState extends State<ShippingScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _circleButton(
-                        icon: fixIcon(FlexIcon.remix.lessThanSignCircle),
+                        icon: Icons.arrow_back,
                         onTap: () {
                           if (widget.onBack != null) {
                             widget.onBack!();

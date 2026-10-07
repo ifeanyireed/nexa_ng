@@ -101,7 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Row(
                   children: [
                     const Text('Lagos, Nigeria', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 14)),
-                    Icon(fixIcon(FlexIcon.remix.downloadArrow), size: 20),
+                    Icon(Icons.keyboard_arrow_down, size: 20),
                   ],
                 ),
                 Row(
@@ -286,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                child: Icon(fixIcon(FlexIcon.remix.lineArrowExpand), color: Color(0xFF1B62F0), size: 20),
+                child: Icon(Icons.chevron_right, color: Color(0xFF1B62F0), size: 20),
               )
             ],
           ),

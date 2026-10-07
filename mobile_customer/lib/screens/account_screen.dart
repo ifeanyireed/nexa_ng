@@ -165,7 +165,7 @@ class _AccountScreenState extends State<AccountScreen> {
                             side: const BorderSide(color: Color(0xFF475569)),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
-                          icon: Icon(fixIcon(FlexIcon.remix.lineArrowExpandWindow2), size: 16),
+                          icon: Icon(Icons.open_in_new, size: 16),
                           label: const Text('Transfer', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12)),
                           onPressed: () {},
                         ),
@@ -317,7 +317,7 @@ class _AccountScreenState extends State<AccountScreen> {
         subtitle,
         style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
       ),
-      trailing: Icon(fixIcon(FlexIcon.remix.lineArrowExpand), size: 13, color: Color(0xFFCBD5E1)),
+      trailing: Icon(Icons.chevron_right, size: 13, color: Color(0xFFCBD5E1)),
       onTap: onTap,
     );
   }

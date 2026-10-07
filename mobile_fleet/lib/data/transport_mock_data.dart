@@ -46,6 +46,22 @@ class TransportMockData {
       icon: Icons.business_center,
       color: const Color(0xFFe65100),
     ),
+    ServiceModule(
+      id: 'srv_5',
+      name: 'Interstate',
+      description: 'Travel between cities',
+      type: ServiceType.interstate,
+      icon: Icons.map,
+      color: const Color(0xFFF59E0B),
+    ),
+    ServiceModule(
+      id: 'srv_6',
+      name: 'School',
+      description: 'School transport',
+      type: ServiceType.school,
+      icon: Icons.school,
+      color: const Color(0xFF10B981),
+    ),
   ];
 
   static final Trip? activeTrip = Trip(

@@ -9,7 +9,8 @@ import 'services/rental_screen.dart';
 import 'services/staff_screen.dart';
 import 'services/interstate_screen.dart';
 import 'services/school_screen.dart';
-import 'account_screen.dart'; // Add Account Screen import
+import 'account_screen.dart';
+import 'bookings_screen.dart'; // Add Account Screen import
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -38,7 +39,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildBody() {
     if (_currentIndex == 1) {
-      return const Center(child: Text("Bookings Flow (Coming Soon)"));
+      return const BookingsScreen();
     } else if (_currentIndex == 2) {
       return AccountScreen(user: user);
     }

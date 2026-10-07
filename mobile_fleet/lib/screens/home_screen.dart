@@ -25,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final Trip? activeTrip = TransportMockData.activeTrip;
 
   int _currentIndex = 0;
+  int _currentBannerIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -298,37 +299,51 @@ class _HomeScreenState extends State<HomeScreen> {
 
   SliverToBoxAdapter _buildBanners() {
     return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.only(top: 10, bottom: 20),
-        child: SizedBox(
-          height: 140,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            physics: const BouncingScrollPhysics(),
-            itemCount: 5,
-            itemBuilder: (context, index) {
-              return Container(
-                width: MediaQuery.of(context).size.width * 0.85,
-                margin: const EdgeInsets.only(right: 16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  image: DecorationImage(
-                    image: AssetImage('assets/images/banner${index + 1}.png'),
-                    fit: BoxFit.cover,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
+      child: Column(
+        children: [
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 160,
+            child: PageView.builder(
+              physics: const BouncingScrollPhysics(),
+              itemCount: 5,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentBannerIndex = index;
+                });
+              },
+              itemBuilder: (context, index) {
+                return Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage('assets/images/banner${index + 1}.png'),
+                      fit: BoxFit.cover,
                     ),
-                  ],
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(5, (index) {
+              final isActive = _currentBannerIndex == index;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                height: 8,
+                width: isActive ? 24 : 8,
+                decoration: BoxDecoration(
+                  color: isActive ? const Color(0xFF1B62F0) : const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(4),
                 ),
               );
-            },
+            }),
           ),
-        ),
+          const SizedBox(height: 20),
+        ],
       ),
     );
   }

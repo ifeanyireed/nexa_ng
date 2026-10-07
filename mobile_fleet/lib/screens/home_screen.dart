@@ -380,7 +380,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisCount: 3,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 0.9,
+                childAspectRatio: 1.15,
               ),
               itemCount: services.length,
               itemBuilder: (context, index) {
@@ -430,18 +430,22 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: service.color.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(service.icon, color: service.color, size: 24),
-              ),
-              const SizedBox(height: 10),
+              Image.asset(service.imagePath, width: 44, height: 44),
+              const SizedBox(height: 8),
               Text(
                 service.name,
-                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
                 style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w700,

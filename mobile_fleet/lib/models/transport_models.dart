@@ -14,7 +14,7 @@ class ServiceModule {
   final String name;
   final String description;
   final ServiceType type;
-  final IconData icon;
+  final String imagePath;
   final Color color;
 
   ServiceModule({
@@ -22,7 +22,7 @@ class ServiceModule {
     required this.name,
     required this.description,
     required this.type,
-    required this.icon,
+    required this.imagePath,
     required this.color,
   });
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flexicon/flexicon.dart';
-import 'package:mobile_customer/utils/icon_util.dart';
+import 'package:mobile_fleet/utils/icon_util.dart';
 
 class VectorMapPainter extends CustomPainter {
   @override

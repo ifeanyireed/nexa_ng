@@ -48,6 +48,8 @@ class _HomeScreenState extends State<HomeScreen> {
       slivers: [
         _buildHeader(),
         _buildDynamicServiceGrid(),
+        _buildBanners(),
+
         if (activeTrip != null) _buildActiveTripWidget(),
         _buildIntelligentPrompt(),
         const SliverPadding(padding: EdgeInsets.only(bottom: 40)),
@@ -294,6 +296,42 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  SliverToBoxAdapter _buildBanners() {
+    return SliverToBoxAdapter(
+      child: Padding(
+        padding: const EdgeInsets.only(top: 10, bottom: 20),
+        child: SizedBox(
+          height: 140,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            physics: const BouncingScrollPhysics(),
+            itemCount: 5,
+            itemBuilder: (context, index) {
+              return Container(
+                width: MediaQuery.of(context).size.width * 0.85,
+                margin: const EdgeInsets.only(right: 16),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  image: DecorationImage(
+                    image: AssetImage('assets/images/banner${index + 1}.png'),
+                    fit: BoxFit.cover,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
   SliverToBoxAdapter _buildDynamicServiceGrid() {
     return SliverToBoxAdapter(
       child: Padding(

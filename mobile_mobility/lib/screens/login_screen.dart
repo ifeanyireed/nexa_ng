@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flexicon/flexicon.dart';
 import 'home_screen.dart';
 import 'signup_screen.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mobile_mobility/utils/icon_util.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -154,19 +155,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 56,
                 child: OutlinedButton.icon(
                   onPressed: () {},
-                  icon: Container(
+                  icon: SvgPicture.asset(
+                    'assets/images/google_logo.svg',
                     width: 24,
                     height: 24,
-                    alignment: Alignment.center,
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFEA4335),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Text('G',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16)),
                   ),
                   label: const Text('Continue with Google',
                       style: TextStyle(

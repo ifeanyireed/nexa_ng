@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../main.dart'; // Import to access MainAppNavigationScaffold
 
 class OnboardingScreen extends StatefulWidget {
@@ -146,7 +145,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
         ),
       ),
-    ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.05, end: 0);
+    );
   }
 
   @override

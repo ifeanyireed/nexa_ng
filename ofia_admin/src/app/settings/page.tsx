@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function AiEmailRedirectPage() {
+export default function SettingsRedirectPage() {
   redirect("/settings/email");
 }

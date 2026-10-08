@@ -153,7 +153,13 @@ export function SuperAdminShell({
         { label: "AI Cockpit", href: "/ai", icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
         { label: "Agent Swarm", href: "/ai/swarm", icon: <Bot className="w-3.5 h-3.5" />, badge: "15 AI" },
         { label: "LLM Observability", href: "/ai/observability", icon: <Activity className="w-3.5 h-3.5" /> },
-        { label: "Email Infrastructure", href: "/ai/email", icon: <Mail className="w-3.5 h-3.5" />, badge: "Relay" },
+      ];
+    }
+
+    if (pathname.startsWith("/settings")) {
+      return [
+        { label: "Email Settings", href: "/settings/email", icon: <Mail className="w-3.5 h-3.5" />, badge: "Relay" },
+        { label: "Platform General", href: "/settings", icon: <Sliders className="w-3.5 h-3.5" /> },
       ];
     }
 
@@ -245,6 +251,14 @@ export function SuperAdminShell({
       href: "/system",
       badge: "Infra",
       key: "system",
+      section: "Governance & Hub",
+    },
+    {
+      label: "Platform Settings",
+      icon: <Settings className="w-6 h-6" />,
+      href: "/settings/email",
+      badge: "Email",
+      key: "settings",
       section: "Governance & Hub",
     },
 

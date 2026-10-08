@@ -199,6 +199,234 @@ export async function testSmtpSettings(settings: SmtpSettings, testRecipientEmai
   }
 }
 
+export interface TenantSenderProfile {
+  id: string;
+  tenantSlug: string;
+  profileName: string;
+  provider: string;
+  host: string;
+  port: number;
+  encryption: "tls" | "ssl" | "none";
+  fromEmail: string;
+  fromName: string;
+  username: string;
+  password?: string;
+  hasPassword?: boolean;
+  isDefault?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+const memorySenderProfilesStore = new Map<string, TenantSenderProfile[]>();
+
+export async function getTenantSenderProfiles(tenantSlug: string): Promise<TenantSenderProfile[]> {
+  if (!tenantSlug) return [];
+  const normalizedSlug = tenantSlug.trim().toLowerCase();
+
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      const res = await pool.query(
+        `SELECT id, tenant_slug, profile_name, provider, host, port, encryption, from_email, from_name, username, password, is_default, created_at, updated_at
+         FROM tenant_sender_profiles
+         WHERE LOWER(tenant_slug) = $1
+         ORDER BY is_default DESC, created_at ASC`,
+        [normalizedSlug]
+      );
+
+      if (res.rows.length > 0) {
+        return res.rows.map((row) => ({
+          id: row.id,
+          tenantSlug: row.tenant_slug,
+          profileName: row.profile_name,
+          provider: row.provider || "custom",
+          host: row.host || "",
+          port: Number(row.port) || 587,
+          encryption: (row.encryption as any) || "tls",
+          fromEmail: row.from_email || "",
+          fromName: row.from_name || "",
+          username: row.username || "",
+          password: row.password ? "••••••••" : "",
+          hasPassword: Boolean(row.password && row.password.length > 0),
+          isDefault: Boolean(row.is_default),
+          createdAt: row.created_at ? new Date(row.created_at).toISOString() : undefined,
+          updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : undefined,
+        }));
+      }
+    }
+  } catch (err) {
+    console.warn("Error fetching sender profiles from database:", err);
+  }
+
+  const cached = memorySenderProfilesStore.get(normalizedSlug) || [];
+  return cached.map((p) => ({
+    ...p,
+    password: p.password ? "••••••••" : "",
+    hasPassword: Boolean(p.password && p.password.length > 0),
+  }));
+}
+
+export async function getTenantSenderProfileById(tenantSlug: string, id: string): Promise<TenantSenderProfile | null> {
+  if (!tenantSlug || !id) return null;
+  const normalizedSlug = tenantSlug.trim().toLowerCase();
+
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      const res = await pool.query(
+        `SELECT id, tenant_slug, profile_name, provider, host, port, encryption, from_email, from_name, username, password, is_default, created_at, updated_at
+         FROM tenant_sender_profiles
+         WHERE LOWER(tenant_slug) = $1 AND id = $2
+         LIMIT 1`,
+        [normalizedSlug, id]
+      );
+      if (res.rows.length > 0) {
+        const row = res.rows[0];
+        return {
+          id: row.id,
+          tenantSlug: row.tenant_slug,
+          profileName: row.profile_name,
+          provider: row.provider || "custom",
+          host: row.host || "",
+          port: Number(row.port) || 587,
+          encryption: (row.encryption as any) || "tls",
+          fromEmail: row.from_email || "",
+          fromName: row.from_name || "",
+          username: row.username || "",
+          password: row.password || "",
+          hasPassword: Boolean(row.password && row.password.length > 0),
+          isDefault: Boolean(row.is_default),
+          createdAt: row.created_at ? new Date(row.created_at).toISOString() : undefined,
+          updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : undefined,
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("Error fetching sender profile by id:", err);
+  }
+
+  const cached = (memorySenderProfilesStore.get(normalizedSlug) || []).find((p) => p.id === id);
+  return cached || null;
+}
+
+export async function saveTenantSenderProfile(
+  profile: Partial<TenantSenderProfile> & { tenantSlug: string; profileName: string; host: string; fromEmail: string }
+): Promise<TenantSenderProfile> {
+  const normalizedSlug = profile.tenantSlug.trim().toLowerCase();
+  const id = profile.id || `prof_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+  let passwordToStore = profile.password;
+  if (!passwordToStore || passwordToStore === "••••••••" || passwordToStore.trim() === "") {
+    if (profile.id) {
+      const existing = await getTenantSenderProfileById(normalizedSlug, profile.id);
+      passwordToStore = existing?.password || "";
+    } else {
+      passwordToStore = "";
+    }
+  }
+
+  const fullProfile: TenantSenderProfile = {
+    id,
+    tenantSlug: normalizedSlug,
+    profileName: profile.profileName.trim(),
+    provider: profile.provider || "custom",
+    host: profile.host.trim(),
+    port: Number(profile.port) || 587,
+    encryption: profile.encryption || "tls",
+    fromEmail: profile.fromEmail.trim(),
+    fromName: profile.fromName ? profile.fromName.trim() : profile.profileName.trim(),
+    username: profile.username ? profile.username.trim() : profile.fromEmail.trim(),
+    password: passwordToStore,
+    hasPassword: Boolean(passwordToStore && passwordToStore.length > 0),
+    isDefault: Boolean(profile.isDefault),
+    updatedAt: new Date().toISOString(),
+  };
+
+  // 1. Update memory
+  const memList = memorySenderProfilesStore.get(normalizedSlug) || [];
+  const existingIdx = memList.findIndex((p) => p.id === id);
+  if (existingIdx !== -1) {
+    memList[existingIdx] = fullProfile;
+  } else {
+    memList.push(fullProfile);
+  }
+  memorySenderProfilesStore.set(normalizedSlug, memList);
+
+  // 2. Persist to Neon Postgres
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      await pool.query(
+        `INSERT INTO tenant_sender_profiles (
+           id, tenant_slug, profile_name, provider, host, port, encryption, from_email, from_name, username, password, is_default, updated_at
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP)
+         ON CONFLICT (id)
+         DO UPDATE SET
+           profile_name = EXCLUDED.profile_name,
+           provider = EXCLUDED.provider,
+           host = EXCLUDED.host,
+           port = EXCLUDED.port,
+           encryption = EXCLUDED.encryption,
+           from_email = EXCLUDED.from_email,
+           from_name = EXCLUDED.from_name,
+           username = EXCLUDED.username,
+           password = EXCLUDED.password,
+           is_default = EXCLUDED.is_default,
+           updated_at = CURRENT_TIMESTAMP`,
+        [
+          fullProfile.id,
+          fullProfile.tenantSlug,
+          fullProfile.profileName,
+          fullProfile.provider,
+          fullProfile.host,
+          fullProfile.port,
+          fullProfile.encryption,
+          fullProfile.fromEmail,
+          fullProfile.fromName,
+          fullProfile.username,
+          fullProfile.password,
+          fullProfile.isDefault,
+        ]
+      );
+    }
+  } catch (err) {
+    console.error("Failed to persist sender profile to PostgreSQL:", err);
+  }
+
+  return {
+    ...fullProfile,
+    password: fullProfile.hasPassword ? "••••••••" : "",
+  };
+}
+
+export async function deleteTenantSenderProfile(tenantSlug: string, id: string): Promise<boolean> {
+  if (!tenantSlug || !id) return false;
+  const normalizedSlug = tenantSlug.trim().toLowerCase();
+
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      await pool.query(
+        `DELETE FROM tenant_sender_profiles WHERE LOWER(tenant_slug) = $1 AND id = $2`,
+        [normalizedSlug, id]
+      );
+    }
+  } catch (err) {
+    console.warn("Failed to delete sender profile from DB:", err);
+  }
+
+  const memList = memorySenderProfilesStore.get(normalizedSlug) || [];
+  memorySenderProfilesStore.set(
+    normalizedSlug,
+    memList.filter((p) => p.id !== id)
+  );
+  return true;
+}
+
 export interface MassEmailRecipient {
   email: string;
   name?: string;
@@ -221,6 +449,7 @@ export interface QueueCampaignParams {
   subject: string;
   messageHtml: string;
   loginUrl?: string;
+  senderOverride?: Partial<SmtpSettings>;
 }
 
 export interface CampaignProgress {
@@ -257,6 +486,7 @@ interface MemoryCampaign {
   subject: string;
   messageHtml: string;
   loginUrl?: string;
+  senderOverride?: Partial<SmtpSettings>;
   totalRecipients: number;
   sentCount: number;
   failedCount: number;
@@ -308,7 +538,7 @@ export async function queueMassEmailCampaign(params: QueueCampaignParams): Promi
   total: number;
   queued: boolean;
 }> {
-  const { tenantSlug, recipients, subject, messageHtml, loginUrl } = params;
+  const { tenantSlug, recipients, subject, messageHtml, loginUrl, senderOverride } = params;
   const campaignId = `cmp_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
   const normalizedSlug = (tenantSlug || "default").trim().toLowerCase();
 
@@ -329,9 +559,17 @@ export async function queueMassEmailCampaign(params: QueueCampaignParams): Promi
       // Insert campaign
       await pool.query(
         `INSERT INTO email_campaigns (
-           id, tenant_slug, subject, message_html, login_url, total_recipients, status, created_at, updated_at
-         ) VALUES ($1, $2, $3, $4, $5, $6, 'queued', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-        [campaignId, normalizedSlug, subject, messageHtml, loginUrl || null, validRecipients.length]
+           id, tenant_slug, subject, message_html, login_url, sender_override, total_recipients, status, created_at, updated_at
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'queued', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+        [
+          campaignId,
+          normalizedSlug,
+          subject,
+          messageHtml,
+          loginUrl || null,
+          senderOverride ? JSON.stringify(senderOverride) : null,
+          validRecipients.length,
+        ]
       );
 
       // Batch insert queue items
@@ -384,6 +622,7 @@ export async function queueMassEmailCampaign(params: QueueCampaignParams): Promi
     subject,
     messageHtml,
     loginUrl,
+    senderOverride,
     totalRecipients: validRecipients.length,
     sentCount: 0,
     failedCount: 0,
@@ -474,7 +713,7 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
         // Fetch campaign details for these items
         const campaignIds = Array.from(new Set(claimedItems.map((item) => item.campaign_id)));
         const campaignsResult = await pool.query(
-          `SELECT id, tenant_slug, subject, message_html, login_url FROM email_campaigns WHERE id = ANY($1)`,
+          `SELECT id, tenant_slug, subject, message_html, login_url, sender_override FROM email_campaigns WHERE id = ANY($1)`,
           [campaignIds]
         );
         const campaignsMap = new Map<string, any>();
@@ -493,7 +732,49 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
           }
 
           try {
-            const { transporter, settings } = await getTransporterForTenant(item.tenant_slug);
+            let effectiveTransporter: any;
+            let effectiveSettings: SmtpSettings;
+
+            let overrideSettings: Partial<SmtpSettings> | null = null;
+            if (campaign.sender_override) {
+              try {
+                overrideSettings =
+                  typeof campaign.sender_override === "string"
+                    ? JSON.parse(campaign.sender_override)
+                    : campaign.sender_override;
+              } catch (parseErr) {
+                console.warn("⚠️ Failed to parse campaign sender_override:", parseErr);
+              }
+            }
+
+            if (overrideSettings && overrideSettings.host && overrideSettings.fromEmail) {
+              const cacheKey = `override_${campaign.id}`;
+              if (!transporterCache.has(cacheKey)) {
+                const fullSettings: SmtpSettings = {
+                  tenantSlug: item.tenant_slug,
+                  provider: overrideSettings.provider || "custom",
+                  host: overrideSettings.host,
+                  port: Number(overrideSettings.port) || 587,
+                  encryption: (overrideSettings.encryption as any) || "tls",
+                  fromEmail: overrideSettings.fromEmail,
+                  fromName: overrideSettings.fromName || "Workspace Admin",
+                  username: overrideSettings.username || overrideSettings.fromEmail,
+                  password: overrideSettings.password || "",
+                };
+                transporterCache.set(cacheKey, {
+                  transporter: createNodemailerTransporter(fullSettings),
+                  settings: fullSettings,
+                });
+              }
+              const entry = transporterCache.get(cacheKey)!;
+              effectiveTransporter = entry.transporter;
+              effectiveSettings = entry.settings;
+            } else {
+              const entry = await getTransporterForTenant(item.tenant_slug);
+              effectiveTransporter = entry.transporter;
+              effectiveSettings = entry.settings;
+            }
+
             const { resolvedLoginUrl, resolvedPortalUrl } = resolveUrls(item.tenant_slug, campaign.login_url);
 
             const recipientObj: MassEmailRecipient = {
@@ -505,9 +786,9 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
 
             const personalizedSubject = personalizeTemplate(campaign.subject, recipientObj, resolvedLoginUrl, resolvedPortalUrl);
             const personalizedHtml = personalizeTemplate(campaign.message_html, recipientObj, resolvedLoginUrl, resolvedPortalUrl);
-            const sender = `"${settings.fromName.replace(/"/g, "")}" <${settings.fromEmail}>`;
+            const sender = `"${effectiveSettings.fromName.replace(/"/g, "")}" <${effectiveSettings.fromEmail}>`;
 
-            await transporter.sendMail({
+            await effectiveTransporter.sendMail({
               from: sender,
               to: item.recipient_email,
               subject: personalizedSubject,
@@ -621,7 +902,29 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
     }
 
     try {
-      const { transporter, settings } = await getTransporterForTenant(item.tenantSlug);
+      let effectiveTransporter: any;
+      let effectiveSettings: SmtpSettings;
+
+      if (campaign.senderOverride && campaign.senderOverride.host && campaign.senderOverride.fromEmail) {
+        const fullSettings: SmtpSettings = {
+          tenantSlug: item.tenantSlug,
+          provider: campaign.senderOverride.provider || "custom",
+          host: campaign.senderOverride.host,
+          port: Number(campaign.senderOverride.port) || 587,
+          encryption: (campaign.senderOverride.encryption as any) || "tls",
+          fromEmail: campaign.senderOverride.fromEmail,
+          fromName: campaign.senderOverride.fromName || "Workspace Admin",
+          username: campaign.senderOverride.username || campaign.senderOverride.fromEmail,
+          password: campaign.senderOverride.password || "",
+        };
+        effectiveTransporter = createNodemailerTransporter(fullSettings);
+        effectiveSettings = fullSettings;
+      } else {
+        const entry = await getTransporterForTenant(item.tenantSlug);
+        effectiveTransporter = entry.transporter;
+        effectiveSettings = entry.settings;
+      }
+
       const { resolvedLoginUrl, resolvedPortalUrl } = resolveUrls(item.tenantSlug, campaign.loginUrl);
 
       const recipientObj: MassEmailRecipient = {
@@ -633,9 +936,9 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
 
       const personalizedSubject = personalizeTemplate(campaign.subject, recipientObj, resolvedLoginUrl, resolvedPortalUrl);
       const personalizedHtml = personalizeTemplate(campaign.messageHtml, recipientObj, resolvedLoginUrl, resolvedPortalUrl);
-      const sender = `"${settings.fromName.replace(/"/g, "")}" <${settings.fromEmail}>`;
+      const sender = `"${effectiveSettings.fromName.replace(/"/g, "")}" <${effectiveSettings.fromEmail}>`;
 
-      await transporter.sendMail({
+      await effectiveTransporter.sendMail({
         from: sender,
         to: item.recipientEmail,
         subject: personalizedSubject,
@@ -772,6 +1075,7 @@ export async function sendMassEmailToRecipients(params: SendMassEmailParams): Pr
     subject: params.subject,
     messageHtml: params.messageHtml,
     loginUrl: params.loginUrl,
+    senderOverride: params.senderOverride,
   });
 
   // Immediately process in chunks until done (for synchronous callers)

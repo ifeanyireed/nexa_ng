@@ -1,5 +1,5 @@
 import { getDbPool, ensureTablesExist } from "./db";
-import { queueMassEmailCampaign, processEmailQueueBatch } from "./email-service";
+import { queueMassEmailCampaign, processEmailQueueBatch, SmtpSettings } from "./email-service";
 
 export interface CrmDeal {
   id: string;
@@ -92,6 +92,9 @@ export interface CrmEmailBlast {
   contentHtml: string;
   senderName: string;
   senderEmail: string;
+  senderProfileId?: string;
+  senderProvider?: string;
+  senderOverride?: Partial<SmtpSettings>;
   status: "DRAFT" | "SCHEDULED" | "SENDING" | "SENT" | "CANCELLED";
   scheduledAt?: string;
   sentAt?: string;
@@ -1118,7 +1121,7 @@ export async function getCrmEmailBlasts(tenantSlug: string): Promise<CrmEmailBla
       }
 
       const res = await pool.query(
-        `SELECT b.id, b.tenant_slug, b.list_id, l.name AS list_name, b.title, b.subject, b.preview_text, b.content_html, b.sender_name, b.sender_email, b.status, b.scheduled_at, b.sent_at, b.total_recipients, b.sent_count, b.open_count, b.click_count, b.bounce_count, b.created_at
+        `SELECT b.id, b.tenant_slug, b.list_id, l.name AS list_name, b.title, b.subject, b.preview_text, b.content_html, b.sender_name, b.sender_email, b.sender_profile_id, b.sender_provider, b.sender_override, b.status, b.scheduled_at, b.sent_at, b.total_recipients, b.sent_count, b.open_count, b.click_count, b.bounce_count, b.created_at
          FROM crm_email_blasts b
          LEFT JOIN crm_email_lists l ON b.list_id = l.id
          WHERE LOWER(b.tenant_slug) = $1
@@ -1126,27 +1129,38 @@ export async function getCrmEmailBlasts(tenantSlug: string): Promise<CrmEmailBla
         [slug]
       );
       if (res.rows.length > 0) {
-        return res.rows.map((r) => ({
-          id: r.id,
-          tenantSlug: r.tenant_slug,
-          listId: r.list_id,
-          listName: r.list_name || "Target Audience",
-          title: r.title,
-          subject: r.subject,
-          previewText: r.preview_text,
-          contentHtml: r.content_html,
-          senderName: r.sender_name,
-          senderEmail: r.sender_email,
-          status: r.status,
-          scheduledAt: r.scheduled_at ? new Date(r.scheduled_at).toISOString() : undefined,
-          sentAt: r.sent_at ? new Date(r.sent_at).toISOString() : undefined,
-          totalRecipients: Number(r.total_recipients) || 0,
-          sentCount: Number(r.sent_count) || 0,
-          openCount: Number(r.open_count) || 0,
-          clickCount: Number(r.click_count) || 0,
-          bounceCount: Number(r.bounce_count) || 0,
-          createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
-        }));
+        return res.rows.map((r) => {
+          let parsedOverride: Partial<SmtpSettings> | undefined = undefined;
+          if (r.sender_override) {
+            try {
+              parsedOverride = typeof r.sender_override === "string" ? JSON.parse(r.sender_override) : r.sender_override;
+            } catch {}
+          }
+          return {
+            id: r.id,
+            tenantSlug: r.tenant_slug,
+            listId: r.list_id,
+            listName: r.list_name || "Target Audience",
+            title: r.title,
+            subject: r.subject,
+            previewText: r.preview_text,
+            contentHtml: r.content_html,
+            senderName: r.sender_name,
+            senderEmail: r.sender_email,
+            senderProfileId: r.sender_profile_id,
+            senderProvider: r.sender_provider || "custom",
+            senderOverride: parsedOverride,
+            status: r.status,
+            scheduledAt: r.scheduled_at ? new Date(r.scheduled_at).toISOString() : undefined,
+            sentAt: r.sent_at ? new Date(r.sent_at).toISOString() : undefined,
+            totalRecipients: Number(r.total_recipients) || 0,
+            sentCount: Number(r.sent_count) || 0,
+            openCount: Number(r.open_count) || 0,
+            clickCount: Number(r.click_count) || 0,
+            bounceCount: Number(r.bounce_count) || 0,
+            createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+          };
+        });
       }
       if (slug !== "default") {
         return [];
@@ -1180,6 +1194,9 @@ export async function createCrmEmailBlast(tenantSlug: string, blast: Partial<Crm
     contentHtml: blast.contentHtml || "<p>Hello {{contact_name}},</p><p>We are reaching out with an update.</p>",
     senderName: blast.senderName || "Ofia Growth Desk",
     senderEmail: blast.senderEmail || "growth@ofia.ng",
+    senderProfileId: blast.senderProfileId,
+    senderProvider: blast.senderProvider || "custom",
+    senderOverride: blast.senderOverride,
     status: blast.status || (blast.scheduledAt ? "SCHEDULED" : "DRAFT"),
     scheduledAt: blast.scheduledAt,
     sentAt: blast.sentAt,
@@ -1196,8 +1213,8 @@ export async function createCrmEmailBlast(tenantSlug: string, blast: Partial<Crm
     if (pool) {
       await ensureTablesExist();
       await pool.query(
-        `INSERT INTO crm_email_blasts (id, tenant_slug, list_id, title, subject, preview_text, content_html, sender_name, sender_email, status, scheduled_at, sent_at, total_recipients, sent_count, open_count, click_count, bounce_count, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())`,
+        `INSERT INTO crm_email_blasts (id, tenant_slug, list_id, title, subject, preview_text, content_html, sender_name, sender_email, sender_profile_id, sender_provider, sender_override, status, scheduled_at, sent_at, total_recipients, sent_count, open_count, click_count, bounce_count, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW())`,
         [
           newBlast.id,
           slug,
@@ -1208,6 +1225,9 @@ export async function createCrmEmailBlast(tenantSlug: string, blast: Partial<Crm
           newBlast.contentHtml,
           newBlast.senderName,
           newBlast.senderEmail,
+          newBlast.senderProfileId || null,
+          newBlast.senderProvider || "custom",
+          newBlast.senderOverride ? JSON.stringify(newBlast.senderOverride) : null,
           newBlast.status,
           newBlast.scheduledAt || null,
           newBlast.sentAt || null,
@@ -1716,7 +1736,7 @@ export async function dispatchScheduledBlasts(tenantSlug?: string): Promise<{ di
       await ensureTablesExist();
       const whereTenant = tenantSlug ? `AND LOWER(b.tenant_slug) = LOWER('${cleanSlug(tenantSlug)}')` : "";
       const res = await pool.query(
-        `SELECT b.id, b.tenant_slug, b.list_id, b.title, b.subject, b.content_html, b.sender_name, b.sender_email
+        `SELECT b.id, b.tenant_slug, b.list_id, b.title, b.subject, b.content_html, b.sender_name, b.sender_email, b.sender_profile_id, b.sender_provider, b.sender_override
          FROM crm_email_blasts b
          WHERE b.status = 'SCHEDULED' AND b.scheduled_at <= NOW() ${whereTenant}`
       );
@@ -1732,6 +1752,13 @@ export async function dispatchScheduledBlasts(tenantSlug?: string): Promise<{ di
           );
 
           if (subsRes.rows.length > 0) {
+            let senderOverride: Partial<SmtpSettings> | undefined = undefined;
+            if (blast.sender_override) {
+              try {
+                senderOverride = typeof blast.sender_override === "string" ? JSON.parse(blast.sender_override) : blast.sender_override;
+              } catch {}
+            }
+
             await queueMassEmailCampaign({
               tenantSlug: blast.tenant_slug,
               recipients: subsRes.rows.map((s) => ({
@@ -1742,6 +1769,7 @@ export async function dispatchScheduledBlasts(tenantSlug?: string): Promise<{ di
               })),
               subject: blast.subject,
               messageHtml: blast.content_html,
+              senderOverride,
             });
             await processEmailQueueBatch(50).catch(() => {});
           }

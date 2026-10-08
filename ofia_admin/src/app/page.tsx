@@ -97,10 +97,10 @@ export default function MasterOverviewPage() {
 
     },
     {
-      label: "Email Infrastructure",
+      label: "Platform Email Settings",
       icon: <Mail className="w-6 h-6" />,
-      desc: "Relay & Domain DNS",
-      href: "/ai/email",
+      desc: "Brevo & SMTP Relay",
+      href: "/settings/email",
     },
     {
       label: "Escrow & Disputes",
@@ -177,14 +177,14 @@ export default function MasterOverviewPage() {
       subtitle="Unified Super Admin command center orchestrating Ofia AI Autonomous Swarm, Ofia Discovery Marketplace, and Ofia Enterprise ERP."
       action={
         <div className="flex items-center gap-2.5">
-          <Link href="/ai/email">
+          <Link href="/settings/email">
             <NexaButton
               size="sm"
               variant="primary"
               leftIcon={<Mail className="w-3.5 h-3.5" />}
               className="bg-nexa-brand hover:bg-nexa-brand/90 text-white shadow-md shadow-nexa-brand/20 font-bold rounded-full px-4"
             >
-              Email Setup Wizard
+              Platform Email Settings
             </NexaButton>
           </Link>
           <Link href="/marketplace/disputes">

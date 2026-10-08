@@ -100,6 +100,24 @@ export async function ensureTablesExist(): Promise<boolean> {
           updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
         );
         CREATE INDEX IF NOT EXISTS idx_tenant_smtp_slug ON tenant_smtp_settings (tenant_slug);
+
+        CREATE TABLE IF NOT EXISTS tenant_sender_profiles (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(100) NOT NULL,
+          profile_name VARCHAR(150) NOT NULL,
+          provider VARCHAR(50) DEFAULT 'custom',
+          host VARCHAR(255) NOT NULL,
+          port INT NOT NULL DEFAULT 587,
+          encryption VARCHAR(20) DEFAULT 'tls',
+          from_email VARCHAR(255) NOT NULL,
+          from_name VARCHAR(255) NOT NULL,
+          username VARCHAR(255),
+          password TEXT,
+          is_default BOOLEAN DEFAULT FALSE,
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_tenant_sender_profiles_tenant ON tenant_sender_profiles (tenant_slug);
       `);
 
       // 4. email_campaigns and email_queue tables for mass email background worker
@@ -296,6 +314,14 @@ export async function ensureTablesExist(): Promise<boolean> {
         CREATE INDEX IF NOT EXISTS idx_prt_token ON password_reset_tokens (token);
         CREATE INDEX IF NOT EXISTS idx_prt_email ON password_reset_tokens (email);
         CREATE INDEX IF NOT EXISTS idx_prt_validity ON password_reset_tokens (token, used, expires_at);
+
+        -- 7. Multi-domain / sender profile blast support
+        ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS sender_profile_id VARCHAR(64);
+        ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS sender_provider VARCHAR(50);
+        ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS sender_override TEXT;
+        CREATE INDEX IF NOT EXISTS idx_crm_blasts_profile ON crm_email_blasts (sender_profile_id);
+
+        ALTER TABLE email_campaigns ADD COLUMN IF NOT EXISTS sender_override TEXT;
       `);
 
       isInitialized = true;

@@ -58,6 +58,168 @@ export async function getPlatformSmtpConfig() {
   };
 }
 
+export interface SmtpConfigParams {
+  provider?: string;
+  host: string;
+  port: number;
+  encryption: "tls" | "ssl" | "none";
+  fromEmail: string;
+  fromName: string;
+  username: string;
+  password?: string;
+}
+
+export async function getPlatformSmtpDetailed() {
+  try {
+    const rows = await executeQuery<SmtpDbRow[]>(
+      `SELECT * FROM tenant_smtp_settings WHERE tenant_slug = $1 LIMIT 1`,
+      ["platform"]
+    );
+    if (rows && rows.length > 0) {
+      const row = rows[0];
+      return {
+        configured: true,
+        tenantSlug: "platform",
+        provider: row.provider || "custom",
+        host: row.host || "",
+        port: Number(row.port) || 587,
+        encryption: (row.encryption as "tls" | "ssl" | "none") || "tls",
+        fromEmail: row.from_email || "",
+        fromName: row.from_name || "Ofia Platform Root Security",
+        username: row.username || "",
+        hasPassword: Boolean(row.password && row.password.length > 0),
+        password: Boolean(row.password && row.password.length > 0) ? "••••••••" : "",
+      };
+    }
+  } catch (err) {
+    console.warn("Could not query platform SMTP details from database:", err);
+  }
+
+  // Fallback to env
+  const port = Number(process.env.SMTP_PORT) || 465;
+  const hasPass = Boolean(process.env.SMTP_PASSWORD && process.env.SMTP_PASSWORD.length > 0);
+  return {
+    configured: Boolean(process.env.SMTP_HOST),
+    tenantSlug: "platform",
+    provider: process.env.SMTP_HOST?.includes("brevo") ? "brevo" : "hostinger",
+    host: process.env.SMTP_HOST || "smtp.hostinger.com",
+    port,
+    encryption: (port === 465 ? "ssl" : "tls") as "tls" | "ssl" | "none",
+    fromEmail: process.env.SMTP_FROM_EMAIL || "hello@resultspro.ng",
+    fromName: process.env.SMTP_FROM_NAME || "Ofia Platform Root Security",
+    username: process.env.SMTP_USER || "hello@resultspro.ng",
+    hasPassword: hasPass,
+    password: hasPass ? "••••••••" : "",
+  };
+}
+
+export async function savePlatformSmtpSettings(settings: SmtpConfigParams): Promise<boolean> {
+  let passwordToStore = settings.password;
+  if (!passwordToStore || passwordToStore === "••••••••" || passwordToStore.trim() === "") {
+    const existing = await getPlatformSmtpConfig();
+    passwordToStore = existing.pass || "";
+  }
+
+  try {
+    await executeQuery(
+      `INSERT INTO tenant_smtp_settings (
+         tenant_slug, provider, host, port, encryption, from_email, from_name, username, password, updated_at
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP)
+       ON CONFLICT (tenant_slug)
+       DO UPDATE SET
+         provider = EXCLUDED.provider,
+         host = EXCLUDED.host,
+         port = EXCLUDED.port,
+         encryption = EXCLUDED.encryption,
+         from_email = EXCLUDED.from_email,
+         from_name = EXCLUDED.from_name,
+         username = EXCLUDED.username,
+         password = EXCLUDED.password,
+         updated_at = CURRENT_TIMESTAMP`,
+      [
+        "platform",
+        settings.provider || "brevo",
+        settings.host.trim(),
+        settings.port || 587,
+        settings.encryption || "tls",
+        settings.fromEmail.trim(),
+        settings.fromName ? settings.fromName.trim() : "Ofia Platform Root Security",
+        settings.username ? settings.username.trim() : settings.fromEmail.trim(),
+        passwordToStore,
+      ]
+    );
+    return true;
+  } catch (err) {
+    console.error("Failed to save platform SMTP settings:", err);
+    return false;
+  }
+}
+
+export async function testPlatformSmtpConnection(
+  settings: SmtpConfigParams,
+  testRecipientEmail: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    let resolvedPassword = settings.password || "";
+    if (!resolvedPassword || resolvedPassword === "••••••••") {
+      const existing = await getPlatformSmtpConfig();
+      resolvedPassword = existing.pass;
+    }
+
+    const isSecure = settings.encryption === "ssl" || settings.port === 465;
+
+    const transporter = nodemailer.createTransport({
+      host: settings.host,
+      port: settings.port,
+      secure: isSecure,
+      auth: {
+        user: settings.username || settings.fromEmail,
+        pass: resolvedPassword,
+      },
+      tls: {
+        rejectUnauthorized: false,
+      },
+    });
+
+    await transporter.verify();
+
+    const sender = `"${(settings.fromName || 'Ofia Platform').replace(/"/g, '')}" <${settings.fromEmail}>`;
+    await transporter.sendMail({
+      from: sender,
+      to: testRecipientEmail,
+      subject: `[Test] Brevo / Platform SMTP Handshake Verification`,
+      text: `Hello,\n\nThis is a test email confirming that your Brevo / Platform SMTP relay is operational.\n\nProvider: ${settings.provider || 'Brevo'}\nHost: ${settings.host}:${settings.port}\nEncryption: ${settings.encryption.toUpperCase()}\nSender: ${sender}\n\nAll platform recovery and notification utilities are ready!`,
+      html: `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 580px; margin: 0 auto; padding: 28px; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff;">
+          <h2 style="color: #1a56db; margin: 0 0 12px; font-size: 20px;">Brevo / Platform SMTP Handshake Verified</h2>
+          <p style="color: #475569; font-size: 14px; line-height: 1.6;">
+            Your platform email relay configuration has successfully connected and passed authorization.
+          </p>
+          <div style="background: #f8fafc; border-left: 4px solid #1a56db; padding: 14px 18px; margin: 20px 0; border-radius: 8px;">
+            <p style="margin: 4px 0; font-size: 12px; color: #64748b;"><strong>Provider:</strong> ${settings.provider || 'Brevo'}</p>
+            <p style="margin: 4px 0; font-size: 12px; color: #64748b;"><strong>Host & Port:</strong> ${settings.host}:${settings.port}</p>
+            <p style="margin: 4px 0; font-size: 12px; color: #64748b;"><strong>Security:</strong> ${settings.encryption.toUpperCase()}</p>
+            <p style="margin: 4px 0; font-size: 12px; color: #64748b;"><strong>Sender:</strong> ${sender}</p>
+          </div>
+          <p style="font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 14px; margin: 0;">
+            Dispatched by Ofia SuperAdmin Infrastructure Console.
+          </p>
+        </div>
+      `,
+    });
+
+    return {
+      success: true,
+      message: `Test email successfully dispatched to ${testRecipientEmail}`,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      message: err.message || "Failed to establish SMTP connection or deliver test email.",
+    };
+  }
+}
+
 export async function createPlatformTransporter() {
   const config = await getPlatformSmtpConfig();
   const transporter = nodemailer.createTransport({

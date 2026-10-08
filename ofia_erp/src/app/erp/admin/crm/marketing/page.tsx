@@ -13,12 +13,17 @@ import {
   Sparkles,
   Users,
   Eye,
+  Code,
   MousePointer,
   RotateCcw,
   Sliders,
   Filter,
   FileText,
   AlertCircle,
+  Globe,
+  Server,
+  ShieldCheck,
+  Key,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -31,6 +36,7 @@ import {
   CrmEmailBlast,
   CrmEmailList,
 } from "@/lib/crm-service";
+import { TenantSenderProfile } from "@/lib/email-service";
 import { crmFetch } from "@/lib/crm-client";
 
 export default function EmailMarketingBlastsPage() {
@@ -39,6 +45,21 @@ export default function EmailMarketingBlastsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [isLoading, setIsLoading] = useState(true);
+
+  // Sender Profiles & Multi-Domain State
+  const [senderProfiles, setSenderProfiles] = useState<TenantSenderProfile[]>([]);
+  const [defaultSmtp, setDefaultSmtp] = useState<any>(null);
+  const [selectedProfileId, setSelectedProfileId] = useState<string>("default");
+
+  // Custom Domain Override State
+  const [customProvider, setCustomProvider] = useState<string>("custom");
+  const [customHost, setCustomHost] = useState<string>("");
+  const [customPort, setCustomPort] = useState<number>(587);
+  const [customEncryption, setCustomEncryption] = useState<"tls" | "ssl" | "none">("tls");
+  const [customUsername, setCustomUsername] = useState<string>("");
+  const [customPassword, setCustomPassword] = useState<string>("");
+  const [saveAsProfile, setSaveAsProfile] = useState<boolean>(false);
+  const [newProfileName, setNewProfileName] = useState<string>("");
 
   // Schedule Blast Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -50,6 +71,7 @@ export default function EmailMarketingBlastsPage() {
   const [contentHtml, setContentHtml] = useState(
     "<h2>Exclusive Commercial Update</h2><p>Dear {{contact_name}},</p><p>We are pleased to introduce our latest enterprise solutions designed for your organization.</p><p><a href='https://ofia.ng' style='background:#1A56DB;color:#fff;padding:8px 16px;border-radius:6px;text-decoration:none;'>Explore Platform</a></p>"
   );
+  const [bodyMode, setBodyMode] = useState<"edit" | "preview">("edit");
   const [scheduleType, setScheduleType] = useState<"NOW" | "LATER">("NOW");
   const [scheduleDate, setScheduleDate] = useState("");
   const [isAiGenerating, setIsAiGenerating] = useState(false);
@@ -57,9 +79,10 @@ export default function EmailMarketingBlastsPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [blastsRes, listsRes] = await Promise.all([
+        const [blastsRes, listsRes, profilesRes] = await Promise.all([
           crmFetch("/api/erp/crm/blasts").then((r) => r.json()).catch(() => null),
           crmFetch("/api/erp/crm/lists").then((r) => r.json()).catch(() => null),
+          crmFetch("/api/erp/sender-profiles").then((r) => r.json()).catch(() => null),
         ]);
 
         if (blastsRes?.blasts) setBlasts(blastsRes.blasts);
@@ -71,6 +94,15 @@ export default function EmailMarketingBlastsPage() {
         } else {
           setLists([]);
         }
+
+        if (profilesRes?.profiles) {
+          setSenderProfiles(profilesRes.profiles);
+        }
+        if (profilesRes?.defaultSmtp) {
+          setDefaultSmtp(profilesRes.defaultSmtp);
+          if (profilesRes.defaultSmtp.fromName) setSenderName(profilesRes.defaultSmtp.fromName);
+          if (profilesRes.defaultSmtp.fromEmail) setSenderEmail(profilesRes.defaultSmtp.fromEmail);
+        }
       } catch (err) {
         console.warn("Using offline email marketing state:", err);
       } finally {
@@ -79,6 +111,53 @@ export default function EmailMarketingBlastsPage() {
     }
     loadData();
   }, []);
+
+  const handleProfileChange = (val: string) => {
+    setSelectedProfileId(val);
+    if (val === "default") {
+      if (defaultSmtp) {
+        setSenderName(defaultSmtp.fromName || "Ofia Enterprise Growth");
+        setSenderEmail(defaultSmtp.fromEmail || "growth@ofia.ng");
+      }
+    } else if (val === "custom") {
+      if (!customHost && defaultSmtp?.host) {
+        setCustomHost(defaultSmtp.host);
+      }
+    } else {
+      const prof = senderProfiles.find((p) => p.id === val);
+      if (prof) {
+        setSenderName(prof.fromName || prof.profileName);
+        setSenderEmail(prof.fromEmail);
+      }
+    }
+  };
+
+  const applyProviderPreset = (prov: string) => {
+    setCustomProvider(prov);
+    if (prov === "hostinger") {
+      setCustomHost("smtp.hostinger.com");
+      setCustomPort(465);
+      setCustomEncryption("ssl");
+    } else if (prov === "sendgrid") {
+      setCustomHost("smtp.sendgrid.net");
+      setCustomPort(587);
+      setCustomEncryption("tls");
+      setCustomUsername("apikey");
+    } else if (prov === "resend") {
+      setCustomHost("smtp.resend.com");
+      setCustomPort(465);
+      setCustomEncryption("ssl");
+      setCustomUsername("resend");
+    } else if (prov === "mailgun") {
+      setCustomHost("smtp.mailgun.org");
+      setCustomPort(587);
+      setCustomEncryption("tls");
+    } else if (prov === "gmail") {
+      setCustomHost("smtp.gmail.com");
+      setCustomPort(465);
+      setCustomEncryption("ssl");
+    }
+  };
 
   const handleAiSubject = () => {
     setIsAiGenerating(true);
@@ -101,6 +180,66 @@ export default function EmailMarketingBlastsPage() {
     const chosenList = lists.find((l) => l.id === selectedListId);
     const recipientsCount = chosenList ? chosenList.subscriberCount : 100;
 
+    let senderProfileId: string | undefined = undefined;
+    let senderProvider = "custom";
+    let senderOverride: any = undefined;
+
+    if (selectedProfileId === "default") {
+      senderProfileId = "default";
+      senderProvider = defaultSmtp?.provider || "custom";
+    } else if (selectedProfileId === "custom") {
+      senderProvider = customProvider;
+      senderOverride = {
+        host: customHost.trim(),
+        port: Number(customPort) || 587,
+        encryption: customEncryption,
+        fromEmail: senderEmail.trim(),
+        fromName: senderName.trim(),
+        username: customUsername.trim() || senderEmail.trim(),
+        password: customPassword,
+      };
+
+      // If user chose to save as reusable profile
+      if (saveAsProfile && customHost && senderEmail) {
+        crmFetch("/api/erp/sender-profiles", {
+          method: "POST",
+          body: JSON.stringify({
+            profileName: newProfileName.trim() || (senderEmail.split("@")[1] ? `${senderEmail.split("@")[1]} Domain` : "Custom Domain"),
+            provider: customProvider,
+            host: customHost.trim(),
+            port: Number(customPort) || 587,
+            encryption: customEncryption,
+            fromEmail: senderEmail.trim(),
+            fromName: senderName.trim(),
+            username: customUsername.trim() || senderEmail.trim(),
+            password: customPassword,
+          }),
+        })
+          .then((r) => r.json())
+          .then((data) => {
+            if (data.profile) {
+              setSenderProfiles((prev) => [...prev, data.profile]);
+            }
+          })
+          .catch(() => {});
+      }
+    } else {
+      const prof = senderProfiles.find((p) => p.id === selectedProfileId);
+      if (prof) {
+        senderProfileId = prof.id;
+        senderProvider = prof.provider;
+        senderOverride = {
+          host: prof.host,
+          port: prof.port,
+          encryption: prof.encryption,
+          fromEmail: prof.fromEmail,
+          fromName: prof.fromName,
+          username: prof.username,
+          password: prof.password,
+        };
+      }
+    }
+
     const payload = {
       title: blastTitle.trim(),
       subject: blastSubject.trim(),
@@ -108,6 +247,9 @@ export default function EmailMarketingBlastsPage() {
       listName: chosenList ? chosenList.name : "Target Audience",
       senderName: senderName.trim(),
       senderEmail: senderEmail.trim(),
+      senderProfileId,
+      senderProvider,
+      senderOverride,
       contentHtml,
       totalRecipients: recipientsCount,
       scheduledAt: scheduleType === "LATER" && scheduleDate ? new Date(scheduleDate).toISOString() : undefined,
@@ -134,6 +276,9 @@ export default function EmailMarketingBlastsPage() {
         contentHtml,
         senderName,
         senderEmail,
+        senderProfileId,
+        senderProvider,
+        senderOverride,
         status: scheduleType === "NOW" ? "SENT" : "SCHEDULED",
         scheduledAt: scheduleType === "LATER" && scheduleDate ? scheduleDate : undefined,
         sentAt: scheduleType === "NOW" ? new Date().toISOString() : undefined,
@@ -273,11 +418,22 @@ export default function EmailMarketingBlastsPage() {
 
                   return (
                     <tr key={blast.id} className="hover:bg-[var(--nexa-bg-surface)]/50 transition-colors">
-                      <td className="py-3.5 px-4 space-y-0.5">
+                      <td className="py-3.5 px-4 space-y-1">
                         <div className="font-extrabold text-[var(--nexa-text-primary)]">{blast.title}</div>
                         <div className="text-[11px] text-[var(--nexa-text-muted)] flex items-center gap-1.5 truncate max-w-md">
-                          <Mail className="w-3 h-3 text-[#1A56DB]" />
-                          {blast.subject}
+                          <Mail className="w-3 h-3 text-[#1A56DB] shrink-0" />
+                          <span className="truncate">{blast.subject}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 pt-0.5">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-muted)] border border-[var(--nexa-border)]">
+                            <Globe className="w-2.5 h-2.5 text-[#1A56DB]" />
+                            {blast.senderEmail?.includes("@") ? blast.senderEmail.split("@")[1] : "default domain"}
+                          </span>
+                          {blast.senderProvider && blast.senderProvider !== "custom" && (
+                            <span className="text-[10px] font-semibold text-blue-600 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20 capitalize">
+                              {blast.senderProvider}
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="py-3.5 px-4">
@@ -420,6 +576,163 @@ export default function EmailMarketingBlastsPage() {
             </div>
           )}
 
+          {/* SENDER PROFILE & OUTBOUND DOMAIN SELECTION */}
+          <div className="p-3.5 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]/60 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-[#1A56DB]" />
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                  Sending Profile & Domain
+                </label>
+              </div>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 font-semibold border border-blue-500/20">
+                Multi-Domain Routing
+              </span>
+            </div>
+
+            <div>
+              <select
+                value={selectedProfileId}
+                onChange={(e) => handleProfileChange(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-medium"
+              >
+                <option value="default">
+                  Default Domain {defaultSmtp ? `(${defaultSmtp.fromEmail || defaultSmtp.host})` : "(Primary Workspace SMTP)"}
+                </option>
+                {senderProfiles.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.profileName} — {p.fromEmail} ({p.provider.toUpperCase()} / {p.host})
+                  </option>
+                ))}
+                <option value="custom">+ Custom SMTP / Domain Override for this Blast...</option>
+              </select>
+            </div>
+
+            {/* Custom Domain Settings Drawer */}
+            {selectedProfileId === "custom" && (
+              <div className="pt-2 border-t border-[var(--nexa-border)] space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
+                    <Server className="w-3.5 h-3.5 text-[#1A56DB]" />
+                    Custom Provider Configuration
+                  </span>
+                  <div className="flex items-center gap-1">
+                    {[
+                      { id: "custom", label: "Custom" },
+                      { id: "hostinger", label: "Hostinger" },
+                      { id: "sendgrid", label: "SendGrid" },
+                      { id: "resend", label: "Resend" },
+                      { id: "mailgun", label: "Mailgun" },
+                      { id: "gmail", label: "Gmail" },
+                    ].map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => applyProviderPreset(p.id)}
+                        className={`text-[10px] px-2 py-0.5 rounded font-bold transition-all ${
+                          customProvider === p.id
+                            ? "bg-[#1A56DB] text-white"
+                            : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)]"
+                        }`}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <div className="sm:col-span-2">
+                    <NexaInput
+                      label="SMTP Host"
+                      value={customHost}
+                      onChange={(e) => setCustomHost(e.target.value)}
+                      placeholder="e.g. smtp.mailgun.org or mail.company2.com"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">Port</label>
+                    <input
+                      type="number"
+                      value={customPort}
+                      onChange={(e) => setCustomPort(Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-mono"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">Encryption</label>
+                    <select
+                      value={customEncryption}
+                      onChange={(e) => setCustomEncryption(e.target.value as any)}
+                      className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-medium"
+                    >
+                      <option value="tls">TLS (STARTTLS)</option>
+                      <option value="ssl">SSL / Direct TLS</option>
+                      <option value="none">None</option>
+                    </select>
+                  </div>
+                  <NexaInput
+                    label="SMTP Username"
+                    value={customUsername}
+                    onChange={(e) => setCustomUsername(e.target.value)}
+                    placeholder="Defaults to sender email"
+                  />
+                </div>
+
+                <div>
+                  <NexaInput
+                    label="SMTP Password / API Key"
+                    type="password"
+                    value={customPassword}
+                    onChange={(e) => setCustomPassword(e.target.value)}
+                    placeholder="Enter password or token"
+                  />
+                </div>
+
+                <div className="pt-1 flex flex-col gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-[var(--nexa-text-primary)]">
+                    <input
+                      type="checkbox"
+                      checked={saveAsProfile}
+                      onChange={(e) => setSaveAsProfile(e.target.checked)}
+                      className="rounded border-[var(--nexa-border)] text-[#1A56DB] focus:ring-0"
+                    />
+                    <span>Save this sending domain as a reusable profile for future blasts</span>
+                  </label>
+                  {saveAsProfile && (
+                    <NexaInput
+                      label="Profile Name"
+                      value={newProfileName}
+                      onChange={(e) => setNewProfileName(e.target.value)}
+                      placeholder="e.g. Corporate Announcements Domain"
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Routing indicator */}
+            <div className="text-[11px] text-[var(--nexa-text-muted)] flex items-center gap-1.5 pt-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+              <span>
+                Sending from:{" "}
+                <strong className="text-[var(--nexa-text-primary)] font-mono">
+                  {senderEmail ? senderEmail : "Default domain"}
+                </strong>
+                {selectedProfileId !== "default" && (
+                  <span className="text-blue-600 font-semibold ml-1">
+                    ({selectedProfileId === "custom" ? `Custom ${customProvider}` : "Dedicated Profile"})
+                  </span>
+                )}
+              </span>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <NexaInput
               label="Sender Display Name"
@@ -434,16 +747,95 @@ export default function EmailMarketingBlastsPage() {
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Email Message HTML / Body</label>
-              <span className="text-[10px] text-[var(--nexa-text-muted)]">Available tag: &#123;&#123;contact_name&#125;&#125;</span>
+            <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Email Message HTML / Body</label>
+                <span className="text-[10px] text-[var(--nexa-text-muted)] font-mono bg-[var(--nexa-bg-surface)] px-1.5 py-0.5 rounded border border-[var(--nexa-border)]">
+                  &#123;&#123;contact_name&#125;&#125;
+                </span>
+                <span className="text-[10px] text-[var(--nexa-text-muted)] font-mono bg-[var(--nexa-bg-surface)] px-1.5 py-0.5 rounded border border-[var(--nexa-border)]">
+                  &#123;&#123;company&#125;&#125;
+                </span>
+              </div>
+
+              {/* PREVIEW SWITCH */}
+              <div className="flex items-center p-0.5 bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-lg">
+                <button
+                  type="button"
+                  onClick={() => setBodyMode("edit")}
+                  className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
+                    bodyMode === "edit"
+                      ? "bg-[#1A56DB] text-white shadow-xs"
+                      : "text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
+                  }`}
+                >
+                  <Code className="w-3 h-3" /> Edit HTML
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBodyMode("preview")}
+                  className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-md transition-all cursor-pointer ${
+                    bodyMode === "preview"
+                      ? "bg-[#1A56DB] text-white shadow-xs"
+                      : "text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
+                  }`}
+                >
+                  <Eye className="w-3 h-3" /> Live Preview
+                </button>
+              </div>
             </div>
-            <textarea
-              rows={4}
-              value={contentHtml}
-              onChange={(e) => setContentHtml(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-mono"
-            />
+
+            {bodyMode === "edit" ? (
+              <textarea
+                rows={6}
+                value={contentHtml}
+                onChange={(e) => setContentHtml(e.target.value)}
+                placeholder="<p>Hello {{contact_name}},</p><p>We would love to partner with {{company}}...</p>"
+                className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-mono"
+              />
+            ) : (
+              <div className="rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] overflow-hidden shadow-xs">
+                {/* Email Client Simulation Header */}
+                <div className="p-2.5 border-b border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]/60 text-[11px] space-y-1 font-sans">
+                  <div className="flex items-center justify-between text-[var(--nexa-text-muted)]">
+                    <span>
+                      <strong className="text-[var(--nexa-text-primary)]">From:</strong> {senderName || "Sender"} &lt;{senderEmail || "growth@ofia.ng"}&gt;
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-mono bg-blue-500/10 text-blue-600 px-1.5 py-0.5 rounded font-semibold border border-blue-500/20">
+                        {senderEmail?.includes("@") ? senderEmail.split("@")[1] : "default domain"}
+                      </span>
+                      <span className="text-[10px] font-mono bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded font-semibold border border-emerald-500/20">
+                        Live Simulation
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-[var(--nexa-text-muted)] truncate">
+                    <strong className="text-[var(--nexa-text-primary)]">Subject:</strong> {blastSubject || "(No subject set)"}
+                  </div>
+                  <div className="text-[10px] text-[var(--nexa-text-muted)]">
+                    <strong className="text-[var(--nexa-text-primary)]">To:</strong> Aliko Dangote &lt;aliko@dangote.com&gt;
+                  </div>
+                </div>
+
+                {/* Rendered HTML Container */}
+                <div className="p-4 bg-white text-slate-900 min-h-[140px] max-h-[240px] overflow-y-auto text-xs leading-relaxed font-sans">
+                  {contentHtml ? (
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: contentHtml
+                          .replace(/\{\{\s*contact_name\s*\}\}/gi, "Aliko Dangote")
+                          .replace(/\{\{\s*company\s*\}\}/gi, "Dangote Group"),
+                      }}
+                    />
+                  ) : (
+                    <div className="text-center text-slate-400 py-6 italic text-xs">
+                      No HTML body entered yet. Switch to "Edit HTML" to compose your email.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end gap-2 pt-4">

@@ -396,12 +396,12 @@ export default function AdminOverviewPage() {
                   </div>
                   <div>
                     <h3 className="font-bold text-xs text-nexa-text-primary">
-                      Cold Email Outreach Infrastructure
+                      Platform Email & Relay Infrastructure
                     </h3>
-                    <p className="text-[11px] text-nexa-text-muted">Multi-provider relay with auto-failover</p>
+                    <p className="text-[11px] text-nexa-text-muted">Brevo & SMTP system recovery relay</p>
                   </div>
                 </div>
-                <Link href="/ai/email">
+                <Link href="/settings/email">
                   <NexaButton size="sm" variant="outline" className="text-xs font-bold rounded-full">
                     Configure
                   </NexaButton>

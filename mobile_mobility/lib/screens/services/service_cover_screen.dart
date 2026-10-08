@@ -84,7 +84,7 @@ class ServiceCoverScreen extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'Continue to ${service.name}',
+                    'Book ${service.name}',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,

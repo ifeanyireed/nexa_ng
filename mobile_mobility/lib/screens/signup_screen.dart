@@ -105,7 +105,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         color: Color(0xFF0F172A))),
                 const SizedBox(height: 12),
                 const Text(
-                  'Allow Nexa to access your location to find nearby rides, shuttles, and optimize your routes.',
+                  'Allow New Era Transports to access your location to find nearby rides, shuttles, and optimize your routes.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),

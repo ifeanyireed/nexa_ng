@@ -23,16 +23,39 @@ class RentalScreen extends StatelessWidget {
         child: Column(
           children: [
             _buildVehicleCard(
-                'Premium Black',
-                'Experience travel like never before with the Jet Mover. Equipped...',
-                '₦250,000.00',
+                'Sedan',
+                'Comfortable and efficient, perfect for personal travel.',
+                '₦40,000.00',
+                'assets/images/Sedan.jpeg',
+                false),
+            const SizedBox(height: 16),
+            _buildVehicleCard(
+                'SUV',
+                'Spacious and premium, great for family and business trips.',
+                '₦60,000.00',
+                'assets/images/suv.png',
                 true),
             const SizedBox(height: 16),
-            _buildVehicleCard('Coaster Bus - New Shape', '(2017 - Present)',
-                '₦350,000.00', false),
+            _buildVehicleCard(
+                'Sienna Space Bus',
+                'Comfortable 7-seater for group travels and events.',
+                '₦75,000.00',
+                'assets/images/Sienna.jpeg',
+                false),
             const SizedBox(height: 16),
-            _buildVehicleCard('Mini Bus', 'Mini Bus (Fold Roof - Hummer 2)',
-                '₦130,000.00', false),
+            _buildVehicleCard(
+                'Hiace Mini Bus',
+                'Ideal for small groups and airport pickups (Hummer 2).',
+                '₦130,000.00',
+                'assets/images/hiace.jpg',
+                false),
+            const SizedBox(height: 16),
+            _buildVehicleCard(
+                'Coaster Bus',
+                'Perfect for large groups, excursions, and corporate events (New Shape).',
+                '₦350,000.00',
+                'assets/images/coaster.jpg',
+                false),
           ],
         ),
       ),
@@ -43,7 +66,7 @@ class RentalScreen extends StatelessWidget {
   }
 
   Widget _buildVehicleCard(
-      String title, String desc, String price, bool isBlack) {
+      String title, String desc, String price, String imagePath, bool isBlack) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -59,13 +82,15 @@ class RentalScreen extends StatelessWidget {
             children: [
               Container(
                 width: 100,
-                height: 60,
+                height: 70,
                 decoration: BoxDecoration(
                   color: Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(8),
+                  image: DecorationImage(
+                    image: AssetImage(imagePath),
+                    fit: BoxFit.cover,
+                  ),
                 ),
-                child: Icon(fixIcon(FlexIcon.remix.transferTruckTime),
-                    size: 40, color: Colors.grey),
               ),
               const SizedBox(width: 16),
               Expanded(

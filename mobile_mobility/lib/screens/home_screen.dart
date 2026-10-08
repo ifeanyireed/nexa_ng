@@ -392,7 +392,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisCount: 3,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 0.95,
+                childAspectRatio: 0.85,
               ),
               itemCount: services.length,
               itemBuilder: (context, index) {
@@ -442,7 +442,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Image.asset(service.imagePath, width: 60, height: 60),
+              Image.asset(service.imagePath, width: 70, height: 70),
               const SizedBox(height: 8),
               Text(
                 service.name,

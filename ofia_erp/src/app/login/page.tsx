@@ -309,7 +309,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
     } else if (activeRole === "inventory_officer") {
       route = "/erp/admin/shop/inventory";
     } else if (activeRole === "dispatcher") {
-      route = "/erp/admin/logistics";
+      route = "/erp/employee";
     } else {
       route = "/erp/employee";
     }

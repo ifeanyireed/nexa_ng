@@ -11,16 +11,16 @@ void main() {
       statusBarIconBrightness: Brightness.dark,
     ),
   );
-  runApp(const TransportFleetApp());
+  runApp(const TransportMobilityApp());
 }
 
-class TransportFleetApp extends StatelessWidget {
-  const TransportFleetApp({Key? key}) : super(key: key);
+class TransportMobilityApp extends StatelessWidget {
+  const TransportMobilityApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Transport OS Fleet',
+      title: 'Transport OS Mobility',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -61,3 +61,6 @@ class TransportFleetApp extends StatelessWidget {
     );
   }
 }
+
+// Backwards compatibility alias
+typedef TransportFleetApp = TransportMobilityApp;

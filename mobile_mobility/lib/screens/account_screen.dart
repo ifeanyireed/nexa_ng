@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../models/transport_models.dart';
-import 'package:mobile_fleet/utils/icon_util.dart';
+import 'package:mobile_mobility/utils/icon_util.dart';
 import 'package:flexicon/flexicon.dart';
 import 'profile/reward_screen.dart';
 import 'profile/wallet_screen.dart';

@@ -100,7 +100,7 @@ export interface ErpAdminShellProps {
   title?: string;
   subtitle?: string;
   action?: React.ReactNode;
-  activeModule?: "mission" | "ai" | "crm" | "marketplace" | "shop" | "inventory" | "pos" | "referrals" | "logistics" | "quests" | "finance" | "hr" | "md" | "employee" | "users" | "departments";
+  activeModule?: "mission" | "ai" | "crm" | "marketplace" | "shop" | "inventory" | "pos" | "referrals" | "quests" | "finance" | "hr" | "md" | "employee" | "users" | "departments";
   subTabs?: SubNavItem[];
   isLoading?: boolean;
 }
@@ -202,7 +202,7 @@ export function ErpAdminShell({
       case "inventory_officer":
         return { path: "/erp/admin/shop/inventory", label: "Inventory", roleKey: "inventory_officer" };
       case "dispatcher":
-        return { path: "/erp/admin/logistics", label: "Logistics", roleKey: "dispatcher" };
+        return { path: "/erp/employee", label: "Employee", roleKey: "dispatcher" };
       case "admin":
       default:
         return { path: "/erp/admin", label: "Admin", roleKey: "admin" };
@@ -467,7 +467,7 @@ export function ErpAdminShell({
           window.location.href = "/erp/marketer";
           return;
         } else if (resolvedRole === "dispatcher") {
-          window.location.href = "/erp/admin/logistics";
+          window.location.href = "/erp/employee";
           return;
         } else if (resolvedRole === "cashier") {
           window.location.href = "/erp/admin/shop/pos";
@@ -571,7 +571,6 @@ export function ErpAdminShell({
     { label: "Ofia AI Swarm", icon: <Bot className="w-6 h-6" />, href: "/erp/admin/ai", badge: "15 AI", key: "ai", section: "Operations" },
     { label: "Ofia Compass Manager", icon: <ShoppingBag className="w-6 h-6" />, href: "/erp/admin/marketplace", key: "marketplace", section: "Operations" },
     { label: "Ofia Shop Manager", icon: <Store className="w-6 h-6" />, href: "/erp/admin/shop", badge: "Retail", key: "shop", section: "Operations" },
-    { label: "Ofia Logistics Manager", icon: <Truck className="w-6 h-6" />, href: "/erp/admin/logistics", key: "logistics", section: "Operations" },
 
     // 2. OFIA ENTERPRISE SUITE
     { label: "CRM & Marketing", icon: <BarChart3 className="w-6 h-6" />, href: "/erp/admin/crm", badge: "CRM", key: "crm", section: "Ofia Enterprise Suite" },
@@ -636,16 +635,6 @@ export function ErpAdminShell({
         { label: "Point of Sale (POS)", href: "/erp/admin/shop/pos", icon: <ShoppingCart className="w-3.5 h-3.5" />, badge: "POS" },
         { label: "My Store Studio", href: "/erp/admin/shop/store", icon: <Palette className="w-3.5 h-3.5" />, badge: "Studio" },
         { label: "Viral Referrals", href: "/erp/admin/shop/referrals", icon: <Gift className="w-3.5 h-3.5" />, badge: "Growth" },
-      ];
-    }
-
-    if (pathname.startsWith("/erp/admin/logistics")) {
-      return [
-        { label: "Logistics Overview", href: "/erp/admin/logistics", icon: <Truck className="w-3.5 h-3.5" /> },
-        { label: "Courier Dispatch Desk", href: "/erp/admin/logistics/dispatch", icon: <Send className="w-3.5 h-3.5" /> },
-        { label: "Live Fleet Map", href: "/erp/admin/logistics/fleet", icon: <Activity className="w-3.5 h-3.5" /> },
-        { label: "Zonal Shipping Rates", href: "/erp/admin/logistics/rates", icon: <DollarSign className="w-3.5 h-3.5" /> },
-        { label: "Waybill Shipments", href: "/erp/admin/logistics/shipments", icon: <FileText className="w-3.5 h-3.5" /> },
       ];
     }
 
@@ -1228,7 +1217,6 @@ export function ErpAdminShell({
                         tab.href === "/erp/admin" ||
                         tab.href === "/erp/admin/ai" ||
                         tab.href === "/erp/marketer" ||
-                        tab.href === "/erp/admin/logistics" ||
                         tab.href === "/erp/admin/marketplace" ||
                         tab.href === "/erp/accountant" ||
                         tab.href === "/erp/hr" ||

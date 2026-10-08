@@ -13,7 +13,6 @@ const DEFAULT_ERP_MODULES = [
   "crm",
   "marketplace",
   "shop",
-  "logistics",
   "accounting",
   "hr",
   "users",

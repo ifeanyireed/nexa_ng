@@ -99,17 +99,12 @@ export default function OmnichannelOrdersPage() {
   return (
     <BusinessShell
       title="Omnichannel Orders & Fulfillment"
-      subtitle="Unified order pipeline syncing Online Storefront checkouts, Retail POS receipts, and Logistics Dispatch dispatches."
+      subtitle="Unified order pipeline syncing Online Storefront checkouts, Retail POS receipts, and fulfillment dispatches."
       action={
         <div className="flex items-center gap-2">
           <Link href="/erp/admin/shop/pos">
             <NexaButton size="sm" variant="outline" leftIcon={<ShoppingCart className="w-3.5 h-3.5" />}>
               Open POS Register
-            </NexaButton>
-          </Link>
-          <Link href="/erp/admin/logistics/dispatch">
-            <NexaButton size="sm" variant="primary" leftIcon={<Truck className="w-3.5 h-3.5" />} className="bg-[#1A56DB] text-white">
-              Logistics Dispatch Desk
             </NexaButton>
           </Link>
         </div>
@@ -245,11 +240,12 @@ export default function OmnichannelOrdersPage() {
                     <td className="py-3.5 px-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
                         {ord.status === "READY_DISPATCH" && (
-                          <Link href={`/erp/admin/logistics/dispatch?order=${ord.orderNumber}`}>
-                            <NexaButton size="sm" variant="primary" className="rounded-full text-xs h-7 bg-purple-600 text-white">
-                              Dispatch Rider
-                            </NexaButton>
-                          </Link>
+                          <button
+                            onClick={() => handleUpdateStatus(ord.id, "DELIVERED")}
+                            className="px-2.5 py-1 rounded-full bg-emerald-600 text-white font-bold hover:bg-emerald-700 text-xs cursor-pointer"
+                          >
+                            Mark Delivered
+                          </button>
                         )}
                         {ord.status === "IN_PREPARATION" && (
                           <button

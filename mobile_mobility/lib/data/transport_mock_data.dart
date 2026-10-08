@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/transport_models.dart';
-import 'package:mobile_fleet/utils/icon_util.dart';
+import 'package:mobile_mobility/utils/icon_util.dart';
 import 'package:flexicon/flexicon.dart';
 
 class TransportMockData {

@@ -62,7 +62,7 @@ export function RoleGuard({
     else if (role === "employee") home = "/erp/employee";
     else if (role === "cashier") home = "/erp/admin/shop/pos";
     else if (role === "inventory_officer") home = "/erp/admin/shop/inventory";
-    else if (role === "dispatcher") home = "/erp/admin/logistics";
+    else if (role === "dispatcher") home = "/erp/employee";
 
     setRedirectTarget(fallbackRoute || home);
 
@@ -130,8 +130,6 @@ export function RoleGuard({
         effectiveAllowedRoles = ["admin", "md", "marketer", "manager"];
       } else if (pathname.startsWith("/erp/admin/shop")) {
         effectiveAllowedRoles = ["admin", "md", "marketer", "cashier", "inventory_officer", "manager"];
-      } else if (pathname.startsWith("/erp/admin/logistics")) {
-        effectiveAllowedRoles = ["admin", "md", "dispatcher", "manager"];
       } else if (pathname.startsWith("/erp/admin/ai")) {
         effectiveAllowedRoles = ["admin", "md", "marketer"];
       } else if (pathname.startsWith("/erp/hr/quests")) {
@@ -151,7 +149,6 @@ export function RoleGuard({
       else if (pathname.startsWith("/erp/marketer") || pathname.startsWith("/erp/admin/crm")) requiredMod = "crm";
       else if (pathname.startsWith("/erp/admin/ai")) requiredMod = "ai";
       else if (pathname.startsWith("/erp/admin/shop")) requiredMod = "shop";
-      else if (pathname.startsWith("/erp/admin/logistics")) requiredMod = "logistics";
       else if (pathname.startsWith("/erp/admin/marketplace")) requiredMod = "marketplace";
     }
 

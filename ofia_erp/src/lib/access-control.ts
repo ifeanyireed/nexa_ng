@@ -155,13 +155,6 @@ export const ERP_MODULES: ErpModuleDef[] = [
     badge: "Retail",
   },
   {
-    key: "logistics",
-    label: "Ofia Logistics Manager",
-    category: "Operations",
-    description: "Zonal route dispatching, fleet management, and shipment tracking.",
-    href: "/erp/admin/logistics",
-  },
-  {
     key: "accounting",
     label: "Accounting & Ledgers",
     category: "Ofia Enterprise Suite",
@@ -220,7 +213,6 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     shop: true,
     inventory: true,
     pos: true,
-    logistics: true,
     referrals: true,
     quests: true,
     accounting: true,
@@ -239,7 +231,6 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     shop: true,
     inventory: true,
     pos: true,
-    logistics: true,
     referrals: true,
     quests: true,
     accounting: true,
@@ -258,7 +249,6 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     shop: false,
     inventory: false,
     pos: false,
-    logistics: false,
     referrals: false,
     quests: true,
     accounting: false,
@@ -277,7 +267,6 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     shop: true,
     inventory: true,
     pos: true,
-    logistics: false,
     referrals: false,
     quests: true,
     accounting: true,
@@ -296,7 +285,6 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     shop: true,
     inventory: false,
     pos: false,
-    logistics: false,
     referrals: true,
     quests: true,
     accounting: false,
@@ -315,7 +303,6 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     shop: true,
     inventory: true,
     pos: false,
-    logistics: true,
     referrals: false,
     quests: true,
     accounting: false,
@@ -334,7 +321,6 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     shop: false,
     inventory: false,
     pos: false,
-    logistics: false,
     referrals: false,
     quests: true,
     accounting: false,
@@ -353,7 +339,6 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     shop: true,
     inventory: true,
     pos: true,
-    logistics: false,
     referrals: false,
     quests: true,
     accounting: false,
@@ -372,7 +357,6 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     shop: true,
     inventory: true,
     pos: false,
-    logistics: true,
     referrals: false,
     quests: true,
     accounting: false,
@@ -391,7 +375,6 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     shop: false,
     inventory: false,
     pos: false,
-    logistics: true,
     referrals: false,
     quests: true,
     accounting: false,
@@ -629,14 +612,14 @@ export const ROLE_CAPABILITIES: Record<RoleKey, RoleCapability> = {
   admin: {
     key: "admin",
     label: "Tenant Administrator",
-    controlPanels: ["overview", "ai", "crm", "marketplace", "shop", "logistics", "accounting", "hr", "users", "departments"],
+    controlPanels: ["overview", "ai", "crm", "marketplace", "shop", "accounting", "hr", "users", "departments"],
     portals: ["employee", "manager", "md"],
     homeRoute: "/erp/admin",
   },
   md: {
     key: "md",
     label: "Managing Director",
-    controlPanels: ["accounting", "hr", "crm", "shop", "logistics"],
+    controlPanels: ["accounting", "hr", "crm", "shop"],
     portals: ["md", "employee"],
     homeRoute: "/erp/md",
   },
@@ -678,9 +661,9 @@ export const ROLE_CAPABILITIES: Record<RoleKey, RoleCapability> = {
   dispatcher: {
     key: "dispatcher",
     label: "Logistics Lead",
-    controlPanels: ["logistics"],
+    controlPanels: [],
     portals: ["employee"],
-    homeRoute: "/erp/admin/logistics",
+    homeRoute: "/erp/employee",
   },
   inventory_officer: {
     key: "inventory_officer",
@@ -749,7 +732,7 @@ export function isNavItemVisibleForRole(
     if (itemKey === "md" || itemKey === "employee") return true;
     if (itemKey === "manager") return isLineManager;
     // MD also has executive control panel visibility into provisioned modules
-    const mdExecutivePanels = ["accounting", "hr", "crm", "shop", "logistics"];
+    const mdExecutivePanels = ["accounting", "hr", "crm", "shop"];
     return mdExecutivePanels.includes(itemKey);
   }
 

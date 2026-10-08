@@ -8,7 +8,6 @@ import {
   Boxes,
   ShoppingCart,
   Gift,
-  Truck,
   Trophy,
   PieChart,
   Users,
@@ -115,18 +114,6 @@ const ALL_KPIS: ModuleKpiCard[] = [
     sub: "348 Active SKUs",
     priority: 4,
   },
-  // Logistics Module
-  {
-    id: "kpi-logistics",
-    module: "logistics",
-    label: "Active Courier Dispatches",
-    value: "18 Waybills",
-    change: "100% On-Time",
-    trend: "up",
-    icon: <Truck className="w-5 h-5 text-amber-500" />,
-    sub: "Live GPS Tracking",
-    priority: 5,
-  },
   // Accounting Module
   {
     id: "kpi-accounting",
@@ -221,15 +208,6 @@ const ALL_QUICK_ACTIONS: ModuleQuickAction[] = [
     desc: "Email & WhatsApp",
     href: "/erp/admin/ai/campaigns/new",
   },
-  // Logistics
-  {
-    id: "qa-log",
-    module: "logistics",
-    label: "Dispatch Courier",
-    icon: <Truck className="w-6 h-6" />,
-    desc: "Print 4x6 Waybill",
-    href: "/erp/admin/logistics/dispatch",
-  },
   // Accounting
   {
     id: "qa-inv",
@@ -308,17 +286,6 @@ const ALL_OPERATIONS: ModuleOperation[] = [
     link: "/erp/admin/shop/pos/receipts",
   },
   {
-    id: "OP-9810",
-    module: "logistics",
-    customer: "Ahnara Global Health",
-    service: "Cold Chain Logistics Express Delivery",
-    amount: "₦85,000",
-    time: "1 hour ago",
-    type: "Waybill Dispatch",
-    status: "Dispatched",
-    link: "/erp/admin/logistics",
-  },
-  {
     id: "OP-9809",
     module: "accounting",
     customer: "Zenith Bank Automated Feed",
@@ -365,7 +332,6 @@ const ALL_OPERATIONS: ModuleOperation[] = [
 ];
 
 const ALL_PULSE_ITEMS = [
-  { module: "logistics", term: "Lagos Mainland Dispatch", growth: "98.4% SLA", niche: "Logistics" },
   { module: "ai", term: "AI Autonomous Outreach", growth: "420 Replies", niche: "Ofia AI" },
   { module: "accounting", term: "Paystack Bank Settled", growth: "₦3.4M Today", niche: "Treasury" },
   { module: "crm", term: "B2B Deal Conversion", growth: "₦34.8M Active", niche: "CRM Sales" },
@@ -418,10 +384,9 @@ export default function AdminCommandCenterPage() {
     isModuleProvisioned(op.module)
   ).slice(0, 4);
 
-  // Determine whether this tenant has physical retail or logistics operations
+  // Determine whether this tenant has physical retail or shop operations
   const hasPhysicalOperations =
     isModuleProvisioned("shop") ||
-    isModuleProvisioned("logistics") ||
     isModuleProvisioned("marketplace");
 
   // Filter Enterprise Pulse by provisioned modules

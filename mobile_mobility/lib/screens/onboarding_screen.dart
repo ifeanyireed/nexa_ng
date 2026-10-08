@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'home_screen.dart';
 
@@ -131,6 +132,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
         ],
       ),
-    );
+    ).animate().fadeIn(duration: const Duration(seconds: 3)).slideY(begin: 0.05, end: 0);
   }
 }

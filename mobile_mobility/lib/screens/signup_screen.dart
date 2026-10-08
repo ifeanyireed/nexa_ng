@@ -296,6 +296,77 @@ class _SignupScreenState extends State<SignupScreen> {
                     fontSize: 16,
                     fontWeight: FontWeight.bold)),
           ),
+          const SizedBox(height: 32),
+
+          Row(
+            children: [
+              Expanded(child: Divider(color: Colors.grey.shade300)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text('OR',
+                    style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontWeight: FontWeight.w600)),
+              ),
+              Expanded(child: Divider(color: Colors.grey.shade300)),
+            ],
+          ),
+          const SizedBox(height: 32),
+
+          // Google Button
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: OutlinedButton.icon(
+              onPressed: () {},
+              icon: Container(
+                width: 24,
+                height: 24,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFEA4335),
+                  shape: BoxShape.circle,
+                ),
+                child: const Text('G',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16)),
+              ),
+              label: const Text('Continue with Google',
+                  style: TextStyle(
+                      color: Colors.black87,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600)),
+              style: OutlinedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                side: BorderSide(color: Colors.grey.shade300),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Apple Button
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: OutlinedButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.apple, color: Colors.black, size: 28),
+              label: const Text('Continue with Apple',
+                  style: TextStyle(
+                      color: Colors.black87,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600)),
+              style: OutlinedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                side: BorderSide(color: Colors.grey.shade300),
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
         ],
       ),
     );

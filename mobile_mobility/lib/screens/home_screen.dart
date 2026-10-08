@@ -11,6 +11,7 @@ import 'services/rental_screen.dart';
 import 'services/staff_screen.dart';
 import 'services/interstate_screen.dart';
 import 'services/school_screen.dart';
+import 'services/service_cover_screen.dart';
 import 'account_screen.dart';
 import 'bookings_screen.dart'; // Add Account Screen import
 import 'tracking_screen.dart';
@@ -591,25 +592,30 @@ class _HomeScreenState extends State<HomeScreen> {
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
+            Widget nextScreen;
             if (service.type == ServiceType.onDemand) {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const OnDemandScreen()));
+              nextScreen = const OnDemandScreen();
             } else if (service.type == ServiceType.shuttle) {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const ShuttleScreen()));
+              nextScreen = const ShuttleScreen();
             } else if (service.type == ServiceType.rental) {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const RentalScreen()));
+              nextScreen = const RentalScreen();
             } else if (service.type == ServiceType.staff) {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const StaffScreen()));
+              nextScreen = const StaffScreen();
             } else if (service.type == ServiceType.interstate) {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const InterstateScreen()));
-            } else if (service.type == ServiceType.school) {
-              Navigator.push(context,
-                  MaterialPageRoute(builder: (_) => const SchoolScreen()));
+              nextScreen = const InterstateScreen();
+            } else {
+              nextScreen = const SchoolScreen();
             }
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ServiceCoverScreen(
+                  service: service,
+                  nextScreen: nextScreen,
+                ),
+              ),
+            );
           },
           borderRadius: BorderRadius.circular(16),
           child: Column(

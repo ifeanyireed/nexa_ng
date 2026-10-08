@@ -45,7 +45,8 @@ const nextConfig: NextConfig = {
       { source: '/ops/dispatch', destination: '/erp/ops/dispatch' },
       { source: '/ops/dispatch/:path*', destination: '/erp/ops/dispatch/:path*' },
       { source: '/mobility', destination: '/erp/admin/mobility' },
-      { source: '/mobility/:path*', destination: '/erp/admin/mobility/:path*' }
+      { source: '/mobility/:path*', destination: '/erp/admin/mobility/:path*' },
+      { source: '/reset-password', destination: '/erp/reset-password' }
     ];
   }
 };

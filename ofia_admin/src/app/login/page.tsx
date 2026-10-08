@@ -185,9 +185,12 @@ function LoginContent() {
                   <label className="text-xs font-semibold text-[var(--nexa-text-secondary)]">
                     Root Password
                   </label>
-                  <span className="text-[11px] font-bold text-[#1A56DB]">
-                    HMAC-SHA256 JWT
-                  </span>
+                  <Link
+                    href="/forgot-password"
+                    className="text-[11px] font-bold text-[#1A56DB] hover:underline"
+                  >
+                    Forgot Password?
+                  </Link>
                 </div>
                 <div className="relative">
                   <input

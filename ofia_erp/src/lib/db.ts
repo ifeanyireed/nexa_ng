@@ -282,6 +282,20 @@ export async function ensureTablesExist(): Promise<boolean> {
         CREATE INDEX IF NOT EXISTS idx_crm_activities_status ON crm_activities (status);
 
         CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_subscribers_unique ON crm_email_subscribers (tenant_slug, list_id, email);
+
+        -- 6. Password Reset Tokens Table
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+          id VARCHAR(64) PRIMARY KEY,
+          email VARCHAR(191) NOT NULL,
+          token VARCHAR(128) UNIQUE NOT NULL,
+          tenant_slug VARCHAR(100),
+          expires_at TIMESTAMPTZ NOT NULL,
+          used BOOLEAN NOT NULL DEFAULT FALSE,
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_prt_token ON password_reset_tokens (token);
+        CREATE INDEX IF NOT EXISTS idx_prt_email ON password_reset_tokens (email);
+        CREATE INDEX IF NOT EXISTS idx_prt_validity ON password_reset_tokens (token, used, expires_at);
       `);
 
       isInitialized = true;

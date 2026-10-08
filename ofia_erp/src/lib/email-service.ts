@@ -1112,3 +1112,217 @@ export async function retryFailedCampaignEmails(campaignId: string): Promise<{ r
   return { retriedCount: count };
 }
 
+export interface PasswordResetEmailParams {
+  recipientEmail: string;
+  recipientName?: string;
+  resetUrl: string;
+  tenantSlug?: string;
+  tenantName?: string;
+  expiresInMinutes?: number;
+}
+
+/**
+ * Send a secure, branded password reset email using the platform email utility.
+ * Attempts tenant-specific SMTP if configured, with automatic fallback to platform Hostinger SMTP.
+ */
+export async function sendPlatformPasswordResetEmail(
+  params: PasswordResetEmailParams
+): Promise<{ success: boolean; messageId?: string; error?: string }> {
+  const {
+    recipientEmail,
+    recipientName = "Valued User",
+    resetUrl,
+    tenantSlug,
+    tenantName = "Ofia ERP",
+    expiresInMinutes = 60,
+  } = params;
+
+  if (!recipientEmail || !recipientEmail.includes("@")) {
+    return { success: false, error: "Invalid recipient email address" };
+  }
+
+  // 1. Determine SMTP Settings:
+  // Priority 1: Tenant-specific SMTP from database (tenant_smtp_settings)
+  // Priority 2: Platform-wide SMTP from database (slug = 'platform')
+  // Priority 3: Environment variables (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD)
+  let settings: SmtpSettings | null = null;
+  if (tenantSlug) {
+    try {
+      settings = await getTenantSmtpSettings(tenantSlug);
+    } catch (e) {
+      console.warn("Failed to retrieve tenant SMTP settings, checking platform defaults:", e);
+    }
+  }
+
+  if (!settings || !settings.host || !settings.password) {
+    try {
+      const platformDbSettings = await getTenantSmtpSettings("platform");
+      if (platformDbSettings && platformDbSettings.host && platformDbSettings.password) {
+        settings = platformDbSettings;
+      }
+    } catch {}
+  }
+
+  const envSettings: SmtpSettings = {
+    tenantSlug: "platform",
+    provider: "hostinger",
+    host: process.env.SMTP_HOST || "smtp.hostinger.com",
+    port: Number(process.env.SMTP_PORT) || 465,
+    encryption: (Number(process.env.SMTP_PORT) === 465 || !process.env.SMTP_PORT ? "ssl" : "tls"),
+    fromEmail: process.env.SMTP_FROM_EMAIL || "hello@resultspro.ng",
+    fromName: tenantName ? `${tenantName} Security` : (process.env.SMTP_FROM_NAME || "Ofia Platform Security"),
+    username: process.env.SMTP_USER || "hello@resultspro.ng",
+    password: process.env.SMTP_PASSWORD || "",
+  };
+
+  const effectiveSettings = (settings && settings.host && settings.password)
+    ? settings
+    : envSettings;
+
+  const senderName = effectiveSettings.fromName || (tenantName ? `${tenantName} Security` : "Ofia Platform Security");
+  const senderEmail = effectiveSettings.fromEmail || envSettings.fromEmail;
+  const senderFormatted = `"${senderName.replace(/"/g, "")}" <${senderEmail}>`;
+
+  const subject = `[Action Required] Reset Your Password for ${tenantName}`;
+
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${subject}</title>
+  <style>
+    body { margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; }
+    .wrapper { width: 100%; background-color: #f8fafc; padding: 40px 16px; box-sizing: border-box; }
+    .card { max-width: 540px; margin: 0 auto; background: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01); overflow: hidden; }
+    .header { padding: 32px 32px 24px; text-align: center; border-bottom: 1px solid #f1f5f9; }
+    .brand-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; background: #eff6ff; border: 1px solid #dbeafe; border-radius: 999px; color: #1a56db; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+    .content { padding: 32px; line-height: 1.6; }
+    .greeting { font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 8px; }
+    .message { font-size: 14px; color: #475569; margin-bottom: 24px; }
+    .btn-container { text-align: center; margin: 28px 0; }
+    .btn { display: inline-block; background-color: #1a56db; color: #ffffff !important; padding: 14px 32px; border-radius: 12px; font-size: 14px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 14px 0 rgba(26, 86, 219, 0.35); }
+    .notice-box { background: #f8fafc; border-left: 4px solid #1a56db; border-radius: 6px; padding: 14px 16px; margin: 24px 0; font-size: 12px; color: #64748b; }
+    .fallback-url { word-break: break-all; font-family: monospace; font-size: 11px; background: #f1f5f9; padding: 10px 12px; border-radius: 8px; color: #0f172a; border: 1px solid #e2e8f0; margin-top: 8px; }
+    .footer { padding: 24px 32px 32px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="card">
+      <div class="header">
+        <div class="brand-badge">
+          <span>🔒</span> ${tenantName} Security
+        </div>
+        <h2 style="margin: 16px 0 4px; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">
+          Password Reset Request
+        </h2>
+        <p style="margin: 0; font-size: 13px; color: #64748b;">
+          Follow the instructions below to regain access to your workspace.
+        </p>
+      </div>
+
+      <div class="content">
+        <p class="greeting">Hello ${recipientName},</p>
+        <p class="message">
+          We received a request to reset the password for your account on <strong>${tenantName}</strong>. If you made this request, click the secure button below to set a new password:
+        </p>
+
+        <div class="btn-container">
+          <a href="${resetUrl}" target="_blank" class="btn">
+            Reset My Password &rarr;
+          </a>
+        </div>
+
+        <div class="notice-box">
+          <p style="margin: 0 0 6px 0;"><strong>⏱ Expiration:</strong> This reset link will automatically expire in <strong>${expiresInMinutes} minutes</strong>.</p>
+          <p style="margin: 0;"><strong>🛡 Did not request this?</strong> If you did not ask to reset your password, you can safely ignore this email. Your existing credentials remain completely secure.</p>
+        </div>
+
+        <p style="font-size: 12px; color: #64748b; margin-top: 20px; margin-bottom: 4px;">
+          Button not working? Copy and paste this URL into your browser:
+        </p>
+        <div class="fallback-url">${resetUrl}</div>
+      </div>
+
+      <div class="footer">
+        <p style="margin: 0 0 6px;">Sent automatically by the Ofia Enterprise Platform Security Infrastructure.</p>
+        <p style="margin: 0;">&copy; ${new Date().getFullYear()} Ofia Technologies. All rights reserved.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+  `;
+
+  const text = `
+Password Reset Request for ${tenantName}
+
+Hello ${recipientName},
+
+We received a request to reset the password for your account on ${tenantName}.
+
+To reset your password, please visit the link below:
+${resetUrl}
+
+This link is valid for ${expiresInMinutes} minutes.
+
+If you did not request a password reset, please ignore this email. Your account remains completely secure.
+
+— ${tenantName} Security Team
+Sent by Ofia Enterprise Platform
+  `.trim();
+
+  // 2. Dispatch via Nodemailer
+  try {
+    const transporter = createNodemailerTransporter(effectiveSettings);
+    const info = await transporter.sendMail({
+      from: senderFormatted,
+      to: recipientEmail,
+      replyTo: "support@ofia.ng",
+      subject,
+      html,
+      text,
+    });
+
+    return {
+      success: true,
+      messageId: info.messageId,
+    };
+  } catch (err: any) {
+    console.error("Failed to deliver password reset email via primary SMTP:", err);
+
+    // If tenant SMTP failed, attempt fallback to platform Hostinger SMTP
+    if (settings && effectiveSettings !== envSettings) {
+      try {
+        const fallbackTransporter = createNodemailerTransporter(envSettings);
+        const fallbackInfo = await fallbackTransporter.sendMail({
+          from: `"${tenantName || 'Ofia'} Security" <${envSettings.fromEmail}>`,
+          to: recipientEmail,
+          replyTo: "support@ofia.ng",
+          subject,
+          html,
+          text,
+        });
+
+        return {
+          success: true,
+          messageId: fallbackInfo.messageId,
+        };
+      } catch (fallbackErr: any) {
+        console.error("Platform fallback SMTP also failed:", fallbackErr);
+        return {
+          success: false,
+          error: fallbackErr.message || "Failed to dispatch password reset email",
+        };
+      }
+    }
+
+    return {
+      success: false,
+      error: err.message || "Failed to dispatch password reset email",
+    };
+  }
+}
+

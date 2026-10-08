@@ -486,103 +486,48 @@ export default function EmailMarketingBlastsPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title="Schedule Email Blast"
-        subtitle="Configure your audience list, rich email copy, and dispatch timing."
+        subtitle="Configure your audience list, outbound sending domain, rich email copy, and dispatch timing."
+        maxWidth="3xl"
       >
         <form onSubmit={handleCreateBlast} className="space-y-4">
-          <NexaInput
-            label="Blast Campaign Title"
-            value={blastTitle}
-            onChange={(e) => setBlastTitle(e.target.value)}
-            placeholder="e.g. Q4 Merchant POS Special Briefing"
-            required
-          />
-
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Email Subject Line</label>
-              <button
-                type="button"
-                onClick={handleAiSubject}
-                disabled={isAiGenerating}
-                className="text-[11px] text-[#1A56DB] font-bold hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                <Sparkles className="w-3 h-3 text-amber-500" />
-                {isAiGenerating ? "Generating..." : "AI Generate Subject"}
-              </button>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <NexaInput
-              value={blastSubject}
-              onChange={(e) => setBlastSubject(e.target.value)}
-              placeholder="e.g. Exclusive Early Deployment Terms for High-Volume Merchants"
+              label="Blast Campaign Title"
+              value={blastTitle}
+              onChange={(e) => setBlastTitle(e.target.value)}
+              placeholder="e.g. Q4 Merchant POS Special Briefing"
               required
             />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">Target Audience List</label>
-              <select
-                value={selectedListId}
-                onChange={(e) => setSelectedListId(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-medium"
-              >
-                {lists.map((l) => (
-                  <option key={l.id} value={l.id}>
-                    {l.name} ({l.subscriberCount} contacts)
-                  </option>
-                ))}
-              </select>
-            </div>
 
             <div>
-              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">Dispatch Timing</label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Email Subject Line</label>
                 <button
                   type="button"
-                  onClick={() => setScheduleType("NOW")}
-                  className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
-                    scheduleType === "NOW"
-                      ? "bg-[#1A56DB] text-white border-[#1A56DB]"
-                      : "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)] text-[var(--nexa-text-muted)]"
-                  }`}
+                  onClick={handleAiSubject}
+                  disabled={isAiGenerating}
+                  className="text-[11px] text-[#1A56DB] font-bold hover:underline flex items-center gap-1 cursor-pointer"
                 >
-                  Send Immediately
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setScheduleType("LATER")}
-                  className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
-                    scheduleType === "LATER"
-                      ? "bg-[#1A56DB] text-white border-[#1A56DB]"
-                      : "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)] text-[var(--nexa-text-muted)]"
-                  }`}
-                >
-                  Schedule for Later
+                  <Sparkles className="w-3 h-3 text-amber-500" />
+                  {isAiGenerating ? "Generating..." : "AI Generate Subject"}
                 </button>
               </div>
-            </div>
-          </div>
-
-          {scheduleType === "LATER" && (
-            <div>
-              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">Schedule Date & Time</label>
-              <input
-                type="datetime-local"
-                value={scheduleDate}
-                onChange={(e) => setScheduleDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-medium"
+              <NexaInput
+                value={blastSubject}
+                onChange={(e) => setBlastSubject(e.target.value)}
+                placeholder="e.g. Exclusive Early Deployment Terms for High-Volume Merchants"
                 required
               />
             </div>
-          )}
+          </div>
 
-          {/* SENDER PROFILE & OUTBOUND DOMAIN SELECTION */}
-          <div className="p-3.5 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]/60 space-y-3">
+          {/* SENDER IDENTITY & OUTBOUND DOMAIN SELECTION */}
+          <div className="p-3.5 rounded-xl border-2 border-blue-500/20 bg-blue-500/[0.02] dark:bg-blue-500/[0.05] space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Globe className="w-4 h-4 text-[#1A56DB]" />
                 <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                  Sending Profile & Domain
+                  Outbound Sender Profile & Domain
                 </label>
               </div>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 font-semibold border border-blue-500/20">
@@ -591,26 +536,29 @@ export default function EmailMarketingBlastsPage() {
             </div>
 
             <div>
+              <label className="block text-[11px] font-semibold text-[var(--nexa-text-secondary)] mb-1">
+                Select Sending Domain / Profile:
+              </label>
               <select
                 value={selectedProfileId}
                 onChange={(e) => handleProfileChange(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-medium"
+                className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-medium focus:border-[#1A56DB] focus:ring-1 focus:ring-[#1A56DB]"
               >
                 <option value="default">
-                  Default Domain {defaultSmtp ? `(${defaultSmtp.fromEmail || defaultSmtp.host})` : "(Primary Workspace SMTP)"}
+                  Primary Workspace Domain {defaultSmtp ? `(${defaultSmtp.fromEmail || defaultSmtp.host})` : "(Default SMTP Relay)"}
                 </option>
                 {senderProfiles.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.profileName} — {p.fromEmail} ({p.provider.toUpperCase()} / {p.host})
                   </option>
                 ))}
-                <option value="custom">+ Custom SMTP / Domain Override for this Blast...</option>
+                <option value="custom">+ Custom SMTP / Different Domain Override for this Blast...</option>
               </select>
             </div>
 
             {/* Custom Domain Settings Drawer */}
             {selectedProfileId === "custom" && (
-              <div className="pt-2 border-t border-[var(--nexa-border)] space-y-3">
+              <div className="pt-2 border-t border-[var(--nexa-border)] space-y-3 animate-in fade-in duration-200">
                 <div className="flex items-center justify-between">
                   <span className="text-[11px] font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
                     <Server className="w-3.5 h-3.5 text-[#1A56DB]" />
@@ -716,13 +664,27 @@ export default function EmailMarketingBlastsPage() {
               </div>
             )}
 
+            {/* Display Name & Email Address */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              <NexaInput
+                label="Sender Display Name"
+                value={senderName}
+                onChange={(e) => setSenderName(e.target.value)}
+              />
+              <NexaInput
+                label="Sender Email Address"
+                value={senderEmail}
+                onChange={(e) => setSenderEmail(e.target.value)}
+              />
+            </div>
+
             {/* Routing indicator */}
-            <div className="text-[11px] text-[var(--nexa-text-muted)] flex items-center gap-1.5 pt-1">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+            <div className="text-[11px] text-[var(--nexa-text-muted)] flex items-center gap-1.5 pt-0.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
               <span>
-                Sending from:{" "}
+                Sending identity:{" "}
                 <strong className="text-[var(--nexa-text-primary)] font-mono">
-                  {senderEmail ? senderEmail : "Default domain"}
+                  {senderName ? `${senderName} <${senderEmail}>` : senderEmail}
                 </strong>
                 {selectedProfileId !== "default" && (
                   <span className="text-blue-600 font-semibold ml-1">
@@ -734,17 +696,62 @@ export default function EmailMarketingBlastsPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <NexaInput
-              label="Sender Display Name"
-              value={senderName}
-              onChange={(e) => setSenderName(e.target.value)}
-            />
-            <NexaInput
-              label="Sender Email Address"
-              value={senderEmail}
-              onChange={(e) => setSenderEmail(e.target.value)}
-            />
+            <div>
+              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">Target Audience List</label>
+              <select
+                value={selectedListId}
+                onChange={(e) => setSelectedListId(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-medium"
+              >
+                {lists.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.name} ({l.subscriberCount} contacts)
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">Dispatch Timing</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setScheduleType("NOW")}
+                  className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
+                    scheduleType === "NOW"
+                      ? "bg-[#1A56DB] text-white border-[#1A56DB]"
+                      : "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)] text-[var(--nexa-text-muted)]"
+                  }`}
+                >
+                  Send Immediately
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setScheduleType("LATER")}
+                  className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
+                    scheduleType === "LATER"
+                      ? "bg-[#1A56DB] text-white border-[#1A56DB]"
+                      : "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)] text-[var(--nexa-text-muted)]"
+                  }`}
+                >
+                  Schedule for Later
+                </button>
+              </div>
+            </div>
           </div>
+
+          {scheduleType === "LATER" && (
+            <div>
+              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">Schedule Date & Time</label>
+              <input
+                type="datetime-local"
+                value={scheduleDate}
+                onChange={(e) => setScheduleDate(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-medium"
+                required
+              />
+            </div>
+          )}
 
           <div>
             <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">

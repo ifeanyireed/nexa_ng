@@ -4,6 +4,7 @@ import '../models/transport_models.dart';
 import 'package:flexicon/flexicon.dart';
 import '../utils/icon_util.dart';
 import '../data/transport_mock_data.dart';
+import '../widgets/route_card.dart';
 import 'services/on_demand_screen.dart';
 import 'services/shuttle_screen.dart';
 import 'services/rental_screen.dart';
@@ -56,6 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildDynamicServiceGrid(),
         _buildBanners(),
         if (activeTrip != null) _buildActiveTripWidget(),
+        _buildPopularShuttleRoutes(),
         _buildIntelligentPrompt(),
         const SliverPadding(padding: EdgeInsets.only(bottom: 40)),
       ],
@@ -327,6 +329,88 @@ class _HomeScreenState extends State<HomeScreen> {
       decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
       child: Icon(icon, size: 16, color: color),
+    );
+  }
+
+  SliverToBoxAdapter _buildPopularShuttleRoutes() {
+    return SliverToBoxAdapter(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Popular Shuttle Routes',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A))),
+                Text('See all',
+                    style: TextStyle(
+                        color: Color(0xFF1B62F0),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14)),
+              ],
+            ),
+          ),
+          SizedBox(
+            height: 185,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              children: [
+                const RouteCard(
+                  width: 300,
+                  code: 'SGT4',
+                  pickup: 'Sangotedo Bus Stop',
+                  destination: 'Marina (Eko Electricity)',
+                  stops: 29,
+                  time: '05:40 AM',
+                  price: '₦3,010.00',
+                  seatsLeft: 12,
+                )
+                    .animate()
+                    .fadeIn(duration: 800.ms, delay: 100.ms)
+                    .slideX(begin: 0.1, end: 0),
+                const SizedBox(width: 16),
+                const RouteCard(
+                  width: 300,
+                  code: 'LEK1',
+                  pickup: 'Lekki Phase 1',
+                  destination: 'Victoria Island',
+                  stops: 14,
+                  time: '06:15 AM',
+                  price: '₦2,500.00',
+                  seatsLeft: 5,
+                )
+                    .animate()
+                    .fadeIn(duration: 800.ms, delay: 250.ms)
+                    .slideX(begin: 0.1, end: 0),
+                const SizedBox(width: 16),
+                const RouteCard(
+                  width: 300,
+                  code: 'IKE2',
+                  pickup: 'Ikeja City Mall',
+                  destination: 'Yaba Tech',
+                  stops: 21,
+                  time: '06:30 AM',
+                  price: '₦1,800.00',
+                  seatsLeft: 8,
+                )
+                    .animate()
+                    .fadeIn(duration: 800.ms, delay: 400.ms)
+                    .slideX(begin: 0.1, end: 0),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
+      )
+          .animate()
+          .fadeIn(duration: 800.ms, delay: 500.ms)
+          .slideY(begin: 0.1, end: 0),
     );
   }
 

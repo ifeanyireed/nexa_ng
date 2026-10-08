@@ -109,6 +109,20 @@ class _SignupScreenState extends State<SignupScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 14, color: Colors.grey),
                 ),
+                const SizedBox(height: 12),
+                InkWell(
+                  onTap: () {
+                    // Navigate to data usage policy
+                  },
+                  child: const Text(
+                    'Learn about how we use your data',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF1B62F0),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 32),
                 SizedBox(
                   width: double.infinity,

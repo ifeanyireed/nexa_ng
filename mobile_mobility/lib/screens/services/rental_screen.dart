@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:mobile_mobility/utils/icon_util.dart';
 import 'package:flexicon/flexicon.dart';
+import 'rental_vehicle_details_screen.dart';
 
 class RentalScreen extends StatelessWidget {
   const RentalScreen({Key? key}) : super(key: key);
@@ -23,6 +24,7 @@ class RentalScreen extends StatelessWidget {
         child: Column(
           children: [
             _buildVehicleCard(
+                context,
                 'Sedan',
                 'Comfortable and efficient, perfect for personal travel.',
                 '₦40,000.00',
@@ -30,6 +32,7 @@ class RentalScreen extends StatelessWidget {
                 false),
             const SizedBox(height: 16),
             _buildVehicleCard(
+                context,
                 'SUV',
                 'Spacious and premium, great for family and business trips.',
                 '₦60,000.00',
@@ -37,6 +40,7 @@ class RentalScreen extends StatelessWidget {
                 true),
             const SizedBox(height: 16),
             _buildVehicleCard(
+                context,
                 'Sienna Space Bus',
                 'Comfortable 7-seater for group travels and events.',
                 '₦75,000.00',
@@ -44,6 +48,7 @@ class RentalScreen extends StatelessWidget {
                 false),
             const SizedBox(height: 16),
             _buildVehicleCard(
+                context,
                 'Hiace Mini Bus',
                 'Ideal for small groups and airport pickups (Hummer 2).',
                 '₦130,000.00',
@@ -51,6 +56,7 @@ class RentalScreen extends StatelessWidget {
                 false),
             const SizedBox(height: 16),
             _buildVehicleCard(
+                context,
                 'Coaster Bus',
                 'Perfect for large groups, excursions, and corporate events (New Shape).',
                 '₦350,000.00',
@@ -65,69 +71,84 @@ class RentalScreen extends StatelessWidget {
         .slideY(begin: 0.05, end: 0);
   }
 
-  Widget _buildVehicleCard(
-      String title, String desc, String price, String imagePath, bool isBlack) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 100,
-                height: 70,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(8),
-                  image: DecorationImage(
-                    image: AssetImage(imagePath),
-                    fit: BoxFit.cover,
+  Widget _buildVehicleCard(BuildContext context, String title, String desc,
+      String price, String imagePath, bool isBlack) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RentalVehicleDetailsScreen(
+              title: title,
+              description: desc,
+              price: price,
+              imagePath: imagePath,
+            ),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 100,
+                  height: 70,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(8),
+                    image: DecorationImage(
+                      image: AssetImage(imagePath),
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 14)),
-                    const SizedBox(height: 4),
-                    Text(desc,
-                        style:
-                            const TextStyle(color: Colors.grey, fontSize: 11),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 8),
-                    const Text('Starting from',
-                        style: TextStyle(color: Colors.grey, fontSize: 10)),
-                    Text(price,
-                        style: const TextStyle(
-                            color: Colors.green,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14)),
-                  ],
-                ),
-              )
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _buildFeatureIcon(fixIcon(FlexIcon.remix.flower), 'AC'),
-              const SizedBox(width: 16),
-              _buildFeatureIcon(fixIcon(FlexIcon.remix.flash3), 'Charger'),
-            ],
-          )
-        ],
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 14)),
+                      const SizedBox(height: 4),
+                      Text(desc,
+                          style:
+                              const TextStyle(color: Colors.grey, fontSize: 11),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 8),
+                      const Text('Starting from',
+                          style: TextStyle(color: Colors.grey, fontSize: 10)),
+                      Text(price,
+                          style: const TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14)),
+                    ],
+                  ),
+                )
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                _buildFeatureIcon(fixIcon(FlexIcon.remix.flower), 'AC'),
+                const SizedBox(width: 16),
+                _buildFeatureIcon(fixIcon(FlexIcon.remix.flash3), 'Charger'),
+              ],
+            )
+          ],
+        ),
       ),
     );
   }

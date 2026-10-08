@@ -25,7 +25,7 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _referralController = TextEditingController();
-  
+
   bool _isCorporateDetected = false;
 
   void _checkCorporateEmail(String email) {
@@ -77,9 +77,82 @@ class _SignupScreenState extends State<SignupScreen> {
     );
     if (picked != null) {
       setState(() {
-        _dobController.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+        _dobController.text =
+            "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
       });
     }
+  }
+
+  void _showLocationPopup() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset('assets/images/ride-reminder.png', height: 120),
+                const SizedBox(height: 24),
+                const Text('Enable Location',
+                    style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A))),
+                const SizedBox(height: 12),
+                const Text(
+                  'Allow Nexa to access your location to find nearby rides, shuttles, and optimize your routes.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1B62F0),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(dialogContext); // Close dialog
+                      Navigator.of(context).pushReplacement(MaterialPageRoute(
+                          builder: (context) => const HomeScreen()));
+                    },
+                    child: const Text('Allow Location',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(dialogContext); // Close dialog
+                    Navigator.of(context).pushReplacement(MaterialPageRoute(
+                        builder: (context) => const HomeScreen()));
+                  },
+                  child: const Text('Not Now',
+                      style: TextStyle(
+                          color: Colors.grey,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+          ),
+        ).animate().scale(
+            duration: 400.ms,
+            curve: Curves.easeOutBack,
+            begin: const Offset(0.8, 0.8));
+      },
+    );
   }
 
   Widget _buildStepIndicator() {
@@ -101,7 +174,9 @@ class _SignupScreenState extends State<SignupScreen> {
             duration: const Duration(milliseconds: 300),
             height: 6,
             decoration: BoxDecoration(
-              color: _currentPage == 1 ? const Color(0xFF1B62F0) : Colors.grey.shade300,
+              color: _currentPage == 1
+                  ? const Color(0xFF1B62F0)
+                  : Colors.grey.shade300,
               borderRadius: BorderRadius.circular(4),
             ),
           ),
@@ -116,25 +191,31 @@ class _SignupScreenState extends State<SignupScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Personal Details', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+          const Text('Personal Details',
+              style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A))),
           const SizedBox(height: 8),
-          const Text('Tell us a bit about yourself.', style: TextStyle(fontSize: 14, color: Colors.grey)),
+          const Text('Tell us a bit about yourself.',
+              style: TextStyle(fontSize: 14, color: Colors.grey)),
           const SizedBox(height: 32),
-          
           TextField(
             controller: _nameController,
             decoration: InputDecoration(
               labelText: 'Full Name',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              prefixIcon: Icon(fixIcon(FlexIcon.remix.userCircleSingle), color: Colors.grey),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              prefixIcon: Icon(fixIcon(FlexIcon.remix.userCircleSingle),
+                  color: Colors.grey),
             ),
           ),
           const SizedBox(height: 16),
-          
           DropdownButtonFormField<String>(
             decoration: InputDecoration(
               labelText: 'Sex',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               prefixIcon: Icon(Icons.person_outline, color: Colors.grey),
             ),
             initialValue: _selectedSex,
@@ -149,27 +230,34 @@ class _SignupScreenState extends State<SignupScreen> {
             },
           ),
           const SizedBox(height: 16),
-          
           TextField(
             controller: _dobController,
             readOnly: true,
             onTap: () => _selectDate(context),
             decoration: InputDecoration(
               labelText: 'Date of Birth',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              prefixIcon: Icon(Icons.calendar_today_outlined, color: Colors.grey),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              prefixIcon:
+                  Icon(Icons.calendar_today_outlined, color: Colors.grey),
             ),
           ),
           const SizedBox(height: 16),
-          
           DropdownButtonFormField<String>(
             decoration: InputDecoration(
               labelText: 'How did you hear about us?',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               prefixIcon: Icon(Icons.campaign_outlined, color: Colors.grey),
             ),
             initialValue: _selectedSource,
-            items: ['Social Media', 'Friend or Family', 'Search Engine', 'Advertisement', 'Other'].map((String value) {
+            items: [
+              'Social Media',
+              'Friend or Family',
+              'Search Engine',
+              'Advertisement',
+              'Other'
+            ].map((String value) {
               return DropdownMenuItem<String>(
                 value: value,
                 child: Text(value),
@@ -179,16 +267,20 @@ class _SignupScreenState extends State<SignupScreen> {
               setState(() => _selectedSource = value);
             },
           ),
-          
           const SizedBox(height: 40),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF1B62F0),
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: _nextPage,
-            child: const Text('Next', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+            child: const Text('Next',
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -201,34 +293,39 @@ class _SignupScreenState extends State<SignupScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text('Contact & Account', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+          const Text('Contact & Account',
+              style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF0F172A))),
           const SizedBox(height: 8),
-          const Text('Almost done! Just a few more details.', style: TextStyle(fontSize: 14, color: Colors.grey)),
+          const Text('Almost done! Just a few more details.',
+              style: TextStyle(fontSize: 14, color: Colors.grey)),
           const SizedBox(height: 32),
-          
           TextField(
             controller: _phoneController,
             keyboardType: TextInputType.phone,
             decoration: InputDecoration(
               labelText: 'Phone Number',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              prefixIcon: Icon(fixIcon(FlexIcon.remix.phone), color: Colors.grey),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              prefixIcon:
+                  Icon(fixIcon(FlexIcon.remix.phone), color: Colors.grey),
             ),
           ),
           const SizedBox(height: 16),
-          
           TextField(
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
             onChanged: _checkCorporateEmail,
             decoration: InputDecoration(
               labelText: 'Email Address (Optional)',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               prefixIcon: Icon(Icons.email_outlined, color: Colors.grey),
             ),
           ),
           const SizedBox(height: 16),
-          
           if (_isCorporateDetected)
             Container(
               margin: const EdgeInsets.only(bottom: 16),
@@ -239,7 +336,8 @@ class _SignupScreenState extends State<SignupScreen> {
                   border: Border.all(color: Colors.green.shade200)),
               child: Row(
                 children: [
-                  Icon(fixIcon(FlexIcon.remix.autoCorrectionCheck), color: Colors.green),
+                  Icon(fixIcon(FlexIcon.remix.autoCorrectionCheck),
+                      color: Colors.green),
                   const SizedBox(width: 8),
                   const Expanded(
                       child: Text(
@@ -248,16 +346,15 @@ class _SignupScreenState extends State<SignupScreen> {
                 ],
               ),
             ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0),
-            
           TextField(
             controller: _referralController,
             decoration: InputDecoration(
               labelText: 'Referral Code (Optional)',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               prefixIcon: Icon(Icons.card_giftcard, color: Colors.grey),
             ),
           ),
-          
           const SizedBox(height: 40),
           Row(
             children: [
@@ -267,10 +364,15 @@ class _SignupScreenState extends State<SignupScreen> {
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     side: const BorderSide(color: Color(0xFF1B62F0)),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                   onPressed: _prevPage,
-                  child: const Text('Back', style: TextStyle(color: Color(0xFF1B62F0), fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: const Text('Back',
+                      style: TextStyle(
+                          color: Color(0xFF1B62F0),
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(width: 16),
@@ -280,13 +382,15 @@ class _SignupScreenState extends State<SignupScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1B62F0),
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
-                  onPressed: () {
-                    Navigator.of(context).pushReplacement(MaterialPageRoute(
-                        builder: (context) => const HomeScreen()));
-                  },
-                  child: const Text('Sign Up', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                  onPressed: _showLocationPopup,
+                  child: const Text('Sign Up',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold)),
                 ),
               ),
             ],
@@ -301,7 +405,8 @@ class _SignupScreenState extends State<SignupScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Create Account', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text('Create Account',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
@@ -324,9 +429,6 @@ class _SignupScreenState extends State<SignupScreen> {
           _buildPage2(),
         ],
       ),
-    )
-    .animate()
-    .fadeIn(duration: 800.ms)
-    .slideY(begin: 0.05, end: 0);
+    ).animate().fadeIn(duration: 800.ms).slideY(begin: 0.05, end: 0);
   }
 }

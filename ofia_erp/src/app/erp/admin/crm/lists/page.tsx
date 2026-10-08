@@ -290,7 +290,7 @@ export default function AudienceListsPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <NexaInput
-              label="Audience Tags (comma-separated)"
+              label="Audience Tags"
               value={newListTags}
               onChange={(e) => setNewListTags(e.target.value)}
               placeholder="Commercial, Solar, North-Central"

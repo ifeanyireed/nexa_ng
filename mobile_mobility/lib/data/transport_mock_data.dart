@@ -19,7 +19,8 @@ class TransportMockData {
     ServiceModule(
       id: 'srv_1',
       name: 'Ride',
-      description: 'On-demand rides',
+      description:
+          'Book a comfortable and affordable ride for your everyday commute. Get picked up in minutes and track your driver in real-time.',
       type: ServiceType.onDemand,
       imagePath: 'assets/images/ride.png',
       color: const Color(0xFF1769aa),
@@ -27,7 +28,8 @@ class TransportMockData {
     ServiceModule(
       id: 'srv_2',
       name: 'Shuttle',
-      description: 'Scheduled shuttles',
+      description:
+          'Join a scheduled shuttle to skip the traffic and travel comfortably. Reserve your seat, track the bus, and commute stress-free.',
       type: ServiceType.shuttle,
       imagePath: 'assets/images/shuttle.png',
       color: const Color(0xFF009688),
@@ -35,7 +37,8 @@ class TransportMockData {
     ServiceModule(
       id: 'srv_3',
       name: 'Rent',
-      description: 'Hire any vehicle',
+      description:
+          'Rent a reliable and affordable vehicle with a driver for any occasion. Choose the vehicle type, set your trip details and book.',
       type: ServiceType.rental,
       imagePath: 'assets/images/rent.png',
       color: const Color(0xFF7354b5),
@@ -43,7 +46,8 @@ class TransportMockData {
     ServiceModule(
       id: 'srv_4',
       name: 'Staff Transport',
-      description: 'Corporate commute',
+      description:
+          'Enjoy a seamless daily commute to and from your workplace. View your company-assigned routes and ride with your colleagues.',
       type: ServiceType.staff,
       imagePath: 'assets/images/staff.png',
       color: const Color(0xFFf44336),
@@ -51,7 +55,8 @@ class TransportMockData {
     ServiceModule(
       id: 'srv_5',
       name: 'Interstate',
-      description: 'Travel between cities',
+      description:
+          'Travel comfortably across cities in our premium vehicles. Book your ticket ahead, choose your preferred seat, and enjoy the journey.',
       type: ServiceType.interstate,
       imagePath: 'assets/images/interstate.png',
       color: const Color(0xFFff9800),
@@ -59,7 +64,8 @@ class TransportMockData {
     ServiceModule(
       id: 'srv_6',
       name: 'School',
-      description: 'School transport',
+      description:
+          'Ensure safe and reliable daily transport for your children. Monitor their school bus in real-time and get updates on their trips.',
       type: ServiceType.school,
       imagePath: 'assets/images/school.png',
       color: const Color(0xFF2196f3),

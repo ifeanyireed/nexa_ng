@@ -2,17 +2,35 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useERPStore, Objective, getActiveTenantSlug } from "@/lib/erp-store";
+import { 
+  useERPStore, 
+  Objective, 
+  PerformanceReview, 
+  ReviewCycle, 
+  User, 
+  getActiveTenantSlug 
+} from "@/lib/erp-store";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
+import { NexaModal } from "@/components/nexa/NexaModal";
 import { Pagination } from "@/components/nexa/Pagination";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertCircle, RefreshCw, CheckCircle2 } from "lucide-react";
+
+interface ResetPromptInfo {
+  department: string;
+  cycle: ReviewCycle;
+  employees: { user: User; review: PerformanceReview }[];
+  freshObjectives: Objective[];
+}
 
 export default function ObjectiveManagement() {
-  const { objectives, updateObjectives } = useERPStore();
+  const { objectives, updateObjectives, reviews, cycles, users, updateReview } = useERPStore();
   const [activeTenantSlug, setActiveTenantSlug] = useState<string>("");
+  const [pendingResetPrompt, setPendingResetPrompt] = useState<ResetPromptInfo | null>(null);
+  const [isResettingReviews, setIsResettingReviews] = useState(false);
+  const [resetSuccessMessage, setResetSuccessMessage] = useState<string | null>(null);
   const [isSavingDept, setIsSavingDept] = useState(false);
   const [isSubmittingObj, setIsSubmittingObj] = useState(false);
   const [text, setText] = useState("");
@@ -234,7 +252,18 @@ export default function ObjectiveManagement() {
       setWeight(15);
       setSelectedDepts([]);
       setDescriptionText("");
-      alert(texts.length > 1 ? `${texts.length} objectives added successfully!` : "Objective added successfully!");
+
+      const affected = objType === "objective" ? selectedDepts : [];
+      if (affected.length > 0) {
+        const prompts = checkForActiveCycleReviews(affected, updated);
+        if (prompts.length > 0) {
+          setPendingResetPrompt(prompts[0]);
+        } else {
+          alert(texts.length > 1 ? `${texts.length} objectives added successfully!` : "Objective added successfully!");
+        }
+      } else {
+        alert(texts.length > 1 ? `${texts.length} objectives added successfully!` : "Objective added successfully!");
+      }
     } catch (err: any) {
       console.error("Error saving objective:", err);
       alert(`Error saving objective: ${err?.message || "Please try again."}`);
@@ -243,9 +272,105 @@ export default function ObjectiveManagement() {
     }
   };
 
-  const handleDelete = (id: string) => {
+  const checkForActiveCycleReviews = (
+    affectedDepts: string[], 
+    freshObjectivesList: Objective[]
+  ): ResetPromptInfo[] => {
+    const activeCycles = cycles.filter(c => c.status === "Active");
+    if (activeCycles.length === 0 || affectedDepts.length === 0) return [];
+
+    const prompts: ResetPromptInfo[] = [];
+
+    for (const dept of affectedDepts) {
+      const deptUsers = users.filter(u => u.department === dept);
+      if (deptUsers.length === 0) continue;
+
+      for (const cycle of activeCycles) {
+        const affectedInCycle: { user: User; review: PerformanceReview }[] = [];
+        for (const u of deptUsers) {
+          const rev = reviews.find(r => r.cycleId === cycle.id && r.employeeId === u.id);
+          if (rev) {
+            affectedInCycle.push({ user: u, review: rev });
+          }
+        }
+
+        if (affectedInCycle.length > 0) {
+          prompts.push({
+            department: dept,
+            cycle,
+            employees: affectedInCycle,
+            freshObjectives: freshObjectivesList,
+          });
+        }
+      }
+    }
+
+    return prompts;
+  };
+
+  const handleConfirmReset = async (promptInfo: ResetPromptInfo) => {
+    setIsResettingReviews(true);
+    try {
+      const { department, cycle, employees, freshObjectives } = promptInfo;
+      
+      const relevantObjs = freshObjectives.filter(o => {
+        if (o.type === "competency") return true;
+        return (o.type === "objective" || !o.type) && o.departments?.includes(department);
+      });
+
+      let count = 0;
+      for (const item of employees) {
+        const resetReview: PerformanceReview = {
+          ...item.review,
+          department: item.user.department,
+          employeeName: item.user.name,
+          status: "Draft",
+          finalScore: undefined,
+          employeeComments: "",
+          managerComments: undefined,
+          hrComments: undefined,
+          improvementPlan: "",
+          objectives: relevantObjs.map(o => ({
+            ...o,
+            selfScore: undefined,
+            managerScore: undefined,
+            comments: undefined,
+            evidence: undefined,
+            managerFeedback: undefined,
+          })),
+          updatedAt: new Date().toISOString(),
+        };
+
+        await updateReview(resetReview);
+        count++;
+      }
+
+      setPendingResetPrompt(null);
+      setResetSuccessMessage(
+        `Successfully reset and re-synchronized ${count} active review(s) for "${department}" in cycle "${cycle.name}".`
+      );
+    } catch (err: any) {
+      console.error("Failed to reset reviews:", err);
+      alert(`Failed to reset reviews: ${err?.message || "Please try again."}`);
+    } finally {
+      setIsResettingReviews(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    const target = objectives.find(o => o.id === id);
+    if (!target) return;
+    if (!confirm(`Are you sure you want to delete objective "${target.text}"?`)) return;
+    const affected = target.departments || [];
     const updated = objectives.filter(o => o.id !== id);
-    updateObjectives(updated);
+    await updateObjectives(updated);
+
+    if (affected.length > 0) {
+      const prompts = checkForActiveCycleReviews(affected, updated);
+      if (prompts.length > 0) {
+        setPendingResetPrompt(prompts[0]);
+      }
+    }
   };
 
   const openEditModal = (o: Objective) => {
@@ -258,7 +383,7 @@ export default function ObjectiveManagement() {
     setEditObjExpectedLevel(o.expectedLevel || 3);
   };
 
-  const handleSaveEdit = (e: React.FormEvent) => {
+  const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingObjective) return;
     if (!editObjText.trim()) {
@@ -271,6 +396,10 @@ export default function ObjectiveManagement() {
       alert("Please select at least one department for the work-related objective.");
       return;
     }
+
+    const affected = isWorkObj 
+      ? Array.from(new Set([...editObjDepts, ...(editingObjective.departments || [])]))
+      : [];
 
     const updated = objectives.map(o => {
       if (o.id === editingObjective.id) {
@@ -289,9 +418,19 @@ export default function ObjectiveManagement() {
       return o;
     });
 
-    updateObjectives(updated);
+    await updateObjectives(updated);
     setEditingObjective(null);
-    alert("Objective updated successfully!");
+
+    if (affected.length > 0) {
+      const prompts = checkForActiveCycleReviews(affected, updated);
+      if (prompts.length > 0) {
+        setPendingResetPrompt(prompts[0]);
+      } else {
+        alert("Objective updated successfully!");
+      }
+    } else {
+      alert("Objective updated successfully!");
+    }
   };
 
   const workObjectives = objectives.filter(
@@ -340,6 +479,22 @@ export default function ObjectiveManagement() {
       }
     >
       <div className="space-y-6">
+
+        {resetSuccessMessage && (
+          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between text-emerald-800 text-xs font-medium shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+              <span>{resetSuccessMessage}</span>
+            </div>
+            <button 
+              type="button"
+              onClick={() => setResetSuccessMessage(null)}
+              className="text-emerald-700 hover:text-emerald-900 font-bold text-xs cursor-pointer ml-3 px-2 py-1 rounded-lg hover:bg-emerald-100 transition-colors"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
 
         {/* Audit weight warning indicator */}
         <div className="p-4 rounded-2xl border flex justify-between items-center text-xs font-bold bg-emerald-50 border-emerald-100 text-emerald-800">
@@ -804,6 +959,96 @@ export default function ObjectiveManagement() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Active Cycle Reset Notification Modal */}
+      {pendingResetPrompt && (
+        <NexaModal
+          isOpen={!!pendingResetPrompt}
+          onClose={() => setPendingResetPrompt(null)}
+          maxWidth="lg"
+        >
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-600 flex-shrink-0">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">
+                  Active Cycle Detected: Re-sync Department Reviews?
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Objectives for <span className="font-semibold text-blue-600">{pendingResetPrompt.department}</span> have been updated.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-2 text-xs">
+              <div className="flex items-center justify-between text-slate-600">
+                <span className="font-medium">Active Review Cycle:</span>
+                <span className="font-bold text-slate-800">{pendingResetPrompt.cycle.name}</span>
+              </div>
+              <div className="flex items-center justify-between text-slate-600">
+                <span className="font-medium">Affected Department:</span>
+                <span className="font-bold text-blue-600">{pendingResetPrompt.department}</span>
+              </div>
+              <div className="pt-2 border-t border-slate-200">
+                <span className="font-medium text-slate-700 block mb-1.5">
+                  Employees in this department with active reviews ({pendingResetPrompt.employees.length}):
+                </span>
+                <div className="max-h-32 overflow-y-auto space-y-1">
+                  {pendingResetPrompt.employees.map(({ user, review }) => (
+                    <div key={user.id} className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-white border border-slate-200 text-[11px]">
+                      <div>
+                        <span className="font-bold text-slate-800">{user.name}</span>
+                        <span className="text-slate-400 text-[10px] ml-1.5">({user.designation || user.email})</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-md text-[9.5px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                        {review.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 bg-blue-50/80 border border-blue-100 rounded-xl text-[11.5px] text-blue-800 leading-relaxed">
+              <span className="font-bold">What happens if you reset?</span>
+              <p className="mt-0.5">
+                Only the {pendingResetPrompt.employees.length} employee(s) in <span className="font-semibold">{pendingResetPrompt.department}</span> will have their active cycle review entries refreshed with the updated department objectives. Any draft scores will be cleared to allow a fresh submission against the new KPIs. Employees in all other departments remain completely untouched.
+              </p>
+            </div>
+
+            <div className="flex gap-2.5 justify-end pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                disabled={isResettingReviews}
+                onClick={() => setPendingResetPrompt(null)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer disabled:opacity-50"
+              >
+                Keep Existing Reviews
+              </button>
+              <button
+                type="button"
+                disabled={isResettingReviews}
+                onClick={() => handleConfirmReset(pendingResetPrompt)}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {isResettingReviews ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    Resetting...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Reset & Sync for {pendingResetPrompt.department}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </NexaModal>
       )}
     </BusinessShell>
   );

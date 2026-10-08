@@ -189,6 +189,8 @@ async function upsertNeonDirectly(subPath: string, tenantSlug: string, bodyText:
           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
           ON CONFLICT (id) DO UPDATE SET 
           status = EXCLUDED.status, 
+          department = EXCLUDED.department,
+          "employeeName" = EXCLUDED."employeeName",
           "employeeComments" = EXCLUDED."employeeComments", 
           "managerComments" = EXCLUDED."managerComments", 
           "hrComments" = EXCLUDED."hrComments", 

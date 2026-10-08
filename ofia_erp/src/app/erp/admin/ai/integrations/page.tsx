@@ -27,7 +27,7 @@ export default function IntegrationsPage() {
       status: "Connected",
       details: "@OfiaGTM_CRO_Bot · 24/7 briefing & lead queries",
       icon: IconBrandTelegram,
-      href: "/telegram",
+      href: "/erp/admin/ai/telegram",
       highlight: true,
       color: "#0088CC",
     },
@@ -37,7 +37,7 @@ export default function IntegrationsPage() {
       status: "Connected",
       details: "Meta WABA Quality: HIGH · Tier 3 (100k msg/day)",
       icon: IconBrandWhatsapp,
-      href: "/settings",
+      href: "/erp/admin/ai/settings",
       color: "#25D366",
     },
     {
@@ -46,7 +46,7 @@ export default function IntegrationsPage() {
       status: "Connected",
       details: "DKIM / SPF / DMARC · 99.4% deliverability score",
       icon: IconMailFast,
-      href: "/settings",
+      href: "/erp/admin/ai/settings",
       color: "#1A56DB",
     },
     {
@@ -55,7 +55,7 @@ export default function IntegrationsPage() {
       status: "Connected",
       details: "Claude 3.5 Sonnet, GPT-4o, Gemini 1.5 Pro, Groq, Mistral",
       icon: IconBrandOpenai,
-      href: "/settings",
+      href: "/erp/admin/ai/pricing",
       color: "#7E22CE",
     },
     {
@@ -64,7 +64,7 @@ export default function IntegrationsPage() {
       status: "Connected",
       details: "Connected to Company Page (14.2k followers)",
       icon: IconBrandLinkedin,
-      href: "/settings",
+      href: "/erp/admin/ai/settings",
       color: "#0A66C2",
     },
     {
@@ -73,7 +73,7 @@ export default function IntegrationsPage() {
       status: "Connected",
       details: "Active Daily Ad Spend: $150/day · ROAS: 3.8x",
       icon: IconBrandMeta,
-      href: "/settings",
+      href: "/erp/admin/ai/settings",
       color: "#1877F2",
     },
     {
@@ -82,7 +82,7 @@ export default function IntegrationsPage() {
       status: "Connected",
       details: "us-east-1 / eu-west-1 Dedicated Infrastructure",
       icon: IconBrandAws,
-      href: "/settings",
+      href: "/erp/admin/ai/settings",
       color: "#FF9900",
     },
     {
@@ -91,7 +91,7 @@ export default function IntegrationsPage() {
       status: "Connected",
       details: "Signed HMAC-SHA256 Payload Dispatches",
       icon: IconBrandZapier,
-      href: "/settings",
+      href: "/erp/admin/ai/settings",
       color: "#FF4A00",
     },
     {
@@ -100,7 +100,7 @@ export default function IntegrationsPage() {
       status: "Connected",
       details: "#gtm-revenue-alerts (Live Webhook Stream)",
       icon: IconBrandSlack,
-      href: "/settings",
+      href: "/erp/admin/ai/settings",
       color: "#4A154B",
     },
   ];

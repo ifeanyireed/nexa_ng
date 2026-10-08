@@ -616,11 +616,11 @@ export function ErpAdminShell({
         { label: "Strategy", href: "/erp/admin/ai/strategy", icon: <TrendingUp className="w-3.5 h-3.5" /> },
         { label: "Knowledge Base", href: "/erp/admin/ai/knowledge", icon: <Database className="w-3.5 h-3.5" /> },
         { label: "Analytics", href: "/erp/admin/ai/analytics", icon: <BarChart3 className="w-3.5 h-3.5" /> },
-        { label: "Team", href: "/erp/admin/ai/team", icon: <Users className="w-3.5 h-3.5" /> },
+        { label: "Agent Fleet", href: "/erp/admin/ai/team", icon: <Users className="w-3.5 h-3.5" />, badge: "15 AI" },
         { label: "Telegram Bot", href: "/erp/admin/ai/telegram", icon: <Radio className="w-3.5 h-3.5" /> },
         { label: "Approvals", href: "/erp/admin/ai/approvals", icon: <FileCheck2 className="w-3.5 h-3.5" /> },
         { label: "Integrations", href: "/erp/admin/ai/integrations", icon: <Key className="w-3.5 h-3.5" /> },
-        { label: "Pricing / BYOK", href: "/erp/admin/ai/pricing", icon: <DollarSign className="w-3.5 h-3.5" /> },
+        { label: "BYOK & Vault", href: "/erp/admin/ai/pricing", icon: <Key className="w-3.5 h-3.5" /> },
         { label: "Settings", href: "/erp/admin/ai/settings", icon: <Settings className="w-3.5 h-3.5" /> },
       ];
     }

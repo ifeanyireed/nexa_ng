@@ -87,7 +87,7 @@ export default function TeamPage() {
                 </span>
               </div>
               <h1 className="text-2xl font-extrabold text-[var(--nexa-text-primary)] text-display tracking-tight">
-                AI Revenue Organization
+                Autonomous AI Specialist Fleet
               </h1>
               <p className="text-xs text-[var(--nexa-text-muted)] mt-1">
                 Each AI employee is an autonomous specialist operating under executive CRO supervision.

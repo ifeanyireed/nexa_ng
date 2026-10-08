@@ -18,7 +18,7 @@ class OnDemandScreen extends StatelessWidget {
               painter: VectorMapPainter(),
             ),
           ),
-          
+
           // Top Back Button
           Positioned(
             top: 50,
@@ -27,7 +27,8 @@ class OnDemandScreen extends StatelessWidget {
               onTap: () => Navigator.pop(context),
               child: Container(
                 padding: const EdgeInsets.all(10),
-                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                    color: Colors.white, shape: BoxShape.circle),
                 child: Icon(Icons.arrow_back, color: Colors.black),
               ),
             ),
@@ -41,15 +42,22 @@ class OnDemandScreen extends StatelessWidget {
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 20, offset: Offset(0, -5))],
+                boxShadow: [
+                  BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 20,
+                      offset: Offset(0, -5))
+                ],
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Where to?', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  const Text('Where to?',
+                      style:
+                          TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 20),
-                  
+
                   // Pickup & Destination Inputs
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -61,9 +69,11 @@ class OnDemandScreen extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            Icon(fixIcon(FlexIcon.remix.locationTarget2), color: Color(0xFF1B62F0), size: 20),
+                            Icon(fixIcon(FlexIcon.remix.locationTarget2),
+                                color: Color(0xFF1B62F0), size: 20),
                             SizedBox(width: 12),
-                            Text('Current Location', style: TextStyle(fontWeight: FontWeight.w600)),
+                            Text('Current Location',
+                                style: TextStyle(fontWeight: FontWeight.w600)),
                           ],
                         ),
                         const Padding(
@@ -72,37 +82,47 @@ class OnDemandScreen extends StatelessWidget {
                         ),
                         Row(
                           children: [
-                            Icon(fixIcon(FlexIcon.remix.magnifyingGlass), color: Color(0xFF64748B), size: 20),
+                            Icon(fixIcon(FlexIcon.remix.magnifyingGlass),
+                                color: Color(0xFF64748B), size: 20),
                             const SizedBox(width: 12),
-                            Text('Search destination...', style: TextStyle(color: Colors.grey.shade500)),
+                            Text('Search destination...',
+                                style: TextStyle(color: Colors.grey.shade500)),
                           ],
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
+
                   // Vehicle Types
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildVehicleOption('Economy', '₦1,500', fixIcon(FlexIcon.remix.carTaxi1), true),
-                      _buildVehicleOption('Standard', '₦2,500', fixIcon(FlexIcon.remix.carTaxi1), false),
-                      _buildVehicleOption('SUV', '₦4,000', fixIcon(FlexIcon.remix.carTaxi1), false),
+                      _buildVehicleOption(
+                          'Economy', '₦1,500', 'assets/images/car.png', true),
+                      _buildVehicleOption(
+                          'Standard', '₦2,500', 'assets/images/car.png', false),
+                      _buildVehicleOption(
+                          'SUV', '₦4,000', 'assets/images/car.png', false),
                     ],
                   ),
                   const SizedBox(height: 24),
-                  
+
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF1B62F0),
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: () {},
-                      child: const Text('Request Ride', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                      child: const Text('Request Ride',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold)),
                     ),
                   ),
                 ],
@@ -111,24 +131,34 @@ class OnDemandScreen extends StatelessWidget {
           ),
         ],
       ),
-    ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.05, end: 0);
+    )
+        .animate()
+        .fadeIn(duration: const Duration(milliseconds: 400))
+        .slideY(begin: 0.05, end: 0);
   }
 
-  Widget _buildVehicleOption(String name, String price, IconData icon, bool isSelected) {
+  Widget _buildVehicleOption(
+      String name, String price, String imageAsset, bool isSelected) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: isSelected ? const Color(0xFFE0E7FF) : Colors.transparent,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isSelected ? const Color(0xFF1B62F0) : const Color(0xFFE2E8F0)),
+        border: Border.all(
+            color:
+                isSelected ? const Color(0xFF1B62F0) : const Color(0xFFE2E8F0)),
       ),
       child: Column(
         children: [
-          Icon(icon, color: isSelected ? const Color(0xFF1B62F0) : const Color(0xFF64748B)),
+          Image.asset(imageAsset, width: 48, height: 48, fit: BoxFit.contain),
           const SizedBox(height: 8),
-          Text(name, style: TextStyle(fontWeight: FontWeight.w600, color: isSelected ? const Color(0xFF1B62F0) : Colors.black)),
+          Text(name,
+              style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: isSelected ? const Color(0xFF1B62F0) : Colors.black)),
           const SizedBox(height: 4),
-          Text(price, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+          Text(price,
+              style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
         ],
       ),
     );

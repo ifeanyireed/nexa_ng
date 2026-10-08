@@ -245,7 +245,7 @@ export default function MasterOverviewPage() {
                   <Activity className="w-5 h-5 text-nexa-brand" />
                   Recent Cross-Ecosystem Operations
                 </h3>
-                <Link href="/ai/audit-logs">
+                <Link href="/audit-logs">
                   <NexaButton
                     variant="ghost"
                     size="sm"

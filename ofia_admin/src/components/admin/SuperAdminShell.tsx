@@ -151,14 +151,16 @@ export function SuperAdminShell({
     if (pathname.startsWith("/ai")) {
       return [
         { label: "AI Cockpit", href: "/ai", icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
-        { label: "Email Infrastructure", href: "/ai/email", icon: <Mail className="w-3.5 h-3.5" />, badge: "Relay" },
         { label: "Agent Swarm", href: "/ai/swarm", icon: <Bot className="w-3.5 h-3.5" />, badge: "15 AI" },
         { label: "LLM Observability", href: "/ai/observability", icon: <Activity className="w-3.5 h-3.5" /> },
-        { label: "Tenants & Plans", href: "/ai/organizations", icon: <Building2 className="w-3.5 h-3.5" /> },
-        { label: "Feature Flags", href: "/ai/features", icon: <Sliders className="w-3.5 h-3.5" /> },
-        { label: "System Health", href: "/ai/system", icon: <Server className="w-3.5 h-3.5" /> },
-        { label: "User Management", href: "/ai/users", icon: <Users className="w-3.5 h-3.5" />, badge: "Staff" },
-        { label: "Security & Audit", href: "/ai/audit-logs", icon: <ShieldAlert className="w-3.5 h-3.5" /> },
+        { label: "Email Infrastructure", href: "/ai/email", icon: <Mail className="w-3.5 h-3.5" />, badge: "Relay" },
+      ];
+    }
+
+    if (pathname.startsWith("/system")) {
+      return [
+        { label: "Health & Queues", href: "/system", icon: <Server className="w-3.5 h-3.5" /> },
+        { label: "Feature Flags", href: "/system/features", icon: <Sliders className="w-3.5 h-3.5" />, badge: "Toggles" },
       ];
     }
 
@@ -219,6 +221,30 @@ export function SuperAdminShell({
       href: "/",
       badge: "HUB",
       key: "overview",
+      section: "Governance & Hub",
+    },
+    {
+      label: "Staff & RBAC Directory",
+      icon: <Users className="w-6 h-6" />,
+      href: "/users",
+      badge: "Staff",
+      key: "users",
+      section: "Governance & Hub",
+    },
+    {
+      label: "Security & Audit Logs",
+      icon: <ShieldAlert className="w-6 h-6" />,
+      href: "/audit-logs",
+      badge: "Audit",
+      key: "audit",
+      section: "Governance & Hub",
+    },
+    {
+      label: "System & Infrastructure",
+      icon: <Server className="w-6 h-6" />,
+      href: "/system",
+      badge: "Infra",
+      key: "system",
       section: "Governance & Hub",
     },
 
@@ -660,6 +686,7 @@ export function SuperAdminShell({
                   pathname === tab.href ||
                   (tab.href !== "/" &&
                     tab.href !== "/ai" &&
+                    tab.href !== "/system" &&
                     tab.href !== "/marketplace" &&
                     tab.href !== "/tenants" &&
                     pathname.startsWith(tab.href));

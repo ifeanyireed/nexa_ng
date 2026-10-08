@@ -15,7 +15,10 @@ export interface CrmDeal {
   probability: number;
   expectedClose: string;
   notes?: string;
+  accountId?: string;
+  leadId?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface CrmLead {
@@ -35,7 +38,10 @@ export interface CrmLead {
   assignedRep?: string;
   source?: string;
   notes?: string;
+  convertedDealId?: string;
+  convertedAt?: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface CrmAccount {
@@ -107,6 +113,11 @@ export interface CrmActivity {
   dateTime: string;
   status: "UPCOMING" | "COMPLETED" | "CANCELLED";
   notes?: string;
+  dealId?: string;
+  accountId?: string;
+  leadId?: string;
+  scheduledAt?: string;
+  completedAt?: string;
   createdAt: string;
 }
 
@@ -535,7 +546,7 @@ export async function getCrmDeals(tenantSlug: string): Promise<CrmDeal[]> {
       }
 
       const res = await pool.query(
-        `SELECT id, tenant_slug, title, company, contact_name, email, phone, value, stage, owner, probability, expected_close, notes, created_at
+        `SELECT id, tenant_slug, title, company, contact_name, email, phone, value, stage, owner, probability, expected_close, notes, account_id, lead_id, created_at, updated_at
          FROM crm_deals
          WHERE LOWER(tenant_slug) = $1 OR LOWER(tenant_slug) = 'default'
          ORDER BY created_at DESC`,
@@ -556,7 +567,10 @@ export async function getCrmDeals(tenantSlug: string): Promise<CrmDeal[]> {
           probability: Number(r.probability) || 50,
           expectedClose: r.expected_close,
           notes: r.notes,
+          accountId: r.account_id,
+          leadId: r.lead_id,
           createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+          updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : undefined,
         }));
       }
     }
@@ -588,6 +602,8 @@ export async function createCrmDeal(tenantSlug: string, deal: Partial<CrmDeal>):
     probability: deal.probability || 50,
     expectedClose: deal.expectedClose || "Next Month",
     notes: deal.notes || "",
+    accountId: deal.accountId,
+    leadId: deal.leadId,
     createdAt: new Date().toISOString(),
   };
 
@@ -596,8 +612,8 @@ export async function createCrmDeal(tenantSlug: string, deal: Partial<CrmDeal>):
     if (pool) {
       await ensureTablesExist();
       await pool.query(
-        `INSERT INTO crm_deals (id, tenant_slug, title, company, contact_name, email, phone, value, stage, owner, probability, expected_close, notes, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())`,
+        `INSERT INTO crm_deals (id, tenant_slug, title, company, contact_name, email, phone, value, stage, owner, probability, expected_close, notes, account_id, lead_id, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW())`,
         [
           newDeal.id,
           slug,
@@ -612,6 +628,8 @@ export async function createCrmDeal(tenantSlug: string, deal: Partial<CrmDeal>):
           newDeal.probability,
           newDeal.expectedClose,
           newDeal.notes,
+          newDeal.accountId || null,
+          newDeal.leadId || null,
         ]
       );
     }
@@ -625,6 +643,122 @@ export async function createCrmDeal(tenantSlug: string, deal: Partial<CrmDeal>):
   return newDeal;
 }
 
+export async function updateCrmDeal(tenantSlug: string, id: string, updates: Partial<CrmDeal>): Promise<CrmDeal | null> {
+  const slug = cleanSlug(tenantSlug);
+  let updatedDeal: CrmDeal | null = null;
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      const fields: string[] = [];
+      const values: any[] = [];
+      let idx = 1;
+
+      if (updates.stage !== undefined) {
+        fields.push(`stage = $${idx++}`);
+        values.push(updates.stage);
+      }
+      if (updates.probability !== undefined) {
+        fields.push(`probability = $${idx++}`);
+        values.push(updates.probability);
+      }
+      if (updates.title !== undefined) {
+        fields.push(`title = $${idx++}`);
+        values.push(updates.title);
+      }
+      if (updates.value !== undefined) {
+        fields.push(`value = $${idx++}`);
+        values.push(updates.value);
+      }
+      if (updates.notes !== undefined) {
+        fields.push(`notes = $${idx++}`);
+        values.push(updates.notes);
+      }
+      if (updates.expectedClose !== undefined) {
+        fields.push(`expected_close = $${idx++}`);
+        values.push(updates.expectedClose);
+      }
+      if (updates.owner !== undefined) {
+        fields.push(`owner = $${idx++}`);
+        values.push(updates.owner);
+      }
+      if (updates.accountId !== undefined) {
+        fields.push(`account_id = $${idx++}`);
+        values.push(updates.accountId);
+      }
+      if (updates.leadId !== undefined) {
+        fields.push(`lead_id = $${idx++}`);
+        values.push(updates.leadId);
+      }
+
+      fields.push(`updated_at = NOW()`);
+
+      values.push(id);
+      values.push(slug);
+      const res = await pool.query(
+        `UPDATE crm_deals
+         SET ${fields.join(", ")}
+         WHERE id = $${idx++} AND (LOWER(tenant_slug) = $${idx++} OR LOWER(tenant_slug) = 'default')
+         RETURNING id, tenant_slug, title, company, contact_name, email, phone, value, stage, owner, probability, expected_close, notes, account_id, lead_id, created_at, updated_at`,
+        values
+      );
+      if (res.rows.length > 0) {
+        const r = res.rows[0];
+        updatedDeal = {
+          id: r.id,
+          tenantSlug: r.tenant_slug,
+          title: r.title,
+          company: r.company,
+          contactName: r.contact_name,
+          email: r.email,
+          phone: r.phone,
+          value: r.value,
+          stage: r.stage,
+          owner: r.owner,
+          probability: Number(r.probability) || 50,
+          expectedClose: r.expected_close,
+          notes: r.notes,
+          accountId: r.account_id,
+          leadId: r.lead_id,
+          createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+          updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString(),
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("Neon DB updateCrmDeal error, updating cache fallback:", err);
+  }
+
+  const list = memoryDeals.get(slug) || DEFAULT_CRM_DEALS.map((d) => ({ ...d, tenantSlug: slug }));
+  const itemIdx = list.findIndex((d) => d.id === id);
+  if (itemIdx !== -1) {
+    list[itemIdx] = { ...list[itemIdx], ...updates, updatedAt: new Date().toISOString() };
+    if (!updatedDeal) updatedDeal = list[itemIdx];
+    memoryDeals.set(slug, list);
+  }
+  return updatedDeal;
+}
+
+export async function deleteCrmDeal(tenantSlug: string, id: string): Promise<boolean> {
+  const slug = cleanSlug(tenantSlug);
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      await pool.query(
+        `DELETE FROM crm_deals WHERE id = $1 AND (LOWER(tenant_slug) = $2 OR LOWER(tenant_slug) = 'default')`,
+        [id, slug]
+      );
+    }
+  } catch (err) {
+    console.warn("Neon DB deleteCrmDeal error:", err);
+  }
+
+  const list = memoryDeals.get(slug) || [];
+  memoryDeals.set(slug, list.filter((d) => d.id !== id));
+  return true;
+}
+
 // 2. LEADS
 export async function getCrmLeads(tenantSlug: string): Promise<CrmLead[]> {
   const slug = cleanSlug(tenantSlug);
@@ -633,7 +767,7 @@ export async function getCrmLeads(tenantSlug: string): Promise<CrmLead[]> {
     if (pool) {
       await ensureTablesExist();
       const res = await pool.query(
-        `SELECT id, tenant_slug, company_name, website, industry, location, contact_name, contact_title, contact_email, contact_phone, icp_fit_score, buying_signals, status, assigned_rep, source, notes, created_at
+        `SELECT id, tenant_slug, company_name, website, industry, location, contact_name, contact_title, contact_email, contact_phone, icp_fit_score, buying_signals, status, assigned_rep, source, notes, converted_deal_id, converted_at, created_at, updated_at
          FROM crm_leads
          WHERE LOWER(tenant_slug) = $1 OR LOWER(tenant_slug) = 'default'
          ORDER BY created_at DESC`,
@@ -657,7 +791,10 @@ export async function getCrmLeads(tenantSlug: string): Promise<CrmLead[]> {
           assignedRep: r.assigned_rep,
           source: r.source,
           notes: r.notes,
+          convertedDealId: r.converted_deal_id,
+          convertedAt: r.converted_at ? new Date(r.converted_at).toISOString() : undefined,
           createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+          updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : undefined,
         }));
       }
     }
@@ -692,6 +829,8 @@ export async function createCrmLead(tenantSlug: string, lead: Partial<CrmLead>):
     assignedRep: lead.assignedRep || "Growth Marketer",
     source: lead.source || "Direct Inbound",
     notes: lead.notes || "",
+    convertedDealId: lead.convertedDealId,
+    convertedAt: lead.convertedAt,
     createdAt: new Date().toISOString(),
   };
 
@@ -700,8 +839,8 @@ export async function createCrmLead(tenantSlug: string, lead: Partial<CrmLead>):
     if (pool) {
       await ensureTablesExist();
       await pool.query(
-        `INSERT INTO crm_leads (id, tenant_slug, company_name, website, industry, location, contact_name, contact_title, contact_email, contact_phone, icp_fit_score, buying_signals, status, assigned_rep, source, notes, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW())`,
+        `INSERT INTO crm_leads (id, tenant_slug, company_name, website, industry, location, contact_name, contact_title, contact_email, contact_phone, icp_fit_score, buying_signals, status, assigned_rep, source, notes, converted_deal_id, converted_at, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW(), NOW())`,
         [
           newLead.id,
           slug,
@@ -719,6 +858,8 @@ export async function createCrmLead(tenantSlug: string, lead: Partial<CrmLead>):
           newLead.assignedRep,
           newLead.source,
           newLead.notes,
+          newLead.convertedDealId || null,
+          newLead.convertedAt || null,
         ]
       );
     }
@@ -730,6 +871,109 @@ export async function createCrmLead(tenantSlug: string, lead: Partial<CrmLead>):
   list.unshift(newLead);
   memoryLeads.set(slug, list);
   return newLead;
+}
+
+export async function updateCrmLead(tenantSlug: string, id: string, updates: Partial<CrmLead>): Promise<CrmLead | null> {
+  const slug = cleanSlug(tenantSlug);
+  let updatedLead: CrmLead | null = null;
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      const fields: string[] = [];
+      const values: any[] = [];
+      let idx = 1;
+
+      if (updates.status !== undefined) {
+        fields.push(`status = $${idx++}`);
+        values.push(updates.status);
+      }
+      if (updates.convertedDealId !== undefined) {
+        fields.push(`converted_deal_id = $${idx++}`);
+        values.push(updates.convertedDealId);
+        fields.push(`converted_at = NOW()`);
+      }
+      if (updates.icpFitScore !== undefined) {
+        fields.push(`icp_fit_score = $${idx++}`);
+        values.push(updates.icpFitScore);
+      }
+      if (updates.notes !== undefined) {
+        fields.push(`notes = $${idx++}`);
+        values.push(updates.notes);
+      }
+      if (updates.assignedRep !== undefined) {
+        fields.push(`assigned_rep = $${idx++}`);
+        values.push(updates.assignedRep);
+      }
+
+      fields.push(`updated_at = NOW()`);
+
+      values.push(id);
+      values.push(slug);
+      const res = await pool.query(
+        `UPDATE crm_leads
+         SET ${fields.join(", ")}
+         WHERE id = $${idx++} AND (LOWER(tenant_slug) = $${idx++} OR LOWER(tenant_slug) = 'default')
+         RETURNING id, tenant_slug, company_name, website, industry, location, contact_name, contact_title, contact_email, contact_phone, icp_fit_score, buying_signals, status, assigned_rep, source, notes, converted_deal_id, converted_at, created_at, updated_at`,
+        values
+      );
+      if (res.rows.length > 0) {
+        const r = res.rows[0];
+        updatedLead = {
+          id: r.id,
+          tenantSlug: r.tenant_slug,
+          companyName: r.company_name,
+          website: r.website,
+          industry: r.industry,
+          location: r.location,
+          contactName: r.contact_name,
+          contactTitle: r.contact_title,
+          contactEmail: r.contact_email,
+          contactPhone: r.contact_phone,
+          icpFitScore: Number(r.icp_fit_score) || 85,
+          buyingSignals: r.buying_signals ? (typeof r.buying_signals === "string" ? JSON.parse(r.buying_signals) : r.buying_signals) : [],
+          status: r.status,
+          assignedRep: r.assigned_rep,
+          source: r.source,
+          notes: r.notes,
+          convertedDealId: r.converted_deal_id,
+          convertedAt: r.converted_at ? new Date(r.converted_at).toISOString() : undefined,
+          createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+          updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString(),
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("Neon DB updateCrmLead error:", err);
+  }
+
+  const list = memoryLeads.get(slug) || DEFAULT_CRM_LEADS.map((l) => ({ ...l, tenantSlug: slug }));
+  const leadIdx = list.findIndex((l) => l.id === id);
+  if (leadIdx !== -1) {
+    list[leadIdx] = { ...list[leadIdx], ...updates, updatedAt: new Date().toISOString() };
+    if (!updatedLead) updatedLead = list[leadIdx];
+    memoryLeads.set(slug, list);
+  }
+  return updatedLead;
+}
+
+export async function deleteCrmLead(tenantSlug: string, id: string): Promise<boolean> {
+  const slug = cleanSlug(tenantSlug);
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      await pool.query(
+        `DELETE FROM crm_leads WHERE id = $1 AND (LOWER(tenant_slug) = $2 OR LOWER(tenant_slug) = 'default')`,
+        [id, slug]
+      );
+    }
+  } catch (err) {
+    console.warn("Neon DB deleteCrmLead error:", err);
+  }
+  const list = memoryLeads.get(slug) || [];
+  memoryLeads.set(slug, list.filter((l) => l.id !== id));
+  return true;
 }
 
 // 3. EMAIL LISTS
@@ -918,6 +1162,48 @@ export async function createCrmEmailBlast(tenantSlug: string, blast: Partial<Crm
 // 5. ACCOUNTS & ACTIVITIES
 export async function getCrmAccounts(tenantSlug: string): Promise<CrmAccount[]> {
   const slug = cleanSlug(tenantSlug);
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+
+      // Seed default accounts if needed
+      for (const a of DEFAULT_CRM_ACCOUNTS) {
+        await pool.query(
+          `INSERT INTO crm_accounts (id, tenant_slug, company, industry, location, total_deals, status, key_contact, email, phone, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+           ON CONFLICT (id) DO NOTHING`,
+          [a.id, slug, a.company, a.industry, a.location, a.totalDeals, a.status, a.keyContact, a.email, a.phone]
+        ).catch(() => {});
+      }
+
+      const res = await pool.query(
+        `SELECT id, tenant_slug, company, industry, location, total_deals, status, key_contact, email, phone, created_at
+         FROM crm_accounts
+         WHERE LOWER(tenant_slug) = $1 OR LOWER(tenant_slug) = 'default'
+         ORDER BY created_at DESC`,
+        [slug]
+      );
+      if (res.rows.length > 0) {
+        return res.rows.map((r) => ({
+          id: r.id,
+          tenantSlug: r.tenant_slug,
+          company: r.company,
+          industry: r.industry,
+          location: r.location,
+          totalDeals: r.total_deals,
+          status: r.status,
+          keyContact: r.key_contact,
+          email: r.email,
+          phone: r.phone,
+          createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+        }));
+      }
+    }
+  } catch (err) {
+    console.warn("Neon DB getCrmAccounts error, falling back to cache:", err);
+  }
+
   const cached = memoryAccounts.get(slug);
   if (cached && cached.length > 0) return cached;
   const seeded = DEFAULT_CRM_ACCOUNTS.map((a) => ({ ...a, tenantSlug: slug }));
@@ -925,11 +1211,468 @@ export async function getCrmAccounts(tenantSlug: string): Promise<CrmAccount[]> 
   return seeded;
 }
 
+export async function createCrmAccount(tenantSlug: string, account: Partial<CrmAccount>): Promise<CrmAccount> {
+  const slug = cleanSlug(tenantSlug);
+  const newAcc: CrmAccount = {
+    id: account.id || `ACC-${Date.now().toString().slice(-4)}`,
+    tenantSlug: slug,
+    company: account.company || "New Account Ltd",
+    industry: account.industry || "Commercial",
+    location: account.location || "Lagos, Nigeria",
+    totalDeals: account.totalDeals || "₦0",
+    status: account.status || "PROSPECT",
+    keyContact: account.keyContact || "Executive Contact",
+    email: account.email || "info@example.ng",
+    phone: account.phone || "",
+    createdAt: new Date().toISOString(),
+  };
+
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      await pool.query(
+        `INSERT INTO crm_accounts (id, tenant_slug, company, industry, location, total_deals, status, key_contact, email, phone, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())`,
+        [newAcc.id, slug, newAcc.company, newAcc.industry, newAcc.location, newAcc.totalDeals, newAcc.status, newAcc.keyContact, newAcc.email, newAcc.phone]
+      );
+    }
+  } catch (err) {
+    console.warn("Neon DB createCrmAccount error:", err);
+  }
+
+  const list = memoryAccounts.get(slug) || DEFAULT_CRM_ACCOUNTS.map((a) => ({ ...a, tenantSlug: slug }));
+  list.unshift(newAcc);
+  memoryAccounts.set(slug, list);
+  return newAcc;
+}
+
+export async function updateCrmAccount(tenantSlug: string, id: string, updates: Partial<CrmAccount>): Promise<CrmAccount | null> {
+  const slug = cleanSlug(tenantSlug);
+  let updated: CrmAccount | null = null;
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      const fields: string[] = [];
+      const values: any[] = [];
+      let idx = 1;
+
+      if (updates.company !== undefined) { fields.push(`company = $${idx++}`); values.push(updates.company); }
+      if (updates.industry !== undefined) { fields.push(`industry = $${idx++}`); values.push(updates.industry); }
+      if (updates.location !== undefined) { fields.push(`location = $${idx++}`); values.push(updates.location); }
+      if (updates.status !== undefined) { fields.push(`status = $${idx++}`); values.push(updates.status); }
+      if (updates.keyContact !== undefined) { fields.push(`key_contact = $${idx++}`); values.push(updates.keyContact); }
+      if (updates.email !== undefined) { fields.push(`email = $${idx++}`); values.push(updates.email); }
+      if (updates.phone !== undefined) { fields.push(`phone = $${idx++}`); values.push(updates.phone); }
+      if (updates.totalDeals !== undefined) { fields.push(`total_deals = $${idx++}`); values.push(updates.totalDeals); }
+
+      fields.push(`updated_at = NOW()`);
+
+      values.push(id);
+      values.push(slug);
+      const res = await pool.query(
+        `UPDATE crm_accounts
+         SET ${fields.join(", ")}
+         WHERE id = $${idx++} AND (LOWER(tenant_slug) = $${idx++} OR LOWER(tenant_slug) = 'default')
+         RETURNING id, tenant_slug, company, industry, location, total_deals, status, key_contact, email, phone, created_at`,
+        values
+      );
+      if (res.rows.length > 0) {
+        const r = res.rows[0];
+        updated = {
+          id: r.id,
+          tenantSlug: r.tenant_slug,
+          company: r.company,
+          industry: r.industry,
+          location: r.location,
+          totalDeals: r.total_deals,
+          status: r.status,
+          keyContact: r.key_contact,
+          email: r.email,
+          phone: r.phone,
+          createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("Neon DB updateCrmAccount error:", err);
+  }
+
+  const list = memoryAccounts.get(slug) || DEFAULT_CRM_ACCOUNTS.map((a) => ({ ...a, tenantSlug: slug }));
+  const accIdx = list.findIndex((a) => a.id === id);
+  if (accIdx !== -1) {
+    list[accIdx] = { ...list[accIdx], ...updates };
+    if (!updated) updated = list[accIdx];
+    memoryAccounts.set(slug, list);
+  }
+  return updated;
+}
+
+export async function deleteCrmAccount(tenantSlug: string, id: string): Promise<boolean> {
+  const slug = cleanSlug(tenantSlug);
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      await pool.query(`DELETE FROM crm_accounts WHERE id = $1 AND (LOWER(tenant_slug) = $2 OR LOWER(tenant_slug) = 'default')`, [id, slug]);
+    }
+  } catch (err) {
+    console.warn("Neon DB deleteCrmAccount error:", err);
+  }
+  const list = memoryAccounts.get(slug) || [];
+  memoryAccounts.set(slug, list.filter((a) => a.id !== id));
+  return true;
+}
+
 export async function getCrmActivities(tenantSlug: string): Promise<CrmActivity[]> {
   const slug = cleanSlug(tenantSlug);
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+
+      // Seed default activities if needed
+      for (const a of DEFAULT_CRM_ACTIVITIES) {
+        await pool.query(
+          `INSERT INTO crm_activities (id, tenant_slug, type, title, company, rep, date_time, status, notes, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+           ON CONFLICT (id) DO NOTHING`,
+          [a.id, slug, a.type, a.title, a.company, a.rep, a.dateTime, a.status, a.notes || ""]
+        ).catch(() => {});
+      }
+
+      const res = await pool.query(
+        `SELECT id, tenant_slug, type, title, company, rep, date_time, status, notes, deal_id, account_id, lead_id, scheduled_at, completed_at, created_at
+         FROM crm_activities
+         WHERE LOWER(tenant_slug) = $1 OR LOWER(tenant_slug) = 'default'
+         ORDER BY created_at DESC`,
+        [slug]
+      );
+      if (res.rows.length > 0) {
+        return res.rows.map((r) => ({
+          id: r.id,
+          tenantSlug: r.tenant_slug,
+          type: r.type,
+          title: r.title,
+          company: r.company,
+          rep: r.rep,
+          dateTime: r.date_time,
+          status: r.status,
+          notes: r.notes,
+          dealId: r.deal_id,
+          accountId: r.account_id,
+          leadId: r.lead_id,
+          scheduledAt: r.scheduled_at ? new Date(r.scheduled_at).toISOString() : undefined,
+          completedAt: r.completed_at ? new Date(r.completed_at).toISOString() : undefined,
+          createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+        }));
+      }
+    }
+  } catch (err) {
+    console.warn("Neon DB getCrmActivities error, falling back to cache:", err);
+  }
+
   const cached = memoryActivities.get(slug);
   if (cached && cached.length > 0) return cached;
   const seeded = DEFAULT_CRM_ACTIVITIES.map((a) => ({ ...a, tenantSlug: slug }));
   memoryActivities.set(slug, seeded);
   return seeded;
+}
+
+export async function createCrmActivity(tenantSlug: string, act: Partial<CrmActivity>): Promise<CrmActivity> {
+  const slug = cleanSlug(tenantSlug);
+  const newAct: CrmActivity = {
+    id: act.id || `ACT-${Date.now().toString().slice(-4)}`,
+    tenantSlug: slug,
+    type: act.type || "CALL",
+    title: act.title || "Sales Call",
+    company: act.company || "Client Company",
+    rep: act.rep || "Senior Sales Rep",
+    dateTime: act.dateTime || "Scheduled",
+    status: act.status || "UPCOMING",
+    notes: act.notes || "",
+    dealId: act.dealId,
+    accountId: act.accountId,
+    leadId: act.leadId,
+    scheduledAt: act.scheduledAt,
+    createdAt: new Date().toISOString(),
+  };
+
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      await pool.query(
+        `INSERT INTO crm_activities (id, tenant_slug, type, title, company, rep, date_time, status, notes, deal_id, account_id, lead_id, scheduled_at, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())`,
+        [newAct.id, slug, newAct.type, newAct.title, newAct.company, newAct.rep, newAct.dateTime, newAct.status, newAct.notes, newAct.dealId || null, newAct.accountId || null, newAct.leadId || null, newAct.scheduledAt || null]
+      );
+    }
+  } catch (err) {
+    console.warn("Neon DB createCrmActivity error:", err);
+  }
+
+  const list = memoryActivities.get(slug) || DEFAULT_CRM_ACTIVITIES.map((a) => ({ ...a, tenantSlug: slug }));
+  list.unshift(newAct);
+  memoryActivities.set(slug, list);
+  return newAct;
+}
+
+export async function updateCrmActivityStatus(tenantSlug: string, id: string, status: CrmActivity["status"]): Promise<CrmActivity | null> {
+  const slug = cleanSlug(tenantSlug);
+  let updated: CrmActivity | null = null;
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      const res = await pool.query(
+        `UPDATE crm_activities
+         SET status = $1, completed_at = CASE WHEN $1 = 'COMPLETED' THEN NOW() ELSE NULL END
+         WHERE id = $2 AND (LOWER(tenant_slug) = $3 OR LOWER(tenant_slug) = 'default')
+         RETURNING id, tenant_slug, type, title, company, rep, date_time, status, notes, deal_id, account_id, lead_id, scheduled_at, completed_at, created_at`,
+        [status, id, slug]
+      );
+      if (res.rows.length > 0) {
+        const r = res.rows[0];
+        updated = {
+          id: r.id,
+          tenantSlug: r.tenant_slug,
+          type: r.type,
+          title: r.title,
+          company: r.company,
+          rep: r.rep,
+          dateTime: r.date_time,
+          status: r.status,
+          notes: r.notes,
+          dealId: r.deal_id,
+          accountId: r.account_id,
+          leadId: r.lead_id,
+          scheduledAt: r.scheduled_at ? new Date(r.scheduled_at).toISOString() : undefined,
+          completedAt: r.completed_at ? new Date(r.completed_at).toISOString() : undefined,
+          createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("Neon DB updateCrmActivityStatus error:", err);
+  }
+
+  const list = memoryActivities.get(slug) || DEFAULT_CRM_ACTIVITIES.map((a) => ({ ...a, tenantSlug: slug }));
+  const actIdx = list.findIndex((a) => a.id === id);
+  if (actIdx !== -1) {
+    list[actIdx] = { ...list[actIdx], status };
+    if (!updated) updated = list[actIdx];
+    memoryActivities.set(slug, list);
+  }
+  return updated;
+}
+
+export async function deleteCrmActivity(tenantSlug: string, id: string): Promise<boolean> {
+  const slug = cleanSlug(tenantSlug);
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      await pool.query(`DELETE FROM crm_activities WHERE id = $1 AND (LOWER(tenant_slug) = $2 OR LOWER(tenant_slug) = 'default')`, [id, slug]);
+    }
+  } catch (err) {
+    console.warn("Neon DB deleteCrmActivity error:", err);
+  }
+  const list = memoryActivities.get(slug) || [];
+  memoryActivities.set(slug, list.filter((a) => a.id !== id));
+  return true;
+}
+
+// 6. SUBSCRIBERS
+export async function getCrmSubscribers(tenantSlug: string, listId: string): Promise<CrmEmailSubscriber[]> {
+  const slug = cleanSlug(tenantSlug);
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      const res = await pool.query(
+        `SELECT id, tenant_slug, list_id, email, first_name, last_name, company, phone, status, created_at
+         FROM crm_email_subscribers
+         WHERE (LOWER(tenant_slug) = $1 OR LOWER(tenant_slug) = 'default') AND list_id = $2
+         ORDER BY created_at DESC`,
+        [slug, listId]
+      );
+      return res.rows.map((r) => ({
+        id: r.id,
+        tenantSlug: r.tenant_slug,
+        listId: r.list_id,
+        email: r.email,
+        firstName: r.first_name,
+        lastName: r.last_name,
+        company: r.company,
+        phone: r.phone,
+        status: r.status,
+        createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+      }));
+    }
+  } catch (err) {
+    console.warn("Neon DB getCrmSubscribers error:", err);
+  }
+  return [];
+}
+
+export async function addCrmSubscriber(tenantSlug: string, listId: string, sub: Partial<CrmEmailSubscriber>): Promise<CrmEmailSubscriber> {
+  const slug = cleanSlug(tenantSlug);
+  const newSub: CrmEmailSubscriber = {
+    id: sub.id || `SUB-${Date.now().toString().slice(-4)}`,
+    tenantSlug: slug,
+    listId,
+    email: (sub.email || "").trim().toLowerCase(),
+    firstName: sub.firstName || "",
+    lastName: sub.lastName || "",
+    company: sub.company || "",
+    phone: sub.phone || "",
+    status: sub.status || "SUBSCRIBED",
+    createdAt: new Date().toISOString(),
+  };
+
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      await pool.query(
+        `INSERT INTO crm_email_subscribers (id, tenant_slug, list_id, email, first_name, last_name, company, phone, status, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+         ON CONFLICT (tenant_slug, list_id, email) DO UPDATE SET status = 'SUBSCRIBED'`,
+        [newSub.id, slug, newSub.listId, newSub.email, newSub.firstName, newSub.lastName, newSub.company, newSub.phone, newSub.status]
+      );
+
+      // Refresh list count
+      await pool.query(
+        `UPDATE crm_email_lists
+         SET subscriber_count = (SELECT COUNT(*) FROM crm_email_subscribers WHERE list_id = $1), updated_at = NOW()
+         WHERE id = $1`,
+        [listId]
+      );
+    }
+  } catch (err) {
+    console.warn("Neon DB addCrmSubscriber error:", err);
+  }
+
+  return newSub;
+}
+
+export async function bulkAddCrmSubscribers(
+  tenantSlug: string,
+  listId: string,
+  subs: Partial<CrmEmailSubscriber>[]
+): Promise<number> {
+  const slug = cleanSlug(tenantSlug);
+  let added = 0;
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      for (const s of subs) {
+        if (!s.email) continue;
+        const subId = s.id || `SUB-${Math.random().toString(36).substring(2, 9)}`;
+        const email = s.email.trim().toLowerCase();
+        await pool.query(
+          `INSERT INTO crm_email_subscribers (id, tenant_slug, list_id, email, first_name, last_name, company, phone, status, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'SUBSCRIBED', NOW())
+           ON CONFLICT (tenant_slug, list_id, email) DO NOTHING`,
+          [subId, slug, listId, email, s.firstName || "", s.lastName || "", s.company || "", s.phone || ""]
+        ).catch(() => {});
+        added++;
+      }
+
+      await pool.query(
+        `UPDATE crm_email_lists
+         SET subscriber_count = (SELECT COUNT(*) FROM crm_email_subscribers WHERE list_id = $1), updated_at = NOW()
+         WHERE id = $1`,
+        [listId]
+      );
+    }
+  } catch (err) {
+    console.warn("Neon DB bulkAddCrmSubscribers error:", err);
+  }
+  return added;
+}
+
+export async function deleteCrmSubscriber(tenantSlug: string, id: string): Promise<boolean> {
+  const slug = cleanSlug(tenantSlug);
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      const res = await pool.query(
+        `DELETE FROM crm_email_subscribers WHERE id = $1 AND (LOWER(tenant_slug) = $2 OR LOWER(tenant_slug) = 'default') RETURNING list_id`,
+        [id, slug]
+      );
+      if (res.rows.length > 0 && res.rows[0].list_id) {
+        await pool.query(
+          `UPDATE crm_email_lists SET subscriber_count = (SELECT COUNT(*) FROM crm_email_subscribers WHERE list_id = $1), updated_at = NOW() WHERE id = $1`,
+          [res.rows[0].list_id]
+        );
+      }
+    }
+  } catch (err) {
+    console.warn("Neon DB deleteCrmSubscriber error:", err);
+  }
+  return true;
+}
+
+// 7. SCHEDULED BLASTS PROCESSOR
+export async function dispatchScheduledBlasts(tenantSlug?: string): Promise<{ dispatched: number; errors: string[] }> {
+  const errors: string[] = [];
+  let dispatched = 0;
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      const whereTenant = tenantSlug ? `AND (LOWER(b.tenant_slug) = LOWER('${cleanSlug(tenantSlug)}') OR LOWER(b.tenant_slug) = 'default')` : "";
+      const res = await pool.query(
+        `SELECT b.id, b.tenant_slug, b.list_id, b.title, b.subject, b.content_html, b.sender_name, b.sender_email
+         FROM crm_email_blasts b
+         WHERE b.status = 'SCHEDULED' AND b.scheduled_at <= NOW() ${whereTenant}`
+      );
+
+      for (const blast of res.rows) {
+        try {
+          await pool.query(`UPDATE crm_email_blasts SET status = 'SENDING' WHERE id = $1`, [blast.id]);
+
+          // Fetch list subscribers
+          const subsRes = await pool.query(
+            `SELECT email, first_name, last_name, company FROM crm_email_subscribers WHERE list_id = $1 AND status = 'SUBSCRIBED'`,
+            [blast.list_id]
+          );
+
+          if (subsRes.rows.length > 0) {
+            await queueMassEmailCampaign({
+              tenantSlug: blast.tenant_slug,
+              recipients: subsRes.rows.map((s) => ({
+                email: s.email,
+                name: `${s.first_name || ""} ${s.last_name || ""}`.trim() || s.email,
+                role: "Subscriber",
+                department: s.company || "Commercial",
+              })),
+              subject: blast.subject,
+              messageHtml: blast.content_html,
+            });
+            await processEmailQueueBatch(50).catch(() => {});
+          }
+
+          await pool.query(
+            `UPDATE crm_email_blasts
+             SET status = 'SENT', sent_at = NOW(), sent_count = $2, updated_at = NOW()
+             WHERE id = $1`,
+            [blast.id, subsRes.rows.length]
+          );
+          dispatched++;
+        } catch (bErr: any) {
+          errors.push(`Blast ${blast.id}: ${bErr.message}`);
+          await pool.query(`UPDATE crm_email_blasts SET status = 'FAILED' WHERE id = $1`, [blast.id]).catch(() => {});
+        }
+      }
+    }
+  } catch (err: any) {
+    errors.push(err.message || "Failed to query scheduled blasts");
+  }
+  return { dispatched, errors };
 }

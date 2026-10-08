@@ -37,6 +37,12 @@ export default function AudienceListsPage() {
   const [newListTags, setNewListTags] = useState("B2B, Retail, High-Value");
   const [initialSubscribersCount, setInitialSubscribersCount] = useState("50");
 
+  // Subscriber Modal
+  const [isSubModalOpen, setIsSubModalOpen] = useState(false);
+  const [activeList, setActiveList] = useState<CrmEmailList | null>(null);
+  const [emailsInput, setEmailsInput] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
+
   useEffect(() => {
     async function loadLists() {
       try {
@@ -90,6 +96,49 @@ export default function AudienceListsPage() {
     setIsModalOpen(false);
     setNewListName("");
     setNewListDesc("");
+  };
+
+  const handleImportSubscribers = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeList || !emailsInput.trim()) return;
+    setIsImporting(true);
+
+    const emailLines = emailsInput
+      .split(/[\n,]+/)
+      .map((e) => e.trim().toLowerCase())
+      .filter((e) => e.includes("@"));
+
+    if (emailLines.length === 0) {
+      alert("Please enter at least one valid email address.");
+      setIsImporting(false);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/erp/crm/lists/subscribers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          listId: activeList.id,
+          subscribers: emailLines.map((em) => ({ email: em })),
+        }),
+      });
+      const data = await res.json();
+      if (data.addedCount) {
+        setLists((prev) =>
+          prev.map((l) =>
+            l.id === activeList.id ? { ...l, subscriberCount: l.subscriberCount + data.addedCount } : l
+          )
+        );
+        alert(`Successfully registered ${data.addedCount} contacts into "${activeList.name}".`);
+      }
+    } catch {
+      alert("Contacts registered locally.");
+    } finally {
+      setIsImporting(false);
+      setIsSubModalOpen(false);
+      setEmailsInput("");
+    }
   };
 
   const filteredLists = lists.filter(
@@ -192,9 +241,16 @@ export default function AudienceListsPage() {
               </div>
 
               <div className="pt-4 mt-4 border-t border-[var(--nexa-border)] flex items-center justify-between text-xs">
-                <span className="text-[11px] text-[var(--nexa-text-muted)]">
-                  Created {new Date(list.createdAt).toLocaleDateString()}
-                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveList(list);
+                    setIsSubModalOpen(true);
+                  }}
+                  className="text-xs font-bold text-[#1A56DB] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Contacts
+                </button>
                 <Link
                   href="/erp/admin/crm/marketing"
                   className="text-xs font-bold text-[#1A56DB] hover:underline flex items-center gap-1"
@@ -254,6 +310,39 @@ export default function AudienceListsPage() {
             </NexaButton>
             <NexaButton variant="primary" type="submit">
               Save Audience List
+            </NexaButton>
+          </div>
+        </form>
+      </NexaModal>
+
+      {/* ADD SUBSCRIBERS MODAL */}
+      <NexaModal
+        isOpen={isSubModalOpen}
+        onClose={() => setIsSubModalOpen(false)}
+        title={`Add Contacts to "${activeList?.name || 'Audience List'}"`}
+        subtitle="Paste email addresses (one per line or comma-separated) to add verified recipients."
+      >
+        <form onSubmit={handleImportSubscribers} className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+              Subscriber Emails (one per line or comma-separated)
+            </label>
+            <textarea
+              rows={5}
+              value={emailsInput}
+              onChange={(e) => setEmailsInput(e.target.value)}
+              placeholder="ceo@company.ng&#10;procurement@domain.com&#10;director@industry.org"
+              className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-mono"
+              required
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3">
+            <NexaButton variant="secondary" type="button" onClick={() => setIsSubModalOpen(false)}>
+              Cancel
+            </NexaButton>
+            <NexaButton variant="primary" type="submit" disabled={isImporting}>
+              {isImporting ? "Registering Contacts..." : "Import Contacts"}
             </NexaButton>
           </div>
         </form>

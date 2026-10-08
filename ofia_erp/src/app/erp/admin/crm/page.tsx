@@ -66,11 +66,12 @@ export default function CrmDashboardPage() {
   useEffect(() => {
     async function loadCrmData() {
       try {
-        const [dealsRes, leadsRes, blastsRes, listsRes] = await Promise.all([
+        const [dealsRes, leadsRes, blastsRes, listsRes, activitiesRes] = await Promise.all([
           fetch("/api/erp/crm/deals").then((r) => r.json()).catch(() => null),
           fetch("/api/erp/crm/leads").then((r) => r.json()).catch(() => null),
           fetch("/api/erp/crm/blasts").then((r) => r.json()).catch(() => null),
           fetch("/api/erp/crm/lists").then((r) => r.json()).catch(() => null),
+          fetch("/api/erp/crm/activities").then((r) => r.json()).catch(() => null),
         ]);
 
         if (dealsRes?.deals) setDeals(dealsRes.deals);
@@ -85,7 +86,8 @@ export default function CrmDashboardPage() {
         if (listsRes?.lists) setLists(listsRes.lists);
         else setLists(DEFAULT_CRM_LISTS.map((l) => ({ ...l, tenantSlug: "default" })));
 
-        setActivities(DEFAULT_CRM_ACTIVITIES.map((a) => ({ ...a, tenantSlug: "default" })));
+        if (activitiesRes?.activities) setActivities(activitiesRes.activities);
+        else setActivities(DEFAULT_CRM_ACTIVITIES.map((a) => ({ ...a, tenantSlug: "default" })));
       } catch (err) {
         console.warn("Using offline CRM state:", err);
       } finally {

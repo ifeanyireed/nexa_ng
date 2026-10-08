@@ -40,31 +40,60 @@ export default function ContactsAccountsPage() {
   const [status, setStatus] = useState<CrmAccount["status"]>("CLIENT");
 
   useEffect(() => {
-    setAccounts(DEFAULT_CRM_ACCOUNTS.map((a) => ({ ...a, tenantSlug: "default" })));
-    setIsLoading(false);
+    async function loadAccounts() {
+      try {
+        const res = await fetch("/api/erp/crm/accounts").then((r) => r.json());
+        if (res?.accounts) setAccounts(res.accounts);
+        else setAccounts(DEFAULT_CRM_ACCOUNTS.map((a) => ({ ...a, tenantSlug: "default" })));
+      } catch {
+        setAccounts(DEFAULT_CRM_ACCOUNTS.map((a) => ({ ...a, tenantSlug: "default" })));
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadAccounts();
   }, []);
 
-  const handleCreateAccount = (e: React.FormEvent) => {
+  const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!company.trim()) return;
 
-    const newAcc: CrmAccount = {
-      id: `ACC-${Date.now().toString().slice(-3)}`,
-      tenantSlug: "default",
+    const payload = {
       company: company.trim(),
       industry: industry.trim(),
       location: location.trim(),
-      totalDeals: "₦0",
       status,
       keyContact: keyContact.trim() || "Decision Maker",
       email: email.trim() || "info@company.ng",
       phone: phone.trim(),
-      createdAt: new Date().toISOString(),
+      totalDeals: "₦0",
     };
 
-    setAccounts((prev) => [newAcc, ...prev]);
+    try {
+      const res = await fetch("/api/erp/crm/accounts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.account) {
+        setAccounts((prev) => [data.account, ...prev]);
+      }
+    } catch {
+      const newAcc: CrmAccount = {
+        id: `ACC-${Date.now().toString().slice(-3)}`,
+        tenantSlug: "default",
+        ...payload,
+        createdAt: new Date().toISOString(),
+      };
+      setAccounts((prev) => [newAcc, ...prev]);
+    }
+
     setIsModalOpen(false);
     setCompany("");
+    setKeyContact("");
+    setEmail("");
+    setPhone("");
   };
 
   const filtered = accounts.filter((a) => {

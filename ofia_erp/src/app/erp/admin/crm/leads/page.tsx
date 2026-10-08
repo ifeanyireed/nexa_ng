@@ -152,7 +152,7 @@ export default function CrmLeadsPage() {
 
   const handlePromoteToDeal = async (lead: CrmLead) => {
     try {
-      await fetch("/api/erp/crm/deals", {
+      const res = await fetch("/api/erp/crm/deals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -166,12 +166,27 @@ export default function CrmLeadsPage() {
           owner: lead.assignedRep || "Senior Account Exec",
           probability: 50,
           expectedClose: "Next Month",
+          leadId: lead.id,
           notes: `Promoted from lead ${lead.id}. Signals: ${lead.buyingSignals.join(", ")}`,
         }),
       });
+      const data = await res.json();
+      const dealId = data?.deal?.id;
+
+      // Persist status change in DB
+      await fetch("/api/erp/crm/leads", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: lead.id,
+          status: "CONVERTED",
+          convertedDealId: dealId,
+        }),
+      });
+
       // Update local lead status
       setLeads((prev) =>
-        prev.map((l) => (l.id === lead.id ? { ...l, status: "CONVERTED" } : l))
+        prev.map((l) => (l.id === lead.id ? { ...l, status: "CONVERTED", convertedDealId: dealId } : l))
       );
       alert(`Success! Lead "${lead.companyName}" promoted to active CRM Deal.`);
     } catch {

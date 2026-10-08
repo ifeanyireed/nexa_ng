@@ -99,18 +99,33 @@ export default function DealsPipelinePage() {
     setCompany("");
   };
 
-  const handleStageChange = (dealId: string, newStage: CrmDeal["stage"]) => {
+  const handleStageChange = async (dealId: string, newStage: CrmDeal["stage"]) => {
+    const newProb = newStage === "WON" ? 100 : newStage === "NEGOTIATION" ? 85 : 50;
     setDeals((prev) =>
       prev.map((d) =>
         d.id === dealId
           ? {
               ...d,
               stage: newStage,
-              probability: newStage === "WON" ? 100 : newStage === "NEGOTIATION" ? 85 : d.probability,
+              probability: newProb,
             }
           : d
       )
     );
+
+    try {
+      await fetch("/api/erp/crm/deals", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: dealId,
+          stage: newStage,
+          probability: newProb,
+        }),
+      });
+    } catch (err) {
+      console.warn("Failed to persist deal stage change:", err);
+    }
   };
 
   const filteredDeals = deals.filter(

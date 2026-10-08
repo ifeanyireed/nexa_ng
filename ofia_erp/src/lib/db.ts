@@ -263,6 +263,25 @@ export async function ensureTablesExist(): Promise<boolean> {
           created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
         );
         CREATE INDEX IF NOT EXISTS idx_crm_activities_tenant ON crm_activities (tenant_slug);
+
+        -- CRM Schema Enhancements & Safe Migrations
+        ALTER TABLE crm_deals ADD COLUMN IF NOT EXISTS account_id VARCHAR(64);
+        ALTER TABLE crm_deals ADD COLUMN IF NOT EXISTS lead_id VARCHAR(64);
+        CREATE INDEX IF NOT EXISTS idx_crm_deals_account ON crm_deals (account_id);
+        CREATE INDEX IF NOT EXISTS idx_crm_deals_lead ON crm_deals (lead_id);
+
+        ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS converted_deal_id VARCHAR(64);
+        ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS converted_at TIMESTAMPTZ;
+
+        ALTER TABLE crm_activities ADD COLUMN IF NOT EXISTS deal_id VARCHAR(64);
+        ALTER TABLE crm_activities ADD COLUMN IF NOT EXISTS account_id VARCHAR(64);
+        ALTER TABLE crm_activities ADD COLUMN IF NOT EXISTS lead_id VARCHAR(64);
+        ALTER TABLE crm_activities ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMPTZ;
+        ALTER TABLE crm_activities ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;
+        CREATE INDEX IF NOT EXISTS idx_crm_activities_deal ON crm_activities (deal_id);
+        CREATE INDEX IF NOT EXISTS idx_crm_activities_status ON crm_activities (status);
+
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_subscribers_unique ON crm_email_subscribers (tenant_slug, list_id, email);
       `);
 
       isInitialized = true;

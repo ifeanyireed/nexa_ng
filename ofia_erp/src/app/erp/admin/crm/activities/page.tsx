@@ -39,36 +39,72 @@ export default function SalesActivitiesPage() {
   const [notes, setNotes] = useState("");
 
   useEffect(() => {
-    setActivities(DEFAULT_CRM_ACTIVITIES.map((a) => ({ ...a, tenantSlug: "default" })));
+    async function loadActivities() {
+      try {
+        const res = await fetch("/api/erp/crm/activities").then((r) => r.json());
+        if (res?.activities) setActivities(res.activities);
+        else setActivities(DEFAULT_CRM_ACTIVITIES.map((a) => ({ ...a, tenantSlug: "default" })));
+      } catch {
+        setActivities(DEFAULT_CRM_ACTIVITIES.map((a) => ({ ...a, tenantSlug: "default" })));
+      }
+    }
+    loadActivities();
   }, []);
 
-  const handleCreateActivity = (e: React.FormEvent) => {
+  const handleCreateActivity = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !company.trim()) return;
 
-    const newAct: CrmActivity = {
-      id: `ACT-${Date.now().toString().slice(-3)}`,
-      tenantSlug: "default",
+    const payload = {
       title: title.trim(),
       company: company.trim(),
       type,
       rep,
       dateTime,
-      status: "UPCOMING",
+      status: "UPCOMING" as const,
       notes: notes.trim(),
-      createdAt: new Date().toISOString(),
     };
 
-    setActivities((prev) => [newAct, ...prev]);
+    try {
+      const res = await fetch("/api/erp/crm/activities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.activity) {
+        setActivities((prev) => [data.activity, ...prev]);
+      }
+    } catch {
+      const newAct: CrmActivity = {
+        id: `ACT-${Date.now().toString().slice(-3)}`,
+        tenantSlug: "default",
+        ...payload,
+        createdAt: new Date().toISOString(),
+      };
+      setActivities((prev) => [newAct, ...prev]);
+    }
+
     setIsModalOpen(false);
     setTitle("");
     setCompany("");
+    setNotes("");
   };
 
-  const handleMarkComplete = (id: string) => {
+  const handleMarkComplete = async (id: string) => {
     setActivities((prev) =>
       prev.map((a) => (a.id === id ? { ...a, status: "COMPLETED" } : a))
     );
+
+    try {
+      await fetch("/api/erp/crm/activities", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status: "COMPLETED" }),
+      });
+    } catch (err) {
+      console.warn("Failed to persist activity completion:", err);
+    }
   };
 
   const filtered = activities.filter((a) => {

@@ -16,8 +16,10 @@ import {
   SUPER_ADMIN_ERP_MODULES,
   ErpModuleItem,
   SHOP_SUB_MODULES,
+  MOBILITY_SUB_MODULES,
   TENANT_VERTICAL_ARCHETYPES,
   ShopSubModuleItem,
+  MobilitySubModuleItem,
   VerticalArchetype,
 } from "@/lib/admin-data";
 import { USER_API, GTM_API } from "@/lib/api-client";
@@ -44,6 +46,7 @@ import {
   Boxes,
   ShoppingCart,
   Truck,
+  Bike,
   Gift,
   Trophy,
   Users,
@@ -80,6 +83,13 @@ import {
   Shirt,
   Laptop,
   Home,
+  Radio,
+  Wrench,
+  MapPin,
+  Calculator,
+  Clock,
+  Navigation,
+  School,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -105,6 +115,8 @@ const getModuleIcon = (iconName: string) => {
       return <ShoppingCart className="w-4 h-4" />;
     case "Truck":
       return <Truck className="w-4 h-4" />;
+    case "Bike":
+      return <Bike className="w-4 h-4" />;
     case "Gift":
       return <Gift className="w-4 h-4" />;
     case "Trophy":
@@ -142,6 +154,20 @@ const getModuleIcon = (iconName: string) => {
       return <Zap className="w-4 h-4" />;
     case "Sparkles":
       return <Sparkles className="w-4 h-4" />;
+    case "Radio":
+      return <Radio className="w-4 h-4" />;
+    case "Wrench":
+      return <Wrench className="w-4 h-4" />;
+    case "MapPin":
+      return <MapPin className="w-4 h-4" />;
+    case "Calculator":
+      return <Calculator className="w-4 h-4" />;
+    case "Clock":
+      return <Clock className="w-4 h-4" />;
+    case "Navigation":
+      return <Navigation className="w-4 h-4" />;
+    case "School":
+      return <School className="w-4 h-4" />;
     default:
       return <Layers className="w-4 h-4" />;
   }
@@ -176,6 +202,8 @@ function TenantManagementContent() {
     shop: true,
     accounting: true,
     hr: true,
+    mobility: true,
+    dispatch: true,
     users: true,
   });
 
@@ -269,6 +297,20 @@ function TenantManagementContent() {
                 store: true,
                 referrals: true,
               },
+              mobilitySubModules: org.mobilitySubModules || {
+                ops: true,
+                vehicles: true,
+                drivers: true,
+                maintenance: true,
+                routes: true,
+                finance: true,
+                shuttle: true,
+                interstate: true,
+                on_demand: true,
+                rental: true,
+                school: true,
+                staff: true,
+              },
               createdAt: org.createdAt || org.created_at
                 ? new Date(org.createdAt || org.created_at).toISOString().split("T")[0]
                 : new Date().toISOString().split("T")[0],
@@ -299,7 +341,16 @@ function TenantManagementContent() {
               SHOP_SUB_MODULES.forEach((sub) => {
                 subModulesEnabled[sub.key] = adminMatrix[sub.key] ?? t.shopSubModules?.[sub.key] ?? true;
               });
-              return { id: t.id, modules: modulesEnabled, shopSubModules: subModulesEnabled };
+              const mobilitySubModulesEnabled: Record<string, boolean> = {};
+              MOBILITY_SUB_MODULES.forEach((sub) => {
+                mobilitySubModulesEnabled[sub.key] = adminMatrix[sub.key] ?? t.mobilitySubModules?.[sub.key] ?? true;
+              });
+              return { 
+                id: t.id, 
+                modules: modulesEnabled, 
+                shopSubModules: subModulesEnabled, 
+                mobilitySubModules: mobilitySubModulesEnabled 
+              };
             }
           } catch {
             return null;
@@ -316,6 +367,7 @@ function TenantManagementContent() {
                 ...t,
                 erpModules: found.modules || t.erpModules,
                 shopSubModules: found.shopSubModules || t.shopSubModules,
+                mobilitySubModules: found.mobilitySubModules || t.mobilitySubModules,
               };
             }
             return t;
@@ -384,7 +436,7 @@ function TenantManagementContent() {
     setSavingModuleKeys((prev) => ({ ...prev, [moduleKey]: true }));
     setIsSavingDb(true);
     try {
-      const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant"];
+      const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant", "dispatcher"];
       const matrixPayload: Record<string, Record<string, boolean>> = {};
 
       defaultRoleKeys.forEach((role) => {
@@ -405,10 +457,14 @@ function TenantManagementContent() {
             hr: false,
             manager: false,
             md: false,
+            mobility: false,
+            dispatch: false,
           };
         } else {
           matrixPayload[role] = {
             ...updatedModules,
+            ...(tenant.shopSubModules || {}),
+            ...(tenant.mobilitySubModules || {}),
           };
           if (!newStatus) {
             matrixPayload[role][moduleKey] = false;
@@ -443,7 +499,7 @@ function TenantManagementContent() {
 
     setIsSavingDb(true);
     try {
-      const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant"];
+      const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant", "dispatcher"];
       const matrixPayload: Record<string, Record<string, boolean>> = {};
       defaultRoleKeys.forEach((role) => {
         if (role === "employee") {
@@ -463,10 +519,14 @@ function TenantManagementContent() {
             hr: false,
             manager: false,
             md: false,
+            mobility: false,
+            dispatch: false,
           };
         } else {
           matrixPayload[role] = {
             ...updatedModules,
+            ...(tenant.shopSubModules || {}),
+            ...(tenant.mobilitySubModules || {}),
           };
         }
       });
@@ -565,6 +625,104 @@ function TenantManagementContent() {
       showToast(`⚡ ${tenant.name}: All Shop sub-modules ${enableAll ? "enabled" : "disabled"}`);
     } catch {
       showToast(`${tenant.name}: Shop sub-modules updated locally`);
+    } finally {
+      setIsSavingDb(false);
+    }
+  };
+
+  // Toggle individual Mobility Sub-Module (ops, vehicles, drivers, maintenance, routes, finance, shuttle, interstate, on_demand, rental, school, staff)
+  const handleToggleMobilitySubModule = async (tenantId: string, subKey: string) => {
+    const tenant = tenants.find((t) => t.id === tenantId);
+    if (!tenant) return;
+
+    const currentSubs = tenant.mobilitySubModules || {
+      ops: true,
+      vehicles: true,
+      drivers: true,
+      maintenance: true,
+      routes: true,
+      finance: true,
+      shuttle: true,
+      interstate: true,
+      on_demand: true,
+      rental: true,
+      school: true,
+      staff: true,
+    };
+    const newStatus = !currentSubs[subKey];
+    const updatedSubs = { ...currentSubs, [subKey]: newStatus };
+    const updatedModules = { ...(tenant.erpModules || {}), [subKey]: newStatus };
+
+    // Update local state immediately
+    setTenants((prev) =>
+      prev.map((t) =>
+        t.id === tenantId
+          ? { ...t, mobilitySubModules: updatedSubs, erpModules: updatedModules }
+          : t
+      )
+    );
+
+    // Persist to Neon Postgres DB
+    setSavingModuleKeys((prev) => ({ ...prev, [`mobility_${subKey}`]: true }));
+    setIsSavingDb(true);
+    try {
+      const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant", "dispatcher"];
+      const matrixPayload: Record<string, Record<string, boolean>> = {};
+
+      defaultRoleKeys.forEach((role) => {
+        matrixPayload[role] = {
+          ...(tenant.erpModules || {}),
+          ...(tenant.shopSubModules || {}),
+          ...updatedSubs,
+        };
+      });
+
+      await USER_API.saveTenantRBAC(tenant.slug, matrixPayload);
+      const subItem = MOBILITY_SUB_MODULES.find((s) => s.key === subKey);
+      showToast(`⚡ ${tenant.name}: '${subItem?.shortLabel || subKey}' sub-module ${newStatus ? "enabled" : "disabled"}`);
+    } catch (err) {
+      console.warn("Failed to persist mobility sub-module toggle:", err);
+      showToast(`${tenant.name}: Sub-module toggled locally`);
+    } finally {
+      setIsSavingDb(false);
+      setSavingModuleKeys((prev) => ({ ...prev, [`mobility_${subKey}`]: false }));
+    }
+  };
+
+  // Bulk toggle Mobility Sub-Modules
+  const handleBulkToggleMobilitySubModules = async (tenantId: string, enableAll: boolean) => {
+    const tenant = tenants.find((t) => t.id === tenantId);
+    if (!tenant) return;
+
+    const updatedSubs: Record<string, boolean> = {};
+    MOBILITY_SUB_MODULES.forEach((s) => {
+      updatedSubs[s.key] = enableAll;
+    });
+    const updatedModules = { ...(tenant.erpModules || {}), ...updatedSubs };
+
+    setTenants((prev) =>
+      prev.map((t) =>
+        t.id === tenantId
+          ? { ...t, mobilitySubModules: updatedSubs, erpModules: updatedModules }
+          : t
+      )
+    );
+
+    setIsSavingDb(true);
+    try {
+      const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant", "dispatcher"];
+      const matrixPayload: Record<string, Record<string, boolean>> = {};
+      defaultRoleKeys.forEach((role) => {
+        matrixPayload[role] = {
+          ...(tenant.erpModules || {}),
+          ...(tenant.shopSubModules || {}),
+          ...updatedSubs,
+        };
+      });
+      await USER_API.saveTenantRBAC(tenant.slug, matrixPayload);
+      showToast(`⚡ ${tenant.name}: All Mobility sub-modules ${enableAll ? "enabled" : "disabled"}`);
+    } catch {
+      showToast(`${tenant.name}: Mobility sub-modules updated locally`);
     } finally {
       setIsSavingDb(false);
     }
@@ -815,6 +973,15 @@ function TenantManagementContent() {
     }
 
     setIsSavingDb(true);
+    const defaultShopSubs: Record<string, boolean> = {};
+    SHOP_SUB_MODULES.forEach((s) => {
+      defaultShopSubs[s.key] = true;
+    });
+    const defaultMobilitySubs: Record<string, boolean> = {};
+    MOBILITY_SUB_MODULES.forEach((s) => {
+      defaultMobilitySubs[s.key] = true;
+    });
+
     const newTenant: TenantOrg = {
       id: `org-${String(tenants.length + 1).padStart(2, "0")}`,
       name: newOrgName,
@@ -833,6 +1000,8 @@ function TenantManagementContent() {
       monthlyAiSpendUSD: 0,
       integrationHealth: "Healthy",
       erpModules: newErpModules,
+      shopSubModules: defaultShopSubs,
+      mobilitySubModules: defaultMobilitySubs,
       createdAt: new Date().toISOString().split("T")[0],
     };
 
@@ -852,11 +1021,13 @@ function TenantManagementContent() {
       }
 
       // Save initial RBAC matrix to Postgres TenantRolePermission table
-      const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant"];
+      const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant", "dispatcher"];
       const matrixPayload: Record<string, Record<string, boolean>> = {};
       defaultRoleKeys.forEach((role) => {
         matrixPayload[role] = {
           ...newErpModules,
+          ...defaultShopSubs,
+          ...defaultMobilitySubs,
         };
       });
       await USER_API.saveTenantRBAC(slug, matrixPayload).catch(() => null);
@@ -1592,6 +1763,271 @@ function TenantManagementContent() {
                           );
                         }
 
+                        if (mod.key === "mobility") {
+                          const mobilitySubs = focusedTenant.mobilitySubModules || {
+                            ops: true,
+                            vehicles: true,
+                            drivers: true,
+                            maintenance: true,
+                            routes: true,
+                            finance: true,
+                            shuttle: true,
+                            interstate: true,
+                            on_demand: true,
+                            rental: true,
+                            school: true,
+                            staff: true,
+                          };
+
+                          return (
+                            <div
+                              key={mod.key}
+                              className={cn(
+                                "col-span-1 sm:col-span-2 lg:col-span-3 p-5 sm:p-6 rounded-3xl border transition-all space-y-5",
+                                isEnabled
+                                  ? "bg-[var(--nexa-bg-base)] border-[#F59E0B]/40 shadow-sm ring-1 ring-[#F59E0B]/15"
+                                  : "bg-[var(--nexa-bg-base)]/30 border-[var(--nexa-border)]/50 opacity-75"
+                              )}
+                            >
+                              {/* MOBILITY CARD HEADER */}
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[var(--nexa-border)]">
+                                <div className="flex items-center gap-3.5">
+                                  <div
+                                    className={cn(
+                                      "w-12 h-12 rounded-2xl flex items-center justify-center text-white text-lg shrink-0 shadow-sm transition-transform",
+                                      isEnabled ? "bg-[#F59E0B]" : "bg-slate-400 dark:bg-slate-700 opacity-50"
+                                    )}
+                                  >
+                                    <Car className="w-6 h-6" />
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <h4 className="text-base font-black text-[var(--nexa-text-primary)]">
+                                        Ofia Mobility Manager
+                                      </h4>
+                                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30 uppercase">
+                                        Transport OS & Mobility
+                                      </span>
+                                      <span
+                                        className={cn(
+                                          "text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase",
+                                          isEnabled
+                                            ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                                            : "bg-rose-500/10 text-rose-600 border border-rose-500/20"
+                                        )}
+                                      >
+                                        {isEnabled ? "Module Active" : "Module Disabled"}
+                                      </span>
+                                    </div>
+                                    <p className="text-xs text-[var(--nexa-text-muted)] mt-0.5">
+                                      Operations control center, corporate vehicles & ROI, driver rosters, workshop compliance, route corridors, pricing margins, and 6 mobility service lines.
+                                    </p>
+                                  </div>
+                                </div>
+
+                                {/* MASTER TOGGLE BUTTON */}
+                                <div className="flex items-center gap-3 self-end sm:self-center">
+                                  <span className="text-xs font-bold text-[var(--nexa-text-secondary)]">
+                                    {isEnabled ? "Enabled" : "Disabled"}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (!isSaving) handleToggleModule(focusedTenant.id, "mobility");
+                                    }}
+                                    disabled={isSaving}
+                                    className={cn(
+                                      "w-12 h-6 rounded-full p-0.5 transition-colors shrink-0 relative cursor-pointer",
+                                      isEnabled ? "bg-[#F59E0B]" : "bg-slate-300 dark:bg-slate-700"
+                                    )}
+                                  >
+                                    <div
+                                      className={cn(
+                                        "w-5 h-5 rounded-full bg-white shadow-sm transform transition-transform flex items-center justify-center",
+                                        isEnabled ? "translate-x-6" : "translate-x-0"
+                                      )}
+                                    >
+                                      {isSaving && (
+                                        <Loader2 className="w-3 h-3 text-[#F59E0B] animate-spin" />
+                                      )}
+                                    </div>
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* MOBILITY QUICK STATS & CONSOLE LAUNCHER */}
+                              <div className="p-4 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-3">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <Radio className="w-4 h-4 text-[#F59E0B]" />
+                                      <h5 className="text-xs font-black uppercase tracking-wider text-[var(--nexa-text-primary)]">
+                                        Mobility Services & Dispatch Console
+                                      </h5>
+                                    </div>
+                                    <p className="text-[11px] text-[var(--nexa-text-muted)] mt-0.5">
+                                      Live telemetry, driver allocation queue, multi-tenant route scheduling, and automated pricing margins across 6 distinct passenger verticals.
+                                    </p>
+                                  </div>
+
+                                  <div className="flex items-center gap-2.5">
+                                    <a
+                                      href="/erp/ops/mobility"
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className={cn(
+                                        "px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5",
+                                        isEnabled
+                                          ? "bg-[#F59E0B]/10 border-[#F59E0B]/30 text-[#F59E0B] hover:bg-[#F59E0B]/20"
+                                          : "bg-[var(--nexa-bg-base)]/50 border-[var(--nexa-border)]/50 text-[var(--nexa-text-muted)] pointer-events-none opacity-50"
+                                      )}
+                                    >
+                                      <span>Launch Live Ops Console</span>
+                                      <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                  </div>
+                                </div>
+
+                                {/* ACTIVE SERVICE LINES PREVIEW PILL */}
+                                <div className="flex items-center gap-2.5 pt-2 border-t border-[var(--nexa-border)]/60 text-xs flex-wrap">
+                                  <div className="w-6 h-6 rounded-lg bg-[#F59E0B]/10 text-[#F59E0B] flex items-center justify-center shrink-0">
+                                    <Truck className="w-3.5 h-3.5" />
+                                  </div>
+                                  <span className="font-extrabold text-[var(--nexa-text-primary)]">
+                                    Transport OS Suite
+                                  </span>
+                                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#F59E0B]/10 text-[#F59E0B] border border-[#F59E0B]/20">
+                                    12 Sub-Modules Active: {MOBILITY_SUB_MODULES.filter((s) => mobilitySubs[s.key] ?? true).length}/12
+                                  </span>
+                                  <span className="text-[11px] text-[var(--nexa-text-muted)] truncate">
+                                    — Shuttle, Interstate, On-Demand, Rental, School & Corporate Staff
+                                  </span>
+                                  <a
+                                    href="/erp/admin/mobility"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="ml-auto text-[11px] font-mono text-[#F59E0B] hover:underline flex items-center gap-1"
+                                  >
+                                    Admin Command Centre <ExternalLink className="w-3 h-3" />
+                                  </a>
+                                </div>
+                              </div>
+
+                              {/* MOBILITY SUB-MODULES GRID */}
+                              <div className="space-y-3">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <Boxes className="w-4 h-4 text-[#F59E0B]" />
+                                    <h5 className="text-xs font-black uppercase tracking-wider text-[var(--nexa-text-primary)]">
+                                      Ofia Mobility Manager Sub-Modules ({MOBILITY_SUB_MODULES.length} Features)
+                                    </h5>
+                                  </div>
+
+                                  {isEnabled && (
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleBulkToggleMobilitySubModules(focusedTenant.id, true)}
+                                        className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-[#F59E0B]/10 text-[#F59E0B] hover:bg-[#F59E0B]/20 transition-colors cursor-pointer"
+                                      >
+                                        Enable All Sub-Modules
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleBulkToggleMobilitySubModules(focusedTenant.id, false)}
+                                        className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 transition-colors cursor-pointer"
+                                      >
+                                        Disable All
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {!isEnabled ? (
+                                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400 text-xs flex items-center gap-2.5">
+                                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                                    <span>
+                                      Ofia Mobility Manager is currently toggled OFF. Turn on the main module switch above to configure and activate individual mobility sub-modules.
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                                    {MOBILITY_SUB_MODULES.map((sub) => {
+                                      const isSubEnabled = mobilitySubs[sub.key] ?? true;
+                                      const isSubSaving = savingModuleKeys[`mobility_${sub.key}`];
+
+                                      return (
+                                        <div
+                                          key={sub.key}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (!isSubSaving) handleToggleMobilitySubModule(focusedTenant.id, sub.key);
+                                          }}
+                                          className={cn(
+                                            "p-3.5 rounded-2xl border transition-all flex items-center justify-between gap-3 cursor-pointer select-none group",
+                                            isSubEnabled
+                                              ? "bg-[var(--nexa-bg-surface)] border-[var(--nexa-border)] hover:border-[#F59E0B]/50 shadow-xs"
+                                              : "bg-[var(--nexa-bg-surface)]/40 border-[var(--nexa-border)]/50 opacity-60 hover:opacity-100",
+                                            isSubSaving && "opacity-75 cursor-wait"
+                                          )}
+                                        >
+                                          <div className="flex items-center gap-2.5 min-w-0">
+                                            <div
+                                              className={cn(
+                                                "w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs shrink-0 transition-transform group-hover:scale-105",
+                                                isSubEnabled
+                                                  ? "bg-[#F59E0B] shadow-xs"
+                                                  : "bg-slate-400 dark:bg-slate-700 opacity-50"
+                                              )}
+                                            >
+                                              {getModuleIcon(sub.iconName)}
+                                            </div>
+                                            <div className="min-w-0">
+                                              <div className="flex items-center gap-1.5">
+                                                <span className="text-xs font-bold text-[var(--nexa-text-primary)] truncate">
+                                                  {sub.shortLabel}
+                                                </span>
+                                                {sub.badge && isSubEnabled && (
+                                                  <span className="text-[8px] font-extrabold px-1.5 py-0.2 rounded-full bg-[#F59E0B]/15 text-[#F59E0B]">
+                                                    {sub.badge}
+                                                  </span>
+                                                )}
+                                              </div>
+                                              <p className="text-[10px] text-[var(--nexa-text-muted)] truncate max-w-[150px]">
+                                                {sub.description}
+                                              </p>
+                                            </div>
+                                          </div>
+
+                                          {/* SUB-TOGGLE SWITCH */}
+                                          <div
+                                            className={cn(
+                                              "w-9 h-5 rounded-full p-0.5 transition-colors shrink-0 relative",
+                                              isSubEnabled ? "bg-[#F59E0B]" : "bg-slate-300 dark:bg-slate-700"
+                                            )}
+                                          >
+                                            <div
+                                              className={cn(
+                                                "w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform flex items-center justify-center",
+                                                isSubEnabled ? "translate-x-4" : "translate-x-0"
+                                              )}
+                                            >
+                                              {isSubSaving && (
+                                                <Loader2 className="w-2.5 h-2.5 text-[#F59E0B] animate-spin" />
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        }
+
                         return (
                           <div
                             key={mod.key}
@@ -1830,12 +2266,16 @@ function TenantManagementContent() {
                           {SUPER_ADMIN_ERP_MODULES.map((mod) => {
                             const isEnabled = tenant.erpModules?.[mod.key] ?? true;
                             const isShop = mod.key === "shop";
+                            const isMobility = mod.key === "mobility";
                             const vertKey = tenant.vertical || "retail";
                             const vertObj =
                               TENANT_VERTICAL_ARCHETYPES.find((v) => v.id === vertKey) ||
                               TENANT_VERTICAL_ARCHETYPES[9];
-                            const activeSubsCount = isShop
+                            const activeShopSubsCount = isShop
                               ? SHOP_SUB_MODULES.filter((s) => tenant.shopSubModules?.[s.key] ?? true).length
+                              : 0;
+                            const activeMobilitySubsCount = isMobility
+                              ? MOBILITY_SUB_MODULES.filter((s) => tenant.mobilitySubModules?.[s.key] ?? true).length
                               : 0;
 
                             return (
@@ -1856,6 +2296,8 @@ function TenantManagementContent() {
                                       isEnabled
                                         ? isShop
                                           ? "bg-[#10B981]/15 text-[#10B981]"
+                                          : isMobility
+                                          ? "bg-[#F59E0B]/15 text-[#F59E0B]"
                                           : "bg-[#1A56DB]/10 text-[#1A56DB]"
                                         : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-muted)]"
                                     )}
@@ -1872,10 +2314,17 @@ function TenantManagementContent() {
                                           {vertObj.badge}
                                         </span>
                                       )}
+                                      {isMobility && isEnabled && (
+                                        <span className="text-[8px] font-extrabold px-1.5 py-0.2 rounded-full bg-[#F59E0B]/15 text-[#F59E0B] truncate">
+                                          Mobility
+                                        </span>
+                                      )}
                                     </div>
                                     <p className="text-[9px] text-[var(--nexa-text-muted)] font-mono truncate">
                                       {isShop && isEnabled
-                                        ? `${activeSubsCount}/7 subs · ${vertObj.name}`
+                                        ? `${activeShopSubsCount}/7 subs · ${vertObj.name}`
+                                        : isMobility && isEnabled
+                                        ? `${activeMobilitySubsCount}/${MOBILITY_SUB_MODULES.length} services · Active`
                                         : `/erp/${mod.key}`}
                                     </p>
                                   </div>
@@ -1887,6 +2336,8 @@ function TenantManagementContent() {
                                     isEnabled
                                       ? isShop
                                         ? "bg-[#10B981]"
+                                        : isMobility
+                                        ? "bg-[#F59E0B]"
                                         : "bg-[#1A56DB]"
                                       : "bg-[var(--nexa-border)]"
                                   )}

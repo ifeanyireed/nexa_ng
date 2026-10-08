@@ -59,6 +59,10 @@ import {
   Sparkles,
   Mail,
   X,
+  Car,
+  Bike,
+  Navigation,
+  MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -93,6 +97,7 @@ export interface SubNavItem {
   href: string;
   icon?: React.ReactNode;
   badge?: string;
+  group?: string;
 }
 
 export interface ErpAdminShellProps {
@@ -100,7 +105,7 @@ export interface ErpAdminShellProps {
   title?: string;
   subtitle?: string;
   action?: React.ReactNode;
-  activeModule?: "mission" | "ai" | "crm" | "marketplace" | "shop" | "inventory" | "pos" | "referrals" | "quests" | "finance" | "hr" | "md" | "employee" | "users" | "departments";
+  activeModule?: "mission" | "ai" | "crm" | "marketplace" | "shop" | "inventory" | "pos" | "referrals" | "quests" | "finance" | "hr" | "md" | "employee" | "users" | "departments" | "mobility" | "dispatch";
   subTabs?: SubNavItem[];
   isLoading?: boolean;
 }
@@ -202,7 +207,7 @@ export function ErpAdminShell({
       case "inventory_officer":
         return { path: "/erp/admin/shop/inventory", label: "Inventory", roleKey: "inventory_officer" };
       case "dispatcher":
-        return { path: "/erp/employee", label: "Employee", roleKey: "dispatcher" };
+        return { path: "/erp/ops/dispatch", label: "Dispatch", roleKey: "dispatcher" };
       case "admin":
       default:
         return { path: "/erp/admin", label: "Admin", roleKey: "admin" };
@@ -327,6 +332,15 @@ export function ErpAdminShell({
           badgeColor: "bg-amber-500/20 text-amber-300 border-amber-400/30",
           iconBg: "from-amber-600 to-orange-600",
         };
+      } else if (pathname.startsWith("/erp/ops")) {
+        origin = {
+          path: "/erp/ops/mobility",
+          label: "Ops",
+          title: "Operations Dispatch",
+          roleKey: "dispatcher",
+          badgeColor: "bg-blue-500/20 text-blue-300 border-blue-400/30",
+          iconBg: "from-blue-600 to-cyan-600",
+        };
       } else if (pathname.startsWith("/erp/employee")) {
         origin = {
           path: "/erp/employee",
@@ -418,6 +432,8 @@ export function ErpAdminShell({
           resolvedRole = "accountant";
         } else if (pathname.startsWith("/erp/marketer")) {
           resolvedRole = "marketer";
+        } else if (pathname.startsWith("/erp/ops")) {
+          resolvedRole = "dispatcher";
         } else if (pathname.startsWith("/erp/admin")) {
           resolvedRole = "admin";
         }
@@ -517,8 +533,10 @@ export function ErpAdminShell({
         if (pathname.includes("/admin/shop/inventory")) pageHeading = "Inventory Management";
         else if (pathname.includes("/admin/shop/pos")) pageHeading = "Point of Sale (POS)";
         else if (pathname.includes("/admin/shop/referrals")) pageHeading = "Referrals & Rewards";
-        else if (pathname.includes("/admin/shop")) pageHeading = "Shop & Retail";
-        else if (pathname.includes("/admin/logistics")) pageHeading = "Logistics & Fleet Dispatch";
+        else if (pathname.includes("/ops/mobility")) pageHeading = "Mobility Operations Console";
+        else if (pathname.includes("/admin/mobility")) pageHeading = "Ofia Mobility Manager";
+        else if (pathname.includes("/admin/dispatch")) pageHeading = "Ofia Dispatch Manager";
+        else if (pathname.includes("/ops/dispatch")) pageHeading = "Dispatch Operator";
         else if (pathname.includes("/admin/users")) pageHeading = "Staff Directory & Roles";
         else if (pathname.includes("/admin/ai")) pageHeading = "AI Swarm & Operations";
         else if (pathname.includes("/admin/marketplace")) pageHeading = "Marketplace & Compass";
@@ -571,6 +589,8 @@ export function ErpAdminShell({
     { label: "Ofia AI Swarm", icon: <Bot className="w-6 h-6" />, href: "/erp/admin/ai", badge: "15 AI", key: "ai", section: "Operations" },
     { label: "Ofia Compass Manager", icon: <ShoppingBag className="w-6 h-6" />, href: "/erp/admin/marketplace", key: "marketplace", section: "Operations" },
     { label: "Ofia Shop Manager", icon: <Store className="w-6 h-6" />, href: "/erp/admin/shop", badge: "Retail", key: "shop", section: "Operations" },
+    { label: "Ofia Mobility Manager", icon: <Truck className="w-6 h-6" />, href: "/erp/admin/mobility", badge: "Mobility", key: "mobility", section: "Operations" },
+    { label: "Ofia Dispatch Manager", icon: <Bike className="w-6 h-6" />, href: "/erp/admin/dispatch", badge: "Admin", key: "dispatch", section: "Operations" },
 
     // 2. OFIA ENTERPRISE SUITE
     { label: "CRM & Marketing", icon: <BarChart3 className="w-6 h-6" />, href: "/erp/admin/crm", badge: "CRM", key: "crm", section: "Ofia Enterprise Suite" },
@@ -579,6 +599,8 @@ export function ErpAdminShell({
     { label: "User Management", icon: <UserCheck className="w-6 h-6" />, href: "/erp/admin/users", badge: "Staff", key: "users", section: "Ofia Enterprise Suite" },
 
     // 3. PORTALS & WORKSPACES
+    { label: "Mobility Operations", icon: <Radio className="w-6 h-6" />, href: "/erp/ops/mobility", badge: "Live", key: "mobility_ops", section: "Portals & Team" },
+    { label: "Dispatch Operator", icon: <Bike className="w-6 h-6" />, href: "/erp/ops/dispatch", badge: "Live", key: "dispatch_ops", section: "Portals & Team" },
     { label: "Employee Portal", icon: <UserCheck className="w-6 h-6" />, href: "/erp/employee", key: "employee", section: "Portals & Team" },
     { label: "Manager Portal", icon: <Sliders className="w-6 h-6" />, href: "/erp/manager", key: "manager", section: "Portals & Team" },
     { label: "Executive Portal", icon: <TrendingUp className="w-6 h-6" />, href: "/erp/md", key: "md", section: "Portals & Team" },
@@ -587,6 +609,45 @@ export function ErpAdminShell({
   // Automatic sub navigation tabs according to current pathname
   const getSubTabs = (): SubNavItem[] => {
     if (subTabs !== undefined) return subTabs;
+
+    if (pathname.startsWith("/erp/admin/mobility")) {
+      return [
+        // Group 1: Fleet Management & Infrastructure
+        { label: "Fleet Command", href: "/erp/admin/mobility", icon: <LayoutDashboard className="w-3.5 h-3.5" />, group: "Fleet Management" },
+        { label: "Live Dispatch", href: "/erp/ops/mobility", icon: <Radio className="w-3.5 h-3.5" />, badge: "Live", group: "Fleet Management" },
+        { label: "Vehicles & ROI", href: "/erp/admin/mobility/vehicles", icon: <Truck className="w-3.5 h-3.5" />, group: "Fleet Management" },
+        { label: "Drivers", href: "/erp/admin/mobility/drivers", icon: <Users className="w-3.5 h-3.5" />, group: "Fleet Management" },
+        { label: "Maintenance", href: "/erp/admin/mobility/maintenance", icon: <Settings className="w-3.5 h-3.5" />, group: "Fleet Management" },
+        { label: "Routes & Zones", href: "/erp/admin/mobility/routes", icon: <MapPin className="w-3.5 h-3.5" />, group: "Fleet Management" },
+        { label: "Pricing Engine", href: "/erp/admin/mobility/finance", icon: <DollarSign className="w-3.5 h-3.5" />, group: "Fleet Management" },
+
+        // Group 2: Transport Services (The 6 Services)
+        { label: "Shuttle", href: "/erp/admin/mobility/services/shuttle", icon: <Clock className="w-3.5 h-3.5" />, group: "Transport Services" },
+        { label: "Interstate", href: "/erp/admin/mobility/services/interstate", icon: <Navigation className="w-3.5 h-3.5" />, group: "Transport Services" },
+        { label: "On-Demand", href: "/erp/admin/mobility/services/on-demand", icon: <Zap className="w-3.5 h-3.5" />, group: "Transport Services" },
+        { label: "Bus Rental", href: "/erp/admin/mobility/services/rental", icon: <Car className="w-3.5 h-3.5" />, group: "Transport Services" },
+        { label: "School Bus", href: "/erp/admin/mobility/services/school", icon: <Building2 className="w-3.5 h-3.5" />, group: "Transport Services" },
+        { label: "Staff Transport", href: "/erp/admin/mobility/services/staff", icon: <Users className="w-3.5 h-3.5" />, group: "Transport Services" },
+      ];
+    }
+
+    if (pathname.startsWith("/erp/ops/mobility")) {
+      return [
+        // Group 1: Job Assignment & Fleet Readiness
+        { label: "Live Dispatch Console", href: "/erp/ops/mobility", icon: <Radio className="w-3.5 h-3.5" />, badge: "Live", group: "Job Assignment" },
+        { label: "Driver Rosters", href: "/erp/admin/mobility/drivers", icon: <Users className="w-3.5 h-3.5" />, group: "Job Assignment" },
+        { label: "Active Vehicles", href: "/erp/admin/mobility/vehicles", icon: <Truck className="w-3.5 h-3.5" />, group: "Job Assignment" },
+
+        // Group 2: Services & Manifests (The 6 Services)
+        { label: "Shuttle Service", href: "/erp/admin/mobility/services/shuttle", icon: <Clock className="w-3.5 h-3.5" />, group: "Services & Manifests" },
+        { label: "Interstate Transit", href: "/erp/admin/mobility/services/interstate", icon: <Navigation className="w-3.5 h-3.5" />, group: "Services & Manifests" },
+        { label: "On-Demand Hailing", href: "/erp/admin/mobility/services/on-demand", icon: <Zap className="w-3.5 h-3.5" />, group: "Services & Manifests" },
+        { label: "Bus Rental Charters", href: "/erp/admin/mobility/services/rental", icon: <Car className="w-3.5 h-3.5" />, group: "Services & Manifests" },
+        { label: "School Bus Manifest", href: "/erp/admin/mobility/services/school", icon: <Building2 className="w-3.5 h-3.5" />, group: "Services & Manifests" },
+        { label: "Staff Commute Trips", href: "/erp/admin/mobility/services/staff", icon: <Users className="w-3.5 h-3.5" />, group: "Services & Manifests" },
+      ];
+    }
+
 
     if (pathname.startsWith("/erp/admin/users") || pathname.startsWith("/erp/admin/departments")) {
       return [
@@ -739,6 +800,16 @@ export function ErpAdminShell({
       if (key === "departments") {
         const isAdminAllowed = permissionMatrix.admin?.users !== false;
         const isTpAllowed = (permissionMatrix as any).tenant_provision?.users !== false;
+        return isAdminAllowed && isTpAllowed;
+      }
+      if (key === "mobility_ops") {
+        const isAdminAllowed = permissionMatrix.admin?.mobility !== false && permissionMatrix.admin?.ops !== false;
+        const isTpAllowed = (permissionMatrix as any).tenant_provision?.mobility !== false;
+        return isAdminAllowed && isTpAllowed;
+      }
+      if (key === "dispatch_ops") {
+        const isAdminAllowed = permissionMatrix.admin?.dispatch !== false;
+        const isTpAllowed = (permissionMatrix as any).tenant_provision?.dispatch !== false;
         return isAdminAllowed && isTpAllowed;
       }
       const isAdminAllowed = permissionMatrix.admin?.[key] !== false;
@@ -1197,64 +1268,145 @@ export function ErpAdminShell({
                 </div>
               )}
 
-              {/* HORIZONTAL SUB-NAVIGATION PILL TABS */}
-              {activeSubTabs.length > 0 && (
-                <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide border-b border-nexa-border pt-1">
-                  {activeSubTabs.map((tab, idx) => {
-                    const isTabActive = (() => {
-                      if (pathname === tab.href) return true;
-                      if (tab.href === "/erp/admin/shop") return pathname === "/erp/admin/shop";
-                      if (tab.href === "/erp/admin/shop/catalog") return pathname.startsWith("/erp/admin/shop/catalog");
-                      if (tab.href === "/erp/admin/shop/services") return pathname.startsWith("/erp/admin/shop/services");
-                      if (tab.href === "/erp/admin/shop/orders") return pathname.startsWith("/erp/admin/shop/orders");
-                      if (tab.href === "/erp/admin/shop/inventory") return pathname.startsWith("/erp/admin/shop/inventory");
-                      if (tab.href === "/erp/admin/shop/pos") return pathname.startsWith("/erp/admin/shop/pos");
-                      if (tab.href === "/erp/admin/shop/store") return pathname.startsWith("/erp/admin/shop/store");
-                      if (tab.href === "/erp/admin/shop/referrals") return pathname.startsWith("/erp/admin/shop/referrals");
-                      if (tab.href === "/erp/admin/users") return pathname === "/erp/admin/users";
-                      if (tab.href === "/erp/admin/departments") return pathname.startsWith("/erp/admin/departments");
-                      if (
-                        tab.href === "/erp/admin" ||
-                        tab.href === "/erp/admin/ai" ||
-                        tab.href === "/erp/marketer" ||
-                        tab.href === "/erp/admin/marketplace" ||
-                        tab.href === "/erp/accountant" ||
-                        tab.href === "/erp/hr" ||
-                        tab.href === "/erp/employee" ||
-                        tab.href === "/erp/manager"
-                      ) {
-                        return false;
-                      }
-                      return pathname.startsWith(tab.href);
-                    })();
-                    return (
-                      <Link href={tab.href} key={idx} className="shrink-0">
-                        <button
-                          className={cn(
-                            "px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-sm",
-                            isTabActive
-                              ? "bg-[#1A56DB] text-white shadow-md shadow-[#1A56DB]/25 font-bold border border-[#1A56DB]"
-                              : "bg-nexa-bg-surface hover:bg-nexa-bg-surface/80 text-nexa-text-secondary hover:text-nexa-text-primary border border-nexa-border hover:border-nexa-brand/30"
-                          )}
-                        >
-                          {tab.icon && <span>{tab.icon}</span>}
-                          <span>{tab.label}</span>
-                          {tab.badge && (
-                            <span
-                              className={cn(
-                                "text-[9px] px-1.5 py-0.2 rounded-full font-extrabold",
-                                isTabActive ? "bg-white text-[#1A56DB]" : "bg-[#1A56DB]/10 text-[#1A56DB]"
-                              )}
-                            >
-                              {tab.badge}
-                            </span>
-                          )}
-                        </button>
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
+              {/* HORIZONTAL SUB-NAVIGATION PILL TABS WITH GROUP SUPPORT */}
+              {activeSubTabs.length > 0 && (() => {
+                const tabGroups: { name: string; tabs: SubNavItem[] }[] = [];
+                activeSubTabs.forEach((tab) => {
+                  const gName = tab.group || "";
+                  let existing = tabGroups.find((g) => g.name === gName);
+                  if (!existing) {
+                    existing = { name: gName, tabs: [] };
+                    tabGroups.push(existing);
+                  }
+                  existing.tabs.push(tab);
+                });
+
+                const renderTabPill = (tab: SubNavItem, idx: number) => {
+                  const isTabActive = (() => {
+                    if (pathname === tab.href) return true;
+                    if (tab.href === "/erp/admin/shop") return pathname === "/erp/admin/shop";
+                    if (tab.href === "/erp/admin/shop/catalog") return pathname.startsWith("/erp/admin/shop/catalog");
+                    if (tab.href === "/erp/admin/shop/services") return pathname.startsWith("/erp/admin/shop/services");
+                    if (tab.href === "/erp/admin/shop/orders") return pathname.startsWith("/erp/admin/shop/orders");
+                    if (tab.href === "/erp/admin/shop/inventory") return pathname.startsWith("/erp/admin/shop/inventory");
+                    if (tab.href === "/erp/admin/shop/pos") return pathname.startsWith("/erp/admin/shop/pos");
+                    if (tab.href === "/erp/admin/shop/store") return pathname.startsWith("/erp/admin/shop/store");
+                    if (tab.href === "/erp/admin/shop/referrals") return pathname.startsWith("/erp/admin/shop/referrals");
+                    if (tab.href === "/erp/admin/users") return pathname === "/erp/admin/users";
+                    if (tab.href === "/erp/admin/departments") return pathname.startsWith("/erp/admin/departments");
+                    if (tab.href === "/erp/admin/mobility") return pathname === "/erp/admin/mobility";
+                    if (tab.href === "/erp/ops/mobility") return pathname === "/erp/ops/mobility";
+                    if (
+                      tab.href === "/erp/admin" ||
+                      tab.href === "/erp/admin/ai" ||
+                      tab.href === "/erp/marketer" ||
+                      tab.href === "/erp/admin/marketplace" ||
+                      tab.href === "/erp/accountant" ||
+                      tab.href === "/erp/hr" ||
+                      tab.href === "/erp/employee" ||
+                      tab.href === "/erp/manager"
+                    ) {
+                      return false;
+                    }
+                    return pathname.startsWith(tab.href);
+                  })();
+
+                  return (
+                    <Link href={tab.href} key={tab.href || idx} className="shrink-0">
+                      <button
+                        className={cn(
+                          "px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs",
+                          isTabActive
+                            ? "bg-[#1A56DB] text-white shadow-md shadow-[#1A56DB]/25 font-bold border border-[#1A56DB]"
+                            : "bg-nexa-bg-surface hover:bg-nexa-bg-surface/80 text-nexa-text-secondary hover:text-nexa-text-primary border border-nexa-border hover:border-nexa-brand/30"
+                        )}
+                      >
+                        {tab.icon && <span className="shrink-0">{tab.icon}</span>}
+                        <span className="whitespace-nowrap">{tab.label}</span>
+                        {tab.badge && (
+                          <span
+                            className={cn(
+                              "text-[9px] px-1.5 py-0.2 rounded-full font-extrabold",
+                              isTabActive ? "bg-white text-[#1A56DB]" : "bg-[#1A56DB]/10 text-[#1A56DB]"
+                            )}
+                          >
+                            {tab.badge}
+                          </span>
+                        )}
+                      </button>
+                    </Link>
+                  );
+                };
+
+                const hasMultipleGroups = tabGroups.length > 1;
+
+                // Detect which group matches the current route
+                const activeGroupFromRoute = tabGroups.find((g) =>
+                  g.tabs.some((t) => {
+                    if (pathname === t.href) return true;
+                    if (t.href === "/erp/admin/mobility") return pathname === "/erp/admin/mobility";
+                    if (t.href === "/erp/ops/mobility") return pathname === "/erp/ops/mobility";
+                    return pathname.startsWith(t.href);
+                  })
+                )?.name;
+
+                const currentGroupName = activeGroupFromRoute || tabGroups[0]?.name;
+                const currentGroupObj = tabGroups.find((g) => g.name === currentGroupName) || tabGroups[0];
+                const tabsToDisplay = hasMultipleGroups ? currentGroupObj.tabs : activeSubTabs;
+
+                return (
+                  <div className="space-y-2 border-b border-nexa-border pb-2 pt-1">
+                    {/* TIER 1: THE 2 TOP SUB-TABS (Only rendered when multiple groups exist) */}
+                    {hasMultipleGroups && (
+                      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                        {tabGroups.map((grp) => {
+                          const isGroupActive = grp.name === currentGroupName;
+                          const firstHref = grp.tabs[0]?.href || "#";
+
+                          return (
+                            <Link href={firstHref} key={grp.name} className="shrink-0">
+                              <button
+                                className={cn(
+                                  "px-4 py-2 rounded-xl text-xs flex items-center gap-2 transition-all cursor-pointer select-none",
+                                  isGroupActive
+                                    ? "bg-[#1A56DB] text-white shadow-md shadow-[#1A56DB]/25 font-black"
+                                    : "bg-nexa-bg-surface hover:bg-nexa-bg-surface/80 text-nexa-text-secondary hover:text-nexa-text-primary border border-nexa-border font-bold"
+                                )}
+                              >
+                                <span className={isGroupActive ? "text-white" : "text-nexa-text-muted"}>
+                                  {grp.name.includes("Fleet") ? (
+                                    <Truck className="w-3.5 h-3.5" />
+                                  ) : grp.name.includes("Job") ? (
+                                    <Radio className="w-3.5 h-3.5" />
+                                  ) : (
+                                    <Car className="w-3.5 h-3.5" />
+                                  )}
+                                </span>
+                                <span>{grp.name}</span>
+                                <span
+                                  className={cn(
+                                    "text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold",
+                                    isGroupActive
+                                      ? "bg-white/20 text-white"
+                                      : "bg-slate-200/80 dark:bg-slate-800 text-nexa-text-muted"
+                                  )}
+                                >
+                                  {grp.tabs.length} tabs
+                                </span>
+                              </button>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* TIER 2: TABS UNDER THE ACTIVE GROUP */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pt-0.5">
+                      {tabsToDisplay.map((tab, idx) => renderTabPill(tab, idx))}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* PAGE BODY */}
               <div className="pt-2">

@@ -18,6 +18,7 @@ export interface TenantOrg {
   erpModules?: Record<string, boolean>;
   vertical?: string;
   shopSubModules?: Record<string, boolean>;
+  mobilitySubModules?: Record<string, boolean>;
   logo?: string;
   loginImage?: string;
   heroTitle?: string;
@@ -55,6 +56,31 @@ export const SHOP_SUB_MODULES: ShopSubModuleItem[] = [
   { key: "referrals", label: "Viral Referrals", shortLabel: "Referrals", description: "Customer affiliate referral codes, commissions & leaderboard", iconName: "Gift", path: "/erp/admin/shop/referrals", badge: "Growth" },
 ];
 
+export interface MobilitySubModuleItem {
+  key: string;
+  label: string;
+  shortLabel: string;
+  description: string;
+  iconName: string;
+  path: string;
+  badge?: string;
+}
+
+export const MOBILITY_SUB_MODULES: MobilitySubModuleItem[] = [
+  { key: "ops", label: "Live Operations & Dispatch Console", shortLabel: "Ops Console", description: "Real-time map telemetry, driver dispatch queue, incident management", iconName: "Radio", path: "/erp/ops/mobility", badge: "Live" },
+  { key: "vehicles", label: "Corporate Vehicles & ROI", shortLabel: "Vehicles & ROI", description: "Vehicle registry, seating capacity, asset tracking and monthly ROI", iconName: "Truck", path: "/erp/admin/mobility/vehicles", badge: "Fleet" },
+  { key: "drivers", label: "Driver Roster & Performance", shortLabel: "Drivers & Roster", description: "Driver profiles, background checks, ratings, rosters and license compliance", iconName: "Users", path: "/erp/admin/mobility/drivers", badge: "Staff" },
+  { key: "maintenance", label: "Maintenance & Workshop Compliance", shortLabel: "Maintenance", description: "Service schedules, workshop repair jobs, and roadworthiness/insurance alerts", iconName: "Wrench", path: "/erp/admin/mobility/maintenance", badge: "Service" },
+  { key: "routes", label: "Routes & Station Corridors", shortLabel: "Routes & Zones", description: "Route corridors, bus stops, timetables and terminal mappings", iconName: "MapPin", path: "/erp/admin/mobility/routes", badge: "Transit" },
+  { key: "finance", label: "Pricing Engine & Margins", shortLabel: "Pricing Engine", description: "Trip simulator, fuel costs, driver allowance, tolls and margin calculation", iconName: "Calculator", path: "/erp/admin/mobility/finance", badge: "Finance" },
+  { key: "shuttle", label: "Daily Shuttle Commute", shortLabel: "Shuttle Service", description: "Commuter shuttle routes, seat maps, ticket reservations and passenger manifests", iconName: "Clock", path: "/erp/admin/mobility/services/shuttle", badge: "Commute" },
+  { key: "interstate", label: "Interstate Transit & Terminals", shortLabel: "Interstate Transit", description: "City-to-city long haul, terminal departure boards and passenger QR manifests", iconName: "Navigation", path: "/erp/admin/mobility/services/interstate", badge: "Transit" },
+  { key: "on_demand", label: "On-Demand Ride Dispatch", shortLabel: "On-Demand Dispatch", description: "Zonal ride-hailing boundaries, base fares, mileage pricing and surge rates", iconName: "Zap", path: "/erp/admin/mobility/services/on-demand", badge: "Hailing" },
+  { key: "rental", label: "Bus & Private Charters", shortLabel: "Bus Rental", description: "Private charters, corporate rentals, daily rates and quote approvals", iconName: "Car", path: "/erp/admin/mobility/services/rental", badge: "Hire" },
+  { key: "school", label: "School Transport & Guardians", shortLabel: "School Transport", description: "Partner school profiles, student manifests, guardian authorizations and absence alerts", iconName: "School", path: "/erp/admin/mobility/services/school", badge: "Campus" },
+  { key: "staff", label: "Staff Corporate Commute", shortLabel: "Staff Commute", description: "Corporate employer contracts, employee subscriptions, and commuter routes", iconName: "Building2", path: "/erp/admin/mobility/services/staff", badge: "Corporate" },
+];
+
 export interface VerticalArchetype {
   id: string;
   name: string;
@@ -85,6 +111,7 @@ export const SUPER_ADMIN_ERP_MODULES: ErpModuleItem[] = [
   { key: "accounting", label: "Accounting & Ledgers", category: "People & Finance", description: "General ledger, charts of accounts, trial balance, and tax remittances.", iconName: "Layers", color: "#0E9F6E", badge: "GL" },
   { key: "hr", label: "HR & Appraisals", category: "People & Finance", description: "Employee roster, KPI appraisal cycles, reviews, and team retreat quests.", iconName: "Users", color: "#9061F9" },
   { key: "mobility", label: "Ofia Mobility Manager", category: "Operations", description: "Corporate commute, route scheduling, assigned drivers, and vehicle ROI.", iconName: "Car", color: "#F59E0B", badge: "Mobility" },
+  { key: "dispatch", label: "Ofia Dispatch Manager", category: "Operations", description: "Operational control center for dispatch agents, waybill tracking, and rider allocation.", iconName: "Bike", color: "#3B82F6", badge: "Live" },
   { key: "users", label: "User Management", category: "People & Finance", description: "Corporate staff directory, 10-tier role governance, departmental hierarchy, and cost centers.", iconName: "Users", color: "#0069FF", badge: "Staff" },
 ];
 
@@ -205,6 +232,7 @@ export const INITIAL_TENANTS: TenantOrg[] = [
       crm: true,
       marketplace: true,
       shop: true,
+      mobility: true,
       accounting: true,
       hr: true,
       users: true,
@@ -218,6 +246,20 @@ export const INITIAL_TENANTS: TenantOrg[] = [
       orders: true,
       store: true,
       referrals: true,
+    },
+    mobilitySubModules: {
+      ops: true,
+      vehicles: true,
+      drivers: true,
+      maintenance: true,
+      routes: true,
+      finance: true,
+      shuttle: true,
+      interstate: true,
+      on_demand: true,
+      rental: true,
+      school: true,
+      staff: true,
     },
     createdAt: "2026-06-15",
   },
@@ -245,6 +287,7 @@ export const INITIAL_TENANTS: TenantOrg[] = [
       crm: true,
       marketplace: true,
       shop: true,
+      mobility: true,
       accounting: true,
       hr: true,
       users: true,
@@ -258,6 +301,20 @@ export const INITIAL_TENANTS: TenantOrg[] = [
       orders: true,
       store: true,
       referrals: true,
+    },
+    mobilitySubModules: {
+      ops: true,
+      vehicles: true,
+      drivers: true,
+      maintenance: true,
+      routes: true,
+      finance: true,
+      shuttle: true,
+      interstate: true,
+      on_demand: true,
+      rental: true,
+      school: true,
+      staff: true,
     },
     createdAt: "2026-05-01",
   },

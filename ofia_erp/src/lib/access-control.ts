@@ -155,6 +155,22 @@ export const ERP_MODULES: ErpModuleDef[] = [
     badge: "Retail",
   },
   {
+    key: "mobility",
+    label: "Ofia Mobility Manager",
+    category: "Operations",
+    description: "Fleet telemetry, multi-modal transport services, live dispatch console, driver rosters, and vehicle ROI.",
+    href: "/erp/admin/mobility",
+    badge: "Mobility",
+  },
+  {
+    key: "dispatch",
+    label: "Ofia Dispatch Manager",
+    category: "Operations",
+    description: "Operational control center for dispatch agents, waybill tracking, and rider allocation.",
+    href: "/erp/admin/dispatch",
+    badge: "Admin",
+  },
+  {
     key: "accounting",
     label: "Accounting & Ledgers",
     category: "Ofia Enterprise Suite",
@@ -198,6 +214,22 @@ export const ERP_MODULES: ErpModuleDef[] = [
     description: "Enterprise-wide departmental rankings, averages, and executive audit.",
     href: "/erp/md",
   },
+  {
+    key: "mobility_ops",
+    label: "Mobility Operations",
+    category: "Portals & Team",
+    description: "Real-time dispatch, vehicle telemetry, active trip queue, and incident management.",
+    href: "/erp/ops/mobility",
+    badge: "Live",
+  },
+  {
+    key: "dispatch_ops",
+    label: "Dispatch Operator",
+    category: "Portals & Team",
+    description: "Operational control center for dispatch agents, waybill tracking, and rider allocation.",
+    href: "/erp/ops/dispatch",
+    badge: "Live",
+  },
 ];
 
 export type PermissionMatrix = Record<RoleKey, Record<string, boolean>>;
@@ -211,6 +243,10 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     departments: true,
     marketplace: true,
     shop: true,
+    mobility: true,
+    mobility_ops: true,
+    dispatch: true,
+    dispatch_ops: true,
     inventory: true,
     pos: true,
     referrals: true,
@@ -229,6 +265,8 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     departments: true,
     marketplace: true,
     shop: true,
+    mobility: true,
+    mobility_ops: true,
     inventory: true,
     pos: true,
     referrals: true,
@@ -247,6 +285,7 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     departments: true,
     marketplace: false,
     shop: false,
+    mobility: false,
     inventory: false,
     pos: false,
     referrals: false,
@@ -265,6 +304,7 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     departments: false,
     marketplace: false,
     shop: true,
+    mobility: false,
     inventory: true,
     pos: true,
     referrals: false,
@@ -283,6 +323,7 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     departments: false,
     marketplace: true,
     shop: true,
+    mobility: false,
     inventory: false,
     pos: false,
     referrals: true,
@@ -301,6 +342,8 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     departments: false,
     marketplace: false,
     shop: true,
+    mobility: true,
+    mobility_ops: true,
     inventory: true,
     pos: false,
     referrals: false,
@@ -319,6 +362,7 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     departments: false,
     marketplace: false,
     shop: false,
+    mobility: false,
     inventory: false,
     pos: false,
     referrals: false,
@@ -337,6 +381,7 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     departments: false,
     marketplace: false,
     shop: true,
+    mobility: false,
     inventory: true,
     pos: true,
     referrals: false,
@@ -355,6 +400,7 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     departments: false,
     marketplace: false,
     shop: true,
+    mobility: false,
     inventory: true,
     pos: false,
     referrals: false,
@@ -373,6 +419,10 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     departments: false,
     marketplace: false,
     shop: false,
+    mobility: true,
+    mobility_ops: true,
+    dispatch: true,
+    dispatch_ops: true,
     inventory: false,
     pos: false,
     referrals: false,
@@ -582,6 +632,11 @@ export function useTenantProvisioning() {
         const isTenantProvisionAllowed = (matrix as any).tenant_provision?.users !== false;
         return isAdminAllowed && isTenantProvisionAllowed;
       }
+      if (moduleKey === "dispatch_ops") {
+        const isAdminAllowed = matrix.admin?.dispatch !== false;
+        const isTenantProvisionAllowed = (matrix as any).tenant_provision?.dispatch !== false;
+        return isAdminAllowed && isTenantProvisionAllowed;
+      }
       const isAdminAllowed = matrix.admin?.[moduleKey] !== false;
       const isTenantProvisionAllowed = (matrix as any).tenant_provision?.[moduleKey] !== false;
       return isAdminAllowed && isTenantProvisionAllowed;
@@ -612,14 +667,14 @@ export const ROLE_CAPABILITIES: Record<RoleKey, RoleCapability> = {
   admin: {
     key: "admin",
     label: "Tenant Administrator",
-    controlPanels: ["overview", "ai", "crm", "marketplace", "shop", "accounting", "hr", "users", "departments"],
+    controlPanels: ["overview", "ai", "crm", "marketplace", "shop", "mobility", "mobility_ops", "dispatch", "dispatch_ops", "accounting", "hr", "users", "departments"],
     portals: ["employee", "manager", "md"],
     homeRoute: "/erp/admin",
   },
   md: {
     key: "md",
     label: "Managing Director",
-    controlPanels: ["accounting", "hr", "crm", "shop"],
+    controlPanels: ["accounting", "hr", "crm", "shop", "mobility", "mobility_ops"],
     portals: ["md", "employee"],
     homeRoute: "/erp/md",
   },
@@ -660,10 +715,10 @@ export const ROLE_CAPABILITIES: Record<RoleKey, RoleCapability> = {
   },
   dispatcher: {
     key: "dispatcher",
-    label: "Logistics Lead",
-    controlPanels: [],
+    label: "Dispatch Operator",
+    controlPanels: ["dispatch", "dispatch_ops", "mobility", "mobility_ops"],
     portals: ["employee"],
-    homeRoute: "/erp/employee",
+    homeRoute: "/erp/ops/dispatch",
   },
   inventory_officer: {
     key: "inventory_officer",
@@ -732,7 +787,7 @@ export function isNavItemVisibleForRole(
     if (itemKey === "md" || itemKey === "employee") return true;
     if (itemKey === "manager") return isLineManager;
     // MD also has executive control panel visibility into provisioned modules
-    const mdExecutivePanels = ["accounting", "hr", "crm", "shop"];
+    const mdExecutivePanels = ["accounting", "hr", "crm", "shop", "mobility", "mobility_ops"];
     return mdExecutivePanels.includes(itemKey);
   }
 

@@ -39,7 +39,13 @@ const nextConfig: NextConfig = {
       { source: '/referrals', destination: '/erp/admin/shop/referrals' },
       { source: '/referrals/:path*', destination: '/erp/admin/shop/referrals/:path*' },
       { source: '/users', destination: '/erp/admin/users' },
-      { source: '/users/:path*', destination: '/erp/admin/users/:path*' }
+      { source: '/users/:path*', destination: '/erp/admin/users/:path*' },
+      { source: '/ops/mobility', destination: '/erp/ops/mobility' },
+      { source: '/ops/mobility/:path*', destination: '/erp/ops/mobility/:path*' },
+      { source: '/ops/dispatch', destination: '/erp/ops/dispatch' },
+      { source: '/ops/dispatch/:path*', destination: '/erp/ops/dispatch/:path*' },
+      { source: '/mobility', destination: '/erp/admin/mobility' },
+      { source: '/mobility/:path*', destination: '/erp/admin/mobility/:path*' }
     ];
   }
 };

@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { getCrmEmailBlasts, createCrmEmailBlast, getCrmSubscribers } from "@/lib/crm-service";
 import { queueMassEmailCampaign, processEmailQueueBatch } from "@/lib/email-service";
+import { getValidatedTenantSlug } from "@/lib/crm-tenant";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const tenantSlug = searchParams.get("tenant") || searchParams.get("slug") || "default";
+    const tenantSlug = getValidatedTenantSlug(request);
     const blasts = await getCrmEmailBlasts(tenantSlug);
     return NextResponse.json({ success: true, blasts });
   } catch (err: any) {
@@ -18,7 +18,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { tenantSlug = "default", dispatchNow = false, recipients = [], ...blastData } = body;
+    const tenantSlug = getValidatedTenantSlug(request, body);
+    const { dispatchNow = false, recipients = [], ...blastData } = body;
 
     const blast = await createCrmEmailBlast(tenantSlug, {
       ...blastData,

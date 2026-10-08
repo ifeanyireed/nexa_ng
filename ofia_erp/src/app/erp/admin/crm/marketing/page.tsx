@@ -30,9 +30,8 @@ import { NexaModal } from "@/components/nexa/NexaModal";
 import {
   CrmEmailBlast,
   CrmEmailList,
-  DEFAULT_CRM_BLASTS,
-  DEFAULT_CRM_LISTS,
 } from "@/lib/crm-service";
+import { crmFetch } from "@/lib/crm-client";
 
 export default function EmailMarketingBlastsPage() {
   const [blasts, setBlasts] = useState<CrmEmailBlast[]>([]);
@@ -59,19 +58,18 @@ export default function EmailMarketingBlastsPage() {
     async function loadData() {
       try {
         const [blastsRes, listsRes] = await Promise.all([
-          fetch("/api/erp/crm/blasts").then((r) => r.json()).catch(() => null),
-          fetch("/api/erp/crm/lists").then((r) => r.json()).catch(() => null),
+          crmFetch("/api/erp/crm/blasts").then((r) => r.json()).catch(() => null),
+          crmFetch("/api/erp/crm/lists").then((r) => r.json()).catch(() => null),
         ]);
 
         if (blastsRes?.blasts) setBlasts(blastsRes.blasts);
-        else setBlasts(DEFAULT_CRM_BLASTS.map((b) => ({ ...b, tenantSlug: "default" })));
+        else setBlasts([]);
 
         if (listsRes?.lists) {
           setLists(listsRes.lists);
           if (listsRes.lists.length > 0) setSelectedListId(listsRes.lists[0].id);
         } else {
-          setLists(DEFAULT_CRM_LISTS.map((l) => ({ ...l, tenantSlug: "default" })));
-          setSelectedListId("LIST-01");
+          setLists([]);
         }
       } catch (err) {
         console.warn("Using offline email marketing state:", err);
@@ -117,9 +115,8 @@ export default function EmailMarketingBlastsPage() {
     };
 
     try {
-      const res = await fetch("/api/erp/crm/blasts", {
+      const res = await crmFetch("/api/erp/crm/blasts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const data = await res.json();

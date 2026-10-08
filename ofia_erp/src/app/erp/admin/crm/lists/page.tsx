@@ -23,7 +23,8 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaModal } from "@/components/nexa/NexaModal";
-import { CrmEmailList, DEFAULT_CRM_LISTS } from "@/lib/crm-service";
+import { CrmEmailList } from "@/lib/crm-service";
+import { crmFetch } from "@/lib/crm-client";
 
 export default function AudienceListsPage() {
   const [lists, setLists] = useState<CrmEmailList[]>([]);
@@ -46,11 +47,11 @@ export default function AudienceListsPage() {
   useEffect(() => {
     async function loadLists() {
       try {
-        const res = await fetch("/api/erp/crm/lists").then((r) => r.json());
+        const res = await crmFetch("/api/erp/crm/lists").then((r) => r.json());
         if (res?.lists) setLists(res.lists);
-        else setLists(DEFAULT_CRM_LISTS.map((l) => ({ ...l, tenantSlug: "default" })));
+        else setLists([]);
       } catch {
-        setLists(DEFAULT_CRM_LISTS.map((l) => ({ ...l, tenantSlug: "default" })));
+        setLists([]);
       } finally {
         setIsLoading(false);
       }
@@ -73,9 +74,8 @@ export default function AudienceListsPage() {
     };
 
     try {
-      const res = await fetch("/api/erp/crm/lists", {
+      const res = await crmFetch("/api/erp/crm/lists", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
@@ -115,9 +115,8 @@ export default function AudienceListsPage() {
     }
 
     try {
-      const res = await fetch("/api/erp/crm/lists/subscribers", {
+      const res = await crmFetch("/api/erp/crm/lists/subscribers", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           listId: activeList.id,
           subscribers: emailLines.map((em) => ({ email: em })),

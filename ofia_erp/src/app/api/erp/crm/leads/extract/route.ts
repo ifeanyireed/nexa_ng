@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { createCrmLead } from "@/lib/crm-service";
+import { getValidatedTenantSlug } from "@/lib/crm-tenant";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { tenantSlug = "default", query = "High-Growth Nigerian Enterprises", location = "Lagos & Abuja", targetSize = 5 } = body;
+    const tenantSlug = getValidatedTenantSlug(request, body);
+    const { query = "High-Growth Nigerian Enterprises", location = "Lagos & Abuja", targetSize = 5 } = body;
 
     const sampleDomains = [
       { company: "Prime Atlantic Cegelec", ind: "Oil & Gas Support", loc: "Victoria Island, Lagos", contact: "Engr. Folake Adeleke", title: "Procurement Director", email: "f.adeleke@pacegelec.com", phone: "+2348021122334", signals: ["Active tender for facilities modernization", "Expanding supply base"] },

@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { getCrmSubscribers, addCrmSubscriber, bulkAddCrmSubscribers, deleteCrmSubscriber } from "@/lib/crm-service";
+import { getValidatedTenantSlug } from "@/lib/crm-tenant";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
+    const tenantSlug = getValidatedTenantSlug(request);
     const { searchParams } = new URL(request.url);
-    const tenantSlug = searchParams.get("tenant") || searchParams.get("slug") || "default";
     const listId = searchParams.get("listId");
     if (!listId) {
       return NextResponse.json({ error: "listId query param is required" }, { status: 400 });
@@ -21,7 +22,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { tenantSlug = "default", listId, subscriber, subscribers } = body;
+    const tenantSlug = getValidatedTenantSlug(request, body);
+    const { listId, subscriber, subscribers } = body;
     if (!listId) {
       return NextResponse.json({ error: "listId is required" }, { status: 400 });
     }
@@ -46,7 +48,7 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
-    const tenantSlug = searchParams.get("tenant") || searchParams.get("slug") || "default";
+    const tenantSlug = getValidatedTenantSlug(request);
     if (!id) {
       return NextResponse.json({ error: "Subscriber ID is required" }, { status: 400 });
     }

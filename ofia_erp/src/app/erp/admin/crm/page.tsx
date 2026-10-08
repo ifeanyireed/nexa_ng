@@ -38,12 +38,8 @@ import {
   CrmEmailBlast,
   CrmEmailList,
   CrmActivity,
-  DEFAULT_CRM_DEALS,
-  DEFAULT_CRM_LEADS,
-  DEFAULT_CRM_BLASTS,
-  DEFAULT_CRM_LISTS,
-  DEFAULT_CRM_ACTIVITIES,
 } from "@/lib/crm-service";
+import { crmFetch } from "@/lib/crm-client";
 
 export default function CrmDashboardPage() {
   const [deals, setDeals] = useState<CrmDeal[]>([]);
@@ -67,27 +63,27 @@ export default function CrmDashboardPage() {
     async function loadCrmData() {
       try {
         const [dealsRes, leadsRes, blastsRes, listsRes, activitiesRes] = await Promise.all([
-          fetch("/api/erp/crm/deals").then((r) => r.json()).catch(() => null),
-          fetch("/api/erp/crm/leads").then((r) => r.json()).catch(() => null),
-          fetch("/api/erp/crm/blasts").then((r) => r.json()).catch(() => null),
-          fetch("/api/erp/crm/lists").then((r) => r.json()).catch(() => null),
-          fetch("/api/erp/crm/activities").then((r) => r.json()).catch(() => null),
+          crmFetch("/api/erp/crm/deals").then((r) => r.json()).catch(() => null),
+          crmFetch("/api/erp/crm/leads").then((r) => r.json()).catch(() => null),
+          crmFetch("/api/erp/crm/blasts").then((r) => r.json()).catch(() => null),
+          crmFetch("/api/erp/crm/lists").then((r) => r.json()).catch(() => null),
+          crmFetch("/api/erp/crm/activities").then((r) => r.json()).catch(() => null),
         ]);
 
         if (dealsRes?.deals) setDeals(dealsRes.deals);
-        else setDeals(DEFAULT_CRM_DEALS.map((d) => ({ ...d, tenantSlug: "default" })));
+        else setDeals([]);
 
         if (leadsRes?.leads) setLeads(leadsRes.leads);
-        else setLeads(DEFAULT_CRM_LEADS.map((l) => ({ ...l, tenantSlug: "default" })));
+        else setLeads([]);
 
         if (blastsRes?.blasts) setBlasts(blastsRes.blasts);
-        else setBlasts(DEFAULT_CRM_BLASTS.map((b) => ({ ...b, tenantSlug: "default" })));
+        else setBlasts([]);
 
         if (listsRes?.lists) setLists(listsRes.lists);
-        else setLists(DEFAULT_CRM_LISTS.map((l) => ({ ...l, tenantSlug: "default" })));
+        else setLists([]);
 
         if (activitiesRes?.activities) setActivities(activitiesRes.activities);
-        else setActivities(DEFAULT_CRM_ACTIVITIES.map((a) => ({ ...a, tenantSlug: "default" })));
+        else setActivities([]);
       } catch (err) {
         console.warn("Using offline CRM state:", err);
       } finally {
@@ -102,9 +98,8 @@ export default function CrmDashboardPage() {
     if (!newDealTitle.trim() || !newDealCompany.trim()) return;
 
     try {
-      const res = await fetch("/api/erp/crm/deals", {
+      const res = await crmFetch("/api/erp/crm/deals", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: newDealTitle.trim(),
           company: newDealCompany.trim(),

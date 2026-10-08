@@ -527,6 +527,10 @@ function cleanSlug(slug: string): string {
   return (slug || "default").trim().toLowerCase();
 }
 
+function generateCrmId(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+}
+
 // 1. DEALS
 export async function getCrmDeals(tenantSlug: string): Promise<CrmDeal[]> {
   const slug = cleanSlug(tenantSlug);
@@ -535,20 +539,22 @@ export async function getCrmDeals(tenantSlug: string): Promise<CrmDeal[]> {
     if (pool) {
       await ensureTablesExist();
 
-      // Ensure all 10 default deals across all stages exist in DB
-      for (const d of DEFAULT_CRM_DEALS) {
-        await pool.query(
-          `INSERT INTO crm_deals (id, tenant_slug, title, company, contact_name, email, phone, value, stage, owner, probability, expected_close, notes)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-           ON CONFLICT (id) DO NOTHING`,
-          [d.id, slug, d.title, d.company, d.contactName, d.email, d.phone, d.value, d.stage, d.owner, d.probability, d.expectedClose, d.notes || ""]
-        ).catch(() => {});
+      // Only seed default demo tenant with default deals
+      if (slug === "default") {
+        for (const d of DEFAULT_CRM_DEALS) {
+          await pool.query(
+            `INSERT INTO crm_deals (id, tenant_slug, title, company, contact_name, email, phone, value, stage, owner, probability, expected_close, notes)
+             VALUES ($1, 'default', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+             ON CONFLICT (id) DO NOTHING`,
+            [d.id, d.title, d.company, d.contactName, d.email, d.phone, d.value, d.stage, d.owner, d.probability, d.expectedClose, d.notes || ""]
+          ).catch(() => {});
+        }
       }
 
       const res = await pool.query(
         `SELECT id, tenant_slug, title, company, contact_name, email, phone, value, stage, owner, probability, expected_close, notes, account_id, lead_id, created_at, updated_at
          FROM crm_deals
-         WHERE LOWER(tenant_slug) = $1 OR LOWER(tenant_slug) = 'default'
+         WHERE LOWER(tenant_slug) = $1
          ORDER BY created_at DESC`,
         [slug]
       );
@@ -573,23 +579,29 @@ export async function getCrmDeals(tenantSlug: string): Promise<CrmDeal[]> {
           updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : undefined,
         }));
       }
+      if (slug !== "default") {
+        return [];
+      }
     }
   } catch (err) {
     console.warn("Neon DB getCrmDeals error, falling back to cache:", err);
   }
 
   const cached = memoryDeals.get(slug);
-  if (cached && cached.length > 0) return cached;
+  if (cached) return cached;
 
-  const seeded = DEFAULT_CRM_DEALS.map((d) => ({ ...d, tenantSlug: slug }));
-  memoryDeals.set(slug, seeded);
-  return seeded;
+  if (slug === "default") {
+    const seeded = DEFAULT_CRM_DEALS.map((d) => ({ ...d, tenantSlug: slug }));
+    memoryDeals.set(slug, seeded);
+    return seeded;
+  }
+  return [];
 }
 
 export async function createCrmDeal(tenantSlug: string, deal: Partial<CrmDeal>): Promise<CrmDeal> {
   const slug = cleanSlug(tenantSlug);
   const newDeal: CrmDeal = {
-    id: deal.id || `DEAL-${Date.now().toString().slice(-4)}`,
+    id: deal.id || generateCrmId("DEAL"),
     tenantSlug: slug,
     title: deal.title || "Untitled Deal",
     company: deal.company || "Unknown Company",
@@ -637,7 +649,7 @@ export async function createCrmDeal(tenantSlug: string, deal: Partial<CrmDeal>):
     console.warn("Neon DB createCrmDeal error, storing in memory:", err);
   }
 
-  const list = memoryDeals.get(slug) || DEFAULT_CRM_DEALS.map((d) => ({ ...d, tenantSlug: slug }));
+  const list = memoryDeals.get(slug) || (slug === "default" ? DEFAULT_CRM_DEALS.map((d) => ({ ...d, tenantSlug: slug })) : []);
   list.unshift(newDeal);
   memoryDeals.set(slug, list);
   return newDeal;
@@ -698,7 +710,7 @@ export async function updateCrmDeal(tenantSlug: string, id: string, updates: Par
       const res = await pool.query(
         `UPDATE crm_deals
          SET ${fields.join(", ")}
-         WHERE id = $${idx++} AND (LOWER(tenant_slug) = $${idx++} OR LOWER(tenant_slug) = 'default')
+         WHERE id = $${idx++} AND LOWER(tenant_slug) = $${idx++}
          RETURNING id, tenant_slug, title, company, contact_name, email, phone, value, stage, owner, probability, expected_close, notes, account_id, lead_id, created_at, updated_at`,
         values
       );
@@ -729,7 +741,7 @@ export async function updateCrmDeal(tenantSlug: string, id: string, updates: Par
     console.warn("Neon DB updateCrmDeal error, updating cache fallback:", err);
   }
 
-  const list = memoryDeals.get(slug) || DEFAULT_CRM_DEALS.map((d) => ({ ...d, tenantSlug: slug }));
+  const list = memoryDeals.get(slug) || (slug === "default" ? DEFAULT_CRM_DEALS.map((d) => ({ ...d, tenantSlug: slug })) : []);
   const itemIdx = list.findIndex((d) => d.id === id);
   if (itemIdx !== -1) {
     list[itemIdx] = { ...list[itemIdx], ...updates, updatedAt: new Date().toISOString() };
@@ -746,7 +758,7 @@ export async function deleteCrmDeal(tenantSlug: string, id: string): Promise<boo
     if (pool) {
       await ensureTablesExist();
       await pool.query(
-        `DELETE FROM crm_deals WHERE id = $1 AND (LOWER(tenant_slug) = $2 OR LOWER(tenant_slug) = 'default')`,
+        `DELETE FROM crm_deals WHERE id = $1 AND LOWER(tenant_slug) = $2`,
         [id, slug]
       );
     }
@@ -766,10 +778,23 @@ export async function getCrmLeads(tenantSlug: string): Promise<CrmLead[]> {
     const pool = getDbPool();
     if (pool) {
       await ensureTablesExist();
+
+      // Only seed default demo tenant with default leads
+      if (slug === "default") {
+        for (const l of DEFAULT_CRM_LEADS) {
+          await pool.query(
+            `INSERT INTO crm_leads (id, tenant_slug, company_name, website, industry, location, contact_name, contact_title, contact_email, contact_phone, icp_fit_score, buying_signals, status, assigned_rep, source, notes, created_at, updated_at)
+             VALUES ($1, 'default', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW(), NOW())
+             ON CONFLICT (id) DO NOTHING`,
+            [l.id, l.companyName, l.website || "", l.industry, l.location, l.contactName, l.contactTitle, l.contactEmail, l.contactPhone || "", l.icpFitScore, JSON.stringify(l.buyingSignals), l.status, l.assignedRep, l.source, l.notes || ""]
+          ).catch(() => {});
+        }
+      }
+
       const res = await pool.query(
         `SELECT id, tenant_slug, company_name, website, industry, location, contact_name, contact_title, contact_email, contact_phone, icp_fit_score, buying_signals, status, assigned_rep, source, notes, converted_deal_id, converted_at, created_at, updated_at
          FROM crm_leads
-         WHERE LOWER(tenant_slug) = $1 OR LOWER(tenant_slug) = 'default'
+         WHERE LOWER(tenant_slug) = $1
          ORDER BY created_at DESC`,
         [slug]
       );
@@ -797,23 +822,29 @@ export async function getCrmLeads(tenantSlug: string): Promise<CrmLead[]> {
           updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : undefined,
         }));
       }
+      if (slug !== "default") {
+        return [];
+      }
     }
   } catch (err) {
     console.warn("Neon DB getCrmLeads error, falling back to cache:", err);
   }
 
   const cached = memoryLeads.get(slug);
-  if (cached && cached.length > 0) return cached;
+  if (cached) return cached;
 
-  const seeded = DEFAULT_CRM_LEADS.map((l) => ({ ...l, tenantSlug: slug }));
-  memoryLeads.set(slug, seeded);
-  return seeded;
+  if (slug === "default") {
+    const seeded = DEFAULT_CRM_LEADS.map((l) => ({ ...l, tenantSlug: slug }));
+    memoryLeads.set(slug, seeded);
+    return seeded;
+  }
+  return [];
 }
 
 export async function createCrmLead(tenantSlug: string, lead: Partial<CrmLead>): Promise<CrmLead> {
   const slug = cleanSlug(tenantSlug);
   const newLead: CrmLead = {
-    id: lead.id || `LEAD-${Date.now().toString().slice(-4)}`,
+    id: lead.id || generateCrmId("LEAD"),
     tenantSlug: slug,
     companyName: lead.companyName || "New Prospect Ltd",
     website: lead.website || "",
@@ -867,7 +898,7 @@ export async function createCrmLead(tenantSlug: string, lead: Partial<CrmLead>):
     console.warn("Neon DB createCrmLead error, storing in memory:", err);
   }
 
-  const list = memoryLeads.get(slug) || DEFAULT_CRM_LEADS.map((l) => ({ ...l, tenantSlug: slug }));
+  const list = memoryLeads.get(slug) || (slug === "default" ? DEFAULT_CRM_LEADS.map((l) => ({ ...l, tenantSlug: slug })) : []);
   list.unshift(newLead);
   memoryLeads.set(slug, list);
   return newLead;
@@ -913,7 +944,7 @@ export async function updateCrmLead(tenantSlug: string, id: string, updates: Par
       const res = await pool.query(
         `UPDATE crm_leads
          SET ${fields.join(", ")}
-         WHERE id = $${idx++} AND (LOWER(tenant_slug) = $${idx++} OR LOWER(tenant_slug) = 'default')
+         WHERE id = $${idx++} AND LOWER(tenant_slug) = $${idx++}
          RETURNING id, tenant_slug, company_name, website, industry, location, contact_name, contact_title, contact_email, contact_phone, icp_fit_score, buying_signals, status, assigned_rep, source, notes, converted_deal_id, converted_at, created_at, updated_at`,
         values
       );
@@ -947,7 +978,7 @@ export async function updateCrmLead(tenantSlug: string, id: string, updates: Par
     console.warn("Neon DB updateCrmLead error:", err);
   }
 
-  const list = memoryLeads.get(slug) || DEFAULT_CRM_LEADS.map((l) => ({ ...l, tenantSlug: slug }));
+  const list = memoryLeads.get(slug) || (slug === "default" ? DEFAULT_CRM_LEADS.map((l) => ({ ...l, tenantSlug: slug })) : []);
   const leadIdx = list.findIndex((l) => l.id === id);
   if (leadIdx !== -1) {
     list[leadIdx] = { ...list[leadIdx], ...updates, updatedAt: new Date().toISOString() };
@@ -964,13 +995,14 @@ export async function deleteCrmLead(tenantSlug: string, id: string): Promise<boo
     if (pool) {
       await ensureTablesExist();
       await pool.query(
-        `DELETE FROM crm_leads WHERE id = $1 AND (LOWER(tenant_slug) = $2 OR LOWER(tenant_slug) = 'default')`,
+        `DELETE FROM crm_leads WHERE id = $1 AND LOWER(tenant_slug) = $2`,
         [id, slug]
       );
     }
   } catch (err) {
     console.warn("Neon DB deleteCrmLead error:", err);
   }
+
   const list = memoryLeads.get(slug) || [];
   memoryLeads.set(slug, list.filter((l) => l.id !== id));
   return true;
@@ -983,10 +1015,23 @@ export async function getCrmEmailLists(tenantSlug: string): Promise<CrmEmailList
     const pool = getDbPool();
     if (pool) {
       await ensureTablesExist();
+
+      // Only seed default demo tenant with default lists
+      if (slug === "default") {
+        for (const l of DEFAULT_CRM_LISTS) {
+          await pool.query(
+            `INSERT INTO crm_email_lists (id, tenant_slug, name, description, tags, subscriber_count, created_at)
+             VALUES ($1, 'default', $2, $3, $4, $5, NOW())
+             ON CONFLICT (id) DO NOTHING`,
+            [l.id, l.name, l.description, JSON.stringify(l.tags), l.subscriberCount]
+          ).catch(() => {});
+        }
+      }
+
       const res = await pool.query(
         `SELECT id, tenant_slug, name, description, tags, subscriber_count, created_at
          FROM crm_email_lists
-         WHERE LOWER(tenant_slug) = $1 OR LOWER(tenant_slug) = 'default'
+         WHERE LOWER(tenant_slug) = $1
          ORDER BY created_at DESC`,
         [slug]
       );
@@ -1001,23 +1046,29 @@ export async function getCrmEmailLists(tenantSlug: string): Promise<CrmEmailList
           createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
         }));
       }
+      if (slug !== "default") {
+        return [];
+      }
     }
   } catch (err) {
     console.warn("Neon DB getCrmEmailLists error, falling back to cache:", err);
   }
 
   const cached = memoryLists.get(slug);
-  if (cached && cached.length > 0) return cached;
+  if (cached) return cached;
 
-  const seeded = DEFAULT_CRM_LISTS.map((l) => ({ ...l, tenantSlug: slug }));
-  memoryLists.set(slug, seeded);
-  return seeded;
+  if (slug === "default") {
+    const seeded = DEFAULT_CRM_LISTS.map((l) => ({ ...l, tenantSlug: slug }));
+    memoryLists.set(slug, seeded);
+    return seeded;
+  }
+  return [];
 }
 
 export async function createCrmEmailList(tenantSlug: string, list: Partial<CrmEmailList>): Promise<CrmEmailList> {
   const slug = cleanSlug(tenantSlug);
   const newList: CrmEmailList = {
-    id: list.id || `LIST-${Date.now().toString().slice(-4)}`,
+    id: list.id || generateCrmId("LIST"),
     tenantSlug: slug,
     name: list.name || "Untitled Audience List",
     description: list.description || "Custom targeted audience segment.",
@@ -1040,7 +1091,7 @@ export async function createCrmEmailList(tenantSlug: string, list: Partial<CrmEm
     console.warn("Neon DB createCrmEmailList error, storing in memory:", err);
   }
 
-  const existing = memoryLists.get(slug) || DEFAULT_CRM_LISTS.map((l) => ({ ...l, tenantSlug: slug }));
+  const existing = memoryLists.get(slug) || (slug === "default" ? DEFAULT_CRM_LISTS.map((l) => ({ ...l, tenantSlug: slug })) : []);
   existing.unshift(newList);
   memoryLists.set(slug, existing);
   return newList;
@@ -1053,11 +1104,24 @@ export async function getCrmEmailBlasts(tenantSlug: string): Promise<CrmEmailBla
     const pool = getDbPool();
     if (pool) {
       await ensureTablesExist();
+
+      // Only seed default demo tenant with default blasts
+      if (slug === "default") {
+        for (const b of DEFAULT_CRM_BLASTS) {
+          await pool.query(
+            `INSERT INTO crm_email_blasts (id, tenant_slug, list_id, title, subject, preview_text, content_html, sender_name, sender_email, status, total_recipients, sent_count, open_count, click_count, bounce_count, created_at)
+             VALUES ($1, 'default', $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
+             ON CONFLICT (id) DO NOTHING`,
+            [b.id, b.listId, b.title, b.subject, b.previewText, b.contentHtml, b.senderName, b.senderEmail, b.status, b.totalRecipients, b.sentCount, b.openCount, b.clickCount, b.bounceCount]
+          ).catch(() => {});
+        }
+      }
+
       const res = await pool.query(
         `SELECT b.id, b.tenant_slug, b.list_id, l.name AS list_name, b.title, b.subject, b.preview_text, b.content_html, b.sender_name, b.sender_email, b.status, b.scheduled_at, b.sent_at, b.total_recipients, b.sent_count, b.open_count, b.click_count, b.bounce_count, b.created_at
          FROM crm_email_blasts b
          LEFT JOIN crm_email_lists l ON b.list_id = l.id
-         WHERE LOWER(b.tenant_slug) = $1 OR LOWER(b.tenant_slug) = 'default'
+         WHERE LOWER(b.tenant_slug) = $1
          ORDER BY b.created_at DESC`,
         [slug]
       );
@@ -1084,23 +1148,29 @@ export async function getCrmEmailBlasts(tenantSlug: string): Promise<CrmEmailBla
           createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
         }));
       }
+      if (slug !== "default") {
+        return [];
+      }
     }
   } catch (err) {
     console.warn("Neon DB getCrmEmailBlasts error, falling back to cache:", err);
   }
 
   const cached = memoryBlasts.get(slug);
-  if (cached && cached.length > 0) return cached;
+  if (cached) return cached;
 
-  const seeded = DEFAULT_CRM_BLASTS.map((b) => ({ ...b, tenantSlug: slug }));
-  memoryBlasts.set(slug, seeded);
-  return seeded;
+  if (slug === "default") {
+    const seeded = DEFAULT_CRM_BLASTS.map((b) => ({ ...b, tenantSlug: slug }));
+    memoryBlasts.set(slug, seeded);
+    return seeded;
+  }
+  return [];
 }
 
 export async function createCrmEmailBlast(tenantSlug: string, blast: Partial<CrmEmailBlast>): Promise<CrmEmailBlast> {
   const slug = cleanSlug(tenantSlug);
   const newBlast: CrmEmailBlast = {
-    id: blast.id || `BLAST-${Date.now().toString().slice(-4)}`,
+    id: blast.id || generateCrmId("BLAST"),
     tenantSlug: slug,
     listId: blast.listId || "LIST-01",
     listName: blast.listName || "VIP Audience",
@@ -1153,7 +1223,7 @@ export async function createCrmEmailBlast(tenantSlug: string, blast: Partial<Crm
     console.warn("Neon DB createCrmEmailBlast error, storing in memory:", err);
   }
 
-  const existing = memoryBlasts.get(slug) || DEFAULT_CRM_BLASTS.map((b) => ({ ...b, tenantSlug: slug }));
+  const existing = memoryBlasts.get(slug) || (slug === "default" ? DEFAULT_CRM_BLASTS.map((b) => ({ ...b, tenantSlug: slug })) : []);
   existing.unshift(newBlast);
   memoryBlasts.set(slug, existing);
   return newBlast;
@@ -1167,20 +1237,22 @@ export async function getCrmAccounts(tenantSlug: string): Promise<CrmAccount[]> 
     if (pool) {
       await ensureTablesExist();
 
-      // Seed default accounts if needed
-      for (const a of DEFAULT_CRM_ACCOUNTS) {
-        await pool.query(
-          `INSERT INTO crm_accounts (id, tenant_slug, company, industry, location, total_deals, status, key_contact, email, phone, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
-           ON CONFLICT (id) DO NOTHING`,
-          [a.id, slug, a.company, a.industry, a.location, a.totalDeals, a.status, a.keyContact, a.email, a.phone]
-        ).catch(() => {});
+      // Only seed default demo tenant with default accounts
+      if (slug === "default") {
+        for (const a of DEFAULT_CRM_ACCOUNTS) {
+          await pool.query(
+            `INSERT INTO crm_accounts (id, tenant_slug, company, industry, location, total_deals, status, key_contact, email, phone, created_at, updated_at)
+             VALUES ($1, 'default', $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+             ON CONFLICT (id) DO NOTHING`,
+            [a.id, a.company, a.industry, a.location, a.totalDeals, a.status, a.keyContact, a.email, a.phone]
+          ).catch(() => {});
+        }
       }
 
       const res = await pool.query(
         `SELECT id, tenant_slug, company, industry, location, total_deals, status, key_contact, email, phone, created_at
          FROM crm_accounts
-         WHERE LOWER(tenant_slug) = $1 OR LOWER(tenant_slug) = 'default'
+         WHERE LOWER(tenant_slug) = $1
          ORDER BY created_at DESC`,
         [slug]
       );
@@ -1199,22 +1271,29 @@ export async function getCrmAccounts(tenantSlug: string): Promise<CrmAccount[]> 
           createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
         }));
       }
+      if (slug !== "default") {
+        return [];
+      }
     }
   } catch (err) {
     console.warn("Neon DB getCrmAccounts error, falling back to cache:", err);
   }
 
   const cached = memoryAccounts.get(slug);
-  if (cached && cached.length > 0) return cached;
-  const seeded = DEFAULT_CRM_ACCOUNTS.map((a) => ({ ...a, tenantSlug: slug }));
-  memoryAccounts.set(slug, seeded);
-  return seeded;
+  if (cached) return cached;
+
+  if (slug === "default") {
+    const seeded = DEFAULT_CRM_ACCOUNTS.map((a) => ({ ...a, tenantSlug: slug }));
+    memoryAccounts.set(slug, seeded);
+    return seeded;
+  }
+  return [];
 }
 
 export async function createCrmAccount(tenantSlug: string, account: Partial<CrmAccount>): Promise<CrmAccount> {
   const slug = cleanSlug(tenantSlug);
   const newAcc: CrmAccount = {
-    id: account.id || `ACC-${Date.now().toString().slice(-4)}`,
+    id: account.id || generateCrmId("ACC"),
     tenantSlug: slug,
     company: account.company || "New Account Ltd",
     industry: account.industry || "Commercial",
@@ -1241,7 +1320,7 @@ export async function createCrmAccount(tenantSlug: string, account: Partial<CrmA
     console.warn("Neon DB createCrmAccount error:", err);
   }
 
-  const list = memoryAccounts.get(slug) || DEFAULT_CRM_ACCOUNTS.map((a) => ({ ...a, tenantSlug: slug }));
+  const list = memoryAccounts.get(slug) || (slug === "default" ? DEFAULT_CRM_ACCOUNTS.map((a) => ({ ...a, tenantSlug: slug })) : []);
   list.unshift(newAcc);
   memoryAccounts.set(slug, list);
   return newAcc;
@@ -1274,7 +1353,7 @@ export async function updateCrmAccount(tenantSlug: string, id: string, updates: 
       const res = await pool.query(
         `UPDATE crm_accounts
          SET ${fields.join(", ")}
-         WHERE id = $${idx++} AND (LOWER(tenant_slug) = $${idx++} OR LOWER(tenant_slug) = 'default')
+         WHERE id = $${idx++} AND LOWER(tenant_slug) = $${idx++}
          RETURNING id, tenant_slug, company, industry, location, total_deals, status, key_contact, email, phone, created_at`,
         values
       );
@@ -1299,7 +1378,7 @@ export async function updateCrmAccount(tenantSlug: string, id: string, updates: 
     console.warn("Neon DB updateCrmAccount error:", err);
   }
 
-  const list = memoryAccounts.get(slug) || DEFAULT_CRM_ACCOUNTS.map((a) => ({ ...a, tenantSlug: slug }));
+  const list = memoryAccounts.get(slug) || (slug === "default" ? DEFAULT_CRM_ACCOUNTS.map((a) => ({ ...a, tenantSlug: slug })) : []);
   const accIdx = list.findIndex((a) => a.id === id);
   if (accIdx !== -1) {
     list[accIdx] = { ...list[accIdx], ...updates };
@@ -1315,7 +1394,7 @@ export async function deleteCrmAccount(tenantSlug: string, id: string): Promise<
     const pool = getDbPool();
     if (pool) {
       await ensureTablesExist();
-      await pool.query(`DELETE FROM crm_accounts WHERE id = $1 AND (LOWER(tenant_slug) = $2 OR LOWER(tenant_slug) = 'default')`, [id, slug]);
+      await pool.query(`DELETE FROM crm_accounts WHERE id = $1 AND LOWER(tenant_slug) = $2`, [id, slug]);
     }
   } catch (err) {
     console.warn("Neon DB deleteCrmAccount error:", err);
@@ -1332,20 +1411,22 @@ export async function getCrmActivities(tenantSlug: string): Promise<CrmActivity[
     if (pool) {
       await ensureTablesExist();
 
-      // Seed default activities if needed
-      for (const a of DEFAULT_CRM_ACTIVITIES) {
-        await pool.query(
-          `INSERT INTO crm_activities (id, tenant_slug, type, title, company, rep, date_time, status, notes, created_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-           ON CONFLICT (id) DO NOTHING`,
-          [a.id, slug, a.type, a.title, a.company, a.rep, a.dateTime, a.status, a.notes || ""]
-        ).catch(() => {});
+      // Only seed default demo tenant with default activities
+      if (slug === "default") {
+        for (const a of DEFAULT_CRM_ACTIVITIES) {
+          await pool.query(
+            `INSERT INTO crm_activities (id, tenant_slug, type, title, company, rep, date_time, status, notes, created_at)
+             VALUES ($1, 'default', $2, $3, $4, $5, $6, $7, $8, NOW())
+             ON CONFLICT (id) DO NOTHING`,
+            [a.id, a.type, a.title, a.company, a.rep, a.dateTime, a.status, a.notes || ""]
+          ).catch(() => {});
+        }
       }
 
       const res = await pool.query(
         `SELECT id, tenant_slug, type, title, company, rep, date_time, status, notes, deal_id, account_id, lead_id, scheduled_at, completed_at, created_at
          FROM crm_activities
-         WHERE LOWER(tenant_slug) = $1 OR LOWER(tenant_slug) = 'default'
+         WHERE LOWER(tenant_slug) = $1
          ORDER BY created_at DESC`,
         [slug]
       );
@@ -1368,22 +1449,29 @@ export async function getCrmActivities(tenantSlug: string): Promise<CrmActivity[
           createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
         }));
       }
+      if (slug !== "default") {
+        return [];
+      }
     }
   } catch (err) {
     console.warn("Neon DB getCrmActivities error, falling back to cache:", err);
   }
 
   const cached = memoryActivities.get(slug);
-  if (cached && cached.length > 0) return cached;
-  const seeded = DEFAULT_CRM_ACTIVITIES.map((a) => ({ ...a, tenantSlug: slug }));
-  memoryActivities.set(slug, seeded);
-  return seeded;
+  if (cached) return cached;
+
+  if (slug === "default") {
+    const seeded = DEFAULT_CRM_ACTIVITIES.map((a) => ({ ...a, tenantSlug: slug }));
+    memoryActivities.set(slug, seeded);
+    return seeded;
+  }
+  return [];
 }
 
 export async function createCrmActivity(tenantSlug: string, act: Partial<CrmActivity>): Promise<CrmActivity> {
   const slug = cleanSlug(tenantSlug);
   const newAct: CrmActivity = {
-    id: act.id || `ACT-${Date.now().toString().slice(-4)}`,
+    id: act.id || generateCrmId("ACT"),
     tenantSlug: slug,
     type: act.type || "CALL",
     title: act.title || "Sales Call",
@@ -1413,7 +1501,7 @@ export async function createCrmActivity(tenantSlug: string, act: Partial<CrmActi
     console.warn("Neon DB createCrmActivity error:", err);
   }
 
-  const list = memoryActivities.get(slug) || DEFAULT_CRM_ACTIVITIES.map((a) => ({ ...a, tenantSlug: slug }));
+  const list = memoryActivities.get(slug) || (slug === "default" ? DEFAULT_CRM_ACTIVITIES.map((a) => ({ ...a, tenantSlug: slug })) : []);
   list.unshift(newAct);
   memoryActivities.set(slug, list);
   return newAct;
@@ -1429,7 +1517,7 @@ export async function updateCrmActivityStatus(tenantSlug: string, id: string, st
       const res = await pool.query(
         `UPDATE crm_activities
          SET status = $1, completed_at = CASE WHEN $1 = 'COMPLETED' THEN NOW() ELSE NULL END
-         WHERE id = $2 AND (LOWER(tenant_slug) = $3 OR LOWER(tenant_slug) = 'default')
+         WHERE id = $2 AND LOWER(tenant_slug) = $3
          RETURNING id, tenant_slug, type, title, company, rep, date_time, status, notes, deal_id, account_id, lead_id, scheduled_at, completed_at, created_at`,
         [status, id, slug]
       );
@@ -1458,7 +1546,7 @@ export async function updateCrmActivityStatus(tenantSlug: string, id: string, st
     console.warn("Neon DB updateCrmActivityStatus error:", err);
   }
 
-  const list = memoryActivities.get(slug) || DEFAULT_CRM_ACTIVITIES.map((a) => ({ ...a, tenantSlug: slug }));
+  const list = memoryActivities.get(slug) || (slug === "default" ? DEFAULT_CRM_ACTIVITIES.map((a) => ({ ...a, tenantSlug: slug })) : []);
   const actIdx = list.findIndex((a) => a.id === id);
   if (actIdx !== -1) {
     list[actIdx] = { ...list[actIdx], status };
@@ -1474,7 +1562,7 @@ export async function deleteCrmActivity(tenantSlug: string, id: string): Promise
     const pool = getDbPool();
     if (pool) {
       await ensureTablesExist();
-      await pool.query(`DELETE FROM crm_activities WHERE id = $1 AND (LOWER(tenant_slug) = $2 OR LOWER(tenant_slug) = 'default')`, [id, slug]);
+      await pool.query(`DELETE FROM crm_activities WHERE id = $1 AND LOWER(tenant_slug) = $2`, [id, slug]);
     }
   } catch (err) {
     console.warn("Neon DB deleteCrmActivity error:", err);
@@ -1494,7 +1582,7 @@ export async function getCrmSubscribers(tenantSlug: string, listId: string): Pro
       const res = await pool.query(
         `SELECT id, tenant_slug, list_id, email, first_name, last_name, company, phone, status, created_at
          FROM crm_email_subscribers
-         WHERE (LOWER(tenant_slug) = $1 OR LOWER(tenant_slug) = 'default') AND list_id = $2
+         WHERE LOWER(tenant_slug) = $1 AND list_id = $2
          ORDER BY created_at DESC`,
         [slug, listId]
       );
@@ -1520,7 +1608,7 @@ export async function getCrmSubscribers(tenantSlug: string, listId: string): Pro
 export async function addCrmSubscriber(tenantSlug: string, listId: string, sub: Partial<CrmEmailSubscriber>): Promise<CrmEmailSubscriber> {
   const slug = cleanSlug(tenantSlug);
   const newSub: CrmEmailSubscriber = {
-    id: sub.id || `SUB-${Date.now().toString().slice(-4)}`,
+    id: sub.id || generateCrmId("SUB"),
     tenantSlug: slug,
     listId,
     email: (sub.email || "").trim().toLowerCase(),
@@ -1571,7 +1659,7 @@ export async function bulkAddCrmSubscribers(
       await ensureTablesExist();
       for (const s of subs) {
         if (!s.email) continue;
-        const subId = s.id || `SUB-${Math.random().toString(36).substring(2, 9)}`;
+        const subId = s.id || generateCrmId("SUB");
         const email = s.email.trim().toLowerCase();
         await pool.query(
           `INSERT INTO crm_email_subscribers (id, tenant_slug, list_id, email, first_name, last_name, company, phone, status, created_at)
@@ -1602,7 +1690,7 @@ export async function deleteCrmSubscriber(tenantSlug: string, id: string): Promi
     if (pool) {
       await ensureTablesExist();
       const res = await pool.query(
-        `DELETE FROM crm_email_subscribers WHERE id = $1 AND (LOWER(tenant_slug) = $2 OR LOWER(tenant_slug) = 'default') RETURNING list_id`,
+        `DELETE FROM crm_email_subscribers WHERE id = $1 AND LOWER(tenant_slug) = $2 RETURNING list_id`,
         [id, slug]
       );
       if (res.rows.length > 0 && res.rows[0].list_id) {
@@ -1626,7 +1714,7 @@ export async function dispatchScheduledBlasts(tenantSlug?: string): Promise<{ di
     const pool = getDbPool();
     if (pool) {
       await ensureTablesExist();
-      const whereTenant = tenantSlug ? `AND (LOWER(b.tenant_slug) = LOWER('${cleanSlug(tenantSlug)}') OR LOWER(b.tenant_slug) = 'default')` : "";
+      const whereTenant = tenantSlug ? `AND LOWER(b.tenant_slug) = LOWER('${cleanSlug(tenantSlug)}')` : "";
       const res = await pool.query(
         `SELECT b.id, b.tenant_slug, b.list_id, b.title, b.subject, b.content_html, b.sender_name, b.sender_email
          FROM crm_email_blasts b

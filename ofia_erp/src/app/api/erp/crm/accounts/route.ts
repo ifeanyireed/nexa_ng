@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { getCrmAccounts, createCrmAccount, updateCrmAccount, deleteCrmAccount } from "@/lib/crm-service";
+import { getValidatedTenantSlug } from "@/lib/crm-tenant";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const tenantSlug = searchParams.get("tenant") || searchParams.get("slug") || "default";
+    const tenantSlug = getValidatedTenantSlug(request);
     const accounts = await getCrmAccounts(tenantSlug);
     return NextResponse.json({ success: true, accounts });
   } catch (err: any) {
@@ -17,8 +17,8 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { tenantSlug = "default", ...accountData } = body;
-    const account = await createCrmAccount(tenantSlug, accountData);
+    const tenantSlug = getValidatedTenantSlug(request, body);
+    const account = await createCrmAccount(tenantSlug, body);
     return NextResponse.json({ success: true, account }, { status: 201 });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Failed to create account" }, { status: 500 });
@@ -28,10 +28,11 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { id, tenantSlug = "default", ...updates } = body;
+    const { id, ...updates } = body;
     if (!id) {
       return NextResponse.json({ error: "Account ID is required" }, { status: 400 });
     }
+    const tenantSlug = getValidatedTenantSlug(request, body);
     const updated = await updateCrmAccount(tenantSlug, id, updates);
     return NextResponse.json({ success: true, account: updated });
   } catch (err: any) {
@@ -43,7 +44,7 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
-    const tenantSlug = searchParams.get("tenant") || searchParams.get("slug") || "default";
+    const tenantSlug = getValidatedTenantSlug(request);
     if (!id) {
       return NextResponse.json({ error: "Account ID is required" }, { status: 400 });
     }

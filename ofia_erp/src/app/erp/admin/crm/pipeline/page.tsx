@@ -19,7 +19,8 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaModal } from "@/components/nexa/NexaModal";
-import { CrmDeal, DEFAULT_CRM_DEALS } from "@/lib/crm-service";
+import { CrmDeal } from "@/lib/crm-service";
+import { crmFetch } from "@/lib/crm-client";
 
 const STAGES: { key: CrmDeal["stage"]; label: string; color: string }[] = [
   { key: "LEAD", label: "Lead Discovery", color: "border-slate-500/40 text-slate-500" },
@@ -47,11 +48,11 @@ export default function DealsPipelinePage() {
   useEffect(() => {
     async function loadDeals() {
       try {
-        const res = await fetch("/api/erp/crm/deals").then((r) => r.json());
+        const res = await crmFetch("/api/erp/crm/deals").then((r) => r.json());
         if (res?.deals) setDeals(res.deals);
-        else setDeals(DEFAULT_CRM_DEALS.map((d) => ({ ...d, tenantSlug: "default" })));
+        else setDeals([]);
       } catch {
-        setDeals(DEFAULT_CRM_DEALS.map((d) => ({ ...d, tenantSlug: "default" })));
+        setDeals([]);
       } finally {
         setIsLoading(false);
       }
@@ -77,9 +78,8 @@ export default function DealsPipelinePage() {
     };
 
     try {
-      const res = await fetch("/api/erp/crm/deals", {
+      const res = await crmFetch("/api/erp/crm/deals", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
@@ -114,9 +114,8 @@ export default function DealsPipelinePage() {
     );
 
     try {
-      await fetch("/api/erp/crm/deals", {
+      await crmFetch("/api/erp/crm/deals", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: dealId,
           stage: newStage,

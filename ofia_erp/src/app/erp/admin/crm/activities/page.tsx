@@ -22,7 +22,8 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaModal } from "@/components/nexa/NexaModal";
-import { CrmActivity, DEFAULT_CRM_ACTIVITIES } from "@/lib/crm-service";
+import { CrmActivity } from "@/lib/crm-service";
+import { crmFetch } from "@/lib/crm-client";
 
 export default function SalesActivitiesPage() {
   const [activities, setActivities] = useState<CrmActivity[]>([]);
@@ -41,11 +42,11 @@ export default function SalesActivitiesPage() {
   useEffect(() => {
     async function loadActivities() {
       try {
-        const res = await fetch("/api/erp/crm/activities").then((r) => r.json());
+        const res = await crmFetch("/api/erp/crm/activities").then((r) => r.json());
         if (res?.activities) setActivities(res.activities);
-        else setActivities(DEFAULT_CRM_ACTIVITIES.map((a) => ({ ...a, tenantSlug: "default" })));
+        else setActivities([]);
       } catch {
-        setActivities(DEFAULT_CRM_ACTIVITIES.map((a) => ({ ...a, tenantSlug: "default" })));
+        setActivities([]);
       }
     }
     loadActivities();
@@ -66,9 +67,8 @@ export default function SalesActivitiesPage() {
     };
 
     try {
-      const res = await fetch("/api/erp/crm/activities", {
+      const res = await crmFetch("/api/erp/crm/activities", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
@@ -97,9 +97,8 @@ export default function SalesActivitiesPage() {
     );
 
     try {
-      await fetch("/api/erp/crm/activities", {
+      await crmFetch("/api/erp/crm/activities", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status: "COMPLETED" }),
       });
     } catch (err) {

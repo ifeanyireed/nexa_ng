@@ -25,7 +25,8 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaModal } from "@/components/nexa/NexaModal";
-import { CrmLead, DEFAULT_CRM_LEADS } from "@/lib/crm-service";
+import { CrmLead } from "@/lib/crm-service";
+import { crmFetch } from "@/lib/crm-client";
 
 export default function CrmLeadsPage() {
   const [leads, setLeads] = useState<CrmLead[]>([]);
@@ -51,11 +52,11 @@ export default function CrmLeadsPage() {
   useEffect(() => {
     async function loadLeads() {
       try {
-        const res = await fetch("/api/erp/crm/leads").then((r) => r.json());
+        const res = await crmFetch("/api/erp/crm/leads").then((r) => r.json());
         if (res?.leads) setLeads(res.leads);
-        else setLeads(DEFAULT_CRM_LEADS.map((l) => ({ ...l, tenantSlug: "default" })));
+        else setLeads([]);
       } catch {
-        setLeads(DEFAULT_CRM_LEADS.map((l) => ({ ...l, tenantSlug: "default" })));
+        setLeads([]);
       } finally {
         setIsLoading(false);
       }
@@ -68,9 +69,8 @@ export default function CrmLeadsPage() {
     setIsExtracting(true);
 
     try {
-      const res = await fetch("/api/erp/crm/leads/extract", {
+      const res = await crmFetch("/api/erp/crm/leads/extract", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           query: extractQuery,
           location: extractLocation,
@@ -126,9 +126,8 @@ export default function CrmLeadsPage() {
     };
 
     try {
-      const res = await fetch("/api/erp/crm/leads", {
+      const res = await crmFetch("/api/erp/crm/leads", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const data = await res.json();
@@ -152,9 +151,8 @@ export default function CrmLeadsPage() {
 
   const handlePromoteToDeal = async (lead: CrmLead) => {
     try {
-      const res = await fetch("/api/erp/crm/deals", {
+      const res = await crmFetch("/api/erp/crm/deals", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: `${lead.companyName} Commercial Contract`,
           company: lead.companyName,
@@ -174,9 +172,8 @@ export default function CrmLeadsPage() {
       const dealId = data?.deal?.id;
 
       // Persist status change in DB
-      await fetch("/api/erp/crm/leads", {
+      await crmFetch("/api/erp/crm/leads", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: lead.id,
           status: "CONVERTED",

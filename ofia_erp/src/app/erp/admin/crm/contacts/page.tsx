@@ -21,7 +21,8 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaModal } from "@/components/nexa/NexaModal";
-import { CrmAccount, DEFAULT_CRM_ACCOUNTS } from "@/lib/crm-service";
+import { CrmAccount } from "@/lib/crm-service";
+import { crmFetch } from "@/lib/crm-client";
 
 export default function ContactsAccountsPage() {
   const [accounts, setAccounts] = useState<CrmAccount[]>([]);
@@ -42,11 +43,11 @@ export default function ContactsAccountsPage() {
   useEffect(() => {
     async function loadAccounts() {
       try {
-        const res = await fetch("/api/erp/crm/accounts").then((r) => r.json());
+        const res = await crmFetch("/api/erp/crm/accounts").then((r) => r.json());
         if (res?.accounts) setAccounts(res.accounts);
-        else setAccounts(DEFAULT_CRM_ACCOUNTS.map((a) => ({ ...a, tenantSlug: "default" })));
+        else setAccounts([]);
       } catch {
-        setAccounts(DEFAULT_CRM_ACCOUNTS.map((a) => ({ ...a, tenantSlug: "default" })));
+        setAccounts([]);
       } finally {
         setIsLoading(false);
       }
@@ -70,9 +71,8 @@ export default function ContactsAccountsPage() {
     };
 
     try {
-      const res = await fetch("/api/erp/crm/accounts", {
+      const res = await crmFetch("/api/erp/crm/accounts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       const data = await res.json();

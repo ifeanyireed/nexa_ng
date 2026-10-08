@@ -154,19 +154,23 @@ class ShipmentCard extends StatelessWidget {
 
   Widget _buildProductThumbnail(String type) {
     String imageUrl;
-    
+
     switch (type) {
       case 'mac':
-        imageUrl = 'https://images.unsplash.com/photo-1517059224940-d4af9eec41b7?q=80&w=200&auto=format&fit=crop';
+        imageUrl =
+            'https://images.unsplash.com/photo-1517059224940-d4af9eec41b7?q=80&w=200&auto=format&fit=crop';
         break;
       case 'chair':
-        imageUrl = 'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?q=80&w=200&auto=format&fit=crop';
+        imageUrl =
+            'https://images.unsplash.com/photo-1567538096630-e0c55bd6374c?q=80&w=200&auto=format&fit=crop';
         break;
       case 'headphone':
-        imageUrl = 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=200&auto=format&fit=crop';
+        imageUrl =
+            'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=200&auto=format&fit=crop';
         break;
       default:
-        imageUrl = 'https://images.unsplash.com/photo-1606836591695-4d58436f5407?q=80&w=200&auto=format&fit=crop';
+        imageUrl =
+            'https://images.unsplash.com/photo-1606836591695-4d58436f5407?q=80&w=200&auto=format&fit=crop';
     }
 
     return Container(

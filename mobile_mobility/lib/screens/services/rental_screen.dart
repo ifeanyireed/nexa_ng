@@ -11,7 +11,8 @@ class RentalScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Rental', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text('Rental',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -21,18 +22,28 @@ class RentalScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            _buildVehicleCard('Premium Black', 'Experience travel like never before with the Jet Mover. Equipped...', '₦250,000.00', true),
+            _buildVehicleCard(
+                'Premium Black',
+                'Experience travel like never before with the Jet Mover. Equipped...',
+                '₦250,000.00',
+                true),
             const SizedBox(height: 16),
-            _buildVehicleCard('Coaster Bus - New Shape', '(2017 - Present)', '₦350,000.00', false),
+            _buildVehicleCard('Coaster Bus - New Shape', '(2017 - Present)',
+                '₦350,000.00', false),
             const SizedBox(height: 16),
-            _buildVehicleCard('Mini Bus', 'Mini Bus (Fold Roof - Hummer 2)', '₦130,000.00', false),
+            _buildVehicleCard('Mini Bus', 'Mini Bus (Fold Roof - Hummer 2)',
+                '₦130,000.00', false),
           ],
         ),
       ),
-    ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.05, end: 0);
+    )
+        .animate()
+        .fadeIn(duration: const Duration(milliseconds: 400))
+        .slideY(begin: 0.05, end: 0);
   }
 
-  Widget _buildVehicleCard(String title, String desc, String price, bool isBlack) {
+  Widget _buildVehicleCard(
+      String title, String desc, String price, bool isBlack) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -53,19 +64,31 @@ class RentalScreen extends StatelessWidget {
                   color: Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(fixIcon(FlexIcon.remix.transferTruckTime), size: 40, color: Colors.grey),
+                child: Icon(fixIcon(FlexIcon.remix.transferTruckTime),
+                    size: 40, color: Colors.grey),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    Text(title,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 14)),
                     const SizedBox(height: 4),
-                    Text(desc, style: const TextStyle(color: Colors.grey, fontSize: 11), maxLines: 2, overflow: TextOverflow.ellipsis),
+                    Text(desc,
+                        style:
+                            const TextStyle(color: Colors.grey, fontSize: 11),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 8),
-                    const Text('Starting from', style: TextStyle(color: Colors.grey, fontSize: 10)),
-                    Text(price, style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 14)),
+                    const Text('Starting from',
+                        style: TextStyle(color: Colors.grey, fontSize: 10)),
+                    Text(price,
+                        style: const TextStyle(
+                            color: Colors.green,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14)),
                   ],
                 ),
               )

@@ -8,7 +8,11 @@ class SavedLocationsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(title: const Text('Saved Locations'), backgroundColor: Colors.white, foregroundColor: Colors.black, elevation: 0),
+      appBar: AppBar(
+          title: const Text('Saved Locations'),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -22,7 +26,9 @@ class SavedLocationsScreen extends StatelessWidget {
               onPressed: () {},
               icon: const Icon(Icons.add),
               label: const Text('Add New Location'),
-              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), foregroundColor: const Color(0xFF1B62F0)),
+              style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  foregroundColor: const Color(0xFF1B62F0)),
             ),
           )
         ],
@@ -33,7 +39,9 @@ class SavedLocationsScreen extends StatelessWidget {
   Widget _buildLocationTile(IconData icon, String title, String subtitle) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: CircleAvatar(backgroundColor: const Color(0xFF1B62F0).withOpacity(0.1), child: Icon(icon, color: const Color(0xFF1B62F0))),
+      leading: CircleAvatar(
+          backgroundColor: const Color(0xFF1B62F0).withOpacity(0.1),
+          child: Icon(icon, color: const Color(0xFF1B62F0))),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text(subtitle, style: TextStyle(color: Colors.grey.shade600)),
       trailing: const Icon(Icons.more_vert),

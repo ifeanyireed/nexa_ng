@@ -16,11 +16,16 @@ class _SecurityScreenState extends State<SecurityScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(title: const Text('Security'), backgroundColor: Colors.white, foregroundColor: Colors.black, elevation: 0),
+      appBar: AppBar(
+          title: const Text('Security'),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text('App Security', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('App Security',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
@@ -37,7 +42,8 @@ class _SecurityScreenState extends State<SecurityScreen> {
             onChanged: (val) => setState(() => _twoFactorEnabled = val),
           ),
           const Divider(height: 40),
-          const Text('Account', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('Account',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 12),
           ListTile(
             contentPadding: EdgeInsets.zero,
@@ -49,7 +55,8 @@ class _SecurityScreenState extends State<SecurityScreen> {
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.delete_forever, color: Colors.red),
-            title: const Text('Delete Account', style: TextStyle(color: Colors.red)),
+            title: const Text('Delete Account',
+                style: TextStyle(color: Colors.red)),
             onTap: () {},
           ),
         ],

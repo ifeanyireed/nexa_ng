@@ -70,7 +70,8 @@ class _IsometricBoxPainter extends CustomPainter {
           Color(0xFF3B82F6),
           Color(0xFF2563EB),
         ],
-      ).createShader(Rect.fromLTRB(topLeft.dx, topTop.dy, topRight.dx, center.dy));
+      ).createShader(
+          Rect.fromLTRB(topLeft.dx, topTop.dy, topRight.dx, center.dy));
 
     canvas.drawPath(topPath, topPaint);
 
@@ -90,7 +91,8 @@ class _IsometricBoxPainter extends CustomPainter {
           Color(0xFF1D64F2),
           Color(0xFF1452D8),
         ],
-      ).createShader(Rect.fromLTRB(bottomLeft.dx, topLeft.dy, center.dx, bottomCenter.dy));
+      ).createShader(
+          Rect.fromLTRB(bottomLeft.dx, topLeft.dy, center.dx, bottomCenter.dy));
 
     canvas.drawPath(leftPath, leftPaint);
 
@@ -110,7 +112,8 @@ class _IsometricBoxPainter extends CustomPainter {
           Color(0xFF1142BC),
           Color(0xFF0B2E8C),
         ],
-      ).createShader(Rect.fromLTRB(center.dx, topRight.dy, bottomRight.dx, bottomCenter.dy));
+      ).createShader(Rect.fromLTRB(
+          center.dx, topRight.dy, bottomRight.dx, bottomCenter.dy));
 
     canvas.drawPath(rightPath, rightPaint);
 

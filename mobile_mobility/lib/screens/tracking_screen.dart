@@ -81,7 +81,8 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
                 // Top Bar with Back, Title, Options
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -132,7 +133,8 @@ class _TrackingScreenState extends State<TrackingScreen> {
                     ),
                     child: Row(
                       children: [
-                        Icon(fixIcon(FlexIcon.remix.magnifyingGlass),
+                        Icon(
+                          fixIcon(FlexIcon.remix.magnifyingGlass),
                           size: 22,
                           color: Color(0xFF94A3B8),
                         ),
@@ -220,7 +222,8 @@ class _TrackingScreenState extends State<TrackingScreen> {
                           child: Image.asset(
                             'assets/images/driver.jpg',
                             fit: BoxFit.cover,
-                            errorBuilder: (ctx, err, stack) => Icon(fixIcon(FlexIcon.remix.userFullBody),
+                            errorBuilder: (ctx, err, stack) => Icon(
+                              fixIcon(FlexIcon.remix.userFullBody),
                               size: 32,
                               color: Color(0xFF64748B),
                             ),
@@ -255,11 +258,15 @@ class _TrackingScreenState extends State<TrackingScreen> {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                Icon(fixIcon(FlexIcon.remix.starCircle), size: 17, color: const Color(0xFFF59E0B)),
+                                Icon(fixIcon(FlexIcon.remix.starCircle),
+                                    size: 17, color: const Color(0xFFF59E0B)),
                                 const SizedBox(width: 4),
                                 const Text(
                                   '4.9 Rating',
-                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF334155)),
+                                  style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF334155)),
                                 ),
                               ],
                             ),
@@ -272,9 +279,11 @@ class _TrackingScreenState extends State<TrackingScreen> {
                         onTap: () {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Calling ${_activeTrip.driverName}...'),
+                              content:
+                                  Text('Calling ${_activeTrip.driverName}...'),
                               behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
                             ),
                           );
                         },
@@ -316,7 +325,8 @@ class _TrackingScreenState extends State<TrackingScreen> {
                           ),
                           backgroundColor: const Color(0xFF181C26),
                           behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
                         ),
                       );
                     },
@@ -353,7 +363,10 @@ class _TrackingScreenState extends State<TrackingScreen> {
           ),
         ],
       ),
-    ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.05, end: 0);
+    )
+        .animate()
+        .fadeIn(duration: const Duration(milliseconds: 400))
+        .slideY(begin: 0.05, end: 0);
   }
 
   Widget _circleButton({required IconData icon, required VoidCallback onTap}) {

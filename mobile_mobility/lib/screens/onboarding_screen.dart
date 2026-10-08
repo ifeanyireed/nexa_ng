@@ -57,7 +57,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               );
             },
           ),
-          
+
           // Top Logo and Inscription
           Positioned(
             top: 60,
@@ -81,11 +81,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                   ),
-                ).animate(key: ValueKey('inscription_$_currentIndex')).fadeIn(duration: const Duration(milliseconds: 600)).slideY(begin: 0.2, end: 0),
+                )
+                    .animate(key: ValueKey('inscription_$_currentIndex'))
+                    .fadeIn(duration: const Duration(milliseconds: 600))
+                    .slideY(begin: 0.2, end: 0),
               ],
             ),
           ),
-          
+
           // Bottom Controls (Dots and Skip/Next)
           Positioned(
             bottom: 40,
@@ -96,7 +99,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               children: [
                 TextButton(
                   onPressed: _finish,
-                  child: const Text('Skip', style: TextStyle(color: Color(0xFF1B62F0), fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: const Text('Skip',
+                      style: TextStyle(
+                          color: Color(0xFF1B62F0),
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold)),
                 ),
                 Row(
                   children: List.generate(_images.length, (index) {
@@ -105,7 +112,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       width: _currentIndex == index ? 12 : 8,
                       height: 8,
                       decoration: BoxDecoration(
-                        color: _currentIndex == index ? const Color(0xFF1B62F0) : const Color(0xFF1B62F0).withValues(alpha: 0.5),
+                        color: _currentIndex == index
+                            ? const Color(0xFF1B62F0)
+                            : const Color(0xFF1B62F0).withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(4),
                       ),
                     );
@@ -124,7 +133,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   },
                   child: Text(
                     _currentIndex == _images.length - 1 ? 'Done' : 'Next',
-                    style: const TextStyle(color: Color(0xFF1B62F0), fontSize: 16, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        color: Color(0xFF1B62F0),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
@@ -132,6 +144,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
         ],
       ),
-    ).animate().fadeIn(duration: const Duration(seconds: 3)).slideY(begin: 0.05, end: 0);
+    )
+        .animate()
+        .fadeIn(duration: const Duration(seconds: 3))
+        .slideY(begin: 0.05, end: 0);
   }
 }

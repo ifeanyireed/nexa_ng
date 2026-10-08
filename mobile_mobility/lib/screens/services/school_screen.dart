@@ -10,32 +10,62 @@ class SchoolScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Parent Portal'), backgroundColor: Colors.white, foregroundColor: Colors.black, elevation: 0),
+      appBar: AppBar(
+          title: const Text('Parent Portal'),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0),
       backgroundColor: const Color(0xFFF8FAFC),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          const Text('Your Children', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          const Text('Your Children',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           const SizedBox(height: 16),
-          _buildChildCard(context, 'Chisom Okafor', 'Grade 4 - Greenoak International', true, 'Arrived at School', '07:45 AM'),
-          _buildChildCard(context, 'David Okafor', 'Grade 2 - Greenoak International', false, 'Bus is 5 mins away', 'Pickup: 02:30 PM'),
-          
+          _buildChildCard(
+              context,
+              'Chisom Okafor',
+              'Grade 4 - Greenoak International',
+              true,
+              'Arrived at School',
+              '07:45 AM'),
+          _buildChildCard(
+              context,
+              'David Okafor',
+              'Grade 2 - Greenoak International',
+              false,
+              'Bus is 5 mins away',
+              'Pickup: 02:30 PM'),
           const SizedBox(height: 32),
-          const Text('Recent Notifications', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          const Text('Recent Notifications',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           const SizedBox(height: 16),
-          _buildNotification('Chisom has arrived at school.', '07:45 AM', fixIcon(FlexIcon.remix.autoCorrectionCheck), Colors.green),
-          _buildNotification('Chisom boarded the bus.', '07:15 AM', fixIcon(FlexIcon.remix.transferTruckTime), const Color(0xFF1B62F0)),
-          _buildNotification('Bus is approaching pickup point.', '07:10 AM', fixIcon(FlexIcon.remix.locationPin3), const Color(0xFFF59E0B)),
+          _buildNotification('Chisom has arrived at school.', '07:45 AM',
+              fixIcon(FlexIcon.remix.autoCorrectionCheck), Colors.green),
+          _buildNotification(
+              'Chisom boarded the bus.',
+              '07:15 AM',
+              fixIcon(FlexIcon.remix.transferTruckTime),
+              const Color(0xFF1B62F0)),
+          _buildNotification('Bus is approaching pickup point.', '07:10 AM',
+              fixIcon(FlexIcon.remix.locationPin3), const Color(0xFFF59E0B)),
         ],
       ),
-    ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.05, end: 0);
+    )
+        .animate()
+        .fadeIn(duration: const Duration(milliseconds: 400))
+        .slideY(begin: 0.05, end: 0);
   }
 
-  Widget _buildChildCard(BuildContext context, String name, String school, bool isMorningCompleted, String status, String time) {
+  Widget _buildChildCard(BuildContext context, String name, String school,
+      bool isMorningCompleted, String status, String time) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: const Color(0xFFE2E8F0))),
+      decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -43,15 +73,21 @@ class SchoolScreen extends StatelessWidget {
             children: [
               CircleAvatar(
                 backgroundColor: const Color(0xFFE0E7FF),
-                child: Text(name[0], style: const TextStyle(color: Color(0xFF4338CA), fontWeight: FontWeight.bold)),
+                child: Text(name[0],
+                    style: const TextStyle(
+                        color: Color(0xFF4338CA), fontWeight: FontWeight.bold)),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    Text(school, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                    Text(name,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text(school,
+                        style:
+                            const TextStyle(color: Colors.grey, fontSize: 12)),
                   ],
                 ),
               ),
@@ -64,14 +100,21 @@ class SchoolScreen extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Morning Trip', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  const Text('Morning Trip',
+                      style: TextStyle(color: Colors.grey, fontSize: 12)),
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(isMorningCompleted ? fixIcon(FlexIcon.remix.autoCorrectionCheck) : fixIcon(FlexIcon.remix.roundAnchorPoint), 
-                           color: isMorningCompleted ? Colors.green : Colors.grey, size: 16),
+                      Icon(
+                          isMorningCompleted
+                              ? fixIcon(FlexIcon.remix.autoCorrectionCheck)
+                              : fixIcon(FlexIcon.remix.roundAnchorPoint),
+                          color:
+                              isMorningCompleted ? Colors.green : Colors.grey,
+                          size: 16),
                       const SizedBox(width: 6),
-                      Text(isMorningCompleted ? 'Completed' : 'Pending', style: const TextStyle(fontWeight: FontWeight.w600)),
+                      Text(isMorningCompleted ? 'Completed' : 'Pending',
+                          style: const TextStyle(fontWeight: FontWeight.w600)),
                     ],
                   )
                 ],
@@ -79,9 +122,13 @@ class SchoolScreen extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text('Live Status', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                  const Text('Live Status',
+                      style: TextStyle(color: Colors.grey, fontSize: 12)),
                   const SizedBox(height: 4),
-                  Text(status, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1B62F0))),
+                  Text(status,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1B62F0))),
                 ],
               )
             ],
@@ -93,10 +140,12 @@ class SchoolScreen extends StatelessWidget {
               style: OutlinedButton.styleFrom(
                 foregroundColor: const Color(0xFF1B62F0),
                 side: const BorderSide(color: Color(0xFF1B62F0)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TrackingScreen()));
+                Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const TrackingScreen()));
               },
               icon: Icon(fixIcon(FlexIcon.remix.mapLocation), size: 18),
               label: const Text('Track Bus'),
@@ -107,7 +156,8 @@ class SchoolScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNotification(String message, String time, IconData icon, Color color) {
+  Widget _buildNotification(
+      String message, String time, IconData icon, Color color) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
@@ -115,7 +165,8 @@ class SchoolScreen extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+                color: color.withOpacity(0.1), shape: BoxShape.circle),
             child: Icon(icon, size: 16, color: color),
           ),
           const SizedBox(width: 12),
@@ -123,9 +174,13 @@ class SchoolScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(message, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
+                Text(message,
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
                 const SizedBox(height: 2),
-                Text(time, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                Text(time,
+                    style: const TextStyle(
+                        fontSize: 12, color: Color(0xFF64748B))),
               ],
             ),
           )

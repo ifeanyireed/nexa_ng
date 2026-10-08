@@ -84,5 +84,6 @@ class UserProfile {
     this.rewardPoints = 0,
   });
 
-  bool get isCorporateLinked => corporateCompanyId != null && corporateCompanyId!.isNotEmpty;
+  bool get isCorporateLinked =>
+      corporateCompanyId != null && corporateCompanyId!.isNotEmpty;
 }

@@ -32,22 +32,22 @@ class _SplashScreenState extends State<SplashScreen> {
             'assets/images/splash6.jpg',
             fit: BoxFit.cover,
           ),
-          
+
           // Content
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo 
+                // Logo
                 SvgPicture.asset(
                   'assets/images/favicon.svg',
                   width: 100,
                   height: 100,
                   fit: BoxFit.contain,
                 ).animate().fadeIn(duration: const Duration(seconds: 2)),
-                
+
                 const SizedBox(height: 24),
-                
+
                 const Text(
                   'New Era',
                   style: TextStyle(
@@ -56,10 +56,14 @@ class _SplashScreenState extends State<SplashScreen> {
                     color: Colors.white,
                     letterSpacing: 1.2,
                   ),
-                ).animate(delay: const Duration(milliseconds: 800))
-                 .fadeIn(duration: const Duration(milliseconds: 800))
-                 .slideY(begin: 0.2, end: 0, duration: const Duration(milliseconds: 800)),
-                 
+                )
+                    .animate(delay: const Duration(milliseconds: 800))
+                    .fadeIn(duration: const Duration(milliseconds: 800))
+                    .slideY(
+                        begin: 0.2,
+                        end: 0,
+                        duration: const Duration(milliseconds: 800)),
+
                 const Text(
                   'Transports Services',
                   style: TextStyle(
@@ -68,9 +72,13 @@ class _SplashScreenState extends State<SplashScreen> {
                     color: Colors.white,
                     letterSpacing: 0.5,
                   ),
-                ).animate(delay: const Duration(milliseconds: 1200))
-                 .fadeIn(duration: const Duration(milliseconds: 800))
-                 .slideY(begin: 0.2, end: 0, duration: const Duration(milliseconds: 800)),
+                )
+                    .animate(delay: const Duration(milliseconds: 1200))
+                    .fadeIn(duration: const Duration(milliseconds: 800))
+                    .slideY(
+                        begin: 0.2,
+                        end: 0,
+                        duration: const Duration(milliseconds: 800)),
               ],
             ),
           ),

@@ -18,7 +18,8 @@ class _StaffScreenState extends State<StaffScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Let\'s plan your trip', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        title: const Text('Let\'s plan your trip',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -41,48 +42,65 @@ class _StaffScreenState extends State<StaffScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(fixIcon(FlexIcon.remix.roundAnchorPoint), size: 16, color: Colors.green.shade600),
+                      Icon(fixIcon(FlexIcon.remix.roundAnchorPoint),
+                          size: 16, color: Colors.green.shade600),
                       const SizedBox(width: 12),
-                      const Expanded(child: Text('Ogidan Bus Stop', style: TextStyle(fontWeight: FontWeight.w600))),
-                      Icon(fixIcon(FlexIcon.remix.deleteTag), size: 16, color: Colors.grey),
+                      const Expanded(
+                          child: Text('Ogidan Bus Stop',
+                              style: TextStyle(fontWeight: FontWeight.w600))),
+                      Icon(fixIcon(FlexIcon.remix.deleteTag),
+                          size: 16, color: Colors.grey),
                     ],
                   ),
                   Padding(
                     padding: const EdgeInsets.only(left: 7),
-                    child: Align(alignment: Alignment.centerLeft, child: Container(width: 2, height: 20, color: Colors.grey.shade300)),
+                    child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                            width: 2, height: 20, color: Colors.grey.shade300)),
                   ),
                   Row(
                     children: [
-                      Icon(fixIcon(FlexIcon.remix.locationPin3), size: 16, color: Colors.blue.shade600),
+                      Icon(fixIcon(FlexIcon.remix.locationPin3),
+                          size: 16, color: Colors.blue.shade600),
                       const SizedBox(width: 12),
-                      const Expanded(child: Text('Sandfill Bus Stop', style: TextStyle(fontWeight: FontWeight.w600))),
-                      Icon(fixIcon(FlexIcon.remix.deleteTag), size: 16, color: Colors.grey),
+                      const Expanded(
+                          child: Text('Sandfill Bus Stop',
+                              style: TextStyle(fontWeight: FontWeight.w600))),
+                      Icon(fixIcon(FlexIcon.remix.deleteTag),
+                          size: 16, color: Colors.grey),
                     ],
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 20),
-            
+
             Row(
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Departure date', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      const Text('Departure date',
+                          style: TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 12),
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey.shade300),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           children: [
-                            Icon(fixIcon(FlexIcon.remix.blankCalendar), size: 16, color: Colors.grey),
+                            Icon(fixIcon(FlexIcon.remix.blankCalendar),
+                                size: 16, color: Colors.grey),
                             SizedBox(width: 8),
-                            Text('Fri, 25 Sep', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                            Text('Fri, 25 Sep',
+                                style: TextStyle(
+                                    fontSize: 14, fontWeight: FontWeight.w500)),
                           ],
                         ),
                       )
@@ -94,21 +112,28 @@ class _StaffScreenState extends State<StaffScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Available time', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                      const Text('Available time',
+                          style: TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 12),
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey.shade300),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           children: [
-                            Icon(fixIcon(FlexIcon.remix.countdownTimer), size: 16, color: Colors.grey),
+                            Icon(fixIcon(FlexIcon.remix.countdownTimer),
+                                size: 16, color: Colors.grey),
                             SizedBox(width: 8),
-                            Text('05:40 AM', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                            Text('05:40 AM',
+                                style: TextStyle(
+                                    fontSize: 14, fontWeight: FontWeight.w500)),
                             Spacer(),
-                            Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.grey),
+                            Icon(Icons.keyboard_arrow_down,
+                                size: 16, color: Colors.grey),
                           ],
                         ),
                       )
@@ -118,11 +143,13 @@ class _StaffScreenState extends State<StaffScreen> {
               ],
             ),
             const SizedBox(height: 24),
-            
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Available vehicles', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                Text('Available vehicles',
+                    style:
+                        TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                 Icon(fixIcon(FlexIcon.remix.alignTop1), color: Colors.grey),
               ],
             ),
@@ -140,28 +167,38 @@ class _StaffScreenState extends State<StaffScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Toyota Coaster • AAA-17JL', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      Text('Toyota Coaster • AAA-17JL',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 14)),
                       SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(fixIcon(FlexIcon.remix.sofa), size: 12, color: Colors.grey),
+                          Icon(fixIcon(FlexIcon.remix.sofa),
+                              size: 12, color: Colors.grey),
                           SizedBox(width: 4),
-                          Text('26 seats', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                          Text('26 seats',
+                              style:
+                                  TextStyle(color: Colors.grey, fontSize: 12)),
                         ],
                       )
                     ],
                   ),
                   Row(
                     children: [
-                      const Text('₦3,010.00', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 14)),
+                      const Text('₦3,010.00',
+                          style: TextStyle(
+                              color: Colors.green,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14)),
                       const SizedBox(width: 8),
-                      Icon(fixIcon(FlexIcon.remix.autoCorrectionCheck), color: Colors.green.shade600, size: 20),
+                      Icon(fixIcon(FlexIcon.remix.autoCorrectionCheck),
+                          color: Colors.green.shade600, size: 20),
                     ],
                   )
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -169,9 +206,12 @@ class _StaffScreenState extends State<StaffScreen> {
                 const Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Subscribe to route', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    Text('Subscribe to route',
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 14)),
                     SizedBox(height: 4),
-                    Text('Toggle ON the "Subscribe to route" button', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                    Text('Toggle ON the "Subscribe to route" button',
+                        style: TextStyle(color: Colors.grey, fontSize: 12)),
                   ],
                 ),
                 Switch(
@@ -185,10 +225,11 @@ class _StaffScreenState extends State<StaffScreen> {
                 )
               ],
             ),
-            
+
             if (isSubscribed) ...[
               const SizedBox(height: 20),
-              const Text('Trip Days', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              const Text('Trip Days',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -211,10 +252,12 @@ class _StaffScreenState extends State<StaffScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              const Text('Trip Duration (In weeks)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              const Text('Trip Duration (In weeks)',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
               const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.grey.shade300),
                   borderRadius: BorderRadius.circular(8),
@@ -222,8 +265,12 @@ class _StaffScreenState extends State<StaffScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Expires: after 3 weeks', style: TextStyle(fontWeight: FontWeight.w500)),
-                    Text('Update', style: TextStyle(color: Colors.blue.shade700, fontWeight: FontWeight.bold)),
+                    const Text('Expires: after 3 weeks',
+                        style: TextStyle(fontWeight: FontWeight.w500)),
+                    Text('Update',
+                        style: TextStyle(
+                            color: Colors.blue.shade700,
+                            fontWeight: FontWeight.bold)),
                   ],
                 ),
               ),
@@ -240,15 +287,23 @@ class _StaffScreenState extends State<StaffScreen> {
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF1B62F0),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: () {},
-              child: const Text('Book Trip', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              child: const Text('Book Trip',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16)),
             ),
           ),
         ),
       ),
-    ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.05, end: 0);
+    )
+        .animate()
+        .fadeIn(duration: const Duration(milliseconds: 400))
+        .slideY(begin: 0.05, end: 0);
   }
 
   Widget _buildDayBadge(String day, bool selected) {
@@ -256,7 +311,8 @@ class _StaffScreenState extends State<StaffScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: selected ? Colors.green.shade50 : Colors.transparent,
-        border: Border.all(color: selected ? Colors.green : Colors.grey.shade300),
+        border:
+            Border.all(color: selected ? Colors.green : Colors.grey.shade300),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(

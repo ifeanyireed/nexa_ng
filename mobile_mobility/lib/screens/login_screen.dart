@@ -57,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 40),
-              
+
               // Email Field
               TextFormField(
                 controller: _emailController,
@@ -72,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              
+
               // Password Field
               TextFormField(
                 controller: _passwordController,
@@ -82,7 +82,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   prefixIcon: Icon(fixIcon(FlexIcon.remix.shield1)),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
                     ),
                     onPressed: () {
                       setState(() {
@@ -96,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              
+
               // Forgot Password
               Align(
                 alignment: Alignment.centerRight,
@@ -106,7 +108,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Login Button
               SizedBox(
                 width: double.infinity,
@@ -130,7 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              
+
               // Sign Up Link
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -142,7 +144,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(builder: (context) => const SignupScreen()),
+                        MaterialPageRoute(
+                            builder: (context) => const SignupScreen()),
                       );
                     },
                     child: const Text('Sign Up'),
@@ -153,7 +156,10 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
-    ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.05, end: 0);
+    )
+        .animate()
+        .fadeIn(duration: const Duration(milliseconds: 400))
+        .slideY(begin: 0.05, end: 0);
   }
 
   @override

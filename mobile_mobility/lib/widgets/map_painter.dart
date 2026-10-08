@@ -194,20 +194,34 @@ class VectorMapPainter extends CustomPainter {
       ..style = PaintingStyle.fill;
 
     final buildings = [
-      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.06, h * 0.04, 28, 22), const Radius.circular(3)),
-      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.15, h * 0.05, 34, 18), const Radius.circular(3)),
-      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.44, h * 0.04, 38, 26), const Radius.circular(3)),
-      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.56, h * 0.06, 24, 20), const Radius.circular(3)),
-      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.84, h * 0.06, 32, 28), const Radius.circular(3)),
-      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.05, h * 0.24, 26, 30), const Radius.circular(3)),
-      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.14, h * 0.28, 30, 22), const Radius.circular(3)),
-      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.38, h * 0.26, 36, 28), const Radius.circular(3)),
-      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.50, h * 0.30, 28, 24), const Radius.circular(3)),
-      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.82, h * 0.28, 32, 34), const Radius.circular(3)),
-      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.08, h * 0.50, 36, 24), const Radius.circular(3)),
-      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.44, h * 0.52, 40, 30), const Radius.circular(3)),
-      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.56, h * 0.56, 32, 22), const Radius.circular(3)),
-      RRect.fromRectAndRadius(Rect.fromLTWH(w * 0.82, h * 0.56, 38, 28), const Radius.circular(3)),
+      RRect.fromRectAndRadius(
+          Rect.fromLTWH(w * 0.06, h * 0.04, 28, 22), const Radius.circular(3)),
+      RRect.fromRectAndRadius(
+          Rect.fromLTWH(w * 0.15, h * 0.05, 34, 18), const Radius.circular(3)),
+      RRect.fromRectAndRadius(
+          Rect.fromLTWH(w * 0.44, h * 0.04, 38, 26), const Radius.circular(3)),
+      RRect.fromRectAndRadius(
+          Rect.fromLTWH(w * 0.56, h * 0.06, 24, 20), const Radius.circular(3)),
+      RRect.fromRectAndRadius(
+          Rect.fromLTWH(w * 0.84, h * 0.06, 32, 28), const Radius.circular(3)),
+      RRect.fromRectAndRadius(
+          Rect.fromLTWH(w * 0.05, h * 0.24, 26, 30), const Radius.circular(3)),
+      RRect.fromRectAndRadius(
+          Rect.fromLTWH(w * 0.14, h * 0.28, 30, 22), const Radius.circular(3)),
+      RRect.fromRectAndRadius(
+          Rect.fromLTWH(w * 0.38, h * 0.26, 36, 28), const Radius.circular(3)),
+      RRect.fromRectAndRadius(
+          Rect.fromLTWH(w * 0.50, h * 0.30, 28, 24), const Radius.circular(3)),
+      RRect.fromRectAndRadius(
+          Rect.fromLTWH(w * 0.82, h * 0.28, 32, 34), const Radius.circular(3)),
+      RRect.fromRectAndRadius(
+          Rect.fromLTWH(w * 0.08, h * 0.50, 36, 24), const Radius.circular(3)),
+      RRect.fromRectAndRadius(
+          Rect.fromLTWH(w * 0.44, h * 0.52, 40, 30), const Radius.circular(3)),
+      RRect.fromRectAndRadius(
+          Rect.fromLTWH(w * 0.56, h * 0.56, 32, 22), const Radius.circular(3)),
+      RRect.fromRectAndRadius(
+          Rect.fromLTWH(w * 0.82, h * 0.56, 38, 28), const Radius.circular(3)),
     ];
 
     for (final b in buildings) {
@@ -264,7 +278,8 @@ class CourierPinWidget extends StatelessWidget {
                   child: Image.asset(
                     imageAsset,
                     fit: BoxFit.cover,
-                    errorBuilder: (ctx, err, stack) => Icon(fixIcon(FlexIcon.remix.userFullBody),
+                    errorBuilder: (ctx, err, stack) => Icon(
+                      fixIcon(FlexIcon.remix.userFullBody),
                       size: 20,
                       color: Color(0xFF1E293B),
                     ),

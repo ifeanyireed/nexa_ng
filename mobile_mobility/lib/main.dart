@@ -56,7 +56,6 @@ class TransportMobilityApp extends StatelessWidget {
           }),
         ),
       ),
-
       home: const SplashScreen(),
     );
   }

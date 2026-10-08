@@ -76,7 +76,8 @@ class CustomStatusBar extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               // Wifi
-              Icon(fixIcon(FlexIcon.remix.wifiAntenna), size: 15, color: textColor),
+              Icon(fixIcon(FlexIcon.remix.wifiAntenna),
+                  size: 15, color: textColor),
               const SizedBox(width: 6),
               // Battery
               Container(

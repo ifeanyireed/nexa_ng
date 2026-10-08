@@ -125,7 +125,8 @@ class _ProgressPainter extends CustomPainter {
     double currentX = p1.dx;
 
     while (currentX < p2.dx) {
-      final nextX = (currentX + dashWidth > p2.dx) ? p2.dx : currentX + dashWidth;
+      final nextX =
+          (currentX + dashWidth > p2.dx) ? p2.dx : currentX + dashWidth;
       canvas.drawLine(Offset(currentX, p1.dy), Offset(nextX, p1.dy), paint);
       currentX += dashWidth + dashSpace;
     }
@@ -133,5 +134,6 @@ class _ProgressPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _ProgressPainter oldDelegate) =>
-      oldDelegate.currentStep != currentStep || oldDelegate.totalSteps != totalSteps;
+      oldDelegate.currentStep != currentStep ||
+      oldDelegate.totalSteps != totalSteps;
 }

@@ -14,7 +14,7 @@ class SuggestRouteScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Don\\'t see your route?', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const Text("Don't see your route?", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             const Text('Suggest a route and we might add it to our network!'),
             const SizedBox(height: 24),

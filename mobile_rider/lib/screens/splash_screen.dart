@@ -94,7 +94,7 @@ class _SplashScreenState extends State<SplashScreen> {
                             fontWeight: FontWeight.w800,
                             color: Color(0xFF0F172A),
                           ),
-                        ),
+                        ).animate(key: ValueKey('title_$_currentPage')).fadeIn(duration: const Duration(milliseconds: 600)).slideY(begin: 0.2, end: 0),
                         const SizedBox(height: 16),
                         Text(
                           _onboardingData[index]['subtitle'],
@@ -104,7 +104,7 @@ class _SplashScreenState extends State<SplashScreen> {
                             color: Color(0xFF64748B),
                             height: 1.5,
                           ),
-                        ),
+                        ).animate(key: ValueKey('subtitle_$_currentPage')).fadeIn(duration: const Duration(milliseconds: 600), delay: const Duration(milliseconds: 200)).slideY(begin: 0.2, end: 0),
                       ],
                     ),
                   );

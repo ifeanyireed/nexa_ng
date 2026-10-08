@@ -14,7 +14,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 5), () {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const OnboardingScreen()),
       );
@@ -44,31 +44,38 @@ class _SplashScreenState extends State<SplashScreen> {
                   width: 100,
                   height: 100,
                   fit: BoxFit.contain,
-                ),
+                ).animate().fadeIn(duration: const Duration(seconds: 2)),
+                
                 const SizedBox(height: 24),
+                
                 const Text(
                   'New Era',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF1B62F0),
+                    color: Colors.white,
                     letterSpacing: 1.2,
                   ),
-                ),
+                ).animate(delay: const Duration(milliseconds: 800))
+                 .fadeIn(duration: const Duration(milliseconds: 800))
+                 .slideY(begin: 0.2, end: 0, duration: const Duration(milliseconds: 800)),
+                 
                 const Text(
                   'Transports Services',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w500,
-                    color: Color(0xFF1B62F0),
+                    color: Colors.white,
                     letterSpacing: 0.5,
                   ),
-                ),
+                ).animate(delay: const Duration(milliseconds: 1200))
+                 .fadeIn(duration: const Duration(milliseconds: 800))
+                 .slideY(begin: 0.2, end: 0, duration: const Duration(milliseconds: 800)),
               ],
             ),
           ),
         ],
       ),
-    ).animate().fadeIn(duration: const Duration(seconds: 3)).slideY(begin: 0.05, end: 0);
+    );
   }
 }

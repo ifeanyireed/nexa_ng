@@ -81,7 +81,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     fontSize: 28,
                     fontWeight: FontWeight.bold,
                   ),
-                ),
+                ).animate(key: ValueKey('inscription_$_currentIndex')).fadeIn(duration: const Duration(milliseconds: 600)).slideY(begin: 0.2, end: 0),
               ],
             ),
           ),

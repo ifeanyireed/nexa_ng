@@ -82,12 +82,10 @@ export const SUPER_ADMIN_ERP_MODULES: ErpModuleItem[] = [
   { key: "crm", label: "CRM & Email Marketing", category: "Sales & Commerce", description: "B2B sales pipelines, contact lists, scheduled email blasts, and lead scoring.", iconName: "BarChart3", color: "#EC4899", badge: "CRM" },
   { key: "marketplace", label: "Ofia Compass Manager", category: "Sales & Commerce", description: "Public storefront, listing catalog, and customer direct bookings.", iconName: "ShoppingBag", color: "#0E9F6E" },
   { key: "shop", label: "Ofia Shop Manager", category: "Sales & Commerce", description: "Multi-warehouse inventory (IMS), POS cashier registers, and viral referrals.", iconName: "Store", color: "#10B981", badge: "Retail" },
-  { key: "logistics", label: "Ofia Logistics Manager", category: "Operations", description: "Dispatch desk, waybills, courier assignments, and fleet routing.", iconName: "Truck", color: "#6366F1" },
   { key: "accounting", label: "Accounting & Ledgers", category: "People & Finance", description: "General ledger, charts of accounts, trial balance, and tax remittances.", iconName: "Layers", color: "#0E9F6E", badge: "GL" },
   { key: "hr", label: "HR & Appraisals", category: "People & Finance", description: "Employee roster, KPI appraisal cycles, reviews, and team retreat quests.", iconName: "Users", color: "#9061F9" },
-  { key: "fleet", label: "Ofia Fleet Manager", category: "Operations", description: "Corporate commute, route scheduling, assigned drivers, and vehicle ROI.", iconName: "Car", color: "#F59E0B", badge: "Fleet" },
+  { key: "mobility", label: "Ofia Mobility Manager", category: "Operations", description: "Corporate commute, route scheduling, assigned drivers, and vehicle ROI.", iconName: "Car", color: "#F59E0B", badge: "Mobility" },
   { key: "users", label: "User Management", category: "People & Finance", description: "Corporate staff directory, 10-tier role governance, departmental hierarchy, and cost centers.", iconName: "Users", color: "#0069FF", badge: "Staff" },
-  { key: "departments", label: "Departments", category: "People & Finance", description: "Corporate organizational divisions, budgetary cost centers, leadership lines, and staff headcount.", iconName: "Building2", color: "#6366F1", badge: "Org" },
 ];
 
 export interface AdminUser {
@@ -207,7 +205,6 @@ export const INITIAL_TENANTS: TenantOrg[] = [
       crm: true,
       marketplace: true,
       shop: true,
-      logistics: true,
       accounting: true,
       hr: true,
       users: true,
@@ -248,7 +245,6 @@ export const INITIAL_TENANTS: TenantOrg[] = [
       crm: true,
       marketplace: true,
       shop: true,
-      logistics: true,
       accounting: true,
       hr: true,
       users: true,

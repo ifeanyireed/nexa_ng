@@ -7,6 +7,7 @@ import {
   Activity,
   Bot,
   Building2,
+  Car,
   CheckCircle2,
   ChevronDown,
   ChevronLeft,
@@ -182,6 +183,15 @@ export function SuperAdminShell({
       ];
     }
 
+    if (pathname.startsWith("/mobility")) {
+      return [
+        { label: "Global Overview", href: "/mobility", icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
+        { label: "Tenant Fleets", href: "/mobility#tenants", icon: <Building2 className="w-3.5 h-3.5" /> },
+        { label: "Trips & Routes", href: "/mobility#trips", icon: <Activity className="w-3.5 h-3.5" /> },
+        { label: "System Alerts", href: "/mobility#alerts", icon: <ShieldAlert className="w-3.5 h-3.5 text-rose-500" /> },
+      ];
+    }
+
     if (pathname.startsWith("/cms")) {
       return [
         { label: "All Posts", href: "/cms/blog", icon: <FileText className="w-3.5 h-3.5" /> },
@@ -200,7 +210,7 @@ export function SuperAdminShell({
     href: string;
     badge?: string;
     key: string;
-    section: "Governance & Hub" | "Tenants & Subscriptions" | "Autonomous AI Swarm" | "Ofia Compass & Commerce" | "CRM & Growth";
+    section: "Governance & Hub" | "Tenants & Subscriptions" | "Autonomous AI Swarm" | "Ofia Compass & Commerce" | "Mobility & Transport" | "CRM & Growth";
   }[] = [
     // 1. GOVERNANCE & HUB
     {
@@ -250,7 +260,17 @@ export function SuperAdminShell({
       section: "Ofia Compass & Commerce",
     },
 
-    // 5. CRM & GROWTH
+    // 5. MOBILITY & TRANSPORT OPERATIONS
+    {
+      label: "Mobility Cockpit",
+      icon: <Car className="w-6 h-6" />,
+      href: "/mobility",
+      badge: "Fleet",
+      key: "mobility",
+      section: "Mobility & Transport",
+    },
+
+    // 6. CRM & GROWTH
     {
       label: "CRM & Growth",
       icon: <Users className="w-6 h-6" />,

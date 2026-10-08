@@ -174,11 +174,9 @@ function TenantManagementContent() {
     crm: true,
     marketplace: true,
     shop: true,
-    logistics: false,
     accounting: true,
     hr: true,
     users: true,
-    departments: true,
   });
 
   // Quota Override Form state
@@ -398,12 +396,10 @@ function TenantManagementContent() {
             ai: false,
             crm: false,
             users: false,
-            departments: false,
             marketplace: false,
             shop: false,
             inventory: false,
             pos: false,
-            logistics: false,
             referrals: false,
             accounting: false,
             hr: false,
@@ -413,13 +409,9 @@ function TenantManagementContent() {
         } else {
           matrixPayload[role] = {
             ...updatedModules,
-            departments: updatedModules.users ?? true,
           };
           if (!newStatus) {
             matrixPayload[role][moduleKey] = false;
-            if (moduleKey === "users") {
-              matrixPayload[role]["departments"] = false;
-            }
           }
         }
       });
@@ -462,12 +454,10 @@ function TenantManagementContent() {
             ai: false,
             crm: false,
             users: false,
-            departments: false,
             marketplace: false,
             shop: false,
             inventory: false,
             pos: false,
-            logistics: false,
             referrals: false,
             accounting: false,
             hr: false,
@@ -477,7 +467,6 @@ function TenantManagementContent() {
         } else {
           matrixPayload[role] = {
             ...updatedModules,
-            departments: enableAll,
           };
         }
       });
@@ -868,7 +857,6 @@ function TenantManagementContent() {
       defaultRoleKeys.forEach((role) => {
         matrixPayload[role] = {
           ...newErpModules,
-          departments: newErpModules.users ?? true,
         };
       });
       await USER_API.saveTenantRBAC(slug, matrixPayload).catch(() => null);
@@ -947,7 +935,7 @@ function TenantManagementContent() {
                   trend: "up",
                   changeType: "info",
                   icon: <Boxes className="w-5 h-5 text-purple-500" />,
-                  sub: "AI, IMS, POS, Logistics, Referrals, HR",
+                  sub: "AI, IMS, POS, Referrals, HR",
                 },
                 {
                   label: "Security & RBAC Enforcement",

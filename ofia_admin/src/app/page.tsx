@@ -90,10 +90,10 @@ export default function MasterOverviewPage() {
       href: "/tenants",
     },
     {
-      label: "Fleet Manager",
+      label: "Mobility Manager",
       icon: <Car className="w-6 h-6 text-orange-500" />,
       desc: "Global Routes & Vehicles",
-      href: "/fleet",
+      href: "/mobility",
 
     },
     {

@@ -37,7 +37,10 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: _buildBody(),
       ),
-    ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.05, end: 0);
+    )
+        .animate()
+        .fadeIn(duration: const Duration(milliseconds: 400))
+        .slideY(begin: 0.05, end: 0);
   }
 
   Widget _buildBody() {
@@ -52,7 +55,6 @@ class _HomeScreenState extends State<HomeScreen> {
         _buildHeader(),
         _buildDynamicServiceGrid(),
         _buildBanners(),
-
         if (activeTrip != null) _buildActiveTripWidget(),
         _buildIntelligentPrompt(),
         const SliverPadding(padding: EdgeInsets.only(bottom: 40)),
@@ -104,24 +106,31 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Row(
                   children: [
-                    const Text('Lagos, Nigeria', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 14)),
+                    const Text('Lagos, Nigeria',
+                        style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14)),
                     Icon(Icons.keyboard_arrow_down, size: 20),
                   ],
                 ),
                 Row(
                   children: [
-                    Icon(fixIcon(FlexIcon.remix.customerSupport5), color: Colors.black),
+                    Icon(fixIcon(FlexIcon.remix.customerSupport5),
+                        color: Colors.black),
                     const SizedBox(width: 16),
                     Stack(
                       children: [
-                        Icon(fixIcon(FlexIcon.remix.bellNotification), color: Colors.black),
+                        Icon(fixIcon(FlexIcon.remix.bellNotification),
+                            color: Colors.black),
                         Positioned(
                           right: 0,
                           top: 0,
                           child: Container(
                             width: 8,
                             height: 8,
-                            decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                            decoration: const BoxDecoration(
+                                color: Colors.red, shape: BoxShape.circle),
                           ),
                         )
                       ],
@@ -135,17 +144,28 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 Text(
                   'Hi, ${user.firstName}',
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black),
+                  style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black),
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(12)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                      color: Colors.orange.shade100,
+                      borderRadius: BorderRadius.circular(12)),
                   child: Row(
                     children: [
-                      Icon(fixIcon(FlexIcon.remix.starCircle), color: Colors.orange, size: 14),
+                      Icon(fixIcon(FlexIcon.remix.starCircle),
+                          color: Colors.orange, size: 14),
                       const SizedBox(width: 4),
-                      Text('${user.rewardPoints}', style: const TextStyle(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.bold)),
+                      Text('${user.rewardPoints}',
+                          style: const TextStyle(
+                              color: Colors.orange,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold)),
                     ],
                   ),
                 )
@@ -161,7 +181,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: TextField(
                 decoration: InputDecoration(
-                  icon: Icon(fixIcon(FlexIcon.remix.magnifyingGlass), color: Colors.grey),
+                  icon: Icon(fixIcon(FlexIcon.remix.magnifyingGlass),
+                      color: Colors.grey),
                   hintText: 'Where would you like to go?',
                   border: InputBorder.none,
                 ),
@@ -170,7 +191,10 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 10),
           ],
         ),
-      ),
+      )
+          .animate()
+          .fadeIn(duration: const Duration(milliseconds: 800))
+          .slideY(begin: -0.1, end: 0),
     );
   }
 
@@ -190,80 +214,109 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-            color: const Color(0xFF1B62F0),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF1B62F0).withOpacity(0.3),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(20),
+              color: const Color(0xFF1B62F0),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF1B62F0).withOpacity(0.3),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'Ongoing ${activeTrip!.serviceType.name}',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600),
+                      ),
                     ),
-                    child: Text(
-                      'Ongoing ${activeTrip!.serviceType.name}',
-                      style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                    Text(
+                      activeTrip!.status.name.toUpperCase(),
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800),
                     ),
-                  ),
-                  Text(
-                    activeTrip!.status.name.toUpperCase(),
-                    style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w800),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  _buildTimelineIcon(fixIcon(FlexIcon.remix.locationTarget2), Colors.white),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Pickup', style: TextStyle(color: Colors.white70, fontSize: 11)),
-                        Text(activeTrip!.pickupLocation, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-                      ],
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    _buildTimelineIcon(
+                        fixIcon(FlexIcon.remix.locationTarget2), Colors.white),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Pickup',
+                              style: TextStyle(
+                                  color: Colors.white70, fontSize: 11)),
+                          Text(activeTrip!.pickupLocation,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600)),
+                        ],
+                      ),
                     ),
-                  ),
-                  Text(activeTrip!.pickupTime.toString().substring(11, 16), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 17),
-                child: Container(width: 2, height: 20, color: Colors.white.withOpacity(0.3)),
-              ),
-              Row(
-                children: [
-                  _buildTimelineIcon(fixIcon(FlexIcon.remix.locationPin3), Colors.white),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Drop-off', style: TextStyle(color: Colors.white70, fontSize: 11)),
-                        Text(activeTrip!.destination, style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600)),
-                      ],
+                    Text(activeTrip!.pickupTime.toString().substring(11, 16),
+                        style: const TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(left: 17),
+                  child: Container(
+                      width: 2,
+                      height: 20,
+                      color: Colors.white.withOpacity(0.3)),
+                ),
+                Row(
+                  children: [
+                    _buildTimelineIcon(
+                        fixIcon(FlexIcon.remix.locationPin3), Colors.white),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Drop-off',
+                              style: TextStyle(
+                                  color: Colors.white70, fontSize: 11)),
+                          Text(activeTrip!.destination,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600)),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
-      ),
-    ),
+      )
+          .animate()
+          .fadeIn(duration: 800.ms, delay: 500.ms)
+          .slideY(begin: 0.1, end: 0),
     );
   }
 
@@ -271,7 +324,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return Container(
       width: 36,
       height: 36,
-      decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+      decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
       child: Icon(icon, size: 16, color: color),
     );
   }
@@ -283,7 +337,8 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [Color(0xFF1B62F0), Color(0xFF1E3A8A)]),
+            gradient: const LinearGradient(
+                colors: [Color(0xFF1B62F0), Color(0xFF1E3A8A)]),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Row(
@@ -292,20 +347,33 @@ class _HomeScreenState extends State<HomeScreen> {
               const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Going to Work?', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w800)),
+                  Text('Going to Work?',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800)),
                   SizedBox(height: 4),
-                  Text('Tap to book your usual Staff route.', style: TextStyle(color: Color(0xFFBAE6FD), fontSize: 12, fontWeight: FontWeight.w500)),
+                  Text('Tap to book your usual Staff route.',
+                      style: TextStyle(
+                          color: Color(0xFFBAE6FD),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500)),
                 ],
               ),
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                child: Icon(Icons.chevron_right, color: Color(0xFF1B62F0), size: 20),
+                decoration: const BoxDecoration(
+                    color: Colors.white, shape: BoxShape.circle),
+                child: Icon(Icons.chevron_right,
+                    color: Color(0xFF1B62F0), size: 20),
               )
             ],
           ),
         ),
-      ),
+      )
+          .animate()
+          .fadeIn(duration: 800.ms, delay: 600.ms)
+          .slideY(begin: 0.1, end: 0),
     );
   }
 
@@ -353,7 +421,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           height: 6,
                           width: isActive ? 16 : 6,
                           decoration: BoxDecoration(
-                            color: isActive ? const Color(0xFF1B62F0) : Colors.white.withValues(alpha: 0.5),
+                            color: isActive
+                                ? const Color(0xFF1B62F0)
+                                : Colors.white.withValues(alpha: 0.5),
                             borderRadius: BorderRadius.circular(4),
                           ),
                         );
@@ -366,9 +436,13 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           const SizedBox(height: 20),
         ],
-      ),
+      )
+          .animate()
+          .fadeIn(duration: 800.ms, delay: 400.ms)
+          .scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1)),
     );
   }
+
   SliverToBoxAdapter _buildDynamicServiceGrid() {
     return SliverToBoxAdapter(
       child: Padding(
@@ -383,7 +457,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 fontWeight: FontWeight.w800,
                 color: Color(0xFF0F172A),
               ),
-            ),
+            )
+                .animate()
+                .fadeIn(duration: 800.ms, delay: 200.ms)
+                .slideX(begin: -0.1, end: 0),
             const SizedBox(height: 16),
             GridView.builder(
               shrinkWrap: true,
@@ -397,7 +474,13 @@ class _HomeScreenState extends State<HomeScreen> {
               itemCount: services.length,
               itemBuilder: (context, index) {
                 final service = services[index];
-                return _buildServiceIcon(service);
+                return _buildServiceIcon(service)
+                    .animate(delay: (200 + (index * 100)).ms)
+                    .fadeIn(duration: 600.ms)
+                    .slideY(begin: 0.2, end: 0)
+                    .scale(
+                        begin: const Offset(0.9, 0.9),
+                        end: const Offset(1.0, 1.0));
               },
             ),
           ],
@@ -425,17 +508,23 @@ class _HomeScreenState extends State<HomeScreen> {
         child: InkWell(
           onTap: () {
             if (service.type == ServiceType.onDemand) {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const OnDemandScreen()));
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const OnDemandScreen()));
             } else if (service.type == ServiceType.shuttle) {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const ShuttleScreen()));
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const ShuttleScreen()));
             } else if (service.type == ServiceType.rental) {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const RentalScreen()));
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const RentalScreen()));
             } else if (service.type == ServiceType.staff) {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const StaffScreen()));
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const StaffScreen()));
             } else if (service.type == ServiceType.interstate) {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const InterstateScreen()));
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const InterstateScreen()));
             } else if (service.type == ServiceType.school) {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const SchoolScreen()));
+              Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const SchoolScreen()));
             }
           },
           borderRadius: BorderRadius.circular(16),
@@ -459,4 +548,3 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-

@@ -12,6 +12,9 @@ export interface SmtpSettings {
   username: string;
   password?: string;
   hasPassword?: boolean;
+  rateLimitedUntil?: string | null;
+  rateLimitReason?: string | null;
+  isRateLimited?: boolean;
 }
 
 // In-memory fallback cache when PostgreSQL connection is unavailable
@@ -26,7 +29,7 @@ export async function getTenantSmtpSettings(tenantSlug: string): Promise<SmtpSet
     if (pool) {
       await ensureTablesExist();
       const res = await pool.query(
-        `SELECT tenant_slug, provider, host, port, encryption, from_email, from_name, username, password
+        `SELECT tenant_slug, provider, host, port, encryption, from_email, from_name, username, password, rate_limited_until, rate_limit_reason
          FROM tenant_smtp_settings
          WHERE LOWER(tenant_slug) = $1
          LIMIT 1`,
@@ -35,6 +38,9 @@ export async function getTenantSmtpSettings(tenantSlug: string): Promise<SmtpSet
 
       if (res.rows.length > 0) {
         const row = res.rows[0];
+        const isRateLimited = Boolean(
+          row.rate_limited_until && new Date(row.rate_limited_until).getTime() > Date.now()
+        );
         return {
           tenantSlug: row.tenant_slug,
           provider: row.provider || "custom",
@@ -46,6 +52,9 @@ export async function getTenantSmtpSettings(tenantSlug: string): Promise<SmtpSet
           username: row.username || "",
           password: row.password || "",
           hasPassword: Boolean(row.password && row.password.length > 0),
+          rateLimitedUntil: row.rate_limited_until ? new Date(row.rate_limited_until).toISOString() : null,
+          rateLimitReason: row.rate_limit_reason || null,
+          isRateLimited,
         };
       }
     }
@@ -213,6 +222,9 @@ export interface TenantSenderProfile {
   password?: string;
   hasPassword?: boolean;
   isDefault?: boolean;
+  rateLimitedUntil?: string | null;
+  rateLimitReason?: string | null;
+  isRateLimited?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -228,7 +240,7 @@ export async function getTenantSenderProfiles(tenantSlug: string): Promise<Tenan
     if (pool) {
       await ensureTablesExist();
       const res = await pool.query(
-        `SELECT id, tenant_slug, profile_name, provider, host, port, encryption, from_email, from_name, username, password, is_default, created_at, updated_at
+        `SELECT id, tenant_slug, profile_name, provider, host, port, encryption, from_email, from_name, username, password, is_default, rate_limited_until, rate_limit_reason, created_at, updated_at
          FROM tenant_sender_profiles
          WHERE LOWER(tenant_slug) = $1
          ORDER BY is_default DESC, created_at ASC`,
@@ -236,23 +248,31 @@ export async function getTenantSenderProfiles(tenantSlug: string): Promise<Tenan
       );
 
       if (res.rows.length > 0) {
-        return res.rows.map((row) => ({
-          id: row.id,
-          tenantSlug: row.tenant_slug,
-          profileName: row.profile_name,
-          provider: row.provider || "custom",
-          host: row.host || "",
-          port: Number(row.port) || 587,
-          encryption: (row.encryption as any) || "tls",
-          fromEmail: row.from_email || "",
-          fromName: row.from_name || "",
-          username: row.username || "",
-          password: row.password || "",
-          hasPassword: Boolean(row.password && row.password.length > 0),
-          isDefault: Boolean(row.is_default),
-          createdAt: row.created_at ? new Date(row.created_at).toISOString() : undefined,
-          updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : undefined,
-        }));
+        return res.rows.map((row) => {
+          const isRateLimited = Boolean(
+            row.rate_limited_until && new Date(row.rate_limited_until).getTime() > Date.now()
+          );
+          return {
+            id: row.id,
+            tenantSlug: row.tenant_slug,
+            profileName: row.profile_name,
+            provider: row.provider || "custom",
+            host: row.host || "",
+            port: Number(row.port) || 587,
+            encryption: (row.encryption as any) || "tls",
+            fromEmail: row.from_email || "",
+            fromName: row.from_name || "",
+            username: row.username || "",
+            password: row.password || "",
+            hasPassword: Boolean(row.password && row.password.length > 0),
+            isDefault: Boolean(row.is_default),
+            rateLimitedUntil: row.rate_limited_until ? new Date(row.rate_limited_until).toISOString() : null,
+            rateLimitReason: row.rate_limit_reason || null,
+            isRateLimited,
+            createdAt: row.created_at ? new Date(row.created_at).toISOString() : undefined,
+            updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : undefined,
+          };
+        });
       }
     }
   } catch (err) {
@@ -264,6 +284,7 @@ export async function getTenantSenderProfiles(tenantSlug: string): Promise<Tenan
     ...p,
     password: p.password || "",
     hasPassword: Boolean(p.password && p.password.length > 0),
+    isRateLimited: Boolean(p.rateLimitedUntil && new Date(p.rateLimitedUntil).getTime() > Date.now()),
   }));
 }
 
@@ -276,7 +297,7 @@ export async function getTenantSenderProfileById(tenantSlug: string, id: string)
     if (pool) {
       await ensureTablesExist();
       const res = await pool.query(
-        `SELECT id, tenant_slug, profile_name, provider, host, port, encryption, from_email, from_name, username, password, is_default, created_at, updated_at
+        `SELECT id, tenant_slug, profile_name, provider, host, port, encryption, from_email, from_name, username, password, is_default, rate_limited_until, rate_limit_reason, created_at, updated_at
          FROM tenant_sender_profiles
          WHERE LOWER(tenant_slug) = $1 AND id = $2
          LIMIT 1`,
@@ -284,6 +305,9 @@ export async function getTenantSenderProfileById(tenantSlug: string, id: string)
       );
       if (res.rows.length > 0) {
         const row = res.rows[0];
+        const isRateLimited = Boolean(
+          row.rate_limited_until && new Date(row.rate_limited_until).getTime() > Date.now()
+        );
         return {
           id: row.id,
           tenantSlug: row.tenant_slug,
@@ -298,6 +322,9 @@ export async function getTenantSenderProfileById(tenantSlug: string, id: string)
           password: row.password || "",
           hasPassword: Boolean(row.password && row.password.length > 0),
           isDefault: Boolean(row.is_default),
+          rateLimitedUntil: row.rate_limited_until ? new Date(row.rate_limited_until).toISOString() : null,
+          rateLimitReason: row.rate_limit_reason || null,
+          isRateLimited,
           createdAt: row.created_at ? new Date(row.created_at).toISOString() : undefined,
           updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : undefined,
         };
@@ -308,7 +335,11 @@ export async function getTenantSenderProfileById(tenantSlug: string, id: string)
   }
 
   const cached = (memorySenderProfilesStore.get(normalizedSlug) || []).find((p) => p.id === id);
-  return cached || null;
+  if (!cached) return null;
+  return {
+    ...cached,
+    isRateLimited: Boolean(cached.rateLimitedUntil && new Date(cached.rateLimitedUntil).getTime() > Date.now()),
+  };
 }
 
 export async function saveTenantSenderProfile(
@@ -459,6 +490,7 @@ export interface SendMassEmailParams {
   messageHtml: string;
   loginUrl?: string;
   senderOverride?: Partial<SmtpSettings>;
+  senderProfileId?: string;
 }
 
 export interface QueueCampaignParams {
@@ -468,6 +500,7 @@ export interface QueueCampaignParams {
   messageHtml: string;
   loginUrl?: string;
   senderOverride?: Partial<SmtpSettings>;
+  senderProfileId?: string;
 }
 
 export interface CampaignProgress {
@@ -478,7 +511,9 @@ export interface CampaignProgress {
   sent: number;
   failed: number;
   pending: number;
-  status: "queued" | "processing" | "completed" | "failed";
+  rateLimited?: number;
+  status: "queued" | "processing" | "completed" | "failed" | "rate_limited";
+  nextRetryAt?: string | null;
   progressPercent: number;
   errors: Array<{ email: string; error: string }>;
 }
@@ -488,6 +523,7 @@ interface MemoryQueueItem {
   id: string;
   campaignId: string;
   tenantSlug: string;
+  senderProfileId?: string;
   recipientEmail: string;
   recipientName?: string;
   recipientRole?: string;
@@ -496,6 +532,8 @@ interface MemoryQueueItem {
   attempts: number;
   errorMessage?: string;
   sentAt?: Date;
+  nextRetryAt?: Date;
+  rateLimitedAt?: Date;
 }
 
 interface MemoryCampaign {
@@ -505,12 +543,230 @@ interface MemoryCampaign {
   messageHtml: string;
   loginUrl?: string;
   senderOverride?: Partial<SmtpSettings>;
+  senderProfileId?: string;
   totalRecipients: number;
   sentCount: number;
   failedCount: number;
-  status: "queued" | "processing" | "completed" | "failed";
+  status: "queued" | "processing" | "completed" | "failed" | "rate_limited";
   createdAt: Date;
   updatedAt: Date;
+}
+
+// In-memory profile cooldown cache (ms timestamp when cooldown ends)
+const profileCooldownMemory = new Map<string, number>();
+
+/**
+ * Returns a globally unique profile key identifying the exact sending identity.
+ * Format: `<tenant_slug>:<profile_id>` or `<tenant_slug>:<host>_<fromEmail>`
+ */
+export function getProfileKey(
+  tenantSlug: string,
+  profileId?: string,
+  host?: string,
+  fromEmail?: string
+): string {
+  const normTenant = (tenantSlug || "default").trim().toLowerCase();
+  if (profileId && profileId !== "workspace_primary" && profileId !== "default" && profileId !== "custom") {
+    return `${normTenant}:${profileId}`;
+  }
+  if (host && fromEmail) {
+    return `${normTenant}:${host.toLowerCase().trim()}_${fromEmail.toLowerCase().trim()}`;
+  }
+  return `${normTenant}:workspace_primary`;
+}
+
+/**
+ * Detects whether an SMTP or HTTP error represents a rate limit / quota exhaustion.
+ * Checks numeric codes (421, 450, 451, 452, 429), enhanced codes (4.7.0, 4.7.1, 4.7.28, 5.4.5),
+ * and standard provider error messages (Brevo, Gmail, SES, Hostinger, Mailgun, SendGrid).
+ */
+export function isRateLimitError(err: any): boolean {
+  if (!err) return false;
+
+  // 1. Check numeric status / response codes
+  const code = err.responseCode || err.code || err.status || err.statusCode;
+  const numCode = Number(code);
+  if ([421, 450, 451, 452, 429].includes(numCode)) {
+    return true;
+  }
+
+  // 2. Aggregate error text components
+  const rawParts = [
+    typeof err === "string" ? err : "",
+    err.message || "",
+    err.response || "",
+    err.command || "",
+    typeof err.toString === "function" ? err.toString() : "",
+  ].join(" ").toLowerCase();
+
+  // Enhanced SMTP codes
+  if (
+    rawParts.includes("4.7.0") ||
+    rawParts.includes("4.7.1") ||
+    rawParts.includes("4.7.28") ||
+    rawParts.includes("5.4.5")
+  ) {
+    return true;
+  }
+
+  // Provider rate-limiting string patterns
+  const rateLimitPatterns = [
+    "rate limit",
+    "ratelimit",
+    "rate-limit",
+    "too many requests",
+    "too many connections",
+    "too many emails",
+    "too many messages",
+    "daily limit",
+    "daily quota",
+    "daily sending limit",
+    "daily message limit",
+    "exceeded your daily",
+    "daily user sending quota",
+    "hourly limit",
+    "hourly quota",
+    "messages per hour limit",
+    "quota exceeded",
+    "exceeded quota",
+    "exceeded allowance",
+    "sending limit exceeded",
+    "maximum sending rate",
+    "user sending limit",
+    "account sending limit",
+    "try again later",
+    "temporarily deferred",
+    "greylisted",
+    "greylist",
+    "throttled",
+    "throttling",
+    "per hour limit reached",
+  ];
+
+  return rateLimitPatterns.some((pattern) => rawParts.includes(pattern));
+}
+
+/**
+ * Checks whether an email profile is currently cooling down due to rate limit enforcement.
+ */
+export async function isProfileInCooldown(profileKey: string): Promise<boolean> {
+  const cachedTime = profileCooldownMemory.get(profileKey);
+  const now = Date.now();
+  if (cachedTime) {
+    if (cachedTime > now) return true;
+    profileCooldownMemory.delete(profileKey);
+  }
+
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      const res = await pool.query(
+        `SELECT cooldown_until FROM email_profile_cooldowns WHERE profile_key = $1 AND cooldown_until > CURRENT_TIMESTAMP LIMIT 1`,
+        [profileKey]
+      );
+      if (res.rows.length > 0) {
+        const until = new Date(res.rows[0].cooldown_until).getTime();
+        profileCooldownMemory.set(profileKey, until);
+        return true;
+      }
+    }
+  } catch (err) {
+    console.warn("⚠️ Failed to query profile cooldown from DB:", err);
+  }
+
+  return false;
+}
+
+/**
+ * Records a 24-hour rate limit cooldown for a specific email profile in memory and Neon PostgreSQL.
+ */
+export async function recordProfileRateLimit(params: {
+  tenantSlug: string;
+  senderProfileId?: string;
+  provider?: string;
+  host?: string;
+  fromEmail?: string;
+  errorMessage: string;
+  cooldownDurationMs?: number; // defaults to 24 hours (86,400,000 ms)
+}): Promise<{ profileKey: string; cooldownUntil: Date }> {
+  const duration = params.cooldownDurationMs ?? 24 * 60 * 60 * 1000;
+  const cooldownUntil = new Date(Date.now() + duration);
+  const profileKey = getProfileKey(params.tenantSlug, params.senderProfileId, params.host, params.fromEmail);
+  const normalizedSlug = (params.tenantSlug || "default").trim().toLowerCase();
+
+  // 1. Update in-memory cooldown cache
+  profileCooldownMemory.set(profileKey, cooldownUntil.getTime());
+
+  // 2. Persist to PostgreSQL tables
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+
+      // Upsert in email_profile_cooldowns table
+      await pool.query(
+        `INSERT INTO email_profile_cooldowns (
+           profile_key, tenant_slug, sender_profile_id, provider, host, from_email, rate_limited_at, cooldown_until, reason, updated_at
+         ) VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, $7, $8, CURRENT_TIMESTAMP)
+         ON CONFLICT (profile_key)
+         DO UPDATE SET
+           rate_limited_at = CURRENT_TIMESTAMP,
+           cooldown_until = EXCLUDED.cooldown_until,
+           reason = EXCLUDED.reason,
+           updated_at = CURRENT_TIMESTAMP`,
+        [
+          profileKey,
+          normalizedSlug,
+          params.senderProfileId || null,
+          params.provider || null,
+          params.host || null,
+          params.fromEmail || null,
+          cooldownUntil,
+          params.errorMessage,
+        ]
+      );
+
+      // Update tenant_sender_profiles if specific profile ID provided
+      if (params.senderProfileId && params.senderProfileId !== "workspace_primary" && params.senderProfileId !== "default") {
+        await pool.query(
+          `UPDATE tenant_sender_profiles
+           SET rate_limited_until = $1, rate_limit_reason = $2, updated_at = CURRENT_TIMESTAMP
+           WHERE id = $3`,
+          [cooldownUntil, params.errorMessage, params.senderProfileId]
+        );
+      }
+
+      // Update tenant_smtp_settings if primary
+      await pool.query(
+        `UPDATE tenant_smtp_settings
+         SET rate_limited_until = $1, rate_limit_reason = $2, updated_at = CURRENT_TIMESTAMP
+         WHERE LOWER(tenant_slug) = $3`,
+        [cooldownUntil, params.errorMessage, normalizedSlug]
+      );
+    }
+  } catch (err) {
+    console.error("⚠️ Failed to record profile rate limit in PostgreSQL:", err);
+  }
+
+  return { profileKey, cooldownUntil };
+}
+
+/**
+ * Resets a profile rate limit cooldown immediately (e.g. upon quota top-up or manual override).
+ */
+export async function resetProfileRateLimit(profileKey: string): Promise<void> {
+  profileCooldownMemory.delete(profileKey);
+
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      await pool.query(`DELETE FROM email_profile_cooldowns WHERE profile_key = $1`, [profileKey]);
+    }
+  } catch (err) {
+    console.warn("⚠️ Failed to reset profile cooldown in DB:", err);
+  }
 }
 
 const memoryCampaigns = new Map<string, MemoryCampaign>();
@@ -556,7 +812,7 @@ export async function queueMassEmailCampaign(params: QueueCampaignParams): Promi
   total: number;
   queued: boolean;
 }> {
-  const { tenantSlug, recipients, subject, messageHtml, loginUrl, senderOverride } = params;
+  const { tenantSlug, recipients, subject, messageHtml, loginUrl, senderOverride, senderProfileId } = params;
   const campaignId = `cmp_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
   const normalizedSlug = (tenantSlug || "default").trim().toLowerCase();
 
@@ -568,17 +824,23 @@ export async function queueMassEmailCampaign(params: QueueCampaignParams): Promi
     throw new Error("At least one valid recipient email is required to queue a campaign");
   }
 
+  // Check if selected profile is in active rate-limit cooldown
+  const profileKey = getProfileKey(normalizedSlug, senderProfileId, senderOverride?.host, senderOverride?.fromEmail);
+  const inCooldown = await isProfileInCooldown(profileKey);
+  const initialRetryAt = inCooldown ? new Date(Date.now() + 24 * 60 * 60 * 1000) : new Date();
+  const campaignInitialStatus = inCooldown ? "rate_limited" : "queued";
+
   // 1. Try to persist to Neon PostgreSQL
   try {
     const pool = getDbPool();
     if (pool) {
       await ensureTablesExist();
 
-      // Insert campaign
+      // Insert campaign with sender_profile_id
       await pool.query(
         `INSERT INTO email_campaigns (
-           id, tenant_slug, subject, message_html, login_url, sender_override, total_recipients, status, created_at, updated_at
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'queued', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+           id, tenant_slug, subject, message_html, login_url, sender_override, sender_profile_id, total_recipients, status, created_at, updated_at
+         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
         [
           campaignId,
           normalizedSlug,
@@ -586,11 +848,13 @@ export async function queueMassEmailCampaign(params: QueueCampaignParams): Promi
           messageHtml,
           loginUrl || null,
           senderOverride ? JSON.stringify(senderOverride) : null,
+          senderProfileId || null,
           validRecipients.length,
+          campaignInitialStatus,
         ]
       );
 
-      // Batch insert queue items
+      // Batch insert queue items including sender_profile_id and next_retry_at
       const insertPromises: Promise<any>[] = [];
       const batchSize = 100;
       for (let i = 0; i < validRecipients.length; i += batchSize) {
@@ -599,23 +863,27 @@ export async function queueMassEmailCampaign(params: QueueCampaignParams): Promi
         const placeholders: string[] = [];
 
         chunk.forEach((rec, idx) => {
-          const offset = idx * 8;
+          const offset = idx * 10;
           const itemId = `q_${campaignId}_${i + idx}`;
-          placeholders.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8})`);
+          placeholders.push(
+            `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10})`
+          );
           values.push(
             itemId,
             campaignId,
             normalizedSlug,
+            senderProfileId || null,
             rec.email.trim(),
             rec.name || "",
             rec.role || "",
             rec.department || "",
-            "pending"
+            "pending",
+            initialRetryAt
           );
         });
 
         const sql = `
-          INSERT INTO email_queue (id, campaign_id, tenant_slug, recipient_email, recipient_name, recipient_role, recipient_department, status)
+          INSERT INTO email_queue (id, campaign_id, tenant_slug, sender_profile_id, recipient_email, recipient_name, recipient_role, recipient_department, status, next_retry_at)
           VALUES ${placeholders.join(", ")}
         `;
         insertPromises.push(pool.query(sql, values));
@@ -641,10 +909,11 @@ export async function queueMassEmailCampaign(params: QueueCampaignParams): Promi
     messageHtml,
     loginUrl,
     senderOverride,
+    senderProfileId,
     totalRecipients: validRecipients.length,
     sentCount: 0,
     failedCount: 0,
-    status: "queued",
+    status: campaignInitialStatus,
     createdAt: new Date(),
     updatedAt: new Date(),
   });
@@ -654,12 +923,14 @@ export async function queueMassEmailCampaign(params: QueueCampaignParams): Promi
       id: `q_${campaignId}_${idx}`,
       campaignId,
       tenantSlug: normalizedSlug,
+      senderProfileId,
       recipientEmail: rec.email.trim(),
       recipientName: rec.name || "",
       recipientRole: rec.role || "",
       recipientDepartment: rec.department || "",
       status: "pending",
       attempts: 0,
+      nextRetryAt: initialRetryAt,
     });
   });
 
@@ -678,20 +949,24 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
   sent: number;
   failed: number;
   remainingPending: number;
+  remainingRateLimited?: number;
   errors: Array<{ email: string; error: string }>;
 }> {
   let processed = 0;
   let sent = 0;
   let failed = 0;
   let remainingPending = 0;
+  let remainingRateLimited = 0;
   const errors: Array<{ email: string; error: string }> = [];
 
-  // Transporter cache per tenant slug during this batch
+  // Transporter cache keyed by profile identity during this batch run
   const transporterCache = new Map<string, { transporter: any; settings: SmtpSettings }>();
+  const rateLimitedProfilesThisRun = new Set<string>();
 
   async function getTransporterForTenant(slug: string) {
-    if (transporterCache.has(slug)) {
-      return transporterCache.get(slug)!;
+    const cacheKey = `tenant_${slug}`;
+    if (transporterCache.has(cacheKey)) {
+      return transporterCache.get(cacheKey)!;
     }
     const settings = await getTenantSmtpSettings(slug);
     if (!settings || !settings.host || !settings.fromEmail) {
@@ -699,7 +974,7 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
     }
     const transporter = createNodemailerTransporter(settings);
     const entry = { transporter, settings };
-    transporterCache.set(slug, entry);
+    transporterCache.set(cacheKey, entry);
     return entry;
   }
 
@@ -709,19 +984,29 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
     if (pool) {
       await ensureTablesExist();
 
-      // Atomically select and claim pending items
+      // Atomically select and claim pending items whose profile is NOT currently in cooldown
+      // and whose next_retry_at has arrived
       const claimQuery = `
-        WITH claimed AS (
-          SELECT id FROM email_queue
-          WHERE (status = 'pending' OR (status = 'processing' AND updated_at < CURRENT_TIMESTAMP - INTERVAL '5 minutes')) AND attempts < 3
-          ORDER BY created_at ASC
+        WITH active_cooldowns AS (
+          SELECT profile_key FROM email_profile_cooldowns WHERE cooldown_until > CURRENT_TIMESTAMP
+        ),
+        claimed AS (
+          SELECT q.id FROM email_queue q
+          WHERE (q.status = 'pending' OR (q.status = 'processing' AND q.updated_at < CURRENT_TIMESTAMP - INTERVAL '5 minutes'))
+            AND (q.next_retry_at IS NULL OR q.next_retry_at <= CURRENT_TIMESTAMP)
+            AND q.attempts < 3
+            AND NOT EXISTS (
+              SELECT 1 FROM active_cooldowns ac
+              WHERE ac.profile_key = COALESCE(q.tenant_slug || ':' || q.sender_profile_id, q.tenant_slug || ':workspace_primary')
+            )
+          ORDER BY q.created_at ASC
           LIMIT $1
           FOR UPDATE SKIP LOCKED
         )
         UPDATE email_queue
         SET status = 'processing', attempts = attempts + 1, updated_at = CURRENT_TIMESTAMP
         WHERE id IN (SELECT id FROM claimed)
-        RETURNING id, campaign_id, tenant_slug, recipient_email, recipient_name, recipient_role, recipient_department, attempts;
+        RETURNING id, campaign_id, tenant_slug, sender_profile_id, recipient_email, recipient_name, recipient_role, recipient_department, attempts;
       `;
 
       const claimedResult = await pool.query(claimQuery, [batchSize]);
@@ -731,16 +1016,16 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
         // Fetch campaign details for these items
         const campaignIds = Array.from(new Set(claimedItems.map((item) => item.campaign_id)));
         const campaignsResult = await pool.query(
-          `SELECT id, tenant_slug, subject, message_html, login_url, sender_override FROM email_campaigns WHERE id = ANY($1)`,
+          `SELECT id, tenant_slug, subject, message_html, login_url, sender_override, sender_profile_id FROM email_campaigns WHERE id = ANY($1)`,
           [campaignIds]
         );
         const campaignsMap = new Map<string, any>();
         campaignsResult.rows.forEach((c) => campaignsMap.set(c.id, c));
 
         for (const item of claimedItems) {
-          processed++;
           const campaign = campaignsMap.get(item.campaign_id);
           if (!campaign) {
+            processed++;
             failed++;
             await pool.query(
               `UPDATE email_queue SET status = 'failed', error_message = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
@@ -748,6 +1033,24 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
             );
             continue;
           }
+
+          // Resolve effective sender profile ID and profile key
+          const effectiveProfileId = item.sender_profile_id || campaign.sender_profile_id || undefined;
+
+          // Check if this profile encountered rate limits earlier in this execution run
+          const preCheckKey = getProfileKey(item.tenant_slug, effectiveProfileId);
+          if (rateLimitedProfilesThisRun.has(preCheckKey)) {
+            // Defer item for 24h retry without penalizing attempts budget
+            await pool.query(
+              `UPDATE email_queue
+               SET status = 'pending', attempts = GREATEST(0, attempts - 1), next_retry_at = CURRENT_TIMESTAMP + INTERVAL '24 hours', updated_at = CURRENT_TIMESTAMP
+               WHERE id = $1`,
+              [item.id]
+            );
+            continue;
+          }
+
+          processed++;
 
           try {
             let effectiveTransporter: any;
@@ -765,28 +1068,54 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
               }
             }
 
-            if (overrideSettings && overrideSettings.host && overrideSettings.fromEmail) {
-              const cacheKey = `override_${campaign.id}`;
-              if (!transporterCache.has(cacheKey)) {
-                const fullSettings: SmtpSettings = {
-                  tenantSlug: item.tenant_slug,
-                  provider: overrideSettings.provider || "custom",
-                  host: overrideSettings.host,
-                  port: Number(overrideSettings.port) || 587,
-                  encryption: (overrideSettings.encryption as any) || "tls",
-                  fromEmail: overrideSettings.fromEmail,
-                  fromName: overrideSettings.fromName || "Workspace Admin",
-                  username: overrideSettings.username || overrideSettings.fromEmail,
-                  password: overrideSettings.password || "",
-                };
-                transporterCache.set(cacheKey, {
-                  transporter: createNodemailerTransporter(fullSettings),
-                  settings: fullSettings,
-                });
-              }
-              const entry = transporterCache.get(cacheKey)!;
+            // Determine transporter cache key for per-profile isolation
+            const profileCacheKey = effectiveProfileId && effectiveProfileId !== "workspace_primary"
+              ? `${item.tenant_slug}:${effectiveProfileId}`
+              : overrideSettings?.host && overrideSettings?.fromEmail
+              ? `override_${campaign.id}`
+              : `tenant_${item.tenant_slug}`;
+
+            if (transporterCache.has(profileCacheKey)) {
+              const entry = transporterCache.get(profileCacheKey)!;
               effectiveTransporter = entry.transporter;
               effectiveSettings = entry.settings;
+            } else if (overrideSettings && overrideSettings.host && overrideSettings.fromEmail) {
+              const fullSettings: SmtpSettings = {
+                tenantSlug: item.tenant_slug,
+                provider: overrideSettings.provider || "custom",
+                host: overrideSettings.host,
+                port: Number(overrideSettings.port) || 587,
+                encryption: (overrideSettings.encryption as any) || "tls",
+                fromEmail: overrideSettings.fromEmail,
+                fromName: overrideSettings.fromName || "Workspace Admin",
+                username: overrideSettings.username || overrideSettings.fromEmail,
+                password: overrideSettings.password || "",
+              };
+              effectiveTransporter = createNodemailerTransporter(fullSettings);
+              effectiveSettings = fullSettings;
+              transporterCache.set(profileCacheKey, { transporter: effectiveTransporter, settings: fullSettings });
+            } else if (effectiveProfileId && effectiveProfileId !== "workspace_primary" && effectiveProfileId !== "default") {
+              const prof = await getTenantSenderProfileById(item.tenant_slug, effectiveProfileId);
+              if (prof && prof.host && prof.fromEmail) {
+                const fullSettings: SmtpSettings = {
+                  tenantSlug: item.tenant_slug,
+                  provider: prof.provider || "custom",
+                  host: prof.host,
+                  port: Number(prof.port) || 587,
+                  encryption: (prof.encryption as any) || "tls",
+                  fromEmail: prof.fromEmail,
+                  fromName: prof.fromName || "Workspace Admin",
+                  username: prof.username || prof.fromEmail,
+                  password: prof.password || "",
+                };
+                effectiveTransporter = createNodemailerTransporter(fullSettings);
+                effectiveSettings = fullSettings;
+                transporterCache.set(profileCacheKey, { transporter: effectiveTransporter, settings: fullSettings });
+              } else {
+                const entry = await getTransporterForTenant(item.tenant_slug);
+                effectiveTransporter = entry.transporter;
+                effectiveSettings = entry.settings;
+              }
             } else {
               const entry = await getTransporterForTenant(item.tenant_slug);
               effectiveTransporter = entry.transporter;
@@ -820,36 +1149,92 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
               [item.id]
             );
 
-            // Throttle between dispatches to comply with SMTP rate limits
+            // Throttle between dispatches to comply with provider rate limits
             await new Promise((resolve) => setTimeout(resolve, 600));
           } catch (sendErr: any) {
             const errMsg = sendErr.message || "Failed to deliver email";
-            const isRateLimit =
-              errMsg.toLowerCase().includes("ratelimit") ||
-              errMsg.includes("451") ||
-              errMsg.toLowerCase().includes("too many");
+            const rateLimited = isRateLimitError(sendErr);
 
-            if (isRateLimit) {
-              console.warn(`⏳ Outbound SMTP rate limit hit for ${item.tenant_slug}: ${errMsg}. Pausing queue batch.`);
-              // Put current item back to pending without penalty
-              await pool.query(
-                `UPDATE email_queue SET status = 'pending', attempts = GREATEST(0, attempts - 1), error_message = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
-                [errMsg, item.id]
+            if (rateLimited) {
+              const currentProfileKey = getProfileKey(
+                item.tenant_slug,
+                effectiveProfileId,
+                transporterCache.get(preCheckKey)?.settings.host,
+                transporterCache.get(preCheckKey)?.settings.fromEmail
               );
 
-              // Also release any remaining unprocessed items in this claimed batch back to 'pending'
+              console.warn(
+                `⏳ Rate limit encountered for profile "${currentProfileKey}" (${item.tenant_slug}): ${errMsg}. Queueing emails for retry in 24 hours.`
+              );
+
+              // 1. Put this item back to pending with 24-hour next_retry_at, preserving retry attempts budget
+              await pool.query(
+                `UPDATE email_queue
+                 SET status = 'pending',
+                     attempts = GREATEST(0, attempts - 1),
+                     next_retry_at = CURRENT_TIMESTAMP + INTERVAL '24 hours',
+                     rate_limited_at = CURRENT_TIMESTAMP,
+                     error_message = $1,
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE id = $2`,
+                [`Rate limit exceeded: ${errMsg}. Scheduled for retry in 24 hours.`, item.id]
+              );
+
+              // 2. Put this specific email profile into 24-hour rate limit cooldown
+              await recordProfileRateLimit({
+                tenantSlug: item.tenant_slug,
+                senderProfileId: effectiveProfileId,
+                provider: transporterCache.get(preCheckKey)?.settings.provider,
+                host: transporterCache.get(preCheckKey)?.settings.host,
+                fromEmail: transporterCache.get(preCheckKey)?.settings.fromEmail,
+                errorMessage: errMsg,
+                cooldownDurationMs: 24 * 60 * 60 * 1000,
+              });
+
+              rateLimitedProfilesThisRun.add(currentProfileKey);
+              rateLimitedProfilesThisRun.add(preCheckKey);
+
+              // 3. Release any remaining unsent items for THIS profile in current claimed batch
               const curIdx = claimedItems.indexOf(item);
-              const remainingUnsent = claimedItems.slice(curIdx + 1);
-              if (remainingUnsent.length > 0) {
-                const remIds = remainingUnsent.map((r) => r.id);
+              const remainingUnsentForProfile = claimedItems.slice(curIdx + 1).filter((r) => {
+                const rKey = getProfileKey(r.tenant_slug, r.sender_profile_id);
+                return rKey === currentProfileKey || rKey === preCheckKey || r.campaign_id === item.campaign_id;
+              });
+
+              if (remainingUnsentForProfile.length > 0) {
+                const remIds = remainingUnsentForProfile.map((r) => r.id);
                 await pool.query(
-                  `UPDATE email_queue SET status = 'pending', attempts = GREATEST(0, attempts - 1), updated_at = CURRENT_TIMESTAMP WHERE id = ANY($1)`,
-                  [remIds]
+                  `UPDATE email_queue
+                   SET status = 'pending',
+                       attempts = GREATEST(0, attempts - 1),
+                       next_retry_at = CURRENT_TIMESTAMP + INTERVAL '24 hours',
+                       rate_limited_at = CURRENT_TIMESTAMP,
+                       error_message = $1,
+                       updated_at = CURRENT_TIMESTAMP
+                   WHERE id = ANY($2)`,
+                  [`Profile paused due to rate limit: ${errMsg}. Scheduled for retry in 24 hours.`, remIds]
                 );
               }
 
-              // Break out of this batch to let the provider rate-limit window cool down
-              break;
+              // 4. Batch defer all remaining pending items in the database for this profile/campaign by 24h
+              await pool.query(
+                `UPDATE email_queue
+                 SET next_retry_at = CURRENT_TIMESTAMP + INTERVAL '24 hours',
+                     rate_limited_at = CURRENT_TIMESTAMP,
+                     error_message = $1,
+                     updated_at = CURRENT_TIMESTAMP
+                 WHERE ((sender_profile_id = $2 AND sender_profile_id IS NOT NULL) OR campaign_id = $3)
+                   AND status = 'pending'
+                   AND (next_retry_at IS NULL OR next_retry_at < CURRENT_TIMESTAMP + INTERVAL '24 hours')`,
+                [
+                  `Rate limit cooldown: ${errMsg}. Retrying in 24 hours.`,
+                  effectiveProfileId || null,
+                  item.campaign_id,
+                ]
+              );
+
+              // Continue to next item — other profiles in this batch will proceed without interruption!
+              continue;
             } else {
               failed++;
               errors.push({ email: item.recipient_email, error: errMsg });
@@ -870,7 +1255,8 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
                COUNT(*) as total,
                COUNT(*) FILTER (WHERE status = 'sent') as sent,
                COUNT(*) FILTER (WHERE status = 'failed') as failed,
-               COUNT(*) FILTER (WHERE status = 'pending' OR status = 'processing') as remaining
+               COUNT(*) FILTER (WHERE status = 'pending' AND (next_retry_at IS NULL OR next_retry_at <= CURRENT_TIMESTAMP)) as pending_ready,
+               COUNT(*) FILTER (WHERE status = 'pending' AND next_retry_at > CURRENT_TIMESTAMP) as pending_rate_limited
              FROM email_queue
              WHERE campaign_id = $1`,
             [cid]
@@ -878,62 +1264,89 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
 
           if (countsRes.rows.length > 0) {
             const row = countsRes.rows[0];
-            const remaining = Number(row.remaining);
-            const campaignStatus = remaining === 0 ? "completed" : "processing";
+            const total = Number(row.total);
+            const sentCount = Number(row.sent);
+            const failedCount = Number(row.failed);
+            const pendingReady = Number(row.pending_ready);
+            const pendingRateLimited = Number(row.pending_rate_limited);
+
+            let campaignStatus: "queued" | "processing" | "completed" | "failed" | "rate_limited";
+            if (sentCount + failedCount >= total && total > 0) {
+              campaignStatus = "completed";
+            } else if (pendingReady === 0 && pendingRateLimited > 0) {
+              campaignStatus = "rate_limited";
+            } else {
+              campaignStatus = "processing";
+            }
 
             await pool.query(
               `UPDATE email_campaigns
                SET sent_count = $1, failed_count = $2, status = $3, updated_at = CURRENT_TIMESTAMP
                WHERE id = $4`,
-              [Number(row.sent), Number(row.failed), campaignStatus, cid]
+              [sentCount, failedCount, campaignStatus, cid]
             );
           }
         }
       }
 
-      // Check remaining overall pending items in DB
+      // Check remaining ready vs rate-limited items across the queue
       const pendingCountRes = await pool.query(
-        `SELECT COUNT(*) as count FROM email_queue WHERE status = 'pending' AND attempts < 3`
+        `SELECT 
+           COUNT(*) FILTER (WHERE status = 'pending' AND (next_retry_at IS NULL OR next_retry_at <= CURRENT_TIMESTAMP) AND attempts < 3) as ready_count,
+           COUNT(*) FILTER (WHERE status = 'pending' AND next_retry_at > CURRENT_TIMESTAMP AND attempts < 3) as rate_limited_count
+         FROM email_queue`
       );
-      remainingPending = Number(pendingCountRes.rows[0]?.count || 0);
+      remainingPending = Number(pendingCountRes.rows[0]?.ready_count || 0);
+      remainingRateLimited = Number(pendingCountRes.rows[0]?.rate_limited_count || 0);
 
-      return { processed, sent, failed, remainingPending, errors };
+      return { processed, sent, failed, remainingPending, remainingRateLimited, errors };
     }
   } catch (err) {
     console.warn("⚠️ PostgreSQL queue processing encountered error, checking memory queue:", err);
   }
 
   // 2. Process memory queue items if DB not active or returned empty
-  const pendingMemoryItems = memoryQueue.filter((q) => q.status === "pending" && q.attempts < 3).slice(0, batchSize);
+  const nowTime = new Date();
+  const pendingMemoryItems = memoryQueue
+    .filter((q) => q.status === "pending" && q.attempts < 3 && (!q.nextRetryAt || q.nextRetryAt <= nowTime))
+    .slice(0, batchSize);
 
   for (const item of pendingMemoryItems) {
-    processed++;
-    item.status = "processing";
-    item.attempts++;
-    const campaign = memoryCampaigns.get(item.campaignId);
-
-    if (!campaign) {
+    const memCampaign = memoryCampaigns.get(item.campaignId);
+    if (!memCampaign) {
+      processed++;
       item.status = "failed";
       item.errorMessage = "Associated campaign not found";
       failed++;
       continue;
     }
 
+    const effectiveProfileId = item.senderProfileId || memCampaign.senderProfileId;
+    const preCheckKey = getProfileKey(item.tenantSlug, effectiveProfileId);
+    if (rateLimitedProfilesThisRun.has(preCheckKey)) {
+      item.nextRetryAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      continue;
+    }
+
+    processed++;
+    item.status = "processing";
+    item.attempts++;
+
     try {
       let effectiveTransporter: any;
       let effectiveSettings: SmtpSettings;
 
-      if (campaign.senderOverride && campaign.senderOverride.host && campaign.senderOverride.fromEmail) {
+      if (memCampaign.senderOverride && memCampaign.senderOverride.host && memCampaign.senderOverride.fromEmail) {
         const fullSettings: SmtpSettings = {
           tenantSlug: item.tenantSlug,
-          provider: campaign.senderOverride.provider || "custom",
-          host: campaign.senderOverride.host,
-          port: Number(campaign.senderOverride.port) || 587,
-          encryption: (campaign.senderOverride.encryption as any) || "tls",
-          fromEmail: campaign.senderOverride.fromEmail,
-          fromName: campaign.senderOverride.fromName || "Workspace Admin",
-          username: campaign.senderOverride.username || campaign.senderOverride.fromEmail,
-          password: campaign.senderOverride.password || "",
+          provider: memCampaign.senderOverride.provider || "custom",
+          host: memCampaign.senderOverride.host,
+          port: Number(memCampaign.senderOverride.port) || 587,
+          encryption: (memCampaign.senderOverride.encryption as any) || "tls",
+          fromEmail: memCampaign.senderOverride.fromEmail,
+          fromName: memCampaign.senderOverride.fromName || "Workspace Admin",
+          username: memCampaign.senderOverride.username || memCampaign.senderOverride.fromEmail,
+          password: memCampaign.senderOverride.password || "",
         };
         effectiveTransporter = createNodemailerTransporter(fullSettings);
         effectiveSettings = fullSettings;
@@ -943,7 +1356,7 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
         effectiveSettings = entry.settings;
       }
 
-      const { resolvedLoginUrl, resolvedPortalUrl } = resolveUrls(item.tenantSlug, campaign.loginUrl);
+      const { resolvedLoginUrl, resolvedPortalUrl } = resolveUrls(item.tenantSlug, memCampaign.loginUrl);
 
       const recipientObj: MassEmailRecipient = {
         email: item.recipientEmail,
@@ -952,8 +1365,8 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
         department: item.recipientDepartment,
       };
 
-      const personalizedSubject = personalizeTemplate(campaign.subject, recipientObj, resolvedLoginUrl, resolvedPortalUrl);
-      const personalizedHtml = personalizeTemplate(campaign.messageHtml, recipientObj, resolvedLoginUrl, resolvedPortalUrl);
+      const personalizedSubject = personalizeTemplate(memCampaign.subject, recipientObj, resolvedLoginUrl, resolvedPortalUrl);
+      const personalizedHtml = personalizeTemplate(memCampaign.messageHtml, recipientObj, resolvedLoginUrl, resolvedPortalUrl);
       const sender = `"${effectiveSettings.fromName.replace(/"/g, "")}" <${effectiveSettings.fromEmail}>`;
 
       await effectiveTransporter.sendMail({
@@ -967,26 +1380,76 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
       item.status = "sent";
       item.sentAt = new Date();
       sent++;
-      campaign.sentCount++;
+      memCampaign.sentCount++;
     } catch (sendErr: any) {
-      item.status = item.attempts >= 3 ? "failed" : "pending";
-      item.errorMessage = sendErr.message || "Failed to deliver email";
-      failed++;
-      campaign.failedCount++;
-      errors.push({ email: item.recipientEmail, error: item.errorMessage! });
+      const errMsg = sendErr.message || "Failed to deliver email";
+      const rateLimited = isRateLimitError(sendErr);
+
+      if (rateLimited) {
+        const currentProfileKey = getProfileKey(
+          item.tenantSlug,
+          effectiveProfileId,
+          memCampaign.senderOverride?.host,
+          memCampaign.senderOverride?.fromEmail
+        );
+
+        item.status = "pending";
+        item.attempts = Math.max(0, item.attempts - 1);
+        item.nextRetryAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        item.rateLimitedAt = new Date();
+        item.errorMessage = `Rate limit reached: ${errMsg}. Scheduled for retry in 24 hours.`;
+
+        rateLimitedProfilesThisRun.add(currentProfileKey);
+        rateLimitedProfilesThisRun.add(preCheckKey);
+        profileCooldownMemory.set(currentProfileKey, item.nextRetryAt.getTime());
+
+        // Defer all remaining items for this profile/campaign by 24h
+        memoryQueue.forEach((q) => {
+          if (
+            (q.campaignId === item.campaignId || (q.senderProfileId === effectiveProfileId && effectiveProfileId)) &&
+            q.status === "pending"
+          ) {
+            q.nextRetryAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+            q.rateLimitedAt = new Date();
+          }
+        });
+        continue;
+      } else {
+        item.status = item.attempts >= 3 ? "failed" : "pending";
+        item.errorMessage = errMsg;
+        failed++;
+        memCampaign.failedCount++;
+        errors.push({ email: item.recipientEmail, error: errMsg });
+      }
     }
 
     // Update memory campaign status
-    const remainingForCampaign = memoryQueue.filter(
-      (q) => q.campaignId === campaign.id && (q.status === "pending" || q.status === "processing")
+    const pendingReady = memoryQueue.filter(
+      (q) => q.campaignId === memCampaign.id && q.status === "pending" && (!q.nextRetryAt || q.nextRetryAt <= new Date())
     ).length;
-    campaign.status = remainingForCampaign === 0 ? "completed" : "processing";
-    campaign.updatedAt = new Date();
+    const pendingRateLimited = memoryQueue.filter(
+      (q) => q.campaignId === memCampaign.id && q.status === "pending" && q.nextRetryAt && q.nextRetryAt > new Date()
+    ).length;
+    const totalRemaining = pendingReady + pendingRateLimited;
+
+    if (totalRemaining === 0) {
+      memCampaign.status = "completed";
+    } else if (pendingReady === 0 && pendingRateLimited > 0) {
+      memCampaign.status = "rate_limited";
+    } else {
+      memCampaign.status = "processing";
+    }
+    memCampaign.updatedAt = new Date();
   }
 
-  remainingPending = memoryQueue.filter((q) => q.status === "pending" && q.attempts < 3).length;
+  remainingPending = memoryQueue.filter(
+    (q) => q.status === "pending" && q.attempts < 3 && (!q.nextRetryAt || q.nextRetryAt <= new Date())
+  ).length;
+  remainingRateLimited = memoryQueue.filter(
+    (q) => q.status === "pending" && q.attempts < 3 && q.nextRetryAt && q.nextRetryAt > new Date()
+  ).length;
 
-  return { processed, sent, failed, remainingPending, errors };
+  return { processed, sent, failed, remainingPending, remainingRateLimited, errors };
 }
 
 /**
@@ -1014,11 +1477,25 @@ export async function getCampaignProgress(campaignId: string): Promise<CampaignP
         const failed = Number(row.failed_count) || 0;
         const pending = Math.max(0, total - (sent + failed));
 
+        // Get failed & rate-limited recipient counts and retry schedules
+        const statsRes = await pool.query(
+          `SELECT 
+             COUNT(*) FILTER (WHERE status = 'pending' AND next_retry_at > CURRENT_TIMESTAMP) as rate_limited_count,
+             MIN(next_retry_at) FILTER (WHERE status = 'pending' AND next_retry_at > CURRENT_TIMESTAMP) as earliest_retry
+           FROM email_queue
+           WHERE campaign_id = $1`,
+          [campaignId]
+        );
+        const rateLimitedCount = Number(statsRes.rows[0]?.rate_limited_count || 0);
+        const earliestRetry = statsRes.rows[0]?.earliest_retry
+          ? new Date(statsRes.rows[0].earliest_retry).toISOString()
+          : null;
+
         // Get failed recipient details
         const errorsRes = await pool.query(
           `SELECT recipient_email, error_message
            FROM email_queue
-           WHERE campaign_id = $1 AND status = 'failed' AND error_message IS NOT NULL
+           WHERE campaign_id = $1 AND (status = 'failed' OR (status = 'pending' AND next_retry_at > CURRENT_TIMESTAMP)) AND error_message IS NOT NULL
            LIMIT 20`,
           [campaignId]
         );
@@ -1038,7 +1515,9 @@ export async function getCampaignProgress(campaignId: string): Promise<CampaignP
           sent,
           failed,
           pending,
+          rateLimited: rateLimitedCount,
           status: row.status as any,
+          nextRetryAt: earliestRetry,
           progressPercent,
           errors,
         };
@@ -1055,8 +1534,17 @@ export async function getCampaignProgress(campaignId: string): Promise<CampaignP
     const sent = memCamp.sentCount;
     const failed = memCamp.failedCount;
     const pending = Math.max(0, total - (sent + failed));
+    const rateLimitedItems = memoryQueue.filter(
+      (q) => q.campaignId === campaignId && q.status === "pending" && q.nextRetryAt && q.nextRetryAt > new Date()
+    );
+    const rateLimited = rateLimitedItems.length;
+    const earliest = rateLimitedItems.reduce<Date | null>((acc, cur) => {
+      if (!cur.nextRetryAt) return acc;
+      return !acc || cur.nextRetryAt < acc ? cur.nextRetryAt : acc;
+    }, null);
+
     const errors = memoryQueue
-      .filter((q) => q.campaignId === campaignId && q.status === "failed" && q.errorMessage)
+      .filter((q) => q.campaignId === campaignId && (q.status === "failed" || q.errorMessage))
       .map((q) => ({ email: q.recipientEmail, error: q.errorMessage! }));
 
     const progressPercent = total > 0 ? Math.min(100, Math.round(((sent + failed) / total) * 100)) : 100;
@@ -1069,7 +1557,9 @@ export async function getCampaignProgress(campaignId: string): Promise<CampaignP
       sent,
       failed,
       pending,
+      rateLimited,
       status: memCamp.status,
+      nextRetryAt: earliest ? earliest.toISOString() : null,
       progressPercent,
       errors,
     };
@@ -1150,7 +1640,7 @@ export interface CampaignSummary {
   sent: number;
   failed: number;
   pending: number;
-  status: "queued" | "processing" | "completed" | "failed";
+  status: "queued" | "processing" | "completed" | "failed" | "rate_limited";
   progressPercent: number;
   createdAt: string;
   updatedAt: string;

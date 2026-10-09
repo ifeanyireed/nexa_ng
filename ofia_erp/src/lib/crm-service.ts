@@ -1100,6 +1100,112 @@ export async function createCrmEmailList(tenantSlug: string, list: Partial<CrmEm
   return newList;
 }
 
+export async function updateCrmEmailList(
+  tenantSlug: string,
+  listId: string,
+  updates: { name?: string; description?: string; tags?: string[] }
+): Promise<CrmEmailList | null> {
+  const slug = cleanSlug(tenantSlug);
+  let updatedList: CrmEmailList | null = null;
+
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+
+      // If it's a default demo seeded list, make sure the row exists in database
+      if (slug === "default") {
+        const seedMatch = DEFAULT_CRM_LISTS.find((l) => l.id === listId);
+        if (seedMatch) {
+          await pool.query(
+            `INSERT INTO crm_email_lists (id, tenant_slug, name, description, tags, subscriber_count, created_at)
+             VALUES ($1, 'default', $2, $3, $4, $5, NOW())
+             ON CONFLICT (id) DO NOTHING`,
+            [seedMatch.id, seedMatch.name, seedMatch.description, JSON.stringify(seedMatch.tags), seedMatch.subscriberCount]
+          ).catch(() => {});
+        }
+      }
+
+      const res = await pool.query(
+        `UPDATE crm_email_lists
+         SET name = COALESCE($1, name),
+             description = COALESCE($2, description),
+             tags = CASE WHEN $3::text IS NOT NULL THEN $3::text ELSE tags END,
+             updated_at = NOW()
+         WHERE id = $4 AND LOWER(tenant_slug) = $5
+         RETURNING id, tenant_slug, name, description, tags, subscriber_count, created_at`,
+        [
+          updates.name !== undefined ? updates.name.trim() : null,
+          updates.description !== undefined ? updates.description.trim() : null,
+          updates.tags !== undefined ? JSON.stringify(updates.tags) : null,
+          listId,
+          slug,
+        ]
+      );
+
+      if (res.rows.length > 0) {
+        const r = res.rows[0];
+        updatedList = {
+          id: r.id,
+          tenantSlug: r.tenant_slug,
+          name: r.name,
+          description: r.description,
+          tags: r.tags ? (typeof r.tags === "string" ? JSON.parse(r.tags) : r.tags) : [],
+          subscriberCount: Number(r.subscriber_count) || 0,
+          createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("Neon DB updateCrmEmailList error, updating memory:", err);
+  }
+
+  // Update in-memory fallback
+  const existing = memoryLists.get(slug) || (slug === "default" ? DEFAULT_CRM_LISTS.map((l) => ({ ...l, tenantSlug: slug })) : []);
+  const idx = existing.findIndex((l) => l.id === listId);
+  if (idx !== -1) {
+    const current = existing[idx];
+    const updated: CrmEmailList = {
+      ...current,
+      name: updates.name !== undefined ? updates.name.trim() : current.name,
+      description: updates.description !== undefined ? updates.description.trim() : current.description,
+      tags: updates.tags !== undefined ? updates.tags : current.tags,
+    };
+    existing[idx] = updated;
+    memoryLists.set(slug, existing);
+    if (!updatedList) {
+      updatedList = updated;
+    }
+  } else if (updatedList) {
+    existing.unshift(updatedList);
+    memoryLists.set(slug, existing);
+  }
+
+  return updatedList;
+}
+
+export async function deleteCrmEmailList(tenantSlug: string, listId: string): Promise<boolean> {
+  const slug = cleanSlug(tenantSlug);
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      await pool.query(
+        `DELETE FROM crm_email_lists WHERE id = $1 AND LOWER(tenant_slug) = $2`,
+        [listId, slug]
+      );
+    }
+  } catch (err) {
+    console.warn("Neon DB deleteCrmEmailList error:", err);
+  }
+
+  const existing = memoryLists.get(slug);
+  if (existing) {
+    memoryLists.set(slug, existing.filter((l) => l.id !== listId));
+  }
+  return true;
+}
+
 // 4. EMAIL BLASTS
 export async function getCrmEmailBlasts(tenantSlug: string): Promise<CrmEmailBlast[]> {
   const slug = cleanSlug(tenantSlug);

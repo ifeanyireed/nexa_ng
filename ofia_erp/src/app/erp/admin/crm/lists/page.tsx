@@ -17,6 +17,7 @@ import {
   Trash2,
   User,
   CheckCircle2,
+  Pencil,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -210,6 +211,69 @@ export default function AudienceListsPage() {
     setNewListDesc("");
   };
 
+  // Edit List Modal State & Handlers
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingList, setEditingList] = useState<CrmEmailList | null>(null);
+  const [editListName, setEditListName] = useState("");
+  const [editListDesc, setEditListDesc] = useState("");
+  const [editListTags, setEditListTags] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleOpenEditModal = (list: CrmEmailList) => {
+    setEditingList(list);
+    setEditListName(list.name);
+    setEditListDesc(list.description || "");
+    setEditListTags(Array.isArray(list.tags) ? list.tags.join(", ") : "");
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateList = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingList || !editListName.trim()) return;
+
+    setIsUpdating(true);
+    const parsedTags = editListTags.split(",").map((t) => t.trim()).filter(Boolean);
+
+    const payload = {
+      id: editingList.id,
+      name: editListName.trim(),
+      description: editListDesc.trim(),
+      tags: parsedTags,
+    };
+
+    try {
+      const res = await crmFetch("/api/erp/crm/lists", {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data?.list) {
+        setLists((prev) => prev.map((l) => (l.id === editingList.id ? data.list : l)));
+        if (rosterList && rosterList.id === editingList.id) {
+          setRosterList(data.list);
+        }
+      } else {
+        throw new Error(data?.error || "Failed to update audience list");
+      }
+    } catch {
+      // Local fallback
+      const updatedFallback: CrmEmailList = {
+        ...editingList,
+        name: editListName.trim(),
+        description: editListDesc.trim(),
+        tags: parsedTags,
+      };
+      setLists((prev) => prev.map((l) => (l.id === editingList.id ? updatedFallback : l)));
+      if (rosterList && rosterList.id === editingList.id) {
+        setRosterList(updatedFallback);
+      }
+    } finally {
+      setIsUpdating(false);
+      setIsEditModalOpen(false);
+      setEditingList(null);
+    }
+  };
+
   const openRosterModal = async (list: CrmEmailList) => {
     setRosterList(list);
     setIsRosterModalOpen(true);
@@ -386,9 +450,19 @@ export default function AudienceListsPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-mono text-[var(--nexa-text-muted)]">{list.id}</span>
-                  <NexaBadge variant="brand">
-                    {list.subscriberCount} Subscribers
-                  </NexaBadge>
+                  <div className="flex items-center gap-1.5">
+                    <NexaBadge variant="brand">
+                      {list.subscriberCount} Subscribers
+                    </NexaBadge>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEditModal(list)}
+                      title="Edit audience list name & description"
+                      className="p-1 rounded text-[var(--nexa-text-muted)] hover:text-[#1A56DB] hover:bg-[var(--nexa-bg-surface)] transition-colors cursor-pointer"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 <div>
@@ -410,6 +484,13 @@ export default function AudienceListsPage() {
 
               <div className="pt-4 mt-4 border-t border-[var(--nexa-border)] flex items-center justify-between text-xs">
                 <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEditModal(list)}
+                    className="text-xs font-semibold text-[var(--nexa-text-muted)] hover:text-[#1A56DB] flex items-center gap-1 cursor-pointer transition-colors"
+                  >
+                    <Pencil className="w-3.5 h-3.5" /> Edit
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
@@ -623,17 +704,30 @@ export default function AudienceListsPage() {
                 leftIcon={<Search className="w-4 h-4 text-[var(--nexa-text-muted)]" />}
               />
             </div>
-            <NexaButton
-              variant="primary"
-              className="text-xs gap-1.5 shrink-0"
-              onClick={() => {
-                setActiveList(rosterList);
-                setIsRosterModalOpen(false);
-                setIsSubModalOpen(true);
-              }}
-            >
-              <Plus className="w-3.5 h-3.5" /> Add Contacts
-            </NexaButton>
+            <div className="flex items-center gap-2 shrink-0">
+              <NexaButton
+                variant="secondary"
+                className="text-xs gap-1.5"
+                onClick={() => {
+                  if (rosterList) {
+                    handleOpenEditModal(rosterList);
+                  }
+                }}
+              >
+                <Pencil className="w-3.5 h-3.5" /> Edit List
+              </NexaButton>
+              <NexaButton
+                variant="primary"
+                className="text-xs gap-1.5"
+                onClick={() => {
+                  setActiveList(rosterList);
+                  setIsRosterModalOpen(false);
+                  setIsSubModalOpen(true);
+                }}
+              >
+                <Plus className="w-3.5 h-3.5" /> Add Contacts
+              </NexaButton>
+            </div>
           </div>
 
           {isRosterLoading ? (
@@ -711,6 +805,66 @@ export default function AudienceListsPage() {
             </NexaButton>
           </div>
         </div>
+      </NexaModal>
+
+      {/* EDIT AUDIENCE LIST MODAL */}
+      <NexaModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          if (!isUpdating) {
+            setIsEditModalOpen(false);
+            setEditingList(null);
+          }
+        }}
+        title="Edit Audience List"
+        subtitle={`Update the name, description, and tags for "${editingList?.name || 'this audience list'}".`}
+      >
+        <form onSubmit={handleUpdateList} className="space-y-4">
+          <NexaInput
+            label="Audience List Name"
+            value={editListName}
+            onChange={(e) => setEditListName(e.target.value)}
+            placeholder="e.g. Abuja Solar Commercial Prospects"
+            required
+          />
+
+          <div>
+            <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+              Description & Purpose
+            </label>
+            <textarea
+              rows={3}
+              value={editListDesc}
+              onChange={(e) => setEditListDesc(e.target.value)}
+              placeholder="Describe which stakeholders are in this list..."
+              className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs text-[var(--nexa-text-primary)] focus:outline-none focus:ring-1 focus:ring-[#1A56DB]"
+            />
+          </div>
+
+          <NexaInput
+            label="Audience Tags"
+            value={editListTags}
+            onChange={(e) => setEditListTags(e.target.value)}
+            placeholder="Commercial, Solar, North-Central"
+          />
+
+          <div className="flex justify-end gap-2 pt-4">
+            <NexaButton
+              variant="secondary"
+              type="button"
+              disabled={isUpdating}
+              onClick={() => {
+                setIsEditModalOpen(false);
+                setEditingList(null);
+              }}
+            >
+              Cancel
+            </NexaButton>
+            <NexaButton variant="primary" type="submit" disabled={isUpdating || !editListName.trim()}>
+              {isUpdating ? "Saving..." : "Save Changes"}
+            </NexaButton>
+          </div>
+        </form>
       </NexaModal>
     </ErpAdminShell>
   );

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flexicon/flexicon.dart';
 import 'package:mobile_mobility/utils/icon_util.dart';
+import '../../widgets/places_search_delegate.dart';
+import '../../services/places_service.dart';
 
 class RentalPlanTripScreen extends StatefulWidget {
   const RentalPlanTripScreen({Key? key}) : super(key: key);
@@ -13,6 +15,8 @@ class RentalPlanTripScreen extends StatefulWidget {
 class _RentalPlanTripScreenState extends State<RentalPlanTripScreen> {
   bool _enableReturnTrip = false;
   bool _subscribeToRoute = false;
+  Place? _origin;
+  Place? _destination;
 
   @override
   Widget build(BuildContext context) {
@@ -47,13 +51,28 @@ class _RentalPlanTripScreenState extends State<RentalPlanTripScreen> {
                       children: [
                         Column(
                           children: [
-                            _buildTextField('Origin', 'Enter pickup location'),
+                            _buildLocationField('Origin', 'Enter pickup location', _origin, () async {
+                              final result = await showSearch<Place?>(
+                                context: context,
+                                delegate: PlacesSearchDelegate(),
+                              );
+                              if (result != null) {
+                                setState(() => _origin = result);
+                              }
+                            }),
                             const Padding(
                               padding: EdgeInsets.symmetric(vertical: 8),
                               child: Divider(color: Color(0xFFE2E8F0)),
                             ),
-                            _buildTextField(
-                                'Destination', 'Enter drop-off location'),
+                            _buildLocationField('Destination', 'Enter drop-off location', _destination, () async {
+                              final result = await showSearch<Place?>(
+                                context: context,
+                                delegate: PlacesSearchDelegate(),
+                              );
+                              if (result != null) {
+                                setState(() => _destination = result);
+                              }
+                            }),
                           ],
                         ),
                         // Swap Icon
@@ -210,21 +229,29 @@ class _RentalPlanTripScreenState extends State<RentalPlanTripScreen> {
         .slideY(begin: 0.05, end: 0);
   }
 
-  Widget _buildTextField(String label, String hint) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        TextField(
-          decoration: InputDecoration(
-            hintText: hint,
-            hintStyle: const TextStyle(fontSize: 14, color: Colors.black87),
-            border: InputBorder.none,
-            isDense: true,
-            contentPadding: const EdgeInsets.symmetric(vertical: 8),
-          ),
+  Widget _buildLocationField(String label, String hint, Place? selectedPlace, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        color: Colors.transparent, // Ensures the entire area is tappable
+        width: double.infinity,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+            const SizedBox(height: 8),
+            Text(
+              selectedPlace?.description ?? hint,
+              style: TextStyle(
+                fontSize: 14,
+                color: selectedPlace != null ? Colors.black : Colors.black87,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 8),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

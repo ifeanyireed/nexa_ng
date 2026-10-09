@@ -86,17 +86,21 @@ export default function EmailMarketingBlastsPage() {
         let initialName = "";
         let initialEmail = "";
 
-        if (profilesRes?.profiles && Array.isArray(profilesRes.profiles) && profilesRes.profiles.length > 0) {
-          setSenderProfiles(profilesRes.profiles);
-          const defaultProf = profilesRes.profiles.find((p: any) => p.isDefault) || profilesRes.profiles[0];
+        const availableProfiles = Array.isArray(profilesRes?.profiles) ? profilesRes.profiles : [];
+        const configuredDefaultSmtp = profilesRes?.defaultSmtp?.fromEmail ? profilesRes.defaultSmtp : null;
+
+        setSenderProfiles(availableProfiles);
+        setDefaultSmtp(configuredDefaultSmtp);
+
+        if (availableProfiles.length > 0) {
+          const defaultProf = availableProfiles.find((p: any) => p.isDefault) || availableProfiles[0];
           initialProfileId = defaultProf.id;
           initialName = defaultProf.fromName || defaultProf.profileName || "";
           initialEmail = defaultProf.fromEmail || "";
-        } else if (profilesRes?.defaultSmtp && profilesRes.defaultSmtp.fromEmail) {
-          setDefaultSmtp(profilesRes.defaultSmtp);
+        } else if (configuredDefaultSmtp) {
           initialProfileId = "workspace_primary";
-          initialName = profilesRes.defaultSmtp.fromName || "";
-          initialEmail = profilesRes.defaultSmtp.fromEmail || "";
+          initialName = configuredDefaultSmtp.fromName || "";
+          initialEmail = configuredDefaultSmtp.fromEmail || "";
         }
 
         setSelectedProfileId(initialProfileId);
@@ -147,11 +151,6 @@ export default function EmailMarketingBlastsPage() {
 
     if (!senderEmail.trim()) {
       alert("Please provide a valid sender email address.");
-      return;
-    }
-
-    if (senderEmail.toLowerCase().includes("@ofia.ng")) {
-      alert("Tenants are prohibited from using the platform domain (@ofia.ng) to dispatch marketing blasts.");
       return;
     }
 
@@ -491,7 +490,8 @@ export default function EmailMarketingBlastsPage() {
                 )}
                 {defaultSmtp && (
                   <option value="workspace_primary">
-                    Primary Workspace ({defaultSmtp.fromEmail || defaultSmtp.host})
+                    {defaultSmtp.fromName ? `${defaultSmtp.fromName} — ` : "Workspace Primary — "}
+                    {defaultSmtp.fromEmail} ({(defaultSmtp.provider || "SMTP").toUpperCase()})
                   </option>
                 )}
                 {senderProfiles.map((p) => (

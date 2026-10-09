@@ -27,9 +27,24 @@ export async function POST(request: Request) {
     const tenantSlug = getValidatedTenantSlug(request, body);
     const { dispatchNow = false, recipients = [], ...blastData } = body;
 
+    // Fetch configured tenant workspace SMTP
+    const tenantSmtp = await getTenantSmtpSettings(tenantSlug);
+
     // Check sender profile / domain
     let effectiveOverride = blastData.senderOverride as Partial<SmtpSettings> | undefined;
-    if (
+
+    if (blastData.senderProfileId === "workspace_primary" && tenantSmtp) {
+      effectiveOverride = {
+        provider: tenantSmtp.provider,
+        host: tenantSmtp.host,
+        port: tenantSmtp.port,
+        encryption: tenantSmtp.encryption,
+        fromEmail: tenantSmtp.fromEmail,
+        fromName: tenantSmtp.fromName,
+        username: tenantSmtp.username,
+        password: tenantSmtp.password,
+      };
+    } else if (
       !effectiveOverride &&
       blastData.senderProfileId &&
       blastData.senderProfileId !== "custom" &&
@@ -51,46 +66,37 @@ export async function POST(request: Request) {
       }
     }
 
-    // Security check: tenants cannot send marketing blasts from platform domain or platform default relay
-    const senderEmailToCheck = (effectiveOverride?.fromEmail || blastData.senderEmail || "").toLowerCase();
-    if (tenantSlug !== "platform" && senderEmailToCheck.includes("@ofia.ng")) {
+    // Resolve masked password if present
+    if (effectiveOverride && (!effectiveOverride.password || effectiveOverride.password === "••••••••")) {
+      if (blastData.senderProfileId && blastData.senderProfileId !== "workspace_primary") {
+        const prof = await getTenantSenderProfileById(tenantSlug, blastData.senderProfileId);
+        if (prof?.password) effectiveOverride.password = prof.password;
+      } else if (tenantSmtp?.password) {
+        effectiveOverride.password = tenantSmtp.password;
+      }
+    }
+
+    // If dispatchNow is requested, tenant MUST have either effectiveOverride or configured tenant SMTP
+    const hasValidTenantSmtp = Boolean(tenantSmtp && tenantSmtp.host && tenantSmtp.fromEmail);
+    const hasValidOverride = Boolean(
+      effectiveOverride && effectiveOverride.host && effectiveOverride.fromEmail
+    );
+
+    if (dispatchNow && !hasValidOverride && !hasValidTenantSmtp && tenantSlug !== "platform") {
       return NextResponse.json(
         {
           error:
-            "Tenants are prohibited from using the platform domain (@ofia.ng) or platform relay for email marketing broadcasts. Please configure your own sender profile or custom domain SMTP.",
+            "A configured sender profile or workspace SMTP is required to dispatch blasts. Please set up your email provider in Workspace Settings.",
         },
         { status: 400 }
       );
     }
 
-    // If dispatchNow is requested, tenant MUST have either effectiveOverride, or a tenant-specific SMTP setting
-    if (dispatchNow) {
-      const tenantSmtp = await getTenantSmtpSettings(tenantSlug);
-      const hasValidTenantSmtp = Boolean(
-        tenantSmtp &&
-          tenantSmtp.host &&
-          tenantSmtp.fromEmail &&
-          tenantSlug !== "platform" &&
-          !tenantSmtp.fromEmail.toLowerCase().includes("@ofia.ng")
-      );
-
-      const hasValidOverride = Boolean(
-        effectiveOverride && effectiveOverride.host && effectiveOverride.fromEmail
-      );
-
-      if (!hasValidOverride && !hasValidTenantSmtp && tenantSlug !== "platform") {
-        return NextResponse.json(
-          {
-            error:
-              "A configured sender profile or custom domain SMTP is required to dispatch blasts. Platform default relay cannot be used by tenants.",
-          },
-          { status: 400 }
-        );
-      }
-    }
-
     const blast = await createCrmEmailBlast(tenantSlug, {
       ...blastData,
+      senderProvider: effectiveOverride?.provider || blastData.senderProvider || (tenantSmtp?.provider ?? "custom"),
+      senderEmail: effectiveOverride?.fromEmail || blastData.senderEmail || tenantSmtp?.fromEmail,
+      senderName: effectiveOverride?.fromName || blastData.senderName || tenantSmtp?.fromName,
       senderOverride: effectiveOverride,
       status: dispatchNow ? "SENT" : blastData.scheduledAt ? "SCHEDULED" : "DRAFT",
       sentAt: dispatchNow ? new Date().toISOString() : undefined,

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { resolveAvatarUrl, getAvatarFallbackUrl } from "./avatar";
+import { extractSubdomainOrParam } from "./tenant-context";
 
 export type Role =
   | "employee"
@@ -234,34 +235,31 @@ const API_BASE_URL = typeof window !== "undefined" ? "/api/erp" : (process.env.E
 export function getActiveTenantSlug(): string {
   if (typeof window === "undefined") return "";
 
-  // 1. Check URL search parameters
-  const urlParams = new URLSearchParams(window.location.search);
-  const param = urlParams.get("tenant") || urlParams.get("tenant_slug") || urlParams.get("company");
-  if (param) return param.toLowerCase().trim();
-
-  // 2. Check Hostname Subdomain
-  const host = window.location.host.toLowerCase();
-  const hostParts = host.split(":")[0].split(".");
-  const isLocal = host.includes("localhost") || host.includes("127.0.0.1");
-
-  if (!isLocal && hostParts.length > 2) {
-    const sub = hostParts[0];
-    if (!["www", "ofia", "app", "nexa", "erp"].includes(sub)) {
-      return sub;
-    }
+  // 1. Primary resolution using tenant context (URL params, host, subdomain, localStorage)
+  const detected = extractSubdomainOrParam();
+  if (detected && !["ofia", "www", "app", "erp", "admin"].includes(detected)) {
+    return detected.toLowerCase().trim();
   }
 
-  // 3. Check Session / Local Storage
+  // 2. Direct checks across all potential storage keys
   try {
-    const storedTenant = localStorage.getItem("nexa_org_id");
-    if (storedTenant && !["ofia", "www", "app", "erp"].includes(storedTenant)) {
-      return storedTenant.toLowerCase().trim();
+    const directStorage =
+      localStorage.getItem("nexa_tenant_slug") ||
+      localStorage.getItem("tenant_slug") ||
+      localStorage.getItem("nexa_org_id") ||
+      localStorage.getItem("active_tenant") ||
+      sessionStorage.getItem("nexa_tenant_slug") ||
+      sessionStorage.getItem("tenant_slug");
+    if (directStorage && !["ofia", "www", "app", "erp", "admin"].includes(directStorage.toLowerCase())) {
+      return directStorage.toLowerCase().trim();
     }
+
     const storedUser = localStorage.getItem("erp_current_user");
     if (storedUser) {
       const parsed = JSON.parse(storedUser);
       if (parsed?.tenantSlug) return parsed.tenantSlug.toLowerCase().trim();
     }
+
     const storedEmail = localStorage.getItem("nexa_user_email");
     if (storedEmail && storedEmail.includes("@")) {
       const domainSlug = storedEmail.split("@")[1].split(".")[0].toLowerCase();

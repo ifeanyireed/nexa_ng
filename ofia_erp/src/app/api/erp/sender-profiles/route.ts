@@ -18,14 +18,13 @@ export async function GET(request: Request) {
       getTenantSmtpSettings(tenantSlug),
     ]);
 
-    // Tenants must never receive platform relay credentials or platform default domain
+    // Ensure the tenant has configured their own SMTP credentials
     const isTenantSpecificSmtp = Boolean(
       defaultSmtp &&
       defaultSmtp.host &&
       defaultSmtp.fromEmail &&
       defaultSmtp.tenantSlug &&
-      defaultSmtp.tenantSlug.toLowerCase() === tenantSlug.toLowerCase() &&
-      (tenantSlug === "platform" || (tenantSlug !== "default" && !defaultSmtp.fromEmail.toLowerCase().includes("@ofia.ng")))
+      defaultSmtp.tenantSlug.toLowerCase() === tenantSlug.toLowerCase()
     );
 
     return NextResponse.json({
@@ -62,13 +61,6 @@ export async function POST(request: Request) {
     if (!body.host || !body.fromEmail) {
       return NextResponse.json(
         { error: "Host and From Email are required to configure a sender profile" },
-        { status: 400 }
-      );
-    }
-
-    if (tenantSlug !== "platform" && body.fromEmail.toLowerCase().includes("@ofia.ng")) {
-      return NextResponse.json(
-        { error: "Tenants cannot register platform domain (@ofia.ng) addresses as sender profiles." },
         { status: 400 }
       );
     }

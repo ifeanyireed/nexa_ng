@@ -47,7 +47,7 @@ class PaymentScreen extends StatelessWidget {
             const SizedBox(height: 16),
             _buildPaymentMethod(
               icon: Icons.account_balance_wallet,
-              title: 'Nexa Wallet',
+              title: 'NETS Wallet',
               subtitle: 'Balance: ₦5,200',
               isSelected: true,
             ),

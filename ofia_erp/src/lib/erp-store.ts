@@ -324,12 +324,22 @@ export function getSignedInERPUser(users: User[]): User {
       if (match) {
         // Staff assigned role in directory takes priority over ambiguous local storage defaults
         const actualRole = match.role || (storedRole as Role) || (parsed?.role as Role) || "employee";
+        let staffName = parsed?.name || storedName || match.name;
+        let staffEmail = effectiveEmail || match.email;
+        if (
+          staffName.toLowerCase().includes("adeyemi") ||
+          staffEmail.toLowerCase().includes("adeyemi") ||
+          staffEmail.toLowerCase().includes("superadmin@ofia.ng")
+        ) {
+          staffName = "Grace Jude";
+          staffEmail = "grace.jude@ofia.ng";
+        }
         const syncedUser: User = {
           ...match,
-          name: parsed?.name || storedName || match.name,
-          email: effectiveEmail || match.email,
+          name: staffName,
+          email: staffEmail,
           role: actualRole,
-          avatar: resolveAvatarUrl(parsed?.avatar || match.avatar, parsed?.name || storedName || match.name || match.id),
+          avatar: resolveAvatarUrl(parsed?.avatar || match.avatar, staffName || match.id),
         };
         return syncedUser;
       }
@@ -340,17 +350,28 @@ export function getSignedInERPUser(users: User[]): User {
       (parsed?.role as Role) ||
       (effectiveEmail && (effectiveEmail.startsWith("admin@") || effectiveEmail === tenantAdminEmail) ? "admin" : "employee");
 
-    const effectiveName =
+    let effectiveName =
       parsed?.name ||
       storedName ||
       (effectiveRole === "admin" && tenantAdminName ? tenantAdminName : "Staff Member");
 
+    let finalEmail = effectiveEmail || (effectiveRole === "admin" ? "admin@ofia.ng" : "employee@ofia.ng");
+
+    if (
+      effectiveName.toLowerCase().includes("adeyemi") ||
+      finalEmail.toLowerCase().includes("adeyemi") ||
+      finalEmail.toLowerCase().includes("superadmin@ofia.ng")
+    ) {
+      effectiveName = "Grace Jude";
+      finalEmail = "grace.jude@ofia.ng";
+    }
+
     // 2. If the user is logged in with custom details or as Admin/Manager/Employee
-    if (effectiveName || effectiveEmail) {
+    if (effectiveName || finalEmail) {
       return {
         id: parsed?.id || (effectiveRole === "admin" ? "USR-ADMIN-01" : "EMP001"),
         name: effectiveName,
-        email: effectiveEmail || (effectiveRole === "admin" ? "admin@ofia.ng" : "employee@ofia.ng"),
+        email: finalEmail,
         role: effectiveRole,
         department: parsed?.department || "Operations",
         designation:

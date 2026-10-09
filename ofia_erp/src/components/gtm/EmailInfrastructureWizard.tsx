@@ -59,8 +59,8 @@ export function EmailInfrastructureWizard() {
   const [providers, setProviders] = useState<ProviderCard[]>([]);
   const [sendingDomain, setSendingDomain] = useState("outreach.edusuite.ng");
   const [domainStatus, setDomainStatus] = useState("VERIFIED");
-  const [senderName, setSenderName] = useState("Adeyemi Adeleke | EduSuite");
-  const [senderEmail, setSenderEmail] = useState("adeyemi@outreach.edusuite.ng");
+  const [senderName, setSenderName] = useState("Grace Jude | EduSuite");
+  const [senderEmail, setSenderEmail] = useState("grace.jude@outreach.edusuite.ng");
   const [replyTo, setReplyTo] = useState("support@edusuite.ng");
 
   // Wizard Setup Form States
@@ -113,7 +113,7 @@ export function EmailInfrastructureWizard() {
   const [isTesting, setIsTesting] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [testRecipient, setTestRecipient] = useState("adeyemi@edusuite.ng");
+  const [testRecipient, setTestRecipient] = useState("grace.jude@ofia.ng");
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -958,7 +958,7 @@ export function EmailInfrastructureWizard() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <NexaInput
                   label="Sender Display Name (Seen by Prospects)"
-                  placeholder="Adeyemi Adeleke | EduSuite"
+                  placeholder="Grace Jude | EduSuite"
                   value={senderName}
                   onChange={(e) => setSenderName(e.target.value)}
                 />

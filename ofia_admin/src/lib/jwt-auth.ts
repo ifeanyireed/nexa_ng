@@ -114,14 +114,26 @@ export async function verifySuperAdminJWT(token: string): Promise<SuperAdminUser
   try {
     const secret = new TextEncoder().encode(JWT_SECRET_KEY);
     const { payload } = await jwtVerify(token, secret);
+    const userId = payload.sub as string;
+    const seeded = SEEDED_SUPER_ADMINS.find((u) => u.id === userId);
+
+    let name = (seeded?.name || payload.name) as string;
+    let email = (seeded?.email || payload.email) as string;
+
+    // Sanitize any legacy cached token claims for admin-root-01 or Adeyemi Phillips
+    if (userId === "admin-root-01" || name?.toLowerCase().includes("adeyemi")) {
+      name = "Grace Jude";
+      email = "grace.jude@ofia.ng";
+    }
+
     return {
-      id: payload.sub as string,
-      email: payload.email as string,
-      name: payload.name as string,
-      role: (payload.role as AdminRole) || "VIEWER",
-      scope: (payload.scope as string) || "READ_ONLY",
-      department: (payload.department as string) || "General",
-      avatar: (payload.avatar as string) || undefined,
+      id: userId,
+      email,
+      name,
+      role: (payload.role as AdminRole) || seeded?.role || "VIEWER",
+      scope: (payload.scope as string) || seeded?.scope || "READ_ONLY",
+      department: seeded?.department || (payload.department as string) || "General",
+      avatar: seeded?.avatar || (payload.avatar as string) || undefined,
     };
   } catch {
     return null;

@@ -213,7 +213,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		user = models.User{
 			ID:    "usr-01",
 			Email: req.Email,
-			Name:  "Adeyemi Adeleke",
+			Name:  "Grace Jude",
 			Role:  models.RoleTenantOwner,
 		}
 		orgID = "org-01"
@@ -309,7 +309,7 @@ func (h *AuthHandler) ListWorkspaceUsers(w http.ResponseWriter, r *http.Request)
 
 	if len(members) == 0 {
 		members = []MemberDTO{
-			{ID: "m-01", UserID: "usr-01", Name: "Adeyemi Adeleke", Email: "adeyemi@edusuite.ng", Role: models.RoleTenantOwner, Title: "Managing Director", Avatar: "/avatar12.png", CreatedAt: time.Now()},
+			{ID: "m-01", UserID: "usr-01", Name: "Grace Jude", Email: "grace.jude@ofia.ng", Role: models.RoleTenantOwner, Title: "Managing Director", Avatar: "/avatar12.png", CreatedAt: time.Now()},
 			{ID: "m-02", UserID: "usr-02", Name: "Khalil Bello", Email: "khalil@edusuite.ng", Role: models.RoleGrowthLead, Title: "Growth Lead", Avatar: "/avatar5.png", CreatedAt: time.Now()},
 			{ID: "m-03", UserID: "usr-03", Name: "Chidinma Eze", Email: "chidinma@edusuite.ng", Role: models.RoleSalesRep, Title: "Senior Sales SDR", Avatar: "/avatar8.png", CreatedAt: time.Now()},
 			{ID: "m-04", UserID: "usr-04", Name: "Babajide Sanwo", Email: "auditor@edusuite.ng", Role: models.RoleViewer, Title: "Operations Auditor", Avatar: "/avatar3.png", CreatedAt: time.Now()},

@@ -44,7 +44,18 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       const cached = sessionStorage.getItem("ofia_superadmin_user");
       if (cached) {
         try {
-          setUser(JSON.parse(cached));
+          const parsed = JSON.parse(cached);
+          if (
+            parsed.id === "admin-root-01" ||
+            parsed.name?.toLowerCase().includes("adeyemi") ||
+            parsed.email?.toLowerCase().includes("adeyemi") ||
+            parsed.email?.toLowerCase().includes("superadmin@ofia.ng")
+          ) {
+            parsed.name = "Grace Jude";
+            parsed.email = "grace.jude@ofia.ng";
+            sessionStorage.setItem("ofia_superadmin_user", JSON.stringify(parsed));
+          }
+          setUser(parsed);
         } catch {}
       }
     }
@@ -54,9 +65,19 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       if (res.ok) {
         const data = await res.json();
         if (data.user) {
-          setUser(data.user);
+          const isTargetAdmin =
+            data.user.id === "admin-root-01" ||
+            data.user.name?.toLowerCase().includes("adeyemi") ||
+            data.user.email?.toLowerCase().includes("adeyemi") ||
+            data.user.email?.toLowerCase().includes("superadmin@ofia.ng");
+          const sanitizedUser = {
+            ...data.user,
+            name: isTargetAdmin ? "Grace Jude" : data.user.name,
+            email: isTargetAdmin ? "grace.jude@ofia.ng" : data.user.email,
+          };
+          setUser(sanitizedUser);
           if (typeof window !== "undefined") {
-            sessionStorage.setItem("ofia_superadmin_user", JSON.stringify(data.user));
+            sessionStorage.setItem("ofia_superadmin_user", JSON.stringify(sanitizedUser));
           }
           setIsLoading(false);
           return;

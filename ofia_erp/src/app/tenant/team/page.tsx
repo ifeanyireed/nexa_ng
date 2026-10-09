@@ -24,7 +24,7 @@ interface TeamMember {
 }
 
 const MEMBERS: TeamMember[] = [
-  { id: "tm-1", name: "Adeyemi Peters", email: "adeyemi@edusuite.ng", role: "TENANT_OWNER", status: "ACTIVE" },
+  { id: "tm-1", name: "Grace Jude", email: "grace.jude@ofia.ng", role: "TENANT_OWNER", status: "ACTIVE" },
   { id: "tm-2", name: "Khalil Ibrahim", email: "khalil@edusuite.ng", role: "ADMIN", status: "ACTIVE" },
   { id: "tm-3", name: "Chidinma Okoro", email: "chidinma@edusuite.ng", role: "ACCOUNTANT", status: "ACTIVE" },
   { id: "tm-4", name: "Femi Adebayo", email: "femi@edusuite.ng", role: "HR", status: "ACTIVE" },

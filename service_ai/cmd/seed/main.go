@@ -156,8 +156,8 @@ func main() {
 			},
 			{
 				ID:       "usr-edusuite-01",
-				Email:    "adeyemi@edusuite.ng",
-				Name:     "Adeyemi Adeleke",
+				Email:    "grace.jude@ofia.ng",
+				Name:     "Grace Jude",
 				Password: "EduSuite2026!",
 				Role:     models.RoleTenantOwner,
 				Title:    "Managing Director & Founder",

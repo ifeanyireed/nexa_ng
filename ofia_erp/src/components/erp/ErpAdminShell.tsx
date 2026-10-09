@@ -416,6 +416,24 @@ export function ErpAdminShell({
         resolvedName = resolvedName
           .replace(/\s*\((MD\s*\/?\s*Founder|MD|Founder|Admin|Accounts|Fleet Mgr|Client Relations|Retail & POS)\)/gi, "")
           .trim();
+        if (
+          resolvedName.toLowerCase().includes("adeyemi") ||
+          resolvedEmail?.toLowerCase().includes("adeyemi") ||
+          resolvedEmail?.toLowerCase().includes("superadmin@ofia.ng")
+        ) {
+          resolvedName = "Grace Jude";
+          resolvedEmail = "grace.jude@ofia.ng";
+          try {
+            localStorage.setItem("nexa_user_name", "Grace Jude");
+            localStorage.setItem("nexa_user_email", "grace.jude@ofia.ng");
+            if (storedErpUser) {
+              const u = JSON.parse(storedErpUser);
+              u.name = "Grace Jude";
+              u.email = "grace.jude@ofia.ng";
+              localStorage.setItem("erp_current_user", JSON.stringify(u));
+            }
+          } catch {}
+        }
       }
 
       // If no stored role is present in session, fallback to current route
@@ -825,6 +843,14 @@ export function ErpAdminShell({
     );
   });
 
+  const rawDisplayName = userName || user?.name || "";
+  const isAdeyemiClaim =
+    rawDisplayName.toLowerCase().includes("adeyemi") ||
+    userEmail?.toLowerCase().includes("adeyemi") ||
+    userEmail?.toLowerCase().includes("superadmin@ofia.ng");
+  const displayedUserName = isAdeyemiClaim
+    ? "Grace Jude"
+    : (rawDisplayName || (tenantName ? `${tenantName} Staff` : "Staff"));
 
   return (
     <div className="min-h-screen bg-nexa-bg-base text-nexa-text-primary flex flex-col md:flex-row relative font-sans">
@@ -1101,10 +1127,10 @@ export function ErpAdminShell({
             ) : isSidebarOpen ? (
               <div className="flex items-center justify-between p-2 rounded-2xl bg-nexa-bg-base/70 border border-nexa-border">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <NexaAvatar size="sm" isOnline src={userAvatar} name={isMounted ? (userName || user?.name || "Staff") : "Staff"} />
+                  <NexaAvatar size="sm" isOnline src={userAvatar} name={isMounted ? displayedUserName : "Staff"} />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-nexa-text-primary truncate" suppressHydrationWarning>
-                      {isMounted ? (userName || user?.name || (tenantName ? `${tenantName} Staff` : "Staff")) : "Staff"}
+                      {isMounted ? displayedUserName : "Staff"}
                     </p>
                     <p
                       className={cn(
@@ -1135,7 +1161,7 @@ export function ErpAdminShell({
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <NexaAvatar size="sm" isOnline src={userAvatar} name={userName || user?.name || tenantName} />
+                <NexaAvatar size="sm" isOnline src={userAvatar} name={displayedUserName} />
                 <button
                   type="button"
                   onClick={() => setIsNotifOpen(!isNotifOpen)}

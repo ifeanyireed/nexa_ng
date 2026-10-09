@@ -341,6 +341,14 @@ export function SuperAdminShell({
     );
   }
 
+  const operatorDisplayName =
+    currentUser?.id === "admin-root-01" ||
+    currentUser?.name?.toLowerCase().includes("adeyemi") ||
+    currentUser?.email?.toLowerCase().includes("adeyemi") ||
+    currentUser?.email?.toLowerCase().includes("superadmin@ofia.ng")
+      ? "Grace Jude"
+      : (currentUser?.name || "Grace Jude");
+
   return (
     <div className="min-h-screen bg-nexa-bg-base text-nexa-text-primary flex relative font-sans">
       {/* SIDEBAR — MATCHING OFIA ERP VERBATIM */}
@@ -511,11 +519,11 @@ export function SuperAdminShell({
                     size="sm"
                     isOnline
                     src={currentUser?.avatar}
-                    name={currentUser?.name || "Super Admin"}
+                    name={operatorDisplayName}
                   />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-nexa-text-primary truncate">
-                      {currentUser?.name || "Super Admin"}
+                      {operatorDisplayName}
                     </p>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <span
@@ -558,7 +566,7 @@ export function SuperAdminShell({
                   size="sm"
                   isOnline
                   src={currentUser?.avatar}
-                  name={currentUser?.name || "Super Admin"}
+                  name={operatorDisplayName}
                 />
                 <button
                   type="button"
@@ -651,7 +659,7 @@ export function SuperAdminShell({
               <div className="flex items-center gap-2.5 min-w-0">
                 <ShieldAlert className="w-4 h-4 shrink-0 text-amber-500" />
                 <p className="text-xs font-semibold truncate">
-                  <strong className="font-extrabold">Read-Only Mode:</strong> Signed in as <span className="font-mono underline">{currentUser?.name}</span> (VIEWER / Auditor). All tenant and infrastructure mutations are restricted.
+                  <strong className="font-extrabold">Read-Only Mode:</strong> Signed in as <span className="font-mono underline">{operatorDisplayName}</span> (VIEWER / Auditor). All tenant and infrastructure mutations are restricted.
                 </p>
               </div>
               <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/30 shrink-0">

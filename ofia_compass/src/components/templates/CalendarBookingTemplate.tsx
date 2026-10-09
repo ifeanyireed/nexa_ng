@@ -70,7 +70,7 @@ const DEFAULT_PROS: ArtisanPro[] = [
   },
   {
     id: "pro-03",
-    name: "Adeyemi Phillips",
+    name: "Tunde Bakare",
     title: "Master Barber & Bespoke Grooming Specialist",
     avatarIndex: 4,
     rating: 4.89,

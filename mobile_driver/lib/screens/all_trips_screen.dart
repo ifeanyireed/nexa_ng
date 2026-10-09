@@ -21,19 +21,42 @@ class AllTripsScreen extends StatelessWidget {
         ) : null,
         title: const Text('All Trips', style: TextStyle(color: Colors.black87)),
         actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1B62F0),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              children: [
-                const Text('Upcoming trips', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(width: 4),
-                const Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 18),
+          Padding(
+            padding: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
+            child: PopupMenuButton<String>(
+              position: PopupMenuPosition.under,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1B62F0),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Row(
+                  children: [
+                    Text('Upcoming trips', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                    SizedBox(width: 4),
+                    Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 18),
+                  ],
+                ),
+              ),
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'all',
+                  child: Text('All Trips'),
+                ),
+                const PopupMenuItem(
+                  value: 'upcoming',
+                  child: Text('Upcoming Trips'),
+                ),
+                const PopupMenuItem(
+                  value: 'past',
+                  child: Text('Past Trips'),
+                ),
               ],
+              onSelected: (value) {
+                // To be implemented: filter functionality
+              },
             ),
           )
         ],

@@ -3,6 +3,13 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../data/mock_data.dart';
 import 'package:mobile_driver/utils/icon_util.dart';
 import 'package:flexicon/flexicon.dart';
+import 'profile/wallet_screen.dart';
+import 'profile/reward_screen.dart';
+import 'profile/security_screen.dart';
+import 'profile/support_screen.dart';
+import 'profile/account_screen.dart';
+import 'profile/vehicles_screen.dart';
+import 'profile/routes_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -30,7 +37,7 @@ class ProfileScreen extends StatelessWidget {
                   CircleAvatar(
                     radius: 40,
                     backgroundColor: Color(0xFFE0E0E0),
-                    backgroundImage: const NetworkImage('https://i.pravatar.cc/150?img=11'),
+                    backgroundImage: const AssetImage('assets/images/avatar1.png'),
                   ),
                   const SizedBox(height: 16),
                   Text(driver.name, style: const TextStyle(color: Colors.black87, fontSize: 24, fontWeight: FontWeight.bold)),
@@ -51,33 +58,32 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 40),
-            
-            _buildMenuItem(fixIcon(FlexIcon.remix.userCircleSingle), 'Account'),
-            _buildMenuItem(fixIcon(FlexIcon.remix.wallet), 'Earnings & Wallet'),
-            _buildMenuItem(fixIcon(FlexIcon.remix.newStickyNote), 'Rewards'),
-            _buildMenuItem(fixIcon(FlexIcon.remix.carTaxi1), 'Vehicles', trailing: '${driver.activeVehiclesCount} Active Vehicles'),
-            _buildMenuItem(fixIcon(FlexIcon.remix.lineArrowRoadmap), 'Routes'),
-            _buildMenuItem(fixIcon(FlexIcon.remix.shield1), 'Security'),
-            _buildMenuItem(fixIcon(FlexIcon.remix.customerSupport5), 'Support'),
+            _buildMenuItem(context, fixIcon(FlexIcon.remix.userCircleSingle), 'Account'),
+            _buildMenuItem(context, fixIcon(FlexIcon.remix.wallet), 'Earnings & Wallet', destination: const WalletScreen()),
+            _buildMenuItem(context, fixIcon(FlexIcon.remix.newStickyNote), 'Rewards', destination: RewardScreen(points: driver.points)),
+            _buildMenuItem(context, fixIcon(FlexIcon.remix.carTaxi1), 'Vehicles', trailing: '${driver.activeVehiclesCount} Active Vehicles'),
+            _buildMenuItem(context, fixIcon(FlexIcon.remix.lineArrowRoadmap), 'Routes'),
+            _buildMenuItem(context, fixIcon(FlexIcon.remix.shield1), 'Security', destination: const SecurityScreen()),
+            _buildMenuItem(context, fixIcon(FlexIcon.remix.customerSupport5), 'Support', destination: const SupportScreen()),
           ],
         ),
       ),
     ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.05, end: 0);
   }
 
-  Widget _buildMenuItem(IconData icon, String title, {String? trailing}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
-          Icon(icon, color: Color(0xFF757575), size: 24),
-          const SizedBox(width: 16),
-          Text(title, style: const TextStyle(color: Colors.black87, fontSize: 16)),
-          const Spacer(),
-          if (trailing != null)
-            Text(trailing, style: const TextStyle(color: Color(0xFF757575), fontSize: 12)),
-        ],
-      ),
+  Widget _buildMenuItem(BuildContext context, IconData icon, String title,
+      {String? trailing, Widget? destination}) {
+    return ListTile(
+      leading: Icon(icon, color: const Color(0xFF1B62F0), size: 24),
+      title: Text(title, style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w500)),
+      trailing: trailing != null
+          ? Text(trailing, style: const TextStyle(color: Color(0xFF757575), fontSize: 12))
+          : const Icon(Icons.chevron_right, color: Colors.grey),
+      onTap: () {
+        if (destination != null) {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => destination));
+        }
+      },
     );
   }
 }

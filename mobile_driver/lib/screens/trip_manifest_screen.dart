@@ -248,7 +248,7 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
               children: [
                 CircleAvatar(
                   radius: 16,
-                  backgroundImage: NetworkImage('https://i.pravatar.cc/100?u=${passenger.id}'),
+                  backgroundImage: AssetImage('assets/images/avatar2.png'),
                 ),
                 const SizedBox(width: 12),
                 Column(

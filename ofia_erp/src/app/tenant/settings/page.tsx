@@ -1225,6 +1225,7 @@ export default function TenantSettingsPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
               {[
                 { id: "brevo", label: "Brevo (Sendinblue)", desc: "smtp-relay.brevo.com" },
+                { id: "hostinger", label: "Hostinger", desc: "smtp.hostinger.com" },
                 { id: "custom", label: "Custom SMTP", desc: "Your mail server" },
                 { id: "gmail", label: "Google / Gmail", desc: "App Password req." },
                 { id: "sendgrid", label: "SendGrid", desc: "API key auth" },
@@ -1267,6 +1268,14 @@ export default function TenantSettingsPage() {
                   <ExternalLink className="w-3 h-3" />
                   Brevo Dashboard
                 </a>
+              </div>
+            )}
+
+            {smtpProvider === "hostinger" && (
+              <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-700 dark:text-purple-300 flex items-center justify-between">
+                <div>
+                  <span className="font-bold">Hostinger Mail Relay:</span> Use your full email address (e.g. notifications@yourdomain.com) as the SMTP Username, Port 465 (SSL), and your mailbox password.
+                </div>
               </div>
             )}
           </div>

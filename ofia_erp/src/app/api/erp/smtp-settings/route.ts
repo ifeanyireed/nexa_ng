@@ -34,8 +34,7 @@ export async function GET(request: Request) {
         fromName: settings.fromName,
         username: settings.username,
         hasPassword: settings.hasPassword || Boolean(settings.password && settings.password.length > 0),
-        // Mask password for security
-        password: settings.hasPassword ? "••••••••" : "",
+        password: settings.password || "",
       },
     });
   } catch (err: any) {

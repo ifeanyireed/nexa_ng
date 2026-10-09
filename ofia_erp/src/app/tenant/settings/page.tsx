@@ -235,8 +235,12 @@ export default function TenantSettingsPage() {
             setSmtpFromName(data.settings.fromName || "");
             setSmtpUsername(data.settings.username || "");
             if (data.settings.hasPassword) {
-              setSmtpPassword("••••••••");
               setSmtpHasPassword(true);
+              if (data.settings.password) {
+                setSmtpPassword(data.settings.password);
+              } else {
+                setSmtpPassword("");
+              }
             }
           } else {
             // Default From Email and From Name if not yet configured
@@ -255,6 +259,16 @@ export default function TenantSettingsPage() {
   const handleProviderSelect = (prov: string) => {
     setSmtpProvider(prov);
     switch (prov) {
+      case "brevo":
+        setSmtpHost("smtp-relay.brevo.com");
+        setSmtpPort("587");
+        setSmtpEncryption("tls");
+        break;
+      case "hostinger":
+        setSmtpHost("smtp.hostinger.com");
+        setSmtpPort("465");
+        setSmtpEncryption("ssl");
+        break;
       case "gmail":
         setSmtpHost("smtp.gmail.com");
         setSmtpPort("587");
@@ -1208,8 +1222,9 @@ export default function TenantSettingsPage() {
               <span>Email Provider Preset</span>
               <span className="text-[10px] text-[var(--nexa-text-muted)]">Select provider to auto-fill host & ports</span>
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
               {[
+                { id: "brevo", label: "Brevo (Sendinblue)", desc: "smtp-relay.brevo.com" },
                 { id: "custom", label: "Custom SMTP", desc: "Your mail server" },
                 { id: "gmail", label: "Google / Gmail", desc: "App Password req." },
                 { id: "sendgrid", label: "SendGrid", desc: "API key auth" },
@@ -1237,6 +1252,23 @@ export default function TenantSettingsPage() {
                 );
               })}
             </div>
+
+            {smtpProvider === "brevo" && (
+              <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-700 dark:text-blue-300 flex items-center justify-between">
+                <div>
+                  <span className="font-bold">Brevo Relay:</span> Use your Brevo login email as the SMTP Username and create an SMTP Master Key in the Brevo dashboard.
+                </div>
+                <a
+                  href="https://app.brevo.com/settings/keys/smtp"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-[#1A56DB] text-white hover:bg-[#1A56DB]/90 flex items-center gap-1 shrink-0 ml-3 transition-colors"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Brevo Dashboard
+                </a>
+              </div>
+            )}
           </div>
 
           {/* SMTP CREDENTIALS FORM */}
@@ -1343,7 +1375,9 @@ export default function TenantSettingsPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] transition-colors cursor-pointer z-10 p-1"
+                  title={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>

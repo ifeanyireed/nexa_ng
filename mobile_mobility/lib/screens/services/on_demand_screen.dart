@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:mobile_mobility/utils/icon_util.dart';
 import 'package:flexicon/flexicon.dart';
@@ -14,8 +15,13 @@ class OnDemandScreen extends StatelessWidget {
         children: [
           // Map Background
           Positioned.fill(
-            child: CustomPaint(
-              painter: VectorMapPainter(),
+            child: GoogleMap(
+              initialCameraPosition: const CameraPosition(
+                target: LatLng(6.5244, 3.3792),
+                zoom: 14.0,
+              ),
+              myLocationEnabled: true,
+              zoomControlsEnabled: false,
             ),
           ),
 

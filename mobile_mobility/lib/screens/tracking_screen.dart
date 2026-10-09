@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../data/transport_mock_data.dart';
 import '../models/transport_models.dart';
@@ -42,33 +43,26 @@ class _TrackingScreenState extends State<TrackingScreen> {
       backgroundColor: const Color(0xFFE8EDF2),
       body: Stack(
         children: [
-          // 1. Vector Map Canvas
+          // 1. Google Map
           Positioned.fill(
-            child: CustomPaint(
-              painter: VectorMapPainter(),
-            ),
-          ),
-
-          // 2. Interactive Courier Map Pins positioned on the map
-          Positioned.fill(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final w = constraints.maxWidth;
-                final h = constraints.maxHeight;
-
-                return Stack(
-                  children: [
-                    Positioned(
-                      left: 0.5 * w - 23,
-                      top: 0.45 * h - 50,
-                      child: CourierPinWidget(
-                        imageAsset: 'assets/images/driver.jpg',
-                        isSelected: true,
-                        onTap: () {},
-                      ),
-                    ),
-                  ],
-                );
+            child: GoogleMap(
+              initialCameraPosition: const CameraPosition(
+                target: LatLng(6.5244, 3.3792), // Default Lagos
+                zoom: 14.0,
+              ),
+              myLocationEnabled: true,
+              zoomControlsEnabled: false,
+              markers: {
+                Marker(
+                  markerId: const MarkerId('pickup'),
+                  position: const LatLng(6.5244, 3.3792),
+                  infoWindow: InfoWindow(title: _activeTrip.pickupLocation),
+                ),
+                Marker(
+                  markerId: const MarkerId('destination'),
+                  position: const LatLng(6.4281, 3.4219),
+                  infoWindow: InfoWindow(title: _activeTrip.destination),
+                ),
               },
             ),
           ),

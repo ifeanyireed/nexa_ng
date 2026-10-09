@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { tenantSlug, recipients, subject, messageHtml, loginUrl } = body;
+    const { tenantSlug, recipients, subject, messageHtml, loginUrl, senderProfileId, senderOverride } = body;
 
     if (!tenantSlug) {
       return NextResponse.json(
@@ -66,6 +66,8 @@ export async function POST(request: Request) {
       subject: subject.trim(),
       messageHtml,
       loginUrl,
+      senderProfileId,
+      senderOverride,
     });
 
     // 2. Immediately dispatch the first batch in this request (e.g., up to 20 emails)

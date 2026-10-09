@@ -35,6 +35,9 @@ export async function GET(request: Request) {
         username: settings.username,
         hasPassword: settings.hasPassword || Boolean(settings.password && settings.password.length > 0),
         password: settings.password || "",
+        rateLimitedUntil: settings.rateLimitedUntil || null,
+        rateLimitReason: settings.rateLimitReason || null,
+        isRateLimited: Boolean(settings.isRateLimited),
       },
     });
   } catch (err: any) {

@@ -131,6 +131,7 @@ export async function POST(request: Request) {
             subject: blast.subject,
             messageHtml: blast.contentHtml,
             senderOverride: blast.senderOverride,
+            senderProfileId: blastData.senderProfileId,
           });
           await processEmailQueueBatch(20).catch(() => {});
         } catch (qErr) {

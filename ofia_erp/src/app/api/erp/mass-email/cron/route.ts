@@ -47,6 +47,7 @@ async function handleCronWorker(request: Request) {
       sent: totalSent,
       failed: totalFailed,
       remainingPending: batch.remainingPending,
+      remainingRateLimited: batch.remainingRateLimited || 0,
       errors: allErrors.slice(0, 10),
     });
   } catch (err: any) {

@@ -72,6 +72,9 @@ export async function GET(request: Request) {
             username: defaultSmtp!.username,
             hasPassword: defaultSmtp!.hasPassword || Boolean(defaultSmtp!.password && defaultSmtp!.password.length > 0),
             password: defaultSmtp!.password ? "••••••••" : "",
+            rateLimitedUntil: defaultSmtp!.rateLimitedUntil || null,
+            rateLimitReason: defaultSmtp!.rateLimitReason || null,
+            isRateLimited: Boolean(defaultSmtp!.isRateLimited),
           }
         : null,
     });

@@ -1621,6 +1621,8 @@ export interface QueueRecipientDetail {
   attempts: number;
   errorMessage?: string;
   sentAt?: string | null;
+  nextRetryAt?: string | null;
+  rateLimitedAt?: string | null;
   createdAt: string;
 }
 
@@ -1759,9 +1761,9 @@ export async function getCampaignDetailsWithRecipients(campaignId: string): Prom
         const pending = Math.max(0, total - (sent + failed));
         const progressPercent = total > 0 ? Math.min(100, Math.round(((sent + failed) / total) * 100)) : 100;
 
-        // Fetch all recipients for audit
+        // Fetch all recipients for audit with next_retry_at and rate_limited_at
         const queueRes = await pool.query(
-          `SELECT id, recipient_email, recipient_name, recipient_role, recipient_department, status, attempts, error_message, sent_at, created_at
+          `SELECT id, recipient_email, recipient_name, recipient_role, recipient_department, status, attempts, error_message, sent_at, next_retry_at, rate_limited_at, created_at
            FROM email_queue
            WHERE campaign_id = $1
            ORDER BY status DESC, recipient_name ASC`,
@@ -1778,12 +1780,25 @@ export async function getCampaignDetailsWithRecipients(campaignId: string): Prom
           attempts: Number(r.attempts) || 0,
           errorMessage: r.error_message || undefined,
           sentAt: r.sent_at?.toISOString ? r.sent_at.toISOString() : r.sent_at ? String(r.sent_at) : null,
+          nextRetryAt: r.next_retry_at?.toISOString ? r.next_retry_at.toISOString() : r.next_retry_at ? String(r.next_retry_at) : null,
+          rateLimitedAt: r.rate_limited_at?.toISOString ? r.rate_limited_at.toISOString() : r.rate_limited_at ? String(r.rate_limited_at) : null,
           createdAt: r.created_at?.toISOString ? r.created_at.toISOString() : String(r.created_at),
         }));
 
         const errors = recipients
-          .filter((r) => r.status === "failed" && r.errorMessage)
+          .filter((r) => (r.status === "failed" || (r.status === "pending" && r.nextRetryAt && new Date(r.nextRetryAt) > new Date())) && r.errorMessage)
           .map((r) => ({ email: r.recipientEmail, error: r.errorMessage! }));
+
+        const rateLimitedCount = recipients.filter(
+          (r) => r.status === "pending" && r.nextRetryAt && new Date(r.nextRetryAt) > new Date()
+        ).length;
+
+        const earliestRetry = recipients
+          .filter((r) => r.status === "pending" && r.nextRetryAt && new Date(r.nextRetryAt) > new Date())
+          .reduce<string | null>((acc, cur) => {
+            if (!cur.nextRetryAt) return acc;
+            return !acc || cur.nextRetryAt < acc ? cur.nextRetryAt : acc;
+          }, null);
 
         return {
           id: row.id,
@@ -1795,7 +1810,9 @@ export async function getCampaignDetailsWithRecipients(campaignId: string): Prom
           sent,
           failed,
           pending,
+          rateLimited: rateLimitedCount,
           status: row.status,
+          nextRetryAt: earliestRetry,
           progressPercent,
           createdAt: row.created_at?.toISOString ? row.created_at.toISOString() : String(row.created_at),
           updatedAt: row.updated_at?.toISOString ? row.updated_at.toISOString() : String(row.updated_at),
@@ -1829,12 +1846,18 @@ export async function getCampaignDetailsWithRecipients(campaignId: string): Prom
         attempts: q.attempts,
         errorMessage: q.errorMessage,
         sentAt: q.sentAt ? q.sentAt.toISOString() : null,
+        nextRetryAt: q.nextRetryAt ? q.nextRetryAt.toISOString() : null,
+        rateLimitedAt: q.rateLimitedAt ? q.rateLimitedAt.toISOString() : null,
         createdAt: memCamp.createdAt.toISOString(),
       }));
 
     const errors = recipients
       .filter((r) => r.status === "failed" && r.errorMessage)
       .map((r) => ({ email: r.recipientEmail, error: r.errorMessage! }));
+
+    const rateLimited = recipients.filter(
+      (r) => r.status === "pending" && r.nextRetryAt && new Date(r.nextRetryAt) > new Date()
+    ).length;
 
     return {
       id: memCamp.id,
@@ -1846,6 +1869,7 @@ export async function getCampaignDetailsWithRecipients(campaignId: string): Prom
       sent,
       failed,
       pending,
+      rateLimited,
       status: memCamp.status,
       progressPercent,
       createdAt: memCamp.createdAt.toISOString(),
@@ -1859,7 +1883,7 @@ export async function getCampaignDetailsWithRecipients(campaignId: string): Prom
 }
 
 /**
- * Re-queue all failed recipients for a campaign so the cron worker can retry them
+ * Re-queue all failed and rate-limited recipients for a campaign so the cron worker can retry them
  */
 export async function retryFailedCampaignEmails(campaignId: string): Promise<{ retriedCount: number }> {
   if (!campaignId) return { retriedCount: 0 };
@@ -1869,17 +1893,26 @@ export async function retryFailedCampaignEmails(campaignId: string): Promise<{ r
     const pool = getDbPool();
     if (pool) {
       await ensureTablesExist();
+
+      // Reset both failed and rate-limited deferred emails to immediate pending retry
       const res = await pool.query(
         `UPDATE email_queue
-         SET status = 'pending', attempts = 0, error_message = NULL, updated_at = CURRENT_TIMESTAMP
-         WHERE campaign_id = $1 AND status = 'failed'
-         RETURNING id`,
+         SET status = 'pending', attempts = 0, next_retry_at = CURRENT_TIMESTAMP, error_message = NULL, updated_at = CURRENT_TIMESTAMP
+         WHERE campaign_id = $1 AND (status = 'failed' OR (status = 'pending' AND next_retry_at > CURRENT_TIMESTAMP))
+         RETURNING id, sender_profile_id, tenant_slug`,
         [campaignId]
       );
 
       const retriedCount = res.rowCount || 0;
 
       if (retriedCount > 0) {
+        // Clear active profile cooldown so immediate retry is not blocked
+        const firstRow = res.rows[0];
+        if (firstRow) {
+          const profileKey = getProfileKey(firstRow.tenant_slug, firstRow.sender_profile_id);
+          await resetProfileRateLimit(profileKey);
+        }
+
         await pool.query(
           `UPDATE email_campaigns
            SET status = 'processing', failed_count = GREATEST(0, failed_count - $1), updated_at = CURRENT_TIMESTAMP
@@ -1902,9 +1935,10 @@ export async function retryFailedCampaignEmails(campaignId: string): Promise<{ r
   // 2. In-memory fallback
   let count = 0;
   memoryQueue.forEach((q) => {
-    if (q.campaignId === campaignId && q.status === "failed") {
+    if (q.campaignId === campaignId && (q.status === "failed" || (q.status === "pending" && q.nextRetryAt && q.nextRetryAt > new Date()))) {
       q.status = "pending";
       q.attempts = 0;
+      q.nextRetryAt = new Date();
       q.errorMessage = undefined;
       count++;
     }

@@ -1899,6 +1899,7 @@ export async function dispatchScheduledBlasts(tenantSlug?: string): Promise<{ di
               subject: blast.subject,
               messageHtml: blast.content_html,
               senderOverride,
+              senderProfileId: blast.sender_profile_id,
             });
             await processEmailQueueBatch(50).catch(() => {});
           }

@@ -209,9 +209,6 @@ class _RentalVehicleDetailsScreenState
                         );
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(
-                            0xFF1B62F0), // Changed to the brand blue from the other screens for consistency, though the design shows green.
-                        // Wait, the design shows green (#00C853) for the button. Let's use green.
                         backgroundColor: const Color(0xFF00C853),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),

@@ -85,7 +85,7 @@ class _RentalPlanTripScreenState extends State<RentalPlanTripScreen> {
                       children: [
                         Row(
                           children: [
-                            Icon(fixIcon(FlexIcon.remix.calendar_2_line),
+                            const Icon(Icons.calendar_today_outlined,
                                 color: Colors.grey, size: 20),
                             const SizedBox(width: 12),
                             const Expanded(
@@ -101,7 +101,7 @@ class _RentalPlanTripScreenState extends State<RentalPlanTripScreen> {
                         ),
                         Row(
                           children: [
-                            Icon(fixIcon(FlexIcon.remix.time_line),
+                            const Icon(Icons.access_time_outlined,
                                 color: Colors.grey, size: 20),
                             const SizedBox(width: 12),
                             const Expanded(

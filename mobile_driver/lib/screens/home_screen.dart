@@ -87,7 +87,7 @@ class HomeScreen extends StatelessWidget {
                           children: [
                             Text(driver.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
                             const SizedBox(width: 8),
-                            Icon(fixIcon(FlexIcon.remix.starCircle), color: const Color(0xFF1B62F0), size: 14),
+                            Icon(fixIcon(FlexIcon.remix.starCircle), color: Colors.orange, size: 14),
                             Text(' ${driver.rating} ratings', style: const TextStyle(color: Colors.white70, fontSize: 12)),
                           ],
                         )

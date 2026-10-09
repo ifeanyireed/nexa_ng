@@ -139,7 +139,7 @@ func seedDefaultOrganizations(db *gorm.DB) {
 			{
 				ID:        "1bb299db-2578-4018-8a53-e42e0308fa06",
 				Name:      "Ifeanyi Felix",
-				Email:     "ifeanyi.ibeh@neweratransports.com",
+				Email:     "netslogistics1@gmail.com",
 				Role:      models.RoleTenantOwner,
 				Password:  "$2a$10$7EqJtq98hPqEX7fNZaFWoOZhg.6eA5Z9qjS8yG4R.M1P8wG4R.M1P",
 				CreatedAt: time.Now(),

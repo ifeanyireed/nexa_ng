@@ -212,7 +212,7 @@ export const INITIAL_TENANTS: TenantOrg[] = [
     slug: "neweratransports",
     domain: "neweratransports.ofia.ng",
     ownerName: "Ifeanyi Felix",
-    ownerEmail: "ifeanyi.ibeh@neweratransports.com",
+    ownerEmail: "netslogistics1@gmail.com",
     logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
     loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
     heroTitle: "Powering next-generation transport, logistics & fleet intelligence.",
@@ -425,7 +425,7 @@ export const INITIAL_ADMIN_USERS: AdminUser[] = [
   {
     id: "usr-02",
     name: "Ifeanyi Felix",
-    email: "ifeanyi.ibeh@neweratransports.com",
+    email: "netslogistics1@gmail.com",
     role: "TENANT_OWNER",
     title: "Admin",
     orgName: "New Era Transports",

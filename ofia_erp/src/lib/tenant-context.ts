@@ -115,10 +115,10 @@ export function extractSubdomainOrParam(searchParamSlug?: string | null): string
 }
 
 const DEFAULT_TENANT_ADMINS: Record<string, { name: string; email: string }> = {
-  neweratransports: { name: "Ifeanyi Felix", email: "ifeanyi.ibeh@neweratransports.com" },
-  "org-01": { name: "Ifeanyi Felix", email: "ifeanyi.ibeh@neweratransports.com" },
-  "edusuite-ng": { name: "Ifeanyi Felix", email: "ifeanyi.ibeh@neweratransports.com" },
-  "1aa8c687-b71d-4188-9de2-371aa5dfa9e6": { name: "Ifeanyi Felix", email: "ifeanyi.ibeh@neweratransports.com" },
+  neweratransports: { name: "Ifeanyi Felix", email: "netslogistics1@gmail.com" },
+  "org-01": { name: "Ifeanyi Felix", email: "netslogistics1@gmail.com" },
+  "edusuite-ng": { name: "Ifeanyi Felix", email: "netslogistics1@gmail.com" },
+  "1aa8c687-b71d-4188-9de2-371aa5dfa9e6": { name: "Ifeanyi Felix", email: "netslogistics1@gmail.com" },
 };
 
 export const DEFAULT_TENANT_BRANDING: Record<

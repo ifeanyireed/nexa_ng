@@ -3,7 +3,7 @@
 -- Target Database: u721451974_nexa_db (MySQL / MariaDB)
 -- Microservices: service_users (:8081) & service_erp (:8084)
 -- Tenant: New Era Transports (slug: neweratransports)
--- Owner: Ifeanyi Felix (ifeanyi.ibeh@neweratransports.com)
+-- Owner: Ifeanyi Felix (netslogistics1@gmail.com)
 -- ==============================================================================
 
 SET FOREIGN_KEY_CHECKS = 0;
@@ -16,7 +16,7 @@ INSERT INTO `User` (
     `company`, `designation`, `employmentDate`, `gradeLevel`, `location`, `password`, `managerId`,
     `createdAt`, `updatedAt`
 ) VALUES (
-    'USR-001', 'Ifeanyi Felix', 'ifeanyi.ibeh@neweratransports.com', 'admin',
+    'USR-001', 'Ifeanyi Felix', 'netslogistics1@gmail.com', 'admin',
     'Executive Directorate', '/character2.jpg', NULL, NULL,
     'NETS', 'Admin', '2025-01-01', 'L1', 'Lagos',
     '$2a$10$p7UtOwSfQo1PUNYLzFTcceT3f9s6AG4iLbn08l.HQw7k9aK6uTlA6', NULL, NOW(3), NOW(3)

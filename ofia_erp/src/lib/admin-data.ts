@@ -122,7 +122,7 @@ export const INITIAL_TENANTS: TenantOrg[] = [
     slug: "neweratransports",
     domain: "neweratransports.com",
     ownerName: "Ifeanyi Felix",
-    ownerEmail: "ifeanyi.ibeh@neweratransports.com",
+    ownerEmail: "netslogistics1@gmail.com",
     loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
     heroTitle: "Powering next-generation transport, logistics & fleet intelligence.",
     heroSubtitle: "Real-time zonal dispatch, fleet telemetry, manifest auditing, and ledger reconciliation in one synchronized ecosystem.",

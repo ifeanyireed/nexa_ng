@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getDbPool } from "@/lib/db";
 import bcrypt from "bcryptjs";
+import { sendPlatformPasswordChangedEmail } from "@/lib/email-service";
+import { slugToTenantName } from "@/lib/tenant-context";
 
 export async function POST(request: Request) {
   try {
@@ -78,6 +80,16 @@ export async function POST(request: Request) {
     }
 
     const updatedUser = result.rows[0];
+
+    // Dispatch security notice to the user via Root Platform SMTP relay
+    if (updatedUser.email) {
+      sendPlatformPasswordChangedEmail({
+        recipientEmail: updatedUser.email,
+        recipientName: updatedUser.name || updatedUser.email.split("@")[0],
+        tenantSlug: updatedUser.tenantSlug || "platform",
+        tenantName: slugToTenantName(updatedUser.tenantSlug || "platform"),
+      }).catch((err) => console.warn("Failed to dispatch staff password reset alert:", err));
+    }
 
     return NextResponse.json({
       success: true,

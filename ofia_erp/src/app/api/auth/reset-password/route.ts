@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { getDbPool, ensureTablesExist } from "@/lib/db";
+import { sendPlatformPasswordChangedEmail } from "@/lib/email-service";
+import { slugToTenantName } from "@/lib/tenant-context";
 
 // GET /api/auth/reset-password?token=...&email=...
 // Verifies if the reset token is valid and unexpired
@@ -170,6 +172,14 @@ export async function POST(request: Request) {
        WHERE id = $1`,
       [tokenRow.id]
     );
+
+    // 5. Dispatch confirmation email using Root Platform SMTP relay
+    sendPlatformPasswordChangedEmail({
+      recipientEmail: normalizedEmail,
+      recipientName: updatedUser.name || normalizedEmail.split("@")[0],
+      tenantSlug: updatedUser.tenantSlug || "platform",
+      tenantName: slugToTenantName(updatedUser.tenantSlug || "platform"),
+    }).catch((err) => console.warn("Failed to dispatch password changed security alert:", err));
 
     return NextResponse.json({
       success: true,

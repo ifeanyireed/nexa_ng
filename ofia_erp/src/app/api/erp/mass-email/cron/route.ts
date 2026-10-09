@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { processEmailQueueBatch } from "@/lib/email-service";
+import { dispatchScheduledBlasts } from "@/lib/crm-service";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60; // Allow full minute for batch dispatch on serverless
@@ -18,7 +19,16 @@ async function handleCronWorker(request: Request) {
       }
     }
 
-    // Process up to 50 pending emails per cron tick in batches of 25
+    // 1. Dispatch any due scheduled CRM marketing blasts into the queue
+    let scheduledBlastsDispatched = 0;
+    try {
+      const blastResult = await dispatchScheduledBlasts();
+      scheduledBlastsDispatched = blastResult.dispatched;
+    } catch (schedErr) {
+      console.warn("Notice: Scheduled blasts cron check error:", schedErr);
+    }
+
+    // 2. Process up to 50 pending emails per cron tick in batches of 25
     let totalProcessed = 0;
     let totalSent = 0;
     let totalFailed = 0;
@@ -43,6 +53,7 @@ async function handleCronWorker(request: Request) {
     return NextResponse.json({
       success: true,
       timestamp: new Date().toISOString(),
+      scheduledBlastsDispatched,
       processed: totalProcessed,
       sent: totalSent,
       failed: totalFailed,

@@ -241,7 +241,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        'Ongoing ${activeTrip!.serviceType.name}',
+                        'Ongoing ${activeTrip!.serviceType.displayName}',
                         style: const TextStyle(
                             color: Colors.white,
                             fontSize: 12,
@@ -249,7 +249,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     Text(
-                      activeTrip!.status.name.toUpperCase(),
+                      activeTrip!.status.displayName.toUpperCase(),
                       style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12,

@@ -6,7 +6,24 @@ enum ServiceType {
   staff,
   interstate,
   school,
-  onDemand,
+  onDemand;
+
+  String get displayName {
+    switch (this) {
+      case ServiceType.shuttle:
+        return 'Shuttle';
+      case ServiceType.rental:
+        return 'Rental';
+      case ServiceType.staff:
+        return 'Staff';
+      case ServiceType.interstate:
+        return 'Interstate';
+      case ServiceType.school:
+        return 'School';
+      case ServiceType.onDemand:
+        return 'On Demand';
+    }
+  }
 }
 
 class ServiceModule {
@@ -34,7 +51,26 @@ enum TripStatus {
   arrived,
   inProgress,
   completed,
-  cancelled,
+  cancelled;
+
+  String get displayName {
+    switch (this) {
+      case TripStatus.searching:
+        return 'Searching';
+      case TripStatus.driverAssigned:
+        return 'Driver Assigned';
+      case TripStatus.driverArriving:
+        return 'Driver Arriving';
+      case TripStatus.arrived:
+        return 'Arrived';
+      case TripStatus.inProgress:
+        return 'In Progress';
+      case TripStatus.completed:
+        return 'Completed';
+      case TripStatus.cancelled:
+        return 'Cancelled';
+    }
+  }
 }
 
 class Trip {

@@ -129,7 +129,7 @@ class BookingsScreen extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        trip.serviceType.name.toUpperCase(),
+                        trip.serviceType.displayName.toUpperCase(),
                         style: const TextStyle(
                             fontWeight: FontWeight.w700, fontSize: 13),
                       ),
@@ -145,7 +145,7 @@ class BookingsScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
-                      trip.status.name.toUpperCase(),
+                      trip.status.displayName.toUpperCase(),
                       style: TextStyle(
                         color: isActive
                             ? const Color(0xFF1B62F0)

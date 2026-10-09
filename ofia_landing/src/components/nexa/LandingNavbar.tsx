@@ -14,6 +14,11 @@ export const LandingNavbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
+  // Hide top navigation bar on single blog post pages (e.g. /blog/[slug])
+  const isSinglePostPage = Boolean(
+    pathname && pathname.startsWith("/blog/") && pathname !== "/blog" && pathname !== "/blog/"
+  );
+
   useEffect(() => {
     const handleScroll = () => {
       setScrolled(window.scrollY > 20);
@@ -21,6 +26,10 @@ export const LandingNavbar = () => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  if (isSinglePostPage) {
+    return null;
+  }
 
   const navLinks = [
     { label: "Products", href: "/products" },

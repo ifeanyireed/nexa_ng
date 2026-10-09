@@ -98,7 +98,7 @@ class _OnDemandScreenState extends State<OnDemandScreen> {
                         ),
                         GestureDetector(
                           onTap: () async {
-                            final Place? result = await showSearch(
+                            final result = await showSearch<Place?>(
                               context: context,
                               delegate: PlacesSearchDelegate(),
                             );

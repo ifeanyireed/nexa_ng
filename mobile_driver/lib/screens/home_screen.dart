@@ -37,6 +37,45 @@ class HomeScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Text('Lagos, Nigeria',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14)),
+                        const Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 20),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Icon(fixIcon(FlexIcon.remix.customerSupport5),
+                            color: Colors.white),
+                        const SizedBox(width: 16),
+                        Stack(
+                          children: [
+                            Icon(fixIcon(FlexIcon.remix.bellNotification),
+                                color: Colors.white),
+                            Positioned(
+                              right: 0,
+                              top: 0,
+                              child: Container(
+                                width: 8,
+                                height: 8,
+                                decoration: const BoxDecoration(
+                                    color: Colors.red, shape: BoxShape.circle),
+                              ),
+                            )
+                          ],
+                        )
+                      ],
+                    )
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Row(
                   children: [
                     Icon(fixIcon(FlexIcon.remix.flower), color: Colors.orange, size: 24),
                     const SizedBox(width: 8),

@@ -53,6 +53,7 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 40),
             
             _buildMenuItem(fixIcon(FlexIcon.remix.userCircleSingle), 'Account'),
+            _buildMenuItem(fixIcon(FlexIcon.remix.wallet3), 'Earnings & Wallet'),
             _buildMenuItem(fixIcon(FlexIcon.remix.newStickyNote), 'Rewards'),
             _buildMenuItem(fixIcon(FlexIcon.remix.carTaxi1), 'Vehicles', trailing: '${driver.activeVehiclesCount} Active Vehicles'),
             _buildMenuItem(fixIcon(FlexIcon.remix.lineArrowRoadmap), 'Routes'),

@@ -1,5 +1,5 @@
 import { getDbPool, ensureTablesExist } from "./db";
-import { queueMassEmailCampaign, processEmailQueueBatch, SmtpSettings } from "./email-service";
+import { queueMassEmailCampaign, processEmailQueueBatch, SmtpSettings, getTenantSenderProfileById } from "./email-service";
 
 export interface CrmDeal {
   id: string;
@@ -1192,8 +1192,8 @@ export async function createCrmEmailBlast(tenantSlug: string, blast: Partial<Crm
     subject: blast.subject || "Important Announcement",
     previewText: blast.previewText || "",
     contentHtml: blast.contentHtml || "<p>Hello {{contact_name}},</p><p>We are reaching out with an update.</p>",
-    senderName: blast.senderName || "Ofia Growth Desk",
-    senderEmail: blast.senderEmail || "growth@ofia.ng",
+    senderName: blast.senderName || (slug === "platform" ? "Ofia Platform Team" : "Workspace Broadcast"),
+    senderEmail: blast.senderEmail || (slug === "platform" ? "growth@ofia.ng" : `broadcast@${slug}.workspace.ng`),
     senderProfileId: blast.senderProfileId,
     senderProvider: blast.senderProvider || "custom",
     senderOverride: blast.senderOverride,
@@ -1756,6 +1756,29 @@ export async function dispatchScheduledBlasts(tenantSlug?: string): Promise<{ di
             if (blast.sender_override) {
               try {
                 senderOverride = typeof blast.sender_override === "string" ? JSON.parse(blast.sender_override) : blast.sender_override;
+              } catch {}
+            }
+            if (
+              !senderOverride &&
+              blast.sender_profile_id &&
+              blast.sender_profile_id !== "custom" &&
+              blast.sender_profile_id !== "default" &&
+              blast.sender_profile_id !== "workspace_primary"
+            ) {
+              try {
+                const prof = await getTenantSenderProfileById(blast.tenant_slug, blast.sender_profile_id);
+                if (prof) {
+                  senderOverride = {
+                    provider: prof.provider,
+                    host: prof.host,
+                    port: prof.port,
+                    encryption: prof.encryption,
+                    fromEmail: prof.fromEmail,
+                    fromName: prof.fromName,
+                    username: prof.username,
+                    password: prof.password,
+                  };
+                }
               } catch {}
             }
 

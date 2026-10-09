@@ -49,7 +49,7 @@ export default function EmailMarketingBlastsPage() {
   // Sender Profiles & Multi-Domain State
   const [senderProfiles, setSenderProfiles] = useState<TenantSenderProfile[]>([]);
   const [defaultSmtp, setDefaultSmtp] = useState<any>(null);
-  const [selectedProfileId, setSelectedProfileId] = useState<string>("default");
+  const [selectedProfileId, setSelectedProfileId] = useState<string>("");
 
   // Custom Domain Override State
   const [customProvider, setCustomProvider] = useState<string>("custom");
@@ -66,8 +66,8 @@ export default function EmailMarketingBlastsPage() {
   const [blastTitle, setBlastTitle] = useState("");
   const [blastSubject, setBlastSubject] = useState("");
   const [selectedListId, setSelectedListId] = useState("");
-  const [senderName, setSenderName] = useState("Ofia Enterprise Growth");
-  const [senderEmail, setSenderEmail] = useState("growth@ofia.ng");
+  const [senderName, setSenderName] = useState("");
+  const [senderEmail, setSenderEmail] = useState("");
   const [contentHtml, setContentHtml] = useState(
     "<h2>Exclusive Commercial Update</h2><p>Dear {{contact_name}},</p><p>We are pleased to introduce our latest enterprise solutions designed for your organization.</p><p><a href='https://ofia.ng' style='background:#1A56DB;color:#fff;padding:8px 16px;border-radius:6px;text-decoration:none;'>Explore Platform</a></p>"
   );
@@ -95,14 +95,30 @@ export default function EmailMarketingBlastsPage() {
           setLists([]);
         }
 
-        if (profilesRes?.profiles) {
+        let initialProfileId = "";
+        let initialName = "";
+        let initialEmail = "";
+
+        if (profilesRes?.profiles && Array.isArray(profilesRes.profiles) && profilesRes.profiles.length > 0) {
           setSenderProfiles(profilesRes.profiles);
-        }
-        if (profilesRes?.defaultSmtp) {
+          const defaultProf = profilesRes.profiles.find((p: any) => p.isDefault) || profilesRes.profiles[0];
+          initialProfileId = defaultProf.id;
+          initialName = defaultProf.fromName || defaultProf.profileName || "";
+          initialEmail = defaultProf.fromEmail || "";
+        } else if (profilesRes?.defaultSmtp && profilesRes.defaultSmtp.fromEmail) {
           setDefaultSmtp(profilesRes.defaultSmtp);
-          if (profilesRes.defaultSmtp.fromName) setSenderName(profilesRes.defaultSmtp.fromName);
-          if (profilesRes.defaultSmtp.fromEmail) setSenderEmail(profilesRes.defaultSmtp.fromEmail);
+          initialProfileId = "workspace_primary";
+          initialName = profilesRes.defaultSmtp.fromName || "";
+          initialEmail = profilesRes.defaultSmtp.fromEmail || "";
+        } else {
+          initialProfileId = "custom";
+          initialName = "";
+          initialEmail = "";
         }
+
+        setSelectedProfileId(initialProfileId);
+        if (initialName) setSenderName(initialName);
+        if (initialEmail) setSenderEmail(initialEmail);
       } catch (err) {
         console.warn("Using offline email marketing state:", err);
       } finally {
@@ -114,20 +130,20 @@ export default function EmailMarketingBlastsPage() {
 
   const handleProfileChange = (val: string) => {
     setSelectedProfileId(val);
-    if (val === "default") {
+    if (val === "workspace_primary") {
       if (defaultSmtp) {
-        setSenderName(defaultSmtp.fromName || "Ofia Enterprise Growth");
-        setSenderEmail(defaultSmtp.fromEmail || "growth@ofia.ng");
+        setSenderName(defaultSmtp.fromName || "");
+        setSenderEmail(defaultSmtp.fromEmail || "");
       }
     } else if (val === "custom") {
-      if (!customHost && defaultSmtp?.host) {
+      if (!customHost && defaultSmtp?.host && !defaultSmtp.host.includes("ofia.ng")) {
         setCustomHost(defaultSmtp.host);
       }
     } else {
       const prof = senderProfiles.find((p) => p.id === val);
       if (prof) {
-        setSenderName(prof.fromName || prof.profileName);
-        setSenderEmail(prof.fromEmail);
+        setSenderName(prof.fromName || prof.profileName || "");
+        setSenderEmail(prof.fromEmail || "");
       }
     }
   };
@@ -177,6 +193,16 @@ export default function EmailMarketingBlastsPage() {
     e.preventDefault();
     if (!blastTitle.trim() || !blastSubject.trim()) return;
 
+    if (!senderEmail.trim()) {
+      alert("Please provide a valid sender email address.");
+      return;
+    }
+
+    if (senderEmail.toLowerCase().includes("@ofia.ng")) {
+      alert("Tenants are prohibited from using the platform domain (@ofia.ng) to dispatch marketing blasts.");
+      return;
+    }
+
     const chosenList = lists.find((l) => l.id === selectedListId);
     const recipientsCount = chosenList ? chosenList.subscriberCount : 100;
 
@@ -184,10 +210,23 @@ export default function EmailMarketingBlastsPage() {
     let senderProvider = "custom";
     let senderOverride: any = undefined;
 
-    if (selectedProfileId === "default") {
-      senderProfileId = "default";
-      senderProvider = defaultSmtp?.provider || "custom";
+    if (selectedProfileId === "workspace_primary" && defaultSmtp) {
+      senderProfileId = "workspace_primary";
+      senderProvider = defaultSmtp.provider || "custom";
+      senderOverride = {
+        host: defaultSmtp.host,
+        port: defaultSmtp.port,
+        encryption: defaultSmtp.encryption,
+        fromEmail: senderEmail.trim() || defaultSmtp.fromEmail,
+        fromName: senderName.trim() || defaultSmtp.fromName,
+        username: defaultSmtp.username,
+        password: defaultSmtp.password,
+      };
     } else if (selectedProfileId === "custom") {
+      if (!customHost.trim() || !senderEmail.trim()) {
+        alert("Please provide the SMTP Host and Sender Email for your custom domain.");
+        return;
+      }
       senderProvider = customProvider;
       senderOverride = {
         host: customHost.trim(),
@@ -200,7 +239,7 @@ export default function EmailMarketingBlastsPage() {
       };
 
       // If user chose to save as reusable profile
-      if (saveAsProfile && customHost && senderEmail) {
+      if (saveAsProfile && customHost.trim() && senderEmail.trim()) {
         crmFetch("/api/erp/sender-profiles", {
           method: "POST",
           body: JSON.stringify({
@@ -237,6 +276,9 @@ export default function EmailMarketingBlastsPage() {
           username: prof.username,
           password: prof.password,
         };
+      } else {
+        alert("Please select a configured sender profile or specify custom SMTP settings.");
+        return;
       }
     }
 
@@ -535,25 +577,63 @@ export default function EmailMarketingBlastsPage() {
               </span>
             </div>
 
-            <div>
-              <label className="block text-[11px] font-semibold text-[var(--nexa-text-secondary)] mb-1">
-                Select Sending Domain / Profile:
-              </label>
-              <select
-                value={selectedProfileId}
-                onChange={(e) => handleProfileChange(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-medium focus:border-[#1A56DB] focus:ring-1 focus:ring-[#1A56DB]"
-              >
-                <option value="default">
-                  Primary Workspace Domain {defaultSmtp ? `(${defaultSmtp.fromEmail || defaultSmtp.host})` : "(Default SMTP Relay)"}
-                </option>
-                {senderProfiles.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.profileName} — {p.fromEmail} ({p.provider.toUpperCase()} / {p.host})
-                  </option>
-                ))}
-                <option value="custom">+ Custom SMTP / Different Domain Override for this Blast...</option>
-              </select>
+            {/* Empty state notice when workspace has no saved sender profiles */}
+            {senderProfiles.length === 0 && !defaultSmtp && (
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-semibold">Tenant Domain Required:</span> Your workspace does not have any saved sender profiles. Tenants are prohibited from using the platform's default relay. Please configure your domain SMTP credentials below to dispatch this blast.
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+                  Select Outbound Sender Profile
+                </label>
+                <select
+                  value={selectedProfileId}
+                  onChange={(e) => handleProfileChange(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-medium focus:border-[#1A56DB] focus:ring-1 focus:ring-[#1A56DB]"
+                >
+                  {senderProfiles.length === 0 && !defaultSmtp && (
+                    <option value="custom">No saved profiles (Configure Custom Domain SMTP)</option>
+                  )}
+                  {defaultSmtp && (
+                    <option value="workspace_primary">
+                      Primary Workspace SMTP ({defaultSmtp.fromEmail || defaultSmtp.host})
+                    </option>
+                  )}
+                  {senderProfiles.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.profileName} — {p.fromEmail} ({p.provider.toUpperCase()} / {p.host})
+                    </option>
+                  ))}
+                  {(senderProfiles.length > 0 || defaultSmtp) && (
+                    <option value="custom">+ Custom SMTP / New Domain Override for this Blast...</option>
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+                  Active Domain Identity
+                </label>
+                <div className="h-[38px] px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-mono flex items-center justify-between text-[var(--nexa-text-secondary)]">
+                  <span className="truncate flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    {senderEmail?.includes("@") ? senderEmail.split("@")[1] : "tenant domain"}
+                  </span>
+                  <span className="text-[10px] font-sans px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 font-semibold border border-blue-500/20 shrink-0">
+                    {selectedProfileId === "custom"
+                      ? "Custom SMTP"
+                      : selectedProfileId === "workspace_primary"
+                      ? "Workspace Primary"
+                      : "Dedicated Profile"}
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* Custom Domain Settings Drawer */}
@@ -684,13 +764,21 @@ export default function EmailMarketingBlastsPage() {
               <span>
                 Sending identity:{" "}
                 <strong className="text-[var(--nexa-text-primary)] font-mono">
-                  {senderName ? `${senderName} <${senderEmail}>` : senderEmail}
+                  {senderName ? `${senderName} <${senderEmail || "your-domain@workspace.ng"}>` : senderEmail || "Enter sender details"}
                 </strong>
-                {selectedProfileId !== "default" && (
+                {selectedProfileId === "custom" ? (
                   <span className="text-blue-600 font-semibold ml-1">
-                    ({selectedProfileId === "custom" ? `Custom ${customProvider}` : "Dedicated Profile"})
+                    (Custom {customProvider.toUpperCase()})
                   </span>
-                )}
+                ) : selectedProfileId === "workspace_primary" ? (
+                  <span className="text-emerald-600 font-semibold ml-1">
+                    (Workspace Primary SMTP)
+                  </span>
+                ) : selectedProfileId ? (
+                  <span className="text-purple-600 font-semibold ml-1">
+                    (Dedicated Profile)
+                  </span>
+                ) : null}
               </span>
             </div>
           </div>
@@ -806,11 +894,11 @@ export default function EmailMarketingBlastsPage() {
                 <div className="p-2.5 border-b border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]/60 text-[11px] space-y-1 font-sans">
                   <div className="flex items-center justify-between text-[var(--nexa-text-muted)]">
                     <span>
-                      <strong className="text-[var(--nexa-text-primary)]">From:</strong> {senderName || "Sender"} &lt;{senderEmail || "growth@ofia.ng"}&gt;
+                      <strong className="text-[var(--nexa-text-primary)]">From:</strong> {senderName || "Sender"} &lt;{senderEmail || "broadcast@yourdomain.com"}&gt;
                     </span>
                     <div className="flex items-center gap-1.5">
                       <span className="text-[10px] font-mono bg-blue-500/10 text-blue-600 px-1.5 py-0.5 rounded font-semibold border border-blue-500/20">
-                        {senderEmail?.includes("@") ? senderEmail.split("@")[1] : "default domain"}
+                        {senderEmail?.includes("@") ? senderEmail.split("@")[1] : "workspace domain"}
                       </span>
                       <span className="text-[10px] font-mono bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded font-semibold border border-emerald-500/20">
                         Live Simulation

@@ -17,6 +17,8 @@ class _RentalPlanTripScreenState extends State<RentalPlanTripScreen> {
   bool _subscribeToRoute = false;
   Place? _origin;
   Place? _destination;
+  DateTime? _departureDate;
+  TimeOfDay? _departureTime;
 
   @override
   Widget build(BuildContext context) {
@@ -102,33 +104,73 @@ class _RentalPlanTripScreenState extends State<RentalPlanTripScreen> {
                     ),
                     child: Column(
                       children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.calendar_today_outlined,
-                                color: Colors.grey, size: 20),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Text('Departure Date',
-                                  style: TextStyle(fontSize: 14)),
+                        GestureDetector(
+                          onTap: () async {
+                            final date = await showDatePicker(
+                              context: context,
+                              initialDate: _departureDate ?? DateTime.now(),
+                              firstDate: DateTime.now(),
+                              lastDate: DateTime.now().add(const Duration(days: 365)),
+                            );
+                            if (date != null) {
+                              setState(() => _departureDate = date);
+                            }
+                          },
+                          child: Container(
+                            color: Colors.transparent,
+                            child: Row(
+                              children: [
+                                const Icon(Icons.calendar_today_outlined,
+                                    color: Colors.grey, size: 20),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                      _departureDate != null 
+                                          ? '${_departureDate!.day}/${_departureDate!.month}/${_departureDate!.year}' 
+                                          : 'Departure Date',
+                                      style: TextStyle(
+                                          fontSize: 14, 
+                                          color: _departureDate != null ? Colors.black : Colors.black87)),
+                                ),
+                                const Icon(Icons.chevron_right, color: Colors.grey),
+                              ],
                             ),
-                            const Icon(Icons.chevron_right, color: Colors.grey),
-                          ],
+                          ),
                         ),
                         const Padding(
                           padding: EdgeInsets.symmetric(vertical: 8),
                           child: Divider(color: Color(0xFFE2E8F0)),
                         ),
-                        Row(
-                          children: [
-                            const Icon(Icons.access_time_outlined,
-                                color: Colors.grey, size: 20),
-                            const SizedBox(width: 12),
-                            const Expanded(
-                              child: Text('Departure Time',
-                                  style: TextStyle(fontSize: 14)),
+                        GestureDetector(
+                          onTap: () async {
+                            final time = await showTimePicker(
+                              context: context,
+                              initialTime: _departureTime ?? TimeOfDay.now(),
+                            );
+                            if (time != null) {
+                              setState(() => _departureTime = time);
+                            }
+                          },
+                          child: Container(
+                            color: Colors.transparent,
+                            child: Row(
+                              children: [
+                                const Icon(Icons.access_time_outlined,
+                                    color: Colors.grey, size: 20),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                      _departureTime != null 
+                                          ? _departureTime!.format(context) 
+                                          : 'Departure Time',
+                                      style: TextStyle(
+                                          fontSize: 14, 
+                                          color: _departureTime != null ? Colors.black : Colors.black87)),
+                                ),
+                                const Icon(Icons.chevron_right, color: Colors.grey),
+                              ],
                             ),
-                            const Icon(Icons.chevron_right, color: Colors.grey),
-                          ],
+                          ),
                         ),
                       ],
                     ),

@@ -354,6 +354,11 @@ export async function ensureTablesExist(): Promise<boolean> {
         );
         CREATE INDEX IF NOT EXISTS idx_cooldowns_until ON email_profile_cooldowns (cooldown_until);
         CREATE INDEX IF NOT EXISTS idx_cooldowns_tenant ON email_profile_cooldowns (tenant_slug);
+
+        -- 9. Organization Modules & GTM BYOK Extensions
+        ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS erp_enabled BOOLEAN DEFAULT true;
+        ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS shop_enabled BOOLEAN DEFAULT true;
+        ALTER TABLE gtm_tenant_settings ADD COLUMN IF NOT EXISTS deepseek_api_key_encrypted TEXT;
       `);
 
       isInitialized = true;

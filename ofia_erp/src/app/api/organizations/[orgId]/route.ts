@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { INITIAL_TENANTS } from "@/lib/admin-data";
+import { getDbPool, ensureTablesExist } from "@/lib/db";
 
 const rawUserUrl = process.env.USER_SERVICE_URL || process.env.NEXT_PUBLIC_USER_SERVICE_URL || "https://ofia-user-service.onrender.com";
 const cleanUserUrl = rawUserUrl.replace(/\/+$/, "");
@@ -16,6 +17,61 @@ export async function GET(
   const { orgId } = await params;
   const lowerId = orgId.toLowerCase();
 
+  // 1. Direct Neon PostgreSQL Query (Source of Truth)
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      const dbRes = await pool.query(
+        `SELECT o.id, o.name, o.slug, o.domain, o.owner_id, o.plan_tier, o.billing_cycle, o.status,
+                o.logo, o.login_image, o.primary_color, o.secondary_color, o.hero_title, o.hero_subtitle,
+                o.erp_enabled, o.shop_enabled,
+                u.name AS "ownerName", u.email AS "ownerEmail"
+         FROM "Organization" o
+         LEFT JOIN "User" u ON u.id = o.owner_id
+         WHERE o.id = $1 OR LOWER(o.slug) = LOWER($1) OR LOWER(o.name) = LOWER($1)
+         LIMIT 1`,
+        [orgId]
+      );
+      if (dbRes.rows.length > 0) {
+        const row = dbRes.rows[0];
+        const record = {
+          id: row.id,
+          name: row.name,
+          slug: row.slug,
+          domain: row.domain || `${row.slug}.ofia.ng`,
+          owner_id: row.owner_id,
+          ownerName: row.ownerName || "",
+          ownerEmail: row.ownerEmail || "",
+          owner: { name: row.ownerName || "", email: row.ownerEmail || "" },
+          plan_tier: row.plan_tier || "ENTERPRISE",
+          planTier: row.plan_tier || "ENTERPRISE",
+          status: row.status || "ACTIVE",
+          logo: row.logo,
+          loginImage: row.login_image,
+          primaryColor: row.primary_color || "#1A56DB",
+          secondaryColor: row.secondary_color || "#0E9F6E",
+          heroTitle: row.hero_title,
+          heroSubtitle: row.hero_subtitle,
+          erpEnabled: row.erp_enabled ?? true,
+          shopEnabled: row.shop_enabled ?? true,
+        };
+
+        const override =
+          globalOrgMap.get(lowerId) ||
+          globalOrgMap.get(row.id?.toLowerCase()) ||
+          globalOrgMap.get(row.slug?.toLowerCase());
+        if (override) {
+          return NextResponse.json({ ...record, ...override });
+        }
+        return NextResponse.json(record);
+      }
+    }
+  } catch (err: any) {
+    console.warn("Direct Neon organization fetch error:", err.message);
+  }
+
+  // 2. Remote User Microservice Fallback
   try {
     const res = await fetch(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}`, {
       cache: "no-store",
@@ -55,13 +111,13 @@ export async function GET(
     console.warn("Failed to fetch organization from remote backend:", err.message);
   }
 
-  // Check in-memory store
+  // 3. Check in-memory store
   const override = globalOrgMap.get(lowerId);
   if (override) {
     return NextResponse.json(override);
   }
 
-  // Check initial tenants seed data
+  // 4. Check initial tenants seed data
   const initialMatch = INITIAL_TENANTS.find(
     (t) => t.id.toLowerCase() === lowerId || t.slug.toLowerCase() === lowerId
   );
@@ -91,6 +147,9 @@ export async function PUT(
     const resolvedOwnerName = body.ownerName || body.owner_name || body.adminName || body.admin_name || "";
     const resolvedOwnerEmail = body.ownerEmail || body.owner_email || body.adminEmail || body.admin_email || "";
 
+    const erpEnabled = body.erpEnabled !== undefined ? body.erpEnabled : (body.erp_enabled !== undefined ? body.erp_enabled : true);
+    const shopEnabled = body.shopEnabled !== undefined ? body.shopEnabled : (body.shop_enabled !== undefined ? body.shop_enabled : true);
+
     const normalizedBody = {
       ...body,
       ownerName: resolvedOwnerName,
@@ -101,6 +160,10 @@ export async function PUT(
       owner_email: resolvedOwnerEmail,
       adminEmail: resolvedOwnerEmail,
       admin_email: resolvedOwnerEmail,
+      erpEnabled,
+      erp_enabled: erpEnabled,
+      shopEnabled,
+      shop_enabled: shopEnabled,
       owner: {
         ...(body.owner || {}),
         name: resolvedOwnerName,
@@ -108,12 +171,63 @@ export async function PUT(
       },
     };
 
-    // Save in global in-memory map
+    // 1. Direct Neon PostgreSQL Update (Guaranteed Persistence)
+    try {
+      const pool = getDbPool();
+      if (pool) {
+        await ensureTablesExist();
+        await pool.query(
+          `UPDATE "Organization"
+           SET name = COALESCE($1, name),
+               slug = COALESCE($2, slug),
+               domain = COALESCE($3, domain),
+               logo = COALESCE($4, logo),
+               login_image = COALESCE($5, login_image),
+               primary_color = COALESCE($6, primary_color),
+               secondary_color = COALESCE($7, secondary_color),
+               hero_title = COALESCE($8, hero_title),
+               hero_subtitle = COALESCE($9, hero_subtitle),
+               erp_enabled = $10,
+               shop_enabled = $11,
+               updated_at = NOW()
+           WHERE id = $12 OR LOWER(slug) = LOWER($12) OR LOWER(name) = LOWER($12)`,
+          [
+            body.name || null,
+            body.slug || null,
+            body.domain || null,
+            body.logo || null,
+            body.loginImage || body.login_image || null,
+            body.primaryColor || null,
+            body.secondaryColor || null,
+            body.heroTitle || body.hero_title || null,
+            body.heroSubtitle || body.hero_subtitle || null,
+            erpEnabled,
+            shopEnabled,
+            orgId,
+          ]
+        );
+
+        if (resolvedOwnerName || resolvedOwnerEmail) {
+          await pool.query(
+            `UPDATE "User"
+             SET name = COALESCE($1, name),
+                 email = COALESCE($2, email)
+             WHERE id = (SELECT owner_id FROM "Organization" WHERE id = $3 OR LOWER(slug) = LOWER($3) LIMIT 1)
+                OR (email = $2 AND email != '')`,
+            [resolvedOwnerName || null, resolvedOwnerEmail || null, orgId]
+          ).catch(() => {});
+        }
+      }
+    } catch (dbErr: any) {
+      console.warn("Direct Neon DB organization update warning:", dbErr.message);
+    }
+
+    // 2. Save in global in-memory map
     globalOrgMap.set(lowerId, normalizedBody);
     if (body.slug) globalOrgMap.set(body.slug.toLowerCase(), normalizedBody);
     if (body.id) globalOrgMap.set(body.id.toLowerCase(), normalizedBody);
 
-    // Forward update to remote microservice
+    // 3. Forward update to remote microservice
     try {
       const res = await fetch(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}`, {
         method: "PUT",
@@ -128,7 +242,7 @@ export async function PUT(
         return NextResponse.json(merged);
       }
     } catch (e: any) {
-      console.warn("Remote org update fetch failed, returning in-memory updated record:", e.message);
+      console.warn("Remote org update fetch failed, returning Neon updated record:", e.message);
     }
 
     return NextResponse.json(normalizedBody);

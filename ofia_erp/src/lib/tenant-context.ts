@@ -19,6 +19,8 @@ export interface DatabaseTenant {
   loginImage?: string;
   heroTitle?: string;
   heroSubtitle?: string;
+  erpEnabled?: boolean;
+  shopEnabled?: boolean;
 }
 
 let cachedTenants: DatabaseTenant[] | null = null;
@@ -382,6 +384,8 @@ export async function fetchDatabaseTenants(forceRefresh = false): Promise<Databa
             loginImage: rawLoginImage,
             heroTitle: rawHeroTitle,
             heroSubtitle: rawHeroSubtitle,
+            erpEnabled: org.erpEnabled !== undefined ? org.erpEnabled : (org.erp_enabled !== undefined ? org.erp_enabled : true),
+            shopEnabled: org.shopEnabled !== undefined ? org.shopEnabled : (org.shop_enabled !== undefined ? org.shop_enabled : true),
           };
         });
 

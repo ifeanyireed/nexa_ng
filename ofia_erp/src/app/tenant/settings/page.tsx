@@ -130,24 +130,66 @@ export default function TenantSettingsPage() {
   const [awsSesSecretKey, setAwsSesSecretKey] = useState("");
   const [awsSesRegion, setAwsSesRegion] = useState("us-east-1");
   const [isTestingAiChannel, setIsTestingAiChannel] = useState(false);
+  // Custom Domain Live DNS Verification States
+  const [isCheckingDns, setIsCheckingDns] = useState(false);
+  const [dnsVerified, setDnsVerified] = useState<boolean | null>(null);
+  const [dnsMessage, setDnsMessage] = useState("");
+
+  const handleVerifyDns = async (domainToTest?: string) => {
+    const dom = domainToTest || customDomain;
+    if (!dom || !dom.trim()) {
+      setDnsMessage("Please enter a custom domain host first.");
+      setDnsVerified(false);
+      return;
+    }
+    setIsCheckingDns(true);
+    setDnsMessage("");
+    try {
+      const res = await fetch(`/api/erp/domain/verify?domain=${encodeURIComponent(dom.trim())}`);
+      const data = await res.json();
+      setDnsVerified(Boolean(data.verified));
+      setDnsMessage(data.message || (data.verified ? "Domain CNAME verified." : "DNS check failed."));
+    } catch (e: any) {
+      setDnsVerified(false);
+      setDnsMessage("DNS check failed: " + e.message);
+    } finally {
+      setIsCheckingDns(false);
+    }
+  };
+
   const [aiChannelStatus, setAiChannelStatus] = useState<string | null>(null);
 
   const handleTestAiChannel = async () => {
+    const currentSlug = activeTenant?.slug || slug;
+    if (!currentSlug) {
+      setAiChannelStatus("Workspace slug required. Please save workspace first.");
+      return;
+    }
     setIsTestingAiChannel(true);
     setAiChannelStatus(null);
     try {
-      await new Promise(r => setTimeout(r, 600));
-      if (aiDeliveryMode === "smtp") {
-        setAiChannelStatus("Verified: Using workspace SMTP for AI outreach dispatches.");
-      } else if (aiDeliveryMode === "resend") {
-        setAiChannelStatus("Verified: Resend API handshake established (latency: 92ms).");
-      } else if (aiDeliveryMode === "brevo") {
-        setAiChannelStatus("Verified: Brevo v3 Transactional API handshake authorized.");
+      const res = await fetch("/api/erp/byok", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "test_channel",
+          tenantSlug: currentSlug,
+          aiDeliveryMode,
+          resendApiKey,
+          brevoApiKey,
+          awsSesAccessKey,
+          awsSesSecretKey,
+          awsSesRegion,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setAiChannelStatus(data.message);
       } else {
-        setAiChannelStatus(`Verified: Amazon SES connection active in region ${awsSesRegion}.`);
+        setAiChannelStatus(data.message || data.error || "Channel verification failed.");
       }
-    } catch {
-      setAiChannelStatus("Channel verification complete.");
+    } catch (err: any) {
+      setAiChannelStatus("Verification network error: " + err.message);
     } finally {
       setIsTestingAiChannel(false);
     }
@@ -217,6 +259,8 @@ export default function TenantSettingsPage() {
       setPrimaryColor(activeTenant.primaryColor || "#1A56DB");
       setSecondaryColor(activeTenant.secondaryColor || "#0E9F6E");
       setCustomDomain(activeTenant.domain || "");
+      if (activeTenant.erpEnabled !== undefined) setErpExt(Boolean(activeTenant.erpEnabled));
+      if (activeTenant.shopEnabled !== undefined) setShopExt(Boolean(activeTenant.shopEnabled));
       setOwnerName(activeTenant.ownerName || savedName || user?.name || "Workspace Admin");
       setOwnerEmail(activeTenant.ownerEmail || savedEmail || user?.email || (activeTenant.slug ? `admin@${activeTenant.slug}.ofia.ng` : ""));
 
@@ -329,13 +373,41 @@ export default function TenantSettingsPage() {
     }
   }, [activeTenant?.slug, slug, selectedProfileId, populateProfileForm, handleAddNewProfile]);
 
-  // Load Sender Profiles on mount or slug change
+  const loadByokFromDb = useCallback(async (targetSlug: string) => {
+    if (!targetSlug) return;
+    try {
+      const res = await fetch(`/api/erp/byok?tenant=${encodeURIComponent(targetSlug)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.configured && data.settings) {
+          const s = data.settings;
+          if (s.anthropicKey) setAnthropicKey(s.anthropicKey);
+          if (s.openaiKey) setOpenaiKey(s.openaiKey);
+          if (s.geminiKey) setGeminiKey(s.geminiKey);
+          if (s.whatsappKey) setWhatsappKey(s.whatsappKey);
+          if (s.groqKey) setGroqKey(s.groqKey);
+          if (s.deepseekKey) setDeepseekKey(s.deepseekKey);
+          if (s.aiDeliveryMode) setAiDeliveryMode(s.aiDeliveryMode);
+          if (s.resendApiKey) setResendApiKey(s.resendApiKey);
+          if (s.brevoApiKey) setBrevoApiKey(s.brevoApiKey);
+          if (s.awsSesAccessKey) setAwsSesAccessKey(s.awsSesAccessKey);
+          if (s.awsSesSecretKey) setAwsSesSecretKey(s.awsSesSecretKey);
+          if (s.awsSesRegion) setAwsSesRegion(s.awsSesRegion);
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to load BYOK settings from database:", err);
+    }
+  }, []);
+
+  // Load Sender Profiles and BYOK configurations on mount or slug change
   useEffect(() => {
     const targetSlug = activeTenant?.slug || slug;
     if (targetSlug) {
       loadSenderProfiles(targetSlug);
+      loadByokFromDb(targetSlug);
     }
-  }, [activeTenant?.slug, slug, loadSenderProfiles]);
+  }, [activeTenant?.slug, slug, loadSenderProfiles, loadByokFromDb]);
 
   const handleSelectProfile = (p: SenderProfileItem) => {
     setSelectedProfileId(p.id);
@@ -699,6 +771,10 @@ export default function TenantSettingsPage() {
         owner_email: ownerEmail,
         adminEmail: ownerEmail,
         admin_email: ownerEmail,
+        erpEnabled: erpExt,
+        erp_enabled: erpExt,
+        shopEnabled: shopExt,
+        shop_enabled: shopExt,
       };
 
       // 1. Persist to localStorage directly under multiple keys for instant, permanent access
@@ -827,6 +903,8 @@ export default function TenantSettingsPage() {
         activeTenant.secondaryColor = secondaryColor;
         activeTenant.ownerName = ownerName;
         activeTenant.ownerEmail = ownerEmail;
+        activeTenant.erpEnabled = erpExt;
+        activeTenant.shopEnabled = shopExt;
       }
 
       // 4. Update ERP staff users table in Postgres
@@ -877,8 +955,9 @@ export default function TenantSettingsPage() {
         }
       }
 
-      // 6. Save BYOK and AI Outreach configuration
+      // 6. Save BYOK and AI Outreach configuration directly to Neon Database
       const byokPayload = {
+        tenantSlug: targetIdentifier,
         anthropicKey,
         openaiKey,
         geminiKey,
@@ -892,6 +971,17 @@ export default function TenantSettingsPage() {
         awsSesSecretKey,
         awsSesRegion,
       };
+
+      try {
+        await fetch("/api/erp/byok", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(byokPayload),
+        });
+      } catch (byokErr) {
+        console.warn("Database BYOK save warning:", byokErr);
+      }
+
       if (typeof window !== "undefined") {
         localStorage.setItem("tenant_byok_" + targetIdentifier, JSON.stringify(byokPayload));
         if (activeTenant?.id) localStorage.setItem("tenant_byok_" + activeTenant.id, JSON.stringify(byokPayload));
@@ -1347,10 +1437,35 @@ export default function TenantSettingsPage() {
                   <Globe className="w-4 h-4 text-[#9061F9]" />
                   Custom Domain Routing
                 </h3>
-                <NexaBadge variant="green">
-                  <CheckCircle2 className="w-3 h-3 inline mr-1" />
-                  CNAME Validated
-                </NexaBadge>
+                <div className="flex items-center gap-2">
+                  {dnsVerified === true && (
+                    <NexaBadge variant="green">
+                      <CheckCircle2 className="w-3 h-3 inline mr-1" />
+                      CNAME Validated
+                    </NexaBadge>
+                  )}
+                  {dnsVerified === false && (
+                    <NexaBadge variant="amber">
+                      <AlertCircle className="w-3 h-3 inline mr-1" />
+                      Pending Propagation
+                    </NexaBadge>
+                  )}
+                  {dnsVerified === null && (
+                    <NexaBadge variant="neutral">
+                      <Globe className="w-3 h-3 inline mr-1" />
+                      DNS Unverified
+                    </NexaBadge>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => handleVerifyDns()}
+                    disabled={isCheckingDns || !customDomain}
+                    className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] hover:bg-[var(--nexa-border)] text-[var(--nexa-text-primary)] cursor-pointer flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${isCheckingDns ? "animate-spin" : ""}`} />
+                    {isCheckingDns ? "Checking..." : "Verify DNS"}
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-3">
@@ -1361,13 +1476,22 @@ export default function TenantSettingsPage() {
                   <input
                     type="text"
                     value={customDomain}
-                    onChange={(e) => setCustomDomain(e.target.value)}
+                    onChange={(e) => {
+                      setCustomDomain(e.target.value);
+                      setDnsVerified(null);
+                      setDnsMessage("");
+                    }}
                     placeholder="e.g. portal.organization.com"
                     className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
                   />
                   <span className="text-[10px] text-[var(--nexa-text-muted)]">
                     Point your DNS CNAME record to `cname.ofia.ng` to serve your branded ERP portal.
                   </span>
+                  {dnsMessage && (
+                    <p className={`text-[11px] font-medium pt-1 ${dnsVerified ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"}`}>
+                      {dnsMessage}
+                    </p>
+                  )}
                 </div>
               </div>
             </NexaCard>

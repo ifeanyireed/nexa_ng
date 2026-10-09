@@ -77,8 +77,8 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
                 if (showNavMenu) 
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(color: Colors.green, borderRadius: BorderRadius.circular(20)),
-                    child: const Text('• Trip has started', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+                    decoration: BoxDecoration(color: const Color(0xFFEBF2FE), borderRadius: BorderRadius.circular(20)),
+                    child: const Text('• Trip has started', style: TextStyle(color: Color(0xFF1B62F0), fontWeight: FontWeight.bold)),
                   )
               ],
             ),
@@ -90,17 +90,22 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
             right: 20,
             child: Container(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: Colors.blue.shade700, borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF1B62F0), Color(0xFF1E3A8A)]
+                ),
+                borderRadius: BorderRadius.circular(12)
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Next Stop - Yaba Bus stop', style: TextStyle(color: Colors.black54, fontSize: 12)),
+                  Text('Next Stop - Yaba Bus stop', style: TextStyle(color: Colors.white70, fontSize: 12)),
                   SizedBox(height: 4),
                   Row(
                     children: [
-                      Icon(fixIcon(FlexIcon.remix.locationPin3), color: Colors.black87, size: 16),
+                      Icon(fixIcon(FlexIcon.remix.locationPin3), color: Colors.white, size: 16),
                       SizedBox(width: 8),
-                      Text('Estimated time of arrival - 17 mins', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+                      Text('Estimated time of arrival - 17 mins', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                     ],
                   )
                 ],
@@ -198,7 +203,7 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
           children: [
             Row(
               children: [
-                Icon(fixIcon(FlexIcon.remix.locationPin3), color: isPickup ? Colors.greenAccent : Colors.redAccent, size: 16),
+                Icon(fixIcon(FlexIcon.remix.locationPin3), color: isPickup ? const Color(0xFF1B62F0) : Colors.redAccent, size: 16),
                 const SizedBox(width: 8),
                 Text(stop.name, style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 16)),
               ],
@@ -267,9 +272,9 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
             if (showNavMenu) ...[
               const SizedBox(height: 16),
               const Divider(color: Colors.black26),
-              _buildNavMenuItem(fixIcon(FlexIcon.remix.locationTarget2), 'Navigation', Colors.greenAccent),
-              _buildNavMenuItem(fixIcon(FlexIcon.remix.scanner), 'View QR code', Colors.greenAccent),
-              _buildNavMenuItem(fixIcon(FlexIcon.remix.applicationAdd), 'Add Passenger', Colors.greenAccent),
+              _buildNavMenuItem(fixIcon(FlexIcon.remix.locationTarget2), 'Navigation', const Color(0xFF1B62F0)),
+              _buildNavMenuItem(fixIcon(FlexIcon.remix.scanner), 'View QR code', const Color(0xFF1B62F0)),
+              _buildNavMenuItem(fixIcon(FlexIcon.remix.applicationAdd), 'Add Passenger', const Color(0xFF1B62F0)),
             ]
           ],
         ),

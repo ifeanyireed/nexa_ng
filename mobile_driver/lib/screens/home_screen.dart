@@ -23,7 +23,11 @@ class HomeScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.only(top: 60, left: 24, right: 24, bottom: 40),
             decoration: const BoxDecoration(
-              color: Color(0xFF1B62F0),
+              gradient: LinearGradient(
+                colors: [Color(0xFF1B62F0), Color(0xFF1E3A8A)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.only(
                 bottomLeft: Radius.circular(32),
                 bottomRight: Radius.circular(32),
@@ -46,7 +50,7 @@ class HomeScreen extends StatelessWidget {
                           children: [
                             Text(driver.name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
                             const SizedBox(width: 8),
-                            Icon(fixIcon(FlexIcon.remix.starCircle), color: Colors.greenAccent, size: 14),
+                            Icon(fixIcon(FlexIcon.remix.starCircle), color: const Color(0xFF1B62F0), size: 14),
                             Text(' ${driver.rating} ratings', style: const TextStyle(color: Colors.white70, fontSize: 12)),
                           ],
                         )
@@ -83,7 +87,7 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      Icon(fixIcon(FlexIcon.remix.locationTarget2), color: Colors.greenAccent, size: 12),
+                      Icon(fixIcon(FlexIcon.remix.locationTarget2), color: const Color(0xFF1B62F0), size: 12),
                       const SizedBox(width: 12),
                       Text(nextTrip.startLocation, style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
                     ],
@@ -96,7 +100,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                   Row(
                     children: [
-                      Icon(fixIcon(FlexIcon.remix.locationPin3), color: Colors.greenAccent, size: 12),
+                      Icon(fixIcon(FlexIcon.remix.locationPin3), color: const Color(0xFF1B62F0), size: 12),
                       const SizedBox(width: 12),
                       Text(nextTrip.endLocation, style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
                     ],

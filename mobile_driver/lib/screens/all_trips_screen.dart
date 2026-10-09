@@ -69,7 +69,7 @@ class AllTripsScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              Icon(fixIcon(FlexIcon.remix.locationTarget2), color: Colors.greenAccent, size: 12),
+              Icon(fixIcon(FlexIcon.remix.locationTarget2), color: const Color(0xFF1B62F0), size: 12),
               const SizedBox(width: 12),
               Text(trip.startLocation, style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
             ],
@@ -82,7 +82,7 @@ class AllTripsScreen extends StatelessWidget {
           ),
           Row(
             children: [
-              Icon(fixIcon(FlexIcon.remix.locationPin3), color: Colors.greenAccent, size: 12),
+              Icon(fixIcon(FlexIcon.remix.locationPin3), color: const Color(0xFF1B62F0), size: 12),
               const SizedBox(width: 12),
               Text(trip.endLocation, style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.bold)),
             ],

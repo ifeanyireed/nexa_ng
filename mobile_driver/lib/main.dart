@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/main_layout.dart';
+import 'screens/splash_screen.dart';
 
 import 'package:flutter/services.dart';
 
@@ -20,7 +21,7 @@ class DriverApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Transport OS - Driver',
+      title: 'NETS Driver',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
@@ -57,7 +58,7 @@ class DriverApp extends StatelessWidget {
         ),
       ),
 
-      home: const MainLayout(),
+      home: const SplashScreen(),
     );
   }
 }

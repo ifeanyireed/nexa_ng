@@ -328,7 +328,7 @@ export default function DashboardOverview() {
                    </h3>
                    <div className="space-y-4">
                       {[
-                        { term: "Avoid Upfront Cash", desc: "Always pay through the Nexa Wallet to keep your funds protected under escrow.", tag: "Safety" },
+                        { term: "Avoid Upfront Cash", desc: "Always pay through the NETS wallet to keep your funds protected under escrow.", tag: "Safety" },
                         { term: "Check Verified Badges", desc: "Pros with a green verified shield have submitted credentials.", tag: "Trust" },
                         { term: "NexaShop is Live", desc: "Purchase products recommended by professionals directly from their catalogs.", tag: "Shop" },
                       ].map((tip, i) => (

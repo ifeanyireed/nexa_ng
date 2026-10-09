@@ -44,7 +44,7 @@ export default function TelegramSetupPage() {
     {
       command: "/leads",
       description: "Returns the top 3 hottest qualified leads discovered today with ICP fit scores and buying signals.",
-      exampleOutput: "[Top Lead] 1. Corona International Schools (98% fit) · Adeyemi Phillips · Signal: Term fee reconciliation leak.",
+      exampleOutput: "[Top Lead] 1. Corona International Schools (98% fit) · Grace Jude · Signal: Term fee reconciliation leak.",
     },
     {
       command: "/approvals",

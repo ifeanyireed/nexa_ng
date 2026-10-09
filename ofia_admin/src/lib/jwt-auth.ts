@@ -63,8 +63,8 @@ export interface SeededSuperAdminAccount extends SuperAdminUser {
 export const SEEDED_SUPER_ADMINS: SeededSuperAdminAccount[] = [
   {
     id: "admin-root-01",
-    name: "Adeyemi Phillips",
-    email: "superadmin@ofia.ng",
+    name: "Grace Jude",
+    email: "grace.jude@ofia.ng",
     passwordHash: "OfiaSuperAdmin2026!",
     role: "SUPER_ADMIN",
     scope: "PLATFORM_ROOT",
@@ -131,7 +131,10 @@ export async function verifySuperAdminJWT(token: string): Promise<SuperAdminUser
 export function findSuperAdminByCredentials(email: string, password: string): SuperAdminUser | null {
   const cleanEmail = email.trim().toLowerCase();
   const found = SEEDED_SUPER_ADMINS.find(
-    (u) => u.email.toLowerCase() === cleanEmail && u.passwordHash === password
+    (u) =>
+      (u.email.toLowerCase() === cleanEmail ||
+        (cleanEmail === "superadmin@ofia.ng" && u.id === "admin-root-01")) &&
+      u.passwordHash === password
   );
 
   if (!found) return null;

@@ -324,8 +324,8 @@ export const INITIAL_ADMIN_USERS: AdminUser[] = [
   },
   {
     id: "usr-02",
-    name: "Adeyemi Phillips",
-    email: "adeyemi@edusuite.ng",
+    name: "Grace Jude",
+    email: "grace.jude@ofia.ng",
     role: "TENANT_OWNER",
     title: "Admin",
     orgName: "EduSuite Nigeria",

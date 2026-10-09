@@ -69,7 +69,7 @@ interface StaffUser {
 const DEFAULT_DEPARTMENTS: DepartmentItem[] = [
   { code: "DEPT-FIN", name: "Finance & Accounts", head: "Oluwatobiloba Olateju", headCount: 8, budget: "₦42,000,000", costCenter: "CC-101" },
   { code: "DEPT-FLT", name: "Fleet Operations & Maintenance", head: "Babajide Sanwo", headCount: 28, budget: "₦95,000,000", costCenter: "CC-201" },
-  { code: "DEPT-IT", name: "Systems & IT / ERP", head: "Adeyemi Phillips", headCount: 6, budget: "₦28,000,000", costCenter: "CC-301" },
+  { code: "DEPT-IT", name: "Systems & IT / ERP", head: "Grace Jude", headCount: 6, budget: "₦28,000,000", costCenter: "CC-301" },
   { code: "DEPT-HR", name: "Human Resources & Talent", head: "Goldy Okeke", headCount: 5, budget: "₦18,500,000", costCenter: "CC-401" },
   { code: "DEPT-MKT", name: "Commercial & Growth", head: "Chioma Okonkwo", headCount: 12, budget: "₦35,000,000", costCenter: "CC-501" },
   { code: "DEPT-EXE", name: "Executive Directorate", head: "Dr. Babatunde Jinadu (MD)", headCount: 4, budget: "₦50,000,000", costCenter: "CC-001" },

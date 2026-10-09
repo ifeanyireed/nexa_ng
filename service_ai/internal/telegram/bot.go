@@ -225,7 +225,7 @@ func (t *TelegramBotEngine) sendExecutiveBriefing(token string, chatID int64, or
 func (t *TelegramBotEngine) sendTopLeads(token string, chatID int64, orgID string) {
 	leadsText := "🎯 *Top Qualified Leads Discovered Today:*\n\n" +
 		"1. *Corona International Schools* — Score: 98%\n" +
-		"   👤 Adeyemi Phillips (Managing Director)\n" +
+		"   👤 Grace Jude (Managing Director)\n" +
 		"   📍 Victoria Island, Lagos · 📡 Signal: Term fee reconciliation leak\n\n" +
 		"2. *Greensprings School* — Score: 94%\n" +
 		"   👤 Folashade Jinadu (Head of Operations)\n" +

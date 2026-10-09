@@ -494,7 +494,7 @@ func (h *AdminOverviewHandler) GetUsers(w http.ResponseWriter, r *http.Request) 
 
 	if len(users) == 0 {
 		users = []UserDTO{
-			{ID: "admin-root-01", Name: "Adeyemi Phillips", Email: "superadmin@ofia.ng", Role: models.RoleSuperAdmin, OrgName: "Ofia AI Platform", OrgID: "platform-root", Title: "Chief Platform Architect & Super Admin", Avatar: "/avatar1.png", TwoFactorEnabled: true, Status: "Active", CreatedAt: time.Now()},
+			{ID: "admin-root-01", Name: "Grace Jude", Email: "grace.jude@ofia.ng", Role: models.RoleSuperAdmin, OrgName: "Ofia AI Platform", OrgID: "platform-root", Title: "Chief Platform Architect & Super Admin", Avatar: "/avatar1.png", TwoFactorEnabled: true, Status: "Active", CreatedAt: time.Now()},
 			{ID: "1bb299db-2578-4018-8a53-e42e0308fa06", Name: "Ifeanyi Felix", Email: "netslogistics1@gmail.com", Role: models.RoleTenantOwner, OrgName: "New Era Transports", OrgID: "1aa8c687-b71d-4188-9de2-371aa5dfa9e6", Title: "Admin", Avatar: "/avatar12.png", TwoFactorEnabled: true, Status: "Active", CreatedAt: time.Now()},
 			{ID: "ACC001", Name: "Victoria Aghogho Otojareri", Email: "accounts@neweratransports.com", Role: models.RoleGrowthLead, OrgName: "New Era Transports", OrgID: "1aa8c687-b71d-4188-9de2-371aa5dfa9e6", Title: "Chief Accountant & Financial Controller", Avatar: "/avatar5.png", TwoFactorEnabled: true, Status: "Active", CreatedAt: time.Now()},
 			{ID: "EMP006", Name: "Babalola Imoleayo Adelakun", Email: "babalola.adelakun@neweratransports.com", Role: models.RoleSalesRep, OrgName: "New Era Transports", OrgID: "1aa8c687-b71d-4188-9de2-371aa5dfa9e6", Title: "Fleet Operations Manager", Avatar: "/avatar8.png", TwoFactorEnabled: false, Status: "Active", CreatedAt: time.Now()},

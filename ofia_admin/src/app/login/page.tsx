@@ -34,7 +34,7 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get("returnUrl") || "/";
 
-  const [email, setEmail] = useState("superadmin@ofia.ng");
+  const [email, setEmail] = useState("grace.jude@ofia.ng");
   const [password, setPassword] = useState("OfiaSuperAdmin2026!");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -171,7 +171,7 @@ function LoginContent() {
                   <input
                     type="email"
                     required
-                    placeholder="superadmin@ofia.ng"
+                    placeholder="grace.jude@ofia.ng"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full h-11 pl-10 pr-4 text-xs rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB] focus:ring-2 focus:ring-[#1A56DB]/20 transition-all font-mono"

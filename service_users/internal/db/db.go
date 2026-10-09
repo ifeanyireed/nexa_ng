@@ -108,7 +108,7 @@ func seedBlogContent(db *gorm.DB) {
 				CategoryID:  &catEco,
 				Tags:        "AI, Innovation, Ecosystem",
 				Status:      "PUBLISHED",
-				AuthorName:  "Adeyemi Phillips",
+				AuthorName:  "Grace Jude",
 				PublishedAt: &now,
 				CreatedAt:   now,
 				UpdatedAt:   now,
@@ -166,9 +166,9 @@ func seedSuperAdmins(db *gorm.DB) {
 	}{
 		{
 			ID:       "admin-root-01",
-			Email:    "superadmin@ofia.ng",
+			Email:    "grace.jude@ofia.ng",
 			Password: "OfiaSuperAdmin2026!",
-			Name:     "Adeyemi Phillips",
+			Name:     "Grace Jude",
 			Role:     models.RoleSuperAdmin,
 		},
 		{

@@ -14,7 +14,7 @@ const SEED_FALLBACK_POSTS = [
     cover_image: 'https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png',
     category: 'Ecosystem & AI',
     status: 'PUBLISHED',
-    author_name: 'Adeyemi Phillips',
+    author_name: 'Grace Jude',
     published_at: new Date().toISOString(),
   },
   {

@@ -4,18 +4,19 @@
 
 SET FOREIGN_KEY_CHECKS = 0;
 
--- 1. Adeyemi Phillips (Root SuperAdmin Operator)
+-- 1. Grace Jude (Root SuperAdmin Operator)
 INSERT INTO `User` (`id`, `email`, `password`, `name`, `role`, `createdAt`, `updatedAt`)
 VALUES (
     'admin-root-01',
-    'superadmin@ofia.ng',
+    'grace.jude@ofia.ng',
     '$2a$10$eE9wLqX3s.i/lK2A0Zg/lOI9H6t7iY.j6I0A/2CqI7kXm/wLqX3s.', -- OfiaSuperAdmin2026!
-    'Adeyemi Phillips',
+    'Grace Jude',
     'SUPER_ADMIN',
     NOW(3),
     NOW(3)
 ) ON DUPLICATE KEY UPDATE
-    `name` = 'Adeyemi Phillips',
+    `name` = 'Grace Jude',
+    `email` = 'grace.jude@ofia.ng',
     `role` = 'SUPER_ADMIN',
     `updatedAt` = NOW(3);
 

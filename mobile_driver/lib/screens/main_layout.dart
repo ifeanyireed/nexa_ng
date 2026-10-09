@@ -43,8 +43,8 @@ class _MainLayoutState extends State<MainLayout> {
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(fixIcon(FlexIcon.remix.briefcase)),
-            selectedIcon: Icon(fixIcon(FlexIcon.solid.briefcase)),
+            icon: const Icon(Icons.cases_outlined),
+            selectedIcon: const Icon(Icons.cases),
             label: 'Trips',
           ),
           NavigationDestination(

@@ -112,18 +112,20 @@ class ShuttleOrderSummaryScreen extends StatelessWidget {
                   const SizedBox(height: 12),
                   _buildDetailRow('Trip start time', '5:40 AM'),
 
-                  const SizedBox(height: 24),
-                  const Text('Selected week days',
-                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      _buildDayChip('Fri'),
-                      _buildDayChip('Sun'),
-                      _buildDayChip('Mon'),
-                      _buildDayChip('Tue'),
-                    ],
-                  ),
+                  if (isSubscription) ...[
+                    const SizedBox(height: 24),
+                    const Text('Selected week days',
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        _buildDayChip('Fri'),
+                        _buildDayChip('Sun'),
+                        _buildDayChip('Mon'),
+                        _buildDayChip('Tue'),
+                      ],
+                    ),
+                  ]
                 ],
               ),
             ),

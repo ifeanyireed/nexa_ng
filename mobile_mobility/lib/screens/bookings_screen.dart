@@ -115,17 +115,10 @@ class BookingsScreen extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1B62F0).withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Image.asset(
-                          'assets/images/car.png',
-                          width: 16,
-                          height: 16,
-                        ),
+                      Image.asset(
+                        'assets/images/car.png',
+                        width: 24,
+                        height: 24,
                       ),
                       const SizedBox(width: 12),
                       Text(

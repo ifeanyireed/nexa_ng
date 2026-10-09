@@ -49,7 +49,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 const SizedBox(height: 24),
 
                 const Text(
-                  'NETS',
+                  'New Era',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -65,7 +65,7 @@ class _SplashScreenState extends State<SplashScreen> {
                         duration: const Duration(milliseconds: 800)),
 
                 const Text(
-                  'Driver App',
+                  'Transports Services',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w500,

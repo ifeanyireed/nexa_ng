@@ -202,7 +202,7 @@ class HomeScreen extends StatelessWidget {
           ),
           const SizedBox(height: 20),
         ],
-      ).animate(delay: const Duration(seconds: 3))
+      ).animate(delay: const Duration(milliseconds: 1500))
       .fadeIn(duration: const Duration(milliseconds: 800))
       .slideY(begin: 0.2, end: 0, duration: const Duration(milliseconds: 800)),
     );

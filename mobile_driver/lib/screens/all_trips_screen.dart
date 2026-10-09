@@ -45,7 +45,7 @@ class AllTripsScreen extends StatelessWidget {
           const SizedBox(height: 16),
           ...MockData.todaysTrips.map((trip) => _buildTripCard(context, trip)).toList(),
         ],
-      ).animate(delay: const Duration(seconds: 3)).fadeIn(duration: const Duration(milliseconds: 800)).slideY(begin: 0.2, end: 0, duration: const Duration(milliseconds: 800)),
+      ).animate(delay: const Duration(milliseconds: 1500)).fadeIn(duration: const Duration(milliseconds: 800)).slideY(begin: 0.2, end: 0, duration: const Duration(milliseconds: 800)),
     );
   }
 

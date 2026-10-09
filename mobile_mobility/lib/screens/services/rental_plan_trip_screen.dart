@@ -219,6 +219,58 @@ class _RentalPlanTripScreenState extends State<RentalPlanTripScreen> {
                       ],
                     ),
                   ),
+
+                  if (_subscribeToRoute) ...[
+                    const SizedBox(height: 20),
+                    const Text('Trip Days',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildDayBadge('Sunday', false),
+                        _buildDayBadge('Monday', true),
+                        _buildDayBadge('Tuesday', true),
+                        _buildDayBadge('Wednesday', false),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        _buildDayBadge('Thursday', true),
+                        const SizedBox(width: 12),
+                        _buildDayBadge('Friday', true),
+                        const SizedBox(width: 12),
+                        _buildDayBadge('Saturday', false),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    const Text('Trip Duration (In weeks)',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Expires: after 3 weeks',
+                              style: TextStyle(fontWeight: FontWeight.w500)),
+                          Text('Update',
+                              style: TextStyle(
+                                  color: Colors.blue.shade700,
+                                  fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                    ),
+                  ],
+
                 ],
               ),
             ),
@@ -292,6 +344,26 @@ class _RentalPlanTripScreenState extends State<RentalPlanTripScreen> {
             ),
             const SizedBox(height: 8),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDayBadge(String day, bool selected) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: selected ? Colors.green.shade50 : Colors.transparent,
+        border:
+            Border.all(color: selected ? Colors.green : Colors.grey.shade300),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        day,
+        style: TextStyle(
+          color: selected ? Colors.green.shade700 : Colors.grey,
+          fontSize: 11,
+          fontWeight: selected ? FontWeight.bold : FontWeight.normal,
         ),
       ),
     );

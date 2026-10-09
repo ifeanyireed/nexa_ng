@@ -36,8 +36,6 @@ class HomeScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('View your next trip from\nthe Home screen', style: TextStyle(color: Colors.white70, fontSize: 14)),
-                const SizedBox(height: 20),
                 Row(
                   children: [
                     Icon(fixIcon(FlexIcon.remix.flower), color: Colors.orange, size: 24),

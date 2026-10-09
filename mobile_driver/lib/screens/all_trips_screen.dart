@@ -22,16 +22,17 @@ class AllTripsScreen extends StatelessWidget {
         title: const Text('All Trips', style: TextStyle(color: Colors.black87)),
         actions: [
           Container(
-            margin: const EdgeInsets.only(right: 16, top: 12, bottom: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            margin: const EdgeInsets.only(right: 16, top: 8, bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
               color: const Color(0xFF1B62F0),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Row(
               children: [
-                Text('Upcoming trips', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 12)),
-                Icon(Icons.keyboard_arrow_down, color: Colors.black, size: 16),
+                const Text('Upcoming trips', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                const SizedBox(width: 4),
+                const Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 18),
               ],
             ),
           )
@@ -45,7 +46,7 @@ class AllTripsScreen extends StatelessWidget {
           ...MockData.todaysTrips.map((trip) => _buildTripCard(context, trip)).toList(),
         ],
       ),
-    ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.05, end: 0);
+    ).animate(delay: const Duration(seconds: 3)).fadeIn(duration: const Duration(milliseconds: 800)).slideY(begin: 0.2, end: 0, duration: const Duration(milliseconds: 800));
   }
 
   Widget _buildTripCard(BuildContext context, trip) {

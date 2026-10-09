@@ -56,6 +56,12 @@ class DriverApp extends StatelessWidget {
             );
           }),
         ),
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
       ),
 
       home: const SplashScreen(),

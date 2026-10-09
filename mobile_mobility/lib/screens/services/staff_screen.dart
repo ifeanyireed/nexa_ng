@@ -3,7 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:mobile_mobility/utils/icon_util.dart';
 import 'package:flexicon/flexicon.dart';
 import '../payment_screen.dart';
-
+import 'shuttle_order_summary_screen.dart';
 class StaffScreen extends StatefulWidget {
   const StaffScreen({Key? key}) : super(key: key);
 
@@ -333,7 +333,7 @@ class _StaffScreenState extends State<StaffScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const PaymentScreen()),
+                  MaterialPageRoute(builder: (context) => ShuttleOrderSummaryScreen(isSubscription: isSubscribed)),
                 );
               },
               child: const Text('Book Trip',

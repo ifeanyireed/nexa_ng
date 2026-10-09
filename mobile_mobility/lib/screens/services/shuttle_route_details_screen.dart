@@ -3,7 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:mobile_mobility/utils/icon_util.dart';
 import 'package:flexicon/flexicon.dart';
 import '../payment_screen.dart';
-
+import 'shuttle_order_summary_screen.dart';
 class ShuttleRouteDetailsScreen extends StatefulWidget {
   const ShuttleRouteDetailsScreen({Key? key}) : super(key: key);
 
@@ -347,7 +347,7 @@ class _ShuttleRouteDetailsScreenState extends State<ShuttleRouteDetailsScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const PaymentScreen()),
+                  MaterialPageRoute(builder: (context) => ShuttleOrderSummaryScreen(isSubscription: isSubscribed)),
                 );
               },
               child: const Text('Book Trip',

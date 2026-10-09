@@ -322,6 +322,38 @@ export async function ensureTablesExist(): Promise<boolean> {
         CREATE INDEX IF NOT EXISTS idx_crm_blasts_profile ON crm_email_blasts (sender_profile_id);
 
         ALTER TABLE email_campaigns ADD COLUMN IF NOT EXISTS sender_override TEXT;
+
+        -- 8. Email Queue 24h Rate-Limit Retry & Per-Profile Cooldown Support
+        ALTER TABLE email_campaigns ADD COLUMN IF NOT EXISTS sender_profile_id VARCHAR(64);
+        CREATE INDEX IF NOT EXISTS idx_email_campaigns_profile ON email_campaigns (sender_profile_id);
+
+        ALTER TABLE email_queue ADD COLUMN IF NOT EXISTS next_retry_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;
+        ALTER TABLE email_queue ADD COLUMN IF NOT EXISTS sender_profile_id VARCHAR(64);
+        ALTER TABLE email_queue ADD COLUMN IF NOT EXISTS rate_limited_at TIMESTAMPTZ;
+        CREATE INDEX IF NOT EXISTS idx_email_queue_next_retry ON email_queue (status, next_retry_at, attempts);
+        CREATE INDEX IF NOT EXISTS idx_email_queue_profile ON email_queue (sender_profile_id);
+
+        ALTER TABLE tenant_sender_profiles ADD COLUMN IF NOT EXISTS rate_limited_until TIMESTAMPTZ;
+        ALTER TABLE tenant_sender_profiles ADD COLUMN IF NOT EXISTS rate_limit_reason TEXT;
+
+        ALTER TABLE tenant_smtp_settings ADD COLUMN IF NOT EXISTS rate_limited_until TIMESTAMPTZ;
+        ALTER TABLE tenant_smtp_settings ADD COLUMN IF NOT EXISTS rate_limit_reason TEXT;
+
+        CREATE TABLE IF NOT EXISTS email_profile_cooldowns (
+          profile_key VARCHAR(150) PRIMARY KEY,
+          tenant_slug VARCHAR(100) NOT NULL,
+          sender_profile_id VARCHAR(64),
+          provider VARCHAR(50),
+          host VARCHAR(150),
+          from_email VARCHAR(150),
+          rate_limited_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          cooldown_until TIMESTAMPTZ NOT NULL,
+          reason TEXT,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE INDEX IF NOT EXISTS idx_cooldowns_until ON email_profile_cooldowns (cooldown_until);
+        CREATE INDEX IF NOT EXISTS idx_cooldowns_tenant ON email_profile_cooldowns (tenant_slug);
       `);
 
       isInitialized = true;

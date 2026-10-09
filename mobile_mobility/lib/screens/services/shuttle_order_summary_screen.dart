@@ -54,7 +54,7 @@ class ShuttleOrderSummaryScreen extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        Icon(fixIcon(FlexIcon.remix.ticket2), color: const Color(0xFF4338CA), size: 20),
+                        const Icon(Icons.local_activity_outlined, color: Color(0xFF4338CA), size: 20),
                         const SizedBox(width: 12),
                         const Expanded(
                           child: Text('Apply promo code',

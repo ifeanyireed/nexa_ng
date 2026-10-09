@@ -15,10 +15,10 @@ class AllTripsScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFFF8FAFC),
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black87),
+        leading: Navigator.canPop(context) ? IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
-        ),
+        ) : null,
         title: const Text('All Trips', style: TextStyle(color: Colors.black87)),
         actions: [
           Container(
@@ -50,14 +50,23 @@ class AllTripsScreen extends StatelessWidget {
   }
 
   Widget _buildTripCard(BuildContext context, trip) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TripManifestScreen(trip: trip),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFFFFF),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
@@ -125,6 +134,7 @@ class AllTripsScreen extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }

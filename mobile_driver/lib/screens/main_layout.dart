@@ -3,7 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flexicon/flexicon.dart';
 import 'home_screen.dart';
 import 'profile_screen.dart';
-
+import 'all_trips_screen.dart';
 // Copy fixIcon since we didn't add icon_util.dart to mobile_driver main_layout.dart
 IconData fixIcon(IconData icon) => IconData(
       icon.codePoint,
@@ -23,7 +23,7 @@ class _MainLayoutState extends State<MainLayout> {
   
   final List<Widget> _screens = [
     const HomeScreen(),
-    const Scaffold(backgroundColor: Color(0xFFF8FAFC), body: Center(child: Text('Map View', style: TextStyle(color: Colors.black87)))),
+    const AllTripsScreen(),
     const ProfileScreen(),
   ];
 
@@ -43,9 +43,9 @@ class _MainLayoutState extends State<MainLayout> {
             label: 'Home',
           ),
           NavigationDestination(
-            icon: Icon(fixIcon(FlexIcon.remix.mapLocation)),
-            selectedIcon: Icon(fixIcon(FlexIcon.solid.mapLocation)),
-            label: 'Map',
+            icon: Icon(fixIcon(FlexIcon.remix.briefcase)),
+            selectedIcon: Icon(fixIcon(FlexIcon.solid.briefcase)),
+            label: 'Trips',
           ),
           NavigationDestination(
             icon: Icon(fixIcon(FlexIcon.remix.userCircleSingle)),

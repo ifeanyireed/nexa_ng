@@ -104,14 +104,18 @@ class HomeScreen extends StatelessWidget {
           // Next Trip Card
           Transform.translate(
             offset: const Offset(0, -30),
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 24),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFFFFF),
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Column(
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => TripManifestScreen(trip: nextTrip)));
+              },
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFFFFF),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
@@ -180,6 +184,7 @@ class HomeScreen extends StatelessWidget {
                 ],
               ),
             ),
+          ),
           ),
           
           const Spacer(),

@@ -45,19 +45,38 @@ const SEED_FALLBACK_POSTS = [
 
 async function getBlogPosts() {
   try {
-    const rawApi = process.env.NEXT_PUBLIC_USERS_API || process.env.USERS_API_URL || 'http://localhost:8081';
+    const rawApi = process.env.NEXT_PUBLIC_USERS_API || process.env.USERS_API_URL || 'https://ofia-user-service.onrender.com';
     const USERS_API = rawApi.trim().replace(/^["']|["']$/g, '').replace(/\/+$/, '');
     if (USERS_API && USERS_API.startsWith('http')) {
-      const res = await fetch(`${USERS_API}/api/v1/cms/blog/posts`, {
-        next: { revalidate: 60 },
-        signal: AbortSignal.timeout(2000),
-      });
-      if (res.ok) {
-        const posts = await res.json();
-        if (Array.isArray(posts) && posts.length > 0) {
-          return posts.filter((p: any) => p.status === 'PUBLISHED');
+      try {
+        const res = await fetch(`${USERS_API}/api/v1/cms/blog/posts`, {
+          next: { revalidate: 60 },
+          signal: AbortSignal.timeout(2000),
+        });
+        if (res.ok) {
+          const posts = await res.json();
+          if (Array.isArray(posts) && posts.length > 0) {
+            return posts.filter((p: any) => p.status === 'PUBLISHED');
+          }
         }
-      }
+      } catch {}
+    }
+
+    const adminRaw = process.env.NEXT_PUBLIC_ADMIN_API || 'http://localhost:3003';
+    const ADMIN_API = adminRaw.trim().replace(/^["']|["']$/g, '').replace(/\/+$/, '');
+    if (ADMIN_API && ADMIN_API.startsWith('http')) {
+      try {
+        const res = await fetch(`${ADMIN_API}/api/v1/cms/blog/posts`, {
+          next: { revalidate: 60 },
+          signal: AbortSignal.timeout(2000),
+        });
+        if (res.ok) {
+          const posts = await res.json();
+          if (Array.isArray(posts) && posts.length > 0) {
+            return posts.filter((p: any) => p.status === 'PUBLISHED');
+          }
+        }
+      } catch {}
     }
   } catch (error) {
     console.warn('Failed to fetch remote blog posts for slug page:', error);
@@ -89,13 +108,24 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   if (!post) {
     // If not found in memory, try direct fetch for this specific slug
     try {
-      const rawApi = process.env.NEXT_PUBLIC_USERS_API || process.env.USERS_API_URL || 'http://localhost:8081';
+      const rawApi = process.env.NEXT_PUBLIC_USERS_API || process.env.USERS_API_URL || 'https://ofia-user-service.onrender.com';
       const USERS_API = rawApi.trim().replace(/^["']|["']$/g, '').replace(/\/+$/, '');
       const res = await fetch(`${USERS_API}/api/v1/cms/blog/posts/${resolvedParams.slug}`);
       if (res.ok) {
         post = await res.json();
       }
     } catch {}
+
+    if (!post) {
+      try {
+        const adminRaw = process.env.NEXT_PUBLIC_ADMIN_API || 'http://localhost:3003';
+        const ADMIN_API = adminRaw.trim().replace(/^["']|["']$/g, '').replace(/\/+$/, '');
+        const res = await fetch(`${ADMIN_API}/api/v1/cms/blog/posts/${resolvedParams.slug}`);
+        if (res.ok) {
+          post = await res.json();
+        }
+      } catch {}
+    }
   }
 
   if (!post) {

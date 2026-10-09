@@ -24,14 +24,15 @@ function CreateBlogPostContent() {
   const editId = searchParams.get('edit');
 
   useEffect(() => {
+    fetch('/api/v1/cms/blog/categories')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setCategories(data);
+      })
+      .catch(() => {});
+
     if (editId) {
-      const USERS_API = process.env.NEXT_PUBLIC_USERS_API || '';
-      fetch(`${USERS_API}/api/v1/cms/blog/categories`)
-        .then(res => res.json())
-        .then(data => {
-          if (Array.isArray(data)) setCategories(data);
-        });
-      fetch(`${USERS_API}/api/v1/cms/blog/posts`)
+      fetch('/api/v1/cms/blog/posts')
         .then(res => res.json())
         .then(data => {
           const posts = Array.isArray(data) ? data : (data.posts || []);
@@ -45,14 +46,9 @@ function CreateBlogPostContent() {
             let imgUrl = post.cover_image || '';
             if (imgUrl && imgUrl.startsWith('/')) imgUrl = 'https://resultspro.ng' + imgUrl;
             setCoverImage(imgUrl);
-            // Wait a tick for editor to initialize
-            setTimeout(() => {
-              if ((window as any).tinymce || document.querySelector('.tiptap')) {
-                // Not ideal but works for this level of abstraction
-              }
-            }, 500);
           }
-        });
+        })
+        .catch(() => {});
     }
   }, [editId]);
 
@@ -123,14 +119,10 @@ function CreateBlogPostContent() {
         author_id
       };
 
-      let url = `${USERS_API}/api/v1/cms/blog/posts`;
+      let url = '/api/v1/cms/blog/posts';
       let method = 'POST';
 
       if (editId) {
-        // Assume PUT /api/v1/cms/blog/posts/:id exists or we just re-POST for now?
-        // Actually, backend might not have PUT yet. If it doesn't, we just POST it as a new post.
-        // Wait, I will just leave it as POST unless the backend supports PUT.
-        // I will add the ID to payload if editing.
         payload['id'] = editId;
       }
 

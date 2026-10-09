@@ -176,12 +176,24 @@ export async function generateScratchCardBatch(schoolId: string, quantity: numbe
 // 7. Blog & CMS
 export async function fetchBlogPosts(): Promise<BlogPost[]> {
   try {
-    const res = await fetch(`${USERS_API}/api/v1/cms/blog/posts`);
-    const data = await res.json();
-    return Array.isArray(data) ? data : (data.posts || []);
-  } catch {
-    return [];
-  }
+    const res = await fetch('/api/v1/cms/blog/posts', { cache: 'no-store' });
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) return data;
+    }
+  } catch {}
+
+  try {
+    if (USERS_API && USERS_API.startsWith('http')) {
+      const res = await fetch(`${USERS_API}/api/v1/cms/blog/posts`);
+      if (res.ok) {
+        const data = await res.json();
+        return Array.isArray(data) ? data : (data.posts || []);
+      }
+    }
+  } catch {}
+
+  return [];
 }
 
 // --- EXAMSPRO API ---

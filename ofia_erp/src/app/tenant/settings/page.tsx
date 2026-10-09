@@ -1423,6 +1423,22 @@ export default function TenantSettingsPage() {
               </button>
             </div>
           </div>
+
+          <div className="pt-3 border-t border-[var(--nexa-border)] flex items-center justify-between">
+            <span className="text-[11px] text-[var(--nexa-text-muted)]">
+              All branding and module extensions persist directly to your PostgreSQL workspace record.
+            </span>
+            <NexaButton
+              size="sm"
+              variant="primary"
+              onClick={handleSave}
+              disabled={isSaving || isLoading}
+              leftIcon={isSaving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              className="bg-[#1A56DB] text-white hover:bg-[#1545B0] rounded-xl font-bold shadow-xs px-4 py-2"
+            >
+              {isSaving ? "Saving..." : isSaved ? "Saved Successfully!" : "Save Profile & Extensions"}
+            </NexaButton>
+          </div>
         </NexaCard>
           </div>
         )}
@@ -1493,6 +1509,22 @@ export default function TenantSettingsPage() {
                     </p>
                   )}
                 </div>
+              </div>
+
+              <div className="pt-3 border-t border-[var(--nexa-border)] flex items-center justify-between">
+                <span className="text-[11px] text-[var(--nexa-text-muted)]">
+                  Custom domain configuration is stored in PostgreSQL and synced to the routing mesh.
+                </span>
+                <NexaButton
+                  size="sm"
+                  variant="primary"
+                  onClick={handleSave}
+                  disabled={isSaving || isLoading}
+                  leftIcon={isSaving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  className="bg-[#1A56DB] text-white hover:bg-[#1545B0] rounded-xl font-bold shadow-xs px-4 py-2"
+                >
+                  {isSaving ? "Saving..." : isSaved ? "Saved Successfully!" : "Save Domain Settings"}
+                </NexaButton>
               </div>
             </NexaCard>
           </div>
@@ -2158,6 +2190,22 @@ export default function TenantSettingsPage() {
                   </span>
                 </div>
               </div>
+
+              <div className="pt-3 border-t border-[var(--nexa-border)] flex items-center justify-between">
+                <span className="text-[11px] text-[var(--nexa-text-muted)]">
+                  Proprietary model keys are encrypted at rest with AES-256 before being committed to PostgreSQL.
+                </span>
+                <NexaButton
+                  size="sm"
+                  variant="primary"
+                  onClick={handleSave}
+                  disabled={isSaving || isLoading}
+                  leftIcon={isSaving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                  className="bg-[#7E22CE] text-white hover:bg-[#6B21A8] rounded-xl font-bold shadow-xs px-4 py-2"
+                >
+                  {isSaving ? "Saving..." : isSaved ? "Saved to Vault!" : "Save AI Model Keys"}
+                </NexaButton>
+              </div>
             </NexaCard>
 
             {/* OFIA AI AUTONOMOUS EMAIL OUTREACH RELAY CARD */}
@@ -2296,24 +2344,37 @@ export default function TenantSettingsPage() {
 
               {/* TEST PIPE & FEEDBACK */}
               <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-[var(--nexa-border)]">
-                <button
-                  type="button"
-                  onClick={handleTestAiChannel}
-                  disabled={isTestingAiChannel}
-                  className="px-4 py-2 text-xs font-bold rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] hover:bg-slate-100 dark:hover:bg-slate-800 text-[var(--nexa-text-primary)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  {isTestingAiChannel ? (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      Testing Pipe...
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="w-3.5 h-3.5 text-amber-500" />
-                      Test AI Outreach Channel
-                    </>
-                  )}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleTestAiChannel}
+                    disabled={isTestingAiChannel}
+                    className="px-4 py-2 text-xs font-bold rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] hover:bg-slate-100 dark:hover:bg-slate-800 text-[var(--nexa-text-primary)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {isTestingAiChannel ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        Testing Pipe...
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-3.5 h-3.5 text-amber-500" />
+                        Test AI Outreach Channel
+                      </>
+                    )}
+                  </button>
+
+                  <NexaButton
+                    size="sm"
+                    variant="primary"
+                    onClick={handleSave}
+                    disabled={isSaving || isLoading}
+                    leftIcon={isSaving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                    className="bg-[#1A56DB] text-white hover:bg-[#1545B0] rounded-xl font-bold shadow-xs px-4 py-2"
+                  >
+                    {isSaving ? "Saving..." : isSaved ? "Saved to Database!" : "Save Outreach Settings"}
+                  </NexaButton>
+                </div>
 
                 {aiChannelStatus && (
                   <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">

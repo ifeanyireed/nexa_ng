@@ -18,7 +18,8 @@ export async function middleware(request: NextRequest) {
   if (
     pathname === "/api/auth/login" ||
     (pathname === "/api/crm/contact" && request.method === "POST") ||
-    (pathname === "/api/crm/waitlist" && request.method === "POST")
+    (pathname === "/api/crm/waitlist" && request.method === "POST") ||
+    (pathname.startsWith("/api/v1/cms/blog") && request.method === "GET")
   ) {
     return NextResponse.next();
   }

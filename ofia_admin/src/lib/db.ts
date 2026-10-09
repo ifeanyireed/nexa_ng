@@ -169,6 +169,36 @@ export async function ensureTablesExist(): Promise<boolean> {
         `);
       }
 
+      // 4. platform_settings table
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS platform_settings (
+          id VARCHAR(64) PRIMARY KEY,
+          platform_name VARCHAR(150) DEFAULT 'Ofia Enterprise Cloud',
+          root_domain VARCHAR(100) DEFAULT 'ofia.ng',
+          support_email VARCHAR(150) DEFAULT 'support@ofia.ng',
+          security_email VARCHAR(150) DEFAULT 'security@ofia.ng',
+          default_currency VARCHAR(10) DEFAULT 'NGN',
+          default_timezone VARCHAR(50) DEFAULT 'Africa/Lagos',
+          session_timeout_hours INT DEFAULT 168,
+          enforce_2fa BOOLEAN DEFAULT false,
+          maintenance_mode BOOLEAN DEFAULT false,
+          broadcast_banner_enabled BOOLEAN DEFAULT false,
+          broadcast_banner_text TEXT DEFAULT '',
+          broadcast_banner_type VARCHAR(20) DEFAULT 'info',
+          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        INSERT INTO platform_settings (
+          id, platform_name, root_domain, support_email, security_email,
+          default_currency, default_timezone, session_timeout_hours,
+          enforce_2fa, maintenance_mode, broadcast_banner_enabled, broadcast_banner_text, broadcast_banner_type, updated_at
+        ) VALUES (
+          'global_root', 'Ofia Enterprise Cloud', 'ofia.ng', 'support@ofia.ng', 'security@ofia.ng',
+          'NGN', 'Africa/Lagos', 168, false, false, false, '', 'info', NOW()
+        )
+        ON CONFLICT (id) DO NOTHING;
+      `);
+
       isInitialized = true;
       return true;
     } finally {

@@ -44,29 +44,48 @@ const SEED_FALLBACK_POSTS = [
 
 async function getBlogPosts() {
   try {
-    const rawApi = process.env.NEXT_PUBLIC_USERS_API || process.env.USERS_API_URL || 'http://localhost:8081';
+    const rawApi = process.env.NEXT_PUBLIC_USERS_API || process.env.USERS_API_URL || 'https://ofia-user-service.onrender.com';
     const USERS_API = rawApi.trim().replace(/^["']|["']$/g, '').replace(/\/+$/, '');
     
+    // 1. Try USERS_API (Render microservice)
     if (USERS_API && USERS_API.startsWith('http')) {
-      const [postsRes, catRes] = await Promise.all([
-        fetch(`${USERS_API}/api/v1/cms/blog/posts`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(2000) }),
-        fetch(`${USERS_API}/api/v1/cms/blog/categories`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(2000) })
-      ]);
-      
-      if (postsRes.ok) {
-        const posts = await postsRes.json();
-        if (Array.isArray(posts) && posts.length > 0) {
-          const published = posts.filter((p: any) => p.status === 'PUBLISHED');
-          if (catRes.ok) {
-            const categories = await catRes.json();
-            published.forEach((p: any) => {
-              const cat = categories.find((c: any) => c.id === p.category_id);
-              if (cat) p.category = cat.name;
-            });
+      try {
+        const [postsRes, catRes] = await Promise.all([
+          fetch(`${USERS_API}/api/v1/cms/blog/posts`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(2000) }),
+          fetch(`${USERS_API}/api/v1/cms/blog/categories`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(2000) })
+        ]);
+        
+        if (postsRes.ok) {
+          const posts = await postsRes.json();
+          if (Array.isArray(posts) && posts.length > 0) {
+            const published = posts.filter((p: any) => p.status === 'PUBLISHED');
+            if (catRes.ok) {
+              const categories = await catRes.json();
+              published.forEach((p: any) => {
+                const cat = categories.find((c: any) => c.id === p.category_id);
+                if (cat) p.category = cat.name;
+              });
+            }
+            if (published.length > 0) return published;
           }
-          if (published.length > 0) return published;
         }
-      }
+      } catch {}
+    }
+
+    // 2. Try Admin API proxy (direct connection to live Neon PostgreSQL database)
+    const adminRaw = process.env.NEXT_PUBLIC_ADMIN_API || 'http://localhost:3003';
+    const ADMIN_API = adminRaw.trim().replace(/^["']|["']$/g, '').replace(/\/+$/, '');
+    if (ADMIN_API && ADMIN_API.startsWith('http')) {
+      try {
+        const adminRes = await fetch(`${ADMIN_API}/api/v1/cms/blog/posts`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(2000) });
+        if (adminRes.ok) {
+          const posts = await adminRes.json();
+          if (Array.isArray(posts) && posts.length > 0) {
+            const published = posts.filter((p: any) => p.status === 'PUBLISHED');
+            if (published.length > 0) return published;
+          }
+        }
+      } catch {}
     }
   } catch (error) {
     console.warn('Unable to reach remote blog API, serving initial Ofia stories:', error);

@@ -28,7 +28,9 @@ const nextConfig: NextConfig = {
       { source: '/system', destination: '/ai/system' },
       { source: '/system/:path*', destination: '/ai/system/:path*' },
       { source: '/tenant', destination: '/tenants' },
-      { source: '/tenant/:path*', destination: '/tenants/:path*' }
+      { source: '/tenant/:path*', destination: '/tenants/:path*' },
+      { source: '/setting', destination: '/settings' },
+      { source: '/setting/:path*', destination: '/settings/:path*' }
     ];
   }
 };

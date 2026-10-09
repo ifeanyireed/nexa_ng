@@ -158,8 +158,8 @@ export function SuperAdminShell({
 
     if (pathname.startsWith("/settings")) {
       return [
-        { label: "Email Settings", href: "/settings/email", icon: <Mail className="w-3.5 h-3.5" />, badge: "Relay" },
         { label: "Platform General", href: "/settings", icon: <Sliders className="w-3.5 h-3.5" /> },
+        { label: "Email Settings", href: "/settings/email", icon: <Mail className="w-3.5 h-3.5" />, badge: "Relay" },
       ];
     }
 
@@ -256,8 +256,8 @@ export function SuperAdminShell({
     {
       label: "Platform Settings",
       icon: <Settings className="w-6 h-6" />,
-      href: "/settings/email",
-      badge: "Email",
+      href: "/settings",
+      badge: "Config",
       key: "settings",
       section: "Governance & Hub",
     },

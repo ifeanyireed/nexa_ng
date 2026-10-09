@@ -33,22 +33,21 @@ export default function BlogCMSPage() {
       setLoading(true);
       const data = await fetchBlogPosts();
       try {
-        const USERS_API = process.env.NEXT_PUBLIC_USERS_API || '';
-        const catRes = await fetch(`${USERS_API}/api/v1/cms/blog/categories`);
+        const catRes = await fetch('/api/v1/cms/blog/categories');
         if (catRes.ok) {
           setCategories(await catRes.json());
         }
-        const tagRes = await fetch(`${USERS_API}/api/v1/cms/blog/tags`);
+        const tagRes = await fetch('/api/v1/cms/blog/tags');
         if (tagRes.ok) {
           setTagsList(await tagRes.json());
         }
         
         try {
-            const subRes = await fetch(`${USERS_API}/api/v1/cms/blog/subscribe`);
+            const subRes = await fetch('/api/v1/cms/blog/subscribe');
             if (subRes.ok) setSubscribers(await subRes.json() || []);
         } catch(e) {}
         try {
-            const comRes = await fetch(`${USERS_API}/api/v1/cms/blog/comments`);
+            const comRes = await fetch('/api/v1/cms/blog/comments');
             if (comRes.ok) setComments(await comRes.json() || []);
         } catch(e) {}
 
@@ -65,8 +64,7 @@ export default function BlogCMSPage() {
     const name = window.prompt("Enter category name:");
     if (!name) return;
     try {
-      const USERS_API = process.env.NEXT_PUBLIC_USERS_API || '';
-      const res = await fetch(`${USERS_API}/api/v1/cms/blog/categories`, {
+      const res = await fetch('/api/v1/cms/blog/categories', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name })
@@ -86,8 +84,7 @@ export default function BlogCMSPage() {
   
   const handleUpdateCommentStatus = async (id: string, status: string) => {
     try {
-      const USERS_API = process.env.NEXT_PUBLIC_USERS_API || '';
-      const res = await fetch(`${USERS_API}/api/v1/cms/blog/comments/status`, {
+      const res = await fetch('/api/v1/cms/blog/comments/status', {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status })
@@ -106,8 +103,7 @@ export default function BlogCMSPage() {
   const handleDeleteComment = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this comment?")) return;
     try {
-      const USERS_API = process.env.NEXT_PUBLIC_USERS_API || '';
-      const res = await fetch(`${USERS_API}/api/v1/cms/blog/comments/delete?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/v1/cms/blog/comments/delete?id=${id}`, { method: "DELETE" });
       if (res.ok) {
         setComments(comments.filter((c: any) => c.id !== id));
         toast.success("Comment deleted!");
@@ -122,8 +118,7 @@ export default function BlogCMSPage() {
   const handleDeleteSubscriber = async (id: string) => {
     if (!window.confirm("Are you sure you want to remove this subscriber?")) return;
     try {
-      const USERS_API = process.env.NEXT_PUBLIC_USERS_API || '';
-      const res = await fetch(`${USERS_API}/api/v1/cms/blog/subscribe/delete?id=${id}`, { method: "DELETE" });
+      const res = await fetch(`/api/v1/cms/blog/subscribe/delete?id=${id}`, { method: "DELETE" });
       if (res.ok) {
         setSubscribers(subscribers.filter((s: any) => s.id !== id));
         toast.success("Subscriber removed!");
@@ -139,8 +134,7 @@ export default function BlogCMSPage() {
     const name = window.prompt("Enter tag name:");
     if (!name) return;
     try {
-      const USERS_API = process.env.NEXT_PUBLIC_USERS_API || '';
-      const res = await fetch(`${USERS_API}/api/v1/cms/blog/tags`, {
+      const res = await fetch('/api/v1/cms/blog/tags', {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name })
@@ -160,8 +154,7 @@ export default function BlogCMSPage() {
   const handleDeletePost = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this article?")) return;
     try {
-      const USERS_API = process.env.NEXT_PUBLIC_USERS_API || '';
-      const res = await fetch(`${USERS_API}/api/v1/cms/blog/posts?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      const res = await fetch(`/api/v1/cms/blog/posts?id=${encodeURIComponent(id)}`, { method: "DELETE" });
       if (res.ok) {
         setPosts(posts.filter((p: any) => p.id !== id));
         toast.success("Post deleted!");
@@ -176,8 +169,7 @@ export default function BlogCMSPage() {
   const handleDeleteCategory = async (id: string) => {
     if (!window.confirm("Delete this category?")) return;
     try {
-      const USERS_API = process.env.NEXT_PUBLIC_USERS_API || '';
-      const res = await fetch(`${USERS_API}/api/v1/cms/blog/categories?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      const res = await fetch(`/api/v1/cms/blog/categories?id=${encodeURIComponent(id)}`, { method: "DELETE" });
       if (res.ok) {
         setCategories(categories.filter((c: any) => c.id !== id));
         toast.success("Category deleted!");
@@ -192,8 +184,7 @@ export default function BlogCMSPage() {
   const handleDeleteTag = async (id: string) => {
     if (!window.confirm("Delete this tag?")) return;
     try {
-      const USERS_API = process.env.NEXT_PUBLIC_USERS_API || '';
-      const res = await fetch(`${USERS_API}/api/v1/cms/blog/tags?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      const res = await fetch(`/api/v1/cms/blog/tags?id=${encodeURIComponent(id)}`, { method: "DELETE" });
       if (res.ok) {
         setTagsList(tagsList.filter((t: any) => t.id !== id));
         toast.success("Tag deleted!");

@@ -4,6 +4,7 @@ import 'package:flexicon/flexicon.dart';
 import 'package:mobile_mobility/utils/icon_util.dart';
 import '../../widgets/places_search_delegate.dart';
 import '../../services/places_service.dart';
+import '../payment_screen.dart';
 
 class RentalPlanTripScreen extends StatefulWidget {
   const RentalPlanTripScreen({Key? key}) : super(key: key);
@@ -295,7 +296,10 @@ class _RentalPlanTripScreenState extends State<RentalPlanTripScreen> {
                 height: 56,
                 child: ElevatedButton(
                   onPressed: () {
-                    // Navigate to payment or next step
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const PaymentScreen()),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF00C853),

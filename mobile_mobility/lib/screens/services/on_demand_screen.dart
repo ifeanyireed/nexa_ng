@@ -7,6 +7,7 @@ import '../../widgets/map_painter.dart';
 
 import '../../widgets/places_search_delegate.dart';
 import '../../services/places_service.dart';
+import '../payment_screen.dart';
 
 class OnDemandScreen extends StatefulWidget {
   const OnDemandScreen({Key? key}) : super(key: key);
@@ -159,7 +160,12 @@ class _OnDemandScreenState extends State<OnDemandScreen> {
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12)),
                       ),
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const PaymentScreen()),
+                        );
+                      },
                       child: const Text('Request Ride',
                           style: TextStyle(
                               color: Colors.white,

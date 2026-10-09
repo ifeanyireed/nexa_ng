@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flexicon/flexicon.dart';
 import 'package:mobile_mobility/utils/icon_util.dart';
-import 'package:mobile_mobility/widgets/map_painter.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../payment_screen.dart';
 
 class ShuttleOrderSummaryScreen extends StatelessWidget {
@@ -30,13 +30,18 @@ class ShuttleOrderSummaryScreen extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // Map Header
             Container(
               height: 120,
               width: double.infinity,
               color: const Color(0xFFE8EDF2),
-              child: CustomPaint(
-                painter: VectorMapPainter(),
+              child: const GoogleMap(
+                initialCameraPosition: CameraPosition(
+                  target: LatLng(6.5244, 3.3792), // Default to Lagos, Nigeria
+                  zoom: 12,
+                ),
+                zoomControlsEnabled: false,
+                mapType: MapType.normal,
+                myLocationButtonEnabled: false,
               ),
             ),
             
@@ -93,10 +98,12 @@ class ShuttleOrderSummaryScreen extends StatelessWidget {
                       isFirst: true),
                   _buildTimelineItem(
                       'Your pick up location', 'Ogidan Bus Stop', 'Est. Arrival: 5:41 AM',
-                      isActive: true),
+                      isActive: true,
+                      customIcon: Icon(fixIcon(FlexIcon.remix.locationTarget2), size: 16, color: Colors.green.shade600)),
                   _buildTimelineItem(
                       'Your drop off location', 'Sandfill Bus Stop', '',
-                      isLast: true),
+                      isLast: true,
+                      customIcon: Icon(fixIcon(FlexIcon.remix.locationPin3), size: 16, color: Colors.blue.shade600)),
 
                   const SizedBox(height: 24),
 
@@ -158,7 +165,7 @@ class ShuttleOrderSummaryScreen extends StatelessWidget {
   }
 
   Widget _buildTimelineItem(String title, String subtitle, String trailing,
-      {bool isFirst = false, bool isLast = false, bool isActive = false}) {
+      {bool isFirst = false, bool isLast = false, bool isActive = false, Widget? customIcon}) {
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -172,7 +179,7 @@ class ShuttleOrderSummaryScreen extends StatelessWidget {
                   height: 16,
                   color: isFirst ? Colors.transparent : Colors.grey.shade300,
                 ),
-                Container(
+                customIcon ?? Container(
                   width: isActive ? 12 : 8,
                   height: isActive ? 12 : 8,
                   decoration: BoxDecoration(

@@ -108,7 +108,7 @@ class SchoolScreen extends StatelessWidget {
                       Icon(
                           isMorningCompleted
                               ? fixIcon(FlexIcon.remix.autoCorrectionCheck)
-                              : fixIcon(FlexIcon.remix.roundAnchorPoint),
+                              : fixIcon(FlexIcon.remix.locationTarget2),
                           color:
                               isMorningCompleted ? Colors.green : Colors.grey,
                           size: 16),

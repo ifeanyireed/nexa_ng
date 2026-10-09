@@ -56,7 +56,7 @@ class _ShuttleRouteDetailsScreenState extends State<ShuttleRouteDetailsScreen> {
                 children: [
                   Row(
                     children: [
-                      Icon(fixIcon(FlexIcon.remix.roundAnchorPoint),
+                      Icon(fixIcon(FlexIcon.remix.locationTarget2),
                           size: 16, color: Colors.green.shade600),
                       const SizedBox(width: 12),
                       const Expanded(

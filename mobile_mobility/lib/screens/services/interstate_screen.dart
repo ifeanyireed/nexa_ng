@@ -32,7 +32,7 @@ class InterstateScreen extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Icon(fixIcon(FlexIcon.remix.roundAnchorPoint),
+                      Icon(fixIcon(FlexIcon.remix.locationTarget2),
                           color: Color(0xFF1B62F0), size: 16),
                       const SizedBox(width: 12),
                       Expanded(

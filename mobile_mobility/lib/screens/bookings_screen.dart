@@ -121,8 +121,11 @@ class BookingsScreen extends StatelessWidget {
                           color: const Color(0xFF1B62F0).withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(fixIcon(FlexIcon.remix.carTaxi1),
-                            color: const Color(0xFF1B62F0), size: 16),
+                        child: Image.asset(
+                          'assets/images/car.png',
+                          width: 16,
+                          height: 16,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Text(

@@ -13,6 +13,8 @@ class StaffScreen extends StatefulWidget {
 
 class _StaffScreenState extends State<StaffScreen> {
   bool isSubscribed = true;
+  DateTime? _departureDate;
+  TimeOfDay? _departureTime;
 
   @override
   Widget build(BuildContext context) {
@@ -87,22 +89,42 @@ class _StaffScreenState extends State<StaffScreen> {
                           style: TextStyle(
                               fontSize: 12, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 12),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(fixIcon(FlexIcon.remix.blankCalendar),
-                                size: 16, color: Colors.grey),
-                            SizedBox(width: 8),
-                            Text('Fri, 25 Sep',
-                                style: TextStyle(
-                                    fontSize: 14, fontWeight: FontWeight.w500)),
-                          ],
+                      InkWell(
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: _departureDate ?? DateTime.now(),
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime.now().add(const Duration(days: 365)),
+                          );
+                          if (date != null) {
+                            setState(() => _departureDate = date);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 12),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(fixIcon(FlexIcon.remix.blankCalendar),
+                                  size: 16, color: Colors.grey),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                    _departureDate != null
+                                        ? '${_departureDate!.day}/${_departureDate!.month}/${_departureDate!.year}'
+                                        : 'Select Date',
+                                    style: const TextStyle(
+                                        fontSize: 14, fontWeight: FontWeight.w500),
+                                    overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       )
                     ],
@@ -117,25 +139,42 @@ class _StaffScreenState extends State<StaffScreen> {
                           style: TextStyle(
                               fontSize: 12, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 12),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(fixIcon(FlexIcon.remix.countdownTimer),
-                                size: 16, color: Colors.grey),
-                            SizedBox(width: 8),
-                            Text('05:40 AM',
-                                style: TextStyle(
-                                    fontSize: 14, fontWeight: FontWeight.w500)),
-                            Spacer(),
-                            Icon(Icons.keyboard_arrow_down,
-                                size: 16, color: Colors.grey),
-                          ],
+                      InkWell(
+                        onTap: () async {
+                          final time = await showTimePicker(
+                            context: context,
+                            initialTime: _departureTime ?? TimeOfDay.now(),
+                          );
+                          if (time != null) {
+                            setState(() => _departureTime = time);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 12),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(fixIcon(FlexIcon.remix.countdownTimer),
+                                  size: 16, color: Colors.grey),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                    _departureTime != null
+                                        ? _departureTime!.format(context)
+                                        : 'Select Time',
+                                    style: const TextStyle(
+                                        fontSize: 14, fontWeight: FontWeight.w500),
+                                    overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const Icon(Icons.keyboard_arrow_down,
+                                  size: 16, color: Colors.grey),
+                            ],
+                          ),
                         ),
                       )
                     ],

@@ -413,7 +413,7 @@ class _SignupScreenState extends State<SignupScreen> {
                   border: Border.all(color: Colors.green.shade200)),
               child: Row(
                 children: [
-                  Icon(fixIcon(FlexIcon.remix.autoCorrectionCheck),
+                  Icon(Icons.check_circle,
                       color: Colors.green),
                   const SizedBox(width: 8),
                   const Expanded(

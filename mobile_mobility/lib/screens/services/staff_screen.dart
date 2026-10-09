@@ -192,7 +192,7 @@ class _StaffScreenState extends State<StaffScreen> {
                               fontWeight: FontWeight.bold,
                               fontSize: 14)),
                       const SizedBox(width: 8),
-                      Icon(fixIcon(FlexIcon.remix.autoCorrectionCheck),
+                      Icon(Icons.check_circle,
                           color: Colors.green.shade600, size: 20),
                     ],
                   )

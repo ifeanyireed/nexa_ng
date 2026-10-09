@@ -41,7 +41,7 @@ class SchoolScreen extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           const SizedBox(height: 16),
           _buildNotification('Chisom has arrived at school.', '07:45 AM',
-              fixIcon(FlexIcon.remix.autoCorrectionCheck), Colors.green),
+              Icons.check_circle, Colors.green),
           _buildNotification(
               'Chisom boarded the bus.',
               '07:15 AM',
@@ -71,11 +71,8 @@ class SchoolScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              CircleAvatar(
-                backgroundColor: const Color(0xFFE0E7FF),
-                child: Text(name[0],
-                    style: const TextStyle(
-                        color: Color(0xFF4338CA), fontWeight: FontWeight.bold)),
+              const CircleAvatar(
+                backgroundImage: AssetImage('assets/images/avatar1.png'),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -107,7 +104,7 @@ class SchoolScreen extends StatelessWidget {
                     children: [
                       Icon(
                           isMorningCompleted
-                              ? fixIcon(FlexIcon.remix.autoCorrectionCheck)
+                              ? Icons.check_circle
                               : fixIcon(FlexIcon.remix.locationTarget2),
                           color:
                               isMorningCompleted ? Colors.green : Colors.grey,

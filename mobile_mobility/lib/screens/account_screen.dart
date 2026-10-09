@@ -52,11 +52,9 @@ class AccountScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Column(
                 children: [
-                  CircleAvatar(
+                  const CircleAvatar(
                     radius: 40,
-                    backgroundColor: Colors.grey.shade200,
-                    child: Icon(fixIcon(FlexIcon.remix.userCircleSingle),
-                        size: 40, color: Colors.grey),
+                    backgroundImage: AssetImage('assets/images/avatar1.png'),
                   ),
                   const SizedBox(height: 12),
                   Text(

@@ -45,7 +45,7 @@ class EmergencyContactScreen extends StatelessWidget {
   Widget _buildContact(String name, String phone, String relation) {
     return ListTile(
       contentPadding: EdgeInsets.zero,
-      leading: const CircleAvatar(child: Icon(Icons.person)),
+      leading: const CircleAvatar(backgroundImage: AssetImage('assets/images/avatar2.png')),
       title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
       subtitle: Text('$relation • $phone'),
       trailing: IconButton(

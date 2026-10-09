@@ -91,8 +91,17 @@ class OnDemandScreen extends StatelessWidget {
                             Icon(fixIcon(FlexIcon.remix.magnifyingGlass),
                                 color: Color(0xFF64748B), size: 20),
                             const SizedBox(width: 12),
-                            Text('Search destination...',
-                                style: TextStyle(color: Colors.grey.shade500)),
+                            Expanded(
+                              child: TextField(
+                                decoration: InputDecoration(
+                                  hintText: 'Search destination...',
+                                  hintStyle: TextStyle(color: Colors.grey.shade500),
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ],

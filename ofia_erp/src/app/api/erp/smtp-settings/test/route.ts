@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { testSmtpSettings, getTenantSmtpSettings, SmtpSettings } from "@/lib/email-service";
+import { testSmtpSettings, getTenantSmtpSettings, getTenantSenderProfileById, SmtpSettings } from "@/lib/email-service";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { testEmail, tenantSlug } = body;
+    const { testEmail, tenantSlug, profileId } = body;
 
     if (!testEmail || !testEmail.includes("@")) {
       return NextResponse.json(
@@ -20,9 +20,17 @@ export async function POST(request: Request) {
       // If password is masked and tenantSlug is provided, look up existing password
       let resolvedPassword = body.password || "";
       if ((!resolvedPassword || resolvedPassword === "••••••••") && tenantSlug) {
-        const existing = await getTenantSmtpSettings(tenantSlug);
-        if (existing?.password) {
-          resolvedPassword = existing.password;
+        if (profileId) {
+          const profile = await getTenantSenderProfileById(tenantSlug, profileId);
+          if (profile?.password) {
+            resolvedPassword = profile.password;
+          }
+        }
+        if (!resolvedPassword) {
+          const existing = await getTenantSmtpSettings(tenantSlug);
+          if (existing?.password) {
+            resolvedPassword = existing.password;
+          }
         }
       }
 

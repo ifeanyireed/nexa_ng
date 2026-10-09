@@ -173,12 +173,17 @@ export async function POST(request: Request) {
       [tokenRow.id]
     );
 
-    // 5. Dispatch confirmation email using Root Platform SMTP relay
+    // 5. Dispatch confirmation email using tenant Primary Workspace Domain and Sender Display Name
+    const resolvedTenantSlug = updatedUser.tenantSlug || tokenRow.tenant_slug || "default";
+    const resolvedTenantName = resolvedTenantSlug && resolvedTenantSlug !== "default"
+      ? slugToTenantName(resolvedTenantSlug)
+      : "Ofia Platform";
+
     sendPlatformPasswordChangedEmail({
       recipientEmail: normalizedEmail,
       recipientName: updatedUser.name || normalizedEmail.split("@")[0],
-      tenantSlug: updatedUser.tenantSlug || "platform",
-      tenantName: slugToTenantName(updatedUser.tenantSlug || "platform"),
+      tenantSlug: resolvedTenantSlug,
+      tenantName: resolvedTenantName,
     }).catch((err) => console.warn("Failed to dispatch password changed security alert:", err));
 
     return NextResponse.json({

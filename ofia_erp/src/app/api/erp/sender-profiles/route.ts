@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   try {
     const tenantSlug = getValidatedTenantSlug(request);
-    const [profiles, defaultSmtp] = await Promise.all([
+    let [profiles, defaultSmtp] = await Promise.all([
       getTenantSenderProfiles(tenantSlug),
       getTenantSmtpSettings(tenantSlug),
     ]);
@@ -27,9 +27,39 @@ export async function GET(request: Request) {
       defaultSmtp.tenantSlug.toLowerCase() === tenantSlug.toLowerCase()
     );
 
+    // If tenant has no profiles in tenant_sender_profiles but has existing SMTP settings,
+    // auto-seed it as their first default profile so it's safely preserved and editable
+    if (profiles.length === 0 && isTenantSpecificSmtp && defaultSmtp) {
+      try {
+        const seeded = await saveTenantSenderProfile({
+          id: `prof_init_${tenantSlug.replace(/[^a-zA-Z0-9]/g, "_")}`,
+          tenantSlug,
+          profileName: `${(defaultSmtp.provider || "Primary").toUpperCase()} Relay`,
+          provider: defaultSmtp.provider || "custom",
+          host: defaultSmtp.host,
+          port: defaultSmtp.port || 587,
+          encryption: defaultSmtp.encryption || "tls",
+          fromEmail: defaultSmtp.fromEmail,
+          fromName: defaultSmtp.fromName || "Workspace Admin",
+          username: defaultSmtp.username || defaultSmtp.fromEmail,
+          password: defaultSmtp.password || "",
+          isDefault: true,
+        });
+        profiles = [seeded];
+      } catch (seedErr) {
+        console.warn("Could not auto-seed initial profile:", seedErr);
+      }
+    }
+
+    const returnedProfiles = profiles.map((p) => ({
+      ...p,
+      hasPassword: p.hasPassword || Boolean(p.password && p.password.length > 0),
+      password: p.password ? "••••••••" : "",
+    }));
+
     return NextResponse.json({
       success: true,
-      profiles,
+      profiles: returnedProfiles,
       defaultSmtp: isTenantSpecificSmtp
         ? {
             tenantSlug: defaultSmtp!.tenantSlug,
@@ -41,7 +71,7 @@ export async function GET(request: Request) {
             fromName: defaultSmtp!.fromName,
             username: defaultSmtp!.username,
             hasPassword: defaultSmtp!.hasPassword || Boolean(defaultSmtp!.password && defaultSmtp!.password.length > 0),
-            password: defaultSmtp!.hasPassword ? "••••••••" : "",
+            password: defaultSmtp!.password ? "••••••••" : "",
           }
         : null,
     });

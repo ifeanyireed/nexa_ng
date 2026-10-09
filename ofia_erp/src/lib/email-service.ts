@@ -247,7 +247,7 @@ export async function getTenantSenderProfiles(tenantSlug: string): Promise<Tenan
           fromEmail: row.from_email || "",
           fromName: row.from_name || "",
           username: row.username || "",
-          password: row.password ? "••••••••" : "",
+          password: row.password || "",
           hasPassword: Boolean(row.password && row.password.length > 0),
           isDefault: Boolean(row.is_default),
           createdAt: row.created_at ? new Date(row.created_at).toISOString() : undefined,
@@ -262,7 +262,7 @@ export async function getTenantSenderProfiles(tenantSlug: string): Promise<Tenan
   const cached = memorySenderProfilesStore.get(normalizedSlug) || [];
   return cached.map((p) => ({
     ...p,
-    password: p.password ? "••••••••" : "",
+    password: p.password || "",
     hasPassword: Boolean(p.password && p.password.length > 0),
   }));
 }
@@ -391,6 +391,24 @@ export async function saveTenantSenderProfile(
           fullProfile.isDefault,
         ]
       );
+
+      if (fullProfile.isDefault) {
+        await pool.query(
+          `UPDATE tenant_sender_profiles SET is_default = false WHERE LOWER(tenant_slug) = $1 AND id != $2`,
+          [normalizedSlug, id]
+        );
+        await saveTenantSmtpSettings({
+          tenantSlug: normalizedSlug,
+          provider: fullProfile.provider,
+          host: fullProfile.host,
+          port: fullProfile.port,
+          encryption: fullProfile.encryption,
+          fromEmail: fullProfile.fromEmail,
+          fromName: fullProfile.fromName,
+          username: fullProfile.username,
+          password: fullProfile.password,
+        });
+      }
     }
   } catch (err) {
     console.error("Failed to persist sender profile to PostgreSQL:", err);
@@ -398,7 +416,7 @@ export async function saveTenantSenderProfile(
 
   return {
     ...fullProfile,
-    password: fullProfile.hasPassword ? "••••••••" : "",
+    password: fullProfile.password || "",
   };
 }
 
@@ -1425,9 +1443,126 @@ export interface PasswordResetEmailParams {
   expiresInMinutes?: number;
 }
 
+export interface EffectiveTenantAuthSmtpResult {
+  settings: SmtpSettings;
+  senderName: string;
+  senderEmail: string;
+  senderFormatted: string;
+  isTenantSpecific: boolean;
+  envSettings: SmtpSettings;
+}
+
 /**
- * Send a secure, branded password reset email using the platform email utility.
- * Attempts tenant-specific SMTP if configured, with automatic fallback to platform Hostinger SMTP.
+ * Resolves the primary email dispatch profile for tenant authentication emails:
+ * Priority 1: Primary Workspace Domain (Default SMTP Relay) configured in tenant_smtp_settings for this tenant
+ * Priority 2: Tenant Default Sender Profile (from tenant_sender_profiles where is_default = true)
+ * Priority 3: Centralized Platform SMTP Relay (tenant_slug = 'platform') configured in ofia_admin
+ * Priority 4: Environment Variables Fallback (SMTP_HOST, SMTP_PORT, etc.)
+ *
+ * Sender Display Name:
+ * - Prioritizes the tenant's configured "Sender Display Name" (fromName in their workspace email profile)
+ * - Falls back to `${tenantName} Security` if unconfigured
+ */
+export async function getEffectiveTenantAuthSmtp(
+  tenantSlug?: string,
+  tenantNameFallback?: string
+): Promise<EffectiveTenantAuthSmtpResult> {
+  const normalizedSlug = (tenantSlug || "").trim().toLowerCase();
+  let tenantSettings: SmtpSettings | null = null;
+  let isTenantSpecific = false;
+
+  // 1. Primary Workspace Domain (Default SMTP Relay) configured for this specific tenant
+  if (normalizedSlug && normalizedSlug !== "platform" && normalizedSlug !== "default") {
+    try {
+      const dbSettings = await getTenantSmtpSettings(normalizedSlug);
+      if (dbSettings && dbSettings.host && (dbSettings.password || dbSettings.hasPassword)) {
+        tenantSettings = dbSettings;
+        isTenantSpecific = true;
+      }
+    } catch (e) {
+      console.warn(`Failed to retrieve Primary Workspace SMTP for tenant "${normalizedSlug}":`, e);
+    }
+
+    // 2. Tenant Default Sender Profile
+    if (!tenantSettings) {
+      try {
+        const profiles = await getTenantSenderProfiles(normalizedSlug);
+        const defaultProfile = profiles.find((p) => p.isDefault) || profiles[0];
+        if (defaultProfile && defaultProfile.host && (defaultProfile.password || defaultProfile.hasPassword)) {
+          tenantSettings = {
+            tenantSlug: defaultProfile.tenantSlug,
+            provider: defaultProfile.provider,
+            host: defaultProfile.host,
+            port: defaultProfile.port,
+            encryption: defaultProfile.encryption,
+            fromEmail: defaultProfile.fromEmail,
+            fromName: defaultProfile.fromName,
+            username: defaultProfile.username,
+            password: defaultProfile.password,
+            hasPassword: defaultProfile.hasPassword,
+          };
+          isTenantSpecific = true;
+        }
+      } catch (e) {
+        console.warn(`Failed to retrieve sender profiles for tenant "${normalizedSlug}":`, e);
+      }
+    }
+  }
+
+  // 3. Centralized Platform SMTP Relay (tenant_slug = 'platform') configured in ofia_admin
+  let platformSettings: SmtpSettings | null = null;
+  try {
+    const platformDbSettings = await getTenantSmtpSettings("platform");
+    if (platformDbSettings && platformDbSettings.host && (platformDbSettings.password || platformDbSettings.hasPassword)) {
+      platformSettings = platformDbSettings;
+    }
+  } catch (e) {
+    console.warn("Failed to retrieve platform SMTP settings:", e);
+  }
+
+  // 4. Environment Fallback
+  const envSettings: SmtpSettings = {
+    tenantSlug: "platform",
+    provider: "hostinger",
+    host: process.env.SMTP_HOST || "smtp.hostinger.com",
+    port: Number(process.env.SMTP_PORT) || 465,
+    encryption: Number(process.env.SMTP_PORT) === 465 || !process.env.SMTP_PORT ? "ssl" : "tls",
+    fromEmail: process.env.SMTP_FROM_EMAIL || "hello@resultspro.ng",
+    fromName: tenantNameFallback ? `${tenantNameFallback} Security` : (process.env.SMTP_FROM_NAME || "Ofia Platform Security"),
+    username: process.env.SMTP_USER || "hello@resultspro.ng",
+    password: process.env.SMTP_PASSWORD || "",
+  };
+
+  const finalSettings = tenantSettings || platformSettings || envSettings;
+
+  // Determine Sender Display Name
+  let senderName = "";
+  if (isTenantSpecific && finalSettings.fromName && finalSettings.fromName.trim() !== "") {
+    senderName = finalSettings.fromName.trim();
+  } else if (tenantNameFallback && tenantNameFallback.trim() !== "") {
+    senderName = `${tenantNameFallback.trim()} Security`;
+  } else if (finalSettings.fromName && finalSettings.fromName.trim() !== "") {
+    senderName = finalSettings.fromName.trim();
+  } else {
+    senderName = "Ofia Platform Security";
+  }
+
+  const senderEmail = finalSettings.fromEmail || envSettings.fromEmail;
+  const senderFormatted = `"${senderName.replace(/"/g, "")}" <${senderEmail}>`;
+
+  return {
+    settings: finalSettings,
+    senderName,
+    senderEmail,
+    senderFormatted,
+    isTenantSpecific,
+    envSettings,
+  };
+}
+
+/**
+ * Send a secure, branded password reset email using the tenant's Primary Workspace Domain (Default SMTP Relay)
+ * and Sender Display Name, with automatic fallback to platform relay.
  */
 export async function sendPlatformPasswordResetEmail(
   params: PasswordResetEmailParams
@@ -1445,49 +1580,8 @@ export async function sendPlatformPasswordResetEmail(
     return { success: false, error: "Invalid recipient email address" };
   }
 
-  // 1. Determine SMTP Settings for Platform Auth:
-  // Priority 1: Centralized Platform SMTP configured in ofia_admin (tenant_slug = 'platform')
-  // Priority 2: Environment variables (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD)
-  // Priority 3: Tenant-specific fallback if platform SMTP is unconfigured
-  let settings: SmtpSettings | null = null;
-  try {
-    const platformDbSettings = await getTenantSmtpSettings("platform");
-    if (platformDbSettings && platformDbSettings.host && platformDbSettings.password) {
-      settings = platformDbSettings;
-    }
-  } catch (e) {
-    console.warn("Failed to retrieve platform SMTP settings, checking fallbacks:", e);
-  }
-
-  // If platform SMTP not found in database, check tenant fallback
-  if (!settings && tenantSlug && tenantSlug !== "platform" && tenantSlug !== "default") {
-    try {
-      const tenantDbSettings = await getTenantSmtpSettings(tenantSlug);
-      if (tenantDbSettings && tenantDbSettings.host && tenantDbSettings.password) {
-        settings = tenantDbSettings;
-      }
-    } catch {}
-  }
-
-  const envSettings: SmtpSettings = {
-    tenantSlug: "platform",
-    provider: "hostinger",
-    host: process.env.SMTP_HOST || "smtp.hostinger.com",
-    port: Number(process.env.SMTP_PORT) || 465,
-    encryption: (Number(process.env.SMTP_PORT) === 465 || !process.env.SMTP_PORT ? "ssl" : "tls"),
-    fromEmail: process.env.SMTP_FROM_EMAIL || "hello@resultspro.ng",
-    fromName: tenantName ? `${tenantName} Security` : (process.env.SMTP_FROM_NAME || "Ofia Platform Security"),
-    username: process.env.SMTP_USER || "hello@resultspro.ng",
-    password: process.env.SMTP_PASSWORD || "",
-  };
-
-  const effectiveSettings = (settings && settings.host && settings.password)
-    ? settings
-    : envSettings;
-
-  const senderName = effectiveSettings.fromName || (tenantName ? `${tenantName} Security` : "Ofia Platform Security");
-  const senderEmail = effectiveSettings.fromEmail || envSettings.fromEmail;
-  const senderFormatted = `"${senderName.replace(/"/g, "")}" <${senderEmail}>`;
+  const { settings, senderName, senderEmail, senderFormatted, isTenantSpecific, envSettings } =
+    await getEffectiveTenantAuthSmtp(tenantSlug, tenantName);
 
   const subject = `[Action Required] Reset Your Password for ${tenantName}`;
 
@@ -1519,7 +1613,7 @@ export async function sendPlatformPasswordResetEmail(
     <div class="card">
       <div class="header">
         <div class="brand-badge">
-          <span>🔒</span> ${tenantName} Security
+          <span>🔒</span> ${senderName}
         </div>
         <h2 style="margin: 16px 0 4px; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">
           Password Reset Request
@@ -1553,8 +1647,8 @@ export async function sendPlatformPasswordResetEmail(
       </div>
 
       <div class="footer">
-        <p style="margin: 0 0 6px;">Sent automatically by the Ofia Enterprise Platform Security Infrastructure.</p>
-        <p style="margin: 0;">&copy; ${new Date().getFullYear()} Ofia Technologies. All rights reserved.</p>
+        <p style="margin: 0 0 6px;">Sent automatically by ${senderName}.</p>
+        <p style="margin: 0;">&copy; ${new Date().getFullYear()} ${tenantName}. All rights reserved.</p>
       </div>
     </div>
   </div>
@@ -1576,17 +1670,15 @@ This link is valid for ${expiresInMinutes} minutes.
 
 If you did not request a password reset, please ignore this email. Your account remains completely secure.
 
-— ${tenantName} Security Team
-Sent by Ofia Enterprise Platform
+— ${senderName}
   `.trim();
 
-  // 2. Dispatch via Nodemailer
   try {
-    const transporter = createNodemailerTransporter(effectiveSettings);
+    const transporter = createNodemailerTransporter(settings);
     const info = await transporter.sendMail({
       from: senderFormatted,
       to: recipientEmail,
-      replyTo: "support@ofia.ng",
+      replyTo: senderEmail || "support@ofia.ng",
       subject,
       html,
       text,
@@ -1599,14 +1691,14 @@ Sent by Ofia Enterprise Platform
   } catch (err: any) {
     console.error("Failed to deliver password reset email via primary SMTP:", err);
 
-    // If tenant SMTP failed, attempt fallback to platform Hostinger SMTP
-    if (settings && effectiveSettings !== envSettings) {
+    // If primary SMTP failed, attempt fallback to platform Hostinger/Brevo SMTP
+    if (settings !== envSettings) {
       try {
         const fallbackTransporter = createNodemailerTransporter(envSettings);
         const fallbackInfo = await fallbackTransporter.sendMail({
-          from: `"${tenantName || 'Ofia'} Security" <${envSettings.fromEmail}>`,
+          from: senderFormatted,
           to: recipientEmail,
-          replyTo: "support@ofia.ng",
+          replyTo: senderEmail || "support@ofia.ng",
           subject,
           html,
           text,
@@ -1641,7 +1733,7 @@ export interface PasswordChangedEmailParams {
 
 /**
  * Dispatches security alert confirming password was updated.
- * Uses Root Platform SMTP relay configured in ofia_admin (tenant_slug = 'platform').
+ * Prioritizes Primary Workspace Domain and Sender Display Name with platform relay fallback.
  */
 export async function sendPlatformPasswordChangedEmail(
   params: PasswordChangedEmailParams
@@ -1657,30 +1749,8 @@ export async function sendPlatformPasswordChangedEmail(
     return { success: false, error: "Invalid recipient email address" };
   }
 
-  let settings: SmtpSettings | null = null;
-  try {
-    const platformDbSettings = await getTenantSmtpSettings("platform");
-    if (platformDbSettings && platformDbSettings.host && platformDbSettings.password) {
-      settings = platformDbSettings;
-    }
-  } catch (e) {}
-
-  const envSettings: SmtpSettings = {
-    tenantSlug: "platform",
-    provider: "hostinger",
-    host: process.env.SMTP_HOST || "smtp.hostinger.com",
-    port: Number(process.env.SMTP_PORT) || 465,
-    encryption: Number(process.env.SMTP_PORT) === 465 || !process.env.SMTP_PORT ? "ssl" : "tls",
-    fromEmail: process.env.SMTP_FROM_EMAIL || "hello@resultspro.ng",
-    fromName: tenantName ? `${tenantName} Security` : "Ofia Platform Security",
-    username: process.env.SMTP_USER || "hello@resultspro.ng",
-    password: process.env.SMTP_PASSWORD || "",
-  };
-
-  const effectiveSettings = settings && settings.host && settings.password ? settings : envSettings;
-  const senderName = effectiveSettings.fromName || `${tenantName} Security`;
-  const senderEmail = effectiveSettings.fromEmail || envSettings.fromEmail;
-  const senderFormatted = `"${senderName.replace(/"/g, "")}" <${senderEmail}>`;
+  const { settings, senderName, senderEmail, senderFormatted, isTenantSpecific, envSettings } =
+    await getEffectiveTenantAuthSmtp(tenantSlug, tenantName);
 
   const subject = `[Security Notice] Your Password Was Successfully Changed — ${tenantName}`;
   const html = `
@@ -1692,6 +1762,9 @@ export async function sendPlatformPasswordChangedEmail(
 </head>
 <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b;">
   <div style="max-width: 580px; margin: 32px auto; padding: 28px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0;">
+    <div style="display: inline-block; padding: 4px 12px; background: #eff6ff; border: 1px solid #dbeafe; border-radius: 999px; color: #1a56db; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 16px;">
+      🔒 ${senderName}
+    </div>
     <h2 style="color: #0f172a; margin-top: 0; font-size: 20px;">Password Changed Successfully</h2>
     <p style="font-size: 14px; color: #475569; line-height: 1.6;">Hello ${recipientName},</p>
     <p style="font-size: 14px; color: #475569; line-height: 1.6;">
@@ -1702,10 +1775,10 @@ export async function sendPlatformPasswordChangedEmail(
       <strong>Account:</strong> ${recipientEmail}
     </div>
     <p style="font-size: 13px; color: #e02424; line-height: 1.5; font-weight: 500;">
-      If you did not make this change, please contact your workspace administrator or Ofia security immediately.
+      If you did not make this change, please contact your workspace administrator immediately.
     </p>
     <p style="font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 14px; margin-top: 24px;">
-      Sent automatically by Ofia Platform Security Infrastructure.
+      Sent automatically by ${senderName}.
     </p>
   </div>
 </body>
@@ -1713,18 +1786,34 @@ export async function sendPlatformPasswordChangedEmail(
   `;
 
   try {
-    const transporter = createNodemailerTransporter(effectiveSettings);
+    const transporter = createNodemailerTransporter(settings);
     const info = await transporter.sendMail({
       from: senderFormatted,
       to: recipientEmail,
-      replyTo: "support@ofia.ng",
+      replyTo: senderEmail || "support@ofia.ng",
       subject,
       html,
-      text: `Hello ${recipientName},\n\nThe password for your account on ${tenantName} was successfully changed on ${new Date().toUTCString()}.\n\nIf you did not authorize this change, please contact support immediately.\n\n— ${tenantName} Security`,
+      text: `Hello ${recipientName},\n\nThe password for your account on ${tenantName} was successfully changed on ${new Date().toUTCString()}.\n\nIf you did not authorize this change, please contact support immediately.\n\n— ${senderName}`,
     });
     return { success: true, messageId: info.messageId };
   } catch (err: any) {
-    console.error("Failed to deliver password change notification:", err);
+    console.error("Failed to deliver password change notification via primary SMTP:", err);
+    if (settings !== envSettings) {
+      try {
+        const fallbackTransporter = createNodemailerTransporter(envSettings);
+        const fallbackInfo = await fallbackTransporter.sendMail({
+          from: senderFormatted,
+          to: recipientEmail,
+          replyTo: senderEmail || "support@ofia.ng",
+          subject,
+          html,
+          text: `Hello ${recipientName},\n\nThe password for your account on ${tenantName} was successfully changed on ${new Date().toUTCString()}.\n\nIf you did not authorize this change, please contact support immediately.\n\n— ${senderName}`,
+        });
+        return { success: true, messageId: fallbackInfo.messageId };
+      } catch (fallbackErr: any) {
+        return { success: false, error: fallbackErr.message };
+      }
+    }
     return { success: false, error: err.message };
   }
 }
@@ -1739,7 +1828,7 @@ export interface EmailVerificationParams {
 
 /**
  * Dispatches email verification link for new user registration or tenant invitations.
- * Uses Root Platform SMTP relay configured in ofia_admin (tenant_slug = 'platform').
+ * Prioritizes Primary Workspace Domain and Sender Display Name with platform relay fallback.
  */
 export async function sendPlatformEmailVerificationEmail(
   params: EmailVerificationParams
@@ -1756,30 +1845,8 @@ export async function sendPlatformEmailVerificationEmail(
     return { success: false, error: "Invalid recipient email address" };
   }
 
-  let settings: SmtpSettings | null = null;
-  try {
-    const platformDbSettings = await getTenantSmtpSettings("platform");
-    if (platformDbSettings && platformDbSettings.host && platformDbSettings.password) {
-      settings = platformDbSettings;
-    }
-  } catch (e) {}
-
-  const envSettings: SmtpSettings = {
-    tenantSlug: "platform",
-    provider: "hostinger",
-    host: process.env.SMTP_HOST || "smtp.hostinger.com",
-    port: Number(process.env.SMTP_PORT) || 465,
-    encryption: Number(process.env.SMTP_PORT) === 465 || !process.env.SMTP_PORT ? "ssl" : "tls",
-    fromEmail: process.env.SMTP_FROM_EMAIL || "hello@resultspro.ng",
-    fromName: tenantName ? `${tenantName} Verification` : "Ofia Platform Verification",
-    username: process.env.SMTP_USER || "hello@resultspro.ng",
-    password: process.env.SMTP_PASSWORD || "",
-  };
-
-  const effectiveSettings = settings && settings.host && settings.password ? settings : envSettings;
-  const senderName = effectiveSettings.fromName || `${tenantName} Verification`;
-  const senderEmail = effectiveSettings.fromEmail || envSettings.fromEmail;
-  const senderFormatted = `"${senderName.replace(/"/g, "")}" <${senderEmail}>`;
+  const { settings, senderName, senderEmail, senderFormatted, isTenantSpecific, envSettings } =
+    await getEffectiveTenantAuthSmtp(tenantSlug, tenantName);
 
   const subject = `[Action Required] Verify Your Email Address for ${tenantName}`;
   const html = `
@@ -1791,6 +1858,9 @@ export async function sendPlatformEmailVerificationEmail(
 </head>
 <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b;">
   <div style="max-width: 580px; margin: 32px auto; padding: 28px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0;">
+    <div style="display: inline-block; padding: 4px 12px; background: #eff6ff; border: 1px solid #dbeafe; border-radius: 999px; color: #1a56db; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 16px;">
+      ✉️ ${senderName}
+    </div>
     <h2 style="color: #0f172a; margin-top: 0; font-size: 20px;">Verify Your Email Address</h2>
     <p style="font-size: 14px; color: #475569; line-height: 1.6;">Hello ${recipientName},</p>
     <p style="font-size: 14px; color: #475569; line-height: 1.6;">
@@ -1806,7 +1876,7 @@ export async function sendPlatformEmailVerificationEmail(
       <span style="word-break: break-all; color: #1a56db;">${verificationUrl}</span>
     </p>
     <p style="font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 14px; margin-top: 24px;">
-      Sent automatically by Ofia Platform Security Infrastructure.
+      Sent automatically by ${senderName}.
     </p>
   </div>
 </body>
@@ -1814,20 +1884,41 @@ export async function sendPlatformEmailVerificationEmail(
   `;
 
   try {
-    const transporter = createNodemailerTransporter(effectiveSettings);
+    const transporter = createNodemailerTransporter(settings);
     const info = await transporter.sendMail({
       from: senderFormatted,
       to: recipientEmail,
-      replyTo: "support@ofia.ng",
+      replyTo: senderEmail || "support@ofia.ng",
       subject,
       html,
-      text: `Hello ${recipientName},\n\nPlease verify your email for ${tenantName} by visiting:\n${verificationUrl}\n\n— ${tenantName} Team`,
+      text: `Hello ${recipientName},\n\nPlease verify your email for ${tenantName} by visiting:\n${verificationUrl}\n\n— ${senderName}`,
     });
     return { success: true, messageId: info.messageId };
   } catch (err: any) {
-    console.error("Failed to deliver email verification:", err);
+    console.error("Failed to deliver email verification via primary SMTP:", err);
+    if (settings !== envSettings) {
+      try {
+        const fallbackTransporter = createNodemailerTransporter(envSettings);
+        const fallbackInfo = await fallbackTransporter.sendMail({
+          from: senderFormatted,
+          to: recipientEmail,
+          replyTo: senderEmail || "support@ofia.ng",
+          subject,
+          html,
+          text: `Hello ${recipientName},\n\nPlease verify your email for ${tenantName} by visiting:\n${verificationUrl}\n\n— ${senderName}`,
+        });
+        return { success: true, messageId: fallbackInfo.messageId };
+      } catch (fallbackErr: any) {
+        return { success: false, error: fallbackErr.message };
+      }
+    }
     return { success: false, error: err.message };
   }
 }
+
+// Convenience Aliases
+export const sendTenantPasswordResetEmail = sendPlatformPasswordResetEmail;
+export const sendTenantPasswordChangedEmail = sendPlatformPasswordChangedEmail;
+export const sendTenantEmailVerificationEmail = sendPlatformEmailVerificationEmail;
 
 

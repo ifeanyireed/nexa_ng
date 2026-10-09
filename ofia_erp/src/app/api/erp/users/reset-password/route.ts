@@ -81,13 +81,18 @@ export async function POST(request: Request) {
 
     const updatedUser = result.rows[0];
 
-    // Dispatch security notice to the user via Root Platform SMTP relay
+    // Dispatch security notice to the user using tenant Primary Workspace Domain and Sender Display Name
     if (updatedUser.email) {
+      const resolvedTenantSlug = updatedUser.tenantSlug || effectiveTenantSlug || "default";
+      const resolvedTenantName = resolvedTenantSlug && resolvedTenantSlug !== "default"
+        ? slugToTenantName(resolvedTenantSlug)
+        : "Ofia Platform";
+
       sendPlatformPasswordChangedEmail({
         recipientEmail: updatedUser.email,
         recipientName: updatedUser.name || updatedUser.email.split("@")[0],
-        tenantSlug: updatedUser.tenantSlug || "platform",
-        tenantName: slugToTenantName(updatedUser.tenantSlug || "platform"),
+        tenantSlug: resolvedTenantSlug,
+        tenantName: resolvedTenantName,
       }).catch((err) => console.warn("Failed to dispatch staff password reset alert:", err));
     }
 

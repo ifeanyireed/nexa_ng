@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   CheckCircle2,
   Copy,
@@ -29,6 +29,10 @@ import {
   Zap,
   ExternalLink,
   MessageSquare,
+  Trash2,
+  Plus,
+  Star,
+  Check,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -37,6 +41,21 @@ import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { useAuth } from "@/components/nexa/AuthContext";
 import { useActiveTenant, applyTenantBranding, DEFAULT_TENANT_BRANDING } from "@/lib/tenant-context";
+
+export interface SenderProfileItem {
+  id: string;
+  profileName: string;
+  provider: string;
+  host: string;
+  port: number;
+  encryption: "tls" | "ssl" | "none";
+  fromEmail: string;
+  fromName: string;
+  username: string;
+  password?: string;
+  hasPassword?: boolean;
+  isDefault?: boolean;
+}
 
 export default function TenantSettingsPage() {
   const { user } = useAuth();
@@ -61,9 +80,16 @@ export default function TenantSettingsPage() {
   const [isSaved, setIsSaved] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // SMTP Email Dispatch Settings
-  const [smtpProvider, setSmtpProvider] = useState("custom");
-  const [smtpHost, setSmtpHost] = useState("");
+  // Active Settings Navigation Tab
+  const [activeTab, setActiveTab] = useState<"profile" | "domain" | "smtp" | "ai_byok">("profile");
+
+  // Multi-Profile Sender & SMTP Settings
+  const [senderProfiles, setSenderProfiles] = useState<SenderProfileItem[]>([]);
+  const [selectedProfileId, setSelectedProfileId] = useState<string>("new");
+  const [activeProfileId, setActiveProfileId] = useState<string>("");
+  const [profileName, setProfileName] = useState("");
+  const [smtpProvider, setSmtpProvider] = useState("brevo");
+  const [smtpHost, setSmtpHost] = useState("smtp-relay.brevo.com");
   const [smtpPort, setSmtpPort] = useState("587");
   const [smtpEncryption, setSmtpEncryption] = useState<"tls" | "ssl" | "none">("tls");
   const [smtpFromEmail, setSmtpFromEmail] = useState("");
@@ -72,14 +98,16 @@ export default function TenantSettingsPage() {
   const [smtpPassword, setSmtpPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [smtpHasPassword, setSmtpHasPassword] = useState(false);
+  const [isDefaultProfile, setIsDefaultProfile] = useState(false);
+  const [isLoadingProfiles, setIsLoadingProfiles] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileSaveSuccess, setProfileSaveSuccess] = useState(false);
+  const [isSavingSmtp, setIsSavingSmtp] = useState(false);
+  const [smtpSaveSuccess, setSmtpSaveSuccess] = useState(false);
+  const [isDeletingProfile, setIsDeletingProfile] = useState<string | null>(null);
   const [isTestingSmtp, setIsTestingSmtp] = useState(false);
   const [smtpTestRecipient, setSmtpTestRecipient] = useState("");
   const [smtpTestStatus, setSmtpTestStatus] = useState<{ success: boolean; message: string } | null>(null);
-  const [isSavingSmtp, setIsSavingSmtp] = useState(false);
-  const [smtpSaveSuccess, setSmtpSaveSuccess] = useState(false);
-
-  // Active Settings Navigation Tab
-  const [activeTab, setActiveTab] = useState<"profile" | "domain" | "smtp" | "ai_byok">("profile");
 
   // AI BYOK & Model Gateway States
   const [anthropicKey, setAnthropicKey] = useState("sk-ant-api03-••••••••••••••••••••••••");
@@ -219,42 +247,100 @@ export default function TenantSettingsPage() {
     }
   }, [activeTenant, user]);
 
-  // Load SMTP Settings from Postgres / API
+  const populateProfileForm = useCallback((p: SenderProfileItem) => {
+    setActiveProfileId(p.id.startsWith("prof_init_") ? p.id : p.id);
+    setProfileName(p.profileName || "");
+    setSmtpProvider(p.provider || "custom");
+    setSmtpHost(p.host || "");
+    setSmtpPort(p.port ? String(p.port) : "587");
+    setSmtpEncryption(p.encryption || "tls");
+    setSmtpFromEmail(p.fromEmail || "");
+    setSmtpFromName(p.fromName || "");
+    setSmtpUsername(p.username || "");
+    setSmtpPassword(p.password || "");
+    setSmtpHasPassword(Boolean(p.hasPassword || (p.password && p.password.length > 0)));
+    setIsDefaultProfile(Boolean(p.isDefault));
+    setSmtpTestStatus(null);
+  }, []);
+
+  const handleAddNewProfile = useCallback(() => {
+    setSelectedProfileId("new");
+    setActiveProfileId("");
+    setProfileName("");
+    setSmtpProvider("brevo");
+    setSmtpHost("smtp-relay.brevo.com");
+    setSmtpPort("587");
+    setSmtpEncryption("tls");
+    setSmtpFromEmail(ownerEmail || (activeTenant?.slug ? `notifications@${activeTenant.slug}.ofia.ng` : ""));
+    setSmtpFromName(orgName ? `${orgName} Notifications` : "Workspace Admin");
+    setSmtpUsername("");
+    setSmtpPassword("");
+    setSmtpHasPassword(false);
+    setIsDefaultProfile(senderProfiles.length === 0);
+    setSmtpTestStatus(null);
+  }, [activeTenant?.slug, orgName, ownerEmail, senderProfiles.length]);
+
+  const loadSenderProfiles = useCallback(async (tenantSlugToUse?: string) => {
+    const targetSlug = tenantSlugToUse || activeTenant?.slug || slug;
+    if (!targetSlug) return;
+    setIsLoadingProfiles(true);
+    try {
+      const res = await fetch(`/api/erp/sender-profiles?tenant=${encodeURIComponent(targetSlug)}`);
+      const data = await res.json();
+      if (data.success) {
+        const loaded: SenderProfileItem[] = Array.isArray(data.profiles) ? data.profiles : [];
+        setSenderProfiles(loaded);
+
+        if (loaded.length > 0) {
+          let current = loaded.find((p) => p.id === selectedProfileId);
+          if (!current && selectedProfileId !== "new") {
+            current = loaded.find((p) => p.isDefault) || loaded[0];
+          }
+          if (current) {
+            setSelectedProfileId(current.id);
+            populateProfileForm(current);
+          }
+        } else if (data.defaultSmtp?.host && data.defaultSmtp?.fromEmail) {
+          const fallback: SenderProfileItem = {
+            id: `prof_init_${targetSlug.replace(/[^a-zA-Z0-9]/g, "_")}`,
+            profileName: `${(data.defaultSmtp.provider || "Primary").toUpperCase()} Relay`,
+            provider: data.defaultSmtp.provider || "custom",
+            host: data.defaultSmtp.host,
+            port: data.defaultSmtp.port || 587,
+            encryption: data.defaultSmtp.encryption || "tls",
+            fromEmail: data.defaultSmtp.fromEmail,
+            fromName: data.defaultSmtp.fromName || "Workspace Admin",
+            username: data.defaultSmtp.username || "",
+            password: data.defaultSmtp.password || "",
+            hasPassword: data.defaultSmtp.hasPassword,
+            isDefault: true,
+          };
+          setSenderProfiles([fallback]);
+          setSelectedProfileId(fallback.id);
+          populateProfileForm(fallback);
+        } else {
+          handleAddNewProfile();
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to load sender profiles:", err);
+    } finally {
+      setIsLoadingProfiles(false);
+    }
+  }, [activeTenant?.slug, slug, selectedProfileId, populateProfileForm, handleAddNewProfile]);
+
+  // Load Sender Profiles on mount or slug change
   useEffect(() => {
     const targetSlug = activeTenant?.slug || slug;
     if (targetSlug) {
-      fetch(`/api/erp/smtp-settings?tenant=${encodeURIComponent(targetSlug)}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.configured && data.settings) {
-            setSmtpProvider(data.settings.provider || "custom");
-            setSmtpHost(data.settings.host || "");
-            setSmtpPort(data.settings.port ? String(data.settings.port) : "587");
-            setSmtpEncryption(data.settings.encryption || "tls");
-            setSmtpFromEmail(data.settings.fromEmail || "");
-            setSmtpFromName(data.settings.fromName || "");
-            setSmtpUsername(data.settings.username || "");
-            if (data.settings.hasPassword) {
-              setSmtpHasPassword(true);
-              if (data.settings.password) {
-                setSmtpPassword(data.settings.password);
-              } else {
-                setSmtpPassword("");
-              }
-            }
-          } else {
-            // Default From Email and From Name if not yet configured
-            if (!smtpFromEmail && ownerEmail) {
-              setSmtpFromEmail(ownerEmail);
-            }
-            if (!smtpFromName && orgName) {
-              setSmtpFromName(orgName);
-            }
-          }
-        })
-        .catch((err) => console.warn("Failed to load SMTP settings:", err));
+      loadSenderProfiles(targetSlug);
     }
-  }, [activeTenant?.slug, slug]);
+  }, [activeTenant?.slug, slug, loadSenderProfiles]);
+
+  const handleSelectProfile = (p: SenderProfileItem) => {
+    setSelectedProfileId(p.id);
+    populateProfileForm(p);
+  };
 
   const handleProviderSelect = (prov: string) => {
     setSmtpProvider(prov);
@@ -348,12 +434,114 @@ export default function TenantSettingsPage() {
       }
 
       setSmtpSaveSuccess(true);
-      setSmtpHasPassword(true);
+      setSmtpHasPassword(Boolean(smtpPassword || smtpHasPassword));
       setTimeout(() => setSmtpSaveSuccess(false), 3500);
+      await loadSenderProfiles(currentSlug);
     } catch (err: any) {
       setSmtpTestStatus({ success: false, message: err.message });
     } finally {
       setIsSavingSmtp(false);
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    const currentSlug = activeTenant?.slug || slug;
+    if (!currentSlug) {
+      setSmtpTestStatus({ success: false, message: "Workspace slug not found. Please save workspace first." });
+      return;
+    }
+
+    if (!smtpHost.trim() || !smtpFromEmail.trim()) {
+      setSmtpTestStatus({ success: false, message: "SMTP Host and From Email (SE) are required." });
+      return;
+    }
+
+    setIsSavingProfile(true);
+    setSmtpTestStatus(null);
+    try {
+      const derivedName = profileName.trim() || `${smtpProvider.toUpperCase()} Profile (${smtpFromEmail.trim()})`;
+      const res = await fetch("/api/erp/sender-profiles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: activeProfileId || undefined,
+          tenantSlug: currentSlug,
+          profileName: derivedName,
+          provider: smtpProvider,
+          host: smtpHost.trim(),
+          port: Number(smtpPort) || 587,
+          encryption: smtpEncryption,
+          fromEmail: smtpFromEmail.trim(),
+          fromName: smtpFromName.trim() || orgName || "Workspace Admin",
+          username: smtpUsername.trim() || smtpFromEmail.trim(),
+          password: smtpPassword === "••••••••" ? "" : smtpPassword,
+          isDefault: isDefaultProfile || senderProfiles.length === 0,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to save sender profile");
+      }
+
+      setProfileSaveSuccess(true);
+      setSmtpHasPassword(Boolean(smtpPassword || smtpHasPassword));
+      setTimeout(() => setProfileSaveSuccess(false), 3500);
+
+      const savedId = data.profile?.id;
+      if (savedId) {
+        setSelectedProfileId(savedId);
+        setActiveProfileId(savedId);
+      }
+      await loadSenderProfiles(currentSlug);
+    } catch (err: any) {
+      setSmtpTestStatus({ success: false, message: err.message });
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handleSetDefaultProfile = async (p: SenderProfileItem, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const currentSlug = activeTenant?.slug || slug;
+    if (!currentSlug) return;
+
+    try {
+      const res = await fetch("/api/erp/sender-profiles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...p,
+          tenantSlug: currentSlug,
+          isDefault: true,
+        }),
+      });
+      if (res.ok) {
+        await loadSenderProfiles(currentSlug);
+      }
+    } catch (err) {
+      console.warn("Failed to set default profile:", err);
+    }
+  };
+
+  const handleDeleteProfile = async (id: string, title: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const currentSlug = activeTenant?.slug || slug;
+    if (!currentSlug) return;
+    if (!confirm(`Are you sure you want to delete profile "${title}"?`)) return;
+
+    setIsDeletingProfile(id);
+    try {
+      const res = await fetch(`/api/erp/sender-profiles?tenant=${encodeURIComponent(currentSlug)}&id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        await loadSenderProfiles(currentSlug);
+      }
+    } catch (err) {
+      console.warn("Failed to delete sender profile:", err);
+    } finally {
+      setIsDeletingProfile(null);
     }
   };
 
@@ -378,6 +566,7 @@ export default function TenantSettingsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           tenantSlug: currentSlug,
+          profileId: activeProfileId || undefined,
           testEmail: recipient,
           provider: smtpProvider,
           host: smtpHost.trim(),
@@ -1185,295 +1374,453 @@ export default function TenantSettingsPage() {
           </div>
         )}
 
-        {/* TAB 3: SMTP EMAIL RELAY */}
+        {/* TAB 3: SMTP EMAIL RELAY & MULTI-SENDER PROFILES */}
         {activeTab === "smtp" && (
           <div className="space-y-6 animate-in fade-in">
-        {/* SMTP PROVIDER & EMAIL DISPATCH SETTINGS */}
         <NexaCard variant="glass" padding="lg" className="space-y-5 border border-[var(--nexa-border)] shadow-xs rounded-3xl">
-          <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--nexa-border)] pb-3">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-[#1A56DB] flex items-center justify-center">
                 <Mail className="w-4 h-4" />
               </div>
               <div>
                 <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">
-                  SMTP Provider & Email Dispatch Configuration
+                  Outbound Sender Profiles & Domains
                 </h3>
                 <p className="text-[11px] text-[var(--nexa-text-muted)]">
-                  Configure corporate SMTP credentials for sending mass emails, notifications, and alerts.
+                  Configure multiple sending identities, distinct From Email addresses, and sender display names for different departments (marketing, support, admissions, billing, etc.).
                 </p>
               </div>
             </div>
-            {smtpHost && smtpFromEmail ? (
-              <NexaBadge variant="green" className="text-[10px]">
-                <CheckCircle2 className="w-3 h-3 mr-1 inline" />
-                Configured
-              </NexaBadge>
-            ) : (
-              <NexaBadge variant="secondary" className="text-[10px]">
-                Not Configured
-              </NexaBadge>
-            )}
+            <button
+              type="button"
+              onClick={handleAddNewProfile}
+              className="px-3.5 py-1.5 rounded-xl bg-[#1A56DB] hover:bg-blue-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shrink-0 self-start sm:self-auto shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Sender Profile
+            </button>
           </div>
 
-          {/* QUICK PROVIDER SELECTOR */}
-          <div className="space-y-2">
-            <label className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center justify-between">
-              <span>Email Provider Preset</span>
-              <span className="text-[10px] text-[var(--nexa-text-muted)]">Select provider to auto-fill host & ports</span>
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-              {[
-                { id: "brevo", label: "Brevo (Sendinblue)", desc: "smtp-relay.brevo.com" },
-                { id: "hostinger", label: "Hostinger", desc: "smtp.hostinger.com" },
-                { id: "custom", label: "Custom SMTP", desc: "Your mail server" },
-                { id: "gmail", label: "Google / Gmail", desc: "App Password req." },
-                { id: "sendgrid", label: "SendGrid", desc: "API key auth" },
-                { id: "ses", label: "Amazon SES", desc: "AWS SES SMTP" },
-                { id: "mailgun", label: "Mailgun", desc: "Domain credentials" },
-                { id: "outlook", label: "Microsoft 365", desc: "Office 365 SMTP" },
-                { id: "resend", label: "Resend", desc: "Modern developer API" },
-                { id: "zoho", label: "Zoho Mail", desc: "Zoho corporate" },
-              ].map((p) => {
-                const isSelected = smtpProvider === p.id;
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => handleProviderSelect(p.id)}
-                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-[#1A56DB]/10 border-[#1A56DB] text-[#1A56DB] font-bold shadow-xs"
-                        : "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] hover:border-slate-400 dark:hover:border-slate-600"
-                    }`}
-                  >
-                    <div className="text-xs font-bold truncate">{p.label}</div>
-                    <div className="text-[10px] text-[var(--nexa-text-muted)] truncate">{p.desc}</div>
-                  </button>
-                );
-              })}
-            </div>
-
-            {smtpProvider === "brevo" && (
-              <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-700 dark:text-blue-300 flex items-center justify-between">
-                <div>
-                  <span className="font-bold">Brevo Relay:</span> Use your Brevo login email as the SMTP Username and create an SMTP Master Key in the Brevo dashboard.
-                </div>
-                <a
-                  href="https://app.brevo.com/settings/keys/smtp"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-[#1A56DB] text-white hover:bg-[#1A56DB]/90 flex items-center gap-1 shrink-0 ml-3 transition-colors"
-                >
-                  <ExternalLink className="w-3 h-3" />
-                  Brevo Dashboard
-                </a>
-              </div>
-            )}
-
-            {smtpProvider === "hostinger" && (
-              <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-700 dark:text-purple-300 flex items-center justify-between">
-                <div>
-                  <span className="font-bold">Hostinger Mail Relay:</span> Use your full email address (e.g. notifications@yourdomain.com) as the SMTP Username, Port 465 (SSL), and your mailbox password.
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* SMTP CREDENTIALS FORM */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
-            <div className="space-y-1 sm:col-span-2">
-              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                SMTP Server / Host <span className="text-red-500">*</span>
+          {/* SENDER PROFILES LIST */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-2">
+                <span>Configured Profiles</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 font-mono font-semibold">
+                  {senderProfiles.length} configured
+                </span>
               </label>
-              <input
-                type="text"
-                value={smtpHost}
-                onChange={(e) => setSmtpHost(e.target.value)}
-                placeholder="e.g. smtp.gmail.com, mail.company.com"
-                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                SMTP Port <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                value={smtpPort}
-                onChange={(e) => setSmtpPort(e.target.value)}
-                placeholder="587"
-                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-mono"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                Security / Encryption
-              </label>
-              <select
-                value={smtpEncryption}
-                onChange={(e) => setSmtpEncryption(e.target.value as any)}
-                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] cursor-pointer"
-              >
-                <option value="tls">STARTTLS / TLS (Port 587 recommended)</option>
-                <option value="ssl">SSL / SMTPS (Port 465)</option>
-                <option value="none">None (Port 25 - unencrypted)</option>
-              </select>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                From Email Address <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="email"
-                value={smtpFromEmail}
-                onChange={(e) => setSmtpFromEmail(e.target.value)}
-                placeholder="e.g. notifications@company.com"
-                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
-              />
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                Sender Display Name
-              </label>
-              <input
-                type="text"
-                value={smtpFromName}
-                onChange={(e) => setSmtpFromName(e.target.value)}
-                placeholder={orgName ? `${orgName} Notifications` : "Workspace Admin"}
-                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
-              />
-            </div>
-
-            <div className="space-y-1 sm:col-span-1">
-              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                SMTP Username
-              </label>
-              <input
-                type="text"
-                value={smtpUsername}
-                onChange={(e) => setSmtpUsername(e.target.value)}
-                placeholder="Username or email address"
-                className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
-              />
-            </div>
-
-            <div className="space-y-1 sm:col-span-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                  SMTP Password / App Password
-                </label>
-                {smtpHasPassword && (
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                    Password saved
-                  </span>
-                )}
-              </div>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={smtpPassword}
-                  onChange={(e) => setSmtpPassword(e.target.value)}
-                  placeholder={smtpHasPassword ? "•••••••• (Leave blank to keep existing password)" : "Enter password or App Password"}
-                  className="w-full px-3.5 py-2.5 pr-10 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] transition-colors cursor-pointer z-10 p-1"
-                  title={showPassword ? "Hide password" : "Show password"}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* TEST CONNECTION & SAVE ACTIONS */}
-          <div className="pt-3 border-t border-[var(--nexa-border)] space-y-3">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[var(--nexa-bg-base)] p-3.5 rounded-2xl border border-[var(--nexa-border)]">
-              <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <input
-                  type="email"
-                  value={smtpTestRecipient}
-                  onChange={(e) => setSmtpTestRecipient(e.target.value)}
-                  placeholder={ownerEmail || user?.email || "Recipient email for test..."}
-                  className="px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] flex-1 min-w-[200px]"
-                />
-                <button
-                  type="button"
-                  onClick={handleTestSmtp}
-                  disabled={isTestingSmtp}
-                  className="px-3.5 py-2 text-xs font-bold rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] hover:bg-slate-100 dark:hover:bg-slate-800 text-[var(--nexa-text-primary)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  {isTestingSmtp ? (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      Testing...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-3.5 h-3.5 text-blue-600" />
-                      Send Test Email
-                    </>
-                  )}
-                </button>
-              </div>
-
               <button
                 type="button"
-                onClick={handleSaveSmtp}
-                disabled={isSavingSmtp}
-                className="px-5 py-2 text-xs font-bold rounded-xl bg-[#1A56DB] hover:bg-blue-700 text-white flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+                onClick={handleAddNewProfile}
+                className="text-xs font-bold text-[#1A56DB] hover:underline flex items-center gap-1 cursor-pointer"
               >
-                {isSavingSmtp ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    Saving...
-                  </>
-                ) : smtpSaveSuccess ? (
-                  <>
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
-                    Saved!
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-3.5 h-3.5" />
-                    Save SMTP Settings
-                  </>
-                )}
+                <Plus className="w-3.5 h-3.5" />
+                Add New Profile
               </button>
             </div>
 
-            {/* STATUS NOTIFICATIONS */}
-            {smtpTestStatus && (
-              <div
-                className={`p-3.5 rounded-xl text-xs flex items-start gap-2.5 border shadow-xs ${
-                  smtpTestStatus.success
-                    ? "bg-emerald-100 text-emerald-950 border-emerald-400 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-500 font-semibold"
-                    : "bg-rose-100 text-rose-950 border-rose-400 dark:bg-rose-950 dark:text-rose-100 dark:border-rose-500 font-semibold"
-                }`}
-              >
-                {smtpTestStatus.success ? (
-                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-800 dark:text-emerald-300 mt-0.5" />
-                ) : (
-                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-800 dark:text-rose-300 mt-0.5" />
-                )}
-                <div className="flex-1">
-                  <span>{smtpTestStatus.message}</span>
-                  {smtpTestStatus.success && (
-                    <p className="text-[11px] text-emerald-800 dark:text-emerald-300 font-normal mt-0.5">
-                      Note: If the email does not show up in your Primary Inbox, please check your Spam or Junk folder.
-                    </p>
-                  )}
+            {senderProfiles.length === 0 ? (
+              <div className="p-6 rounded-2xl border border-dashed border-[var(--nexa-border)] text-center space-y-2 bg-[var(--nexa-bg-base)]">
+                <div className="w-10 h-10 rounded-full bg-blue-500/10 text-[#1A56DB] flex items-center justify-center mx-auto">
+                  <Mail className="w-5 h-5" />
                 </div>
+                <div className="text-xs font-bold text-[var(--nexa-text-primary)]">No Sender Profiles Configured</div>
+                <p className="text-[11px] text-[var(--nexa-text-muted)] max-w-md mx-auto">
+                  Add your first outbound profile to send email blasts, customer notifications, and automated alerts under your verified domain.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleAddNewProfile}
+                  className="mt-2 px-3 py-1.5 rounded-xl bg-[#1A56DB] text-white text-xs font-bold cursor-pointer"
+                >
+                  Create Sender Profile
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {senderProfiles.map((p) => {
+                  const isSelected = selectedProfileId === p.id;
+                  return (
+                    <div
+                      key={p.id}
+                      onClick={() => handleSelectProfile(p)}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer relative flex flex-col justify-between gap-3 ${
+                        isSelected
+                          ? "bg-[#1A56DB]/5 border-[#1A56DB] shadow-xs ring-1 ring-[#1A56DB]"
+                          : "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)] hover:border-slate-400 dark:hover:border-slate-600"
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-[var(--nexa-text-primary)]">{p.profileName}</span>
+                            {p.isDefault && (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                                <Star className="w-2.5 h-2.5 fill-current" />
+                                Default
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[11px] font-medium text-[var(--nexa-text-secondary)]">
+                            {p.fromName ? `${p.fromName} <${p.fromEmail}>` : p.fromEmail}
+                          </div>
+                        </div>
+
+                        <span className="text-[10px] uppercase font-mono font-bold px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 border border-blue-500/20 shrink-0">
+                          {p.provider}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-[var(--nexa-border)] text-[10px] text-[var(--nexa-text-muted)] font-mono">
+                        <span className="truncate max-w-[180px]">{p.host}:{p.port} ({p.encryption.toUpperCase()})</span>
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                          {!p.isDefault && (
+                            <button
+                              type="button"
+                              onClick={(e) => handleSetDefaultProfile(p, e)}
+                              className="text-[10px] text-amber-600 hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                            >
+                              <Star className="w-2.5 h-2.5" />
+                              Set Default
+                            </button>
+                          )}
+                          {senderProfiles.length > 1 && (
+                            <button
+                              type="button"
+                              disabled={isDeletingProfile === p.id}
+                              onClick={(e) => handleDeleteProfile(p.id, p.profileName, e)}
+                              className="text-rose-500 hover:text-rose-700 p-1 rounded hover:bg-rose-500/10 transition-colors cursor-pointer disabled:opacity-50"
+                              title="Delete profile"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
+          </div>
+
+          {/* PROFILE EDITOR FORM */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-4">
+            <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#1A56DB]" />
+                <h4 className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                  {selectedProfileId === "new"
+                    ? "Add New Outbound Sender Profile"
+                    : `Editing Profile: ${profileName || "Sender Profile"}`}
+                </h4>
+              </div>
+              {selectedProfileId !== "new" && (
+                <button
+                  type="button"
+                  onClick={handleAddNewProfile}
+                  className="text-[11px] font-bold text-[#1A56DB] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Plus className="w-3 h-3" />
+                  Create Another Profile
+                </button>
+              )}
+            </div>
+
+            {/* IDENTITY FIELDS */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                  Profile Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={profileName}
+                  onChange={(e) => setProfileName(e.target.value)}
+                  placeholder="e.g. Ofia Enterprise Growth, ResultsPro Support"
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
+                />
+                <span className="text-[10px] text-[var(--nexa-text-muted)]">Internal label in dropdowns</span>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                  Sender Display Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={smtpFromName}
+                  onChange={(e) => setSmtpFromName(e.target.value)}
+                  placeholder="e.g. ResultsPro Educational Support, Ofia Enterprise Growth"
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
+                />
+                <span className="text-[10px] text-[var(--nexa-text-muted)]">Visible name in recipients' inbox</span>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                  From Email Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={smtpFromEmail}
+                  onChange={(e) => setSmtpFromEmail(e.target.value)}
+                  placeholder="e.g. noreply@resultspro.ng, growth@ofia.ng"
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
+                />
+                <span className="text-[10px] text-[var(--nexa-text-muted)]">Sending mailbox address</span>
+              </div>
+            </div>
+
+            {/* DEFAULT PROFILE TOGGLE */}
+            <div className="flex items-center gap-2 pt-1">
+              <input
+                type="checkbox"
+                id="isDefaultProfileCheck"
+                checked={isDefaultProfile}
+                onChange={(e) => setIsDefaultProfile(e.target.checked)}
+                className="rounded border-[var(--nexa-border)] text-[#1A56DB] focus:ring-[#1A56DB] cursor-pointer"
+              />
+              <label htmlFor="isDefaultProfileCheck" className="text-xs font-semibold text-[var(--nexa-text-primary)] cursor-pointer">
+                Set as default sender profile for workspace email blasts and notifications
+              </label>
+            </div>
+
+            {/* PROVIDER PRESETS */}
+            <div className="space-y-2 pt-2 border-t border-[var(--nexa-border)]">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center justify-between">
+                <span>Email Provider Preset</span>
+                <span className="text-[10px] text-[var(--nexa-text-muted)]">Select provider to auto-fill host & ports</span>
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                {[
+                  { id: "brevo", label: "Brevo (Sendinblue)", desc: "smtp-relay.brevo.com" },
+                  { id: "hostinger", label: "Hostinger", desc: "smtp.hostinger.com" },
+                  { id: "custom", label: "Custom SMTP", desc: "Your mail server" },
+                  { id: "gmail", label: "Google / Gmail", desc: "App Password req." },
+                  { id: "sendgrid", label: "SendGrid", desc: "API key auth" },
+                  { id: "ses", label: "Amazon SES", desc: "AWS SES SMTP" },
+                  { id: "mailgun", label: "Mailgun", desc: "Domain credentials" },
+                  { id: "outlook", label: "Microsoft 365", desc: "Office 365 SMTP" },
+                  { id: "resend", label: "Resend", desc: "Modern developer API" },
+                  { id: "zoho", label: "Zoho Mail", desc: "Zoho corporate" },
+                ].map((p) => {
+                  const isSelected = smtpProvider === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => handleProviderSelect(p.id)}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-[#1A56DB]/10 border-[#1A56DB] text-[#1A56DB] font-bold shadow-xs"
+                          : "bg-[var(--nexa-bg-surface)] border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] hover:border-slate-400 dark:hover:border-slate-600"
+                      }`}
+                    >
+                      <div className="text-xs font-bold truncate">{p.label}</div>
+                      <div className="text-[10px] text-[var(--nexa-text-muted)] truncate">{p.desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {smtpProvider === "brevo" && (
+                <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-700 dark:text-blue-300 flex items-center justify-between">
+                  <div>
+                    <span className="font-bold">Brevo Relay:</span> Use your Brevo login email as SMTP Username, Port 587 (TLS), and your Brevo SMTP Master Key.
+                  </div>
+                  <a
+                    href="https://app.brevo.com/settings/keys/smtp"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-[#1A56DB] text-white hover:bg-[#1A56DB]/90 flex items-center gap-1 shrink-0 ml-3 transition-colors"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    Brevo Dashboard
+                  </a>
+                </div>
+              )}
+
+              {smtpProvider === "hostinger" && (
+                <div className="p-3 rounded-xl bg-purple-500/10 border border-purple-500/20 text-xs text-purple-700 dark:text-purple-300 flex items-center justify-between">
+                  <div>
+                    <span className="font-bold">Hostinger Mail Relay:</span> Use your full email address (e.g. noreply@yourdomain.com) as SMTP Username, Port 465 (SSL), and mailbox password.
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* SMTP SERVER CREDENTIALS */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+              <div className="space-y-1 sm:col-span-2">
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                  SMTP Server / Host <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={smtpHost}
+                  onChange={(e) => setSmtpHost(e.target.value)}
+                  placeholder="e.g. smtp.hostinger.com, smtp-relay.brevo.com"
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                  SMTP Port <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  value={smtpPort}
+                  onChange={(e) => setSmtpPort(e.target.value)}
+                  placeholder="587"
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-mono"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                  Security / Encryption
+                </label>
+                <select
+                  value={smtpEncryption}
+                  onChange={(e) => setSmtpEncryption(e.target.value as any)}
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] cursor-pointer"
+                >
+                  <option value="tls">STARTTLS / TLS (Port 587 recommended)</option>
+                  <option value="ssl">SSL / SMTPS (Port 465)</option>
+                  <option value="none">None (Port 25 - unencrypted)</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                  SMTP Username
+                </label>
+                <input
+                  type="text"
+                  value={smtpUsername}
+                  onChange={(e) => setSmtpUsername(e.target.value)}
+                  placeholder="Username or email address"
+                  className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                    SMTP Password / App Key
+                  </label>
+                  {smtpHasPassword && (
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                      Password saved
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={smtpPassword}
+                    onChange={(e) => setSmtpPassword(e.target.value)}
+                    placeholder={smtpHasPassword ? "•••••••• (Leave blank to keep current)" : "Enter password or App Key"}
+                    className="w-full px-3.5 py-2.5 pr-10 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] transition-colors cursor-pointer z-10 p-1"
+                    title={showPassword ? "Hide password" : "Show password"}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* TEST CONNECTION & SAVE PROFILE ACTIONS */}
+            <div className="pt-3 border-t border-[var(--nexa-border)] space-y-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-[var(--nexa-bg-surface)] p-3 rounded-xl border border-[var(--nexa-border)]">
+                <div className="flex-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <input
+                    type="email"
+                    value={smtpTestRecipient}
+                    onChange={(e) => setSmtpTestRecipient(e.target.value)}
+                    placeholder={ownerEmail || user?.email || "Recipient email for test..."}
+                    className="px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] flex-1 min-w-[200px]"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleTestSmtp}
+                    disabled={isTestingSmtp}
+                    className="px-3.5 py-2 text-xs font-bold rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] hover:bg-slate-100 dark:hover:bg-slate-800 text-[var(--nexa-text-primary)] flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {isTestingSmtp ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        Testing...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5 text-blue-600" />
+                        Send Test Email
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSaveProfile}
+                  disabled={isSavingProfile}
+                  className="px-5 py-2 text-xs font-bold rounded-xl bg-[#1A56DB] hover:bg-blue-700 text-white flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+                >
+                  {isSavingProfile ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      Saving...
+                    </>
+                  ) : profileSaveSuccess ? (
+                    <>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
+                      Saved!
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-3.5 h-3.5" />
+                      {selectedProfileId === "new" ? "Save New Profile" : "Update Profile"}
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* STATUS NOTIFICATIONS */}
+              {smtpTestStatus && (
+                <div
+                  className={`p-3.5 rounded-xl text-xs flex items-start gap-2.5 border shadow-xs ${
+                    smtpTestStatus.success
+                      ? "bg-emerald-100 text-emerald-950 border-emerald-400 dark:bg-emerald-950 dark:text-emerald-100 dark:border-emerald-500 font-semibold"
+                      : "bg-rose-100 text-rose-950 border-rose-400 dark:bg-rose-950 dark:text-rose-100 dark:border-rose-500 font-semibold"
+                  }`}
+                >
+                  {smtpTestStatus.success ? (
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-800 dark:text-emerald-300 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-800 dark:text-rose-300 mt-0.5" />
+                  )}
+                  <div className="flex-1">
+                    <span>{smtpTestStatus.message}</span>
+                    {smtpTestStatus.success && (
+                      <p className="text-[11px] text-emerald-800 dark:text-emerald-300 font-normal mt-0.5">
+                        Note: If the email does not show up in your Primary Inbox, please check your Spam or Junk folder.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </NexaCard>
           </div>

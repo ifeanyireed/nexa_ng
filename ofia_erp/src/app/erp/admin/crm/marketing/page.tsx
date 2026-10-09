@@ -476,9 +476,19 @@ export default function EmailMarketingBlastsPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
-                Email Sender Profile
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-bold text-[var(--nexa-text-primary)]">
+                  Email Sender Profile
+                </label>
+                <Link
+                  href="/tenant/settings?tab=smtp"
+                  className="text-[11px] text-[#1A56DB] hover:underline flex items-center gap-1 font-semibold"
+                  target="_blank"
+                >
+                  <Plus className="w-3 h-3" />
+                  Manage Profiles
+                </Link>
+              </div>
               <select
                 value={selectedProfileId}
                 onChange={(e) => handleProfileChange(e.target.value)}
@@ -488,17 +498,20 @@ export default function EmailMarketingBlastsPage() {
                 {senderProfiles.length === 0 && !defaultSmtp && (
                   <option value="" disabled>No sender profiles configured (Setup in Settings)</option>
                 )}
-                {defaultSmtp && (
+                {defaultSmtp && !senderProfiles.some((p) => p.fromEmail.toLowerCase() === defaultSmtp.fromEmail.toLowerCase()) && (
                   <option value="workspace_primary">
                     {defaultSmtp.fromName ? `${defaultSmtp.fromName} — ` : "Workspace Primary — "}
                     {defaultSmtp.fromEmail} ({(defaultSmtp.provider || "SMTP").toUpperCase()})
                   </option>
                 )}
-                {senderProfiles.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.profileName} — {p.fromEmail} ({p.provider.toUpperCase()})
-                  </option>
-                ))}
+                {senderProfiles.map((p) => {
+                  const displayName = p.fromName || p.profileName;
+                  return (
+                    <option key={p.id} value={p.id}>
+                      {displayName} — {p.fromEmail} ({p.provider.toUpperCase()})
+                    </option>
+                  );
+                })}
               </select>
             </div>
 

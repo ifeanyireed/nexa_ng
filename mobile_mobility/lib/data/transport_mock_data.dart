@@ -6,9 +6,9 @@ import 'package:flexicon/flexicon.dart';
 class TransportMockData {
   static final UserProfile currentUser = UserProfile(
     id: 'u_123',
-    firstName: 'Ifeanyi',
+    firstName: 'Ayodele',
     lastName: 'User',
-    email: 'ifeanyi@company.com',
+    email: 'ayodele@company.com',
     phone: '+2348000000000',
     corporateCompanyId: 'corp_tech_ltd', // Automatically mapped via email
     walletBalance: 15450.0,

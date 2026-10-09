@@ -21,9 +21,6 @@ import {
   FileText,
   AlertCircle,
   Globe,
-  Server,
-  ShieldCheck,
-  Key,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -50,16 +47,6 @@ export default function EmailMarketingBlastsPage() {
   const [senderProfiles, setSenderProfiles] = useState<TenantSenderProfile[]>([]);
   const [defaultSmtp, setDefaultSmtp] = useState<any>(null);
   const [selectedProfileId, setSelectedProfileId] = useState<string>("");
-
-  // Custom Domain Override State
-  const [customProvider, setCustomProvider] = useState<string>("custom");
-  const [customHost, setCustomHost] = useState<string>("");
-  const [customPort, setCustomPort] = useState<number>(587);
-  const [customEncryption, setCustomEncryption] = useState<"tls" | "ssl" | "none">("tls");
-  const [customUsername, setCustomUsername] = useState<string>("");
-  const [customPassword, setCustomPassword] = useState<string>("");
-  const [saveAsProfile, setSaveAsProfile] = useState<boolean>(false);
-  const [newProfileName, setNewProfileName] = useState<string>("");
 
   // Schedule Blast Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -110,10 +97,6 @@ export default function EmailMarketingBlastsPage() {
           initialProfileId = "workspace_primary";
           initialName = profilesRes.defaultSmtp.fromName || "";
           initialEmail = profilesRes.defaultSmtp.fromEmail || "";
-        } else {
-          initialProfileId = "custom";
-          initialName = "";
-          initialEmail = "";
         }
 
         setSelectedProfileId(initialProfileId);
@@ -135,43 +118,12 @@ export default function EmailMarketingBlastsPage() {
         setSenderName(defaultSmtp.fromName || "");
         setSenderEmail(defaultSmtp.fromEmail || "");
       }
-    } else if (val === "custom") {
-      if (!customHost && defaultSmtp?.host && !defaultSmtp.host.includes("ofia.ng")) {
-        setCustomHost(defaultSmtp.host);
-      }
     } else {
       const prof = senderProfiles.find((p) => p.id === val);
       if (prof) {
         setSenderName(prof.fromName || prof.profileName || "");
         setSenderEmail(prof.fromEmail || "");
       }
-    }
-  };
-
-  const applyProviderPreset = (prov: string) => {
-    setCustomProvider(prov);
-    if (prov === "hostinger") {
-      setCustomHost("smtp.hostinger.com");
-      setCustomPort(465);
-      setCustomEncryption("ssl");
-    } else if (prov === "sendgrid") {
-      setCustomHost("smtp.sendgrid.net");
-      setCustomPort(587);
-      setCustomEncryption("tls");
-      setCustomUsername("apikey");
-    } else if (prov === "resend") {
-      setCustomHost("smtp.resend.com");
-      setCustomPort(465);
-      setCustomEncryption("ssl");
-      setCustomUsername("resend");
-    } else if (prov === "mailgun") {
-      setCustomHost("smtp.mailgun.org");
-      setCustomPort(587);
-      setCustomEncryption("tls");
-    } else if (prov === "gmail") {
-      setCustomHost("smtp.gmail.com");
-      setCustomPort(465);
-      setCustomEncryption("ssl");
     }
   };
 
@@ -217,51 +169,11 @@ export default function EmailMarketingBlastsPage() {
         host: defaultSmtp.host,
         port: defaultSmtp.port,
         encryption: defaultSmtp.encryption,
-        fromEmail: senderEmail.trim() || defaultSmtp.fromEmail,
-        fromName: senderName.trim() || defaultSmtp.fromName,
+        fromEmail: defaultSmtp.fromEmail,
+        fromName: defaultSmtp.fromName,
         username: defaultSmtp.username,
         password: defaultSmtp.password,
       };
-    } else if (selectedProfileId === "custom") {
-      if (!customHost.trim() || !senderEmail.trim()) {
-        alert("Please provide the SMTP Host and Sender Email for your custom domain.");
-        return;
-      }
-      senderProvider = customProvider;
-      senderOverride = {
-        host: customHost.trim(),
-        port: Number(customPort) || 587,
-        encryption: customEncryption,
-        fromEmail: senderEmail.trim(),
-        fromName: senderName.trim(),
-        username: customUsername.trim() || senderEmail.trim(),
-        password: customPassword,
-      };
-
-      // If user chose to save as reusable profile
-      if (saveAsProfile && customHost.trim() && senderEmail.trim()) {
-        crmFetch("/api/erp/sender-profiles", {
-          method: "POST",
-          body: JSON.stringify({
-            profileName: newProfileName.trim() || (senderEmail.split("@")[1] ? `${senderEmail.split("@")[1]} Domain` : "Custom Domain"),
-            provider: customProvider,
-            host: customHost.trim(),
-            port: Number(customPort) || 587,
-            encryption: customEncryption,
-            fromEmail: senderEmail.trim(),
-            fromName: senderName.trim(),
-            username: customUsername.trim() || senderEmail.trim(),
-            password: customPassword,
-          }),
-        })
-          .then((r) => r.json())
-          .then((data) => {
-            if (data.profile) {
-              setSenderProfiles((prev) => [...prev, data.profile]);
-            }
-          })
-          .catch(() => {});
-      }
     } else {
       const prof = senderProfiles.find((p) => p.id === selectedProfileId);
       if (prof) {
@@ -277,7 +189,7 @@ export default function EmailMarketingBlastsPage() {
           password: prof.password,
         };
       } else {
-        alert("Please select a configured sender profile or specify custom SMTP settings.");
+        alert("Please select a configured email sender profile.");
         return;
       }
     }
@@ -563,233 +475,40 @@ export default function EmailMarketingBlastsPage() {
             </div>
           </div>
 
-          {/* SENDER IDENTITY & OUTBOUND DOMAIN SELECTION */}
-          <div className="p-3.5 rounded-xl border-2 border-blue-500/20 bg-blue-500/[0.02] dark:bg-blue-500/[0.05] space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4 text-[#1A56DB]" />
-                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                  Outbound Sender Profile & Domain
-                </label>
-              </div>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 font-semibold border border-blue-500/20">
-                Multi-Domain Routing
-              </span>
-            </div>
-
-            {/* Empty state notice when workspace has no saved sender profiles */}
-            {senderProfiles.length === 0 && !defaultSmtp && (
-              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                <div>
-                  <span className="font-semibold">Tenant Domain Required:</span> Your workspace does not have any saved sender profiles. Tenants are prohibited from using the platform's default relay. Please configure your domain SMTP credentials below to dispatch this blast.
-                </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
-                  Select Outbound Sender Profile
-                </label>
-                <select
-                  value={selectedProfileId}
-                  onChange={(e) => handleProfileChange(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-medium focus:border-[#1A56DB] focus:ring-1 focus:ring-[#1A56DB]"
-                >
-                  {senderProfiles.length === 0 && !defaultSmtp && (
-                    <option value="custom">No saved profiles (Configure Custom Domain SMTP)</option>
-                  )}
-                  {defaultSmtp && (
-                    <option value="workspace_primary">
-                      Primary Workspace SMTP ({defaultSmtp.fromEmail || defaultSmtp.host})
-                    </option>
-                  )}
-                  {senderProfiles.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.profileName} — {p.fromEmail} ({p.provider.toUpperCase()} / {p.host})
-                    </option>
-                  ))}
-                  {(senderProfiles.length > 0 || defaultSmtp) && (
-                    <option value="custom">+ Custom SMTP / New Domain Override for this Blast...</option>
-                  )}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
-                  Active Domain Identity
-                </label>
-                <div className="h-[38px] px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-mono flex items-center justify-between text-[var(--nexa-text-secondary)]">
-                  <span className="truncate flex items-center gap-1.5">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    {senderEmail?.includes("@") ? senderEmail.split("@")[1] : "tenant domain"}
-                  </span>
-                  <span className="text-[10px] font-sans px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 font-semibold border border-blue-500/20 shrink-0">
-                    {selectedProfileId === "custom"
-                      ? "Custom SMTP"
-                      : selectedProfileId === "workspace_primary"
-                      ? "Workspace Primary"
-                      : "Dedicated Profile"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Custom Domain Settings Drawer */}
-            {selectedProfileId === "custom" && (
-              <div className="pt-2 border-t border-[var(--nexa-border)] space-y-3 animate-in fade-in duration-200">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
-                    <Server className="w-3.5 h-3.5 text-[#1A56DB]" />
-                    Custom Provider Configuration
-                  </span>
-                  <div className="flex items-center gap-1">
-                    {[
-                      { id: "custom", label: "Custom" },
-                      { id: "hostinger", label: "Hostinger" },
-                      { id: "sendgrid", label: "SendGrid" },
-                      { id: "resend", label: "Resend" },
-                      { id: "mailgun", label: "Mailgun" },
-                      { id: "gmail", label: "Gmail" },
-                    ].map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => applyProviderPreset(p.id)}
-                        className={`text-[10px] px-2 py-0.5 rounded font-bold transition-all ${
-                          customProvider === p.id
-                            ? "bg-[#1A56DB] text-white"
-                            : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)]"
-                        }`}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <div className="sm:col-span-2">
-                    <NexaInput
-                      label="SMTP Host"
-                      value={customHost}
-                      onChange={(e) => setCustomHost(e.target.value)}
-                      placeholder="e.g. smtp.mailgun.org or mail.company2.com"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">Port</label>
-                    <input
-                      type="number"
-                      value={customPort}
-                      onChange={(e) => setCustomPort(Number(e.target.value))}
-                      className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-mono"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">Encryption</label>
-                    <select
-                      value={customEncryption}
-                      onChange={(e) => setCustomEncryption(e.target.value as any)}
-                      className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-medium"
-                    >
-                      <option value="tls">TLS (STARTTLS)</option>
-                      <option value="ssl">SSL / Direct TLS</option>
-                      <option value="none">None</option>
-                    </select>
-                  </div>
-                  <NexaInput
-                    label="SMTP Username"
-                    value={customUsername}
-                    onChange={(e) => setCustomUsername(e.target.value)}
-                    placeholder="Defaults to sender email"
-                  />
-                </div>
-
-                <div>
-                  <NexaInput
-                    label="SMTP Password / API Key"
-                    type="password"
-                    value={customPassword}
-                    onChange={(e) => setCustomPassword(e.target.value)}
-                    placeholder="Enter password or token"
-                  />
-                </div>
-
-                <div className="pt-1 flex flex-col gap-2">
-                  <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-[var(--nexa-text-primary)]">
-                    <input
-                      type="checkbox"
-                      checked={saveAsProfile}
-                      onChange={(e) => setSaveAsProfile(e.target.checked)}
-                      className="rounded border-[var(--nexa-border)] text-[#1A56DB] focus:ring-0"
-                    />
-                    <span>Save this sending domain as a reusable profile for future blasts</span>
-                  </label>
-                  {saveAsProfile && (
-                    <NexaInput
-                      label="Profile Name"
-                      value={newProfileName}
-                      onChange={(e) => setNewProfileName(e.target.value)}
-                      placeholder="e.g. Corporate Announcements Domain"
-                    />
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Display Name & Email Address */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <NexaInput
-                label="Sender Display Name"
-                value={senderName}
-                onChange={(e) => setSenderName(e.target.value)}
-              />
-              <NexaInput
-                label="Sender Email Address"
-                value={senderEmail}
-                onChange={(e) => setSenderEmail(e.target.value)}
-              />
-            </div>
-
-            {/* Routing indicator */}
-            <div className="text-[11px] text-[var(--nexa-text-muted)] flex items-center gap-1.5 pt-0.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-              <span>
-                Sending identity:{" "}
-                <strong className="text-[var(--nexa-text-primary)] font-mono">
-                  {senderName ? `${senderName} <${senderEmail || "your-domain@workspace.ng"}>` : senderEmail || "Enter sender details"}
-                </strong>
-                {selectedProfileId === "custom" ? (
-                  <span className="text-blue-600 font-semibold ml-1">
-                    (Custom {customProvider.toUpperCase()})
-                  </span>
-                ) : selectedProfileId === "workspace_primary" ? (
-                  <span className="text-emerald-600 font-semibold ml-1">
-                    (Workspace Primary SMTP)
-                  </span>
-                ) : selectedProfileId ? (
-                  <span className="text-purple-600 font-semibold ml-1">
-                    (Dedicated Profile)
-                  </span>
-                ) : null}
-              </span>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+                Email Sender Profile
+              </label>
+              <select
+                value={selectedProfileId}
+                onChange={(e) => handleProfileChange(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-medium focus:border-[#1A56DB] focus:ring-1 focus:ring-[#1A56DB]"
+                required
+              >
+                {senderProfiles.length === 0 && !defaultSmtp && (
+                  <option value="" disabled>No sender profiles configured (Setup in Settings)</option>
+                )}
+                {defaultSmtp && (
+                  <option value="workspace_primary">
+                    Primary Workspace ({defaultSmtp.fromEmail || defaultSmtp.host})
+                  </option>
+                )}
+                {senderProfiles.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.profileName} — {p.fromEmail} ({p.provider.toUpperCase()})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div>
               <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">Target Audience List</label>
               <select
                 value={selectedListId}
                 onChange={(e) => setSelectedListId(e.target.value)}
                 className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-medium"
+                required
               >
                 {lists.map((l) => (
                   <option key={l.id} value={l.id}>
@@ -798,7 +517,9 @@ export default function EmailMarketingBlastsPage() {
                 ))}
               </select>
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">Dispatch Timing</label>
               <div className="grid grid-cols-2 gap-2">
@@ -826,7 +547,6 @@ export default function EmailMarketingBlastsPage() {
                 </button>
               </div>
             </div>
-          </div>
 
           {scheduleType === "LATER" && (
             <div>
@@ -840,6 +560,7 @@ export default function EmailMarketingBlastsPage() {
               />
             </div>
           )}
+          </div>
 
           <div>
             <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">

@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../models/driver_models.dart';
 import 'package:mobile_driver/utils/icon_util.dart';
 import 'package:flexicon/flexicon.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class TripManifestScreen extends StatefulWidget {
   final DriverTrip trip;
@@ -15,6 +16,27 @@ class TripManifestScreen extends StatefulWidget {
 class _TripManifestScreenState extends State<TripManifestScreen> {
   bool isPickup = true;
   bool showNavMenu = false;
+  GoogleMapController? mapController;
+
+  static const CameraPosition _initialPosition = CameraPosition(
+    target: LatLng(6.435, 3.534), // Chevron Bus Stop coordinates
+    zoom: 14.0,
+  );
+
+  Set<Marker> _createMarkers() {
+    return {
+      const Marker(
+        markerId: MarkerId('chevron_pickup'),
+        position: LatLng(6.435, 3.534),
+        infoWindow: InfoWindow(title: 'Chevron Bus stop', snippet: 'Pickup'),
+      ),
+      const Marker(
+        markerId: MarkerId('yaba_dropoff'),
+        position: LatLng(6.5095, 3.3711),
+        infoWindow: InfoWindow(title: 'Yaba Bus stop', snippet: 'Drop off'),
+      ),
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,11 +44,18 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
       backgroundColor: Colors.grey.shade300,
       body: Stack(
         children: [
-          // Map Background Placeholder
+          // Google Map Background
           Positioned.fill(
-            child: Image.network(
-              'https://miro.medium.com/max/4096/1*qYUvh-dpTqwqh3_4o4KYzA.png',
-              fit: BoxFit.cover,
+            child: GoogleMap(
+              initialCameraPosition: _initialPosition,
+              onMapCreated: (GoogleMapController controller) {
+                mapController = controller;
+              },
+              markers: _createMarkers(),
+              myLocationEnabled: true,
+              myLocationButtonEnabled: false,
+              zoomControlsEnabled: false,
+              mapType: MapType.normal,
             ),
           ),
           

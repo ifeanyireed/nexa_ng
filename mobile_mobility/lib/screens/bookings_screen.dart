@@ -117,8 +117,8 @@ class BookingsScreen extends StatelessWidget {
                     children: [
                       Image.asset(
                         'assets/images/car.png',
-                        width: 24,
-                        height: 24,
+                        width: 40,
+                        height: 40,
                       ),
                       const SizedBox(width: 12),
                       Text(

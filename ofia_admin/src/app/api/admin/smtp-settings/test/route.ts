@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       fromEmail: body.fromEmail.trim(),
       fromName: body.fromName ? body.fromName.trim() : "Ofia Platform Root Security",
       username: body.username ? body.username.trim() : body.fromEmail.trim(),
-      password: body.password || "",
+      password: (body.password || "").trim(),
     };
 
     const result = await testPlatformSmtpConnection(config, testEmail.trim());

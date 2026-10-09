@@ -88,7 +88,7 @@ export async function getPlatformSmtpDetailed() {
         fromName: row.from_name || "Ofia Platform Root Security",
         username: row.username || "",
         hasPassword: Boolean(row.password && row.password.length > 0),
-        password: Boolean(row.password && row.password.length > 0) ? "••••••••" : "",
+        password: row.password || "",
       };
     }
   } catch (err) {
@@ -109,7 +109,7 @@ export async function getPlatformSmtpDetailed() {
     fromName: process.env.SMTP_FROM_NAME || "Ofia Platform Root Security",
     username: process.env.SMTP_USER || "hello@resultspro.ng",
     hasPassword: hasPass,
-    password: hasPass ? "••••••••" : "",
+    password: process.env.SMTP_PASSWORD || "",
   };
 }
 
@@ -213,9 +213,20 @@ export async function testPlatformSmtpConnection(
       message: `Test email successfully dispatched to ${testRecipientEmail}`,
     };
   } catch (err: any) {
+    const rawMsg = err.message || "Failed to establish SMTP connection or deliver test email.";
+    let detailedMessage = rawMsg;
+
+    if (rawMsg.includes("535") || rawMsg.toLowerCase().includes("authentication failed")) {
+      if (settings.host?.toLowerCase().includes("brevo")) {
+        detailedMessage = `Brevo Authentication Failed (535 5.7.8): The Brevo SMTP server rejected the login. Please check: 1) Your SMTP Username must match the exact "Login" value shown in Brevo under Settings > SMTP & API > SMTP tab (usually your registered account email, which may differ from your From address); 2) Your password must be an SMTP Key (starts with xsmtpsib-...) generated under the SMTP tab; 3) Your Brevo account must have Transactional Email Sending activated; 4) Ensure your From Email (${settings.fromEmail}) is verified in Brevo under Senders & IPs.`;
+      } else {
+        detailedMessage = `Authentication failed (535 5.7.8): The SMTP server rejected your credentials. Please double-check your username/password and ensure an App Password or SMTP access is enabled.`;
+      }
+    }
+
     return {
       success: false,
-      message: err.message || "Failed to establish SMTP connection or deliver test email.",
+      message: detailedMessage,
     };
   }
 }

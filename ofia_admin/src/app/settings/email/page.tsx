@@ -64,7 +64,11 @@ export default function PlatformEmailSettingsPage() {
         if (d.fromName) setSmtpFromName(d.fromName);
         if (d.username) setSmtpUsername(d.username);
         setSmtpHasPassword(Boolean(d.hasPassword));
-        setSmtpPassword(d.hasPassword ? "••••••••" : "");
+        if (d.password) {
+          setSmtpPassword(d.password);
+        } else {
+          setSmtpPassword("");
+        }
       }
     } catch (err) {
       console.warn("Could not load platform SMTP settings:", err);
@@ -456,7 +460,9 @@ export default function PlatformEmailSettingsPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] transition-colors cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] transition-colors cursor-pointer z-10 p-1"
+                  title={showPassword ? "Hide password" : "Show password"}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>

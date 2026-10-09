@@ -30,9 +30,9 @@ class _RentalVehicleDetailsScreenState
   final PageController _pageController = PageController();
 
   final List<String> _interiorImages = [
-    'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=600&q=80',
+    'https://plus.unsplash.com/premium_photo-1677591655703-e6f11ffdb1cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+    'https://images.unsplash.com/photo-1533630217389-3a5e4dff5683?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
+    'https://images.unsplash.com/photo-1625690180114-5530b1304127?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1080',
   ];
 
   @override

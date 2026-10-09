@@ -196,11 +196,10 @@ class _LoginScreenState extends State<LoginScreen> {
             ],
           ),
         ),
-      ),
-    )
-        .animate()
+      ).animate()
         .fadeIn(duration: const Duration(milliseconds: 400))
-        .slideY(begin: 0.05, end: 0);
+        .slideY(begin: 0.05, end: 0),
+    );
   }
 
   @override

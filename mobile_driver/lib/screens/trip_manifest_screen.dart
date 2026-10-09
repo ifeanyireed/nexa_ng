@@ -190,8 +190,8 @@ class _TripManifestScreenState extends State<TripManifestScreen> {
               ),
             ),
         ],
-      ),
-    ).animate(delay: const Duration(seconds: 3)).fadeIn(duration: const Duration(milliseconds: 800)).slideY(begin: 0.2, end: 0, duration: const Duration(milliseconds: 800));
+      ).animate(delay: const Duration(seconds: 3)).fadeIn(duration: const Duration(milliseconds: 800)).slideY(begin: 0.2, end: 0, duration: const Duration(milliseconds: 800)),
+    );
   }
 
   Widget _buildStopSection(TripStop stop) {

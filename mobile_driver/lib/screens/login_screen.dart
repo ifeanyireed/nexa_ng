@@ -50,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Log in to continue to Ofia Customer',
+                'Log in to continue to NETS Driver',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey.shade600,

@@ -7,8 +7,15 @@ import 'all_trips_screen.dart';
 import 'package:mobile_driver/utils/icon_util.dart';
 import 'package:flexicon/flexicon.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  bool _isOnline = true;
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +58,36 @@ class HomeScreen extends StatelessWidget {
                     ),
                     Row(
                       children: [
+                        GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _isOnline = !_isOnline;
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: _isOnline ? Colors.green : Colors.white.withValues(alpha: 0.3),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(_isOnline ? 'Online' : 'Offline', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
                         Icon(fixIcon(FlexIcon.remix.customerSupport5),
                             color: Colors.white),
                         const SizedBox(width: 16),

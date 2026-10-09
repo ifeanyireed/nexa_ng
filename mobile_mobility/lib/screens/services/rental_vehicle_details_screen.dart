@@ -26,6 +26,14 @@ class RentalVehicleDetailsScreen extends StatefulWidget {
 class _RentalVehicleDetailsScreenState
     extends State<RentalVehicleDetailsScreen> {
   int _vehicleCount = 1;
+  int _currentImageIndex = 0;
+  final PageController _pageController = PageController();
+
+  final List<String> _interiorImages = [
+    'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=600&q=80',
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -46,14 +54,51 @@ class _RentalVehicleDetailsScreenState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Image Carousel Placeholder
-                  Container(
+                  // Image Carousel
+                  SizedBox(
                     height: 220,
                     width: double.infinity,
-                    color: Colors.grey.shade200,
-                    child: Image.asset(
-                      widget.imagePath,
-                      fit: BoxFit.cover,
+                    child: Stack(
+                      children: [
+                        PageView.builder(
+                          controller: _pageController,
+                          itemCount: _interiorImages.length,
+                          onPageChanged: (index) {
+                            setState(() {
+                              _currentImageIndex = index;
+                            });
+                          },
+                          itemBuilder: (context, index) {
+                            return Image.network(
+                              _interiorImages[index],
+                              fit: BoxFit.cover,
+                            );
+                          },
+                        ),
+                        Positioned(
+                          bottom: 16,
+                          left: 0,
+                          right: 0,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(
+                              _interiorImages.length,
+                              (index) => Container(
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 4),
+                                width: _currentImageIndex == index ? 24 : 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: _currentImageIndex == index
+                                      ? Colors.white
+                                      : Colors.white.withOpacity(0.5),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 24),

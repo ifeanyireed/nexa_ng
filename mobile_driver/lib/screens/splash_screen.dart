@@ -49,31 +49,17 @@ class _SplashScreenState extends State<SplashScreen> {
                 const SizedBox(height: 24),
 
                 const Text(
-                  'New Era',
+                  'New Era\nTransports Services',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
-                    letterSpacing: 1.2,
+                    letterSpacing: 0.2,
+                    height: 1.1,
                   ),
                 )
                     .animate(delay: const Duration(milliseconds: 800))
-                    .fadeIn(duration: const Duration(milliseconds: 800))
-                    .slideY(
-                        begin: 0.2,
-                        end: 0,
-                        duration: const Duration(milliseconds: 800)),
-
-                const Text(
-                  'Transports Services',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
-                  ),
-                )
-                    .animate(delay: const Duration(milliseconds: 1200))
                     .fadeIn(duration: const Duration(milliseconds: 800))
                     .slideY(
                         begin: 0.2,

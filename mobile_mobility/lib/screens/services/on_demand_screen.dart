@@ -5,8 +5,18 @@ import 'package:mobile_mobility/utils/icon_util.dart';
 import 'package:flexicon/flexicon.dart';
 import '../../widgets/map_painter.dart';
 
-class OnDemandScreen extends StatelessWidget {
+import '../../widgets/places_search_delegate.dart';
+import '../../services/places_service.dart';
+
+class OnDemandScreen extends StatefulWidget {
   const OnDemandScreen({Key? key}) : super(key: key);
+
+  @override
+  State<OnDemandScreen> createState() => _OnDemandScreenState();
+}
+
+class _OnDemandScreenState extends State<OnDemandScreen> {
+  Place? _selectedDestination;
 
   @override
   Widget build(BuildContext context) {
@@ -86,23 +96,40 @@ class OnDemandScreen extends StatelessWidget {
                           padding: EdgeInsets.symmetric(vertical: 8),
                           child: Divider(height: 1),
                         ),
-                        Row(
-                          children: [
-                            Icon(fixIcon(FlexIcon.remix.magnifyingGlass),
-                                color: Color(0xFF64748B), size: 20),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: TextField(
-                                decoration: InputDecoration(
-                                  hintText: 'Search destination...',
-                                  hintStyle: TextStyle(color: Colors.grey.shade500),
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                  contentPadding: EdgeInsets.zero,
+                        GestureDetector(
+                          onTap: () async {
+                            final Place? result = await showSearch(
+                              context: context,
+                              delegate: PlacesSearchDelegate(),
+                            );
+                            if (result != null) {
+                              setState(() {
+                                _selectedDestination = result;
+                              });
+                            }
+                          },
+                          child: Container(
+                            color: Colors.transparent, // Ensures the entire row is tappable
+                            child: Row(
+                              children: [
+                                Icon(fixIcon(FlexIcon.remix.magnifyingGlass),
+                                    color: const Color(0xFF64748B), size: 20),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    _selectedDestination?.description ?? 'Search destination...',
+                                    style: TextStyle(
+                                      color: _selectedDestination != null
+                                          ? Colors.black
+                                          : Colors.grey.shade500,
+                                      fontSize: 16,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ],
                     ),

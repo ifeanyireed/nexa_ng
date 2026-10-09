@@ -23,9 +23,6 @@ class ProfileScreen extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: const Color(0xFFF8FAFC),
         elevation: 0,
-        actions: [
-          IconButton(icon: Icon(fixIcon(FlexIcon.remix.tuneAdjustVolume), color: Colors.black87), onPressed: () {}),
-        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),

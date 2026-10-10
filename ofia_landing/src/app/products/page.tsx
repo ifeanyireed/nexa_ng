@@ -1,24 +1,23 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  Compass,
-  ShoppingBag,
-  Smartphone,
-  Layers,
-  Cpu,
-  Truck,
-  Building2,
-  ShieldCheck,
+  Target,
+  Users,
   CreditCard,
-  Briefcase,
+  Building2,
+  Truck,
+  Navigation,
+  Car,
   Store,
-  Sparkles,
+  HeartPulse,
+  GraduationCap,
+  Hotel,
   ArrowRight,
   CheckCircle2,
-  Boxes,
+  Sparkles,
   Zap,
 } from "lucide-react";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -29,7 +28,7 @@ import { NexaChip } from "@/components/nexa/NexaChip";
 interface ProductItem {
   id: string;
   name: string;
-  category: "storefronts" | "erp" | "ai" | "logistics";
+  category: "enterprise" | "operations" | "mobility" | "commerce" | "verticals";
   categoryLabel: string;
   badge: string;
   badgeVariant: "brand" | "emerald" | "amber" | "purple" | "cyan";
@@ -43,270 +42,343 @@ interface ProductItem {
 }
 
 const CATEGORIES = [
-  { id: "all", label: "All Modules" },
-  { id: "storefronts", label: "Digital Storefronts" },
-  { id: "erp", label: "Operations & ERP" },
-  { id: "ai", label: "Autonomous AI & CRM" },
-  { id: "logistics", label: "Logistics & Physical" },
+  { id: "all", label: "All Products & Managers" },
+  { id: "enterprise", label: "Enterprise & Finance" },
+  { id: "operations", label: "Facility Management" },
+  { id: "mobility", label: "Mobility, Fleet & Dispatch" },
+  { id: "commerce", label: "Commerce & Retail" },
+  { id: "verticals", label: "Specialized Industry Suites" },
 ];
 
 const PRODUCTS: ProductItem[] = [
+  // ==========================================
+  // 1. CRM and Marketing
+  // ==========================================
   {
-    id: "compass",
-    name: "Ofia Compass",
-    category: "storefronts",
-    categoryLabel: "Discovery Marketplace",
-    badge: "Public Discovery",
+    id: "crm-marketing",
+    name: "CRM and Marketing",
+    category: "enterprise",
+    categoryLabel: "Growth & Customer Lifecycle",
+    badge: "Omnichannel CRM",
     badgeVariant: "brand",
-    tagline: "Be discovered by millions of Nigerian shoppers",
+    tagline: "Automated lead pipeline, customer engagement & marketing campaigns",
     description:
-      "A high-intent commercial discovery directory with 100+ niche hubs. Connect buyer searches directly to verified local merchants, service experts, and product catalogs.",
+      "End-to-end customer relationship and growth automation engine. Capture inbound leads, track multi-stage visual deal pipelines, run segmented email and WhatsApp marketing broadcasts, and automate customer lifecycle interactions from initial touchpoint to repeat retention.",
     features: [
-      "Verified merchant badges & trust rank",
-      "Niche hub categorical listings",
-      "Direct WhatsApp & instant quote requests",
-      "Customer reviews & verified proof-of-work",
+      "Visual Kanban deal pipeline with deal stages and revenue forecasting",
+      "Omnichannel lead capture with automated SDR triage & qualification",
+      "Targeted audience marketing lists with WhatsApp & email broadcast tools",
+      "Complete customer interaction timeline (calls, emails, meetings, tasks)",
+      "Real-time sales velocity, lead conversion funnels & campaign ROI analytics",
     ],
-    icon: <Compass className="w-6 h-6" />,
-    iconBg: "bg-blue-500/10",
-    iconColor: "text-blue-600",
-    href: "http://localhost:3000",
-  },
-  {
-    id: "shops",
-    name: "Ofia Shops",
-    category: "storefronts",
-    categoryLabel: "Digital Storefronts",
-    badge: "E-Commerce",
-    badgeVariant: "brand",
-    tagline: "Dedicated branded storefront (.ofia.shop)",
-    description:
-      "Turnkey online store with lightning-fast mobile checkout, live inventory synchronization, dynamic product filters, and built-in buyer financing options.",
-    features: [
-      "Custom subdomain or connect your own domain",
-      "Mobile-first responsive purchasing flow",
-      "Instant inventory sync with Ofia ERP",
-      "Zero coding required to launch",
-    ],
-    icon: <ShoppingBag className="w-6 h-6" />,
+    icon: <Target className="w-6 h-6" />,
     iconBg: "bg-indigo-500/10",
     iconColor: "text-indigo-600",
     href: "/pricing",
   },
+
+  // ==========================================
+  // 2. HR
+  // ==========================================
   {
-    id: "merchant-app",
-    name: "Ofia Merchant App",
-    category: "storefronts",
-    categoryLabel: "Mobile Suite",
-    badge: "Mobile iOS & Android",
-    badgeVariant: "emerald",
-    tagline: "Your entire company in your pocket",
-    description:
-      "A handheld operating hub for business owners and store managers. Monitor daily revenue, approve invoices, assign rider pickups, and chat with customers on the move.",
-    features: [
-      "Real-time cashflow & sales push notifications",
-      "Quick barcode & QR stock scanning",
-      "Staff shift & terminal management",
-      "Customer support chat & CRM triage",
-    ],
-    icon: <Smartphone className="w-6 h-6" />,
-    iconBg: "bg-emerald-500/10",
-    iconColor: "text-emerald-600",
-    href: "/pricing",
-  },
-  {
-    id: "erp",
-    name: "Ofia ERP",
-    category: "erp",
-    categoryLabel: "Back-Office Engine",
-    badge: "Enterprise Core",
+    id: "hr",
+    name: "HR",
+    category: "enterprise",
+    categoryLabel: "Human Capital",
+    badge: "360° Appraisals",
     badgeVariant: "purple",
-    tagline: "The central nervous system for Nigerian enterprise",
+    tagline: "People operations, performance appraisal cycles, OKRs & governance",
     description:
-      "End-to-end operational software tailored for Nigerian tax laws, multi-warehouse supply chains, branch reconciliations, and payroll compliances.",
+      "Modern workforce governance and human capital operations. Structure quarterly 360-degree milestone review cycles, calibrate supervisor scorecards, align departmental OKR objective banks, and organize company hierarchies with dynamic permission inheritance.",
     features: [
-      "Multi-store & multi-branch ledger consolidation",
-      "Batch & expiry-date inventory tracking",
-      "Automated VAT & withholding tax reports",
-      "Role-based staff permissions & audit trails",
+      "Structured milestone 360 review cycles with manager calibration desk",
+      "Enterprise OKR Objectives Bank with weighted key results scoring",
+      "Dynamic organizational department hierarchies & granular tab permissions",
+      "Employee self-service portal, peer reviews, quests & growth roadmap",
+      "Leave administration, attendance monitoring, and staff directory records",
     ],
-    icon: <Layers className="w-6 h-6" />,
+    icon: <Users className="w-6 h-6" />,
     iconBg: "bg-purple-500/10",
     iconColor: "text-purple-600",
     href: "/pricing",
   },
+
+  // ==========================================
+  // 3. Accounting
+  // ==========================================
   {
-    id: "verticals",
-    name: "Vertical Experiences",
-    category: "storefronts",
-    categoryLabel: "Industry Templates",
-    badge: "Specialized",
-    badgeVariant: "cyan",
-    tagline: "Deep vertical architectures ready out of the box",
-    description:
-      "Purpose-built software workflows designed for Auto dealerships (VIN lookups), Restaurants (table QR ordering & kitchen display), Shortlets, and Health clinics.",
-    features: [
-      "Automotive inventory with VIN & spec lookup",
-      "Restaurant KDS & table ordering pipelines",
-      "Hotel & shortlet calendar synchronization",
-      "Specialized service booking workflows",
-    ],
-    icon: <Boxes className="w-6 h-6" />,
-    iconBg: "bg-cyan-500/10",
-    iconColor: "text-cyan-600",
-    href: "/pricing",
-  },
-  {
-    id: "ai",
-    name: "Ofia AI Swarms",
-    category: "ai",
-    categoryLabel: "Autonomous AI",
-    badge: "AI Powered",
-    badgeVariant: "amber",
-    tagline: "24/7 autonomous marketing & sales agents",
-    description:
-      "Autonomous AI workers that qualify inbound leads on WhatsApp, draft product descriptions, optimize pricing, and re-engage dormant customers without extra headcount.",
-    features: [
-      "Autonomous WhatsApp sales triage & order booking",
-      "AI product photography enhancement & copywriter",
-      "Predictive restock demand forecasting",
-      "Automated churn prevention campaigns",
-    ],
-    icon: <Cpu className="w-6 h-6" />,
-    iconBg: "bg-amber-500/10",
-    iconColor: "text-amber-600",
-    href: "/pricing",
-  },
-  {
-    id: "logistics",
-    name: "Ofia Logistics",
-    category: "logistics",
-    categoryLabel: "Fulfillment",
-    badge: "Nationwide",
+    id: "accounting",
+    name: "Accounting",
+    category: "enterprise",
+    categoryLabel: "Financial Governance",
+    badge: "FIRS Tax Compliant",
     badgeVariant: "emerald",
-    tagline: "Automated fleet dispatch and last-mile tracking",
+    tagline: "Double-entry ledgers, automated Nigerian tax compliance & banking",
     description:
-      "Integrated delivery network linking your warehouse or retail floor directly with vetted motorcycle, van, and interstate haulage operators across Nigeria.",
+      "Comprehensive corporate accounting and financial reporting built for Nigerian compliance. Automated double-entry general ledger, FIRS 7.5% VAT and withholding tax (WHT) calculations, real-time bank reconciliation, multi-currency invoicing, and real-time P&L reporting.",
     features: [
-      "Instant automated rider assignment & dispatch",
-      "Live GPS tracking for buyers and store staff",
-      "Digital proof-of-delivery with OTP & photo verification",
-      "Pre-negotiated competitive courier rates",
-    ],
-    icon: <Truck className="w-6 h-6" />,
-    iconBg: "bg-emerald-500/10",
-    iconColor: "text-emerald-600",
-    href: "/pricing",
-  },
-  {
-    id: "virtual-office",
-    name: "Virtual Office",
-    category: "logistics",
-    categoryLabel: "Business Presence",
-    badge: "Corporate Address",
-    badgeVariant: "brand",
-    tagline: "Prestigious corporate identity in key commercial capitals",
-    description:
-      "Give your business instant credibility with prime corporate addresses in Lagos and Abuja, physical mail scanning, phone reception, and boardroom booking credits.",
-    features: [
-      "CAC-compliant registered business address",
-      "Mail receipt, digital scanning, and forwarding",
-      "Executive conference room access on demand",
-      "Dedicated professional phone answering",
-    ],
-    icon: <Building2 className="w-6 h-6" />,
-    iconBg: "bg-blue-500/10",
-    iconColor: "text-blue-600",
-    href: "/pricing",
-  },
-  {
-    id: "escrow",
-    name: "Ofia Escrow",
-    category: "storefronts",
-    categoryLabel: "Trust & Safety",
-    badge: "Zero Fraud",
-    badgeVariant: "emerald",
-    tagline: "Milestone-backed financial security for both parties",
-    description:
-      "Eliminate 'pay on delivery' disputes and bad debts. Buyer funds are securely escrowed in partner commercial banks and automatically released upon buyer inspection or OTP confirmation.",
-    features: [
-      "Automated settlement upon courier OTP verification",
-      "Fair multi-tier dispute resolution protocol",
-      "Support for high-ticket commercial equipment",
-      "Eliminates rider cash-handling risks",
-    ],
-    icon: <ShieldCheck className="w-6 h-6" />,
-    iconBg: "bg-emerald-500/10",
-    iconColor: "text-emerald-600",
-    href: "/pricing",
-  },
-  {
-    id: "business-hub",
-    name: "Ofia Business Hub",
-    category: "logistics",
-    categoryLabel: "Physical Spaces",
-    badge: "Co-Working",
-    badgeVariant: "amber",
-    tagline: "Modern physical hubs with uninterrupted power & fibre",
-    description:
-      "Physical work centers with 24/7 solar + generator redundancy, high-speed fibre optic internet, podcast recording studios, and merchant networking events.",
-    features: [
-      "Uninterrupted 24/7 power & high-speed backup internet",
-      "Hot desks, dedicated pods, and private team suites",
-      "Monthly founder mixers & masterclasses",
-      "Exclusive discounts for Ofia platform subscribers",
-    ],
-    icon: <Briefcase className="w-6 h-6" />,
-    iconBg: "bg-amber-500/10",
-    iconColor: "text-amber-600",
-    href: "/pricing",
-  },
-  {
-    id: "pos",
-    name: "Ofia POS",
-    category: "erp",
-    categoryLabel: "In-Store Hardware",
-    badge: "Offline First",
-    badgeVariant: "cyan",
-    tagline: "Fast counter billing that never stops for network dips",
-    description:
-      "Smart Android and desktop point-of-sale systems that cache catalog and transaction records offline. When connection drops, sales keep ringing; data syncs when back online.",
-    features: [
-      "Full offline-mode sales recording & local receipts",
-      "Thermal printer & barcode scanner USB/Bluetooth sync",
-      "Split bills across cash, cards, and bank transfer",
-      "Cashier shift closing and blind drop reports",
-    ],
-    icon: <Store className="w-6 h-6" />,
-    iconBg: "bg-cyan-500/10",
-    iconColor: "text-cyan-600",
-    href: "/pricing",
-  },
-  {
-    id: "payments",
-    name: "Ofia Payments",
-    category: "erp",
-    categoryLabel: "Financial Rails",
-    badge: "Multi-Rail",
-    badgeVariant: "brand",
-    tagline: "Instant reconciliation across all Nigerian payment rails",
-    description:
-      "Accept customer payments seamlessly via dynamic virtual accounts, instant bank transfers, cards, and USSD with sub-second webhook notifications directly into your ERP ledger.",
-    features: [
-      "Dedicated dynamic virtual accounts per order",
-      "Real-time bank transfer confirmation without receipt checks",
-      "Instant next-day automated merchant settlements",
-      "Built-in chargeback protection & fraud flags",
+      "Automated FIRS 7.5% VAT and WHT remittance reporting",
+      "Double-entry General Ledger, Chart of Accounts, and instant Trial Balance",
+      "Automated bank statement reconciliation with discrepancy & variance flags",
+      "Invoices, estimates, retainers, and aged payables/receivables",
+      "Multi-branch ledger consolidation, audit logs, and real-time P&L / balance sheet",
     ],
     icon: <CreditCard className="w-6 h-6" />,
+    iconBg: "bg-emerald-500/10",
+    iconColor: "text-emerald-600",
+    href: "/pricing",
+  },
+
+  // ==========================================
+  // 4. Facility Manager
+  // ==========================================
+  {
+    id: "facility-manager",
+    name: "Facility Manager",
+    category: "operations",
+    categoryLabel: "Infrastructure & Assets",
+    badge: "95%+ Uptime OS",
+    badgeVariant: "amber",
+    tagline: "Infrastructure uptime, utility management & preventive maintenance",
+    description:
+      "Centralized operations desk for commercial properties, corporate estates, and facilities. Supervise power systems (solar, generator, grid), track preventive equipment maintenance, manage vendor service contracts, and resolve facility work orders with rapid SLA tracking.",
+    features: [
+      "Critical facility uptime monitoring (electricity, generators, water, HVAC & lighting)",
+      "Preventive maintenance scheduling & digital work order ticketing desk",
+      "Vendor service agreements, maintenance records & expense documentation",
+      "Building asset register with depreciation and replacement logs",
+      "Safety compliance auditing (fire systems, alarms, and emergency protocols)",
+    ],
+    icon: <Building2 className="w-6 h-6" />,
+    iconBg: "bg-amber-500/10",
+    iconColor: "text-amber-600",
+    href: "/pricing",
+  },
+
+  // ==========================================
+  // 5. Fleet Manager
+  // ==========================================
+  {
+    id: "fleet-manager",
+    name: "Fleet Manager",
+    category: "mobility",
+    categoryLabel: "Fleet Intelligence",
+    badge: "Asset Intelligence",
+    badgeVariant: "cyan",
+    tagline: "Vehicle asset lifecycles, fuel telemetry & maintenance scheduling",
+    description:
+      "Dedicated command center for transport companies and corporate fleet operators. Oversee vehicle asset lifecycles, fuel consumption analytics, driver rosters, vehicle documentation compliance, and asset payback horizons.",
+    features: [
+      "Vehicle asset register with VIN, documentation & expiry alerts (insurance, roadworthiness)",
+      "Fuel consumption logs, fuel allowance monitoring & cost-per-km metrics",
+      "Preventive vehicle maintenance schedules & spare parts tracking",
+      "Driver roster scheduling, license verification & safety performance ratings",
+      "Vehicle ROI, depreciation analysis, and operational revenue tracking",
+    ],
+    icon: <Truck className="w-6 h-6" />,
+    iconBg: "bg-cyan-500/10",
+    iconColor: "text-cyan-600",
+    href: "/pricing",
+  },
+
+  // ==========================================
+  // 6. Dispatch Manager
+  // ==========================================
+  {
+    id: "dispatch-manager",
+    name: "Dispatch Manager",
+    category: "mobility",
+    categoryLabel: "Last-Mile Fulfillment",
+    badge: "Real-Time Dispatch",
+    badgeVariant: "emerald",
+    tagline: "Universal dispatch routing, rider tracking & proof of delivery",
+    description:
+      "Integrated delivery management coordinating in-house dispatch riders and third-party logistics carriers. Manage 4 universal delivery job types, broadcast jobs to nearby riders, generate digital waybills, and ensure foolproof delivery confirmation with recipient OTP codes.",
+    features: [
+      "4 universal delivery job types: Store Orders, Vendor Dispatch, Customer Pickups & Transfers",
+      "Multi-carrier routing: in-house bike/van fleet or 3rd-party logistics APIs (GIGL, DHL, Sendbox)",
+      "Real-time GPS parcel map telemetry with dynamic status island updates",
+      "Recipient OTP verification for zero-dispute proof of delivery",
+      "Zone-based rate matrices, automated digital waybills, and barcode tracking",
+    ],
+    icon: <Navigation className="w-6 h-6" />,
+    iconBg: "bg-emerald-500/10",
+    iconColor: "text-emerald-600",
+    href: "/pricing",
+  },
+
+  // ==========================================
+  // 7. Mobility Manager(with services)
+  // ==========================================
+  {
+    id: "mobility-manager",
+    name: "Mobility Manager (with services)",
+    category: "mobility",
+    categoryLabel: "Transit & Passenger OS",
+    badge: "6 Transit Modes",
+    badgeVariant: "brand",
+    tagline: "Unified passenger transit OS across 6 dedicated mobility services",
+    description:
+      "Complete passenger transit operating system powering modern commercial mobility. Operate ticketing, terminal manifests, route scheduling, seat selection, and passenger booking apps across 6 dedicated mobility service lines from a single unified platform.",
+    features: [
+      "Interstate Travel: Terminal booking desks, route manifests & QR boarding passes",
+      "Intra-City Shuttles: Scheduled fixed routes with virtual boarding stops",
+      "Bus Rentals & Charters: Custom itinerary planning with automated charter pricing calculator",
+      "School Bus Runs: Student passenger rosters & verified guardian pickup/drop-off tracking",
+      "Corporate Staff Commute: B2B scheduled employee shuttle contracts & attendance logs",
+      "On-Demand Hailing & Booking: Real-time passenger trip dispatch with integrated digital wallet",
+    ],
+    icon: <Car className="w-6 h-6" />,
     iconBg: "bg-blue-500/10",
     iconColor: "text-blue-600",
+    href: "/pricing",
+  },
+
+  // ==========================================
+  // 8. Shop Manager (With submodules)
+  // ==========================================
+  {
+    id: "shop-manager",
+    name: "Shop Manager (With submodules)",
+    category: "commerce",
+    categoryLabel: "Retail & Commerce Hub",
+    badge: "Omnichannel Suite",
+    badgeVariant: "purple",
+    tagline: "Omnichannel retail operating desk with 6 core commerce submodules",
+    description:
+      "Complete commerce and retail management hub. Seamlessly manage physical storefronts, cashier registers, multi-warehouse stock, and online web stores with specialized submodules that keep stock, sales, and orders synchronized in real time.",
+    features: [
+      "Catalog & Listings: Multi-variant product catalog, attributes & SKU categorization",
+      "Point of Sale (POS): Offline-first cashier billing, barcode scanning & thermal receipts",
+      "Inventory Management (IMS): Multi-warehouse stock tracking, transfers & reorder alerts",
+      "Orders & Fulfillment: Unified omnichannel order pipeline & dispatch waybills",
+      "Services & Bookings: Appointment scheduling, service calendars & staff allocation",
+      "Store Studio & Referrals: Branded storefront customization, affiliate codes & loyalty",
+    ],
+    icon: <Store className="w-6 h-6" />,
+    iconBg: "bg-purple-500/10",
+    iconColor: "text-purple-600",
+    href: "/pricing",
+  },
+
+  // ==========================================
+  // 9. Hospital Manager
+  // ==========================================
+  {
+    id: "hospital-manager",
+    name: "Hospital Manager",
+    category: "verticals",
+    categoryLabel: "Healthcare & Clinical",
+    badge: "Clinical OS",
+    badgeVariant: "cyan",
+    tagline: "Clinical records, doctor appointments, pharmacy & patient billing",
+    description:
+      "Purpose-built healthcare operating software for hospitals, clinics, and diagnostic centers. Streamline electronic medical records (EMR), doctor consultation appointments, clinical laboratory investigations, pharmacy dispensing, and insurance/HMO billing.",
+    features: [
+      "Confidential Electronic Medical Records (EMR) with patient history & clinical notes",
+      "Doctor appointment scheduling, clinic queue triage, and front-desk reception",
+      "In-house pharmacy inventory, prescription verification & medication dispensing",
+      "Diagnostic laboratory test ordering, specimen tracking, and digital result delivery",
+      "HMO health insurance claims processing, copays, and consolidated hospital billing",
+    ],
+    icon: <HeartPulse className="w-6 h-6" />,
+    iconBg: "bg-cyan-500/10",
+    iconColor: "text-cyan-600",
+    href: "/pricing",
+  },
+
+  // ==========================================
+  // 10. School Manager
+  // ==========================================
+  {
+    id: "school-manager",
+    name: "School Manager",
+    category: "verticals",
+    categoryLabel: "Education & Academics",
+    badge: "EdTech OS",
+    badgeVariant: "amber",
+    tagline: "Student academic records, term fee billing, attendance & guardian portal",
+    description:
+      "Comprehensive academic and institution management system for schools and academies. Coordinate student admissions, academic grading and report cards, term fee billing with automated payment receipts, teacher rosters, and parent communication channels.",
+    features: [
+      "Student admissions, comprehensive bio-data records & digital student IDs",
+      "Academic grading engine, term report card generation & continuous assessment tracking",
+      "School fees billing, installment payment plans, automated receipts & debtor tracking",
+      "Daily classroom attendance monitoring, timetable scheduling & teacher allocations",
+      "Guardian parent portal with SMS/email notifications for results, events & announcements",
+    ],
+    icon: <GraduationCap className="w-6 h-6" />,
+    iconBg: "bg-amber-500/10",
+    iconColor: "text-amber-600",
+    href: "/pricing",
+  },
+
+  // ==========================================
+  // 11. Hotel Manager
+  // ==========================================
+  {
+    id: "hotel-manager",
+    name: "Hotel Manager",
+    category: "verticals",
+    categoryLabel: "Hospitality & Stays",
+    badge: "Hospitality OS",
+    badgeVariant: "emerald",
+    tagline: "Room reservation engine, front-desk check-in, housekeeping & guest billing",
+    description:
+      "Dedicated property and guest hospitality software for hotels, boutique lodges, and short-let operators. Automate room availability calendars, direct guest reservations, keycard front-desk check-ins, housekeeping room turnarounds, and restaurant/bar guest folio billing.",
+    features: [
+      "Visual room reservation calendar with real-time status (Clean, Occupied, Maintenance)",
+      "Fast front-desk guest check-in / check-out with ID scanning & digital registration cards",
+      "Housekeeping room turnover dispatch with mobile room inspection checklists",
+      "Guest folio billing: consolidate room charges, dining, bar, laundry, and room service",
+      "Dynamic seasonal tariff pricing, direct booking engine, and OTA channel sync",
+    ],
+    icon: <Hotel className="w-6 h-6" />,
+    iconBg: "bg-emerald-500/10",
+    iconColor: "text-emerald-600",
     href: "/pricing",
   },
 ];
 
 export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const syncCategoryFromUrl = () => {
+        const params = new URLSearchParams(window.location.search);
+        const cat = params.get("category");
+        if (cat) {
+          if (["enterprise", "operations", "mobility", "commerce", "verticals", "all"].includes(cat)) {
+            setSelectedCategory(cat);
+          } else if (cat === "erp") {
+            setSelectedCategory("enterprise");
+          } else if (cat === "storefronts") {
+            setSelectedCategory("commerce");
+          } else if (cat === "logistics") {
+            setSelectedCategory("mobility");
+          }
+        }
+      };
+
+      syncCategoryFromUrl();
+      window.addEventListener("popstate", syncCategoryFromUrl);
+      return () => window.removeEventListener("popstate", syncCategoryFromUrl);
+    }
+  }, []);
+
+  const handleCategorySelect = (catId: string) => {
+    setSelectedCategory(catId);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (catId === "all") {
+        url.searchParams.delete("category");
+      } else {
+        url.searchParams.set("category", catId);
+      }
+      window.history.pushState({}, "", url.toString());
+    }
+  };
 
   const filteredProducts =
     selectedCategory === "all"
@@ -323,36 +395,50 @@ export default function ProductsPage() {
         {/* HERO SECTION */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           >
             <div className="inline-flex items-center gap-2 bg-nexa-brand/10 text-nexa-brand px-4 py-1.5 rounded-full border border-nexa-brand/20 mb-6">
               <Sparkles className="w-4 h-4 text-nexa-brand" />
               <span className="text-xs font-bold uppercase tracking-[0.2em]">
-                Complete Commerce Stack
+                Complete African Enterprise Architecture
               </span>
             </div>
-
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-display tracking-tight text-slate-900 mb-6">
-              Twelve Product Families,{" "}
-              <span className="text-nexa-brand">One Unified System.</span>
-            </h1>
-
-            <p className="text-lg sm:text-xl text-nexa-text-secondary leading-relaxed">
-              Every tool a growing Nigerian business needs to be found, operate
-              friction-free, fulfill orders with trust, and scale exponentially.
-            </p>
           </motion.div>
 
+          <motion.h1
+            initial={{ opacity: 0, y: 55 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.75, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+            className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-display tracking-tight text-slate-900 mb-6"
+          >
+            Eleven Specialized Products,{" "}
+            <span className="text-nexa-brand">One Unified Operating System.</span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 45 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.75, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            className="text-lg sm:text-xl text-nexa-text-secondary leading-relaxed"
+          >
+            From CRM, HR, and accounting to fleet, dispatch, mobility, shop operations, and specialized industry managers — explore the complete suite of products powering modern African enterprise.
+          </motion.p>
+
           {/* CATEGORY FILTER CHIPS */}
-          <div className="flex flex-wrap items-center justify-center gap-2.5 mt-10">
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="flex flex-wrap items-center justify-center gap-2.5 mt-10"
+          >
             {CATEGORIES.map((cat) => (
               <NexaChip
                 key={cat.id}
                 label={cat.label}
                 selected={selectedCategory === cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
+                onClick={() => handleCategorySelect(cat.id)}
                 count={
                   cat.id === "all"
                     ? PRODUCTS.length
@@ -360,18 +446,18 @@ export default function ProductsPage() {
                 }
               />
             ))}
-          </div>
+          </motion.div>
         </div>
 
         {/* PRODUCTS GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div id="catalog" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredProducts.map((product, idx) => (
             <motion.div
               key={product.id}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 60 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
-              transition={{ delay: idx * 0.05, duration: 0.4 }}
+              transition={{ delay: (idx % 3) * 0.12, duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
               className="h-full"
             >
               <NexaCard
@@ -444,10 +530,10 @@ export default function ProductsPage() {
 
         {/* BOTTOM ARCHITECTURE CALLOUT */}
         <motion.div
-          initial={{ opacity: 0, y: 35, scale: 0.98 }}
+          initial={{ opacity: 0, y: 65, scale: 0.98 }}
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
           viewport={{ once: true, margin: "-80px" }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
           className="mt-20"
         >
           <NexaCard
@@ -459,21 +545,43 @@ export default function ProductsPage() {
             
             <div className="relative z-10 grid lg:grid-cols-12 gap-8 items-center p-4 sm:p-6">
               <div className="lg:col-span-8">
-                <div className="inline-flex items-center gap-2 bg-white/10 text-blue-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4 backdrop-blur-md">
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.65, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+                  className="inline-flex items-center gap-2 bg-white/10 text-blue-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4 backdrop-blur-md"
+                >
                   <Zap className="w-3.5 h-3.5 text-blue-400" />
-                  No Integration Headaches
-                </div>
-                <h2 className="text-2xl sm:text-4xl font-extrabold text-white mb-4">
+                  Unified Architecture · One Shared Data Plane
+                </motion.div>
+                <motion.h2
+                  initial={{ opacity: 0, y: 50 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.75, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                  className="text-2xl sm:text-4xl font-extrabold text-white mb-4"
+                >
                   Data Enters Once. Synchronizes Everywhere.
-                </h2>
-                <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl">
-                  Add a product once to your inventory. It publishes automatically to your
-                  Compass profile, your branded shop, your counter POS, and your warehouse ledger.
-                  No CSV exports. No manual sync errors.
-                </p>
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0, y: 45 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.75, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                  className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl"
+                >
+                  Add inventory once: it reflects across your storefront, counter POS, warehouse ledger, and dispatch routes. Book a courier, schedule student transit, or log guest reservations: operations and accounting update in real time. Zero CSV exports, zero manual re-entry.
+                </motion.p>
               </div>
 
-              <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3 justify-end">
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3 justify-end"
+              >
                 <Link href="/pricing" className="w-full">
                   <NexaButton
                     variant="primary"
@@ -483,16 +591,16 @@ export default function ProductsPage() {
                     View Pricing &amp; Plans
                   </NexaButton>
                 </Link>
-                <Link href="http://localhost:3000" className="w-full">
+                <Link href="/pricing" className="w-full">
                   <NexaButton
                     variant="white"
                     size="lg"
                     className="w-full font-bold"
                   >
-                    Visit Ofia Compass
+                    Get Started Free
                   </NexaButton>
                 </Link>
-              </div>
+              </motion.div>
             </div>
           </NexaCard>
         </motion.div>

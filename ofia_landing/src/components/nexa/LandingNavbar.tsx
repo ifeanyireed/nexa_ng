@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { NexaButton } from "./NexaButton";
 import { NexaBadge } from "./NexaBadge";
-import { Menu, X, ArrowRight, Compass, ShieldCheck, Sparkles } from "lucide-react";
+import { Menu, X, ArrowRight, ShieldCheck, Sparkles } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export const LandingNavbar = () => {
@@ -35,6 +35,7 @@ export const LandingNavbar = () => {
     { label: "Products", href: "/products" },
     { label: "Pricing", href: "/pricing" },
     { label: "Blog", href: "/blog" },
+    { label: "Waitlist", href: "/waitlist" },
   ];
 
   return (
@@ -86,18 +87,6 @@ export const LandingNavbar = () => {
                 </Link>
               );
             })}
-
-            <div className="h-4 w-[1px] bg-[var(--nexa-border)] mx-1" />
-
-            <a
-              href="https://ofia.ng"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-nexa-text-secondary hover:text-nexa-brand transition-colors"
-            >
-              <Compass className="w-3.5 h-3.5 text-nexa-brand" />
-              <span>Compass</span>
-            </a>
           </nav>
 
           {/* RIGHT ACTION BUTTONS */}

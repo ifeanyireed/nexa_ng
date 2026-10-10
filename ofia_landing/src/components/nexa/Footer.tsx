@@ -5,6 +5,7 @@ import Link from "next/link";
 import { NexaButton } from "./NexaButton";
 import { NexaBadge } from "./NexaBadge";
 import { ArrowRight, ShieldCheck, Heart, Sparkles } from "lucide-react";
+import { motion } from "framer-motion";
 import {
   IconBrandX,
   IconBrandInstagram,
@@ -47,7 +48,13 @@ export const Footer = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
           {/* COLUMN 1: BRAND */}
-          <div className="lg:col-span-2">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+            className="lg:col-span-2"
+          >
             <Link href="/" className="flex items-center gap-2.5 mb-6 group inline-flex">
               <div className="w-8 h-8 rounded-xl overflow-hidden shadow-xs flex items-center justify-center">
                 <img
@@ -62,7 +69,7 @@ export const Footer = () => {
             </Link>
 
             <p className="text-nexa-text-secondary text-sm mb-6 leading-relaxed max-w-sm">
-              The unified multi-tenant business operating system for African trade. Run storefronts, ERP operations, autonomous AI lead generation, and nationwide logistics from a single login.
+              The unified multi-tenant business operating system for African trade. Run industry storefronts, enterprise ERP, white-label mobility, multi-carrier dispatch, and an autonomous AI swarm from a single login.
             </p>
 
             <div className="flex items-center gap-3 mb-6">
@@ -83,49 +90,59 @@ export const Footer = () => {
                 </a>
               ))}
             </div>
-          </div>
+          </motion.div>
 
-          {/* COLUMN 2: SUITE PRODUCTS */}
-          <div>
+          {/* COLUMN 2: 5 STRATEGIC PILLARS */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.75, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+          >
             <h4 className="font-bold mb-6 text-display tracking-widest uppercase text-[11px] text-nexa-brand">
-              The Ecosystem
+              The 5 Pillars
             </h4>
-            <ul className="space-y-3.5 text-sm text-nexa-text-secondary">
+            <ul className="space-y-3 text-sm text-nexa-text-secondary">
               <li>
                 <Link href="/products" className="hover:text-nexa-brand transition-colors font-medium">
-                  Products Overview
+                  All Products Overview
                 </Link>
               </li>
               <li>
-                <a href="https://ofia.ng" target="_blank" rel="noopener noreferrer" className="hover:text-nexa-brand transition-colors">
-                  Ofia Compass Discovery
-                </a>
-              </li>
-              <li>
-                <Link href="/products" className="hover:text-nexa-brand transition-colors">
-                  Dedicated Digital Shops
+                <Link href="/products?category=storefronts" className="hover:text-nexa-brand transition-colors">
+                  Commerce &amp; 10 Storefronts
                 </Link>
               </li>
               <li>
-                <Link href="/products" className="hover:text-nexa-brand transition-colors">
-                  Autonomous AI GTM Swarm
-                </Link>
-              </li>
-              <li>
-                <Link href="/products" className="hover:text-nexa-brand transition-colors">
-                  Ofia Dispatch &amp; Logistics
-                </Link>
-              </li>
-              <li>
-                <Link href="/products" className="hover:text-nexa-brand transition-colors">
+                <Link href="/products?category=erp" className="hover:text-nexa-brand transition-colors">
                   Enterprise ERP Suite
                 </Link>
               </li>
+              <li>
+                <Link href="/products?category=mobility" className="hover:text-nexa-brand transition-colors">
+                  Mobility &amp; Transport OS
+                </Link>
+              </li>
+              <li>
+                <Link href="/products?category=logistics" className="hover:text-nexa-brand transition-colors">
+                  Logistics &amp; Fulfillment
+                </Link>
+              </li>
+              <li>
+                <Link href="/products?category=ai" className="hover:text-nexa-brand transition-colors">
+                  Autonomous AI Swarm
+                </Link>
+              </li>
             </ul>
-          </div>
+          </motion.div>
 
           {/* COLUMN 3: PLATFORM & PRICING */}
-          <div>
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.75, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          >
             <h4 className="font-bold mb-6 text-display tracking-widest uppercase text-[11px] text-nexa-text-muted">
               Platform &amp; Plans
             </h4>
@@ -138,6 +155,11 @@ export const Footer = () => {
               <li>
                 <Link href="/pricing" className="hover:text-nexa-brand transition-colors">
                   Founding Offer (First 500)
+                </Link>
+              </li>
+              <li>
+                <Link href="/waitlist" className="hover:text-nexa-brand transition-colors font-medium">
+                  Join VIP Waitlist
                 </Link>
               </li>
               <li>
@@ -156,10 +178,15 @@ export const Footer = () => {
                 </a>
               </li>
             </ul>
-          </div>
+          </motion.div>
 
           {/* COLUMN 4: NEWSLETTER */}
-          <div>
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.75, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          >
             <h4 className="font-bold mb-6 text-display tracking-widest uppercase text-[11px] text-nexa-text-muted">
               Stay Informed
             </h4>
@@ -185,16 +212,22 @@ export const Footer = () => {
                 </NexaButton>
               </form>
             )}
-          </div>
+          </motion.div>
         </div>
 
         {/* BOTTOM COPYRIGHT */}
-        <div className="flex flex-col sm:flex-row items-center justify-between pt-8 border-t border-[var(--nexa-border)] text-xs text-nexa-text-muted">
+        <motion.div
+          initial={{ opacity: 0, y: 35 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.65, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
+          className="flex flex-col sm:flex-row items-center justify-between pt-8 border-t border-[var(--nexa-border)] text-xs text-nexa-text-muted"
+        >
           <p>© {new Date().getFullYear()} Ofia Technologies Ltd. All rights reserved.</p>
           <p className="mt-3 sm:mt-0 flex items-center gap-1.5 font-medium">
             Engineered with pride for Nigeria &amp; West Africa 🇳🇬
           </p>
-        </div>
+        </motion.div>
       </div>
     </footer>
   );

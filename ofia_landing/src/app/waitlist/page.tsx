@@ -3,14 +3,12 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowRight,
   Check,
-  CheckCircle2,
   ChevronDown,
-  Copy,
   Plus,
   Share2,
   X,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NexaButton } from "@/components/nexa/NexaButton";
@@ -56,26 +54,18 @@ const BUSINESS_TYPES = [
 ];
 
 const TOOL_TYPES = [
-  "Multiple Cuisines, Restaurant & Cloud Kitchen Suite",
-  "Hospital, Clinic & Healthcare Management Suite",
-  "Hotel, Resort & Hospitality Management Suite",
-  "Pharmacy, Drugs & Prescription Dispensary Suite",
-  "School, College & Academy Management Suite",
-  "Real Estate, Facility & Tenant Management Suite",
-  "Logistics, Haulage & Waybill Fleet Suite",
-  "Solar, Inverter & Renewable Energy Field Suite",
-  "Supermarket, Wholesale & Multi-Warehouse IMS Suite",
-  "Automotive Garage, Dealership & Spare Parts Suite",
-  "Law Firm, Legal Practice & Retainer Suite",
-  "Event Center, Hall Rental & Sound Stage Suite",
-  "Beauty Salon, Spa Wellness & Barbershop Suite",
-  "Autonomous AI Outreach & SDR Marketing Swarm",
-  "Multi-Store POS & Cashier Desk Registers",
-  "Milestone Escrow & Automated Invoicing",
-  "Double-Entry Accounting & General Ledger",
+  "CRM and Marketing Suite",
   "HR, Staff Attendance, Payroll & Appraisals",
-  "WhatsApp Meta Cloud API CRM & Live Automation",
-  "B2B Sales Pipelines & Corporate Deal Desk",
+  "Double-Entry Accounting & General Ledger",
+  "Facility Manager (Uptime, Maintenance & Work Orders)",
+  "Fleet Manager (Telemetry, Fuel, Mileage & Payback)",
+  "Dispatch Manager (Multi-Carrier Routing & Waybills)",
+  "Mobility Manager (Interstate, Shuttle, Charter, School)",
+  "Shop Manager (Catalog, POS, IMS, Orders & Store Studio)",
+  "Hospital Manager (EMR, Clinic Triage & HMO Billing)",
+  "School Manager (Admissions, Academics & Fee Billing)",
+  "Hotel Manager (Reservations, Check-in & Folio Billing)",
+  "Autonomous AI Outreach & WhatsApp SDR Swarm",
   "Other (Type below)",
 ];
 
@@ -198,7 +188,7 @@ export default function WaitlistPage() {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center py-12 md:py-16 px-4 sm:px-6 lg:px-12 overflow-hidden bg-slate-50 font-sans">
+    <main className="relative min-h-screen flex items-center justify-center pt-28 md:pt-36 pb-20 px-4 sm:px-6 lg:px-12 overflow-hidden bg-slate-50 font-sans">
       {/* Background image & gradient blur overlay */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         <AnimatePresence mode="popLayout">
@@ -214,7 +204,7 @@ export default function WaitlistPage() {
           />
         </AnimatePresence>
 
-        {/* Water translucent blurry overlay */}
+        {/* Translucent blur overlay */}
         <div
           className="absolute inset-0"
           style={{
@@ -225,45 +215,40 @@ export default function WaitlistPage() {
           }}
         />
 
-        {/* Vertical gradient tending towards the header area */}
-        <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white via-white/90 to-transparent" />
+        {/* Vertical top gradient to match navbar */}
+        <div className="absolute top-0 left-0 right-0 h-40 bg-gradient-to-b from-white via-white/90 to-transparent" />
 
         {/* Left horizontal gradient to shield text content */}
         <div className="absolute inset-0 bg-gradient-to-r from-white via-white/90 via-30% to-transparent" />
       </div>
 
-      {/* Top Left Brand Anchor */}
-      <div className="absolute top-6 left-6 md:top-8 md:left-12 z-20 flex items-center gap-2.5">
-        <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia" className="w-8 h-8 object-contain" />
-        <span className="text-base font-extrabold tracking-tight text-slate-900">
-          Ofia
-        </span>
-      </div>
-
       {/* Main Two-Column Structure */}
       <div className="container mx-auto max-w-6xl relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-        {/* Left Column */}
+        {/* Left Column: Copy & Messaging */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="lg:col-span-7 flex flex-col items-start text-left pt-6 lg:pt-0 max-w-lg"
         >
-          <span className="text-xs font-bold tracking-widest uppercase text-blue-600 mb-3">
-            Early Access
-          </span>
+          <div className="inline-flex items-center gap-2 bg-blue-500/10 text-blue-600 px-3.5 py-1.5 rounded-full border border-blue-500/20 mb-4">
+            <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+            <span className="text-xs font-bold tracking-widest uppercase">
+              Early Access Cohort
+            </span>
+          </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-[1.12] tracking-tight">
             Run your business on <span className="text-nexa-brand">Ofia.</span>
           </h1>
 
           <p className="text-base sm:text-lg text-slate-700 mt-4 max-w-md leading-relaxed">
-            Discover, book, buy — all in one place. Nigeria's most trusted business operating system.
+            Discover, book, buy, fulfill — all in one place. Nigeria&apos;s most complete enterprise operating system across 11 purpose-built managers.
           </p>
 
           <div className="mt-7 flex items-center gap-2 text-xs font-semibold text-slate-600">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>Priority onboarding opening soon</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>Priority onboarding opening soon for verified businesses</span>
           </div>
         </motion.div>
 
@@ -274,7 +259,7 @@ export default function WaitlistPage() {
           transition={{ duration: 0.6, delay: 0.15 }}
           className="lg:col-span-5 w-full flex justify-center lg:justify-end"
         >
-          <div className="bg-white/90 backdrop-blur-md border border-slate-200/80 shadow-2xl rounded-3xl p-5 sm:p-6 text-left max-w-[430px] w-full">
+          <div className="bg-white/95 backdrop-blur-md border border-slate-200/80 shadow-2xl rounded-3xl p-5 sm:p-6 text-left max-w-[430px] w-full">
             {!submittedData ? (
               <form onSubmit={handleSubmit} className="space-y-3.5">
                 <div>
@@ -282,7 +267,7 @@ export default function WaitlistPage() {
                     Join the waitlist
                   </h2>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    Reserve your priority spot for early access.
+                    Reserve your priority spot for early access &amp; founder pricing.
                   </p>
                 </div>
 
@@ -384,11 +369,11 @@ export default function WaitlistPage() {
                   )}
                 </div>
 
-                {/* Tool of Interest (Multi-Select with Stacked Items) */}
+                {/* Tool of Interest (Multi-Select) */}
                 <div>
                   <div className="flex items-center justify-between mb-1 ml-1 mr-1">
                     <label className="block text-xs font-bold text-slate-700">
-                      Tools of Interest
+                      Products of Interest
                     </label>
                     <span className="text-[10px] text-slate-500 font-medium">
                       Select multiple
@@ -406,7 +391,7 @@ export default function WaitlistPage() {
                       className="bg-white border border-slate-200 rounded-full w-full h-11 px-4 pr-10 text-xs text-slate-800 focus:ring-2 focus:ring-nexa-brand/20 focus:border-nexa-brand focus:outline-none transition-all appearance-none cursor-pointer"
                     >
                       <option value="" disabled>
-                        + Add a tool or feature...
+                        + Add a product or manager...
                       </option>
                       {TOOL_TYPES.map((tt) => (
                         <option
@@ -426,7 +411,7 @@ export default function WaitlistPage() {
                     <div className="flex items-center gap-2 mt-2">
                       <input
                         type="text"
-                        placeholder="Type custom tool or module..."
+                        placeholder="Type custom manager or module..."
                         value={customToolInput}
                         onChange={(e) => setCustomToolInput(e.target.value)}
                         onKeyDown={(e) => {
@@ -455,13 +440,13 @@ export default function WaitlistPage() {
                     </div>
                   )}
 
-                  {/* AUTO-FIT WRAPPED SELECTED ITEMS */}
+                  {/* Selected Items Chips */}
                   {selectedTools.length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2.5">
                       {selectedTools.map((tool) => (
                         <div
                           key={tool}
-                          className="inline-flex w-fit max-w-full items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-blue-50/90 border border-blue-200/80 text-blue-950 text-xs font-medium transition-all shadow-sm"
+                          className="inline-flex w-fit max-w-full items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-50/90 border border-blue-200/80 text-blue-950 text-xs font-medium transition-all shadow-xs"
                         >
                           <span className="truncate">{tool}</span>
                           <button
@@ -514,7 +499,7 @@ export default function WaitlistPage() {
                   </div>
                 </div>
 
-                {/* Fully Rounded Submit Button */}
+                {/* Submit Button */}
                 <div className="pt-2">
                   <NexaButton
                     type="submit"
@@ -528,7 +513,7 @@ export default function WaitlistPage() {
                         <span>Submitting...</span>
                       </div>
                     ) : (
-                      <span>Join Waitlist</span>
+                      <span>Join VIP Waitlist</span>
                     )}
                   </NexaButton>
                 </div>
@@ -542,7 +527,7 @@ export default function WaitlistPage() {
 
                 <div>
                   <h3 className="text-xl font-bold text-slate-900">
-                    You're on the list
+                    You&apos;re on the list
                   </h3>
                   <p className="text-xs text-slate-600 mt-1 max-w-sm mx-auto">
                     Thanks, <strong>{submittedData.lead?.fullName}</strong>. We will reach out on WhatsApp and email as onboarding begins.
@@ -565,7 +550,7 @@ export default function WaitlistPage() {
                   </div>
                   {submittedData.lead?.featuresInterest && (
                     <div className="pt-1.5 border-t border-slate-200/80">
-                      <span className="text-slate-500 block mb-1 text-[11px]">Selected Tools:</span>
+                      <span className="text-slate-500 block mb-1 text-[11px]">Selected Products:</span>
                       <div className="flex flex-col gap-1">
                         {submittedData.lead.featuresInterest.map((item: string) => (
                           <span key={item} className="text-[11px] font-medium text-slate-800">
@@ -577,7 +562,7 @@ export default function WaitlistPage() {
                   )}
                 </div>
 
-                {/* Referral Link with Fully Rounded Elements */}
+                {/* Referral Link */}
                 <div className="space-y-2 text-left">
                   <span className="text-xs font-semibold text-slate-700 block ml-1">
                     Share with other business owners:
@@ -623,6 +608,6 @@ export default function WaitlistPage() {
           </div>
         </motion.div>
       </div>
-    </section>
+    </main>
   );
 }

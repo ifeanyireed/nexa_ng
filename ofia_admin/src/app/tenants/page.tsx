@@ -413,7 +413,12 @@ function TenantManagementContent() {
   const focusedTenant = selectedTenantId !== "all" ? tenants.find((t) => t.id === selectedTenantId) : null;
 
   const handleImpersonate = (t: TenantOrg) => {
-    const targetUrl = t.domain.includes(".")
+    const isLocal =
+      typeof window !== "undefined" &&
+      (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+    const targetUrl = isLocal
+      ? `http://localhost:3002/erp/admin?tenant=${encodeURIComponent(t.slug)}`
+      : t.domain.includes(".")
       ? `https://${t.domain}/erp/admin`
       : `https://${t.slug}.ofia.ng/erp/admin`;
     window.open(targetUrl, "_blank");
@@ -437,8 +442,20 @@ function TenantManagementContent() {
     setSavingModuleKeys((prev) => ({ ...prev, [moduleKey]: true }));
     setIsSavingDb(true);
     try {
-      const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant", "dispatcher"];
+      const defaultRoleKeys = [
+        "tenant_provision",
+        "admin",
+        "md",
+        "manager",
+        "employee",
+        "hr",
+        "accountant",
+        "dispatcher",
+        "sales_closer",
+        "marketer",
+      ];
       const matrixPayload: Record<string, Record<string, boolean>> = {};
+      const isCrmActive = updatedModules.crm ?? (moduleKey === "crm" ? newStatus : false);
 
       defaultRoleKeys.forEach((role) => {
         if (role === "employee") {
@@ -448,6 +465,7 @@ function TenantManagementContent() {
             mission: false,
             ai: false,
             crm: false,
+            sales_closer: false,
             users: false,
             marketplace: false,
             shop: false,
@@ -461,9 +479,41 @@ function TenantManagementContent() {
             mobility: false,
             dispatch: false,
           };
+        } else if (role === "sales_closer") {
+          matrixPayload[role] = {
+            employee: true,
+            quests: true,
+            crm: isCrmActive,
+            sales_closer: isCrmActive,
+            mission: false,
+            ai: false,
+            users: false,
+            marketplace: false,
+            shop: false,
+            inventory: false,
+            pos: false,
+            referrals: false,
+            accounting: false,
+            hr: false,
+            manager: false,
+            md: false,
+            mobility: false,
+            dispatch: false,
+          };
+        } else if (role === "marketer") {
+          matrixPayload[role] = {
+            employee: true,
+            quests: true,
+            crm: isCrmActive,
+            sales_closer: isCrmActive,
+            ai: updatedModules.ai ?? true,
+            marketplace: updatedModules.marketplace ?? true,
+            ...(tenant.shopSubModules || {}),
+          };
         } else {
           matrixPayload[role] = {
             ...updatedModules,
+            sales_closer: isCrmActive,
             ...(tenant.shopSubModules || {}),
             ...(tenant.mobilitySubModules || {}),
           };
@@ -500,7 +550,18 @@ function TenantManagementContent() {
 
     setIsSavingDb(true);
     try {
-      const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant", "dispatcher"];
+      const defaultRoleKeys = [
+        "tenant_provision",
+        "admin",
+        "md",
+        "manager",
+        "employee",
+        "hr",
+        "accountant",
+        "dispatcher",
+        "sales_closer",
+        "marketer",
+      ];
       const matrixPayload: Record<string, Record<string, boolean>> = {};
       defaultRoleKeys.forEach((role) => {
         if (role === "employee") {
@@ -510,6 +571,7 @@ function TenantManagementContent() {
             mission: false,
             ai: false,
             crm: false,
+            sales_closer: false,
             users: false,
             marketplace: false,
             shop: false,
@@ -523,9 +585,41 @@ function TenantManagementContent() {
             mobility: false,
             dispatch: false,
           };
+        } else if (role === "sales_closer") {
+          matrixPayload[role] = {
+            employee: true,
+            quests: true,
+            crm: enableAll,
+            sales_closer: enableAll,
+            mission: false,
+            ai: false,
+            users: false,
+            marketplace: false,
+            shop: false,
+            inventory: false,
+            pos: false,
+            referrals: false,
+            accounting: false,
+            hr: false,
+            manager: false,
+            md: false,
+            mobility: false,
+            dispatch: false,
+          };
+        } else if (role === "marketer") {
+          matrixPayload[role] = {
+            employee: true,
+            quests: true,
+            crm: enableAll,
+            sales_closer: enableAll,
+            ai: enableAll,
+            marketplace: enableAll,
+            ...(tenant.shopSubModules || {}),
+          };
         } else {
           matrixPayload[role] = {
             ...updatedModules,
+            sales_closer: enableAll,
             ...(tenant.shopSubModules || {}),
             ...(tenant.mobilitySubModules || {}),
           };

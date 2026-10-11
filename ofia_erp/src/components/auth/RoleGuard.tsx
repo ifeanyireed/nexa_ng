@@ -25,6 +25,7 @@ export interface RoleGuardProps {
 function getPageKeyFromPath(path: string): string | null {
   if (path.startsWith("/erp/accountant") || path.startsWith("/accountant")) return "accounting";
   if (path.startsWith("/erp/hr") || path.startsWith("/hr")) return "hr";
+  if (path.startsWith("/erp/ops/crm")) return "sales_closer";
   if (path.startsWith("/erp/admin/crm") || path.startsWith("/erp/marketer")) return "crm";
   if (path.startsWith("/erp/admin/shop")) return "shop";
   if (path.startsWith("/erp/admin/mobility")) return "mobility";
@@ -124,15 +125,15 @@ export function RoleGuard({
     else if (role === "hr") home = "/erp/hr";
     else if (role === "accountant") home = "/erp/accountant";
     else if (role === "marketer") home = "/erp/marketer";
-    else if (role === "sales_closer") home = "/erp/admin/crm";
+    else if (role === "sales_closer") home = "/erp/ops/crm";
     else if (role === "manager") home = "/erp/manager";
     else if (role === "employee") home = "/erp/employee";
     else if (role === "cashier") home = "/erp/admin/shop/pos";
     else if (role === "inventory_officer") home = "/erp/admin/shop/inventory";
     else if (role === "dispatcher") home = "/erp/employee";
 
-    if (assignedPages.length > 0 && !assignedPages.includes("employee") && assignedPages[0] === "crm") {
-      home = "/erp/admin/crm";
+    if (assignedPages.length > 0 && !assignedPages.includes("employee") && (assignedPages[0] === "crm" || assignedPages[0] === "sales_closer")) {
+      home = "/erp/ops/crm";
     }
 
     setRedirectTarget(fallbackRoute || home);
@@ -150,17 +151,35 @@ export function RoleGuard({
     }
 
     // DIRECT USER ASSIGNED PAGES CHECK:
-    // If the user has specific assigned pages (e.g. Sales Closer with Employee Portal + CRM):
+    // If the user has specific assigned pages (e.g. Sales Closer with Employee Portal + Sales Closer Portal):
     if (assignedPages && assignedPages.length > 0 && targetPageKey) {
-      if (assignedPages.includes(targetPageKey)) {
+      const isAllowedByAssigned =
+        assignedPages.includes(targetPageKey) ||
+        (targetPageKey === "sales_closer" && (assignedPages.includes("sales_closer") || assignedPages.includes("crm"))) ||
+        (targetPageKey === "crm" && (assignedPages.includes("crm") || assignedPages.includes("sales_closer")));
+
+      if (isAllowedByAssigned) {
+        // Enforce CRM module provisioning: if accessing sales_closer or CRM, tenant MUST have CRM module
+        if (targetPageKey === "sales_closer" || targetPageKey === "crm") {
+          const tenantSlug = localStorage.getItem("nexa_tenant_slug") || "neweratransports";
+          const isCrmProvisioned = isModuleEnabledForRole(tenantSlug, "admin", "crm");
+          if (!isCrmProvisioned) {
+            setIsAuthorized(false);
+            const fallback = assignedPages.includes("employee") ? "/erp/employee" : (role === "admin" ? "/erp/admin" : "/login");
+            if (pathname !== fallback) {
+              router.replace(fallback);
+            }
+            return;
+          }
+        }
         setIsAuthorized(true);
         return;
       } else if (role !== "admin") {
         // User attempted to navigate to an unassigned page
         setIsAuthorized(false);
-        const fallback = assignedPages.includes("employee")
-          ? "/erp/employee"
-          : (assignedPages.includes("crm") ? "/erp/admin/crm" : home);
+        const fallback = assignedPages.includes("sales_closer")
+          ? "/erp/ops/crm"
+          : (assignedPages.includes("employee") ? "/erp/employee" : (assignedPages.includes("crm") ? "/erp/admin/crm" : home));
         if (pathname !== fallback) {
           router.replace(fallback);
         }
@@ -170,11 +189,24 @@ export function RoleGuard({
 
     // STRICT SALES CLOSER ROLE ISOLATION:
     if (role === "sales_closer") {
-      const isSalesAllowed = pathname.startsWith("/erp/employee") || pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer");
+      const isSalesAllowed =
+        pathname.startsWith("/erp/employee") ||
+        pathname.startsWith("/erp/ops/crm") ||
+        pathname.startsWith("/erp/admin/crm") ||
+        pathname.startsWith("/erp/marketer");
       if (!isSalesAllowed && !isDepartmentAllowed) {
         setIsAuthorized(false);
-        router.replace("/erp/admin/crm");
+        router.replace("/erp/ops/crm");
         return;
+      }
+      if (pathname.startsWith("/erp/ops/crm") || pathname.startsWith("/erp/admin/crm")) {
+        const tenantSlug = localStorage.getItem("nexa_tenant_slug") || "neweratransports";
+        const isCrmProvisioned = isModuleEnabledForRole(tenantSlug, "admin", "crm");
+        if (!isCrmProvisioned) {
+          setIsAuthorized(false);
+          router.replace("/erp/employee");
+          return;
+        }
       }
       setIsAuthorized(true);
       return;
@@ -211,7 +243,7 @@ export function RoleGuard({
         effectiveAllowedRoles = ["admin", "md", "hr"];
       } else if (pathname === "/erp/admin") {
         effectiveAllowedRoles = ["admin"];
-      } else if (pathname.startsWith("/erp/marketer") || pathname.startsWith("/erp/admin/crm")) {
+      } else if (pathname.startsWith("/erp/marketer") || pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/ops/crm")) {
         effectiveAllowedRoles = ["admin", "md", "marketer", "sales_closer"];
       } else if (pathname.startsWith("/erp/md")) {
         effectiveAllowedRoles = ["admin", "md"];
@@ -259,14 +291,14 @@ export function RoleGuard({
     if (!requiredMod) {
       if (pathname.startsWith("/erp/accountant")) requiredMod = "accounting";
       else if (pathname.startsWith("/erp/hr")) requiredMod = "hr";
-      else if (pathname.startsWith("/erp/marketer") || pathname.startsWith("/erp/admin/crm")) requiredMod = "crm";
+      else if (pathname.startsWith("/erp/marketer") || pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/ops/crm")) requiredMod = "crm";
       else if (pathname.startsWith("/erp/admin/ai")) requiredMod = "ai";
       else if (pathname.startsWith("/erp/admin/shop")) requiredMod = "shop";
       else if (pathname.startsWith("/erp/admin/marketplace")) requiredMod = "marketplace";
     }
 
     if (requiredMod && !isDepartmentAllowed) {
-      const tenantName = localStorage.getItem("nexa_org_name") || "EduSuite";
+      const tenantName = localStorage.getItem("nexa_tenant_slug") || localStorage.getItem("nexa_org_name") || "neweratransports";
       moduleAllowed = isModuleEnabledForRole(tenantName, role, requiredMod);
     }
 

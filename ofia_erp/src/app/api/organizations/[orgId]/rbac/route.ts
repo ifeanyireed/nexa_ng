@@ -11,11 +11,16 @@ const USER_BASE = cleanUserUrl.endsWith("/api/v1") ? cleanUserUrl : `${cleanUser
 const DEFAULT_ERP_MODULES = [
   "ai",
   "crm",
+  "sales_closer",
   "marketplace",
   "shop",
   "accounting",
   "hr",
   "users",
+  "mobility",
+  "dispatch",
+  "employee",
+  "quests",
 ];
 
 const DEFAULT_ROLES = [
@@ -26,6 +31,8 @@ const DEFAULT_ROLES = [
   "employee",
   "hr",
   "accountant",
+  "sales_closer",
+  "marketer",
 ];
 
 function generateDefaultMatrix(): Record<string, Record<string, boolean>> {
@@ -33,7 +40,15 @@ function generateDefaultMatrix(): Record<string, Record<string, boolean>> {
   for (const role of DEFAULT_ROLES) {
     matrix[role] = {};
     for (const mod of DEFAULT_ERP_MODULES) {
-      matrix[role][mod] = true;
+      if (role === "employee") {
+        matrix[role][mod] = mod === "employee" || mod === "quests";
+      } else if (role === "sales_closer") {
+        matrix[role][mod] = mod === "sales_closer" || mod === "crm" || mod === "employee" || mod === "quests";
+      } else if (role === "marketer") {
+        matrix[role][mod] = mod === "crm" || mod === "sales_closer" || mod === "ai" || mod === "marketplace" || mod === "employee" || mod === "quests";
+      } else {
+        matrix[role][mod] = true;
+      }
     }
   }
   return matrix;
@@ -72,14 +87,6 @@ async function resolveCanonicalOrg(pool: any, rawOrgId: string) {
         );
       }
 
-      if (orgRes.rows.length === 0) {
-        orgRes = await pool.query(
-          `SELECT id, slug FROM "Organization" 
-           ORDER BY "created_at" ASC NULLS LAST 
-           LIMIT 1`
-        );
-      }
-
       if (orgRes.rows.length > 0) {
         canonicalSlug = orgRes.rows[0].slug;
         canonicalId = orgRes.rows[0].id;
@@ -100,22 +107,7 @@ export async function GET(
   const pool = getDbPool();
   const { canonicalSlug, canonicalId } = await resolveCanonicalOrg(pool, orgId);
 
-  // 1. Try remote microservice using canonicalSlug
-  try {
-    const res = await fetch(`${USER_BASE}/organizations/${encodeURIComponent(canonicalSlug)}/rbac`, {
-      cache: "no-store",
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.matrix && Object.keys(data.matrix).length > 0) {
-        return NextResponse.json(data);
-      }
-    }
-  } catch {
-    // Fall back to direct Neon PostgreSQL read
-  }
-
-  // 2. Query Neon PostgreSQL directly
+  // 1. Direct Neon PostgreSQL Query first for instant (<50ms) consistency
   try {
     if (pool) {
       const permRes = await pool.query(
@@ -140,7 +132,23 @@ export async function GET(
       }
     }
   } catch (err: any) {
-    console.warn("Neon PostgreSQL RBAC read error in ofia_erp:", err.message);
+    console.warn("Neon PostgreSQL RBAC direct read error in ofia_erp:", err.message);
+  }
+
+  // 2. Fall back to remote microservice with strict timeout (1500ms) to avoid hanging
+  try {
+    const res = await fetch(`${USER_BASE}/organizations/${encodeURIComponent(canonicalSlug)}/rbac`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(1500),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.matrix && Object.keys(data.matrix).length > 0) {
+        return NextResponse.json(data);
+      }
+    }
+  } catch {
+    // Microservice offline or timed out
   }
 
   return NextResponse.json({
@@ -168,17 +176,6 @@ export async function PUT(
 
     const pool = getDbPool();
     const { canonicalSlug, canonicalId } = await resolveCanonicalOrg(pool, orgId);
-
-    // Try remote microservice using canonicalSlug
-    try {
-      await fetch(`${USER_BASE}/organizations/${encodeURIComponent(canonicalSlug)}/rbac`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ matrix }),
-      });
-    } catch {
-      // service_users is offline, write directly to Neon
-    }
 
     if (pool) {
       const targets = Array.from(new Set([canonicalSlug, canonicalId])).filter(Boolean);
@@ -209,6 +206,18 @@ export async function PUT(
         `;
         await pool.query(queryText, queryParams);
       }
+    }
+
+    // Forward to remote microservice with strict timeout (1500ms) non-blocking
+    try {
+      await fetch(`${USER_BASE}/organizations/${encodeURIComponent(canonicalSlug)}/rbac`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matrix }),
+        signal: AbortSignal.timeout(1500),
+      });
+    } catch {
+      // service_users is offline or timed out, direct Neon write succeeded
     }
 
     return NextResponse.json({

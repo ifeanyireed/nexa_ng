@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, Suspense } from "react";
+import React, { useState, useEffect, useMemo, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -32,7 +32,7 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { Pagination } from "@/components/nexa/Pagination";
-import { RoleKey, ASSIGNABLE_PAGES, getDefaultPagesForRole, AssignablePage } from "@/lib/access-control";
+import { RoleKey, ASSIGNABLE_PAGES, getDefaultPagesForRole, AssignablePage, useTenantProvisioning } from "@/lib/access-control";
 import { useAuth } from "@/components/nexa/AuthContext";
 import { useActiveTenant, DatabaseTenant } from "@/lib/tenant-context";
 import { resolveAvatarUrl } from "@/lib/avatar";
@@ -379,6 +379,45 @@ function UserManagementContent() {
   const [formCompany, setFormCompany] = useState("");
   const [formLocation, setFormLocation] = useState("Lagos, Nigeria");
 
+  // Dropdown checklist state for assigned pages (non-admins)
+  const [isPagesDropdownOpen, setIsPagesDropdownOpen] = useState(false);
+  const [pagesSearch, setPagesSearch] = useState("");
+  const pagesDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (pagesDropdownRef.current && !pagesDropdownRef.current.contains(e.target as Node)) {
+        setIsPagesDropdownOpen(false);
+      }
+    }
+    if (isPagesDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isPagesDropdownOpen]);
+
+  const { isModuleProvisioned } = useTenantProvisioning();
+  const isCrmProvisioned = isModuleProvisioned("crm");
+
+  const filteredAssignablePages = useMemo(() => {
+    const list = ASSIGNABLE_PAGES.filter((p) => {
+      if (p.key === "sales_closer" || p.key === "crm") {
+        return isCrmProvisioned;
+      }
+      return true;
+    });
+    if (!pagesSearch.trim()) return list;
+    const q = pagesSearch.toLowerCase();
+    return list.filter(
+      (p) =>
+        p.label.toLowerCase().includes(q) ||
+        p.key.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q) ||
+        (p.badge && p.badge.toLowerCase().includes(q))
+    );
+  }, [pagesSearch, isCrmProvisioned]);
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
@@ -573,6 +612,8 @@ function UserManagementContent() {
     setFormCompany(activeTenant?.name || "");
     setFormLocation("Lagos, Nigeria");
     setIsCustomDesignation(false);
+    setIsPagesDropdownOpen(false);
+    setPagesSearch("");
     setIsAddUserModalOpen(true);
   };
 
@@ -594,6 +635,8 @@ function UserManagementContent() {
     setFormCompany(staffUser.company || activeTenant?.name || "");
     setFormLocation(staffUser.location || "Lagos, Nigeria");
     setIsCustomDesignation(false);
+    setIsPagesDropdownOpen(false);
+    setPagesSearch("");
     setIsAddUserModalOpen(true);
   };
 
@@ -944,7 +987,9 @@ function UserManagementContent() {
                 <option value="manager">Manager</option>
                 <option value="accountant">Accountant</option>
                 <option value="marketer">Marketer</option>
-                <option value="sales_closer">Sales Closer (CRM + Employee)</option>
+                {isCrmProvisioned && (
+                  <option value="sales_closer">Sales Closer (CRM + Employee)</option>
+                )}
                 <option value="employee">Employee</option>
                 <option value="cashier">POS Cashier</option>
                 <option value="inventory_officer">Inventory Officer</option>
@@ -961,21 +1006,20 @@ function UserManagementContent() {
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Department</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Designation</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Reporting Manager</th>
-                  <th className="pb-3 px-3 font-bold uppercase tracking-wider">Access Role & Pages</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--nexa-border)] text-[var(--nexa-text-primary)]">
                 {isLoadingUsers ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-xs text-[var(--nexa-text-muted)] font-medium">
+                    <td colSpan={5} className="py-12 text-center text-xs text-[var(--nexa-text-muted)] font-medium">
                       <RefreshCw className="w-5 h-5 mx-auto animate-spin mb-2 text-[#1A56DB]" />
                       Loading staff records from database...
                     </td>
                   </tr>
                 ) : paginatedUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-[var(--nexa-text-muted)] font-medium">
+                    <td colSpan={5} className="py-8 text-center text-[var(--nexa-text-muted)] font-medium">
                       No staff members match the selected filters.
                     </td>
                   </tr>
@@ -999,83 +1043,19 @@ function UserManagementContent() {
                             <p className="text-[10px] text-[var(--nexa-text-muted)] font-mono">{u.email} • {u.id}</p>
                           </div>
                         </td>
-                      <td className="py-3.5 px-3 text-[var(--nexa-text-muted)] font-medium">{u.department}</td>
-                      <td className="py-3.5 px-3 text-[var(--nexa-text-primary)] font-semibold">{u.designation}</td>
-                      <td className="py-3.5 px-3">
-                        {u.managerName ? (
-                          <span className="font-medium text-xs text-[var(--nexa-text-primary)] flex items-center gap-1.5">
-                            <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
-                            {u.managerName}
-                          </span>
-                        ) : (
-                          <span className="text-[var(--nexa-text-muted)] font-medium">—</span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-3">
-                        {editingUserId === u.id ? (
-                          <select
-                            value={selectedRole}
-                            onChange={(e) => setSelectedRole(e.target.value as RoleKey)}
-                            className="px-2.5 py-1 text-xs font-bold rounded-full bg-[var(--nexa-bg-base)] border border-[#1A56DB] text-[var(--nexa-text-primary)] outline-none"
-                          >
-                            <option value="admin">Admin</option>
-                            <option value="md">MD (Executive)</option>
-                            <option value="hr">HR</option>
-                            <option value="accountant">Accountant</option>
-                            <option value="marketer">Marketer</option>
-                            <option value="sales_closer">Sales Closer</option>
-                            <option value="manager">Manager</option>
-                            <option value="employee">Employee</option>
-                            <option value="cashier">POS Cashier</option>
-                            <option value="inventory_officer">Inventory Officer</option>
-                            <option value="dispatcher">Dispatcher</option>
-                          </select>
-                        ) : (
-                          <div className="space-y-1.5">
-                            <div>{getRoleBadge(u.role)}</div>
-                            {u.assignedPages && u.assignedPages.length > 0 && (
-                              <div className="flex flex-wrap gap-1 max-w-xs">
-                                {u.assignedPages.map((pgKey) => {
-                                  const pg = getPageInfo(pgKey);
-                                  const isSalesCrm = (u.role === "sales_closer" || u.designation?.toLowerCase().includes("sales closer")) && pgKey === "crm";
-                                  return (
-                                    <span
-                                      key={pgKey}
-                                      className={cn(
-                                        "text-[10px] px-1.5 py-0.5 rounded-md font-medium border inline-flex items-center",
-                                        isSalesCrm
-                                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400 font-bold"
-                                          : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)]"
-                                      )}
-                                      title={pg.description}
-                                    >
-                                      {isSalesCrm ? "CRM (Sales Closer)" : pg.label}
-                                    </span>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-3 text-right">
-                        {editingUserId === u.id ? (
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => handleRoleChange(u.id, selectedRole)}
-                              disabled={isSaving}
-                              className="px-3 py-1 rounded-full bg-emerald-600 text-white font-bold hover:bg-emerald-700 text-xs cursor-pointer shadow-xs"
-                            >
-                              {isSaving ? "Saving..." : "Save"}
-                            </button>
-                            <button
-                              onClick={() => setEditingUserId(null)}
-                              className="px-3 py-1 rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-xs font-semibold cursor-pointer"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
+                        <td className="py-3.5 px-3 text-[var(--nexa-text-muted)] font-medium">{u.department}</td>
+                        <td className="py-3.5 px-3 text-[var(--nexa-text-primary)] font-semibold">{u.designation}</td>
+                        <td className="py-3.5 px-3">
+                          {u.managerName ? (
+                            <span className="font-medium text-xs text-[var(--nexa-text-primary)] flex items-center gap-1.5">
+                              <UserCheck className="w-3.5 h-3.5 text-emerald-500" />
+                              {u.managerName}
+                            </span>
+                          ) : (
+                            <span className="text-[var(--nexa-text-muted)] font-medium">—</span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-3 text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             <NexaButton
                               size="sm"
@@ -1104,12 +1084,11 @@ function UserManagementContent() {
                               Delete
                             </NexaButton>
                           </div>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
@@ -1217,7 +1196,9 @@ function UserManagementContent() {
                     className="w-full px-3.5 py-2 text-xs font-bold rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] cursor-pointer"
                   >
                     <option value="employee">Employee</option>
-                    <option value="sales_closer">Sales Closer (Employee Portal + CRM)</option>
+                    {isCrmProvisioned && (
+                      <option value="sales_closer">Sales Closer (Employee Portal + CRM)</option>
+                    )}
                     <option value="manager">Manager</option>
                     <option value="marketer">Growth Marketer</option>
                     <option value="hr">Human Resources</option>
@@ -1348,102 +1329,216 @@ function UserManagementContent() {
                 </div>
               </div>
 
-              {/* ASSIGNED PAGES & PORTALS ACCESS */}
-              <div className="space-y-2.5 pt-3 border-t border-[var(--nexa-border)]">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
+              {/* ASSIGNED PAGES & PORTALS ACCESS - ONLY FOR NON-ADMINS */}
+              {formRole !== "admin" ? (
+                <div className="space-y-2 pt-3 border-t border-[var(--nexa-border)]" ref={pagesDropdownRef}>
+                  <div className="flex items-center justify-between">
                     <label className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
                       <Shield className="w-3.5 h-3.5 text-[#1A56DB]" />
                       Assigned Pages & Portals Access
                     </label>
-                    <p className="text-[11px] text-[var(--nexa-text-secondary)]">
-                      Control which pages this user can see and navigate to. Sales closers can access Employee Portal and CRM (Sales Closer Portal).
-                    </p>
+                    <span className="text-[10px] font-semibold text-[var(--nexa-text-muted)]">
+                      {formAssignedPages.length} of {ASSIGNABLE_PAGES.length} selected
+                    </span>
                   </div>
-                  <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFormRole("sales_closer");
-                        setFormAssignedPages(["employee", "crm"]);
-                      }}
-                      className="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border border-emerald-500/20 cursor-pointer transition-colors"
-                      title="Set to Sales Closer with Employee Portal and CRM"
-                    >
-                      Sales Closer (CRM + Emp)
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormAssignedPages(["employee"])}
-                      className="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)] cursor-pointer transition-colors"
-                    >
-                      Employee Only
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setFormAssignedPages(ASSIGNABLE_PAGES.map((p) => p.key))}
-                      className="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)] cursor-pointer transition-colors"
-                    >
-                      Select All
-                    </button>
-                  </div>
-                </div>
+                  <p className="text-[11px] text-[var(--nexa-text-secondary)]">
+                    Configure accessible portals and modules for this user (e.g. Sales Closer Portal, Employee Portal, CRM).
+                  </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto p-1.5 border border-[var(--nexa-border)] rounded-2xl bg-[var(--nexa-bg-base)]/40">
-                  {ASSIGNABLE_PAGES.map((page) => {
-                    const isChecked = formAssignedPages.includes(page.key);
-                    const isSalesCloserCRM = page.key === "crm";
-                    return (
-                      <label
-                        key={page.key}
+                  {/* Dropdown trigger button */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setIsPagesDropdownOpen((prev) => !prev)}
+                      className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-[#1A56DB] flex items-center justify-between text-left transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2 overflow-hidden flex-1 mr-2">
+                        <span className="font-semibold text-[var(--nexa-text-primary)] truncate">
+                          {formAssignedPages.length === 0
+                            ? "Select accessible pages & portals..."
+                            : `${formAssignedPages.length} portal${formAssignedPages.length > 1 ? "s" : ""} & page${formAssignedPages.length > 1 ? "s" : ""} selected`}
+                        </span>
+                      </div>
+                      <ChevronDown
                         className={cn(
-                          "flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer select-none text-left",
-                          isChecked
-                            ? isSalesCloserCRM
-                              ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-950 dark:text-emerald-200"
-                              : "bg-[#1A56DB]/10 border-[#1A56DB]/40 text-[var(--nexa-text-primary)]"
-                            : "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)] hover:border-[var(--nexa-border)]/80 text-[var(--nexa-text-secondary)]"
+                          "w-4 h-4 text-[var(--nexa-text-muted)] transition-transform shrink-0",
+                          isPagesDropdownOpen && "rotate-180 text-[#1A56DB]"
                         )}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setFormAssignedPages((prev) => [...prev, page.key]);
-                            } else {
-                              setFormAssignedPages((prev) => prev.filter((k) => k !== page.key));
-                            }
-                          }}
-                          className="mt-0.5 rounded border-[var(--nexa-border)] text-[#1A56DB] focus:ring-[#1A56DB] cursor-pointer"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-bold text-xs">
-                              {page.label}
-                            </span>
-                            {page.badge && (
-                              <span
+                      />
+                    </button>
+
+                    {/* Dropdown checklist menu */}
+                    {isPagesDropdownOpen && (
+                      <div className="mt-2 p-3 rounded-2xl bg-[var(--nexa-bg-base)]/90 border border-[var(--nexa-border)] shadow-xl space-y-2.5">
+                        {/* Quick preset buttons */}
+                        <div className="flex items-center gap-1.5 flex-wrap pb-2 border-b border-[var(--nexa-border)]">
+                          <span className="text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider mr-1">
+                            Presets:
+                          </span>
+                          {isCrmProvisioned && (
+                            <button
+                              type="button"
+                              onClick={() => setFormAssignedPages(["sales_closer", "employee", "crm"])}
+                              className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border border-emerald-500/20 cursor-pointer transition-colors"
+                            >
+                              Sales Closer (Portal + CRM + Emp)
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setFormAssignedPages(["employee"])}
+                            className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)] cursor-pointer transition-colors"
+                          >
+                            Employee Only
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormAssignedPages(ASSIGNABLE_PAGES.map((p) => p.key))}
+                            className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)] cursor-pointer transition-colors"
+                          >
+                            Select All
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setFormAssignedPages([])}
+                            className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 border border-rose-500/20 cursor-pointer transition-colors ml-auto"
+                          >
+                            Clear
+                          </button>
+                        </div>
+
+                        {/* Search inside dropdown */}
+                        <div className="relative">
+                          <Search className="w-3.5 h-3.5 text-[var(--nexa-text-muted)] absolute left-2.5 top-1/2 -translate-y-1/2" />
+                          <input
+                            type="text"
+                            placeholder="Filter pages, portals..."
+                            value={pagesSearch}
+                            onChange={(e) => setPagesSearch(e.target.value)}
+                            className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
+                          />
+                        </div>
+
+                        {/* Checklist items */}
+                        <div className="max-h-52 overflow-y-auto space-y-1 pr-1 divide-y divide-[var(--nexa-border)]/40">
+                          {filteredAssignablePages.map((page) => {
+                            const isChecked = formAssignedPages.includes(page.key);
+                            const isSalesPortal = page.key === "sales_closer" || page.key === "crm";
+                            return (
+                              <label
+                                key={page.key}
                                 className={cn(
-                                  "text-[9px] px-1.5 py-0.2 rounded font-semibold border",
-                                  isSalesCloserCRM
-                                    ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border-emerald-500/30"
-                                    : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-muted)] border-[var(--nexa-border)]"
+                                  "flex items-start gap-2.5 p-2 rounded-xl transition-all cursor-pointer select-none text-left pt-2",
+                                  isChecked
+                                    ? isSalesPortal
+                                      ? "bg-emerald-500/10 border border-emerald-500/30 text-emerald-950 dark:text-emerald-200"
+                                      : "bg-[#1A56DB]/10 border border-[#1A56DB]/30 text-[var(--nexa-text-primary)]"
+                                    : "hover:bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] border border-transparent"
                                 )}
                               >
-                                {page.badge}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[10px] text-[var(--nexa-text-muted)] leading-tight mt-0.5 line-clamp-2">
-                            {page.description}
-                          </p>
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setFormAssignedPages((prev) => [...prev, page.key]);
+                                    } else {
+                                      setFormAssignedPages((prev) => prev.filter((k) => k !== page.key));
+                                    }
+                                  }}
+                                  className="mt-0.5 rounded border-[var(--nexa-border)] text-[#1A56DB] focus:ring-[#1A56DB] cursor-pointer"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="font-bold text-xs">{page.label}</span>
+                                    {page.badge && (
+                                      <span
+                                        className={cn(
+                                          "text-[9px] px-1.5 py-0.2 rounded font-semibold border",
+                                          isSalesPortal
+                                            ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border-emerald-500/30"
+                                            : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-muted)] border-[var(--nexa-border)]"
+                                        )}
+                                      >
+                                        {page.badge}
+                                      </span>
+                                    )}
+                                    <span className="text-[10px] text-[var(--nexa-text-muted)] font-mono ml-auto">
+                                      {page.route}
+                                    </span>
+                                  </div>
+                                  <p className="text-[10px] text-[var(--nexa-text-muted)] leading-tight mt-0.5 line-clamp-2">
+                                    {page.description}
+                                  </p>
+                                </div>
+                              </label>
+                            );
+                          })}
+                          {filteredAssignablePages.length === 0 && (
+                            <p className="py-4 text-center text-xs text-[var(--nexa-text-muted)]">
+                              No portals or pages match &quot;{pagesSearch}&quot;.
+                            </p>
+                          )}
                         </div>
-                      </label>
-                    );
-                  })}
+
+                        {/* Footer */}
+                        <div className="flex items-center justify-between pt-2 border-t border-[var(--nexa-border)]">
+                          <span className="text-[10px] text-[var(--nexa-text-muted)]">
+                            {formAssignedPages.length} item{formAssignedPages.length === 1 ? "" : "s"} selected
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setIsPagesDropdownOpen(false)}
+                            className="px-3 py-1 bg-[#1A56DB] text-white rounded-lg text-xs font-bold hover:bg-[#1A56DB]/90 cursor-pointer shadow-xs"
+                          >
+                            Done
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Selected pages badge pills preview */}
+                  {formAssignedPages.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {formAssignedPages.map((pgKey) => {
+                        const pg = getPageInfo(pgKey);
+                        const isSalesPortal = pgKey === "sales_closer" || pgKey === "crm";
+                        return (
+                          <span
+                            key={pgKey}
+                            className={cn(
+                              "inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold border",
+                              isSalesPortal
+                                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20"
+                                : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)]"
+                            )}
+                          >
+                            {pg.label}
+                            <button
+                              type="button"
+                              onClick={() => setFormAssignedPages((prev) => prev.filter((k) => k !== pgKey))}
+                              className="hover:text-rose-500 text-[var(--nexa-text-muted)] cursor-pointer"
+                              title={`Remove ${pg.label}`}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              </div>
+              ) : (
+                <div className="pt-3 border-t border-[var(--nexa-border)]">
+                  <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-[var(--nexa-text-secondary)] flex items-center gap-2.5">
+                    <ShieldCheck className="w-4 h-4 text-[#1A56DB] shrink-0" />
+                    <span>
+                      <strong className="text-[var(--nexa-text-primary)]">Administrator Account:</strong> Unrestricted access to all ERP portals, admin consoles, and operations modules is automatically granted.
+                    </span>
+                  </div>
+                </div>
+              )}
 
               <div className="pt-3 border-t border-[var(--nexa-border)] flex items-center justify-end gap-2">
                 <NexaButton

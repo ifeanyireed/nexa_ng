@@ -32,7 +32,13 @@ async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T> {
     headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const res = await fetch(url, {
+  let requestUrl = url;
+  if (isServer && url.startsWith("/")) {
+    const port = process.env.PORT || 3002;
+    requestUrl = `http://localhost:${port}${url}`;
+  }
+
+  const res = await fetch(requestUrl, {
     ...options,
     headers,
   });
@@ -107,12 +113,12 @@ export const USER_API = {
   },
 
   getTenantRBAC: async (orgId = "default") => {
-    return fetchJSON<{ tenant_id: string; matrix: any }>(`${USER_BASE}/organizations/${orgId}/rbac`);
+    return fetchJSON<{ tenant_id: string; matrix: any }>(`/api/organizations/${encodeURIComponent(orgId)}/rbac`);
   },
 
   saveTenantRBAC: async (orgId = "default", matrix: any) => {
     return fetchJSON<{ success: boolean; message: string; tenant_id: string; matrix: any }>(
-      `${USER_BASE}/organizations/${orgId}/rbac`,
+      `/api/organizations/${encodeURIComponent(orgId)}/rbac`,
       {
         method: "PUT",
         body: JSON.stringify({ matrix }),

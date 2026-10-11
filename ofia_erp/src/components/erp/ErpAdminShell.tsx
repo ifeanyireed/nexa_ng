@@ -247,8 +247,13 @@ export function ErpAdminShell({
         return { path: "/erp/accountant", label: "Accountant", roleKey: "accountant" };
       case "marketer":
         return { path: "/erp/marketer", label: "CRM", roleKey: "marketer" };
-      case "sales_closer":
-        return { path: "/erp/admin/crm", label: "CRM", roleKey: "sales_closer" };
+      case "sales_closer": {
+        const isCrmDisabled = permissionMatrix.admin?.crm === false || (permissionMatrix as any).tenant_provision?.crm === false;
+        if (isCrmDisabled) {
+          return { path: "/erp/employee", label: "Employee", roleKey: "employee" };
+        }
+        return { path: "/erp/ops/crm", label: "Sales Closer", roleKey: "sales_closer" };
+      }
       case "employee":
         return { path: "/erp/employee", label: "Employee", roleKey: "employee" };
       case "cashier":
@@ -284,7 +289,7 @@ export function ErpAdminShell({
     const initShell = async () => {
       const list = await fetchDatabaseTenants();
       if (!isCurrent) return;
-      const matched = resolveTenantFromList(list, user?.email);
+      const matched = resolveTenantFromList(list, user?.email, slug);
       const activeName = matched?.name || cachedName || "";
       const tenantKey = matched?.slug || matched?.id || slug || "neweratransports";
       setTenantName(activeName);
@@ -392,6 +397,15 @@ export function ErpAdminShell({
           roleKey: "manager",
           badgeColor: "bg-amber-500/20 text-amber-300 border-amber-400/30",
           iconBg: "from-amber-600 to-orange-600",
+        };
+      } else if (pathname.startsWith("/erp/ops/crm")) {
+        origin = {
+          path: "/erp/ops/crm",
+          label: "Sales Closer",
+          title: "Sales Closer Portal",
+          roleKey: "sales_closer",
+          badgeColor: "bg-emerald-500/20 text-emerald-300 border-emerald-400/30",
+          iconBg: "from-emerald-600 to-teal-600",
         };
       } else if (pathname.startsWith("/erp/ops")) {
         origin = {
@@ -511,6 +525,8 @@ export function ErpAdminShell({
           resolvedRole = "accountant";
         } else if (pathname.startsWith("/erp/marketer")) {
           resolvedRole = "marketer";
+        } else if (pathname.startsWith("/erp/ops/crm")) {
+          resolvedRole = "sales_closer";
         } else if (pathname.startsWith("/erp/ops")) {
           resolvedRole = "dispatcher";
         } else if (pathname.startsWith("/erp/admin")) {
@@ -560,7 +576,8 @@ export function ErpAdminShell({
           if (
             (allowedPage === "accounting" && pathname.startsWith("/erp/accountant")) ||
             (allowedPage === "hr" && pathname.startsWith("/erp/hr")) ||
-            (allowedPage === "crm" && (pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer"))) ||
+            (allowedPage === "sales_closer" && pathname.startsWith("/erp/ops/crm")) ||
+            (allowedPage === "crm" && (pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer") || pathname.startsWith("/erp/ops/crm"))) ||
             (allowedPage === "shop" && pathname.startsWith("/erp/admin/shop")) ||
             (allowedPage === "mobility" && pathname.startsWith("/erp/admin/mobility")) ||
             (allowedPage === "mobility_ops" && pathname.startsWith("/erp/ops/mobility")) ||
@@ -580,6 +597,20 @@ export function ErpAdminShell({
         }
       }
 
+      // CRM & Marketing Module Tenant Provisioning Check:
+      // If the tenant does not have the CRM module, the Sales Closer Portal is inaccessible for ALL users
+      const isCrmProvisioned =
+        permissionMatrix.admin?.crm !== false &&
+        (permissionMatrix as any).tenant_provision?.crm !== false;
+
+      if (pathname.startsWith("/erp/ops/crm") && !isCrmProvisioned) {
+        const fallback = resolvedRole === "admin" ? "/erp/admin" : "/erp/employee";
+        if (typeof window !== "undefined" && pathname !== fallback) {
+          window.location.href = fallback;
+          return;
+        }
+      }
+
       // Dynamic Department Access Check for Portal Protection:
       let isDepartmentGrantedCurrentPath = false;
       if (resolvedDept && loadedDeptConfigs.length > 0) {
@@ -589,7 +620,8 @@ export function ErpAdminShell({
             if (
               (allowedPage === "accounting" && pathname.startsWith("/erp/accountant")) ||
               (allowedPage === "hr" && pathname.startsWith("/erp/hr")) ||
-              (allowedPage === "crm" && (pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer"))) ||
+              (allowedPage === "sales_closer" && pathname.startsWith("/erp/ops/crm")) ||
+              (allowedPage === "crm" && (pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer") || pathname.startsWith("/erp/ops/crm"))) ||
               (allowedPage === "shop" && pathname.startsWith("/erp/admin/shop")) ||
               (allowedPage === "mobility" && pathname.startsWith("/erp/admin/mobility")) ||
               (allowedPage === "mobility_ops" && pathname.startsWith("/erp/ops/mobility")) ||
@@ -613,9 +645,9 @@ export function ErpAdminShell({
       // Strict Role & Assigned Pages Route Protection:
       if (resolvedAssignedPages.length > 0 && resolvedRole !== "admin") {
         if (!isAssignedGrantedCurrentPath && !isDepartmentGrantedCurrentPath) {
-          const fallback = resolvedAssignedPages.includes("employee")
-            ? "/erp/employee"
-            : (resolvedAssignedPages.includes("crm") ? "/erp/admin/crm" : "/erp/employee");
+          const fallback = (resolvedAssignedPages.includes("sales_closer") && isCrmProvisioned)
+            ? "/erp/ops/crm"
+            : (resolvedAssignedPages.includes("employee") ? "/erp/employee" : ((resolvedAssignedPages.includes("crm") && isCrmProvisioned) ? "/erp/admin/crm" : "/erp/employee"));
           if (pathname !== fallback) {
             window.location.href = fallback;
             return;
@@ -623,8 +655,12 @@ export function ErpAdminShell({
         }
       } else if (!isDepartmentGrantedCurrentPath) {
         if (resolvedRole === "sales_closer") {
-          if (!pathname.startsWith("/erp/employee") && !pathname.startsWith("/erp/admin/crm") && !pathname.startsWith("/erp/marketer")) {
-            window.location.href = "/erp/admin/crm";
+          if (!isCrmProvisioned) {
+            window.location.href = "/erp/employee";
+            return;
+          }
+          if (!pathname.startsWith("/erp/employee") && !pathname.startsWith("/erp/ops/crm") && !pathname.startsWith("/erp/admin/crm") && !pathname.startsWith("/erp/marketer")) {
+            window.location.href = "/erp/ops/crm";
             return;
           }
         } else if (resolvedRole === "employee") {
@@ -733,6 +769,7 @@ export function ErpAdminShell({
         else if (pathname.includes("/admin/dispatch")) pageHeading = "Ofia Dispatch Manager";
         else if (pathname.includes("/ops/dispatch")) pageHeading = "Dispatch Operator";
         else if (pathname.includes("/admin/users")) pageHeading = "Staff Directory & Roles";
+        else if (pathname.startsWith("/erp/ops/crm")) pageHeading = "Sales Closer Portal";
         else if (pathname.includes("/admin/ai")) pageHeading = "AI Swarm & Operations";
         else if (pathname.includes("/admin/marketplace")) pageHeading = "Marketplace & Storefronts";
         else if (pathname.startsWith("/erp/accountant")) pageHeading = "Finance & Accounting";
@@ -788,21 +825,13 @@ export function ErpAdminShell({
     { label: "Ofia Dispatch Manager", icon: <Bike className="w-6 h-6" />, href: "/erp/admin/dispatch", badge: "Admin", key: "dispatch", section: "Operations" },
 
     // 2. OFIA ENTERPRISE SUITE
-    {
-      label: currentRole === "sales_closer" || (userAssignedPages.includes("crm") && currentRole !== "admin")
-        ? "CRM (Sales Closer Portal)"
-        : "CRM & Marketing",
-      icon: <BarChart3 className="w-6 h-6" />,
-      href: "/erp/admin/crm",
-      badge: currentRole === "sales_closer" ? "Closer" : "CRM",
-      key: "crm",
-      section: "Ofia Enterprise Suite",
-    },
+    { label: "CRM & Marketing", icon: <BarChart3 className="w-6 h-6" />, href: "/erp/admin/crm", badge: "CRM", key: "crm", section: "Ofia Enterprise Suite" },
     { label: "Accounting & Ledgers", icon: <Layers className="w-6 h-6" />, href: "/erp/accountant", badge: "GL", key: "accounting", section: "Ofia Enterprise Suite" },
     { label: "HR & Appraisals", icon: <Users className="w-6 h-6" />, href: "/erp/hr", key: "hr", section: "Ofia Enterprise Suite" },
     { label: "User Management", icon: <UserCheck className="w-6 h-6" />, href: "/erp/admin/users", badge: "Staff", key: "users", section: "Ofia Enterprise Suite" },
 
     // 3. PORTALS & WORKSPACES
+    { label: "Sales Closer Portal", icon: <Target className="w-6 h-6" />, href: "/erp/ops/crm", badge: "Closer", key: "sales_closer", section: "Portals & Team" },
     { label: "Mobility Operations", icon: <Radio className="w-6 h-6" />, href: "/erp/ops/mobility", badge: "Live", key: "mobility_ops", section: "Portals & Team" },
     { label: "Dispatch Operator", icon: <Bike className="w-6 h-6" />, href: "/erp/ops/dispatch", badge: "Live", key: "dispatch_ops", section: "Portals & Team" },
     { label: "Employee Portal", icon: <UserCheck className="w-6 h-6" />, href: "/erp/employee", key: "employee", section: "Portals & Team" },
@@ -858,6 +887,13 @@ export function ErpAdminShell({
         { label: "Staff Directory", href: "/erp/admin/users", icon: <Users className="w-3.5 h-3.5" /> },
         { label: "Departments", href: "/erp/admin/departments", icon: <Building2 className="w-3.5 h-3.5" /> },
         { label: "Mass Messaging", href: "/erp/admin/users/mass-messaging", icon: <Mail className="w-3.5 h-3.5" /> },
+      ];
+    }
+
+    if (pathname.startsWith("/erp/ops/crm")) {
+      return [
+        { label: "Leads Directory", href: "/erp/ops/crm?tab=leads", icon: <Target className="w-3.5 h-3.5" />, badge: "Leads" },
+        { label: "Sales Activity", href: "/erp/ops/crm?tab=activities", icon: <Calendar className="w-3.5 h-3.5" />, badge: "Activities" },
       ];
     }
 
@@ -1030,6 +1066,11 @@ export function ErpAdminShell({
         const isTpAllowed = (permissionMatrix as any).tenant_provision?.dispatch !== false;
         return isAdminAllowed && isTpAllowed;
       }
+      if (key === "sales_closer") {
+        const isAdminAllowed = permissionMatrix.admin?.crm !== false;
+        const isTpAllowed = (permissionMatrix as any).tenant_provision?.crm !== false;
+        return isAdminAllowed && isTpAllowed;
+      }
       const isAdminAllowed = permissionMatrix.admin?.[key] !== false;
       const isTpAllowed = (permissionMatrix as any).tenant_provision?.[key] !== false;
       return isAdminAllowed && isTpAllowed;
@@ -1043,11 +1084,17 @@ export function ErpAdminShell({
     // 2. Direct Assigned Pages Check (Configured in User Management):
     // E.g. A sales closer sees the employee portal and the CRM (Sales Closer Portal)
     if (userAssignedPages && userAssignedPages.length > 0) {
+      if (item.key === "sales_closer") {
+        return isProvisioned("sales_closer") && (userAssignedPages.includes("sales_closer") || userAssignedPages.includes("crm"));
+      }
+      if (item.key === "crm") {
+        return isProvisioned("crm") && (userAssignedPages.includes("crm") || userAssignedPages.includes("sales_closer"));
+      }
       return userAssignedPages.includes(item.key);
     }
 
     if (currentRole === "sales_closer") {
-      return item.key === "employee" || item.key === "crm";
+      return item.key === "employee" || ((item.key === "sales_closer" || item.key === "crm") && isProvisioned("crm"));
     }
 
     // 2. Dynamic Department Access Evaluation:

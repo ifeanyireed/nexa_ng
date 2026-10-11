@@ -245,6 +245,14 @@ export const ERP_MODULES: ErpModuleDef[] = [
     href: "/erp/ops/dispatch",
     badge: "Live",
   },
+  {
+    key: "sales_closer",
+    label: "Sales Closer Portal",
+    category: "Portals & Team",
+    description: "Dedicated pipeline for assigned leads, sales outreach, calls, demos, and closing activities.",
+    href: "/erp/ops/crm",
+    badge: "Closer",
+  },
 ];
 
 export interface AssignablePage {
@@ -258,6 +266,14 @@ export interface AssignablePage {
 
 export const ASSIGNABLE_PAGES: AssignablePage[] = [
   {
+    key: "sales_closer",
+    label: "Sales Closer Portal",
+    description: "Dedicated pipeline for assigned leads directory, sales outreach, calls, demos, and closing activities.",
+    route: "/erp/ops/crm",
+    category: "Portals & Team",
+    badge: "Closer",
+  },
+  {
     key: "employee",
     label: "Employee Portal",
     description: "Personal self-service appraisals, profile audit, career quest challenges, and reviews.",
@@ -267,11 +283,11 @@ export const ASSIGNABLE_PAGES: AssignablePage[] = [
   },
   {
     key: "crm",
-    label: "CRM (Sales Closer Portal)",
+    label: "CRM & Email Marketing",
     description: "B2B sales pipelines, contact lists, lead scoring, deals stages, and client outreach.",
     route: "/erp/admin/crm",
     category: "Ofia Enterprise Suite",
-    badge: "Sales Closer",
+    badge: "CRM",
   },
   {
     key: "manager",
@@ -380,14 +396,14 @@ export function getDefaultPagesForRole(role: RoleKey | string, designation?: str
   const normalizedRole = (role || "").toLowerCase();
   const desig = (designation || "").toLowerCase();
 
-  // A sales closer sees the employee portal and the CRM (Sales Closer Portal)
+  // A sales closer sees the employee portal and the Sales Closer Portal (/erp/ops/crm) + CRM
   if (
     normalizedRole === "sales_closer" ||
     desig.includes("sales closer") ||
     desig.includes("closer") ||
     desig.includes("marketing 6")
   ) {
-    return ["employee", "crm"];
+    return ["sales_closer", "employee", "crm"];
   }
 
   switch (normalizedRole) {
@@ -439,6 +455,7 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     employee: true,
     manager: true,
     md: true,
+    sales_closer: true,
   },
   md: {
     mission: true,
@@ -521,6 +538,7 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     mission: false,
     ai: false,
     crm: true,
+    sales_closer: true,
     users: false,
     departments: false,
     marketplace: false,
@@ -681,6 +699,16 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
         merged.admin[mod.key] = isAllowed;
       }
 
+      // Explicitly tie Sales Closer Portal and CRM access to workspace CRM module provisioning
+      const isCrmProvisioned = tp.crm !== false && ad.crm !== false;
+      merged.admin.crm = isCrmProvisioned;
+      merged.admin.sales_closer = isCrmProvisioned && (tp.sales_closer !== false && ad.sales_closer !== false);
+
+      if ((merged as any).tenant_provision) {
+        (merged as any).tenant_provision.crm = isCrmProvisioned;
+        (merged as any).tenant_provision.sales_closer = merged.admin.sales_closer;
+      }
+
       // 2. For other roles, a module is enabled ONLY IF:
       // a) Super Admin allowed the module for the tenant in the database, AND
       // b) Tenant Admin granted it to that role
@@ -691,6 +719,22 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
             const isRoleGranted = merged[role.key][mod.key] ?? DEFAULT_PERMISSION_MATRIX[role.key]?.[mod.key] ?? false;
             merged[role.key][mod.key] = isTenantAllowed && isRoleGranted;
           }
+        }
+      }
+
+      // Explicitly synchronize role permissions for Sales Closer & Marketer with CRM provisioning
+      if (merged.sales_closer) {
+        merged.sales_closer.crm = isCrmProvisioned;
+        merged.sales_closer.sales_closer = isCrmProvisioned;
+      }
+      if (merged.marketer) {
+        merged.marketer.crm = isCrmProvisioned;
+        merged.marketer.sales_closer = isCrmProvisioned;
+      }
+      if (!isCrmProvisioned) {
+        for (const role of ERP_ROLES) {
+          merged[role.key].crm = false;
+          merged[role.key].sales_closer = false;
         }
       }
 
@@ -855,6 +899,11 @@ export function useTenantProvisioning() {
         const isTenantProvisionAllowed = (matrix as any).tenant_provision?.dispatch !== false;
         return isAdminAllowed && isTenantProvisionAllowed;
       }
+      if (moduleKey === "sales_closer") {
+        const isAdminAllowed = matrix.admin?.crm !== false;
+        const isTenantProvisionAllowed = (matrix as any).tenant_provision?.crm !== false;
+        return isAdminAllowed && isTenantProvisionAllowed;
+      }
       const isAdminAllowed = matrix.admin?.[moduleKey] !== false;
       const isTenantProvisionAllowed = (matrix as any).tenant_provision?.[moduleKey] !== false;
       return isAdminAllowed && isTenantProvisionAllowed;
@@ -936,8 +985,8 @@ export const ROLE_CAPABILITIES: Record<RoleKey, RoleCapability> = {
     key: "sales_closer",
     label: "Sales Closer",
     controlPanels: ["crm"],
-    portals: ["employee"],
-    homeRoute: "/erp/admin/crm",
+    portals: ["employee", "sales_closer" as any],
+    homeRoute: "/erp/ops/crm",
   },
   dispatcher: {
     key: "dispatcher",
@@ -1015,9 +1064,13 @@ export function isNavItemVisibleForRole(
     return itemKey === "employee";
   }
 
-  // Sales Closer sees Employee Portal and CRM (Sales Closer Portal)
+  // Sales Closer sees Sales Closer Portal, Employee Portal, and CRM (only if CRM is provisioned)
   if (role === "sales_closer") {
-    return itemKey === "employee" || itemKey === "crm";
+    const hasCrm = isModuleProvisioned("crm");
+    if (itemKey === "sales_closer" || itemKey === "crm") {
+      return hasCrm;
+    }
+    return itemKey === "employee";
   }
 
   // Line Manager sees Manager Portal and Employee Portal
@@ -1063,9 +1116,14 @@ export function isNavItemVisibleForUser(
   if (role === "admin") return true;
 
   // Direct Assigned Pages Check:
-  // If the user has assignedPages configured (e.g. A sales closer assigned Employee Portal + CRM),
-  // they see only their explicitly assigned pages!
+  // If the user has assignedPages configured (e.g. A sales closer assigned Employee Portal + Sales Closer Portal):
   if (user?.assignedPages && Array.isArray(user.assignedPages) && user.assignedPages.length > 0) {
+    if (itemKey === "sales_closer") {
+      return isModuleProvisioned("crm") && (user.assignedPages.includes("sales_closer") || user.assignedPages.includes("crm"));
+    }
+    if (itemKey === "crm") {
+      return isModuleProvisioned("crm") && (user.assignedPages.includes("crm") || user.assignedPages.includes("sales_closer"));
+    }
     return user.assignedPages.includes(itemKey);
   }
 

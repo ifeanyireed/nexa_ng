@@ -19,6 +19,8 @@ const DEFAULT_ROLES = [
   "employee",
   "hr",
   "accountant",
+  "sales_closer",
+  "marketer",
 ];
 
 function generateDefaultMatrix(): Record<string, Record<string, boolean>> {
@@ -26,7 +28,15 @@ function generateDefaultMatrix(): Record<string, Record<string, boolean>> {
   for (const role of DEFAULT_ROLES) {
     matrix[role] = {};
     for (const mod of SUPER_ADMIN_ERP_MODULES) {
-      matrix[role][mod.key] = true;
+      if (role === "employee") {
+        matrix[role][mod.key] = mod.key === "employee" || mod.key === "quests";
+      } else if (role === "sales_closer") {
+        matrix[role][mod.key] = mod.key === "sales_closer" || mod.key === "crm" || mod.key === "employee" || mod.key === "quests";
+      } else if (role === "marketer") {
+        matrix[role][mod.key] = mod.key === "crm" || mod.key === "sales_closer" || mod.key === "ai" || mod.key === "marketplace" || mod.key === "employee" || mod.key === "quests";
+      } else {
+        matrix[role][mod.key] = true;
+      }
     }
   }
   return matrix;
@@ -65,14 +75,6 @@ async function resolveCanonicalOrg(pool: any, rawOrgId: string) {
         );
       }
 
-      if (orgRes.rows.length === 0) {
-        orgRes = await pool.query(
-          `SELECT id, slug FROM "Organization" 
-           ORDER BY "created_at" ASC NULLS LAST 
-           LIMIT 1`
-        );
-      }
-
       if (orgRes.rows.length > 0) {
         canonicalSlug = orgRes.rows[0].slug;
         canonicalId = orgRes.rows[0].id;
@@ -93,22 +95,7 @@ export async function GET(
   const pool = getDbPool();
   const { canonicalSlug, canonicalId } = await resolveCanonicalOrg(pool, orgId);
 
-  // 1. Try to fetch from remote Go microservice if available using canonicalSlug
-  try {
-    const res = await fetch(`${USER_BASE}/organizations/${encodeURIComponent(canonicalSlug)}/rbac`, {
-      cache: "no-store",
-    });
-    if (res.ok) {
-      const data = await res.json();
-      if (data && data.matrix && Object.keys(data.matrix).length > 0) {
-        return NextResponse.json(data);
-      }
-    }
-  } catch {
-    // service_users is offline or unreachable, fall back to direct Neon PostgreSQL
-  }
-
-  // 2. Fetch directly from Neon PostgreSQL
+  // 1. Direct Neon PostgreSQL Query first for instant consistency
   try {
     if (pool) {
       const permRes = await pool.query(
@@ -134,6 +121,22 @@ export async function GET(
     }
   } catch (err: any) {
     console.warn("Neon PostgreSQL RBAC read error:", err.message);
+  }
+
+  // 2. Try remote microservice with strict timeout (1500ms)
+  try {
+    const res = await fetch(`${USER_BASE}/organizations/${encodeURIComponent(canonicalSlug)}/rbac`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(1500),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.matrix && Object.keys(data.matrix).length > 0) {
+        return NextResponse.json(data);
+      }
+    }
+  } catch {
+    // service_users is offline or timed out
   }
 
   // 3. Fallback to default matrix
@@ -166,7 +169,6 @@ export async function PUT(
       );
     }
 
-    // 1. Forward to remote microservice if alive
     const pool = getDbPool();
     if (!pool) {
       return NextResponse.json(
@@ -177,22 +179,45 @@ export async function PUT(
 
     const { canonicalSlug, canonicalId } = await resolveCanonicalOrg(pool, orgId);
 
-    // 1. Forward to remote microservice if alive
-    try {
-      await fetch(`${USER_BASE}/organizations/${encodeURIComponent(canonicalSlug)}/rbac`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ matrix }),
-      });
-    } catch {
-      // service_users is offline, continuing to direct Neon write
-    }
-
     const targets = Array.from(new Set([canonicalSlug, canonicalId])).filter(Boolean);
 
     const valuesPlaceholders: string[] = [];
     const queryParams: any[] = [];
     let pIdx = 1;
+
+    for (const targetTenantId of targets) {
+      for (const [role, modules] of Object.entries(matrix)) {
+        for (const [moduleKey, isEnabled] of Object.entries(modules)) {
+          const permId = `perm_${targetTenantId}_${role}_${moduleKey}`;
+          valuesPlaceholders.push(
+            `($${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, $${pIdx++}, NOW(), NOW())`
+          );
+          queryParams.push(permId, targetTenantId, role, moduleKey, Boolean(isEnabled));
+        }
+      }
+    }
+
+    if (valuesPlaceholders.length > 0) {
+      const batchSql = `
+        INSERT INTO "TenantRolePermission" (id, "tenantId", role, "moduleKey", "isEnabled", "createdAt", "updatedAt")
+        VALUES ${valuesPlaceholders.join(", ")}
+        ON CONFLICT ("tenantId", role, "moduleKey")
+        DO UPDATE SET "isEnabled" = EXCLUDED."isEnabled", "updatedAt" = NOW()
+      `;
+      await pool.query(batchSql, queryParams);
+    }
+
+    // Forward to remote microservice with strict timeout non-blocking
+    try {
+      await fetch(`${USER_BASE}/organizations/${encodeURIComponent(canonicalSlug)}/rbac`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ matrix }),
+        signal: AbortSignal.timeout(1500),
+      });
+    } catch {
+      // service_users is offline or timed out, direct Neon write succeeded
+    }
 
     for (const targetTenantId of targets) {
       for (const [role, modules] of Object.entries(matrix)) {

@@ -56,7 +56,35 @@ export async function middleware(request: NextRequest) {
   }
 
   // 6. Role-Based Access Control (RBAC) at the Edge
-  // Block mutating operations (POST, PUT, PATCH, DELETE) for VIEWER role on admin API endpoints
+  // A. EDITOR_SUPPORT role: only allow Blog (/cms), CRM & Growth (/crm), and Support System (/support)
+  if (user.role === "EDITOR_SUPPORT") {
+    const isAllowedPage =
+      pathname.startsWith("/cms") ||
+      pathname.startsWith("/crm") ||
+      pathname.startsWith("/support");
+
+    if (!pathname.startsWith("/api/")) {
+      if (!isAllowedPage) {
+        return NextResponse.redirect(new URL("/support", request.url));
+      }
+    } else {
+      const isAllowedApi =
+        pathname.startsWith("/api/auth") ||
+        pathname.startsWith("/api/crm") ||
+        pathname.startsWith("/api/v1/cms") ||
+        pathname.startsWith("/api/upload") ||
+        pathname.startsWith("/api/support");
+
+      if (!isAllowedApi) {
+        return NextResponse.json(
+          { error: "Forbidden: Scoped Editor/Support role can only access CMS, CRM, and Support resources" },
+          { status: 403 }
+        );
+      }
+    }
+  }
+
+  // B. Block mutating operations (POST, PUT, PATCH, DELETE) for VIEWER role on admin API endpoints
   if (user.role === "VIEWER") {
     const isMutatingMethod = ["POST", "PUT", "PATCH", "DELETE"].includes(request.method);
     if (pathname.startsWith("/api/") && isMutatingMethod) {

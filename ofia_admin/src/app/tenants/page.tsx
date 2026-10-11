@@ -52,6 +52,7 @@ import {
   Users,
   Database,
   RefreshCw,
+  FolderTree,
   Sparkles,
   Lock,
   Unlock,
@@ -1055,7 +1056,10 @@ function TenantManagementContent() {
   return (
     <SuperAdminShell
       title="Tenant Management & Module Provisioning"
-      subTabs={[]}
+      subTabs={[
+        { label: "Tenant Organizations", href: "/tenants", icon: <Building2 className="w-3.5 h-3.5" /> },
+        { label: "Plan Tiers & Quotas", href: "/subscriptions", icon: <CreditCard className="w-3.5 h-3.5" /> },
+      ]}
       action={
         <div className="flex items-center gap-2.5">
           {toastMessage && (

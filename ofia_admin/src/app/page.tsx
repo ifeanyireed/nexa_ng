@@ -200,14 +200,14 @@ export default function MasterOverviewPage() {
         </div>
       }
     >
-      <div className="space-y-10">
+      <div className="space-y-6 sm:space-y-8 lg:space-y-10">
         {/* TOP 4 EXECUTIVE KPI CARDS */}
         <AdminStatGrid stats={kpis} columns={4} />
 
         {/* MAIN 2-COLUMN GRID (MATCHING /erp/admin EXACT STRUCTURE) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10">
           {/* LEFT 2 COLUMNS */}
-          <div className="lg:col-span-2 space-y-10">
+          <div className="lg:col-span-2 space-y-6 sm:space-y-8 lg:space-y-10">
             {/* QUICK ACTIONS */}
             <section>
               <div className="flex items-center justify-between mb-6">
@@ -261,18 +261,18 @@ export default function MasterOverviewPage() {
                   <NexaCard
                     key={i}
                     variant="flat"
-                    className="p-6 flex flex-col md:flex-row items-center justify-between gap-6 border border-nexa-border bg-nexa-bg-surface/30 hover:bg-nexa-bg-surface/70 transition-all rounded-3xl"
+                    className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-nexa-border bg-nexa-bg-surface/30 hover:bg-nexa-bg-surface/70 transition-all rounded-3xl"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="w-11 h-11 rounded-2xl bg-[#1A56DB]/10 text-[#1A56DB] flex items-center justify-center font-bold text-xs">
+                    <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                      <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#1A56DB]/10 text-[#1A56DB] flex items-center justify-center font-bold text-xs shrink-0">
                         {op.id.split("-")[1] || op.id}
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-sm text-nexa-text-primary">{op.customer}</h4>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h4 className="font-bold text-sm text-nexa-text-primary truncate">{op.customer}</h4>
                           <span
                             className={cn(
-                              "text-[9px] font-bold px-2 py-0.5 rounded-full border",
+                              "text-[9px] font-bold px-2 py-0.5 rounded-full border shrink-0",
                               op.badgeVariant === "danger"
                                 ? "bg-rose-500/10 text-rose-500 border-rose-500/20"
                                 : op.badgeVariant === "info"
@@ -283,13 +283,13 @@ export default function MasterOverviewPage() {
                             {op.status}
                           </span>
                         </div>
-                        <p className="text-xs text-nexa-text-faint font-medium mt-0.5">
+                        <p className="text-xs text-nexa-text-faint font-medium mt-0.5 line-clamp-2">
                           {op.service}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-8">
-                      <div className="text-right">
+                    <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-8 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-nexa-border/50">
+                      <div className="text-left sm:text-right">
                         <p className="text-sm font-extrabold text-nexa-text-primary">{op.amount}</p>
                         <p className="text-[10px] text-nexa-text-faint font-bold uppercase tracking-wider">
                           {op.time}

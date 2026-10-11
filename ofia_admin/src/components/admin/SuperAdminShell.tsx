@@ -5,8 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity,
+  BookOpen,
   Bot,
   Building2,
+  Calendar,
   Car,
   CheckCircle2,
   ChevronDown,
@@ -25,6 +27,7 @@ import {
   LayoutDashboard,
   Lock,
   Mail,
+  MessageSquare,
   PieChart,
   Radio,
   Search,
@@ -39,6 +42,7 @@ import {
   Sparkles,
   Store,
   Terminal,
+  Ticket,
   TrendingUp,
   UserCheck,
   Users,
@@ -48,7 +52,6 @@ import {
   LogOut,
   Bell,
   BarChart3,
-  Calendar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NexaAvatar } from "@/components/nexa/NexaAvatar";
@@ -91,7 +94,9 @@ export function SuperAdminShell({
     logout: handleLogout,
   } = useAdminAuth();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const mobileNavContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -102,6 +107,15 @@ export function SuperAdminShell({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (mobileNavContainerRef.current) {
+      const activeEl = mobileNavContainerRef.current.querySelector('[data-active="true"]');
+      if (activeEl) {
+        activeEl.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      }
+    }
+  }, [pathname]);
 
   const notifications = [
     {
@@ -207,18 +221,29 @@ export function SuperAdminShell({
       ];
     }
 
+    if (pathname.startsWith("/support")) {
+      return [
+        { label: "Dashboard", href: "/support/dashboard", icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
+        { label: "All Tickets", href: "/support/tickets", icon: <Ticket className="w-3.5 h-3.5 text-blue-500" />, badge: "Queue" },
+        { label: "Live Chat", href: "/support/chat", icon: <MessageSquare className="w-3.5 h-3.5 text-emerald-500" />, badge: "Live" },
+        { label: "Knowledge Base", href: "/support/kb", icon: <BookOpen className="w-3.5 h-3.5" /> },
+      ];
+    }
+
     return [];
   };
 
   const activeSubTabs = getSubTabs();
 
-  const navItems: {
+  const isEditorSupport = role === "EDITOR_SUPPORT";
+
+  const allNavItems: {
     label: string;
     icon: React.ReactNode;
     href: string;
     badge?: string;
     key: string;
-    section: "Governance & Hub" | "Tenants & Subscriptions" | "Autonomous AI Swarm" | "Ofia Compass & Commerce" | "Mobility & Transport" | "CRM & Growth";
+    section: "Governance & Hub" | "Tenants & Subscriptions" | "Autonomous AI Swarm" | "Ofia Compass & Commerce" | "Mobility & Transport" | "CRM & Growth" | "Workspace";
   }[] = [
     // 1. GOVERNANCE & HUB
     {
@@ -327,7 +352,45 @@ export function SuperAdminShell({
       key: "cms",
       section: "CRM & Growth",
     },
+    {
+      label: "Support System",
+      icon: <Headphones className="w-6 h-6" />,
+      href: "/support",
+      badge: "Desk",
+      key: "support",
+      section: "CRM & Growth",
+    },
   ];
+
+  // Scoped navigation: EDITOR_SUPPORT sees ONLY Blog, CRM & Growth, and Support System
+  const navItems = isEditorSupport
+    ? [
+        {
+          label: "Blog",
+          icon: <FileText className="w-6 h-6" />,
+          href: "/cms/blog",
+          badge: "CMS",
+          key: "cms",
+          section: "Workspace" as const,
+        },
+        {
+          label: "CRM & Growth",
+          icon: <Users className="w-6 h-6" />,
+          href: "/crm",
+          badge: "2.8k",
+          key: "crm",
+          section: "Workspace" as const,
+        },
+        {
+          label: "Support System",
+          icon: <Headphones className="w-6 h-6" />,
+          href: "/support",
+          badge: "HelpDesk",
+          key: "support",
+          section: "Workspace" as const,
+        },
+      ]
+    : allNavItems;
 
   if (isLoading && !currentUser) {
     return (
@@ -349,12 +412,133 @@ export function SuperAdminShell({
       ? "Grace Jude"
       : (currentUser?.name || "Grace Jude");
 
+  const filteredNavItems = navItems.filter((item) =>
+    item.label.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="min-h-screen bg-nexa-bg-base text-nexa-text-primary flex relative font-sans">
-      {/* SIDEBAR — MATCHING OFIA ERP VERBATIM */}
+    <div className="min-h-screen bg-nexa-bg-base text-nexa-text-primary flex flex-col md:flex-row relative font-sans">
+      {/* MOBILE TOP HEADER BAR (< md) */}
+      <header className="md:hidden sticky top-0 z-40 bg-nexa-bg-surface/95 backdrop-blur-md border-b border-nexa-border px-4 py-2.5 flex items-center justify-between shadow-xs">
+        <Link href="/" className="flex items-center gap-2.5 min-w-0">
+          <img
+            src="/icon.png"
+            alt="Ofia Super Admin"
+            className="w-7 h-7 rounded-lg object-contain shrink-0"
+          />
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-black text-display leading-tight text-nexa-text-primary truncate">
+                Ofia Ecosystem
+              </span>
+              <span
+                className={cn(
+                  "text-[8px] font-extrabold px-1.5 py-0.2 rounded-full uppercase border shrink-0",
+                  role === "SUPER_ADMIN"
+                    ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                    : role === "SECURITY_ADMIN"
+                    ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                    : role === "EDITOR_SUPPORT"
+                    ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                    : "bg-slate-500/10 text-slate-500 border-slate-500/20"
+                )}
+              >
+                {role ? role.replace("_", " ") : "SUPER ADMIN"}
+              </span>
+            </div>
+            <span className="text-[9px] font-bold text-nexa-text-muted truncate">
+              {operatorDisplayName}
+            </span>
+          </div>
+        </Link>
+
+        {/* MOBILE TOP ACTIONS */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* Mobile search toggle */}
+          <button
+            type="button"
+            onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
+            className={cn(
+              "p-1.5 rounded-full border transition-colors cursor-pointer",
+              isMobileSearchOpen
+                ? "bg-nexa-brand/10 border-nexa-brand text-nexa-brand"
+                : "border-nexa-border text-nexa-text-secondary hover:bg-nexa-bg-base"
+            )}
+            title="Search Navigation"
+          >
+            <Search className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Alerts Bell */}
+          <button
+            type="button"
+            onClick={() => setIsNotifOpen(!isNotifOpen)}
+            className="relative p-1.5 rounded-full border border-nexa-border text-nexa-text-secondary hover:bg-nexa-bg-base transition-colors cursor-pointer"
+            title="Cross-App Alerts"
+          >
+            <Bell className="w-3.5 h-3.5" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[13px] h-3 bg-rose-500 rounded-full text-[7px] font-extrabold text-white flex items-center justify-center px-0.5 shadow-sm animate-pulse">
+                {unreadCount}
+              </span>
+            )}
+          </button>
+
+          {/* Theme Toggle */}
+          <div className="scale-90 shrink-0">
+            <NexaThemeToggle />
+          </div>
+
+          {/* Avatar */}
+          <NexaAvatar
+            size="xs"
+            isOnline
+            src={currentUser?.avatar}
+            name={operatorDisplayName}
+          />
+
+          {/* Logout */}
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="p-1.5 rounded-full text-rose-500 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition-colors cursor-pointer"
+            title="Log Out"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </header>
+
+      {/* MOBILE SEARCH BAR DROPDOWN */}
+      {isMobileSearchOpen && (
+        <div className="md:hidden sticky top-[49px] z-30 px-4 py-2 bg-nexa-bg-surface/95 backdrop-blur-md border-b border-nexa-border">
+          <div className="flex items-center bg-nexa-bg-base px-3 py-1.5 rounded-full border border-nexa-border gap-2 w-full">
+            <Search className="w-3.5 h-3.5 text-nexa-text-muted shrink-0" />
+            <input
+              type="text"
+              autoFocus
+              placeholder="Search tabs & console..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-transparent text-xs outline-none w-full text-nexa-text-primary placeholder:text-nexa-text-muted font-medium"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="text-xs text-nexa-text-muted hover:text-nexa-text-primary cursor-pointer"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* DESKTOP SIDEBAR (hidden on mobile) */}
       <aside
         className={cn(
-          "bg-nexa-bg-surface border-r border-nexa-border transition-all duration-300 flex flex-col z-50 sticky top-0 h-screen",
+          "hidden md:flex bg-nexa-bg-surface border-r border-nexa-border transition-all duration-300 flex-col z-30 sticky top-0 h-screen shrink-0",
           isSidebarOpen ? "w-72" : "w-20"
         )}
       >
@@ -435,13 +619,9 @@ export function SuperAdminShell({
         {/* NAV ITEMS WITH CATEGORIZED SECTION GROUPINGS */}
         <nav className="flex-1 px-4 space-y-1 mt-2 overflow-y-auto scrollbar-hide">
           {(() => {
-            const filtered = navItems.filter((item) =>
-              item.label.toLowerCase().includes(searchQuery.toLowerCase())
-            );
-
             let currentSection = "";
 
-            return filtered.map((item, i) => {
+            return filteredNavItems.map((item, i) => {
               const isActive =
                 item.href === "/"
                   ? pathname === "/"
@@ -533,6 +713,8 @@ export function SuperAdminShell({
                             ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
                             : role === "SECURITY_ADMIN"
                             ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                            : role === "EDITOR_SUPPORT"
+                            ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
                             : "bg-slate-500/10 text-slate-500 border-slate-500/20"
                         )}
                       >
@@ -586,39 +768,54 @@ export function SuperAdminShell({
 
             {/* NOTIFICATION CENTER DROPDOWN */}
             {isNotifOpen && (
-              <div className="absolute left-full bottom-0 ml-3 w-80 sm:w-96 bg-nexa-bg-surface border border-nexa-border rounded-3xl shadow-2xl z-[100] overflow-hidden flex flex-col max-h-[500px]">
-                <div className="p-4 border-b border-nexa-border flex items-center justify-between bg-nexa-bg-base/50">
-                  <span className="font-extrabold text-sm text-display">Ecosystem Live Feeds</span>
-                  <span className="text-xs text-nexa-brand font-bold">Real-Time Sync</span>
-                </div>
-
-                <div className="flex-1 overflow-y-auto divide-y divide-nexa-border max-h-[350px]">
-                  {notifications.map((notif) => (
-                    <div
-                      key={notif.id}
-                      className={cn(
-                        "p-4 transition-colors flex gap-3 items-start relative group hover:bg-nexa-bg-base/30",
-                        !notif.isRead && "bg-nexa-brand/5 dark:bg-nexa-brand/10"
-                      )}
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border uppercase tracking-wider bg-blue-500/10 text-blue-500 border-blue-500/20">
-                            {notif.type}
-                          </span>
-                          <span className="text-[10px] text-nexa-text-muted font-semibold">
-                            {notif.time}
-                          </span>
-                        </div>
-                        <h4 className="text-xs font-bold text-nexa-text-primary">{notif.title}</h4>
-                        <p className="text-xs text-nexa-text-secondary mt-0.5 leading-relaxed">
-                          {notif.message}
-                        </p>
-                      </div>
+              <>
+                <div
+                  className="fixed inset-0 z-[95] bg-black/20 backdrop-blur-[1px] md:hidden"
+                  onClick={() => setIsNotifOpen(false)}
+                />
+                <div className="fixed inset-x-4 top-14 sm:inset-x-auto sm:right-4 md:absolute md:left-full md:bottom-0 md:top-auto md:ml-3 w-auto sm:w-96 bg-nexa-bg-surface border border-nexa-border rounded-3xl shadow-2xl z-[100] overflow-hidden flex flex-col max-h-[80vh] md:max-h-[500px]">
+                  <div className="p-4 border-b border-nexa-border flex items-center justify-between bg-nexa-bg-base/50">
+                    <span className="font-extrabold text-sm text-display">Ecosystem Live Feeds</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-nexa-brand font-bold hidden sm:inline">Real-Time Sync</span>
+                      <button
+                        type="button"
+                        onClick={() => setIsNotifOpen(false)}
+                        className="md:hidden p-1 rounded-full text-nexa-text-muted hover:text-nexa-text-primary cursor-pointer"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                     </div>
-                  ))}
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto divide-y divide-nexa-border max-h-[60vh] md:max-h-[350px]">
+                    {notifications.map((notif) => (
+                      <div
+                        key={notif.id}
+                        className={cn(
+                          "p-4 transition-colors flex gap-3 items-start relative group hover:bg-nexa-bg-base/30",
+                          !notif.isRead && "bg-nexa-brand/5 dark:bg-nexa-brand/10"
+                        )}
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border uppercase tracking-wider bg-blue-500/10 text-blue-500 border-blue-500/20">
+                              {notif.type}
+                            </span>
+                            <span className="text-[10px] text-nexa-text-muted font-semibold">
+                              {notif.time}
+                            </span>
+                          </div>
+                          <h4 className="text-xs font-bold text-nexa-text-primary">{notif.title}</h4>
+                          <p className="text-xs text-nexa-text-secondary mt-0.5 leading-relaxed">
+                            {notif.message}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              </>
             )}
           </div>
 
@@ -651,18 +848,18 @@ export function SuperAdminShell({
       </aside>
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <div className="p-8 space-y-6 flex-1">
+      <main className="flex-1 flex flex-col min-w-0 overflow-y-auto pb-24 md:pb-8">
+        <div className="p-4 sm:p-6 md:p-8 space-y-6 flex-1">
           {/* RBAC ROLE BANNER FOR AUDITOR / VIEWER */}
           {role === "VIEWER" && (
-            <div className="px-4 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 text-amber-600 dark:text-amber-400">
+            <div className="px-4 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 text-amber-600 dark:text-amber-400">
               <div className="flex items-center gap-2.5 min-w-0">
                 <ShieldAlert className="w-4 h-4 shrink-0 text-amber-500" />
                 <p className="text-xs font-semibold truncate">
                   <strong className="font-extrabold">Read-Only Mode:</strong> Signed in as <span className="font-mono underline">{operatorDisplayName}</span> (VIEWER / Auditor). All tenant and infrastructure mutations are restricted.
                 </p>
               </div>
-              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/30 shrink-0">
+              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/30 shrink-0 self-start sm:self-auto">
                 AUDIT COMPLIANCE
               </span>
             </div>
@@ -670,23 +867,36 @@ export function SuperAdminShell({
 
           {/* RBAC ROLE BANNER FOR SECURITY ADMIN */}
           {role === "SECURITY_ADMIN" && (
-            <div className="px-4 py-2.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-between gap-3 text-blue-600 dark:text-blue-400 text-xs">
+            <div className="px-4 py-2.5 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 text-blue-600 dark:text-blue-400 text-xs">
               <div className="flex items-center gap-2 min-w-0">
                 <ShieldCheck className="w-4 h-4 shrink-0 text-blue-500" />
                 <span className="font-medium truncate">SecOps & Trust Scope ({currentUser?.department}) — Tenant mutation restricted</span>
               </div>
-              <span className="text-[9px] font-mono font-extrabold px-2 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 shrink-0">
+              <span className="text-[9px] font-mono font-extrabold px-2 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 shrink-0 self-start sm:self-auto">
                 SECOPS SCOPE
+              </span>
+            </div>
+          )}
+
+          {/* RBAC ROLE BANNER FOR EDITOR / SUPPORT */}
+          {role === "EDITOR_SUPPORT" && (
+            <div className="px-4 py-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 text-emerald-600 dark:text-emerald-400 text-xs">
+              <div className="flex items-center gap-2 min-w-0">
+                <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" />
+                <span className="font-medium truncate">Editor &amp; Support Scope ({currentUser?.department}) — Focused on Blog, CRM &amp; Growth, and Support System</span>
+              </div>
+              <span className="text-[9px] font-mono font-extrabold px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 shrink-0 self-start sm:self-auto">
+                SUPPORT SCOPE
               </span>
             </div>
           )}
 
           {/* HEADER TITLE & ACTIONS */}
           {(title || action) && (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
               <div>
                 {title && (
-                  <h1 className="text-2xl font-black text-display tracking-tight text-nexa-text-primary">
+                  <h1 className="text-xl sm:text-2xl font-black text-display tracking-tight text-nexa-text-primary">
                     {title}
                   </h1>
                 )}
@@ -696,7 +906,7 @@ export function SuperAdminShell({
                   </p>
                 )}
               </div>
-              {action && <div className="shrink-0 flex items-center gap-2.5">{action}</div>}
+              {action && <div className="shrink-0 flex flex-wrap items-center gap-2 sm:gap-2.5">{action}</div>}
             </div>
           )}
 
@@ -716,7 +926,7 @@ export function SuperAdminShell({
                   <Link href={tab.href} key={idx} className="shrink-0">
                     <button
                       className={cn(
-                        "px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-sm",
+                        "px-4 py-2 rounded-full text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer shadow-sm whitespace-nowrap",
                         isTabActive
                           ? "bg-nexa-brand text-white shadow-md shadow-nexa-brand/25 font-bold border border-nexa-brand"
                           : "bg-nexa-bg-surface hover:bg-nexa-bg-surface/80 text-nexa-text-secondary hover:text-nexa-text-primary border border-nexa-border hover:border-nexa-brand/30"
@@ -745,6 +955,55 @@ export function SuperAdminShell({
           <div className="pt-2">{children}</div>
         </div>
       </main>
+
+      {/* MOBILE HORIZONTALLY SCROLLABLE BOTTOM NAV MENU (< md) */}
+      <nav
+        aria-label="Mobile Navigation"
+        className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-nexa-bg-surface/95 backdrop-blur-md border-t border-nexa-border shadow-2xl pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+      >
+        <div
+          ref={mobileNavContainerRef}
+          className="flex items-center gap-2 px-3 py-2 overflow-x-auto scrollbar-hide scroll-smooth"
+        >
+          {filteredNavItems.map((item, i) => {
+            const isActive =
+              item.href === "/"
+                ? pathname === "/"
+                : pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+
+            return (
+              <Link
+                key={item.key || i}
+                href={item.href}
+                data-active={isActive ? "true" : undefined}
+                className={cn(
+                  "shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-full text-xs transition-all whitespace-nowrap active:scale-95 shadow-xs select-none",
+                  isActive
+                    ? "bg-nexa-brand text-white shadow-md shadow-nexa-brand/25 font-bold border border-nexa-brand"
+                    : "bg-nexa-bg-base/80 text-nexa-text-secondary hover:text-nexa-text-primary hover:bg-nexa-bg-base border border-nexa-border/70 font-semibold"
+                )}
+              >
+                <span className={cn("shrink-0 flex items-center justify-center [&>svg]:w-4 [&>svg]:h-4", isActive ? "text-white" : "text-nexa-brand")}>
+                  {item.icon}
+                </span>
+                <span>{item.label}</span>
+                {item.badge && (
+                  <span
+                    className={cn(
+                      "text-[9px] font-extrabold px-1.5 py-0.2 rounded-full",
+                      isActive
+                        ? "bg-white/20 text-white"
+                        : "bg-nexa-brand/10 text-nexa-brand"
+                    )}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }

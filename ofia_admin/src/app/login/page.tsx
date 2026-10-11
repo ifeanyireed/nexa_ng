@@ -73,9 +73,17 @@ function LoginContent() {
       // Store in memory / session storage for UI convenience
       if (typeof window !== "undefined") {
         sessionStorage.setItem("ofia_superadmin_user", JSON.stringify(data.user));
-        window.location.href = decodeURIComponent(returnUrl);
+        let target = decodeURIComponent(returnUrl);
+        if (data.user?.role === "EDITOR_SUPPORT" && (target === "/" || !target)) {
+          target = "/support";
+        }
+        window.location.href = target;
       } else {
-        router.push(decodeURIComponent(returnUrl));
+        let target = decodeURIComponent(returnUrl);
+        if (data.user?.role === "EDITOR_SUPPORT" && (target === "/" || !target)) {
+          target = "/support";
+        }
+        router.push(target);
       }
     } catch (err: any) {
       setError(err.message || "Invalid operator credentials");

@@ -1,0 +1,19 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+export default function SupportRootPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace("/support/dashboard");
+  }, [router]);
+
+  return (
+    <div className="flex items-center justify-center p-12 text-sm text-[var(--nexa-text-muted)]">
+      <div className="w-6 h-6 border-2 border-nexa-brand border-t-transparent rounded-full animate-spin mr-3" />
+      Loading Support System...
+    </div>
+  );
+}

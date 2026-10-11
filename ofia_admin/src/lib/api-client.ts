@@ -120,6 +120,8 @@ export const USER_API = {
     );
   },
 
+
+
   checkSubdomainAvailability: async (slug: string) => {
     return fetchJSON<{
       slug: string;

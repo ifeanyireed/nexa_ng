@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export const JWT_SECRET_KEY = process.env.JWT_SECRET || "nexa-jwt-secret-key-production-2026";
 export const AUTH_COOKIE_NAME = "ofia_superadmin_jwt";
 
-export type AdminRole = "SUPER_ADMIN" | "SECURITY_ADMIN" | "VIEWER";
+export type AdminRole = "SUPER_ADMIN" | "SECURITY_ADMIN" | "VIEWER" | "EDITOR_SUPPORT";
 
 export interface RolePermissions {
   canManageTenants: boolean;     // create, update, delete tenant orgs
@@ -39,6 +39,14 @@ export const ROLE_PERMISSIONS: Record<AdminRole, RolePermissions> = {
     canResolveDisputes: false,
     canExportData: false,
     canMutate: false,
+  },
+  EDITOR_SUPPORT: {
+    canManageTenants: false,
+    canManagePlans: false,
+    canManageSecurity: false,
+    canResolveDisputes: false,
+    canExportData: true,
+    canMutate: true,
   },
 };
 
@@ -89,6 +97,26 @@ export const SEEDED_SUPER_ADMINS: SeededSuperAdminAccount[] = [
     role: "VIEWER",
     scope: "READ_ONLY",
     department: "Financial & Systems Audit",
+    avatar: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686465/ofia_ng_assets/rpiuip9fu0em4wpsrvfm.jpg",
+  },
+  {
+    id: "admin-support-04",
+    name: "Support & Editorial Lead",
+    email: "support@ofia.ng",
+    passwordHash: "OfiaSupport2026!",
+    role: "EDITOR_SUPPORT",
+    scope: "SUPPORT_EDITORIAL",
+    department: "Customer Success & Editorial",
+    avatar: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/aa9nvrmyrc38lbpz1mkp.png",
+  },
+  {
+    id: "admin-editor-05",
+    name: "Content Editor",
+    email: "editor@ofia.ng",
+    passwordHash: "OfiaEditor2026!",
+    role: "EDITOR_SUPPORT",
+    scope: "SUPPORT_EDITORIAL",
+    department: "Editorial & Content Ops",
     avatar: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686465/ofia_ng_assets/rpiuip9fu0em4wpsrvfm.jpg",
   },
 ];

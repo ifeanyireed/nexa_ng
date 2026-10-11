@@ -419,7 +419,7 @@ export function SuperAdminShell({
   return (
     <div className="min-h-screen bg-nexa-bg-base text-nexa-text-primary flex flex-col md:flex-row relative font-sans">
       {/* MOBILE TOP HEADER BAR (< md) */}
-      <header className="md:hidden sticky top-0 z-40 bg-nexa-bg-surface/95 backdrop-blur-md border-b border-nexa-border px-4 py-2.5 flex items-center justify-between shadow-xs">
+      <header className="md:hidden sticky top-0 z-40 bg-nexa-bg-surface/95 backdrop-blur-md border-b border-nexa-border px-3 sm:px-4 py-2.5 flex items-center justify-between shadow-xs">
         <Link href="/" className="flex items-center gap-2.5 min-w-0">
           <img
             src="/icon.png"
@@ -511,7 +511,7 @@ export function SuperAdminShell({
 
       {/* MOBILE SEARCH BAR DROPDOWN */}
       {isMobileSearchOpen && (
-        <div className="md:hidden sticky top-[49px] z-30 px-4 py-2 bg-nexa-bg-surface/95 backdrop-blur-md border-b border-nexa-border">
+        <div className="md:hidden sticky top-[49px] z-30 px-3 sm:px-4 py-2 bg-nexa-bg-surface/95 backdrop-blur-md border-b border-nexa-border">
           <div className="flex items-center bg-nexa-bg-base px-3 py-1.5 rounded-full border border-nexa-border gap-2 w-full">
             <Search className="w-3.5 h-3.5 text-nexa-text-muted shrink-0" />
             <input
@@ -849,7 +849,7 @@ export function SuperAdminShell({
 
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto pb-24 md:pb-8">
-        <div className="p-4 sm:p-6 md:p-8 space-y-6 flex-1">
+        <div className="px-2.5 sm:px-6 md:px-8 py-3.5 sm:py-6 md:py-8 space-y-5 sm:space-y-6 flex-1">
           {/* RBAC ROLE BANNER FOR AUDITOR / VIEWER */}
           {role === "VIEWER" && (
             <div className="px-4 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 text-amber-600 dark:text-amber-400">

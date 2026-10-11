@@ -30,12 +30,12 @@ export function AdminStatGrid({
       : "grid-cols-1 sm:grid-cols-2";
 
   return (
-    <section className={cn("grid gap-6", colClass)}>
+    <section className={cn("grid gap-3.5 sm:gap-6", colClass)}>
       {stats.map((kpi, i) => (
         <NexaCard
           key={i}
           variant="glass"
-          className="p-6 relative overflow-hidden group hover:border-nexa-brand/30 transition-all rounded-3xl"
+          className="p-3.5 sm:p-6 relative overflow-hidden group hover:border-nexa-brand/30 transition-all rounded-2xl sm:rounded-3xl"
         >
           <div className="flex items-center justify-between mb-4">
             <div

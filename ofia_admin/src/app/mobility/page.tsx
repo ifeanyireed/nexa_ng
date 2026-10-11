@@ -64,9 +64,9 @@ export default function MobilitySuperAdminDashboard() {
         {/* KPI STAT CARDS */}
         <AdminStatGrid stats={kpis} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
           {/* Tenant Fleet Activity */}
-          <NexaCard className="p-6">
+          <NexaCard className="p-3.5 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-base font-bold text-nexa-text-primary">Tenant Fleet Activity</h2>
@@ -100,7 +100,7 @@ export default function MobilitySuperAdminDashboard() {
           </NexaCard>
 
           {/* System Alerts */}
-          <NexaCard className="p-6">
+          <NexaCard className="p-3.5 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-base font-bold text-nexa-text-primary">Mobility System Alerts</h2>

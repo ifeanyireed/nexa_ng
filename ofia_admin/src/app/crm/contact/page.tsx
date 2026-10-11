@@ -436,7 +436,7 @@ export default function ContactCRMPage() {
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={handleCloseDrawer} />
           <div className="relative w-full max-w-lg bg-[var(--nexa-bg-surface)] h-full shadow-2xl border-l border-[var(--nexa-border)] flex flex-col z-10 animate-in slide-in-from-right duration-300">
             {/* Header */}
-            <div className="p-6 border-b border-[var(--nexa-border)] flex items-center justify-between bg-[var(--nexa-bg-base)]">
+            <div className="p-4 sm:p-6 border-b border-[var(--nexa-border)] flex items-center justify-between bg-[var(--nexa-bg-base)]">
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-xs font-extrabold px-2 py-0.5 rounded bg-[#1A56DB] text-white">
@@ -462,7 +462,7 @@ export default function ContactCRMPage() {
             </div>
 
             {/* Body */}
-            <div className="flex-1 p-6 overflow-y-auto space-y-6 text-xs text-left">
+            <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-6 text-xs text-left">
               {/* Quick Communication Actions */}
               <div className="grid grid-cols-2 gap-3">
                 {activeTicket.phone ? (

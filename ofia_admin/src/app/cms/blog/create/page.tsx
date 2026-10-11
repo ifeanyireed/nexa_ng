@@ -148,37 +148,38 @@ function CreateBlogPostContent() {
   return (
     <SuperAdminShell title={editId ? "Edit Blog Post" : "Create Blog Post"} subtitle="Write and publish an article to the Ofia blog">
       <div className="w-full">
-        <div className="p-8 pb-0 border-b border-nexa-border/30">
-          <div className="flex items-center gap-4 mb-2">
+        <div className="px-1 py-3 sm:px-4 md:p-6 pb-0 border-b border-nexa-border/30">
+          <div className="flex items-center gap-3 sm:gap-4 mb-2">
             <Link href="/cms/blog" className="p-2 hover:bg-slate-100 rounded-full transition-colors"><ArrowLeft size={20} /></Link>
-            <h1 className="text-2xl font-bold text-nexa-text-primary">{editId ? "Edit Blog Post" : "Create Blog Post"}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-nexa-text-primary">{editId ? "Edit Blog Post" : "Create Blog Post"}</h1>
           </div>
-          <p className="text-nexa-text-secondary mb-4 ml-12">Write and publish an article to the Ofia platform blog</p>
+          <p className="text-xs sm:text-sm text-nexa-text-secondary mb-4 ml-0 sm:ml-12">Write and publish an article to the Ofia platform blog</p>
         </div>
 
-      <div className="p-8 space-y-6 max-w-[1200px] mx-auto w-full">
+      <div className="px-0 sm:px-4 md:px-6 py-4 sm:py-6 space-y-5 sm:space-y-6 max-w-[1200px] mx-auto w-full">
         {/* Actions Header */}
-        <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-          <Link href="/cms/blog" className="flex items-center gap-2 text-slate-500 hover:text-slate-700 text-sm font-medium transition-colors">
+        <div className="flex items-center justify-between bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm">
+          <Link href="/cms/blog" className="flex items-center gap-2 text-slate-500 hover:text-slate-700 text-xs sm:text-sm font-medium transition-colors">
             <ArrowLeft className="w-4 h-4" />
-            Back to Posts
+            <span className="hidden sm:inline">Back to Posts</span>
+            <span className="sm:hidden">Back</span>
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button 
               onClick={() => handleSave('DRAFT')}
               disabled={isSaving}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-sm transition-colors shadow-sm ${isSaving ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-100'}`}
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 font-semibold text-xs sm:text-sm transition-colors shadow-sm ${isSaving ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-100'}`}
             >
-              <Save className="w-4 h-4" />
-              {isSaving ? 'Saving...' : 'Save Draft'}
+              <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span>{isSaving ? 'Saving...' : 'Save Draft'}</span>
             </button>
             <button 
               onClick={() => handleSave('PUBLISHED')}
               disabled={isSaving}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold text-sm transition-colors shadow-sm ${isSaving ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'}`}
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-blue-600 text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm ${isSaving ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'}`}
             >
-              <Send className="w-4 h-4" />
-              {isSaving ? 'Publishing...' : (editId ? 'Update Post' : 'Publish Post')}
+              <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span>{isSaving ? 'Publishing...' : (editId ? 'Update' : 'Publish')}</span>
             </button>
           </div>
         </div>
@@ -186,7 +187,7 @@ function CreateBlogPostContent() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content Area */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            <div className="bg-white p-3.5 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-2">Post Title</label>
                 <input 
@@ -207,7 +208,7 @@ function CreateBlogPostContent() {
 
           {/* Sidebar Area */}
           <div className="space-y-6">
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5">
+            <div className="bg-white p-3.5 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm space-y-5">
               <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-3">Post Settings</h3>
               
               <div>

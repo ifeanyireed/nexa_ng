@@ -221,7 +221,7 @@ export default function MasterOverviewPage() {
                   <Link href={action.href} key={i}>
                     <NexaCard
                       variant="interactive"
-                      className="p-6 flex flex-col items-center text-center group cursor-pointer border border-nexa-border bg-nexa-bg-surface/50 hover:bg-nexa-bg-surface hover:shadow-xl transition-all rounded-3xl"
+                      className="p-3.5 sm:p-6 flex flex-col items-center text-center group cursor-pointer border border-nexa-border bg-nexa-bg-surface/50 hover:bg-nexa-bg-surface hover:shadow-xl transition-all rounded-2xl sm:rounded-3xl"
                     >
                       <div className="w-12 h-12 rounded-2xl bg-nexa-brand/10 text-nexa-brand flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-nexa-brand group-hover:text-white transition-all shadow-sm">
                         {action.icon}
@@ -261,7 +261,7 @@ export default function MasterOverviewPage() {
                   <NexaCard
                     key={i}
                     variant="flat"
-                    className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-nexa-border bg-nexa-bg-surface/30 hover:bg-nexa-bg-surface/70 transition-all rounded-3xl"
+                    className="p-3 sm:p-4 md:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border border-nexa-border bg-nexa-bg-surface/30 hover:bg-nexa-bg-surface/70 transition-all rounded-2xl sm:rounded-3xl"
                   >
                     <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                       <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#1A56DB]/10 text-[#1A56DB] flex items-center justify-center font-bold text-xs shrink-0">
@@ -321,7 +321,7 @@ export default function MasterOverviewPage() {
                 {/* APP 1: OFIA AI */}
                 <NexaCard
                   variant="glass"
-                  className="p-6 space-y-5 border border-nexa-border hover:border-blue-500/30 flex flex-col justify-between rounded-3xl transition-all"
+                  className="p-4 sm:p-6 space-y-5 border border-nexa-border hover:border-blue-500/30 flex flex-col justify-between rounded-2xl sm:rounded-3xl transition-all"
                 >
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -361,7 +361,7 @@ export default function MasterOverviewPage() {
                 {/* APP 2: OFIA COMPASS */}
                 <NexaCard
                   variant="glass"
-                  className="p-6 space-y-5 border border-nexa-border hover:border-emerald-500/30 flex flex-col justify-between rounded-3xl transition-all"
+                  className="p-4 sm:p-6 space-y-5 border border-nexa-border hover:border-emerald-500/30 flex flex-col justify-between rounded-2xl sm:rounded-3xl transition-all"
                 >
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -401,7 +401,7 @@ export default function MasterOverviewPage() {
                 {/* APP 3: MULTI-TENANT WORKSPACES */}
                 <NexaCard
                   variant="glass"
-                  className="p-6 space-y-5 border border-nexa-border hover:border-purple-500/30 flex flex-col justify-between rounded-3xl transition-all"
+                  className="p-4 sm:p-6 space-y-5 border border-nexa-border hover:border-purple-500/30 flex flex-col justify-between rounded-2xl sm:rounded-3xl transition-all"
                 >
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
@@ -447,7 +447,7 @@ export default function MasterOverviewPage() {
             <section>
               <NexaCard
                 variant="glass"
-                className="p-6 bg-gradient-to-br from-emerald-500/5 to-transparent border-emerald-500/20 rounded-3xl space-y-5"
+                className="p-4 sm:p-6 bg-gradient-to-br from-emerald-500/5 to-transparent border-emerald-500/20 rounded-2xl sm:rounded-3xl space-y-5"
               >
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold flex items-center gap-2 text-sm text-nexa-text-primary">
@@ -530,7 +530,7 @@ export default function MasterOverviewPage() {
               {/* GOVERNANCE NOTE */}
               <NexaCard
                 variant="glass"
-                className="mt-6 p-6 bg-nexa-brand/5 border-nexa-brand/10 rounded-3xl"
+                className="mt-6 p-4 sm:p-6 bg-nexa-brand/5 border-nexa-brand/10 rounded-2xl sm:rounded-3xl"
               >
                 <h4 className="text-xs font-extrabold mb-1.5 flex items-center gap-1.5 text-display text-nexa-text-primary">
                   <ShieldCheck className="w-4 h-4 text-[#1A56DB]" />

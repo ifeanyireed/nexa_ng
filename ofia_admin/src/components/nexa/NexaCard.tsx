@@ -33,9 +33,9 @@ export const NexaCard = React.forwardRef<HTMLDivElement, NexaCardProps>(
 
     const paddings = {
       none: "p-0",
-      sm: "p-3",
-      md: "p-5",
-      lg: "p-8",
+      sm: "p-2.5 sm:p-3",
+      md: "p-3.5 sm:p-5",
+      lg: "p-4 sm:p-6 md:p-8",
     };
 
     const isInteractive = variant === "interactive" || hoverEffect;

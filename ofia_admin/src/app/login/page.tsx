@@ -21,31 +21,23 @@ import {
   Building2,
   Briefcase,
   Layers,
-  Key,
 } from "lucide-react";
 import {
   IconBrandGoogle,
   IconBrandWindows,
 } from "@tabler/icons-react";
-import { SEEDED_SUPER_ADMINS, SeededSuperAdminAccount } from "@/lib/jwt-auth";
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const returnUrl = searchParams.get("returnUrl") || "/";
 
-  const [email, setEmail] = useState("grace.jude@ofia.ng");
-  const [password, setPassword] = useState("OfiaSuperAdmin2026!");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
-
-  const selectPersona = (pEmail: string, pPass: string) => {
-    setEmail(pEmail);
-    setPassword(pPass);
-    setError("");
-  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,36 +125,6 @@ function LoginContent() {
               </p>
             </div>
 
-            {/* Quick Test Persona Switcher */}
-            <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-2.5">
-              <div className="flex items-center justify-between text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider px-1">
-                <span className="flex items-center gap-1">
-                  <Key className="w-3 h-3 text-[#1A56DB]" />
-                  1-Click Seeded Operator Personas
-                </span>
-                <span className="text-[#0E9F6E] font-semibold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#0E9F6E] animate-pulse" />
-                  Quick Fill
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1.5">
-                {SEEDED_SUPER_ADMINS.map((p) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => selectPersona(p.email, p.passwordHash)}
-                    className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border transition-all cursor-pointer shadow-sm ${
-                      email === p.email
-                        ? "bg-[#1A56DB] text-white border-[#1A56DB] shadow-[#1A56DB]/30 font-bold"
-                        : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)] hover:border-[#1A56DB] hover:text-[#1A56DB]"
-                    }`}
-                  >
-                    {p.name.split(" ")[0]} ({p.role.replace("_", " ")})
-                  </button>
-                ))}
-              </div>
-            </div>
-
             {error && (
               <div className="p-3 rounded-full bg-red-500/10 border border-red-500/30 text-red-500 text-xs font-semibold text-center flex items-center justify-center gap-2">
                 <ShieldAlert className="w-4 h-4 shrink-0" />
@@ -179,7 +141,7 @@ function LoginContent() {
                   <input
                     type="email"
                     required
-                    placeholder="grace.jude@ofia.ng"
+                    placeholder="operator@ofia.ng"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full h-11 pl-10 pr-4 text-xs rounded-full bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB] focus:ring-2 focus:ring-[#1A56DB]/20 transition-all font-mono"

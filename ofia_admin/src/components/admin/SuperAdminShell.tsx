@@ -75,6 +75,36 @@ export interface SuperAdminShellProps {
   subTabs?: SubNavItem[];
 }
 
+const getMobileNavLabel = (label: string): string => {
+  const map: Record<string, string> = {
+    "Master Overview": "Overview",
+    "Staff & RBAC Directory": "Staff",
+    "Security & Audit Logs": "Audit Logs",
+    "System & Infrastructure": "System",
+    "Tenant Workspaces": "Tenants",
+    "Plans & Billing": "Billing",
+    "Autonomous Swarm": "AI Swarm",
+    "Agent Playground": "Playground",
+    "Email Relay & SMTP": "Email Relay",
+    "Compass Marketplace": "Marketplace",
+    "Service Disputes": "Disputes",
+    "Mobility Manager": "Mobility",
+    "Waitlist Pipeline": "Waitlist",
+    "Inquiries & Contact": "Inquiries",
+    "Enterprise Inquiries": "Leads",
+    "Suite Blog CMS": "Blog CMS",
+    "All Posts": "Posts",
+    "Create Post": "New Post",
+    "Support System": "Support",
+    "Dashboard": "Support",
+    "All Tickets": "Tickets",
+    "Live Chat": "Live Chat",
+    "Knowledge Base": "Docs",
+    "Platform Settings": "Settings",
+  };
+  return map[label] || label;
+};
+
 export function SuperAdminShell({
   children,
   title,
@@ -959,11 +989,11 @@ export function SuperAdminShell({
       {/* MOBILE HORIZONTALLY SCROLLABLE BOTTOM NAV MENU (< md) */}
       <nav
         aria-label="Mobile Navigation"
-        className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-nexa-bg-surface/95 backdrop-blur-md border-t border-nexa-border shadow-2xl pb-[max(0.5rem,env(safe-area-inset-bottom))]"
+        className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-nexa-bg-surface/95 backdrop-blur-md border-t border-nexa-border shadow-2xl pb-[max(0.35rem,env(safe-area-inset-bottom))]"
       >
         <div
           ref={mobileNavContainerRef}
-          className="flex items-center gap-2 px-3 py-2 overflow-x-auto scrollbar-hide scroll-smooth"
+          className="flex items-center gap-1.5 px-2 py-1.5 overflow-x-auto scrollbar-hide scroll-smooth"
         >
           {filteredNavItems.map((item, i) => {
             const isActive =
@@ -971,34 +1001,57 @@ export function SuperAdminShell({
                 ? pathname === "/"
                 : pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
 
+            const mobileLabel = getMobileNavLabel(item.label);
+
             return (
               <Link
                 key={item.key || i}
                 href={item.href}
                 data-active={isActive ? "true" : undefined}
                 className={cn(
-                  "shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-full text-xs transition-all whitespace-nowrap active:scale-95 shadow-xs select-none",
+                  "shrink-0 flex flex-col items-center justify-center min-w-[62px] px-2 py-1 rounded-2xl transition-all select-none active:scale-95 group relative",
                   isActive
-                    ? "bg-nexa-brand text-white shadow-md shadow-nexa-brand/25 font-bold border border-nexa-brand"
-                    : "bg-nexa-bg-base/80 text-nexa-text-secondary hover:text-nexa-text-primary hover:bg-nexa-bg-base border border-nexa-border/70 font-semibold"
+                    ? "text-nexa-brand"
+                    : "text-nexa-text-muted hover:text-nexa-text-primary"
                 )}
               >
-                <span className={cn("shrink-0 flex items-center justify-center [&>svg]:w-4 [&>svg]:h-4", isActive ? "text-white" : "text-nexa-brand")}>
-                  {item.icon}
-                </span>
-                <span>{item.label}</span>
-                {item.badge && (
+                {/* ICON ON TOP */}
+                <div className="relative flex items-center justify-center">
                   <span
                     className={cn(
-                      "text-[9px] font-extrabold px-1.5 py-0.2 rounded-full",
+                      "w-10 h-7 rounded-full flex items-center justify-center transition-all [&>svg]:w-5 [&>svg]:h-5",
                       isActive
-                        ? "bg-white/20 text-white"
-                        : "bg-nexa-brand/10 text-nexa-brand"
+                        ? "bg-nexa-brand text-white shadow-xs shadow-nexa-brand/30"
+                        : "text-nexa-text-secondary group-hover:text-nexa-text-primary group-hover:bg-nexa-bg-base"
                     )}
                   >
-                    {item.badge}
+                    {item.icon}
                   </span>
-                )}
+                  {item.badge && (
+                    <span
+                      className={cn(
+                        "absolute -top-1 -right-2 text-[8px] font-black px-1.5 py-0.2 rounded-full border border-nexa-bg-surface shadow-xs",
+                        isActive
+                          ? "bg-rose-500 text-white"
+                          : "bg-nexa-brand text-white"
+                      )}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
+                </div>
+
+                {/* NAME (LABEL) UNDER */}
+                <span
+                  className={cn(
+                    "text-[10px] font-medium leading-tight mt-1 text-center truncate max-w-[68px] transition-colors",
+                    isActive
+                      ? "font-bold text-nexa-brand"
+                      : "text-nexa-text-muted group-hover:text-nexa-text-secondary"
+                  )}
+                >
+                  {mobileLabel}
+                </span>
               </Link>
             );
           })}

@@ -69,8 +69,8 @@ Every taxable inventory item sold through Ofia Storefronts or POS records an aut
   const fetchInitialData = async () => {
     try {
       const [catsRes, artRes] = await Promise.all([
-        fetch(`${USERS_API}/api/v1/support/kb/categories`),
-        fetch(`${USERS_API}/api/v1/support/kb/articles/${articleId}`),
+        fetch(`/api/support/kb/categories`),
+        fetch(`/api/support/kb/articles/${articleId}`),
       ]);
 
       if (catsRes.ok) {
@@ -119,7 +119,7 @@ Every taxable inventory item sold through Ofia Storefronts or POS records an aut
         typeof window !== "undefined"
           ? localStorage.getItem("nexa_auth_token") || localStorage.getItem("resultspro_admin_token")
           : null;
-      await fetch(`${USERS_API}/api/v1/support/kb/articles/${articleId}`, {
+      await fetch(`/api/support/kb/articles/${articleId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

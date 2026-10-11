@@ -21,6 +21,7 @@ export default function FloatingChat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const USERS_API = process.env.NEXT_PUBLIC_USERS_API || "http://localhost:8081";
+  const ADMIN_API = process.env.NEXT_PUBLIC_ADMIN_API || "http://localhost:3003";
 
   const toggleChat = () => {
     setIsOpen(!isOpen);
@@ -32,6 +33,17 @@ export default function FloatingChat() {
   // Restore previous chat history if available
   useEffect(() => {
     const fetchHistory = async (sid: string) => {
+      try {
+        const res = await fetch(`${ADMIN_API}/api/support/chat/history?session_id=${sid}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setMessages(data);
+            return;
+          }
+        }
+      } catch {}
+
       try {
         const res = await fetch(`${USERS_API}/api/v1/support/chat/history?session_id=${sid}`);
         if (res.ok) {
@@ -49,7 +61,35 @@ export default function FloatingChat() {
         fetchHistory(sid);
       }
     }
-  }, [USERS_API]);
+  }, [USERS_API, ADMIN_API]);
+
+  // Periodic sync when chat is open to receive staff replies
+  useEffect(() => {
+    if (!isOpen) return;
+    const interval = setInterval(async () => {
+      if (typeof window === "undefined") return;
+      const sid = localStorage.getItem("ofia_support_chat_session");
+      if (!sid) return;
+
+      try {
+        const res = await fetch(`${ADMIN_API}/api/support/chat/history?session_id=${sid}`);
+        if (res.ok) {
+          const data: ChatMessage[] = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setMessages((prev) => {
+              const prevLen = prev.length;
+              if (data.length > prevLen) {
+                return data;
+              }
+              return prev;
+            });
+          }
+        }
+      } catch {}
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [isOpen, ADMIN_API]);
 
   // Connect to WebSocket when chat opens
   useEffect(() => {
@@ -121,6 +161,20 @@ export default function FloatingChat() {
 
     setMessages((prev) => [...prev, msgObj]);
 
+    // Persist to Admin PostgreSQL API
+    if (typeof window !== "undefined") {
+      const sid = localStorage.getItem("ofia_support_chat_session") || `guest-${Date.now()}`;
+      fetch(`${ADMIN_API}/api/support/chat/history`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: sid,
+          sender: "Guest Visitor",
+          text: userText,
+        }),
+      }).catch(() => {});
+    }
+
     // Send over WebSocket if connected
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       try {
@@ -129,14 +183,14 @@ export default function FloatingChat() {
       } catch {}
     }
 
-    // Automated fallback response if backend WebSocket server is running standalone
+    // Automated reassurance if staff not immediately connected via WS
     setTimeout(() => {
       setMessages((prev) => [
         ...prev,
         {
           id: `m-bot-${Date.now()}`,
           sender: "Support",
-          text: "Thank you for reaching out to Ofia Support! Our operator team has received your ticket and will respond directly here and to your registered merchant account.",
+          text: "Thank you for reaching out! Our Support Desk has logged your inquiry and an operator is reviewing it.",
           timestamp: new Date().toISOString(),
         },
       ]);

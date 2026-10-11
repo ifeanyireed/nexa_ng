@@ -14,12 +14,15 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Allow public auth and public ingestion API routes
+  // 2. Allow public auth, live chat, and public ingestion API routes
   if (
     pathname === "/api/auth/login" ||
     (pathname === "/api/crm/contact" && request.method === "POST") ||
     (pathname === "/api/crm/waitlist" && request.method === "POST") ||
-    (pathname.startsWith("/api/v1/cms/blog") && request.method === "GET")
+    (pathname.startsWith("/api/v1/cms/blog") && request.method === "GET") ||
+    pathname.startsWith("/api/support/chat/history") ||
+    (pathname === "/api/support/chat/sessions" && request.method === "POST") ||
+    (pathname.startsWith("/api/support/kb") && request.method === "GET")
   ) {
     return NextResponse.next();
   }

@@ -78,7 +78,7 @@ export default function SupportDashboard() {
         typeof window !== "undefined"
           ? localStorage.getItem("nexa_auth_token") || localStorage.getItem("resultspro_admin_token")
           : null;
-      const res = await fetch(`${USERS_API}/api/v1/support/admin/tickets`, {
+      const res = await fetch(`/api/support/admin/tickets`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.ok) {
@@ -100,7 +100,7 @@ export default function SupportDashboard() {
         typeof window !== "undefined"
           ? localStorage.getItem("nexa_auth_token") || localStorage.getItem("resultspro_admin_token")
           : null;
-      const res = await fetch(`${USERS_API}/api/v1/support/staff/status`, {
+      const res = await fetch(`/api/support/staff/status`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.ok) {
@@ -117,7 +117,7 @@ export default function SupportDashboard() {
         typeof window !== "undefined"
           ? localStorage.getItem("nexa_auth_token") || localStorage.getItem("resultspro_admin_token")
           : null;
-      await fetch(`${USERS_API}/api/v1/support/staff/status`, {
+      await fetch(`/api/support/staff/status`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -128,19 +128,54 @@ export default function SupportDashboard() {
     } catch {}
   };
 
-  const handleCreateTicket = (e: React.FormEvent) => {
+  const handleCreateTicket = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newSubject.trim()) return;
-    const newT = {
-      id: `t-${Date.now().toString().slice(-4)}`,
-      subject: newSubject,
-      user_full_name: newUserName || "Merchant Partner",
-      category: newCategory,
-      message: newMessage,
-      status: "open",
-      created_at: new Date().toISOString(),
-    };
-    setTickets([newT, ...tickets]);
+    try {
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("nexa_auth_token") || localStorage.getItem("resultspro_admin_token")
+          : null;
+      const res = await fetch(`/api/support/admin/tickets`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          subject: newSubject,
+          user_full_name: newUserName || "Merchant Partner",
+          category: newCategory,
+          message: newMessage,
+        }),
+      });
+      if (res.ok) {
+        const created = await res.json();
+        setTickets([created, ...tickets]);
+      } else {
+        const newT = {
+          id: `t-${Date.now().toString().slice(-4)}`,
+          subject: newSubject,
+          user_full_name: newUserName || "Merchant Partner",
+          category: newCategory,
+          message: newMessage,
+          status: "open",
+          created_at: new Date().toISOString(),
+        };
+        setTickets([newT, ...tickets]);
+      }
+    } catch {
+      const newT = {
+        id: `t-${Date.now().toString().slice(-4)}`,
+        subject: newSubject,
+        user_full_name: newUserName || "Merchant Partner",
+        category: newCategory,
+        message: newMessage,
+        status: "open",
+        created_at: new Date().toISOString(),
+      };
+      setTickets([newT, ...tickets]);
+    }
     setNewSubject("");
     setNewMessage("");
     setNewUserName("");

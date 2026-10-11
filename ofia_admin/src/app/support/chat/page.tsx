@@ -50,7 +50,7 @@ export default function SupportChatPage() {
         typeof window !== "undefined"
           ? localStorage.getItem("nexa_auth_token") || localStorage.getItem("resultspro_admin_token")
           : null;
-      const res = await fetch(`${USERS_API}/api/v1/support/chat/sessions`, {
+      const res = await fetch(`/api/support/chat/sessions`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.ok) {
@@ -60,6 +60,7 @@ export default function SupportChatPage() {
           setSessionsData(data);
           if (!activeSession) {
             setActiveSession(data[0].session_id);
+            fetchHistory(data[0].session_id);
           }
         }
       }
@@ -68,7 +69,7 @@ export default function SupportChatPage() {
 
   const fetchHistory = async (sessionId: string) => {
     try {
-      const res = await fetch(`${USERS_API}/api/v1/support/chat/history?session_id=${sessionId}`);
+      const res = await fetch(`/api/support/chat/history?session_id=${sessionId}`);
       if (res.ok) {
         const data: ChatMessage[] = await res.json();
         if (Array.isArray(data)) {
@@ -89,6 +90,12 @@ export default function SupportChatPage() {
     fetchHistory(sessionId);
     setShowMobileThread(true);
   };
+
+  useEffect(() => {
+    if (activeSession) {
+      fetchHistory(activeSession);
+    }
+  }, [activeSession]);
 
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -134,24 +141,39 @@ export default function SupportChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim() || !activeSession) return;
 
+    const currentMsgText = message.trim();
     const msgObj: ChatMessage = {
       id: `m-${Date.now()}`,
       sender: "Support",
       session_id: activeSession,
-      text: message,
+      text: currentMsgText,
       timestamp: new Date().toISOString(),
     };
 
     setMessages((prev) => [...prev, msgObj]);
+    setMessage("");
 
+    // Send via WebSocket if live
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       ws.current.send(JSON.stringify(msgObj));
     }
-    setMessage("");
+
+    // Persist via HTTP API
+    try {
+      await fetch(`/api/support/chat/history`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: activeSession,
+          sender: "Support Lead",
+          text: currentMsgText,
+        }),
+      });
+    } catch {}
   };
 
   const displayMessages = messages.filter((m) => m.session_id === activeSession);

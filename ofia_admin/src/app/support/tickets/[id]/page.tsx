@@ -59,18 +59,17 @@ export default function TicketDetailPage() {
           ? localStorage.getItem("nexa_auth_token") || localStorage.getItem("resultspro_admin_token")
           : null;
 
-      const tRes = await fetch(`${USERS_API}/api/v1/support/admin/tickets`, {
+      const tRes = await fetch(`/api/support/tickets/${ticketId}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (tRes.ok) {
-        const allTickets = await tRes.json();
-        const current = (allTickets || []).find((t: any) => t.id === ticketId);
+        const current = await tRes.json();
         setTicket(current || fallbackTicket);
       } else {
         setTicket(fallbackTicket);
       }
 
-      const res = await fetch(`${USERS_API}/api/v1/support/tickets/${ticketId}/messages`, {
+      const res = await fetch(`/api/support/tickets/${ticketId}/messages`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.ok) {
@@ -92,15 +91,16 @@ export default function TicketDetailPage() {
     if (!reply.trim()) return;
     setSending(true);
 
+    const messageContent = reply;
     const newMsgObj = {
       id: `msg-${Date.now()}`,
       sender_type: "staff",
-      message: reply,
+      sender_name: "Support & Editorial Lead",
+      message: messageContent,
       created_at: new Date().toISOString(),
     };
 
     setMessages((prev) => [...prev, newMsgObj]);
-    const messageContent = reply;
     setReply("");
 
     try {
@@ -108,7 +108,7 @@ export default function TicketDetailPage() {
         typeof window !== "undefined"
           ? localStorage.getItem("nexa_auth_token") || localStorage.getItem("resultspro_admin_token")
           : null;
-      await fetch(`${USERS_API}/api/v1/support/tickets/${ticketId}/messages`, {
+      await fetch(`/api/support/tickets/${ticketId}/messages`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -117,6 +117,8 @@ export default function TicketDetailPage() {
         body: JSON.stringify({
           message: messageContent,
           sender_type: "staff",
+          sender_role: "staff",
+          sender_name: "Support & Editorial Lead",
         }),
       });
 
@@ -136,8 +138,8 @@ export default function TicketDetailPage() {
         typeof window !== "undefined"
           ? localStorage.getItem("nexa_auth_token") || localStorage.getItem("resultspro_admin_token")
           : null;
-      await fetch(`${USERS_API}/api/v1/support/tickets/${ticketId}/status`, {
-        method: "PUT",
+      await fetch(`/api/support/tickets/${ticketId}`, {
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),

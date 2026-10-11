@@ -71,8 +71,8 @@ export default function KnowledgeBaseDashboard() {
     setLoading(true);
     try {
       const [catsRes, artsRes] = await Promise.all([
-        fetch(`${USERS_API}/api/v1/support/kb/categories`),
-        fetch(`${USERS_API}/api/v1/support/kb/articles`),
+        fetch(`/api/support/kb/categories`),
+        fetch(`/api/support/kb/articles`),
       ]);
 
       if (catsRes.ok) {
@@ -106,7 +106,7 @@ export default function KnowledgeBaseDashboard() {
         typeof window !== "undefined"
           ? localStorage.getItem("nexa_auth_token") || localStorage.getItem("resultspro_admin_token")
           : null;
-      await fetch(`${USERS_API}/api/v1/support/kb/articles/${id}`, {
+      await fetch(`/api/support/kb/articles/${id}`, {
         method: "DELETE",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });

@@ -76,7 +76,7 @@ export default function AdminTicketsPage() {
         typeof window !== "undefined"
           ? localStorage.getItem("nexa_auth_token") || localStorage.getItem("resultspro_admin_token")
           : null;
-      const res = await fetch(`${USERS_API}/api/v1/support/admin/tickets`, {
+      const res = await fetch(`/api/support/admin/tickets`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (res.ok) {

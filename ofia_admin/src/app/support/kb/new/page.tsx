@@ -36,7 +36,7 @@ export default function NewKBArticle() {
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch(`${USERS_API}/api/v1/support/kb/categories`);
+      const res = await fetch(`/api/support/kb/categories`);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
@@ -68,7 +68,7 @@ export default function NewKBArticle() {
         typeof window !== "undefined"
           ? localStorage.getItem("nexa_auth_token") || localStorage.getItem("resultspro_admin_token")
           : null;
-      await fetch(`${USERS_API}/api/v1/support/kb/articles`, {
+      await fetch(`/api/support/kb/articles`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { getDbPool, ensureTablesExist } from "@/lib/db";
 import { sendPlatformPasswordResetEmail } from "@/lib/email-service";
-import { slugToTenantName } from "@/lib/tenant-context";
+import { slugToTenantName } from "@/lib/tenant-utils";
 
 export async function POST(request: Request) {
   try {

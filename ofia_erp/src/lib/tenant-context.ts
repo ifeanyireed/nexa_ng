@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { slugToTenantName } from "./tenant-utils";
 
 export interface DatabaseTenant {
   id: string;
@@ -30,15 +31,7 @@ const CACHE_TTL_MS = 30_000; // 30 seconds
 /**
  * Formats a slug dynamically (e.g. "acme-corp" -> "Acme Corp")
  */
-export function slugToTenantName(slug: string): string {
-  if (!slug) return "";
-  const clean = slug.toLowerCase().trim();
-  return clean
-    .split(/[-_]/)
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
+export { slugToTenantName };
 
 /**
  * Extracts the tenant slug dynamically from URL query (?tenant=) or subdomain

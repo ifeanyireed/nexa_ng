@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { getDbPool, ensureTablesExist } from "@/lib/db";
 import { sendPlatformPasswordChangedEmail } from "@/lib/email-service";
-import { slugToTenantName } from "@/lib/tenant-context";
+import { slugToTenantName } from "@/lib/tenant-utils";
 
 // GET /api/auth/reset-password?token=...&email=...
 // Verifies if the reset token is valid and unexpired

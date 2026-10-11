@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getDbPool } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import { sendPlatformPasswordChangedEmail } from "@/lib/email-service";
-import { slugToTenantName } from "@/lib/tenant-context";
+import { slugToTenantName } from "@/lib/tenant-utils";
 
 export async function POST(request: Request) {
   try {

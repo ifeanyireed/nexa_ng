@@ -5,11 +5,13 @@ import Link from 'next/link';
 
 import { NexaBadge as Badge } from '@/components/nexa/NexaBadge';
 import { AdminStatCard as StatCard } from '@/components/admin/AdminStatCard';
-import { FileText, CheckCircle2, File, Plus, Tag, MessageSquare, Folder, Users } from 'lucide-react';
+import { FileText, CheckCircle2, File, Plus, Tag, MessageSquare, Folder, Users, Copy, Check, ExternalLink, X } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 import { fetchBlogPosts } from '@/lib/api';
 import { BlogPost } from '@/lib/types';
 import toast from 'react-hot-toast';
 import { SuperAdminShell } from '@/components/admin/SuperAdminShell';
+import { getPublicBlogUrl, copyBlogUrlToClipboard } from '@/lib/blog-utils';
 
 const TABS = [
   { id: 'posts', name: 'Posts', icon: FileText },
@@ -20,6 +22,15 @@ const TABS = [
 ];
 
 export default function BlogCMSPage() {
+  return (
+    <React.Suspense fallback={<div className="p-8 text-center text-slate-500">Loading blog CMS...</div>}>
+      <BlogCMSContent />
+    </React.Suspense>
+  );
+}
+
+function BlogCMSContent() {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('posts');
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -27,6 +38,27 @@ export default function BlogCMSPage() {
   const [subscribers, setSubscribers] = useState<any[]>([]);
   const [comments, setComments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [savedDraftInfo, setSavedDraftInfo] = useState<{ slug: string; title?: string } | null>(null);
+
+  useEffect(() => {
+    const draftSlug = searchParams.get('savedDraft');
+    const draftTitle = searchParams.get('title');
+    if (draftSlug) {
+      setSavedDraftInfo({ slug: draftSlug, title: draftTitle || undefined });
+    }
+  }, [searchParams]);
+
+  const handleCopyPostUrl = async (slugOrId: string) => {
+    const res = await copyBlogUrlToClipboard(slugOrId);
+    if (res.success) {
+      setCopiedId(slugOrId);
+      toast.success(`Copied blog URL: ${res.url}`);
+      setTimeout(() => setCopiedId(null), 2500);
+    } else {
+      toast.error('Could not copy link');
+    }
+  };
 
   useEffect(() => {
     async function load() {
@@ -209,6 +241,53 @@ export default function BlogCMSPage() {
 
       <div className="px-0 sm:px-4 md:px-6 py-4 sm:py-6 space-y-6 sm:space-y-8">
         
+        {/* Saved Draft Alert Banner */}
+        {savedDraftInfo && (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-emerald-50 border border-emerald-200 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm animate-in fade-in slide-in-from-top-1">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 flex-shrink-0">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-emerald-900 uppercase tracking-wider">Draft Saved</p>
+                <p className="text-sm font-semibold text-slate-800 truncate">
+                  {savedDraftInfo.title || 'Your article'} is saved as draft.
+                </p>
+                <p className="text-xs text-emerald-700 font-mono mt-0.5 truncate max-w-sm sm:max-w-md">
+                  {getPublicBlogUrl(savedDraftInfo.slug)}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => handleCopyPostUrl(savedDraftInfo.slug)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 text-white font-semibold text-xs hover:bg-emerald-700 shadow-sm transition"
+              >
+                {copiedId === savedDraftInfo.slug ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedId === savedDraftInfo.slug ? 'Copied!' : 'Copy Blog URL'}</span>
+              </button>
+              <a
+                href={getPublicBlogUrl(savedDraftInfo.slug)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-emerald-300 text-emerald-800 font-semibold text-xs hover:bg-emerald-50 shadow-sm transition"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Preview</span>
+              </a>
+              <button
+                type="button"
+                onClick={() => setSavedDraftInfo(null)}
+                className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/50 transition"
+                title="Dismiss"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Header Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
           <div className="flex bg-slate-100 p-1 rounded-full shadow-inner border border-slate-200 overflow-x-auto whitespace-nowrap hide-scrollbar">
@@ -315,9 +394,44 @@ export default function BlogCMSPage() {
                               ? new Date(post.published_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) 
                               : new Date(post.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                           </td>
-                          <td className="px-3 sm:px-6 py-3 sm:py-4 text-right">
-                            <Link href={`/cms/blog/create?edit=${post.id}`} className="text-blue-600 hover:text-blue-800 text-sm font-medium mr-3">Edit</Link>
-                            <button onClick={() => handleDeletePost(post.id)} className="text-rose-600 hover:text-rose-800 text-sm font-medium">Delete</button>
+                          <td className="px-3 sm:px-6 py-3 sm:py-4 text-right whitespace-nowrap">
+                            <button
+                              type="button"
+                              onClick={() => handleCopyPostUrl(post.slug || post.id)}
+                              className={`inline-flex items-center gap-1.5 text-xs font-semibold mr-2 sm:mr-3 px-2 sm:px-2.5 py-1 rounded-lg border transition-all ${
+                                copiedId === (post.slug || post.id)
+                                  ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                                  : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"
+                              }`}
+                              title="Copy public blog article URL"
+                            >
+                              {copiedId === (post.slug || post.id) ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span>Copied!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3.5 h-3.5 text-slate-500" />
+                                  <span>Copy URL</span>
+                                </>
+                              )}
+                            </button>
+                            <a
+                              href={getPublicBlogUrl(post.slug || post.id)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center p-1.5 text-slate-400 hover:text-blue-600 mr-2 transition-colors rounded hover:bg-slate-100"
+                              title="Preview article"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                            <Link href={`/cms/blog/create?edit=${post.id}`} className="text-blue-600 hover:text-blue-800 text-xs sm:text-sm font-semibold mr-2 sm:mr-3">
+                              Edit
+                            </Link>
+                            <button onClick={() => handleDeletePost(post.id)} className="text-rose-600 hover:text-rose-800 text-xs sm:text-sm font-semibold">
+                              Delete
+                            </button>
                           </td>
                         </tr>
                       ))

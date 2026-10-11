@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { PaperAirplaneIcon } from "@heroicons/react/24/outline";
+import { Volume2, VolumeX, Bell, Radio } from "lucide-react";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { SuperAdminShell } from "@/components/admin/SuperAdminShell";
+import { playSupportChime } from "@/lib/audio-chime";
 
 interface ChatMessage {
   id: string;
@@ -21,9 +23,23 @@ export default function SupportChatPage() {
   const [sessionsData, setSessionsData] = useState<any[]>([]);
   const [connected, setConnected] = useState(false);
   const [showMobileThread, setShowMobileThread] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [recentPing, setRecentPing] = useState<{ id: string; sender: string; text: string } | null>(null);
 
   const ws = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const knownMsgIdsRef = useRef<Set<string>>(new Set());
+  const isInitialLoadRef = useRef(true);
+
+  const triggerPing = (msg: { id: string; sender: string; text: string }) => {
+    if (soundEnabled) {
+      playSupportChime();
+    }
+    setRecentPing(msg);
+    setTimeout(() => {
+      setRecentPing((curr) => (curr?.id === msg.id ? null : curr));
+    }, 4500);
+  };
 
   useEffect(() => {
     fetchSessions();
@@ -67,16 +83,35 @@ export default function SupportChatPage() {
       if (res.ok) {
         const data: ChatMessage[] = await res.json();
         if (Array.isArray(data)) {
+          // Play realtime chime when a new message arrives from a visitor/customer
+          if (!isInitialLoadRef.current && knownMsgIdsRef.current.size > 0) {
+            const newVisitorMsg = data.find(
+              (m) =>
+                !knownMsgIdsRef.current.has(m.id) &&
+                m.sender !== "Support" &&
+                m.sender !== "Support Staff" &&
+                m.sender !== "Support Lead"
+            );
+            if (newVisitorMsg) {
+              triggerPing(newVisitorMsg);
+            }
+          }
+
+          data.forEach((m) => knownMsgIdsRef.current.add(m.id));
+
           setMessages((prev) => {
             const existingIds = new Set(prev.map((m) => m.id));
             const newMsgs = data.filter((m: ChatMessage) => !existingIds.has(m.id));
+            if (newMsgs.length === 0) return prev;
             return [...prev, ...newMsgs].sort(
               (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
             );
           });
         }
       }
-    } catch {}
+    } catch {} finally {
+      isInitialLoadRef.current = false;
+    }
   };
 
   const handleSessionClick = (sessionId: string) => {
@@ -89,6 +124,18 @@ export default function SupportChatPage() {
     if (activeSession) {
       fetchHistory(activeSession);
     }
+  }, [activeSession]);
+
+  // Periodic realtime synchronization: poll sessions & active history every 3.5s
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchSessions();
+      if (activeSession) {
+        fetchHistory(activeSession);
+      }
+    }, 3500);
+
+    return () => clearInterval(interval);
   }, [activeSession]);
 
   useEffect(() => {
@@ -108,7 +155,23 @@ export default function SupportChatPage() {
         try {
           const newMsg = JSON.parse(event.data);
           if (newMsg.type === "status") return;
-          setMessages((prev) => [...prev, newMsg]);
+
+          if (!knownMsgIdsRef.current.has(newMsg.id)) {
+            knownMsgIdsRef.current.add(newMsg.id);
+            if (
+              newMsg.sender !== "Support" &&
+              newMsg.sender !== "Support Staff" &&
+              newMsg.sender !== "Support Lead"
+            ) {
+              triggerPing(newMsg);
+            }
+          }
+
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === newMsg.id)) return prev;
+            return [...prev, newMsg];
+          });
+
           if (newMsg.sender === "Guest" && !activeSession) {
             setActiveSession(newMsg.session_id);
           }
@@ -276,16 +339,72 @@ export default function SupportChatPage() {
                 </h3>
               </div>
               <div className="flex items-center gap-2 shrink-0">
-                <div
-                  className={`w-2.5 h-2.5 rounded-full ${
-                    connected ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
+                {/* Audio Chime Toggle */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !soundEnabled;
+                    setSoundEnabled(next);
+                    if (next) playSupportChime();
+                  }}
+                  className={`px-2.5 py-1 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                    soundEnabled
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
+                      : "bg-slate-500/10 text-slate-400 border-slate-500/20 hover:bg-slate-500/20"
                   }`}
-                />
-                <span className="text-[11px] sm:text-xs font-semibold text-[var(--nexa-text-muted)]">
-                  {connected ? "Gateway Online" : "Local Standby"}
-                </span>
+                  title={soundEnabled ? "Audio Chime Enabled (Click to Mute)" : "Audio Chime Muted (Click to Unmute)"}
+                >
+                  {soundEnabled ? (
+                    <>
+                      <Volume2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      <span className="hidden sm:inline">Chime On</span>
+                    </>
+                  ) : (
+                    <>
+                      <VolumeX className="w-3.5 h-3.5 shrink-0" />
+                      <span className="hidden sm:inline">Chime Muted</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Test Sound Button */}
+                <button
+                  type="button"
+                  onClick={() => playSupportChime()}
+                  className="px-2 py-1 rounded-xl text-[11px] font-semibold text-nexa-text-muted hover:text-nexa-text-primary border border-[var(--nexa-border)] hover:bg-[var(--nexa-bg-base)] transition-colors cursor-pointer hidden sm:inline-block"
+                  title="Test notification chime tone"
+                >
+                  Test Sound
+                </button>
+
+                {/* Gateway Status Badge */}
+                <div className="flex items-center gap-1.5 pl-1.5 border-l border-[var(--nexa-border)]">
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      connected ? "bg-emerald-500 animate-pulse" : "bg-blue-500 animate-pulse"
+                    }`}
+                  />
+                  <span className="text-[11px] font-semibold text-[var(--nexa-text-muted)] hidden md:inline">
+                    {connected ? "Gateway Online" : "Neon Live Sync"}
+                  </span>
+                </div>
               </div>
             </div>
+
+            {/* Realtime Ping Alert Banner */}
+            {recentPing && (
+              <div className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 py-2 text-xs font-bold flex items-center justify-between shadow-sm animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="flex items-center gap-2 truncate">
+                  <Bell className="w-4 h-4 text-emerald-200 animate-bounce shrink-0" />
+                  <span className="truncate">
+                    New message from <span className="underline">{recentPing.sender}</span>: &quot;{recentPing.text}&quot;
+                  </span>
+                </div>
+                <span className="text-[10px] uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full font-mono shrink-0 ml-2">
+                  Realtime Ping
+                </span>
+              </div>
+            )}
 
           {/* Messages Feed */}
           <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-[var(--nexa-bg-base)]/20">

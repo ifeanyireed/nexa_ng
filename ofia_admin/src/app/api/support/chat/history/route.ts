@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDbPool, ensureTablesExist } from "@/lib/db";
+import { generateSupportAutoreply } from "@/lib/gemini";
 
 export async function GET(request: Request) {
   try {
@@ -67,7 +68,70 @@ export async function POST(request: Request) {
       [msgId, session_id, sender, text.trim(), now]
     );
 
-    return NextResponse.json(insertRes.rows[0], { status: 201 });
+    const savedMessage = insertRes.rows[0];
+
+    // 3. Check if sender is a visitor/guest
+    const normalizedSender = (sender || "").toLowerCase();
+    const isVisitor =
+      !normalizedSender.includes("support") &&
+      !normalizedSender.includes("staff") &&
+      !normalizedSender.includes("admin") &&
+      !normalizedSender.includes("ai");
+
+    let aiReplyRecord = null;
+
+    if (isVisitor) {
+      // Check if support staff is currently online
+      const staffRes = await pool.query(
+        `SELECT is_active 
+         FROM support_staff_status 
+         WHERE is_active = true 
+         LIMIT 1`
+      );
+      const isStaffOnline = staffRes.rows.length > 0 && Boolean(staffRes.rows[0].is_active);
+
+      // Trigger Gemini 3.8 Flash autoreply when staff is NOT online
+      if (!isStaffOnline) {
+        try {
+          const aiResult = await generateSupportAutoreply({
+            sessionId: session_id,
+            visitorMessage: text.trim(),
+            visitorName: user_name || sender,
+          });
+
+          if (aiResult?.text) {
+            const aiMsgId = `cmsg-ai-${Date.now()}`;
+            const aiSender = `Ofia AI Assistant (${aiResult.model})`;
+
+            const aiInsertRes = await pool.query(
+              `INSERT INTO support_chat_messages (id, session_id, sender, text, timestamp)
+               VALUES ($1, $2, $3, $4, NOW())
+               RETURNING *`,
+              [aiMsgId, session_id, aiSender, aiResult.text]
+            );
+
+            await pool.query(
+              `UPDATE support_chat_sessions 
+               SET last_message = $1, updated_at = NOW() 
+               WHERE id = $2`,
+              [aiResult.text, session_id]
+            );
+
+            aiReplyRecord = aiInsertRes.rows[0];
+          }
+        } catch (aiErr) {
+          console.error("[Support Chat] Failed to execute Gemini autoreply:", aiErr);
+        }
+      }
+    }
+
+    return NextResponse.json(
+      {
+        ...savedMessage,
+        ai_reply: aiReplyRecord,
+      },
+      { status: 201 }
+    );
   } catch (error: any) {
     console.error("POST /api/support/chat/history error:", error);
     return NextResponse.json({ error: error.message || "Failed to send message" }, { status: 500 });

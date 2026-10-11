@@ -24,49 +24,14 @@ export default function EditKBArticle() {
     status: "published",
   });
 
-  const USERS_API = process.env.NEXT_PUBLIC_USERS_API || "http://localhost:8081";
-
-  const defaultCategories = [
-    { id: "cat-1", name: "Storefronts & DNS" },
-    { id: "cat-2", name: "ERP & Accounting" },
-    { id: "cat-3", name: "Mobility & Transit OS" },
-    { id: "cat-4", name: "Autonomous AI Swarm" },
-    { id: "cat-5", name: "Logistics & Dispatch" },
-  ];
-
-  const defaultContent: Record<string, any> = {
-    "art-1": {
-      title: "Configuring Custom Apex Domains (.ng / .com) on Ofia Storefronts",
-      category_id: "cat-1",
-      content: `# Configuring Custom Apex Domains on Ofia Storefronts
-
-1. Log into your domain registrar (e.g., Whogohost, Namecheap, Cloudflare).
-2. Create an **A Record** pointing to \`185.199.108.153\`.
-3. Create a **CNAME Record** with host \`www\` pointing to \`cname.ofia.shop\`.
-4. Wait 15-30 minutes for DNS propagation across Nigerian ISPs.
-5. In Ofia Admin, verify that the edge certificate status reports "Active".`,
-      status: "published",
-    },
-    "art-2": {
-      title: "Reconciling 7.5% Nigerian FIRS VAT in General Ledger",
-      category_id: "cat-2",
-      content: `# Nigerian FIRS VAT Reconciliation Guide
-
-Every taxable inventory item sold through Ofia Storefronts or POS records an automated output VAT entry (7.5%) in Account #2200 (VAT Payable).
-
-### Exporting FIRS Compliant Schedules:
-- Navigate to Accounting Cockpit > Tax Schedules
-- Select Monthly Tax Filing Period
-- Click "Generate FIRS e-Schedule" to download the tax remittance schedule.`,
-      status: "published",
-    },
-  };
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchInitialData();
   }, [articleId]);
 
   const fetchInitialData = async () => {
+    setLoading(true);
     try {
       const [catsRes, artRes] = await Promise.all([
         fetch(`/api/support/kb/categories`),
@@ -75,9 +40,9 @@ Every taxable inventory item sold through Ofia Storefronts or POS records an aut
 
       if (catsRes.ok) {
         const cData = await catsRes.json();
-        setCategories(Array.isArray(cData) && cData.length > 0 ? cData : defaultCategories);
+        setCategories(Array.isArray(cData) ? cData : []);
       } else {
-        setCategories(defaultCategories);
+        setCategories([]);
       }
 
       if (artRes.ok) {
@@ -88,24 +53,13 @@ Every taxable inventory item sold through Ofia Storefronts or POS records an aut
           content: article.content,
           status: article.status || "published",
         });
+        setError(null);
       } else {
-        const fallback = defaultContent[articleId] || {
-          title: "Guide: Getting Started with Ofia Enterprise Suite",
-          category_id: "cat-1",
-          content: "# Overview\n\nStandard documentation checklist.",
-          status: "published",
-        };
-        setFormData(fallback);
+        setError(`Article not found in database (HTTP ${artRes.status})`);
       }
-    } catch {
-      setCategories(defaultCategories);
-      const fallback = defaultContent[articleId] || {
-        title: "Guide: Getting Started with Ofia Enterprise Suite",
-        category_id: "cat-1",
-        content: "# Overview\n\nStandard documentation checklist.",
-        status: "published",
-      };
-      setFormData(fallback);
+    } catch (err: any) {
+      setCategories([]);
+      setError("Database connection error: " + (err?.message || "Failed to reach server"));
     } finally {
       setLoading(false);
     }
@@ -144,6 +98,26 @@ Every taxable inventory item sold through Ofia Storefronts or POS records an aut
       >
         <div className="p-12 text-center text-xs text-[var(--nexa-text-muted)]">
           Loading article details...
+        </div>
+      </SuperAdminShell>
+    );
+  }
+
+  if (!loading && error) {
+    return (
+      <SuperAdminShell
+        title="Knowledge Base Article"
+        subtitle="Article not found or unavailable."
+      >
+        <div className="p-12 text-center space-y-4">
+          <p className="text-xs text-rose-500 font-semibold">{error}</p>
+          <Link
+            href="/support/kb"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-nexa-brand hover:underline"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span>Return to Knowledge Base</span>
+          </Link>
         </div>
       </SuperAdminShell>
     );

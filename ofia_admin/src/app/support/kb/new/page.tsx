@@ -20,16 +20,6 @@ export default function NewKBArticle() {
     status: "published",
   });
 
-  const USERS_API = process.env.NEXT_PUBLIC_USERS_API || "http://localhost:8081";
-
-  const defaultCategories = [
-    { id: "cat-1", name: "Storefronts & DNS" },
-    { id: "cat-2", name: "ERP & Accounting" },
-    { id: "cat-3", name: "Mobility & Transit OS" },
-    { id: "cat-4", name: "Autonomous AI Swarm" },
-    { id: "cat-5", name: "Logistics & Dispatch" },
-  ];
-
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -45,9 +35,9 @@ export default function NewKBArticle() {
           return;
         }
       }
-      setCategories(defaultCategories);
+      setCategories([]);
     } catch {
-      setCategories(defaultCategories);
+      setCategories([]);
     }
   };
 

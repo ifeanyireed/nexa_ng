@@ -17,28 +17,13 @@ interface ChatMessage {
 export default function SupportChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [message, setMessage] = useState("");
-  const [activeSession, setActiveSession] = useState<string | null>("sess-demo-01");
-  const [sessionsData, setSessionsData] = useState<any[]>([
-    {
-      session_id: "sess-demo-01",
-      sender: "Visitor 8492 (Lagos)",
-      text: "How do I connect my Flutter app to the Flota dispatch fleet API?",
-      timestamp: new Date().toISOString(),
-    },
-    {
-      session_id: "sess-demo-02",
-      sender: "Visitor 1024 (Abuja)",
-      text: "Can I accept card installments without paying Paystack developer setup fees?",
-      timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-    },
-  ]);
+  const [activeSession, setActiveSession] = useState<string | null>(null);
+  const [sessionsData, setSessionsData] = useState<any[]>([]);
   const [connected, setConnected] = useState(false);
   const [showMobileThread, setShowMobileThread] = useState(false);
 
   const ws = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const USERS_API = process.env.NEXT_PUBLIC_USERS_API || "http://localhost:8081";
 
   useEffect(() => {
     fetchSessions();
@@ -62,9 +47,18 @@ export default function SupportChatPage() {
             setActiveSession(data[0].session_id);
             fetchHistory(data[0].session_id);
           }
+        } else {
+          setSessionsData([]);
+          setActiveSession(null);
         }
+      } else {
+        setSessionsData([]);
+        setActiveSession(null);
       }
-    } catch {}
+    } catch {
+      setSessionsData([]);
+      setActiveSession(null);
+    }
   };
 
   const fetchHistory = async (sessionId: string) => {

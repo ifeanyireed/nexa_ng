@@ -23,49 +23,7 @@ export default function SupportDashboard() {
   const [newMessage, setNewMessage] = useState("");
   const [newUserName, setNewUserName] = useState("");
 
-  const USERS_API = process.env.NEXT_PUBLIC_USERS_API || "http://localhost:8081";
-
-  const fallbackTickets = [
-    {
-      id: "t-101",
-      subject: "Storefront custom domain DNS verification delayed",
-      user_full_name: "Chukwudi auto parts",
-      category: "Storefronts",
-      message: "We pointed our CNAME to ofia.shop 4 hours ago but SSL cert is still showing provisioning.",
-      status: "open",
-      created_at: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
-      assigned_to: "support@ofia.ng",
-    },
-    {
-      id: "t-102",
-      subject: "Inter-state courier waybill dispatch error on GIGL",
-      user_full_name: "Lekki Luxury Hub",
-      category: "Logistics",
-      message: "Waybill generation failed with 502 Bad Gateway during evening parcel batching.",
-      status: "open",
-      created_at: new Date(Date.now() - 1000 * 60 * 120).toISOString(),
-    },
-    {
-      id: "t-103",
-      subject: "POS Terminal shift balance difference mediation",
-      user_full_name: "Ikeja Digital Supermart",
-      category: "ERP & POS",
-      message: "Shift report shows ₦15,000 variance between offline cash log and electronic ledger.",
-      status: "in-progress",
-      created_at: new Date(Date.now() - 1000 * 60 * 360).toISOString(),
-      assigned_to: "support@ofia.ng",
-    },
-    {
-      id: "t-104",
-      subject: "Passenger seat allocation conflict on Flota Coach",
-      user_full_name: "Kano Express Transit",
-      category: "Mobility",
-      message: "Two passengers booked Seat 14A on Lagos-Abuja transit line via different channels.",
-      status: "resolved",
-      created_at: new Date(Date.now() - 1000 * 60 * 720).toISOString(),
-      assigned_to: "support@ofia.ng",
-    },
-  ];
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchTickets();
@@ -73,6 +31,7 @@ export default function SupportDashboard() {
   }, []);
 
   const fetchTickets = async () => {
+    setLoading(true);
     try {
       const token =
         typeof window !== "undefined"
@@ -83,12 +42,15 @@ export default function SupportDashboard() {
       });
       if (res.ok) {
         const data = await res.json();
-        setTickets(Array.isArray(data) && data.length > 0 ? data : fallbackTickets);
+        setTickets(Array.isArray(data) ? data : []);
+        setError(null);
       } else {
-        setTickets(fallbackTickets);
+        setTickets([]);
+        setError(`Database query error (HTTP ${res.status})`);
       }
-    } catch {
-      setTickets(fallbackTickets);
+    } catch (err: any) {
+      setTickets([]);
+      setError("Database connection error: " + (err?.message || "Failed to reach server"));
     } finally {
       setLoading(false);
     }
@@ -202,6 +164,17 @@ export default function SupportDashboard() {
       }
     >
       <div className="space-y-6">
+        {error && (
+          <div className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 text-xs font-semibold flex items-center justify-between">
+            <span>⚠️ {error}</span>
+            <button
+              onClick={() => fetchTickets()}
+              className="text-[11px] underline hover:text-rose-600 font-bold cursor-pointer"
+            >
+              Retry
+            </button>
+          </div>
+        )}
         {/* Metrics Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <NexaCard variant="glass" padding="md" className="border border-[var(--nexa-border)] shadow-xs">

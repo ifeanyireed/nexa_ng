@@ -20,39 +20,14 @@ export default function TicketDetailPage() {
   const [sending, setSending] = useState(false);
   const [updating, setUpdating] = useState(false);
 
-  const USERS_API = process.env.NEXT_PUBLIC_USERS_API || "http://localhost:8081";
-
-  const fallbackTicket = {
-    id: ticketId,
-    subject: "Storefront custom domain DNS verification delayed",
-    user_full_name: "Chukwudi auto parts",
-    category: "Storefronts",
-    message: "We pointed our CNAME to ofia.shop 4 hours ago but SSL cert is still showing provisioning.",
-    status: "open",
-    created_at: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
-    assigned_to: "support@ofia.ng",
-  };
-
-  const fallbackMessages = [
-    {
-      id: "m-1",
-      sender_type: "customer",
-      message: "Hello team, we added the CNAME record for chukwudi-autoparts.ofia.shop on Cloudflare 4 hours ago, but the custom domain shows 'SSL Pending' on the storefront dashboard.",
-      created_at: new Date(Date.now() - 1000 * 60 * 45).toISOString(),
-    },
-    {
-      id: "m-2",
-      sender_type: "staff",
-      message: "Hi Chukwudi! Thank you for reaching out. We have initiated an edge SSL validation probe. Let's verify if DNS propagation has completed across Lagos and MTN/Airtel network caches.",
-      created_at: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
-    },
-  ];
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchThread();
   }, [ticketId]);
 
   const fetchThread = async () => {
+    setLoading(true);
     try {
       const token =
         typeof window !== "undefined"
@@ -64,9 +39,11 @@ export default function TicketDetailPage() {
       });
       if (tRes.ok) {
         const current = await tRes.json();
-        setTicket(current || fallbackTicket);
+        setTicket(current || null);
+        setError(null);
       } else {
-        setTicket(fallbackTicket);
+        setTicket(null);
+        setError(`Ticket #${ticketId} not found in database (HTTP ${tRes.status})`);
       }
 
       const res = await fetch(`/api/support/tickets/${ticketId}/messages`, {
@@ -74,13 +51,14 @@ export default function TicketDetailPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        setMessages(Array.isArray(data) && data.length > 0 ? data : fallbackMessages);
+        setMessages(Array.isArray(data) ? data : []);
       } else {
-        setMessages(fallbackMessages);
+        setMessages([]);
       }
-    } catch {
-      setTicket(fallbackTicket);
-      setMessages(fallbackMessages);
+    } catch (err: any) {
+      setTicket(null);
+      setMessages([]);
+      setError("Database connection error: " + (err?.message || "Failed to reach server"));
     } finally {
       setLoading(false);
     }
@@ -159,6 +137,26 @@ export default function TicketDetailPage() {
       >
         <div className="p-12 text-center text-xs text-[var(--nexa-text-muted)]">
           Loading ticket conversation...
+        </div>
+      </SuperAdminShell>
+    );
+  }
+
+  if (!loading && (!ticket || error)) {
+    return (
+      <SuperAdminShell
+        title={`Ticket #${ticketId}`}
+        subtitle="Ticket not found or unavailable."
+      >
+        <div className="p-12 text-center space-y-4">
+          <p className="text-xs text-rose-500 font-semibold">{error || "Ticket not found in database."}</p>
+          <Link
+            href="/support/tickets"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-nexa-brand hover:underline"
+          >
+            <ArrowLeftIcon className="w-3.5 h-3.5" />
+            <span>Return to Tickets Queue</span>
+          </Link>
         </div>
       </SuperAdminShell>
     );

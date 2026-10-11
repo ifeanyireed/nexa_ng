@@ -14,54 +14,7 @@ export default function KnowledgeBaseDashboard() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
-  const USERS_API = process.env.NEXT_PUBLIC_USERS_API || "http://localhost:8081";
-
-  const fallbackCategories = [
-    { id: "cat-1", name: "Storefronts & DNS", slug: "storefronts" },
-    { id: "cat-2", name: "ERP & Accounting", slug: "erp-accounting" },
-    { id: "cat-3", name: "Mobility & Transit OS", slug: "mobility" },
-    { id: "cat-4", name: "Autonomous AI Swarm", slug: "ai-swarm" },
-    { id: "cat-5", name: "Logistics & Dispatch", slug: "logistics" },
-  ];
-
-  const fallbackArticles = [
-    {
-      id: "art-1",
-      title: "Configuring Custom Apex Domains (.ng / .com) on Ofia Storefronts",
-      category_id: "cat-1",
-      category_name: "Storefronts & DNS",
-      excerpt: "Step-by-step instructions for pointing CNAME and A records to the African Edge proxy.",
-      status: "published",
-      updated_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-    },
-    {
-      id: "art-2",
-      title: "Reconciling 7.5% Nigerian FIRS VAT in General Ledger",
-      category_id: "cat-2",
-      category_name: "ERP & Accounting",
-      excerpt: "How sales tax output logs and withholding tax entries automatically map to the general journal.",
-      status: "published",
-      updated_at: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-    },
-    {
-      id: "art-3",
-      title: "Flota Intercity Coach Passenger Manifests & Seat Assignment",
-      category_id: "cat-3",
-      category_name: "Mobility & Transit OS",
-      excerpt: "Managing boarding manifests, bus conductor check-in QR codes, and emergency manifest dispatch.",
-      status: "published",
-      updated_at: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(),
-    },
-    {
-      id: "art-4",
-      title: "Autonomous Lead Re-engagement Swarm: Best Practices for WhatsApp",
-      category_id: "cat-4",
-      category_name: "Autonomous AI Swarm",
-      excerpt: "Configuring safety boundaries, prompt engineering, and human-in-the-loop action approval desks.",
-      status: "published",
-      updated_at: new Date(Date.now() - 1000 * 60 * 60 * 96).toISOString(),
-    },
-  ];
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -77,20 +30,22 @@ export default function KnowledgeBaseDashboard() {
 
       if (catsRes.ok) {
         const cData = await catsRes.json();
-        setCategories(Array.isArray(cData) && cData.length > 0 ? cData : fallbackCategories);
+        setCategories(Array.isArray(cData) ? cData : []);
       } else {
-        setCategories(fallbackCategories);
+        setCategories([]);
       }
 
       if (artsRes.ok) {
         const aData = await artsRes.json();
-        setArticles(Array.isArray(aData) && aData.length > 0 ? aData : fallbackArticles);
+        setArticles(Array.isArray(aData) ? aData : []);
       } else {
-        setArticles(fallbackArticles);
+        setArticles([]);
       }
-    } catch {
-      setCategories(fallbackCategories);
-      setArticles(fallbackArticles);
+      setError(null);
+    } catch (err: any) {
+      setCategories([]);
+      setArticles([]);
+      setError("Database connection error: " + (err?.message || "Failed to reach server"));
     } finally {
       setLoading(false);
     }

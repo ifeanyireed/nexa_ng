@@ -35,7 +35,6 @@ export const LandingNavbar = () => {
     { label: "Products", href: "/products" },
     { label: "Pricing", href: "/pricing" },
     { label: "Blog", href: "/blog" },
-    { label: "Waitlist", href: "/waitlist" },
   ];
 
   return (

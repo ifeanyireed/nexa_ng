@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { LandingNavbar } from "@/components/nexa/LandingNavbar";
 import { Footer } from "@/components/nexa/Footer";
+import FloatingChat from "@/components/FloatingChat";
 
 const dropa = localFont({
   src: "./fonts/Dropa-Regular.woff2",
@@ -40,6 +41,7 @@ export default function RootLayout({
           {children}
         </div>
         <Footer />
+        <FloatingChat />
       </body>
     </html>
   );

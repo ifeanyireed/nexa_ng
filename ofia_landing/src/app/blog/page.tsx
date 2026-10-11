@@ -1,5 +1,3 @@
-import Link from 'next/link';
-import { Sparkles } from 'lucide-react';
 import BlogListClient from '@/components/BlogListClient';
 
 export const revalidate = 60;
@@ -22,8 +20,8 @@ const SEED_FALLBACK_POSTS = [
   },
   {
     id: 'post-seed-02',
-    title: 'How Ofia Compass Bridges Offline Merchants with Escrow Commerce',
-    slug: 'how-ofia-compass-bridges-offline-merchants',
+    title: 'How Ofia Digital Storefronts Bridge Offline Merchants with Escrow Commerce',
+    slug: 'how-ofia-storefronts-bridge-offline-merchants',
     excerpt: 'Empowering brick-and-mortar retailers with digital storefronts, verified technician dispatch, and dispute-free escrow payments.',
     cover_image: 'https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/aa9nvrmyrc38lbpz1mkp.png',
     category: 'Retail & Commerce',
@@ -103,25 +101,6 @@ export default async function BlogPage() {
       <div className="absolute top-[50%] right-[-10%] w-[500px] h-[500px] bg-nexa-accent/10 blur-[140px] rounded-full pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* HERO HEADER */}
-        <div className="max-w-3xl mb-16">
-          <div className="inline-flex items-center gap-2 bg-nexa-brand/10 text-nexa-brand px-4 py-1.5 rounded-full border border-nexa-brand/20 mb-6">
-            <Sparkles className="w-4 h-4 text-nexa-brand" />
-            <span className="text-xs font-bold uppercase tracking-[0.2em]">
-              Ofia Journal &amp; Engineering
-            </span>
-          </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-display tracking-tight text-slate-900 mb-6 leading-tight">
-            Commerce, Logistics <br />
-            <span className="text-nexa-brand">&amp; Autonomous AI.</span>
-          </h1>
-          <p className="text-lg sm:text-xl text-nexa-text-secondary leading-relaxed">
-            Read the latest technical breakthroughs, merchant playbooks, and platform
-            updates driving the new digital economy across Nigeria and West Africa.
-          </p>
-        </div>
-
-        {/* ARTICLES GRID */}
         <BlogListClient posts={posts} />
       </div>
     </main>

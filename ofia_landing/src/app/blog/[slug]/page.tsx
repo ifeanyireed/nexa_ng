@@ -19,10 +19,10 @@ const SEED_FALLBACK_POSTS = [
   },
   {
     id: 'post-seed-02',
-    title: 'How Ofia Compass Bridges Offline Merchants with Escrow Commerce',
-    slug: 'how-ofia-compass-bridges-offline-merchants',
+    title: 'How Ofia Digital Storefronts Bridge Offline Merchants with Escrow Commerce',
+    slug: 'how-ofia-storefronts-bridge-offline-merchants',
     excerpt: 'Empowering brick-and-mortar retailers with digital storefronts, verified technician dispatch, and dispute-free escrow payments.',
-    content: '<h2>Modernizing the Retail Storefront</h2><p>Thousands of trade merchants across computer villages and open markets rely on word-of-mouth and cash payments. Ofia Compass bridges this gap by providing instantly provisioned custom storefronts backed by verified merchant badges.</p><p>With built-in escrow, buyers across different states can transact confidently knowing their funds are protected until verified delivery.</p>',
+    content: '<h2>Modernizing the Retail Storefront</h2><p>Thousands of trade merchants across computer villages and open markets rely on word-of-mouth and cash payments. Ofia Digital Storefronts bridge this gap by providing instantly provisioned custom storefronts backed by verified merchant badges.</p><p>With built-in escrow, buyers across different states can transact confidently knowing their funds are protected until verified delivery.</p>',
     cover_image: 'https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/aa9nvrmyrc38lbpz1mkp.png',
     category: 'Retail & Commerce',
     status: 'PUBLISHED',

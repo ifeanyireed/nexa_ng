@@ -13,7 +13,6 @@ import {
   Truck,
   Building2,
   Users,
-  Compass,
   CheckCircle2,
   Cpu,
   BarChart3,
@@ -30,44 +29,52 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 export default function Home() {
   const pillars = [
     {
-      title: "Establish",
-      badge: "Presence",
-      desc: "Instantly launch your brand online with a custom digital storefront (.ofia.shop) and a verified discoverable profile on Ofia Compass.",
+      title: "Commerce & Storefronts",
+      badge: "Pillar 01",
+      desc: "10 industry-specific digital storefronts (.ofia.shop) with vertical workflows, instant online ordering, and milestone escrow.",
       icon: <Store className="w-6 h-6 text-blue-500" />,
       bg: "bg-blue-500/10",
       accent: "text-blue-500",
     },
     {
-      title: "Operate",
-      badge: "Core ERP",
-      desc: "Run retail POS, multi-location inventory, staff directories, attendance, and chart-of-accounts bookkeeping with offline edge-sync resilience.",
-      icon: <Layers className="w-6 h-6 text-emerald-500" />,
+      title: "Enterprise ERP Suite",
+      badge: "Pillar 02",
+      desc: "Operations command, General Ledger, FIRS 7.5% VAT, 360 appraisals, offline-edge POS, and 4 persona portals.",
+      icon: <Layers className="w-6 h-6 text-purple-500" />,
+      bg: "bg-purple-500/10",
+      accent: "text-purple-500",
+    },
+    {
+      title: "Mobility & Transport OS",
+      badge: "Pillar 03",
+      desc: "White-label passenger mobility across Interstate, Shuttles, Charters, School, Staff, and universal driver cockpits.",
+      icon: <Radio className="w-6 h-6 text-cyan-500" />,
+      bg: "bg-cyan-500/10",
+      accent: "text-cyan-500",
+    },
+    {
+      title: "Logistics & Fulfillment",
+      badge: "Pillar 04",
+      desc: "Universal dispatch across 4 delivery job types, in-house & 3rd-party courier APIs, courier rider app, and waypoint GPS tracking.",
+      icon: <Truck className="w-6 h-6 text-emerald-500" />,
       bg: "bg-emerald-500/10",
       accent: "text-emerald-500",
     },
     {
-      title: "Sell & Connect",
-      badge: "Commerce",
-      desc: "Manage catalogs, take Paystack payments, book field technicians, and dispatch shipments with automated rider tracking and escrow.",
-      icon: <Truck className="w-6 h-6 text-amber-500" />,
+      title: "Autonomous AI Swarm",
+      badge: "Pillar 05",
+      desc: "Deploy 15 autonomous AI agents with an encrypted BYOK vault, multi-LLM model gateway, WhatsApp triage, and Telegram bot gateways.",
+      icon: <Bot className="w-6 h-6 text-amber-500" />,
       bg: "bg-amber-500/10",
       accent: "text-amber-500",
-    },
-    {
-      title: "Grow",
-      badge: "Autonomous AI",
-      desc: "Deploy a 15-agent AI swarm that qualifies leads 24/7 across WhatsApp & email, drafts campaigns, and runs automated customer follow-ups.",
-      icon: <Bot className="w-6 h-6 text-purple-500" />,
-      bg: "bg-purple-500/10",
-      accent: "text-purple-500",
     },
   ];
 
   const stats = [
-    { label: "Architecture", value: "5 Microservices", sub: "Go & Neon Postgres" },
-    { label: "Offline First", value: "100% Edge Sync", sub: "Never lose a sale in transit" },
-    { label: "Autonomous AI", value: "15 Specialized Agents", sub: "Continuous 24/7 Outreach" },
-    { label: "Dispatch Fleet", value: "36 States", sub: "Real-time Waybill tracking" },
+    { label: "Core Architecture", value: "5 Microservices", sub: "Go & Neon Lakebase Postgres" },
+    { label: "Vertical Stores", value: "10 Industry Engines", sub: "Auto, Food, Fashion, Health & more" },
+    { label: "Mobility & Transit", value: "6 Transport Lines", sub: "Interstate, Shuttle, Charter, Driver App" },
+    { label: "Autonomous AI", value: "15 Specialized Agents", sub: "Continuous 24/7 Multi-Channel Swarm" },
   ];
 
   return (
@@ -80,9 +87,9 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           {/* Badge pill */}
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="inline-flex items-center gap-2 mb-8"
           >
             <div className="liquid-glass px-4 py-1.5 rounded-full flex items-center gap-2 border border-nexa-brand/30 shadow-xs">
@@ -95,9 +102,9 @@ export default function Home() {
 
           {/* Heading */}
           <motion.h1
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 55 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
+            transition={{ duration: 0.75, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
             className="text-4xl sm:text-6xl md:text-7xl font-extrabold text-display tracking-tight text-[var(--nexa-text-primary)] mb-8 leading-[1.08] max-w-5xl mx-auto"
           >
             The Operating System <br className="hidden sm:block" />
@@ -109,9 +116,9 @@ export default function Home() {
 
           {/* Subtitle */}
           <motion.p
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 45 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
+            transition={{ duration: 0.75, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
             className="text-lg sm:text-xl text-nexa-text-secondary max-w-3xl mx-auto mb-10 leading-relaxed font-normal"
           >
             Not a fragmented collection of disjointed apps. A unified multi-tenant ecosystem — custom storefront, ERP operations, autonomous AI, logistics, and marketplace discovery — so you enter data once, and it coordinates everywhere.
@@ -119,9 +126,9 @@ export default function Home() {
 
           {/* Actions */}
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
+            transition={{ duration: 0.7, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16"
           >
             <Link href="/pricing" className="w-full sm:w-auto">
@@ -137,17 +144,14 @@ export default function Home() {
           </motion.div>
 
           {/* KPI Ticker in Liquid Glass */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto"
-          >
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-5xl mx-auto">
             {stats.map((s, idx) => (
               <motion.div
                 key={idx}
+                initial={{ opacity: 0, y: 45 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.48 + idx * 0.1, ease: [0.22, 1, 0.36, 1] }}
                 whileHover={{ y: -2 }}
-                transition={{ duration: 0.2 }}
                 className="liquid-glass p-5 rounded-2xl border border-[var(--nexa-border)] text-left hover:border-nexa-brand/40 transition-all duration-200"
               >
                 <p className="text-[11px] font-bold uppercase tracking-wider text-nexa-text-muted mb-1">
@@ -161,39 +165,52 @@ export default function Home() {
                 </p>
               </motion.div>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* 2. THE FOUR PILLARS */}
+      {/* 2. THE FIVE STRATEGIC PILLARS */}
       <section className="py-24 bg-[var(--nexa-bg-surface)] border-b border-[var(--nexa-border)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.5 }}
-            className="text-center max-w-3xl mx-auto mb-16"
-          >
-            <NexaBadge variant="brand" size="md" dot className="mb-4">
-              End-to-End Capabilities
-            </NexaBadge>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-display text-[var(--nexa-text-primary)] mb-6">
-              What Ofia does for an African business
-            </h2>
-            <p className="text-base sm:text-lg text-nexa-text-secondary">
-              Everything required to establish credibility, streamline day-to-day work, sell with trust, and scale aggressively.
-            </p>
-          </motion.div>
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <motion.div
+              initial={{ opacity: 0, y: 35 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <NexaBadge variant="brand" size="md" dot className="mb-4">
+                Five Strategic Pillars
+              </NexaBadge>
+            </motion.div>
+            <motion.h2
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.75, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+              className="text-3xl sm:text-5xl font-extrabold text-display text-[var(--nexa-text-primary)] mb-6"
+            >
+              The full spectrum of what Ofia delivers
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 40 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.75, delay: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              className="text-base sm:text-lg text-nexa-text-secondary"
+            >
+              A unified operating system engineered specifically for Nigerian and West African commerce, transit, logistics, and enterprise scale.
+            </motion.p>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
             {pillars.map((pillar, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 30 }}
+                initial={{ opacity: 0, y: 60 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
+                transition={{ duration: 0.75, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }}
                 className="h-full"
               >
                 <NexaCard
@@ -226,28 +243,41 @@ export default function Home() {
       <section className="py-24 bg-[var(--nexa-bg-base)] border-b border-[var(--nexa-border)] overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-12 gap-12 items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ duration: 0.5 }}
-              className="lg:col-span-5 space-y-6"
-            >
-              <NexaBadge variant="amber" size="md">
-                Cross-Module Synchronization
-              </NexaBadge>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-display text-[var(--nexa-text-primary)] leading-tight">
+            <div className="lg:col-span-5 space-y-6">
+              <motion.div
+                initial={{ opacity: 0, y: 35 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <NexaBadge variant="amber" size="md">
+                  Cross-Module Synchronization
+                </NexaBadge>
+              </motion.div>
+              <motion.h2
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.75, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                className="text-3xl sm:text-4xl font-extrabold text-display text-[var(--nexa-text-primary)] leading-tight"
+              >
                 Enter your data once. <br />
                 <span className="text-nexa-brand">It coordinates everywhere.</span>
-              </h2>
-              <p className="text-base text-nexa-text-secondary leading-relaxed">
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }}
+                transition={{ duration: 0.75, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                className="text-base text-nexa-text-secondary leading-relaxed"
+              >
                 Most platforms force business owners to use five separate vendors: one for accounting, one for point of sale, one for delivery riders, and another for their website.
-              </p>
+              </motion.p>
               <div className="space-y-4 pt-2">
                 {[
                   {
                     title: "Inventory Syncs to Storefront & POS",
-                    desc: "When a cashier sells an item at your physical shop, online stock drops instantly across your web store and Compass.",
+                    desc: "When a cashier sells an item at your physical shop, online stock drops instantly across your web store and central inventory ledger.",
                   },
                   {
                     title: "Automated Fleet & Waybill Dispatch",
@@ -260,10 +290,10 @@ export default function Home() {
                 ].map((item, idx) => (
                   <motion.div
                     key={idx}
-                    initial={{ opacity: 0, y: 15 }}
+                    initial={{ opacity: 0, y: 40 }}
                     whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-40px" }}
-                    transition={{ duration: 0.4, delay: idx * 0.1 }}
+                    viewport={{ once: true, margin: "-50px" }}
+                    transition={{ duration: 0.7, delay: 0.25 + idx * 0.12, ease: [0.22, 1, 0.36, 1] }}
                     className="flex gap-4 items-start"
                   >
                     <div className="w-6 h-6 rounded-full bg-nexa-brand/10 text-nexa-brand flex items-center justify-center shrink-0 mt-0.5">
@@ -276,18 +306,24 @@ export default function Home() {
                   </motion.div>
                 ))}
               </div>
-            </motion.div>
+            </div>
 
             {/* Architecture Card Diagram */}
             <motion.div
-              initial={{ opacity: 0, x: 30, scale: 0.96 }}
-              whileInView={{ opacity: 1, x: 0, scale: 1 }}
+              initial={{ opacity: 0, y: 60, scale: 0.98 }}
+              whileInView={{ opacity: 1, y: 0, scale: 1 }}
               viewport={{ once: true, margin: "-80px" }}
-              transition={{ duration: 0.6 }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
               className="lg:col-span-7"
             >
               <div className="liquid-glass p-8 sm:p-10 rounded-3xl border border-[var(--nexa-border)] shadow-xl relative">
-                <div className="flex items-center justify-between pb-6 border-b border-[var(--nexa-border)] mb-8">
+                <motion.div
+                  initial={{ opacity: 0, y: 25 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+                  className="flex items-center justify-between pb-6 border-b border-[var(--nexa-border)] mb-8"
+                >
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 rounded-full bg-rose-500" />
                     <div className="w-3 h-3 rounded-full bg-amber-500" />
@@ -295,36 +331,37 @@ export default function Home() {
                     <span className="text-xs font-mono font-bold text-nexa-text-muted ml-2">tenant_runtime_matrix.json</span>
                   </div>
                   <NexaBadge variant="brand" size="sm">Single Tenant ID</NexaBadge>
-                </div>
+                </motion.div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                  <motion.div
-                    whileHover={{ y: -3 }}
-                    className="bg-[var(--nexa-bg-surface)] p-4 rounded-xl border border-[var(--nexa-border)] text-center transition-all"
-                  >
-                    <Store className="w-6 h-6 text-blue-500 mx-auto mb-2" />
-                    <p className="font-bold text-xs">Ofia Shop</p>
-                    <p className="text-[10px] text-nexa-text-muted">Direct Web Storefront</p>
-                  </motion.div>
-                  <motion.div
-                    whileHover={{ y: -3 }}
-                    className="bg-[var(--nexa-bg-surface)] p-4 rounded-xl border border-[var(--nexa-border)] text-center transition-all"
-                  >
-                    <Layers className="w-6 h-6 text-emerald-500 mx-auto mb-2" />
-                    <p className="font-bold text-xs">Ofia ERP</p>
-                    <p className="text-[10px] text-nexa-text-muted">POS &amp; Staff Ledger</p>
-                  </motion.div>
-                  <motion.div
-                    whileHover={{ y: -3 }}
-                    className="bg-[var(--nexa-bg-surface)] p-4 rounded-xl border border-[var(--nexa-border)] text-center transition-all"
-                  >
-                    <Compass className="w-6 h-6 text-amber-500 mx-auto mb-2" />
-                    <p className="font-bold text-xs">Ofia Compass</p>
-                    <p className="text-[10px] text-nexa-text-muted">Marketplace Discovery</p>
-                  </motion.div>
+                  {[
+                    { title: "Ofia Shop", sub: "Direct Web Storefront", icon: <Store className="w-6 h-6 text-blue-500 mx-auto mb-2" /> },
+                    { title: "Ofia ERP", sub: "POS & Staff Ledger", icon: <Layers className="w-6 h-6 text-emerald-500 mx-auto mb-2" /> },
+                    { title: "Ofia Dispatch", sub: "Fleet & Waybill Routing", icon: <Truck className="w-6 h-6 text-amber-500 mx-auto mb-2" /> },
+                  ].map((subCard, scIdx) => (
+                    <motion.div
+                      key={scIdx}
+                      initial={{ opacity: 0, y: 40 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.65, delay: 0.2 + scIdx * 0.1, ease: [0.22, 1, 0.36, 1] }}
+                      whileHover={{ y: -3 }}
+                      className="bg-[var(--nexa-bg-surface)] p-4 rounded-xl border border-[var(--nexa-border)] text-center transition-all"
+                    >
+                      {subCard.icon}
+                      <p className="font-bold text-xs">{subCard.title}</p>
+                      <p className="text-[10px] text-nexa-text-muted">{subCard.sub}</p>
+                    </motion.div>
+                  ))}
                 </div>
 
-                <div className="bg-nexa-brand/5 border border-nexa-brand/20 p-5 rounded-2xl flex items-center justify-between">
+                <motion.div
+                  initial={{ opacity: 0, y: 40 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.7, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                  className="bg-nexa-brand/5 border border-nexa-brand/20 p-5 rounded-2xl flex items-center justify-between"
+                >
                   <div className="flex items-center gap-3">
                     <Cpu className="w-6 h-6 text-nexa-brand" />
                     <div>
@@ -333,7 +370,7 @@ export default function Home() {
                     </div>
                   </div>
                   <span className="text-[10px] font-mono font-bold bg-nexa-brand text-white px-2.5 py-1 rounded-md">LIVE</span>
-                </div>
+                </motion.div>
               </div>
             </motion.div>
           </div>
@@ -344,27 +381,54 @@ export default function Home() {
       <section className="py-20 bg-[var(--nexa-bg-surface)]">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
-            initial={{ opacity: 0, y: 40, scale: 0.98 }}
+            initial={{ opacity: 0, y: 65, scale: 0.98 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
             className="relative rounded-3xl bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0A101D] text-white p-8 sm:p-14 overflow-hidden shadow-2xl border border-slate-700"
           >
             {/* Background circular accent */}
             <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/20 blur-[90px] rounded-full pointer-events-none" />
 
             <div className="relative z-10 max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-bold mb-6">
+              <motion.div
+                initial={{ opacity: 0, y: 35 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.65, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-300 text-xs font-bold mb-6"
+              >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Founding Cohort · Limited to First 500 Businesses</span>
-              </div>
-              <h2 className="text-3xl sm:text-5xl font-extrabold text-display text-white mb-6 leading-tight">
+              </motion.div>
+
+              <motion.h2
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.75, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                className="text-3xl sm:text-5xl font-extrabold text-display text-white mb-6 leading-tight"
+              >
                 Get full platform access for <span className="text-blue-400">₦5,000/mo</span>
-              </h2>
-              <p className="text-slate-300 text-base sm:text-lg mb-8 leading-relaxed">
+              </motion.h2>
+
+              <motion.p
+                initial={{ opacity: 0, y: 45 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.75, delay: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                className="text-slate-300 text-base sm:text-lg mb-8 leading-relaxed"
+              >
                 Join our founding cohort today. Lock in founder rates for life, get dedicated onboarding support, and deploy your business on Nigeria&apos;s fastest-growing enterprise infrastructure.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              </motion.p>
+
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.7, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                className="flex flex-col sm:flex-row gap-4"
+              >
                 <Link href="/pricing">
                   <NexaButton size="lg" variant="primary" className="bg-blue-600 hover:bg-blue-500 text-white shadow-xl">
                     Claim Founding Plan Now
@@ -375,7 +439,7 @@ export default function Home() {
                     Read Product Documentation
                   </NexaButton>
                 </Link>
-              </div>
+              </motion.div>
             </div>
           </motion.div>
         </div>

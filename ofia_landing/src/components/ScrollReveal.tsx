@@ -16,14 +16,14 @@ export default function ScrollReveal({
   animation = 'fade-up', 
   delay = 0, 
   className = '',
-  duration = 0.6
+  duration = 0.75
 }: ScrollRevealProps) {
   
   const variants = {
     hidden: {
       opacity: 0,
-      y: animation === 'fade-up' ? 40 : 0,
-      x: animation === 'slide-left' ? 40 : animation === 'slide-right' ? -40 : 0,
+      y: animation === 'fade-up' ? 50 : 0,
+      x: animation === 'slide-left' ? 50 : animation === 'slide-right' ? -50 : 0,
       scale: animation === 'zoom-in' ? 0.9 : 1,
     },
     visible: {
@@ -34,7 +34,7 @@ export default function ScrollReveal({
       transition: {
         duration: duration,
         delay: delay,
-        ease: [0.21, 0.47, 0.32, 0.98] as const, // Custom ease-out cubic
+        ease: [0.22, 1, 0.36, 1] as const,
       }
     }
   };
@@ -44,7 +44,7 @@ export default function ScrollReveal({
       className={className}
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true, margin: "-50px" }}
+      viewport={{ once: true, margin: "-60px" }}
       variants={variants}
     >
       {children}

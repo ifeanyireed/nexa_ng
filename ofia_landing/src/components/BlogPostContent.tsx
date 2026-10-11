@@ -160,10 +160,10 @@ export default function BlogPostContent({ post }: { post: BlogPost }) {
 
             {/* Content Container Overlapping Image */}
       <div className="container-nets relative z-10" style={{ marginTop: '-25vh' }}>
-        <div className="max-w-[1100px] mx-auto">
+        <div className="max-w-[1100px] mx-auto space-y-8">
           
-          <ScrollReveal animation="fade-up">
-            {/* Card 1: Meta Header */}
+          {/* Card 1: Meta Header */}
+          <ScrollReveal animation="fade-up" duration={0.8} delay={0.1}>
             <div className="bg-white shadow-xl w-full p-8 md:p-16 mb-8">
               <span className="text-xs fw-700 tracking-widest uppercase text-muted mb-6 block">
                 {post.category || 'Marketing'}
@@ -188,10 +188,12 @@ export default function BlogPostContent({ post }: { post: BlogPost }) {
                 </div>
               </div>
             </div>
+          </ScrollReveal>
 
-                            {/* Card 2: Main Prose Content */}
-              <div className="bg-white shadow-xl w-full p-8 md:p-16 mb-8 relative">
-                {/* Floating Share Side-Nav */}
+          {/* Card 2: Main Prose Content */}
+          <ScrollReveal animation="fade-up" duration={0.8} delay={0.15}>
+            <div className="bg-white shadow-xl w-full p-8 md:p-16 mb-8 relative">
+              {/* Floating Share Side-Nav */}
               <div className="hidden lg:flex flex-col items-center gap-4 w-12 absolute top-8 -left-20">
                 <span className="text-xs text-muted fw-600 mb-2">share</span>
                 <button onClick={() => handleShare('facebook')} className="w-8 h-8 flex items-center justify-center rounded-full text-muted hover:text-navy hover:bg-gray-200 transition-colors">
@@ -207,178 +209,188 @@ export default function BlogPostContent({ post }: { post: BlogPost }) {
                   <IconMail size={18} />
                 </button>
               </div>
-                <div 
-                  className="prose prose-lg prose-nets max-w-none"
-                  dangerouslySetInnerHTML={{ __html: post.content }} 
-                />
+              <div 
+                className="prose prose-lg prose-nets max-w-none"
+                dangerouslySetInnerHTML={{ __html: post.content }} 
+              />
+            </div>
+          </ScrollReveal>
+
+          {/* Card 3: Author Bio */}
+          <ScrollReveal animation="fade-up" duration={0.75} delay={0.1}>
+            <div className="bg-white shadow-xl w-full p-8 md:p-12 mb-8 flex flex-col md:flex-row gap-6 items-center md:items-start text-center md:text-left">
+              <div className="w-24 h-24 rounded-full bg-gray-200 shrink-0 overflow-hidden">
+                <img src="https://res.cloudinary.com/qsdwzejd/image/upload/v1789250545/landing_page/photo04.jpg" className="w-full h-full object-cover" alt={typeof post.author === "string" ? post.author : ((post.author as any)?.full_name || "Admin")} />
               </div>
-
-              {/* Card 3: Author Bio */}
-              <div className="bg-white shadow-xl w-full p-8 md:p-12 mb-8 flex flex-col md:flex-row gap-6 items-center md:items-start text-center md:text-left">
-                <div className="w-24 h-24 rounded-full bg-gray-200 shrink-0 overflow-hidden">
-                  <img src="https://res.cloudinary.com/qsdwzejd/image/upload/v1789250545/landing_page/photo04.jpg" className="w-full h-full object-cover" alt={typeof post.author === "string" ? post.author : ((post.author as any)?.full_name || "Admin")} />
-                </div>
-                <div>
-                  <h3 className="text-xl fw-700 text-navy mb-2">{typeof post.author === "string" ? post.author : ((post.author as any)?.full_name || "Ofia Editorial Team")} - Author</h3>
-                  <p className="text-sm text-muted mb-4 leading-relaxed">
-                    Ofia's dedicated editorial and engineering team bridging the gap between frontier AI, enterprise commerce, and scalable African logistics.
-                  </p>
-                  <div className="flex items-center justify-center md:justify-start gap-4">
-                    <button className="w-8 h-8 flex items-center justify-center rounded-full bg-nets-light text-navy hover:bg-gray-200 transition-colors">
-                      <IconBrandFacebook size={16} />
-                    </button>
-                    <button className="w-8 h-8 flex items-center justify-center rounded-full bg-nets-light text-navy hover:bg-gray-200 transition-colors">
-                      <IconBrandTwitter size={16} />
-                    </button>
-                    <button className="w-8 h-8 flex items-center justify-center rounded-full bg-nets-light text-navy hover:bg-gray-200 transition-colors">
-                      <IconBrandLinkedin size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 4: Comments List */}
-              <div className="bg-white shadow-xl w-full p-8 md:p-12 mb-8">
-                <h3 className="text-2xl fw-700 text-navy mb-8">Comments</h3>
-                
-                {post.comments && post.comments.length > 0 ? (
-                  <div className="space-y-8">
-                    {(post.comments || []).filter((c: any) => !c.parent_id).map((comment: any) => (
-                      <div key={comment.id} className="flex flex-col gap-6">
-                        <div className="flex gap-4">
-                          <div className="w-12 h-12 rounded-full bg-gray-200 shrink-0 overflow-hidden">
-                            <img src="https://res.cloudinary.com/qsdwzejd/image/upload/v1789250607/landing_page/photo13.jpg" className="w-full h-full object-cover" />
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="fw-700 text-navy text-sm">{comment.user_name || "Guest"}</span>
-                              <button onClick={() => handleReplyClick(comment.user_name || "Guest", comment.id.toString())} className="text-xs font-bold text-muted hover:text-navy flex items-center gap-1 cursor-pointer">
-                                <IconMessageCircle size={14} /> Reply
-                              </button>
-                            </div>
-                            <span className="text-[10px] text-muted uppercase tracking-wider block mb-3">
-                              {new Date(comment.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                            </span>
-                            <p className="text-sm text-navy/80 leading-relaxed m-0 bg-nets-light p-4 rounded-tr-xl rounded-br-xl rounded-bl-xl border border-gray-200 whitespace-pre-wrap">
-                              {renderCommentContent(comment.content)}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Nested Replies */}
-                        {(post.comments || []).filter((r: any) => r.parent_id === comment.id).length > 0 && (
-                          <div className="ml-14 flex flex-col gap-6">
-                            {(post.comments || []).filter((r: any) => r.parent_id === comment.id).map((reply: any) => (
-                              <div key={reply.id} className="flex gap-4">
-                                <div className="w-10 h-10 rounded-full bg-gray-200 shrink-0 overflow-hidden">
-                                  <img src="https://res.cloudinary.com/qsdwzejd/image/upload/v1789250607/landing_page/photo13.jpg" className="w-full h-full object-cover" />
-                                </div>
-                                <div className="flex-1">
-                                  <div className="flex items-center justify-between mb-1">
-                                    <span className="fw-700 text-navy text-sm">{reply.user_name || "Guest"}</span>
-                                    <button onClick={() => handleReplyClick(reply.user_name || "Guest", comment.id.toString())} className="text-xs font-bold text-muted hover:text-navy flex items-center gap-1 cursor-pointer">
-                                      <IconMessageCircle size={14} /> Reply
-                                    </button>
-                                  </div>
-                                  <span className="text-[10px] text-muted uppercase tracking-wider block mb-3">
-                                    {new Date(reply.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                                  </span>
-                                  <p className="text-sm text-navy/80 leading-relaxed m-0 bg-nets-light p-4 rounded-tr-xl rounded-br-xl rounded-bl-xl border border-gray-200 whitespace-pre-wrap">
-                                    {renderCommentContent(reply.content)}
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="bg-nets-light border border-gray-200 rounded-xl p-8 text-center text-muted text-sm">
-                    No comments yet. Be the first to share your thoughts!
-                  </div>
-                )}
-              </div>
-
-              {/* Card 5: Leave Comment Form */}
-              <div className="bg-white shadow-xl w-full p-8 md:p-12 mb-8">
-                <h3 className="text-2xl fw-700 text-navy mb-8">Leave your Comments</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <input type="text" value={commentFirstName} onChange={e => setCommentFirstName(e.target.value)} placeholder="First Name" className="w-full px-4 py-3 rounded-lg bg-nets-light border border-gray-200 text-sm focus:outline-none focus:border-blue-500" />
-                  <input type="text" value={commentLastName} onChange={e => setCommentLastName(e.target.value)} placeholder="Last Name" className="w-full px-4 py-3 rounded-lg bg-nets-light border border-gray-200 text-sm focus:outline-none focus:border-blue-500" />
-                </div>
-                <input type="email" value={commentEmail} onChange={e => setCommentEmail(e.target.value)} placeholder="Email Address" className="w-full px-4 py-3 rounded-lg bg-nets-light border border-gray-200 text-sm focus:outline-none focus:border-blue-500 mb-4" />
-                {replyingTo && (
-                  <div className="flex justify-between items-center bg-blue-50 text-blue-800 text-xs px-3 py-2 rounded-t-lg border border-b-0 border-blue-100">
-                    <span className="font-semibold">Replying to comment...</span>
-                    <button onClick={() => { setReplyingTo(null); setCommentContent(''); }} className="hover:text-blue-900 font-bold">&times; Cancel</button>
-                  </div>
-                )}
-                <textarea ref={textareaRef} value={commentContent} onChange={e => setCommentContent(e.target.value)} placeholder="Your Comment" rows={5} className={`w-full px-4 py-3 bg-nets-light border border-gray-200 text-sm focus:outline-none focus:border-blue-500 mb-6 ${replyingTo ? 'rounded-b-lg border-t-0' : 'rounded-lg'}`}></textarea>
-                <button onClick={handleCommentSubmit} disabled={commentLoading} className="btn" style={{ backgroundColor: "#1A56DB", color: "white", padding: "0.75rem 2rem", opacity: commentLoading ? 0.7 : 1 }}>
-                  {commentLoading ? "Submitting..." : "Submit your Comment"}
-                </button>
-              </div>
-
-              {/* Card 6: Subscribe */}
-              <div className="bg-white shadow-xl w-full p-8 md:p-12 mb-8 text-center flex flex-col items-center">
-                <h3 className="text-2xl fw-700 text-navy mb-4">Subscribe to our Blog</h3>
-                <p className="text-sm text-muted mb-8 max-w-md mx-auto">
-                  Get the latest African commerce insights, product updates, and thought leadership delivered straight to your inbox.
+              <div>
+                <h3 className="text-xl fw-700 text-navy mb-2">{typeof post.author === "string" ? post.author : ((post.author as any)?.full_name || "Ofia Editorial Team")} - Author</h3>
+                <p className="text-sm text-muted mb-4 leading-relaxed">
+                  Ofia's dedicated editorial and engineering team bridging the gap between frontier AI, enterprise commerce, and scalable African logistics.
                 </p>
-                <div className="flex w-full max-w-md mx-auto relative">
-                  <input type="email" value={subEmail} onChange={e => setSubEmail(e.target.value)} placeholder="Enter email address..." className="w-full px-5 py-3 rounded-full bg-nets-light border border-gray-200 text-sm focus:outline-none focus:border-blue-500 pr-32" />
-                  <button onClick={handleSubscribeSubmit} disabled={subLoading} className="absolute right-1 top-1 bottom-1 px-6 rounded-full text-white text-xs fw-700 transition-colors" style={{ backgroundColor: "#1A56DB", opacity: subLoading ? 0.7 : 1 }}>
-                    {subLoading ? "..." : "Subscribe"}
+                <div className="flex items-center justify-center md:justify-start gap-4">
+                  <button className="w-8 h-8 flex items-center justify-center rounded-full bg-nets-light text-navy hover:bg-gray-200 transition-colors">
+                    <IconBrandFacebook size={16} />
+                  </button>
+                  <button className="w-8 h-8 flex items-center justify-center rounded-full bg-nets-light text-navy hover:bg-gray-200 transition-colors">
+                    <IconBrandTwitter size={16} />
+                  </button>
+                  <button className="w-8 h-8 flex items-center justify-center rounded-full bg-nets-light text-navy hover:bg-gray-200 transition-colors">
+                    <IconBrandLinkedin size={16} />
                   </button>
                 </div>
               </div>
+            </div>
+          </ScrollReveal>
 
-              {/* Card 7: Related Posts */}
-              <div className="w-full mt-8">
-                <h3 className="text-2xl fw-700 text-navy mb-6 text-center">Related Posts</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200 flex flex-col">
-                    <div className="h-32 bg-gray-200">
-                      <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" className="w-full h-full object-cover" />
-                    </div>
-                    <div className="p-5 flex-1 flex flex-col">
-                      <span className="text-[10px] fw-700 text-muted uppercase tracking-widest mb-2">Ecosystem &amp; AI</span>
-                      <h4 className="text-sm fw-700 text-navy leading-snug mb-3">Unveiling Ofia: Autonomous AI Swarms</h4>
-                      <div className="mt-auto">
-                        <Link href="/blog/unveiling-ofia-autonomous-ai-swarms" className="text-xs fw-600 text-blue-600 hover:underline">Read full article</Link>
+          {/* Card 4: Comments List */}
+          <ScrollReveal animation="fade-up" duration={0.75} delay={0.1}>
+            <div className="bg-white shadow-xl w-full p-8 md:p-12 mb-8">
+              <h3 className="text-2xl fw-700 text-navy mb-8">Comments</h3>
+              
+              {post.comments && post.comments.length > 0 ? (
+                <div className="space-y-8">
+                  {(post.comments || []).filter((c: any) => !c.parent_id).map((comment: any) => (
+                    <div key={comment.id} className="flex flex-col gap-6">
+                      <div className="flex gap-4">
+                        <div className="w-12 h-12 rounded-full bg-gray-200 shrink-0 overflow-hidden">
+                          <img src="https://res.cloudinary.com/qsdwzejd/image/upload/v1789250607/landing_page/photo13.jpg" className="w-full h-full object-cover" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="fw-700 text-navy text-sm">{comment.user_name || "Guest"}</span>
+                            <button onClick={() => handleReplyClick(comment.user_name || "Guest", comment.id.toString())} className="text-xs font-bold text-muted hover:text-navy flex items-center gap-1 cursor-pointer">
+                              <IconMessageCircle size={14} /> Reply
+                            </button>
+                          </div>
+                          <span className="text-[10px] text-muted uppercase tracking-wider block mb-3">
+                            {new Date(comment.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                          </span>
+                          <p className="text-sm text-navy/80 leading-relaxed m-0 bg-nets-light p-4 rounded-tr-xl rounded-br-xl rounded-bl-xl border border-gray-200 whitespace-pre-wrap">
+                            {renderCommentContent(comment.content)}
+                          </p>
+                        </div>
                       </div>
+
+                      {/* Nested Replies */}
+                      {(post.comments || []).filter((r: any) => r.parent_id === comment.id).length > 0 && (
+                        <div className="ml-14 flex flex-col gap-6">
+                          {(post.comments || []).filter((r: any) => r.parent_id === comment.id).map((reply: any) => (
+                            <div key={reply.id} className="flex gap-4">
+                              <div className="w-10 h-10 rounded-full bg-gray-200 shrink-0 overflow-hidden">
+                                <img src="https://res.cloudinary.com/qsdwzejd/image/upload/v1789250607/landing_page/photo13.jpg" className="w-full h-full object-cover" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="fw-700 text-navy text-sm">{reply.user_name || "Guest"}</span>
+                                  <button onClick={() => handleReplyClick(reply.user_name || "Guest", comment.id.toString())} className="text-xs font-bold text-muted hover:text-navy flex items-center gap-1 cursor-pointer">
+                                    <IconMessageCircle size={14} /> Reply
+                                  </button>
+                                </div>
+                                <span className="text-[10px] text-muted uppercase tracking-wider block mb-3">
+                                  {new Date(reply.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                                </span>
+                                <p className="text-sm text-navy/80 leading-relaxed m-0 bg-nets-light p-4 rounded-tr-xl rounded-br-xl rounded-bl-xl border border-gray-200 whitespace-pre-wrap">
+                                  {renderCommentContent(reply.content)}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-nets-light border border-gray-200 rounded-xl p-8 text-center text-muted text-sm">
+                  No comments yet. Be the first to share your thoughts!
+                </div>
+              )}
+            </div>
+          </ScrollReveal>
+
+          {/* Card 5: Leave Comment Form */}
+          <ScrollReveal animation="fade-up" duration={0.75} delay={0.1}>
+            <div className="bg-white shadow-xl w-full p-8 md:p-12 mb-8">
+              <h3 className="text-2xl fw-700 text-navy mb-8">Leave your Comments</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <input type="text" value={commentFirstName} onChange={e => setCommentFirstName(e.target.value)} placeholder="First Name" className="w-full px-4 py-3 rounded-lg bg-nets-light border border-gray-200 text-sm focus:outline-none focus:border-blue-500" />
+                <input type="text" value={commentLastName} onChange={e => setCommentLastName(e.target.value)} placeholder="Last Name" className="w-full px-4 py-3 rounded-lg bg-nets-light border border-gray-200 text-sm focus:outline-none focus:border-blue-500" />
+              </div>
+              <input type="email" value={commentEmail} onChange={e => setCommentEmail(e.target.value)} placeholder="Email Address" className="w-full px-4 py-3 rounded-lg bg-nets-light border border-gray-200 text-sm focus:outline-none focus:border-blue-500 mb-4" />
+              {replyingTo && (
+                <div className="flex justify-between items-center bg-blue-50 text-blue-800 text-xs px-3 py-2 rounded-t-lg border border-b-0 border-blue-100">
+                  <span className="font-semibold">Replying to comment...</span>
+                  <button onClick={() => { setReplyingTo(null); setCommentContent(''); }} className="hover:text-blue-900 font-bold">&times; Cancel</button>
+                </div>
+              )}
+              <textarea ref={textareaRef} value={commentContent} onChange={e => setCommentContent(e.target.value)} placeholder="Your Comment" rows={5} className={`w-full px-4 py-3 bg-nets-light border border-gray-200 text-sm focus:outline-none focus:border-blue-500 mb-6 ${replyingTo ? 'rounded-b-lg border-t-0' : 'rounded-lg'}`}></textarea>
+              <button onClick={handleCommentSubmit} disabled={commentLoading} className="btn" style={{ backgroundColor: "#1A56DB", color: "white", padding: "0.75rem 2rem", opacity: commentLoading ? 0.7 : 1 }}>
+                {commentLoading ? "Submitting..." : "Submit your Comment"}
+              </button>
+            </div>
+          </ScrollReveal>
+
+          {/* Card 6: Subscribe */}
+          <ScrollReveal animation="fade-up" duration={0.75} delay={0.1}>
+            <div className="bg-white shadow-xl w-full p-8 md:p-12 mb-8 text-center flex flex-col items-center">
+              <h3 className="text-2xl fw-700 text-navy mb-4">Subscribe to our Blog</h3>
+              <p className="text-sm text-muted mb-8 max-w-md mx-auto">
+                Get the latest African commerce insights, product updates, and thought leadership delivered straight to your inbox.
+              </p>
+              <div className="flex w-full max-w-md mx-auto relative">
+                <input type="email" value={subEmail} onChange={e => setSubEmail(e.target.value)} placeholder="Enter email address..." className="w-full px-5 py-3 rounded-full bg-nets-light border border-gray-200 text-sm focus:outline-none focus:border-blue-500 pr-32" />
+                <button onClick={handleSubscribeSubmit} disabled={subLoading} className="absolute right-1 top-1 bottom-1 px-6 rounded-full text-white text-xs fw-700 transition-colors" style={{ backgroundColor: "#1A56DB", opacity: subLoading ? 0.7 : 1 }}>
+                  {subLoading ? "..." : "Subscribe"}
+                </button>
+              </div>
+            </div>
+          </ScrollReveal>
+
+          {/* Card 7: Related Posts */}
+          <ScrollReveal animation="fade-up" duration={0.8} delay={0.1}>
+            <div className="w-full mt-8">
+              <h3 className="text-2xl fw-700 text-navy mb-6 text-center">Related Posts</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200 flex flex-col">
+                  <div className="h-32 bg-gray-200">
+                    <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="p-5 flex-1 flex flex-col">
+                    <span className="text-[10px] fw-700 text-muted uppercase tracking-widest mb-2">Ecosystem &amp; AI</span>
+                    <h4 className="text-sm fw-700 text-navy leading-snug mb-3">Unveiling Ofia: Autonomous AI Swarms</h4>
+                    <div className="mt-auto">
+                      <Link href="/blog/unveiling-ofia-autonomous-ai-swarms" className="text-xs fw-600 text-blue-600 hover:underline">Read full article</Link>
                     </div>
                   </div>
-                  
-                  <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200 flex flex-col">
-                    <div className="h-32 bg-gray-200">
-                      <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/aa9nvrmyrc38lbpz1mkp.png" className="w-full h-full object-cover" />
-                    </div>
-                    <div className="p-5 flex-1 flex flex-col">
-                      <span className="text-[10px] fw-700 text-muted uppercase tracking-widest mb-2">Retail &amp; Commerce</span>
-                      <h4 className="text-sm fw-700 text-navy leading-snug mb-3">How Ofia Compass Bridges Offline Merchants</h4>
-                      <div className="mt-auto">
-                        <Link href="/blog/how-ofia-compass-bridges-offline-merchants" className="text-xs fw-600 text-blue-600 hover:underline">Read full article</Link>
-                      </div>
+                </div>
+                
+                <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200 flex flex-col">
+                  <div className="h-32 bg-gray-200">
+                    <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/aa9nvrmyrc38lbpz1mkp.png" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="p-5 flex-1 flex flex-col">
+                    <span className="text-[10px] fw-700 text-muted uppercase tracking-widest mb-2">Retail &amp; Commerce</span>
+                    <h4 className="text-sm fw-700 text-navy leading-snug mb-3">How Ofia Storefronts Bridge Offline Merchants</h4>
+                    <div className="mt-auto">
+                      <Link href="/blog/how-ofia-storefronts-bridge-offline-merchants" className="text-xs fw-600 text-blue-600 hover:underline">Read full article</Link>
                     </div>
                   </div>
-                  
-                  <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200 flex flex-col">
-                    <div className="h-32 bg-gray-200">
-                      <img src="https://res.cloudinary.com/qsdwzejd/image/upload/v1789250607/landing_page/photo13.jpg" className="w-full h-full object-cover" />
-                    </div>
-                    <div className="p-5 flex-1 flex flex-col">
-                      <span className="text-[10px] fw-700 text-muted uppercase tracking-widest mb-2">Fleet &amp; Logistics</span>
-                      <h4 className="text-sm fw-700 text-navy leading-snug mb-3">Real-Time Fleet Dispatch: Scaling Nationwide</h4>
-                      <div className="mt-auto">
-                        <Link href="/blog/real-time-fleet-dispatch-last-mile-logistics" className="text-xs fw-600 text-blue-600 hover:underline">Read full article</Link>
-                      </div>
+                </div>
+                
+                <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200 flex flex-col">
+                  <div className="h-32 bg-gray-200">
+                    <img src="https://res.cloudinary.com/qsdwzejd/image/upload/v1789250607/landing_page/photo13.jpg" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="p-5 flex-1 flex flex-col">
+                    <span className="text-[10px] fw-700 text-muted uppercase tracking-widest mb-2">Fleet &amp; Logistics</span>
+                    <h4 className="text-sm fw-700 text-navy leading-snug mb-3">Real-Time Fleet Dispatch: Scaling Nationwide</h4>
+                    <div className="mt-auto">
+                      <Link href="/blog/real-time-fleet-dispatch-last-mile-logistics" className="text-xs fw-600 text-blue-600 hover:underline">Read full article</Link>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
           </ScrollReveal>
         </div>
       </div>

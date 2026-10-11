@@ -176,20 +176,24 @@ export async function testSmtpSettings(settings: SmtpSettings, testRecipientEmai
       subject: `[Test] SMTP Verification from ${settings.fromName || "Ofia ERP"}`,
       text: `Hello,\n\nThis is a test email sent from Ofia ERP to confirm your SMTP configuration for "${settings.fromName}".\n\nProvider: ${settings.provider}\nHost: ${settings.host}:${settings.port}\nEncryption: ${settings.encryption.toUpperCase()}\nFrom Address: ${settings.fromEmail}\n\nYour mass messaging setup is ready to use!`,
       html: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background: #ffffff;">
-          <div style="display: flex; align-items: center; margin-bottom: 20px;">
-            <h2 style="color: #1a56db; margin: 0; font-size: 20px; font-weight: bold;">Ofia ERP — SMTP Test</h2>
+        <div style="font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 580px; margin: 24px auto; padding: 32px; border: 1px solid #dadce0; border-radius: 8px; background: #ffffff;">
+          <div style="margin-bottom: 20px; border-bottom: 1px solid #dadce0; padding-bottom: 16px;">
+            <div style="display: inline-block; padding: 4px 10px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 4px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">
+              SMTP Verification
+            </div>
+            <h2 style="color: #202124; margin: 14px 0 4px; font-size: 20px; font-weight: 600;">Ofia ERP Connection Verified</h2>
+            <p style="color: #5f6368; font-size: 13px; margin: 0;">Automated Mail Relay Test</p>
           </div>
-          <p style="color: #475569; font-size: 15px; line-height: 1.6;">
+          <p style="color: #3c4043; font-size: 14px; line-height: 1.6; margin: 0 0 16px;">
             Success! Your SMTP connection has been verified. You can now dispatch announcements, notifications, and mass communications to your staff directory.
           </p>
-          <div style="background: #f8fafc; border-left: 4px solid #1a56db; padding: 14px 18px; margin: 20px 0; border-radius: 4px;">
-            <p style="margin: 4px 0; font-size: 13px; color: #64748b;"><strong>Provider:</strong> ${settings.provider}</p>
-            <p style="margin: 4px 0; font-size: 13px; color: #64748b;"><strong>Host & Port:</strong> ${settings.host}:${settings.port}</p>
-            <p style="margin: 4px 0; font-size: 13px; color: #64748b;"><strong>Encryption:</strong> ${settings.encryption.toUpperCase()}</p>
-            <p style="margin: 4px 0; font-size: 13px; color: #64748b;"><strong>Sender:</strong> ${sender}</p>
+          <div style="background: #f8f9fa; border: 1px solid #dadce0; border-left: 3px solid #1a73e8; padding: 12px 16px; margin: 20px 0; border-radius: 4px;">
+            <p style="margin: 4px 0; font-size: 13px; color: #3c4043;"><strong>Provider:</strong> ${settings.provider}</p>
+            <p style="margin: 4px 0; font-size: 13px; color: #3c4043;"><strong>Host & Port:</strong> ${settings.host}:${settings.port}</p>
+            <p style="margin: 4px 0; font-size: 13px; color: #3c4043;"><strong>Encryption:</strong> ${settings.encryption.toUpperCase()}</p>
+            <p style="margin: 4px 0; font-size: 13px; color: #3c4043;"><strong>Sender:</strong> ${sender}</p>
           </div>
-          <p style="font-size: 12px; color: #94a3b8; margin-top: 30px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+          <p style="font-size: 12px; color: #70757a; border-top: 1px solid #dadce0; padding-top: 16px; margin: 24px 0 0;">
             Sent automatically by Ofia Enterprise Resource Planning platform.
           </p>
         </div>
@@ -672,7 +676,7 @@ export async function isProfileInCooldown(profileKey: string): Promise<boolean> 
       }
     }
   } catch (err) {
-    console.warn("⚠️ Failed to query profile cooldown from DB:", err);
+    console.warn("[Warning] Failed to query profile cooldown from DB:", err);
   }
 
   return false;
@@ -746,7 +750,7 @@ export async function recordProfileRateLimit(params: {
       );
     }
   } catch (err) {
-    console.error("⚠️ Failed to record profile rate limit in PostgreSQL:", err);
+    console.error("[Warning] Failed to record profile rate limit in PostgreSQL:", err);
   }
 
   return { profileKey, cooldownUntil };
@@ -765,7 +769,7 @@ export async function resetProfileRateLimit(profileKey: string): Promise<void> {
       await pool.query(`DELETE FROM email_profile_cooldowns WHERE profile_key = $1`, [profileKey]);
     }
   } catch (err) {
-    console.warn("⚠️ Failed to reset profile cooldown in DB:", err);
+    console.warn("[Warning] Failed to reset profile cooldown in DB:", err);
   }
 }
 
@@ -802,6 +806,57 @@ function resolveUrls(tenantSlug: string, loginUrl?: string): { resolvedLoginUrl:
     (resolvedLoginUrl.includes("?") ? resolvedLoginUrl.substring(resolvedLoginUrl.indexOf("?")) : "");
 
   return { resolvedLoginUrl, resolvedPortalUrl };
+}
+
+/**
+ * Wraps campaign body HTML into a clean Google AdSense-styled email container
+ * using Google Fonts (Plus Jakarta Sans and DM Sans) with no emojis.
+ */
+export function wrapInMasterAdsenseTemplate(
+  contentHtml: string,
+  title?: string,
+  senderName?: string
+): string {
+  if (contentHtml.toLowerCase().includes("<html") || contentHtml.toLowerCase().includes("<!doctype")) {
+    return contentHtml;
+  }
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title || "Notification"}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+    body { margin: 0; padding: 0; background-color: #f8f9fa; font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #202124; -webkit-font-smoothing: antialiased; }
+    .wrapper { width: 100%; background-color: #f8f9fa; padding: 32px 16px; box-sizing: border-box; }
+    .card { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; border: 1px solid #dadce0; overflow: hidden; }
+    .header { padding: 28px 32px 20px; border-bottom: 1px solid #dadce0; }
+    .badge { display: inline-block; padding: 4px 10px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 4px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .title { margin: 14px 0 0; font-size: 20px; font-weight: 600; color: #202124; line-height: 1.3; }
+    .content { padding: 32px; font-size: 14px; line-height: 1.6; color: #3c4043; }
+    .footer { padding: 20px 32px; text-align: center; font-size: 12px; color: #70757a; background-color: #f8f9fa; border-top: 1px solid #dadce0; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="card">
+      ${senderName || title ? `
+      <div class="header">
+        ${senderName ? `<div class="badge">${senderName}</div>` : ""}
+        ${title ? `<h1 class="title">${title}</h1>` : ""}
+      </div>` : ""}
+      <div class="content">
+        ${contentHtml}
+      </div>
+      <div class="footer">
+        &copy; ${new Date().getFullYear()} ${senderName || "Ofia ERP"}. All rights reserved.<br/>
+        This is a mandatory system communication regarding your enterprise account.
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
 }
 
 /**
@@ -898,7 +953,7 @@ export async function queueMassEmailCampaign(params: QueueCampaignParams): Promi
       };
     }
   } catch (err) {
-    console.error("⚠️ Failed to write mass email campaign to PostgreSQL, utilizing memory queue:", err);
+    console.error("[Warning] Failed to write mass email campaign to PostgreSQL, utilizing memory queue:", err);
   }
 
   // 2. In-memory fallback
@@ -1064,7 +1119,7 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
                     ? JSON.parse(campaign.sender_override)
                     : campaign.sender_override;
               } catch (parseErr) {
-                console.warn("⚠️ Failed to parse campaign sender_override:", parseErr);
+                console.warn("[Warning] Failed to parse campaign sender_override:", parseErr);
               }
             }
 
@@ -1135,11 +1190,13 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
             const personalizedHtml = personalizeTemplate(campaign.message_html, recipientObj, resolvedLoginUrl, resolvedPortalUrl);
             const sender = `"${effectiveSettings.fromName.replace(/"/g, "")}" <${effectiveSettings.fromEmail}>`;
 
+            const finalHtml = wrapInMasterAdsenseTemplate(personalizedHtml, personalizedSubject, effectiveSettings.fromName);
+
             await effectiveTransporter.sendMail({
               from: sender,
               to: item.recipient_email,
               subject: personalizedSubject,
-              html: personalizedHtml,
+              html: finalHtml,
               text: personalizedHtml.replace(/<[^>]*>?/gm, ""),
             });
 
@@ -1164,7 +1221,7 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
               );
 
               console.warn(
-                `⏳ Rate limit encountered for profile "${currentProfileKey}" (${item.tenant_slug}): ${errMsg}. Queueing emails for retry in 24 hours.`
+                `Rate limit encountered for profile "${currentProfileKey}" (${item.tenant_slug}): ${errMsg}. Queueing emails for retry in 24 hours.`
               );
 
               // 1. Put this item back to pending with 24-hour next_retry_at, preserving retry attempts budget
@@ -1302,7 +1359,7 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
       return { processed, sent, failed, remainingPending, remainingRateLimited, errors };
     }
   } catch (err) {
-    console.warn("⚠️ PostgreSQL queue processing encountered error, checking memory queue:", err);
+    console.warn("[Warning] PostgreSQL queue processing encountered error, checking memory queue:", err);
   }
 
   // 2. Process memory queue items if DB not active or returned empty
@@ -1369,11 +1426,13 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
       const personalizedHtml = personalizeTemplate(memCampaign.messageHtml, recipientObj, resolvedLoginUrl, resolvedPortalUrl);
       const sender = `"${effectiveSettings.fromName.replace(/"/g, "")}" <${effectiveSettings.fromEmail}>`;
 
+      const finalHtml = wrapInMasterAdsenseTemplate(personalizedHtml, personalizedSubject, effectiveSettings.fromName);
+
       await effectiveTransporter.sendMail({
         from: sender,
         to: item.recipientEmail,
         subject: personalizedSubject,
-        html: personalizedHtml,
+        html: finalHtml,
         text: personalizedHtml.replace(/<[^>]*>?/gm, ""),
       });
 
@@ -1524,7 +1583,7 @@ export async function getCampaignProgress(campaignId: string): Promise<CampaignP
       }
     }
   } catch (err) {
-    console.warn("⚠️ Failed to read campaign progress from PostgreSQL, falling back to memory:", err);
+    console.warn("[Warning] Failed to read campaign progress from PostgreSQL, falling back to memory:", err);
   }
 
   // 2. Try in-memory fallback
@@ -1703,7 +1762,7 @@ export async function listTenantCampaigns(tenantSlug: string, limit: number = 50
       });
     }
   } catch (err) {
-    console.warn("⚠️ Failed to list campaigns from PostgreSQL, falling back to memory:", err);
+    console.warn("[Warning] Failed to list campaigns from PostgreSQL, falling back to memory:", err);
   }
 
   // 2. In-memory fallback
@@ -1822,7 +1881,7 @@ export async function getCampaignDetailsWithRecipients(campaignId: string): Prom
       }
     }
   } catch (err) {
-    console.warn("⚠️ Failed to load campaign details from PostgreSQL, checking memory:", err);
+    console.warn("[Warning] Failed to load campaign details from PostgreSQL, checking memory:", err);
   }
 
   // 2. In-memory fallback
@@ -1929,7 +1988,7 @@ export async function retryFailedCampaignEmails(campaignId: string): Promise<{ r
       return { retriedCount };
     }
   } catch (err) {
-    console.warn("⚠️ Failed to reset failed emails in PostgreSQL, checking memory:", err);
+    console.warn("[Warning] Failed to reset failed emails in PostgreSQL, checking memory:", err);
   }
 
   // 2. In-memory fallback
@@ -2076,62 +2135,55 @@ export async function sendPlatformPasswordResetEmail(
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${subject}</title>
   <style>
-    body { margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; }
-    .wrapper { width: 100%; background-color: #f8fafc; padding: 40px 16px; box-sizing: border-box; }
-    .card { max-width: 540px; margin: 0 auto; background: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01); overflow: hidden; }
-    .header { padding: 32px 32px 24px; text-align: center; border-bottom: 1px solid #f1f5f9; }
-    .brand-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; background: #eff6ff; border: 1px solid #dbeafe; border-radius: 999px; color: #1a56db; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
-    .content { padding: 32px; line-height: 1.6; }
-    .greeting { font-size: 16px; font-weight: 600; color: #0f172a; margin-bottom: 8px; }
-    .message { font-size: 14px; color: #475569; margin-bottom: 24px; }
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+    body { margin: 0; padding: 0; background-color: #f8f9fa; font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #202124; -webkit-font-smoothing: antialiased; }
+    .wrapper { width: 100%; background-color: #f8f9fa; padding: 40px 16px; box-sizing: border-box; }
+    .card { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 8px; border: 1px solid #dadce0; overflow: hidden; }
+    .header { padding: 32px 32px 20px; border-bottom: 1px solid #dadce0; }
+    .brand-badge { display: inline-block; padding: 4px 10px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 4px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .title { margin: 16px 0 6px; font-size: 22px; font-weight: 600; color: #202124; line-height: 1.3; }
+    .subtitle { margin: 0; font-size: 13px; color: #5f6368; }
+    .content { padding: 32px; font-size: 14px; line-height: 1.6; color: #3c4043; }
     .btn-container { text-align: center; margin: 28px 0; }
-    .btn { display: inline-block; background-color: #1a56db; color: #ffffff !important; padding: 14px 32px; border-radius: 12px; font-size: 14px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 14px 0 rgba(26, 86, 219, 0.35); }
-    .notice-box { background: #f8fafc; border-left: 4px solid #1a56db; border-radius: 6px; padding: 14px 16px; margin: 24px 0; font-size: 12px; color: #64748b; }
-    .fallback-url { word-break: break-all; font-family: monospace; font-size: 11px; background: #f1f5f9; padding: 10px 12px; border-radius: 8px; color: #0f172a; border: 1px solid #e2e8f0; margin-top: 8px; }
-    .footer { padding: 24px 32px 32px; text-align: center; font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9; }
+    .btn { display: inline-block; background-color: #1a73e8; color: #ffffff !important; padding: 12px 28px; border-radius: 4px; font-size: 14px; font-weight: 600; text-decoration: none; }
+    .notice-box { background: #f8f9fa; border: 1px solid #dadce0; border-left: 3px solid #1a73e8; border-radius: 4px; padding: 12px 16px; margin: 20px 0; font-size: 13px; color: #3c4043; line-height: 1.5; }
+    .fallback-url { word-break: break-all; font-family: monospace; font-size: 11px; background: #f8f9fa; padding: 10px 12px; border-radius: 4px; color: #202124; border: 1px solid #dadce0; margin-top: 8px; }
+    .footer { padding: 20px 32px; text-align: center; font-size: 12px; color: #70757a; background-color: #f8f9fa; border-top: 1px solid #dadce0; line-height: 1.5; }
   </style>
 </head>
 <body>
   <div class="wrapper">
     <div class="card">
       <div class="header">
-        <div class="brand-badge">
-          <span>🔒</span> ${senderName}
-        </div>
-        <h2 style="margin: 16px 0 4px; font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.02em;">
-          Password Reset Request
-        </h2>
-        <p style="margin: 0; font-size: 13px; color: #64748b;">
-          Follow the instructions below to regain access to your workspace.
-        </p>
+        <div class="brand-badge">${senderName}</div>
+        <h1 class="title">Password Reset Request</h1>
+        <p class="subtitle">Follow the instructions below to regain access to your workspace.</p>
       </div>
 
       <div class="content">
-        <p class="greeting">Hello ${recipientName},</p>
-        <p class="message">
+        <p style="margin: 0 0 16px;">Hello ${recipientName},</p>
+        <p style="margin: 0 0 16px;">
           We received a request to reset the password for your account on <strong>${tenantName}</strong>. If you made this request, click the secure button below to set a new password:
         </p>
 
         <div class="btn-container">
-          <a href="${resetUrl}" target="_blank" class="btn">
-            Reset My Password &rarr;
-          </a>
+          <a href="${resetUrl}" target="_blank" class="btn">Reset My Password</a>
         </div>
 
         <div class="notice-box">
-          <p style="margin: 0 0 6px 0;"><strong>⏱ Expiration:</strong> This reset link will automatically expire in <strong>${expiresInMinutes} minutes</strong>.</p>
-          <p style="margin: 0;"><strong>🛡 Did not request this?</strong> If you did not ask to reset your password, you can safely ignore this email. Your existing credentials remain completely secure.</p>
+          <p style="margin: 0 0 6px;"><strong>Expiration:</strong> This reset link will automatically expire in <strong>${expiresInMinutes} minutes</strong>.</p>
+          <p style="margin: 0;"><strong>Did not request this?</strong> If you did not ask to reset your password, you can safely ignore this email. Your existing credentials remain completely secure.</p>
         </div>
 
-        <p style="font-size: 12px; color: #64748b; margin-top: 20px; margin-bottom: 4px;">
+        <p style="font-size: 12px; color: #70757a; margin-top: 20px; margin-bottom: 4px;">
           Button not working? Copy and paste this URL into your browser:
         </p>
         <div class="fallback-url">${resetUrl}</div>
       </div>
 
       <div class="footer">
-        <p style="margin: 0 0 6px;">Sent automatically by Ofia Platform Security Infrastructure on behalf of ${tenantName}.</p>
-        <p style="margin: 0;">&copy; ${new Date().getFullYear()} Ofia Technologies Ltd. All rights reserved.</p>
+        &copy; ${new Date().getFullYear()} Ofia Technologies Ltd. All rights reserved.<br/>
+        Sent automatically by Ofia Platform Security Infrastructure on behalf of ${tenantName}.
       </div>
     </div>
   </div>
@@ -2241,28 +2293,49 @@ export async function sendPlatformPasswordChangedEmail(
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${subject}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+    body { margin: 0; padding: 0; background-color: #f8f9fa; font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #202124; -webkit-font-smoothing: antialiased; }
+    .wrapper { width: 100%; background-color: #f8f9fa; padding: 40px 16px; box-sizing: border-box; }
+    .card { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 8px; border: 1px solid #dadce0; overflow: hidden; }
+    .header { padding: 32px 32px 20px; border-bottom: 1px solid #dadce0; }
+    .badge { display: inline-block; padding: 4px 10px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 4px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .title { margin: 16px 0 6px; font-size: 22px; font-weight: 600; color: #202124; line-height: 1.3; }
+    .subtitle { margin: 0; font-size: 13px; color: #5f6368; }
+    .content { padding: 32px; font-size: 14px; line-height: 1.6; color: #3c4043; }
+    .info-box { background: #f8f9fa; border: 1px solid #dadce0; border-left: 3px solid #0f9d58; border-radius: 4px; padding: 12px 16px; margin: 20px 0; font-size: 13px; color: #3c4043; line-height: 1.6; }
+    .warning-box { background: #fce8e6; border: 1px solid #fad2cf; border-left: 3px solid #d93025; border-radius: 4px; padding: 12px 16px; margin: 20px 0; font-size: 13px; color: #c5221f; line-height: 1.5; font-weight: 500; }
+    .footer { padding: 20px 32px; text-align: center; font-size: 12px; color: #70757a; background-color: #f8f9fa; border-top: 1px solid #dadce0; line-height: 1.5; }
+  </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b;">
-  <div style="max-width: 580px; margin: 32px auto; padding: 28px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0;">
-    <div style="display: inline-block; padding: 4px 12px; background: #eff6ff; border: 1px solid #dbeafe; border-radius: 999px; color: #1a56db; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 16px;">
-      🔒 ${senderName}
+<body>
+  <div class="wrapper">
+    <div class="card">
+      <div class="header">
+        <div class="badge">${senderName}</div>
+        <h1 class="title">Password Changed Successfully</h1>
+        <p class="subtitle">Security update confirmation for your workspace account.</p>
+      </div>
+      <div class="content">
+        <p style="margin: 0 0 16px;">Hello ${recipientName},</p>
+        <p style="margin: 0 0 16px;">
+          This email confirms that the password for your account on <strong>${tenantName}</strong> was recently updated.
+        </p>
+        <div class="info-box">
+          <p style="margin: 2px 0;"><strong>Timestamp:</strong> ${new Date().toUTCString()}</p>
+          <p style="margin: 2px 0;"><strong>Account:</strong> ${recipientEmail}</p>
+        </div>
+        <div class="warning-box">
+          If you did not initiate this change, please contact Ofia platform security or your workspace administrator immediately.
+        </div>
+      </div>
+      <div class="footer">
+        &copy; ${new Date().getFullYear()} Ofia Technologies Ltd. All rights reserved.<br/>
+        Sent automatically by Ofia Platform Security Infrastructure.
+      </div>
     </div>
-    <h2 style="color: #0f172a; margin-top: 0; font-size: 20px;">Password Changed Successfully</h2>
-    <p style="font-size: 14px; color: #475569; line-height: 1.6;">Hello ${recipientName},</p>
-    <p style="font-size: 14px; color: #475569; line-height: 1.6;">
-      This email confirms that the password for your account on <strong>${tenantName}</strong> was recently changed.
-    </p>
-    <div style="background: #f1f5f9; border-left: 4px solid #0e9f6e; padding: 12px 16px; margin: 20px 0; border-radius: 6px; font-size: 13px; color: #334155;">
-      <strong>Time:</strong> ${new Date().toUTCString()}<br/>
-      <strong>Account:</strong> ${recipientEmail}
-    </div>
-    <p style="font-size: 13px; color: #e02424; line-height: 1.5; font-weight: 500;">
-      If you did not make this change, please contact Ofia platform security or your workspace administrator immediately.
-    </p>
-    <p style="font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 14px; margin-top: 24px;">
-      Sent automatically by Ofia Platform Security Infrastructure.
-    </p>
   </div>
 </body>
 </html>
@@ -2337,30 +2410,51 @@ export async function sendPlatformEmailVerificationEmail(
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${subject}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+    body { margin: 0; padding: 0; background-color: #f8f9fa; font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #202124; -webkit-font-smoothing: antialiased; }
+    .wrapper { width: 100%; background-color: #f8f9fa; padding: 40px 16px; box-sizing: border-box; }
+    .card { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 8px; border: 1px solid #dadce0; overflow: hidden; }
+    .header { padding: 32px 32px 20px; border-bottom: 1px solid #dadce0; }
+    .badge { display: inline-block; padding: 4px 10px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 4px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .title { margin: 16px 0 6px; font-size: 22px; font-weight: 600; color: #202124; line-height: 1.3; }
+    .subtitle { margin: 0; font-size: 13px; color: #5f6368; }
+    .content { padding: 32px; font-size: 14px; line-height: 1.6; color: #3c4043; }
+    .btn-wrap { text-align: center; margin: 28px 0; }
+    .btn { display: inline-block; padding: 12px 28px; background-color: #1a73e8; color: #ffffff !important; font-weight: 600; font-size: 14px; text-decoration: none; border-radius: 4px; }
+    .fallback-box { font-size: 12px; color: #70757a; line-height: 1.5; margin-top: 20px; }
+    .fallback-url { word-break: break-all; color: #1a73e8; margin-top: 4px; font-family: monospace; font-size: 11px; }
+    .footer { padding: 20px 32px; text-align: center; font-size: 12px; color: #70757a; background-color: #f8f9fa; border-top: 1px solid #dadce0; line-height: 1.5; }
+  </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b;">
-  <div style="max-width: 580px; margin: 32px auto; padding: 28px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0;">
-    <div style="display: inline-block; padding: 4px 12px; background: #eff6ff; border: 1px solid #dbeafe; border-radius: 999px; color: #1a56db; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 16px;">
-      ✉️ ${senderName}
+<body>
+  <div class="wrapper">
+    <div class="card">
+      <div class="header">
+        <div class="badge">${senderName}</div>
+        <h1 class="title">Verify Your Email Address</h1>
+        <p class="subtitle">Complete your setup to access ${tenantName}</p>
+      </div>
+      <div class="content">
+        <p style="margin: 0 0 16px;">Hello ${recipientName},</p>
+        <p style="margin: 0 0 16px;">
+          Welcome to <strong>${tenantName}</strong>. Please confirm your email address by clicking the authorization button below:
+        </p>
+        <div class="btn-wrap">
+          <a href="${verificationUrl}" target="_blank" class="btn">Verify My Email</a>
+        </div>
+        <div class="fallback-box">
+          Button not working? Copy and paste this URL into your browser:
+          <div class="fallback-url">${verificationUrl}</div>
+        </div>
+      </div>
+      <div class="footer">
+        &copy; ${new Date().getFullYear()} Ofia Technologies Ltd. All rights reserved.<br/>
+        Sent automatically by Ofia Platform Security Infrastructure.
+      </div>
     </div>
-    <h2 style="color: #0f172a; margin-top: 0; font-size: 20px;">Verify Your Email Address</h2>
-    <p style="font-size: 14px; color: #475569; line-height: 1.6;">Hello ${recipientName},</p>
-    <p style="font-size: 14px; color: #475569; line-height: 1.6;">
-      Welcome to <strong>${tenantName}</strong>! Please confirm your email address by clicking the secure button below:
-    </p>
-    <div style="text-align: center; margin: 28px 0;">
-      <a href="${verificationUrl}" target="_blank" style="display: inline-block; padding: 13px 28px; background-color: #1a56db; color: #ffffff; font-weight: 700; font-size: 14px; text-decoration: none; border-radius: 10px; box-shadow: 0 4px 6px -1px rgba(26, 86, 219, 0.2);">
-        Verify My Email &rarr;
-      </a>
-    </div>
-    <p style="font-size: 12px; color: #64748b; line-height: 1.5;">
-      Button not working? Copy and paste this URL into your browser:<br/>
-      <span style="word-break: break-all; color: #1a56db;">${verificationUrl}</span>
-    </p>
-    <p style="font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 14px; margin-top: 24px;">
-      Sent automatically by Ofia Platform Security Infrastructure.
-    </p>
   </div>
 </body>
 </html>
@@ -2441,32 +2535,54 @@ export async function sendPlatformBillingNotificationEmail(
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${subject}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+    body { margin: 0; padding: 0; background-color: #f8f9fa; font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #202124; -webkit-font-smoothing: antialiased; }
+    .wrapper { width: 100%; background-color: #f8f9fa; padding: 40px 16px; box-sizing: border-box; }
+    .card { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 8px; border: 1px solid #dadce0; overflow: hidden; }
+    .header { padding: 32px 32px 20px; border-bottom: 1px solid #dadce0; }
+    .badge { display: inline-block; padding: 4px 10px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 4px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .title { margin: 16px 0 6px; font-size: 22px; font-weight: 600; color: #202124; line-height: 1.3; }
+    .subtitle { margin: 0; font-size: 13px; color: #5f6368; }
+    .content { padding: 32px; font-size: 14px; line-height: 1.6; color: #3c4043; }
+    .box { background: #f8f9fa; border: 1px solid #dadce0; border-left: 3px solid #1a73e8; padding: 14px 18px; margin: 20px 0; border-radius: 4px; font-size: 13px; color: #3c4043; }
+    .btn-wrap { text-align: center; margin: 24px 0; }
+    .btn { display: inline-block; padding: 12px 28px; background-color: #1a73e8; color: #ffffff !important; font-weight: 600; font-size: 14px; text-decoration: none; border-radius: 4px; }
+    .footer { padding: 20px 32px; text-align: center; font-size: 12px; color: #70757a; background-color: #f8f9fa; border-top: 1px solid #dadce0; line-height: 1.5; }
+  </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #1e293b;">
-  <div style="max-width: 580px; margin: 32px auto; padding: 28px; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0;">
-    <div style="display: inline-block; padding: 4px 12px; background: #eff6ff; border: 1px solid #dbeafe; border-radius: 999px; color: #1a56db; font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 16px;">
-      💳 ${senderName}
+<body>
+  <div class="wrapper">
+    <div class="card">
+      <div class="header">
+        <div class="badge">${senderName}</div>
+        <h1 class="title">Subscription &amp; Billing Update</h1>
+        <p class="subtitle">Administrative billing notice for ${tenantName}</p>
+      </div>
+      <div class="content">
+        <p style="margin: 0 0 16px;">Hello ${recipientName},</p>
+        <p style="margin: 0 0 16px;">
+          This is an administrative billing notice regarding your workspace subscription for <strong>${tenantName}</strong>.
+        </p>
+        <div class="box">
+          <p style="margin: 4px 0;"><strong>Plan:</strong> ${planName}</p>
+          ${invoiceNumber ? `<p style="margin: 4px 0;"><strong>Invoice Number:</strong> ${invoiceNumber}</p>` : ""}
+          ${amount ? `<p style="margin: 4px 0;"><strong>Amount:</strong> ${amount}</p>` : ""}
+          <p style="margin: 4px 0;"><strong>Status:</strong> ${status}</p>
+        </div>
+        <div class="btn-wrap">
+          <a href="${billingPortalUrl}" target="_blank" class="btn">
+            Manage Billing &amp; Invoices
+          </a>
+        </div>
+      </div>
+      <div class="footer">
+        &copy; ${new Date().getFullYear()} Ofia Technologies Ltd. All rights reserved.<br/>
+        Sent automatically by Ofia Platform Billing &amp; Security Infrastructure.
+      </div>
     </div>
-    <h2 style="color: #0f172a; margin-top: 0; font-size: 20px;">Subscription & Billing Update</h2>
-    <p style="font-size: 14px; color: #475569; line-height: 1.6;">Hello ${recipientName},</p>
-    <p style="font-size: 14px; color: #475569; line-height: 1.6;">
-      This is an administrative billing notice regarding your workspace subscription for <strong>${tenantName}</strong>.
-    </p>
-    <div style="background: #f8fafc; border-left: 4px solid #1a56db; padding: 14px 18px; margin: 20px 0; border-radius: 6px; font-size: 13px; color: #334155;">
-      <p style="margin: 4px 0;"><strong>Plan:</strong> ${planName}</p>
-      ${invoiceNumber ? `<p style="margin: 4px 0;"><strong>Invoice Number:</strong> ${invoiceNumber}</p>` : ""}
-      ${amount ? `<p style="margin: 4px 0;"><strong>Amount:</strong> ${amount}</p>` : ""}
-      <p style="margin: 4px 0;"><strong>Status:</strong> ${status}</p>
-    </div>
-    <div style="text-align: center; margin: 24px 0;">
-      <a href="${billingPortalUrl}" target="_blank" style="display: inline-block; padding: 12px 26px; background-color: #1a56db; color: #ffffff; font-weight: 700; font-size: 13px; text-decoration: none; border-radius: 10px;">
-        Manage Billing & Invoices &rarr;
-      </a>
-    </div>
-    <p style="font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 14px; margin-top: 24px;">
-      Sent automatically by Ofia Platform Billing & Security Infrastructure.
-    </p>
   </div>
 </body>
 </html>

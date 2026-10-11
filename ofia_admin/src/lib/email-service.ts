@@ -190,19 +190,25 @@ export async function testPlatformSmtpConnection(
       subject: `[Test] Brevo / Platform SMTP Handshake Verification`,
       text: `Hello,\n\nThis is a test email confirming that your Brevo / Platform SMTP relay is operational.\n\nProvider: ${settings.provider || 'Brevo'}\nHost: ${settings.host}:${settings.port}\nEncryption: ${settings.encryption.toUpperCase()}\nSender: ${sender}\n\nAll platform recovery and notification utilities are ready!`,
       html: `
-        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 580px; margin: 0 auto; padding: 28px; border: 1px solid #e2e8f0; border-radius: 16px; background: #ffffff;">
-          <h2 style="color: #1a56db; margin: 0 0 12px; font-size: 20px;">Brevo / Platform SMTP Handshake Verified</h2>
-          <p style="color: #475569; font-size: 14px; line-height: 1.6;">
+        <div style="font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 580px; margin: 24px auto; padding: 32px; border: 1px solid #dadce0; border-radius: 8px; background: #ffffff;">
+          <div style="margin-bottom: 20px; border-bottom: 1px solid #dadce0; padding-bottom: 16px;">
+            <div style="display: inline-block; padding: 4px 10px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 4px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">
+              Platform Infrastructure
+            </div>
+            <h2 style="color: #202124; margin: 14px 0 4px; font-size: 20px; font-weight: 600;">SMTP Handshake Verified</h2>
+            <p style="color: #5f6368; font-size: 13px; margin: 0;">Ofia Platform Relay Authorization</p>
+          </div>
+          <p style="color: #3c4043; font-size: 14px; line-height: 1.6; margin: 0 0 16px;">
             Your platform email relay configuration has successfully connected and passed authorization.
           </p>
-          <div style="background: #f8fafc; border-left: 4px solid #1a56db; padding: 14px 18px; margin: 20px 0; border-radius: 8px;">
-            <p style="margin: 4px 0; font-size: 12px; color: #64748b;"><strong>Provider:</strong> ${settings.provider || 'Brevo'}</p>
-            <p style="margin: 4px 0; font-size: 12px; color: #64748b;"><strong>Host & Port:</strong> ${settings.host}:${settings.port}</p>
-            <p style="margin: 4px 0; font-size: 12px; color: #64748b;"><strong>Security:</strong> ${settings.encryption.toUpperCase()}</p>
-            <p style="margin: 4px 0; font-size: 12px; color: #64748b;"><strong>Sender:</strong> ${sender}</p>
+          <div style="background: #f8f9fa; border: 1px solid #dadce0; border-left: 3px solid #1a73e8; padding: 12px 16px; margin: 20px 0; border-radius: 4px;">
+            <p style="margin: 4px 0; font-size: 13px; color: #3c4043;"><strong>Provider:</strong> ${settings.provider || 'Brevo'}</p>
+            <p style="margin: 4px 0; font-size: 13px; color: #3c4043;"><strong>Host & Port:</strong> ${settings.host}:${settings.port}</p>
+            <p style="margin: 4px 0; font-size: 13px; color: #3c4043;"><strong>Security:</strong> ${settings.encryption.toUpperCase()}</p>
+            <p style="margin: 4px 0; font-size: 13px; color: #3c4043;"><strong>Sender:</strong> ${sender}</p>
           </div>
-          <p style="font-size: 11px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 14px; margin: 0;">
-            Dispatched by Ofia SuperAdmin Infrastructure Console.
+          <p style="font-size: 12px; color: #70757a; border-top: 1px solid #dadce0; padding-top: 16px; margin: 24px 0 0;">
+            Dispatched automatically by Ofia SuperAdmin Infrastructure Console.
           </p>
         </div>
       `,
@@ -265,50 +271,52 @@ export async function sendSuperAdminPasswordResetEmail(
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${subject}</title>
   <style>
-    body { margin: 0; padding: 0; background-color: #0b0f19; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #f1f5f9; }
-    .wrapper { width: 100%; background-color: #0b0f19; padding: 40px 16px; box-sizing: border-box; }
-    .card { max-width: 520px; margin: 0 auto; background: #111827; border-radius: 20px; border: 1px solid #1f2937; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); overflow: hidden; }
-    .header { padding: 32px; text-align: center; border-bottom: 1px solid #1f2937; }
-    .badge { display: inline-block; padding: 4px 12px; background: rgba(0, 105, 255, 0.15); border: 1px solid rgba(0, 105, 255, 0.3); border-radius: 999px; color: #3b82f6; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; font-family: monospace; }
-    .content { padding: 32px; font-size: 14px; line-height: 1.6; color: #94a3b8; }
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+    body { margin: 0; padding: 0; background-color: #f8f9fa; font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #202124; -webkit-font-smoothing: antialiased; }
+    .wrapper { width: 100%; background-color: #f8f9fa; padding: 40px 16px; box-sizing: border-box; }
+    .card { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 8px; border: 1px solid #dadce0; overflow: hidden; }
+    .header { padding: 32px 32px 20px; border-bottom: 1px solid #dadce0; }
+    .badge { display: inline-block; padding: 4px 10px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 4px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .title { margin: 16px 0 6px; font-size: 22px; font-weight: 600; color: #202124; line-height: 1.3; }
+    .subtitle { margin: 0; font-size: 13px; color: #5f6368; }
+    .content { padding: 32px; font-size: 14px; line-height: 1.6; color: #3c4043; }
     .btn-wrap { text-align: center; margin: 28px 0; }
-    .btn { display: inline-block; background-color: #1a56db; color: #ffffff !important; padding: 14px 32px; border-radius: 12px; font-size: 14px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 14px 0 rgba(26, 86, 219, 0.4); }
-    .box { background: #1e293b; border-left: 4px solid #3b82f6; border-radius: 6px; padding: 14px 16px; margin: 24px 0; font-size: 12px; color: #cbd5e1; }
-    .footer { padding: 24px 32px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #1f2937; }
+    .btn { display: inline-block; background-color: #1a73e8; color: #ffffff !important; padding: 12px 28px; border-radius: 4px; font-size: 14px; font-weight: 600; text-decoration: none; }
+    .box { background: #f8f9fa; border: 1px solid #dadce0; border-left: 3px solid #1a73e8; border-radius: 4px; padding: 12px 16px; margin: 20px 0; font-size: 13px; color: #3c4043; line-height: 1.5; }
+    .direct-link { font-size: 11px; color: #70757a; word-break: break-all; margin-top: 16px; }
+    .footer { padding: 20px 32px; text-align: center; font-size: 12px; color: #70757a; background-color: #f8f9fa; border-top: 1px solid #dadce0; line-height: 1.5; }
   </style>
 </head>
 <body>
   <div class="wrapper">
     <div class="card">
       <div class="header">
-        <div class="badge">PLATFORM ROOT SECURITY</div>
-        <h2 style="margin: 16px 0 4px; font-size: 20px; font-weight: 800; color: #f8fafc;">
-          Operator Credential Reset
-        </h2>
-        <p style="margin: 0; font-size: 12px; color: #64748b;">
-          Ofia SuperAdmin Infrastructure Console
-        </p>
+        <div class="badge">Platform Root Security</div>
+        <h1 class="title">Operator Credential Reset</h1>
+        <p class="subtitle">Ofia SuperAdmin Infrastructure Console</p>
       </div>
       <div class="content">
-        <p style="color: #f8fafc; font-weight: 600;">Hello ${recipientName},</p>
-        <p>
+        <p style="margin: 0 0 16px;">Hello ${recipientName},</p>
+        <p style="margin: 0 0 16px;">
           A password reset was requested for your SuperAdmin operator account. Click the authorization button below to update your root access key:
         </p>
         <div class="btn-wrap">
-          <a href="${resetUrl}" target="_blank" class="btn">Reset Root Password &rarr;</a>
+          <a href="${resetUrl}" target="_blank" class="btn">Reset Root Password</a>
         </div>
         <div class="box">
-          <p style="margin: 0 0 6px;"><strong>⏱ Expiration:</strong> Valid for <strong>${expiresInMinutes} minutes</strong>.</p>
-          <p style="margin: 0;"><strong>🔒 Security Note:</strong> If you did not initiate this request, contact Security Operations immediately.</p>
+          <p style="margin: 0 0 6px;"><strong>Expiration:</strong> Valid for <strong>${expiresInMinutes} minutes</strong>.</p>
+          <p style="margin: 0;"><strong>Security Note:</strong> If you did not initiate this request, contact Security Operations immediately.</p>
         </div>
-        <p style="font-size: 11px; color: #64748b; word-break: break-all;">
+        <p class="direct-link">
           Direct link: ${resetUrl}
         </p>
       </div>
       <div class="footer">
-        &copy; ${new Date().getFullYear()} Ofia Technologies Ltd. SOC2 Type II Certified.
+        &copy; ${new Date().getFullYear()} Ofia Technologies Ltd. SOC2 Type II Certified.<br/>
+        This is a mandatory security service notification regarding your operator access.
       </div>
     </div>
   </div>

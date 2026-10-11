@@ -104,28 +104,37 @@ func HandleSendResetEmail(w http.ResponseWriter, r *http.Request) {
 		resetLink := fmt.Sprintf("%s/reset-password?email=%s&token=%s", origin, u.Email, token)
 
 		htmlBody := fmt.Sprintf(`<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+    </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f3f4f6;">
-    <div style="background-color: #f3f4f6; padding: 40px 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
-            <div style="background-color: #1e3a8a; padding: 30px 20px; text-align: center;">
-                <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.02em;">OFIA Performance Portal</h1>
-            </div>
-            <div style="padding: 40px 30px; color: #334155; line-height: 1.6; font-size: 14px;">
-                <h2 style="color: #1e3a8a; font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 16px;">Reset Your Password</h2>
-                <p style="margin: 0 0 16px 0;">Hello %s,</p>
-                <p style="margin: 0 0 24px 0;">A request has been made to reset the password for your account on the OFIA Performance Portal. Click the button below to choose a new password:</p>
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="%s" style="display: inline-block; padding: 12px 30px; background-color: #2563eb; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; text-align: center;">Reset Password</a>
+<body style="margin: 0; padding: 0; background-color: #f8f9fa; font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #202124; -webkit-font-smoothing: antialiased;">
+    <div style="background-color: #f8f9fa; padding: 40px 16px;">
+        <div style="max-width: 580px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #dadce0;">
+            <div style="padding: 32px 32px 20px; border-bottom: 1px solid #dadce0;">
+                <div style="display: inline-block; padding: 4px 10px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 4px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">
+                    OFIA Performance Portal
                 </div>
-                <p style="margin: 0 0 16px 0;">If you did not request this password reset, please ignore this email or contact HR.</p>
-                <p style="margin: 0;">Best regards,<br><strong style="color: #1e3a8a;">HR & People Team</strong></p>
+                <h1 style="margin: 16px 0 0; color: #202124; font-size: 22px; font-weight: 600; line-height: 1.3;">Reset Your Password</h1>
             </div>
-            <div style="background-color: #f8fafc; padding: 20px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
-                &copy; 2026 OFIA ERP. All rights reserved.
+            <div style="padding: 32px; color: #3c4043; line-height: 1.6; font-size: 14px;">
+                <p style="margin: 0 0 16px;">Hello %s,</p>
+                <p style="margin: 0 0 16px;">A request has been made to reset the password for your account on the OFIA Performance Portal. Click the authorization button below to choose a new password:</p>
+                <div style="text-align: center; margin: 28px 0;">
+                    <a href="%s" style="display: inline-block; padding: 12px 28px; background-color: #1a73e8; color: #ffffff !important; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 14px; text-align: center;">Reset Password</a>
+                </div>
+                <div style="background: #f8f9fa; border: 1px solid #dadce0; border-left: 3px solid #1a73e8; border-radius: 4px; padding: 12px 16px; margin: 20px 0; font-size: 13px; color: #3c4043;">
+                    <strong>Security Notice:</strong> If you did not request this password reset, please ignore this email or contact HR immediately.
+                </div>
+                <p style="margin: 20px 0 0; color: #3c4043; border-top: 1px solid #dadce0; padding-top: 16px;">Best regards,<br><strong>HR &amp; People Team</strong></p>
+            </div>
+            <div style="background-color: #f8f9fa; padding: 20px 32px; text-align: center; font-size: 12px; color: #70757a; border-top: 1px solid #dadce0; line-height: 1.5;">
+                &copy; 2026 OFIA Technologies Ltd. All rights reserved.<br/>
+                Mandatory system notification regarding your employee portal access.
             </div>
         </div>
     </div>
@@ -219,24 +228,33 @@ func HandleSendBulkNotification(w http.ResponseWriter, r *http.Request) {
 		formattedMsg := strings.ReplaceAll(req.Message, "\n", "<br>")
 
 		htmlBody := fmt.Sprintf(`<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400..700&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+    </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #f3f4f6;">
-    <div style="background-color: #f3f4f6; padding: 40px 20px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-        <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
-            <div style="background-color: #1e3a8a; padding: 30px 20px; text-align: center;">
-                <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.02em;">OFIA Performance Portal</h1>
+<body style="margin: 0; padding: 0; background-color: #f8f9fa; font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #202124; -webkit-font-smoothing: antialiased;">
+    <div style="background-color: #f8f9fa; padding: 40px 16px;">
+        <div style="max-width: 580px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #dadce0;">
+            <div style="padding: 32px 32px 20px; border-bottom: 1px solid #dadce0;">
+                <div style="display: inline-block; padding: 4px 10px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 4px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">
+                    OFIA Performance Portal
+                </div>
+                <h1 style="margin: 16px 0 0; color: #202124; font-size: 22px; font-weight: 600; line-height: 1.3;">Notification Alert</h1>
             </div>
-            <div style="padding: 40px 30px; color: #334155; line-height: 1.6; font-size: 14px;">
-                <h2 style="color: #1e3a8a; font-size: 18px; font-weight: 700; margin-top: 0; margin-bottom: 16px;">Notification Alert</h2>
-                <p style="margin: 0 0 16px 0;">Hello %s,</p>
-                <p style="margin: 0 0 24px 0;">%s</p>
-                <p style="margin: 0;">Best regards,<br><strong style="color: #1e3a8a;">HR & Performance Team</strong></p>
+            <div style="padding: 32px; color: #3c4043; line-height: 1.6; font-size: 14px;">
+                <p style="margin: 0 0 16px;">Hello %s,</p>
+                <div style="background: #f8f9fa; border: 1px solid #dadce0; border-left: 3px solid #1a73e8; border-radius: 4px; padding: 14px 18px; margin: 20px 0; font-size: 13px; color: #3c4043; line-height: 1.6;">
+                    %s
+                </div>
+                <p style="margin: 20px 0 0; color: #3c4043; border-top: 1px solid #dadce0; padding-top: 16px;">Best regards,<br><strong>HR &amp; Performance Team</strong></p>
             </div>
-            <div style="background-color: #f8fafc; padding: 20px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0;">
-                &copy; 2026 OFIA ERP. All rights reserved.
+            <div style="background-color: #f8f9fa; padding: 20px 32px; text-align: center; font-size: 12px; color: #70757a; border-top: 1px solid #dadce0; line-height: 1.5;">
+                &copy; 2026 OFIA Technologies Ltd. All rights reserved.<br/>
+                Mandatory system notification regarding your enterprise account.
             </div>
         </div>
     </div>

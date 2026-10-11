@@ -58,93 +58,110 @@ const EMAIL_TEMPLATES = [
     id: "active_review_cycle_instructions",
     name: "Active Review Cycle Instructions & Guide",
     subject: "Action Required: Complete Your Self-Appraisal for Active Review Cycle ({{name}})",
-    body: `<p>Dear {{name}},</p>
+    body: `<div style="font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #202124; line-height: 1.6;">
+  <p style="margin: 0 0 16px; font-size: 14px; color: #3c4043;">Dear {{name}},</p>
 
-<p>This is a formal directive from Human Resources regarding our <strong>Active Performance Review Cycle</strong>. All staff members are required to complete and submit their self-appraisal within the allotted cycle period.</p>
-
-<div style="text-align: center; margin: 24px 0;">
-  <a href="{{login_url}}" style="display: inline-block; background-color: #1a56db; color: #ffffff; font-weight: bold; font-size: 14px; text-decoration: none; padding: 12px 28px; border-radius: 8px; box-shadow: 0 2px 4px rgba(26,86,219,0.3);">
-    Click Here to Log In & Begin Appraisal
-  </a>
-  <p style="margin-top: 8px; font-size: 11px; color: #64748b;">
-    Direct Login URL: <a href="{{login_url}}" style="color: #1a56db; font-weight: bold; text-decoration: underline;">{{login_url}}</a>
+  <p style="margin: 0 0 16px; font-size: 14px; color: #3c4043;">
+    This is a formal directive from Human Resources regarding our <strong>Active Performance Review Cycle</strong>. All staff members are required to complete and submit their self-appraisal within the allotted cycle period.
   </p>
-</div>
 
-<h3 style="color: #0f172a; font-size: 14px; margin-top: 18px; font-weight: bold;">Step-by-Step Navigation Guide (How to Complete Your Appraisal):</h3>
+  <div style="text-align: center; margin: 28px 0;">
+    <a href="{{login_url}}" style="display: inline-block; background-color: #1a73e8; color: #ffffff !important; font-weight: 600; font-size: 14px; text-decoration: none; padding: 12px 28px; border-radius: 4px;">
+      Log In &amp; Begin Self-Appraisal
+    </a>
+    <p style="margin-top: 10px; font-size: 12px; color: #70757a;">
+      Direct Portal URL: <a href="{{login_url}}" style="color: #1a73e8; text-decoration: underline;">{{login_url}}</a>
+    </p>
+  </div>
 
-<ol style="color: #334155; font-size: 13px; line-height: 1.7; padding-left: 20px;">
-  <li><strong>Log In to Your Workspace:</strong> Go to the corporate login portal at <a href="{{login_url}}" style="color: #1a56db; font-weight: bold; text-decoration: underline;">{{login_url}}</a> and sign in with your corporate email (<code style="background: #f1f5f9; padding: 2px 5px; border-radius: 4px;">{{email}}</code>) and password.</li>
-  <li><strong>Access the Employee Portal:</strong>
-    <ul>
-      <li>In the left-hand navigation sidebar, click on <strong>"Employee Portal"</strong> (or navigate directly to <a href="{{portal_url}}" style="color: #1a56db; font-weight: bold; text-decoration: underline;">{{portal_url}}</a>).</li>
-    </ul>
-  </li>
-  <li><strong>Locate Your Active Appraisal Cycle:</strong> Under the <em>Active Performance Appraisal</em> section, identify the current open cycle.</li>
-  <li><strong>Start or Resume Self-Assessment:</strong> Click on the blue <strong>"Start Self-Appraisal"</strong> button (or <strong>"Continue Review"</strong> if already saved as a draft).</li>
-  <li><strong>Rate Key Performance Objectives:</strong>
-    <ul>
-      <li>Evaluate your achievements against each allocated corporate objective and scoring milestone (from 1 to 5 stars).</li>
-      <li>Provide specific reflections, documented milestones, and justification in the comments field.</li>
-    </ul>
-  </li>
-  <li><strong>Submit to Your Line Manager:</strong> Review all inputs, then click <strong>"Submit Self-Appraisal"</strong> to forward your appraisal directly to your Line Manager and HR Lead for review.</li>
-</ol>
+  <h3 style="color: #202124; font-size: 15px; margin: 24px 0 12px; font-weight: 600;">Step-by-Step Navigation Guide:</h3>
 
-<div style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 12px 16px; margin: 18px 0; color: #92400e; font-size: 12px;">
-  <strong>Allotted Submission Window:</strong> Please ensure your appraisal is submitted before the cycle cutoff date. Incomplete self-appraisals delay manager evaluations, moderation committees, and performance incentives.
-</div>
+  <ol style="color: #3c4043; font-size: 13px; line-height: 1.7; padding-left: 20px; margin: 0 0 20px;">
+    <li><strong>Log In to Your Workspace:</strong> Go to the corporate login portal at <a href="{{login_url}}" style="color: #1a73e8; text-decoration: underline;">{{login_url}}</a> and sign in with your corporate email (<code style="background: #f1f3f4; padding: 2px 6px; border-radius: 4px; font-size: 12px;">{{email}}</code>) and password.</li>
+    <li><strong>Access the Employee Portal:</strong> In the navigation menu, select <strong>"Employee Portal"</strong> (or navigate directly to <a href="{{portal_url}}" style="color: #1a73e8; text-decoration: underline;">{{portal_url}}</a>).</li>
+    <li><strong>Locate Your Active Appraisal Cycle:</strong> Under the <em>Active Performance Appraisal</em> section, identify the current open cycle.</li>
+    <li><strong>Start or Resume Self-Assessment:</strong> Click on <strong>"Start Self-Appraisal"</strong> (or <strong>"Continue Review"</strong> if already saved as a draft).</li>
+    <li><strong>Rate Key Performance Objectives:</strong> Evaluate your achievements against each allocated corporate objective and scoring milestone, providing specific reflections and justification in the comments field.</li>
+    <li><strong>Submit to Your Line Manager:</strong> Review all inputs, then click <strong>"Submit Self-Appraisal"</strong> to forward your appraisal directly to your Line Manager and HR Lead for review.</li>
+  </ol>
 
-<p style="color: #475569; font-size: 13px;">If you encounter any issues logging in at <a href="{{login_url}}" style="color: #1a56db; font-weight: bold; text-decoration: underline;">{{login_url}}</a> or navigating your appraisal form, please reach out to IT Support immediately.</p>
+  <div style="background: #f8f9fa; border: 1px solid #dadce0; border-left: 3px solid #1a73e8; border-radius: 4px; padding: 12px 16px; margin: 20px 0; color: #3c4043; font-size: 13px; line-height: 1.5;">
+    <strong>Submission Window:</strong> Please ensure your appraisal is submitted before the cycle cutoff date. Incomplete self-appraisals delay manager evaluations, moderation committees, and performance incentives.
+  </div>
 
-<p style="color: #334155; font-size: 13px; margin-top: 20px;">Warm regards,<br/><strong>Human Resources & People Operations</strong></p>`,
+  <p style="color: #5f6368; font-size: 13px; margin: 16px 0;">If you encounter any issues logging in or navigating your appraisal form, please reach out to IT Support immediately.</p>
+
+  <p style="color: #3c4043; font-size: 13px; margin-top: 24px; border-top: 1px solid #dadce0; padding-top: 16px;">
+    Warm regards,<br/><strong>Human Resources &amp; People Operations</strong>
+  </p>
+</div>`,
   },
   {
     id: "general_announcement",
     name: "General Announcement",
     subject: "Important Enterprise Update: {{name}}",
-    body: `<p>Dear {{name}},</p>
-<p>We are writing to share an important corporate update with all staff members across the organization.</p>
-<p>Please review our latest strategic priorities and operational guidelines as we continue driving excellence across our departments.</p>
-<p>If you have any questions or need further clarification, feel free to reach out to your team lead or Human Resources.</p>
-<p>Warm regards,<br/><strong>Executive Leadership Team</strong></p>`,
+    body: `<div style="font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #202124; line-height: 1.6;">
+  <p style="margin: 0 0 16px; font-size: 14px; color: #3c4043;">Dear {{name}},</p>
+  <p style="margin: 0 0 16px; font-size: 14px; color: #3c4043;">We are writing to share an important corporate update with all staff members across the organization.</p>
+  <p style="margin: 0 0 16px; font-size: 14px; color: #3c4043;">Please review our latest strategic priorities and operational guidelines as we continue driving excellence across our departments.</p>
+  <div style="background: #f8f9fa; border: 1px solid #dadce0; border-left: 3px solid #1a73e8; border-radius: 4px; padding: 12px 16px; margin: 20px 0; color: #3c4043; font-size: 13px;">
+    If you have any questions or need further clarification, feel free to reach out to your department lead or Human Resources.
+  </div>
+  <p style="color: #3c4043; font-size: 13px; margin-top: 24px; border-top: 1px solid #dadce0; padding-top: 16px;">
+    Warm regards,<br/><strong>Executive Leadership Team</strong>
+  </p>
+</div>`,
   },
   {
     id: "system_maintenance",
     name: "Scheduled System Maintenance",
     subject: "Notice: Scheduled Platform Maintenance Window",
-    body: `<p>Dear {{name}},</p>
-<p>Please be advised that scheduled maintenance will be performed on the enterprise ERP platform this upcoming weekend.</p>
-<p><strong>Impact Details:</strong></p>
-<ul>
-  <li><strong>Department:</strong> {{department}}</li>
-  <li><strong>Downtime Duration:</strong> Approximately 45 minutes</li>
-  <li><strong>Scope:</strong> Core database optimization, security enhancements, and ledger upgrades.</li>
-</ul>
-<p>Please ensure all active transactions, time logs, and performance appraisals are saved prior to this maintenance window.</p>
-<p>Thank you for your cooperation.<br/><strong>Systems & IT Infrastructure</strong></p>`,
+    body: `<div style="font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #202124; line-height: 1.6;">
+  <p style="margin: 0 0 16px; font-size: 14px; color: #3c4043;">Dear {{name}},</p>
+  <p style="margin: 0 0 16px; font-size: 14px; color: #3c4043;">Please be advised that scheduled maintenance will be performed on the enterprise ERP platform this upcoming weekend.</p>
+  <div style="background: #f8f9fa; border: 1px solid #dadce0; border-left: 3px solid #1a73e8; border-radius: 4px; padding: 14px 18px; margin: 20px 0; font-size: 13px; color: #3c4043;">
+    <p style="margin: 3px 0;"><strong>Department:</strong> {{department}}</p>
+    <p style="margin: 3px 0;"><strong>Downtime Duration:</strong> Approximately 45 minutes</p>
+    <p style="margin: 3px 0;"><strong>Scope:</strong> Core database optimization, security enhancements, and ledger upgrades.</p>
+  </div>
+  <p style="margin: 0 0 16px; font-size: 14px; color: #3c4043;">Please ensure all active transactions, time logs, and performance appraisals are saved prior to this maintenance window.</p>
+  <p style="color: #3c4043; font-size: 13px; margin-top: 24px; border-top: 1px solid #dadce0; padding-top: 16px;">
+    Thank you for your cooperation.<br/><strong>Systems &amp; IT Infrastructure</strong>
+  </p>
+</div>`,
   },
   {
     id: "all_hands",
     name: "All-Hands Meeting Invitation",
     subject: "Invitation: Monthly All-Hands Assembly",
-    body: `<p>Hi {{name}},</p>
-<p>You are cordially invited to our upcoming Monthly All-Hands Assembly. During this session, executive leadership will review monthly milestones, financial performance, and department achievements.</p>
-<p><strong>Your Details:</strong><br/>
-Role: {{role}}<br/>
-Department: {{department}}</p>
-<p>We look forward to your active participation!</p>
-<p>Best regards,<br/><strong>Human Resources & Talent Management</strong></p>`,
+    body: `<div style="font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #202124; line-height: 1.6;">
+  <p style="margin: 0 0 16px; font-size: 14px; color: #3c4043;">Hi {{name}},</p>
+  <p style="margin: 0 0 16px; font-size: 14px; color: #3c4043;">You are cordially invited to our upcoming Monthly All-Hands Assembly. During this session, executive leadership will review monthly milestones, financial performance, and department achievements.</p>
+  <div style="background: #f8f9fa; border: 1px solid #dadce0; border-left: 3px solid #1a73e8; border-radius: 4px; padding: 14px 18px; margin: 20px 0; font-size: 13px; color: #3c4043;">
+    <p style="margin: 3px 0;"><strong>Role:</strong> {{role}}</p>
+    <p style="margin: 3px 0;"><strong>Department:</strong> {{department}}</p>
+  </div>
+  <p style="margin: 0 0 16px; font-size: 14px; color: #3c4043;">We look forward to your active participation!</p>
+  <p style="color: #3c4043; font-size: 13px; margin-top: 24px; border-top: 1px solid #dadce0; padding-top: 16px;">
+    Best regards,<br/><strong>Human Resources &amp; Talent Management</strong>
+  </p>
+</div>`,
   },
   {
     id: "policy_compliance",
     name: "Policy & Compliance Memo",
     subject: "Action Required: Annual Policy & Code of Conduct Review",
-    body: `<p>Dear {{name}},</p>
-<p>This is a formal reminder to review and acknowledge our updated corporate code of conduct and workplace safety guidelines.</p>
-<p>All staff members in <strong>{{department}}</strong> are kindly requested to complete their review within the next 5 business days.</p>
-<p>Thank you for your prompt attention to this matter.</p>
-<p>Sincerely,<br/><strong>Corporate Governance & Compliance</strong></p>`,
+    body: `<div style="font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #202124; line-height: 1.6;">
+  <p style="margin: 0 0 16px; font-size: 14px; color: #3c4043;">Dear {{name}},</p>
+  <p style="margin: 0 0 16px; font-size: 14px; color: #3c4043;">This is a formal reminder to review and acknowledge our updated corporate code of conduct and workplace safety guidelines.</p>
+  <div style="background: #f8f9fa; border: 1px solid #dadce0; border-left: 3px solid #1a73e8; border-radius: 4px; padding: 12px 16px; margin: 20px 0; color: #3c4043; font-size: 13px;">
+    All staff members in <strong>{{department}}</strong> are kindly requested to complete their review within the next 5 business days.
+  </div>
+  <p style="margin: 0 0 16px; font-size: 14px; color: #3c4043;">Thank you for your prompt attention to this matter.</p>
+  <p style="color: #3c4043; font-size: 13px; margin-top: 24px; border-top: 1px solid #dadce0; padding-top: 16px;">
+    Sincerely,<br/><strong>Corporate Governance &amp; Compliance</strong>
+  </p>
+</div>`,
   },
 ];
 
@@ -1307,8 +1324,11 @@ function MassMessagingContent() {
                     <span>Previewing recipient: <strong>{sampleRecipient.name}</strong> ({sampleRecipient.email})</span>
                     <NexaBadge variant="secondary" size="sm">Mock Preview</NexaBadge>
                   </div>
-                  <div className="border border-[var(--nexa-border)] rounded-2xl p-5 bg-white text-slate-800 space-y-3 min-h-[260px] shadow-inner">
-                    <div className="border-b border-slate-200 pb-2">
+                  <div
+                    style={{ fontFamily: "'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" }}
+                    className="border border-[#dadce0] rounded-lg p-6 bg-white text-[#202124] space-y-3 min-h-[260px] shadow-xs"
+                  >
+                    <div className="border-b border-[#dadce0] pb-3">
                       <div className="text-xs text-slate-500">
                         <strong>From:</strong> {smtpSenderEmail || "admin@ofia.ng"}
                       </div>

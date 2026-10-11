@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDbPool } from "@/lib/db";
-import { DEFAULT_DEPARTMENT_ACCESS, DepartmentAccessItem } from "@/lib/department-access";
+import { DEFAULT_DEPARTMENT_ACCESS, DepartmentAccessItem } from "@/lib/department-access-constants";
 
 async function resolveCanonicalOrg(pool: any, rawOrgId: string) {
   const decoded = decodeURIComponent(rawOrgId || "").trim();

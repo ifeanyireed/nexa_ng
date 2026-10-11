@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { RoleGuard } from "@/components/auth/RoleGuard";
@@ -82,6 +82,12 @@ import {
   isUserLineManager,
 } from "@/lib/access-control";
 import {
+  DepartmentAccessItem,
+  DEFAULT_DEPARTMENT_ACCESS,
+  fetchTenantDepartmentAccess,
+  getUserDepartmentAccess,
+} from "@/lib/department-access";
+import {
   fetchDatabaseTenants,
   resolveTenantFromList,
   extractSubdomainOrParam,
@@ -128,7 +134,43 @@ export function ErpAdminShell({
   subTabs,
   isLoading,
 }: ErpAdminShellProps) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("erp_sidebar_collapsed");
+      if (stored !== null) {
+        return stored !== "true";
+      }
+    }
+    return true;
+  });
+
+  const toggleSidebar = useCallback(() => {
+    setIsSidebarOpen((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("erp_sidebar_collapsed", next ? "false" : "true");
+        window.dispatchEvent(
+          new CustomEvent("erp_sidebar_collapsed_change", {
+            detail: { isCollapsed: !next },
+          })
+        );
+      }
+      return next;
+    });
+  }, []);
+
+  const expandSidebar = useCallback(() => {
+    setIsSidebarOpen(true);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("erp_sidebar_collapsed", "false");
+      window.dispatchEvent(
+        new CustomEvent("erp_sidebar_collapsed_change", {
+          detail: { isCollapsed: false },
+        })
+      );
+    }
+  }, []);
+
   const pathname = usePathname();
   const { user, logout } = useAuth();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -150,10 +192,13 @@ export function ErpAdminShell({
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const [permissionMatrix, setPermissionMatrix] = useState<PermissionMatrix>(DEFAULT_PERMISSION_MATRIX);
   const [currentRole, setCurrentRole] = useState<RoleKey>("admin");
+  const [departmentConfigs, setDepartmentConfigs] = useState<DepartmentAccessItem[]>(DEFAULT_DEPARTMENT_ACCESS);
+  const [userDepartment, setUserDepartment] = useState<string>("");
   const [isLineManager, setIsLineManager] = useState<boolean>(false);
   const [userName, setUserName] = useState<string>("");
   const [userEmail, setUserEmail] = useState<string>("");
   const [userAvatar, setUserAvatar] = useState<string>("");
+  const [userAssignedPages, setUserAssignedPages] = useState<string[]>([]);
 
   const isEffectiveLoading = !isShellReady || Boolean(isLoading);
 
@@ -164,6 +209,7 @@ export function ErpAdminShell({
       case "hr": return "HR Director";
       case "accountant": return "Chief Accountant";
       case "marketer": return "Growth Marketer";
+      case "sales_closer": return "Sales Closer";
       case "manager": return "Line Manager";
       case "employee": return "General Employee";
       case "cashier": return "POS Cashier";
@@ -180,6 +226,7 @@ export function ErpAdminShell({
       case "hr": return "text-rose-600 bg-rose-500/10 border-rose-500/20";
       case "accountant": return "text-emerald-600 bg-emerald-500/10 border-emerald-500/20";
       case "marketer": return "text-pink-600 bg-pink-500/10 border-pink-500/20";
+      case "sales_closer": return "text-emerald-600 bg-emerald-500/10 border-emerald-500/20";
       case "manager": return "text-amber-600 bg-amber-500/10 border-amber-500/20";
       case "cashier": return "text-cyan-600 bg-cyan-500/10 border-cyan-500/20";
       case "inventory_officer": return "text-amber-600 bg-amber-500/10 border-amber-500/20";
@@ -200,6 +247,8 @@ export function ErpAdminShell({
         return { path: "/erp/accountant", label: "Accountant", roleKey: "accountant" };
       case "marketer":
         return { path: "/erp/marketer", label: "CRM", roleKey: "marketer" };
+      case "sales_closer":
+        return { path: "/erp/admin/crm", label: "CRM", roleKey: "sales_closer" };
       case "employee":
         return { path: "/erp/employee", label: "Employee", roleKey: "employee" };
       case "cashier":
@@ -253,6 +302,18 @@ export function ErpAdminShell({
         }
       } catch (err) {
         if (isCurrent) setPermissionMatrix(getTenantPermissionMatrix(tenantKey));
+      }
+
+      // Fetch live department access configurations from Postgres backend
+      let loadedDeptConfigs: DepartmentAccessItem[] = DEFAULT_DEPARTMENT_ACCESS;
+      try {
+        const remoteDepts = await fetchTenantDepartmentAccess(tenantKey);
+        if (remoteDepts && remoteDepts.length > 0 && isCurrent) {
+          loadedDeptConfigs = remoteDepts;
+          setDepartmentConfigs(remoteDepts);
+        }
+      } catch (err) {
+        console.warn("Department access load error in ErpAdminShell:", err);
       }
 
       // Track and remember home/origin portal
@@ -470,45 +531,135 @@ export function ErpAdminShell({
       if (!resolvedAvatar && (user as any)?.avatar) resolvedAvatar = (user as any).avatar;
       resolvedAvatar = resolveAvatarUrl(resolvedAvatar, resolvedName || resolvedEmail || "Staff");
 
+      let resolvedDept = parsedUser?.department || (user as any)?.department || "";
+      if (!resolvedDept && typeof window !== "undefined") {
+        resolvedDept = localStorage.getItem("nexa_user_department") || localStorage.getItem("erp_user_department") || "";
+      }
+      setUserDepartment(resolvedDept);
+
       setCurrentRole(resolvedRole);
       setIsLineManager(resolvedLineManager);
       setUserName(resolvedName);
       setUserEmail(resolvedEmail);
       setUserAvatar(resolvedAvatar);
 
-      // Strict Role & Portal Protection Guard:
-      if (resolvedRole === "employee") {
-        if (!pathname.startsWith("/erp/employee")) {
-          window.location.href = "/erp/employee";
-          return;
+      let resolvedAssignedPages: string[] = [];
+      if (parsedUser && Array.isArray(parsedUser.assignedPages)) {
+        resolvedAssignedPages = parsedUser.assignedPages;
+      } else if (parsedUser && (parsedUser.designation?.toLowerCase().includes("sales closer") || resolvedRole === "sales_closer")) {
+        resolvedAssignedPages = ["employee", "crm"];
+      } else if (resolvedRole === "sales_closer") {
+        resolvedAssignedPages = ["employee", "crm"];
+      }
+      setUserAssignedPages(resolvedAssignedPages);
+
+      // Direct User Assigned Pages Check for Current Route:
+      let isAssignedGrantedCurrentPath = false;
+      if (resolvedAssignedPages && resolvedAssignedPages.length > 0) {
+        for (const allowedPage of resolvedAssignedPages) {
+          if (
+            (allowedPage === "accounting" && pathname.startsWith("/erp/accountant")) ||
+            (allowedPage === "hr" && pathname.startsWith("/erp/hr")) ||
+            (allowedPage === "crm" && (pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer"))) ||
+            (allowedPage === "shop" && pathname.startsWith("/erp/admin/shop")) ||
+            (allowedPage === "mobility" && pathname.startsWith("/erp/admin/mobility")) ||
+            (allowedPage === "mobility_ops" && pathname.startsWith("/erp/ops/mobility")) ||
+            (allowedPage === "dispatch" && pathname.startsWith("/erp/admin/dispatch")) ||
+            (allowedPage === "dispatch_ops" && pathname.startsWith("/erp/ops/dispatch")) ||
+            (allowedPage === "marketplace" && pathname.startsWith("/erp/admin/marketplace")) ||
+            (allowedPage === "ai" && pathname.startsWith("/erp/admin/ai")) ||
+            (allowedPage === "users" && (pathname.startsWith("/erp/admin/users") || pathname.startsWith("/erp/admin/departments"))) ||
+            (allowedPage === "employee" && pathname.startsWith("/erp/employee")) ||
+            (allowedPage === "manager" && pathname.startsWith("/erp/manager")) ||
+            (allowedPage === "md" && pathname.startsWith("/erp/md")) ||
+            (allowedPage === "overview" && pathname === "/erp/admin")
+          ) {
+            isAssignedGrantedCurrentPath = true;
+            break;
+          }
         }
-      } else if (resolvedRole === "manager") {
-        if (!pathname.startsWith("/erp/manager") && !pathname.startsWith("/erp/employee")) {
-          window.location.href = "/erp/manager";
-          return;
+      }
+
+      // Dynamic Department Access Check for Portal Protection:
+      let isDepartmentGrantedCurrentPath = false;
+      if (resolvedDept && loadedDeptConfigs.length > 0) {
+        const dAccess = getUserDepartmentAccess({ department: resolvedDept, role: resolvedRole }, loadedDeptConfigs);
+        if (dAccess.matchedDepartment) {
+          for (const allowedPage of Array.from(dAccess.accessiblePages)) {
+            if (
+              (allowedPage === "accounting" && pathname.startsWith("/erp/accountant")) ||
+              (allowedPage === "hr" && pathname.startsWith("/erp/hr")) ||
+              (allowedPage === "crm" && (pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer"))) ||
+              (allowedPage === "shop" && pathname.startsWith("/erp/admin/shop")) ||
+              (allowedPage === "mobility" && pathname.startsWith("/erp/admin/mobility")) ||
+              (allowedPage === "mobility_ops" && pathname.startsWith("/erp/ops/mobility")) ||
+              (allowedPage === "dispatch" && pathname.startsWith("/erp/admin/dispatch")) ||
+              (allowedPage === "dispatch_ops" && pathname.startsWith("/erp/ops/dispatch")) ||
+              (allowedPage === "marketplace" && pathname.startsWith("/erp/admin/marketplace")) ||
+              (allowedPage === "ai" && pathname.startsWith("/erp/admin/ai")) ||
+              (allowedPage === "users" && (pathname.startsWith("/erp/admin/users") || pathname.startsWith("/erp/admin/departments"))) ||
+              (allowedPage === "employee" && pathname.startsWith("/erp/employee")) ||
+              (allowedPage === "manager" && pathname.startsWith("/erp/manager")) ||
+              (allowedPage === "md" && pathname.startsWith("/erp/md")) ||
+              (allowedPage === "overview" && pathname === "/erp/admin")
+            ) {
+              isDepartmentGrantedCurrentPath = true;
+              break;
+            }
+          }
         }
-      } else if (resolvedRole !== "admin" && pathname === "/erp/admin") {
-        if (resolvedRole === "md") {
-          window.location.href = "/erp/md";
-          return;
-        } else if (resolvedRole === "hr") {
-          window.location.href = "/erp/hr";
-          return;
-        } else if (resolvedRole === "accountant") {
-          window.location.href = "/erp/accountant";
-          return;
-        } else if (resolvedRole === "marketer") {
-          window.location.href = "/erp/marketer";
-          return;
-        } else if (resolvedRole === "dispatcher") {
-          window.location.href = "/erp/employee";
-          return;
-        } else if (resolvedRole === "cashier") {
-          window.location.href = "/erp/admin/shop/pos";
-          return;
-        } else if (resolvedRole === "inventory_officer") {
-          window.location.href = "/erp/admin/shop/inventory";
-          return;
+      }
+
+      // Strict Role & Assigned Pages Route Protection:
+      if (resolvedAssignedPages.length > 0 && resolvedRole !== "admin") {
+        if (!isAssignedGrantedCurrentPath && !isDepartmentGrantedCurrentPath) {
+          const fallback = resolvedAssignedPages.includes("employee")
+            ? "/erp/employee"
+            : (resolvedAssignedPages.includes("crm") ? "/erp/admin/crm" : "/erp/employee");
+          if (pathname !== fallback) {
+            window.location.href = fallback;
+            return;
+          }
+        }
+      } else if (!isDepartmentGrantedCurrentPath) {
+        if (resolvedRole === "sales_closer") {
+          if (!pathname.startsWith("/erp/employee") && !pathname.startsWith("/erp/admin/crm") && !pathname.startsWith("/erp/marketer")) {
+            window.location.href = "/erp/admin/crm";
+            return;
+          }
+        } else if (resolvedRole === "employee") {
+          if (!pathname.startsWith("/erp/employee")) {
+            window.location.href = "/erp/employee";
+            return;
+          }
+        } else if (resolvedRole === "manager") {
+          if (!pathname.startsWith("/erp/manager") && !pathname.startsWith("/erp/employee")) {
+            window.location.href = "/erp/manager";
+            return;
+          }
+        } else if (resolvedRole !== "admin" && pathname === "/erp/admin") {
+          if (resolvedRole === "md") {
+            window.location.href = "/erp/md";
+            return;
+          } else if (resolvedRole === "hr") {
+            window.location.href = "/erp/hr";
+            return;
+          } else if (resolvedRole === "accountant") {
+            window.location.href = "/erp/accountant";
+            return;
+          } else if (resolvedRole === "marketer") {
+            window.location.href = "/erp/marketer";
+            return;
+          } else if (resolvedRole === "dispatcher") {
+            window.location.href = "/erp/employee";
+            return;
+          } else if (resolvedRole === "cashier") {
+            window.location.href = "/erp/admin/shop/pos";
+            return;
+          } else if (resolvedRole === "inventory_officer") {
+            window.location.href = "/erp/admin/shop/inventory";
+            return;
+          }
         }
       }
 
@@ -527,10 +678,36 @@ export function ErpAdminShell({
       }
     };
 
+    const handleDeptUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && customEvent.detail.departments) {
+        setDepartmentConfigs(customEvent.detail.departments);
+      }
+    };
+
+    const handleSidebarSync = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && typeof customEvent.detail.isCollapsed === "boolean") {
+        setIsSidebarOpen(!customEvent.detail.isCollapsed);
+      }
+    };
+
+    const handleStorageSync = (e: StorageEvent) => {
+      if (e.key === "erp_sidebar_collapsed" && e.newValue !== null) {
+        setIsSidebarOpen(e.newValue !== "true");
+      }
+    };
+
     window.addEventListener("ofia_rbac_updated", handleRbacUpdate);
+    window.addEventListener("ofia_dept_access_updated", handleDeptUpdate);
+    window.addEventListener("erp_sidebar_collapsed_change", handleSidebarSync);
+    window.addEventListener("storage", handleStorageSync);
     return () => {
       isCurrent = false;
       window.removeEventListener("ofia_rbac_updated", handleRbacUpdate);
+      window.removeEventListener("ofia_dept_access_updated", handleDeptUpdate);
+      window.removeEventListener("erp_sidebar_collapsed_change", handleSidebarSync);
+      window.removeEventListener("storage", handleStorageSync);
     };
   }, [user, pathname]);
 
@@ -557,7 +734,7 @@ export function ErpAdminShell({
         else if (pathname.includes("/ops/dispatch")) pageHeading = "Dispatch Operator";
         else if (pathname.includes("/admin/users")) pageHeading = "Staff Directory & Roles";
         else if (pathname.includes("/admin/ai")) pageHeading = "AI Swarm & Operations";
-        else if (pathname.includes("/admin/marketplace")) pageHeading = "Marketplace & Compass";
+        else if (pathname.includes("/admin/marketplace")) pageHeading = "Marketplace & Storefronts";
         else if (pathname.startsWith("/erp/accountant")) pageHeading = "Finance & Accounting";
         else if (pathname.startsWith("/erp/hr")) pageHeading = "HR & Appraisals";
         else if (pathname.startsWith("/erp/md")) pageHeading = "Managing Director Command";
@@ -605,13 +782,22 @@ export function ErpAdminShell({
     // 1. OPERATIONS & REVENUE APPS
     { label: "Overview", icon: <LayoutDashboard className="w-6 h-6" />, href: "/erp/admin", key: "overview", section: "Operations" },
     { label: "Ofia AI Swarm", icon: <Bot className="w-6 h-6" />, href: "/erp/admin/ai", badge: "15 AI", key: "ai", section: "Operations" },
-    { label: "Ofia Compass Manager", icon: <ShoppingBag className="w-6 h-6" />, href: "/erp/admin/marketplace", key: "marketplace", section: "Operations" },
+    { label: "Marketplace Manager", icon: <ShoppingBag className="w-6 h-6" />, href: "/erp/admin/marketplace", key: "marketplace", section: "Operations" },
     { label: "Ofia Shop Manager", icon: <Store className="w-6 h-6" />, href: "/erp/admin/shop", badge: "Retail", key: "shop", section: "Operations" },
     { label: "Ofia Mobility Manager", icon: <Truck className="w-6 h-6" />, href: "/erp/admin/mobility", badge: "Mobility", key: "mobility", section: "Operations" },
     { label: "Ofia Dispatch Manager", icon: <Bike className="w-6 h-6" />, href: "/erp/admin/dispatch", badge: "Admin", key: "dispatch", section: "Operations" },
 
     // 2. OFIA ENTERPRISE SUITE
-    { label: "CRM & Marketing", icon: <BarChart3 className="w-6 h-6" />, href: "/erp/admin/crm", badge: "CRM", key: "crm", section: "Ofia Enterprise Suite" },
+    {
+      label: currentRole === "sales_closer" || (userAssignedPages.includes("crm") && currentRole !== "admin")
+        ? "CRM (Sales Closer Portal)"
+        : "CRM & Marketing",
+      icon: <BarChart3 className="w-6 h-6" />,
+      href: "/erp/admin/crm",
+      badge: currentRole === "sales_closer" ? "Closer" : "CRM",
+      key: "crm",
+      section: "Ofia Enterprise Suite",
+    },
     { label: "Accounting & Ledgers", icon: <Layers className="w-6 h-6" />, href: "/erp/accountant", badge: "GL", key: "accounting", section: "Ofia Enterprise Suite" },
     { label: "HR & Appraisals", icon: <Users className="w-6 h-6" />, href: "/erp/hr", key: "hr", section: "Ofia Enterprise Suite" },
     { label: "User Management", icon: <UserCheck className="w-6 h-6" />, href: "/erp/admin/users", badge: "Staff", key: "users", section: "Ofia Enterprise Suite" },
@@ -795,23 +981,37 @@ export function ErpAdminShell({
     return [];
   };
 
-  const activeSubTabs = getSubTabs();
+  const rawSubTabs = getSubTabs();
+  const activeSubTabs: SubNavItem[] = useMemo<SubNavItem[]>(() => {
+    if (!userDepartment || !departmentConfigs || departmentConfigs.length === 0 || currentRole === "admin") {
+      return rawSubTabs;
+    }
+
+    const dAccess = getUserDepartmentAccess({ department: userDepartment, role: currentRole }, departmentConfigs);
+    if (!dAccess.matchedDepartment) return rawSubTabs;
+
+    let activeModKey = "";
+    if (pathname.startsWith("/erp/admin/mobility")) activeModKey = "mobility";
+    else if (pathname.startsWith("/erp/ops/mobility")) activeModKey = "mobility_ops";
+    else if (pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer")) activeModKey = "crm";
+    else if (pathname.startsWith("/erp/admin/ai")) activeModKey = "ai";
+    else if (pathname.startsWith("/erp/admin/shop")) activeModKey = "shop";
+    else if (pathname.startsWith("/erp/admin/marketplace")) activeModKey = "marketplace";
+    else if (pathname.startsWith("/erp/accountant")) activeModKey = "accounting";
+    else if (pathname.startsWith("/erp/hr")) activeModKey = "hr";
+    else if (pathname.startsWith("/erp/admin/users") || pathname.startsWith("/erp/admin/departments")) activeModKey = "users";
+    else if (pathname.startsWith("/erp/employee")) activeModKey = "employee";
+    else if (pathname.startsWith("/erp/manager")) activeModKey = "manager";
+    else if (pathname.startsWith("/erp/md")) activeModKey = "md";
+
+    if (!activeModKey) return rawSubTabs;
+
+    return rawSubTabs.filter((tab: SubNavItem) => dAccess.isTabAllowed(activeModKey, tab.href));
+  }, [rawSubTabs, userDepartment, departmentConfigs, currentRole, pathname]);
 
   const filteredNavItems = navItems.filter((item) => {
     const matchesSearch = item.label.toLowerCase().includes(searchQuery.toLowerCase());
     if (!matchesSearch) return false;
-
-    if (currentRole === "employee") {
-      return (
-        item.key === "employee" ||
-        item.href === "/erp/employee" ||
-        item.href.startsWith("/erp/employee/")
-      );
-    }
-
-    if (item.key === "overview" || item.href === "/erp/admin") {
-      return currentRole === "admin";
-    }
 
     const isProvisioned = (key: string) => {
       if (key === "overview" || key === "employee") return true;
@@ -835,11 +1035,56 @@ export function ErpAdminShell({
       return isAdminAllowed && isTpAllowed;
     };
 
+    if (!isProvisioned(item.key)) return false;
+
+    // 1. If admin, full access
+    if (currentRole === "admin") return true;
+
+    // 2. Direct Assigned Pages Check (Configured in User Management):
+    // E.g. A sales closer sees the employee portal and the CRM (Sales Closer Portal)
+    if (userAssignedPages && userAssignedPages.length > 0) {
+      return userAssignedPages.includes(item.key);
+    }
+
+    if (currentRole === "sales_closer") {
+      return item.key === "employee" || item.key === "crm";
+    }
+
+    // 2. Dynamic Department Access Evaluation:
+    // If the user belongs to a department and department configurations exist:
+    if (userDepartment && departmentConfigs && departmentConfigs.length > 0) {
+      const deptAccess = getUserDepartmentAccess(
+        { department: userDepartment, role: currentRole },
+        departmentConfigs
+      );
+      if (deptAccess.matchedDepartment) {
+        if (item.key === "overview") {
+          return deptAccess.isPageAllowed("overview");
+        }
+        return deptAccess.isPageAllowed(item.key);
+      }
+    }
+
+    // 3. Fallback to standard role visibility
+    if (currentRole === "employee") {
+      return (
+        item.key === "employee" ||
+        item.href === "/erp/employee" ||
+        item.href.startsWith("/erp/employee/")
+      );
+    }
+
+    if (item.key === "overview" || item.href === "/erp/admin") {
+      return false;
+    }
+
     return isNavItemVisibleForRole(
       item.key,
       currentRole,
       isLineManager,
-      isProvisioned
+      isProvisioned,
+      userDepartment,
+      departmentConfigs
     );
   });
 
@@ -923,6 +1168,7 @@ export function ErpAdminShell({
 
       {/* SIDEBAR — EXACT OFIA MARKETPLACE VERBATIM STYLING */}
       <aside
+        suppressHydrationWarning
         className={cn(
           "hidden md:flex bg-nexa-bg-surface border-r border-nexa-border transition-all duration-300 flex-col z-50 sticky top-0 h-screen",
           isSidebarOpen ? "w-72" : "w-20"
@@ -930,7 +1176,7 @@ export function ErpAdminShell({
       >
         {/* COLLAPSE TOGGLE BUTTON WITH PURE WHITE BACKGROUND */}
         <button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          onClick={toggleSidebar}
           className="absolute -right-3 top-24 w-6 h-6 !bg-white bg-white border border-slate-200 shadow-md rounded-full flex items-center justify-center text-slate-700 hover:text-[#1A56DB] hover:scale-110 transition-transform z-[60] cursor-pointer"
         >
           {isSidebarOpen ? <ChevronLeft className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
@@ -1016,7 +1262,7 @@ export function ErpAdminShell({
             </div>
           ) : (
             <button
-              onClick={() => setIsSidebarOpen(true)}
+              onClick={expandSidebar}
               className="w-10 h-10 mx-auto rounded-full bg-nexa-bg-base border border-nexa-border flex items-center justify-center text-nexa-text-muted hover:text-nexa-text-primary hover:border-nexa-brand/30 transition-colors cursor-pointer"
               title="Search ERP modules"
             >
@@ -1132,15 +1378,25 @@ export function ErpAdminShell({
                     <p className="text-xs font-bold text-nexa-text-primary truncate" suppressHydrationWarning>
                       {isMounted ? displayedUserName : "Staff"}
                     </p>
-                    <p
-                      className={cn(
-                        "text-[9px] font-extrabold uppercase tracking-wider truncate inline-block px-1.5 py-0.5 rounded-full border mt-0.5",
-                        getRoleBadgeColor(currentRole)
+                    <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                      <p
+                        className={cn(
+                          "text-[9px] font-extrabold uppercase tracking-wider truncate inline-block px-1.5 py-0.5 rounded-full border",
+                          getRoleBadgeColor(currentRole)
+                        )}
+                        suppressHydrationWarning
+                      >
+                        {getRoleDisplayName(currentRole)}
+                      </p>
+                      {userDepartment && (
+                        <p
+                          className="text-[9px] font-extrabold uppercase tracking-wider truncate inline-block px-1.5 py-0.5 rounded-full border bg-blue-500/10 text-blue-500 border-blue-500/20 font-mono max-w-[120px]"
+                          title={`Assigned Department: ${userDepartment}`}
+                        >
+                          {userDepartment}
+                        </p>
                       )}
-                      suppressHydrationWarning
-                    >
-                      {getRoleDisplayName(currentRole)}
-                    </p>
+                    </div>
                   </div>
                 </div>
 
@@ -1297,7 +1553,7 @@ export function ErpAdminShell({
               {/* HORIZONTAL SUB-NAVIGATION PILL TABS WITH GROUP SUPPORT */}
               {activeSubTabs.length > 0 && (() => {
                 const tabGroups: { name: string; tabs: SubNavItem[] }[] = [];
-                activeSubTabs.forEach((tab) => {
+                activeSubTabs.forEach((tab: SubNavItem) => {
                   const gName = tab.group || "";
                   let existing = tabGroups.find((g) => g.name === gName);
                   if (!existing) {
@@ -1428,7 +1684,7 @@ export function ErpAdminShell({
 
                     {/* TIER 2: TABS UNDER THE ACTIVE GROUP */}
                     <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide pt-0.5">
-                      {tabsToDisplay.map((tab, idx) => renderTabPill(tab, idx))}
+                      {tabsToDisplay.map((tab: SubNavItem, idx: number) => renderTabPill(tab, idx))}
                     </div>
                   </div>
                 );

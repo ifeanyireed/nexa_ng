@@ -55,14 +55,17 @@ export default function TenantFleetCommandCentre() {
             <p className="text-2xl font-bold text-nexa-text-primary">12</p>
             <p className="text-xs text-nexa-text-secondary mt-2">48 trips completed today</p>
           </div>
-          <div className="p-5 bg-nexa-surface border border-nexa-border rounded-xl shadow-sm">
+          <Link href="/erp/admin/mobility/vehicles" className="p-5 bg-nexa-surface border border-nexa-border rounded-xl shadow-sm hover:border-blue-500/40 transition-all block group">
             <div className="flex justify-between mb-2">
-              <h3 className="text-sm font-medium text-nexa-text-secondary">Available Vehicles</h3>
+              <h3 className="text-sm font-medium text-nexa-text-secondary group-hover:text-blue-500 transition-colors">Fleet & Vehicles</h3>
               <Car className="w-5 h-5 text-purple-500" />
             </div>
             <p className="text-2xl font-bold text-nexa-text-primary">8 / 45</p>
-            <p className="text-xs text-nexa-text-secondary mt-2">12 on trip, 5 in maintenance</p>
-          </div>
+            <p className="text-xs text-nexa-text-secondary mt-2 flex items-center justify-between">
+              <span>12 on trip, 5 in workshop</span>
+              <span className="text-blue-500 font-semibold text-[11px] group-hover:underline">View ROI &rarr;</span>
+            </p>
+          </Link>
           <div className="p-5 bg-nexa-surface border border-nexa-border rounded-xl shadow-sm">
             <div className="flex justify-between mb-2">
               <h3 className="text-sm font-medium text-nexa-text-secondary">Available Drivers</h3>

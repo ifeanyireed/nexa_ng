@@ -14,22 +14,22 @@ const dropa = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Ofia Compass | Nigeria's #1 Business & Service Discovery Marketplace",
+  title: "Ofia ERP | Unified African Enterprise & Commerce Operating System",
   description:
-    "Nigeria's #1 business discovery and navigation platform. Empowering local businesses and consumers to navigate commercial opportunities.",
+    "The unified multi-tenant enterprise business operating system for African trade. Run storefronts, ERP operations, autonomous AI lead generation, and nationwide logistics from a single login.",
   metadataBase: new URL("https://ofia.ng"),
   openGraph: {
-    title: "Ofia Compass | Nigeria's #1 Business & Service Discovery Marketplace",
+    title: "Ofia ERP | Unified African Enterprise & Commerce Operating System",
     description:
-      "Nigeria's #1 business discovery and navigation platform. Empowering local businesses and consumers to navigate commercial opportunities.",
+      "The unified multi-tenant enterprise business operating system for African trade. Run storefronts, ERP operations, autonomous AI lead generation, and nationwide logistics from a single login.",
     url: "https://ofia.ng",
-    siteName: "Ofia Compass",
+    siteName: "Ofia ERP",
     images: [
       {
         url: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png",
         width: 800,
         height: 800,
-        alt: "Ofia Compass Logo",
+        alt: "Ofia ERP Logo",
       },
     ],
     locale: "en_NG",
@@ -37,9 +37,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Ofia Compass | Nigeria's #1 Business & Service Discovery Marketplace",
+    title: "Ofia ERP | Unified African Enterprise & Commerce Operating System",
     description:
-      "Nigeria's #1 business discovery and navigation platform. Empowering local businesses and consumers to navigate commercial opportunities.",
+      "The unified multi-tenant enterprise business operating system for African trade. Run storefronts, ERP operations, autonomous AI lead generation, and nationwide logistics from a single login.",
     images: ["https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"],
   },
   icons: {

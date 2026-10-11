@@ -358,6 +358,7 @@ export async function ensureTablesExist(): Promise<boolean> {
         -- 9. Organization Modules & GTM BYOK Extensions
         ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS erp_enabled BOOLEAN DEFAULT true;
         ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS shop_enabled BOOLEAN DEFAULT true;
+        ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "assignedPages" JSONB DEFAULT '[]'::jsonb;
         ALTER TABLE gtm_tenant_settings ADD COLUMN IF NOT EXISTS deepseek_api_key_encrypted TEXT;
       `);
 

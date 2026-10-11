@@ -8,7 +8,7 @@ export default function MarketplaceLayout({
 }) {
   return (
     <ErpAdminShell
-      title="Ofia Compass Manager"
+      title="Marketplace Manager"
       subtitle="Manage your tenant's digital storefront, customer service bookings, deals, SEO articles, catalog shop items, and escrow payouts."
       activeModule="marketplace"
     >

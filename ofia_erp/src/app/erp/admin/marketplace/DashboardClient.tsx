@@ -41,7 +41,30 @@ import { NICHE_DETAILS } from "@/lib/niche-data";
 import Link from "next/link";
 
 export default function DashboardClient() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("erp_sidebar_collapsed");
+      if (stored !== null) {
+        return stored !== "true";
+      }
+    }
+    return true;
+  });
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("erp_sidebar_collapsed", next ? "false" : "true");
+        window.dispatchEvent(
+          new CustomEvent("erp_sidebar_collapsed_change", {
+            detail: { isCollapsed: !next },
+          })
+        );
+      }
+      return next;
+    });
+  };
   const [activeNiche] = useState("home-services"); // Mocking a registered seller in Home Services
   const data = NICHE_DETAILS["handyman-finders"]; // Using handyman-finders data for mock
   
@@ -66,10 +89,13 @@ export default function DashboardClient() {
     <div className="min-h-screen bg-nexa-bg-base flex overflow-hidden">
       
       {/* SIDEBAR */}
-      <aside className={cn(
-        "bg-nexa-bg-surface border-r border-nexa-border transition-all duration-500 flex flex-col z-50",
-        isSidebarOpen ? "w-72" : "w-20"
-      )}>
+      <aside
+        suppressHydrationWarning
+        className={cn(
+          "bg-nexa-bg-surface border-r border-nexa-border transition-all duration-500 flex flex-col z-50",
+          isSidebarOpen ? "w-72" : "w-20"
+        )}
+      >
         <div className="p-6 flex items-center justify-between">
            {isSidebarOpen && (
              <Link href="/" className="flex items-center gap-2">
@@ -125,7 +151,7 @@ export default function DashboardClient() {
         <header className="h-20 bg-nexa-bg-surface/80 backdrop-blur-xl border-b border-nexa-border sticky top-0 z-40 px-8 flex items-center justify-between">
            <div className="flex items-center gap-4">
               <button 
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                onClick={toggleSidebar}
                 className="p-2 hover:bg-nexa-bg-base rounded-xl transition-colors"
               >
                  <Menu className="w-5 h-5 text-nexa-text-secondary" />

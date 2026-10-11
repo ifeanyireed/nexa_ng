@@ -24,11 +24,11 @@ export const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
           <div className="col-span-1 md:col-span-1">
             <div className="flex items-center gap-2 mb-6">
-              <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia Compass Logo" className="w-8 h-8 object-contain" />
-              <span className="text-xl font-bold text-display">Ofia Compass</span>
+              <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia ERP Logo" className="w-8 h-8 object-contain" />
+              <span className="text-xl font-bold text-display">Ofia ERP</span>
             </div>
             <p className="text-nexa-text-secondary text-sm mb-6 leading-relaxed">
-              Nigeria's #1 business discovery and navigation platform. Empowering local businesses and consumers to navigate commercial opportunities.
+              The unified multi-tenant enterprise business operating system for African trade.
             </p>
             <div className="flex gap-4">
               {socials.map((social, i) => (
@@ -75,7 +75,7 @@ export const Footer = () => {
         </div>
 
         <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-nexa-border text-xs text-nexa-text-faint">
-          <p>© 2026 Ofia Compass. All rights reserved.</p>
+          <p>© 2026 Ofia ERP. All rights reserved.</p>
           <p className="mt-4 md:mt-0 flex items-center gap-1">Made with ❤️ for Nigeria 🇳🇬</p>
         </div>
       </div>

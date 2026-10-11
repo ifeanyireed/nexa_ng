@@ -37,7 +37,30 @@ interface AdminShellProps {
 export const AdminShell = ({ children }: AdminShellProps) => {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("erp_sidebar_collapsed");
+      if (stored !== null) {
+        return stored !== "true";
+      }
+    }
+    return true;
+  });
+
+  const toggleSidebar = () => {
+    setIsSidebarOpen((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("erp_sidebar_collapsed", next ? "false" : "true");
+        window.dispatchEvent(
+          new CustomEvent("erp_sidebar_collapsed_change", {
+            detail: { isCollapsed: !next },
+          })
+        );
+      }
+      return next;
+    });
+  };
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isGlobalCircuitBreakerArmed, setIsGlobalCircuitBreakerArmed] = useState(false);
   const [isCircuitBreakerToast, setIsCircuitBreakerToast] = useState(false);
@@ -74,6 +97,7 @@ export const AdminShell = ({ children }: AdminShellProps) => {
       <div className="flex flex-1 h-full relative overflow-hidden">
         {/* Admin Sidebar */}
         <aside
+          suppressHydrationWarning
           className={`hidden md:flex flex-col h-screen sticky top-0 border-r border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]/90 backdrop-blur-xl transition-all duration-300 z-30 shrink-0 select-none ${
             isSidebarOpen ? "w-64" : "w-20"
           }`}
@@ -99,7 +123,7 @@ export const AdminShell = ({ children }: AdminShellProps) => {
             </Link>
 
             <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              onClick={toggleSidebar}
               className="p-1.5 rounded-lg text-[var(--nexa-text-faint)] hover:text-[var(--nexa-text-primary)] hover:bg-[var(--nexa-bg-base)] transition-colors cursor-pointer"
             >
               {isSidebarOpen ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}

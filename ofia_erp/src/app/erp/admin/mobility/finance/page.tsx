@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { Calculator, DollarSign, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import Link from "next/link";
+import { Calculator, DollarSign, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, ChevronRight } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
@@ -119,7 +120,12 @@ export default function FinancePricingPage() {
 
           {/* Fleet Health & Profitability */}
           <div className="bg-nexa-surface rounded-xl border border-nexa-border shadow-sm p-6">
-            <h2 className="text-base font-semibold text-nexa-text-primary border-b border-nexa-border pb-4 mb-4">Fleet Profitability Intelligence</h2>
+            <div className="flex justify-between items-center border-b border-nexa-border pb-4 mb-4">
+              <h2 className="text-base font-semibold text-nexa-text-primary">Fleet Profitability Intelligence</h2>
+              <Link href="/erp/admin/mobility/vehicles" className="text-xs text-blue-500 hover:underline flex items-center gap-1 font-medium">
+                Detailed Vehicle ROI & Fuel <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
             <div className="space-y-4">
               <div className="p-4 border border-emerald-500/30 rounded-xl flex items-center justify-between bg-emerald-500/5">
                 <div>

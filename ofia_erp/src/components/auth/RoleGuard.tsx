@@ -7,6 +7,12 @@ import {
   RoleKey,
   isModuleEnabledForRole,
 } from "@/lib/access-control";
+import {
+  fetchTenantDepartmentAccess,
+  getUserDepartmentAccess,
+  DepartmentAccessItem,
+  DEFAULT_DEPARTMENT_ACCESS,
+} from "@/lib/department-access";
 import { ShieldAlert, ArrowRight, Loader2 } from "lucide-react";
 
 export interface RoleGuardProps {
@@ -14,6 +20,25 @@ export interface RoleGuardProps {
   allowedRoles?: RoleKey[];
   requiredModule?: string;
   fallbackRoute?: string;
+}
+
+function getPageKeyFromPath(path: string): string | null {
+  if (path.startsWith("/erp/accountant") || path.startsWith("/accountant")) return "accounting";
+  if (path.startsWith("/erp/hr") || path.startsWith("/hr")) return "hr";
+  if (path.startsWith("/erp/admin/crm") || path.startsWith("/erp/marketer")) return "crm";
+  if (path.startsWith("/erp/admin/shop")) return "shop";
+  if (path.startsWith("/erp/admin/mobility")) return "mobility";
+  if (path.startsWith("/erp/ops/mobility")) return "mobility_ops";
+  if (path.startsWith("/erp/admin/dispatch")) return "dispatch";
+  if (path.startsWith("/erp/ops/dispatch")) return "dispatch_ops";
+  if (path.startsWith("/erp/admin/marketplace")) return "marketplace";
+  if (path.startsWith("/erp/admin/ai")) return "ai";
+  if (path.startsWith("/erp/admin/users") || path.startsWith("/erp/admin/departments")) return "users";
+  if (path.startsWith("/erp/employee") || path.startsWith("/employee")) return "employee";
+  if (path.startsWith("/erp/manager") || path.startsWith("/manager")) return "manager";
+  if (path.startsWith("/erp/md") || path.startsWith("/md")) return "md";
+  if (path === "/erp/admin" || path === "/admin") return "overview";
+  return null;
 }
 
 export function RoleGuard({
@@ -28,18 +53,50 @@ export function RoleGuard({
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [userRole, setUserRole] = useState<RoleKey>("employee");
   const [redirectTarget, setRedirectTarget] = useState<string>("/login");
+  const [departmentConfigs, setDepartmentConfigs] = useState<DepartmentAccessItem[]>(DEFAULT_DEPARTMENT_ACCESS);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const slug = localStorage.getItem("nexa_tenant_slug") || "neweratransports";
+    fetchTenantDepartmentAccess(slug).then((configs) => {
+      if (configs && configs.length > 0) {
+        setDepartmentConfigs(configs);
+      }
+    });
+
+    const handleDeptUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.departments) {
+        setDepartmentConfigs(customEvent.detail.departments);
+      }
+    };
+    window.addEventListener("ofia_dept_access_updated", handleDeptUpdate);
+    return () => window.removeEventListener("ofia_dept_access_updated", handleDeptUpdate);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     // 1. Resolve active user and role
     let role: RoleKey = "employee";
+    let userDept = (user as any)?.department || "";
+    let assignedPages: string[] = [];
+
     const stored = localStorage.getItem("erp_current_user");
     if (stored) {
       try {
         const u = JSON.parse(stored);
         if (u && u.role) {
           role = u.role as RoleKey;
+        }
+        if (u && u.department) {
+          userDept = u.department;
+        }
+        if (u && Array.isArray(u.assignedPages)) {
+          assignedPages = u.assignedPages;
+        } else if (u && (u.designation?.toLowerCase().includes("sales closer") || role === "sales_closer")) {
+          assignedPages = ["employee", "crm"];
         }
       } catch {}
     } else if (localStorage.getItem("nexa_user_role")) {
@@ -49,6 +106,15 @@ export function RoleGuard({
     } else if (pathname.startsWith("/erp/admin")) {
       role = "admin";
     }
+
+    if (!userDept) {
+      userDept = localStorage.getItem("nexa_user_department") || localStorage.getItem("erp_user_department") || "";
+    }
+
+    if (role === "sales_closer" && assignedPages.length === 0) {
+      assignedPages = ["employee", "crm"];
+    }
+
     setUserRole(role);
 
     // 2. Resolve default home dashboard for this role
@@ -58,18 +124,65 @@ export function RoleGuard({
     else if (role === "hr") home = "/erp/hr";
     else if (role === "accountant") home = "/erp/accountant";
     else if (role === "marketer") home = "/erp/marketer";
+    else if (role === "sales_closer") home = "/erp/admin/crm";
     else if (role === "manager") home = "/erp/manager";
     else if (role === "employee") home = "/erp/employee";
     else if (role === "cashier") home = "/erp/admin/shop/pos";
     else if (role === "inventory_officer") home = "/erp/admin/shop/inventory";
     else if (role === "dispatcher") home = "/erp/employee";
 
+    if (assignedPages.length > 0 && !assignedPages.includes("employee") && assignedPages[0] === "crm") {
+      home = "/erp/admin/crm";
+    }
+
     setRedirectTarget(fallbackRoute || home);
 
-    // STRICT EMPLOYEE ROLE ISOLATION:
-    // When an employee is logged in, they can ONLY view the employee portal (/erp/employee*)
+    // Dynamic Department Access Check
+    const targetPageKey = requiredModule || getPageKeyFromPath(pathname);
+    let isDepartmentAllowed = false;
+    if (userDept && targetPageKey) {
+      const dAccess = getUserDepartmentAccess({ department: userDept, role }, departmentConfigs);
+      if (dAccess.matchedDepartment && dAccess.isPageAllowed(targetPageKey)) {
+        if (dAccess.isTabAllowed(targetPageKey, pathname)) {
+          isDepartmentAllowed = true;
+        }
+      }
+    }
+
+    // DIRECT USER ASSIGNED PAGES CHECK:
+    // If the user has specific assigned pages (e.g. Sales Closer with Employee Portal + CRM):
+    if (assignedPages && assignedPages.length > 0 && targetPageKey) {
+      if (assignedPages.includes(targetPageKey)) {
+        setIsAuthorized(true);
+        return;
+      } else if (role !== "admin") {
+        // User attempted to navigate to an unassigned page
+        setIsAuthorized(false);
+        const fallback = assignedPages.includes("employee")
+          ? "/erp/employee"
+          : (assignedPages.includes("crm") ? "/erp/admin/crm" : home);
+        if (pathname !== fallback) {
+          router.replace(fallback);
+        }
+        return;
+      }
+    }
+
+    // STRICT SALES CLOSER ROLE ISOLATION:
+    if (role === "sales_closer") {
+      const isSalesAllowed = pathname.startsWith("/erp/employee") || pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer");
+      if (!isSalesAllowed && !isDepartmentAllowed) {
+        setIsAuthorized(false);
+        router.replace("/erp/admin/crm");
+        return;
+      }
+      setIsAuthorized(true);
+      return;
+    }
+
+    // STRICT EMPLOYEE ROLE ISOLATION (bypassed if department permissions grant access):
     if (role === "employee") {
-      if (!pathname.startsWith("/erp/employee")) {
+      if (!pathname.startsWith("/erp/employee") && !isDepartmentAllowed) {
         setIsAuthorized(false);
         if (pathname !== "/erp/employee") {
           router.replace("/erp/employee");
@@ -80,10 +193,9 @@ export function RoleGuard({
       return;
     }
 
-    // STRICT LINE MANAGER ROLE ISOLATION:
-    // A line manager can ONLY view the Manager Portal (/erp/manager*) and Employee Portal (/erp/employee*)
+    // STRICT LINE MANAGER ROLE ISOLATION (bypassed if department permissions grant access):
     if (role === "manager") {
-      if (!pathname.startsWith("/erp/manager") && !pathname.startsWith("/erp/employee")) {
+      if (!pathname.startsWith("/erp/manager") && !pathname.startsWith("/erp/employee") && !isDepartmentAllowed) {
         setIsAuthorized(false);
         router.replace("/erp/manager");
         return;
@@ -100,7 +212,7 @@ export function RoleGuard({
       } else if (pathname === "/erp/admin") {
         effectiveAllowedRoles = ["admin"];
       } else if (pathname.startsWith("/erp/marketer") || pathname.startsWith("/erp/admin/crm")) {
-        effectiveAllowedRoles = ["admin", "md", "marketer"];
+        effectiveAllowedRoles = ["admin", "md", "marketer", "sales_closer"];
       } else if (pathname.startsWith("/erp/md")) {
         effectiveAllowedRoles = ["admin", "md"];
       } else if (pathname.startsWith("/erp/hr")) {
@@ -108,7 +220,7 @@ export function RoleGuard({
       } else if (pathname.startsWith("/erp/accountant")) {
         effectiveAllowedRoles = ["admin", "md", "accountant"];
       } else if (pathname.startsWith("/erp/manager")) {
-        effectiveAllowedRoles = ["admin", "md", "hr", "accountant", "marketer", "manager"];
+        effectiveAllowedRoles = ["admin", "md", "hr", "accountant", "marketer", "sales_closer", "manager"];
       } else if (pathname.startsWith("/erp/employee")) {
         effectiveAllowedRoles = [
           "admin",
@@ -116,6 +228,7 @@ export function RoleGuard({
           "hr",
           "accountant",
           "marketer",
+          "sales_closer",
           "manager",
           "employee",
           "cashier",
@@ -137,8 +250,8 @@ export function RoleGuard({
       }
     }
 
-    // 4. Role Permission Check
-    const roleAllowed = !effectiveAllowedRoles || effectiveAllowedRoles.includes(role);
+    // 4. Role Permission Check (bypassed if department granted)
+    const roleAllowed = isDepartmentAllowed || !effectiveAllowedRoles || effectiveAllowedRoles.includes(role);
 
     // 5. Workspace Module Provisioning Check
     let moduleAllowed = true;
@@ -152,7 +265,7 @@ export function RoleGuard({
       else if (pathname.startsWith("/erp/admin/marketplace")) requiredMod = "marketplace";
     }
 
-    if (requiredMod) {
+    if (requiredMod && !isDepartmentAllowed) {
       const tenantName = localStorage.getItem("nexa_org_name") || "EduSuite";
       moduleAllowed = isModuleEnabledForRole(tenantName, role, requiredMod);
     }
@@ -169,7 +282,7 @@ export function RoleGuard({
     } else {
       setIsAuthorized(true);
     }
-  }, [pathname, user, allowedRoles, requiredModule, fallbackRoute, router]);
+  }, [pathname, user, allowedRoles, requiredModule, fallbackRoute, router, departmentConfigs]);
 
   if (isAuthorized === null) {
     return (

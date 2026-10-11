@@ -119,6 +119,21 @@ export const USER_API = {
       }
     );
   },
+
+  getTenantDepartmentAccess: async (orgId = "default") => {
+    return fetchJSON<any[]>(`/api/organizations/${encodeURIComponent(orgId)}/departments/access`);
+  },
+
+  saveTenantDepartmentAccess: async (orgId = "default", departments: any[]) => {
+    return fetchJSON<{ success: boolean; message: string; departments: any[] }>(
+      `/api/organizations/${encodeURIComponent(orgId)}/departments/access`,
+      {
+        method: "PUT",
+        body: JSON.stringify({ departments }),
+      }
+    );
+  },
+
   checkSubdomainAvailability: async (slug: string) => {
     return fetchJSON<{
       slug: string;

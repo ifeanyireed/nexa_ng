@@ -246,7 +246,7 @@ const ALL_QUICK_ACTIONS: ModuleQuickAction[] = [
   {
     id: "qa-marketplace",
     module: "marketplace",
-    label: "Compass Storefront",
+    label: "Digital Storefront",
     icon: <Store className="w-6 h-6" />,
     desc: "Merchant Catalog",
     href: "/erp/admin/marketplace",

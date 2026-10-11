@@ -3,6 +3,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { USER_API } from "./api-client";
 import { fetchDatabaseTenants, resolveTenantFromList, DatabaseTenant } from "./tenant-context";
+import {
+  DepartmentAccessItem,
+  DEFAULT_DEPARTMENT_ACCESS,
+  fetchTenantDepartmentAccess,
+  getUserDepartmentAccess,
+} from "./department-access";
 
 export type RoleKey =
   | "admin"
@@ -11,6 +17,7 @@ export type RoleKey =
   | "manager"
   | "accountant"
   | "marketer"
+  | "sales_closer"
   | "employee"
   | "cashier"
   | "inventory_officer"
@@ -65,6 +72,14 @@ export const ERP_ROLES: RoleInfo[] = [
     description: "Manage CRM sales pipelines, B2B deal stages, viral promoter campaigns, and customer conversions.",
     color: "#EC4899",
     avatarBg: "bg-pink-600",
+  },
+  {
+    key: "sales_closer",
+    label: "Sales Closer",
+    badge: "Sales Closer",
+    description: "Assigned to the Employee Portal and CRM (Sales Closer Portal) for high-ticket client closing.",
+    color: "#059669",
+    avatarBg: "bg-emerald-600",
   },
   {
     key: "manager",
@@ -141,7 +156,7 @@ export const ERP_MODULES: ErpModuleDef[] = [
   },
   {
     key: "marketplace",
-    label: "Ofia Compass Manager",
+    label: "Marketplace Manager",
     category: "Operations",
     description: "Public storefront, order fulfillments, merchant catalogs, and payments.",
     href: "/erp/admin/marketplace",
@@ -231,6 +246,174 @@ export const ERP_MODULES: ErpModuleDef[] = [
     badge: "Live",
   },
 ];
+
+export interface AssignablePage {
+  key: string;
+  label: string;
+  description: string;
+  route: string;
+  category: "Portals & Team" | "Ofia Enterprise Suite" | "Operations";
+  badge?: string;
+}
+
+export const ASSIGNABLE_PAGES: AssignablePage[] = [
+  {
+    key: "employee",
+    label: "Employee Portal",
+    description: "Personal self-service appraisals, profile audit, career quest challenges, and reviews.",
+    route: "/erp/employee",
+    category: "Portals & Team",
+    badge: "Portal",
+  },
+  {
+    key: "crm",
+    label: "CRM (Sales Closer Portal)",
+    description: "B2B sales pipelines, contact lists, lead scoring, deals stages, and client outreach.",
+    route: "/erp/admin/crm",
+    category: "Ofia Enterprise Suite",
+    badge: "Sales Closer",
+  },
+  {
+    key: "manager",
+    label: "Manager Portal",
+    description: "Direct reports appraisal evaluation, scoring verifications, return notes, and calibrations.",
+    route: "/erp/manager",
+    category: "Portals & Team",
+    badge: "Portal",
+  },
+  {
+    key: "md",
+    label: "MD Executive Portal",
+    description: "Enterprise-wide departmental rankings, executive audit, company averages, and KPI metrics.",
+    route: "/erp/md",
+    category: "Portals & Team",
+    badge: "Executive",
+  },
+  {
+    key: "accounting",
+    label: "Accounting & Ledgers",
+    description: "General ledger, charts of accounts, trial balance, tax remittances, and invoices.",
+    route: "/erp/accountant",
+    category: "Ofia Enterprise Suite",
+    badge: "GL",
+  },
+  {
+    key: "hr",
+    label: "HR & Appraisals",
+    description: "Staff performance review cycles, objectives, calibrations, and departmental reports.",
+    route: "/erp/hr",
+    category: "Ofia Enterprise Suite",
+  },
+  {
+    key: "users",
+    label: "User Management",
+    description: "Corporate staff directory, departmental hierarchy, role administration, and page access.",
+    route: "/erp/admin/users",
+    category: "Ofia Enterprise Suite",
+    badge: "Staff",
+  },
+  {
+    key: "shop",
+    label: "Ofia Shop & POS",
+    description: "Point of sale (POS) cash registers, warehouse inventory (IMS), and viral referral campaigns.",
+    route: "/erp/admin/shop",
+    category: "Operations",
+    badge: "Retail",
+  },
+  {
+    key: "mobility",
+    label: "Ofia Mobility Manager",
+    description: "Fleet telemetry, multi-modal transport services, driver rosters, and vehicle ROI.",
+    route: "/erp/admin/mobility",
+    category: "Operations",
+    badge: "Mobility",
+  },
+  {
+    key: "mobility_ops",
+    label: "Mobility Operations",
+    description: "Real-time dispatch, vehicle telemetry, active trip queue, driver rosters, and manifests.",
+    route: "/erp/ops/mobility",
+    category: "Portals & Team",
+    badge: "Live",
+  },
+  {
+    key: "dispatch",
+    label: "Ofia Dispatch Manager",
+    description: "Operational control center for dispatch agents, waybill tracking, and rider allocation.",
+    route: "/erp/admin/dispatch",
+    category: "Operations",
+    badge: "Admin",
+  },
+  {
+    key: "dispatch_ops",
+    label: "Dispatch Operator",
+    description: "Operational control center for dispatch agents, live waybill tracking, and manifests.",
+    route: "/erp/ops/dispatch",
+    category: "Portals & Team",
+    badge: "Live",
+  },
+  {
+    key: "marketplace",
+    label: "Marketplace Manager",
+    description: "Public storefront, order fulfillments, merchant catalogs, bookings, and payments.",
+    route: "/erp/admin/marketplace",
+    category: "Operations",
+  },
+  {
+    key: "ai",
+    label: "Ofia AI Swarm",
+    description: "15 autonomous marketing, sales, and lead automation agent swarm.",
+    route: "/erp/admin/ai",
+    category: "Operations",
+    badge: "15 AI",
+  },
+  {
+    key: "overview",
+    label: "Admin Command Center",
+    description: "Master tenant administrative dashboard, system health, and operations pulse.",
+    route: "/erp/admin",
+    category: "Operations",
+  },
+];
+
+export function getDefaultPagesForRole(role: RoleKey | string, designation?: string): string[] {
+  const normalizedRole = (role || "").toLowerCase();
+  const desig = (designation || "").toLowerCase();
+
+  // A sales closer sees the employee portal and the CRM (Sales Closer Portal)
+  if (
+    normalizedRole === "sales_closer" ||
+    desig.includes("sales closer") ||
+    desig.includes("closer") ||
+    desig.includes("marketing 6")
+  ) {
+    return ["employee", "crm"];
+  }
+
+  switch (normalizedRole) {
+    case "admin":
+      return ASSIGNABLE_PAGES.map((p) => p.key);
+    case "md":
+      return ["employee", "md", "crm", "accounting", "hr", "shop", "mobility"];
+    case "manager":
+      return ["employee", "manager"];
+    case "hr":
+      return ["employee", "manager", "hr", "users"];
+    case "accountant":
+      return ["employee", "accounting"];
+    case "marketer":
+      return ["employee", "crm", "ai", "marketplace"];
+    case "cashier":
+      return ["employee", "shop"];
+    case "inventory_officer":
+      return ["employee", "shop"];
+    case "dispatcher":
+      return ["employee", "dispatch", "dispatch_ops", "mobility", "mobility_ops"];
+    case "employee":
+    default:
+      return ["employee"];
+  }
+}
 
 export type PermissionMatrix = Record<RoleKey, Record<string, boolean>>;
 
@@ -327,6 +510,25 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     inventory: false,
     pos: false,
     referrals: true,
+    quests: true,
+    accounting: false,
+    hr: false,
+    employee: true,
+    manager: false,
+    md: false,
+  },
+  sales_closer: {
+    mission: false,
+    ai: false,
+    crm: true,
+    users: false,
+    departments: false,
+    marketplace: false,
+    shop: false,
+    mobility: false,
+    inventory: false,
+    pos: false,
+    referrals: false,
     quests: true,
     accounting: false,
     hr: false,
@@ -551,6 +753,7 @@ export function isModuleEnabledForRole(
  */
 export function useTenantProvisioning() {
   const [matrix, setMatrix] = useState<PermissionMatrix>(DEFAULT_PERMISSION_MATRIX);
+  const [departmentConfigs, setDepartmentConfigs] = useState<DepartmentAccessItem[]>(DEFAULT_DEPARTMENT_ACCESS);
   const [tenant, setTenant] = useState<DatabaseTenant | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
@@ -599,6 +802,12 @@ export function useTenantProvisioning() {
         if (remoteMatrix && Object.keys(remoteMatrix).length > 0 && isCurrent) {
           setMatrix(remoteMatrix);
         }
+
+        // Fetch live department access configurations
+        const remoteDepts = await fetchTenantDepartmentAccess(tenantKey);
+        if (remoteDepts && remoteDepts.length > 0 && isCurrent) {
+          setDepartmentConfigs(remoteDepts);
+        }
       } catch (err) {
         console.warn("[Provisioning] Failed to fetch tenant provisioning:", err);
       } finally {
@@ -616,10 +825,19 @@ export function useTenantProvisioning() {
       }
     };
 
+    const handleDeptUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.departments) {
+        setDepartmentConfigs(customEvent.detail.departments);
+      }
+    };
+
     window.addEventListener("ofia_rbac_updated", handleUpdate);
+    window.addEventListener("ofia_dept_access_updated", handleDeptUpdate);
     return () => {
       isCurrent = false;
       window.removeEventListener("ofia_rbac_updated", handleUpdate);
+      window.removeEventListener("ofia_dept_access_updated", handleDeptUpdate);
     };
   }, []);
 
@@ -647,6 +865,7 @@ export function useTenantProvisioning() {
   return {
     matrix,
     tenant,
+    departmentConfigs,
     isLoading,
     isModuleProvisioned,
   };
@@ -713,6 +932,13 @@ export const ROLE_CAPABILITIES: Record<RoleKey, RoleCapability> = {
     portals: ["manager", "employee"],
     homeRoute: "/erp/marketer",
   },
+  sales_closer: {
+    key: "sales_closer",
+    label: "Sales Closer",
+    controlPanels: ["crm"],
+    portals: ["employee"],
+    homeRoute: "/erp/admin/crm",
+  },
   dispatcher: {
     key: "dispatcher",
     label: "Dispatch Operator",
@@ -760,7 +986,9 @@ export function isNavItemVisibleForRole(
   itemKey: string,
   role: RoleKey,
   isLineManager: boolean,
-  isModuleProvisioned: (key: string) => boolean
+  isModuleProvisioned: (key: string) => boolean,
+  userDepartment?: string,
+  departmentConfigs?: DepartmentAccessItem[]
 ): boolean {
   // If the module is not provisioned for the workspace, it's not present for any portal or role
   if (!isModuleProvisioned(itemKey)) {
@@ -772,9 +1000,24 @@ export function isNavItemVisibleForRole(
     return true;
   }
 
+  // Dynamic Department Access Check:
+  // If the user belongs to a department and department configurations are provided,
+  // the department's allowed pages grant direct access!
+  if (userDepartment && departmentConfigs && departmentConfigs.length > 0) {
+    const deptAccess = getUserDepartmentAccess({ department: userDepartment, role }, departmentConfigs);
+    if (deptAccess.matchedDepartment && deptAccess.isPageAllowed(itemKey)) {
+      return true;
+    }
+  }
+
   // General employee only sees Employee Portal
   if (role === "employee") {
     return itemKey === "employee";
+  }
+
+  // Sales Closer sees Employee Portal and CRM (Sales Closer Portal)
+  if (role === "sales_closer") {
+    return itemKey === "employee" || itemKey === "crm";
   }
 
   // Line Manager sees Manager Portal and Employee Portal
@@ -805,4 +1048,36 @@ export function isNavItemVisibleForRole(
 
   return false;
 }
+
+export function isNavItemVisibleForUser(
+  itemKey: string,
+  user: { department?: string; role?: string; isLineManager?: boolean; assignedPages?: string[] } | null | undefined,
+  isModuleProvisioned: (key: string) => boolean,
+  departmentConfigs?: DepartmentAccessItem[]
+): boolean {
+  if (!isModuleProvisioned(itemKey)) {
+    return false;
+  }
+
+  const role = (user?.role as RoleKey) || "employee";
+  if (role === "admin") return true;
+
+  // Direct Assigned Pages Check:
+  // If the user has assignedPages configured (e.g. A sales closer assigned Employee Portal + CRM),
+  // they see only their explicitly assigned pages!
+  if (user?.assignedPages && Array.isArray(user.assignedPages) && user.assignedPages.length > 0) {
+    return user.assignedPages.includes(itemKey);
+  }
+
+  const isLineMgr = Boolean(user?.isLineManager || role === "manager");
+  return isNavItemVisibleForRole(
+    itemKey,
+    role,
+    isLineMgr,
+    isModuleProvisioned,
+    user?.department,
+    departmentConfigs
+  );
+}
+
 

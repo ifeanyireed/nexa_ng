@@ -84,7 +84,7 @@ export function TenantMetaTitleSync() {
       } else if (pathname.includes("/admin/ai")) {
         pageTitle = "AI Swarm & Automation";
       } else if (pathname.includes("/admin/marketplace")) {
-        pageTitle = "Marketplace & Compass";
+        pageTitle = "Marketplace & Storefronts";
       } else if (pathname.startsWith("/erp/accountant")) {
         pageTitle = "Finance & Accounting";
       } else if (pathname.startsWith("/erp/hr")) {

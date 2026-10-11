@@ -32,11 +32,12 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { Pagination } from "@/components/nexa/Pagination";
-import { RoleKey } from "@/lib/access-control";
+import { RoleKey, ASSIGNABLE_PAGES, getDefaultPagesForRole, AssignablePage } from "@/lib/access-control";
 import { useAuth } from "@/components/nexa/AuthContext";
 import { useActiveTenant, DatabaseTenant } from "@/lib/tenant-context";
 import { resolveAvatarUrl } from "@/lib/avatar";
 import { INITIAL_USERS } from "@/lib/erp-store";
+import { cn } from "@/lib/utils";
 
 interface ERPStaffUser {
   id: string;
@@ -51,6 +52,7 @@ interface ERPStaffUser {
   company?: string;
   location?: string;
   status: "ACTIVE" | "ON_LEAVE" | "TERMINATED";
+  assignedPages?: string[];
 }
 
 const DEPARTMENTS = [
@@ -367,6 +369,7 @@ function UserManagementContent() {
   const [formName, setFormName] = useState("");
   const [formEmail, setFormEmail] = useState("");
   const [formRole, setFormRole] = useState<RoleKey>("employee");
+  const [formAssignedPages, setFormAssignedPages] = useState<string[]>(["employee"]);
   const [formDepartment, setFormDepartment] = useState(DEPARTMENTS[0]);
   const [formDesignation, setFormDesignation] = useState("");
   const [isCustomDesignation, setIsCustomDesignation] = useState(false);
@@ -427,9 +430,19 @@ function UserManagementContent() {
 
       const mapped: ERPStaffUser[] = rawList.map((u: any, idx: number) => {
         const rawRole = (u.role || u.Role || "employee").toLowerCase();
-        const validRole = (["admin", "md", "hr", "manager", "accountant", "marketer", "employee", "cashier", "inventory_officer", "dispatcher"].includes(rawRole)
+        const validRole = (["admin", "md", "hr", "manager", "accountant", "marketer", "sales_closer", "employee", "cashier", "inventory_officer", "dispatcher"].includes(rawRole)
           ? rawRole
-          : "employee") as RoleKey;
+          : (u.designation?.toLowerCase().includes("sales closer") ? "sales_closer" : "employee")) as RoleKey;
+
+        let userPages: string[] = [];
+        if (Array.isArray(u.assignedPages)) {
+          userPages = u.assignedPages;
+        } else if (typeof u.assignedPages === "string") {
+          try { userPages = JSON.parse(u.assignedPages); } catch {}
+        }
+        if (!userPages || userPages.length === 0) {
+          userPages = getDefaultPagesForRole(validRole, u.designation || u.Designation);
+        }
 
         return {
           id: u.id || u.ID || `USR-${idx + 1}`,
@@ -444,26 +457,31 @@ function UserManagementContent() {
           company: u.company || u.Company || activeTenant?.name || "Corporate Staff",
           location: u.location || u.Location || "Lagos, Nigeria",
           status: "ACTIVE",
+          assignedPages: userPages,
         };
       });
       setUsers(mapped);
     } catch (e) {
       console.error("Failed to fetch ERP users from Postgres database:", e);
       if (INITIAL_USERS && INITIAL_USERS.length > 0) {
-        const mappedFallback: ERPStaffUser[] = INITIAL_USERS.map((u: any, idx: number) => ({
-          id: u.id || `USR-${idx + 1}`,
-          name: u.name || "Staff Member",
-          email: u.email || "",
-          role: (u.role || "employee") as RoleKey,
-          department: u.department || "Executive Directorate",
-          designation: u.designation || "Corporate Officer",
-          managerName: u.managerName,
-          managerId: u.managerId,
-          avatar: resolveAvatarUrl(u.avatar, u.name || u.id, idx),
-          company: u.company || activeTenant?.name || "Corporate Staff",
-          location: u.location || "Lagos, Nigeria",
-          status: "ACTIVE",
-        }));
+        const mappedFallback: ERPStaffUser[] = INITIAL_USERS.map((u: any, idx: number) => {
+          const fRole = (u.role || (u.designation?.toLowerCase().includes("sales closer") ? "sales_closer" : "employee")) as RoleKey;
+          return {
+            id: u.id || `USR-${idx + 1}`,
+            name: u.name || "Staff Member",
+            email: u.email || "",
+            role: fRole,
+            department: u.department || "Executive Directorate",
+            designation: u.designation || "Corporate Officer",
+            managerName: u.managerName,
+            managerId: u.managerId,
+            avatar: resolveAvatarUrl(u.avatar, u.name || u.id, idx),
+            company: u.company || activeTenant?.name || "Corporate Staff",
+            location: u.location || "Lagos, Nigeria",
+            status: "ACTIVE",
+            assignedPages: getDefaultPagesForRole(fRole, u.designation),
+          };
+        });
         setUsers(mappedFallback);
       }
     } finally {
@@ -512,6 +530,9 @@ function UserManagementContent() {
   const handleRoleChange = async (id: string, updatedRole: RoleKey) => {
     const target = users.find((u) => u.id === id);
     if (!target) return;
+    const newPages = target.assignedPages && target.assignedPages.length > 0
+      ? target.assignedPages
+      : getDefaultPagesForRole(updatedRole, target.designation);
     try {
       setIsSaving(true);
       const res = await fetch("/api/erp/users", {
@@ -523,6 +544,7 @@ function UserManagementContent() {
         body: JSON.stringify({
           ...target,
           role: updatedRole,
+          assignedPages: newPages,
         }),
       });
       if (!res.ok) throw new Error("Failed to update user role");
@@ -542,6 +564,7 @@ function UserManagementContent() {
     setFormName("");
     setFormEmail("");
     setFormRole("employee");
+    setFormAssignedPages(["employee"]);
     const initialDesignation = tenantDepartments[0] || "";
     setFormDesignation(initialDesignation);
     setFormDepartment(mapToParentDepartment(initialDesignation));
@@ -558,6 +581,11 @@ function UserManagementContent() {
     setFormName(staffUser.name);
     setFormEmail(staffUser.email);
     setFormRole(staffUser.role);
+    setFormAssignedPages(
+      staffUser.assignedPages && staffUser.assignedPages.length > 0
+        ? staffUser.assignedPages
+        : getDefaultPagesForRole(staffUser.role, staffUser.designation)
+    );
     setFormDepartment(staffUser.department);
     const initialDesig = staffUser.designation || staffUser.department || "";
     setFormDesignation(initialDesig);
@@ -591,6 +619,7 @@ function UserManagementContent() {
         avatar: avatarNum,
         company: formCompany || activeTenant?.name || "Corporate Staff",
         location: formLocation,
+        assignedPages: formAssignedPages,
       };
 
       const res = await fetch("/api/erp/users", {
@@ -604,10 +633,25 @@ function UserManagementContent() {
 
       if (!res.ok) throw new Error("Failed to save staff member");
 
+      if (typeof window !== "undefined") {
+        const storedErpUser = localStorage.getItem("erp_current_user");
+        if (storedErpUser) {
+          try {
+            const u = JSON.parse(storedErpUser);
+            if (u.id === payload.id || u.email === payload.email) {
+              const updatedSession = { ...u, role: payload.role, assignedPages: payload.assignedPages };
+              localStorage.setItem("erp_current_user", JSON.stringify(updatedSession));
+              localStorage.setItem("nexa_user_role", payload.role);
+              window.dispatchEvent(new CustomEvent("erp_current_user_updated", { detail: updatedSession }));
+            }
+          } catch {}
+        }
+      }
+
       showToast(
         editingStaffUser
-          ? `Staff record for ${formName} updated in Postgres database!`
-          : `Staff member ${formName} onboarded and saved to database!`
+          ? `Staff record for ${formName} updated with ${formAssignedPages.length} assigned pages!`
+          : `Staff member ${formName} onboarded with ${formAssignedPages.length} assigned pages!`
       );
       setIsAddUserModalOpen(false);
       await fetchUsers();
@@ -721,6 +765,12 @@ function UserManagementContent() {
         return <NexaBadge variant="neutral" size="sm" className="rounded-full bg-teal-500/10 text-teal-600 border border-teal-500/20">Accountant</NexaBadge>;
       case "marketer":
         return <NexaBadge variant="neutral" size="sm" className="rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">Marketer</NexaBadge>;
+      case "sales_closer":
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50 inline-flex items-center">
+            Sales Closer
+          </span>
+        );
       case "employee":
         return (
           <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800/50 inline-flex items-center">
@@ -734,6 +784,18 @@ function UserManagementContent() {
           </span>
         );
     }
+  };
+
+  const getPageInfo = (pageKey: string) => {
+    return (
+      ASSIGNABLE_PAGES.find((p) => p.key === pageKey) || {
+        key: pageKey,
+        label: pageKey,
+        category: "Portals & Team",
+        description: "",
+        route: "",
+      }
+    );
   };
 
   return (
@@ -882,6 +944,7 @@ function UserManagementContent() {
                 <option value="manager">Manager</option>
                 <option value="accountant">Accountant</option>
                 <option value="marketer">Marketer</option>
+                <option value="sales_closer">Sales Closer (CRM + Employee)</option>
                 <option value="employee">Employee</option>
                 <option value="cashier">POS Cashier</option>
                 <option value="inventory_officer">Inventory Officer</option>
@@ -898,7 +961,7 @@ function UserManagementContent() {
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Department</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Designation</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Reporting Manager</th>
-                  <th className="pb-3 px-3 font-bold uppercase tracking-wider">Access Role</th>
+                  <th className="pb-3 px-3 font-bold uppercase tracking-wider">Access Role & Pages</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
@@ -960,6 +1023,7 @@ function UserManagementContent() {
                             <option value="hr">HR</option>
                             <option value="accountant">Accountant</option>
                             <option value="marketer">Marketer</option>
+                            <option value="sales_closer">Sales Closer</option>
                             <option value="manager">Manager</option>
                             <option value="employee">Employee</option>
                             <option value="cashier">POS Cashier</option>
@@ -967,7 +1031,31 @@ function UserManagementContent() {
                             <option value="dispatcher">Dispatcher</option>
                           </select>
                         ) : (
-                          getRoleBadge(u.role)
+                          <div className="space-y-1.5">
+                            <div>{getRoleBadge(u.role)}</div>
+                            {u.assignedPages && u.assignedPages.length > 0 && (
+                              <div className="flex flex-wrap gap-1 max-w-xs">
+                                {u.assignedPages.map((pgKey) => {
+                                  const pg = getPageInfo(pgKey);
+                                  const isSalesCrm = (u.role === "sales_closer" || u.designation?.toLowerCase().includes("sales closer")) && pgKey === "crm";
+                                  return (
+                                    <span
+                                      key={pgKey}
+                                      className={cn(
+                                        "text-[10px] px-1.5 py-0.5 rounded-md font-medium border inline-flex items-center",
+                                        isSalesCrm
+                                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400 font-bold"
+                                          : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)]"
+                                      )}
+                                      title={pg.description}
+                                    >
+                                      {isSalesCrm ? "CRM (Sales Closer)" : pg.label}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
                         )}
                       </td>
                       <td className="py-3.5 px-3 text-right">
@@ -1042,7 +1130,7 @@ function UserManagementContent() {
       {/* ADD / EDIT STAFF USER MODAL */}
       {isAddUserModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-sans">
-          <div className="w-full max-w-lg bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-3xl p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-xl max-h-[92vh] overflow-y-auto bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-3xl p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between border-b border-[var(--nexa-border)] pb-3">
               <div>
                 <h2 className="text-base font-black text-[var(--nexa-text-primary)]">
@@ -1121,10 +1209,15 @@ function UserManagementContent() {
                   </label>
                   <select
                     value={formRole}
-                    onChange={(e) => setFormRole(e.target.value as RoleKey)}
+                    onChange={(e) => {
+                      const newRole = e.target.value as RoleKey;
+                      setFormRole(newRole);
+                      setFormAssignedPages(getDefaultPagesForRole(newRole, formDesignation));
+                    }}
                     className="w-full px-3.5 py-2 text-xs font-bold rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] cursor-pointer"
                   >
                     <option value="employee">Employee</option>
+                    <option value="sales_closer">Sales Closer (Employee Portal + CRM)</option>
                     <option value="manager">Manager</option>
                     <option value="marketer">Growth Marketer</option>
                     <option value="hr">Human Resources</option>
@@ -1252,6 +1345,103 @@ function UserManagementContent() {
                     onChange={(e) => setFormLocation(e.target.value)}
                     className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
                   />
+                </div>
+              </div>
+
+              {/* ASSIGNED PAGES & PORTALS ACCESS */}
+              <div className="space-y-2.5 pt-3 border-t border-[var(--nexa-border)]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <label className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
+                      <Shield className="w-3.5 h-3.5 text-[#1A56DB]" />
+                      Assigned Pages & Portals Access
+                    </label>
+                    <p className="text-[11px] text-[var(--nexa-text-secondary)]">
+                      Control which pages this user can see and navigate to. Sales closers can access Employee Portal and CRM (Sales Closer Portal).
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormRole("sales_closer");
+                        setFormAssignedPages(["employee", "crm"]);
+                      }}
+                      className="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border border-emerald-500/20 cursor-pointer transition-colors"
+                      title="Set to Sales Closer with Employee Portal and CRM"
+                    >
+                      Sales Closer (CRM + Emp)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormAssignedPages(["employee"])}
+                      className="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)] cursor-pointer transition-colors"
+                    >
+                      Employee Only
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormAssignedPages(ASSIGNABLE_PAGES.map((p) => p.key))}
+                      className="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)] cursor-pointer transition-colors"
+                    >
+                      Select All
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto p-1.5 border border-[var(--nexa-border)] rounded-2xl bg-[var(--nexa-bg-base)]/40">
+                  {ASSIGNABLE_PAGES.map((page) => {
+                    const isChecked = formAssignedPages.includes(page.key);
+                    const isSalesCloserCRM = page.key === "crm";
+                    return (
+                      <label
+                        key={page.key}
+                        className={cn(
+                          "flex items-start gap-2.5 p-2.5 rounded-xl border transition-all cursor-pointer select-none text-left",
+                          isChecked
+                            ? isSalesCloserCRM
+                              ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-950 dark:text-emerald-200"
+                              : "bg-[#1A56DB]/10 border-[#1A56DB]/40 text-[var(--nexa-text-primary)]"
+                            : "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)] hover:border-[var(--nexa-border)]/80 text-[var(--nexa-text-secondary)]"
+                        )}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormAssignedPages((prev) => [...prev, page.key]);
+                            } else {
+                              setFormAssignedPages((prev) => prev.filter((k) => k !== page.key));
+                            }
+                          }}
+                          className="mt-0.5 rounded border-[var(--nexa-border)] text-[#1A56DB] focus:ring-[#1A56DB] cursor-pointer"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold text-xs">
+                              {page.label}
+                            </span>
+                            {page.badge && (
+                              <span
+                                className={cn(
+                                  "text-[9px] px-1.5 py-0.2 rounded font-semibold border",
+                                  isSalesCloserCRM
+                                    ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 border-emerald-500/30"
+                                    : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-muted)] border-[var(--nexa-border)]"
+                                )}
+                              >
+                                {page.badge}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-[var(--nexa-text-muted)] leading-tight mt-0.5 line-clamp-2">
+                            {page.description}
+                          </p>
+                        </div>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
 

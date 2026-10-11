@@ -7,6 +7,7 @@ import { resolveAvatarUrl, getAvatarFallbackUrl } from "@/lib/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import LoadingScreen from "./LoadingScreen";
 import { IconBuildingBank } from "@tabler/icons-react";
+import { fetchTenantDepartmentAccess, getUserDepartmentAccess, DepartmentAccessItem } from "@/lib/department-access";
 
 // Custom SVG Icons
 const DashboardIcon = () => (
@@ -157,13 +158,22 @@ export default function ERPLayout({ children }: { children: React.ReactNode }) {
     department: "Marketing",
     avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
   });
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [departmentConfigs, setDepartmentConfigs] = useState<DepartmentAccessItem[]>([]);
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("erp_sidebar_collapsed");
+      if (stored !== null) {
+        return stored === "true";
+      }
+    }
+    return false;
+  });
 
   // Sync user and collapsed state from localStorage on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedCollapse = localStorage.getItem("erp_sidebar_collapsed");
-      if (storedCollapse) setIsCollapsed(storedCollapse === "true");
+      if (storedCollapse !== null) setIsCollapsed(storedCollapse === "true");
 
       const storedUser = localStorage.getItem("erp_current_user");
       if (storedUser) {
@@ -178,13 +188,54 @@ export default function ERPLayout({ children }: { children: React.ReactNode }) {
         setCurrentUser(found);
         localStorage.setItem("erp_current_user", JSON.stringify(found));
       }
+
+      const tenantSlug = localStorage.getItem("nexa_tenant_slug") || "neweratransports";
+      fetchTenantDepartmentAccess(tenantSlug).then((depts) => {
+        if (depts && depts.length > 0) setDepartmentConfigs(depts);
+      });
+
+      const handleDeptUpdate = (e: Event) => {
+        const customEvent = e as CustomEvent;
+        if (customEvent.detail?.departments) {
+          setDepartmentConfigs(customEvent.detail.departments);
+        }
+      };
+
+      const handleSidebarSync = (e: Event) => {
+        const ce = e as CustomEvent;
+        if (ce.detail && typeof ce.detail.isCollapsed === "boolean") {
+          setIsCollapsed(ce.detail.isCollapsed);
+        }
+      };
+
+      const handleStorageSync = (e: StorageEvent) => {
+        if (e.key === "erp_sidebar_collapsed" && e.newValue !== null) {
+          setIsCollapsed(e.newValue === "true");
+        }
+      };
+
+      window.addEventListener("ofia_dept_access_updated", handleDeptUpdate);
+      window.addEventListener("erp_sidebar_collapsed_change", handleSidebarSync);
+      window.addEventListener("storage", handleStorageSync);
+      return () => {
+        window.removeEventListener("ofia_dept_access_updated", handleDeptUpdate);
+        window.removeEventListener("erp_sidebar_collapsed_change", handleSidebarSync);
+        window.removeEventListener("storage", handleStorageSync);
+      };
     }
   }, [users]);
 
   const toggleCollapse = () => {
     const next = !isCollapsed;
     setIsCollapsed(next);
-    localStorage.setItem("erp_sidebar_collapsed", String(next));
+    if (typeof window !== "undefined") {
+      localStorage.setItem("erp_sidebar_collapsed", String(next));
+      window.dispatchEvent(
+        new CustomEvent("erp_sidebar_collapsed_change", {
+          detail: { isCollapsed: next },
+        })
+      );
+    }
   };
 
   const dbUser = currentUser ? users.find(u => u.id === currentUser.id) : null;
@@ -245,41 +296,48 @@ export default function ERPLayout({ children }: { children: React.ReactNode }) {
     return "Switch View";
   };
 
-  // Determine sidebar menu items based on role
+  // Determine sidebar menu items based on role and dynamic department access
   const getSidebarItems = (): SidebarItem[] => {
     if (!currentUser) return [];
 
+    let items: SidebarItem[] = [];
+
     switch (currentUser.role) {
       case "employee":
-        return [
+        items = [
           { name: "Dashboard", route: "/employee", icon: <DashboardIcon /> },
           { name: "My Reviews", route: "/employee/reviews", icon: <FileTextIcon /> },
           { name: "My Profile", route: "/employee/profile", icon: <UserIcon /> },
         ];
+        break;
       case "manager":
-        return [
+        items = [
           { name: "Team Dashboard", route: "/manager", icon: <DashboardIcon /> },
           { name: "Employee Profile", route: "/employee/profile", icon: <UserIcon /> },
         ];
+        break;
       case "hr":
-        return [
+        items = [
           { name: "HR Dashboard", route: "/hr", icon: <DashboardIcon /> },
           { name: "Reports", route: "/hr/reports", icon: <BarChartIcon /> },
           { name: "Cycles", route: "/hr/cycle", icon: <CycleIcon /> },
           { name: "Objectives", route: "/hr/objectives", icon: <FileTextIcon /> },
           { name: "Users & Roles", route: "/hr/users", icon: <UsersIcon /> },
         ];
+        break;
       case "md":
-        return [
+        items = [
           { name: "MD Dashboard", route: "/md", icon: <BarChartIcon /> },
           { name: "Department Details", route: "/md/department/detail?deptId=Fleet", icon: <BuildingIcon /> },
         ];
+        break;
       case "admin":
-        return [
+        items = [
           { name: "Admin Dashboard", route: "/admin", icon: <DashboardIcon /> },
         ];
+        break;
       case "accountant":
-        return [
+        items = [
           { name: "Finance Dashboard", route: "/accountant", icon: <FinanceIcon /> },
           { name: "Transactions", route: "/accountant/journal-entries", icon: <TransactionsIcon /> },
           { name: "Clients", route: "/accountant/clients", icon: <UsersIcon /> },
@@ -288,9 +346,53 @@ export default function ERPLayout({ children }: { children: React.ReactNode }) {
           { name: "Reports", route: "/accountant/finance-reports", icon: <BarChartIcon /> },
           { name: "Payment", route: "/accountant/payment-processing", icon: <PaymentIcon /> },
         ];
+        break;
       default:
-        return [];
+        items = [];
     }
+
+    // Dynamic Department Access Inheritance:
+    // If the user belongs to a department with configured permissions, dynamically append allowed modules
+    if (currentUser.department && departmentConfigs.length > 0) {
+      const dAccess = getUserDepartmentAccess(currentUser, departmentConfigs);
+      const hasRoute = (prefix: string) => items.some(i => i.route.startsWith(prefix));
+
+      if (dAccess.isPageAllowed("accounting") && !hasRoute("/accountant") && !hasRoute("/erp/accountant")) {
+        items.push({ name: "Finance Hub", route: "/accountant", icon: <FinanceIcon /> });
+      }
+      if (dAccess.isPageAllowed("mobility") && !hasRoute("/erp/admin/mobility")) {
+        items.push({ name: "Mobility Ops", route: "/erp/admin/mobility", icon: <BoxIcon /> });
+      }
+      if (dAccess.isPageAllowed("mobility_ops") && !hasRoute("/erp/ops/mobility")) {
+        items.push({ name: "Dispatch Telemetry", route: "/erp/ops/mobility", icon: <TransactionsIcon /> });
+      }
+      if (dAccess.isPageAllowed("shop") && !hasRoute("/erp/admin/shop")) {
+        items.push({ name: "Store & POS", route: "/erp/admin/shop", icon: <BoxIcon /> });
+      }
+      if (dAccess.isPageAllowed("crm") && !hasRoute("/erp/admin/crm") && !hasRoute("/erp/marketer")) {
+        items.push({ name: "CRM & Growth", route: "/erp/admin/crm", icon: <BarChartIcon /> });
+      }
+      if (dAccess.isPageAllowed("ai") && !hasRoute("/erp/admin/ai")) {
+        items.push({ name: "Ofia AI Swarm", route: "/erp/admin/ai", icon: <DashboardIcon /> });
+      }
+      if (dAccess.isPageAllowed("hr") && !hasRoute("/hr") && !hasRoute("/erp/hr")) {
+        items.push({ name: "HR Management", route: "/hr", icon: <UsersIcon /> });
+      }
+      if (dAccess.isPageAllowed("users") && !hasRoute("/erp/admin/users")) {
+        items.push({ name: "Staff Directory", route: "/erp/admin/users", icon: <UsersIcon /> });
+      }
+      if (dAccess.isPageAllowed("marketplace") && !hasRoute("/erp/admin/marketplace")) {
+        items.push({ name: "Marketplace", route: "/erp/admin/marketplace", icon: <BuildingIcon /> });
+      }
+      if (dAccess.isPageAllowed("dispatch") && !hasRoute("/erp/admin/dispatch")) {
+        items.push({ name: "Dispatch Manager", route: "/erp/admin/dispatch", icon: <TransactionsIcon /> });
+      }
+      if (dAccess.isPageAllowed("dispatch_ops") && !hasRoute("/erp/ops/dispatch")) {
+        items.push({ name: "Operator Console", route: "/erp/ops/dispatch", icon: <TransactionsIcon /> });
+      }
+    }
+
+    return items;
   };
 
   const sidebarItems = getSidebarItems();
@@ -339,7 +441,10 @@ export default function ERPLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* SIDEBAR (Desktop Only) */}
-      <aside className={`hidden md:flex ${isCollapsed ? "md:w-20 px-3" : "md:w-64 p-6"} bg-[#EAECEF]/60 border-r border-[#D2D5DA] py-6 flex-col justify-between shrink-0 transition-all duration-300`}>
+      <aside
+        suppressHydrationWarning
+        className={`hidden md:flex ${isCollapsed ? "md:w-20 px-3" : "md:w-64 p-6"} bg-[#EAECEF]/60 border-r border-[#D2D5DA] py-6 flex-col justify-between shrink-0 transition-all duration-300`}
+      >
         
         <div>
           {/* Logo & Toggle Button */}
@@ -510,6 +615,11 @@ export default function ERPLayout({ children }: { children: React.ReactNode }) {
               <span className="text-[12px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md uppercase">
                 {currentUser.role}
               </span>
+              {currentUser.department && (
+                <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/50 px-2 py-0.5 rounded-md">
+                  {currentUser.department}
+                </span>
+              )}
             </div>
           </div>
         </header>

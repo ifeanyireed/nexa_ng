@@ -161,7 +161,7 @@ export default function FloatingChat() {
 
     setMessages((prev) => [...prev, msgObj]);
 
-    // Persist to Admin PostgreSQL API
+    // Persist to Admin PostgreSQL API and receive Gemini 3.8 Flash autoreply if staff is offline
     if (typeof window !== "undefined") {
       const sid = localStorage.getItem("ofia_support_chat_session") || `guest-${Date.now()}`;
       fetch(`${ADMIN_API}/api/support/chat/history`, {
@@ -172,29 +172,25 @@ export default function FloatingChat() {
           sender: "Guest Visitor",
           text: userText,
         }),
-      }).catch(() => {});
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && data.ai_reply) {
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === data.ai_reply.id)) return prev;
+              return [...prev, data.ai_reply];
+            });
+          }
+        })
+        .catch(() => {});
     }
 
     // Send over WebSocket if connected
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
       try {
         ws.current.send(JSON.stringify(msgObj));
-        return;
       } catch {}
     }
-
-    // Automated reassurance if staff not immediately connected via WS
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `m-bot-${Date.now()}`,
-          sender: "Support",
-          text: "Thank you for reaching out! Our Support Desk has logged your inquiry and an operator is reviewing it.",
-          timestamp: new Date().toISOString(),
-        },
-      ]);
-    }, 1200);
   };
 
   return (
@@ -205,13 +201,12 @@ export default function FloatingChat() {
           {/* Header */}
           <div className="bg-gradient-to-r from-[#1A56DB] to-[#1545B0] text-white p-4 flex justify-between items-center shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-xs flex items-center justify-center border border-white/20">
-                <img
-                  src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"
-                  alt="Ofia Support Logo"
-                  className="w-5 h-5 object-contain"
-                />
-              </div>
+              <img
+                src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"
+                alt="Ofia Support Logo"
+                className="w-7 h-7 object-contain brightness-0 invert shrink-0"
+                style={{ filter: "brightness(0) invert(1)" }}
+              />
               <div>
                 <h3 className="font-extrabold text-sm tracking-tight flex items-center gap-1.5">
                   Ofia Support Desk

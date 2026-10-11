@@ -56,13 +56,11 @@ export const Footer = () => {
             className="lg:col-span-2"
           >
             <Link href="/" className="flex items-center gap-2.5 mb-6 group inline-flex">
-              <div className="w-8 h-8 rounded-xl overflow-hidden shadow-xs flex items-center justify-center">
-                <img
-                  src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"
-                  alt="Ofia Ecosystem Logo"
-                  className="w-full h-full object-contain"
-                />
-              </div>
+              <img
+                src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"
+                alt="Ofia Ecosystem Logo"
+                className="w-8 h-8 object-contain transition-transform group-hover:scale-105"
+              />
               <span className="text-2xl font-extrabold text-display tracking-tight text-[var(--nexa-text-primary)]">
                 Ofia
               </span>

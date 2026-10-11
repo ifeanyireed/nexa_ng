@@ -51,13 +51,11 @@ export const LandingNavbar = () => {
           {/* LOGO */}
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2.5 group">
-              <div className="w-8 h-8 rounded-xl overflow-hidden shadow-sm flex items-center justify-center transition-transform group-hover:scale-105">
-                <img
-                  src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"
-                  alt="Ofia Ecosystem Logo"
-                  className="w-full h-full object-contain"
-                />
-              </div>
+              <img
+                src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"
+                alt="Ofia Ecosystem Logo"
+                className="w-8 h-8 object-contain transition-transform group-hover:scale-105"
+              />
               <span className="text-xl font-extrabold tracking-tight text-display text-[var(--nexa-text-primary)]">
                 Ofia
               </span>

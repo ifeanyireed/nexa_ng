@@ -1,22 +1,20 @@
-Absolutely. I’d give the agents a prompt that treats this as an **architectural transformation of the existing Flota apps**, not a redesign or a rebuild.
+# OFIA MOBILITY WHITE-LABEL ARCHITECTURE & MULTI-TENANT SPECIFICATION
+
+Transforming Flota Mobile Applications into a Multi-Tenant, White-Label Mobility Platform with Tiered Neon Database Isolation.
 
 You have:
 
-* **Ofia Admin** → platform/super-admin control plane
+* **Ofia Admin** → platform/super-admin control plane & central database registry
 * **Ofia ERP** → tenant environment; tenant backend, dashboard, fleet management, and tenant-level mobile-app configuration
-* **Flota Mobile Mobility** → customer-facing Flutter app
-* **Flota Mobile Driver** → driver-facing Flutter app
+* **Flota Mobile Mobility** (`@mobile_mobility`) → customer/passenger-facing Flutter app
+* **Flota Mobile Driver** (`@mobile_driver`) → driver-facing Flutter app
 * Existing Flota apps are already designed and largely complete
-* Existing splash, logo, banners, icons and screens should be preserved
+* Existing splash, logo, banners, icons and screens must be preserved
 * Goal: **one Flutter codebase per app, capable of serving many tenants through tenant-specific configuration, without creating separate Flutter projects/folders for each client**
-
-Here is the prompt I would feed the agents:
 
 ---
 
-# MASTER ENGINEERING PROMPT — TRANSFORM FLOTA INTO A MULTI-TENANT WHITE-LABEL MOBILE PLATFORM
-
-## 1. CONTEXT
+# 1. CONTEXT
 
 We currently have two Flutter mobile applications:
 
@@ -27,35 +25,42 @@ These applications are currently designed as essentially single-client applicati
 
 We now need to transform them into **multi-tenant, configurable white-label applications** without creating separate Flutter projects, codebases, folders or duplicated application logic for every client.
 
-The target architecture is:
+The target end-to-end architecture is:
 
 ```text
                          OFIA ADMIN
-                    (Super Admin / Platform)
-                           │
-                           │
-              ┌────────────┴────────────┐
-              │                         │
-          TENANT A                  TENANT B
-              │                         │
-         OFIA ERP A                OFIA ERP B
-              │                         │
-       Tenant Configuration     Tenant Configuration
-              │                         │
-       ┌──────┴──────┐          ┌──────┴──────┐
-       │             │          │             │
-  Mobility App   Driver App  Mobility App  Driver App
-       │             │          │             │
-       └─────────────┴──────────┴─────────────┘
-                       │
-                  Shared backend
-                       │
-             Tenant-aware APIs/data
+             (Super Admin / Platform Control Plane)
+             (Central Tenant DB Registry & Provisioning)
+                            │
+               ┌────────────┴────────────┐
+               │                         │
+           TENANT A                  TENANT B
+      (Standard Fleet)          (Enterprise White-Label)
+               │                         │
+          OFIA ERP A                OFIA ERP B
+      (Fleet Operations)        (Fleet Operations)
+               │                         │
+        Tenant Config             Tenant Config
+               │                         │
+        ┌──────┴──────┐           ┌──────┴──────┐
+        │             │           │             │
+   Mobility App   Driver App   Mobility App  Driver App
+        │             │           │             │
+        └─────────────┴───────────┴─────────────┘
+                        │
+                API Gateway Router
+            (Tenant Resolution & Auth)
+                        │
+         ┌──────────────┴──────────────┐
+         ▼                             ▼
+[Shared Neon Project/DB]      [Dedicated Neon Project]
+ (RLS / Logical Catalog)      (Full Physical Isolation)
+ (Cost-effective, Zero Cold)  (Dedicated Compute, PITR)
 ```
 
 The critical principle is:
 
-> **ONE CODEBASE + MANY TENANTS + TENANT-SPECIFIC CONFIGURATION**
+> **ONE CODEBASE + MANY TENANTS + TENANT-SPECIFIC CONFIGURATION + TIERED DATABASE ISOLATION**
 
 Do not create a separate Flutter project for each client.
 
@@ -1074,7 +1079,7 @@ Date:
 
 ---
 
-# 28. SECURITY / DATA ISOLATION
+# 28. SECURITY / APPLICATION DATA ISOLATION
 
 Every API request originating from a mobile application must ultimately resolve to the correct tenant.
 
@@ -1105,6 +1110,114 @@ A user from Tenant A must never be able to retrieve Tenant B's:
 * branding;
 * configuration;
 * operational data.
+
+---
+
+# 28B. NEON DATABASE MULTI-TENANCY & TIERED ISOLATION ARCHITECTURE
+
+Mobility systems handle high-frequency, safety-critical, and financial data: real-time GPS telemetry (driver location updates every 3–5 seconds), passenger travel histories, driver banking/payout accounts, and fare transactions. 
+
+To provide enterprise-grade security and compliance without incurring excessive cost or operational overhead, the platform utilizes a **Tiered Hybrid Database Isolation Architecture** built on Neon PostgreSQL.
+
+### 1. The Isolation Spectrum on Neon
+
+| Isolation Model | Blast Radius | Compute Overhead | Cost Profile | Best Use Case |
+| :--- | :--- | :--- | :--- | :--- |
+| **Separate Neon Project** | **Absolute (Physical + Compute)** | High (N independent computes) | High | Tier 2 Enterprise / VIP White-Label Fleets |
+| **Separate Neon Branch** | **Strong (Copy-on-write)** | Medium (Isolated endpoints) | Medium | Tenant Staging / Sandbox / A/B Testing |
+| **Separate Logical DB (`CREATE DATABASE`)** | **High (Catalog isolated)** | Low (Shared project compute) | Low | Standard Managed Fleets |
+| **Shared DB + Row-Level Security (RLS)** | **Medium (Logical namespace)** | Lowest (Shared pool) | Lowest | Starter / Micro Fleets & Self-Serve |
+
+### 2. The Tiered Hybrid Architecture
+
+Rather than forcing every tenant into a separate Neon Project on day one (which causes compute cold-start latency, migration drift, and quota exhaustion), the platform divides tenants into two distinct operational tiers:
+
+#### Tier 1 — Standard Fleets (Shared Project, Logical Database or RLS)
+* Run on a shared Neon database with `tenant_id` scoping and PostgreSQL Row-Level Security (RLS) or logical databases (`CREATE DATABASE tenant_[slug]`).
+* Benefits: Instant onboarding, zero cold-start delay for small fleets, consolidated connection pooling, and zero idle compute billing.
+
+#### Tier 2 — Enterprise White-Label Fleets (Dedicated Neon Project)
+* Reserved for paying white-label enterprise clients who demand dedicated compute guarantees, contractual data residency, private SLAs, or isolated backups.
+* Automatically provisioned via the Neon API / Neon MCP tool (`create_project`) directly from `@ofia_admin`.
+* Benefits:
+  * **Zero Noisy Neighbors:** Peak morning rush-hour pings from a 2,000-vehicle fleet cannot exhaust CPU, RAM, or connection pools of other tenants.
+  * **Independent Point-In-Time Recovery (PITR):** Neon allows instant branching and rollback from any second. Tenant A can be restored without touching Tenants B, C, or D.
+  * **Clean Enterprise Handover:** If a client graduates to self-hosted infrastructure, their entire Neon project can be transferred or exported without dissecting shared tables.
+
+### 3. Control Plane Database Registry (`tenant_database_configs`)
+
+The central control plane database in `@ofia_admin` acts as the single source of truth for database routing:
+
+```sql
+CREATE TABLE tenant_database_configs (
+  id VARCHAR(64) PRIMARY KEY,
+  tenant_id VARCHAR(64) UNIQUE NOT NULL,
+  tenant_slug VARCHAR(100) UNIQUE NOT NULL,
+  isolation_tier VARCHAR(30) NOT NULL DEFAULT 'SHARED', -- 'SHARED' | 'DEDICATED_PROJECT' | 'DEDICATED_BRANCH'
+  neon_project_id VARCHAR(100),
+  neon_endpoint_id VARCHAR(100),
+  neon_branch_id VARCHAR(100),
+  connection_string_encrypted TEXT NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  scale_to_zero_delay_seconds INT DEFAULT 300,
+  created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_tenant_db_lookup ON tenant_database_configs (tenant_id, is_active);
+```
+
+### 4. Dynamic Connection Routing & Serverless Pooling in `@ofia_erp`
+
+The backend database layer in [`ofia_erp/src/lib/db.ts`](file:///Volumes/ReedBreedCC/ofia_ng/ofia_erp/src/lib/db.ts) dynamically resolves database connections per request:
+
+```text
+API Request (with X-Tenant-Id: TEN_001)
+     ↓
+Tenant Database Cache (Redis / In-Memory LRU, 60s TTL)
+     ↓
+Resolve Connection String
+     ↓
+Neon Serverless Pooler (-pooler.neon.tech:5432)
+     ↓
+Tenant Postgres Engine (Dedicated or Shared)
+```
+
+Implementation guidelines:
+* **Connection Pooling:** Always connect through Neon's serverless connection pooler (`-pooler.neon.tech`) using `@neondatabase/serverless` to prevent connection exhaustion in serverless edge environments.
+* **Pool Cache:** Maintain an LRU cache of active `Pool` instances keyed by `tenant_id` to prevent socket thrashing while tearing down idle tenant pools after 5 minutes of inactivity.
+
+### 5. Mobile Application Decoupling Principle
+
+Neither [`mobile_mobility`](file:///Volumes/ReedBreedCC/ofia_ng/mobile_mobility/lib/main.dart) nor [`mobile_driver`](file:///Volumes/ReedBreedCC/ofia_ng/mobile_driver/lib/main.dart) should **ever** connect directly to Neon PostgreSQL or hold database credentials.
+
+* The Flutter apps interact **strictly** with the backend API gateway via HTTPS/WebSockets.
+* Requests carry the immutable `tenantId` (via `X-Tenant-Id` header, JWT payload, or subdomain mapping).
+* The backend authenticates the user, resolves the tenant's database connection dynamically, and executes the queries.
+* This abstraction ensures that promoting a tenant from Tier 1 (Shared) to Tier 2 (Dedicated Neon Project) requires **zero mobile app updates or rebuilds**.
+
+### 6. Mitigating Real-Time Mobility Latency & Scale-to-Zero
+
+Neon projects auto-suspend compute to optimize cost when idle. In mobility applications, a 1–3 second cold-start delay when a passenger opens the app to hail a ride is unacceptable.
+
+* **For Dedicated Enterprise Projects:** Configure the Neon compute endpoint `suspend_timeout_seconds` to a higher threshold (e.g. 1,800 seconds / 30 minutes) during daytime operational fleet hours (6:00 AM – 11:00 PM).
+* **Warm-up Ping on App Launch:** When [`mobile_mobility`](file:///Volumes/ReedBreedCC/ofia_ng/mobile_mobility/lib/main.dart) initializes its splash screen or fetches runtime configuration, the gateway fires an asynchronous warm-up query (`SELECT 1`) to ensure the tenant's compute is fully warm before the user reaches the booking map.
+* **Driver Location Buffer:** Stream high-frequency driver GPS pings into a low-latency Redis/WebSocket layer, batching persistence to the tenant database to minimize transactional overhead on isolated compute.
+
+### 7. Cross-Tenant Analytics & Super-Admin Reporting
+
+When enterprise tenants reside in separate Neon projects, `@ofia_admin` cannot execute a single cross-database SQL query (`SELECT SUM(fare) FROM trips`).
+
+Super-admin platform metrics (e.g. total rides across all fleets, aggregate GMV, system health) are fulfilled via:
+1. **Asynchronous Fan-out Queries:** For on-demand administrative dashboards, `@ofia_admin` issues parallel queries across active tenant connections with aggregate reduction.
+2. **Event-Driven Telemetry:** Real-time billing and GMV events are published to a central analytics event bus (or transactional ledger in the Control Plane database) upon trip completion.
+
+### 8. Schema Migration & Drift Prevention Strategy
+
+To prevent schema divergence across dozens of isolated Neon projects:
+* **Template Branching:** Maintain a golden `main-schema` branch in Neon.
+* **Orchestrated Migration Runner:** CI/CD deployment pipelines query `tenant_database_configs` and sequentially apply schema migrations (via Prisma/Drizzle/migrate) across all active tenant connection strings, logging execution status and aborting on failures.
+* **Drift Detection:** Automated daily cron checks verify table checksums across all provisioned tenant projects to guarantee schema uniformity.
 
 ---
 
@@ -1385,6 +1498,9 @@ Super Admin provisions:
 ```text
 Mobile Mobility
 Mobile Driver
+Database Isolation Tier:
+  - SHARED (Tier 1: Logical DB / RLS on shared Neon compute)
+  - DEDICATED_NEON_PROJECT (Tier 2: Enterprise dedicated Neon Project via Neon API)
 ```
 
 ### Step 3
@@ -1624,9 +1740,10 @@ Mobile Mobility / Mobile Driver
 
 Specify:
 
-* tables/collections;
+* tables/collections (including `tenant_database_configs`, tenant branding, and service entitlement flags);
 * fields;
 * relationships;
+* database routing & serverless connection pooling layer (`getTenantDbPool`);
 * API endpoints;
 * authorization rules.
 

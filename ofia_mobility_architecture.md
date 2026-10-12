@@ -1,14 +1,14 @@
 # OFIA MOBILITY WHITE-LABEL ARCHITECTURE & MULTI-TENANT SPECIFICATION
 
-Transforming Flota Mobile Applications into a Multi-Tenant, White-Label Mobility Platform with Tiered Neon Database Isolation.
+Transforming Ofia Mobile Applications into a Multi-Tenant, White-Label Mobility Platform with Tiered Neon Database Isolation.
 
 You have:
 
 * **Ofia Admin** → platform/super-admin control plane & central database registry
 * **Ofia ERP** → tenant environment; tenant backend, dashboard, fleet management, and tenant-level mobile-app configuration
-* **Flota Mobile Mobility** (`@mobile_mobility`) → customer/passenger-facing Flutter app
-* **Flota Mobile Driver** (`@mobile_driver`) → driver-facing Flutter app
-* Existing Flota apps are already designed and largely complete
+* **Ofia Mobile Mobility** (`@mobile_mobility`) → customer/passenger-facing Flutter app
+* **Ofia Mobile Driver** (`@mobile_driver`) → driver-facing Flutter app
+* Existing Ofia apps are already designed and largely complete
 * Existing splash, logo, banners, icons and screens must be preserved
 * Goal: **one Flutter codebase per app, capable of serving many tenants through tenant-specific configuration, without creating separate Flutter projects/folders for each client**
 
@@ -18,8 +18,8 @@ You have:
 
 We currently have two Flutter mobile applications:
 
-1. **Flota Mobile Mobility** — customer/passenger application
-2. **Flota Mobile Driver** — driver application
+1. **Ofia Mobile Mobility** — customer/passenger application
+2. **Ofia Mobile Driver** — driver application
 
 These applications are currently designed as essentially single-client applications. The screens, UI, assets, navigation and functionality have already been designed and reviewed.
 
@@ -74,7 +74,7 @@ Do not hard-code a client's branding into the application.
 
 # 2. PRIMARY OBJECTIVE
 
-Transform both existing Flota Flutter applications into configurable multi-tenant applications where:
+Transform both existing Ofia Flutter applications into configurable multi-tenant applications where:
 
 * each installation/build can be associated with a tenant;
 * the backend knows which tenant the application belongs to;
@@ -86,7 +86,7 @@ Transform both existing Flota Flutter applications into configurable multi-tenan
 * available mobility services can be different;
 * features can be enabled/disabled per tenant;
 * configuration can be changed without rebuilding the APK wherever technically possible;
-* the existing Flota UI/design is preserved;
+* the existing Ofia UI/design is preserved;
 * the same Flutter codebase serves all tenants;
 * Ofia Admin can provision and control tenants;
 * Ofia ERP allows the tenant administrator to configure the parts of the mobile app that they are permitted to configure.
@@ -350,7 +350,7 @@ rather than allowing tenants to modify every widget individually.
 
 # 9. SPLASH SCREEN CONFIGURATION
 
-The existing splash screen must remain visually consistent with the approved Flota design.
+The existing splash screen must remain visually consistent with the approved Ofia design.
 
 However, its tenant-specific content should be configurable.
 
@@ -1298,7 +1298,7 @@ The app must have a safe default configuration.
 If tenant branding fails to load:
 
 ```text
-Use default Ofia/Flota branding.
+Use default Ofia branding.
 ```
 
 If a banner fails:
@@ -1425,7 +1425,7 @@ Things that should NOT require rebuilding the APK:
 * promotional content;
 * tenant information.
 
-The agent must identify which existing Flota assets currently require native build-time treatment and determine whether they can be moved to runtime configuration.
+The agent must identify which existing Ofia assets currently require native build-time treatment and determine whether they can be moved to runtime configuration.
 
 ---
 
@@ -1438,7 +1438,7 @@ Investigate the existing implementation.
 If we want a tenant-specific native launch experience without separate builds, determine whether:
 
 1. a generic native launch screen can be used; followed immediately by
-2. a runtime-configurable Flota splash screen.
+2. a runtime-configurable Ofia splash screen.
 
 This is likely preferable for a universal multi-tenant build.
 
@@ -1663,7 +1663,7 @@ Test banners the same way.
 
 ---
 
-# 42. DO NOT BREAK THE EXISTING FLOTA PRODUCT
+# 42. DO NOT BREAK THE EXISTING OFIA PRODUCT
 
 Before implementation:
 
@@ -1770,7 +1770,7 @@ List:
 
 ### I. Migration plan
 
-Explain how to migrate the current single-tenant Flota application without breaking existing functionality.
+Explain how to migrate the current single-tenant Ofia application without breaking existing functionality.
 
 ---
 
@@ -1820,6 +1820,6 @@ Create another APK
 Repeat forever
 ```
 
-The entire purpose of this work is to ensure that **one maintained Flota codebase can power dozens or hundreds of tenant-specific mobility applications while Ofia Admin and Ofia ERP control the configuration and the backend enforces tenant isolation.**
+The entire purpose of this work is to ensure that **one maintained Ofia codebase can power dozens or hundreds of tenant-specific mobility applications while Ofia Admin and Ofia ERP control the configuration and the backend enforces tenant isolation.**
 
-**Do not start implementation until the current Flota Mobile Mobility and Flota Mobile Driver repositories have been audited and the proposed architecture, database changes, API changes, configuration model, and screen additions have been explicitly mapped.**
+**Do not start implementation until the current Ofia Mobile Mobility and Ofia Mobile Driver repositories have been audited and the proposed architecture, database changes, API changes, configuration model, and screen additions have been explicitly mapped.**

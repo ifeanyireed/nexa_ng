@@ -1733,15 +1733,22 @@ export async function getCrmSubscribers(tenantSlug: string, listId: string): Pro
 
 export async function addCrmSubscriber(tenantSlug: string, listId: string, sub: Partial<CrmEmailSubscriber>): Promise<CrmEmailSubscriber> {
   const slug = cleanSlug(tenantSlug);
+  const emailVal = (sub.email || "").trim().toLowerCase() || null;
+  const phoneVal = (sub.phone || "").trim() || null;
+
+  if (!emailVal && !phoneVal) {
+    throw new Error("Subscriber must have either an email address or a phone number.");
+  }
+
   const newSub: CrmEmailSubscriber = {
     id: sub.id || generateCrmId("SUB"),
     tenantSlug: slug,
     listId,
-    email: (sub.email || "").trim().toLowerCase(),
+    email: emailVal || "",
     firstName: sub.firstName || "",
     lastName: sub.lastName || "",
     company: sub.company || "",
-    phone: sub.phone || "",
+    phone: phoneVal || "",
     status: sub.status || "SUBSCRIBED",
     createdAt: new Date().toISOString(),
   };
@@ -1750,12 +1757,42 @@ export async function addCrmSubscriber(tenantSlug: string, listId: string, sub: 
     const pool = getDbPool();
     if (pool) {
       await ensureTablesExist();
-      await pool.query(
-        `INSERT INTO crm_email_subscribers (id, tenant_slug, list_id, email, first_name, last_name, company, phone, status, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-         ON CONFLICT (tenant_slug, list_id, email) DO UPDATE SET status = 'SUBSCRIBED'`,
-        [newSub.id, slug, newSub.listId, newSub.email, newSub.firstName, newSub.lastName, newSub.company, newSub.phone, newSub.status]
-      );
+
+      if (emailVal) {
+        await pool.query(
+          `INSERT INTO crm_email_subscribers (id, tenant_slug, list_id, email, first_name, last_name, company, phone, status, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+           ON CONFLICT (tenant_slug, list_id, email) DO UPDATE SET 
+             status = 'SUBSCRIBED',
+             first_name = COALESCE(NULLIF(EXCLUDED.first_name, ''), crm_email_subscribers.first_name),
+             last_name = COALESCE(NULLIF(EXCLUDED.last_name, ''), crm_email_subscribers.last_name),
+             company = COALESCE(NULLIF(EXCLUDED.company, ''), crm_email_subscribers.company),
+             phone = COALESCE(NULLIF(EXCLUDED.phone, ''), crm_email_subscribers.phone)`,
+          [newSub.id, slug, newSub.listId, emailVal, newSub.firstName, newSub.lastName, newSub.company, newSub.phone, newSub.status]
+        );
+      } else if (phoneVal) {
+        const existing = await pool.query(
+          `SELECT id FROM crm_email_subscribers WHERE tenant_slug = $1 AND list_id = $2 AND phone = $3 LIMIT 1`,
+          [slug, listId, phoneVal]
+        );
+        if (existing.rows.length === 0) {
+          await pool.query(
+            `INSERT INTO crm_email_subscribers (id, tenant_slug, list_id, email, first_name, last_name, company, phone, status, created_at)
+             VALUES ($1, $2, $3, NULL, $4, $5, $6, $7, $8, NOW())`,
+            [newSub.id, slug, newSub.listId, newSub.firstName, newSub.lastName, newSub.company, phoneVal, newSub.status]
+          );
+        } else {
+          await pool.query(
+            `UPDATE crm_email_subscribers SET 
+               status = 'SUBSCRIBED',
+               first_name = COALESCE(NULLIF($1, ''), first_name),
+               last_name = COALESCE(NULLIF($2, ''), last_name),
+               company = COALESCE(NULLIF($3, ''), company)
+             WHERE id = $4`,
+            [newSub.firstName, newSub.lastName, newSub.company, existing.rows[0].id]
+          );
+        }
+      }
 
       // Refresh list count
       await pool.query(
@@ -1784,16 +1821,52 @@ export async function bulkAddCrmSubscribers(
     if (pool) {
       await ensureTablesExist();
       for (const s of subs) {
-        if (!s.email) continue;
+        const email = (s.email || "").trim().toLowerCase() || null;
+        const phone = (s.phone || "").trim() || null;
+        if (!email && !phone) continue;
+
         const subId = s.id || generateCrmId("SUB");
-        const email = s.email.trim().toLowerCase();
-        await pool.query(
-          `INSERT INTO crm_email_subscribers (id, tenant_slug, list_id, email, first_name, last_name, company, phone, status, created_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'SUBSCRIBED', NOW())
-           ON CONFLICT (tenant_slug, list_id, email) DO NOTHING`,
-          [subId, slug, listId, email, s.firstName || "", s.lastName || "", s.company || "", s.phone || ""]
-        ).catch(() => {});
-        added++;
+
+        if (email) {
+          await pool.query(
+            `INSERT INTO crm_email_subscribers (id, tenant_slug, list_id, email, first_name, last_name, company, phone, status, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'SUBSCRIBED', NOW())
+             ON CONFLICT (tenant_slug, list_id, email) DO UPDATE SET
+               first_name = COALESCE(NULLIF(EXCLUDED.first_name, ''), crm_email_subscribers.first_name),
+               last_name = COALESCE(NULLIF(EXCLUDED.last_name, ''), crm_email_subscribers.last_name),
+               company = COALESCE(NULLIF(EXCLUDED.company, ''), crm_email_subscribers.company),
+               phone = COALESCE(NULLIF(EXCLUDED.phone, ''), crm_email_subscribers.phone)`,
+            [subId, slug, listId, email, s.firstName || "", s.lastName || "", s.company || "", phone || ""]
+          ).catch((e) => {
+            console.warn("Failed inserting subscriber with email:", e);
+          });
+          added++;
+        } else if (phone) {
+          const existing = await pool.query(
+            `SELECT id FROM crm_email_subscribers WHERE tenant_slug = $1 AND list_id = $2 AND phone = $3 LIMIT 1`,
+            [slug, listId, phone]
+          );
+          if (existing.rows.length === 0) {
+            await pool.query(
+              `INSERT INTO crm_email_subscribers (id, tenant_slug, list_id, email, first_name, last_name, company, phone, status, created_at)
+               VALUES ($1, $2, $3, NULL, $4, $5, $6, $7, 'SUBSCRIBED', NOW())`,
+              [subId, slug, listId, s.firstName || "", s.lastName || "", s.company || "", phone]
+            ).catch((e) => {
+              console.warn("Failed inserting phone subscriber:", e);
+            });
+            added++;
+          } else {
+            await pool.query(
+              `UPDATE crm_email_subscribers SET 
+                 status = 'SUBSCRIBED',
+                 first_name = COALESCE(NULLIF($1, ''), first_name),
+                 last_name = COALESCE(NULLIF($2, ''), last_name),
+                 company = COALESCE(NULLIF($3, ''), company)
+               WHERE id = $4`,
+              [s.firstName || "", s.lastName || "", s.company || "", existing.rows[0].id]
+            ).catch(() => {});
+          }
+        }
       }
 
       await pool.query(
@@ -1851,13 +1924,15 @@ export async function dispatchScheduledBlasts(tenantSlug?: string): Promise<{ di
         try {
           await pool.query(`UPDATE crm_email_blasts SET status = 'SENDING' WHERE id = $1`, [blast.id]);
 
-          // Fetch list subscribers
+          // Fetch list subscribers (only those with valid email addresses for email blasts)
           const subsRes = await pool.query(
             `SELECT email, first_name, last_name, company FROM crm_email_subscribers WHERE list_id = $1 AND status = 'SUBSCRIBED'`,
             [blast.list_id]
           );
 
-          if (subsRes.rows.length > 0) {
+          const emailSubs = subsRes.rows.filter((s) => s.email && s.email.includes("@"));
+
+          if (emailSubs.length > 0) {
             let senderOverride: Partial<SmtpSettings> | undefined = undefined;
             if (blast.sender_override) {
               try {
@@ -1890,7 +1965,7 @@ export async function dispatchScheduledBlasts(tenantSlug?: string): Promise<{ di
 
             await queueMassEmailCampaign({
               tenantSlug: blast.tenant_slug,
-              recipients: subsRes.rows.map((s) => ({
+              recipients: emailSubs.map((s) => ({
                 email: s.email,
                 name: `${s.first_name || ""} ${s.last_name || ""}`.trim() || s.email,
                 role: "Subscriber",
@@ -1908,7 +1983,7 @@ export async function dispatchScheduledBlasts(tenantSlug?: string): Promise<{ di
             `UPDATE crm_email_blasts
              SET status = 'SENT', sent_at = NOW(), sent_count = $2, updated_at = NOW()
              WHERE id = $1`,
-            [blast.id, subsRes.rows.length]
+            [blast.id, emailSubs.length]
           );
           dispatched++;
         } catch (bErr: any) {

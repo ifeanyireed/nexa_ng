@@ -233,7 +233,7 @@ export async function ensureTablesExist(): Promise<boolean> {
           id VARCHAR(64) PRIMARY KEY,
           tenant_slug VARCHAR(100) NOT NULL,
           list_id VARCHAR(64) REFERENCES crm_email_lists(id) ON DELETE CASCADE,
-          email VARCHAR(150) NOT NULL,
+          email VARCHAR(150),
           first_name VARCHAR(100),
           last_name VARCHAR(100),
           company VARCHAR(150),
@@ -243,6 +243,7 @@ export async function ensureTablesExist(): Promise<boolean> {
         );
         CREATE INDEX IF NOT EXISTS idx_crm_subscribers_list ON crm_email_subscribers (list_id);
         CREATE INDEX IF NOT EXISTS idx_crm_subscribers_email ON crm_email_subscribers (email);
+        CREATE INDEX IF NOT EXISTS idx_crm_subscribers_phone ON crm_email_subscribers (phone);
 
         CREATE TABLE IF NOT EXISTS crm_email_blasts (
           id VARCHAR(64) PRIMARY KEY,
@@ -300,6 +301,8 @@ export async function ensureTablesExist(): Promise<boolean> {
         CREATE INDEX IF NOT EXISTS idx_crm_activities_status ON crm_activities (status);
 
         CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_subscribers_unique ON crm_email_subscribers (tenant_slug, list_id, email);
+        ALTER TABLE crm_email_subscribers ALTER COLUMN email DROP NOT NULL;
+        CREATE INDEX IF NOT EXISTS idx_crm_subscribers_phone ON crm_email_subscribers (phone);
 
         -- 6. Password Reset Tokens Table
         CREATE TABLE IF NOT EXISTS password_reset_tokens (

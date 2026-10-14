@@ -46,6 +46,7 @@ function parseContactsInput(text: string, defaultCompany: string): ParsedContact
   const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
   const results: ParsedContact[] = [];
   const seenEmails = new Set<string>();
+  const seenPhones = new Set<string>();
 
   for (const rawLine of lines) {
     const atMatches = rawLine.match(/@/g) || [];
@@ -68,6 +69,24 @@ function parseContactsInput(text: string, defaultCompany: string): ParsedContact
       continue;
     }
 
+    // Comma-separated list of phones on one line
+    const commaParts = rawLine.split(",").map((p) => p.trim()).filter(Boolean);
+    if (commaParts.length > 1 && commaParts.every((p) => isLikelyPhone(p))) {
+      for (const p of commaParts) {
+        const phoneKey = p.replace(/[\s\-\(\)\.]/g, "");
+        if (!seenPhones.has(phoneKey)) {
+          seenPhones.add(phoneKey);
+          results.push({
+            email: "",
+            company: defaultCompany.trim(),
+            contactName: "",
+            phone: p,
+          });
+        }
+      }
+      continue;
+    }
+
     let line = rawLine;
     let extractedName = "";
     const angleBracketMatch = line.match(/^(.*?)[<]([^>]+@[^>]+)[>](.*)$/);
@@ -81,8 +100,44 @@ function parseContactsInput(text: string, defaultCompany: string): ParsedContact
     const parts = line.split(/[,\t|;]+/).map((p) => p.trim()).filter(Boolean);
     const emailIndex = parts.findIndex((p) => p.includes("@"));
 
-    if (emailIndex === -1) continue;
+    // Case 1: No email address on this line -> check for phone number
+    if (emailIndex === -1) {
+      const phoneIndex = parts.findIndex((p) => isLikelyPhone(p));
+      if (phoneIndex === -1) {
+        // Neither email nor phone detected, skip invalid line
+        continue;
+      }
 
+      const phone = parts[phoneIndex];
+      const phoneKey = phone.replace(/[\s\-\(\)\.]/g, "");
+      if (seenPhones.has(phoneKey)) continue;
+      seenPhones.add(phoneKey);
+
+      let company = defaultCompany.trim();
+      let contactName = extractedName;
+
+      const otherParts = parts.filter((_, idx) => idx !== phoneIndex);
+
+      if (otherParts.length === 1) {
+        if (defaultCompany.trim()) {
+          contactName = contactName || otherParts[0];
+        } else {
+          if (/(corp|inc|ltd|limited|group|enterprises|plc|llc|co|holdings)/i.test(otherParts[0])) {
+            company = otherParts[0];
+          } else {
+            contactName = contactName || otherParts[0];
+          }
+        }
+      } else if (otherParts.length >= 2) {
+        company = otherParts[0];
+        contactName = contactName || otherParts[1];
+      }
+
+      results.push({ email: "", company, contactName, phone });
+      continue;
+    }
+
+    // Case 2: Email address is present
     const email = parts[emailIndex].toLowerCase();
     if (seenEmails.has(email)) continue;
     seenEmails.add(email);
@@ -98,6 +153,7 @@ function parseContactsInput(text: string, defaultCompany: string): ParsedContact
     for (const p of otherParts) {
       if (!phone && isLikelyPhone(p)) {
         phone = p;
+        seenPhones.add(p.replace(/[\s\-\(\)\.]/g, ""));
       } else {
         remainingParts.push(p);
       }
@@ -317,7 +373,7 @@ export default function AudienceListsPage() {
     const q = rosterSearch.toLowerCase();
     const fullName = `${s.firstName || ""} ${s.lastName || ""}`.toLowerCase();
     return (
-      s.email.toLowerCase().includes(q) ||
+      (s.email && s.email.toLowerCase().includes(q)) ||
       (s.company && s.company.toLowerCase().includes(q)) ||
       (s.phone && s.phone.toLowerCase().includes(q)) ||
       fullName.includes(q)
@@ -327,7 +383,7 @@ export default function AudienceListsPage() {
   const handleImportSubscribers = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeList || parsedContacts.length === 0) {
-      alert("Please enter at least one valid contact with an email address.");
+      alert("Please enter at least one valid contact with an email address or phone number.");
       return;
     }
     setIsImporting(true);
@@ -361,7 +417,7 @@ export default function AudienceListsPage() {
             l.id === activeList.id ? { ...l, subscriberCount: l.subscriberCount + count } : l
           )
         );
-        alert(`Successfully registered ${count} contact${count === 1 ? '' : 's'} with company and name details into "${activeList.name}".`);
+        alert(`Successfully registered ${count} contact${count === 1 ? '' : 's'} into "${activeList.name}".`);
       }
     } catch {
       alert("Contacts registered locally.");
@@ -419,7 +475,7 @@ export default function AudienceListsPage() {
             {
               label: "Total Registered Contacts",
               value: totalContacts.toString(),
-              change: "Verified emails",
+              change: "Emails & phone contacts",
               changeType: "success",
               icon: <Mail className="w-4 h-4 text-emerald-500" />,
             },
@@ -578,7 +634,7 @@ export default function AudienceListsPage() {
         isOpen={isSubModalOpen}
         onClose={() => setIsSubModalOpen(false)}
         title={`Add Contacts to "${activeList?.name || 'Audience List'}"`}
-        subtitle="Batch import contacts with Company Names and Contact Names (supports CSV, Excel rows, or emails)."
+        subtitle="Batch import contacts with Company Names, Contact Names, Emails, or Phone Numbers."
       >
         <form onSubmit={handleImportSubscribers} className="space-y-4">
           <div className="space-y-1">
@@ -600,14 +656,14 @@ export default function AudienceListsPage() {
                 Contacts List (one per line, CSV, or Tab-separated)
               </label>
               <span className="text-[10px] text-[#1A56DB] font-semibold bg-[#1A56DB]/10 px-2 py-0.5 rounded">
-                Format: email, company, contact_name, phone
+                Format: email, company, contact_name, phone (or phone, company, name)
               </span>
             </div>
             <textarea
               rows={6}
               value={emailsInput}
               onChange={(e) => setEmailsInput(e.target.value)}
-              placeholder={`ceo@dangote.com, Dangote Group, Aliko Dangote, +2348031234567\nprocurement@buagroup.com, BUA Cement, Rabiu Abdulsamad, 08023456789\ndirector@nnpc.gov.ng, NNPC Limited, Mele Kyari\nexecutive@innovate.ng, Innovate Tech, 08123456789`}
+              placeholder={`ceo@dangote.com, Dangote Group, Aliko Dangote, +2348031234567\n+2348039876543, BUA Cement, Rabiu Abdulsamad\nprocurement@buagroup.com, BUA Cement\n08012345678, Mele Kyari`}
               className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-mono"
               required
             />
@@ -631,6 +687,11 @@ export default function AudienceListsPage() {
                   <span className="bg-emerald-500/10 text-emerald-600 font-semibold px-2 py-0.5 rounded">
                     {parsedContacts.filter((c) => c.phone).length} with Phone
                   </span>
+                  {parsedContacts.some((c) => !c.email && c.phone) && (
+                    <span className="bg-amber-500/10 text-amber-600 font-semibold px-2 py-0.5 rounded">
+                      {parsedContacts.filter((c) => !c.email && c.phone).length} Phone-only
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -641,9 +702,16 @@ export default function AudienceListsPage() {
                     key={idx}
                     className="flex items-center justify-between gap-2 p-1.5 rounded-lg bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-[11px]"
                   >
-                    <span className="font-mono text-[var(--nexa-text-primary)] truncate max-w-[160px]">
-                      {contact.email}
-                    </span>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="font-mono text-[var(--nexa-text-primary)] truncate max-w-[160px]">
+                        {contact.email || contact.phone}
+                      </span>
+                      {!contact.email && contact.phone && (
+                        <span className="text-[9px] text-amber-600 font-bold bg-amber-500/10 px-1.5 py-0.5 rounded shrink-0">
+                          Phone only
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
                       {contact.company ? (
                         <span className="flex items-center gap-1 text-[10px] text-purple-600 font-semibold bg-purple-500/10 px-1.5 py-0.5 rounded">
@@ -657,7 +725,7 @@ export default function AudienceListsPage() {
                           <User className="w-2.5 h-2.5" /> {contact.contactName}
                         </span>
                       ) : null}
-                      {contact.phone ? (
+                      {contact.email && contact.phone ? (
                         <span className="flex items-center gap-1 text-[10px] text-emerald-600 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded">
                           <Phone className="w-2.5 h-2.5" /> {contact.phone}
                         </span>
@@ -692,7 +760,11 @@ export default function AudienceListsPage() {
         isOpen={isRosterModalOpen}
         onClose={() => setIsRosterModalOpen(false)}
         title={`Roster: "${rosterList?.name || 'Audience List'}"`}
-        subtitle={`${rosterSubscribers.length} total contact${rosterSubscribers.length === 1 ? '' : 's'} registered in this segment.`}
+        subtitle={`${rosterSubscribers.length} total contact${rosterSubscribers.length === 1 ? '' : 's'} registered in this segment${
+          rosterSubscribers.some((s) => !s.email && s.phone)
+            ? ` (${rosterSubscribers.filter((s) => s.email).length} email, ${rosterSubscribers.filter((s) => !s.email && s.phone).length} phone only)`
+            : ''
+        }.`}
       >
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-3">
@@ -758,8 +830,13 @@ export default function AudienceListsPage() {
                     <div className="space-y-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-bold text-xs text-[var(--nexa-text-primary)] font-mono truncate">
-                          {sub.email}
+                          {sub.email || sub.phone || "No contact identifier"}
                         </span>
+                        {!sub.email && sub.phone && (
+                          <span className="text-[10px] font-semibold text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded flex items-center gap-1">
+                            <Phone className="w-2.5 h-2.5" /> Phone Only
+                          </span>
+                        )}
                         {fullName && (
                           <span className="text-[11px] font-semibold text-blue-600 bg-blue-500/10 px-2 py-0.5 rounded flex items-center gap-1">
                             <User className="w-2.5 h-2.5" /> {fullName}
@@ -775,7 +852,7 @@ export default function AudienceListsPage() {
                         ) : (
                           <span className="italic text-[10px]">No company specified</span>
                         )}
-                        {sub.phone && (
+                        {sub.email && sub.phone && (
                           <span className="flex items-center gap-1">
                             <Phone className="w-3 h-3 text-emerald-500" />
                             {sub.phone}

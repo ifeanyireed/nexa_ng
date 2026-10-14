@@ -569,6 +569,44 @@ export function ErpAdminShell({
       }
       setUserAssignedPages(resolvedAssignedPages);
 
+      // Asynchronously fetch latest user profile from Neon to ensure assignedPages & role updates are applied live
+      if (resolvedEmail && isCurrent) {
+        fetch(`/api/erp/users?email=${encodeURIComponent(resolvedEmail)}`, {
+          headers: {
+            ...(tenantKey ? { "x-tenant-slug": tenantKey } : {}),
+          },
+          cache: "no-store",
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((dbUser) => {
+            if (dbUser && isCurrent) {
+              let updatedPages: string[] | null = null;
+              if (Array.isArray(dbUser.assignedPages)) {
+                updatedPages = dbUser.assignedPages;
+              } else if (typeof dbUser.assignedPages === "string") {
+                try { updatedPages = JSON.parse(dbUser.assignedPages); } catch {}
+              }
+              if (updatedPages && updatedPages.length > 0) {
+                setUserAssignedPages(updatedPages);
+              }
+              if (dbUser.role && dbUser.role !== resolvedRole) {
+                setCurrentRole(dbUser.role);
+              }
+              try {
+                const existing = localStorage.getItem("erp_current_user");
+                const parsedExisting = existing ? JSON.parse(existing) : {};
+                const merged = {
+                  ...parsedExisting,
+                  ...dbUser,
+                  assignedPages: updatedPages || parsedExisting.assignedPages || [],
+                };
+                localStorage.setItem("erp_current_user", JSON.stringify(merged));
+              } catch {}
+            }
+          })
+          .catch(() => {});
+      }
+
       // Direct User Assigned Pages Check for Current Route:
       let isAssignedGrantedCurrentPath = false;
       if (resolvedAssignedPages && resolvedAssignedPages.length > 0) {
@@ -734,14 +772,28 @@ export function ErpAdminShell({
       }
     };
 
+    const handleCurrentUserUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail) {
+        if (Array.isArray(customEvent.detail.assignedPages)) {
+          setUserAssignedPages(customEvent.detail.assignedPages);
+        }
+        if (customEvent.detail.role) {
+          setCurrentRole(customEvent.detail.role);
+        }
+      }
+    };
+
     window.addEventListener("ofia_rbac_updated", handleRbacUpdate);
     window.addEventListener("ofia_dept_access_updated", handleDeptUpdate);
+    window.addEventListener("erp_current_user_updated", handleCurrentUserUpdate);
     window.addEventListener("erp_sidebar_collapsed_change", handleSidebarSync);
     window.addEventListener("storage", handleStorageSync);
     return () => {
       isCurrent = false;
       window.removeEventListener("ofia_rbac_updated", handleRbacUpdate);
       window.removeEventListener("ofia_dept_access_updated", handleDeptUpdate);
+      window.removeEventListener("erp_current_user_updated", handleCurrentUserUpdate);
       window.removeEventListener("erp_sidebar_collapsed_change", handleSidebarSync);
       window.removeEventListener("storage", handleStorageSync);
     };

@@ -61,11 +61,22 @@ async function queryNeonDirectly(subPath: string, tenantSlug: string, searchPara
       } catch {}
 
       const id = searchParams.get("id");
-      if (id) {
-        const res = await pool.query(
-          `SELECT id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, "assignedPages" FROM "User" WHERE id = $1`,
-          [id]
-        );
+      const email = searchParams.get("email");
+      if (id || email) {
+        let query = `SELECT id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, "assignedPages" FROM "User" WHERE `;
+        const args: any[] = [];
+        if (id) {
+          query += `id = $1`;
+          args.push(id);
+        } else {
+          query += `LOWER(email) = LOWER($1)`;
+          args.push(email);
+        }
+        if (tenantSlug) {
+          query += ` AND "tenantSlug" = $${args.length + 1}`;
+          args.push(tenantSlug);
+        }
+        const res = await pool.query(query, args);
         return res.rows[0] || null;
       }
       let query = `SELECT id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, "assignedPages" FROM "User"`;
@@ -160,7 +171,17 @@ export async function GET(
 
     // For users, merge Neon database records so assignedPages and updated roles take precedence
     if (subPath === "users") {
+      const isSingleQuery = Boolean(url.searchParams.get("id") || url.searchParams.get("email"));
       const neonUsers = await queryNeonDirectly("users", tenantSlug, url.searchParams);
+      if (isSingleQuery && neonUsers && !Array.isArray(neonUsers)) {
+        let pages: any[] = [];
+        if (Array.isArray(neonUsers.assignedPages)) {
+          pages = neonUsers.assignedPages;
+        } else if (typeof neonUsers.assignedPages === "string") {
+          try { pages = JSON.parse(neonUsers.assignedPages); } catch {}
+        }
+        return NextResponse.json({ ...neonUsers, assignedPages: pages });
+      }
       if (neonUsers && Array.isArray(neonUsers) && neonUsers.length > 0) {
         if (res.ok && data !== null && Array.isArray(data) && data.length > 0) {
           const neonMap = new Map(neonUsers.map((u: any) => [u.id || u.email, u]));

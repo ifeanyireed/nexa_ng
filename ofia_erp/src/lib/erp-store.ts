@@ -12,6 +12,7 @@ export type Role =
   | "admin"
   | "accountant"
   | "marketer"
+  | "sales_closer"
   | "cashier"
   | "inventory_officer"
   | "dispatcher";
@@ -32,6 +33,7 @@ export interface User {
   company?: string;
   location?: string;
   password?: string;
+  assignedPages?: string[];
 }
 
 export function getParentDept(deptName: string): string {
@@ -334,13 +336,32 @@ export function getSignedInERPUser(users: User[]): User {
           staffName = "Grace Jude";
           staffEmail = "grace.jude@ofia.ng";
         }
+        let userPages: string[] = [];
+        if (Array.isArray(match.assignedPages)) {
+          userPages = match.assignedPages;
+        } else if (typeof match.assignedPages === "string") {
+          try { userPages = JSON.parse(match.assignedPages); } catch {}
+        }
+        if (userPages.length === 0 && parsed?.assignedPages) {
+          if (Array.isArray(parsed.assignedPages)) userPages = parsed.assignedPages;
+          else if (typeof parsed.assignedPages === "string") {
+            try { userPages = JSON.parse(parsed.assignedPages); } catch {}
+          }
+        }
         const syncedUser: User = {
           ...match,
           name: staffName,
           email: staffEmail,
           role: actualRole,
           avatar: resolveAvatarUrl(parsed?.avatar || match.avatar, staffName || match.id),
+          assignedPages: userPages,
         };
+        // Persist updated assignedPages to local session cache so ErpAdminShell stays in sync
+        try {
+          const updatedSession = { ...(parsed || {}), ...syncedUser };
+          localStorage.setItem("erp_current_user", JSON.stringify(updatedSession));
+          window.dispatchEvent(new CustomEvent("erp_current_user_updated", { detail: updatedSession }));
+        } catch {}
         return syncedUser;
       }
     }
@@ -385,6 +406,7 @@ export function getSignedInERPUser(users: User[]): User {
         company: parsed?.company || "Organization",
         managerName: parsed?.managerName,
         managerId: parsed?.managerId,
+        assignedPages: Array.isArray(parsed?.assignedPages) ? parsed.assignedPages : [],
       };
     }
   } catch (e) {
@@ -440,16 +462,29 @@ export function createReviewForUser(
   cycle: ReviewCycle,
   objectivesList: Objective[]
 ): PerformanceReview {
+  const userDept = (user.department || "").trim().toLowerCase();
+  const userDesig = (user.designation || "").trim().toLowerCase();
+
   const relevantObjectives = objectivesList.filter(o => {
     if (o.type === "competency") return true;
-    return (o.type === "objective" || !o.type) && o.departments?.includes(user.department);
+    if (o.type !== "objective" && o.type) return false;
+    if (!o.departments || o.departments.length === 0) return true;
+    return o.departments.some(d => {
+      const dNorm = (d || "").trim().toLowerCase();
+      return (
+        dNorm === userDept ||
+        (userDesig && dNorm === userDesig) ||
+        (userDept && (userDept.includes(dNorm) || dNorm.includes(userDept))) ||
+        (userDesig && (userDesig.includes(dNorm) || dNorm.includes(userDesig)))
+      );
+    });
   });
 
   return {
     id: `REV${cycle.id.replace("CYC", "")}${user.id}`,
     employeeId: user.id,
     employeeName: user.name,
-    department: user.department,
+    department: user.department || user.designation || "General",
     cycleId: cycle.id,
     cycleName: cycle.name,
     status: "Draft",

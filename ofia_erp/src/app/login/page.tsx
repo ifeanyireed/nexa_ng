@@ -218,14 +218,14 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
     const emailDomain = normalizedEmail.includes("@") ? normalizedEmail.split("@")[1].split(".")[0] : "";
 
     try {
-      const res = await AUTH_API.login({ email, password });
+      const res = await AUTH_API.login({ email: normalizedEmail, password });
       
       if (!res || !res.token || !res.user) {
         throw new Error("Invalid response from authentication server");
       }
       
       let resolvedRole = "employee";
-      let resolvedName = res.user.name || email.split("@")[0] || "User";
+      let resolvedName = res.user.name || normalizedEmail.split("@")[0] || "User";
       let resolvedDept = res.user.department || "Operations";
       let resolvedDesig = res.user.designation || "Staff Member";
       let resolvedAvatar = res.user.avatar || "/character1.jpg";
@@ -253,9 +253,37 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
         }
       }
 
+      let resolvedAssignedPages: string[] = [];
+      try {
+        const userRes = await fetch(`/api/erp/users?email=${encodeURIComponent(normalizedEmail)}`, {
+          cache: "no-store",
+        });
+        if (userRes.ok) {
+          const dbUser = await userRes.json();
+          if (dbUser) {
+            if (dbUser.role) resolvedRole = dbUser.role;
+            if (dbUser.name) resolvedName = dbUser.name;
+            if (dbUser.department) resolvedDept = dbUser.department;
+            if (dbUser.designation) resolvedDesig = dbUser.designation;
+            if (Array.isArray(dbUser.assignedPages)) {
+              resolvedAssignedPages = dbUser.assignedPages;
+            } else if (typeof dbUser.assignedPages === "string") {
+              try { resolvedAssignedPages = JSON.parse(dbUser.assignedPages); } catch {}
+            }
+          }
+        }
+      } catch {}
+
+      if (resolvedAssignedPages.length === 0 && (resolvedDesig?.toLowerCase().includes("sales closer") || resolvedRole === "sales_closer")) {
+        resolvedAssignedPages = ["employee", "crm"];
+      }
+
       if (typeof window !== "undefined") {
+        const isOfiaDomain = window.location.hostname.endsWith("ofia.ng");
+        const domainAttr = isOfiaDomain ? "; domain=.ofia.ng" : "";
+
         localStorage.setItem("nexa_auth_token", res.token);
-        localStorage.setItem("nexa_user_email", email);
+        localStorage.setItem("nexa_user_email", normalizedEmail);
         localStorage.setItem("nexa_user_role", resolvedRole);
         localStorage.setItem("nexa_user_name", resolvedName);
         if (emailDomain) {
@@ -265,18 +293,20 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
           "erp_current_user",
           JSON.stringify({
             id: resolvedId,
-            email,
+            email: normalizedEmail,
             role: resolvedRole,
             name: resolvedName,
             department: resolvedDept,
             designation: resolvedDesig,
             avatar: resolveAvatarUrl(resolvedAvatar, resolvedName),
+            assignedPages: resolvedAssignedPages,
           })
         );
-        document.cookie = `nexa_user_role=${resolvedRole}; path=/; max-age=2592000; SameSite=Lax`;
-        document.cookie = `nexa_user_email=${encodeURIComponent(email)}; path=/; max-age=2592000; SameSite=Lax`;
+        document.cookie = `nexa_auth_token=${encodeURIComponent(res.token)}; path=/; max-age=2592000; SameSite=Lax${domainAttr}`;
+        document.cookie = `nexa_user_role=${resolvedRole}; path=/; max-age=2592000; SameSite=Lax${domainAttr}`;
+        document.cookie = `nexa_user_email=${encodeURIComponent(normalizedEmail)}; path=/; max-age=2592000; SameSite=Lax${domainAttr}`;
       }
-      navigateUser(email, resolvedRole);
+      navigateUser(normalizedEmail, resolvedRole);
     } catch (err: any) {
       setError(err.message || "Invalid credentials or authentication failed.");
     } finally {

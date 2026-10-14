@@ -43,6 +43,13 @@ export default function EmployeeDashboard() {
   const [isSubmittingNew, setIsSubmittingNew] = useState(false);
 
   const hasShopModule = isModuleProvisioned("shop");
+  const hasCrmModule = isModuleProvisioned("crm");
+  const userAssignedPages = currentUser.assignedPages || [];
+  const hasCrmAssigned =
+    userAssignedPages.includes("crm") ||
+    userAssignedPages.includes("sales_closer") ||
+    Boolean(currentUser.designation?.toLowerCase().includes("closer")) ||
+    currentUser.role === "sales_closer";
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -204,6 +211,43 @@ export default function EmployeeDashboard() {
             </Link>
           </div>
         </div>
+
+        {/* Assigned Enterprise Workspace Module Banner (CRM & Sales Closer Portal) */}
+        {hasCrmModule && hasCrmAssigned && (
+          <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 rounded-3xl p-5 text-white flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm border border-blue-500/30">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 shrink-0">
+                <Target className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-base font-extrabold tracking-tight">CRM & Email Marketing</h4>
+                  <span className="bg-emerald-400/20 text-emerald-200 border border-emerald-400/30 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full">
+                    Assigned Workspace
+                  </span>
+                </div>
+                <p className="text-xs text-blue-100/90 mt-1 max-w-xl leading-relaxed">
+                  B2B sales pipelines, contact lists, customer deal stages, and lead outreach campaigns assigned to your corporate account.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
+              <button
+                onClick={() => router.push("/erp/admin/crm")}
+                className="px-4 py-2.5 bg-white text-blue-700 font-extrabold rounded-xl text-xs hover:bg-blue-50 transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
+              >
+                <span>Open CRM Dashboard</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+              <button
+                onClick={() => router.push("/erp/ops/crm")}
+                className="px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <span>Sales Closer Portal</span>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Cashier / POS Banner (if applicable) */}
         {hasShopModule && (currentUser.role === "cashier" || currentUser.role === "admin") && (

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -52,9 +53,15 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cleanEmail := strings.ToLower(strings.TrimSpace(req.Email))
+	if cleanEmail == "" {
+		http.Error(w, `{"error": "Email is required"}`, http.StatusBadRequest)
+		return
+	}
+
 	user := models.User{
 		ID:        uuid.New().String(),
-		Email:     req.Email,
+		Email:     cleanEmail,
 		Password:  string(hashedPassword),
 		Name:      req.Name,
 		Role:      models.RoleTenantOwner,
@@ -128,10 +135,16 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	cleanEmail := strings.ToLower(strings.TrimSpace(req.Email))
 	var user models.User
 	if h.db != nil {
-		if err := h.db.Preload("Organizations").First(&user, "email = ?", req.Email).Error; err != nil {
+		if err := h.db.Preload("Organizations").First(&user, "LOWER(email) = ?", cleanEmail).Error; err != nil {
 			http.Error(w, `{"error": "Invalid email or password"}`, http.StatusUnauthorized)
+			return
+		}
+
+		if user.Password == "" {
+			http.Error(w, `{"error": "Password not set for this account. Please reset your password."}`, http.StatusUnauthorized)
 			return
 		}
 
@@ -143,7 +156,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		// Mock offline login for development testing
 		user = models.User{
 			ID:    "mock-user-1",
-			Email: req.Email,
+			Email: cleanEmail,
 			Name:  "Test User",
 			Role:  models.RoleTenantOwner,
 		}

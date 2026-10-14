@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { getDbPool } from "@/lib/db";
 import { SEEDED_SUPER_ADMINS } from "@/lib/jwt-auth";
 
@@ -82,18 +83,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Reset token expired or already used" }, { status: 400 });
     }
 
+    // Hash the password with bcrypt before persisting
+    const hashedPassword = bcrypt.hashSync(cleanPassword, 10);
+
     // Update in database "User" table
     await pool.query(
       `UPDATE "User"
-       SET password = $1, "updatedAt" = NOW(), updated_at = NOW()
+       SET password = $1, email = LOWER(email), "updatedAt" = NOW(), updated_at = NOW()
        WHERE LOWER(email) = $2`,
-      [cleanPassword, normalizedEmail]
+      [hashedPassword, normalizedEmail]
     );
 
     // Also update in SEEDED_SUPER_ADMINS in-memory cache if matching
     const seeded = SEEDED_SUPER_ADMINS.find((a) => a.email.toLowerCase() === normalizedEmail);
     if (seeded) {
-      seeded.passwordHash = cleanPassword;
+      seeded.passwordHash = hashedPassword;
     }
 
     // Mark token as used

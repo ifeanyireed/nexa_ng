@@ -250,11 +250,12 @@ func HandleUsers(w http.ResponseWriter, r *http.Request) {
 				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 				ON CONFLICT (id) DO UPDATE SET 
 				"tenantSlug" = CASE WHEN EXCLUDED."tenantSlug" != '' THEN EXCLUDED."tenantSlug" ELSE "User"."tenantSlug" END,
-				name = EXCLUDED.name, email = EXCLUDED.email, role = EXCLUDED.role, department = EXCLUDED.department, 
+				name = EXCLUDED.name, email = LOWER(EXCLUDED.email), role = EXCLUDED.role, department = EXCLUDED.department, 
 				avatar = EXCLUDED.avatar, "managerName" = EXCLUDED."managerName", "managerId" = EXCLUDED."managerId", "ratingTrend" = EXCLUDED."ratingTrend",
 				designation = EXCLUDED.designation, "gradeLevel" = EXCLUDED."gradeLevel", "employmentDate" = EXCLUDED."employmentDate",
-				company = EXCLUDED.company, location = EXCLUDED.location, password = EXCLUDED.password`,
-				u.ID, tenantSlug, u.Name, u.Email, u.Role, u.Department, u.Avatar, u.ManagerName, u.ManagerID, ratingTrendStr, u.Designation, u.GradeLevel, u.EmploymentDate, u.Company, u.Location, u.Password)
+				company = EXCLUDED.company, location = EXCLUDED.location, 
+				password = CASE WHEN EXCLUDED.password IS NOT NULL AND EXCLUDED.password != '' THEN EXCLUDED.password ELSE "User".password END`,
+				u.ID, tenantSlug, u.Name, strings.ToLower(strings.TrimSpace(u.Email)), u.Role, u.Department, u.Avatar, u.ManagerName, u.ManagerID, ratingTrendStr, u.Designation, u.GradeLevel, u.EmploymentDate, u.Company, u.Location, u.Password)
 
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)

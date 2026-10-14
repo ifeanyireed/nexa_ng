@@ -149,6 +149,7 @@ export async function POST(request: Request) {
     const updateRes = await pool.query(
       `UPDATE "User"
        SET password = $1,
+           email = LOWER(email),
            "updatedAt" = NOW(),
            updated_at = NOW()
        WHERE LOWER(email) = $2

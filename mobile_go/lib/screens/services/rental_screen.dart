@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:mobile_mobility/utils/icon_util.dart';
+import 'package:mobile_go/utils/icon_util.dart';
 import 'package:flexicon/flexicon.dart';
 import 'rental_vehicle_details_screen.dart';
 

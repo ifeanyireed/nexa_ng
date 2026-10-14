@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flexicon/flexicon.dart';
-import 'package:mobile_mobility/utils/icon_util.dart';
+import 'package:mobile_go/utils/icon_util.dart';
 import '../../widgets/places_search_delegate.dart';
 import '../../services/places_service.dart';
 import '../payment_screen.dart';

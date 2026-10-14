@@ -6,7 +6,7 @@ You have:
 
 * **Ofia Admin** → platform/super-admin control plane & central database registry
 * **Ofia ERP** → tenant environment; tenant backend, dashboard, fleet management, and tenant-level mobile-app configuration
-* **Ofia Mobile Mobility** (`@mobile_mobility`) → customer/passenger-facing Flutter app
+* **Ofia Mobile Go** (`@mobile_go`) → customer/passenger-facing Flutter app
 * **Ofia Mobile Driver** (`@mobile_driver`) → driver-facing Flutter app
 * Existing Ofia apps are already designed and largely complete
 * Existing splash, logo, banners, icons and screens must be preserved
@@ -18,7 +18,7 @@ You have:
 
 We currently have two Flutter mobile applications:
 
-1. **Ofia Mobile Mobility** — customer/passenger application
+1. **Ofia Mobile Go** — customer/passenger application
 2. **Ofia Mobile Driver** — driver application
 
 These applications are currently designed as essentially single-client applications. The screens, UI, assets, navigation and functionality have already been designed and reviewed.
@@ -178,7 +178,7 @@ Ofia
 ### Application
 
 ```text
-mobile-mobility
+mobile-go
 mobile-driver
 ```
 
@@ -238,38 +238,49 @@ These are separate concepts.
 
 Implement a robust tenant-resolution strategy.
 
-The architecture should support the possibility of:
+The architecture supports three resolution models, with **Option C (Build-Time Identity + Runtime Hydration)** serving as the mandatory production standard for enterprise white-label accounts:
 
-### Option A — Tenant-specific build configuration
-
-For example:
+### Option A — Tenant-Specific Build Configuration (Build-Time Only)
 
 ```text
 TENANT_ID=TEN_001
-APP_TYPE=mobility
+APP_TYPE=go  # or driver
 ```
 
-being injected into a build.
+Injected into the build via `--dart-define` or generated config constants. All branding, package names, and endpoints are compiled directly into the binary. (Static, requires rebuilds for branding changes).
 
-### Option B — Tenant discovery
+### Option B — Dynamic Tenant Discovery (Universal Container)
 
-The app may receive a tenant-specific configuration/deep link/domain/invitation.
+The app is published as a single universal listing. Tenant resolution occurs dynamically at runtime via:
+* Deep links / QR codes (`https://go.ofia.ng/join/:tenantSlug`);
+* Corporate email domain matching (`user@acmetransit.com` resolves `acme` fleet);
+* Onboarding tenant code prompt.
 
-### Option C — Combination
+### Option C — Combination: Build-Time Store Identity + Runtime Configuration (Recommended Enterprise Standard)
 
-Use build-time identity where required, while still allowing runtime configuration.
+For enterprise tenants deploying under their **own Google Play Developer and Apple Developer accounts**, the application uses **Option C**:
 
-The agent must inspect the existing architecture and recommend the cleanest implementation.
+1. **Build-Time Native Identity:**
+   * Unique `applicationId` / `bundleId` (`com.acmetransit.rider`, `com.acmetransit.driver`);
+   * Unique App Store and Google Play listing metadata, native app icons, and native launch splash screens;
+   * Immutable build-time `TENANT_ID` and tenant public signing keys injected via build flavor matrix;
+   * Third-party SDK keys restricted to that specific tenant bundle ID (Google Maps, Firebase).
 
-Do NOT simply hard-code:
+2. **Runtime Configuration Hydration:**
+   * Once launched, the app immediately queries the Ofia Backend Configuration Service:
+     ```http
+     GET /api/v1/mobile/config
+     Header: X-Ofia-Tenant-Id: TEN_001
+     ```
+   * Dynamically loads tenant theme colors, promotional banners, service entitlements (Ride, Delivery, Shuttles), splash messages, and fleet rules from Ofia ERP without requiring app store updates.
+
+Do NOT hard-code:
 
 ```dart
 const tenantId = "TEN_001";
 ```
 
-inside application logic.
-
-Create a proper tenant/app configuration layer.
+inside application logic. Create a proper tenant/app configuration layer (`TenantConfigService`) that resolves identity from build environment flags and hydrates state from the backend.
 
 ---
 
@@ -667,7 +678,7 @@ Tenant
 Choose:
 
 ```text
-Mobile Mobility
+Mobile Go
 Mobile Driver
 ```
 
@@ -946,12 +957,12 @@ because it was never entitled by the platform.
 
 ---
 
-# 24. MOBILE MOBILITY VS MOBILE DRIVER
+# 24. MOBILE GO VS MOBILE DRIVER
 
 The configuration system must understand that:
 
 ```text
-mobile-mobility
+mobile-go
 ```
 
 and
@@ -977,7 +988,7 @@ Some configuration is application-specific.
 For example:
 
 ```text
-Mobile Mobility
+Mobile Go
 → customer services
 → booking
 → passenger experience
@@ -1015,7 +1026,7 @@ Then application-specific configuration:
 
 ```text
 Tenant
-├── Mobile Mobility Config
+├── Mobile Go Config
 └── Mobile Driver Config
 ```
 
@@ -1065,7 +1076,7 @@ Example:
 
 ```text
 Tenant: ABC Transport
-Application: Mobile Mobility
+Application: Mobile Go
 
 Changed:
 Delivery: OFF → ON
@@ -1189,7 +1200,7 @@ Implementation guidelines:
 
 ### 5. Mobile Application Decoupling Principle
 
-Neither [`mobile_mobility`](file:///Volumes/ReedBreedCC/ofia_ng/mobile_mobility/lib/main.dart) nor [`mobile_driver`](file:///Volumes/ReedBreedCC/ofia_ng/mobile_driver/lib/main.dart) should **ever** connect directly to Neon PostgreSQL or hold database credentials.
+Neither [`mobile_go`](file:///Volumes/ReedBreedCC/ofia_ng/mobile_go/lib/main.dart) nor [`mobile_driver`](file:///Volumes/ReedBreedCC/ofia_ng/mobile_driver/lib/main.dart) should **ever** connect directly to Neon PostgreSQL or hold database credentials.
 
 * The Flutter apps interact **strictly** with the backend API gateway via HTTPS/WebSockets.
 * Requests carry the immutable `tenantId` (via `X-Tenant-Id` header, JWT payload, or subdomain mapping).
@@ -1201,7 +1212,7 @@ Neither [`mobile_mobility`](file:///Volumes/ReedBreedCC/ofia_ng/mobile_mobility/
 Neon projects auto-suspend compute to optimize cost when idle. In mobility applications, a 1–3 second cold-start delay when a passenger opens the app to hail a ride is unacceptable.
 
 * **For Dedicated Enterprise Projects:** Configure the Neon compute endpoint `suspend_timeout_seconds` to a higher threshold (e.g. 1,800 seconds / 30 minutes) during daytime operational fleet hours (6:00 AM – 11:00 PM).
-* **Warm-up Ping on App Launch:** When [`mobile_mobility`](file:///Volumes/ReedBreedCC/ofia_ng/mobile_mobility/lib/main.dart) initializes its splash screen or fetches runtime configuration, the gateway fires an asynchronous warm-up query (`SELECT 1`) to ensure the tenant's compute is fully warm before the user reaches the booking map.
+* **Warm-up Ping on App Launch:** When [`mobile_go`](file:///Volumes/ReedBreedCC/ofia_ng/mobile_go/lib/main.dart) initializes its splash screen or fetches runtime configuration, the gateway fires an asynchronous warm-up query (`SELECT 1`) to ensure the tenant's compute is fully warm before the user reaches the booking map.
 * **Driver Location Buffer:** Stream high-frequency driver GPS pings into a low-latency Redis/WebSocket layer, batching persistence to the tenant database to minimize transactional overhead on isolated compute.
 
 ### 7. Cross-Tenant Analytics & Super-Admin Reporting
@@ -1226,7 +1237,7 @@ To prevent schema divergence across dozens of isolated Neon projects:
 The final repository should remain conceptually:
 
 ```text
-mobile-mobility/
+mobile-go/
 mobile-driver/
 ```
 
@@ -1359,7 +1370,7 @@ Configuration
       ↓
 Preview Renderer
       ↓
-Mobile Mobility Preview
+Mobile Go Preview
 ```
 
 This allows the administrator to see:
@@ -1463,7 +1474,7 @@ Configuration version
 Example:
 
 ```text
-Mobile Mobility
+Mobile Go
 App version: 2.1.0
 Configuration version: 47
 ```
@@ -1475,6 +1486,232 @@ App version 2.1.1
 ```
 
 unless the code itself has changed.
+
+---
+
+# 37B. WHITE-LABEL STORE DISTRIBUTION ARCHITECTURE: MULTI-TENANT GOOGLE PLAY & APPLE APP STORE SPECIFICATION
+
+When enterprise mobility clients require their own branded applications (e.g. Acme Go, Acme Driver), publishing all branded variants under a single Ofia developer account is strictly prohibited by both Apple and Google Play policies. 
+
+The production architecture mandates: **One shared Flutter core engine per application (`mobile_go` and `mobile_driver`), deployed to each enterprise tenant's distinct Google Play Console and Apple Developer Program accounts via automated build flavoring and CI/CD pipelines.**
+
+---
+
+### 1. The Multi-Account Distribution Mandate
+
+Publishing dozens of white-label apps under a single software vendor account triggers fatal store rejections:
+* **Apple App Store Trap:** Violation of **Guideline 4.2.6 (Commercial Templates)** and **Guideline 4.3 (Spam)**. Apple explicitly rejects templated applications unless submitted from the content owner’s own developer account.
+* **Google Play Policy Trap:** Violation of the **Repetitive Content / Spam & Minimum Functionality** policy. Publishing multiple apps with identical codebases differing only by colors/logos under one developer account leads to automated policy strikes and account termination.
+* **Blast Radius Isolation:** If Tenant A suffers a policy warning or account suspension, Tenant B and the core Ofia platform are completely insulated.
+
+```text
+                           OFIA CORE REPOSITORIES
+                 ┌────────────────────────────────────┐
+                 │  mobile_go      (Passenger Core)   │
+                 │  mobile_driver  (Driver Core)      │
+                 └──────────────────┬─────────────────┘
+                                    │
+                         CI/CD Build Matrix (Fastlane)
+                                    │
+           ┌────────────────────────┴────────────────────────┐
+           ▼                                                 ▼
+   TENANT A (Acme Transit)                           TENANT B (Metro Fleet)
+   ┌───────────────────────────────────┐             ┌───────────────────────────────────┐
+   │ Google Play Org: Acme Transit Ltd │             │ Google Play Org: Metro Transit Plc│
+   │ Apple Dev Org: Acme Transit Ltd   │             │ Apple Dev Org: Metro Transit Plc  │
+   │ Bundle ID: com.acmetransit.go     │             │ Bundle ID: com.metro.rider        │
+   │ Driver ID: com.acmetransit.driver │             │ Driver ID: com.metro.driver       │
+   └───────────────────────────────────┘             └───────────────────────────────────┘
+```
+
+---
+
+### 2. Apple App Store Guidelines & Architecture Compliance
+
+Apple enforces the most rigorous review standards for white-label applications. All tenant deployments must adhere to these specific guidelines:
+
+#### A. Guideline 4.2.6 (Commercial Templates & App Generation)
+* **The Rule:** *"Apps created from a commercial template or app generation service must be submitted directly by the provider of the app’s content. These services should not submit apps on behalf of their clients and may offer tools that let their clients create customized apps or publish them through their own developer accounts."*
+* **Implementation:** Each tenant must register an **Apple Developer Program Organization Account** ($99/year).
+* **The D-U-N-S Requirement:** Tenants must possess a valid Dun & Bradstreet (D-U-N-S) number matching their legal business entity. (Verification typically takes 1–3 weeks; this must be initiated during tenant contract signing).
+* **Delegation to Ofia:** The client does not compile or upload builds. In **App Store Connect**, the client adds the Ofia deployment service account as an **App Manager** or **Admin** and provisions an **App Store Connect API Key** (`.p8`) for Fastlane automation.
+
+#### B. Alternative: Apple Business Manager (ABM) / Custom Apps
+* For non-public enterprise clients (e.g. internal corporate employee shuttles, private hospital patient transport, closed-campus fleets):
+  * Distribute via **Apple Custom Apps** through Apple Business Manager (ABM).
+  * Apps are not published on the public consumer App Store and avoid public consumer review friction while being privately installable on tenant staff devices.
+
+#### C. Apple Technical & Policy Requirements in Code
+1. **Location Privacy Purpose Strings (`Info.plist`):**
+   * Apple rejects generic phrases like `"App needs location"`. Purpose strings must explicitly detail business utility:
+     * `NSLocationWhenInUseUsageDescription`: `"$(PRODUCT_NAME) uses your location to discover nearby vehicles, display pickup points, and track your trip progress."` (Both apps).
+     * `NSLocationAlwaysAndWhenInUseUsageDescription`: `"$(PRODUCT_NAME) Driver requires continuous background location access to receive ride dispatches, provide real-time turn-by-turn navigation, and calculate accurate trip distances even when the screen is locked."` (`mobile_driver` only).
+     * `UIBackgroundModes`: Include `location` strictly in `mobile_driver`. Never include in `mobile_go`.
+2. **Mandatory In-App Account Deletion (Guideline 5.1.1(v)):**
+   * Reviewers test this manually. `security_screen.dart` must feature an operational **Delete Account** action that invokes `POST /api/v1/user/delete-account`, revokes active auth tokens, and initiates data anonymization.
+3. **In-App Purchase (IAP) Exemption (Guideline 3.1.5(a)):**
+   * Physical mobility, passenger fares, parcel logistics, and vehicle rentals are explicitly exempt from Apple's 30% digital goods commission. Direct payment gateways (Paystack, Flutterwave, Stripe) are 100% compliant.
+
+---
+
+### 3. Google Play Store Review Policies & Technical Optimizations
+
+Google Play enforces automated scanning and human verification for location-heavy mobility apps.
+
+#### A. Package ID & Namespace Parameterization
+* Google Play Console instantly rejects uploads containing `com.example.*`.
+* In `build.gradle.kts`:
+  ```kotlin
+  defaultConfig {
+      applicationId = project.findProperty("APP_ID") ?: "com.ofia.go"
+      namespace = project.findProperty("APP_NAMESPACE") ?: "com.ofia.go"
+      // ...
+  }
+  ```
+* Every tenant build injects dedicated production IDs: e.g. `com.acmetransit.go` and `com.acmetransit.driver`.
+
+#### B. Location & Background Tracking Compliance (#1 Rejection Cause)
+* **Passenger App (`mobile_go`):**
+  * Strictly foreground only:
+    ```xml
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    ```
+  * Never declare `ACCESS_BACKGROUND_LOCATION` in `mobile_go`. Ride-hailing riders do not qualify under Google Play policy.
+* **Driver App (`mobile_driver`):**
+  * Drivers require location when minimized or navigating via external maps.
+  * In `AndroidManifest.xml`:
+    ```xml
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    ```
+  * **Mandatory Prominent In-App Disclosure:** Prior to displaying the Android OS runtime permission dialog, the app must present a full-screen custom modal explicitly stating:
+    > *"Ofia Driver collects location data to enable trip dispatching, route navigation, and accurate fare calculation even when the app is closed or not in use."*
+  * **Just-In-Time Request:** Trigger this permission strictly when the driver toggles **"Go Online"**, never on initial app startup or splash.
+  * **Ongoing Notification:** When online, maintain a non-dismissible Android Foreground Service notification (`"Online — actively dispatching and tracking trip location"`).
+  * **Submission Declaration & Video:** For every tenant Driver submission in Play Console, submit a public YouTube/Drive link showing the in-app disclosure dialog followed by background tracking in action.
+
+#### C. Account Deletion & Data Safety Form
+* Google Play policy mandates two deletion mechanisms:
+  1. **In-App Deletion:** Functional delete trigger in `security_screen.dart`.
+  2. **Web-Based Deletion URL:** A publicly accessible web URL where users can request account and data deletion without opening the mobile app (hosted dynamically on Ofia ERP: `https://<tenant-domain>/privacy/delete-account`).
+* Both links must be populated in the tenant's Google Play Console Data Safety questionnaire.
+
+#### D. Google Maps API Key Protection
+* Never commit plain-text Google Maps keys in `AndroidManifest.xml` or `AppDelegate.swift`.
+* Inject via Gradle `manifestPlaceholders` from environment variables during CI.
+* Restrict the Google Cloud API key strictly to the tenant's production Android package name + production SHA-1 signing fingerprint, and iOS bundle identifier.
+
+#### E. Android Vitals Stability Thresholds
+* Google Play enforces strict discovery penalties and blocks updates if apps exceed stability thresholds:
+  * **User-Perceived Crash Rate:** Must remain below **1.09%**.
+  * **User-Perceived ANR Rate (Application Not Responding):** Must remain below **0.47%**.
+* Architecture mandates wrapping root entry points in `runZonedGuarded` with automated crash telemetry (Crashlytics/Sentry) and executing polyline decoding/heavy calculations inside background isolates (`compute()`).
+
+---
+
+### 4. Multi-Tenant Build Matrix & Automated CI/CD Pipeline (Fastlane)
+
+To manage deployments across N tenant accounts without manual intervention, the platform utilizes a configuration matrix powered by Fastlane.
+
+#### A. Tenant Build Configuration Schema (`configs/tenants/acme_transit.yaml`)
+```yaml
+tenant_id: "TEN_001"
+tenant_slug: "acme_transit"
+brand_name: "Acme Transit"
+
+android:
+  package_name_go: "com.acmetransit.go"
+  package_name_driver: "com.acmetransit.driver"
+  google_maps_key: "AIzaSyAcmeAndroidKey..."
+  play_store_service_account_json: "credentials/acme_google_play_service_account.json"
+
+ios:
+  bundle_id_go: "com.acmetransit.go"
+  bundle_id_driver: "com.acmetransit.driver"
+  google_maps_key: "AIzaSyAcmeiOSKey..."
+  apple_team_id: "ABC123XYZ"
+  app_store_connect_key_id: "KEY12345"
+  app_store_connect_issuer_id: "issuer-uuid-here"
+
+assets:
+  app_icon_source: "tenants/acme/icon.png"
+  splash_logo_source: "tenants/acme/splash.png"
+  primary_color_hex: "#0F766E"
+```
+
+#### B. Pre-Build Automation Script (`scripts/configure_tenant.py`)
+Prior to compilation, the CI runner invokes:
+```bash
+python3 scripts/configure_tenant.py --tenant acme_transit --app go
+```
+This automated task:
+1. Replaces native app icons using `flutter_launcher_icons:main --path configs/tenants/acme_transit.yaml`.
+2. Generates native splash assets via `flutter_native_splash`.
+3. Injects tenant `applicationId`, package namespace, and Maps API keys into Gradle & Xcode properties.
+4. Copies tenant-specific `google-services.json` (Android) and `GoogleService-Info.plist` (iOS) into native target folders.
+5. Injects compile-time constants:
+   ```bash
+   flutter build appbundle --dart-define=TENANT_ID=TEN_001 --dart-define=APP_TYPE=go
+   ```
+
+#### C. Multi-Account Deployment via Fastlane
+
+* **iOS Lane (`fastlane/Fastfile`):**
+  Uses `fastlane match` backed by an encrypted private repository (with separate branches per tenant) to manage distribution certificates and provisioning profiles:
+  ```ruby
+  lane :deploy_ios do |options|
+    tenant = options[:tenant]
+    config = YAML.load_file("configs/tenants/#{tenant}.yaml")
+    
+    api_key = app_store_connect_api_key(
+      key_id: config["ios"]["app_store_connect_key_id"],
+      issuer_id: config["ios"]["app_store_connect_issuer_id"],
+      key_filepath: "credentials/#{tenant}_AuthKey.p8"
+    )
+    
+    match(
+      type: "appstore",
+      app_identifier: config["ios"]["bundle_id_go"],
+      git_branch: "tenant_#{tenant}"
+    )
+    
+    build_app(workspace: "ios/Runner.xcworkspace", scheme: "Runner")
+    upload_to_app_store(api_key: api_key)
+  end
+  ```
+
+* **Android Lane (`fastlane/Fastfile`):**
+  Uses `upload_to_play_store` (`supply`) authenticated via each tenant's dedicated Google Cloud service account JSON:
+  ```ruby
+  lane :deploy_android do |options|
+    tenant = options[:tenant]
+    config = YAML.load_file("configs/tenants/#{tenant}.yaml")
+    
+    upload_to_play_store(
+      package_name: config["android"]["package_name_go"],
+      json_key: config["android"]["play_store_service_account_json"],
+      aab: "build/app/outputs/bundle/release/app-release.aab",
+      track: "internal"  # Promoted to production upon approval
+    )
+  end
+  ```
+
+---
+
+### 5. Compliance Matrix: Apple App Store vs. Google Play Store
+
+| Compliance Vector | Apple App Store | Google Play Store | Technical Architectural Action |
+| :--- | :--- | :--- | :--- |
+| **White-Label / Template Policy** | **Guideline 4.2.6:** Must submit from Client’s own Organization Account. | **Repetitive Content Policy:** Multi-app identical publishing on 1 account triggers ban. | Publish to distinct client Developer Organization accounts; CI/CD parameterization. |
+| **Account Type Required** | Organization (D-U-N-S verified), $99/yr. | Organization (D-U-N-S verified), $25 one-time. | Guide tenants through D-U-N-S setup during onboarding. |
+| **Driver Background Location** | `UIBackgroundModes: location` + descriptive `NSLocationAlways...` string. | `FOREGROUND_SERVICE_LOCATION` + `ACCESS_BACKGROUND_LOCATION` + disclosure dialog. | Implement pre-prompt in-app disclosure dialog in `mobile_driver`; submit video demo to Play Console. |
+| **Passenger Location** | Foreground only (`NSLocationWhenInUse...`). | Foreground only (`ACCESS_FINE_LOCATION`). | Exclude background location manifests strictly from `mobile_go`. |
+| **Account Deletion** | **Guideline 5.1.1(v):** Functional in-app deletion button. | In-app deletion button + public web deletion URL. | Wire `security_screen.dart` to `DELETE /api/user`; provide web portal deletion link in Ofia ERP. |
+| **Payments / In-App Purchases** | **Exempt (Guideline 3.1.5(a)):** Physical transport exempt from 30% IAP. | **Exempt:** Physical rides exempt from Google Play Billing. | Direct payment processors (Stripe, Paystack, Flutterwave) permitted in both apps. |
+| **Map API Protection** | Restrict by iOS Bundle ID. | Restrict by Android package name + production SHA-1. | Generate tenant-specific Maps API keys in Google Cloud; inject via CI placeholders. |
+| **Reviewer Test Access** | Working credentials + live route simulation mode. | Working credentials + video of background driver tracking. | Provide demo credentials with sandbox driver/trip simulation capabilities. |
 
 ---
 
@@ -1496,7 +1733,7 @@ tenantId = TEN_001
 Super Admin provisions:
 
 ```text
-Mobile Mobility
+Mobile Go
 Mobile Driver
 Database Isolation Tier:
   - SHARED (Tier 1: Logical DB / RLS on shared Neon compute)
@@ -1687,7 +1924,7 @@ Before modifying code, produce an audit report containing:
 ### A. Current architecture
 
 ```text
-mobile-mobility
+mobile-go
 mobile-driver
 backend
 authentication
@@ -1733,7 +1970,7 @@ Ofia ERP
       ↓
 Backend configuration service
       ↓
-Mobile Mobility / Mobile Driver
+Mobile Go / Mobile Driver
 ```
 
 ### E. Required database/backend changes
@@ -1783,7 +2020,7 @@ CREATE TENANT
       ↓
 ASSIGN SERVICES
       ↓
-PROVISION MOBILE MOBILITY
+PROVISION MOBILE GO
       ↓
 PROVISION MOBILE DRIVER
       ↓
@@ -1822,4 +2059,4 @@ Repeat forever
 
 The entire purpose of this work is to ensure that **one maintained Ofia codebase can power dozens or hundreds of tenant-specific mobility applications while Ofia Admin and Ofia ERP control the configuration and the backend enforces tenant isolation.**
 
-**Do not start implementation until the current Ofia Mobile Mobility and Ofia Mobile Driver repositories have been audited and the proposed architecture, database changes, API changes, configuration model, and screen additions have been explicitly mapped.**
+**Do not start implementation until the current Ofia Mobile Go and Ofia Mobile Driver repositories have been audited and the proposed architecture, database changes, API changes, configuration model, and screen additions have been explicitly mapped.**

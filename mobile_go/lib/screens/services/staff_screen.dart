@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:mobile_mobility/utils/icon_util.dart';
+import 'package:mobile_go/utils/icon_util.dart';
 import 'package:flexicon/flexicon.dart';
 import '../payment_screen.dart';
 import 'shuttle_order_summary_screen.dart';
-class ShuttleRouteDetailsScreen extends StatefulWidget {
-  const ShuttleRouteDetailsScreen({Key? key}) : super(key: key);
+class StaffScreen extends StatefulWidget {
+  const StaffScreen({Key? key}) : super(key: key);
 
   @override
-  State<ShuttleRouteDetailsScreen> createState() =>
-      _ShuttleRouteDetailsScreenState();
+  State<StaffScreen> createState() => _StaffScreenState();
 }
 
-class _ShuttleRouteDetailsScreenState extends State<ShuttleRouteDetailsScreen> {
-  bool isSubscribed = false;
+class _StaffScreenState extends State<StaffScreen> {
+  bool isSubscribed = true;
   DateTime? _departureDate;
   TimeOfDay? _departureTime;
 
@@ -22,25 +21,12 @@ class _ShuttleRouteDetailsScreenState extends State<ShuttleRouteDetailsScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('SGT4',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            Row(
-              children: [
-                Icon(fixIcon(FlexIcon.remix.transferTruckTime),
-                    size: 12, color: Colors.green.shade600),
-                const SizedBox(width: 4),
-                const Text('29 stops along this route',
-                    style: TextStyle(fontSize: 12, color: Colors.grey)),
-              ],
-            )
-          ],
-        ),
+        title: const Text('Let\'s plan your trip',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
+        leading: const BackButton(color: Colors.black),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

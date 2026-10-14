@@ -116,7 +116,17 @@ func HandleSendResetEmail(w http.ResponseWriter, r *http.Request) {
     <div style="background-color: #f8f9fa; padding: 40px 16px;">
         <div style="max-width: 580px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #dadce0;">
             <div style="padding: 32px 32px 20px; border-bottom: 1px solid #dadce0;">
-                <div style="display: inline-block; padding: 4px 10px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 4px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">
+                <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 14px;">
+                    <tr>
+                        <td style="vertical-align: middle;">
+                            <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia" width="36" height="36" style="display: block; width: 36px; height: 36px; object-fit: contain;">
+                        </td>
+                        <td style="vertical-align: middle; padding-left: 10px;">
+                            <span style="font-size: 20px; font-weight: 800; color: #202124; letter-spacing: -0.02em;">Ofia</span>
+                        </td>
+                    </tr>
+                </table>
+                <div style="display: inline-block; padding: 4px 12px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 9999px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">
                     OFIA Performance Portal
                 </div>
                 <h1 style="margin: 16px 0 0; color: #202124; font-size: 22px; font-weight: 600; line-height: 1.3;">Reset Your Password</h1>
@@ -125,7 +135,7 @@ func HandleSendResetEmail(w http.ResponseWriter, r *http.Request) {
                 <p style="margin: 0 0 16px;">Hello %s,</p>
                 <p style="margin: 0 0 16px;">A request has been made to reset the password for your account on the OFIA Performance Portal. Click the authorization button below to choose a new password:</p>
                 <div style="text-align: center; margin: 28px 0;">
-                    <a href="%s" style="display: inline-block; padding: 12px 28px; background-color: #1a73e8; color: #ffffff !important; text-decoration: none; border-radius: 4px; font-weight: 600; font-size: 14px; text-align: center;">Reset Password</a>
+                    <a href="%s" style="display: inline-block; padding: 12px 32px; background-color: #1a73e8; color: #ffffff !important; text-decoration: none; border-radius: 9999px; font-weight: 600; font-size: 14px; text-align: center;">Reset Password</a>
                 </div>
                 <div style="background: #f8f9fa; border: 1px solid #dadce0; border-left: 3px solid #1a73e8; border-radius: 4px; padding: 12px 16px; margin: 20px 0; font-size: 13px; color: #3c4043;">
                     <strong>Security Notice:</strong> If you did not request this password reset, please ignore this email or contact HR immediately.
@@ -240,7 +250,17 @@ func HandleSendBulkNotification(w http.ResponseWriter, r *http.Request) {
     <div style="background-color: #f8f9fa; padding: 40px 16px;">
         <div style="max-width: 580px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; border: 1px solid #dadce0;">
             <div style="padding: 32px 32px 20px; border-bottom: 1px solid #dadce0;">
-                <div style="display: inline-block; padding: 4px 10px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 4px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">
+                <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 14px;">
+                    <tr>
+                        <td style="vertical-align: middle;">
+                            <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia" width="36" height="36" style="display: block; width: 36px; height: 36px; object-fit: contain;">
+                        </td>
+                        <td style="vertical-align: middle; padding-left: 10px;">
+                            <span style="font-size: 20px; font-weight: 800; color: #202124; letter-spacing: -0.02em;">Ofia</span>
+                        </td>
+                    </tr>
+                </table>
+                <div style="display: inline-block; padding: 4px 12px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 9999px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">
                     OFIA Performance Portal
                 </div>
                 <h1 style="margin: 16px 0 0; color: #202124; font-size: 22px; font-weight: 600; line-height: 1.3;">Notification Alert</h1>

@@ -178,7 +178,17 @@ export async function testSmtpSettings(settings: SmtpSettings, testRecipientEmai
       html: `
         <div style="font-family: 'Plus Jakarta Sans', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 580px; margin: 24px auto; padding: 32px; border: 1px solid #dadce0; border-radius: 8px; background: #ffffff;">
           <div style="margin-bottom: 20px; border-bottom: 1px solid #dadce0; padding-bottom: 16px;">
-            <div style="display: inline-block; padding: 4px 10px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 4px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">
+            <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 14px;">
+              <tr>
+                <td style="vertical-align: middle;">
+                  <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia" width="36" height="36" style="display: block; width: 36px; height: 36px; object-fit: contain;" />
+                </td>
+                <td style="vertical-align: middle; padding-left: 10px;">
+                  <span style="font-size: 20px; font-weight: 800; color: #202124; letter-spacing: -0.02em;">Ofia</span>
+                </td>
+              </tr>
+            </table>
+            <div style="display: inline-block; padding: 4px 12px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 9999px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">
               SMTP Verification
             </div>
             <h2 style="color: #202124; margin: 14px 0 4px; font-size: 20px; font-weight: 600;">Ofia ERP Connection Verified</h2>
@@ -832,20 +842,30 @@ export function wrapInMasterAdsenseTemplate(
     .wrapper { width: 100%; background-color: #f8f9fa; padding: 32px 16px; box-sizing: border-box; }
     .card { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; border: 1px solid #dadce0; overflow: hidden; }
     .header { padding: 28px 32px 20px; border-bottom: 1px solid #dadce0; }
-    .badge { display: inline-block; padding: 4px 10px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 4px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .badge { display: inline-block; padding: 4px 12px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 9999px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
     .title { margin: 14px 0 0; font-size: 20px; font-weight: 600; color: #202124; line-height: 1.3; }
     .content { padding: 32px; font-size: 14px; line-height: 1.6; color: #3c4043; }
+    .btn { display: inline-block; padding: 12px 32px; background-color: #1a73e8; color: #ffffff !important; font-weight: 600; font-size: 14px; text-decoration: none; border-radius: 9999px; }
     .footer { padding: 20px 32px; text-align: center; font-size: 12px; color: #70757a; background-color: #f8f9fa; border-top: 1px solid #dadce0; line-height: 1.5; }
   </style>
 </head>
 <body>
   <div class="wrapper">
     <div class="card">
-      ${senderName || title ? `
       <div class="header">
+        <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 14px;">
+          <tr>
+            <td style="vertical-align: middle;">
+              <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia" width="36" height="36" style="display: block; width: 36px; height: 36px; object-fit: contain;" />
+            </td>
+            <td style="vertical-align: middle; padding-left: 10px;">
+              <span style="font-size: 20px; font-weight: 800; color: #202124; letter-spacing: -0.02em;">Ofia</span>
+            </td>
+          </tr>
+        </table>
         ${senderName ? `<div class="badge">${senderName}</div>` : ""}
         ${title ? `<h1 class="title">${title}</h1>` : ""}
-      </div>` : ""}
+      </div>
       <div class="content">
         ${contentHtml}
       </div>
@@ -2140,12 +2160,12 @@ export async function sendPlatformPasswordResetEmail(
     .wrapper { width: 100%; background-color: #f8f9fa; padding: 40px 16px; box-sizing: border-box; }
     .card { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 8px; border: 1px solid #dadce0; overflow: hidden; }
     .header { padding: 32px 32px 20px; border-bottom: 1px solid #dadce0; }
-    .brand-badge { display: inline-block; padding: 4px 10px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 4px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .brand-badge { display: inline-block; padding: 4px 12px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 9999px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
     .title { margin: 16px 0 6px; font-size: 22px; font-weight: 600; color: #202124; line-height: 1.3; }
     .subtitle { margin: 0; font-size: 13px; color: #5f6368; }
     .content { padding: 32px; font-size: 14px; line-height: 1.6; color: #3c4043; }
     .btn-container { text-align: center; margin: 28px 0; }
-    .btn { display: inline-block; background-color: #1a73e8; color: #ffffff !important; padding: 12px 28px; border-radius: 4px; font-size: 14px; font-weight: 600; text-decoration: none; }
+    .btn { display: inline-block; background-color: #1a73e8; color: #ffffff !important; padding: 12px 32px; border-radius: 9999px; font-size: 14px; font-weight: 600; text-decoration: none; }
     .notice-box { background: #f8f9fa; border: 1px solid #dadce0; border-left: 3px solid #1a73e8; border-radius: 4px; padding: 12px 16px; margin: 20px 0; font-size: 13px; color: #3c4043; line-height: 1.5; }
     .fallback-url { word-break: break-all; font-family: monospace; font-size: 11px; background: #f8f9fa; padding: 10px 12px; border-radius: 4px; color: #202124; border: 1px solid #dadce0; margin-top: 8px; }
     .footer { padding: 20px 32px; text-align: center; font-size: 12px; color: #70757a; background-color: #f8f9fa; border-top: 1px solid #dadce0; line-height: 1.5; }
@@ -2155,6 +2175,16 @@ export async function sendPlatformPasswordResetEmail(
   <div class="wrapper">
     <div class="card">
       <div class="header">
+        <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 14px;">
+          <tr>
+            <td style="vertical-align: middle;">
+              <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia" width="36" height="36" style="display: block; width: 36px; height: 36px; object-fit: contain;" />
+            </td>
+            <td style="vertical-align: middle; padding-left: 10px;">
+              <span style="font-size: 20px; font-weight: 800; color: #202124; letter-spacing: -0.02em;">Ofia</span>
+            </td>
+          </tr>
+        </table>
         <div class="brand-badge">${senderName}</div>
         <h1 class="title">Password Reset Request</h1>
         <p class="subtitle">Follow the instructions below to regain access to your workspace.</p>
@@ -2301,7 +2331,7 @@ export async function sendPlatformPasswordChangedEmail(
     .wrapper { width: 100%; background-color: #f8f9fa; padding: 40px 16px; box-sizing: border-box; }
     .card { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 8px; border: 1px solid #dadce0; overflow: hidden; }
     .header { padding: 32px 32px 20px; border-bottom: 1px solid #dadce0; }
-    .badge { display: inline-block; padding: 4px 10px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 4px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .badge { display: inline-block; padding: 4px 12px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 9999px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
     .title { margin: 16px 0 6px; font-size: 22px; font-weight: 600; color: #202124; line-height: 1.3; }
     .subtitle { margin: 0; font-size: 13px; color: #5f6368; }
     .content { padding: 32px; font-size: 14px; line-height: 1.6; color: #3c4043; }
@@ -2314,6 +2344,16 @@ export async function sendPlatformPasswordChangedEmail(
   <div class="wrapper">
     <div class="card">
       <div class="header">
+        <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 14px;">
+          <tr>
+            <td style="vertical-align: middle;">
+              <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia" width="36" height="36" style="display: block; width: 36px; height: 36px; object-fit: contain;" />
+            </td>
+            <td style="vertical-align: middle; padding-left: 10px;">
+              <span style="font-size: 20px; font-weight: 800; color: #202124; letter-spacing: -0.02em;">Ofia</span>
+            </td>
+          </tr>
+        </table>
         <div class="badge">${senderName}</div>
         <h1 class="title">Password Changed Successfully</h1>
         <p class="subtitle">Security update confirmation for your workspace account.</p>
@@ -2418,12 +2458,12 @@ export async function sendPlatformEmailVerificationEmail(
     .wrapper { width: 100%; background-color: #f8f9fa; padding: 40px 16px; box-sizing: border-box; }
     .card { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 8px; border: 1px solid #dadce0; overflow: hidden; }
     .header { padding: 32px 32px 20px; border-bottom: 1px solid #dadce0; }
-    .badge { display: inline-block; padding: 4px 10px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 4px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .badge { display: inline-block; padding: 4px 12px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 9999px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
     .title { margin: 16px 0 6px; font-size: 22px; font-weight: 600; color: #202124; line-height: 1.3; }
     .subtitle { margin: 0; font-size: 13px; color: #5f6368; }
     .content { padding: 32px; font-size: 14px; line-height: 1.6; color: #3c4043; }
     .btn-wrap { text-align: center; margin: 28px 0; }
-    .btn { display: inline-block; padding: 12px 28px; background-color: #1a73e8; color: #ffffff !important; font-weight: 600; font-size: 14px; text-decoration: none; border-radius: 4px; }
+    .btn { display: inline-block; padding: 12px 32px; background-color: #1a73e8; color: #ffffff !important; font-weight: 600; font-size: 14px; text-decoration: none; border-radius: 9999px; }
     .fallback-box { font-size: 12px; color: #70757a; line-height: 1.5; margin-top: 20px; }
     .fallback-url { word-break: break-all; color: #1a73e8; margin-top: 4px; font-family: monospace; font-size: 11px; }
     .footer { padding: 20px 32px; text-align: center; font-size: 12px; color: #70757a; background-color: #f8f9fa; border-top: 1px solid #dadce0; line-height: 1.5; }
@@ -2433,6 +2473,16 @@ export async function sendPlatformEmailVerificationEmail(
   <div class="wrapper">
     <div class="card">
       <div class="header">
+        <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 14px;">
+          <tr>
+            <td style="vertical-align: middle;">
+              <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia" width="36" height="36" style="display: block; width: 36px; height: 36px; object-fit: contain;" />
+            </td>
+            <td style="vertical-align: middle; padding-left: 10px;">
+              <span style="font-size: 20px; font-weight: 800; color: #202124; letter-spacing: -0.02em;">Ofia</span>
+            </td>
+          </tr>
+        </table>
         <div class="badge">${senderName}</div>
         <h1 class="title">Verify Your Email Address</h1>
         <p class="subtitle">Complete your setup to access ${tenantName}</p>
@@ -2543,13 +2593,13 @@ export async function sendPlatformBillingNotificationEmail(
     .wrapper { width: 100%; background-color: #f8f9fa; padding: 40px 16px; box-sizing: border-box; }
     .card { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 8px; border: 1px solid #dadce0; overflow: hidden; }
     .header { padding: 32px 32px 20px; border-bottom: 1px solid #dadce0; }
-    .badge { display: inline-block; padding: 4px 10px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 4px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+    .badge { display: inline-block; padding: 4px 12px; background: #e8f0fe; border: 1px solid #d2e3fc; border-radius: 9999px; color: #1a73e8; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
     .title { margin: 16px 0 6px; font-size: 22px; font-weight: 600; color: #202124; line-height: 1.3; }
     .subtitle { margin: 0; font-size: 13px; color: #5f6368; }
     .content { padding: 32px; font-size: 14px; line-height: 1.6; color: #3c4043; }
     .box { background: #f8f9fa; border: 1px solid #dadce0; border-left: 3px solid #1a73e8; padding: 14px 18px; margin: 20px 0; border-radius: 4px; font-size: 13px; color: #3c4043; }
     .btn-wrap { text-align: center; margin: 24px 0; }
-    .btn { display: inline-block; padding: 12px 28px; background-color: #1a73e8; color: #ffffff !important; font-weight: 600; font-size: 14px; text-decoration: none; border-radius: 4px; }
+    .btn { display: inline-block; padding: 12px 32px; background-color: #1a73e8; color: #ffffff !important; font-weight: 600; font-size: 14px; text-decoration: none; border-radius: 9999px; }
     .footer { padding: 20px 32px; text-align: center; font-size: 12px; color: #70757a; background-color: #f8f9fa; border-top: 1px solid #dadce0; line-height: 1.5; }
   </style>
 </head>
@@ -2557,6 +2607,16 @@ export async function sendPlatformBillingNotificationEmail(
   <div class="wrapper">
     <div class="card">
       <div class="header">
+        <table cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 14px;">
+          <tr>
+            <td style="vertical-align: middle;">
+              <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" alt="Ofia" width="36" height="36" style="display: block; width: 36px; height: 36px; object-fit: contain;" />
+            </td>
+            <td style="vertical-align: middle; padding-left: 10px;">
+              <span style="font-size: 20px; font-weight: 800; color: #202124; letter-spacing: -0.02em;">Ofia</span>
+            </td>
+          </tr>
+        </table>
         <div class="badge">${senderName}</div>
         <h1 class="title">Subscription &amp; Billing Update</h1>
         <p class="subtitle">Administrative billing notice for ${tenantName}</p>

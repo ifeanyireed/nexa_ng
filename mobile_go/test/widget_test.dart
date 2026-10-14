@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mobile_mobility/main.dart';
+import 'package:mobile_go/main.dart';
 
 void main() {
   testWidgets('Mobile mobility app smoke test', (WidgetTester tester) async {

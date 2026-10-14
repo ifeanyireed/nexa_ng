@@ -4,7 +4,7 @@ import 'package:flexicon/flexicon.dart';
 import 'home_screen.dart';
 import 'signup_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:mobile_mobility/utils/icon_util.dart';
+import 'package:mobile_go/utils/icon_util.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flexicon/flexicon.dart';
-import 'package:mobile_mobility/utils/icon_util.dart';
+import 'package:mobile_go/utils/icon_util.dart';
 import 'rental_plan_trip_screen.dart';
 
 class RentalVehicleDetailsScreen extends StatefulWidget {

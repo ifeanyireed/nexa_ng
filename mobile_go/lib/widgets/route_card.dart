@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mobile_mobility/utils/icon_util.dart';
+import 'package:mobile_go/utils/icon_util.dart';
 import 'package:flexicon/flexicon.dart';
 import '../screens/services/shuttle_route_details_screen.dart';
 

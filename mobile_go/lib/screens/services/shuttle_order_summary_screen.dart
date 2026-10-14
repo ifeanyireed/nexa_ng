@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flexicon/flexicon.dart';
-import 'package:mobile_mobility/utils/icon_util.dart';
+import 'package:mobile_go/utils/icon_util.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../payment_screen.dart';
 

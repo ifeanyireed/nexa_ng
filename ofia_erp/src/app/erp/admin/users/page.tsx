@@ -55,18 +55,6 @@ interface ERPStaffUser {
   assignedPages?: string[];
 }
 
-const DEPARTMENTS = [
-  "Executive Directorate",
-  "Human Resources & Talent",
-  "Finance & Accounts",
-  "Commercial & Growth",
-  "Fleet & Warehouse Operations",
-  "Retail & Front Desk",
-  "Supply Chain & Depot",
-  "Logistics & Fulfillment",
-  "Systems & IT",
-];
-
 // Comprehensive tenant-specific departments and operational units
 const TENANT_SPECIFIC_DEPARTMENTS: Record<string, string[]> = {
   // New Era Transport Solutions (Transport & Logistics Operations)
@@ -218,116 +206,6 @@ const TENANT_SPECIFIC_DEPARTMENTS: Record<string, string[]> = {
   ],
 };
 
-function mapToParentDepartment(val: string): string {
-  if (!val) return DEPARTMENTS[0];
-  const lower = val.toLowerCase();
-  if (
-    lower.includes("fleet") ||
-    lower.includes("workshop") ||
-    lower.includes("maintenance") ||
-    lower.includes("facility") ||
-    lower.includes("warehouse")
-  ) {
-    return "Fleet & Warehouse Operations";
-  }
-  if (
-    lower.includes("finance") ||
-    lower.includes("acc") ||
-    lower.includes("bursary") ||
-    lower.includes("accountant") ||
-    lower.includes("payable") ||
-    lower.includes("receivable") ||
-    lower.includes("treasury") ||
-    lower.includes("audit") ||
-    lower.includes("tax")
-  ) {
-    return "Finance & Accounts";
-  }
-  if (
-    lower.includes("noc") ||
-    lower.includes("dispatch") ||
-    lower.includes("fulfillment") ||
-    lower.includes("logistics") ||
-    lower.includes("monitoring") ||
-    lower.includes("hub") ||
-    lower.includes("route")
-  ) {
-    return "Logistics & Fulfillment";
-  }
-  if (
-    lower.includes("hr") ||
-    lower.includes("talent") ||
-    lower.includes("human resource") ||
-    lower.includes("people") ||
-    lower.includes("recruitment") ||
-    lower.includes("welfare")
-  ) {
-    return "Human Resources & Talent";
-  }
-  if (
-    lower.includes("market") ||
-    lower.includes("sales") ||
-    lower.includes("growth") ||
-    lower.includes("csr") ||
-    lower.includes("social media") ||
-    lower.includes("commercial") ||
-    lower.includes("merchant")
-  ) {
-    return "Commercial & Growth";
-  }
-  if (
-    lower.includes("it") ||
-    lower.includes("systems") ||
-    lower.includes("erp") ||
-    lower.includes("devops") ||
-    lower.includes("engineering") ||
-    lower.includes("software") ||
-    lower.includes("robotics") ||
-    lower.includes("technical") ||
-    lower.includes("informatics")
-  ) {
-    return "Systems & IT";
-  }
-  if (
-    lower.includes("legal") ||
-    lower.includes("executive") ||
-    lower.includes("internal control") ||
-    lower.includes("operations") ||
-    lower.includes("director") ||
-    lower.includes("general manager") ||
-    lower.includes("governance") ||
-    lower.includes("compliance") ||
-    lower.includes("aml") ||
-    lower.includes("risk")
-  ) {
-    return "Executive Directorate";
-  }
-  if (
-    lower.includes("supply") ||
-    lower.includes("depot") ||
-    lower.includes("procurement") ||
-    lower.includes("inventory") ||
-    lower.includes("pharmacy")
-  ) {
-    return "Supply Chain & Depot";
-  }
-  if (
-    lower.includes("khlc") ||
-    lower.includes("instructor") ||
-    lower.includes("student") ||
-    lower.includes("academic") ||
-    lower.includes("front desk") ||
-    lower.includes("retail") ||
-    lower.includes("desk") ||
-    lower.includes("patient") ||
-    lower.includes("clinical") ||
-    lower.includes("reception")
-  ) {
-    return "Retail & Front Desk";
-  }
-  return DEPARTMENTS[0];
-}
-
 function UserManagementContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
@@ -370,9 +248,8 @@ function UserManagementContent() {
   const [formEmail, setFormEmail] = useState("");
   const [formRole, setFormRole] = useState<RoleKey>("employee");
   const [formAssignedPages, setFormAssignedPages] = useState<string[]>(["employee"]);
-  const [formDepartment, setFormDepartment] = useState(DEPARTMENTS[0]);
-  const [formDesignation, setFormDesignation] = useState("");
-  const [isCustomDesignation, setIsCustomDesignation] = useState(false);
+  const [formDepartment, setFormDepartment] = useState("");
+  const [isCustomDept, setIsCustomDept] = useState(false);
   const [fetchedDepts, setFetchedDepts] = useState<{ code: string; name: string }[]>([]);
   const [formManager, setFormManager] = useState("");
   const [formManagerId, setFormManagerId] = useState<string | undefined>(undefined);
@@ -571,7 +448,7 @@ function UserManagementContent() {
     if (!target) return;
     const newPages = target.assignedPages && target.assignedPages.length > 0
       ? target.assignedPages
-      : getDefaultPagesForRole(updatedRole, target.designation);
+      : getDefaultPagesForRole(updatedRole, target.department || target.designation);
     try {
       setIsSaving(true);
       const res = await fetch("/api/erp/users", {
@@ -603,15 +480,14 @@ function UserManagementContent() {
     setFormName("");
     setFormEmail("");
     setFormRole("employee");
-    setFormAssignedPages(["employee"]);
-    const initialDesignation = tenantDepartments[0] || "";
-    setFormDesignation(initialDesignation);
-    setFormDepartment(mapToParentDepartment(initialDesignation));
+    const initialDept = tenantDepartments[0] || "General Operations";
+    setFormDepartment(initialDept);
+    setFormAssignedPages(getDefaultPagesForRole("employee", initialDept));
     setFormManager("");
     setFormManagerId(undefined);
     setFormCompany(activeTenant?.name || "");
     setFormLocation("Lagos, Nigeria");
-    setIsCustomDesignation(false);
+    setIsCustomDept(false);
     setIsPagesDropdownOpen(false);
     setPagesSearch("");
     setIsAddUserModalOpen(true);
@@ -622,19 +498,18 @@ function UserManagementContent() {
     setFormName(staffUser.name);
     setFormEmail(staffUser.email);
     setFormRole(staffUser.role);
+    const userDept = staffUser.department || staffUser.designation || "";
+    setFormDepartment(userDept);
     setFormAssignedPages(
       staffUser.assignedPages && staffUser.assignedPages.length > 0
         ? staffUser.assignedPages
-        : getDefaultPagesForRole(staffUser.role, staffUser.designation)
+        : getDefaultPagesForRole(staffUser.role, userDept)
     );
-    setFormDepartment(staffUser.department);
-    const initialDesig = staffUser.designation || staffUser.department || "";
-    setFormDesignation(initialDesig);
     setFormManager(staffUser.managerName || "");
     setFormManagerId(staffUser.managerId || undefined);
     setFormCompany(staffUser.company || activeTenant?.name || "");
     setFormLocation(staffUser.location || "Lagos, Nigeria");
-    setIsCustomDesignation(false);
+    setIsCustomDept(false);
     setIsPagesDropdownOpen(false);
     setPagesSearch("");
     setIsAddUserModalOpen(true);
@@ -656,7 +531,7 @@ function UserManagementContent() {
         email: formEmail,
         role: formRole,
         department: formDepartment,
-        designation: formDesignation || "Corporate Officer",
+        designation: formDepartment,
         managerName: formManager || undefined,
         managerId: formManagerId || undefined,
         avatar: avatarNum,
@@ -792,7 +667,7 @@ function UserManagementContent() {
   });
 
   const leadershipCount = users.filter((u) => ["manager", "md", "admin", "hr"].includes(u.role)).length;
-  const departmentsCount = departmentsList.length || DEPARTMENTS.length;
+  const departmentsCount = departmentsList.length || tenantDepartments.length;
 
   const getRoleBadge = (role: RoleKey) => {
     switch (role) {
@@ -1003,8 +878,8 @@ function UserManagementContent() {
               <thead>
                 <tr className="border-b border-[var(--nexa-border)] text-[var(--nexa-text-muted)]">
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Employee</th>
-                  <th className="pb-3 px-3 font-bold uppercase tracking-wider">Department</th>
-                  <th className="pb-3 px-3 font-bold uppercase tracking-wider">Designation</th>
+                  <th className="pb-3 px-3 font-bold uppercase tracking-wider">Department / Role</th>
+                  <th className="pb-3 px-3 font-bold uppercase tracking-wider">System Role</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Reporting Manager</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider text-right">Actions</th>
                 </tr>
@@ -1043,8 +918,19 @@ function UserManagementContent() {
                             <p className="text-[10px] text-[var(--nexa-text-muted)] font-mono">{u.email} • {u.id}</p>
                           </div>
                         </td>
-                        <td className="py-3.5 px-3 text-[var(--nexa-text-muted)] font-medium">{u.department}</td>
-                        <td className="py-3.5 px-3 text-[var(--nexa-text-primary)] font-semibold">{u.designation}</td>
+                        <td className="py-3.5 px-3">
+                          <p className="font-semibold text-xs text-[var(--nexa-text-primary)]">
+                            {u.department || u.designation || "—"}
+                          </p>
+                          {u.designation && u.designation !== u.department && (
+                            <p className="text-[10px] text-[var(--nexa-text-muted)]">
+                              {u.designation}
+                            </p>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-3">
+                          {getRoleBadge(u.role)}
+                        </td>
                         <td className="py-3.5 px-3">
                           {u.managerName ? (
                             <span className="font-medium text-xs text-[var(--nexa-text-primary)] flex items-center gap-1.5">
@@ -1161,37 +1047,72 @@ function UserManagementContent() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                    Department
-                  </label>
-                  <select
-                    value={formDepartment}
-                    onChange={(e) => setFormDepartment(e.target.value)}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] cursor-pointer"
-                  >
-                    {formDepartment && !DEPARTMENTS.includes(formDepartment) && (
-                      <option value={formDepartment}>
-                        {formDepartment} (Current Department)
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                      Department / Role *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomDept(!isCustomDept)}
+                      className="text-[10px] text-[#1A56DB] hover:underline cursor-pointer"
+                    >
+                      {isCustomDept ? "Select from list" : "+ Custom"}
+                    </button>
+                  </div>
+                  {isCustomDept ? (
+                    <input
+                      type="text"
+                      placeholder="e.g. Fleet 4 (Facility Manager)"
+                      value={formDepartment}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFormDepartment(val);
+                        setFormAssignedPages(getDefaultPagesForRole(formRole, val));
+                      }}
+                      className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
+                    />
+                  ) : (
+                    <select
+                      value={formDepartment}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val === "__CUSTOM__") {
+                          setIsCustomDept(true);
+                          return;
+                        }
+                        setFormDepartment(val);
+                        setFormAssignedPages(getDefaultPagesForRole(formRole, val));
+                      }}
+                      className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] cursor-pointer"
+                    >
+                      <option value="" disabled>
+                        -- Select Tenant Department / Role --
                       </option>
-                    )}
-                    {DEPARTMENTS.map((dept) => (
-                      <option key={dept} value={dept}>
-                        {dept}
-                      </option>
-                    ))}
-                  </select>
+                      {formDepartment && !tenantDepartments.includes(formDepartment) && (
+                        <option value={formDepartment}>
+                          {formDepartment} (Current Department / Role)
+                        </option>
+                      )}
+                      {tenantDepartments.map((dept) => (
+                        <option key={dept} value={dept}>
+                          {dept}
+                        </option>
+                      ))}
+                      <option value="__CUSTOM__">+ Enter Custom Department / Role...</option>
+                    </select>
+                  )}
                 </div>
 
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                    Assigned Role
+                    Assigned Role *
                   </label>
                   <select
                     value={formRole}
                     onChange={(e) => {
                       const newRole = e.target.value as RoleKey;
                       setFormRole(newRole);
-                      setFormAssignedPages(getDefaultPagesForRole(newRole, formDesignation));
+                      setFormAssignedPages(getDefaultPagesForRole(newRole, formDepartment));
                     }}
                     className="w-full px-3.5 py-2 text-xs font-bold rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] cursor-pointer"
                   >
@@ -1214,65 +1135,6 @@ function UserManagementContent() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                      Job Title / Designation
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setIsCustomDesignation(!isCustomDesignation)}
-                      className="text-[10px] text-[#1A56DB] hover:underline cursor-pointer"
-                    >
-                      {isCustomDesignation ? "Select from list" : "+ Custom"}
-                    </button>
-                  </div>
-                  {isCustomDesignation ? (
-                    <input
-                      type="text"
-                      placeholder="e.g. Senior Operations Officer"
-                      value={formDesignation}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setFormDesignation(val);
-                        const matched = mapToParentDepartment(val);
-                        if (matched) setFormDepartment(matched);
-                      }}
-                      className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
-                    />
-                  ) : (
-                    <select
-                      value={formDesignation}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (val === "__CUSTOM__") {
-                          setIsCustomDesignation(true);
-                          return;
-                        }
-                        setFormDesignation(val);
-                        const matched = mapToParentDepartment(val);
-                        if (matched) setFormDepartment(matched);
-                      }}
-                      className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] cursor-pointer"
-                    >
-                      <option value="" disabled>
-                        -- Select Tenant Department / Title --
-                      </option>
-                      {/* Preserve current designation if not in preset list */}
-                      {formDesignation && !tenantDepartments.includes(formDesignation) && (
-                        <option value={formDesignation}>
-                          {formDesignation} (Current Designation)
-                        </option>
-                      )}
-                      {tenantDepartments.map((dept) => (
-                        <option key={dept} value={dept}>
-                          {dept}
-                        </option>
-                      ))}
-                      <option value="__CUSTOM__">+ Enter Custom Title / Designation...</option>
-                    </select>
-                  )}
-                </div>
-                <div className="space-y-1">
                   <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
                     Reporting Manager
                   </label>
@@ -1287,7 +1149,6 @@ function UserManagementContent() {
                     className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] cursor-pointer"
                   >
                     <option value="">-- No Direct Reporting Manager --</option>
-                    {/* Preserve current manager name if set but not present in manager-filtered array */}
                     {formManager && !managerStaffOptions.some((m) => m.name === formManager) && (
                       <option value={formManager}>
                         {formManager} (Current Manager)
@@ -1295,14 +1156,12 @@ function UserManagementContent() {
                     )}
                     {managerStaffOptions.map((mgr) => (
                       <option key={mgr.id} value={mgr.name}>
-                        {mgr.name} — {mgr.designation || mgr.department} ({mgr.role.toUpperCase()})
+                        {mgr.name} — {mgr.department || mgr.designation} ({mgr.role.toUpperCase()})
                       </option>
                     ))}
                   </select>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
                     Tenant Organization
@@ -1315,18 +1174,19 @@ function UserManagementContent() {
                     className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                    Location / Office Base
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Lagos, Nigeria"
-                    value={formLocation}
-                    onChange={(e) => setFormLocation(e.target.value)}
-                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
-                  />
-                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                  Location / Office Base
+                </label>
+                <input
+                  type="text"
+                  placeholder="Lagos, Nigeria"
+                  value={formLocation}
+                  onChange={(e) => setFormLocation(e.target.value)}
+                  className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
+                />
               </div>
 
               {/* ASSIGNED PAGES & PORTALS ACCESS - ONLY FOR NON-ADMINS */}
@@ -1605,7 +1465,7 @@ function UserManagementContent() {
                   {resetModalUser.email}
                 </p>
                 <p className="text-[10px] text-[var(--nexa-text-secondary)] mt-0.5">
-                  {resetModalUser.designation} • {resetModalUser.department}
+                  {resetModalUser.department || resetModalUser.designation} • {resetModalUser.role.toUpperCase()}
                 </p>
               </div>
             </div>

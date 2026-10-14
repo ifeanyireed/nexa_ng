@@ -47,9 +47,13 @@ export default function EmployeeDashboard() {
   const userAssignedPages = currentUser.assignedPages || [];
   const hasCrmAssigned =
     userAssignedPages.includes("crm") ||
+    currentUser.role === "marketer" ||
+    currentUser.role === "admin";
+  const hasSalesCloserAssigned =
     userAssignedPages.includes("sales_closer") ||
     Boolean(currentUser.designation?.toLowerCase().includes("closer")) ||
-    currentUser.role === "sales_closer";
+    currentUser.role === "sales_closer" ||
+    currentUser.role === "admin";
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -212,7 +216,7 @@ export default function EmployeeDashboard() {
           </div>
         </div>
 
-        {/* Assigned Enterprise Workspace Module Banner (CRM & Sales Closer Portal) */}
+        {/* Assigned Enterprise Workspace Module Banner (CRM & Email Marketing) */}
         {hasCrmModule && hasCrmAssigned && (
           <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 rounded-3xl p-5 text-white flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm border border-blue-500/30">
             <div className="flex items-center gap-4">
@@ -239,11 +243,36 @@ export default function EmployeeDashboard() {
                 <span>Open CRM Dashboard</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* Assigned Sales Closer Portal Banner */}
+        {hasCrmModule && hasSalesCloserAssigned && (
+          <div className="bg-gradient-to-r from-emerald-600 via-teal-700 to-cyan-800 rounded-3xl p-5 text-white flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-sm border border-emerald-500/30">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 shrink-0">
+                <Target className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-base font-extrabold tracking-tight">Sales Closer Portal</h4>
+                  <span className="bg-emerald-400/20 text-emerald-200 border border-emerald-400/30 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full">
+                    Sales Pipeline
+                  </span>
+                </div>
+                <p className="text-xs text-emerald-100/90 mt-1 max-w-xl leading-relaxed">
+                  Dedicated pipeline for assigned leads directory, sales outreach, calls, demos, and closing activities.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5 shrink-0 flex-wrap">
               <button
                 onClick={() => router.push("/erp/ops/crm")}
-                className="px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1.5"
+                className="px-4 py-2.5 bg-white text-emerald-800 font-extrabold rounded-xl text-xs hover:bg-emerald-50 transition-all cursor-pointer shadow-sm flex items-center gap-1.5"
               >
-                <span>Sales Closer Portal</span>
+                <span>Open Sales Closer Portal</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>

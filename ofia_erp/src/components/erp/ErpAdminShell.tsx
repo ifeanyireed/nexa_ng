@@ -563,9 +563,9 @@ export function ErpAdminShell({
       if (parsedUser && Array.isArray(parsedUser.assignedPages)) {
         resolvedAssignedPages = parsedUser.assignedPages;
       } else if (parsedUser && (parsedUser.designation?.toLowerCase().includes("sales closer") || resolvedRole === "sales_closer")) {
-        resolvedAssignedPages = ["employee", "crm"];
+        resolvedAssignedPages = ["sales_closer", "employee"];
       } else if (resolvedRole === "sales_closer") {
-        resolvedAssignedPages = ["employee", "crm"];
+        resolvedAssignedPages = ["sales_closer", "employee"];
       }
       setUserAssignedPages(resolvedAssignedPages);
 
@@ -615,7 +615,7 @@ export function ErpAdminShell({
             (allowedPage === "accounting" && pathname.startsWith("/erp/accountant")) ||
             (allowedPage === "hr" && pathname.startsWith("/erp/hr")) ||
             (allowedPage === "sales_closer" && pathname.startsWith("/erp/ops/crm")) ||
-            (allowedPage === "crm" && (pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer") || pathname.startsWith("/erp/ops/crm"))) ||
+            (allowedPage === "crm" && (pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer"))) ||
             (allowedPage === "shop" && pathname.startsWith("/erp/admin/shop")) ||
             (allowedPage === "mobility" && pathname.startsWith("/erp/admin/mobility")) ||
             (allowedPage === "mobility_ops" && pathname.startsWith("/erp/ops/mobility")) ||
@@ -659,7 +659,7 @@ export function ErpAdminShell({
               (allowedPage === "accounting" && pathname.startsWith("/erp/accountant")) ||
               (allowedPage === "hr" && pathname.startsWith("/erp/hr")) ||
               (allowedPage === "sales_closer" && pathname.startsWith("/erp/ops/crm")) ||
-              (allowedPage === "crm" && (pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer") || pathname.startsWith("/erp/ops/crm"))) ||
+              (allowedPage === "crm" && (pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer"))) ||
               (allowedPage === "shop" && pathname.startsWith("/erp/admin/shop")) ||
               (allowedPage === "mobility" && pathname.startsWith("/erp/admin/mobility")) ||
               (allowedPage === "mobility_ops" && pathname.startsWith("/erp/ops/mobility")) ||
@@ -1134,19 +1134,18 @@ export function ErpAdminShell({
     if (currentRole === "admin") return true;
 
     // 2. Direct Assigned Pages Check (Configured in User Management):
-    // E.g. A sales closer sees the employee portal and the CRM (Sales Closer Portal)
     if (userAssignedPages && userAssignedPages.length > 0) {
       if (item.key === "sales_closer") {
-        return isProvisioned("sales_closer") && (userAssignedPages.includes("sales_closer") || userAssignedPages.includes("crm"));
+        return isProvisioned("sales_closer") && userAssignedPages.includes("sales_closer");
       }
       if (item.key === "crm") {
-        return isProvisioned("crm") && (userAssignedPages.includes("crm") || userAssignedPages.includes("sales_closer"));
+        return isProvisioned("crm") && userAssignedPages.includes("crm");
       }
       return userAssignedPages.includes(item.key);
     }
 
     if (currentRole === "sales_closer") {
-      return item.key === "employee" || ((item.key === "sales_closer" || item.key === "crm") && isProvisioned("crm"));
+      return item.key === "employee" || (item.key === "sales_closer" && isProvisioned("sales_closer"));
     }
 
     // 2. Dynamic Department Access Evaluation:

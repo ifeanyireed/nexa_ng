@@ -396,14 +396,14 @@ export function getDefaultPagesForRole(role: RoleKey | string, designation?: str
   const normalizedRole = (role || "").toLowerCase();
   const desig = (designation || "").toLowerCase();
 
-  // A sales closer sees the employee portal and the Sales Closer Portal (/erp/ops/crm) + CRM
+  // A sales closer sees the employee portal and the Sales Closer Portal (/erp/ops/crm)
   if (
     normalizedRole === "sales_closer" ||
     desig.includes("sales closer") ||
     desig.includes("closer") ||
     desig.includes("marketing 6")
   ) {
-    return ["sales_closer", "employee", "crm"];
+    return ["sales_closer", "employee"];
   }
 
   switch (normalizedRole) {
@@ -724,12 +724,10 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
 
       // Explicitly synchronize role permissions for Sales Closer & Marketer with CRM provisioning
       if (merged.sales_closer) {
-        merged.sales_closer.crm = isCrmProvisioned;
         merged.sales_closer.sales_closer = isCrmProvisioned;
       }
       if (merged.marketer) {
         merged.marketer.crm = isCrmProvisioned;
-        merged.marketer.sales_closer = isCrmProvisioned;
       }
       if (!isCrmProvisioned) {
         for (const role of ERP_ROLES) {
@@ -1064,10 +1062,10 @@ export function isNavItemVisibleForRole(
     return itemKey === "employee";
   }
 
-  // Sales Closer sees Sales Closer Portal, Employee Portal, and CRM (only if CRM is provisioned)
+  // Sales Closer sees Sales Closer Portal and Employee Portal (only if CRM is provisioned)
   if (role === "sales_closer") {
     const hasCrm = isModuleProvisioned("crm");
-    if (itemKey === "sales_closer" || itemKey === "crm") {
+    if (itemKey === "sales_closer") {
       return hasCrm;
     }
     return itemKey === "employee";
@@ -1119,10 +1117,10 @@ export function isNavItemVisibleForUser(
   // If the user has assignedPages configured (e.g. A sales closer assigned Employee Portal + Sales Closer Portal):
   if (user?.assignedPages && Array.isArray(user.assignedPages) && user.assignedPages.length > 0) {
     if (itemKey === "sales_closer") {
-      return isModuleProvisioned("crm") && (user.assignedPages.includes("sales_closer") || user.assignedPages.includes("crm"));
+      return isModuleProvisioned("crm") && user.assignedPages.includes("sales_closer");
     }
     if (itemKey === "crm") {
-      return isModuleProvisioned("crm") && (user.assignedPages.includes("crm") || user.assignedPages.includes("sales_closer"));
+      return isModuleProvisioned("crm") && user.assignedPages.includes("crm");
     }
     return user.assignedPages.includes(itemKey);
   }

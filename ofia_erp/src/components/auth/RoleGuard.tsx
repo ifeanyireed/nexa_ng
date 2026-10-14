@@ -97,7 +97,7 @@ export function RoleGuard({
         if (u && Array.isArray(u.assignedPages)) {
           assignedPages = u.assignedPages;
         } else if (u && (u.designation?.toLowerCase().includes("sales closer") || role === "sales_closer")) {
-          assignedPages = ["employee", "crm"];
+          assignedPages = ["employee", "sales_closer"];
         }
       } catch {}
     } else if (localStorage.getItem("nexa_user_role")) {
@@ -113,7 +113,7 @@ export function RoleGuard({
     }
 
     if (role === "sales_closer" && assignedPages.length === 0) {
-      assignedPages = ["employee", "crm"];
+      assignedPages = ["employee", "sales_closer"];
     }
 
     setUserRole(role);
@@ -132,8 +132,12 @@ export function RoleGuard({
     else if (role === "inventory_officer") home = "/erp/admin/shop/inventory";
     else if (role === "dispatcher") home = "/erp/employee";
 
-    if (assignedPages.length > 0 && !assignedPages.includes("employee") && (assignedPages[0] === "crm" || assignedPages[0] === "sales_closer")) {
-      home = "/erp/ops/crm";
+    if (assignedPages.length > 0 && !assignedPages.includes("employee")) {
+      if (assignedPages.includes("sales_closer")) {
+        home = "/erp/ops/crm";
+      } else if (assignedPages.includes("crm")) {
+        home = "/erp/admin/crm";
+      }
     }
 
     setRedirectTarget(fallbackRoute || home);
@@ -153,10 +157,7 @@ export function RoleGuard({
     // DIRECT USER ASSIGNED PAGES CHECK:
     // If the user has specific assigned pages (e.g. Sales Closer with Employee Portal + Sales Closer Portal):
     if (assignedPages && assignedPages.length > 0 && targetPageKey) {
-      const isAllowedByAssigned =
-        assignedPages.includes(targetPageKey) ||
-        (targetPageKey === "sales_closer" && (assignedPages.includes("sales_closer") || assignedPages.includes("crm"))) ||
-        (targetPageKey === "crm" && (assignedPages.includes("crm") || assignedPages.includes("sales_closer")));
+      const isAllowedByAssigned = assignedPages.includes(targetPageKey);
 
       if (isAllowedByAssigned) {
         // Enforce CRM module provisioning: if accessing sales_closer or CRM, tenant MUST have CRM module
@@ -179,7 +180,7 @@ export function RoleGuard({
         setIsAuthorized(false);
         const fallback = assignedPages.includes("sales_closer")
           ? "/erp/ops/crm"
-          : (assignedPages.includes("employee") ? "/erp/employee" : (assignedPages.includes("crm") ? "/erp/admin/crm" : home));
+          : (assignedPages.includes("crm") ? "/erp/admin/crm" : (assignedPages.includes("employee") ? "/erp/employee" : home));
         if (pathname !== fallback) {
           router.replace(fallback);
         }
@@ -191,9 +192,7 @@ export function RoleGuard({
     if (role === "sales_closer") {
       const isSalesAllowed =
         pathname.startsWith("/erp/employee") ||
-        pathname.startsWith("/erp/ops/crm") ||
-        pathname.startsWith("/erp/admin/crm") ||
-        pathname.startsWith("/erp/marketer");
+        pathname.startsWith("/erp/ops/crm");
       if (!isSalesAllowed && !isDepartmentAllowed) {
         setIsAuthorized(false);
         router.replace("/erp/ops/crm");
@@ -243,8 +242,10 @@ export function RoleGuard({
         effectiveAllowedRoles = ["admin", "md", "hr"];
       } else if (pathname === "/erp/admin") {
         effectiveAllowedRoles = ["admin"];
-      } else if (pathname.startsWith("/erp/marketer") || pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/ops/crm")) {
-        effectiveAllowedRoles = ["admin", "md", "marketer", "sales_closer"];
+      } else if (pathname.startsWith("/erp/marketer") || pathname.startsWith("/erp/admin/crm")) {
+        effectiveAllowedRoles = ["admin", "md", "marketer"];
+      } else if (pathname.startsWith("/erp/ops/crm")) {
+        effectiveAllowedRoles = ["admin", "md", "sales_closer"];
       } else if (pathname.startsWith("/erp/md")) {
         effectiveAllowedRoles = ["admin", "md"];
       } else if (pathname.startsWith("/erp/hr")) {

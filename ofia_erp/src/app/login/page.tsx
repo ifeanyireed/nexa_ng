@@ -275,7 +275,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
       } catch {}
 
       if (resolvedAssignedPages.length === 0 && (resolvedDesig?.toLowerCase().includes("sales closer") || resolvedRole === "sales_closer")) {
-        resolvedAssignedPages = ["employee", "crm"];
+        resolvedAssignedPages = ["sales_closer", "employee"];
       }
 
       if (typeof window !== "undefined") {
@@ -306,7 +306,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
         document.cookie = `nexa_user_role=${resolvedRole}; path=/; max-age=2592000; SameSite=Lax${domainAttr}`;
         document.cookie = `nexa_user_email=${encodeURIComponent(normalizedEmail)}; path=/; max-age=2592000; SameSite=Lax${domainAttr}`;
       }
-      navigateUser(normalizedEmail, resolvedRole);
+      navigateUser(normalizedEmail, resolvedRole, resolvedAssignedPages);
     } catch (err: any) {
       setError(err.message || "Invalid credentials or authentication failed.");
     } finally {
@@ -314,7 +314,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
     }
   };
 
-  const navigateUser = (userEmail: string, userRole?: string) => {
+  const navigateUser = (userEmail: string, userRole?: string, assignedPages?: string[]) => {
     const activeRole =
       userRole ||
       (typeof window !== "undefined"
@@ -340,8 +340,18 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
       route = "/erp/admin/shop/inventory";
     } else if (activeRole === "dispatcher") {
       route = "/erp/ops/dispatch";
+    } else if (activeRole === "sales_closer") {
+      route = "/erp/ops/crm";
     } else {
       route = "/erp/employee";
+    }
+
+    if (assignedPages && assignedPages.length > 0 && !assignedPages.includes("employee")) {
+      if (assignedPages.includes("sales_closer")) {
+        route = "/erp/ops/crm";
+      } else if (assignedPages.includes("crm")) {
+        route = "/erp/admin/crm";
+      }
     }
 
     // 1. Identify tenant slug from user email if on general erp.domain.ng

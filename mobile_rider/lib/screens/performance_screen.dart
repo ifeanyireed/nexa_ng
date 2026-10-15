@@ -70,15 +70,15 @@ class PerformanceScreen extends StatelessWidget {
                     style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.w900),
                   ),
                   const SizedBox(height: 24),
-                  Row(
+                  const Row(
                     children: [
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Completed', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
-                            const SizedBox(height: 4),
-                            const Text('32 Jobs', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+                            Text('Completed', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                            SizedBox(height: 4),
+                            Text('32 Jobs', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
                           ],
                         ),
                       ),
@@ -86,9 +86,9 @@ class PerformanceScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Online Time', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
-                            const SizedBox(height: 4),
-                            const Text('24h 15m', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
+                            Text('Online Time', style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12)),
+                            SizedBox(height: 4),
+                            Text('24h 15m', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w700)),
                           ],
                         ),
                       ),

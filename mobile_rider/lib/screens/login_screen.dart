@@ -98,7 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 alignment: Alignment.centerRight,
                 child: TextButton(
                   onPressed: () {},
-                  child: const Text('Forgot Password?', style: TextStyle(color: Color(0xFF16A34A))),
+                  child: const Text('Forgot Password?', style: TextStyle(color: Color(0xFF146EF5))),
                 ),
               ),
               const SizedBox(height: 24),
@@ -110,7 +110,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: ElevatedButton(
                   onPressed: _login,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary, // Green
+                    backgroundColor: Theme.of(context).colorScheme.primary, // Blue #146EF5
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -142,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         MaterialPageRoute(builder: (context) => const OnboardingScreen()),
                       );
                     },
-                    child: const Text('Apply Now', style: TextStyle(color: Color(0xFF16A34A), fontWeight: FontWeight.w700)),
+                    child: const Text('Apply Now', style: TextStyle(color: Color(0xFF146EF5), fontWeight: FontWeight.w700)),
                   ),
                 ],
               ),

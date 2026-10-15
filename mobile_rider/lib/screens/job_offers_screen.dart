@@ -102,7 +102,7 @@ class JobOffersScreen extends StatelessWidget {
                 ),
                 Text(
                   earning,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF16A34A)),
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Color(0xFF146EF5)),
                 ),
               ],
             ),
@@ -195,7 +195,7 @@ class JobOffersScreen extends StatelessWidget {
                   flex: 2,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF16A34A),
+                      backgroundColor: const Color(0xFF146EF5),
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

@@ -1,5 +1,5 @@
+// ignore_for_file: non_const_argument_for_const_parameter
 import 'package:flutter/widgets.dart';
-import 'package:flexicon/flexicon.dart';
 
 /// Helper to fix the fontPackage missing in flexicon package
 IconData fixIcon(IconData icon) => IconData(

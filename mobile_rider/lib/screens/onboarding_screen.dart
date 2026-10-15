@@ -138,7 +138,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     onPressed: () {
                       Navigator.of(context).pop();
                     },
-                    child: const Text('Log In', style: TextStyle(color: Color(0xFF16A34A), fontWeight: FontWeight.w700)),
+                    child: const Text('Log In', style: TextStyle(color: Color(0xFF146EF5), fontWeight: FontWeight.w700)),
                   ),
                 ],
               ),

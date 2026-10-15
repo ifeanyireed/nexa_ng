@@ -76,13 +76,13 @@ class _SplashScreenState extends State<SplashScreen> {
                           width: 120,
                           height: 120,
                           decoration: const BoxDecoration(
-                            color: Color(0xFFDCFCE7),
+                            color: Color(0xFFDBEAFE),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             _onboardingData[index]['icon'],
                             size: 50,
-                            color: Theme.of(context).colorScheme.primary, // This is green #16A34A
+                            color: Theme.of(context).colorScheme.primary, // ResultsPRO Blue #146EF5
                           ),
                         ),
                         const SizedBox(height: 48),

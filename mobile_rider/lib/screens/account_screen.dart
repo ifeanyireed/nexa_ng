@@ -61,7 +61,7 @@ class AccountScreen extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: const BoxDecoration(
-                            color: Color(0xFF16A34A),
+                            color: Color(0xFF146EF5),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.edit, size: 14, color: Colors.white),
@@ -96,12 +96,12 @@ class AccountScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFDCFCE7),
+                      color: const Color(0xFFDBEAFE),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Text(
                       'Verified Agent',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF15803D)),
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF1D4ED8)),
                     ),
                   ),
                 ],
@@ -188,7 +188,7 @@ class AccountScreen extends StatelessWidget {
       leading: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: iconColor.withOpacity(0.1),
+          color: iconColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: iconColor, size: 20),

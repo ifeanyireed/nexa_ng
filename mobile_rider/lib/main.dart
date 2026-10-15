@@ -33,16 +33,16 @@ class MobileRiderApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFFF8FAFC),
         fontFamily: 'Dropa',
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF16A34A), // Green color for Rider app
-          primary: const Color(0xFF16A34A),
+          seedColor: const Color(0xFF146EF5), // ResultsPRO Blue
+          primary: const Color(0xFF146EF5),
           surface: Colors.white,
         ),
         navigationBarTheme: NavigationBarThemeData(
           backgroundColor: Colors.white,
-          indicatorColor: const Color(0xFFDCFCE7),
+          indicatorColor: const Color(0xFFDBEAFE),
           iconTheme: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return const IconThemeData(color: Color(0xFF16A34A), size: 23);
+              return const IconThemeData(color: Color(0xFF146EF5), size: 23);
             }
             return const IconThemeData(color: Color(0xFF64748B), size: 23);
           }),
@@ -51,7 +51,7 @@ class MobileRiderApp extends StatelessWidget {
               return const TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w700,
-                color: Color(0xFF16A34A),
+                color: Color(0xFF146EF5),
               );
             }
             return const TextStyle(

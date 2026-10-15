@@ -238,6 +238,7 @@ export async function ensureTablesExist(): Promise<boolean> {
           last_name VARCHAR(100),
           company VARCHAR(150),
           phone VARCHAR(50),
+          linkedin_url VARCHAR(255),
           status VARCHAR(30) DEFAULT 'SUBSCRIBED',
           created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
         );
@@ -302,6 +303,7 @@ export async function ensureTablesExist(): Promise<boolean> {
 
         CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_subscribers_unique ON crm_email_subscribers (tenant_slug, list_id, email);
         ALTER TABLE crm_email_subscribers ALTER COLUMN email DROP NOT NULL;
+        ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS linkedin_url VARCHAR(255);
         CREATE INDEX IF NOT EXISTS idx_crm_subscribers_phone ON crm_email_subscribers (phone);
 
         -- 6. Password Reset Tokens Table

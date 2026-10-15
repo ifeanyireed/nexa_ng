@@ -18,6 +18,8 @@ import {
   User,
   CheckCircle2,
   Pencil,
+  ExternalLink,
+  Globe,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -34,11 +36,20 @@ interface ParsedContact {
   company: string;
   contactName: string;
   phone: string;
+  linkedinUrl?: string;
 }
 
 function isLikelyPhone(str: string): boolean {
   const cleaned = str.replace(/[\s\-\(\)\.]/g, "");
   return /^(\+?[0-9]{7,15})$/.test(cleaned);
+}
+
+function isLikelyUrl(str: string): boolean {
+  return /^https?:\/\/[^\s]+$/i.test(str) || /^www\.[^\s]+$/i.test(str) || /linkedin\.com/i.test(str);
+}
+
+function hasCompanyIndicator(str: string): boolean {
+  return /\b(ltd|limited|group|haulage|logistics|holdings|plc|corp|corporation|inc|incorporated|llc|enterprises|services|technologies|solutions|industries|motors|ventures|bank|agency|transport|global|international)\b/i.test(str);
 }
 
 function parseContactsInput(text: string, defaultCompany: string): ParsedContact[] {
@@ -50,7 +61,8 @@ function parseContactsInput(text: string, defaultCompany: string): ParsedContact
 
   for (const rawLine of lines) {
     const atMatches = rawLine.match(/@/g) || [];
-    if (atMatches.length > 1) {
+    // Multiple emails separated by commas without extra metadata
+    if (atMatches.length > 1 && !rawLine.includes("http") && !rawLine.includes("linkedin.com")) {
       const parts = rawLine.split(",").map((p) => p.trim());
       for (const p of parts) {
         if (p.includes("@")) {
@@ -94,89 +106,79 @@ function parseContactsInput(text: string, defaultCompany: string): ParsedContact
       extractedName = angleBracketMatch[1].trim();
       const em = angleBracketMatch[2].trim().toLowerCase();
       const remainder = angleBracketMatch[3].trim().replace(/^[,;\t]+/, "").trim();
-      line = `${em}, ${remainder}`;
+      line = `${remainder ? remainder + ", " : ""}${em}`;
     }
 
-    const parts = line.split(/[,\t|;]+/).map((p) => p.trim()).filter(Boolean);
-    const emailIndex = parts.findIndex((p) => p.includes("@"));
+    // Split line into parts by comma, tab, pipe, or semicolon
+    let parts = line.split(/[,\t|;]+/).map((p) => p.trim()).filter(Boolean);
 
-    // Case 1: No email address on this line -> check for phone number
-    if (emailIndex === -1) {
-      const phoneIndex = parts.findIndex((p) => isLikelyPhone(p));
-      if (phoneIndex === -1) {
-        // Neither email nor phone detected, skip invalid line
-        continue;
-      }
+    // 1. Extract LinkedIn / Web URL if present
+    let linkedinUrl = "";
+    const urlIndex = parts.findIndex((p) => isLikelyUrl(p));
+    if (urlIndex !== -1) {
+      linkedinUrl = parts[urlIndex];
+      parts.splice(urlIndex, 1);
+    }
 
-      const phone = parts[phoneIndex];
+    // 2. Extract Email if present
+    let email = "";
+    const emailIndex = parts.findIndex((p) => p.includes("@") && !p.startsWith("http"));
+    if (emailIndex !== -1) {
+      email = parts[emailIndex].toLowerCase();
+      parts.splice(emailIndex, 1);
+      if (seenEmails.has(email)) continue;
+      seenEmails.add(email);
+    }
+
+    // 3. Extract Phone if present
+    let phone = "";
+    const phoneIndex = parts.findIndex((p) => isLikelyPhone(p));
+    if (phoneIndex !== -1) {
+      phone = parts[phoneIndex];
       const phoneKey = phone.replace(/[\s\-\(\)\.]/g, "");
-      if (seenPhones.has(phoneKey)) continue;
+      if (seenPhones.has(phoneKey) && !email) continue;
       seenPhones.add(phoneKey);
+      parts.splice(phoneIndex, 1);
+    }
 
-      let company = defaultCompany.trim();
-      let contactName = extractedName;
-
-      const otherParts = parts.filter((_, idx) => idx !== phoneIndex);
-
-      if (otherParts.length === 1) {
-        if (defaultCompany.trim()) {
-          contactName = contactName || otherParts[0];
-        } else {
-          if (/(corp|inc|ltd|limited|group|enterprises|plc|llc|co|holdings)/i.test(otherParts[0])) {
-            company = otherParts[0];
-          } else {
-            contactName = contactName || otherParts[0];
-          }
-        }
-      } else if (otherParts.length >= 2) {
-        company = otherParts[0];
-        contactName = contactName || otherParts[1];
-      }
-
-      results.push({ email: "", company, contactName, phone });
+    // If neither email nor phone detected, skip invalid row
+    if (!email && !phone) {
       continue;
     }
 
-    // Case 2: Email address is present
-    const email = parts[emailIndex].toLowerCase();
-    if (seenEmails.has(email)) continue;
-    seenEmails.add(email);
-
+    // 4. Map remaining parts to Company and Contact Name
     let company = defaultCompany.trim();
     let contactName = extractedName;
-    let phone = "";
 
-    const otherParts = parts.filter((_, idx) => idx !== emailIndex);
-
-    // 1. Detect phone if any part matches phone number format
-    const remainingParts: string[] = [];
-    for (const p of otherParts) {
-      if (!phone && isLikelyPhone(p)) {
-        phone = p;
-        seenPhones.add(p.replace(/[\s\-\(\)\.]/g, ""));
+    if (parts.length === 1) {
+      if (hasCompanyIndicator(parts[0])) {
+        company = parts[0];
+      } else if (defaultCompany.trim()) {
+        company = defaultCompany.trim();
+        contactName = contactName || parts[0];
       } else {
-        remainingParts.push(p);
+        company = parts[0];
+      }
+    } else if (parts.length >= 2) {
+      const p0 = parts[0];
+      const p1 = parts[1];
+      const p0HasCorp = hasCompanyIndicator(p0);
+      const p1HasCorp = hasCompanyIndicator(p1);
+
+      if (p0HasCorp && !p1HasCorp) {
+        company = p0;
+        contactName = contactName || p1;
+      } else if (p1HasCorp && !p0HasCorp) {
+        company = p1;
+        contactName = contactName || p0;
+      } else {
+        // Default convention: part 0 is company, part 1 is contact name (standard for B2B lists)
+        company = p0;
+        contactName = contactName || p1;
       }
     }
 
-    // 2. Map remaining parts to company and contact name
-    if (remainingParts.length === 1) {
-      if (defaultCompany.trim()) {
-        contactName = contactName || remainingParts[0];
-      } else {
-        company = remainingParts[0];
-      }
-    } else if (remainingParts.length >= 2) {
-      if (emailIndex === 0) {
-        company = remainingParts[0];
-        contactName = contactName || remainingParts[1];
-      } else {
-        contactName = contactName || remainingParts[0];
-        company = remainingParts[1];
-      }
-    }
-
-    results.push({ email, company, contactName, phone });
+    results.push({ email, company, contactName, phone, linkedinUrl });
   }
 
   return results;
@@ -376,6 +378,7 @@ export default function AudienceListsPage() {
       (s.email && s.email.toLowerCase().includes(q)) ||
       (s.company && s.company.toLowerCase().includes(q)) ||
       (s.phone && s.phone.toLowerCase().includes(q)) ||
+      (s.linkedinUrl && s.linkedinUrl.toLowerCase().includes(q)) ||
       fullName.includes(q)
     );
   });
@@ -398,6 +401,7 @@ export default function AudienceListsPage() {
         firstName,
         lastName,
         phone: c.phone || "",
+        linkedinUrl: c.linkedinUrl || "",
       };
     });
 
@@ -656,14 +660,14 @@ export default function AudienceListsPage() {
                 Contacts List (one per line, CSV, or Tab-separated)
               </label>
               <span className="text-[10px] text-[#1A56DB] font-semibold bg-[#1A56DB]/10 px-2 py-0.5 rounded">
-                Format: email, company, contact_name, phone (or phone, company, name)
+                Format: Company, Name, Email, Phone, LinkedIn (or Email, Company, Name, Phone)
               </span>
             </div>
             <textarea
               rows={6}
               value={emailsInput}
               onChange={(e) => setEmailsInput(e.target.value)}
-              placeholder={`ceo@dangote.com, Dangote Group, Aliko Dangote, +2348031234567\n+2348039876543, BUA Cement, Rabiu Abdulsamad\nprocurement@buagroup.com, BUA Cement\n08012345678, Mele Kyari`}
+              placeholder={`Sifax Haulage Limited, Adetayo Adewale, info@sifaxgroup.com, +234(0)8105376814, https://ng.linkedin.com/in/adetayo-adewale-135ba181\nceo@dangote.com, Dangote Group, Aliko Dangote, +2348031234567\n+2348039876543, BUA Cement, Rabiu Abdulsamad\nprocurement@buagroup.com, BUA Cement`}
               className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-mono"
               required
             />
@@ -687,6 +691,12 @@ export default function AudienceListsPage() {
                   <span className="bg-emerald-500/10 text-emerald-600 font-semibold px-2 py-0.5 rounded">
                     {parsedContacts.filter((c) => c.phone).length} with Phone
                   </span>
+                  {parsedContacts.some((c) => c.linkedinUrl) && (
+                    <span className="bg-[#0A66C2]/10 text-[#0A66C2] font-semibold px-2 py-0.5 rounded flex items-center gap-1">
+                      <ExternalLink className="w-2.5 h-2.5" />
+                      {parsedContacts.filter((c) => c.linkedinUrl).length} with LinkedIn
+                    </span>
+                  )}
                   {parsedContacts.some((c) => !c.email && c.phone) && (
                     <span className="bg-amber-500/10 text-amber-600 font-semibold px-2 py-0.5 rounded">
                       {parsedContacts.filter((c) => !c.email && c.phone).length} Phone-only
@@ -728,6 +738,11 @@ export default function AudienceListsPage() {
                       {contact.email && contact.phone ? (
                         <span className="flex items-center gap-1 text-[10px] text-emerald-600 font-semibold bg-emerald-500/10 px-1.5 py-0.5 rounded">
                           <Phone className="w-2.5 h-2.5" /> {contact.phone}
+                        </span>
+                      ) : null}
+                      {contact.linkedinUrl ? (
+                        <span className="flex items-center gap-1 text-[10px] text-[#0A66C2] font-semibold bg-[#0A66C2]/10 px-1.5 py-0.5 rounded truncate max-w-[130px]" title={contact.linkedinUrl}>
+                          <ExternalLink className="w-2.5 h-2.5 shrink-0" /> LinkedIn
                         </span>
                       ) : null}
                     </div>
@@ -841,6 +856,18 @@ export default function AudienceListsPage() {
                           <span className="text-[11px] font-semibold text-blue-600 bg-blue-500/10 px-2 py-0.5 rounded flex items-center gap-1">
                             <User className="w-2.5 h-2.5" /> {fullName}
                           </span>
+                        )}
+                        {sub.linkedinUrl && (
+                          <a
+                            href={sub.linkedinUrl.startsWith("http") ? sub.linkedinUrl : `https://${sub.linkedinUrl}`}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#0A66C2] bg-[#0A66C2]/10 hover:bg-[#0A66C2]/20 px-2 py-0.5 rounded transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                            title={sub.linkedinUrl}
+                          >
+                            <ExternalLink className="w-2.5 h-2.5" /> LinkedIn
+                          </a>
                         )}
                       </div>
                       <div className="flex items-center gap-3 text-[11px] text-[var(--nexa-text-muted)]">

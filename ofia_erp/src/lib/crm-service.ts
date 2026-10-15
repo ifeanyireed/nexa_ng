@@ -77,6 +77,7 @@ export interface CrmEmailSubscriber {
   lastName?: string;
   company?: string;
   phone?: string;
+  linkedinUrl?: string;
   status: "SUBSCRIBED" | "UNSUBSCRIBED" | "BOUNCED";
   createdAt: string;
 }
@@ -1706,7 +1707,7 @@ export async function getCrmSubscribers(tenantSlug: string, listId: string): Pro
     if (pool) {
       await ensureTablesExist();
       const res = await pool.query(
-        `SELECT id, tenant_slug, list_id, email, first_name, last_name, company, phone, status, created_at
+        `SELECT id, tenant_slug, list_id, email, first_name, last_name, company, phone, linkedin_url, status, created_at
          FROM crm_email_subscribers
          WHERE LOWER(tenant_slug) = $1 AND list_id = $2
          ORDER BY created_at DESC`,
@@ -1721,6 +1722,7 @@ export async function getCrmSubscribers(tenantSlug: string, listId: string): Pro
         lastName: r.last_name,
         company: r.company,
         phone: r.phone,
+        linkedinUrl: r.linkedin_url,
         status: r.status,
         createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
       }));
@@ -1735,6 +1737,7 @@ export async function addCrmSubscriber(tenantSlug: string, listId: string, sub: 
   const slug = cleanSlug(tenantSlug);
   const emailVal = (sub.email || "").trim().toLowerCase() || null;
   const phoneVal = (sub.phone || "").trim() || null;
+  const linkedinVal = (sub.linkedinUrl || "").trim() || null;
 
   if (!emailVal && !phoneVal) {
     throw new Error("Subscriber must have either an email address or a phone number.");
@@ -1749,6 +1752,7 @@ export async function addCrmSubscriber(tenantSlug: string, listId: string, sub: 
     lastName: sub.lastName || "",
     company: sub.company || "",
     phone: phoneVal || "",
+    linkedinUrl: linkedinVal || undefined,
     status: sub.status || "SUBSCRIBED",
     createdAt: new Date().toISOString(),
   };
@@ -1760,15 +1764,16 @@ export async function addCrmSubscriber(tenantSlug: string, listId: string, sub: 
 
       if (emailVal) {
         await pool.query(
-          `INSERT INTO crm_email_subscribers (id, tenant_slug, list_id, email, first_name, last_name, company, phone, status, created_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+          `INSERT INTO crm_email_subscribers (id, tenant_slug, list_id, email, first_name, last_name, company, phone, linkedin_url, status, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
            ON CONFLICT (tenant_slug, list_id, email) DO UPDATE SET 
              status = 'SUBSCRIBED',
              first_name = COALESCE(NULLIF(EXCLUDED.first_name, ''), crm_email_subscribers.first_name),
              last_name = COALESCE(NULLIF(EXCLUDED.last_name, ''), crm_email_subscribers.last_name),
              company = COALESCE(NULLIF(EXCLUDED.company, ''), crm_email_subscribers.company),
-             phone = COALESCE(NULLIF(EXCLUDED.phone, ''), crm_email_subscribers.phone)`,
-          [newSub.id, slug, newSub.listId, emailVal, newSub.firstName, newSub.lastName, newSub.company, newSub.phone, newSub.status]
+             phone = COALESCE(NULLIF(EXCLUDED.phone, ''), crm_email_subscribers.phone),
+             linkedin_url = COALESCE(NULLIF(EXCLUDED.linkedin_url, ''), crm_email_subscribers.linkedin_url)`,
+          [newSub.id, slug, newSub.listId, emailVal, newSub.firstName, newSub.lastName, newSub.company, newSub.phone, linkedinVal, newSub.status]
         );
       } else if (phoneVal) {
         const existing = await pool.query(
@@ -1777,9 +1782,9 @@ export async function addCrmSubscriber(tenantSlug: string, listId: string, sub: 
         );
         if (existing.rows.length === 0) {
           await pool.query(
-            `INSERT INTO crm_email_subscribers (id, tenant_slug, list_id, email, first_name, last_name, company, phone, status, created_at)
-             VALUES ($1, $2, $3, NULL, $4, $5, $6, $7, $8, NOW())`,
-            [newSub.id, slug, newSub.listId, newSub.firstName, newSub.lastName, newSub.company, phoneVal, newSub.status]
+            `INSERT INTO crm_email_subscribers (id, tenant_slug, list_id, email, first_name, last_name, company, phone, linkedin_url, status, created_at)
+             VALUES ($1, $2, $3, NULL, $4, $5, $6, $7, $8, $9, NOW())`,
+            [newSub.id, slug, newSub.listId, newSub.firstName, newSub.lastName, newSub.company, phoneVal, linkedinVal, newSub.status]
           );
         } else {
           await pool.query(
@@ -1787,9 +1792,10 @@ export async function addCrmSubscriber(tenantSlug: string, listId: string, sub: 
                status = 'SUBSCRIBED',
                first_name = COALESCE(NULLIF($1, ''), first_name),
                last_name = COALESCE(NULLIF($2, ''), last_name),
-               company = COALESCE(NULLIF($3, ''), company)
-             WHERE id = $4`,
-            [newSub.firstName, newSub.lastName, newSub.company, existing.rows[0].id]
+               company = COALESCE(NULLIF($3, ''), company),
+               linkedin_url = COALESCE(NULLIF($4, ''), linkedin_url)
+             WHERE id = $5`,
+            [newSub.firstName, newSub.lastName, newSub.company, linkedinVal, existing.rows[0].id]
           );
         }
       }
@@ -1823,20 +1829,22 @@ export async function bulkAddCrmSubscribers(
       for (const s of subs) {
         const email = (s.email || "").trim().toLowerCase() || null;
         const phone = (s.phone || "").trim() || null;
+        const linkedinUrl = (s.linkedinUrl || "").trim() || null;
         if (!email && !phone) continue;
 
         const subId = s.id || generateCrmId("SUB");
 
         if (email) {
           await pool.query(
-            `INSERT INTO crm_email_subscribers (id, tenant_slug, list_id, email, first_name, last_name, company, phone, status, created_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'SUBSCRIBED', NOW())
+            `INSERT INTO crm_email_subscribers (id, tenant_slug, list_id, email, first_name, last_name, company, phone, linkedin_url, status, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'SUBSCRIBED', NOW())
              ON CONFLICT (tenant_slug, list_id, email) DO UPDATE SET
                first_name = COALESCE(NULLIF(EXCLUDED.first_name, ''), crm_email_subscribers.first_name),
                last_name = COALESCE(NULLIF(EXCLUDED.last_name, ''), crm_email_subscribers.last_name),
                company = COALESCE(NULLIF(EXCLUDED.company, ''), crm_email_subscribers.company),
-               phone = COALESCE(NULLIF(EXCLUDED.phone, ''), crm_email_subscribers.phone)`,
-            [subId, slug, listId, email, s.firstName || "", s.lastName || "", s.company || "", phone || ""]
+               phone = COALESCE(NULLIF(EXCLUDED.phone, ''), crm_email_subscribers.phone),
+               linkedin_url = COALESCE(NULLIF(EXCLUDED.linkedin_url, ''), crm_email_subscribers.linkedin_url)`,
+            [subId, slug, listId, email, s.firstName || "", s.lastName || "", s.company || "", phone || "", linkedinUrl]
           ).catch((e) => {
             console.warn("Failed inserting subscriber with email:", e);
           });
@@ -1848,9 +1856,9 @@ export async function bulkAddCrmSubscribers(
           );
           if (existing.rows.length === 0) {
             await pool.query(
-              `INSERT INTO crm_email_subscribers (id, tenant_slug, list_id, email, first_name, last_name, company, phone, status, created_at)
-               VALUES ($1, $2, $3, NULL, $4, $5, $6, $7, 'SUBSCRIBED', NOW())`,
-              [subId, slug, listId, s.firstName || "", s.lastName || "", s.company || "", phone]
+              `INSERT INTO crm_email_subscribers (id, tenant_slug, list_id, email, first_name, last_name, company, phone, linkedin_url, status, created_at)
+               VALUES ($1, $2, $3, NULL, $4, $5, $6, $7, $8, 'SUBSCRIBED', NOW())`,
+              [subId, slug, listId, s.firstName || "", s.lastName || "", s.company || "", phone, linkedinUrl]
             ).catch((e) => {
               console.warn("Failed inserting phone subscriber:", e);
             });
@@ -1861,9 +1869,10 @@ export async function bulkAddCrmSubscribers(
                  status = 'SUBSCRIBED',
                  first_name = COALESCE(NULLIF($1, ''), first_name),
                  last_name = COALESCE(NULLIF($2, ''), last_name),
-                 company = COALESCE(NULLIF($3, ''), company)
-               WHERE id = $4`,
-              [s.firstName || "", s.lastName || "", s.company || "", existing.rows[0].id]
+                 company = COALESCE(NULLIF($3, ''), company),
+                 linkedin_url = COALESCE(NULLIF($4, ''), linkedin_url)
+               WHERE id = $5`,
+              [s.firstName || "", s.lastName || "", s.company || "", linkedinUrl, existing.rows[0].id]
             ).catch(() => {});
           }
         }

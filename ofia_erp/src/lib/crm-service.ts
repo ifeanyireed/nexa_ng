@@ -1192,6 +1192,10 @@ export async function deleteCrmEmailList(tenantSlug: string, listId: string): Pr
     if (pool) {
       await ensureTablesExist();
       await pool.query(
+        `DELETE FROM crm_email_subscribers WHERE list_id = $1 AND LOWER(tenant_slug) = $2`,
+        [listId, slug]
+      ).catch(() => {});
+      await pool.query(
         `DELETE FROM crm_email_lists WHERE id = $1 AND LOWER(tenant_slug) = $2`,
         [listId, slug]
       );

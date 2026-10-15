@@ -50,13 +50,24 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
-    const tenantSlug = getValidatedTenantSlug(request);
+    let id = searchParams.get("id") || searchParams.get("listId");
+    let body: any = null;
+
+    if (!id) {
+      try {
+        body = await request.json();
+        id = body?.id || body?.listId;
+      } catch {
+        // body may not be JSON or present
+      }
+    }
+
+    const tenantSlug = getValidatedTenantSlug(request, body);
     if (!id) {
       return NextResponse.json({ error: "Audience list ID is required" }, { status: 400 });
     }
     await deleteCrmEmailList(tenantSlug, id);
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, deletedId: id });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Failed to delete audience list" }, { status: 500 });
   }

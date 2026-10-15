@@ -371,6 +371,43 @@ export default function AudienceListsPage() {
     }
   };
 
+  const [deletingListId, setDeletingListId] = useState<string | null>(null);
+
+  const handleDeleteList = async (list: CrmEmailList) => {
+    const confirmMessage =
+      list.subscriberCount > 0
+        ? `Are you sure you want to delete the audience list "${list.name}"?\n\nThis list currently contains ${list.subscriberCount} contact(s) which will also be permanently removed.`
+        : `Are you sure you want to delete the audience list "${list.name}"?`;
+
+    if (!confirm(confirmMessage)) return;
+
+    setDeletingListId(list.id);
+    try {
+      const res = await crmFetch(`/api/erp/crm/lists?id=${encodeURIComponent(list.id)}`, {
+        method: "DELETE",
+      }).then((r) => r.json());
+
+      if (res?.success) {
+        setLists((prev) => prev.filter((l) => l.id !== list.id));
+        if (rosterList?.id === list.id) {
+          setIsRosterModalOpen(false);
+          setRosterList(null);
+        }
+        if (editingList?.id === list.id) {
+          setIsEditModalOpen(false);
+          setEditingList(null);
+        }
+      } else {
+        alert(res?.error || "Failed to delete audience list");
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to delete audience list");
+    } finally {
+      setDeletingListId(null);
+    }
+  };
+
+
   const filteredRoster = rosterSubscribers.filter((s) => {
     const q = rosterSearch.toLowerCase();
     const fullName = `${s.firstName || ""} ${s.lastName || ""}`.toLowerCase();
@@ -522,6 +559,15 @@ export default function AudienceListsPage() {
                     >
                       <Pencil className="w-3.5 h-3.5" />
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteList(list)}
+                      disabled={deletingListId === list.id}
+                      title="Delete audience list"
+                      className="p-1 rounded text-[var(--nexa-text-muted)] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
 
@@ -550,6 +596,15 @@ export default function AudienceListsPage() {
                     className="text-xs font-semibold text-[var(--nexa-text-muted)] hover:text-[#1A56DB] flex items-center gap-1 cursor-pointer transition-colors"
                   >
                     <Pencil className="w-3.5 h-3.5" /> Edit
+                  </button>
+                  <button
+                    type="button"
+                    disabled={deletingListId === list.id}
+                    onClick={() => handleDeleteList(list)}
+                    className="text-xs font-semibold text-[var(--nexa-text-muted)] hover:text-rose-600 flex items-center gap-1 cursor-pointer transition-colors disabled:opacity-50"
+                    title="Delete audience list"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Delete
                   </button>
                   <button
                     type="button"
@@ -804,6 +859,18 @@ export default function AudienceListsPage() {
                 <Pencil className="w-3.5 h-3.5" /> Edit List
               </NexaButton>
               <NexaButton
+                variant="secondary"
+                className="text-xs gap-1.5 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 border-rose-200 dark:border-rose-900"
+                disabled={!rosterList || deletingListId === rosterList?.id}
+                onClick={() => {
+                  if (rosterList) {
+                    handleDeleteList(rosterList);
+                  }
+                }}
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Delete List
+              </NexaButton>
+              <NexaButton
                 variant="primary"
                 className="text-xs gap-1.5"
                 onClick={() => {
@@ -952,21 +1019,35 @@ export default function AudienceListsPage() {
             placeholder="Commercial, Solar, North-Central"
           />
 
-          <div className="flex justify-end gap-2 pt-4">
-            <NexaButton
-              variant="secondary"
+          <div className="flex items-center justify-between pt-4">
+            <button
               type="button"
-              disabled={isUpdating}
+              disabled={isUpdating || !editingList || deletingListId === editingList?.id}
               onClick={() => {
-                setIsEditModalOpen(false);
-                setEditingList(null);
+                if (editingList) {
+                  handleDeleteList(editingList);
+                }
               }}
+              className="text-xs font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1.5 px-3 py-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors disabled:opacity-50 cursor-pointer"
             >
-              Cancel
-            </NexaButton>
-            <NexaButton variant="primary" type="submit" disabled={isUpdating || !editListName.trim()}>
-              {isUpdating ? "Saving..." : "Save Changes"}
-            </NexaButton>
+              <Trash2 className="w-3.5 h-3.5" /> Delete List
+            </button>
+            <div className="flex items-center gap-2">
+              <NexaButton
+                variant="secondary"
+                type="button"
+                disabled={isUpdating}
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setEditingList(null);
+                }}
+              >
+                Cancel
+              </NexaButton>
+              <NexaButton variant="primary" type="submit" disabled={isUpdating || !editListName.trim()}>
+                {isUpdating ? "Saving..." : "Save Changes"}
+              </NexaButton>
+            </div>
           </div>
         </form>
       </NexaModal>

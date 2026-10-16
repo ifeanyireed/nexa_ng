@@ -92,8 +92,13 @@ export async function POST(request: Request) {
       );
     }
 
+    const recipientIds: string[] | undefined = Array.isArray(body?.recipientIds)
+      ? body.recipientIds
+      : undefined;
+
     const blast = await createCrmEmailBlast(tenantSlug, {
       ...blastData,
+      recipientIds,
       senderProvider: effectiveOverride?.provider || blastData.senderProvider || (tenantSmtp?.provider ?? "custom"),
       senderEmail: effectiveOverride?.fromEmail || blastData.senderEmail || tenantSmtp?.fromEmail,
       senderName: effectiveOverride?.fromName || blastData.senderName || tenantSmtp?.fromName,
@@ -107,13 +112,18 @@ export async function POST(request: Request) {
     if (dispatchNow) {
       let targetRecipients = recipients;
       if ((!targetRecipients || targetRecipients.length === 0) && blast.listId) {
-        const subs = await getCrmSubscribers(tenantSlug, blast.listId);
+        let subs = await getCrmSubscribers(tenantSlug, blast.listId);
+        if (recipientIds && recipientIds.length > 0) {
+          subs = subs.filter((s) => recipientIds.includes(s.id));
+        }
         if (subs.length > 0) {
           targetRecipients = subs.map((s) => ({
             email: s.email,
             name: `${s.firstName || ""} ${s.lastName || ""}`.trim() || s.email,
+            firstName: s.firstName || "",
+            lastName: s.lastName || "",
+            company: s.company || "",
             role: "Subscriber",
-            company: s.company || "Commercial",
           }));
         }
       }
@@ -125,6 +135,9 @@ export async function POST(request: Request) {
             recipients: targetRecipients.map((r: any) => ({
               email: r.email,
               name: r.name || "",
+              firstName: r.firstName || "",
+              lastName: r.lastName || "",
+              company: r.company || "",
               role: r.role || "Prospect",
               department: r.company || "Commercial",
             })),

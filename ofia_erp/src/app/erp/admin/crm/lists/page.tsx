@@ -20,6 +20,7 @@ import {
   Pencil,
   ExternalLink,
   Globe,
+  Filter,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -209,7 +210,22 @@ export default function AudienceListsPage() {
   const [rosterSubscribers, setRosterSubscribers] = useState<CrmEmailSubscriber[]>([]);
   const [isRosterLoading, setIsRosterLoading] = useState(false);
   const [rosterSearch, setRosterSearch] = useState("");
+  const [rosterFilter, setRosterFilter] = useState<
+    "ALL" | "HAS_EMAIL" | "HAS_PHONE" | "HAS_NAME" | "MISSING_NAME" | "HAS_COMPANY" | "HAS_LINKEDIN"
+  >("ALL");
   const [deletingSubId, setDeletingSubId] = useState<string | null>(null);
+
+  // Edit Subscriber Modal State
+  const [isEditContactModalOpen, setIsEditContactModalOpen] = useState(false);
+  const [editingContact, setEditingContact] = useState<CrmEmailSubscriber | null>(null);
+  const [contactFirstName, setContactFirstName] = useState("");
+  const [contactLastName, setContactLastName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [contactCompany, setContactCompany] = useState("");
+  const [contactLinkedin, setContactLinkedin] = useState("");
+  const [contactStatus, setContactStatus] = useState<"SUBSCRIBED" | "UNSUBSCRIBED" | "BOUNCED">("SUBSCRIBED");
+  const [isUpdatingContact, setIsUpdatingContact] = useState(false);
 
   const parsedContacts = useMemo(() => {
     return parseContactsInput(emailsInput, defaultCompany);
@@ -408,16 +424,80 @@ export default function AudienceListsPage() {
   };
 
 
+  const handleOpenEditContactModal = (contact: CrmEmailSubscriber) => {
+    setEditingContact(contact);
+    setContactFirstName(contact.firstName || "");
+    setContactLastName(contact.lastName || "");
+    setContactEmail(contact.email || "");
+    setContactPhone(contact.phone || "");
+    setContactCompany(contact.company || "");
+    setContactLinkedin(contact.linkedinUrl || "");
+    setContactStatus(contact.status || "SUBSCRIBED");
+    setIsEditContactModalOpen(true);
+  };
+
+  const handleUpdateContact = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingContact) return;
+    if (!contactEmail.trim() && !contactPhone.trim()) {
+      alert("Please provide at least an email address or a phone number.");
+      return;
+    }
+
+    setIsUpdatingContact(true);
+    const updates = {
+      firstName: contactFirstName.trim(),
+      lastName: contactLastName.trim(),
+      email: contactEmail.trim().toLowerCase(),
+      phone: contactPhone.trim(),
+      company: contactCompany.trim(),
+      linkedinUrl: contactLinkedin.trim(),
+      status: contactStatus,
+    };
+
+    try {
+      const res = await crmFetch("/api/erp/crm/lists/subscribers", {
+        method: "PATCH",
+        body: JSON.stringify({ id: editingContact.id, ...updates }),
+      }).then((r) => r.json());
+
+      if (res?.subscriber) {
+        setRosterSubscribers((prev) =>
+          prev.map((s) => (s.id === editingContact.id ? res.subscriber : s))
+        );
+        setIsEditContactModalOpen(false);
+        setEditingContact(null);
+      } else {
+        alert(res?.error || "Failed to update contact");
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to update contact");
+    } finally {
+      setIsUpdatingContact(false);
+    }
+  };
+
   const filteredRoster = rosterSubscribers.filter((s) => {
     const q = rosterSearch.toLowerCase();
-    const fullName = `${s.firstName || ""} ${s.lastName || ""}`.toLowerCase();
-    return (
+    const fullName = `${s.firstName || ""} ${s.lastName || ""}`.trim().toLowerCase();
+    const matchesSearch =
+      !q ||
       (s.email && s.email.toLowerCase().includes(q)) ||
       (s.company && s.company.toLowerCase().includes(q)) ||
       (s.phone && s.phone.toLowerCase().includes(q)) ||
       (s.linkedinUrl && s.linkedinUrl.toLowerCase().includes(q)) ||
-      fullName.includes(q)
-    );
+      fullName.includes(q);
+
+    if (!matchesSearch) return false;
+
+    if (rosterFilter === "HAS_EMAIL") return Boolean(s.email && s.email.includes("@"));
+    if (rosterFilter === "HAS_PHONE") return Boolean(s.phone && s.phone.trim());
+    if (rosterFilter === "HAS_NAME") return Boolean((s.firstName && s.firstName.trim()) || (s.lastName && s.lastName.trim()));
+    if (rosterFilter === "MISSING_NAME") return !Boolean((s.firstName && s.firstName.trim()) || (s.lastName && s.lastName.trim()));
+    if (rosterFilter === "HAS_COMPANY") return Boolean(s.company && s.company.trim());
+    if (rosterFilter === "HAS_LINKEDIN") return Boolean(s.linkedinUrl && s.linkedinUrl.trim());
+
+    return true;
   });
 
   const handleImportSubscribers = async (e: React.FormEvent) => {
@@ -884,6 +964,35 @@ export default function AudienceListsPage() {
             </div>
           </div>
 
+          {/* Quick Filter Chips */}
+          <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+            <span className="text-[10px] font-bold text-[var(--nexa-text-muted)] mr-1 flex items-center gap-1">
+              <Filter className="w-3 h-3 text-[#1A56DB]" /> Filters:
+            </span>
+            {[
+              { id: "ALL", label: `All (${rosterSubscribers.length})` },
+              { id: "HAS_EMAIL", label: `Has Email (${rosterSubscribers.filter((s) => s.email).length})` },
+              { id: "HAS_PHONE", label: `Has Phone (${rosterSubscribers.filter((s) => s.phone).length})` },
+              { id: "HAS_NAME", label: `Has Name (${rosterSubscribers.filter((s) => s.firstName || s.lastName).length})` },
+              { id: "MISSING_NAME", label: `Missing Name (${rosterSubscribers.filter((s) => !s.firstName && !s.lastName).length})` },
+              { id: "HAS_COMPANY", label: `Has Company (${rosterSubscribers.filter((s) => s.company).length})` },
+              { id: "HAS_LINKEDIN", label: `Has LinkedIn (${rosterSubscribers.filter((s) => s.linkedinUrl).length})` },
+            ].map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => setRosterFilter(f.id as any)}
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-colors cursor-pointer ${
+                  rosterFilter === f.id
+                    ? "bg-[#1A56DB] text-white border-[#1A56DB]"
+                    : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-muted)] border-[var(--nexa-border)] hover:text-[var(--nexa-text-primary)]"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
           {isRosterLoading ? (
             <div className="py-12 text-center text-xs text-[var(--nexa-text-muted)]">
               Loading roster contacts...
@@ -892,11 +1001,11 @@ export default function AudienceListsPage() {
             <div className="py-12 text-center space-y-2">
               <Users className="w-8 h-8 text-[var(--nexa-text-muted)] mx-auto opacity-50" />
               <p className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                {rosterSearch ? "No matching contacts found" : "No contacts in this list yet"}
+                {rosterSearch || rosterFilter !== "ALL" ? "No matching contacts found" : "No contacts in this list yet"}
               </p>
               <p className="text-[11px] text-[var(--nexa-text-muted)] max-w-sm mx-auto">
-                {rosterSearch
-                  ? "Try searching with a different keyword."
+                {rosterSearch || rosterFilter !== "ALL"
+                  ? "Try adjusting your search query or filter selection."
                   : "Batch import contacts with their company names and contact names to start sending campaigns."}
               </p>
             </div>
@@ -907,7 +1016,7 @@ export default function AudienceListsPage() {
                 return (
                   <div
                     key={sub.id}
-                    className="p-3 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] flex items-center justify-between gap-3"
+                    className="p-3 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] flex items-center justify-between gap-3 hover:border-[var(--nexa-border)]/80 transition-colors"
                   >
                     <div className="space-y-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -919,9 +1028,13 @@ export default function AudienceListsPage() {
                             <Phone className="w-2.5 h-2.5" /> Phone Only
                           </span>
                         )}
-                        {fullName && (
+                        {fullName ? (
                           <span className="text-[11px] font-semibold text-blue-600 bg-blue-500/10 px-2 py-0.5 rounded flex items-center gap-1">
                             <User className="w-2.5 h-2.5" /> {fullName}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] italic text-[var(--nexa-text-muted)] bg-[var(--nexa-bg-surface)] px-1.5 py-0.5 rounded border border-[var(--nexa-border)]">
+                            No first/last name
                           </span>
                         )}
                         {sub.linkedinUrl && (
@@ -935,6 +1048,11 @@ export default function AudienceListsPage() {
                           >
                             <ExternalLink className="w-2.5 h-2.5" /> LinkedIn
                           </a>
+                        )}
+                        {sub.status && sub.status !== "SUBSCRIBED" && (
+                          <span className="text-[10px] font-bold text-rose-500 bg-rose-500/10 px-1.5 py-0.5 rounded">
+                            {sub.status}
+                          </span>
                         )}
                       </div>
                       <div className="flex items-center gap-3 text-[11px] text-[var(--nexa-text-muted)]">
@@ -955,15 +1073,25 @@ export default function AudienceListsPage() {
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      disabled={deletingSubId === sub.id}
-                      onClick={() => handleDeleteSubscriber(sub.id)}
-                      className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors shrink-0 cursor-pointer disabled:opacity-50"
-                      title="Remove contact"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditContactModal(sub)}
+                        className="p-1.5 rounded-lg text-[var(--nexa-text-muted)] hover:text-[#1A56DB] hover:bg-[var(--nexa-bg-surface)] transition-colors cursor-pointer"
+                        title="Edit contact details"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={deletingSubId === sub.id}
+                        onClick={() => handleDeleteSubscriber(sub.id)}
+                        className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors shrink-0 cursor-pointer disabled:opacity-50"
+                        title="Remove contact"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -1048,6 +1176,104 @@ export default function AudienceListsPage() {
                 {isUpdating ? "Saving..." : "Save Changes"}
               </NexaButton>
             </div>
+          </div>
+        </form>
+      </NexaModal>
+
+      {/* EDIT SUBSCRIBER CONTACT MODAL */}
+      <NexaModal
+        isOpen={isEditContactModalOpen}
+        onClose={() => {
+          if (!isUpdatingContact) {
+            setIsEditContactModalOpen(false);
+            setEditingContact(null);
+          }
+        }}
+        title="Edit Audience Contact"
+        subtitle="Update contact personal details, business affiliation, and email subscription preferences."
+      >
+        <form onSubmit={handleUpdateContact} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <NexaInput
+              label="First Name"
+              value={contactFirstName}
+              onChange={(e) => setContactFirstName(e.target.value)}
+              placeholder="e.g. Adetayo"
+            />
+            <NexaInput
+              label="Last Name"
+              value={contactLastName}
+              onChange={(e) => setContactLastName(e.target.value)}
+              placeholder="e.g. Adewale"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <NexaInput
+              label="Email Address"
+              type="email"
+              value={contactEmail}
+              onChange={(e) => setContactEmail(e.target.value)}
+              placeholder="name@company.com"
+            />
+            <NexaInput
+              label="Phone Number"
+              type="tel"
+              value={contactPhone}
+              onChange={(e) => setContactPhone(e.target.value)}
+              placeholder="+2348012345678"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <NexaInput
+              label="Company / Organization"
+              value={contactCompany}
+              onChange={(e) => setContactCompany(e.target.value)}
+              placeholder="e.g. Sifax Haulage Limited"
+            />
+            <div>
+              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+                Subscription Status
+              </label>
+              <select
+                value={contactStatus}
+                onChange={(e) => setContactStatus(e.target.value as any)}
+                className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs text-[var(--nexa-text-primary)] focus:outline-none focus:ring-1 focus:ring-[#1A56DB]"
+              >
+                <option value="SUBSCRIBED">Subscribed (Active)</option>
+                <option value="UNSUBSCRIBED">Unsubscribed</option>
+                <option value="BOUNCED">Bounced</option>
+              </select>
+            </div>
+          </div>
+
+          <NexaInput
+            label="LinkedIn Profile URL"
+            value={contactLinkedin}
+            onChange={(e) => setContactLinkedin(e.target.value)}
+            placeholder="https://ng.linkedin.com/in/adetayo-adewale"
+          />
+
+          <div className="flex justify-end gap-2 pt-4 border-t border-[var(--nexa-border)]">
+            <NexaButton
+              variant="secondary"
+              type="button"
+              disabled={isUpdatingContact}
+              onClick={() => {
+                setIsEditContactModalOpen(false);
+                setEditingContact(null);
+              }}
+            >
+              Cancel
+            </NexaButton>
+            <NexaButton
+              variant="primary"
+              type="submit"
+              disabled={isUpdatingContact || (!contactEmail.trim() && !contactPhone.trim())}
+            >
+              {isUpdatingContact ? "Saving..." : "Save Contact Changes"}
+            </NexaButton>
           </div>
         </form>
       </NexaModal>

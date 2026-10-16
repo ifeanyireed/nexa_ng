@@ -96,6 +96,7 @@ export interface CrmEmailBlast {
   senderProfileId?: string;
   senderProvider?: string;
   senderOverride?: Partial<SmtpSettings>;
+  recipientIds?: string[];
   status: "DRAFT" | "SCHEDULED" | "SENDING" | "SENT" | "CANCELLED";
   scheduledAt?: string;
   sentAt?: string;
@@ -1232,7 +1233,7 @@ export async function getCrmEmailBlasts(tenantSlug: string): Promise<CrmEmailBla
       }
 
       const res = await pool.query(
-        `SELECT b.id, b.tenant_slug, b.list_id, l.name AS list_name, b.title, b.subject, b.preview_text, b.content_html, b.sender_name, b.sender_email, b.sender_profile_id, b.sender_provider, b.sender_override, b.status, b.scheduled_at, b.sent_at, b.total_recipients, b.sent_count, b.open_count, b.click_count, b.bounce_count, b.created_at
+        `SELECT b.id, b.tenant_slug, b.list_id, l.name AS list_name, b.title, b.subject, b.preview_text, b.content_html, b.sender_name, b.sender_email, b.sender_profile_id, b.sender_provider, b.sender_override, b.recipient_ids, b.status, b.scheduled_at, b.sent_at, b.total_recipients, b.sent_count, b.open_count, b.click_count, b.bounce_count, b.created_at
          FROM crm_email_blasts b
          LEFT JOIN crm_email_lists l ON b.list_id = l.id
          WHERE LOWER(b.tenant_slug) = $1
@@ -1245,6 +1246,12 @@ export async function getCrmEmailBlasts(tenantSlug: string): Promise<CrmEmailBla
           if (r.sender_override) {
             try {
               parsedOverride = typeof r.sender_override === "string" ? JSON.parse(r.sender_override) : r.sender_override;
+            } catch {}
+          }
+          let parsedRecipientIds: string[] | undefined = undefined;
+          if (r.recipient_ids) {
+            try {
+              parsedRecipientIds = typeof r.recipient_ids === "string" ? JSON.parse(r.recipient_ids) : r.recipient_ids;
             } catch {}
           }
           return {
@@ -1261,6 +1268,7 @@ export async function getCrmEmailBlasts(tenantSlug: string): Promise<CrmEmailBla
             senderProfileId: r.sender_profile_id,
             senderProvider: r.sender_provider || "custom",
             senderOverride: parsedOverride,
+            recipientIds: parsedRecipientIds,
             status: r.status,
             scheduledAt: r.scheduled_at ? new Date(r.scheduled_at).toISOString() : undefined,
             sentAt: r.sent_at ? new Date(r.sent_at).toISOString() : undefined,
@@ -1308,6 +1316,7 @@ export async function createCrmEmailBlast(tenantSlug: string, blast: Partial<Crm
     senderProfileId: blast.senderProfileId,
     senderProvider: blast.senderProvider || "custom",
     senderOverride: blast.senderOverride,
+    recipientIds: blast.recipientIds,
     status: blast.status || (blast.scheduledAt ? "SCHEDULED" : "DRAFT"),
     scheduledAt: blast.scheduledAt,
     sentAt: blast.sentAt,
@@ -1324,8 +1333,8 @@ export async function createCrmEmailBlast(tenantSlug: string, blast: Partial<Crm
     if (pool) {
       await ensureTablesExist();
       await pool.query(
-        `INSERT INTO crm_email_blasts (id, tenant_slug, list_id, title, subject, preview_text, content_html, sender_name, sender_email, sender_profile_id, sender_provider, sender_override, status, scheduled_at, sent_at, total_recipients, sent_count, open_count, click_count, bounce_count, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW())`,
+        `INSERT INTO crm_email_blasts (id, tenant_slug, list_id, title, subject, preview_text, content_html, sender_name, sender_email, sender_profile_id, sender_provider, sender_override, recipient_ids, status, scheduled_at, sent_at, total_recipients, sent_count, open_count, click_count, bounce_count, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, NOW())`,
         [
           newBlast.id,
           slug,
@@ -1339,6 +1348,7 @@ export async function createCrmEmailBlast(tenantSlug: string, blast: Partial<Crm
           newBlast.senderProfileId || null,
           newBlast.senderProvider || "custom",
           newBlast.senderOverride ? JSON.stringify(newBlast.senderOverride) : null,
+          newBlast.recipientIds && newBlast.recipientIds.length > 0 ? JSON.stringify(newBlast.recipientIds) : null,
           newBlast.status,
           newBlast.scheduledAt || null,
           newBlast.sentAt || null,
@@ -1918,6 +1928,84 @@ export async function deleteCrmSubscriber(tenantSlug: string, id: string): Promi
   return true;
 }
 
+export async function updateCrmSubscriber(
+  tenantSlug: string,
+  id: string,
+  updates: Partial<Omit<CrmEmailSubscriber, "id" | "tenantSlug" | "listId">>
+): Promise<CrmEmailSubscriber | null> {
+  const slug = cleanSlug(tenantSlug);
+  let updated: CrmEmailSubscriber | null = null;
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+      const fields: string[] = [];
+      const values: any[] = [];
+      let idx = 1;
+
+      if (updates.email !== undefined) {
+        fields.push(`email = $${idx++}`);
+        values.push((updates.email || "").trim().toLowerCase() || null);
+      }
+      if (updates.firstName !== undefined) {
+        fields.push(`first_name = $${idx++}`);
+        values.push(updates.firstName?.trim() || null);
+      }
+      if (updates.lastName !== undefined) {
+        fields.push(`last_name = $${idx++}`);
+        values.push(updates.lastName?.trim() || null);
+      }
+      if (updates.company !== undefined) {
+        fields.push(`company = $${idx++}`);
+        values.push(updates.company?.trim() || null);
+      }
+      if (updates.phone !== undefined) {
+        fields.push(`phone = $${idx++}`);
+        values.push(updates.phone?.trim() || null);
+      }
+      if (updates.linkedinUrl !== undefined) {
+        fields.push(`linkedin_url = $${idx++}`);
+        values.push(updates.linkedinUrl?.trim() || null);
+      }
+      if (updates.status !== undefined) {
+        fields.push(`status = $${idx++}`);
+        values.push(updates.status);
+      }
+
+      if (fields.length > 0) {
+        values.push(id);
+        values.push(slug);
+        const res = await pool.query(
+          `UPDATE crm_email_subscribers
+           SET ${fields.join(", ")}
+           WHERE id = $${idx++} AND LOWER(tenant_slug) = $${idx++}
+           RETURNING id, tenant_slug, list_id, email, first_name, last_name, company, phone, linkedin_url, status, created_at`,
+          values
+        );
+        if (res.rows.length > 0) {
+          const r = res.rows[0];
+          updated = {
+            id: r.id,
+            tenantSlug: r.tenant_slug,
+            listId: r.list_id,
+            email: r.email,
+            firstName: r.first_name,
+            lastName: r.last_name,
+            company: r.company,
+            phone: r.phone,
+            linkedinUrl: r.linkedin_url,
+            status: r.status,
+            createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
+          };
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("Neon DB updateCrmSubscriber error:", err);
+  }
+  return updated;
+}
+
 // 7. SCHEDULED BLASTS PROCESSOR
 export async function dispatchScheduledBlasts(tenantSlug?: string): Promise<{ dispatched: number; errors: string[] }> {
   const errors: string[] = [];
@@ -1928,7 +2016,7 @@ export async function dispatchScheduledBlasts(tenantSlug?: string): Promise<{ di
       await ensureTablesExist();
       const whereTenant = tenantSlug ? `AND LOWER(b.tenant_slug) = LOWER('${cleanSlug(tenantSlug)}')` : "";
       const res = await pool.query(
-        `SELECT b.id, b.tenant_slug, b.list_id, b.title, b.subject, b.content_html, b.sender_name, b.sender_email, b.sender_profile_id, b.sender_provider, b.sender_override
+        `SELECT b.id, b.tenant_slug, b.list_id, b.title, b.subject, b.content_html, b.sender_name, b.sender_email, b.sender_profile_id, b.sender_provider, b.sender_override, b.recipient_ids
          FROM crm_email_blasts b
          WHERE b.status = 'SCHEDULED' AND b.scheduled_at <= NOW() ${whereTenant}`
       );
@@ -1938,10 +2026,18 @@ export async function dispatchScheduledBlasts(tenantSlug?: string): Promise<{ di
           await pool.query(`UPDATE crm_email_blasts SET status = 'SENDING' WHERE id = $1`, [blast.id]);
 
           // Fetch list subscribers (only those with valid email addresses for email blasts)
-          const subsRes = await pool.query(
-            `SELECT email, first_name, last_name, company FROM crm_email_subscribers WHERE list_id = $1 AND status = 'SUBSCRIBED'`,
-            [blast.list_id]
-          );
+          let subsQuery = `SELECT id, email, first_name, last_name, company FROM crm_email_subscribers WHERE list_id = $1 AND status = 'SUBSCRIBED'`;
+          const subsParams: any[] = [blast.list_id];
+          if (blast.recipient_ids) {
+            try {
+              const ids = typeof blast.recipient_ids === "string" ? JSON.parse(blast.recipient_ids) : blast.recipient_ids;
+              if (Array.isArray(ids) && ids.length > 0) {
+                subsQuery += ` AND id = ANY($2)`;
+                subsParams.push(ids);
+              }
+            } catch {}
+          }
+          const subsRes = await pool.query(subsQuery, subsParams);
 
           const emailSubs = subsRes.rows.filter((s) => s.email && s.email.includes("@"));
 
@@ -1981,6 +2077,9 @@ export async function dispatchScheduledBlasts(tenantSlug?: string): Promise<{ di
               recipients: emailSubs.map((s) => ({
                 email: s.email,
                 name: `${s.first_name || ""} ${s.last_name || ""}`.trim() || s.email,
+                firstName: s.first_name || "",
+                lastName: s.last_name || "",
+                company: s.company || "",
                 role: "Subscriber",
                 department: s.company || "Commercial",
               })),

@@ -495,6 +495,9 @@ export interface MassEmailRecipient {
   name?: string;
   role?: string;
   department?: string;
+  firstName?: string;
+  lastName?: string;
+  company?: string;
 }
 
 export interface SendMassEmailParams {
@@ -792,15 +795,80 @@ function personalizeTemplate(
   resolvedLoginUrl: string,
   resolvedPortalUrl: string
 ): string {
-  return text
-    .replace(/{{name}}/gi, recipient.name || "Colleague")
-    .replace(/{{email}}/gi, recipient.email)
-    .replace(/{{role}}/gi, recipient.role || "Staff Member")
-    .replace(/{{department}}/gi, recipient.department || "Organization")
-    .replace(/{{login_url}}/gi, resolvedLoginUrl)
-    .replace(/{{loginUrl}}/gi, resolvedLoginUrl)
-    .replace(/{{portal_url}}/gi, resolvedPortalUrl)
-    .replace(/{{portalUrl}}/gi, resolvedPortalUrl);
+  // Derive first name, last name, and company
+  let derivedFirstName = (recipient.firstName || "").trim();
+  let derivedLastName = (recipient.lastName || "").trim();
+
+  if (!derivedFirstName && recipient.name && !recipient.name.includes("@")) {
+    const parts = recipient.name.trim().split(/\s+/);
+    derivedFirstName = parts[0] || "";
+    if (!derivedLastName && parts.length > 1) {
+      derivedLastName = parts.slice(1).join(" ");
+    }
+  }
+
+  const derivedCompany = (recipient.company || recipient.department || "").trim();
+  const fullName =
+    recipient.name && !recipient.name.includes("@")
+      ? recipient.name.trim()
+      : derivedFirstName
+      ? `${derivedFirstName} ${derivedLastName}`.trim()
+      : "";
+
+  let result = text;
+
+  // 1. First name with fallback e.g. {{first_name|Valued Partner}} or {{firstName|there}}
+  result = result.replace(/\{\{\s*(?:first_name|firstName|first\s+name)\|([^}]+)\}\}/gi, (_, fallback) => {
+    return derivedFirstName || fallback.trim();
+  });
+  // 1b. First name default: if missing, falls back to "there"
+  result = result.replace(/\{\{\s*(?:first_name|firstName|first\s+name)\s*\}\}/gi, () => {
+    return derivedFirstName || "there";
+  });
+
+  // 2. Contact name with fallback e.g. {{contact_name|there}}
+  result = result.replace(/\{\{\s*(?:contact_name|contactName|contact\s+name)\|([^}]+)\}\}/gi, (_, fallback) => {
+    return fullName || derivedFirstName || fallback.trim();
+  });
+  result = result.replace(/\{\{\s*(?:contact_name|contactName|contact\s+name)\s*\}\}/gi, () => {
+    return fullName || derivedFirstName || "there";
+  });
+
+  // 3. Last name with fallback e.g. {{last_name|}}
+  result = result.replace(/\{\{\s*(?:last_name|lastName|last\s+name)\|([^}]+)\}\}/gi, (_, fallback) => {
+    return derivedLastName || fallback.trim();
+  });
+  result = result.replace(/\{\{\s*(?:last_name|lastName|last\s+name)\s*\}\}/gi, () => {
+    return derivedLastName || "";
+  });
+
+  // 4. Company with fallback e.g. {{company|your organization}}
+  result = result.replace(/\{\{\s*company\|([^}]+)\}\}/gi, (_, fallback) => {
+    return derivedCompany || fallback.trim();
+  });
+  result = result.replace(/\{\{\s*company\s*\}\}/gi, () => {
+    return derivedCompany || "";
+  });
+
+  // 5. Full name with fallback e.g. {{name|Colleague}}
+  result = result.replace(/\{\{\s*name\|([^}]+)\}\}/gi, (_, fallback) => {
+    return fullName || derivedFirstName || fallback.trim();
+  });
+  result = result.replace(/\{\{\s*name\s*\}\}/gi, () => {
+    return fullName || derivedFirstName || "Colleague";
+  });
+
+  // 6. Email, role, department, URLs
+  result = result
+    .replace(/\{\{\s*email\s*\}\}/gi, recipient.email)
+    .replace(/\{\{\s*role\s*\}\}/gi, recipient.role || "Staff Member")
+    .replace(/\{\{\s*department\s*\}\}/gi, recipient.department || "Organization")
+    .replace(/\{\{\s*login_url\s*\}\}/gi, resolvedLoginUrl)
+    .replace(/\{\{\s*loginUrl\s*\}\}/gi, resolvedLoginUrl)
+    .replace(/\{\{\s*portal_url\s*\}\}/gi, resolvedPortalUrl)
+    .replace(/\{\{\s*portalUrl\s*\}\}/gi, resolvedPortalUrl);
+
+  return result;
 }
 
 function resolveUrls(tenantSlug: string, loginUrl?: string): { resolvedLoginUrl: string; resolvedPortalUrl: string } {
@@ -940,6 +1008,8 @@ export async function queueMassEmailCampaign(params: QueueCampaignParams): Promi
         chunk.forEach((rec, idx) => {
           const offset = idx * 10;
           const itemId = `q_${campaignId}_${i + idx}`;
+          const effectiveName = rec.name?.trim() || (rec.firstName ? `${rec.firstName} ${rec.lastName || ""}`.trim() : "");
+          const effectiveDept = rec.department?.trim() || rec.company?.trim() || "";
           placeholders.push(
             `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10})`
           );
@@ -949,9 +1019,9 @@ export async function queueMassEmailCampaign(params: QueueCampaignParams): Promi
             normalizedSlug,
             senderProfileId || null,
             rec.email.trim(),
-            rec.name || "",
+            effectiveName,
             rec.role || "",
-            rec.department || "",
+            effectiveDept,
             "pending",
             initialRetryAt
           );
@@ -994,15 +1064,17 @@ export async function queueMassEmailCampaign(params: QueueCampaignParams): Promi
   });
 
   validRecipients.forEach((rec, idx) => {
+    const effectiveName = rec.name?.trim() || (rec.firstName ? `${rec.firstName} ${rec.lastName || ""}`.trim() : "");
+    const effectiveDept = rec.department?.trim() || rec.company?.trim() || "";
     memoryQueue.push({
       id: `q_${campaignId}_${idx}`,
       campaignId,
       tenantSlug: normalizedSlug,
       senderProfileId,
       recipientEmail: rec.email.trim(),
-      recipientName: rec.name || "",
+      recipientName: effectiveName,
       recipientRole: rec.role || "",
-      recipientDepartment: rec.department || "",
+      recipientDepartment: effectiveDept,
       status: "pending",
       attempts: 0,
       nextRetryAt: initialRetryAt,

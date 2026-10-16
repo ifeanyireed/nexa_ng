@@ -344,6 +344,9 @@ export async function ensureTablesExist(): Promise<boolean> {
         ALTER TABLE tenant_smtp_settings ADD COLUMN IF NOT EXISTS rate_limited_until TIMESTAMPTZ;
         ALTER TABLE tenant_smtp_settings ADD COLUMN IF NOT EXISTS rate_limit_reason TEXT;
 
+        -- 9. Audience list blast recipient selection
+        ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS recipient_ids TEXT;
+
         CREATE TABLE IF NOT EXISTS email_profile_cooldowns (
           profile_key VARCHAR(150) PRIMARY KEY,
           tenant_slug VARCHAR(100) NOT NULL,

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   Send,
@@ -21,6 +21,9 @@ import {
   FileText,
   AlertCircle,
   Globe,
+  User,
+  Phone,
+  Building2,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -32,6 +35,7 @@ import { NexaModal } from "@/components/nexa/NexaModal";
 import {
   CrmEmailBlast,
   CrmEmailList,
+  CrmEmailSubscriber,
 } from "@/lib/crm-service";
 import { TenantSenderProfile } from "@/lib/email-service";
 import { crmFetch } from "@/lib/crm-client";
@@ -56,12 +60,23 @@ export default function EmailMarketingBlastsPage() {
   const [senderName, setSenderName] = useState("");
   const [senderEmail, setSenderEmail] = useState("");
   const [contentHtml, setContentHtml] = useState(
-    "<h2>Exclusive Commercial Update</h2><p>Dear {{contact_name}},</p><p>We are pleased to introduce our latest enterprise solutions designed for your organization.</p><p><a href='https://ofia.ng' style='background:#1A56DB;color:#fff;padding:8px 16px;border-radius:6px;text-decoration:none;'>Explore Platform</a></p>"
+    "<h2>Exclusive Commercial Update</h2><p>Dear {{first_name}},</p><p>We are pleased to introduce our latest enterprise solutions designed for your organization.</p><p><a href='https://ofia.ng' style='background:#1A56DB;color:#fff;padding:8px 16px;border-radius:6px;text-decoration:none;'>Explore Platform</a></p>"
   );
   const [bodyMode, setBodyMode] = useState<"edit" | "preview">("edit");
   const [scheduleType, setScheduleType] = useState<"NOW" | "LATER">("NOW");
   const [scheduleDate, setScheduleDate] = useState("");
   const [isAiGenerating, setIsAiGenerating] = useState(false);
+
+  // Audience List Contacts Selection & Filtering
+  const [listSubscribers, setListSubscribers] = useState<CrmEmailSubscriber[]>([]);
+  const [isLoadingSubscribers, setIsLoadingSubscribers] = useState(false);
+  const [recipientSelectionMode, setRecipientSelectionMode] = useState<"ALL" | "CUSTOM">("ALL");
+  const [selectedSubscriberIds, setSelectedSubscriberIds] = useState<string[]>([]);
+  const [contactSearchQuery, setContactSearchQuery] = useState("");
+  const [contactFieldFilter, setContactFieldFilter] = useState<
+    "ALL" | "HAS_EMAIL" | "HAS_NAME" | "MISSING_NAME" | "HAS_COMPANY" | "HAS_LINKEDIN"
+  >("ALL");
+  const [previewContactType, setPreviewContactType] = useState<"WITH_NAME" | "WITHOUT_NAME">("WITH_NAME");
 
   useEffect(() => {
     async function loadData() {
@@ -115,6 +130,101 @@ export default function EmailMarketingBlastsPage() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    if (!selectedListId) {
+      setListSubscribers([]);
+      setSelectedSubscriberIds([]);
+      return;
+    }
+
+    let isMounted = true;
+    async function fetchSubscribers() {
+      setIsLoadingSubscribers(true);
+      try {
+        const res = await crmFetch(`/api/erp/crm/lists/subscribers?listId=${selectedListId}`).then((r) => r.json());
+        if (isMounted) {
+          if (Array.isArray(res?.subscribers)) {
+            setListSubscribers(res.subscribers);
+            // Default: pre-select all subscribers that have an email address
+            const validIds = res.subscribers
+              .filter((s: CrmEmailSubscriber) => s.email && s.email.includes("@"))
+              .map((s: CrmEmailSubscriber) => s.id);
+            setSelectedSubscriberIds(validIds);
+          } else {
+            setListSubscribers([]);
+            setSelectedSubscriberIds([]);
+          }
+        }
+      } catch {
+        if (isMounted) {
+          setListSubscribers([]);
+          setSelectedSubscriberIds([]);
+        }
+      } finally {
+        if (isMounted) setIsLoadingSubscribers(false);
+      }
+    }
+
+    fetchSubscribers();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedListId]);
+
+  const filteredListSubscribers = useMemo(() => {
+    return listSubscribers.filter((s) => {
+      const q = contactSearchQuery.trim().toLowerCase();
+      const fullName = `${s.firstName || ""} ${s.lastName || ""}`.trim().toLowerCase();
+      const matchesSearch =
+        !q ||
+        (s.email && s.email.toLowerCase().includes(q)) ||
+        (s.company && s.company.toLowerCase().includes(q)) ||
+        (s.phone && s.phone.toLowerCase().includes(q)) ||
+        fullName.includes(q);
+
+      if (!matchesSearch) return false;
+
+      if (contactFieldFilter === "HAS_EMAIL") return Boolean(s.email && s.email.includes("@"));
+      if (contactFieldFilter === "HAS_NAME") return Boolean((s.firstName && s.firstName.trim()) || (s.lastName && s.lastName.trim()));
+      if (contactFieldFilter === "MISSING_NAME") return !Boolean((s.firstName && s.firstName.trim()) || (s.lastName && s.lastName.trim()));
+      if (contactFieldFilter === "HAS_COMPANY") return Boolean(s.company && s.company.trim());
+      if (contactFieldFilter === "HAS_LINKEDIN") return Boolean(s.linkedinUrl && s.linkedinUrl.trim());
+
+      return true;
+    });
+  }, [listSubscribers, contactSearchQuery, contactFieldFilter]);
+
+  const handleSelectAllFiltered = () => {
+    const validFilteredIds = filteredListSubscribers
+      .filter((s) => s.email && s.email.includes("@"))
+      .map((s) => s.id);
+    setSelectedSubscriberIds((prev) => Array.from(new Set([...prev, ...validFilteredIds])));
+  };
+
+  const handleSelectOnlyWithEmail = () => {
+    const validIds = listSubscribers
+      .filter((s) => s.email && s.email.includes("@"))
+      .map((s) => s.id);
+    setSelectedSubscriberIds(validIds);
+  };
+
+  const handleSelectWithNameAndEmail = () => {
+    const validIds = listSubscribers
+      .filter((s) => s.email && s.email.includes("@") && (s.firstName?.trim() || s.lastName?.trim()))
+      .map((s) => s.id);
+    setSelectedSubscriberIds(validIds);
+  };
+
+  const handleDeselectAll = () => {
+    setSelectedSubscriberIds([]);
+  };
+
+  const toggleSubscriber = (id: string) => {
+    setSelectedSubscriberIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
   const handleProfileChange = (val: string) => {
     setSelectedProfileId(val);
     if (val === "workspace_primary") {
@@ -155,7 +265,28 @@ export default function EmailMarketingBlastsPage() {
     }
 
     const chosenList = lists.find((l) => l.id === selectedListId);
-    const recipientsCount = chosenList ? chosenList.subscriberCount : 100;
+    let chosenSubs: CrmEmailSubscriber[] = [];
+    let chosenRecipientIds: string[] | undefined = undefined;
+
+    if (recipientSelectionMode === "CUSTOM") {
+      chosenSubs = listSubscribers.filter(
+        (s) => selectedSubscriberIds.includes(s.id) && s.email && s.email.includes("@")
+      );
+      if (chosenSubs.length === 0) {
+        alert("Please select at least one contact with a valid email address to receive this blast.");
+        return;
+      }
+      chosenRecipientIds = chosenSubs.map((s) => s.id);
+    } else {
+      chosenSubs = listSubscribers.filter((s) => s.email && s.email.includes("@"));
+    }
+
+    const recipientsCount =
+      recipientSelectionMode === "CUSTOM"
+        ? chosenSubs.length
+        : chosenSubs.length > 0
+        ? chosenSubs.length
+        : chosenList ? chosenList.subscriberCount : 100;
 
     let senderProfileId: string | undefined = undefined;
     let senderProvider = "custom";
@@ -203,6 +334,17 @@ export default function EmailMarketingBlastsPage() {
       senderProfileId,
       senderProvider,
       senderOverride,
+      recipientIds: chosenRecipientIds,
+      recipients: chosenRecipientIds
+        ? chosenSubs.map((s) => ({
+            email: s.email,
+            name: `${s.firstName || ""} ${s.lastName || ""}`.trim() || s.email,
+            firstName: s.firstName || "",
+            lastName: s.lastName || "",
+            company: s.company || "",
+            role: "Subscriber",
+          }))
+        : undefined,
       contentHtml,
       totalRecipients: recipientsCount,
       scheduledAt: scheduleType === "LATER" && scheduleDate ? new Date(scheduleDate).toISOString() : undefined,
@@ -532,6 +674,212 @@ export default function EmailMarketingBlastsPage() {
             </div>
           </div>
 
+          {/* RECIPIENT SELECTION & FILTERS */}
+          <div className="rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] p-3 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <label className="block text-xs font-bold text-[var(--nexa-text-primary)]">
+                  Recipient Selection
+                </label>
+                <p className="text-[11px] text-[var(--nexa-text-muted)]">
+                  Choose whether to dispatch to the entire list or hand-pick specific contacts with field filters.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-1.5 p-0.5 bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-lg text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setRecipientSelectionMode("ALL")}
+                  className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                    recipientSelectionMode === "ALL"
+                      ? "bg-[#1A56DB] text-white shadow-xs"
+                      : "text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
+                  }`}
+                >
+                  All in List ({listSubscribers.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRecipientSelectionMode("CUSTOM")}
+                  className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                    recipientSelectionMode === "CUSTOM"
+                      ? "bg-[#1A56DB] text-white shadow-xs"
+                      : "text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
+                  }`}
+                >
+                  Select Contacts ({selectedSubscriberIds.length})
+                </button>
+              </div>
+            </div>
+
+            {recipientSelectionMode === "CUSTOM" && (
+              <div className="space-y-2 pt-2 border-t border-[var(--nexa-border)]">
+                {/* Search & Action Bar */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <div className="flex-1">
+                    <NexaInput
+                      placeholder="Search contacts by name, email, or company..."
+                      value={contactSearchQuery}
+                      onChange={(e) => setContactSearchQuery(e.target.value)}
+                      leftIcon={<Search className="w-3.5 h-3.5 text-[var(--nexa-text-muted)]" />}
+                    />
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={handleSelectAllFiltered}
+                      className="text-[11px] font-semibold px-2 py-1.5 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] hover:bg-[#1A56DB]/10 hover:text-[#1A56DB] transition-colors cursor-pointer"
+                    >
+                      Select Filtered ({filteredListSubscribers.filter((s) => s.email && s.email.includes("@")).length})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSelectOnlyWithEmail}
+                      className="text-[11px] font-semibold px-2 py-1.5 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] hover:bg-[#1A56DB]/10 hover:text-[#1A56DB] transition-colors cursor-pointer"
+                    >
+                      All with Email
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSelectWithNameAndEmail}
+                      className="text-[11px] font-semibold px-2 py-1.5 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] hover:bg-[#1A56DB]/10 hover:text-[#1A56DB] transition-colors cursor-pointer"
+                    >
+                      With Name & Email
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDeselectAll}
+                      className="text-[11px] font-semibold px-2 py-1.5 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                    >
+                      Deselect All
+                    </button>
+                  </div>
+                </div>
+
+                {/* Filter Chips */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] font-bold text-[var(--nexa-text-muted)] flex items-center gap-1 mr-1">
+                    <Filter className="w-3 h-3 text-[#1A56DB]" /> Field Filters:
+                  </span>
+                  {[
+                    { id: "ALL", label: `All (${listSubscribers.length})` },
+                    { id: "HAS_EMAIL", label: `Has Email (${listSubscribers.filter((s) => s.email).length})` },
+                    { id: "HAS_NAME", label: `Has Name (${listSubscribers.filter((s) => s.firstName || s.lastName).length})` },
+                    { id: "MISSING_NAME", label: `Missing Name (${listSubscribers.filter((s) => !s.firstName && !s.lastName).length})` },
+                    { id: "HAS_COMPANY", label: `Has Company (${listSubscribers.filter((s) => s.company).length})` },
+                    { id: "HAS_LINKEDIN", label: `Has LinkedIn (${listSubscribers.filter((s) => s.linkedinUrl).length})` },
+                  ].map((chip) => (
+                    <button
+                      key={chip.id}
+                      type="button"
+                      onClick={() => setContactFieldFilter(chip.id as any)}
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-colors cursor-pointer ${
+                        contactFieldFilter === chip.id
+                          ? "bg-[#1A56DB] text-white border-[#1A56DB]"
+                          : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-muted)] border-[var(--nexa-border)] hover:text-[var(--nexa-text-primary)]"
+                      }`}
+                    >
+                      {chip.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Contacts Checklist */}
+                {isLoadingSubscribers ? (
+                  <div className="py-8 text-center text-xs text-[var(--nexa-text-muted)]">
+                    Loading contacts for selected audience list...
+                  </div>
+                ) : filteredListSubscribers.length === 0 ? (
+                  <div className="py-6 text-center text-xs text-[var(--nexa-text-muted)] italic">
+                    No contacts matching your current search or field filters.
+                  </div>
+                ) : (
+                  <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 border border-[var(--nexa-border)] rounded-xl p-2 bg-[var(--nexa-bg-surface)]/50">
+                    {filteredListSubscribers.map((contact) => {
+                      const isSelected = selectedSubscriberIds.includes(contact.id);
+                      const hasEmail = Boolean(contact.email && contact.email.includes("@"));
+                      const fullName = `${contact.firstName || ""} ${contact.lastName || ""}`.trim();
+                      return (
+                        <div
+                          key={contact.id}
+                          onClick={() => hasEmail && toggleSubscriber(contact.id)}
+                          className={`p-2 rounded-lg border text-xs flex items-center justify-between gap-2 transition-all cursor-pointer ${
+                            !hasEmail
+                              ? "opacity-50 border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] cursor-not-allowed"
+                              : isSelected
+                              ? "border-[#1A56DB] bg-[#1A56DB]/5 text-[var(--nexa-text-primary)]"
+                              : "border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] hover:border-[#1A56DB]/40 text-[var(--nexa-text-primary)]"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              disabled={!hasEmail}
+                              onChange={() => toggleSubscriber(contact.id)}
+                              className="w-3.5 h-3.5 rounded text-[#1A56DB] focus:ring-[#1A56DB] cursor-pointer"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="font-bold font-mono text-[11px] truncate">
+                                  {contact.email || contact.phone || "No contact info"}
+                                </span>
+                                {!hasEmail && (
+                                  <span className="text-[9px] font-semibold text-amber-600 bg-amber-500/10 px-1 py-0.2 rounded">
+                                    No email
+                                  </span>
+                                )}
+                                {fullName ? (
+                                  <span className="text-[10px] font-semibold text-blue-600 bg-blue-500/10 px-1.5 py-0.2 rounded flex items-center gap-1">
+                                    <User className="w-2.5 h-2.5" /> {fullName}
+                                  </span>
+                                ) : (
+                                  <span className="text-[9px] italic text-[var(--nexa-text-muted)] bg-[var(--nexa-bg-surface)] px-1.5 py-0.2 rounded border border-[var(--nexa-border)]">
+                                    No first/last name
+                                  </span>
+                                )}
+                              </div>
+                              {contact.company && (
+                                <div className="text-[10px] text-[var(--nexa-text-muted)] flex items-center gap-1 mt-0.5">
+                                  <Building2 className="w-2.5 h-2.5 text-purple-500" />
+                                  <span>{contact.company}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="shrink-0 text-[10px] font-bold text-[var(--nexa-text-muted)]">
+                            {isSelected ? (
+                              <span className="text-emerald-600 flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3" /> Selected
+                              </span>
+                            ) : hasEmail ? (
+                              <span>Click to select</span>
+                            ) : null}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Selection Count Summary */}
+                <div className="flex items-center justify-between text-[11px] text-[var(--nexa-text-muted)] pt-1">
+                  <span>
+                    Selected <strong className="text-[var(--nexa-text-primary)]">{selectedSubscriberIds.length}</strong> of{" "}
+                    <strong>{listSubscribers.filter((s) => s.email && s.email.includes("@")).length}</strong> deliverable email contacts
+                  </span>
+                  {selectedSubscriberIds.length === 0 && (
+                    <span className="text-rose-500 font-bold flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" /> Select at least 1 contact
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">Dispatch Timing</label>
@@ -561,30 +909,45 @@ export default function EmailMarketingBlastsPage() {
               </div>
             </div>
 
-          {scheduleType === "LATER" && (
-            <div>
-              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">Schedule Date & Time</label>
-              <input
-                type="datetime-local"
-                value={scheduleDate}
-                onChange={(e) => setScheduleDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-medium"
-                required
-              />
-            </div>
-          )}
+            {scheduleType === "LATER" && (
+              <div>
+                <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">Schedule Date & Time</label>
+                <input
+                  type="datetime-local"
+                  value={scheduleDate}
+                  onChange={(e) => setScheduleDate(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-medium"
+                  required
+                />
+              </div>
+            )}
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
-              <div className="flex items-center gap-2">
+              <div className="space-y-1">
                 <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Email Message HTML / Body</label>
-                <span className="text-[10px] text-[var(--nexa-text-muted)] font-mono bg-[var(--nexa-bg-surface)] px-1.5 py-0.5 rounded border border-[var(--nexa-border)]">
-                  &#123;&#123;contact_name&#125;&#125;
-                </span>
-                <span className="text-[10px] text-[var(--nexa-text-muted)] font-mono bg-[var(--nexa-bg-surface)] px-1.5 py-0.5 rounded border border-[var(--nexa-border)]">
-                  &#123;&#123;company&#125;&#125;
-                </span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[10px] text-[var(--nexa-text-muted)] font-semibold">Tokens:</span>
+                  {[
+                    { token: "{{first_name}}", title: "Contact first name (or defaults to 'there')" },
+                    { token: "{{first_name|Valued Partner}}", title: "Custom fallback if first name missing" },
+                    { token: "{{last_name}}", title: "Contact last name" },
+                    { token: "{{company}}", title: "Company name" },
+                    { token: "{{name}}", title: "Full contact name" },
+                    { token: "{{email}}", title: "Recipient email" },
+                  ].map((t) => (
+                    <button
+                      key={t.token}
+                      type="button"
+                      onClick={() => setContentHtml((prev) => prev + " " + t.token)}
+                      title={t.title}
+                      className="text-[10px] font-mono text-[var(--nexa-text-muted)] hover:text-[#1A56DB] bg-[var(--nexa-bg-surface)] hover:bg-[#1A56DB]/10 px-1.5 py-0.5 rounded border border-[var(--nexa-border)] cursor-pointer transition-colors"
+                    >
+                      {t.token}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* PREVIEW SWITCH */}
@@ -619,31 +982,51 @@ export default function EmailMarketingBlastsPage() {
                 rows={6}
                 value={contentHtml}
                 onChange={(e) => setContentHtml(e.target.value)}
-                placeholder="<p>Hello {{contact_name}},</p><p>We would love to partner with {{company}}...</p>"
+                placeholder="<p>Hello {{first_name}},</p><p>We would love to partner with {{company}}...</p>"
                 className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-mono"
               />
             ) : (
               <div className="rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] overflow-hidden shadow-xs">
                 {/* Email Client Simulation Header */}
-                <div className="p-2.5 border-b border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]/60 text-[11px] space-y-1 font-sans">
-                  <div className="flex items-center justify-between text-[var(--nexa-text-muted)]">
+                <div className="p-2.5 border-b border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]/60 text-[11px] space-y-1.5 font-sans">
+                  <div className="flex items-center justify-between text-[var(--nexa-text-muted)] flex-wrap gap-2">
                     <span>
                       <strong className="text-[var(--nexa-text-primary)]">From:</strong> {senderName || "Sender"} &lt;{senderEmail || "broadcast@yourdomain.com"}&gt;
                     </span>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[10px] font-mono bg-blue-500/10 text-blue-600 px-1.5 py-0.5 rounded font-semibold border border-blue-500/20">
-                        {senderEmail?.includes("@") ? senderEmail.split("@")[1] : "workspace domain"}
-                      </span>
-                      <span className="text-[10px] font-mono bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded font-semibold border border-emerald-500/20">
-                        Live Simulation
-                      </span>
+                      <span className="text-[10px] font-bold text-[var(--nexa-text-muted)]">Preview As:</span>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewContactType("WITH_NAME")}
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded border transition-colors cursor-pointer ${
+                          previewContactType === "WITH_NAME"
+                            ? "bg-[#1A56DB] text-white border-[#1A56DB]"
+                            : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-muted)] border-[var(--nexa-border)]"
+                        }`}
+                      >
+                        Has First Name (Adetayo)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewContactType("WITHOUT_NAME")}
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded border transition-colors cursor-pointer ${
+                          previewContactType === "WITHOUT_NAME"
+                            ? "bg-amber-600 text-white border-amber-600"
+                            : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-muted)] border-[var(--nexa-border)]"
+                        }`}
+                      >
+                        No First Name (Fallback Demo)
+                      </button>
                     </div>
                   </div>
                   <div className="text-[var(--nexa-text-muted)] truncate">
                     <strong className="text-[var(--nexa-text-primary)]">Subject:</strong> {blastSubject || "(No subject set)"}
                   </div>
                   <div className="text-[10px] text-[var(--nexa-text-muted)]">
-                    <strong className="text-[var(--nexa-text-primary)]">To:</strong> Aliko Dangote &lt;aliko@dangote.com&gt;
+                    <strong className="text-[var(--nexa-text-primary)]">To:</strong>{" "}
+                    {previewContactType === "WITH_NAME"
+                      ? "Adetayo Adewale <adetayo@sifaxgroup.com>"
+                      : "info@sifaxgroup.com"}
                   </div>
                 </div>
 
@@ -653,8 +1036,35 @@ export default function EmailMarketingBlastsPage() {
                     <div
                       dangerouslySetInnerHTML={{
                         __html: contentHtml
-                          .replace(/\{\{\s*contact_name\s*\}\}/gi, "Aliko Dangote")
-                          .replace(/\{\{\s*company\s*\}\}/gi, "Dangote Group"),
+                          .replace(/\{\{\s*(?:first_name|firstName|first\s+name)\|([^}]+)\}\}/gi, (_, fallback) =>
+                            previewContactType === "WITH_NAME" ? "Adetayo" : fallback.trim()
+                          )
+                          .replace(/\{\{\s*(?:first_name|firstName|first\s+name)\s*\}\}/gi,
+                            previewContactType === "WITH_NAME" ? "Adetayo" : "there"
+                          )
+                          .replace(/\{\{\s*(?:contact_name|contactName|contact\s+name)\|([^}]+)\}\}/gi, (_, fallback) =>
+                            previewContactType === "WITH_NAME" ? "Adetayo Adewale" : fallback.trim()
+                          )
+                          .replace(/\{\{\s*(?:contact_name|contactName|contact\s+name)\s*\}\}/gi,
+                            previewContactType === "WITH_NAME" ? "Adetayo Adewale" : "there"
+                          )
+                          .replace(/\{\{\s*(?:last_name|lastName|last\s+name)\|([^}]+)\}\}/gi, (_, fallback) =>
+                            previewContactType === "WITH_NAME" ? "Adewale" : fallback.trim()
+                          )
+                          .replace(/\{\{\s*(?:last_name|lastName|last\s+name)\s*\}\}/gi,
+                            previewContactType === "WITH_NAME" ? "Adewale" : ""
+                          )
+                          .replace(/\{\{\s*company\|([^}]+)\}\}/gi, () => "Sifax Haulage Ltd")
+                          .replace(/\{\{\s*company\s*\}\}/gi, "Sifax Haulage Ltd")
+                          .replace(/\{\{\s*name\|([^}]+)\}\}/gi, (_, fallback) =>
+                            previewContactType === "WITH_NAME" ? "Adetayo Adewale" : fallback.trim()
+                          )
+                          .replace(/\{\{\s*name\s*\}\}/gi,
+                            previewContactType === "WITH_NAME" ? "Adetayo Adewale" : "there"
+                          )
+                          .replace(/\{\{\s*email\s*\}\}/gi,
+                            previewContactType === "WITH_NAME" ? "adetayo@sifaxgroup.com" : "info@sifaxgroup.com"
+                          ),
                       }}
                     />
                   ) : (
@@ -671,8 +1081,14 @@ export default function EmailMarketingBlastsPage() {
             <NexaButton variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>
               Cancel
             </NexaButton>
-            <NexaButton variant="primary" type="submit">
-              {scheduleType === "NOW" ? "Dispatch Blast Now" : "Schedule Blast"}
+            <NexaButton
+              variant="primary"
+              type="submit"
+              disabled={recipientSelectionMode === "CUSTOM" && selectedSubscriberIds.length === 0}
+            >
+              {scheduleType === "NOW"
+                ? `Dispatch Blast Now (${recipientSelectionMode === "CUSTOM" ? selectedSubscriberIds.length : (listSubscribers.filter(s => s.email && s.email.includes("@")).length || "All")})`
+                : "Schedule Blast"}
             </NexaButton>
           </div>
         </form>

@@ -2006,6 +2006,238 @@ export async function updateCrmSubscriber(
   return updated;
 }
 
+export interface UnsubscribeResult {
+  success: boolean;
+  status: "SUBSCRIBED" | "UNSUBSCRIBED";
+  affectedCount: number;
+  email: string;
+  listName?: string;
+  tenantName?: string;
+  message?: string;
+}
+
+export interface SubscriberUnsubscribeDetails {
+  email: string;
+  status: "SUBSCRIBED" | "UNSUBSCRIBED" | "BOUNCED" | "NOT_FOUND";
+  firstName?: string;
+  lastName?: string;
+  company?: string;
+  listName?: string;
+  tenantName?: string;
+}
+
+export async function getCrmSubscriberDetailsForUnsubscribe(params: {
+  tenantSlug: string;
+  email: string;
+  subscriberId?: string;
+  listId?: string;
+}): Promise<SubscriberUnsubscribeDetails> {
+  const slug = cleanSlug(params.tenantSlug);
+  const email = (params.email || "").trim().toLowerCase();
+
+  const details: SubscriberUnsubscribeDetails = {
+    email,
+    status: "NOT_FOUND",
+  };
+
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+
+      // 1. Fetch organization / tenant name
+      try {
+        const orgRes = await pool.query(`SELECT name FROM "Organization" WHERE LOWER(slug) = LOWER($1) LIMIT 1`, [slug]);
+        if (orgRes.rows.length > 0 && orgRes.rows[0].name) {
+          details.tenantName = orgRes.rows[0].name;
+        }
+      } catch {}
+
+      // 2. Fetch list name if listId provided
+      if (params.listId) {
+        try {
+          const listRes = await pool.query(`SELECT name FROM crm_email_lists WHERE id = $1 LIMIT 1`, [params.listId]);
+          if (listRes.rows.length > 0 && listRes.rows[0].name) {
+            details.listName = listRes.rows[0].name;
+          }
+        } catch {}
+      }
+
+      // 3. Find subscriber
+      let subQuery = "";
+      let subParams: any[] = [];
+      if (params.subscriberId) {
+        subQuery = `SELECT s.id, s.email, s.first_name, s.last_name, s.company, s.status, l.name as list_name
+                    FROM crm_email_subscribers s
+                    LEFT JOIN crm_email_lists l ON s.list_id = l.id
+                    WHERE s.id = $1 AND LOWER(s.tenant_slug) = $2 LIMIT 1`;
+        subParams = [params.subscriberId, slug];
+      } else if (params.listId) {
+        subQuery = `SELECT s.id, s.email, s.first_name, s.last_name, s.company, s.status, l.name as list_name
+                    FROM crm_email_subscribers s
+                    LEFT JOIN crm_email_lists l ON s.list_id = l.id
+                    WHERE LOWER(s.email) = $1 AND s.list_id = $2 AND LOWER(s.tenant_slug) = $3 LIMIT 1`;
+        subParams = [email, params.listId, slug];
+      } else {
+        subQuery = `SELECT s.id, s.email, s.first_name, s.last_name, s.company, s.status, l.name as list_name
+                    FROM crm_email_subscribers s
+                    LEFT JOIN crm_email_lists l ON s.list_id = l.id
+                    WHERE LOWER(s.email) = $1 AND LOWER(s.tenant_slug) = $2
+                    ORDER BY s.created_at DESC LIMIT 1`;
+        subParams = [email, slug];
+      }
+
+      const subRes = await pool.query(subQuery, subParams);
+      if (subRes.rows.length > 0) {
+        const row = subRes.rows[0];
+        details.status = (row.status?.toUpperCase() as any) || "SUBSCRIBED";
+        details.firstName = row.first_name || undefined;
+        details.lastName = row.last_name || undefined;
+        details.company = row.company || undefined;
+        if (row.list_name && !details.listName) {
+          details.listName = row.list_name;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("getCrmSubscriberDetailsForUnsubscribe error:", err);
+  }
+
+  // Fallback to memory subscribers if not found
+  if (details.status === "NOT_FOUND") {
+    const list = memorySubscribers.get(slug) || [];
+    const found = list.find(
+      (s: CrmEmailSubscriber) => s.email && s.email.toLowerCase() === email
+    );
+    if (found) {
+      details.status = found.status;
+      details.firstName = found.firstName;
+      details.lastName = found.lastName;
+      details.company = found.company;
+    }
+  }
+
+  return details;
+}
+
+export async function handleCrmUnsubscribe(params: {
+  tenantSlug: string;
+  email: string;
+  subscriberId?: string;
+  listId?: string;
+  action: "unsubscribe" | "resubscribe";
+  reason?: string;
+}): Promise<UnsubscribeResult> {
+  const slug = cleanSlug(params.tenantSlug);
+  const email = (params.email || "").trim().toLowerCase();
+  const targetStatus = params.action === "resubscribe" ? "SUBSCRIBED" : "UNSUBSCRIBED";
+  const reasonText = params.reason || (params.action === "resubscribe" ? "User resubscribed" : "One-click unsubscribe");
+
+  let affectedCount = 0;
+  let listName: string | undefined = undefined;
+  let tenantName: string | undefined = undefined;
+
+  try {
+    const pool = getDbPool();
+    if (pool) {
+      await ensureTablesExist();
+
+      // Fetch org name
+      try {
+        const orgRes = await pool.query(`SELECT name FROM "Organization" WHERE LOWER(slug) = LOWER($1) LIMIT 1`, [slug]);
+        if (orgRes.rows.length > 0) {
+          tenantName = orgRes.rows[0].name;
+        }
+      } catch {}
+
+      // Fetch list name
+      if (params.listId) {
+        try {
+          const listRes = await pool.query(`SELECT name FROM crm_email_lists WHERE id = $1 LIMIT 1`, [params.listId]);
+          if (listRes.rows.length > 0) {
+            listName = listRes.rows[0].name;
+          }
+        } catch {}
+      }
+
+      let updateQuery = "";
+      let updateParams: any[] = [];
+
+      if (params.subscriberId) {
+        updateQuery = `UPDATE crm_email_subscribers
+                       SET status = $1,
+                           unsubscribed_at = ${targetStatus === "UNSUBSCRIBED" ? "NOW()" : "NULL"},
+                           unsubscribe_reason = $2
+                       WHERE id = $3 AND LOWER(tenant_slug) = $4
+                       RETURNING id, list_id`;
+        updateParams = [targetStatus, reasonText, params.subscriberId, slug];
+      } else if (params.listId) {
+        updateQuery = `UPDATE crm_email_subscribers
+                       SET status = $1,
+                           unsubscribed_at = ${targetStatus === "UNSUBSCRIBED" ? "NOW()" : "NULL"},
+                           unsubscribe_reason = $2
+                       WHERE LOWER(email) = $3 AND list_id = $4 AND LOWER(tenant_slug) = $5
+                       RETURNING id, list_id`;
+        updateParams = [targetStatus, reasonText, email, params.listId, slug];
+      } else {
+        updateQuery = `UPDATE crm_email_subscribers
+                       SET status = $1,
+                           unsubscribed_at = ${targetStatus === "UNSUBSCRIBED" ? "NOW()" : "NULL"},
+                           unsubscribe_reason = $2
+                       WHERE LOWER(email) = $3 AND LOWER(tenant_slug) = $4
+                       RETURNING id, list_id`;
+        updateParams = [targetStatus, reasonText, email, slug];
+      }
+
+      const updateRes = await pool.query(updateQuery, updateParams);
+      affectedCount = updateRes.rowCount || updateRes.rows.length;
+
+      // Log CRM Activity
+      try {
+        const actId = generateCrmId("ACT");
+        const actTitle = targetStatus === "UNSUBSCRIBED"
+          ? `Unsubscribed: ${email}`
+          : `Resubscribed: ${email}`;
+        const actNotes = `${targetStatus === "UNSUBSCRIBED" ? "Unsubscribed from" : "Resubscribed to"} mailing list${listName ? ` (${listName})` : ""}. Reason: ${reasonText}`;
+
+        await pool.query(
+          `INSERT INTO crm_activities (id, tenant_slug, type, title, company, rep, date_time, status, notes, created_at)
+           VALUES ($1, $2, 'EMAIL', $3, $4, 'System Unsubscribe', NOW(), 'COMPLETED', $5, NOW())`,
+          [actId, slug, actTitle, listName || "Mailing List", actNotes]
+        );
+      } catch (actErr) {
+        console.warn("Could not record unsubscribe CRM activity:", actErr);
+      }
+    }
+  } catch (err) {
+    console.warn("Neon DB handleCrmUnsubscribe error:", err);
+  }
+
+  // Update memory fallback in case of in-memory execution
+  const memList = memorySubscribers.get(slug) || [];
+  for (const s of memList) {
+    if (s.email && s.email.toLowerCase() === email) {
+      if (!params.listId || s.listId === params.listId) {
+        s.status = targetStatus;
+        affectedCount++;
+      }
+    }
+  }
+
+  return {
+    success: true,
+    status: targetStatus,
+    affectedCount,
+    email,
+    listName,
+    tenantName,
+    message:
+      targetStatus === "UNSUBSCRIBED"
+        ? "You have been successfully unsubscribed."
+        : "You have been successfully resubscribed.",
+  };
+}
+
 // 7. SCHEDULED BLASTS PROCESSOR
 export async function dispatchScheduledBlasts(tenantSlug?: string): Promise<{ dispatched: number; errors: string[] }> {
   const errors: string[] = [];
@@ -2082,6 +2314,8 @@ export async function dispatchScheduledBlasts(tenantSlug?: string): Promise<{ di
                 company: s.company || "",
                 role: "Subscriber",
                 department: s.company || "Commercial",
+                subscriberId: s.id,
+                listId: blast.list_id,
               })),
               subject: blast.subject,
               messageHtml: blast.content_html,

@@ -124,6 +124,8 @@ export async function POST(request: Request) {
             lastName: s.lastName || "",
             company: s.company || "",
             role: "Subscriber",
+            subscriberId: s.id,
+            listId: blast.listId,
           }));
         }
       }
@@ -140,6 +142,8 @@ export async function POST(request: Request) {
               company: r.company || "",
               role: r.role || "Prospect",
               department: r.company || "Commercial",
+              subscriberId: r.subscriberId,
+              listId: r.listId || blast.listId,
             })),
             subject: blast.subject,
             messageHtml: blast.contentHtml,

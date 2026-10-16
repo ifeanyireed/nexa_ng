@@ -368,6 +368,14 @@ export async function ensureTablesExist(): Promise<boolean> {
         ALTER TABLE "Organization" ADD COLUMN IF NOT EXISTS shop_enabled BOOLEAN DEFAULT true;
         ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "assignedPages" JSONB DEFAULT '[]'::jsonb;
         ALTER TABLE gtm_tenant_settings ADD COLUMN IF NOT EXISTS deepseek_api_key_encrypted TEXT;
+
+        -- 10. Unsubscribe Tracking and Queue Associations
+        ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS unsubscribed_at TIMESTAMPTZ;
+        ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS unsubscribe_reason TEXT;
+        ALTER TABLE email_queue ADD COLUMN IF NOT EXISTS subscriber_id VARCHAR(64);
+        ALTER TABLE email_queue ADD COLUMN IF NOT EXISTS list_id VARCHAR(64);
+        ALTER TABLE email_queue ADD COLUMN IF NOT EXISTS unsubscribe_url TEXT;
+        CREATE INDEX IF NOT EXISTS idx_crm_subscribers_status ON crm_email_subscribers (status);
       `);
 
       isInitialized = true;

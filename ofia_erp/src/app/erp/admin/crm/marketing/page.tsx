@@ -936,6 +936,7 @@ export default function EmailMarketingBlastsPage() {
                     { token: "{{company}}", title: "Company name" },
                     { token: "{{name}}", title: "Full contact name" },
                     { token: "{{email}}", title: "Recipient email" },
+                    { token: "{{unsubscribe_url}}", title: "Personalized one-click unsubscribe link" },
                   ].map((t) => (
                     <button
                       key={t.token}
@@ -1064,6 +1065,9 @@ export default function EmailMarketingBlastsPage() {
                           )
                           .replace(/\{\{\s*email\s*\}\}/gi,
                             previewContactType === "WITH_NAME" ? "adetayo@sifaxgroup.com" : "info@sifaxgroup.com"
+                          )
+                          .replace(/\{\{\s*(?:unsubscribe_url|unsubscribeUrl|unsubscribe)\s*\}\}/gi,
+                            "https://app.ofia.ng/crm/unsubscribe?token=sample_demo_token"
                           ),
                       }}
                     />
@@ -1072,6 +1076,13 @@ export default function EmailMarketingBlastsPage() {
                       No HTML body entered yet. Switch to "Edit HTML" to compose your email.
                     </div>
                   )}
+
+                  {/* Auto-injected System / Adsense Unsubscribe Footer Simulation */}
+                  <div className="mt-6 pt-4 border-t border-slate-200 text-center text-[10px] text-slate-400 leading-normal">
+                    &copy; {new Date().getFullYear()} {senderName || "Ofia ERP"}. All rights reserved.<br/>
+                    You received this email because you are subscribed to our communications.<br/>
+                    <span className="text-slate-500 underline cursor-pointer">Unsubscribe from this mailing list</span>
+                  </div>
                 </div>
               </div>
             )}

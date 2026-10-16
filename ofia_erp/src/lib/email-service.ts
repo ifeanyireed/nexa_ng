@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { getDbPool, ensureTablesExist } from "./db";
+import { buildUnsubscribeUrl, buildOneClickUnsubscribeApiUrl } from "./unsubscribe-token";
 
 export interface SmtpSettings {
   tenantSlug: string;
@@ -498,6 +499,9 @@ export interface MassEmailRecipient {
   firstName?: string;
   lastName?: string;
   company?: string;
+  subscriberId?: string;
+  listId?: string;
+  unsubscribeUrl?: string;
 }
 
 export interface SendMassEmailParams {
@@ -545,6 +549,9 @@ interface MemoryQueueItem {
   recipientName?: string;
   recipientRole?: string;
   recipientDepartment?: string;
+  subscriberId?: string;
+  listId?: string;
+  unsubscribeUrl?: string;
   status: "pending" | "processing" | "sent" | "failed";
   attempts: number;
   errorMessage?: string;
@@ -793,7 +800,8 @@ function personalizeTemplate(
   text: string,
   recipient: MassEmailRecipient,
   resolvedLoginUrl: string,
-  resolvedPortalUrl: string
+  resolvedPortalUrl: string,
+  unsubscribeUrl?: string
 ): string {
   // Derive first name, last name, and company
   let derivedFirstName = (recipient.firstName || "").trim();
@@ -858,7 +866,8 @@ function personalizeTemplate(
     return fullName || derivedFirstName || "Colleague";
   });
 
-  // 6. Email, role, department, URLs
+  // 6. Email, role, department, URLs, and Unsubscribe URL
+  const effectiveUnsubscribeUrl = unsubscribeUrl || recipient.unsubscribeUrl || "#";
   result = result
     .replace(/\{\{\s*email\s*\}\}/gi, recipient.email)
     .replace(/\{\{\s*role\s*\}\}/gi, recipient.role || "Staff Member")
@@ -866,7 +875,8 @@ function personalizeTemplate(
     .replace(/\{\{\s*login_url\s*\}\}/gi, resolvedLoginUrl)
     .replace(/\{\{\s*loginUrl\s*\}\}/gi, resolvedLoginUrl)
     .replace(/\{\{\s*portal_url\s*\}\}/gi, resolvedPortalUrl)
-    .replace(/\{\{\s*portalUrl\s*\}\}/gi, resolvedPortalUrl);
+    .replace(/\{\{\s*portalUrl\s*\}\}/gi, resolvedPortalUrl)
+    .replace(/\{\{\s*(?:unsubscribe_url|unsubscribeUrl|unsubscribe)\s*\}\}/gi, effectiveUnsubscribeUrl);
 
   return result;
 }
@@ -893,7 +903,8 @@ function resolveUrls(tenantSlug: string, loginUrl?: string): { resolvedLoginUrl:
 export function wrapInMasterAdsenseTemplate(
   contentHtml: string,
   title?: string,
-  senderName?: string
+  senderName?: string,
+  unsubscribeUrl?: string
 ): string {
   if (contentHtml.toLowerCase().includes("<html") || contentHtml.toLowerCase().includes("<!doctype")) {
     return contentHtml;
@@ -914,7 +925,8 @@ export function wrapInMasterAdsenseTemplate(
     .title { margin: 14px 0 0; font-size: 20px; font-weight: 600; color: #202124; line-height: 1.3; }
     .content { padding: 32px; font-size: 14px; line-height: 1.6; color: #3c4043; }
     .btn { display: inline-block; padding: 12px 32px; background-color: #1a73e8; color: #ffffff !important; font-weight: 600; font-size: 14px; text-decoration: none; border-radius: 9999px; }
-    .footer { padding: 20px 32px; text-align: center; font-size: 12px; color: #70757a; background-color: #f8f9fa; border-top: 1px solid #dadce0; line-height: 1.5; }
+    .footer { padding: 20px 32px; text-align: center; font-size: 12px; color: #70757a; background-color: #f8f9fa; border-top: 1px solid #dadce0; line-height: 1.6; }
+    .footer a { color: #5f6368; text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -939,7 +951,11 @@ export function wrapInMasterAdsenseTemplate(
       </div>
       <div class="footer">
         &copy; ${new Date().getFullYear()} ${senderName || "Ofia ERP"}. All rights reserved.<br/>
-        This is a mandatory system communication regarding your enterprise account.
+        ${
+          unsubscribeUrl
+            ? `You received this email because you are subscribed to our communications.<br/><a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer" style="color: #70757a; text-decoration: underline; margin-top: 6px; display: inline-block;">Unsubscribe from this mailing list</a>`
+            : `This is a mandatory system communication regarding your enterprise account.`
+        }
       </div>
     </div>
   </div>
@@ -1006,12 +1022,12 @@ export async function queueMassEmailCampaign(params: QueueCampaignParams): Promi
         const placeholders: string[] = [];
 
         chunk.forEach((rec, idx) => {
-          const offset = idx * 10;
+          const offset = idx * 13;
           const itemId = `q_${campaignId}_${i + idx}`;
           const effectiveName = rec.name?.trim() || (rec.firstName ? `${rec.firstName} ${rec.lastName || ""}`.trim() : "");
           const effectiveDept = rec.department?.trim() || rec.company?.trim() || "";
           placeholders.push(
-            `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10})`
+            `($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5}, $${offset + 6}, $${offset + 7}, $${offset + 8}, $${offset + 9}, $${offset + 10}, $${offset + 11}, $${offset + 12}, $${offset + 13})`
           );
           values.push(
             itemId,
@@ -1022,13 +1038,16 @@ export async function queueMassEmailCampaign(params: QueueCampaignParams): Promi
             effectiveName,
             rec.role || "",
             effectiveDept,
+            rec.subscriberId || null,
+            rec.listId || null,
+            rec.unsubscribeUrl || null,
             "pending",
             initialRetryAt
           );
         });
 
         const sql = `
-          INSERT INTO email_queue (id, campaign_id, tenant_slug, sender_profile_id, recipient_email, recipient_name, recipient_role, recipient_department, status, next_retry_at)
+          INSERT INTO email_queue (id, campaign_id, tenant_slug, sender_profile_id, recipient_email, recipient_name, recipient_role, recipient_department, subscriber_id, list_id, unsubscribe_url, status, next_retry_at)
           VALUES ${placeholders.join(", ")}
         `;
         insertPromises.push(pool.query(sql, values));
@@ -1075,6 +1094,9 @@ export async function queueMassEmailCampaign(params: QueueCampaignParams): Promi
       recipientName: effectiveName,
       recipientRole: rec.role || "",
       recipientDepartment: effectiveDept,
+      subscriberId: rec.subscriberId,
+      listId: rec.listId,
+      unsubscribeUrl: rec.unsubscribeUrl,
       status: "pending",
       attempts: 0,
       nextRetryAt: initialRetryAt,
@@ -1153,7 +1175,7 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
         UPDATE email_queue
         SET status = 'processing', attempts = attempts + 1, updated_at = CURRENT_TIMESTAMP
         WHERE id IN (SELECT id FROM claimed)
-        RETURNING id, campaign_id, tenant_slug, sender_profile_id, recipient_email, recipient_name, recipient_role, recipient_department, attempts;
+        RETURNING id, campaign_id, tenant_slug, sender_profile_id, recipient_email, recipient_name, recipient_role, recipient_department, subscriber_id, list_id, unsubscribe_url, attempts;
       `;
 
       const claimedResult = await pool.query(claimQuery, [batchSize]);
@@ -1270,19 +1292,41 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
             }
 
             const { resolvedLoginUrl, resolvedPortalUrl } = resolveUrls(item.tenant_slug, campaign.login_url);
+            const campaignBaseUrl = campaign.login_url ? campaign.login_url.replace(/\/login(\?.*)?$/i, "") : undefined;
+
+            const unsubscribeUrl =
+              item.unsubscribe_url ||
+              buildUnsubscribeUrl({
+                tenantSlug: item.tenant_slug,
+                email: item.recipient_email,
+                subscriberId: item.subscriber_id,
+                listId: item.list_id,
+                baseUrl: campaignBaseUrl,
+              });
+
+            const oneClickApiUrl = buildOneClickUnsubscribeApiUrl({
+              tenantSlug: item.tenant_slug,
+              email: item.recipient_email,
+              subscriberId: item.subscriber_id,
+              listId: item.list_id,
+              baseUrl: campaignBaseUrl,
+            });
 
             const recipientObj: MassEmailRecipient = {
               email: item.recipient_email,
               name: item.recipient_name,
               role: item.recipient_role,
               department: item.recipient_department,
+              subscriberId: item.subscriber_id,
+              listId: item.list_id,
+              unsubscribeUrl,
             };
 
-            const personalizedSubject = personalizeTemplate(campaign.subject, recipientObj, resolvedLoginUrl, resolvedPortalUrl);
-            const personalizedHtml = personalizeTemplate(campaign.message_html, recipientObj, resolvedLoginUrl, resolvedPortalUrl);
+            const personalizedSubject = personalizeTemplate(campaign.subject, recipientObj, resolvedLoginUrl, resolvedPortalUrl, unsubscribeUrl);
+            const personalizedHtml = personalizeTemplate(campaign.message_html, recipientObj, resolvedLoginUrl, resolvedPortalUrl, unsubscribeUrl);
             const sender = `"${effectiveSettings.fromName.replace(/"/g, "")}" <${effectiveSettings.fromEmail}>`;
 
-            const finalHtml = wrapInMasterAdsenseTemplate(personalizedHtml, personalizedSubject, effectiveSettings.fromName);
+            const finalHtml = wrapInMasterAdsenseTemplate(personalizedHtml, personalizedSubject, effectiveSettings.fromName, unsubscribeUrl);
 
             await effectiveTransporter.sendMail({
               from: sender,
@@ -1290,6 +1334,10 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
               subject: personalizedSubject,
               html: finalHtml,
               text: personalizedHtml.replace(/<[^>]*>?/gm, ""),
+              headers: {
+                "List-Unsubscribe": `<${oneClickApiUrl}>, <mailto:${effectiveSettings.fromEmail}?subject=Unsubscribe>`,
+                "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+              },
             });
 
             sent++;
@@ -1506,19 +1554,41 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
       }
 
       const { resolvedLoginUrl, resolvedPortalUrl } = resolveUrls(item.tenantSlug, memCampaign.loginUrl);
+      const campaignBaseUrl = memCampaign.loginUrl ? memCampaign.loginUrl.replace(/\/login(\?.*)?$/i, "") : undefined;
+
+      const unsubscribeUrl =
+        item.unsubscribeUrl ||
+        buildUnsubscribeUrl({
+          tenantSlug: item.tenantSlug,
+          email: item.recipientEmail,
+          subscriberId: item.subscriberId,
+          listId: item.listId,
+          baseUrl: campaignBaseUrl,
+        });
+
+      const oneClickApiUrl = buildOneClickUnsubscribeApiUrl({
+        tenantSlug: item.tenantSlug,
+        email: item.recipientEmail,
+        subscriberId: item.subscriberId,
+        listId: item.listId,
+        baseUrl: campaignBaseUrl,
+      });
 
       const recipientObj: MassEmailRecipient = {
         email: item.recipientEmail,
         name: item.recipientName,
         role: item.recipientRole,
         department: item.recipientDepartment,
+        subscriberId: item.subscriberId,
+        listId: item.listId,
+        unsubscribeUrl,
       };
 
-      const personalizedSubject = personalizeTemplate(memCampaign.subject, recipientObj, resolvedLoginUrl, resolvedPortalUrl);
-      const personalizedHtml = personalizeTemplate(memCampaign.messageHtml, recipientObj, resolvedLoginUrl, resolvedPortalUrl);
+      const personalizedSubject = personalizeTemplate(memCampaign.subject, recipientObj, resolvedLoginUrl, resolvedPortalUrl, unsubscribeUrl);
+      const personalizedHtml = personalizeTemplate(memCampaign.messageHtml, recipientObj, resolvedLoginUrl, resolvedPortalUrl, unsubscribeUrl);
       const sender = `"${effectiveSettings.fromName.replace(/"/g, "")}" <${effectiveSettings.fromEmail}>`;
 
-      const finalHtml = wrapInMasterAdsenseTemplate(personalizedHtml, personalizedSubject, effectiveSettings.fromName);
+      const finalHtml = wrapInMasterAdsenseTemplate(personalizedHtml, personalizedSubject, effectiveSettings.fromName, unsubscribeUrl);
 
       await effectiveTransporter.sendMail({
         from: sender,
@@ -1526,6 +1596,10 @@ export async function processEmailQueueBatch(batchSize: number = 25): Promise<{
         subject: personalizedSubject,
         html: finalHtml,
         text: personalizedHtml.replace(/<[^>]*>?/gm, ""),
+        headers: {
+          "List-Unsubscribe": `<${oneClickApiUrl}>, <mailto:${effectiveSettings.fromEmail}?subject=Unsubscribe>`,
+          "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        },
       });
 
       item.status = "sent";

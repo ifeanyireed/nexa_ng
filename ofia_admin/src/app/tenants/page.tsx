@@ -318,10 +318,10 @@ function TenantManagementContent() {
                 school: true,
                 staff: true,
               },
-              databaseUrl: org.database_url || org.databaseUrl || (orgSlug === "neweratransports" ? INITIAL_TENANTS[0].databaseUrl : orgSlug === "reedbreed" ? INITIAL_TENANTS[1].databaseUrl : ""),
-              cloudinaryUrl: org.cloudinary_url || org.cloudinaryUrl || (orgSlug === "neweratransports" ? INITIAL_TENANTS[0].cloudinaryUrl : orgSlug === "reedbreed" ? INITIAL_TENANTS[1].cloudinaryUrl : ""),
-              isCustomDb: Boolean(org.is_custom_db || org.isCustomDb || org.database_url || org.databaseUrl || orgSlug === "neweratransports" || orgSlug === "reedbreed"),
-              isCustomStorage: Boolean(org.is_custom_storage || org.isCustomStorage || org.cloudinary_url || org.cloudinaryUrl || orgSlug === "neweratransports" || orgSlug === "reedbreed"),
+              databaseUrl: org.database_url || org.databaseUrl || "",
+              cloudinaryUrl: org.cloudinary_url || org.cloudinaryUrl || "",
+              isCustomDb: Boolean(org.is_custom_db || org.isCustomDb || org.database_url || org.databaseUrl),
+              isCustomStorage: Boolean(org.is_custom_storage || org.isCustomStorage || org.cloudinary_url || org.cloudinaryUrl),
               createdAt: org.createdAt || org.created_at
                 ? new Date(org.createdAt || org.created_at).toISOString().split("T")[0]
                 : new Date().toISOString().split("T")[0],

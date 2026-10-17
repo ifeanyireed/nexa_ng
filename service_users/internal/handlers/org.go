@@ -3,16 +3,24 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"nexa/user_subscription_service/internal/middleware"
 	"nexa/user_subscription_service/internal/models"
+)
+
+var (
+	tenantUserDBPools sync.Map // map[string]*gorm.DB
+	tenantUserDBMu    sync.Mutex
 )
 
 type OrgHandler struct {
@@ -513,6 +521,35 @@ type SaveRBACRequest struct {
 	Matrix map[string]map[string]bool `json:"matrix"`
 }
 
+func (h *OrgHandler) getTenantGorm(org *models.Organization) *gorm.DB {
+	if org == nil || !org.IsCustomDB || org.DatabaseURL == "" {
+		return nil
+	}
+	slug := strings.ToLower(org.Slug)
+	if val, ok := tenantUserDBPools.Load(slug); ok {
+		return val.(*gorm.DB)
+	}
+
+	tenantUserDBMu.Lock()
+	defer tenantUserDBMu.Unlock()
+
+	if val, ok := tenantUserDBPools.Load(slug); ok {
+		return val.(*gorm.DB)
+	}
+
+	gdb, err := gorm.Open(postgres.Open(org.DatabaseURL), &gorm.Config{
+		DisableForeignKeyConstraintWhenMigrating: true,
+	})
+	if err != nil {
+		log.Printf("❌ service_users: Failed to open dedicated DB for tenant '%s': %v (fallback to platform DB is strictly disabled)", slug, err)
+		return nil
+	}
+
+	_ = gdb.AutoMigrate(&models.TenantRolePermission{})
+	tenantUserDBPools.Store(slug, gdb)
+	return gdb
+}
+
 func (h *OrgHandler) GetTenantRBAC(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgId")
 	if orgID == "" {
@@ -528,15 +565,21 @@ func (h *OrgHandler) GetTenantRBAC(w http.ResponseWriter, r *http.Request) {
 		if h.db.Where("id = ? OR slug = ? OR LOWER(slug) = LOWER(?) OR LOWER(name) = LOWER(?)", orgID, orgID, orgID, orgID).First(&org).Error == nil {
 			canonicalSlug = org.Slug
 			canonicalID = org.ID
-		} else if orgID == "default" || orgID == "Ofia ERP" || orgID == "" {
-			if h.db.Where("slug = ?", "neweratransports").First(&org).Error == nil {
-				canonicalSlug = org.Slug
-				canonicalID = org.ID
+		}
+		h.attachInfrastructure(&org)
+
+		dbToUse := h.db
+		if org.IsCustomDB {
+			targetGorm := h.getTenantGorm(&org)
+			if targetGorm == nil {
+				http.Error(w, `{"error": "Tenant dedicated database unavailable"}`, http.StatusServiceUnavailable)
+				return
 			}
+			dbToUse = targetGorm
 		}
 
 		var perms []models.TenantRolePermission
-		if err := h.db.Where("\"tenantId\" = ? OR \"tenantId\" = ?", canonicalSlug, canonicalID).Find(&perms).Error; err == nil && len(perms) > 0 {
+		if err := dbToUse.Where("\"tenantId\" = ? OR \"tenantId\" = ?", canonicalSlug, canonicalID).Find(&perms).Error; err == nil && len(perms) > 0 {
 			for _, p := range perms {
 				if matrix[p.Role] == nil {
 					matrix[p.Role] = make(map[string]bool)
@@ -572,11 +615,17 @@ func (h *OrgHandler) SaveTenantRBAC(w http.ResponseWriter, r *http.Request) {
 		if h.db.Where("id = ? OR slug = ? OR LOWER(slug) = LOWER(?) OR LOWER(name) = LOWER(?)", orgID, orgID, orgID, orgID).First(&org).Error == nil {
 			canonicalSlug = org.Slug
 			canonicalID = org.ID
-		} else if orgID == "default" || orgID == "Ofia ERP" || orgID == "" {
-			if h.db.Where("slug = ?", "neweratransports").First(&org).Error == nil {
-				canonicalSlug = org.Slug
-				canonicalID = org.ID
+		}
+		h.attachInfrastructure(&org)
+
+		dbToUse := h.db
+		if org.IsCustomDB {
+			targetGorm := h.getTenantGorm(&org)
+			if targetGorm == nil {
+				http.Error(w, `{"error": "Tenant dedicated database unavailable for writes"}`, http.StatusServiceUnavailable)
+				return
 			}
+			dbToUse = targetGorm
 		}
 
 		targets := []string{canonicalSlug}
@@ -588,7 +637,7 @@ func (h *OrgHandler) SaveTenantRBAC(w http.ResponseWriter, r *http.Request) {
 			for role, modules := range req.Matrix {
 				for modKey, isEnabled := range modules {
 					var existing models.TenantRolePermission
-					err := h.db.Where("\"tenantId\" = ? AND role = ? AND \"moduleKey\" = ?", targetID, role, modKey).First(&existing).Error
+					err := dbToUse.Where("\"tenantId\" = ? AND role = ? AND \"moduleKey\" = ?", targetID, role, modKey).First(&existing).Error
 					if err != nil {
 						newPerm := models.TenantRolePermission{
 							ID:        uuid.New().String(),
@@ -599,9 +648,9 @@ func (h *OrgHandler) SaveTenantRBAC(w http.ResponseWriter, r *http.Request) {
 							CreatedAt: time.Now(),
 							UpdatedAt: time.Now(),
 						}
-						h.db.Create(&newPerm)
+						dbToUse.Create(&newPerm)
 					} else {
-						h.db.Model(&existing).Updates(map[string]interface{}{
+						dbToUse.Model(&existing).Updates(map[string]interface{}{
 							"isEnabled": isEnabled,
 							"updatedAt": time.Now(),
 						})
@@ -614,7 +663,7 @@ func (h *OrgHandler) SaveTenantRBAC(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"success":   true,
-		"message":   "Tenant RBAC matrix successfully persisted to Neon Postgres database",
+		"message":   "Tenant RBAC matrix successfully persisted to dedicated Neon Postgres database",
 		"tenant_id": orgID,
 		"matrix":    req.Matrix,
 	})

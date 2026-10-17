@@ -22,17 +22,11 @@ var (
 	tenantGormPools sync.Map // map[string]*gorm.DB
 	poolMu          sync.Mutex
 
-	// Dedicated tenant database projects (Project-level isolation)
-	tenantProjectRegistry = map[string]string{
-		"neweratransports": "postgresql://neondb_owner:npg_C7HvEVY5Nruo@ep-tiny-block-b53y1iw8-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
-		"neweratrnsports":  "postgresql://neondb_owner:npg_C7HvEVY5Nruo@ep-tiny-block-b53y1iw8-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
-	}
+	// Dedicated tenant database projects (Project-level isolation cache - populated dynamically from tenant_infrastructures)
+	tenantProjectRegistry = make(map[string]string)
 
-	// Dedicated tenant Cloudinary storage projects
-	tenantStorageRegistry = map[string]string{
-		"neweratransports": "cloudinary://768523141117821:KeVQI7I7tuGlCxUIdWC9M6RdWjg@wnmabxiy",
-		"neweratrnsports":  "cloudinary://768523141117821:KeVQI7I7tuGlCxUIdWC9M6RdWjg@wnmabxiy",
-	}
+	// Dedicated tenant Cloudinary storage projects cache - populated dynamically from tenant_infrastructures
+	tenantStorageRegistry = make(map[string]string)
 )
 
 func RegisterTenantProject(slug string, databaseURL string, cloudinaryURL string) {
@@ -90,8 +84,13 @@ func getDB(r *http.Request) *sql.DB {
 	if !ok || targetURL == "" {
 		if db != nil {
 			var fetchedURL, fetchedStorage sql.NullString
-			err := db.QueryRow(`SELECT database_url, cloudinary_url FROM tenant_infrastructures WHERE LOWER(tenant_slug) = $1 AND is_custom_db = true`, slug).
-				Scan(&fetchedURL, &fetchedStorage)
+			err := db.QueryRow(`
+				SELECT ti.database_url, ti.cloudinary_url 
+				FROM tenant_infrastructures ti
+				LEFT JOIN "Organization" o ON LOWER(o.slug) = LOWER(ti.tenant_slug)
+				WHERE (LOWER(ti.tenant_slug) = $1 OR LOWER(o.id::text) = $1)
+				  AND ti.is_custom_db = true
+				LIMIT 1`, slug).Scan(&fetchedURL, &fetchedStorage)
 			if err == nil && fetchedURL.Valid && fetchedURL.String != "" {
 				RegisterTenantProject(slug, fetchedURL.String, fetchedStorage.String)
 				targetURL = fetchedURL.String
@@ -100,7 +99,8 @@ func getDB(r *http.Request) *sql.DB {
 		}
 	}
 	if !ok || targetURL == "" {
-		return db
+		log.Printf("❌ Strict Multi-Tenancy: No custom database configured for tenant '%s'. Fallback to platform database is disabled.", slug)
+		return nil
 	}
 
 	if val, ok := tenantSqlPools.Load(slug); ok {
@@ -120,14 +120,14 @@ func getDB(r *http.Request) *sql.DB {
 		Logger:      logger.Default.LogMode(logger.Warn),
 	})
 	if err != nil {
-		log.Printf("⚠️ Failed to open dedicated project pool for tenant '%s': %v (falling back to platform DB)", slug, err)
-		return db
+		log.Printf("❌ Strict Multi-Tenancy: Failed to connect to dedicated project for tenant '%s': %v (fallback to platform DB is disabled)", slug, err)
+		return nil
 	}
 
 	sDB, err := gdb.DB()
 	if err != nil {
-		log.Printf("⚠️ Failed to get sql.DB for tenant '%s': %v", slug, err)
-		return db
+		log.Printf("❌ Strict Multi-Tenancy: Failed to get sql.DB for tenant '%s': %v (fallback to platform DB is disabled)", slug, err)
+		return nil
 	}
 
 	sDB.SetMaxOpenConns(15)
@@ -148,20 +148,22 @@ func getGorm(r *http.Request) *gorm.DB {
 		return DB
 	}
 
-	targetURL, ok := tenantProjectRegistry[slug]
-	if !ok || targetURL == "" {
-		return DB
+	if val, ok := tenantGormPools.Load(slug); ok {
+		return val.(*gorm.DB)
+	}
+
+	sDB := getDB(r)
+	if sDB == nil {
+		log.Printf("❌ Strict Multi-Tenancy: getGorm failed for tenant '%s'. Fallback to platform DB is disabled.", slug)
+		return nil
 	}
 
 	if val, ok := tenantGormPools.Load(slug); ok {
 		return val.(*gorm.DB)
 	}
 
-	_ = getDB(r)
-	if val, ok := tenantGormPools.Load(slug); ok {
-		return val.(*gorm.DB)
-	}
-	return DB
+	log.Printf("❌ Strict Multi-Tenancy: getGorm could not load dedicated pool for tenant '%s'. Fallback to platform DB is disabled.", slug)
+	return nil
 }
 
 func SetDB(database *sql.DB) {

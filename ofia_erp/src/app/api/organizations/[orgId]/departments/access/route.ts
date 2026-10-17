@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDbPool } from "@/lib/db";
-import { DEFAULT_DEPARTMENT_ACCESS, DepartmentAccessItem } from "@/lib/department-access-constants";
+import { DepartmentAccessItem } from "@/lib/department-access-constants";
 
 export const dynamic = "force-dynamic";
 
@@ -9,40 +9,20 @@ async function resolveCanonicalOrg(pool: any, rawOrgId: string) {
   let canonicalSlug = decoded;
   let canonicalId = decoded;
 
-  if (pool) {
-    try {
-      let orgRes = await pool.query(
-        `SELECT id, slug FROM "Organization" 
-         WHERE id = $1 
-            OR slug = $1 
-            OR domain = $1 
-            OR LOWER(slug) = LOWER($1)
-            OR LOWER(name) = LOWER($1)
-         LIMIT 1`,
-        [decoded]
-      );
+  const orgRes = await pool.query(
+    `SELECT id, slug FROM "Organization" 
+     WHERE id = $1 
+        OR slug = $1 
+        OR domain = $1 
+        OR LOWER(slug) = LOWER($1)
+        OR LOWER(name) = LOWER($1)
+     LIMIT 1`,
+    [decoded]
+  );
 
-      if (orgRes.rows.length === 0 && (
-        !decoded ||
-        decoded === "default" ||
-        decoded === "Ofia ERP" ||
-        decoded.toLowerCase().includes("newera")
-      )) {
-        orgRes = await pool.query(
-          `SELECT id, slug FROM "Organization" 
-           WHERE slug = 'neweratransports' OR id = '1aa8c687-b71d-4188-9de2-371aa5dfa9e6'
-           ORDER BY "created_at" ASC NULLS LAST 
-           LIMIT 1`
-        );
-      }
-
-      if (orgRes.rows.length > 0) {
-        canonicalSlug = orgRes.rows[0].slug;
-        canonicalId = orgRes.rows[0].id;
-      }
-    } catch (err) {
-      console.warn("Error resolving canonical organization in erp department access:", err);
-    }
+  if (orgRes.rows.length > 0) {
+    canonicalSlug = orgRes.rows[0].slug;
+    canonicalId = orgRes.rows[0].id;
   }
 
   return { canonicalSlug, canonicalId };
@@ -54,16 +34,9 @@ export async function GET(
 ) {
   const resolvedParams = await params;
   const orgId = resolvedParams?.orgId || "";
-  let pool: any = null;
-  try {
-    pool = getDbPool();
-  } catch {}
 
   try {
-    if (!pool) {
-      return NextResponse.json(DEFAULT_DEPARTMENT_ACCESS);
-    }
-
+    const pool = getDbPool();
     const { canonicalSlug, canonicalId } = await resolveCanonicalOrg(pool, orgId);
 
     // 1. Fetch from TenantDepartmentPermission
@@ -95,7 +68,7 @@ export async function GET(
       return NextResponse.json(list);
     }
 
-    // 2. Fallback to Department table accessiblePages/accessibleTabs
+    // 2. Fetch from Department table accessiblePages/accessibleTabs
     const deptRows = await pool.query(
       `SELECT code, name, "accessiblePages", "accessibleTabs" 
        FROM "Department" 
@@ -115,7 +88,7 @@ export async function GET(
           id: `dept_perm_${canonicalSlug}_${row.code}`,
           departmentCode: row.code,
           departmentName: row.name,
-          accessiblePages: (pages && pages.length > 0) ? pages : ["employee"],
+          accessiblePages: pages || [],
           accessibleTabs: tabs || {},
           isEnabled: true,
         };
@@ -124,9 +97,11 @@ export async function GET(
       return NextResponse.json(list);
     }
 
-    return NextResponse.json(DEFAULT_DEPARTMENT_ACCESS);
+    return NextResponse.json([]);
   } catch (err: any) {
-    console.error("Error retrieving department access in ofia_erp:", err);
-    return NextResponse.json(DEFAULT_DEPARTMENT_ACCESS);
+    return NextResponse.json(
+      { error: "Department access query error: " + err.message },
+      { status: 500 }
+    );
   }
 }

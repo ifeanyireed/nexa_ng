@@ -12,23 +12,13 @@ function getConnectionString(): string {
   );
 }
 
-export function getDbPool(): Pool | null {
+export function getDbPool(): Pool {
   if (!pool) {
     const connectionString = getConnectionString();
     if (!connectionString) {
-      if (process.env.NODE_ENV !== "production") {
-        console.warn("DATABASE_URL is not set. Please configure it in your .env.local file.");
-      } else {
-        console.warn("DATABASE_URL is not set in environment variables. Database operations will fall back gracefully.");
-      }
-      return null;
+      throw new Error("DATABASE_URL is not configured in environment variables.");
     }
-    try {
-      pool = new Pool({ connectionString });
-    } catch (err) {
-      console.warn("Failed to initialize Neon database pool:", err);
-      return null;
-    }
+    pool = new Pool({ connectionString });
   }
   return pool;
 }

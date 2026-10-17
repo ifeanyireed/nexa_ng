@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDbPool } from "@/lib/db";
-import { DEFAULT_DEPARTMENT_ACCESS, DepartmentAccessItem } from "@/lib/department-access-constants";
+import { DepartmentAccessItem } from "@/lib/department-access-constants";
 
 export const dynamic = "force-dynamic";
 
@@ -11,24 +11,20 @@ export async function GET(request: Request) {
     url.searchParams.get("tenant") ||
     url.searchParams.get("tenant_slug") ||
     url.searchParams.get("orgId") ||
-    "neweratransports";
-
-  const pool = getDbPool();
-  if (!pool) {
-    return NextResponse.json(DEFAULT_DEPARTMENT_ACCESS);
-  }
+    "";
 
   try {
+    const pool = getDbPool();
     const permRes = await pool.query(
       `SELECT id, "departmentCode", "departmentName", "accessiblePages", "accessibleTabs", "isEnabled" 
        FROM "TenantDepartmentPermission" 
-       WHERE "tenantId" = $1 OR "tenantId" = 'neweratransports' OR "tenantId" = 'default'
+       WHERE "tenantId" = $1
        ORDER BY "departmentName" ASC`,
       [tenantSlug]
     );
 
     if (permRes.rows.length > 0) {
-      const list: DepartmentAccessItem[] = permRes.rows.map((row) => {
+      const list: DepartmentAccessItem[] = permRes.rows.map((row: any) => {
         let pages = [];
         try { pages = typeof row.accessiblePages === "string" ? JSON.parse(row.accessiblePages) : row.accessiblePages; } catch {}
         let tabs = {};
@@ -47,9 +43,11 @@ export async function GET(request: Request) {
       return NextResponse.json(list);
     }
 
-    return NextResponse.json(DEFAULT_DEPARTMENT_ACCESS);
+    return NextResponse.json([]);
   } catch (err: any) {
-    console.warn("Direct department access fetch error:", err);
-    return NextResponse.json(DEFAULT_DEPARTMENT_ACCESS);
+    return NextResponse.json(
+      { error: "Department access query error: " + err.message },
+      { status: 500 }
+    );
   }
 }

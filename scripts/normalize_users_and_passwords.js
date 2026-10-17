@@ -1,8 +1,14 @@
 const { Pool } = require('@neondatabase/serverless');
 const bcrypt = require('bcryptjs');
 
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  console.error("DATABASE_URL environment variable is required");
+  process.exit(1);
+}
+
 const pool = new Pool({
-  connectionString: 'postgresql://neondb_owner:npg_t6UQAzVEqBO4@ep-falling-star-b4lrdr76-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
+  connectionString,
 });
 
 async function run() {

@@ -4,12 +4,19 @@ let pool: Pool | null = null;
 let isInitialized = false;
 
 function getConnectionString(): string {
-  return (
+  const url =
     process.env.DATABASE_URL ||
     process.env.POSTGRES_URL ||
-    process.env.NEON_DATABASE_URL ||
-    "postgresql://neondb_owner:npg_t6UQAzVEqBO4@ep-falling-star-b4lrdr76-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
-  );
+    process.env.NEON_DATABASE_URL;
+
+  if (!url) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("DATABASE_URL environment variable is missing.");
+    }
+    console.warn("DATABASE_URL is not set. Please configure it in your .env.local file.");
+    return "";
+  }
+  return url;
 }
 
 export function getDbPool(): Pool {

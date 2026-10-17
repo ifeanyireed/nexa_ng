@@ -4,12 +4,16 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 func main() {
-	neonURL := "postgresql://neondb_owner:npg_t6UQAzVEqBO4@ep-falling-star-b4lrdr76.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+	neonURL := os.Getenv("DATABASE_URL")
+	if neonURL == "" {
+		log.Fatal("DATABASE_URL environment variable is required")
+	}
 	db, err := sql.Open("pgx", neonURL)
 	if err != nil {
 		log.Fatalf("Failed to open Neon: %v", err)

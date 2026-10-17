@@ -53,8 +53,11 @@ func mapMySQLTypeToPostgres(myType string) string {
 }
 
 func main() {
-	mysqlDSN := "u721451974_nexa:*Reedb4b4@tcp(srv2113.hstgr.io:3306)/u721451974_nexa_db?charset=utf8mb4&parseTime=True&loc=Local"
-	neonDSN := "postgresql://neondb_owner:npg_t6UQAzVEqBO4@ep-falling-star-b4lrdr76.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+	mysqlDSN := os.Getenv("MYSQL_DSN")
+	neonDSN := os.Getenv("DATABASE_URL")
+	if mysqlDSN == "" || neonDSN == "" {
+		log.Fatal("MYSQL_DSN and DATABASE_URL environment variables are required")
+	}
 
 	fmt.Println("🚀 Connecting to Hostinger MySQL (Source)...")
 	mysqlDB, err := sql.Open("mysql", mysqlDSN)

@@ -1,6 +1,10 @@
 const { Pool } = require('@neondatabase/serverless');
 
-const neonURL = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_t6UQAzVEqBO4@ep-falling-star-b4lrdr76.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require";
+const neonURL = process.env.DATABASE_URL;
+if (!neonURL) {
+  console.error("Please provide DATABASE_URL environment variable.");
+  process.exit(1);
+}
 
 const NETS_ORG_ID = '1aa8c687-b71d-4188-9de2-371aa5dfa9e6';
 const REED_ORG_ID = '2bb399db-3689-5129-9b64-e53f0419fa07';

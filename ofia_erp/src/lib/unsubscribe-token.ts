@@ -11,8 +11,7 @@ export interface UnsubscribePayload {
 const UNSUBSCRIBE_SECRET =
   process.env.CRM_UNSUBSCRIBE_SECRET ||
   process.env.JWT_SECRET ||
-  process.env.NEXTAUTH_SECRET ||
-  "ofia-crm-unsubscribe-secret-salt-2026";
+  "ofia-crm-secret";
 
 /**
  * Creates a cryptographically signed URL-safe token containing

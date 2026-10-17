@@ -868,6 +868,17 @@ function personalizeTemplate(
 
   // 6. Email, role, department, URLs, and Unsubscribe URL
   const effectiveUnsubscribeUrl = unsubscribeUrl || recipient.unsubscribeUrl || "#";
+  const standardButtonSnippet = `<table border="0" cellpadding="0" cellspacing="0" style="margin-top: 24px;">
+  <tr>
+    <td align="center" style="border-radius: 6px;">
+      <a href="${effectiveUnsubscribeUrl}" target="_blank" rel="noopener noreferrer" 
+         style="display: inline-block; padding: 10px 20px; font-size: 12px; color: #5f6368; text-decoration: underline;">
+        Unsubscribe from this list
+      </a>
+    </td>
+  </tr>
+</table>`;
+
   result = result
     .replace(/\{\{\s*email\s*\}\}/gi, recipient.email)
     .replace(/\{\{\s*role\s*\}\}/gi, recipient.role || "Staff Member")
@@ -876,6 +887,7 @@ function personalizeTemplate(
     .replace(/\{\{\s*loginUrl\s*\}\}/gi, resolvedLoginUrl)
     .replace(/\{\{\s*portal_url\s*\}\}/gi, resolvedPortalUrl)
     .replace(/\{\{\s*portalUrl\s*\}\}/gi, resolvedPortalUrl)
+    .replace(/\{\{\s*(?:unsubscribe_button|unsubscribeButton)\s*\}\}/gi, standardButtonSnippet)
     .replace(/\{\{\s*(?:unsubscribe_url|unsubscribeUrl|unsubscribe)\s*\}\}/gi, effectiveUnsubscribeUrl);
 
   return result;
@@ -906,7 +918,27 @@ export function wrapInMasterAdsenseTemplate(
   senderName?: string,
   unsubscribeUrl?: string
 ): string {
+  const footerUnsubscribeSnippet = unsubscribeUrl
+    ? `You received this email because you are subscribed to our communications.<br/>
+      <a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer" style="color: #5f6368; text-decoration: underline; margin-top: 6px; display: inline-block;">
+        Unsubscribe from this mailing list
+      </a>`
+    : `This is a mandatory system communication regarding your enterprise account.`;
+
+  const masterFooterHtml = `
+<div class="footer" style="padding: 20px 32px; text-align: center; font-size: 12px; color: #70757a; border-top: 1px solid #dadce0;">
+  &copy; ${new Date().getFullYear()} ${senderName || "Ofia ERP"}. All rights reserved.<br/>
+  ${footerUnsubscribeSnippet}
+</div>`;
+
   if (contentHtml.toLowerCase().includes("<html") || contentHtml.toLowerCase().includes("<!doctype")) {
+    if (unsubscribeUrl && !contentHtml.includes(unsubscribeUrl) && !contentHtml.toLowerCase().includes("unsubscribe")) {
+      if (contentHtml.toLowerCase().includes("</body>")) {
+        return contentHtml.replace(/<\/body>/i, `${masterFooterHtml}</body>`);
+      } else {
+        return contentHtml + masterFooterHtml;
+      }
+    }
     return contentHtml;
   }
   return `<!DOCTYPE html>
@@ -951,11 +983,7 @@ export function wrapInMasterAdsenseTemplate(
       </div>
       <div class="footer">
         &copy; ${new Date().getFullYear()} ${senderName || "Ofia ERP"}. All rights reserved.<br/>
-        ${
-          unsubscribeUrl
-            ? `You received this email because you are subscribed to our communications.<br/><a href="${unsubscribeUrl}" target="_blank" rel="noopener noreferrer" style="color: #70757a; text-decoration: underline; margin-top: 6px; display: inline-block;">Unsubscribe from this mailing list</a>`
-            : `This is a mandatory system communication regarding your enterprise account.`
-        }
+        ${footerUnsubscribeSnippet}
       </div>
     </div>
   </div>

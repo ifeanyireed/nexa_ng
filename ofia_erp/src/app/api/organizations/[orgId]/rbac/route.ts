@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getDbPool } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 const rawUserUrl =
   process.env.USER_SERVICE_URL ||
   process.env.NEXT_PUBLIC_USER_SERVICE_URL ||
@@ -101,10 +103,14 @@ async function resolveCanonicalOrg(pool: any, rawOrgId: string) {
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ orgId: string }> }
+  { params }: { params: Promise<{ orgId?: string }> | { orgId?: string } }
 ) {
-  const { orgId } = await params;
-  const pool = getDbPool();
+  const resolvedParams = await params;
+  const orgId = resolvedParams?.orgId || "";
+  let pool: any = null;
+  try {
+    pool = getDbPool();
+  } catch {}
   const { canonicalSlug, canonicalId } = await resolveCanonicalOrg(pool, orgId);
 
   // 1. Direct Neon PostgreSQL Query first for instant (<50ms) consistency
@@ -159,9 +165,10 @@ export async function GET(
 
 export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ orgId: string }> }
+  { params }: { params: Promise<{ orgId?: string }> | { orgId?: string } }
 ) {
-  const { orgId } = await params;
+  const resolvedParams = await params;
+  const orgId = resolvedParams?.orgId || "";
 
   try {
     const body = await request.json();
@@ -174,7 +181,10 @@ export async function PUT(
       );
     }
 
-    const pool = getDbPool();
+    let pool: any = null;
+    try {
+      pool = getDbPool();
+    } catch {}
     const { canonicalSlug, canonicalId } = await resolveCanonicalOrg(pool, orgId);
 
     if (pool) {

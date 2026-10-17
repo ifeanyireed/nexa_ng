@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getDbPool } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 const ERP_BASE = process.env.ERP_SERVICE_URL || process.env.NEXT_PUBLIC_ERP_SERVICE_URL || "https://ofia-erp-service.onrender.com";
 
 function getTenantSlug(request: Request, url: URL): string {
@@ -14,7 +16,13 @@ function getTenantSlug(request: Request, url: URL): string {
 }
 
 async function queryNeonDirectly(subPath: string, tenantSlug: string, searchParams: URLSearchParams) {
-  const pool = getDbPool();
+  let pool: any = null;
+  try {
+    pool = getDbPool();
+  } catch (err) {
+    console.warn("getDbPool failed in queryNeonDirectly:", err);
+    return null;
+  }
   if (!pool) return null;
 
   try {
@@ -48,7 +56,7 @@ async function queryNeonDirectly(subPath: string, tenantSlug: string, searchPara
       }
       query += ` ORDER BY "updatedAt" DESC`;
       const res = await pool.query(query, args);
-      return res.rows.map(r => {
+      return res.rows.map((r: any) => {
         let objs = [];
         try { objs = JSON.parse(r.objectivesJson || "[]"); } catch {}
         return { ...r, objectives: objs };
@@ -99,7 +107,7 @@ async function queryNeonDirectly(subPath: string, tenantSlug: string, searchPara
       }
       query += ` ORDER BY id ASC`;
       const res = await pool.query(query, args);
-      return res.rows.map(c => {
+      return res.rows.map((c: any) => {
         let depts = [];
         try {
           depts = typeof c.departments === "string" ? JSON.parse(c.departments) : c.departments;
@@ -117,7 +125,7 @@ async function queryNeonDirectly(subPath: string, tenantSlug: string, searchPara
       }
       query += ` ORDER BY id ASC`;
       const res = await pool.query(query, args);
-      return res.rows.map(o => {
+      return res.rows.map((o: any) => {
         let depts = [];
         try { depts = typeof o.departments === "string" ? JSON.parse(o.departments) : o.departments; } catch {}
         let desc = [];
@@ -145,9 +153,10 @@ async function queryNeonDirectly(subPath: string, tenantSlug: string, searchPara
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path?: string[] }> | { path?: string[] } }
 ) {
-  const { path } = await params;
+  const resolvedParams = await params;
+  const path = Array.isArray(resolvedParams?.path) ? resolvedParams.path : [];
   const subPath = path.join("/");
   const url = new URL(request.url);
   const targetUrl = `${ERP_BASE}/${subPath}${url.search}`;
@@ -165,6 +174,7 @@ export async function GET(
       method: "GET",
       headers,
       cache: "no-store",
+      signal: AbortSignal.timeout(5000),
     });
 
     const data = await res.json().catch(() => null);
@@ -199,7 +209,7 @@ export async function GET(
       }
     }
 
-    if (res.ok && data !== null && (Array.isArray(data) ? true : Object.keys(data).length > 0)) {
+    if (res.ok && data !== null && (Array.isArray(data) ? data.length > 0 : Object.keys(data).length > 0)) {
       return NextResponse.json(data, { status: res.status });
     }
 
@@ -220,7 +230,12 @@ export async function GET(
 }
 
 async function upsertNeonDirectly(subPath: string, tenantSlug: string, bodyText: string) {
-  const pool = getDbPool();
+  let pool: any = null;
+  try {
+    pool = getDbPool();
+  } catch {
+    return null;
+  }
   if (!pool) return null;
 
   try {
@@ -344,7 +359,12 @@ async function upsertNeonDirectly(subPath: string, tenantSlug: string, bodyText:
 }
 
 async function deleteNeonDirectly(subPath: string, tenantSlug: string, id: string) {
-  const pool = getDbPool();
+  let pool: any = null;
+  try {
+    pool = getDbPool();
+  } catch {
+    return null;
+  }
   if (!pool || !id) return null;
   try {
     if (subPath === "cycles") {
@@ -383,9 +403,10 @@ async function deleteNeonDirectly(subPath: string, tenantSlug: string, id: strin
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path?: string[] }> | { path?: string[] } }
 ) {
-  const { path } = await params;
+  const resolvedParams = await params;
+  const path = Array.isArray(resolvedParams?.path) ? resolvedParams.path : [];
   const subPath = path.join("/");
   const url = new URL(request.url);
   const targetUrl = `${ERP_BASE}/${subPath}${url.search}`;
@@ -438,16 +459,17 @@ export async function POST(
 
 export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path?: string[] }> | { path?: string[] } }
 ) {
   return POST(request, { params });
 }
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path?: string[] }> | { path?: string[] } }
 ) {
-  const { path } = await params;
+  const resolvedParams = await params;
+  const path = Array.isArray(resolvedParams?.path) ? resolvedParams.path : [];
   const subPath = path.join("/");
   const url = new URL(request.url);
   const targetUrl = `${ERP_BASE}/${subPath}${url.search}`;

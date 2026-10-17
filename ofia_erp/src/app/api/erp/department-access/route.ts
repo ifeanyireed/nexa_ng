@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getDbPool } from "@/lib/db";
 import { DEFAULT_DEPARTMENT_ACCESS, DepartmentAccessItem } from "@/lib/department-access-constants";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const tenantSlug =

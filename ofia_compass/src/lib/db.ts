@@ -4,25 +4,31 @@ let pool: Pool | null = null;
 let isInitialized = false;
 
 function getConnectionString(): string {
-  const url =
+  return (
     process.env.DATABASE_URL ||
     process.env.POSTGRES_URL ||
-    process.env.NEON_DATABASE_URL;
-
-  if (!url) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("DATABASE_URL environment variable is missing.");
-    }
-    console.warn("DATABASE_URL is not set. Please configure it in your .env.local file.");
-    return "";
-  }
-  return url;
+    process.env.NEON_DATABASE_URL ||
+    ""
+  );
 }
 
-export function getDbPool(): Pool {
+export function getDbPool(): Pool | null {
   if (!pool) {
     const connectionString = getConnectionString();
-    pool = new Pool({ connectionString });
+    if (!connectionString) {
+      if (process.env.NODE_ENV !== "production") {
+        console.warn("DATABASE_URL is not set. Please configure it in your .env.local file.");
+      } else {
+        console.warn("DATABASE_URL is not set in environment variables. Database operations will fall back gracefully.");
+      }
+      return null;
+    }
+    try {
+      pool = new Pool({ connectionString });
+    } catch (err) {
+      console.warn("Failed to initialize Neon database pool:", err);
+      return null;
+    }
   }
   return pool;
 }

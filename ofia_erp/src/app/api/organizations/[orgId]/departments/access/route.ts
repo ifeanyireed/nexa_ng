@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getDbPool } from "@/lib/db";
 import { DEFAULT_DEPARTMENT_ACCESS, DepartmentAccessItem } from "@/lib/department-access-constants";
 
+export const dynamic = "force-dynamic";
+
 async function resolveCanonicalOrg(pool: any, rawOrgId: string) {
   const decoded = decodeURIComponent(rawOrgId || "").trim();
   let canonicalSlug = decoded;
@@ -48,10 +50,14 @@ async function resolveCanonicalOrg(pool: any, rawOrgId: string) {
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ orgId: string }> }
+  { params }: { params: Promise<{ orgId?: string }> | { orgId?: string } }
 ) {
-  const { orgId } = await params;
-  const pool = getDbPool();
+  const resolvedParams = await params;
+  const orgId = resolvedParams?.orgId || "";
+  let pool: any = null;
+  try {
+    pool = getDbPool();
+  } catch {}
 
   try {
     if (!pool) {
@@ -70,7 +76,7 @@ export async function GET(
     );
 
     if (permRes.rows.length > 0) {
-      const list: DepartmentAccessItem[] = permRes.rows.map((row) => {
+      const list: DepartmentAccessItem[] = permRes.rows.map((row: any) => {
         let pages = [];
         try { pages = typeof row.accessiblePages === "string" ? JSON.parse(row.accessiblePages) : row.accessiblePages; } catch {}
         let tabs = {};
@@ -99,7 +105,7 @@ export async function GET(
     );
 
     if (deptRows.rows.length > 0) {
-      const list: DepartmentAccessItem[] = deptRows.rows.map((row) => {
+      const list: DepartmentAccessItem[] = deptRows.rows.map((row: any) => {
         let pages = [];
         try { pages = typeof row.accessiblePages === "string" ? JSON.parse(row.accessiblePages) : row.accessiblePages; } catch {}
         let tabs = {};

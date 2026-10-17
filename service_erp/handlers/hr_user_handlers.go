@@ -135,88 +135,79 @@ func matchesTenant(u *User, tenantSlug string) bool {
 
 func HandleUsers(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
+	targetDB := getDB(r)
+	if targetDB == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Database connection unavailable"})
+		return
+	}
 
 	if r.Method == http.MethodGet {
 		id := r.URL.Query().Get("id")
 		if id != "" {
-			if db != nil {
-				var u User
-				var ratingTrend sql.NullString
-				var tSlug sql.NullString
-				err := db.QueryRow(`SELECT id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" WHERE id = $1`, id).
-					Scan(&u.ID, &tSlug, &u.Name, &u.Email, &u.Role, &u.Department, &u.Avatar, &u.ManagerName, &u.ManagerID, &ratingTrend, &u.Designation, &u.GradeLevel, &u.EmploymentDate, &u.Company, &u.Location, &u.Password)
-				if err == nil {
-					if tSlug.Valid {
-						u.TenantSlug = tSlug.String
-					}
-					if ratingTrend.Valid && ratingTrend.String != "" {
-						raw := json.RawMessage(ratingTrend.String)
-						u.RatingTrend = &raw
-					}
-					json.NewEncoder(w).Encode(u)
+			var u User
+			var ratingTrend sql.NullString
+			var tSlug sql.NullString
+			err := targetDB.QueryRow(`SELECT id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" WHERE id = $1`, id).
+				Scan(&u.ID, &tSlug, &u.Name, &u.Email, &u.Role, &u.Department, &u.Avatar, &u.ManagerName, &u.ManagerID, &ratingTrend, &u.Designation, &u.GradeLevel, &u.EmploymentDate, &u.Company, &u.Location, &u.Password)
+			if err != nil {
+				if err == sql.ErrNoRows {
+					w.WriteHeader(http.StatusNotFound)
+					json.NewEncoder(w).Encode(map[string]string{"message": "User not found"})
 					return
 				}
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+				return
 			}
-
-			// Fallback search
-			fallbacks := getFallbackUsers()
-			for _, u := range fallbacks {
-				if u.ID == id {
-					json.NewEncoder(w).Encode(u)
-					return
-				}
+			if tSlug.Valid {
+				u.TenantSlug = tSlug.String
 			}
-			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"message": "User not found"})
+			if ratingTrend.Valid && ratingTrend.String != "" {
+				raw := json.RawMessage(ratingTrend.String)
+				u.RatingTrend = &raw
+			}
+			json.NewEncoder(w).Encode(u)
 			return
 		}
 
 		tenantSlug := getTenantFilter(r)
-
-		if db != nil {
-			var query string
-			var args []interface{}
-
-			if tenantSlug == "" || tenantSlug == "all" {
-				query = `SELECT id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" ORDER BY name ASC`
-			} else {
-				query = `SELECT id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" WHERE "tenantSlug" = $1 ORDER BY name ASC`
-				args = append(args, tenantSlug)
-			}
-
-			rows, err := db.Query(query, args...)
-			if err == nil {
-				defer rows.Close()
-				users := []User{}
-				for rows.Next() {
-					var u User
-					var ratingTrend sql.NullString
-					var tSlug sql.NullString
-					if err := rows.Scan(&u.ID, &tSlug, &u.Name, &u.Email, &u.Role, &u.Department, &u.Avatar, &u.ManagerName, &u.ManagerID, &ratingTrend, &u.Designation, &u.GradeLevel, &u.EmploymentDate, &u.Company, &u.Location, &u.Password); err == nil {
-						if tSlug.Valid {
-							u.TenantSlug = tSlug.String
-						}
-						if ratingTrend.Valid && ratingTrend.String != "" {
-							raw := json.RawMessage(ratingTrend.String)
-							u.RatingTrend = &raw
-						}
-						users = append(users, u)
-					}
-				}
-				if len(users) > 0 || (tenantSlug != "" && tenantSlug != "all") {
-					json.NewEncoder(w).Encode(users)
-					return
-				}
-			}
-		}
+		var query string
+		var args []interface{}
 
 		if tenantSlug == "" || tenantSlug == "all" {
-			fallbacks := getFallbackUsers()
-			json.NewEncoder(w).Encode(fallbacks)
-			return
+			query = `SELECT id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" ORDER BY name ASC`
+		} else {
+			query = `SELECT id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" WHERE ("tenantSlug" = $1 OR LOWER(company) = $1 OR LOWER(email) LIKE $2) ORDER BY name ASC`
+			args = append(args, tenantSlug, "%@"+tenantSlug+"%")
 		}
 
-		json.NewEncoder(w).Encode([]User{})
+		rows, err := targetDB.Query(query, args...)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		defer rows.Close()
+
+		users := []User{}
+		for rows.Next() {
+			var u User
+			var ratingTrend sql.NullString
+			var tSlug sql.NullString
+			if err := rows.Scan(&u.ID, &tSlug, &u.Name, &u.Email, &u.Role, &u.Department, &u.Avatar, &u.ManagerName, &u.ManagerID, &ratingTrend, &u.Designation, &u.GradeLevel, &u.EmploymentDate, &u.Company, &u.Location, &u.Password); err == nil {
+				if tSlug.Valid {
+					u.TenantSlug = tSlug.String
+				}
+				if ratingTrend.Valid && ratingTrend.String != "" {
+					raw := json.RawMessage(ratingTrend.String)
+					u.RatingTrend = &raw
+				}
+				users = append(users, u)
+			}
+		}
+		json.NewEncoder(w).Encode(users)
+		return
 
 	} else if r.Method == http.MethodPost || r.Method == http.MethodPut {
 		var u User
@@ -245,39 +236,22 @@ func HandleUsers(w http.ResponseWriter, r *http.Request) {
 			ratingTrendStr = &s
 		}
 
-		if db != nil {
-			_, err := db.Exec(`INSERT INTO "User" (id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password) 
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-				ON CONFLICT (id) DO UPDATE SET 
-				"tenantSlug" = CASE WHEN EXCLUDED."tenantSlug" != '' THEN EXCLUDED."tenantSlug" ELSE "User"."tenantSlug" END,
-				name = EXCLUDED.name, email = LOWER(EXCLUDED.email), role = EXCLUDED.role, department = EXCLUDED.department, 
-				avatar = EXCLUDED.avatar, "managerName" = EXCLUDED."managerName", "managerId" = EXCLUDED."managerId", "ratingTrend" = EXCLUDED."ratingTrend",
-				designation = EXCLUDED.designation, "gradeLevel" = EXCLUDED."gradeLevel", "employmentDate" = EXCLUDED."employmentDate",
-				company = EXCLUDED.company, location = EXCLUDED.location, 
-				password = CASE WHEN EXCLUDED.password IS NOT NULL AND EXCLUDED.password != '' THEN EXCLUDED.password ELSE "User".password END`,
-				u.ID, tenantSlug, u.Name, strings.ToLower(strings.TrimSpace(u.Email)), u.Role, u.Department, u.Avatar, u.ManagerName, u.ManagerID, ratingTrendStr, u.Designation, u.GradeLevel, u.EmploymentDate, u.Company, u.Location, u.Password)
+		_, err := targetDB.Exec(`INSERT INTO "User" (id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password) 
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+			ON CONFLICT (id) DO UPDATE SET 
+			"tenantSlug" = CASE WHEN EXCLUDED."tenantSlug" != '' THEN EXCLUDED."tenantSlug" ELSE "User"."tenantSlug" END,
+			name = EXCLUDED.name, email = LOWER(EXCLUDED.email), role = EXCLUDED.role, department = EXCLUDED.department, 
+			avatar = EXCLUDED.avatar, "managerName" = EXCLUDED."managerName", "managerId" = EXCLUDED."managerId", "ratingTrend" = EXCLUDED."ratingTrend",
+			designation = EXCLUDED.designation, "gradeLevel" = EXCLUDED."gradeLevel", "employmentDate" = EXCLUDED."employmentDate",
+			company = EXCLUDED.company, location = EXCLUDED.location, 
+			password = CASE WHEN EXCLUDED.password IS NOT NULL AND EXCLUDED.password != '' THEN EXCLUDED.password ELSE "User".password END`,
+			u.ID, tenantSlug, u.Name, strings.ToLower(strings.TrimSpace(u.Email)), u.Role, u.Department, u.Avatar, u.ManagerName, u.ManagerID, ratingTrendStr, u.Designation, u.GradeLevel, u.EmploymentDate, u.Company, u.Location, u.Password)
 
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-				return
-			}
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
 		}
-
-		// Update in-memory fallback list
-		memoryUsersLock.Lock()
-		found := false
-		for idx, existing := range memoryUsers {
-			if existing.ID == u.ID {
-				memoryUsers[idx] = u
-				found = true
-				break
-			}
-		}
-		if !found {
-			memoryUsers = append(memoryUsers, u)
-		}
-		memoryUsersLock.Unlock()
 
 		json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "User upserted successfully"})
 
@@ -288,18 +262,12 @@ func HandleUsers(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(map[string]string{"error": "User ID is required"})
 			return
 		}
-		if db != nil {
-			_, _ = db.Exec(`DELETE FROM "User" WHERE id = $1`, id)
+		_, err := targetDB.Exec(`DELETE FROM "User" WHERE id = $1`, id)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
 		}
-
-		memoryUsersLock.Lock()
-		for idx, u := range memoryUsers {
-			if u.ID == id {
-				memoryUsers = append(memoryUsers[:idx], memoryUsers[idx+1:]...)
-				break
-			}
-		}
-		memoryUsersLock.Unlock()
 
 		json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "User deleted successfully"})
 	} else {

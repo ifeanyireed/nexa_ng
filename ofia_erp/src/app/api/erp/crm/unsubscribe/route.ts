@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyUnsubscribeToken } from "@/lib/unsubscribe-token";
-import { handleCrmUnsubscribe, getCrmSubscriberDetailsForUnsubscribe } from "@/lib/crm-service";
 
 export const dynamic = "force-dynamic";
+
+const ERP_BASE =
+  process.env.ERP_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_ERP_SERVICE_URL ||
+  "https://ofia-erp-service.onrender.com";
 
 /**
  * GET /api/erp/crm/unsubscribe?token=...
@@ -28,22 +32,16 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const details = await getCrmSubscriberDetailsForUnsubscribe({
-      tenantSlug: payload.tenantSlug,
-      email: payload.email,
-      subscriberId: payload.subscriberId,
-      listId: payload.listId,
-    });
+    const res = await fetch(
+      `${ERP_BASE}/crm/unsubscribe?email=${encodeURIComponent(payload.email)}&list_id=${encodeURIComponent(payload.listId || "")}&tenant=${encodeURIComponent(payload.tenantSlug)}`,
+      {
+        cache: "no-store",
+        signal: AbortSignal.timeout(10000),
+      }
+    );
 
-    return NextResponse.json({
-      success: true,
-      details: {
-        tenantSlug: payload.tenantSlug,
-        subscriberId: payload.subscriberId,
-        listId: payload.listId,
-        ...details,
-      },
-    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data || { success: true, email: payload.email, status: "ACTIVE" });
   } catch (err: any) {
     return NextResponse.json(
       { success: false, error: err.message || "Failed to inspect unsubscribe token" },
@@ -54,10 +52,7 @@ export async function GET(req: NextRequest) {
 
 /**
  * POST /api/erp/crm/unsubscribe
- * Handles unsubscribe and resubscribe requests.
- * Supports:
- * 1. RFC 8058 One-Click HTTP POST with query param `?token=...` and body `List-Unsubscribe=One-Click`
- * 2. JSON POST body `{ token: string, action?: "unsubscribe" | "resubscribe", reason?: string }`
+ * Handles unsubscribe and resubscribe requests across audience lists and tenants.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -104,18 +99,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const result = await handleCrmUnsubscribe({
-      tenantSlug: payload.tenantSlug,
-      email: payload.email,
-      subscriberId: payload.subscriberId,
-      listId: payload.listId,
-      action,
-      reason,
+    const res = await fetch(`${ERP_BASE}/crm/unsubscribe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: payload.email,
+        list_id: payload.listId,
+        tenant: payload.tenantSlug,
+        action,
+        reason,
+      }),
+      signal: AbortSignal.timeout(10000),
     });
 
-    return NextResponse.json({
-      ...result,
-    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
     return NextResponse.json(
       { success: false, error: err.message || "Failed to process unsubscribe request" },

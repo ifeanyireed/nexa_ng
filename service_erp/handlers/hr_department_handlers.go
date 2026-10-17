@@ -64,22 +64,23 @@ func getDepartmentHeadAndCount(deptName string, tenantUsers []User) (string, int
 func HandleDepartments(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	EnsureHRTables()
+	targetDB := getDB(r)
+	EnsureHRTablesOnDB(targetDB)
 	tenantSlug := getTenantFilter(r)
 
 	if r.Method == http.MethodGet {
 		// Fetch tenant users to calculate dynamic headcount & leadership
 		users := []User{}
-		if db != nil {
+		if targetDB != nil {
 			var query string
 			var rows *sql.Rows
 			var err error
 			if tenantSlug == "" || tenantSlug == "all" {
 				query = `SELECT id, name, email, role, department, avatar, "managerName", "managerId", designation, company FROM "User"`
-				rows, err = db.Query(query)
+				rows, err = targetDB.Query(query)
 			} else {
 				query = `SELECT id, name, email, role, department, avatar, "managerName", "managerId", designation, company FROM "User" WHERE ("tenantSlug" = $1 OR LOWER(company) = $1 OR LOWER(company) LIKE $2 OR LOWER(email) LIKE $3)`
-				rows, err = db.Query(query, tenantSlug, "%"+tenantSlug+"%", "%@"+tenantSlug+"%")
+				rows, err = targetDB.Query(query, tenantSlug, "%"+tenantSlug+"%", "%@"+tenantSlug+"%")
 			}
 			if err == nil {
 				defer rows.Close()
@@ -92,7 +93,7 @@ func HandleDepartments(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		if len(users) == 0 {
+		if len(users) == 0 && (tenantSlug == "" || tenantSlug == "all") {
 			for _, u := range getFallbackUsers() {
 				if matchesTenant(&u, tenantSlug) {
 					users = append(users, u)
@@ -102,13 +103,13 @@ func HandleDepartments(w http.ResponseWriter, r *http.Request) {
 
 		// Read persistent departments from DB
 		dbDepts := []DepartmentItem{}
-		if db != nil {
+		if targetDB != nil {
 			var dRows *sql.Rows
 			var dErr error
 			if tenantSlug != "" && tenantSlug != "all" {
-				dRows, dErr = db.Query(`SELECT "code", "name", "head", "headCount", "budget", "costCenter", "tenantSlug" FROM "Department" WHERE "tenantSlug" = $1 ORDER BY "code" ASC`, tenantSlug)
+				dRows, dErr = targetDB.Query(`SELECT "code", "name", "head", "headCount", "budget", "costCenter", "tenantSlug" FROM "Department" WHERE "tenantSlug" = $1 ORDER BY "code" ASC`, tenantSlug)
 			} else {
-				dRows, dErr = db.Query(`SELECT "code", "name", "head", "headCount", "budget", "costCenter", "tenantSlug" FROM "Department" ORDER BY "code" ASC`)
+				dRows, dErr = targetDB.Query(`SELECT "code", "name", "head", "headCount", "budget", "costCenter", "tenantSlug" FROM "Department" ORDER BY "code" ASC`)
 			}
 			if dErr == nil {
 				defer dRows.Close()
@@ -231,8 +232,8 @@ func HandleDepartments(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Persist to database
-		if db != nil {
-			_, err := db.Exec(`INSERT INTO "Department" ("code", "name", "head", "headCount", "budget", "costCenter", "tenantSlug", "updatedAt")
+		if targetDB != nil {
+			_, err := targetDB.Exec(`INSERT INTO "Department" ("code", "name", "head", "headCount", "budget", "costCenter", "tenantSlug", "updatedAt")
 				VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
 				ON CONFLICT ("code", "tenantSlug") DO UPDATE SET
 					"name" = EXCLUDED."name",
@@ -274,11 +275,11 @@ func HandleDepartments(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if db != nil {
+		if targetDB != nil {
 			if tenantSlug != "" && tenantSlug != "all" {
-				_, _ = db.Exec(`DELETE FROM "Department" WHERE "code" = $1 AND ("tenantSlug" = $2 OR "tenantSlug" = '' OR "tenantSlug" IS NULL)`, code, tenantSlug)
+				_, _ = targetDB.Exec(`DELETE FROM "Department" WHERE "code" = $1 AND ("tenantSlug" = $2 OR "tenantSlug" = '' OR "tenantSlug" IS NULL)`, code, tenantSlug)
 			} else {
-				_, _ = db.Exec(`DELETE FROM "Department" WHERE "code" = $1`, code)
+				_, _ = targetDB.Exec(`DELETE FROM "Department" WHERE "code" = $1`, code)
 			}
 		}
 

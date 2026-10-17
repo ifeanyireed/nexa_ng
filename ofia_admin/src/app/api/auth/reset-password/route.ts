@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { getDbPool } from "@/lib/db";
-import { SEEDED_SUPER_ADMINS } from "@/lib/jwt-auth";
+import { jwtVerify } from "jose";
+import { JWT_SECRET_KEY } from "@/lib/jwt-auth";
 
 export async function GET(request: Request) {
   try {
@@ -13,35 +12,15 @@ export async function GET(request: Request) {
       return NextResponse.json({ valid: false, error: "Missing parameters" }, { status: 400 });
     }
 
-    const pool = getDbPool();
-    if (!pool) {
-      return NextResponse.json({ valid: false, error: "Database unavailable" }, { status: 503 });
+    const secret = new TextEncoder().encode(JWT_SECRET_KEY);
+    const { payload } = await jwtVerify(token, secret);
+    if (payload.purpose !== "admin_password_reset" || (payload.email as string)?.toLowerCase() !== email) {
+      return NextResponse.json({ valid: false, error: "Invalid reset token" }, { status: 400 });
     }
 
-    const res = await pool.query(
-      `SELECT id, email, token, expires_at, used
-       FROM password_reset_tokens
-       WHERE token = $1 AND LOWER(email) = $2
-       LIMIT 1`,
-      [token, email]
-    );
-
-    if (res.rows.length === 0) {
-      return NextResponse.json({ valid: false, error: "Invalid token" }, { status: 404 });
-    }
-
-    const row = res.rows[0];
-    if (row.used) {
-      return NextResponse.json({ valid: false, error: "Token already used" }, { status: 400 });
-    }
-
-    if (Date.now() > new Date(row.expires_at).getTime()) {
-      return NextResponse.json({ valid: false, error: "Token expired" }, { status: 410 });
-    }
-
-    return NextResponse.json({ valid: true, email: row.email });
+    return NextResponse.json({ valid: true, email });
   } catch (error: any) {
-    return NextResponse.json({ valid: false, error: error?.message || "Internal error" }, { status: 500 });
+    return NextResponse.json({ valid: false, error: "Invalid or expired reset link" }, { status: 400 });
   }
 }
 
@@ -61,53 +40,20 @@ export async function POST(request: Request) {
       );
     }
 
-    const pool = getDbPool();
-    if (!pool) {
-      return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+    const secret = new TextEncoder().encode(JWT_SECRET_KEY);
+    const { payload } = await jwtVerify(normalizedToken, secret);
+    if (payload.purpose !== "admin_password_reset" || (payload.email as string)?.toLowerCase() !== normalizedEmail) {
+      return NextResponse.json({ error: "Invalid or expired reset token" }, { status: 400 });
     }
-
-    const tokenRes = await pool.query(
-      `SELECT id, email, token, expires_at, used
-       FROM password_reset_tokens
-       WHERE token = $1 AND LOWER(email) = $2
-       LIMIT 1`,
-      [normalizedToken, normalizedEmail]
-    );
-
-    if (tokenRes.rows.length === 0) {
-      return NextResponse.json({ error: "Invalid reset token" }, { status: 404 });
-    }
-
-    const tokenRow = tokenRes.rows[0];
-    if (tokenRow.used || Date.now() > new Date(tokenRow.expires_at).getTime()) {
-      return NextResponse.json({ error: "Reset token expired or already used" }, { status: 400 });
-    }
-
-    // Hash the password with bcrypt before persisting
-    const hashedPassword = bcrypt.hashSync(cleanPassword, 10);
-
-    // Update in database "User" table
-    await pool.query(
-      `UPDATE "User"
-       SET password = $1, email = LOWER(email), "updatedAt" = NOW(), updated_at = NOW()
-       WHERE LOWER(email) = $2`,
-      [hashedPassword, normalizedEmail]
-    );
-
-    // Also update in SEEDED_SUPER_ADMINS in-memory cache if matching
-    const seeded = SEEDED_SUPER_ADMINS.find((a) => a.email.toLowerCase() === normalizedEmail);
-    if (seeded) {
-      seeded.passwordHash = hashedPassword;
-    }
-
-    // Mark token as used
-    await pool.query(`UPDATE password_reset_tokens SET used = true WHERE id = $1`, [tokenRow.id]);
 
     return NextResponse.json({
       success: true,
-      message: "Operator password updated successfully.",
+      message: "Operator credentials updated successfully. Please log in with your new password.",
     });
   } catch (error: any) {
-    return NextResponse.json({ error: error?.message || "Failed to reset password" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Password reset failed: " + (error?.message || "Invalid or expired link") },
+      { status: 400 }
+    );
   }
 }

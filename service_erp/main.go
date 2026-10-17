@@ -164,6 +164,31 @@ func registerRoutes() {
 	registerRoute("/api/v1/quests/announcements", handlers.HandleQuestAnnouncements)
 	registerRoute("/api/v1/quests/schedule", handlers.HandleQuestSchedule)
 	registerRoute("/api/v1/quests/prizes", handlers.HandleQuestPrizes)
+
+	// 5. CRM Engine (Accounts, Leads, Deals, Activities, Lists, Subscribers, Blasts, SMTP)
+	registerRoute("/crm/accounts", handlers.HandleCrmAccounts)
+	registerRoute("/crm/leads", handlers.HandleCrmLeads)
+	registerRoute("/crm/leads/extract", handlers.HandleCrmLeadsExtract)
+	registerRoute("/crm/deals", handlers.HandleCrmDeals)
+	registerRoute("/crm/activities", handlers.HandleCrmActivities)
+	registerRoute("/crm/lists", handlers.HandleCrmLists)
+	registerRoute("/crm/lists/subscribers", handlers.HandleCrmSubscribers)
+	registerRoute("/crm/blasts", handlers.HandleCrmBlasts)
+	registerRoute("/crm/unsubscribe", handlers.HandleCrmUnsubscribe)
+	registerRoute("/crm/smtp-settings", handlers.HandleCrmSmtpSettings)
+
+	// Prefix aliases for /api/v1/erp/crm/*
+	registerRoute("/api/v1/erp/crm/accounts", handlers.HandleCrmAccounts)
+	registerRoute("/api/v1/erp/crm/leads", handlers.HandleCrmLeads)
+	registerRoute("/api/v1/erp/crm/leads/extract", handlers.HandleCrmLeadsExtract)
+	registerRoute("/api/v1/erp/crm/deals", handlers.HandleCrmDeals)
+	registerRoute("/api/v1/erp/crm/activities", handlers.HandleCrmActivities)
+	registerRoute("/api/v1/erp/crm/lists", handlers.HandleCrmLists)
+	registerRoute("/api/v1/erp/crm/lists/subscribers", handlers.HandleCrmSubscribers)
+	registerRoute("/api/v1/erp/crm/blasts", handlers.HandleCrmBlasts)
+	registerRoute("/api/v1/erp/crm/unsubscribe", handlers.HandleCrmUnsubscribe)
+	registerRoute("/api/v1/erp/crm/smtp-settings", handlers.HandleCrmSmtpSettings)
+	registerRoute("/api/v1/erp/smtp-settings", handlers.HandleCrmSmtpSettings)
 }
 
 func enableCORS(next http.HandlerFunc) http.HandlerFunc {

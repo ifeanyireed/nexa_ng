@@ -44,50 +44,50 @@ func HandleCycles(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	tenantSlug := getTenantFilter(r)
 
-	EnsureHRTables()
+	targetDB := getDB(r)
+	EnsureHRTablesOnDB(targetDB)
+
+	if targetDB == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Database unavailable"})
+		return
+	}
 
 	if r.Method == http.MethodGet {
-		var cycles []ReviewCycle
+		query := `SELECT id, "tenantSlug", name, "startDate", "endDate", status, departments FROM "ReviewCycle"`
+		var rows *sql.Rows
+		var err error
 
-		if db != nil {
-			query := `SELECT id, "tenantSlug", name, "startDate", "endDate", status, departments FROM "ReviewCycle"`
-			var rows *sql.Rows
-			var err error
+		if tenantSlug != "" && tenantSlug != "all" {
+			query += ` WHERE "tenantSlug" = $1 ORDER BY id ASC`
+			rows, err = targetDB.Query(query, tenantSlug)
+		} else {
+			query += ` ORDER BY id ASC`
+			rows, err = targetDB.Query(query)
+		}
 
-			if tenantSlug != "" && tenantSlug != "all" {
-				query += ` WHERE "tenantSlug" = $1 ORDER BY id ASC`
-				rows, err = db.Query(query, tenantSlug)
-			} else {
-				query += ` ORDER BY id ASC`
-				rows, err = db.Query(query)
-			}
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		defer rows.Close()
 
-			if err == nil {
-				defer rows.Close()
-				for rows.Next() {
-					var c ReviewCycle
-					var depts sql.NullString
-					var tSlug sql.NullString
-					if err := rows.Scan(&c.ID, &tSlug, &c.Name, &c.StartDate, &c.EndDate, &c.Status, &depts); err == nil {
-						if tSlug.Valid {
-							c.TenantSlug = tSlug.String
-						}
-						if depts.Valid && depts.String != "" {
-							raw := json.RawMessage(depts.String)
-							c.Departments = &raw
-						}
-						cycles = append(cycles, c)
-					}
+		cycles := []ReviewCycle{}
+		for rows.Next() {
+			var c ReviewCycle
+			var depts sql.NullString
+			var tSlug sql.NullString
+			if err := rows.Scan(&c.ID, &tSlug, &c.Name, &c.StartDate, &c.EndDate, &c.Status, &depts); err == nil {
+				if tSlug.Valid {
+					c.TenantSlug = tSlug.String
 				}
+				if depts.Valid && depts.String != "" {
+					raw := json.RawMessage(depts.String)
+					c.Departments = &raw
+				}
+				cycles = append(cycles, c)
 			}
-		}
-
-		if len(cycles) == 0 && (tenantSlug == "" || tenantSlug == "all") {
-			cycles = getFallbackCycles()
-		}
-
-		if cycles == nil {
-			cycles = []ReviewCycle{}
 		}
 
 		json.NewEncoder(w).Encode(cycles)
@@ -116,29 +116,28 @@ func HandleCycles(w http.ResponseWriter, r *http.Request) {
 			deptsStr = string(*c.Departments)
 		}
 
-		if db != nil {
-			_, err := db.Exec(`INSERT INTO "ReviewCycle" (id, "tenantSlug", name, "startDate", "endDate", status, departments) 
-				VALUES ($1, $2, $3, $4, $5, $6, $7)
-				ON CONFLICT (id) DO UPDATE SET 
-					name = EXCLUDED.name, 
-					"startDate" = EXCLUDED."startDate", 
-					"endDate" = EXCLUDED."endDate", 
-					status = EXCLUDED.status, 
-					departments = EXCLUDED.departments,
-					"tenantSlug" = CASE WHEN EXCLUDED."tenantSlug" != '' THEN EXCLUDED."tenantSlug" ELSE "ReviewCycle"."tenantSlug" END`,
-				c.ID, effectiveTenant, c.Name, c.StartDate, c.EndDate, c.Status, deptsStr)
+		_, err := targetDB.Exec(`INSERT INTO "ReviewCycle" (id, "tenantSlug", name, "startDate", "endDate", status, departments) 
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
+			ON CONFLICT (id) DO UPDATE SET 
+				name = EXCLUDED.name, 
+				"startDate" = EXCLUDED."startDate", 
+				"endDate" = EXCLUDED."endDate", 
+				status = EXCLUDED.status, 
+				departments = EXCLUDED.departments,
+				"tenantSlug" = CASE WHEN EXCLUDED."tenantSlug" != '' THEN EXCLUDED."tenantSlug" ELSE "ReviewCycle"."tenantSlug" END`,
+			c.ID, effectiveTenant, c.Name, c.StartDate, c.EndDate, c.Status, deptsStr)
 
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-				return
-			}
-
-			// If cycle is Completed, automatically close all pending reviews for this cycle
-			if c.Status == "Completed" {
-				_, _ = db.Exec(`UPDATE "PerformanceReview" SET status = 'Closed', "updatedAt" = NOW() WHERE "cycleId" = $1 AND status NOT IN ('HR Approved', 'Closed')`, c.ID)
-			}
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
 		}
+
+		// If cycle is Completed, automatically close all pending reviews for this cycle
+		if c.Status == "Completed" {
+			_, _ = targetDB.Exec(`UPDATE "PerformanceReview" SET status = 'Closed', "updatedAt" = NOW() WHERE "cycleId" = $1 AND status NOT IN ('HR Approved', 'Closed')`, c.ID)
+		}
+
 		json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "Cycle upserted successfully"})
 
 	} else if r.Method == http.MethodDelete {
@@ -148,18 +147,17 @@ func HandleCycles(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(map[string]string{"error": "Cycle ID is required"})
 			return
 		}
-		if db != nil {
-			var err error
-			if tenantSlug != "" && tenantSlug != "all" {
-				_, err = db.Exec(`DELETE FROM "ReviewCycle" WHERE id = $1 AND ("tenantSlug" = $2 OR "tenantSlug" = '' OR "tenantSlug" IS NULL)`, id, tenantSlug)
-			} else {
-				_, err = db.Exec(`DELETE FROM "ReviewCycle" WHERE id = $1`, id)
-			}
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-				return
-			}
+
+		var err error
+		if tenantSlug != "" && tenantSlug != "all" {
+			_, err = targetDB.Exec(`DELETE FROM "ReviewCycle" WHERE id = $1 AND ("tenantSlug" = $2 OR "tenantSlug" = '' OR "tenantSlug" IS NULL)`, id, tenantSlug)
+		} else {
+			_, err = targetDB.Exec(`DELETE FROM "ReviewCycle" WHERE id = $1`, id)
+		}
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
 		}
 		json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "Review cycle deleted successfully"})
 	} else {

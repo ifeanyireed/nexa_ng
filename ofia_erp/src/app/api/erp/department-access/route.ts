@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { getDbPool } from "@/lib/db";
-import { DepartmentAccessItem } from "@/lib/department-access-constants";
 
 export const dynamic = "force-dynamic";
+
+const ERP_BASE = process.env.ERP_SERVICE_URL || process.env.NEXT_PUBLIC_ERP_SERVICE_URL || "https://ofia-erp-service.onrender.com";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -14,40 +14,39 @@ export async function GET(request: Request) {
     "";
 
   try {
-    const pool = getDbPool();
-    const permRes = await pool.query(
-      `SELECT id, "departmentCode", "departmentName", "accessiblePages", "accessibleTabs", "isEnabled" 
-       FROM "TenantDepartmentPermission" 
-       WHERE "tenantId" = $1
-       ORDER BY "departmentName" ASC`,
-      [tenantSlug]
-    );
+    const res = await fetch(`${ERP_BASE}/departments?tenant=${encodeURIComponent(tenantSlug)}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        "x-tenant-slug": tenantSlug,
+        ...(request.headers.get("authorization") ? { authorization: request.headers.get("authorization")! } : {}),
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(10000),
+    });
 
-    if (permRes.rows.length > 0) {
-      const list: DepartmentAccessItem[] = permRes.rows.map((row: any) => {
-        let pages = [];
-        try { pages = typeof row.accessiblePages === "string" ? JSON.parse(row.accessiblePages) : row.accessiblePages; } catch {}
-        let tabs = {};
-        try { tabs = typeof row.accessibleTabs === "string" ? JSON.parse(row.accessibleTabs) : row.accessibleTabs; } catch {}
-
-        return {
-          id: row.id,
-          departmentCode: row.departmentCode,
-          departmentName: row.departmentName,
-          accessiblePages: pages || [],
-          accessibleTabs: tabs || {},
-          isEnabled: row.isEnabled ?? true,
-        };
-      });
-
-      return NextResponse.json(list);
+    const data = await res.json().catch(() => []);
+    if (!res.ok) {
+      return NextResponse.json(data, { status: res.status });
     }
 
-    return NextResponse.json([]);
+    if (Array.isArray(data)) {
+      const mapped = data.map((d: any) => ({
+        id: `dept_${d.code || d.name}`,
+        departmentCode: d.code,
+        departmentName: d.name,
+        accessiblePages: ["employee"],
+        accessibleTabs: {},
+        isEnabled: true,
+      }));
+      return NextResponse.json(mapped);
+    }
+
+    return NextResponse.json(data);
   } catch (err: any) {
     return NextResponse.json(
-      { error: "Department access query error: " + err.message },
-      { status: 500 }
+      { error: "ERP service department connection error: " + err.message },
+      { status: 502 }
     );
   }
 }

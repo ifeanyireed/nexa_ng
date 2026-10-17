@@ -1,122 +1,72 @@
 import { NextResponse } from "next/server";
-import { executeQuery } from "@/lib/db";
-import { INITIAL_CONTACT_MESSAGES, ContactMessageItem } from "@/lib/admin-data";
 import { authenticateApiRequest } from "@/lib/jwt-auth";
+
+export const dynamic = "force-dynamic";
+
+const rawUserUrl =
+  process.env.USER_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_USER_SERVICE_URL ||
+  "https://ofia-user-service.onrender.com";
+const cleanUserUrl = rawUserUrl.replace(/\/+$/, "");
+const USER_BASE = cleanUserUrl.endsWith("/api/v1") ? cleanUserUrl : `${cleanUserUrl}/api/v1`;
 
 export async function GET(request: Request) {
   const { errorResponse } = await authenticateApiRequest(request);
   if (errorResponse) return errorResponse;
 
   try {
-    const { searchParams } = new URL(request.url);
-    const search = searchParams.get("search")?.toLowerCase();
-    const status = searchParams.get("status");
-    const priority = searchParams.get("priority");
-    const subject = searchParams.get("subject");
-
-    // Fetch from Postgres
-    const dbMessages = await executeQuery<any[]>(
-      "SELECT * FROM contact_inquiries ORDER BY created_at DESC"
-    );
-
-    let messages: ContactMessageItem[] = [];
-
-    if (dbMessages && dbMessages.length > 0) {
-      messages = dbMessages.map((row) => ({
-        id: row.id,
-        ticketNumber: row.ticket_number,
-        name: row.name,
-        email: row.email,
-        phone: row.phone,
-        subject: row.subject,
-        message: row.message,
-        priority: row.priority || "MEDIUM",
-        status: row.status || "OPEN",
-        assignedTo: row.assigned_to,
-        resolutionNotes: row.resolution_notes,
-        createdAt: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString(),
-        updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : new Date().toISOString(),
-      }));
-    } else {
-      messages = [...INITIAL_CONTACT_MESSAGES];
-    }
-
-    if (search) {
-      messages = messages.filter(
-        (msg) =>
-          msg.name.toLowerCase().includes(search) ||
-          msg.email.toLowerCase().includes(search) ||
-          msg.ticketNumber.toLowerCase().includes(search) ||
-          msg.message.toLowerCase().includes(search) ||
-          (msg.phone && msg.phone.includes(search))
-      );
-    }
-
-    if (status && status !== "ALL") {
-      messages = messages.filter((msg) => msg.status === status);
-    }
-
-    if (priority && priority !== "ALL") {
-      messages = messages.filter((msg) => msg.priority === priority);
-    }
-
-    if (subject && subject !== "ALL") {
-      messages = messages.filter((msg) => msg.subject === subject);
-    }
-
-    return NextResponse.json({
-      messages,
-      kpis: {
-        totalTickets: messages.length,
-        openTickets: messages.filter((m) => m.status === "OPEN").length,
-        inProgressTickets: messages.filter((m) => m.status === "IN_PROGRESS").length,
-        resolvedTickets: messages.filter((m) => m.status === "RESOLVED").length,
-      },
+    const { search } = new URL(request.url);
+    const res = await fetch(`${USER_BASE}/crm/contact${search}`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(10000),
     });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      return NextResponse.json(data, { status: res.status });
+    }
+
+    const messages = Array.isArray(data)
+      ? data.map((row: any) => ({
+          id: row.id,
+          ticketNumber: row.ticket_number || row.TicketNumber,
+          name: row.name || row.Name,
+          email: row.email || row.Email,
+          phone: row.phone || row.Phone,
+          subject: row.subject || row.Subject,
+          message: row.message || row.Message,
+          priority: row.priority || row.Priority || "MEDIUM",
+          status: row.status || row.Status || "OPEN",
+          assignedTo: row.assigned_to || row.AssignedTo,
+          resolutionNotes: row.resolution_notes || row.ResolutionNotes,
+          createdAt: row.created_at || row.CreatedAt,
+          updatedAt: row.updated_at || row.UpdatedAt,
+        }))
+      : [];
+
+    return NextResponse.json(messages);
   } catch (err: any) {
-    return NextResponse.json({ error: "Failed to fetch contact messages: " + err.message }, { status: 500 });
+    return NextResponse.json(
+      { error: "User microservice connection error: " + err.message },
+      { status: 502 }
+    );
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { name, email, phone = "", subject = "General Inquiry", message, priority = "MEDIUM" } = body;
-
-    if (!name || !email || !message) {
-      return NextResponse.json({ error: "Missing required contact ticket fields" }, { status: 400 });
-    }
-
-    const ticketNumber = `TKT-${Math.floor(8000 + Math.random() * 1999)}`;
-    const id = `cnt-${Date.now()}`;
-    const now = new Date().toISOString().slice(0, 19).replace("T", " ");
-
-    await executeQuery(
-      `INSERT INTO contact_inquiries
-       (id, ticket_number, name, email, phone, subject, message, priority, status, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?)`,
-      [id, ticketNumber, name.trim(), email.trim().toLowerCase(), phone.trim(), subject, message.trim(), priority, now, now]
-    );
-
-    const newMsg: ContactMessageItem = {
-      id,
-      ticketNumber,
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      phone: phone.trim(),
-      subject,
-      message: message.trim(),
-      priority,
-      status: "OPEN",
-      assignedTo: null,
-      resolutionNotes: null,
-      createdAt: now,
-      updatedAt: now,
-    };
-
-    INITIAL_CONTACT_MESSAGES.unshift(newMsg);
-    return NextResponse.json(newMsg, { status: 201 });
+    const body = await request.text();
+    const res = await fetch(`${USER_BASE}/crm/contact`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: "Failed to create contact ticket: " + err.message }, { status: 500 });
+    return NextResponse.json(
+      { error: "User microservice connection error: " + err.message },
+      { status: 502 }
+    );
   }
 }

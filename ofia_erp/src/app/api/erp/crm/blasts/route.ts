@@ -1,164 +1,48 @@
 import { NextResponse } from "next/server";
-import { getCrmEmailBlasts, createCrmEmailBlast, getCrmSubscribers } from "@/lib/crm-service";
-import {
-  queueMassEmailCampaign,
-  processEmailQueueBatch,
-  getTenantSenderProfileById,
-  getTenantSmtpSettings,
-  SmtpSettings,
-} from "@/lib/email-service";
 import { getValidatedTenantSlug } from "@/lib/crm-tenant";
 
 export const dynamic = "force-dynamic";
 
+const ERP_BASE =
+  process.env.ERP_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_ERP_SERVICE_URL ||
+  "https://ofia-erp-service.onrender.com";
+
 export async function GET(request: Request) {
   try {
     const tenantSlug = getValidatedTenantSlug(request);
-    const blasts = await getCrmEmailBlasts(tenantSlug);
-    return NextResponse.json({ success: true, blasts });
+    const res = await fetch(`${ERP_BASE}/crm/blasts?tenant=${encodeURIComponent(tenantSlug)}`, {
+      cache: "no-store",
+      headers: {
+        "x-tenant-slug": tenantSlug,
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to fetch email blasts" }, { status: 500 });
+    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const tenantSlug = getValidatedTenantSlug(request, body);
-    const { dispatchNow = false, recipients = [], ...blastData } = body;
+    const bodyText = await request.text();
+    const parsed = JSON.parse(bodyText || "{}");
+    const tenantSlug = getValidatedTenantSlug(request, parsed);
 
-    // Fetch configured tenant workspace SMTP
-    const tenantSmtp = await getTenantSmtpSettings(tenantSlug);
-
-    // Check sender profile / domain
-    let effectiveOverride = blastData.senderOverride as Partial<SmtpSettings> | undefined;
-
-    if (blastData.senderProfileId === "workspace_primary" && tenantSmtp) {
-      effectiveOverride = {
-        provider: tenantSmtp.provider,
-        host: tenantSmtp.host,
-        port: tenantSmtp.port,
-        encryption: tenantSmtp.encryption,
-        fromEmail: tenantSmtp.fromEmail,
-        fromName: tenantSmtp.fromName,
-        username: tenantSmtp.username,
-        password: tenantSmtp.password,
-      };
-    } else if (
-      !effectiveOverride &&
-      blastData.senderProfileId &&
-      blastData.senderProfileId !== "custom" &&
-      blastData.senderProfileId !== "default" &&
-      blastData.senderProfileId !== "workspace_primary"
-    ) {
-      const prof = await getTenantSenderProfileById(tenantSlug, blastData.senderProfileId);
-      if (prof) {
-        effectiveOverride = {
-          provider: prof.provider,
-          host: prof.host,
-          port: prof.port,
-          encryption: prof.encryption,
-          fromEmail: prof.fromEmail,
-          fromName: prof.fromName,
-          username: prof.username,
-          password: prof.password,
-        };
-      }
-    }
-
-    // Resolve masked password if present
-    if (effectiveOverride && (!effectiveOverride.password || effectiveOverride.password === "••••••••")) {
-      if (blastData.senderProfileId && blastData.senderProfileId !== "workspace_primary") {
-        const prof = await getTenantSenderProfileById(tenantSlug, blastData.senderProfileId);
-        if (prof?.password) effectiveOverride.password = prof.password;
-      } else if (tenantSmtp?.password) {
-        effectiveOverride.password = tenantSmtp.password;
-      }
-    }
-
-    // If dispatchNow is requested, tenant MUST have either effectiveOverride or configured tenant SMTP
-    const hasValidTenantSmtp = Boolean(tenantSmtp && tenantSmtp.host && tenantSmtp.fromEmail);
-    const hasValidOverride = Boolean(
-      effectiveOverride && effectiveOverride.host && effectiveOverride.fromEmail
-    );
-
-    if (dispatchNow && !hasValidOverride && !hasValidTenantSmtp && tenantSlug !== "platform") {
-      return NextResponse.json(
-        {
-          error:
-            "A configured sender profile or workspace SMTP is required to dispatch blasts. Please set up your email provider in Workspace Settings.",
-        },
-        { status: 400 }
-      );
-    }
-
-    const recipientIds: string[] | undefined = Array.isArray(body?.recipientIds)
-      ? body.recipientIds
-      : undefined;
-
-    const blast = await createCrmEmailBlast(tenantSlug, {
-      ...blastData,
-      recipientIds,
-      senderProvider: effectiveOverride?.provider || blastData.senderProvider || (tenantSmtp?.provider ?? "custom"),
-      senderEmail: effectiveOverride?.fromEmail || blastData.senderEmail || tenantSmtp?.fromEmail,
-      senderName: effectiveOverride?.fromName || blastData.senderName || tenantSmtp?.fromName,
-      senderOverride: effectiveOverride,
-      status: dispatchNow ? "SENT" : blastData.scheduledAt ? "SCHEDULED" : "DRAFT",
-      sentAt: dispatchNow ? new Date().toISOString() : undefined,
-      sentCount: dispatchNow ? blastData.totalRecipients || 100 : 0,
+    const res = await fetch(`${ERP_BASE}/crm/blasts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-tenant-slug": tenantSlug,
+      },
+      body: bodyText,
+      signal: AbortSignal.timeout(10000),
     });
-
-    // If dispatchNow was requested, load subscribers from list if not explicitly provided
-    if (dispatchNow) {
-      let targetRecipients = recipients;
-      if ((!targetRecipients || targetRecipients.length === 0) && blast.listId) {
-        let subs = await getCrmSubscribers(tenantSlug, blast.listId);
-        if (recipientIds && recipientIds.length > 0) {
-          subs = subs.filter((s) => recipientIds.includes(s.id));
-        }
-        if (subs.length > 0) {
-          targetRecipients = subs.map((s) => ({
-            email: s.email,
-            name: `${s.firstName || ""} ${s.lastName || ""}`.trim() || s.email,
-            firstName: s.firstName || "",
-            lastName: s.lastName || "",
-            company: s.company || "",
-            role: "Subscriber",
-            subscriberId: s.id,
-            listId: blast.listId,
-          }));
-        }
-      }
-
-      if (Array.isArray(targetRecipients) && targetRecipients.length > 0) {
-        try {
-          await queueMassEmailCampaign({
-            tenantSlug,
-            recipients: targetRecipients.map((r: any) => ({
-              email: r.email,
-              name: r.name || "",
-              firstName: r.firstName || "",
-              lastName: r.lastName || "",
-              company: r.company || "",
-              role: r.role || "Prospect",
-              department: r.company || "Commercial",
-              subscriberId: r.subscriberId,
-              listId: r.listId || blast.listId,
-            })),
-            subject: blast.subject,
-            messageHtml: blast.contentHtml,
-            senderOverride: blast.senderOverride,
-            senderProfileId: blastData.senderProfileId,
-          });
-          await processEmailQueueBatch(20).catch(() => {});
-        } catch (qErr) {
-          console.warn("Notice: Real-time dispatch queued with warning:", qErr);
-        }
-      }
-    }
-
-    return NextResponse.json({ success: true, blast }, { status: 201 });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to create or schedule blast" }, { status: 500 });
+    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
   }
 }

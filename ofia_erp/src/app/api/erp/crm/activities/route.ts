@@ -1,42 +1,49 @@
 import { NextResponse } from "next/server";
-import { getCrmActivities, createCrmActivity, updateCrmActivityStatus, deleteCrmActivity } from "@/lib/crm-service";
 import { getValidatedTenantSlug } from "@/lib/crm-tenant";
 
 export const dynamic = "force-dynamic";
 
+const ERP_BASE =
+  process.env.ERP_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_ERP_SERVICE_URL ||
+  "https://ofia-erp-service.onrender.com";
+
 export async function GET(request: Request) {
   try {
     const tenantSlug = getValidatedTenantSlug(request);
-    const activities = await getCrmActivities(tenantSlug);
-    return NextResponse.json({ success: true, activities });
+    const res = await fetch(`${ERP_BASE}/crm/activities?tenant=${encodeURIComponent(tenantSlug)}`, {
+      cache: "no-store",
+      headers: {
+        "x-tenant-slug": tenantSlug,
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to fetch activities" }, { status: 500 });
+    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const tenantSlug = getValidatedTenantSlug(request, body);
-    const activity = await createCrmActivity(tenantSlug, body);
-    return NextResponse.json({ success: true, activity }, { status: 201 });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to log activity" }, { status: 500 });
-  }
-}
+    const bodyText = await request.text();
+    const parsed = JSON.parse(bodyText || "{}");
+    const tenantSlug = getValidatedTenantSlug(request, parsed);
 
-export async function PATCH(request: Request) {
-  try {
-    const body = await request.json();
-    const { id, status } = body;
-    if (!id || !status) {
-      return NextResponse.json({ error: "Activity ID and status are required" }, { status: 400 });
-    }
-    const tenantSlug = getValidatedTenantSlug(request, body);
-    const updated = await updateCrmActivityStatus(tenantSlug, id, status);
-    return NextResponse.json({ success: true, activity: updated });
+    const res = await fetch(`${ERP_BASE}/crm/activities`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-tenant-slug": tenantSlug,
+      },
+      body: bodyText,
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to update activity" }, { status: 500 });
+    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
   }
 }
 
@@ -45,12 +52,21 @@ export async function DELETE(request: Request) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
     const tenantSlug = getValidatedTenantSlug(request);
+
     if (!id) {
       return NextResponse.json({ error: "Activity ID is required" }, { status: 400 });
     }
-    await deleteCrmActivity(tenantSlug, id);
-    return NextResponse.json({ success: true });
+
+    const res = await fetch(`${ERP_BASE}/crm/activities?id=${encodeURIComponent(id)}&tenant=${encodeURIComponent(tenantSlug)}`, {
+      method: "DELETE",
+      headers: {
+        "x-tenant-slug": tenantSlug,
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to delete activity" }, { status: 500 });
+    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
   }
 }

@@ -1,5 +1,3 @@
-import { getDbPool } from "./db";
-
 export interface GeminiReplyResult {
   text: string;
   model: string;
@@ -9,6 +7,13 @@ export interface GeminiReplyResult {
 
 const DEFAULT_MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 const FALLBACK_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+
+const rawUserUrl =
+  process.env.USER_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_USER_SERVICE_URL ||
+  "https://ofia-user-service.onrender.com";
+const cleanUserUrl = rawUserUrl.replace(/\/+$/, "");
+const USER_BASE = cleanUserUrl.endsWith("/api/v1") ? cleanUserUrl : `${cleanUserUrl}/api/v1`;
 
 /**
  * Generate an AI support autoreply using Gemini 3.8 Flash
@@ -22,52 +27,46 @@ export async function generateSupportAutoreply(params: {
   const { sessionId, visitorMessage, visitorName } = params;
   const apiKey = process.env.GEMINI_API_KEY;
 
-  const pool = getDbPool();
-
-  // 1. Fetch published KB articles to provide rich domain context
+  // 1. Fetch published KB articles via service_users HTTP proxy
   let kbContext = "";
-  if (pool) {
-    try {
-      const kbRes = await pool.query(
-        `SELECT title, content, category 
-         FROM support_kb_articles 
-         WHERE status = 'published' 
-         ORDER BY created_at DESC 
-         LIMIT 10`
-      );
-      if (kbRes.rows.length > 0) {
-        kbContext = "\n\n--- OFIA KNOWLEDGE BASE ---\n" + kbRes.rows
+  try {
+    const kbRes = await fetch(`${USER_BASE}/support/kb/articles?status=published`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(3000),
+    });
+    if (kbRes.ok) {
+      const articles = await kbRes.json();
+      if (Array.isArray(articles) && articles.length > 0) {
+        kbContext = "\n\n--- OFIA KNOWLEDGE BASE ---\n" + articles.slice(0, 10)
           .map((r: any) => `### ${r.title} (${r.category})\n${r.content}`)
           .join("\n\n");
       }
-    } catch (err) {
-      console.warn("[Gemini Autoreply] Could not fetch KB articles:", err);
     }
+  } catch (err) {
+    console.warn("[Gemini Autoreply] Could not fetch KB articles:", err);
   }
 
-  // 2. Fetch recent conversation history
+  // 2. Fetch recent conversation history via service_users HTTP proxy
   const historyContents: Array<{ role: "user" | "model"; parts: Array<{ text: string }> }> = [];
-  if (pool) {
-    try {
-      const histRes = await pool.query(
-        `SELECT sender, text, timestamp 
-         FROM support_chat_messages 
-         WHERE session_id = $1 
-         ORDER BY timestamp DESC 
-         LIMIT 8`,
-        [sessionId]
-      );
-      const rows = [...histRes.rows].reverse();
-      for (const row of rows) {
-        const isUser = row.sender === "Visitor" || row.sender === "Guest Visitor" || row.sender === "Guest";
-        historyContents.push({
-          role: isUser ? "user" : "model",
-          parts: [{ text: row.text }],
-        });
+  try {
+    const histRes = await fetch(`${USER_BASE}/support/chat/history?session_id=${encodeURIComponent(sessionId)}`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(3000),
+    });
+    if (histRes.ok) {
+      const messages = await histRes.json();
+      if (Array.isArray(messages)) {
+        for (const row of messages.slice(-8)) {
+          const isUser = row.sender === "Visitor" || row.sender === "Guest Visitor" || row.sender === "Guest";
+          historyContents.push({
+            role: isUser ? "user" : "model",
+            parts: [{ text: row.text }],
+          });
+        }
       }
-    } catch (err) {
-      console.warn("[Gemini Autoreply] Could not fetch history:", err);
     }
+  } catch (err) {
+    console.warn("[Gemini Autoreply] Could not fetch history:", err);
   }
 
   // Ensure current message is in contents
@@ -145,7 +144,6 @@ Instructions:
         const errorBody = await response.text();
         console.warn(`[Gemini Autoreply] Model ${model} returned ${response.status}:`, errorBody);
 
-        // If error is 403 permission denied (e.g. leaked key), break early with informative message
         if (response.status === 403) {
           return {
             text: "Hello! Thank you for contacting Ofia Support. Our human operators are currently offline, and your inquiry has been queued at high priority. Please leave your email or phone number and an operator will contact you as soon as they are back online.",
@@ -160,7 +158,6 @@ Instructions:
     }
   }
 
-  // Graceful fallback if all API calls failed
   return {
     text: "Thank you for reaching out to Ofia Support! Our human support staff is currently offline. Your inquiry has been safely logged in our support queue, and our team will get back to you as soon as they are back online.",
     model: "local-fallback",

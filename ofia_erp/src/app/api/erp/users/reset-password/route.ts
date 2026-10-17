@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
-import { getDbPool } from "@/lib/db";
 import bcrypt from "bcryptjs";
-import { sendPlatformPasswordChangedEmail } from "@/lib/email-service";
-import { slugToTenantName } from "@/lib/tenant-utils";
+
+export const dynamic = "force-dynamic";
+
+const ERP_BASE =
+  process.env.ERP_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_ERP_SERVICE_URL ||
+  "https://ofia-erp-service.onrender.com";
 
 export async function POST(request: Request) {
   try {
@@ -33,87 +37,39 @@ export async function POST(request: Request) {
     }
 
     const hashedPassword = bcrypt.hashSync(newPassword, 10);
-    const pool = getDbPool();
 
-    if (!pool) {
+    const res = await fetch(`${ERP_BASE}/users`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-tenant-slug": effectiveTenantSlug,
+      },
+      body: JSON.stringify({
+        id: targetUserId,
+        email: normalizedEmail,
+        password: hashedPassword,
+        tenantSlug: effectiveTenantSlug,
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
       return NextResponse.json(
-        { error: "Database connection unavailable" },
-        { status: 503 }
+        { error: data?.error || "Failed to reset password in ERP microservice" },
+        { status: res.status }
       );
-    }
-
-    // 1. Try matching with tenant slug first if provided
-    let result = null;
-    if (effectiveTenantSlug) {
-      result = await pool.query(
-        `UPDATE "User"
-         SET password = $1,
-             email = LOWER(email),
-             "updatedAt" = NOW(),
-             updated_at = NOW()
-         WHERE (LOWER(email) = $2 OR id = $3)
-           AND "tenantSlug" = $4
-         RETURNING id, name, email, role, "tenantSlug", "updatedAt"`,
-        [hashedPassword, normalizedEmail, targetUserId, effectiveTenantSlug]
-      );
-    }
-
-    // 2. If no match with tenant slug, try matching by email or id directly
-    if (!result || result.rows.length === 0) {
-      result = await pool.query(
-        `UPDATE "User"
-         SET password = $1,
-             email = LOWER(email),
-             "updatedAt" = NOW(),
-             updated_at = NOW()
-         WHERE LOWER(email) = $2 OR id = $3
-         RETURNING id, name, email, role, "tenantSlug", "updatedAt"`,
-        [hashedPassword, normalizedEmail, targetUserId]
-      );
-    }
-
-    if (!result || result.rows.length === 0) {
-      return NextResponse.json(
-        { error: `User not found with email '${normalizedEmail || targetUserId}'` },
-        { status: 404 }
-      );
-    }
-
-    const updatedUser = result.rows[0];
-
-    // Dispatch security notice to the user using tenant Primary Workspace Domain and Sender Display Name
-    if (updatedUser.email) {
-      const resolvedTenantSlug = updatedUser.tenantSlug || effectiveTenantSlug || "default";
-      const resolvedTenantName = resolvedTenantSlug && resolvedTenantSlug !== "default"
-        ? slugToTenantName(resolvedTenantSlug)
-        : "Ofia Platform";
-
-      sendPlatformPasswordChangedEmail({
-        recipientEmail: updatedUser.email,
-        recipientName: updatedUser.name || updatedUser.email.split("@")[0],
-        tenantSlug: resolvedTenantSlug,
-        tenantName: resolvedTenantName,
-      }).catch((err) => console.warn("Failed to dispatch staff password reset alert:", err));
     }
 
     return NextResponse.json({
       success: true,
-      message: `Password for ${updatedUser.name || updatedUser.email} reset successfully to '${newPassword}'`,
-      user: {
-        id: updatedUser.id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        role: updatedUser.role,
-        tenantSlug: updatedUser.tenantSlug,
-        updatedAt: updatedUser.updatedAt,
-      },
-      newPassword,
+      message: "Password reset successfully.",
+      user: data,
     });
   } catch (error: any) {
-    console.error("Error in reset-password route:", error);
     return NextResponse.json(
-      { error: "Failed to reset password: " + (error?.message || "Unknown error") },
-      { status: 500 }
+      { error: "ERP microservice error: " + (error?.message || "Internal failure") },
+      { status: 502 }
     );
   }
 }

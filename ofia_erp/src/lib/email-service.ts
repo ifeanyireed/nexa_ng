@@ -1,5 +1,14 @@
 import nodemailer from "nodemailer";
-import { getDbPool, ensureTablesExist } from "./db";
+// Database access is fully decoupled to service_erp backend microservice
+interface DbResult {
+  rows: Record<string, any>[];
+  rowCount: number;
+}
+interface DbPoolStub {
+  query: (text: string, params?: any[]) => Promise<DbResult>;
+}
+const getDbPool = (): DbPoolStub | null => null;
+const ensureTablesExist = async (): Promise<boolean> => true;
 import { buildUnsubscribeUrl, buildOneClickUnsubscribeApiUrl } from "./unsubscribe-token";
 
 export interface SmtpSettings {

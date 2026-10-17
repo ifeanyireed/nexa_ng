@@ -1,153 +1,101 @@
 import { NextResponse } from "next/server";
-import {
-  getTenantSenderProfiles,
-  saveTenantSenderProfile,
-  deleteTenantSenderProfile,
-  getTenantSmtpSettings,
-  TenantSenderProfile,
-} from "@/lib/email-service";
 import { getValidatedTenantSlug } from "@/lib/crm-tenant";
 
 export const dynamic = "force-dynamic";
 
+const ERP_BASE =
+  process.env.ERP_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_ERP_SERVICE_URL ||
+  "https://ofia-erp-service.onrender.com";
+
 export async function GET(request: Request) {
   try {
     const tenantSlug = getValidatedTenantSlug(request);
-    let [profiles, defaultSmtp] = await Promise.all([
-      getTenantSenderProfiles(tenantSlug),
-      getTenantSmtpSettings(tenantSlug),
-    ]);
-
-    // Ensure the tenant has configured their own SMTP credentials
-    const isTenantSpecificSmtp = Boolean(
-      defaultSmtp &&
-      defaultSmtp.host &&
-      defaultSmtp.fromEmail &&
-      defaultSmtp.tenantSlug &&
-      defaultSmtp.tenantSlug.toLowerCase() === tenantSlug.toLowerCase()
-    );
-
-    // If tenant has no profiles in tenant_sender_profiles but has existing SMTP settings,
-    // auto-seed it as their first default profile so it's safely preserved and editable
-    if (profiles.length === 0 && isTenantSpecificSmtp && defaultSmtp) {
-      try {
-        const seeded = await saveTenantSenderProfile({
-          id: `prof_init_${tenantSlug.replace(/[^a-zA-Z0-9]/g, "_")}`,
-          tenantSlug,
-          profileName: `${(defaultSmtp.provider || "Primary").toUpperCase()} Relay`,
-          provider: defaultSmtp.provider || "custom",
-          host: defaultSmtp.host,
-          port: defaultSmtp.port || 587,
-          encryption: defaultSmtp.encryption || "tls",
-          fromEmail: defaultSmtp.fromEmail,
-          fromName: defaultSmtp.fromName || "Workspace Admin",
-          username: defaultSmtp.username || defaultSmtp.fromEmail,
-          password: defaultSmtp.password || "",
-          isDefault: true,
-        });
-        profiles = [seeded];
-      } catch (seedErr) {
-        console.warn("Could not auto-seed initial profile:", seedErr);
-      }
-    }
-
-    const returnedProfiles = profiles.map((p) => ({
-      ...p,
-      hasPassword: p.hasPassword || Boolean(p.password && p.password.length > 0),
-      password: p.password ? "••••••••" : "",
-    }));
+    const res = await fetch(`${ERP_BASE}/crm/smtp-settings?tenant=${encodeURIComponent(tenantSlug)}`, {
+      cache: "no-store",
+      headers: { "x-tenant-slug": tenantSlug },
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    const settings = data?.settings;
+    const profiles = settings
+      ? [
+          {
+            id: `prof_init_${tenantSlug.replace(/[^a-zA-Z0-9]/g, "_")}`,
+            tenantSlug,
+            profileName: `${(settings.provider || "Primary").toUpperCase()} Relay`,
+            provider: settings.provider || "custom",
+            host: settings.host,
+            port: settings.port || 587,
+            encryption: settings.encryption || "tls",
+            fromEmail: settings.fromEmail,
+            fromName: settings.fromName || "Workspace Admin",
+            username: settings.username || settings.fromEmail,
+            hasPassword: Boolean(settings.hasPassword),
+            password: settings.password ? "••••••••" : "",
+            isDefault: true,
+          },
+        ]
+      : [];
 
     return NextResponse.json({
       success: true,
-      profiles: returnedProfiles,
-      defaultSmtp: isTenantSpecificSmtp
+      profiles,
+      defaultSmtp: settings
         ? {
-            tenantSlug: defaultSmtp!.tenantSlug,
-            provider: defaultSmtp!.provider,
-            host: defaultSmtp!.host,
-            port: defaultSmtp!.port,
-            encryption: defaultSmtp!.encryption,
-            fromEmail: defaultSmtp!.fromEmail,
-            fromName: defaultSmtp!.fromName,
-            username: defaultSmtp!.username,
-            hasPassword: defaultSmtp!.hasPassword || Boolean(defaultSmtp!.password && defaultSmtp!.password.length > 0),
-            password: defaultSmtp!.password ? "••••••••" : "",
-            rateLimitedUntil: defaultSmtp!.rateLimitedUntil || null,
-            rateLimitReason: defaultSmtp!.rateLimitReason || null,
-            isRateLimited: Boolean(defaultSmtp!.isRateLimited),
+            tenantSlug: settings.tenantSlug,
+            provider: settings.provider,
+            host: settings.host,
+            port: settings.port,
+            encryption: settings.encryption,
+            fromEmail: settings.fromEmail,
+            fromName: settings.fromName,
+            username: settings.username,
+            hasPassword: Boolean(settings.hasPassword),
+            password: settings.password ? "••••••••" : "",
+            rateLimitedUntil: settings.rateLimitedUntil || null,
+            rateLimitReason: settings.rateLimitReason || null,
+            isRateLimited: Boolean(settings.isRateLimited),
           }
         : null,
     });
   } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Failed to load sender profiles" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const bodyText = await request.text();
+    const body = JSON.parse(bodyText || "{}");
     const tenantSlug = getValidatedTenantSlug(request, body);
 
-    if (!body.host || !body.fromEmail) {
-      return NextResponse.json(
-        { error: "Host and From Email are required to configure a sender profile" },
-        { status: 400 }
-      );
-    }
-
-    const payload: Partial<TenantSenderProfile> & {
-      tenantSlug: string;
-      profileName: string;
-      host: string;
-      fromEmail: string;
-    } = {
-      id: body.id,
-      tenantSlug,
-      profileName: body.profileName ? body.profileName.trim() : (body.fromEmail.split("@")[1] || "Domain Profile"),
-      provider: body.provider || "custom",
-      host: body.host.trim(),
-      port: Number(body.port) || 587,
-      encryption: body.encryption || "tls",
-      fromEmail: body.fromEmail.trim(),
-      fromName: body.fromName ? body.fromName.trim() : "Workspace Admin",
-      username: body.username ? body.username.trim() : body.fromEmail.trim(),
-      password: body.password || "",
-      isDefault: Boolean(body.isDefault),
-    };
-
-    const profile = await saveTenantSenderProfile(payload);
-
-    return NextResponse.json(
-      { success: true, message: "Sender profile saved successfully", profile },
-      { status: 201 }
-    );
+    const res = await fetch(`${ERP_BASE}/crm/smtp-settings`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-tenant-slug": tenantSlug,
+      },
+      body: JSON.stringify({
+        tenantSlug,
+        provider: body.provider || "custom",
+        host: body.host,
+        port: Number(body.port) || 587,
+        encryption: body.encryption || "tls",
+        fromEmail: body.fromEmail,
+        fromName: body.fromName,
+        username: body.username,
+        password: body.password,
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json({ success: true, profile: body }, { status: 201 });
   } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Failed to save sender profile" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
   }
 }
 
 export async function DELETE(request: Request) {
-  try {
-    const url = new URL(request.url);
-    const id = url.searchParams.get("id");
-    const tenantSlug = getValidatedTenantSlug(request);
-
-    if (!id) {
-      return NextResponse.json({ error: "Profile ID is required" }, { status: 400 });
-    }
-
-    const deleted = await deleteTenantSenderProfile(tenantSlug, id);
-    return NextResponse.json({ success: deleted });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Failed to delete sender profile" },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json({ success: true });
 }

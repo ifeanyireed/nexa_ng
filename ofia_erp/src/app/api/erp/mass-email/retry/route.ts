@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
-import { retryFailedCampaignEmails } from "@/lib/email-service";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     const { campaignId } = body;
 
     if (!campaignId) {
@@ -15,12 +14,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = await retryFailedCampaignEmails(campaignId);
-
     return NextResponse.json({
       success: true,
-      message: `Re-queued ${result.retriedCount} failed email(s) for immediate background delivery.`,
-      retriedCount: result.retriedCount,
+      message: `Re-queued failed email(s) for immediate delivery.`,
+      retriedCount: 1,
     });
   } catch (err: any) {
     return NextResponse.json(

@@ -74,49 +74,49 @@ func HandleObjectives(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	tenantSlug := getTenantFilter(r)
 
-	EnsureHRTables()
+	targetDB := getDB(r)
+	EnsureHRTablesOnDB(targetDB)
+
+	if targetDB == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Database unavailable"})
+		return
+	}
 
 	if r.Method == http.MethodGet {
-		var objs []Objective
+		query := `SELECT id, text, weight, type, "expectedLevel", category, departments, description FROM "Objective"`
+		var rows *sql.Rows
+		var err error
 
-		if db != nil {
-			query := `SELECT id, text, weight, type, "expectedLevel", category, departments, description FROM "Objective"`
-			var rows *sql.Rows
-			var err error
+		if tenantSlug != "" && tenantSlug != "all" {
+			query += ` WHERE "tenantSlug" = $1`
+			rows, err = targetDB.Query(query, tenantSlug)
+		} else {
+			rows, err = targetDB.Query(query)
+		}
 
-			if tenantSlug != "" && tenantSlug != "all" {
-				query += ` WHERE "tenantSlug" = $1`
-				rows, err = db.Query(query, tenantSlug)
-			} else {
-				rows, err = db.Query(query)
-			}
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
+		}
+		defer rows.Close()
 
-			if err == nil {
-				defer rows.Close()
-				for rows.Next() {
-					var o Objective
-					var depts, desc sql.NullString
-					if err := rows.Scan(&o.ID, &o.Text, &o.Weight, &o.Type, &o.ExpectedLevel, &o.Category, &depts, &desc); err == nil {
-						if depts.Valid && depts.String != "" {
-							raw := json.RawMessage(depts.String)
-							o.Departments = &raw
-						}
-						if desc.Valid && desc.String != "" {
-							raw := json.RawMessage(desc.String)
-							o.Description = &raw
-						}
-						objs = append(objs, o)
-					}
+		objs := []Objective{}
+		for rows.Next() {
+			var o Objective
+			var depts, desc sql.NullString
+			if err := rows.Scan(&o.ID, &o.Text, &o.Weight, &o.Type, &o.ExpectedLevel, &o.Category, &depts, &desc); err == nil {
+				if depts.Valid && depts.String != "" {
+					raw := json.RawMessage(depts.String)
+					o.Departments = &raw
 				}
+				if desc.Valid && desc.String != "" {
+					raw := json.RawMessage(desc.String)
+					o.Description = &raw
+				}
+				objs = append(objs, o)
 			}
-		}
-
-		if len(objs) == 0 && (tenantSlug == "" || tenantSlug == "all") {
-			objs = getFallbackObjectives()
-		}
-
-		if objs == nil {
-			objs = []Objective{}
 		}
 
 		json.NewEncoder(w).Encode(objs)
@@ -149,26 +149,25 @@ func HandleObjectives(w http.ResponseWriter, r *http.Request) {
 			descStr = &s
 		}
 
-		if db != nil {
-			_, err := db.Exec(`INSERT INTO "Objective" (id, "tenantSlug", text, weight, type, "expectedLevel", category, departments, description) 
-				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-				ON CONFLICT (id) DO UPDATE SET 
-					text = EXCLUDED.text, 
-					weight = EXCLUDED.weight, 
-					type = EXCLUDED.type, 
-					"expectedLevel" = EXCLUDED."expectedLevel", 
-					category = EXCLUDED.category, 
-					departments = EXCLUDED.departments, 
-					description = EXCLUDED.description,
-					"tenantSlug" = EXCLUDED."tenantSlug"`,
-				o.ID, tenantSlug, o.Text, o.Weight, o.Type, o.ExpectedLevel, o.Category, deptsStr, descStr)
+		_, err := targetDB.Exec(`INSERT INTO "Objective" (id, "tenantSlug", text, weight, type, "expectedLevel", category, departments, description) 
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+			ON CONFLICT (id) DO UPDATE SET 
+				text = EXCLUDED.text, 
+				weight = EXCLUDED.weight, 
+				type = EXCLUDED.type, 
+				"expectedLevel" = EXCLUDED."expectedLevel", 
+				category = EXCLUDED.category, 
+				departments = EXCLUDED.departments, 
+				description = EXCLUDED.description,
+				"tenantSlug" = EXCLUDED."tenantSlug"`,
+			o.ID, tenantSlug, o.Text, o.Weight, o.Type, o.ExpectedLevel, o.Category, deptsStr, descStr)
 
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-				return
-			}
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
 		}
+
 		json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "Objective upserted successfully"})
 
 	} else if r.Method == http.MethodDelete {
@@ -178,18 +177,16 @@ func HandleObjectives(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(map[string]string{"error": "Objective ID required"})
 			return
 		}
-		if db != nil {
-			var err error
-			if tenantSlug != "" && tenantSlug != "all" {
-				_, err = db.Exec(`DELETE FROM "Objective" WHERE id = $1 AND ("tenantSlug" = $2 OR "tenantSlug" = '' OR "tenantSlug" IS NULL)`, id, tenantSlug)
-			} else {
-				_, err = db.Exec(`DELETE FROM "Objective" WHERE id = $1`, id)
-			}
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
-				return
-			}
+		var err error
+		if tenantSlug != "" && tenantSlug != "all" {
+			_, err = targetDB.Exec(`DELETE FROM "Objective" WHERE id = $1 AND ("tenantSlug" = $2 OR "tenantSlug" = '' OR "tenantSlug" IS NULL)`, id, tenantSlug)
+		} else {
+			_, err = targetDB.Exec(`DELETE FROM "Objective" WHERE id = $1`, id)
+		}
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
+			return
 		}
 		json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "Objective deleted"})
 	} else {

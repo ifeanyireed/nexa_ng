@@ -1,42 +1,71 @@
 import { NextResponse } from "next/server";
-import { getCrmDeals, createCrmDeal, updateCrmDeal, deleteCrmDeal } from "@/lib/crm-service";
 import { getValidatedTenantSlug } from "@/lib/crm-tenant";
 
 export const dynamic = "force-dynamic";
 
+const ERP_BASE =
+  process.env.ERP_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_ERP_SERVICE_URL ||
+  "https://ofia-erp-service.onrender.com";
+
 export async function GET(request: Request) {
   try {
     const tenantSlug = getValidatedTenantSlug(request);
-    const deals = await getCrmDeals(tenantSlug);
-    return NextResponse.json({ success: true, deals });
+    const res = await fetch(`${ERP_BASE}/crm/deals?tenant=${encodeURIComponent(tenantSlug)}`, {
+      cache: "no-store",
+      headers: {
+        "x-tenant-slug": tenantSlug,
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to fetch deals" }, { status: 500 });
+    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const tenantSlug = getValidatedTenantSlug(request, body);
-    const deal = await createCrmDeal(tenantSlug, body);
-    return NextResponse.json({ success: true, deal }, { status: 201 });
+    const bodyText = await request.text();
+    const parsed = JSON.parse(bodyText || "{}");
+    const tenantSlug = getValidatedTenantSlug(request, parsed);
+
+    const res = await fetch(`${ERP_BASE}/crm/deals`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-tenant-slug": tenantSlug,
+      },
+      body: bodyText,
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to create deal" }, { status: 500 });
+    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
   }
 }
 
 export async function PATCH(request: Request) {
   try {
-    const body = await request.json();
-    const { id, ...updates } = body;
-    if (!id) {
-      return NextResponse.json({ error: "Deal ID is required for updates" }, { status: 400 });
-    }
-    const tenantSlug = getValidatedTenantSlug(request, body);
-    const updated = await updateCrmDeal(tenantSlug, id, updates);
-    return NextResponse.json({ success: true, deal: updated });
+    const bodyText = await request.text();
+    const parsed = JSON.parse(bodyText || "{}");
+    const tenantSlug = getValidatedTenantSlug(request, parsed);
+
+    const res = await fetch(`${ERP_BASE}/crm/deals`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "x-tenant-slug": tenantSlug,
+      },
+      body: bodyText,
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to update deal" }, { status: 500 });
+    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
   }
 }
 
@@ -45,12 +74,21 @@ export async function DELETE(request: Request) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
     const tenantSlug = getValidatedTenantSlug(request);
+
     if (!id) {
       return NextResponse.json({ error: "Deal ID is required" }, { status: 400 });
     }
-    await deleteCrmDeal(tenantSlug, id);
-    return NextResponse.json({ success: true });
+
+    const res = await fetch(`${ERP_BASE}/crm/deals?id=${encodeURIComponent(id)}&tenant=${encodeURIComponent(tenantSlug)}`, {
+      method: "DELETE",
+      headers: {
+        "x-tenant-slug": tenantSlug,
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to delete deal" }, { status: 500 });
+    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
   }
 }

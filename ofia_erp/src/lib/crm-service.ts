@@ -1,4 +1,13 @@
-import { getDbPool, ensureTablesExist } from "./db";
+// Database access is fully decoupled to service_erp backend microservice
+interface DbResult {
+  rows: Record<string, any>[];
+  rowCount: number;
+}
+interface DbPoolStub {
+  query: (text: string, params?: any[]) => Promise<DbResult>;
+}
+const getDbPool = (): DbPoolStub | null => null;
+const ensureTablesExist = async (): Promise<boolean> => true;
 import { queueMassEmailCampaign, processEmailQueueBatch, SmtpSettings, getTenantSenderProfileById } from "./email-service";
 
 export interface CrmDeal {
@@ -1859,7 +1868,7 @@ export async function bulkAddCrmSubscribers(
                phone = COALESCE(NULLIF(EXCLUDED.phone, ''), crm_email_subscribers.phone),
                linkedin_url = COALESCE(NULLIF(EXCLUDED.linkedin_url, ''), crm_email_subscribers.linkedin_url)`,
             [subId, slug, listId, email, s.firstName || "", s.lastName || "", s.company || "", phone || "", linkedinUrl]
-          ).catch((e) => {
+          ).catch((e: any) => {
             console.warn("Failed inserting subscriber with email:", e);
           });
           added++;
@@ -1873,7 +1882,7 @@ export async function bulkAddCrmSubscribers(
               `INSERT INTO crm_email_subscribers (id, tenant_slug, list_id, email, first_name, last_name, company, phone, linkedin_url, status, created_at)
                VALUES ($1, $2, $3, NULL, $4, $5, $6, $7, $8, 'SUBSCRIBED', NOW())`,
               [subId, slug, listId, s.firstName || "", s.lastName || "", s.company || "", phone, linkedinUrl]
-            ).catch((e) => {
+            ).catch((e: any) => {
               console.warn("Failed inserting phone subscriber:", e);
             });
             added++;

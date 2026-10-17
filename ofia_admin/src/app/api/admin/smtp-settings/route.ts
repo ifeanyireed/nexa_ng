@@ -1,73 +1,45 @@
 import { NextResponse } from "next/server";
-import {
-  getPlatformSmtpDetailed,
-  savePlatformSmtpSettings,
-  SmtpConfigParams,
-} from "@/lib/email-service";
+
+export const dynamic = "force-dynamic";
+
+const rawUserUrl =
+  process.env.USER_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_USER_SERVICE_URL ||
+  "https://ofia-user-service.onrender.com";
+const cleanUserUrl = rawUserUrl.replace(/\/+$/, "");
+const USER_BASE = cleanUserUrl.endsWith("/api/v1") ? cleanUserUrl : `${cleanUserUrl}/api/v1`;
 
 export async function GET() {
   try {
-    const details = await getPlatformSmtpDetailed();
-    return NextResponse.json({
-      success: true,
-      data: details,
+    const res = await fetch(`${USER_BASE}/admin/smtp-settings`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(10000),
     });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json({ success: res.ok, data }, { status: res.status });
   } catch (err: any) {
     return NextResponse.json(
-      { error: "Failed to retrieve platform SMTP settings: " + err.message },
-      { status: 500 }
+      { error: "User microservice connection error: " + err.message },
+      { status: 502 }
     );
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-
-    if (!body.host || !body.fromEmail) {
-      return NextResponse.json(
-        { error: "Host and From Email are required to configure Platform SMTP" },
-        { status: 400 }
-      );
-    }
-
-    const payload: SmtpConfigParams = {
-      provider: body.provider || "brevo",
-      host: body.host.trim(),
-      port: Number(body.port) || 587,
-      encryption: body.encryption || "tls",
-      fromEmail: body.fromEmail.trim(),
-      fromName: body.fromName ? body.fromName.trim() : "Ofia Platform Root Security",
-      username: body.username ? body.username.trim() : body.fromEmail.trim(),
-      password: (body.password || "").trim(),
-    };
-
-    const saved = await savePlatformSmtpSettings(payload);
-    if (!saved) {
-      return NextResponse.json(
-        { error: "Failed to store Platform SMTP configuration in database" },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: "Platform SMTP configuration successfully persisted to Postgres database",
-      data: {
-        provider: payload.provider,
-        host: payload.host,
-        port: payload.port,
-        encryption: payload.encryption,
-        fromEmail: payload.fromEmail,
-        fromName: payload.fromName,
-        username: payload.username,
-        hasPassword: Boolean(payload.password && payload.password.length > 0),
-      },
+    const body = await request.text();
+    const res = await fetch(`${USER_BASE}/admin/smtp-settings`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      signal: AbortSignal.timeout(10000),
     });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
     return NextResponse.json(
-      { error: "Failed to process Platform SMTP update: " + err.message },
-      { status: 500 }
+      { error: "User microservice connection error: " + err.message },
+      { status: 502 }
     );
   }
 }

@@ -1,83 +1,38 @@
 import { NextResponse } from "next/server";
-import { executeQuery } from "@/lib/db";
-import { INITIAL_WAITLIST_LEADS, WaitlistLeadItem } from "@/lib/admin-data";
 import { authenticateApiRequest } from "@/lib/jwt-auth";
+
+export const dynamic = "force-dynamic";
+
+const rawUserUrl =
+  process.env.USER_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_USER_SERVICE_URL ||
+  "https://ofia-user-service.onrender.com";
+const cleanUserUrl = rawUserUrl.replace(/\/+$/, "");
+const USER_BASE = cleanUserUrl.endsWith("/api/v1") ? cleanUserUrl : `${cleanUserUrl}/api/v1`;
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { errorResponse } = await authenticateApiRequest(request, { requireMutation: true });
+  const { errorResponse } = await authenticateApiRequest(request);
   if (errorResponse) return errorResponse;
 
   try {
     const { id } = await params;
-    const body = await request.json();
-    const { status, notes, generateInviteCode, inviteCode } = body;
-
-    let finalInviteCode = inviteCode;
-    if (generateInviteCode) {
-      finalInviteCode = `OFIA-VIP-${Math.floor(1000 + Math.random() * 9000)}`;
-    }
-
-    const now = new Date().toISOString().slice(0, 19).replace("T", " ");
-
-    // Update in Postgres
-    await executeQuery(
-      `UPDATE waitlist_leads 
-       SET status = COALESCE(?, status), 
-           notes = COALESCE(?, notes), 
-           invite_code = COALESCE(?, invite_code),
-           updated_at = ?
-       WHERE id = ?`,
-      [status || null, notes !== undefined ? notes : null, finalInviteCode || null, now, id]
-    );
-
-    // Also update in-memory fallback
-    const leadIndex = INITIAL_WAITLIST_LEADS.findIndex((l) => l.id === id);
-    if (leadIndex !== -1) {
-      const current = INITIAL_WAITLIST_LEADS[leadIndex];
-      const updated: WaitlistLeadItem = {
-        ...current,
-        status: status || current.status,
-        notes: notes !== undefined ? notes : current.notes,
-        inviteCode: finalInviteCode || current.inviteCode,
-      };
-      INITIAL_WAITLIST_LEADS[leadIndex] = updated;
-      return NextResponse.json(updated);
-    }
-
-    // Query updated row from Postgres
-    const dbResult = await executeQuery<any[]>(
-      "SELECT * FROM waitlist_leads WHERE id = ? LIMIT 1",
-      [id]
-    );
-
-    if (dbResult && dbResult.length > 0) {
-      const row = dbResult[0];
-      return NextResponse.json({
-        id: row.id,
-        fullName: row.full_name,
-        businessName: row.business_name,
-        email: row.email,
-        phone: row.phone,
-        role: row.role,
-        businessType: row.business_type,
-        toolType: row.tool_type,
-        state: row.state,
-        city: row.city,
-        queueNumber: row.queue_number,
-        referralCode: row.referral_code,
-        status: row.status,
-        inviteCode: row.invite_code,
-        notes: row.notes,
-        createdAt: row.created_at,
-      });
-    }
-
-    return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+    const body = await request.text();
+    const res = await fetch(`${USER_BASE}/waitlist/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body,
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: "Failed to update lead: " + err.message }, { status: 500 });
+    return NextResponse.json(
+      { error: "User microservice connection error: " + err.message },
+      { status: 502 }
+    );
   }
 }
 
@@ -85,20 +40,21 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { errorResponse } = await authenticateApiRequest(request, { requireMutation: true });
+  const { errorResponse } = await authenticateApiRequest(request);
   if (errorResponse) return errorResponse;
 
   try {
     const { id } = await params;
-    await executeQuery("DELETE FROM waitlist_leads WHERE id = ?", [id]);
-
-    const leadIndex = INITIAL_WAITLIST_LEADS.findIndex((l) => l.id === id);
-    if (leadIndex !== -1) {
-      INITIAL_WAITLIST_LEADS.splice(leadIndex, 1);
-    }
-
-    return NextResponse.json({ success: true, message: "Lead removed from pipeline" });
+    const res = await fetch(`${USER_BASE}/waitlist/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: "Failed to delete lead: " + err.message }, { status: 500 });
+    return NextResponse.json(
+      { error: "User microservice connection error: " + err.message },
+      { status: 502 }
+    );
   }
 }

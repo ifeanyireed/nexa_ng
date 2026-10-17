@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -40,12 +41,14 @@ func HandleRBAC(w http.ResponseWriter, r *http.Request) {
 		tenantID = "default"
 	}
 
+	targetGorm := getGorm(r)
+
 	if r.Method == http.MethodGet {
 		matrix := make(map[string]map[string]bool)
 
-		if DB != nil {
+		if targetGorm != nil {
 			var perms []TenantRolePermission
-			if err := DB.Where("tenantId = ?", tenantID).Find(&perms).Error; err == nil && len(perms) > 0 {
+			if err := targetGorm.Where("\"tenantId\" = ? OR \"tenantId\" = ?", tenantID, strings.ToLower(tenantID)).Find(&perms).Error; err == nil && len(perms) > 0 {
 				for _, p := range perms {
 					if matrix[p.Role] == nil {
 						matrix[p.Role] = make(map[string]bool)
@@ -73,13 +76,13 @@ func HandleRBAC(w http.ResponseWriter, r *http.Request) {
 			tenantID = payload.TenantID
 		}
 
-		if DB != nil && payload.Matrix != nil {
-			_ = DB.AutoMigrate(&TenantRolePermission{})
+		if targetGorm != nil && payload.Matrix != nil {
+			_ = targetGorm.AutoMigrate(&TenantRolePermission{})
 
 			for role, modules := range payload.Matrix {
 				for modKey, isEnabled := range modules {
 					var existing TenantRolePermission
-					err := DB.Where("tenantId = ? AND role = ? AND moduleKey = ?", tenantID, role, modKey).First(&existing).Error
+					err := targetGorm.Where("\"tenantId\" = ? AND role = ? AND \"moduleKey\" = ?", tenantID, role, modKey).First(&existing).Error
 					if err != nil {
 						newPerm := TenantRolePermission{
 							ID:        generateUUID(),
@@ -90,9 +93,9 @@ func HandleRBAC(w http.ResponseWriter, r *http.Request) {
 							CreatedAt: time.Now(),
 							UpdatedAt: time.Now(),
 						}
-						DB.Create(&newPerm)
+						targetGorm.Create(&newPerm)
 					} else {
-						DB.Model(&existing).Updates(map[string]interface{}{
+						targetGorm.Model(&existing).Updates(map[string]interface{}{
 							"isEnabled": isEnabled,
 							"updatedAt": time.Now(),
 						})

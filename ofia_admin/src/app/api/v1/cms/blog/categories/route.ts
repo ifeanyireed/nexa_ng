@@ -1,80 +1,46 @@
 import { NextResponse } from "next/server";
-import { getDbPool, ensureTablesExist } from "@/lib/db";
-import crypto from "crypto";
+
+export const dynamic = "force-dynamic";
 
 const rawUserUrl =
   process.env.USER_SERVICE_URL ||
   process.env.NEXT_PUBLIC_USER_SERVICE_URL ||
-  "http://localhost:8081";
+  "https://ofia-user-service.onrender.com";
 const cleanUserUrl = rawUserUrl.replace(/\/+$/, "");
 const USER_BASE = cleanUserUrl.endsWith("/api/v1") ? cleanUserUrl : `${cleanUserUrl}/api/v1`;
-
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "") || `cat-${Date.now()}`;
-}
 
 export async function GET() {
   try {
     const res = await fetch(`${USER_BASE}/cms/blog/categories`, {
       cache: "no-store",
-      signal: AbortSignal.timeout(1500),
+      signal: AbortSignal.timeout(10000),
     });
-    if (res.ok) {
-      return NextResponse.json(await res.json());
-    }
-  } catch {}
-
-  try {
-    await ensureTablesExist();
-    const pool = getDbPool();
-    if (pool) {
-      const result = await pool.query(`SELECT id, name, slug, created_at FROM "BlogCategory" ORDER BY name ASC`);
-      return NextResponse.json(result.rows);
-    }
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    console.error("Error fetching categories:", err);
+    return NextResponse.json(
+      { error: "User microservice connection error: " + err.message },
+      { status: 502 }
+    );
   }
-
-  return NextResponse.json([]);
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    if (!body.name) return NextResponse.json({ error: "Category name required" }, { status: 400 });
-
-    try {
-      const res = await fetch(`${USER_BASE}/cms/blog/categories`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(2000),
-      });
-      if (res.ok) return NextResponse.json(await res.json(), { status: 201 });
-    } catch {}
-
-    await ensureTablesExist();
-    const pool = getDbPool();
-    if (!pool) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
-
-    const id = body.id || `cat_${Date.now()}_${crypto.randomBytes(2).toString("hex")}`;
-    const slug = slugify(body.name);
-
-    const insertRes = await pool.query(
-      `INSERT INTO "BlogCategory" (id, name, slug, created_at)
-       VALUES ($1, $2, $3, NOW())
-       ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
-       RETURNING *`,
-      [id, body.name, slug]
-    );
-
-    return NextResponse.json(insertRes.rows[0], { status: 201 });
+    const body = await request.text();
+    const res = await fetch(`${USER_BASE}/cms/blog/categories`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json(
+      { error: "User microservice connection error: " + err.message },
+      { status: 502 }
+    );
   }
 }
 
@@ -84,21 +50,16 @@ export async function DELETE(request: Request) {
     const id = searchParams.get("id");
     if (!id) return NextResponse.json({ error: "Category ID required" }, { status: 400 });
 
-    try {
-      const res = await fetch(`${USER_BASE}/cms/blog/categories?id=${encodeURIComponent(id)}`, {
-        method: "DELETE",
-        signal: AbortSignal.timeout(2000),
-      });
-      if (res.ok) return NextResponse.json({ success: true });
-    } catch {}
-
-    const pool = getDbPool();
-    if (pool) {
-      await pool.query(`DELETE FROM "BlogCategory" WHERE id = $1`, [id]);
-      return NextResponse.json({ success: true });
-    }
-    return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+    const res = await fetch(`${USER_BASE}/cms/blog/categories?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json(
+      { error: "User microservice connection error: " + err.message },
+      { status: 502 }
+    );
   }
 }

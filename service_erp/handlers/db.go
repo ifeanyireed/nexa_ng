@@ -2,12 +2,155 @@ package handlers
 
 import (
 	"database/sql"
+	"log"
+	"net/http"
+	"strings"
+	"sync"
+	"time"
 
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 var DB *gorm.DB
 var db *sql.DB
+
+// Multi-tenant project pools cache
+var (
+	tenantSqlPools  sync.Map // map[string]*sql.DB
+	tenantGormPools sync.Map // map[string]*gorm.DB
+	poolMu          sync.Mutex
+
+	// Dedicated tenant database projects (Project-level isolation)
+	tenantProjectRegistry = map[string]string{
+		"neweratransports": "postgresql://neondb_owner:npg_C7HvEVY5Nruo@ep-tiny-block-b53y1iw8-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
+		"neweratrnsports":  "postgresql://neondb_owner:npg_C7HvEVY5Nruo@ep-tiny-block-b53y1iw8-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
+	}
+
+	// Dedicated tenant Cloudinary storage projects
+	tenantStorageRegistry = map[string]string{
+		"neweratransports": "cloudinary://768523141117821:KeVQI7I7tuGlCxUIdWC9M6RdWjg@wnmabxiy",
+		"neweratrnsports":  "cloudinary://768523141117821:KeVQI7I7tuGlCxUIdWC9M6RdWjg@wnmabxiy",
+	}
+)
+
+func RegisterTenantProject(slug string, databaseURL string, cloudinaryURL string) {
+	norm := strings.ToLower(strings.TrimSpace(slug))
+	if norm != "" && databaseURL != "" {
+		poolMu.Lock()
+		tenantProjectRegistry[norm] = databaseURL
+		if cloudinaryURL != "" {
+			tenantStorageRegistry[norm] = cloudinaryURL
+		}
+		poolMu.Unlock()
+	}
+}
+
+func extractTenantSlug(r *http.Request) string {
+	slug := r.Header.Get("x-tenant-slug")
+	if slug == "" {
+		slug = r.URL.Query().Get("tenant")
+	}
+	if slug == "" {
+		slug = r.URL.Query().Get("tenant_slug")
+	}
+	if slug == "" {
+		slug = r.URL.Query().Get("tenantId")
+	}
+	if slug == "" {
+		slug = r.URL.Query().Get("tenant_id")
+	}
+	if slug == "" {
+		slug = r.URL.Query().Get("orgId")
+	}
+	if slug == "" {
+		host := r.Host
+		if strings.Contains(host, ".") {
+			parts := strings.Split(host, ".")
+			sub := parts[0]
+			if sub != "www" && sub != "admin" && sub != "app" && sub != "api" && sub != "localhost" {
+				slug = sub
+			}
+		}
+	}
+	if slug == "" {
+		slug = "default"
+	}
+	return strings.ToLower(strings.TrimSpace(slug))
+}
+
+func getDB(r *http.Request) *sql.DB {
+	slug := extractTenantSlug(r)
+	if slug == "" || slug == "default" || slug == "platform" {
+		return db
+	}
+
+	targetURL, ok := tenantProjectRegistry[slug]
+	if !ok || targetURL == "" {
+		return db
+	}
+
+	if val, ok := tenantSqlPools.Load(slug); ok {
+		return val.(*sql.DB)
+	}
+
+	poolMu.Lock()
+	defer poolMu.Unlock()
+
+	if val, ok := tenantSqlPools.Load(slug); ok {
+		return val.(*sql.DB)
+	}
+
+	log.Printf("🐘 Initializing dedicated Neon project database pool for tenant '%s'...", slug)
+	gdb, err := gorm.Open(postgres.Open(targetURL), &gorm.Config{
+		PrepareStmt: true,
+		Logger:      logger.Default.LogMode(logger.Warn),
+	})
+	if err != nil {
+		log.Printf("⚠️ Failed to open dedicated project pool for tenant '%s': %v (falling back to platform DB)", slug, err)
+		return db
+	}
+
+	sDB, err := gdb.DB()
+	if err != nil {
+		log.Printf("⚠️ Failed to get sql.DB for tenant '%s': %v", slug, err)
+		return db
+	}
+
+	sDB.SetMaxOpenConns(15)
+	sDB.SetMaxIdleConns(5)
+	sDB.SetConnMaxLifetime(15 * time.Minute)
+
+	EnsureHRTablesOnDB(sDB)
+	EnsureCRMTablesOnDB(sDB)
+
+	tenantSqlPools.Store(slug, sDB)
+	tenantGormPools.Store(slug, gdb)
+	return sDB
+}
+
+func getGorm(r *http.Request) *gorm.DB {
+	slug := extractTenantSlug(r)
+	if slug == "" || slug == "default" || slug == "platform" {
+		return DB
+	}
+
+	targetURL, ok := tenantProjectRegistry[slug]
+	if !ok || targetURL == "" {
+		return DB
+	}
+
+	if val, ok := tenantGormPools.Load(slug); ok {
+		return val.(*gorm.DB)
+	}
+
+	_ = getDB(r)
+	if val, ok := tenantGormPools.Load(slug); ok {
+		return val.(*gorm.DB)
+	}
+	return DB
+}
 
 func SetDB(database *sql.DB) {
 	db = database
@@ -21,6 +164,7 @@ func SetGormDB(gormDB *gorm.DB) {
 			db = sqlDB
 			EnsureHRTables()
 			EnsureQuestTables()
+			EnsureCRMTables()
 		}
 	}
 }
@@ -232,12 +376,18 @@ func EnsureQuestTables() {
 }
 
 func EnsureHRTables() {
-	if db == nil {
+	if db != nil {
+		EnsureHRTablesOnDB(db)
+	}
+}
+
+func EnsureHRTablesOnDB(targetDB *sql.DB) {
+	if targetDB == nil {
 		return
 	}
 
 	// 0. Ensure User table exists
-	_, _ = db.Exec(`CREATE TABLE IF NOT EXISTS "User" (
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS "User" (
 		id varchar(191) NOT NULL,
 		"tenantSlug" varchar(191) NOT NULL DEFAULT '',
 		name varchar(191) NOT NULL,
@@ -272,7 +422,7 @@ func EnsureHRTables() {
 		`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "location" varchar(191) DEFAULT NULL`,
 	}
 	for _, q := range cols {
-		_, _ = db.Exec(q)
+		_, _ = targetDB.Exec(q)
 	}
 
 	// 1.5. Ensure HR tables have tenantSlug (Migration)
@@ -282,11 +432,11 @@ func EnsureHRTables() {
 		`ALTER TABLE "PerformanceReview" ADD COLUMN IF NOT EXISTS "tenantSlug" varchar(191) NOT NULL DEFAULT ''`,
 	}
 	for _, q := range hr_migrations {
-		_, _ = db.Exec(q)
+		_, _ = targetDB.Exec(q)
 	}
 
 	// 2. Ensure ReviewCycle table exists
-	_, _ = db.Exec(`CREATE TABLE IF NOT EXISTS "ReviewCycle" (
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS "ReviewCycle" (
 		id varchar(191) NOT NULL,
 		"tenantSlug" varchar(191) NOT NULL DEFAULT '',
 		name varchar(191) NOT NULL,
@@ -298,7 +448,7 @@ func EnsureHRTables() {
 	);`)
 
 	// 3. Ensure Objective table exists
-	_, _ = db.Exec(`CREATE TABLE IF NOT EXISTS "Objective" (
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS "Objective" (
 		id varchar(191) NOT NULL,
 		"tenantSlug" varchar(191) NOT NULL DEFAULT '',
 		text varchar(191) NOT NULL,
@@ -312,7 +462,7 @@ func EnsureHRTables() {
 	);`)
 
 	// 4. Ensure PerformanceReview table exists
-	_, _ = db.Exec(`CREATE TABLE IF NOT EXISTS "PerformanceReview" (
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS "PerformanceReview" (
 		id varchar(191) NOT NULL,
 		"tenantSlug" varchar(191) NOT NULL DEFAULT '',
 		"employeeId" varchar(191) NOT NULL,
@@ -332,7 +482,7 @@ func EnsureHRTables() {
 	);`)
 
 	// 5. Ensure Department table exists
-	_, _ = db.Exec(`CREATE TABLE IF NOT EXISTS "Department" (
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS "Department" (
 		"code" varchar(191) NOT NULL,
 		"name" varchar(191) NOT NULL,
 		"head" varchar(191) DEFAULT 'Pending Appointment',
@@ -344,4 +494,173 @@ func EnsureHRTables() {
 		"updatedAt" timestamptz DEFAULT CURRENT_TIMESTAMP,
 		PRIMARY KEY ("code", "tenantSlug")
 	);`)
+
+	// 6. Ensure TenantRolePermission table exists
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS "TenantRolePermission" (
+		id VARCHAR(191) PRIMARY KEY,
+		"tenantId" VARCHAR(191) NOT NULL,
+		role VARCHAR(50) NOT NULL,
+		"moduleKey" VARCHAR(50) NOT NULL,
+		"isEnabled" BOOLEAN NOT NULL DEFAULT TRUE,
+		"allowedActions" JSONB DEFAULT '[]'::jsonb,
+		"createdAt" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		"updatedAt" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		CONSTRAINT tenant_role_module_uniq UNIQUE ("tenantId", role, "moduleKey")
+	);`)
+}
+
+func EnsureCRMTables() {
+	if db != nil {
+		EnsureCRMTablesOnDB(db)
+	}
+}
+
+func EnsureCRMTablesOnDB(targetDB *sql.DB) {
+	if targetDB == nil {
+		return
+	}
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS crm_accounts (
+		id VARCHAR(64) PRIMARY KEY,
+		tenant_slug VARCHAR(191) NOT NULL,
+		name VARCHAR(191) NOT NULL,
+		industry VARCHAR(100),
+		tier VARCHAR(50),
+		website VARCHAR(255),
+		phone VARCHAR(50),
+		city VARCHAR(100),
+		status VARCHAR(50) DEFAULT 'ACTIVE',
+		owner VARCHAR(191),
+		notes TEXT,
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS crm_leads (
+		id VARCHAR(64) PRIMARY KEY,
+		tenant_slug VARCHAR(191) NOT NULL,
+		name VARCHAR(191) NOT NULL,
+		company VARCHAR(191),
+		email VARCHAR(191),
+		phone VARCHAR(50),
+		source VARCHAR(100),
+		score INT DEFAULT 50,
+		status VARCHAR(50) DEFAULT 'NEW',
+		owner VARCHAR(191),
+		value VARCHAR(100),
+		notes TEXT,
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS crm_deals (
+		id VARCHAR(64) PRIMARY KEY,
+		tenant_slug VARCHAR(191) NOT NULL,
+		title VARCHAR(191) NOT NULL,
+		company VARCHAR(191),
+		contact_name VARCHAR(191),
+		email VARCHAR(191),
+		phone VARCHAR(50),
+		value VARCHAR(100),
+		stage VARCHAR(50) DEFAULT 'DISCOVERY',
+		owner VARCHAR(191),
+		probability INT DEFAULT 50,
+		expected_close VARCHAR(100),
+		notes TEXT,
+		account_id VARCHAR(64),
+		lead_id VARCHAR(64),
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS crm_activities (
+		id VARCHAR(64) PRIMARY KEY,
+		tenant_slug VARCHAR(191) NOT NULL,
+		type VARCHAR(50) NOT NULL,
+		title VARCHAR(255) NOT NULL,
+		company VARCHAR(191),
+		rep VARCHAR(191),
+		date_time VARCHAR(100),
+		status VARCHAR(50) DEFAULT 'PENDING',
+		notes TEXT,
+		account_id VARCHAR(64),
+		deal_id VARCHAR(64),
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS crm_email_lists (
+		id VARCHAR(64) PRIMARY KEY,
+		tenant_slug VARCHAR(191) NOT NULL,
+		name VARCHAR(191) NOT NULL,
+		description TEXT,
+		tags TEXT,
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS crm_email_subscribers (
+		id VARCHAR(64) PRIMARY KEY,
+		list_id VARCHAR(64) NOT NULL,
+		tenant_slug VARCHAR(191) NOT NULL,
+		email VARCHAR(191) NOT NULL,
+		name VARCHAR(191),
+		role VARCHAR(100),
+		department VARCHAR(100),
+		status VARCHAR(50) DEFAULT 'SUBSCRIBED',
+		unsubscribed_at TIMESTAMPTZ,
+		unsubscribe_reason TEXT,
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS crm_email_blasts (
+		id VARCHAR(64) PRIMARY KEY,
+		tenant_slug VARCHAR(191) NOT NULL,
+		title VARCHAR(191) NOT NULL,
+		subject VARCHAR(255) NOT NULL,
+		message_html TEXT NOT NULL,
+		list_ids TEXT,
+		sender_profile_id VARCHAR(64),
+		status VARCHAR(50) DEFAULT 'DRAFT',
+		scheduled_at TIMESTAMPTZ,
+		sent_at TIMESTAMPTZ,
+		total_recipients INT DEFAULT 0,
+		sent_count INT DEFAULT 0,
+		failed_count INT DEFAULT 0,
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS tenant_smtp_settings (
+		tenant_slug VARCHAR(191) PRIMARY KEY,
+		provider VARCHAR(50) DEFAULT 'custom',
+		host VARCHAR(191),
+		port INT DEFAULT 587,
+		encryption VARCHAR(20) DEFAULT 'tls',
+		from_email VARCHAR(191),
+		from_name VARCHAR(191),
+		username VARCHAR(191),
+		password VARCHAR(255),
+		rate_limited_until TIMESTAMPTZ,
+		rate_limit_reason TEXT,
+		updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS first_name VARCHAR(100);`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS last_name VARCHAR(100);`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS company VARCHAR(191);`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS phone VARCHAR(50);`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS linkedin_url VARCHAR(255);`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS list_id VARCHAR(64);`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS list_name VARCHAR(191);`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS preview_text VARCHAR(255);`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS content_html TEXT;`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS sender_name VARCHAR(191);`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS sender_email VARCHAR(191);`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS sender_provider VARCHAR(50);`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS recipient_ids TEXT;`)
+
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_subscribers_email ON crm_email_subscribers (LOWER(email));`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_subscribers_tenant ON crm_email_subscribers (LOWER(tenant_slug));`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_leads_tenant ON crm_leads (LOWER(tenant_slug));`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_deals_tenant ON crm_deals (LOWER(tenant_slug));`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_accounts_tenant ON crm_accounts (LOWER(tenant_slug));`)
 }

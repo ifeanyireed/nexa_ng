@@ -1,42 +1,71 @@
 import { NextResponse } from "next/server";
-import { getCrmAccounts, createCrmAccount, updateCrmAccount, deleteCrmAccount } from "@/lib/crm-service";
 import { getValidatedTenantSlug } from "@/lib/crm-tenant";
 
 export const dynamic = "force-dynamic";
 
+const ERP_BASE =
+  process.env.ERP_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_ERP_SERVICE_URL ||
+  "https://ofia-erp-service.onrender.com";
+
 export async function GET(request: Request) {
   try {
     const tenantSlug = getValidatedTenantSlug(request);
-    const accounts = await getCrmAccounts(tenantSlug);
-    return NextResponse.json({ success: true, accounts });
+    const res = await fetch(`${ERP_BASE}/crm/accounts?tenant=${encodeURIComponent(tenantSlug)}`, {
+      cache: "no-store",
+      headers: {
+        "x-tenant-slug": tenantSlug,
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to fetch accounts" }, { status: 500 });
+    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const tenantSlug = getValidatedTenantSlug(request, body);
-    const account = await createCrmAccount(tenantSlug, body);
-    return NextResponse.json({ success: true, account }, { status: 201 });
+    const bodyText = await request.text();
+    const parsed = JSON.parse(bodyText || "{}");
+    const tenantSlug = getValidatedTenantSlug(request, parsed);
+
+    const res = await fetch(`${ERP_BASE}/crm/accounts`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-tenant-slug": tenantSlug,
+      },
+      body: bodyText,
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to create account" }, { status: 500 });
+    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
   }
 }
 
 export async function PATCH(request: Request) {
   try {
-    const body = await request.json();
-    const { id, ...updates } = body;
-    if (!id) {
-      return NextResponse.json({ error: "Account ID is required" }, { status: 400 });
-    }
-    const tenantSlug = getValidatedTenantSlug(request, body);
-    const updated = await updateCrmAccount(tenantSlug, id, updates);
-    return NextResponse.json({ success: true, account: updated });
+    const bodyText = await request.text();
+    const parsed = JSON.parse(bodyText || "{}");
+    const tenantSlug = getValidatedTenantSlug(request, parsed);
+
+    const res = await fetch(`${ERP_BASE}/crm/accounts`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "x-tenant-slug": tenantSlug,
+      },
+      body: bodyText,
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to update account" }, { status: 500 });
+    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
   }
 }
 
@@ -45,12 +74,21 @@ export async function DELETE(request: Request) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
     const tenantSlug = getValidatedTenantSlug(request);
+
     if (!id) {
       return NextResponse.json({ error: "Account ID is required" }, { status: 400 });
     }
-    await deleteCrmAccount(tenantSlug, id);
-    return NextResponse.json({ success: true });
+
+    const res = await fetch(`${ERP_BASE}/crm/accounts?id=${encodeURIComponent(id)}&tenant=${encodeURIComponent(tenantSlug)}`, {
+      method: "DELETE",
+      headers: {
+        "x-tenant-slug": tenantSlug,
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to delete account" }, { status: 500 });
+    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
   }
 }

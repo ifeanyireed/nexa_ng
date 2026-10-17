@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
-import { testSmtpSettings, getTenantSmtpSettings, getTenantSenderProfileById, SmtpSettings } from "@/lib/email-service";
+import { testSmtpSettings, SmtpSettings } from "@/lib/email-service";
+
+export const dynamic = "force-dynamic";
+
+const ERP_BASE =
+  process.env.ERP_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_ERP_SERVICE_URL ||
+  "https://ofia-erp-service.onrender.com";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { testEmail, tenantSlug, profileId } = body;
+    const { testEmail, tenantSlug } = body;
 
     if (!testEmail || !testEmail.includes("@")) {
       return NextResponse.json(
@@ -15,23 +22,19 @@ export async function POST(request: Request) {
 
     let config: SmtpSettings;
 
-    // If configuration fields are provided directly in the request, use them
     if (body.host && body.fromEmail) {
-      // If password is masked and tenantSlug is provided, look up existing password
       let resolvedPassword = body.password || "";
       if ((!resolvedPassword || resolvedPassword === "••••••••") && tenantSlug) {
-        if (profileId) {
-          const profile = await getTenantSenderProfileById(tenantSlug, profileId);
-          if (profile?.password) {
-            resolvedPassword = profile.password;
+        try {
+          const res = await fetch(`${ERP_BASE}/crm/smtp-settings?tenant=${encodeURIComponent(tenantSlug)}`, {
+            cache: "no-store",
+            signal: AbortSignal.timeout(5000),
+          });
+          const data = await res.json().catch(() => null);
+          if (data?.settings?.hasPassword && data.settings?.password) {
+            resolvedPassword = data.settings.password;
           }
-        }
-        if (!resolvedPassword) {
-          const existing = await getTenantSmtpSettings(tenantSlug);
-          if (existing?.password) {
-            resolvedPassword = existing.password;
-          }
-        }
+        } catch {}
       }
 
       config = {
@@ -46,15 +49,18 @@ export async function POST(request: Request) {
         password: resolvedPassword,
       };
     } else if (tenantSlug) {
-      // Look up saved tenant settings
-      const saved = await getTenantSmtpSettings(tenantSlug);
-      if (!saved) {
+      const res = await fetch(`${ERP_BASE}/crm/smtp-settings?tenant=${encodeURIComponent(tenantSlug)}`, {
+        cache: "no-store",
+        signal: AbortSignal.timeout(5000),
+      });
+      const data = await res.json().catch(() => null);
+      if (!data?.configured || !data?.settings) {
         return NextResponse.json(
           { error: "No SMTP settings found for this tenant. Please configure host and credentials first." },
           { status: 400 }
         );
       }
-      config = saved;
+      config = data.settings;
     } else {
       return NextResponse.json(
         { error: "Please supply host and credentials or a valid tenant identifier." },

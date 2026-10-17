@@ -114,7 +114,7 @@ func filterReviews(list []PerformanceReview, employeeId, tenantSlug string) []Pe
 
 func HandleReviews(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	EnsureHRTables()
+	targetDB := getDB(r)
 	tenantSlug := getTenantFilter(r)
 
 	if r.Method == http.MethodGet {
@@ -122,10 +122,10 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 		employeeId := r.URL.Query().Get("employeeId")
 
 		if id != "" {
-			if db != nil {
+			if targetDB != nil {
 				var pr PerformanceReview
 				var objJSON sql.NullString
-				err := db.QueryRow(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", to_char("updatedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "updatedAt" FROM "PerformanceReview" WHERE id = $1`, id).
+				err := targetDB.QueryRow(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", to_char("updatedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "updatedAt" FROM "PerformanceReview" WHERE id = $1`, id).
 					Scan(&pr.ID, &pr.EmployeeID, &pr.EmployeeName, &pr.Department, &pr.CycleID, &pr.CycleName, &pr.Status, &pr.EmployeeComments, &pr.ManagerComments, &pr.HRComments, &pr.ImprovementPlan, &pr.FinalScore, &objJSON, &pr.UpdatedAt)
 				if err == nil {
 					if objJSON.Valid && objJSON.String != "" {
@@ -137,34 +137,25 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			if tenantSlug == "" || tenantSlug == "all" {
-				fallback := getFallbackReviews("", "")
-				for _, fb := range fallback {
-					if fb.ID == id {
-						json.NewEncoder(w).Encode(fb)
-						return
-					}
-				}
-			}
 			w.WriteHeader(http.StatusNotFound)
 			json.NewEncoder(w).Encode(map[string]string{"message": "Review not found"})
 			return
 		}
 
 		var reviews []PerformanceReview
-		if db != nil {
+		if targetDB != nil {
 			var rows *sql.Rows
 			var err error
 			if employeeId != "" {
 				if tenantSlug != "" && tenantSlug != "all" {
-					rows, err = db.Query(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", to_char("updatedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "updatedAt" FROM "PerformanceReview" WHERE "employeeId" = $1 AND "tenantSlug" = $2`, employeeId, tenantSlug)
+					rows, err = targetDB.Query(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", to_char("updatedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "updatedAt" FROM "PerformanceReview" WHERE "employeeId" = $1 AND "tenantSlug" = $2`, employeeId, tenantSlug)
 				} else {
-					rows, err = db.Query(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", to_char("updatedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "updatedAt" FROM "PerformanceReview" WHERE "employeeId" = $1`, employeeId)
+					rows, err = targetDB.Query(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", to_char("updatedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "updatedAt" FROM "PerformanceReview" WHERE "employeeId" = $1`, employeeId)
 				}
 			} else if tenantSlug == "" || tenantSlug == "all" {
-				rows, err = db.Query(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", to_char("updatedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "updatedAt" FROM "PerformanceReview"`)
+				rows, err = targetDB.Query(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", to_char("updatedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "updatedAt" FROM "PerformanceReview"`)
 			} else {
-				rows, err = db.Query(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", to_char("updatedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "updatedAt" 
+				rows, err = targetDB.Query(`SELECT id, "employeeId", "employeeName", department, "cycleId", "cycleName", status, "employeeComments", "managerComments", "hrComments", "improvementPlan", "finalScore", "objectivesJson", to_char("updatedAt", 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "updatedAt" 
 					FROM "PerformanceReview" 
 					WHERE "tenantSlug" = $1`, tenantSlug)
 			}
@@ -183,10 +174,6 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 			}
-		}
-
-		if len(reviews) == 0 && (tenantSlug == "" || tenantSlug == "all") {
-			reviews = getFallbackReviews(employeeId, tenantSlug)
 		}
 
 		if reviews == nil {
@@ -221,8 +208,8 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 			reviewsToUpsert = append(reviewsToUpsert, pr)
 		}
 
-		if db != nil {
-			tx, err := db.Begin()
+		if targetDB != nil {
+			tx, err := targetDB.Begin()
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(map[string]string{"error": "Transaction start failed: " + err.Error()})
@@ -296,8 +283,8 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 			json.NewEncoder(w).Encode(map[string]string{"error": "Review ID is required"})
 			return
 		}
-		if db != nil {
-			_, err := db.Exec(`DELETE FROM "PerformanceReview" WHERE id = $1`, id)
+		if targetDB != nil {
+			_, err := targetDB.Exec(`DELETE FROM "PerformanceReview" WHERE id = $1`, id)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})

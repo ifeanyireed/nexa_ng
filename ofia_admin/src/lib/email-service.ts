@@ -1,5 +1,4 @@
 import nodemailer from "nodemailer";
-import { executeQuery } from "./db";
 
 export interface PasswordResetEmailParams {
   recipientEmail: string;
@@ -8,41 +7,38 @@ export interface PasswordResetEmailParams {
   expiresInMinutes?: number;
 }
 
-interface SmtpDbRow {
-  tenant_slug: string;
-  provider: string;
-  host: string;
-  port: number;
-  encryption: string;
-  from_email: string;
-  from_name: string;
-  username: string;
-  password: string;
-}
+const rawUserUrl =
+  process.env.USER_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_USER_SERVICE_URL ||
+  "https://ofia-user-service.onrender.com";
+const cleanUserUrl = rawUserUrl.replace(/\/+$/, "");
+const USER_BASE = cleanUserUrl.endsWith("/api/v1") ? cleanUserUrl : `${cleanUserUrl}/api/v1`;
 
 export async function getPlatformSmtpConfig() {
-  // 1. Try fetching platform-level settings from Neon Postgres (tenant_smtp_settings)
+  // 1. Try fetching platform-level settings from service_users
   try {
-    const rows = await executeQuery<SmtpDbRow[]>(
-      `SELECT * FROM tenant_smtp_settings WHERE tenant_slug = $1 LIMIT 1`,
-      ["platform"]
-    );
-    if (rows && rows.length > 0 && rows[0].password) {
-      const row = rows[0];
-      const port = Number(row.port) || 465;
-      const isSecure = row.encryption === "ssl" || port === 465;
-      return {
-        host: row.host || process.env.SMTP_HOST || "smtp.hostinger.com",
-        port,
-        secure: isSecure,
-        user: row.username || process.env.SMTP_USER || "hello@resultspro.ng",
-        pass: row.password,
-        fromEmail: row.from_email || process.env.SMTP_FROM_EMAIL || "hello@resultspro.ng",
-        fromName: row.from_name || process.env.SMTP_FROM_NAME || "Ofia Platform Root Security",
-      };
+    const res = await fetch(`${USER_BASE}/admin/smtp-settings`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(2000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.host) {
+        const port = Number(data.port) || 465;
+        const isSecure = data.encryption === "ssl" || port === 465;
+        return {
+          host: data.host,
+          port,
+          secure: isSecure,
+          user: data.username || process.env.SMTP_USER || "hello@resultspro.ng",
+          pass: data.password || process.env.SMTP_PASSWORD || "",
+          fromEmail: data.fromEmail || process.env.SMTP_FROM_EMAIL || "hello@resultspro.ng",
+          fromName: data.fromName || process.env.SMTP_FROM_NAME || "Ofia Platform Root Security",
+        };
+      }
     }
   } catch (err) {
-    console.warn("Could not query platform SMTP from database, falling back to env:", err);
+    console.warn("Could not query platform SMTP from microservice, falling back to env:", err);
   }
 
   // 2. Fall back to environment variables (.env)
@@ -71,28 +67,28 @@ export interface SmtpConfigParams {
 
 export async function getPlatformSmtpDetailed() {
   try {
-    const rows = await executeQuery<SmtpDbRow[]>(
-      `SELECT * FROM tenant_smtp_settings WHERE tenant_slug = $1 LIMIT 1`,
-      ["platform"]
-    );
-    if (rows && rows.length > 0) {
-      const row = rows[0];
+    const res = await fetch(`${USER_BASE}/admin/smtp-settings`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(2000),
+    });
+    if (res.ok) {
+      const data = await res.json();
       return {
-        configured: true,
+        configured: data.configured || Boolean(data.host),
         tenantSlug: "platform",
-        provider: row.provider || "custom",
-        host: row.host || "",
-        port: Number(row.port) || 587,
-        encryption: (row.encryption as "tls" | "ssl" | "none") || "tls",
-        fromEmail: row.from_email || "",
-        fromName: row.from_name || "Ofia Platform Root Security",
-        username: row.username || "",
-        hasPassword: Boolean(row.password && row.password.length > 0),
-        password: row.password || "",
+        provider: data.provider || "hostinger",
+        host: data.host || "",
+        port: Number(data.port) || 587,
+        encryption: (data.encryption as "tls" | "ssl" | "none") || "tls",
+        fromEmail: data.fromEmail || "",
+        fromName: data.fromName || "Ofia Platform Root Security",
+        username: data.username || "",
+        hasPassword: Boolean(data.hasPassword),
+        password: "",
       };
     }
   } catch (err) {
-    console.warn("Could not query platform SMTP details from database:", err);
+    console.warn("Could not query platform SMTP details from microservice:", err);
   }
 
   // Fallback to env
@@ -114,46 +110,20 @@ export async function getPlatformSmtpDetailed() {
 }
 
 export async function savePlatformSmtpSettings(settings: SmtpConfigParams): Promise<boolean> {
-  let passwordToStore = settings.password;
-  if (!passwordToStore || passwordToStore === "••••••••" || passwordToStore.trim() === "") {
-    const existing = await getPlatformSmtpConfig();
-    passwordToStore = existing.pass || "";
-  }
-
   try {
-    await executeQuery(
-      `INSERT INTO tenant_smtp_settings (
-         tenant_slug, provider, host, port, encryption, from_email, from_name, username, password, updated_at
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP)
-       ON CONFLICT (tenant_slug)
-       DO UPDATE SET
-         provider = EXCLUDED.provider,
-         host = EXCLUDED.host,
-         port = EXCLUDED.port,
-         encryption = EXCLUDED.encryption,
-         from_email = EXCLUDED.from_email,
-         from_name = EXCLUDED.from_name,
-         username = EXCLUDED.username,
-         password = EXCLUDED.password,
-         updated_at = CURRENT_TIMESTAMP`,
-      [
-        "platform",
-        settings.provider || "brevo",
-        settings.host.trim(),
-        settings.port || 587,
-        settings.encryption || "tls",
-        settings.fromEmail.trim(),
-        settings.fromName ? settings.fromName.trim() : "Ofia Platform Root Security",
-        settings.username ? settings.username.trim() : settings.fromEmail.trim(),
-        passwordToStore,
-      ]
-    );
-    return true;
+    const res = await fetch(`${USER_BASE}/admin/smtp-settings`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(settings),
+      signal: AbortSignal.timeout(5000),
+    });
+    return res.ok;
   } catch (err) {
-    console.error("Failed to save platform SMTP settings:", err);
+    console.warn("Could not save platform SMTP settings via microservice:", err);
     return false;
   }
 }
+
 
 export async function testPlatformSmtpConnection(
   settings: SmtpConfigParams,

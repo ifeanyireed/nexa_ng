@@ -1,78 +1,77 @@
 import { NextResponse } from "next/server";
-import { getCrmSubscribers, addCrmSubscriber, bulkAddCrmSubscribers, updateCrmSubscriber, deleteCrmSubscriber } from "@/lib/crm-service";
 import { getValidatedTenantSlug } from "@/lib/crm-tenant";
 
 export const dynamic = "force-dynamic";
+
+const ERP_BASE =
+  process.env.ERP_SERVICE_URL ||
+  process.env.NEXT_PUBLIC_ERP_SERVICE_URL ||
+  "https://ofia-erp-service.onrender.com";
 
 export async function GET(request: Request) {
   try {
     const tenantSlug = getValidatedTenantSlug(request);
     const { searchParams } = new URL(request.url);
-    const listId = searchParams.get("listId");
+    const listId = searchParams.get("listId") || searchParams.get("list_id");
     if (!listId) {
       return NextResponse.json({ error: "listId query param is required" }, { status: 400 });
     }
-    const subscribers = await getCrmSubscribers(tenantSlug, listId);
-    return NextResponse.json({ success: true, subscribers });
+
+    const res = await fetch(`${ERP_BASE}/crm/lists/subscribers?listId=${encodeURIComponent(listId)}&tenant=${encodeURIComponent(tenantSlug)}`, {
+      cache: "no-store",
+      headers: {
+        "x-tenant-slug": tenantSlug,
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to fetch subscribers" }, { status: 500 });
+    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const tenantSlug = getValidatedTenantSlug(request, body);
-    const { listId, subscriber, subscribers } = body;
-    if (!listId) {
-      return NextResponse.json({ error: "listId is required" }, { status: 400 });
-    }
+    const bodyText = await request.text();
+    const parsed = JSON.parse(bodyText || "{}");
+    const tenantSlug = getValidatedTenantSlug(request, parsed);
 
-    if (Array.isArray(subscribers) && subscribers.length > 0) {
-      const count = await bulkAddCrmSubscribers(tenantSlug, listId, subscribers);
-      return NextResponse.json({ success: true, addedCount: count }, { status: 201 });
-    }
-
-    if (subscriber) {
-      const added = await addCrmSubscriber(tenantSlug, listId, subscriber);
-      return NextResponse.json({ success: true, subscriber: added }, { status: 201 });
-    }
-
-    return NextResponse.json({ error: "Either subscriber or subscribers array must be provided" }, { status: 400 });
+    const res = await fetch(`${ERP_BASE}/crm/lists/subscribers`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-tenant-slug": tenantSlug,
+      },
+      body: bodyText,
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to add subscriber(s)" }, { status: 500 });
+    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
   }
 }
 
 export async function PATCH(request: Request) {
   try {
-    const body = await request.json();
-    const tenantSlug = getValidatedTenantSlug(request, body);
-    const { id, subscriber, email, firstName, lastName, company, phone, linkedinUrl, status } = body;
+    const bodyText = await request.text();
+    const parsed = JSON.parse(bodyText || "{}");
+    const tenantSlug = getValidatedTenantSlug(request, parsed);
 
-    const subId = id || subscriber?.id;
-    if (!subId) {
-      return NextResponse.json({ error: "Subscriber ID is required" }, { status: 400 });
-    }
-
-    const updates = {
-      email: email !== undefined ? email : subscriber?.email,
-      firstName: firstName !== undefined ? firstName : subscriber?.firstName,
-      lastName: lastName !== undefined ? lastName : subscriber?.lastName,
-      company: company !== undefined ? company : subscriber?.company,
-      phone: phone !== undefined ? phone : subscriber?.phone,
-      linkedinUrl: linkedinUrl !== undefined ? linkedinUrl : subscriber?.linkedinUrl,
-      status: status !== undefined ? status : subscriber?.status,
-    };
-
-    const updated = await updateCrmSubscriber(tenantSlug, subId, updates);
-    if (!updated) {
-      return NextResponse.json({ error: "Subscriber not found or could not be updated" }, { status: 404 });
-    }
-
-    return NextResponse.json({ success: true, subscriber: updated });
+    const res = await fetch(`${ERP_BASE}/crm/lists/subscribers`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "x-tenant-slug": tenantSlug,
+      },
+      body: bodyText,
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to update subscriber" }, { status: 500 });
+    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
   }
 }
 
@@ -85,12 +84,21 @@ export async function DELETE(request: Request) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
     const tenantSlug = getValidatedTenantSlug(request);
+
     if (!id) {
       return NextResponse.json({ error: "Subscriber ID is required" }, { status: 400 });
     }
-    await deleteCrmSubscriber(tenantSlug, id);
-    return NextResponse.json({ success: true });
+
+    const res = await fetch(`${ERP_BASE}/crm/lists/subscribers?id=${encodeURIComponent(id)}&tenant=${encodeURIComponent(tenantSlug)}`, {
+      method: "DELETE",
+      headers: {
+        "x-tenant-slug": tenantSlug,
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: err.message || "Failed to delete subscriber" }, { status: 500 });
+    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
   }
 }

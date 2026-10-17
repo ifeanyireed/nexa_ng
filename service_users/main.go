@@ -30,6 +30,7 @@ func main() {
 	orgHandler := handlers.NewOrgHandler(database)
 	subHandler := handlers.NewSubscriptionHandler(database)
 	blogHandler := handlers.NewBlogHandler(database)
+	adminSupportHandler := handlers.NewAdminSupportHandler(database)
 
 	r := chi.NewRouter()
 
@@ -128,6 +129,62 @@ func main() {
 			r.Post("/subscribe", blogHandler.CreateSubscriber)
 			r.Delete("/subscribe/delete", blogHandler.DeleteSubscriber)
 			r.Delete("/subscribe/{id}", blogHandler.DeleteSubscriber)
+		})
+
+		// Platform Administration & Settings
+		r.Route("/admin", func(r chi.Router) {
+			r.Get("/general-settings", adminSupportHandler.GetPlatformSettings)
+			r.Post("/general-settings", adminSupportHandler.SavePlatformSettings)
+			r.Get("/smtp-settings", adminSupportHandler.GetPlatformSmtp)
+			r.Post("/smtp-settings", adminSupportHandler.SavePlatformSmtp)
+		})
+
+		// Contact Inquiries (CRM / Contact)
+		r.Route("/crm/contact", func(r chi.Router) {
+			r.Get("/", adminSupportHandler.ListContactInquiries)
+			r.Post("/", adminSupportHandler.CreateContactInquiry)
+			r.Patch("/{id}", adminSupportHandler.UpdateContactInquiry)
+			r.Delete("/{id}", adminSupportHandler.DeleteContactInquiry)
+		})
+		r.Route("/contact", func(r chi.Router) {
+			r.Get("/", adminSupportHandler.ListContactInquiries)
+			r.Post("/", adminSupportHandler.CreateContactInquiry)
+			r.Patch("/{id}", adminSupportHandler.UpdateContactInquiry)
+			r.Delete("/{id}", adminSupportHandler.DeleteContactInquiry)
+		})
+
+		// Waitlist Leads (Landing / Compass / Admin)
+		r.Route("/waitlist", func(r chi.Router) {
+			r.Get("/", adminSupportHandler.ListWaitlistLeads)
+			r.Post("/", adminSupportHandler.CreateWaitlistLead)
+			r.Patch("/{id}", adminSupportHandler.UpdateWaitlistLead)
+			r.Delete("/{id}", adminSupportHandler.DeleteWaitlistLead)
+		})
+
+		// Support Tickets, KB & Chat
+		r.Route("/support", func(r chi.Router) {
+			r.Get("/tickets", adminSupportHandler.ListSupportTickets)
+			r.Post("/tickets", adminSupportHandler.CreateSupportTicket)
+			r.Get("/tickets/{id}", adminSupportHandler.GetSupportTicket)
+			r.Patch("/tickets/{id}", adminSupportHandler.UpdateSupportTicket)
+			r.Get("/tickets/{id}/messages", adminSupportHandler.ListTicketMessages)
+			r.Post("/tickets/{id}/messages", adminSupportHandler.CreateTicketMessage)
+
+			r.Get("/kb/articles", adminSupportHandler.ListKbArticles)
+			r.Post("/kb/articles", adminSupportHandler.CreateKbArticle)
+			r.Get("/kb/articles/{id}", adminSupportHandler.GetKbArticle)
+			r.Put("/kb/articles/{id}", adminSupportHandler.UpdateKbArticle)
+			r.Delete("/kb/articles/{id}", adminSupportHandler.DeleteKbArticle)
+			r.Get("/kb/categories", adminSupportHandler.ListKbCategories)
+			r.Post("/kb/categories", adminSupportHandler.CreateKbCategory)
+
+			r.Get("/chat/sessions", adminSupportHandler.ListChatSessions)
+			r.Post("/chat/sessions", adminSupportHandler.CreateChatSession)
+			r.Get("/chat/history", adminSupportHandler.ListChatHistory)
+			r.Post("/chat/history", adminSupportHandler.CreateChatMessage)
+
+			r.Get("/staff/status", adminSupportHandler.GetStaffStatus)
+			r.Put("/staff/status", adminSupportHandler.UpdateStaffStatus)
 		})
 
 		// Protected Workspace & User Routes

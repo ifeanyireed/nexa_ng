@@ -266,14 +266,14 @@ export const GTM_API = {
     return fetchJSON<any[]>(`/api/organizations`);
   },
 
-  createAdminOrganization: async (data: { name: string; plan_tier?: string; planTier?: string; billing_cycle?: string; slug?: string; domain?: string; owner_name?: string; owner_email?: string; mrr?: number; leads_limit?: number; campaigns_limit?: number; erp_modules?: any; logo?: string }) => {
+  createAdminOrganization: async (data: { name: string; plan_tier?: string; planTier?: string; billing_cycle?: string; slug?: string; domain?: string; owner_name?: string; owner_email?: string; mrr?: number; leads_limit?: number; campaigns_limit?: number; erp_modules?: any; logo?: string; database_url?: string; cloudinary_url?: string; databaseUrl?: string; cloudinaryUrl?: string }) => {
     return fetchJSON<any>(`/api/organizations`, {
       method: "POST",
       body: JSON.stringify(data),
     });
   },
 
-  updateAdminOrganization: async (id: string, data: { name?: string; slug?: string; domain?: string; ownerName?: string; ownerEmail?: string; plan_tier?: string; planTier?: string; status?: string; mrr?: number; leadsLimit?: number; campaignsLimit?: number; erpModules?: any; logo?: string }) => {
+  updateAdminOrganization: async (id: string, data: { name?: string; slug?: string; domain?: string; ownerName?: string; ownerEmail?: string; plan_tier?: string; planTier?: string; status?: string; mrr?: number; leadsLimit?: number; campaignsLimit?: number; erpModules?: any; logo?: string; database_url?: string; cloudinary_url?: string; databaseUrl?: string; cloudinaryUrl?: string }) => {
     return fetchJSON<any>(`/api/organizations/${encodeURIComponent(id)}`, {
       method: "PUT",
       body: JSON.stringify(data),

@@ -23,6 +23,10 @@ export interface TenantOrg {
   loginImage?: string;
   heroTitle?: string;
   heroSubtitle?: string;
+  databaseUrl?: string;
+  cloudinaryUrl?: string;
+  isCustomDb?: boolean;
+  isCustomStorage?: boolean;
   createdAt: string;
 }
 
@@ -261,6 +265,10 @@ export const INITIAL_TENANTS: TenantOrg[] = [
       school: true,
       staff: true,
     },
+    databaseUrl: "postgresql://neondb_owner:npg_C7HvEVY5Nruo@ep-tiny-block-b53y1iw8-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
+    cloudinaryUrl: "cloudinary://768523141117821:KeVQI7I7tuGlCxUIdWC9M6RdWjg@wnmabxiy",
+    isCustomDb: true,
+    isCustomStorage: true,
     createdAt: "2026-06-15",
   },
   {
@@ -316,6 +324,10 @@ export const INITIAL_TENANTS: TenantOrg[] = [
       school: true,
       staff: true,
     },
+    databaseUrl: "",
+    cloudinaryUrl: "",
+    isCustomDb: false,
+    isCustomStorage: false,
     createdAt: "2026-05-01",
   },
 ];

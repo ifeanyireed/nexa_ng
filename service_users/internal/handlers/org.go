@@ -24,8 +24,10 @@ func NewOrgHandler(db *gorm.DB) *OrgHandler {
 }
 
 type CreateOrgRequest struct {
-	Name string `json:"name"`
-	Slug string `json:"slug"`
+	Name          string `json:"name"`
+	Slug          string `json:"slug"`
+	DatabaseURL   string `json:"database_url"`
+	CloudinaryURL string `json:"cloudinary_url"`
 }
 
 type InviteMemberRequest struct {
@@ -107,11 +109,37 @@ func (h *OrgHandler) CreateOrg(w http.ResponseWriter, r *http.Request) {
 			UpdatedAt:          time.Now(),
 		}
 		h.db.Create(&sub)
+
+		if req.DatabaseURL != "" || req.CloudinaryURL != "" {
+			h.db.Exec(`INSERT INTO tenant_infrastructures (tenant_slug, database_url, cloudinary_url, is_custom_db, is_custom_storage, migration_status, created_at, updated_at)
+				VALUES ($1, $2, $3, $4, $5, 'COMPLETED', NOW(), NOW())
+				ON CONFLICT (tenant_slug) DO UPDATE SET
+					database_url = EXCLUDED.database_url,
+					cloudinary_url = EXCLUDED.cloudinary_url,
+					is_custom_db = $4,
+					is_custom_storage = $5,
+					updated_at = NOW()`,
+				slug, req.DatabaseURL, req.CloudinaryURL, req.DatabaseURL != "", req.CloudinaryURL != "")
+		}
+		h.attachInfrastructure(&org)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(org)
+}
+
+func (h *OrgHandler) attachInfrastructure(org *models.Organization) {
+	if h.db == nil || org == nil || org.Slug == "" {
+		return
+	}
+	var infra models.TenantInfrastructure
+	if err := h.db.Where("LOWER(tenant_slug) = LOWER(?)", org.Slug).First(&infra).Error; err == nil {
+		org.DatabaseURL = infra.DatabaseURL
+		org.CloudinaryURL = infra.CloudinaryURL
+		org.IsCustomDB = infra.IsCustomDB
+		org.IsCustomStorage = infra.IsCustomStorage
+	}
 }
 
 func (h *OrgHandler) GetOrgDetails(w http.ResponseWriter, r *http.Request) {
@@ -122,6 +150,7 @@ func (h *OrgHandler) GetOrgDetails(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, `{"error": "Organization not found"}`, http.StatusNotFound)
 			return
 		}
+		h.attachInfrastructure(&org)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -220,6 +249,9 @@ func (h *OrgHandler) ListAllAdminOrgs(w http.ResponseWriter, r *http.Request) {
 		seedDefaultOrganizations(h.db)
 		var orgs []models.Organization
 		h.db.Preload("Subscription").Preload("Owner").Find(&orgs)
+		for i := range orgs {
+			h.attachInfrastructure(&orgs[i])
+		}
 		json.NewEncoder(w).Encode(orgs)
 		return
 	}
@@ -235,6 +267,20 @@ func (h *OrgHandler) UpdateOrgProfile(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&rawMap); err != nil {
 		http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
 		return
+	}
+
+	dbURL := ""
+	if v, ok := rawMap["database_url"].(string); ok {
+		dbURL = strings.TrimSpace(v)
+	} else if v, ok := rawMap["databaseUrl"].(string); ok {
+		dbURL = strings.TrimSpace(v)
+	}
+
+	cloudinaryURL := ""
+	if v, ok := rawMap["cloudinary_url"].(string); ok {
+		cloudinaryURL = strings.TrimSpace(v)
+	} else if v, ok := rawMap["cloudinaryUrl"].(string); ok {
+		cloudinaryURL = strings.TrimSpace(v)
 	}
 
 	updateFields := make(map[string]interface{})
@@ -366,8 +412,21 @@ func (h *OrgHandler) UpdateOrgProfile(w http.ResponseWriter, r *http.Request) {
 				})
 			}
 
+			if dbURL != "" || cloudinaryURL != "" {
+				h.db.Exec(`INSERT INTO tenant_infrastructures (tenant_slug, database_url, cloudinary_url, is_custom_db, is_custom_storage, migration_status, created_at, updated_at)
+					VALUES ($1, $2, $3, $4, $5, 'COMPLETED', NOW(), NOW())
+					ON CONFLICT (tenant_slug) DO UPDATE SET
+						database_url = CASE WHEN EXCLUDED.database_url != '' THEN EXCLUDED.database_url ELSE tenant_infrastructures.database_url END,
+						cloudinary_url = CASE WHEN EXCLUDED.cloudinary_url != '' THEN EXCLUDED.cloudinary_url ELSE tenant_infrastructures.cloudinary_url END,
+						is_custom_db = CASE WHEN EXCLUDED.database_url != '' THEN true ELSE tenant_infrastructures.is_custom_db END,
+						is_custom_storage = CASE WHEN EXCLUDED.cloudinary_url != '' THEN true ELSE tenant_infrastructures.is_custom_storage END,
+						updated_at = NOW()`,
+					org.Slug, dbURL, cloudinaryURL, dbURL != "", cloudinaryURL != "")
+			}
+
 			var updated models.Organization
 			h.db.Preload("Subscription").Preload("Owner").First(&updated, "id = ?", org.ID)
+			h.attachInfrastructure(&updated)
 			json.NewEncoder(w).Encode(updated)
 			return
 		}
@@ -421,8 +480,22 @@ func (h *OrgHandler) UpdateOrgProfile(w http.ResponseWriter, r *http.Request) {
 				UpdatedAt:          time.Now(),
 			}
 			_ = h.db.Create(&sub)
+
+			if dbURL != "" || cloudinaryURL != "" {
+				h.db.Exec(`INSERT INTO tenant_infrastructures (tenant_slug, database_url, cloudinary_url, is_custom_db, is_custom_storage, migration_status, created_at, updated_at)
+					VALUES ($1, $2, $3, $4, $5, 'COMPLETED', NOW(), NOW())
+					ON CONFLICT (tenant_slug) DO UPDATE SET
+						database_url = EXCLUDED.database_url,
+						cloudinary_url = EXCLUDED.cloudinary_url,
+						is_custom_db = $4,
+						is_custom_storage = $5,
+						updated_at = NOW()`,
+					slug, dbURL, cloudinaryURL, dbURL != "", cloudinaryURL != "")
+			}
+
 			var created models.Organization
 			h.db.Preload("Subscription").Preload("Owner").First(&created, "id = ?", newOrg.ID)
+			h.attachInfrastructure(&created)
 			json.NewEncoder(w).Encode(created)
 			return
 		}

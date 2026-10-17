@@ -88,6 +88,18 @@ func getDB(r *http.Request) *sql.DB {
 
 	targetURL, ok := tenantProjectRegistry[slug]
 	if !ok || targetURL == "" {
+		if db != nil {
+			var fetchedURL, fetchedStorage sql.NullString
+			err := db.QueryRow(`SELECT database_url, cloudinary_url FROM tenant_infrastructures WHERE LOWER(tenant_slug) = $1 AND is_custom_db = true`, slug).
+				Scan(&fetchedURL, &fetchedStorage)
+			if err == nil && fetchedURL.Valid && fetchedURL.String != "" {
+				RegisterTenantProject(slug, fetchedURL.String, fetchedStorage.String)
+				targetURL = fetchedURL.String
+				ok = true
+			}
+		}
+	}
+	if !ok || targetURL == "" {
 		return db
 	}
 

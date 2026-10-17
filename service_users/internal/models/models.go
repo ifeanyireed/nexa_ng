@@ -63,6 +63,12 @@ type Organization struct {
 	HeroTitle      string    `gorm:"type:text" json:"heroTitle,omitempty"`
 	HeroSubtitle   string    `gorm:"type:text" json:"heroSubtitle,omitempty"`
 
+	// Dedicated Project Infrastructure (BYODB / BYOS)
+	DatabaseURL     string `gorm:"-" json:"database_url,omitempty"`
+	CloudinaryURL   string `gorm:"-" json:"cloudinary_url,omitempty"`
+	IsCustomDB      bool   `gorm:"-" json:"is_custom_db"`
+	IsCustomStorage bool   `gorm:"-" json:"is_custom_storage"`
+
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 

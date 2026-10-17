@@ -208,6 +208,10 @@ function TenantManagementContent() {
     users: true,
   });
 
+  // Dedicated Infrastructure (BYODB & BYOS) for New Tenant
+  const [newDatabaseUrl, setNewDatabaseUrl] = useState("");
+  const [newCloudinaryUrl, setNewCloudinaryUrl] = useState("");
+
   // Quota Override Form state
   const [extraLeads, setExtraLeads] = useState("2000");
   const [extraCampaigns, setExtraCampaigns] = useState("5");
@@ -226,6 +230,8 @@ function TenantManagementContent() {
   const [editTenantLeadsLimit, setEditTenantLeadsLimit] = useState("5000");
   const [editTenantCampaignsLimit, setEditTenantCampaignsLimit] = useState("10");
   const [editTenantLogo, setEditTenantLogo] = useState("");
+  const [editTenantDatabaseUrl, setEditTenantDatabaseUrl] = useState("");
+  const [editTenantCloudinaryUrl, setEditTenantCloudinaryUrl] = useState("");
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [logoUploadError, setLogoUploadError] = useState<string | null>(null);
   const [savingModuleKeys, setSavingModuleKeys] = useState<Record<string, boolean>>({});
@@ -312,6 +318,10 @@ function TenantManagementContent() {
                 school: true,
                 staff: true,
               },
+              databaseUrl: org.database_url || org.databaseUrl || (orgSlug === "neweratransports" ? INITIAL_TENANTS[0].databaseUrl : ""),
+              cloudinaryUrl: org.cloudinary_url || org.cloudinaryUrl || (orgSlug === "neweratransports" ? INITIAL_TENANTS[0].cloudinaryUrl : ""),
+              isCustomDb: Boolean(org.is_custom_db || org.isCustomDb || org.database_url || org.databaseUrl || orgSlug === "neweratransports"),
+              isCustomStorage: Boolean(org.is_custom_storage || org.isCustomStorage || org.cloudinary_url || org.cloudinaryUrl || orgSlug === "neweratransports"),
               createdAt: org.createdAt || org.created_at
                 ? new Date(org.createdAt || org.created_at).toISOString().split("T")[0]
                 : new Date().toISOString().split("T")[0],
@@ -949,6 +959,8 @@ function TenantManagementContent() {
     setEditTenantLeadsLimit(String(t.leadsLimit));
     setEditTenantCampaignsLimit(String(t.campaignsLimit));
     setEditTenantLogo(t.logo || "");
+    setEditTenantDatabaseUrl(t.databaseUrl || "");
+    setEditTenantCloudinaryUrl(t.cloudinaryUrl || "");
     setLogoUploadError(null);
   };
 
@@ -968,6 +980,8 @@ function TenantManagementContent() {
       mrr: parseInt(editTenantMrr || "0", 10),
       leadsLimit: parseInt(editTenantLeadsLimit || "0", 10),
       campaignsLimit: parseInt(editTenantCampaignsLimit || "0", 10),
+      database_url: editTenantDatabaseUrl.trim(),
+      cloudinary_url: editTenantCloudinaryUrl.trim(),
     };
 
     setIsSavingDb(true);
@@ -1005,6 +1019,10 @@ function TenantManagementContent() {
               monthlyAiSpendUSD: Math.round(mrr * 0.12),
               integrationHealth: "Healthy",
               erpModules: org.erpModules || selectedTenantForEdit.erpModules || { ...INITIAL_TENANTS[0].erpModules },
+              databaseUrl: org.database_url || org.databaseUrl || (org.id === selectedTenantForEdit.id ? editTenantDatabaseUrl.trim() : ""),
+              cloudinaryUrl: org.cloudinary_url || org.cloudinaryUrl || (org.id === selectedTenantForEdit.id ? editTenantCloudinaryUrl.trim() : ""),
+              isCustomDb: Boolean(org.is_custom_db || org.isCustomDb || org.database_url || org.databaseUrl || (org.id === selectedTenantForEdit.id && editTenantDatabaseUrl.trim())),
+              isCustomStorage: Boolean(org.is_custom_storage || org.isCustomStorage || org.cloudinary_url || org.cloudinaryUrl || (org.id === selectedTenantForEdit.id && editTenantCloudinaryUrl.trim())),
               createdAt: org.created_at
                 ? new Date(org.created_at).toISOString().split("T")[0]
                 : new Date().toISOString().split("T")[0],
@@ -1013,7 +1031,19 @@ function TenantManagementContent() {
         );
       } else {
         setTenants((prev) =>
-          prev.map((t) => (t.id === selectedTenantForEdit.id ? { ...t, ...updatedData, logo: editTenantLogo } : t))
+          prev.map((t) =>
+            t.id === selectedTenantForEdit.id
+              ? {
+                  ...t,
+                  ...updatedData,
+                  databaseUrl: editTenantDatabaseUrl.trim(),
+                  cloudinaryUrl: editTenantCloudinaryUrl.trim(),
+                  isCustomDb: Boolean(editTenantDatabaseUrl.trim()),
+                  isCustomStorage: Boolean(editTenantCloudinaryUrl.trim()),
+                  logo: editTenantLogo,
+                }
+              : t
+          )
         );
       }
       setSelectedTenantForEdit(null);
@@ -1021,7 +1051,19 @@ function TenantManagementContent() {
       console.warn("Remote tenant update failed:", err);
       showToast(`Tenant '${editTenantName}' updated locally`);
       setTenants((prev) =>
-        prev.map((t) => (t.id === selectedTenantForEdit.id ? { ...t, ...updatedData, logo: editTenantLogo } : t))
+        prev.map((t) =>
+          t.id === selectedTenantForEdit.id
+            ? {
+                ...t,
+                ...updatedData,
+                databaseUrl: editTenantDatabaseUrl.trim(),
+                cloudinaryUrl: editTenantCloudinaryUrl.trim(),
+                isCustomDb: Boolean(editTenantDatabaseUrl.trim()),
+                isCustomStorage: Boolean(editTenantCloudinaryUrl.trim()),
+                logo: editTenantLogo,
+              }
+            : t
+        )
       );
       setSelectedTenantForEdit(null);
     } finally {
@@ -1097,6 +1139,10 @@ function TenantManagementContent() {
       erpModules: newErpModules,
       shopSubModules: defaultShopSubs,
       mobilitySubModules: defaultMobilitySubs,
+      databaseUrl: newDatabaseUrl.trim(),
+      cloudinaryUrl: newCloudinaryUrl.trim(),
+      isCustomDb: Boolean(newDatabaseUrl.trim()),
+      isCustomStorage: Boolean(newCloudinaryUrl.trim()),
       createdAt: new Date().toISOString().split("T")[0],
     };
 
@@ -1110,6 +1156,8 @@ function TenantManagementContent() {
         owner_email: newOwnerEmail || `admin@${newOrgDomain}`,
         plan_tier: newPlanTier,
         billing_cycle: "MONTHLY",
+        database_url: newDatabaseUrl.trim(),
+        cloudinary_url: newCloudinaryUrl.trim(),
       });
       if (createdRemote && createdRemote.id) {
         newTenant.id = createdRemote.id;
@@ -1145,6 +1193,8 @@ function TenantManagementContent() {
     setNewOrgDomain("");
     setNewOwnerName("");
     setNewOwnerEmail("");
+    setNewDatabaseUrl("");
+    setNewCloudinaryUrl("");
   };
 
   return (
@@ -1379,6 +1429,22 @@ function TenantManagementContent() {
                           <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 uppercase">
                             {focusedTenant.status}
                           </span>
+                          {focusedTenant.isCustomDb ? (
+                            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 uppercase flex items-center gap-1">
+                              <Database className="w-3 h-3" />
+                              BYODB: Neon Dedicated
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-slate-500/10 text-slate-500 border border-slate-500/20 uppercase">
+                              DB: Shared Platform
+                            </span>
+                          )}
+                          {focusedTenant.isCustomStorage && (
+                            <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-600 border border-cyan-500/20 uppercase flex items-center gap-1">
+                              <UploadCloud className="w-3 h-3" />
+                              BYOS: Cloudinary
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-[var(--nexa-text-muted)] mt-1">
                           Workspace:{" "}
@@ -2239,6 +2305,18 @@ function TenantManagementContent() {
                                 <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 uppercase">
                                   {tenant.status}
                                 </span>
+                                {tenant.isCustomDb && (
+                                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 uppercase flex items-center gap-1">
+                                    <Database className="w-2.5 h-2.5" />
+                                    BYODB
+                                  </span>
+                                )}
+                                {tenant.isCustomStorage && (
+                                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-600 border border-cyan-500/20 uppercase flex items-center gap-1">
+                                    <UploadCloud className="w-2.5 h-2.5" />
+                                    BYOS
+                                  </span>
+                                )}
                               </div>
                               <p className="text-[11px] text-[var(--nexa-text-muted)] mt-1">
                                 Workspace:{" "}
@@ -2697,6 +2775,45 @@ function TenantManagementContent() {
             </div>
           </div>
 
+          {/* DEDICATED INFRASTRUCTURE (BYODB & BYOS) */}
+          <div className="space-y-3 pt-3 border-t border-[var(--nexa-border)]">
+            <div>
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
+                <Database className="w-3.5 h-3.5 text-[#1A56DB]" />
+                Dedicated Infrastructure (BYODB & BYOS - Optional)
+              </label>
+              <p className="text-[11px] text-[var(--nexa-text-secondary)]">
+                Provide custom Neon Project and Cloudinary URLs for physical project-level isolation. Leave empty to use shared platform infrastructure.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-[var(--nexa-text-secondary)]">
+                Dedicated Neon Database URL (Pooled)
+              </label>
+              <input
+                type="password"
+                placeholder="postgresql://neondb_owner:***@ep-xxxx-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require"
+                value={newDatabaseUrl}
+                onChange={(e) => setNewDatabaseUrl(e.target.value)}
+                className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-mono outline-none focus:border-[#1A56DB]"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-[var(--nexa-text-secondary)]">
+                Dedicated Cloudinary Storage URL
+              </label>
+              <input
+                type="password"
+                placeholder="cloudinary://api_key:api_secret@cloud_name"
+                value={newCloudinaryUrl}
+                onChange={(e) => setNewCloudinaryUrl(e.target.value)}
+                className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-mono outline-none focus:border-[#1A56DB]"
+              />
+            </div>
+          </div>
+
           <div className="pt-3 border-t border-[var(--nexa-border)] flex items-center justify-end gap-2">
             <NexaButton
               size="sm"
@@ -2953,6 +3070,45 @@ function TenantManagementContent() {
                 type="number"
                 value={editTenantCampaignsLimit}
                 onChange={(e) => setEditTenantCampaignsLimit(e.target.value)}
+                className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-mono outline-none focus:border-[#1A56DB]"
+              />
+            </div>
+          </div>
+
+          {/* DEDICATED INFRASTRUCTURE (BYODB & BYOS) */}
+          <div className="space-y-3 pt-3 border-t border-[var(--nexa-border)]">
+            <div>
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
+                <Database className="w-3.5 h-3.5 text-[#1A56DB]" />
+                Dedicated Infrastructure (BYODB & BYOS)
+              </label>
+              <p className="text-[11px] text-[var(--nexa-text-secondary)]">
+                Provide or update the tenant&apos;s isolated Neon Postgres project connection string and Cloudinary storage credentials.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-[var(--nexa-text-secondary)]">
+                Dedicated Neon Database URL
+              </label>
+              <input
+                type="password"
+                placeholder="postgresql://neondb_owner:***@ep-xxxx-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require"
+                value={editTenantDatabaseUrl}
+                onChange={(e) => setEditTenantDatabaseUrl(e.target.value)}
+                className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-mono outline-none focus:border-[#1A56DB]"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold text-[var(--nexa-text-secondary)]">
+                Dedicated Cloudinary Storage URL
+              </label>
+              <input
+                type="password"
+                placeholder="cloudinary://api_key:api_secret@cloud_name"
+                value={editTenantCloudinaryUrl}
+                onChange={(e) => setEditTenantCloudinaryUrl(e.target.value)}
                 className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-mono outline-none focus:border-[#1A56DB]"
               />
             </div>

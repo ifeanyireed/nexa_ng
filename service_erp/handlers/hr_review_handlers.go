@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"strings"
 	"sync"
 )
 
@@ -112,6 +114,30 @@ func filterReviews(list []PerformanceReview, employeeId, tenantSlug string) []Pe
 	return res
 }
 
+func sanitizeObjectivesJSON(s string) string {
+	if s == "" {
+		return "[]"
+	}
+	if json.Valid([]byte(s)) {
+		return s
+	}
+
+	// 1. Fix backslash followed by literal tab or whitespace
+	s = strings.ReplaceAll(s, "\\\t", " ")
+	s = strings.ReplaceAll(s, "\\\r\n", "\\n")
+	s = strings.ReplaceAll(s, "\\\n", "\\n")
+	s = strings.ReplaceAll(s, "\\\r", "\\n")
+
+	// 2. Fix unescaped control characters
+	s = strings.ReplaceAll(s, "\t", " ")
+
+	if json.Valid([]byte(s)) {
+		return s
+	}
+
+	return "[]"
+}
+
 func HandleReviews(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	targetDB := getDB(r)
@@ -129,16 +155,16 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 					Scan(&pr.ID, &pr.EmployeeID, &pr.EmployeeName, &pr.Department, &pr.CycleID, &pr.CycleName, &pr.Status, &pr.EmployeeComments, &pr.ManagerComments, &pr.HRComments, &pr.ImprovementPlan, &pr.FinalScore, &objJSON, &pr.UpdatedAt)
 				if err == nil {
 					if objJSON.Valid && objJSON.String != "" {
-						raw := json.RawMessage(objJSON.String)
+						raw := json.RawMessage(sanitizeObjectivesJSON(objJSON.String))
 						pr.Objectives = &raw
 					}
-					json.NewEncoder(w).Encode(pr)
+					_ = json.NewEncoder(w).Encode(pr)
 					return
 				}
 			}
 
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{"message": "Review not found"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"message": "Review not found"})
 			return
 		}
 
@@ -167,7 +193,7 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 					var objJSON sql.NullString
 					if err := rows.Scan(&pr.ID, &pr.EmployeeID, &pr.EmployeeName, &pr.Department, &pr.CycleID, &pr.CycleName, &pr.Status, &pr.EmployeeComments, &pr.ManagerComments, &pr.HRComments, &pr.ImprovementPlan, &pr.FinalScore, &objJSON, &pr.UpdatedAt); err == nil {
 						if objJSON.Valid && objJSON.String != "" {
-							raw := json.RawMessage(objJSON.String)
+							raw := json.RawMessage(sanitizeObjectivesJSON(objJSON.String))
 							pr.Objectives = &raw
 						}
 						reviews = append(reviews, pr)
@@ -180,7 +206,9 @@ func HandleReviews(w http.ResponseWriter, r *http.Request) {
 			reviews = []PerformanceReview{}
 		}
 
-		json.NewEncoder(w).Encode(reviews)
+		if err := json.NewEncoder(w).Encode(reviews); err != nil {
+			log.Printf("⚠️ Error encoding reviews to JSON: %v", err)
+		}
 		return
 
 	} else if r.Method == http.MethodPost || r.Method == http.MethodPut {

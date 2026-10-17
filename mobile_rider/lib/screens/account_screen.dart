@@ -2,11 +2,67 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flexicon/flexicon.dart';
 import '../utils/icon_util.dart';
+import 'personal_info_screen.dart';
+import 'payout_methods_screen.dart';
+import 'notifications_settings_screen.dart';
+import 'operations_support_screen.dart';
+import 'login_screen.dart';
 
 class AccountScreen extends StatelessWidget {
   final Function(int)? onNavigateToTab;
 
   const AccountScreen({super.key, this.onNavigateToTab});
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.logout_rounded, color: Color(0xFFEF4444), size: 24),
+            SizedBox(width: 10),
+            Text(
+              'Log Out',
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: Color(0xFF0F172A)),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Are you sure you want to log out of your Ofia Rider account? You will need to log back in to accept jobs and receive payout notifications.',
+          style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.45),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => const LoginScreen()),
+                (route) => false,
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEF4444),
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text(
+              'Log Out',
+              style: TextStyle(fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,43 +87,51 @@ class AccountScreen extends StatelessWidget {
               child: Column(
                 children: [
                   const SizedBox(height: 10),
-                  Stack(
-                    children: [
-                      Container(
-                        width: 100,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE2E8F0),
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 4),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x0A000000),
-                              blurRadius: 10,
-                              offset: Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'JA',
-                            style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: Color(0xFF64748B)),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF146EF5),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const PersonalInfoScreen()),
+                      );
+                    },
+                    child: Stack(
+                      children: [
+                        Container(
+                          width: 100,
+                          height: 100,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE2E8F0),
                             shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 4),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color(0x0A000000),
+                                blurRadius: 10,
+                                offset: Offset(0, 4),
+                              ),
+                            ],
                           ),
-                          child: const Icon(Icons.edit, size: 14, color: Colors.white),
+                          child: const Center(
+                            child: Text(
+                              'JA',
+                              style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: Color(0xFF64748B)),
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF146EF5),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.edit, size: 14, color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -123,18 +187,36 @@ class AccountScreen extends StatelessWidget {
                     icon: fixIcon(FlexIcon.remix.userCircleSingle),
                     title: 'Personal Information',
                     subtitle: 'Update your details and vehicle info',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const PersonalInfoScreen()),
+                      );
+                    },
                   ),
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
                   _buildListTile(
                     icon: fixIcon(FlexIcon.solid.wallet),
                     title: 'Payout Methods',
                     subtitle: 'Manage bank accounts for earnings',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const PayoutMethodsScreen()),
+                      );
+                    },
                   ),
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
                   _buildListTile(
                     icon: fixIcon(FlexIcon.remix.bellNotification),
                     title: 'Notifications',
                     subtitle: 'Job alerts and system messages',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const NotificationsSettingsScreen()),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -156,6 +238,12 @@ class AccountScreen extends StatelessWidget {
                     title: 'Operations Support',
                     subtitle: 'Contact dispatch or report issues',
                     iconColor: const Color(0xFF3B82F6),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const OperationsSupportScreen()),
+                      );
+                    },
                   ),
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
                   _buildListTile(
@@ -165,6 +253,7 @@ class AccountScreen extends StatelessWidget {
                     iconColor: const Color(0xFFEF4444),
                     titleColor: const Color(0xFFEF4444),
                     hideArrow: true,
+                    onTap: () => _showLogoutDialog(context),
                   ),
                 ],
               ),
@@ -182,6 +271,7 @@ class AccountScreen extends StatelessWidget {
     Color iconColor = const Color(0xFF64748B),
     Color titleColor = const Color(0xFF0F172A),
     bool hideArrow = false,
+    VoidCallback? onTap,
   }) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -204,7 +294,7 @@ class AccountScreen extends StatelessWidget {
             )
           : null,
       trailing: hideArrow ? null : const Icon(Icons.chevron_right, color: Color(0xFFCBD5E1)),
-      onTap: () {},
+      onTap: onTap,
     );
   }
 }

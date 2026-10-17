@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flexicon/flexicon.dart';
 import '../utils/icon_util.dart';
+import 'navigation_dropoff_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   final Function(int)? onNavigateToTab;
@@ -274,7 +275,7 @@ class DashboardScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            _buildActiveJobCard(),
+            _buildActiveJobCard(context),
 
           ],
         ),
@@ -282,7 +283,7 @@ class DashboardScreen extends StatelessWidget {
     ).animate().fadeIn(duration: const Duration(milliseconds: 400)).slideY(begin: 0.05, end: 0);
   }
 
-  Widget _buildActiveJobCard() {
+  Widget _buildActiveJobCard(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -359,7 +360,14 @@ class DashboardScreen extends StatelessWidget {
                       ),
                       icon: Icon(fixIcon(FlexIcon.remix.mapLocation), size: 16),
                       label: const Text('Navigate to Drop-off', style: TextStyle(fontWeight: FontWeight.w700)),
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const NavigationDropoffScreen(),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ),

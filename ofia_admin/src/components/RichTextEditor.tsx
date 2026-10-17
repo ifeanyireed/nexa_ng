@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { mergeAttributes } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
@@ -8,6 +8,8 @@ import Heading from '@tiptap/extension-heading';
 import Link from '@tiptap/extension-link';
 import Image from '@tiptap/extension-image';
 import toast from 'react-hot-toast';
+import { marked } from 'marked';
+import TurndownService from 'turndown';
 import { 
   Bold, 
   Italic, 
@@ -27,8 +29,37 @@ import {
   Unlink, 
   ImageIcon, 
   Undo, 
-  Redo 
+  Redo,
+  Eye,
+  FileCode,
+  Columns,
+  Edit3
 } from 'lucide-react';
+
+// Configure marked with standard GFM rules
+marked.setOptions({
+  gfm: true,
+  breaks: true,
+});
+
+// Configure Turndown for clean ATX markdown generation
+function createTurndownService() {
+  const td = new TurndownService({
+    headingStyle: 'atx',
+    codeBlockStyle: 'fenced',
+    hr: '---',
+    bulletListMarker: '-',
+    emDelimiter: '_',
+    strongDelimiter: '**',
+  });
+
+  td.addRule('strikethrough', {
+    filter: ['del', 's'] as any,
+    replacement: (content) => `~~${content}~~`,
+  });
+
+  return td;
+}
 
 // Custom Heading extension rendering distinct Tailwind typography classes directly on the DOM node
 const CustomHeading = Heading.extend({
@@ -55,8 +86,8 @@ interface RichTextEditorProps {
   onChange: (html: string) => void;
 }
 
+// WYSIWYG Toolbar
 const MenuBar = ({ editor }: { editor: any }) => {
-  // Re-render toolbar when editor transaction or selection updates
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -118,7 +149,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
         } else {
           toast.error(data.error || 'Upload failed', { id: loadingToast });
         }
-      } catch (err) {
+      } catch {
         toast.error('Something went wrong', { id: loadingToast });
       }
     };
@@ -137,8 +168,8 @@ const MenuBar = ({ editor }: { editor: any }) => {
   `;
 
   return (
-    <div className="flex flex-wrap items-center gap-1 p-2 border-b border-slate-200 bg-slate-50/90 rounded-t-lg select-none">
-      {/* 1. Document Structure / Headings */}
+    <div className="flex flex-wrap items-center gap-1">
+      {/* Headings */}
       <div className="flex items-center gap-0.5">
         <button
           type="button"
@@ -195,7 +226,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
 
       <div className="w-[1px] h-5 bg-slate-200 mx-1 self-center" />
 
-      {/* 2. Inline Text Formatting */}
+      {/* Formatting */}
       <div className="flex items-center gap-0.5">
         <button
           type="button"
@@ -228,19 +259,6 @@ const MenuBar = ({ editor }: { editor: any }) => {
           onMouseDown={(e) => e.preventDefault()}
           onClick={(e) => {
             e.preventDefault();
-            editor.chain().focus().toggleUnderline().run();
-          }}
-          className={buttonClass(editor.isActive('underline'))}
-          title="Underline (Ctrl+U)"
-        >
-          <Underline className="w-4 h-4" />
-        </button>
-
-        <button
-          type="button"
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={(e) => {
-            e.preventDefault();
             editor.chain().focus().toggleStrike().run();
           }}
           className={buttonClass(editor.isActive('strike'))}
@@ -265,7 +283,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
 
       <div className="w-[1px] h-5 bg-slate-200 mx-1 self-center" />
 
-      {/* 3. Lists & Blocks */}
+      {/* Lists & Quotes */}
       <div className="flex items-center gap-0.5">
         <button
           type="button"
@@ -301,7 +319,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
             editor.chain().focus().toggleBlockquote().run();
           }}
           className={buttonClass(editor.isActive('blockquote'))}
-          title="Blockquote"
+          title="Quote Block"
         >
           <Quote className="w-4 h-4" />
         </button>
@@ -327,7 +345,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
             editor.chain().focus().setHorizontalRule().run();
           }}
           className={buttonClass(false)}
-          title="Horizontal Rule"
+          title="Horizontal Line"
         >
           <Minus className="w-4 h-4" />
         </button>
@@ -335,7 +353,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
 
       <div className="w-[1px] h-5 bg-slate-200 mx-1 self-center" />
 
-      {/* 4. Links & Images */}
+      {/* Media & Links */}
       <div className="flex items-center gap-0.5">
         <button
           type="button"
@@ -345,7 +363,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
             toggleLink();
           }}
           className={buttonClass(editor.isActive('link'))}
-          title="Insert Link"
+          title={editor.isActive('link') ? "Edit Link" : "Insert Link"}
         >
           <LinkIcon className="w-4 h-4" />
         </button>
@@ -361,7 +379,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
             className={buttonClass(false)}
             title="Remove Link"
           >
-            <Unlink className="w-4 h-4 text-red-500" />
+            <Unlink className="w-4 h-4" />
           </button>
         )}
 
@@ -373,7 +391,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
             addImage();
           }}
           className={buttonClass(false)}
-          title="Upload Image"
+          title="Upload & Insert Image"
         >
           <ImageIcon className="w-4 h-4" />
         </button>
@@ -381,7 +399,7 @@ const MenuBar = ({ editor }: { editor: any }) => {
 
       <div className="w-[1px] h-5 bg-slate-200 mx-1 self-center" />
 
-      {/* 5. Undo & Redo */}
+      {/* History */}
       <div className="flex items-center gap-0.5">
         <button
           type="button"
@@ -415,7 +433,201 @@ const MenuBar = ({ editor }: { editor: any }) => {
   );
 };
 
+// Markdown Toolbar with formatting snippets and preview switcher
+const MarkdownToolbar = ({ 
+  onInsert, 
+  onUploadImage,
+  markdownView, 
+  setMarkdownView 
+}: { 
+  onInsert: (before: string, after?: string, defaultText?: string) => void;
+  onUploadImage: () => void;
+  markdownView: 'write' | 'preview' | 'split';
+  setMarkdownView: (v: 'write' | 'preview' | 'split') => void;
+}) => {
+  const toolBtnClass = 'p-1.5 sm:p-2 rounded-lg text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors flex items-center justify-center cursor-pointer';
+
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {/* Markdown quick shortcuts */}
+      <div className="flex items-center gap-0.5">
+        <button
+          type="button"
+          onClick={() => onInsert('# ', '', 'Heading 1')}
+          className={toolBtnClass}
+          title="Heading 1 (# )"
+        >
+          <Heading1 className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onInsert('## ', '', 'Heading 2')}
+          className={toolBtnClass}
+          title="Heading 2 (## )"
+        >
+          <Heading2 className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onInsert('### ', '', 'Heading 3')}
+          className={toolBtnClass}
+          title="Heading 3 (### )"
+        >
+          <Heading3 className="w-4 h-4" />
+        </button>
+      </div>
+
+      <div className="w-[1px] h-5 bg-slate-200 mx-1 self-center" />
+
+      <div className="flex items-center gap-0.5">
+        <button
+          type="button"
+          onClick={() => onInsert('**', '**', 'bold text')}
+          className={toolBtnClass}
+          title="Bold (**text**)"
+        >
+          <Bold className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onInsert('_', '_', 'italic text')}
+          className={toolBtnClass}
+          title="Italic (_text_)"
+        >
+          <Italic className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onInsert('~~', '~~', 'strikethrough')}
+          className={toolBtnClass}
+          title="Strikethrough (~~text~~)"
+        >
+          <Strikethrough className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onInsert('`', '`', 'code')}
+          className={toolBtnClass}
+          title="Inline Code (`code`)"
+        >
+          <Code className="w-4 h-4" />
+        </button>
+      </div>
+
+      <div className="w-[1px] h-5 bg-slate-200 mx-1 self-center" />
+
+      <div className="flex items-center gap-0.5">
+        <button
+          type="button"
+          onClick={() => onInsert('- ', '', 'List item')}
+          className={toolBtnClass}
+          title="Bullet List (- item)"
+        >
+          <List className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onInsert('1. ', '', 'First item')}
+          className={toolBtnClass}
+          title="Numbered List (1. item)"
+        >
+          <ListOrdered className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onInsert('> ', '', 'Quote')}
+          className={toolBtnClass}
+          title="Blockquote (> quote)"
+        >
+          <Quote className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onInsert('```\n', '\n```', 'code block')}
+          className={toolBtnClass}
+          title="Code Block (```)"
+        >
+          <SquareCode className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onInsert('\n---\n', '', '')}
+          className={toolBtnClass}
+          title="Horizontal Rule (---)"
+        >
+          <Minus className="w-4 h-4" />
+        </button>
+      </div>
+
+      <div className="w-[1px] h-5 bg-slate-200 mx-1 self-center" />
+
+      <div className="flex items-center gap-0.5">
+        <button
+          type="button"
+          onClick={() => onInsert('[', '](https://example.com)', 'link title')}
+          className={toolBtnClass}
+          title="Insert Markdown Link [title](url)"
+        >
+          <LinkIcon className="w-4 h-4" />
+        </button>
+        <button
+          type="button"
+          onClick={onUploadImage}
+          className={toolBtnClass}
+          title="Upload & Insert Image ![alt](url)"
+        >
+          <ImageIcon className="w-4 h-4" />
+        </button>
+      </div>
+
+      <div className="w-[1px] h-5 bg-slate-200 mx-1 self-center" />
+
+      {/* Markdown View Switcher (Write / Preview / Split) */}
+      <div className="flex items-center bg-slate-200/70 p-0.5 rounded-lg text-xs">
+        <button
+          type="button"
+          onClick={() => setMarkdownView('write')}
+          className={`flex items-center gap-1 px-2 py-1 rounded-md font-semibold transition-all ${
+            markdownView === 'write' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+          }`}
+          title="Raw Markdown Editor"
+        >
+          <Edit3 className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Write</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMarkdownView('preview')}
+          className={`flex items-center gap-1 px-2 py-1 rounded-md font-semibold transition-all ${
+            markdownView === 'preview' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+          }`}
+          title="Live HTML Preview"
+        >
+          <Eye className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Preview</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setMarkdownView('split')}
+          className={`hidden md:flex items-center gap-1 px-2 py-1 rounded-md font-semibold transition-all ${
+            markdownView === 'split' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+          }`}
+          title="Side-by-Side Split View"
+        >
+          <Columns className="w-3.5 h-3.5" />
+          <span>Split</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
+  const [editorMode, setEditorMode] = useState<'wysiwyg' | 'markdown'>('wysiwyg');
+  const [markdownContent, setMarkdownContent] = useState('');
+  const [markdownView, setMarkdownView] = useState<'write' | 'preview' | 'split'>('write');
+  const markdownTextareaRef = useRef<HTMLTextAreaElement>(null);
+
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -437,11 +649,13 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
     ],
     content: content || '',
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
+      if (editorMode === 'wysiwyg') {
+        onChange(editor.getHTML());
+      }
     },
     editorProps: {
       attributes: {
-        class: 'tiptap ProseMirror rich-editor-content focus:outline-none min-h-[400px] p-5 text-slate-800',
+        class: 'tiptap ProseMirror rich-editor-content focus:outline-none min-h-[420px] p-5 text-slate-800',
       },
     },
   });
@@ -449,17 +663,274 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
   // Keep editor in sync with external content updates without resetting selection during typing
   useEffect(() => {
     if (!editor) return;
-    const isSame = editor.getHTML() === content || (content === '' && editor.isEmpty);
-    if (!isSame) {
-      editor.commands.setContent(content || '', { emitUpdate: false });
+    if (editorMode === 'wysiwyg') {
+      const isSame = editor.getHTML() === content || (content === '' && editor.isEmpty);
+      if (!isSame) {
+        editor.commands.setContent(content || '', { emitUpdate: false });
+      }
     }
-  }, [content, editor]);
+  }, [content, editor, editorMode]);
+
+  // Mode Switch Handler
+  const handleSwitchMode = (newMode: 'wysiwyg' | 'markdown') => {
+    if (newMode === editorMode) return;
+
+    if (newMode === 'markdown') {
+      // Transition WYSIWYG -> Markdown
+      const currentHtml = editor ? editor.getHTML() : content;
+      if (!currentHtml || currentHtml === '<p></p>' || (editor && editor.isEmpty)) {
+        setMarkdownContent('');
+      } else {
+        const td = createTurndownService();
+        const md = td.turndown(currentHtml);
+        setMarkdownContent(md);
+      }
+      setEditorMode('markdown');
+      toast.success('Switched to Markdown mode');
+    } else {
+      // Transition Markdown -> WYSIWYG
+      const parsedHtml = (marked.parse(markdownContent, { async: false }) as string) || '';
+      onChange(parsedHtml);
+      if (editor) {
+        editor.commands.setContent(parsedHtml, { emitUpdate: false });
+      }
+      setEditorMode('wysiwyg');
+      toast.success('Switched to WYSIWYG mode');
+    }
+  };
+
+  // Markdown Textarea Change Handler
+  const handleMarkdownChange = (newMarkdown: string) => {
+    setMarkdownContent(newMarkdown);
+    const parsedHtml = (marked.parse(newMarkdown, { async: false }) as string) || '';
+    onChange(parsedHtml);
+  };
+
+  // Helper to insert markdown syntax at cursor position
+  const insertMarkdownSnippet = (before: string, after: string = '', defaultText: string = '') => {
+    const textarea = markdownTextareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const selected = text.substring(start, end) || defaultText;
+
+    const replacement = `${before}${selected}${after}`;
+    const newText = text.substring(0, start) + replacement + text.substring(end);
+
+    handleMarkdownChange(newText);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(
+        start + before.length,
+        start + before.length + selected.length
+      );
+    }, 0);
+  };
+
+  // Image uploader for Markdown mode
+  const handleMarkdownImageUpload = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    
+    input.onchange = async (e: any) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const loadingToast = toast.loading('Uploading image...');
+      
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('target_path', 'blog/content');
+
+      try {
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        
+        if (res.ok && data.url) {
+          const imgMarkdown = `\n![${file.name.replace(/\.[^/.]+$/, "")}](${data.url})\n`;
+          insertMarkdownSnippet(imgMarkdown, '', '');
+          toast.success('Image inserted into Markdown', { id: loadingToast });
+        } else {
+          toast.error(data.error || 'Upload failed', { id: loadingToast });
+        }
+      } catch {
+        toast.error('Something went wrong with upload', { id: loadingToast });
+      }
+    };
+    
+    input.click();
+  };
+
+  // Word & character stats
+  const currentText = editorMode === 'wysiwyg' 
+    ? (editor ? editor.getText() : '')
+    : markdownContent;
+  const wordCount = currentText.trim() ? currentText.trim().split(/\s+/).length : 0;
+  const charCount = currentText.length;
 
   return (
     <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
-      <MenuBar editor={editor} />
-      <div className="rich-editor-wrapper bg-white">
-        <EditorContent editor={editor} />
+      {/* Top Toolbar Container */}
+      <div className="flex flex-wrap items-center justify-between gap-2 p-2 border-b border-slate-200 bg-slate-50/90 select-none">
+        {/* Left Formatting Tools */}
+        <div className="flex-1 min-w-[280px]">
+          {editorMode === 'wysiwyg' ? (
+            <MenuBar editor={editor} />
+          ) : (
+            <MarkdownToolbar 
+              onInsert={insertMarkdownSnippet}
+              onUploadImage={handleMarkdownImageUpload}
+              markdownView={markdownView}
+              setMarkdownView={setMarkdownView}
+            />
+          )}
+        </div>
+
+        {/* Right Mode Toggle Switcher */}
+        <div className="flex items-center gap-1 bg-slate-200/80 p-0.5 rounded-lg shrink-0 ml-auto">
+          <button
+            type="button"
+            onClick={() => handleSwitchMode('wysiwyg')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+              editorMode === 'wysiwyg'
+                ? 'bg-white text-blue-600 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+            }`}
+            title="Visual WYSIWYG Editor"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>WYSIWYG</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleSwitchMode('markdown')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${
+              editorMode === 'markdown'
+                ? 'bg-white text-blue-600 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+            }`}
+            title="Markdown Source Editor"
+          >
+            <FileCode className="w-3.5 h-3.5" />
+            <span>Markdown</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Editor Content Area */}
+      {editorMode === 'wysiwyg' ? (
+        <div className="rich-editor-wrapper bg-white">
+          <EditorContent editor={editor} />
+        </div>
+      ) : (
+        <div className="bg-white">
+          {/* Write Mode */}
+          {markdownView === 'write' && (
+            <textarea
+              ref={markdownTextareaRef}
+              value={markdownContent}
+              onChange={(e) => handleMarkdownChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Tab') {
+                  e.preventDefault();
+                  const target = e.currentTarget;
+                  const start = target.selectionStart;
+                  const end = target.selectionEnd;
+                  const val = target.value;
+                  const nextVal = val.substring(0, start) + '  ' + val.substring(end);
+                  handleMarkdownChange(nextVal);
+                  setTimeout(() => {
+                    target.selectionStart = target.selectionEnd = start + 2;
+                  }, 0);
+                }
+              }}
+              placeholder="# Write your blog post in Markdown format...&#10;&#10;Use ## for sections, **bold**, _italic_, - lists, or ![images](url)."
+              className="w-full min-h-[440px] p-5 font-mono text-sm leading-relaxed text-slate-800 bg-slate-50/30 focus:bg-white focus:outline-none resize-y"
+              spellCheck={true}
+            />
+          )}
+
+          {/* Preview Mode */}
+          {markdownView === 'preview' && (
+            <div className="rich-editor-wrapper p-6 min-h-[440px] bg-white overflow-y-auto">
+              {markdownContent.trim() ? (
+                <div 
+                  dangerouslySetInnerHTML={{ 
+                    __html: (marked.parse(markdownContent, { async: false }) as string) || '' 
+                  }} 
+                />
+              ) : (
+                <div className="flex flex-col items-center justify-center min-h-[300px] text-slate-400">
+                  <FileCode className="w-10 h-10 mb-2 opacity-40 text-slate-400" />
+                  <p className="text-sm font-semibold text-slate-500">Nothing to preview yet</p>
+                  <p className="text-xs text-slate-400 mt-1">Switch to Write mode to type some markdown</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Split Mode */}
+          {markdownView === 'split' && (
+            <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-200">
+              <textarea
+                ref={markdownTextareaRef}
+                value={markdownContent}
+                onChange={(e) => handleMarkdownChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Tab') {
+                    e.preventDefault();
+                    const target = e.currentTarget;
+                    const start = target.selectionStart;
+                    const end = target.selectionEnd;
+                    const val = target.value;
+                    const nextVal = val.substring(0, start) + '  ' + val.substring(end);
+                    handleMarkdownChange(nextVal);
+                    setTimeout(() => {
+                      target.selectionStart = target.selectionEnd = start + 2;
+                    }, 0);
+                  }
+                }}
+                placeholder="# Type markdown here..."
+                className="w-full min-h-[440px] p-5 font-mono text-sm leading-relaxed text-slate-800 bg-slate-50/30 focus:bg-white focus:outline-none resize-none"
+                spellCheck={true}
+              />
+              <div className="rich-editor-wrapper p-5 min-h-[440px] bg-white overflow-y-auto">
+                {markdownContent.trim() ? (
+                  <div 
+                    dangerouslySetInnerHTML={{ 
+                      __html: (marked.parse(markdownContent, { async: false }) as string) || '' 
+                    }} 
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center min-h-[300px] text-slate-400">
+                    <p className="text-xs text-slate-400">Live preview will appear here</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Editor Footer Status Bar */}
+      <div className="flex items-center justify-between px-4 py-2 border-t border-slate-100 bg-slate-50/60 text-xs text-slate-500 font-medium">
+        <div className="flex items-center gap-3">
+          <span>{wordCount} words</span>
+          <span className="text-slate-300">•</span>
+          <span>{charCount} characters</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`inline-block w-2 h-2 rounded-full ${editorMode === 'wysiwyg' ? 'bg-blue-500' : 'bg-emerald-500'}`} />
+          <span className="capitalize">{editorMode} mode active</span>
+        </div>
       </div>
 
       {/* Embedded scoped stylesheet to guarantee visual formatting regardless of font or global CSS caching */}
@@ -578,6 +1049,22 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
           font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
           overflow-x: auto !important;
           margin: 1.25rem 0 !important;
+        }
+
+        .rich-editor-wrapper a,
+        .rich-editor-wrapper .ProseMirror a,
+        .rich-editor-wrapper .tiptap a {
+          color: #0069FF !important;
+          text-decoration: underline !important;
+        }
+
+        .rich-editor-wrapper img,
+        .rich-editor-wrapper .ProseMirror img,
+        .rich-editor-wrapper .tiptap img {
+          border-radius: 0.5rem !important;
+          max-width: 100% !important;
+          margin-top: 1rem !important;
+          margin-bottom: 1rem !important;
         }
       `}</style>
     </div>

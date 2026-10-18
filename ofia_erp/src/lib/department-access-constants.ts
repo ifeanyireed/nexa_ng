@@ -160,18 +160,6 @@ export const ERP_PAGE_CATALOG: ErpPageDef[] = [
     ],
   },
   {
-    key: "dispatch_ops",
-    label: "Dispatch Operator Console",
-    category: "Portals & Team",
-    description: "Active parcel intake, courier waybills, rider manifests, and live deliveries.",
-    href: "/erp/admin/dispatch?tab=queue",
-    iconName: "Truck",
-    badge: "Live",
-    tabs: [
-      { id: "console", label: "Live Parcel Console", path: "/erp/admin/dispatch?tab=queue" },
-    ],
-  },
-  {
     key: "crm",
     label: "CRM & Email Marketing",
     category: "Enterprise Suite",
@@ -312,12 +300,11 @@ export const DEFAULT_DEPARTMENT_ACCESS: DepartmentAccessItem[] = [
   {
     departmentCode: "DEPT-FLT",
     departmentName: "Fleet Operations & Maintenance",
-    accessiblePages: ["mobility", "mobility_ops", "dispatch", "dispatch_ops", "employee"],
+    accessiblePages: ["mobility", "mobility_ops", "dispatch", "employee"],
     accessibleTabs: {
       mobility: ["command", "vehicles", "drivers", "maintenance", "routes", "pricing", "shuttle", "interstate", "on-demand", "rental", "school", "staff"],
       mobility_ops: ["console", "drivers", "vehicles", "shuttle", "interstate", "on-demand", "rental", "school", "staff"],
       dispatch: ["command", "operator"],
-      dispatch_ops: ["console"],
       employee: ["overview", "reviews", "quests", "profile"],
     },
     isEnabled: true,
@@ -327,7 +314,7 @@ export const DEFAULT_DEPARTMENT_ACCESS: DepartmentAccessItem[] = [
     departmentName: "Systems & IT / ERP",
     accessiblePages: [
       "overview", "ai", "marketplace", "shop", "mobility", "mobility_ops",
-      "dispatch", "dispatch_ops", "crm", "accounting", "hr", "users",
+      "dispatch", "crm", "accounting", "hr", "users",
       "employee", "manager", "md"
     ],
     accessibleTabs: {},

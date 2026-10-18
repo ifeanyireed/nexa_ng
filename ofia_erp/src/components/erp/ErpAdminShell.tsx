@@ -819,8 +819,7 @@ export function ErpAdminShell({
         else if (pathname.includes("/admin/shop/referrals")) pageHeading = "Referrals & Rewards";
         else if (pathname.includes("/ops/mobility")) pageHeading = "Mobility Operations Console";
         else if (pathname.includes("/admin/mobility")) pageHeading = "Ofia Mobility Manager";
-        else if (pathname.includes("/admin/dispatch")) pageHeading = "Ofia Dispatch Manager";
-        else if (pathname.includes("/ops/dispatch")) pageHeading = "Dispatch Operator";
+        else if (pathname.includes("/admin/dispatch") || pathname.includes("/ops/dispatch")) pageHeading = "Ofia Dispatch Manager";
         else if (pathname.includes("/admin/users")) pageHeading = "Staff Directory & Roles";
         else if (pathname.startsWith("/erp/ops/crm")) pageHeading = "Sales Closer Portal";
         else if (pathname.includes("/admin/ai")) pageHeading = "AI Swarm & Operations";

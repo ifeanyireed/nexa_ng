@@ -238,14 +238,6 @@ export const ERP_MODULES: ErpModuleDef[] = [
     badge: "Live",
   },
   {
-    key: "dispatch_ops",
-    label: "Dispatch Operator",
-    category: "Portals & Team",
-    description: "Operational control center for dispatch agents, waybill tracking, and rider allocation.",
-    href: "/erp/admin/dispatch?tab=queue",
-    badge: "Live",
-  },
-  {
     key: "sales_closer",
     label: "Sales Closer Portal",
     category: "Portals & Team",
@@ -359,14 +351,6 @@ export const ASSIGNABLE_PAGES: AssignablePage[] = [
     route: "/erp/admin/dispatch",
     category: "Operations",
     badge: "Admin",
-  },
-  {
-    key: "dispatch_ops",
-    label: "Dispatch Operator",
-    description: "Operational control center for dispatch agents, live waybill tracking, and manifests.",
-    route: "/erp/admin/dispatch",
-    category: "Portals & Team",
-    badge: "Live",
   },
   {
     key: "marketplace",
@@ -988,7 +972,7 @@ export const ROLE_CAPABILITIES: Record<RoleKey, RoleCapability> = {
   },
   dispatcher: {
     key: "dispatcher",
-    label: "Dispatch Operator",
+    label: "Fleet Dispatcher",
     controlPanels: ["dispatch", "dispatch_ops", "mobility", "mobility_ops"],
     portals: ["employee"],
     homeRoute: "/erp/admin/dispatch",

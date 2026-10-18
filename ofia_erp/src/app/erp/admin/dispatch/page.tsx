@@ -295,7 +295,7 @@ export default function DispatchUnifiedCommandCentre() {
       lat: c.currentLat,
       lng: c.currentLng,
       title: `Rider: ${c.name} [${c.plateNumber}]`,
-      subtitle: `${c.vehicleType} • ${c.isAvailable ? "Available" : "Busy on trip"}`,
+      subtitle: `${c.vehicleType} • ${c.isAvailable ? "Available" : "Busy on trip"}${c.speed ? ` • ${c.speed.toFixed(0)} km/h` : ""}${c.batteryPct !== undefined ? ` • 🔋${c.batteryPct}%` : ""}`,
     })),
   ];
 
@@ -1420,6 +1420,22 @@ export default function DispatchUnifiedCommandCentre() {
                       <span className="text-nexa-text-secondary">Rating:</span>
                       <div className="font-bold text-amber-500">⭐ {courier.rating}</div>
                     </div>
+                    {courier.batteryPct !== undefined && (
+                      <div>
+                        <span className="text-nexa-text-secondary">Battery Level:</span>
+                        <div className="font-bold text-emerald-600 flex items-center gap-1">
+                          🔋 {courier.batteryPct}%
+                        </div>
+                      </div>
+                    )}
+                    {courier.speed !== undefined && courier.speed > 0 && (
+                      <div>
+                        <span className="text-nexa-text-secondary">Live Speed:</span>
+                        <div className="font-bold text-blue-600 flex items-center gap-1">
+                          ⚡ {courier.speed.toFixed(0)} km/h
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="pt-2 border-t border-nexa-border flex items-center justify-between">

@@ -34,11 +34,11 @@ func main() {
 	r.Use(chiMiddleware.Logger)
 	r.Use(chiMiddleware.Recoverer)
 
-	// CORS configuration
+	// CORS configuration with tenant headers allowed
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Org-ID"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Org-ID", "X-Tenant-Slug", "X-Rider-ID"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 		MaxAge:           300,
@@ -53,17 +53,38 @@ func main() {
 
 	// Logistics API Routes
 	r.Route("/api/v1/logistics", func(r chi.Router) {
-		// Shipments
+		// Shipments (Dispatch Manager Console)
 		r.Get("/shipments", logisticsHandler.ListShipments)
 		r.Post("/shipments", logisticsHandler.CreateShipment)
 		r.Get("/shipments/{id}", logisticsHandler.GetShipment)
 		r.Patch("/shipments/{id}/status", logisticsHandler.UpdateShipmentStatus)
 
-		// Couriers & Fleet
+		// Couriers & Live Radar Telemetry for Map
 		r.Get("/couriers", logisticsHandler.ListCouriers)
+		r.Get("/telemetry", logisticsHandler.GetFleetTelemetry)
 
 		// Pricing & Rates
 		r.Post("/rates/calculate", logisticsHandler.CalculateRates)
+
+		// Mobile Rider App Endpoints
+		r.Route("/rider", func(r chi.Router) {
+			r.Post("/lookup", logisticsHandler.RiderPhoneLookup)
+			r.Post("/login", logisticsHandler.RiderLogin)
+			r.Get("/profile", logisticsHandler.RiderGetProfile)
+			r.Put("/profile", logisticsHandler.RiderUpdateProfile)
+			r.Get("/performance", logisticsHandler.RiderGetPerformance)
+			r.Get("/payout-methods", logisticsHandler.RiderGetPayoutMethods)
+			r.Post("/payout-methods", logisticsHandler.RiderAddPayoutMethod)
+			r.Delete("/payout-methods/{id}", logisticsHandler.RiderDeletePayoutMethod)
+			r.Patch("/status", logisticsHandler.RiderUpdateStatus)
+			r.Get("/active-job", logisticsHandler.RiderGetActiveJob)
+			r.Get("/offers", logisticsHandler.RiderGetOffers)
+			r.Post("/jobs/{id}/accept", logisticsHandler.RiderAcceptJob)
+			r.Post("/jobs/{id}/pickup", logisticsHandler.RiderPickupJob)
+			r.Post("/jobs/{id}/deliver", logisticsHandler.RiderDeliverJob)
+			r.Post("/jobs/{id}/exception", logisticsHandler.RiderReportException)
+			r.Post("/telemetry", logisticsHandler.RiderIngestTelemetry)
+		})
 	})
 
 	addr := fmt.Sprintf(":%s", port)

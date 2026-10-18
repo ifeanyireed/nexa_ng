@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../services/api_service.dart';
 
 class PersonalInfoScreen extends StatefulWidget {
   const PersonalInfoScreen({super.key});
@@ -17,15 +19,66 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
   late final TextEditingController _emergencyController;
   late final TextEditingController _plateController;
 
+  String _riderId = '';
+  String _tenantName = 'Logistics Fleet';
+  String _tenantSlug = '';
+  String _vehicleType = 'Motorbike';
+
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: 'John Adebayo');
-    _phoneController = TextEditingController(text: '+234 802 345 6789');
-    _emailController = TextEditingController(text: 'john.adebayo@ofia.ng');
-    _addressController = TextEditingController(text: '14 Admiralty Way, Lekki Phase 1, Lagos');
-    _emergencyController = TextEditingController(text: 'Bisi Adebayo (+234 803 987 6543)');
-    _plateController = TextEditingController(text: 'LAG-482-XA');
+    _nameController = TextEditingController();
+    _phoneController = TextEditingController();
+    _emailController = TextEditingController();
+    _addressController = TextEditingController();
+    _emergencyController = TextEditingController();
+    _plateController = TextEditingController();
+    _loadSavedData();
+  }
+
+  Future<void> _loadSavedData() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final name = prefs.getString('rider_name');
+    if (name != null && name.isNotEmpty) _nameController.text = name;
+
+    final phone = prefs.getString('rider_phone');
+    if (phone != null && phone.isNotEmpty) _phoneController.text = phone;
+
+    final email = prefs.getString('rider_email');
+    if (email != null && email.isNotEmpty) _emailController.text = email;
+
+    final address = prefs.getString('rider_address');
+    if (address != null && address.isNotEmpty) _addressController.text = address;
+
+    final emergency = prefs.getString('rider_emergency_contact');
+    if (emergency != null && emergency.isNotEmpty) _emergencyController.text = emergency;
+
+    final plate = prefs.getString('rider_plate_number');
+    if (plate != null && plate.isNotEmpty) _plateController.text = plate;
+
+    setState(() {
+      _riderId = prefs.getString('rider_id') ?? '';
+      _tenantName = prefs.getString('rider_tenant_name') ?? 'Logistics Fleet';
+      _tenantSlug = prefs.getString('rider_tenant_slug') ?? '';
+      _vehicleType = prefs.getString('rider_vehicle_type') ?? 'Motorbike';
+    });
+
+    // Also fetch live from backend profile
+    final profileRes = await ApiService().getRiderProfile();
+    if (profileRes['success'] == true && profileRes['rider'] != null) {
+      final r = profileRes['rider'];
+      if (!mounted) return;
+      setState(() {
+        if (r['name'] != null && (r['name'] as String).isNotEmpty) _nameController.text = r['name'];
+        if (r['phone'] != null && (r['phone'] as String).isNotEmpty) _phoneController.text = r['phone'];
+        if (r['email'] != null && (r['email'] as String).isNotEmpty) _emailController.text = r['email'];
+        if (r['address'] != null && (r['address'] as String).isNotEmpty) _addressController.text = r['address'];
+        if (r['emergency_contact'] != null && (r['emergency_contact'] as String).isNotEmpty) _emergencyController.text = r['emergency_contact'];
+        if (r['plate_number'] != null && (r['plate_number'] as String).isNotEmpty) _plateController.text = r['plate_number'];
+        if (r['vehicle_type'] != null && (r['vehicle_type'] as String).isNotEmpty) _vehicleType = r['vehicle_type'];
+      });
+    }
   }
 
   @override
@@ -39,24 +92,43 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
     super.dispose();
   }
 
-  void _saveChanges() {
+  Future<void> _saveChanges() async {
+    final name = _nameController.text.trim();
+    final phone = _phoneController.text.trim();
+    final email = _emailController.text.trim();
+    final address = _addressController.text.trim();
+    final emergency = _emergencyController.text.trim();
+    final plate = _plateController.text.trim();
+
+    await ApiService().updateRiderProfile(
+      name: name,
+      phone: phone,
+      email: email,
+      address: address,
+      emergencyContact: emergency,
+      plateNumber: plate,
+      vehicleType: _vehicleType,
+    );
+
     setState(() {
       _isEditing = false;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.white, size: 20),
-            SizedBox(width: 10),
-            Text('Personal information updated successfully!'),
-          ],
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.white, size: 20),
+              SizedBox(width: 10),
+              Text('Personal information updated and persisted!'),
+            ],
+          ),
+          backgroundColor: const Color(0xFF16A34A),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
-        backgroundColor: const Color(0xFF16A34A),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
+      );
+    }
   }
 
   @override
@@ -182,36 +254,58 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                           ),
                         ),
                         const SizedBox(height: 4),
-                        const Text(
-                          'Rider ID: OF-RID-8842',
-                          style: TextStyle(
+                        Text(
+                          'Rider ID: $_riderId',
+                          style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF64748B),
                           ),
                         ),
                         const SizedBox(height: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFDCFCE7),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.verified, size: 14, color: Color(0xFF16A34A)),
-                              SizedBox(width: 4),
-                              Text(
-                                'Verified Active Agent',
-                                style: TextStyle(
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 6,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEFF6FF),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFBFDBFE)),
+                              ),
+                              child: Text(
+                                _tenantName,
+                                style: const TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
-                                  color: Color(0xFF16A34A),
+                                  color: Color(0xFF1D4ED8),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFDCFCE7),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.verified, size: 12, color: Color(0xFF16A34A)),
+                                  SizedBox(width: 3),
+                                  Text(
+                                    'Verified',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w700,
+                                      color: Color(0xFF16A34A),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -235,6 +329,15 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
               ),
               child: Column(
                 children: [
+                  _buildStaticField(
+                    label: 'Tenant Organization',
+                    value: _tenantSlug.isNotEmpty ? '$_tenantName ($_tenantSlug)' : _tenantName,
+                    icon: Icons.business,
+                    badge: 'Dedicated Tenant',
+                    badgeColor: const Color(0xFFEFF6FF),
+                    badgeTextColor: const Color(0xFF1D4ED8),
+                  ),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
                   _buildEditableField(
                     label: 'Full Legal Name',
                     controller: _nameController,
@@ -292,9 +395,11 @@ class _PersonalInfoScreenState extends State<PersonalInfoScreen> {
                 children: [
                   _buildStaticField(
                     label: 'Vehicle Assigned',
-                    value: 'Super Soco CPx (Electric Bike)',
-                    icon: Icons.electric_bike,
-                    badge: 'Ofia Fleet',
+                    value: _vehicleType,
+                    icon: _vehicleType.toLowerCase().contains('bike') || _vehicleType.toLowerCase().contains('cycle')
+                        ? Icons.electric_bike
+                        : Icons.local_shipping,
+                    badge: 'Fleet Assigned',
                     badgeColor: const Color(0xFFDBEAFE),
                     badgeTextColor: const Color(0xFF1D4ED8),
                   ),

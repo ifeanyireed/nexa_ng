@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../services/api_service.dart';
 
 class PayoutMethodsScreen extends StatefulWidget {
   const PayoutMethodsScreen({super.key});
@@ -10,23 +11,31 @@ class PayoutMethodsScreen extends StatefulWidget {
 
 class _PayoutMethodsScreenState extends State<PayoutMethodsScreen> {
   int _selectedPrimaryIndex = 0;
+  bool _isLoading = true;
+  List<Map<String, dynamic>> _bankAccounts = [];
 
-  final List<Map<String, dynamic>> _bankAccounts = [
-    {
-      'bankName': 'Access Bank PLC',
-      'accountNumber': '0124982789',
-      'accountName': 'John Adebayo',
-      'isVerified': true,
-      'code': '044',
-    },
-    {
-      'bankName': 'Kuda Microfinance Bank',
-      'accountNumber': '2001489245',
-      'accountName': 'John Adebayo',
-      'isVerified': true,
-      'code': '090267',
-    },
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadAccounts();
+  }
+
+  Future<void> _loadAccounts() async {
+    setState(() => _isLoading = true);
+    final accounts = await ApiService().getPayoutMethods();
+    if (!mounted) return;
+    setState(() {
+      _bankAccounts = accounts.map((a) => {
+        'id': a['id'] ?? '',
+        'bankName': a['bank_name'] ?? 'Bank',
+        'accountNumber': a['account_number'] ?? '',
+        'accountName': a['account_name'] ?? 'Courier Account',
+        'isVerified': a['is_verified'] ?? true,
+        'code': a['bank_code'] ?? '',
+      }).toList();
+      _isLoading = false;
+    });
+  }
 
   void _showAddAccountSheet() {
     final bankCtrl = TextEditingController(text: 'Guaranty Trust Bank (GTBank)');
@@ -198,25 +207,28 @@ class _PayoutMethodsScreenState extends State<PayoutMethodsScreen> {
                     child: ElevatedButton(
                       onPressed: resolvedName.isEmpty
                           ? null
-                          : () {
-                              setState(() {
-                                _bankAccounts.add({
-                                  'bankName': bankCtrl.text,
-                                  'accountNumber': accNumCtrl.text,
-                                  'accountName': resolvedName,
-                                  'isVerified': true,
-                                  'code': '058',
-                                });
-                              });
+                          : () async {
+                              final bankName = bankCtrl.text.trim();
+                              final accNum = accNumCtrl.text.trim();
                               Navigator.of(modalContext).pop();
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Text('Bank account linked successfully!'),
-                                  backgroundColor: const Color(0xFF16A34A),
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
+                              final res = await ApiService().addPayoutMethod(
+                                bankName: bankName,
+                                bankCode: '058',
+                                accountNumber: accNum,
+                                accountName: resolvedName,
                               );
+                              if (res['success'] == true) {
+                                await _loadAccounts();
+                                if (!mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text('Bank account linked and verified successfully!'),
+                                    backgroundColor: const Color(0xFF16A34A),
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  ),
+                                );
+                              }
                             },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF146EF5),
@@ -495,7 +507,15 @@ class _PayoutMethodsScreenState extends State<PayoutMethodsScreen> {
               ],
             ),
             const SizedBox(height: 8),
-            ListView.separated(
+            if (_isLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24.0),
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else
+              ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: _bankAccounts.length,

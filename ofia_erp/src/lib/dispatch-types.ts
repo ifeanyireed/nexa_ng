@@ -38,6 +38,10 @@ export interface CourierDriver {
   rating: number;
   totalTrips: number;
   activeJobs: number;
+  heading?: number;
+  speed?: number;
+  batteryPct?: number;
+  status?: string;
 }
 
 export interface DispatchJob {

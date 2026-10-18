@@ -1,17 +1,69 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flexicon/flexicon.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/icon_util.dart';
+import '../services/telemetry_service.dart';
+import '../services/api_service.dart';
 import 'personal_info_screen.dart';
 import 'payout_methods_screen.dart';
 import 'notifications_settings_screen.dart';
 import 'operations_support_screen.dart';
 import 'login_screen.dart';
 
-class AccountScreen extends StatelessWidget {
+class AccountScreen extends StatefulWidget {
   final Function(int)? onNavigateToTab;
 
   const AccountScreen({super.key, this.onNavigateToTab});
+
+  @override
+  State<AccountScreen> createState() => _AccountScreenState();
+}
+
+class _AccountScreenState extends State<AccountScreen> {
+  String _riderName = 'Rider';
+  String _riderId = '';
+  String _riderRating = '5.0';
+  String _tenantName = 'Logistics Workspace';
+  String _tenantSlug = '';
+  String _vehicleType = 'Motorbike';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _riderName = prefs.getString('rider_name') ?? 'Rider';
+      _riderId = prefs.getString('rider_id') ?? '';
+      _riderRating = prefs.getString('rider_rating') ?? '5.0';
+      _tenantName = prefs.getString('rider_tenant_name') ?? 'Logistics Workspace';
+      _tenantSlug = prefs.getString('rider_tenant_slug') ?? '';
+      _vehicleType = prefs.getString('rider_vehicle_type') ?? 'Motorbike';
+    });
+
+    final profileRes = await ApiService().getRiderProfile();
+    if (profileRes['success'] == true && profileRes['rider'] != null) {
+      final r = profileRes['rider'];
+      if (!mounted) return;
+      setState(() {
+        if (r['name'] != null && (r['name'] as String).isNotEmpty) _riderName = r['name'];
+        if (r['id'] != null) _riderId = r['id'];
+        if (r['rating'] != null) _riderRating = (r['rating'] as num).toStringAsFixed(1);
+        if (r['vehicle_type'] != null) _vehicleType = r['vehicle_type'];
+      });
+    }
+  }
+
+  String _getInitials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty) return 'RD';
+    if (parts.length == 1) return parts[0].substring(0, parts[0].length >= 2 ? 2 : 1).toUpperCase();
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  }
 
   void _showLogoutDialog(BuildContext context) {
     showDialog(
@@ -28,9 +80,9 @@ class AccountScreen extends StatelessWidget {
             ),
           ],
         ),
-        content: const Text(
-          'Are you sure you want to log out of your Ofia Rider account? You will need to log back in to accept jobs and receive payout notifications.',
-          style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.45),
+        content: Text(
+          'Are you sure you want to log out of $_tenantName? Telemetry tracking will stop and you will need to sign in again to receive new dispatch offers.',
+          style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.45),
         ),
         actions: [
           TextButton(
@@ -41,12 +93,26 @@ class AccountScreen extends StatelessWidget {
             ),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-                (route) => false,
-              );
+              TelemetryService().stop();
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.remove('rider_token');
+              await prefs.remove('rider_tenant_slug');
+              await prefs.remove('rider_tenant_id');
+              await prefs.remove('rider_tenant_name');
+              await prefs.remove('rider_id');
+              await prefs.remove('rider_name');
+              await prefs.remove('rider_phone');
+              await prefs.remove('rider_rating');
+              await prefs.remove('rider_vehicle_type');
+
+              if (context.mounted) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  (route) => false,
+                );
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFEF4444),
@@ -111,10 +177,10 @@ class AccountScreen extends StatelessWidget {
                               ),
                             ],
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Text(
-                              'JA',
-                              style: TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: Color(0xFF64748B)),
+                              _getInitials(_riderName),
+                              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w800, color: Color(0xFF64748B)),
                             ),
                           ),
                         ),
@@ -134,39 +200,64 @@ class AccountScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'John Adebayo',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                  Text(
+                    _riderName,
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Rider ID: OF-RID-8842',
-                    style: TextStyle(fontSize: 13, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                  Text(
+                    'Rider ID: $_riderId',
+                    style: const TextStyle(fontSize: 13, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 8),
+                  // Dedicated Tenant Badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFBFDBFE)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.business_rounded, size: 14, color: Color(0xFF1D4ED8)),
+                        const SizedBox(width: 6),
+                        Text(
+                          _tenantName.toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                            color: Color(0xFF1D4ED8),
+                          ),
+                        ),
+                        if (_tenantSlug.isNotEmpty) ...[
+                          const SizedBox(width: 4),
+                          Text(
+                            '($_tenantSlug)',
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF3B82F6),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 10),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Icon(Icons.star, color: Color(0xFFFBBF24), size: 16),
                       const SizedBox(width: 4),
-                      const Text('4.8 Rating', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF334155))),
+                      Text('$_riderRating Rating', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF334155))),
                       const SizedBox(width: 12),
                       Container(width: 4, height: 4, decoration: const BoxDecoration(color: Color(0xFFCBD5E1), shape: BoxShape.circle)),
                       const SizedBox(width: 12),
-                      const Text('128 Deliveries', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF64748B))),
+                      Text(_vehicleType, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF64748B))),
                     ],
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFDBEAFE),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'Verified Agent',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF1D4ED8)),
-                    ),
                   ),
                 ],
               ),

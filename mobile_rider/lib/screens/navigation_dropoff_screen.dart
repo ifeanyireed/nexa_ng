@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../services/api_service.dart';
+import '../services/telemetry_service.dart';
 
 enum DeliveryPhase {
   inTransit,
@@ -15,16 +17,22 @@ class NavigationDropoffScreen extends StatefulWidget {
   final String pickupAddress;
   final String orderDetails;
   final String deliveryFee;
+  final String trackingNumber;
+  final double dropoffLat;
+  final double dropoffLng;
 
   const NavigationDropoffScreen({
     super.key,
-    this.orderId = 'OF-ORD-9182',
-    this.recipientName = 'Dr. Chioma Okonkwo',
-    this.recipientPhone = '+234 802 345 6789',
-    this.dropoffAddress = 'Apt 4B, Admiralty Heights, 15 Admiralty Way, Lekki Phase 1, Lagos',
-    this.pickupAddress = 'Electronics Hub, Computer Village, Ikeja',
-    this.orderDetails = 'Sony WH-1000XM5 Wireless Headphones (1x)',
-    this.deliveryFee = '₦2,850.00',
+    required this.orderId,
+    this.trackingNumber = '',
+    this.recipientName = 'Recipient',
+    this.recipientPhone = '',
+    this.dropoffAddress = '',
+    this.pickupAddress = '',
+    this.orderDetails = '',
+    this.deliveryFee = '₦0.00',
+    this.dropoffLat = 6.4520,
+    this.dropoffLng = 3.4735,
   });
 
   @override
@@ -36,6 +44,18 @@ class _NavigationDropoffScreenState extends State<NavigationDropoffScreen> {
   MapType _currentMapType = MapType.normal;
   bool _trafficEnabled = true;
   DeliveryPhase _phase = DeliveryPhase.inTransit;
+
+  @override
+  void initState() {
+    super.initState();
+    TelemetryService().setTripActive(true, jobId: widget.orderId);
+  }
+
+  @override
+  void dispose() {
+    TelemetryService().setTripActive(false);
+    super.dispose();
+  }
 
   // Realistic Lekki Phase 1 Lagos delivery coordinates
   static const LatLng _riderPosition = LatLng(6.4425, 3.4610); // En route on Lekki-Epe expressway
@@ -57,19 +77,20 @@ class _NavigationDropoffScreenState extends State<NavigationDropoffScreen> {
   ];
 
   Set<Marker> _buildMarkers() {
+    final destPosition = LatLng(widget.dropoffLat, widget.dropoffLng);
     return {
       Marker(
         markerId: const MarkerId('rider_courier'),
         position: _riderPosition,
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
         infoWindow: const InfoWindow(
-          title: 'You (Ofia Rider OF-RID-8842)',
-          snippet: 'Speed: 32 km/h • Super Soco CPx',
+          title: 'Courier Active Delivery',
+          snippet: 'Live GPS Telemetry Connected',
         ),
       ),
       Marker(
         markerId: const MarkerId('dropoff_destination'),
-        position: _dropoffPosition,
+        position: destPosition,
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
         infoWindow: InfoWindow(
           title: 'Drop-off: ${widget.recipientName}',
@@ -392,10 +413,10 @@ class _NavigationDropoffScreenState extends State<NavigationDropoffScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.info_outline_rounded, size: 14, color: Color(0xFF64748B)),
+                const Icon(Icons.shield_outlined, size: 14, color: Color(0xFF146EF5)),
                 const SizedBox(width: 4),
                 Text(
-                  'Demo Test Code: 7492',
+                  'Enter 4-digit verification code from recipient',
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey.shade600),
                 ),
               ],
@@ -405,12 +426,44 @@ class _NavigationDropoffScreenState extends State<NavigationDropoffScreen> {
               width: double.infinity,
               height: 52,
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(ctx);
-                  setState(() {
-                    _phase = DeliveryPhase.completed;
-                  });
-                  _showOrderSuccessSheet();
+                onPressed: () async {
+                  final otp = pinController.text.trim();
+                  if (otp.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please enter the 4-digit verification code.'),
+                        backgroundColor: Color(0xFFEF4444),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                    return;
+                  }
+
+                  final res = await ApiService().deliverWithOtp(
+                    jobId: widget.orderId,
+                    otp: otp,
+                    lat: _dropoffPosition.latitude,
+                    lng: _dropoffPosition.longitude,
+                  );
+
+                  if (!ctx.mounted) return;
+
+                  if (res['success'] == true) {
+                    Navigator.pop(ctx);
+                    setState(() {
+                      _phase = DeliveryPhase.completed;
+                    });
+                    TelemetryService().setTripActive(false);
+                    _showOrderSuccessSheet();
+                  } else {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      SnackBar(
+                        content: Text(res['error'] ?? 'Invalid Delivery OTP'),
+                        backgroundColor: const Color(0xFFEF4444),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF16A34A),

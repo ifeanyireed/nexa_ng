@@ -156,7 +156,7 @@ export const ERP_PAGE_CATALOG: ErpPageDef[] = [
     badge: "Admin",
     tabs: [
       { id: "command", label: "Waybill & Parcel Center", path: "/erp/admin/dispatch" },
-      { id: "operator", label: "Operator Console", path: "/erp/ops/dispatch" },
+      { id: "operator", label: "Operator Console", path: "/erp/admin/dispatch?tab=queue" },
     ],
   },
   {
@@ -164,11 +164,11 @@ export const ERP_PAGE_CATALOG: ErpPageDef[] = [
     label: "Dispatch Operator Console",
     category: "Portals & Team",
     description: "Active parcel intake, courier waybills, rider manifests, and live deliveries.",
-    href: "/erp/ops/dispatch",
+    href: "/erp/admin/dispatch?tab=queue",
     iconName: "Truck",
     badge: "Live",
     tabs: [
-      { id: "console", label: "Live Parcel Console", path: "/erp/ops/dispatch" },
+      { id: "console", label: "Live Parcel Console", path: "/erp/admin/dispatch?tab=queue" },
     ],
   },
   {

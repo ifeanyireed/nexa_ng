@@ -6,7 +6,7 @@ import (
 	"service_erp/utils"
 )
 
-// HandleSendEmail handles requests to send emails via the finance email utility / email proxy
+// HandleSendEmail handles requests to send emails via the finance email utility with multi-tenant direct SMTP and failover
 func HandleSendEmail(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
@@ -21,7 +21,17 @@ func HandleSendEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := utils.SendEmailViaProxy(payload); err != nil {
+	tenantSlug := payload.TenantSlug
+	if tenantSlug == "" {
+		tenantSlug = r.Header.Get("x-tenant-slug")
+	}
+	if tenantSlug == "" {
+		tenantSlug = extractTenantSlug(r)
+	}
+	payload.TenantSlug = tenantSlug
+
+	targetDB := getDBForSlug(tenantSlug)
+	if err := DispatchTenantEmail(targetDB, tenantSlug, payload); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": err.Error()})
 		return

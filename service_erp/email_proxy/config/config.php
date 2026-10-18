@@ -8,7 +8,7 @@ return [
     'api_key' => 'ep_live_6f3b92d8a4c1e7f50b4a1d9c2e8f7a3b',
 
     // SMTP Configuration (Hostinger / ResultsPro SMTP)
-    'smtp_host'     => 'mail.resultspro.ng', 
+    'smtp_host'     => 'smtp.hostinger.com', 
     'smtp_auth'     => true,                 
     'smtp_username' => 'hello@resultspro.ng',
     'smtp_password' => '*Reedb4b4',

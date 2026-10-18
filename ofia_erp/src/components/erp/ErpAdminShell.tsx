@@ -63,6 +63,7 @@ import {
   Bike,
   Navigation,
   MapPin,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -261,7 +262,7 @@ export function ErpAdminShell({
       case "inventory_officer":
         return { path: "/erp/admin/shop/inventory", label: "Inventory", roleKey: "inventory_officer" };
       case "dispatcher":
-        return { path: "/erp/ops/dispatch", label: "Dispatch", roleKey: "dispatcher" };
+        return { path: "/erp/admin/dispatch", label: "Dispatch", roleKey: "dispatcher" };
       case "admin":
       default:
         return { path: "/erp/admin", label: "Admin", roleKey: "admin" };
@@ -620,7 +621,7 @@ export function ErpAdminShell({
             (allowedPage === "mobility" && pathname.startsWith("/erp/admin/mobility")) ||
             (allowedPage === "mobility_ops" && pathname.startsWith("/erp/ops/mobility")) ||
             (allowedPage === "dispatch" && pathname.startsWith("/erp/admin/dispatch")) ||
-            (allowedPage === "dispatch_ops" && pathname.startsWith("/erp/ops/dispatch")) ||
+            (allowedPage === "dispatch_ops" && (pathname.startsWith("/erp/ops/dispatch") || pathname.startsWith("/erp/admin/dispatch"))) ||
             (allowedPage === "marketplace" && pathname.startsWith("/erp/admin/marketplace")) ||
             (allowedPage === "ai" && pathname.startsWith("/erp/admin/ai")) ||
             (allowedPage === "users" && (pathname.startsWith("/erp/admin/users") || pathname.startsWith("/erp/admin/departments"))) ||
@@ -664,7 +665,7 @@ export function ErpAdminShell({
               (allowedPage === "mobility" && pathname.startsWith("/erp/admin/mobility")) ||
               (allowedPage === "mobility_ops" && pathname.startsWith("/erp/ops/mobility")) ||
               (allowedPage === "dispatch" && pathname.startsWith("/erp/admin/dispatch")) ||
-              (allowedPage === "dispatch_ops" && pathname.startsWith("/erp/ops/dispatch")) ||
+              (allowedPage === "dispatch_ops" && (pathname.startsWith("/erp/ops/dispatch") || pathname.startsWith("/erp/admin/dispatch"))) ||
               (allowedPage === "marketplace" && pathname.startsWith("/erp/admin/marketplace")) ||
               (allowedPage === "ai" && pathname.startsWith("/erp/admin/ai")) ||
               (allowedPage === "users" && (pathname.startsWith("/erp/admin/users") || pathname.startsWith("/erp/admin/departments"))) ||
@@ -874,7 +875,7 @@ export function ErpAdminShell({
     { label: "Marketplace Manager", icon: <ShoppingBag className="w-6 h-6" />, href: "/erp/admin/marketplace", key: "marketplace", section: "Operations" },
     { label: "Ofia Shop Manager", icon: <Store className="w-6 h-6" />, href: "/erp/admin/shop", badge: "Retail", key: "shop", section: "Operations" },
     { label: "Ofia Mobility Manager", icon: <Truck className="w-6 h-6" />, href: "/erp/admin/mobility", badge: "Mobility", key: "mobility", section: "Operations" },
-    { label: "Ofia Dispatch Manager", icon: <Bike className="w-6 h-6" />, href: "/erp/admin/dispatch", badge: "Admin", key: "dispatch", section: "Operations" },
+    { label: "Ofia Dispatch Manager", icon: <Bike className="w-6 h-6" />, href: "/erp/admin/dispatch", badge: "Live", key: "dispatch", section: "Operations" },
 
     // 2. OFIA ENTERPRISE SUITE
     { label: "CRM & Marketing", icon: <BarChart3 className="w-6 h-6" />, href: "/erp/admin/crm", badge: "CRM", key: "crm", section: "Ofia Enterprise Suite" },
@@ -885,7 +886,6 @@ export function ErpAdminShell({
     // 3. PORTALS & WORKSPACES
     { label: "Sales Closer Portal", icon: <Target className="w-6 h-6" />, href: "/erp/ops/crm", badge: "Closer", key: "sales_closer", section: "Portals & Team" },
     { label: "Mobility Operations", icon: <Radio className="w-6 h-6" />, href: "/erp/ops/mobility", badge: "Live", key: "mobility_ops", section: "Portals & Team" },
-    { label: "Dispatch Operator", icon: <Bike className="w-6 h-6" />, href: "/erp/ops/dispatch", badge: "Live", key: "dispatch_ops", section: "Portals & Team" },
     { label: "Employee Portal", icon: <UserCheck className="w-6 h-6" />, href: "/erp/employee", key: "employee", section: "Portals & Team" },
     { label: "Manager Portal", icon: <Sliders className="w-6 h-6" />, href: "/erp/manager", key: "manager", section: "Portals & Team" },
     { label: "Executive Portal", icon: <TrendingUp className="w-6 h-6" />, href: "/erp/md", key: "md", section: "Portals & Team" },
@@ -930,6 +930,17 @@ export function ErpAdminShell({
         { label: "Bus Rental Charters", href: "/erp/admin/mobility/services/rental", icon: <Car className="w-3.5 h-3.5" />, group: "Services & Manifests" },
         { label: "School Bus Manifest", href: "/erp/admin/mobility/services/school", icon: <Building2 className="w-3.5 h-3.5" />, group: "Services & Manifests" },
         { label: "Staff Commute Trips", href: "/erp/admin/mobility/services/staff", icon: <Users className="w-3.5 h-3.5" />, group: "Services & Manifests" },
+      ];
+    }
+
+    if (pathname.startsWith("/erp/admin/dispatch")) {
+      return [
+        { label: "Overview", href: "/erp/admin/dispatch", icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
+        { label: "Dispatch Console", href: "/erp/admin/dispatch?tab=queue", icon: <Bike className="w-3.5 h-3.5" />, badge: "Console" },
+        { label: "Live Fleet Map", href: "/erp/admin/dispatch?tab=map", icon: <Navigation className="w-3.5 h-3.5" /> },
+        { label: "Rider Management", href: "/erp/admin/dispatch?tab=fleet", icon: <Users className="w-3.5 h-3.5" /> },
+        { label: "Exceptions", href: "/erp/admin/dispatch?tab=exceptions", icon: <AlertTriangle className="w-3.5 h-3.5" /> },
+        { label: "Tariff & Quotes", href: "/erp/admin/dispatch?tab=rates", icon: <DollarSign className="w-3.5 h-3.5" /> },
       ];
     }
 
@@ -1081,6 +1092,7 @@ export function ErpAdminShell({
     let activeModKey = "";
     if (pathname.startsWith("/erp/admin/mobility")) activeModKey = "mobility";
     else if (pathname.startsWith("/erp/ops/mobility")) activeModKey = "mobility_ops";
+    else if (pathname.startsWith("/erp/admin/dispatch")) activeModKey = "dispatch";
     else if (pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer")) activeModKey = "crm";
     else if (pathname.startsWith("/erp/admin/ai")) activeModKey = "ai";
     else if (pathname.startsWith("/erp/admin/shop")) activeModKey = "shop";
@@ -1141,6 +1153,13 @@ export function ErpAdminShell({
       if (item.key === "crm") {
         return isProvisioned("crm") && userAssignedPages.includes("crm");
       }
+      if (item.key === "dispatch") {
+        return isProvisioned("dispatch") && (
+          userAssignedPages.includes("dispatch") ||
+          userAssignedPages.includes("dispatch_ops") ||
+          userAssignedPages.includes("dispatcher")
+        );
+      }
       return userAssignedPages.includes(item.key);
     }
 
@@ -1158,6 +1177,9 @@ export function ErpAdminShell({
       if (deptAccess.matchedDepartment) {
         if (item.key === "overview") {
           return deptAccess.isPageAllowed("overview");
+        }
+        if (item.key === "dispatch") {
+          return deptAccess.isPageAllowed("dispatch") || deptAccess.isPageAllowed("dispatch_ops");
         }
         return deptAccess.isPageAllowed(item.key);
       }
@@ -1664,6 +1686,14 @@ export function ErpAdminShell({
                 const renderTabPill = (tab: SubNavItem, idx: number) => {
                   const isTabActive = (() => {
                     if (pathname === tab.href) return true;
+                    if (tab.href.startsWith("/erp/admin/dispatch")) {
+                      if (typeof window !== "undefined") {
+                        const currentTab = new URLSearchParams(window.location.search).get("tab") || "overview";
+                        const targetTab = new URLSearchParams(tab.href.split("?")[1] || "").get("tab") || "overview";
+                        return currentTab === targetTab;
+                      }
+                      return tab.href === "/erp/admin/dispatch";
+                    }
                     if (tab.href === "/erp/admin/shop") return pathname === "/erp/admin/shop";
                     if (tab.href === "/erp/admin/shop/catalog") return pathname.startsWith("/erp/admin/shop/catalog");
                     if (tab.href === "/erp/admin/shop/services") return pathname.startsWith("/erp/admin/shop/services");

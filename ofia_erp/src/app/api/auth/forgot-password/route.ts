@@ -10,7 +10,7 @@ const ERP_BASE =
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
-    const { email } = body;
+    const { email, tenant } = body;
     const normalizedEmail = (email || "").trim().toLowerCase();
 
     if (!normalizedEmail || !normalizedEmail.includes("@")) {
@@ -20,11 +20,32 @@ export async function POST(request: Request) {
       );
     }
 
+    const host = request.headers.get("host") || "";
+    const origin = request.headers.get("origin") || "";
+    let tenantSlug = (tenant || request.headers.get("x-tenant-slug") || "").trim();
+    if (!tenantSlug && host) {
+      const parts = host.split(".");
+      if (parts.length > 1 && !["www", "admin", "app", "api", "localhost"].includes(parts[0])) {
+        tenantSlug = parts[0];
+      }
+    }
+
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (tenantSlug) {
+      headers["x-tenant-slug"] = tenantSlug;
+    }
+    if (origin) {
+      headers["Origin"] = origin;
+    } else if (host) {
+      const protocol = host.includes("localhost") ? "http" : "https";
+      headers["Origin"] = `${protocol}://${host}`;
+    }
+
     const res = await fetch(`${ERP_BASE}/send-reset-email`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: normalizedEmail }),
-      signal: AbortSignal.timeout(10000),
+      headers,
+      body: JSON.stringify({ email: normalizedEmail, tenant: tenantSlug }),
+      signal: AbortSignal.timeout(15000),
     });
 
     const data = await res.json().catch(() => null);

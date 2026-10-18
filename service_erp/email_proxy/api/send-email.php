@@ -141,13 +141,22 @@ $mail = new PHPMailer(true);
 
 try {
     // Server settings
+    $smtpHost     = !empty($input['smtp_host']) ? $input['smtp_host'] : $config['smtp_host'];
+    $smtpUser     = !empty($input['smtp_username']) ? $input['smtp_username'] : $config['smtp_username'];
+    $smtpPass     = !empty($input['smtp_password']) ? $input['smtp_password'] : $config['smtp_password'];
+    $smtpPort     = !empty($input['smtp_port']) ? (int)$input['smtp_port'] : (int)$config['smtp_port'];
+
     $mail->isSMTP();
-    $mail->Host       = $config['smtp_host'];
+    $mail->Host       = $smtpHost;
     $mail->SMTPAuth   = $config['smtp_auth'];
-    $mail->Username   = $config['smtp_username'];
-    $mail->Password   = $config['smtp_password'];
-    $mail->SMTPSecure = $config['smtp_secure'];
-    $mail->Port       = $config['smtp_port'];
+    $mail->Username   = $smtpUser;
+    $mail->Password   = $smtpPass;
+    $mail->Port       = $smtpPort;
+    if ($smtpPort === 587) {
+        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+    } else {
+        $mail->SMTPSecure = $config['smtp_secure'];
+    }
 
     // Recipients
     $mail->setFrom($from, $fromName);
@@ -171,7 +180,7 @@ try {
         if (strpos($e->getMessage(), 'Sender address rejected') !== false || strpos($mail->ErrorInfo, 'Sender address rejected') !== false) {
             $mail->clearAllRecipients();
             $mail->clearReplyTos();
-            $mail->setFrom($config['smtp_username'], $fromName);
+            $mail->setFrom($smtpUser, $fromName);
             $mail->addReplyTo($from, $fromName);
             $mail->addAddress($to);
             $mail->send();

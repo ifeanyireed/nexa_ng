@@ -130,13 +130,15 @@ export function RoleGuard({
     else if (role === "employee") home = "/erp/employee";
     else if (role === "cashier") home = "/erp/admin/shop/pos";
     else if (role === "inventory_officer") home = "/erp/admin/shop/inventory";
-    else if (role === "dispatcher") home = "/erp/employee";
+    else if (role === "dispatcher") home = "/erp/admin/dispatch";
 
     if (assignedPages.length > 0 && !assignedPages.includes("employee")) {
       if (assignedPages.includes("sales_closer")) {
         home = "/erp/ops/crm";
       } else if (assignedPages.includes("crm")) {
         home = "/erp/admin/crm";
+      } else if (assignedPages.includes("dispatcher") || assignedPages.includes("dispatch") || assignedPages.includes("dispatch_ops")) {
+        home = "/erp/admin/dispatch";
       }
     }
 
@@ -147,7 +149,12 @@ export function RoleGuard({
     let isDepartmentAllowed = false;
     if (userDept && targetPageKey) {
       const dAccess = getUserDepartmentAccess({ department: userDept, role }, departmentConfigs);
-      if (dAccess.matchedDepartment && dAccess.isPageAllowed(targetPageKey)) {
+      const isPageGranted =
+        dAccess.isPageAllowed(targetPageKey) ||
+        (targetPageKey === "dispatch" && dAccess.isPageAllowed("dispatch_ops")) ||
+        (targetPageKey === "dispatch_ops" && dAccess.isPageAllowed("dispatch"));
+
+      if (dAccess.matchedDepartment && isPageGranted) {
         if (dAccess.isTabAllowed(targetPageKey, pathname)) {
           isDepartmentAllowed = true;
         }
@@ -157,7 +164,10 @@ export function RoleGuard({
     // DIRECT USER ASSIGNED PAGES CHECK:
     // If the user has specific assigned pages (e.g. Sales Closer with Employee Portal + Sales Closer Portal):
     if (assignedPages && assignedPages.length > 0 && targetPageKey) {
-      const isAllowedByAssigned = assignedPages.includes(targetPageKey);
+      const isAllowedByAssigned =
+        assignedPages.includes(targetPageKey) ||
+        (targetPageKey === "dispatch" && assignedPages.includes("dispatch_ops")) ||
+        (targetPageKey === "dispatch_ops" && assignedPages.includes("dispatch"));
 
       if (isAllowedByAssigned) {
         // Enforce CRM module provisioning: if accessing sales_closer or CRM, tenant MUST have CRM module

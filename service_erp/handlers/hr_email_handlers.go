@@ -12,9 +12,13 @@ import (
 	"sync"
 )
 
-// Send Email via Email Proxy
+// Send Email via DispatchTenantEmail
 func sendEmail(to, subject, htmlBody string) error {
-	return utils.SendEmail(to, subject, htmlBody)
+	return DispatchTenantEmail(db, "platform", utils.EmailPayload{
+		To:      to,
+		Subject: subject,
+		HTML:    htmlBody,
+	})
 }
 
 // SHA256 Token generator for password resets
@@ -41,16 +45,41 @@ func HandleSendResetEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tenantSlug := r.Header.Get("x-tenant-slug")
+	if tenantSlug == "" {
+		tenantSlug = req.Tenant
+	}
+	if tenantSlug == "" {
+		tenantSlug = extractTenantSlug(r)
+	}
+
+	targetDB := getDBForSlug(tenantSlug)
+	if targetDB == nil {
+		targetDB = db
+	}
+	if targetDB == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Database unavailable"})
+		return
+	}
+
 	origin := r.Header.Get("Origin")
 	if origin == "" {
-		origin = os.Getenv("PORTAL_URL")
-		if origin == "" {
-			origin = "https://erp.ofia.ng"
+		if tenantSlug != "" && tenantSlug != "platform" && tenantSlug != "default" {
+			origin = fmt.Sprintf("https://%s.ofia.ng", tenantSlug)
+		} else {
+			origin = os.Getenv("PORTAL_URL")
+			if origin == "" {
+				origin = "https://erp.ofia.ng"
+			}
 		}
 	}
 
-	// Fetch users from database
-	rows, err := db.Query(`SELECT id, name, email, password FROM "User"`)
+	// Fetch users from target database
+	rows, err := targetDB.Query(`SELECT id, name, email, password FROM "User"`)
+	if err != nil && targetDB != db && db != nil {
+		rows, err = db.Query(`SELECT id, name, email, password FROM "User"`)
+	}
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Database error: " + err.Error()})
@@ -80,6 +109,23 @@ func HandleSendResetEmail(w http.ResponseWriter, r *http.Request) {
 		for _, id := range req.UserIDs {
 			if u, ok := userMap[id]; ok && u.Email != "" {
 				targetUsers = append(targetUsers, u)
+			}
+		}
+	}
+
+	// Secondary check in platform db if user not found in targetDB
+	if len(targetUsers) == 0 && targetDB != db && db != nil {
+		pRows, pErr := db.Query(`SELECT id, name, email, password FROM "User"`)
+		if pErr == nil {
+			defer pRows.Close()
+			for pRows.Next() {
+				var u User
+				if err := pRows.Scan(&u.ID, &u.Name, &u.Email, &u.Password); err != nil {
+					continue
+				}
+				if req.Email != "" && strings.ToLower(strings.TrimSpace(u.Email)) == strings.ToLower(strings.TrimSpace(req.Email)) {
+					targetUsers = append(targetUsers, u)
+				}
 			}
 		}
 	}
@@ -152,9 +198,14 @@ func HandleSendResetEmail(w http.ResponseWriter, r *http.Request) {
 </html>`, u.Name, resetLink)
 
 		wg.Add(1)
-		go func(toEmail, subject, body string) {
+		go func(toEmail, subject, body, tSlug string) {
 			defer wg.Done()
-			err := sendEmail(toEmail, subject, body)
+			err := DispatchTenantEmail(targetDB, tSlug, utils.EmailPayload{
+				To:         toEmail,
+				Subject:    subject,
+				HTML:       body,
+				TenantSlug: tSlug,
+			})
 			if err == nil {
 				mu.Lock()
 				successCount++
@@ -165,7 +216,7 @@ func HandleSendResetEmail(w http.ResponseWriter, r *http.Request) {
 				lastErr = err
 				mu.Unlock()
 			}
-		}(u.Email, "Reset Your Password - OFIA Performance Portal", htmlBody)
+		}(u.Email, "Reset Your Password - OFIA Performance Portal", htmlBody, tenantSlug)
 	}
 	wg.Wait()
 
@@ -206,8 +257,29 @@ func HandleSendBulkNotification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tenantSlug := r.Header.Get("x-tenant-slug")
+	if tenantSlug == "" {
+		tenantSlug = req.Tenant
+	}
+	if tenantSlug == "" {
+		tenantSlug = extractTenantSlug(r)
+	}
+
+	targetDB := getDBForSlug(tenantSlug)
+	if targetDB == nil {
+		targetDB = db
+	}
+	if targetDB == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Database unavailable"})
+		return
+	}
+
 	// Fetch users from database
-	rows, err := db.Query(`SELECT id, name, email FROM "User"`)
+	rows, err := targetDB.Query(`SELECT id, name, email FROM "User"`)
+	if err != nil && targetDB != db && db != nil {
+		rows, err = db.Query(`SELECT id, name, email FROM "User"`)
+	}
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Database error: " + err.Error()})
@@ -282,9 +354,14 @@ func HandleSendBulkNotification(w http.ResponseWriter, r *http.Request) {
 </html>`, u.Name, formattedMsg)
 
 		wg.Add(1)
-		go func(toEmail, subject, body string) {
+		go func(toEmail, subject, body, tSlug string) {
 			defer wg.Done()
-			err := sendEmail(toEmail, subject, body)
+			err := DispatchTenantEmail(targetDB, tSlug, utils.EmailPayload{
+				To:         toEmail,
+				Subject:    subject,
+				HTML:       body,
+				TenantSlug: tSlug,
+			})
 			if err == nil {
 				mu.Lock()
 				successCount++
@@ -292,7 +369,7 @@ func HandleSendBulkNotification(w http.ResponseWriter, r *http.Request) {
 			} else {
 				log.Printf("Failed to send notification email to %s: %v", toEmail, err)
 			}
-		}(u.Email, req.Subject, htmlBody)
+		}(u.Email, req.Subject, htmlBody, tenantSlug)
 	}
 	wg.Wait()
 
@@ -323,8 +400,26 @@ func HandleUpdatePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Fetch user from database
-	tx, err := db.Begin()
+	tenantSlug := r.Header.Get("x-tenant-slug")
+	if tenantSlug == "" {
+		tenantSlug = req.Tenant
+	}
+	if tenantSlug == "" {
+		tenantSlug = extractTenantSlug(r)
+	}
+
+	targetDB := getDBForSlug(tenantSlug)
+	if targetDB == nil {
+		targetDB = db
+	}
+	if targetDB == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"error": "Database unavailable"})
+		return
+	}
+
+	// Fetch user from target database
+	tx, err := targetDB.Begin()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to begin transaction: " + err.Error()})
@@ -333,7 +428,11 @@ func HandleUpdatePassword(w http.ResponseWriter, r *http.Request) {
 	defer tx.Rollback()
 
 	var u User
-	err = tx.QueryRow(`SELECT id, name, email, password FROM "User" WHERE email = $1`, req.Email).Scan(&u.ID, &u.Name, &u.Email, &u.Password)
+	err = tx.QueryRow(`SELECT id, name, email, password FROM "User" WHERE LOWER(email) = LOWER($1)`, req.Email).Scan(&u.ID, &u.Name, &u.Email, &u.Password)
+	if err != nil && targetDB != db && db != nil {
+		// Try finding in platform DB if user not in tenant DB
+		err = db.QueryRow(`SELECT id, name, email, password FROM "User" WHERE LOWER(email) = LOWER($1)`, req.Email).Scan(&u.ID, &u.Name, &u.Email, &u.Password)
+	}
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		json.NewEncoder(w).Encode(map[string]string{"error": "User not found"})
@@ -354,7 +453,7 @@ func HandleUpdatePassword(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update password in database
-	_, err = tx.Exec(`UPDATE "User" SET password = $1 WHERE email = $2`, req.NewPassword, req.Email)
+	_, err = tx.Exec(`UPDATE "User" SET password = $1 WHERE LOWER(email) = LOWER($2)`, req.NewPassword, req.Email)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to update password: " + err.Error()})
@@ -365,6 +464,11 @@ func HandleUpdatePassword(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to commit transaction: " + err.Error()})
 		return
+	}
+
+	// Also synchronize password to platform DB if targetDB != db
+	if targetDB != db && db != nil {
+		_, _ = db.Exec(`UPDATE "User" SET password = $1 WHERE LOWER(email) = LOWER($2)`, req.NewPassword, req.Email)
 	}
 
 	w.WriteHeader(http.StatusOK)

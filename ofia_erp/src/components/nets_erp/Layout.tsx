@@ -384,11 +384,8 @@ export default function ERPLayout({ children }: { children: React.ReactNode }) {
       if (dAccess.isPageAllowed("marketplace") && !hasRoute("/erp/admin/marketplace")) {
         items.push({ name: "Marketplace", route: "/erp/admin/marketplace", icon: <BuildingIcon /> });
       }
-      if (dAccess.isPageAllowed("dispatch") && !hasRoute("/erp/admin/dispatch")) {
+      if ((dAccess.isPageAllowed("dispatch") || dAccess.isPageAllowed("dispatch_ops")) && !hasRoute("/erp/admin/dispatch")) {
         items.push({ name: "Dispatch Manager", route: "/erp/admin/dispatch", icon: <TransactionsIcon /> });
-      }
-      if (dAccess.isPageAllowed("dispatch_ops") && !hasRoute("/erp/ops/dispatch")) {
-        items.push({ name: "Operator Console", route: "/erp/ops/dispatch", icon: <TransactionsIcon /> });
       }
     }
 

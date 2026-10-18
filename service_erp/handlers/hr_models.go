@@ -69,17 +69,20 @@ type SeedData struct {
 }
 
 type ResetEmailRequest struct {
+	Tenant  string   `json:"tenant,omitempty"`
 	UserIDs []string `json:"userIds"`
 	Email   string   `json:"email"`
 }
 
 type BulkNotificationRequest struct {
+	Tenant  string   `json:"tenant,omitempty"`
 	UserIDs []string `json:"userIds"`
 	Subject string   `json:"subject"`
 	Message string   `json:"message"`
 }
 
 type UpdatePasswordRequest struct {
+	Tenant      string `json:"tenant,omitempty"`
 	Email       string `json:"email"`
 	Token       string `json:"token"`
 	NewPassword string `json:"newPassword"`

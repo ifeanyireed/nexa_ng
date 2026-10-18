@@ -74,13 +74,13 @@ func extractTenantSlug(r *http.Request) string {
 	return strings.ToLower(strings.TrimSpace(slug))
 }
 
-func getDB(r *http.Request) *sql.DB {
-	slug := extractTenantSlug(r)
-	if slug == "" || slug == "default" || slug == "platform" {
+func getDBForSlug(slug string) *sql.DB {
+	norm := strings.ToLower(strings.TrimSpace(slug))
+	if norm == "" || norm == "default" || norm == "platform" {
 		return db
 	}
 
-	targetURL, ok := tenantProjectRegistry[slug]
+	targetURL, ok := tenantProjectRegistry[norm]
 	if !ok || targetURL == "" {
 		if db != nil {
 			var fetchedURL, fetchedStorage sql.NullString
@@ -90,43 +90,43 @@ func getDB(r *http.Request) *sql.DB {
 				LEFT JOIN "Organization" o ON LOWER(o.slug) = LOWER(ti.tenant_slug)
 				WHERE (LOWER(ti.tenant_slug) = $1 OR LOWER(o.id::text) = $1)
 				  AND ti.is_custom_db = true
-				LIMIT 1`, slug).Scan(&fetchedURL, &fetchedStorage)
+				LIMIT 1`, norm).Scan(&fetchedURL, &fetchedStorage)
 			if err == nil && fetchedURL.Valid && fetchedURL.String != "" {
-				RegisterTenantProject(slug, fetchedURL.String, fetchedStorage.String)
+				RegisterTenantProject(norm, fetchedURL.String, fetchedStorage.String)
 				targetURL = fetchedURL.String
 				ok = true
 			}
 		}
 	}
 	if !ok || targetURL == "" {
-		log.Printf("❌ Strict Multi-Tenancy: No custom database configured for tenant '%s'. Fallback to platform database is disabled.", slug)
+		log.Printf("❌ Strict Multi-Tenancy: No custom database configured for tenant '%s'. Fallback to platform database is disabled.", norm)
 		return nil
 	}
 
-	if val, ok := tenantSqlPools.Load(slug); ok {
+	if val, ok := tenantSqlPools.Load(norm); ok {
 		return val.(*sql.DB)
 	}
 
 	poolMu.Lock()
 	defer poolMu.Unlock()
 
-	if val, ok := tenantSqlPools.Load(slug); ok {
+	if val, ok := tenantSqlPools.Load(norm); ok {
 		return val.(*sql.DB)
 	}
 
-	log.Printf("🐘 Initializing dedicated Neon project database pool for tenant '%s'...", slug)
+	log.Printf("🐘 Initializing dedicated Neon project database pool for tenant '%s'...", norm)
 	gdb, err := gorm.Open(postgres.Open(targetURL), &gorm.Config{
 		PrepareStmt: true,
 		Logger:      logger.Default.LogMode(logger.Warn),
 	})
 	if err != nil {
-		log.Printf("❌ Strict Multi-Tenancy: Failed to connect to dedicated project for tenant '%s': %v (fallback to platform DB is disabled)", slug, err)
+		log.Printf("❌ Strict Multi-Tenancy: Failed to connect to dedicated project for tenant '%s': %v (fallback to platform DB is disabled)", norm, err)
 		return nil
 	}
 
 	sDB, err := gdb.DB()
 	if err != nil {
-		log.Printf("❌ Strict Multi-Tenancy: Failed to get sql.DB for tenant '%s': %v (fallback to platform DB is disabled)", slug, err)
+		log.Printf("❌ Strict Multi-Tenancy: Failed to get sql.DB for tenant '%s': %v (fallback to platform DB is disabled)", norm, err)
 		return nil
 	}
 
@@ -137,9 +137,13 @@ func getDB(r *http.Request) *sql.DB {
 	EnsureHRTablesOnDB(sDB)
 	EnsureCRMTablesOnDB(sDB)
 
-	tenantSqlPools.Store(slug, sDB)
-	tenantGormPools.Store(slug, gdb)
+	tenantSqlPools.Store(norm, sDB)
+	tenantGormPools.Store(norm, gdb)
 	return sDB
+}
+
+func getDB(r *http.Request) *sql.DB {
+	return getDBForSlug(extractTenantSlug(r))
 }
 
 func getGorm(r *http.Request) *gorm.DB {

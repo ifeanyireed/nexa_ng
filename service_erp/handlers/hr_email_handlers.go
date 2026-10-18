@@ -10,6 +10,8 @@ import (
 	"service_erp/utils"
 	"strings"
 	"sync"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Send Email via DispatchTenantEmail
@@ -394,7 +396,18 @@ func HandleUpdatePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Email == "" || req.Token == "" || req.NewPassword == "" {
+	newPwd := strings.TrimSpace(req.NewPassword)
+	if newPwd == "" {
+		newPwd = strings.TrimSpace(req.NewPasswordSnake)
+	}
+	if newPwd == "" {
+		newPwd = strings.TrimSpace(req.Password)
+	}
+
+	req.Email = strings.TrimSpace(req.Email)
+	req.Token = strings.TrimSpace(req.Token)
+
+	if req.Email == "" || req.Token == "" || newPwd == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Email, Token, and new password are required"})
 		return
@@ -452,8 +465,20 @@ func HandleUpdatePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Compute hashed password (ensure it's a bcrypt hash)
+	hashedPassword := newPwd
+	if !strings.HasPrefix(newPwd, "$2a$") && !strings.HasPrefix(newPwd, "$2b$") {
+		hBytes, errHash := bcrypt.GenerateFromPassword([]byte(newPwd), 10)
+		if errHash != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{"error": "Failed to hash password"})
+			return
+		}
+		hashedPassword = string(hBytes)
+	}
+
 	// Update password in database
-	_, err = tx.Exec(`UPDATE "User" SET password = $1 WHERE LOWER(email) = LOWER($2)`, req.NewPassword, req.Email)
+	_, err = tx.Exec(`UPDATE "User" SET password = $1 WHERE LOWER(email) = LOWER($2)`, hashedPassword, req.Email)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode(map[string]string{"error": "Failed to update password: " + err.Error()})
@@ -468,7 +493,7 @@ func HandleUpdatePassword(w http.ResponseWriter, r *http.Request) {
 
 	// Also synchronize password to platform DB if targetDB != db
 	if targetDB != db && db != nil {
-		_, _ = db.Exec(`UPDATE "User" SET password = $1 WHERE LOWER(email) = LOWER($2)`, req.NewPassword, req.Email)
+		_, _ = db.Exec(`UPDATE "User" SET password = $1 WHERE LOWER(email) = LOWER($2)`, hashedPassword, req.Email)
 	}
 
 	w.WriteHeader(http.StatusOK)

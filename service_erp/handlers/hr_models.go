@@ -82,8 +82,10 @@ type BulkNotificationRequest struct {
 }
 
 type UpdatePasswordRequest struct {
-	Tenant      string `json:"tenant,omitempty"`
-	Email       string `json:"email"`
-	Token       string `json:"token"`
-	NewPassword string `json:"newPassword"`
+	Tenant           string `json:"tenant,omitempty"`
+	Email            string `json:"email"`
+	Token            string `json:"token"`
+	NewPassword      string `json:"newPassword"`
+	NewPasswordSnake string `json:"new_password,omitempty"`
+	Password         string `json:"password,omitempty"`
 }

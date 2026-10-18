@@ -45,13 +45,30 @@ export async function POST(request: Request) {
       );
     }
 
+    const host = request.headers.get("host") || "";
+    let tenantSlug = (request.headers.get("x-tenant-slug") || "").trim();
+    if (!tenantSlug && host) {
+      const parts = host.split(".");
+      if (parts.length > 1 && !["www", "admin", "app", "api", "localhost"].includes(parts[0])) {
+        tenantSlug = parts[0];
+      }
+    }
+
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (tenantSlug) {
+      headers["x-tenant-slug"] = tenantSlug;
+    }
+
     const res = await fetch(`${ERP_BASE}/update-password`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({
         email: normalizedEmail,
         token: normalizedToken,
         new_password: targetPassword,
+        newPassword: targetPassword,
+        password: targetPassword,
+        tenant: tenantSlug,
       }),
       signal: AbortSignal.timeout(10000),
     });

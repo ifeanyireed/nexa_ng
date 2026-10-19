@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { VendorStore, VerticalType } from "@/types/storefront";
 import {
-  ShieldCheck,
-  Truck,
   Clock,
   MapPin,
   Phone,
@@ -199,48 +197,6 @@ export default function StoreFooter({ store }: StoreFooterProps) {
   return (
     <footer className="w-full bg-[#111216] text-white pt-14 pb-10 border-t border-white/10 mt-20">
       <div className="max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-14 space-y-12">
-        {/* Value Proposition Highlights */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-10 border-b border-white/10">
-          <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-              <ShieldCheck className="w-5 h-5 text-blue-400" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-white">Verified Business Storefront</h4>
-              <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">
-                Direct merchant storefront running on Ofia Commerce ecosystem.
-              </p>
-            </div>
-          </div>
-
-          <Link href="/dispatch" className="flex items-start gap-3.5 group hover:bg-white/5 p-2 -m-2 rounded-2xl transition-all">
-            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 group-hover:border-emerald-500/50 flex items-center justify-center shrink-0">
-              <Truck className="w-5 h-5 text-emerald-400" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-white group-hover:text-emerald-400 transition-colors flex items-center gap-1.5">
-                <span>Integrated Logistics Dispatch</span>
-                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/30">Book</span>
-              </h4>
-              <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">
-                Automated rider dispatch, express doorstep delivery & live route tracking.
-              </p>
-            </div>
-          </Link>
-
-          <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-              <Clock className="w-5 h-5 text-amber-400" />
-            </div>
-            <div>
-              <h4 className="text-sm font-bold text-white">Industry-Tailored Workflows</h4>
-              <p className="text-xs text-zinc-400 mt-0.5 leading-relaxed">
-                Bespoke fittings, vehicle test drives, meal prep counters & viewing appointments.
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Main Footer Dynamic Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Col 1: Store Brand & Identity */}

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useCart } from "@/context/CartContext";
 import { MOCK_STORES } from "@/data/mockStores";
 import { VerticalType } from "@/types/storefront";
 import StoreHeader from "@/components/common/StoreHeader";
@@ -24,25 +25,10 @@ import {
 
 function StoreInfoContent() {
   const searchParams = useSearchParams();
-  const requestedVertical = (searchParams.get("vertical") as VerticalType) || "fashion";
-  const [selectedVertical, setSelectedVertical] = useState<VerticalType>(
-    MOCK_STORES[requestedVertical] ? requestedVertical : "fashion"
-  );
-
-  const store = MOCK_STORES[selectedVertical] || MOCK_STORES["fashion"];
-
-  const verticalOptions: { key: VerticalType; label: string }[] = [
-    { key: "fashion", label: "Fashion & Apparel" },
-    { key: "cars", label: "Cars & Automotive" },
-    { key: "food", label: "Food & Groceries" },
-    { key: "property", label: "Property Rentals" },
-    { key: "gadgets", label: "Gadgets & Tech" },
-    { key: "beauty", label: "Beauty & Wellness" },
-    { key: "home-living", label: "Home & Living" },
-    { key: "pharmacy", label: "Health & Pharmacy" },
-    { key: "hardware", label: "Hardware & Energy" },
-    { key: "retail", label: "General Retail & Specialty" },
-  ];
+  const { activeVertical } = useCart();
+  const requestedVertical = (searchParams.get("vertical") as VerticalType) || activeVertical || "fashion";
+  const vertical = MOCK_STORES[requestedVertical] ? requestedVertical : "fashion";
+  const store = MOCK_STORES[vertical] || MOCK_STORES["fashion"];
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col justify-between">
@@ -60,23 +46,6 @@ function StoreInfoContent() {
           <p className="text-sm sm:text-base text-stone-600 leading-relaxed">
             Verified operating details, physical location, opening hours, customer care channels, and merchant policies.
           </p>
-
-          {/* Quick Vertical Selector */}
-          <div className="flex flex-wrap justify-center gap-2 pt-2">
-            {verticalOptions.map((opt) => (
-              <button
-                key={opt.key}
-                onClick={() => setSelectedVertical(opt.key)}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all ${
-                  selectedVertical === opt.key
-                    ? "bg-stone-900 text-white shadow-sm"
-                    : "bg-white border border-stone-200 text-stone-600 hover:bg-stone-100"
-                }`}
-              >
-                {opt.label}
-              </button>
-            ))}
-          </div>
         </div>
 
         {/* Store Profile Card */}

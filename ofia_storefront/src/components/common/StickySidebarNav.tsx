@@ -518,7 +518,7 @@ export default function StickySidebarNav() {
                 <img
                   src={store.logo}
                   alt={store.name}
-                  className="w-9 h-9 object-contain rounded-xl border border-stone-200 bg-white p-1 shrink-0"
+                  className="w-9 h-9 object-contain shrink-0"
                 />
                 <div className="min-w-0">
                   <h3 className="font-dropa font-bold text-base text-zinc-900 truncate">
@@ -611,7 +611,7 @@ export default function StickySidebarNav() {
                       <img
                         src={store.logo}
                         alt="Bot"
-                        className="w-6 h-6 rounded-full object-contain border border-stone-200 bg-white p-0.5 shrink-0 mb-1"
+                        className="w-6 h-6 object-contain shrink-0 mb-1"
                       />
                     )}
                     <div
@@ -639,7 +639,7 @@ export default function StickySidebarNav() {
                     <img
                       src={store.logo}
                       alt="Bot"
-                      className="w-6 h-6 rounded-full object-contain border border-stone-200 bg-white p-0.5 shrink-0"
+                      className="w-6 h-6 object-contain shrink-0"
                     />
                     <div className="bg-white border border-stone-200 px-3.5 py-2 rounded-2xl rounded-tl-xs shadow-2xs flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-stone-400 animate-bounce" />

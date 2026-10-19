@@ -40,9 +40,24 @@ interface ChatMessage {
   time: string;
 }
 
+const VALID_VERTICALS = [
+  "fashion",
+  "cars",
+  "food",
+  "property",
+  "gadgets",
+  "beauty",
+  "home-living",
+  "pharmacy",
+  "hardware",
+  "retail",
+] as const;
+
+type ValidVertical = (typeof VALID_VERTICALS)[number];
+
 export default function StickySidebarNav() {
   const pathname = usePathname();
-  const { totalCount, setIsCartOpen } = useCart();
+  const { totalCount, setIsCartOpen, isCartOpen, activeVertical, setActiveVertical } = useCart();
 
   // Slide-over drawers state
   const [isInquiryOpen, setIsInquiryOpen] = useState(false);
@@ -50,10 +65,59 @@ export default function StickySidebarNav() {
   const [showPromoBadge, setShowPromoBadge] = useState(false);
   const [copiedPromo, setCopiedPromo] = useState(false);
 
-  // Extract current vertical from pathname if present
+  // Extract current vertical safely from pathname if present, or fallback to CartContext
   const segments = pathname.split("/").filter(Boolean);
-  const currentVertical = segments[0] || "fashion";
+  const detectedVertical = VALID_VERTICALS.find((v) => v === segments[0]);
+
+  // Synchronize activeVertical with CartContext if on a vertical page
+  useEffect(() => {
+    if (detectedVertical) {
+      setActiveVertical(detectedVertical);
+    }
+  }, [detectedVertical, setActiveVertical]);
+
+  const currentVertical: ValidVertical =
+    detectedVertical ||
+    (VALID_VERTICALS.includes(activeVertical as ValidVertical)
+      ? (activeVertical as ValidVertical)
+      : "fashion");
   const store = MOCK_STORES[currentVertical] || MOCK_STORES.fashion;
+
+  // Drawer handlers ensuring mutual exclusivity
+  const openInquiryDrawer = () => {
+    setIsCartOpen(false);
+    setIsWalletOpen(false);
+    setShowPromoBadge(false);
+    setIsInquiryOpen((prev) => !prev);
+  };
+
+  const openWalletDrawer = () => {
+    setIsCartOpen(false);
+    setIsInquiryOpen(false);
+    setShowPromoBadge(false);
+    setIsWalletOpen((prev) => !prev);
+  };
+
+  const openCartDrawer = () => {
+    setIsInquiryOpen(false);
+    setIsWalletOpen(false);
+    setShowPromoBadge(false);
+    setIsCartOpen(true);
+  };
+
+  const togglePromoBadge = () => {
+    setIsInquiryOpen(false);
+    setIsWalletOpen(false);
+    setIsCartOpen(false);
+    setShowPromoBadge((prev) => !prev);
+  };
+
+  const closeAllDrawers = () => {
+    setIsInquiryOpen(false);
+    setIsWalletOpen(false);
+    setIsCartOpen(false);
+    setShowPromoBadge(false);
+  };
 
   // Live Concierge Chat state
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
@@ -80,11 +144,6 @@ export default function StickySidebarNav() {
       chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [chatMessages, isTyping, isInquiryOpen]);
-
-  // Check if current page is the vertical storefront home
-  const isVerticalHome =
-    pathname === `/${currentVertical}` ||
-    pathname === "/";
 
   // Vertical-specific Lookbook route
   const getLookbookHref = () => {
@@ -184,6 +243,98 @@ export default function StickySidebarNav() {
   const catalogHref = getCatalogHref();
   const lookbookHref = getLookbookHref();
 
+  // Determine the single active item for strictly exclusive highlighting
+  const getActiveNav = ():
+    | "home"
+    | "lookbook"
+    | "cart"
+    | "booking"
+    | "catalog"
+    | "mail"
+    | "wallet"
+    | "promo"
+    | "settings"
+    | "account"
+    | null => {
+    // 1. Drawers & modals take top exclusive precedence
+    if (isInquiryOpen) return "mail";
+    if (isWalletOpen) return "wallet";
+    if (isCartOpen) return "cart";
+    if (showPromoBadge) return "promo";
+
+    // 2. Bottom pinned routes
+    if (pathname === "/account" || pathname.startsWith("/account/")) return "account";
+    if (pathname === "/info" || pathname.startsWith("/info")) return "settings";
+
+    // 3. Vertical service/booking routes
+    if (
+      pathname.includes("/custom-tailoring") ||
+      pathname.includes("/book-test-drive") ||
+      pathname.includes("/custom-order") ||
+      pathname.includes("/schedule-viewing") ||
+      pathname.includes("/repairs") ||
+      pathname.includes("/book-appointment") ||
+      pathname.includes("/consultation") ||
+      pathname.includes("/calculator") ||
+      pathname.includes("/delivery-options") ||
+      pathname.includes("/customization")
+    ) {
+      return "booking";
+    }
+
+    // 4. Lookbook
+    if (pathname.includes("/lookbook")) {
+      return "lookbook";
+    }
+
+    // 5. Catalog, collections & products
+    if (
+      pathname.includes("/catalog") ||
+      pathname.includes("/listings") ||
+      pathname.includes("/menu") ||
+      pathname.includes("/products") ||
+      pathname.includes("/services") ||
+      pathname.includes("/product/") ||
+      pathname.includes("/listing/") ||
+      pathname.includes("/item/") ||
+      pathname.includes("/inspection") ||
+      pathname.includes("/compare")
+    ) {
+      return "catalog";
+    }
+
+    // 6. True storefront home (exclusive to root or direct vertical slug)
+    if (
+      pathname === "/" ||
+      VALID_VERTICALS.some((v) => pathname === `/${v}` || pathname === `/${v}/`)
+    ) {
+      return "home";
+    }
+
+    return null;
+  };
+
+  const activeNav = getActiveNav();
+
+  const getDesktopNavClasses = (isActive: boolean) =>
+    `w-11 h-11 rounded-full flex items-center justify-center transition-all ${
+      isActive
+        ? "bg-[#111318] text-white shadow-md scale-100"
+        : "text-stone-500 hover:text-zinc-950 hover:bg-black/5"
+    }`;
+
+  const getDesktopBottomClasses = (isActive: boolean) =>
+    `w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+      isActive
+        ? "bg-[#111318] text-white shadow-md scale-100"
+        : "text-stone-500 hover:text-zinc-950 hover:bg-black/5"
+    }`;
+
+  const getMobileNavClasses = (isActive: boolean) =>
+    `p-2 rounded-2xl flex flex-col items-center transition-all ${
+      isActive ? "bg-zinc-900 text-white shadow-xs" : "text-stone-500 hover:text-zinc-900"
+    }`;
+
   const handleCopyCode = () => {
     navigator.clipboard.writeText("SUMMER50");
     setCopiedPromo(true);
@@ -262,11 +413,8 @@ export default function StickySidebarNav() {
           <div className="relative group flex items-center justify-center w-full">
             <Link
               href={`/${currentVertical}`}
-              className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
-                isVerticalHome
-                  ? "bg-[#111318] text-white shadow-md scale-100"
-                  : "text-stone-500 hover:text-zinc-950 hover:bg-black/5"
-              }`}
+              onClick={closeAllDrawers}
+              className={getDesktopNavClasses(activeNav === "home")}
             >
               <LayoutGrid className="w-5 h-5" />
             </Link>
@@ -279,11 +427,8 @@ export default function StickySidebarNav() {
           <div className="relative group flex items-center justify-center w-full">
             <Link
               href={lookbookHref}
-              className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
-                pathname.includes("/lookbook")
-                  ? "bg-[#111318] text-white shadow-md"
-                  : "text-stone-500 hover:text-zinc-950 hover:bg-black/5"
-              }`}
+              onClick={closeAllDrawers}
+              className={getDesktopNavClasses(activeNav === "lookbook")}
             >
               <Compass className="w-5 h-5" />
             </Link>
@@ -295,8 +440,8 @@ export default function StickySidebarNav() {
           {/* 3. Shopping Cart / Bag with Live Counter Badge */}
           <div className="relative group flex items-center justify-center w-full">
             <button
-              onClick={() => setIsCartOpen(true)}
-              className="relative w-11 h-11 rounded-full flex items-center justify-center text-stone-500 hover:text-zinc-950 hover:bg-black/5 transition-all cursor-pointer"
+              onClick={openCartDrawer}
+              className={`relative ${getDesktopNavClasses(activeNav === "cart")} cursor-pointer`}
             >
               <ShoppingCart className="w-5 h-5" />
               {totalCount > 0 && (
@@ -314,11 +459,8 @@ export default function StickySidebarNav() {
           <div className="relative group flex items-center justify-center w-full">
             <Link
               href={bookingInfo.href}
-              className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
-                pathname === bookingInfo.href
-                  ? "bg-[#111318] text-white shadow-md"
-                  : "text-stone-500 hover:text-zinc-950 hover:bg-black/5"
-              }`}
+              onClick={closeAllDrawers}
+              className={getDesktopNavClasses(activeNav === "booking")}
             >
               <Calendar className="w-5 h-5" />
             </Link>
@@ -331,11 +473,8 @@ export default function StickySidebarNav() {
           <div className="relative group flex items-center justify-center w-full">
             <Link
               href={catalogHref}
-              className={`w-11 h-11 rounded-full flex items-center justify-center transition-all ${
-                pathname.includes("/catalog") || pathname.includes("/listings") || pathname.includes("/menu")
-                  ? "bg-[#111318] text-white shadow-md"
-                  : "text-stone-500 hover:text-zinc-950 hover:bg-black/5"
-              }`}
+              onClick={closeAllDrawers}
+              className={getDesktopNavClasses(activeNav === "catalog")}
             >
               <Tag className="w-5 h-5" />
             </Link>
@@ -347,12 +486,8 @@ export default function StickySidebarNav() {
           {/* 6. Mail / Live Concierge Chat Drawer (Light Mode) */}
           <div className="relative group flex items-center justify-center w-full">
             <button
-              onClick={() => setIsInquiryOpen(true)}
-              className={`w-11 h-11 rounded-full flex items-center justify-center transition-all cursor-pointer ${
-                isInquiryOpen
-                  ? "bg-[#111318] text-white shadow-md"
-                  : "text-stone-500 hover:text-zinc-950 hover:bg-black/5"
-              }`}
+              onClick={openInquiryDrawer}
+              className={`${getDesktopNavClasses(activeNav === "mail")} cursor-pointer`}
             >
               <Mail className="w-5 h-5" />
             </button>
@@ -364,12 +499,8 @@ export default function StickySidebarNav() {
           {/* 7. Wallet / Store Wallet & Customer Refunds */}
           <div className="relative group flex items-center justify-center w-full">
             <button
-              onClick={() => setIsWalletOpen(true)}
-              className={`w-11 h-11 rounded-full flex items-center justify-center transition-all cursor-pointer ${
-                isWalletOpen
-                  ? "bg-[#111318] text-white shadow-md"
-                  : "text-stone-500 hover:text-zinc-950 hover:bg-black/5"
-              }`}
+              onClick={openWalletDrawer}
+              className={`${getDesktopNavClasses(activeNav === "wallet")} cursor-pointer`}
             >
               <Wallet className="w-5 h-5" />
             </button>
@@ -381,8 +512,8 @@ export default function StickySidebarNav() {
           {/* 8. Percent / Promotional Campaign */}
           <div className="relative group flex items-center justify-center w-full">
             <button
-              onClick={() => setShowPromoBadge(!showPromoBadge)}
-              className="w-11 h-11 rounded-full flex items-center justify-center text-stone-500 hover:text-zinc-950 hover:bg-black/5 transition-all cursor-pointer"
+              onClick={togglePromoBadge}
+              className={`${getDesktopNavClasses(activeNav === "promo")} cursor-pointer`}
             >
               <Percent className="w-5 h-5" />
             </button>
@@ -398,7 +529,8 @@ export default function StickySidebarNav() {
           <div className="relative group flex items-center justify-center w-full">
             <Link
               href={`/info?vertical=${currentVertical}`}
-              className="w-10 h-10 rounded-full flex items-center justify-center text-stone-500 hover:text-zinc-950 hover:bg-black/5 transition-all"
+              onClick={closeAllDrawers}
+              className={getDesktopBottomClasses(activeNav === "settings")}
             >
               <Settings className="w-4.5 h-4.5" />
             </Link>
@@ -411,11 +543,8 @@ export default function StickySidebarNav() {
           <div className="relative group flex items-center justify-center w-full">
             <Link
               href="/account"
-              className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                pathname === "/account"
-                  ? "bg-[#111318] text-white shadow-md"
-                  : "text-stone-500 hover:text-zinc-950 hover:bg-black/5"
-              }`}
+              onClick={closeAllDrawers}
+              className={getDesktopBottomClasses(activeNav === "account")}
             >
               <User className="w-4.5 h-4.5" />
             </Link>
@@ -433,9 +562,8 @@ export default function StickySidebarNav() {
       >
         <Link
           href={`/${currentVertical}`}
-          className={`p-2 rounded-2xl flex flex-col items-center ${
-            isVerticalHome ? "bg-zinc-900 text-white" : "text-stone-500 hover:text-zinc-900"
-          }`}
+          onClick={closeAllDrawers}
+          className={getMobileNavClasses(activeNav === "home")}
           title="Home"
         >
           <LayoutGrid className="w-5 h-5" />
@@ -443,9 +571,8 @@ export default function StickySidebarNav() {
 
         <Link
           href={lookbookHref}
-          className={`p-2 rounded-2xl flex flex-col items-center ${
-            pathname.includes("/lookbook") ? "bg-zinc-900 text-white" : "text-stone-500 hover:text-zinc-900"
-          }`}
+          onClick={closeAllDrawers}
+          className={getMobileNavClasses(activeNav === "lookbook")}
           title="Lookbook"
         >
           <Compass className="w-5 h-5" />
@@ -453,17 +580,16 @@ export default function StickySidebarNav() {
 
         <Link
           href={bookingInfo.href}
-          className={`p-2 rounded-2xl flex flex-col items-center ${
-            pathname === bookingInfo.href ? "bg-zinc-900 text-white" : "text-stone-500 hover:text-zinc-900"
-          }`}
+          onClick={closeAllDrawers}
+          className={getMobileNavClasses(activeNav === "booking")}
           title={bookingInfo.shortLabel}
         >
           <Calendar className="w-5 h-5" />
         </Link>
 
         <button
-          onClick={() => setIsCartOpen(true)}
-          className="relative p-2 rounded-2xl flex flex-col items-center text-stone-500 hover:text-zinc-900 cursor-pointer"
+          onClick={openCartDrawer}
+          className={`relative ${getMobileNavClasses(activeNav === "cart")} cursor-pointer`}
           title="Bag"
         >
           <ShoppingCart className="w-5 h-5" />
@@ -475,16 +601,16 @@ export default function StickySidebarNav() {
         </button>
 
         <button
-          onClick={() => setIsInquiryOpen(true)}
-          className="p-2 rounded-2xl flex flex-col items-center text-stone-500 hover:text-zinc-900 cursor-pointer"
+          onClick={openInquiryDrawer}
+          className={`${getMobileNavClasses(activeNav === "mail")} cursor-pointer`}
           title="Live Chat"
         >
           <Mail className="w-5 h-5" />
         </button>
 
         <button
-          onClick={() => setIsWalletOpen(true)}
-          className="p-2 rounded-2xl flex flex-col items-center text-stone-500 hover:text-zinc-900 cursor-pointer"
+          onClick={openWalletDrawer}
+          className={`${getMobileNavClasses(activeNav === "wallet")} cursor-pointer`}
           title="Wallet & Refunds"
         >
           <Wallet className="w-5 h-5" />
@@ -492,9 +618,8 @@ export default function StickySidebarNav() {
 
         <Link
           href="/account"
-          className={`p-2 rounded-2xl flex flex-col items-center ${
-            pathname === "/account" ? "bg-zinc-900 text-white" : "text-stone-500 hover:text-zinc-900"
-          }`}
+          onClick={closeAllDrawers}
+          className={getMobileNavClasses(activeNav === "account")}
           title="Account"
         >
           <User className="w-5 h-5" />

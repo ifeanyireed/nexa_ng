@@ -180,13 +180,13 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
   return (
     <header className="w-full bg-transparent z-30 transition-colors pt-2.5 pb-1.5">
       <div className="max-w-[1720px] mx-auto px-4 sm:px-5 lg:px-6 flex items-center justify-between gap-4 sm:gap-6">
-        {/* Brand & Store Identity matching moodboard VRAI logo */}
+        {/* Brand & Store Identity with Ofia logo just like in footer */}
         <Link href={`/${store.slug}`} className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-xl bg-zinc-900 flex items-center justify-center text-white shrink-0 group-hover:bg-blue-600 transition-colors shadow-xs">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M12 2L3 9V20C3 20.5523 3.44772 21 4 21H20C20.5523 21 21 20.5523 21 20V9L12 2Z" />
-            </svg>
-          </div>
+          <img
+            src={store.logo}
+            alt={store.name}
+            className="w-9 h-9 object-contain shrink-0 group-hover:scale-105 transition-transform"
+          />
           <span className="font-dropa font-extrabold text-2xl tracking-tighter text-zinc-950 uppercase">
             {store.name}
           </span>

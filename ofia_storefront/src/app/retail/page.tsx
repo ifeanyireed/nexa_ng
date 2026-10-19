@@ -2,6 +2,9 @@ import Link from "next/link";
 import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import VerticalHeroBento from "@/components/common/VerticalHeroBento";
+import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
+import StorefrontCartRail from "@/components/common/StorefrontCartRail";
 import {
   BookOpen,
   Dumbbell,
@@ -26,63 +29,90 @@ export default function RetailHomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-[#222129] flex flex-col justify-between">
-      {/* Luxury Packaging Banner Strip (Minimal Height, No Extra Padding) */}
-      <div className="bg-[#1C1826] text-amber-200 text-xs py-1 px-4 text-center font-medium tracking-wide flex items-center justify-center gap-2 border-b border-indigo-950">
+    <div className="min-h-screen bg-[#ECEEF2] text-[#222129] flex flex-col justify-between">
+      {/* Luxury Packaging Banner Strip */}
+      <div className="bg-[#1C1826] text-amber-200 text-xs py-1.5 px-4 text-center font-medium tracking-wide flex items-center justify-center gap-2 border-b border-indigo-950">
         <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse" />
         <span>Complimentary Artisan Wax-Sealed Gift Wrapping & Custom Brass Engraving on Curated Orders</span>
       </div>
 
       <StoreHeader store={store} />
 
-      <main className="flex-1 w-full space-y-16 pb-12">
-        {/* Full-Bleed Editorial Retail Hero */}
-        <section className="relative w-full overflow-hidden shadow-2xl bg-zinc-950 text-white min-h-[520px] sm:min-h-[580px] flex items-end p-6 sm:p-12 lg:p-16 border-y border-stone-800">
-          <img
-            src={store.coverImage}
-            alt={store.name}
-            className="absolute inset-0 w-full h-full object-cover object-[50%_35%] opacity-55 scale-100 hover:scale-105 transition-transform duration-1000"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/60 to-transparent" />
-
-          <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
-            <div className="max-w-2xl space-y-5">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 text-xs sm:text-sm font-bold uppercase tracking-wider backdrop-blur-xs">
-                <Award className="w-4 h-4" />
-                <span>Curated Multi-Department Specialty Emporium</span>
-              </div>
-
-              <h1 className="font-dropa text-4xl sm:text-6xl lg:text-7xl font-normal tracking-tight text-white leading-tight">
-                Curated Heritage. <br />
-                <span className="italic font-cormorant text-purple-300">Bespoke</span> Keepsakes.
-              </h1>
-
-              <p className="text-zinc-200 text-base sm:text-lg leading-relaxed font-light max-w-xl">
-                Discover rare literature anthologies, high-performance home gym systems, certified non-toxic Montessori playcraft, and artisan gifts customized with personal monograms.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3.5 pt-2">
-                <Link
-                  href="/retail/catalog"
-                  className="px-7 py-3.5 rounded-full bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm sm:text-base transition-colors flex items-center gap-2.5 shadow-lg shadow-purple-950/40"
-                >
-                  <ShoppingBag className="w-5 h-5" />
-                  <span>Explore All 4 Departments</span>
-                </Link>
-                <Link
-                  href="/retail/customization"
-                  className="px-7 py-3.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-sm sm:text-base backdrop-blur-xs transition-colors flex items-center gap-2.5"
-                >
-                  <PenTool className="w-5 h-5 text-purple-300" />
-                  <span>Personalize & Gift Registries</span>
-                </Link>
-              </div>
-            </div>
+      {/* Hero & Category Collage Section:
+          Fits exactly in desktop viewport height (100vh - header),
+          Cards on Line 1 and Line 2 have almost the same height (flex-1 min-h-0),
+          and their sum fits into the screen height. */}
+      <section className="w-full max-w-[1720px] mx-auto px-4 sm:px-5 lg:px-6 py-2.5 sm:py-3 lg:py-3.5 flex flex-col gap-3 sm:gap-4 lg:gap-4 lg:h-[calc(100vh-70px)] lg:min-h-[560px] lg:max-h-[calc(100vh-70px)] box-border">
+        {/* Row 1: Top Hero Showcase (9 cols) & Companion Cart Rail (3 cols) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 lg:gap-4 w-full lg:flex-1 min-h-0 items-stretch">
+          <div className="lg:col-span-9 flex h-full min-h-0">
+            <VerticalHeroBento
+              eyebrow="Curated Multi-Department"
+              headline={"Literature &\nKeepsakes"}
+              highlightText="· Custom Engraved Gifts"
+              description="Discover rare literature anthologies, high-performance athletic gear, certified heirloom toys, and artisan gifts customized with personal monograms."
+              ctaLabel="Explore All Departments"
+              ctaHref="/retail/catalog"
+              footnote="Complimentary Gift Wrapping · Custom Laser Engraving"
+              image="https://images.unsplash.com/photo-1472851294608-062f824d29cc?auto=format&fit=crop&w=1200&q=80"
+              imageAlt="The Artisan Guild Emporium"
+              badge="Artisan Emporium"
+              bgColor="#F7F5FA"
+            />
           </div>
-        </section>
 
-        {/* Content Container */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+          {/* Companion Cart Rail */}
+          <div className="lg:col-span-3 hidden lg:flex h-full min-h-0">
+            <StorefrontCartRail sampleProducts={products} />
+          </div>
+        </div>
+
+        {/* Row 2: 3-Card Category Bento Grid (Card 1: 25%, Card 2: 25%, Card 3: 50%) */}
+        <div className="w-full lg:flex-1 min-h-0">
+          <VerticalCategoryBentoGrid
+            card1={{
+              title: "Literature &\nRare Editions",
+              count: "400+ titles",
+              image: "https://images.unsplash.com/photo-1495640388908-05fa85288e61?auto=format&fit=crop&w=800&q=80",
+              href: "/retail/catalog",
+            }}
+            card2={{
+              title: "Specialty\nKeepsakes",
+              count: "220+ items",
+              image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80",
+              href: "/retail/customization",
+            }}
+            card3={{
+              title: "Top Collation",
+              href: "/retail/catalog",
+              backgroundImage: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=1000&q=80",
+              pills: [
+                {
+                  label: "Artisan Stationery",
+                  count: "180+ items",
+                  image: "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=120&q=80",
+                  href: "/retail/catalog",
+                },
+                {
+                  label: "Heirloom Toys",
+                  count: "95+ crafts",
+                  image: "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?auto=format&fit=crop&w=120&q=80",
+                  href: "/retail/catalog",
+                },
+                {
+                  label: "Fitness & Travel Gear",
+                  count: "130+ products",
+                  image: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=120&q=80",
+                  href: "/retail/catalog",
+                },
+              ],
+            }}
+          />
+        </div>
+      </section>
+
+      {/* Content Container */}
+      <main className="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 space-y-16 pb-16">
           {/* Value Badges */}
           <section className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4">
             <div className="p-5 rounded-2xl bg-white border border-stone-200/80 shadow-xs flex items-center gap-3.5">
@@ -290,10 +320,9 @@ export default function RetailHomePage() {
               />
             </div>
           </section>
-        </div>
-      </main>
+        </main>
 
-      <StoreFooter store={store} />
+        <StoreFooter store={store} />
     </div>
   );
 }

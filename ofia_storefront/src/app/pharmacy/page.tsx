@@ -2,6 +2,9 @@ import Link from "next/link";
 import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import VerticalHeroBento from "@/components/common/VerticalHeroBento";
+import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
+import StorefrontCartRail from "@/components/common/StorefrontCartRail";
 import {
   Upload,
   ShieldCheck,
@@ -27,63 +30,90 @@ export default function PharmacyHomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-[#13221C] flex flex-col justify-between">
-      {/* Regulated Dispensary Alert Strip (Minimal Height, No Extra Padding) */}
-      <div className="bg-[#0C4A3E] text-emerald-100 text-xs py-1 px-4 text-center font-medium tracking-wide flex items-center justify-center gap-2 border-b border-emerald-900">
+    <div className="min-h-screen bg-[#ECEEF2] text-[#13221C] flex flex-col justify-between">
+      {/* Regulated Dispensary Alert Strip */}
+      <div className="bg-[#0C4A3E] text-emerald-100 text-xs py-1.5 px-4 text-center font-medium tracking-wide flex items-center justify-center gap-2 border-b border-emerald-900">
         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
         <span>Licensed Clinical Pharmacist on Duty · Immediate NAFDAC Verified Prescription Dispensing</span>
       </div>
 
       <StoreHeader store={store} />
 
-      <main className="flex-1 w-full space-y-16 pb-12">
-        {/* Full-Bleed Editorial Pharmacy Hero */}
-        <section className="relative w-full overflow-hidden shadow-2xl bg-zinc-950 text-white min-h-[520px] sm:min-h-[580px] flex items-end p-6 sm:p-12 lg:p-16 border-y border-stone-800">
-          <img
-            src={store.coverImage}
-            alt={store.name}
-            className="absolute inset-0 w-full h-full object-cover object-[50%_35%] opacity-55 scale-100 hover:scale-105 transition-transform duration-1000"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/60 to-transparent" />
-
-          <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
-            <div className="max-w-2xl space-y-5">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-500/20 border border-teal-500/40 text-teal-300 text-xs sm:text-sm font-bold uppercase tracking-wider backdrop-blur-xs">
-                <ShieldCheck className="w-4 h-4" />
-                <span>NAFDAC Regulated & Cold-Chain Certified Dispensary</span>
-              </div>
-
-              <h1 className="font-dropa text-4xl sm:text-6xl lg:text-7xl font-normal tracking-tight text-white leading-tight">
-                Clinical Purity. <br />
-                <span className="italic font-cormorant text-teal-400">Regulated</span> Healing.
-              </h1>
-
-              <p className="text-zinc-200 text-base sm:text-lg leading-relaxed font-light max-w-xl">
-                Verified pharmaceutical dispensing, temperature-controlled cold-chain logistics, and confidential clinical consultation with licensed resident pharmacists.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3.5 pt-2">
-                <Link
-                  href="/pharmacy/prescription"
-                  className="px-7 py-3.5 rounded-full bg-teal-600 hover:bg-teal-500 text-white font-bold text-sm sm:text-base transition-colors flex items-center gap-2.5 shadow-lg shadow-teal-950/40"
-                >
-                  <Upload className="w-5 h-5" />
-                  <span>Upload Doctor&apos;s Prescription</span>
-                </Link>
-                <Link
-                  href="/pharmacy/catalog"
-                  className="px-7 py-3.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-sm sm:text-base backdrop-blur-xs transition-colors flex items-center gap-2.5"
-                >
-                  <Pill className="w-5 h-5 text-teal-300" />
-                  <span>Browse Medication Catalog</span>
-                </Link>
-              </div>
-            </div>
+      {/* Hero & Category Collage Section:
+          Fits exactly in desktop viewport height (100vh - header),
+          Cards on Line 1 and Line 2 have almost the same height (flex-1 min-h-0),
+          and their sum fits into the screen height. */}
+      <section className="w-full max-w-[1720px] mx-auto px-4 sm:px-5 lg:px-6 py-2.5 sm:py-3 lg:py-3.5 flex flex-col gap-3 sm:gap-4 lg:gap-4 lg:h-[calc(100vh-70px)] lg:min-h-[560px] lg:max-h-[calc(100vh-70px)] box-border">
+        {/* Row 1: Top Hero Showcase (9 cols) & Companion Cart Rail (3 cols) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 lg:gap-4 w-full lg:flex-1 min-h-0 items-stretch">
+          <div className="lg:col-span-9 flex h-full min-h-0">
+            <VerticalHeroBento
+              eyebrow="Licensed NAFDAC Dispensary"
+              headline={"Rapid Prescription\nRefills"}
+              highlightText="· Cold-Chain Wellness"
+              description="Verified pharmaceutical dispensing, temperature-controlled cold-chain logistics, and confidential clinical consultation with licensed resident pharmacists."
+              ctaLabel="Upload Doctor's Rx"
+              ctaHref="/pharmacy/prescription"
+              footnote="Licensed Clinical Pharmacists · 100% Verified Batch Numbers"
+              image="https://images.unsplash.com/photo-1586015555751-63bb77f4322a?auto=format&fit=crop&w=1200&q=80"
+              imageAlt="Nectar & Cure Dispensary Care"
+              badge="NAFDAC Regulated"
+              bgColor="#F2F8F6"
+            />
           </div>
-        </section>
 
-        {/* Content Container */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+          {/* Companion Cart Rail */}
+          <div className="lg:col-span-3 hidden lg:flex h-full min-h-0">
+            <StorefrontCartRail sampleProducts={products} />
+          </div>
+        </div>
+
+        {/* Row 2: 3-Card Category Bento Grid (Card 1: 25%, Card 2: 25%, Card 3: 50%) */}
+        <div className="w-full lg:flex-1 min-h-0">
+          <VerticalCategoryBentoGrid
+            card1={{
+              title: "Chronic Care\n& Refills",
+              count: "320+ medications",
+              image: "https://images.unsplash.com/photo-1471864190281-a93a3070b6de?auto=format&fit=crop&w=800&q=80",
+              href: "/pharmacy/catalog",
+            }}
+            card2={{
+              title: "Vitamins &\nPreventative",
+              count: "180+ supplements",
+              image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+              href: "/pharmacy/catalog",
+            }}
+            card3={{
+              title: "Top Collation",
+              href: "/pharmacy/catalog",
+              backgroundImage: "https://images.unsplash.com/photo-1576602976047-174e57a47881?auto=format&fit=crop&w=1000&q=80",
+              pills: [
+                {
+                  label: "BP & Glucose Monitors",
+                  count: "45+ devices",
+                  image: "https://images.unsplash.com/photo-1615486511484-92e172cc4fe0?auto=format&fit=crop&w=120&q=80",
+                  href: "/pharmacy/catalog",
+                },
+                {
+                  label: "Pediatric Nutrition",
+                  count: "90+ items",
+                  image: "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=120&q=80",
+                  href: "/pharmacy/catalog",
+                },
+                {
+                  label: "Dermatological Care",
+                  count: "115+ remedies",
+                  image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=120&q=80",
+                  href: "/pharmacy/catalog",
+                },
+              ],
+            }}
+          />
+        </div>
+      </section>
+
+      {/* Content Container */}
+      <main className="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 space-y-16 pb-16">
           {/* Value Badges */}
           <section className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4">
             <div className="p-5 rounded-2xl bg-white border border-stone-200/80 shadow-xs flex items-center gap-3.5">
@@ -295,10 +325,9 @@ export default function PharmacyHomePage() {
               />
             </div>
           </section>
-        </div>
-      </main>
+        </main>
 
-      <StoreFooter store={store} />
+        <StoreFooter store={store} />
     </div>
   );
 }

@@ -2,6 +2,9 @@ import Link from "next/link";
 import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import VerticalHeroBento from "@/components/common/VerticalHeroBento";
+import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
+import StorefrontCartRail from "@/components/common/StorefrontCartRail";
 import { ArrowRight, Shirt, Scissors, Shield, Ruler, Truck, RefreshCw } from "lucide-react";
 
 export default function FashionStorefrontPage() {
@@ -9,57 +12,84 @@ export default function FashionStorefrontPage() {
   const fashionProducts = MOCK_PRODUCTS.filter((p) => p.vertical === "fashion");
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] text-[#1A1A1A] flex flex-col justify-between">
+    <div className="min-h-screen bg-[#ECEEF2] text-[#111318] flex flex-col justify-between">
       <StoreHeader store={store} />
 
-      <main className="flex-1 w-full space-y-16 pb-12">
-        {/* Editorial Fashion Hero - Spanning Entire Width on Left & Right */}
-        <section className="relative w-full overflow-hidden shadow-2xl bg-zinc-950 text-white min-h-[520px] sm:min-h-[580px] flex items-end p-6 sm:p-12 lg:p-16 border-y border-stone-800">
-          <img
-            src={store.coverImage}
-            alt={store.name}
-            className="absolute inset-0 w-full h-full object-cover object-[50%_30%] opacity-60 scale-100 hover:scale-105 transition-transform duration-1000"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-
-          <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
-            <div className="max-w-2xl space-y-5">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs sm:text-sm font-bold uppercase tracking-wider backdrop-blur-xs">
-                <Shirt className="w-4 h-4" />
-                <span>Harmattan / Resort 2026 Collection</span>
-              </div>
-
-              <h1 className="font-dropa text-4xl sm:text-6xl lg:text-7xl font-normal tracking-tight text-white leading-tight">
-                Raw Silhouettes. <br />
-                <span className="italic font-cormorant text-amber-400">Timeless</span> Heritage.
-              </h1>
-
-              <p className="text-zinc-200 text-base sm:text-lg leading-relaxed font-light max-w-xl">
-                Artisanal linen tunics, hand-embroidered kaftans, and architectural outerwear tailored for effortless tropical elegance.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3.5 pt-2">
-                <Link
-                  href="/fashion/catalog"
-                  className="px-7 py-3.5 rounded-full bg-white text-zinc-900 font-bold text-sm sm:text-base hover:bg-amber-400 transition-colors flex items-center gap-2.5 shadow-lg"
-                >
-                  <span>Shop Product Catalog</span>
-                  <ArrowRight className="w-5 h-5" />
-                </Link>
-                <Link
-                  href="/fashion/custom-tailoring"
-                  className="px-7 py-3.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-sm sm:text-base backdrop-blur-xs transition-colors flex items-center gap-2.5"
-                >
-                  <span>Book Bespoke Fitting</span>
-                  <Ruler className="w-5 h-5 text-amber-300" />
-                </Link>
-              </div>
-            </div>
+      {/* Hero & Category Collage Section:
+          Fits exactly in desktop viewport height (100vh - header),
+          Cards on Line 1 and Line 2 have almost the same height (flex-1 min-h-0),
+          and their sum fits into the screen height. */}
+      <section className="w-full max-w-[1720px] mx-auto px-4 sm:px-5 lg:px-6 py-2.5 sm:py-3 lg:py-3.5 flex flex-col gap-3 sm:gap-4 lg:gap-4 lg:h-[calc(100vh-70px)] lg:min-h-[560px] lg:max-h-[calc(100vh-70px)] box-border">
+        {/* Row 1: Top Hero Showcase (9 cols) & Companion Cart Rail (3 cols) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 lg:gap-4 w-full lg:flex-1 min-h-0 items-stretch">
+          <div className="lg:col-span-9 flex h-full min-h-0">
+            <VerticalHeroBento
+              eyebrow="Summer Weekend's"
+              headline={"Get Up to\n50% Off"}
+              highlightText=""
+              description="Artisanal linen tunics, hand-embroidered kaftans, and architectural outerwear tailored for effortless tropical elegance."
+              ctaLabel="Get Discount"
+              ctaHref="/fashion/catalog"
+              footnote="Valid Until 05 April 2026 · Free Doorstep Sizing Exchanges"
+              image="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=80"
+              imageAlt="Aura & Loom Harmattan Collection"
+              badge="Capsule Drop"
+              bgColor="#FAF9F5"
+            />
           </div>
-        </section>
 
-        {/* Content Container */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+          {/* Companion Cart Rail (3 cols on desktop) */}
+          <div className="lg:col-span-3 hidden lg:flex h-full min-h-0">
+            <StorefrontCartRail sampleProducts={fashionProducts} />
+          </div>
+        </div>
+
+        {/* Row 2: 3-Card Category Bento Grid (Card 1: 25%, Card 2: 25%, Card 3: 50%) */}
+        <div className="w-full lg:flex-1 min-h-0">
+          <VerticalCategoryBentoGrid
+            card1={{
+              title: "Men's\nCollection",
+              count: "180+ pieces",
+              image: "https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80",
+              href: "/fashion/catalog",
+            }}
+            card2={{
+              title: "Women's\nCollection",
+              count: "260+ pieces",
+              image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80",
+              href: "/fashion/catalog",
+            }}
+            card3={{
+              title: "Top Collation",
+              href: "/fashion/catalog",
+              backgroundImage: "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=1000&q=80",
+              pills: [
+                {
+                  label: "Linen Tunics",
+                  count: "1.2k+ pieces",
+                  image: "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?auto=format&fit=crop&w=120&q=80",
+                  href: "/fashion/catalog",
+                },
+                {
+                  label: "Kaftans & Agbada",
+                  count: "850+ pieces",
+                  image: "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=120&q=80",
+                  href: "/fashion/catalog",
+                },
+                {
+                  label: "Leather Sandals & Bags",
+                  count: "420+ pieces",
+                  image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=120&q=80",
+                  href: "/fashion/catalog",
+                },
+              ],
+            }}
+          />
+        </div>
+      </section>
+
+      {/* Content Container */}
+      <main className="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 space-y-16 pb-16">
           {/* Value Badges */}
           <section className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4">
             <div className="p-5 rounded-2xl bg-white border border-stone-200/80 shadow-xs flex items-center gap-3.5">
@@ -225,10 +255,9 @@ export default function FashionStorefrontPage() {
               />
             </div>
           </section>
-        </div>
-      </main>
+        </main>
 
-      <StoreFooter store={store} />
+        <StoreFooter store={store} />
     </div>
   );
 }

@@ -2,6 +2,9 @@ import Link from "next/link";
 import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import VerticalHeroBento from "@/components/common/VerticalHeroBento";
+import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
+import StorefrontCartRail from "@/components/common/StorefrontCartRail";
 import {
   Laptop,
   Smartphone,
@@ -26,57 +29,84 @@ export default function GadgetsStorefrontPage() {
   const gadgetProducts = MOCK_PRODUCTS.filter((p) => p.vertical === "gadgets");
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col justify-between">
+    <div className="min-h-screen bg-[#ECEEF2] text-slate-900 flex flex-col justify-between">
       <StoreHeader store={store} />
 
-      <main className="flex-1 w-full space-y-16 pb-12">
-        {/* Tech Hero - Spanning Entire Width on Left & Right */}
-        <section className="relative w-full overflow-hidden shadow-2xl bg-slate-950 text-white min-h-[520px] sm:min-h-[580px] flex items-end p-6 sm:p-12 lg:p-16 border-y border-slate-200/80">
-          <img
-            src={store.coverImage}
-            alt={store.name}
-            className="absolute inset-0 w-full h-full object-cover object-center opacity-45 scale-100 hover:scale-105 transition-transform duration-1000"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent" />
-
-          <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl space-y-5">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-300 text-xs sm:text-sm font-bold uppercase tracking-wider backdrop-blur-xs">
-                <Cpu className="w-4 h-4" />
-                <span>Next-Gen Silicon & Flagship Hardware</span>
-              </div>
-
-              <h1 className="font-dropa text-4xl sm:text-6xl lg:text-7xl font-normal tracking-tight text-white leading-tight">
-                Uncompromising Power. <br />
-                <span className="text-blue-400 font-bold">2-Year Direct</span> Warranty.
-              </h1>
-
-              <p className="text-slate-200 text-base sm:text-lg leading-relaxed font-light max-w-xl">
-                Authentic factory-sealed flagship phones, M-series workstations, and audiophile noise-canceling acoustics. Backed by official service warranties.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3.5 pt-2">
-                <Link
-                  href="/gadgets/catalog"
-                  className="px-7 py-3.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm sm:text-base transition-colors flex items-center gap-2.5 shadow-lg shadow-blue-600/30 cursor-pointer"
-                >
-                  <span>Shop Tech Catalog</span>
-                  <ArrowRight className="w-5 h-5" />
-                </Link>
-                <Link
-                  href="/gadgets/compare"
-                  className="px-7 py-3.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-sm sm:text-base backdrop-blur-xs transition-colors flex items-center gap-2.5 cursor-pointer"
-                >
-                  <SlidersHorizontal className="w-5 h-5 text-blue-300" />
-                  <span>Compare Specs & Diagnostics</span>
-                </Link>
-              </div>
-            </div>
+      {/* Hero & Category Collage Section:
+          Fits exactly in desktop viewport height (100vh - header),
+          Cards on Line 1 and Line 2 have almost the same height (flex-1 min-h-0),
+          and their sum fits into the screen height. */}
+      <section className="w-full max-w-[1720px] mx-auto px-4 sm:px-5 lg:px-6 py-2.5 sm:py-3 lg:py-3.5 flex flex-col gap-3 sm:gap-4 lg:gap-4 lg:h-[calc(100vh-70px)] lg:min-h-[560px] lg:max-h-[calc(100vh-70px)] box-border">
+        {/* Row 1: Top Hero Showcase (9 cols) & Companion Cart Rail (3 cols) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 lg:gap-4 w-full lg:flex-1 min-h-0 items-stretch">
+          <div className="lg:col-span-9 flex h-full min-h-0">
+            <VerticalHeroBento
+              eyebrow="Official Flagship Tech"
+              headline={"Up to 30%\nTrade-In Credit"}
+              highlightText="· Pro Laptops & Smart Audio"
+              description="Authorized retailer for Apple, Samsung, Sony, and Dell flagship technology with guaranteed manufacturer warranties and express doorstep delivery."
+              ctaLabel="Shop Apple & Flagships"
+              ctaHref="/gadgets/catalog"
+              footnote="2-Year PulseCare Warranty · Same-Day Lagos Dispatch"
+              image="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80"
+              imageAlt="PulseTech Pro Workstations"
+              badge="Trade-In Ready"
+              bgColor="#F4F7FA"
+            />
           </div>
-        </section>
 
-        {/* Content Container */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+          {/* Companion Cart Rail */}
+          <div className="lg:col-span-3 hidden lg:flex h-full min-h-0">
+            <StorefrontCartRail sampleProducts={gadgetProducts} />
+          </div>
+        </div>
+
+        {/* Row 2: 3-Card Category Bento Grid (Card 1: 25%, Card 2: 25%, Card 3: 50%) */}
+        <div className="w-full lg:flex-1 min-h-0">
+          <VerticalCategoryBentoGrid
+            card1={{
+              title: "Smartphones\n& Flagships",
+              count: "120+ devices",
+              image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80",
+              href: "/gadgets/catalog",
+            }}
+            card2={{
+              title: "Pro Laptops\n& Mac",
+              count: "85+ machines",
+              image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80",
+              href: "/gadgets/catalog",
+            }}
+            card3={{
+              title: "Top Collation",
+              href: "/gadgets/catalog",
+              backgroundImage: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=1000&q=80",
+              pills: [
+                {
+                  label: "Studio Headphones & ANC",
+                  count: "60+ units",
+                  image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=120&q=80",
+                  href: "/gadgets/catalog",
+                },
+                {
+                  label: "Smartwatches & Health",
+                  count: "45+ devices",
+                  image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=120&q=80",
+                  href: "/gadgets/catalog",
+                },
+                {
+                  label: "Fast Chargers & Docks",
+                  count: "150+ accessories",
+                  image: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=120&q=80",
+                  href: "/gadgets/catalog",
+                },
+              ],
+            }}
+          />
+        </div>
+      </section>
+
+      {/* Content Container */}
+      <main className="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 space-y-16 pb-16">
           {/* Tech Guarantees Badges */}
           <section className="grid grid-cols-2 md:grid-cols-4 gap-4 py-2">
             <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3.5">
@@ -246,10 +276,9 @@ export default function GadgetsStorefrontPage() {
               </Link>
             </div>
           </section>
-        </div>
-      </main>
+        </main>
 
-      <StoreFooter store={store} />
+        <StoreFooter store={store} />
     </div>
   );
 }

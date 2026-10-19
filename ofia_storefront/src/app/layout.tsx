@@ -4,6 +4,7 @@ import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
 import TemplateSwitcher from "@/components/common/TemplateSwitcher";
 import CartDrawer from "@/components/common/CartDrawer";
+import StickySidebarNav from "@/components/common/StickySidebarNav";
 
 const dropa = localFont({
   src: "../fonts/Dropa-Regular.woff2",
@@ -12,8 +13,8 @@ const dropa = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Ofia Storefront · 7 Industry Vertical Experience Templates",
-  description: "Industry-native storefronts tailored to Fashion, Cars, Food, Property, Gadgets, Beauty, and Home & Living.",
+  title: "Ofia Storefront · 10 Industry Vertical Experience Templates",
+  description: "Industry-native storefronts tailored to Fashion, Cars, Food, Property, Gadgets, Beauty, Home & Living, Pharmacy, Hardware, and Retail.",
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
@@ -31,7 +32,12 @@ export default function RootLayout({
       <body className="min-h-screen bg-[#F8F6F1] text-[#111318] selection:bg-[#0069ff]/20 selection:text-[#0069ff]">
         <CartProvider>
           <TemplateSwitcher />
-          {children}
+          <div className="flex min-h-screen w-full">
+            <StickySidebarNav />
+            <div className="flex-1 min-w-0 pb-16 lg:pb-0">
+              {children}
+            </div>
+          </div>
           <CartDrawer />
         </CartProvider>
       </body>

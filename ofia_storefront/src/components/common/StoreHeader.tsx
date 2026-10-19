@@ -16,6 +16,8 @@ import {
   ArrowRight,
   Search,
   Wrench,
+  Bell,
+  ChevronDown,
 } from "lucide-react";
 import { VendorStore } from "@/types/storefront";
 import { useCart } from "@/context/CartContext";
@@ -176,32 +178,32 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
   const CtaIcon = cta.icon;
 
   return (
-    <header className="w-full bg-[#FAF8F5]/90 backdrop-blur-md border-b border-stone-200/80 sticky top-11 z-40 transition-colors">
-      <div className="max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-14 py-3.5 sm:py-4 flex items-center justify-between gap-6">
-        {/* Brand & Store Identity */}
-        <Link href={`/${store.slug}`} className="flex items-center gap-3 group">
-          <img
-            src={store.logo}
-            alt={store.name}
-            className="w-11 h-11 object-contain shrink-0 group-hover:scale-105 transition-transform"
-          />
-          <span className="font-dropa font-bold text-xl sm:text-2xl text-zinc-900 tracking-tight leading-none group-hover:text-blue-600 transition-colors">
+    <header className="w-full bg-transparent z-30 transition-colors pt-2.5 pb-1.5">
+      <div className="max-w-[1720px] mx-auto px-4 sm:px-5 lg:px-6 flex items-center justify-between gap-4 sm:gap-6">
+        {/* Brand & Store Identity matching moodboard VRAI logo */}
+        <Link href={`/${store.slug}`} className="flex items-center gap-2.5 group">
+          <div className="w-9 h-9 rounded-xl bg-zinc-900 flex items-center justify-center text-white shrink-0 group-hover:bg-blue-600 transition-colors shadow-xs">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M12 2L3 9V20C3 20.5523 3.44772 21 4 21H20C20.5523 21 21 20.5523 21 20V9L12 2Z" />
+            </svg>
+          </div>
+          <span className="font-dropa font-extrabold text-2xl tracking-tighter text-zinc-950 uppercase">
             {store.name}
           </span>
         </Link>
 
-        {/* Desktop Navigation Links */}
-        <nav className="hidden lg:flex items-center gap-2 bg-stone-100/90 p-2 rounded-full border border-stone-200/80 shadow-xs overflow-x-auto max-w-[50vw] xl:max-w-[60vw] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        {/* Center Pill Category Tabs matching moodboard (Dashboard, Women, Men, Kids) */}
+        <nav className="hidden lg:flex items-center gap-1 bg-[#E2E4E8]/80 p-1.5 rounded-full shadow-2xs overflow-x-auto max-w-[50vw] xl:max-w-[60vw]">
           {navLinks.map((link) => {
             const isActive = pathname === link.href;
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`shrink-0 whitespace-nowrap min-w-[120px] xl:min-w-[145px] px-6 sm:px-8 py-2.5 rounded-full text-sm font-semibold transition-all text-center flex items-center justify-center ${
+                className={`shrink-0 whitespace-nowrap px-6 py-2 rounded-full text-xs sm:text-sm transition-all text-center flex items-center justify-center ${
                   isActive
-                    ? "bg-zinc-900 text-white shadow-sm"
-                    : "text-stone-700 hover:text-zinc-900 hover:bg-stone-200/60"
+                    ? "bg-white text-zinc-950 shadow-sm font-bold"
+                    : "text-stone-600 hover:text-zinc-950 font-medium hover:bg-white/40"
                 }`}
               >
                 {link.label}
@@ -210,66 +212,60 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
           })}
         </nav>
 
-        {/* Right Actions: Phone + CTA + Account + Cart + Mobile Toggle */}
-        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
-          <a
-            href={`tel:${store.contact.phone}`}
-            className="hidden md:flex shrink-0 whitespace-nowrap items-center gap-2 text-sm font-medium text-stone-700 hover:text-zinc-900 px-3.5 py-2 rounded-full hover:bg-stone-200/60 transition-colors"
-          >
-            <Phone className="w-4 h-4 shrink-0 text-stone-500" />
-            <span>{store.contact.phone}</span>
-          </a>
-
-          {/* Vertical Primary Action Button */}
-          <Link
-            href={cta.href}
-            className="hidden sm:flex shrink-0 whitespace-nowrap items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold text-white transition-all shadow-sm hover:scale-[1.02] active:scale-95 cursor-pointer"
-            style={{ backgroundColor: store.primaryColor }}
-          >
-            <CtaIcon className="w-4 h-4 shrink-0" />
-            <span>{cta.label}</span>
-          </Link>
-
-          {/* Search Trigger */}
+        {/* Right Actions: Search + Bag + Bell + User Avatar Pill matching moodboard */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Search */}
           <Link
             href={`/search?vertical=${store.vertical}`}
-            className="p-2.5 sm:p-3 rounded-full bg-stone-100 hover:bg-stone-200 text-zinc-900 transition-colors cursor-pointer"
-            title="Search Storefront"
+            className="p-2.5 rounded-full text-stone-700 hover:text-zinc-950 hover:bg-stone-200/60 transition-colors cursor-pointer"
+            title="Search"
           >
             <Search className="w-5 h-5" />
           </Link>
 
-
-          {/* Customer Account Trigger */}
-          <Link
-            href="/account"
-            className="p-2.5 sm:p-3 rounded-full bg-stone-100 hover:bg-stone-200 text-zinc-900 transition-colors cursor-pointer"
-            title="Customer Account: Profile, Addresses, Orders, Bookings"
-          >
-            <User className="w-5 h-5" />
-          </Link>
-
-          {/* Cart Trigger */}
+          {/* Bag */}
           <button
             onClick={() => setIsCartOpen(true)}
-            className="relative p-2.5 sm:p-3 rounded-full bg-stone-100 hover:bg-stone-200 text-zinc-900 transition-colors cursor-pointer"
-            title="Open Bag"
+            className="relative p-2.5 rounded-full text-stone-700 hover:text-zinc-950 hover:bg-stone-200/60 transition-colors cursor-pointer"
+            title="Cart"
           >
             <ShoppingBag className="w-5 h-5" />
             {totalCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-black flex items-center justify-center shadow-xs">
+              <span className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 rounded-full bg-blue-600 text-white text-[10px] font-black flex items-center justify-center shadow-xs">
                 {totalCount}
               </span>
             )}
           </button>
 
+          {/* Bell Notification */}
+          <button
+            className="p-2.5 rounded-full text-stone-700 hover:text-zinc-950 hover:bg-stone-200/60 transition-colors cursor-pointer"
+            title="Notifications"
+          >
+            <Bell className="w-5 h-5" />
+          </button>
+
+          {/* User Avatar with circular photo & dropdown chevron matching moodboard */}
+          <Link
+            href="/account"
+            className="flex items-center gap-1.5 p-1 pr-2.5 rounded-full bg-white/80 hover:bg-white shadow-2xs border border-stone-200/60 transition-all cursor-pointer"
+            title="Account"
+          >
+            <img
+              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80"
+              alt="User Avatar"
+              className="w-7 h-7 rounded-full object-cover"
+            />
+            <ChevronDown className="w-3.5 h-3.5 text-stone-500" />
+          </Link>
+
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="lg:hidden p-2.5 rounded-full text-stone-700 hover:bg-stone-100 transition-colors"
+            className="lg:hidden p-2 rounded-full text-stone-700 hover:bg-stone-200/60 transition-colors"
             aria-label="Toggle navigation menu"
           >
-            {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
       </div>

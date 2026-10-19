@@ -2,6 +2,9 @@ import Link from "next/link";
 import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import VerticalHeroBento from "@/components/common/VerticalHeroBento";
+import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
+import StorefrontCartRail from "@/components/common/StorefrontCartRail";
 import {
   Zap,
   Calculator,
@@ -25,63 +28,90 @@ export default function HardwareHomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] text-[#1E252B] flex flex-col justify-between">
-      {/* Industrial Grade Strip (Minimal Height, No Extra Padding) */}
-      <div className="bg-[#151D24] text-amber-400 text-xs py-1 px-4 text-center font-mono tracking-wider flex items-center justify-center gap-2 border-b border-stone-800">
+    <div className="min-h-screen bg-[#ECEEF2] text-[#1E252B] flex flex-col justify-between">
+      {/* Industrial Grade Strip */}
+      <div className="bg-[#151D24] text-amber-400 text-xs py-1.5 px-4 text-center font-mono tracking-wider flex items-center justify-center gap-2 border-b border-stone-800">
         <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
         <span>COREN Certified Renewable Engineers On-Call · Wholesale Contractor Bulk Discounts Active</span>
       </div>
 
       <StoreHeader store={store} />
 
-      <main className="flex-1 w-full space-y-16 pb-12">
-        {/* Full-Bleed Editorial Hardware Hero */}
-        <section className="relative w-full overflow-hidden shadow-2xl bg-zinc-950 text-white min-h-[520px] sm:min-h-[580px] flex items-end p-6 sm:p-12 lg:p-16 border-y border-stone-800">
-          <img
-            src={store.coverImage}
-            alt={store.name}
-            className="absolute inset-0 w-full h-full object-cover object-[50%_35%] opacity-55 scale-100 hover:scale-105 transition-transform duration-1000"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/60 to-transparent" />
-
-          <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
-            <div className="max-w-2xl space-y-5">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-400 text-xs sm:text-sm font-bold uppercase tracking-wider backdrop-blur-xs">
-                <ShieldCheck className="w-4 h-4" />
-                <span>Tier-1 Renewable Hardware · Up to 25-Year Warranties</span>
-              </div>
-
-              <h1 className="font-dropa text-4xl sm:text-6xl lg:text-7xl font-normal tracking-tight text-white leading-tight">
-                Unbroken Power. <br />
-                <span className="italic font-cormorant text-amber-400">Engineered</span> Yield.
-              </h1>
-
-              <p className="text-zinc-200 text-base sm:text-lg leading-relaxed font-light max-w-xl">
-                Engineered for Nigerian grid unreliability. Calculate your exact home or factory power requirements, order factory-warranted equipment, and book certified COREN installation engineers.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3.5 pt-2">
-                <Link
-                  href="/hardware/calculator"
-                  className="px-7 py-3.5 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black text-sm sm:text-base transition-colors flex items-center gap-2.5 shadow-lg shadow-amber-950/40"
-                >
-                  <Calculator className="w-5 h-5" />
-                  <span>Run Solar Load Calculator</span>
-                </Link>
-                <Link
-                  href="/hardware/catalog"
-                  className="px-7 py-3.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-sm sm:text-base backdrop-blur-xs transition-colors flex items-center gap-2.5"
-                >
-                  <Zap className="w-5 h-5 text-amber-400" />
-                  <span>Browse Technical Equipment</span>
-                </Link>
-              </div>
-            </div>
+      {/* Hero & Category Collage Section:
+          Fits exactly in desktop viewport height (100vh - header),
+          Cards on Line 1 and Line 2 have almost the same height (flex-1 min-h-0),
+          and their sum fits into the screen height. */}
+      <section className="w-full max-w-[1720px] mx-auto px-4 sm:px-5 lg:px-6 py-2.5 sm:py-3 lg:py-3.5 flex flex-col gap-3 sm:gap-4 lg:gap-4 lg:h-[calc(100vh-70px)] lg:min-h-[560px] lg:max-h-[calc(100vh-70px)] box-border">
+        {/* Row 1: Top Hero Showcase (9 cols) & Companion Cart Rail (3 cols) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 lg:gap-4 w-full lg:flex-1 min-h-0 items-stretch">
+          <div className="lg:col-span-9 flex h-full min-h-0">
+            <VerticalHeroBento
+              eyebrow="Industrial Power & Solar"
+              headline={"Tier-1 Hybrid\nInverters"}
+              highlightText="· LiFePO4 Storage & Tools"
+              description="Pure sine wave hybrid inverters, tier-1 monocrystalline panels, server-rack lithium batteries, and certified engineering installation."
+              ctaLabel="Run Solar Load Calculator"
+              ctaHref="/hardware/calculator"
+              footnote="5-Year Hardware Warranty · Certified Industrial Installation"
+              image="https://images.unsplash.com/photo-1558449028-b53a39d100fc?auto=format&fit=crop&w=1200&q=80"
+              imageAlt="VoltForge Industrial Solar Infrastructure"
+              badge="Tier-1 Certified"
+              bgColor="#F6F3EB"
+            />
           </div>
-        </section>
 
-        {/* Content Container */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+          {/* Companion Cart Rail */}
+          <div className="lg:col-span-3 hidden lg:flex h-full min-h-0">
+            <StorefrontCartRail sampleProducts={products} />
+          </div>
+        </div>
+
+        {/* Row 2: 3-Card Category Bento Grid (Card 1: 25%, Card 2: 25%, Card 3: 50%) */}
+        <div className="w-full lg:flex-1 min-h-0">
+          <VerticalCategoryBentoGrid
+            card1={{
+              title: "Hybrid Inverters\n& Solar",
+              count: "75+ systems",
+              image: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80",
+              href: "/hardware/catalog",
+            }}
+            card2={{
+              title: "Lithium LiFePO4\nStorage",
+              count: "50+ battery racks",
+              image: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=800&q=80",
+              href: "/hardware/catalog",
+            }}
+            card3={{
+              title: "Top Collation",
+              href: "/hardware/catalog",
+              backgroundImage: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1000&q=80",
+              pills: [
+                {
+                  label: "Power Tool Sets",
+                  count: "140+ tools",
+                  image: "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=120&q=80",
+                  href: "/hardware/catalog",
+                },
+                {
+                  label: "Copper Armored Cable",
+                  count: "85+ gauges",
+                  image: "https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?auto=format&fit=crop&w=120&q=80",
+                  href: "/hardware/catalog",
+                },
+                {
+                  label: "Transfer Switches",
+                  count: "35+ panels",
+                  image: "https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=120&q=80",
+                  href: "/hardware/catalog",
+                },
+              ],
+            }}
+          />
+        </div>
+      </section>
+
+      {/* Content Container */}
+      <main className="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 space-y-16 pb-16">
           {/* Value Badges */}
           <section className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4">
             <div className="p-5 rounded-2xl bg-white border border-stone-200/80 shadow-xs flex items-center gap-3.5">
@@ -289,10 +319,9 @@ export default function HardwareHomePage() {
               />
             </div>
           </section>
-        </div>
-      </main>
+        </main>
 
-      <StoreFooter store={store} />
+        <StoreFooter store={store} />
     </div>
   );
 }

@@ -2,6 +2,9 @@ import Link from "next/link";
 import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import VerticalHeroBento from "@/components/common/VerticalHeroBento";
+import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
+import StorefrontCartRail from "@/components/common/StorefrontCartRail";
 import {
   Building2,
   Bed,
@@ -27,57 +30,84 @@ export default function PropertyStorefrontPage() {
   const properties = MOCK_PRODUCTS.filter((p) => p.vertical === "property");
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-[#111318] flex flex-col justify-between">
+    <div className="min-h-screen bg-[#ECEEF2] text-[#111318] flex flex-col justify-between">
       <StoreHeader store={store} />
 
-      <main className="flex-1 w-full space-y-16 pb-12">
-        {/* Editorial Architecture Hero - Spanning Entire Width on Left & Right */}
-        <section className="relative w-full overflow-hidden shadow-2xl bg-zinc-950 text-white min-h-[520px] sm:min-h-[580px] flex items-end p-6 sm:p-12 lg:p-16 border-y border-zinc-800">
-          <img
-            src={store.coverImage}
-            alt={store.name}
-            className="absolute inset-0 w-full h-full object-cover object-center opacity-60 scale-100 hover:scale-105 transition-transform duration-1000"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/60 to-transparent" />
-
-          <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
-            <div className="max-w-3xl space-y-5">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-300 text-xs sm:text-sm font-bold uppercase tracking-wider backdrop-blur-xs">
-                <Building2 className="w-4 h-4" />
-                <span>Exclusive Waterfront Portfolio</span>
-              </div>
-
-              <h1 className="font-dropa text-4xl sm:text-6xl lg:text-7xl font-normal tracking-tight text-white leading-tight">
-                Architectural Grandeur. <br />
-                <span className="text-blue-400 font-bold">Pristine</span> Waterfronts.
-              </h1>
-
-              <p className="text-zinc-200 text-base sm:text-lg leading-relaxed font-light max-w-2xl">
-                Curated luxury penthouses, private villas, and high-yield executive residences across Lagos, Dubai, and New York. Verified titles with private concierge service.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3.5 pt-2">
-                <Link
-                  href="/property/listings"
-                  className="px-7 py-3.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm sm:text-base transition-colors flex items-center gap-2.5 shadow-lg shadow-blue-600/30"
-                >
-                  <Building2 className="w-5 h-5" />
-                  <span>Explore Available Residences</span>
-                </Link>
-                <Link
-                  href={`/property/schedule-viewing/${properties[0]?.id || "prp-001"}`}
-                  className="px-7 py-3.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-sm sm:text-base backdrop-blur-xs transition-colors flex items-center gap-2.5"
-                >
-                  <Calendar className="w-5 h-5 text-blue-300" />
-                  <span>Schedule Private Viewing</span>
-                </Link>
-              </div>
-            </div>
+      {/* Hero & Category Collage Section:
+          Fits exactly in desktop viewport height (100vh - header),
+          Cards on Line 1 and Line 2 have almost the same height (flex-1 min-h-0),
+          and their sum fits into the screen height. */}
+      <section className="w-full max-w-[1720px] mx-auto px-4 sm:px-5 lg:px-6 py-2.5 sm:py-3 lg:py-3.5 flex flex-col gap-3 sm:gap-4 lg:gap-4 lg:h-[calc(100vh-70px)] lg:min-h-[560px] lg:max-h-[calc(100vh-70px)] box-border">
+        {/* Row 1: Top Hero Showcase (9 cols) & Companion Cart Rail (3 cols) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 lg:gap-4 w-full lg:flex-1 min-h-0 items-stretch">
+          <div className="lg:col-span-9 flex h-full min-h-0">
+            <VerticalHeroBento
+              eyebrow="Waterfront Architecture"
+              headline={"Waterfront\nPenthouses"}
+              highlightText="· Serviced Luxury Villas"
+              description="Curated luxury penthouses, private villas, and high-yield residences across Lagos, Dubai, and New York with verified land titles and 24/7 concierge service."
+              ctaLabel="Schedule Private Viewing"
+              ctaHref={`/property/schedule-viewing/${properties[0]?.id || "prp-001"}`}
+              footnote="Verified Governor's Consent / C-of-O · 24/7 Shoreline Power"
+              image="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686504/ofia_ng_assets/wuuq3envwns5v2hbkjr3.jpg"
+              imageAlt="Veloura Prime Waterfront Residences"
+              badge="Verified Title"
+              bgColor="#F4F8FC"
+            />
           </div>
-        </section>
 
-        {/* Content Container */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+          {/* Companion Cart Rail */}
+          <div className="lg:col-span-3 hidden lg:flex h-full min-h-0">
+            <StorefrontCartRail sampleProducts={properties} />
+          </div>
+        </div>
+
+        {/* Row 2: 3-Card Category Bento Grid (Card 1: 25%, Card 2: 25%, Card 3: 50%) */}
+        <div className="w-full lg:flex-1 min-h-0">
+          <VerticalCategoryBentoGrid
+            card1={{
+              title: "Waterfront\nPenthouses",
+              count: "18 residences",
+              image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80",
+              href: "/property/listings",
+            }}
+            card2={{
+              title: "Private Serviced\nVillas",
+              count: "24 estates",
+              image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
+              href: "/property/listings",
+            }}
+            card3={{
+              title: "Top Collation",
+              href: "/property/listings",
+              backgroundImage: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1000&q=80",
+              pills: [
+                {
+                  label: "Eko Atlantic Towers",
+                  count: "12 suites",
+                  image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=120&q=80",
+                  href: "/property/listings",
+                },
+                {
+                  label: "Ikoyi Old Suburb",
+                  count: "16 villas",
+                  image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=120&q=80",
+                  href: "/property/listings",
+                },
+                {
+                  label: "Banana Island",
+                  count: "9 estates",
+                  image: "https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&w=120&q=80",
+                  href: "/property/listings",
+                },
+              ],
+            }}
+          />
+        </div>
+      </section>
+
+      {/* Content Container */}
+      <main className="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 space-y-16 pb-16">
           {/* Value Badges */}
           <section className="grid grid-cols-2 md:grid-cols-4 gap-4 py-2">
             <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3.5">
@@ -223,10 +253,9 @@ export default function PropertyStorefrontPage() {
               })}
             </div>
           </section>
-        </div>
-      </main>
+        </main>
 
-      <StoreFooter store={store} />
+        <StoreFooter store={store} />
     </div>
   );
 }

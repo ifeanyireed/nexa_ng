@@ -2,6 +2,9 @@ import Link from "next/link";
 import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import VerticalHeroBento from "@/components/common/VerticalHeroBento";
+import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
+import StorefrontCartRail from "@/components/common/StorefrontCartRail";
 import {
   Armchair,
   Ruler,
@@ -24,57 +27,84 @@ export default function HomeLivingStorefrontPage() {
   const homeProducts = MOCK_PRODUCTS.filter((p) => p.vertical === "home-living");
 
   return (
-    <div className="min-h-screen bg-[#F5F2EB] text-[#1E1F22] flex flex-col justify-between">
+    <div className="min-h-screen bg-[#ECEEF2] text-[#1E1F22] flex flex-col justify-between">
       <StoreHeader store={store} />
 
-      <main className="flex-1 w-full space-y-16 pb-12">
-        {/* Architectural Hero - Spanning Entire Width on Left & Right */}
-        <section className="relative w-full overflow-hidden shadow-2xl bg-zinc-950 text-white min-h-[520px] sm:min-h-[580px] flex items-end p-6 sm:p-12 lg:p-16 border-y border-stone-800">
-          <img
-            src={store.coverImage}
-            alt={store.name}
-            className="absolute inset-0 w-full h-full object-cover object-center opacity-65 scale-100 hover:scale-105 transition-transform duration-1000"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-stone-950 via-stone-950/50 to-transparent" />
-
-          <div className="relative z-10 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8">
-            <div className="max-w-2xl space-y-5">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-stone-500/20 border border-stone-400/40 text-stone-200 text-xs sm:text-sm font-bold uppercase tracking-wider backdrop-blur-xs">
-                <Armchair className="w-4 h-4" />
-                <span>Architectural Form & Tactile Comfort</span>
-              </div>
-
-              <h1 className="font-dropa text-4xl sm:text-6xl lg:text-7xl font-normal tracking-tight text-white leading-tight">
-                Calm Geometry. <br />
-                <span className="italic font-cormorant text-amber-200">Heirloom</span> Craft.
-              </h1>
-
-              <p className="text-stone-200 text-base sm:text-lg leading-relaxed font-light max-w-xl">
-                Sculptural bouclé sofas, solid ashwood dining credenzas, and ambient ceramic fixtures designed for tranquil tropical living.
-              </p>
-
-              <div className="flex flex-wrap items-center gap-3.5 pt-2">
-                <Link
-                  href="/home-living/catalog"
-                  className="px-7 py-3.5 rounded-full bg-white text-stone-900 font-bold text-sm sm:text-base hover:bg-amber-100 transition-colors flex items-center gap-2.5 shadow-lg"
-                >
-                  <span>Explore Visual Catalog</span>
-                  <ArrowRight className="w-5 h-5" />
-                </Link>
-                <Link
-                  href="/home-living/delivery-options"
-                  className="px-7 py-3.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-bold text-sm sm:text-base backdrop-blur-xs transition-colors flex items-center gap-2.5"
-                >
-                  <Truck className="w-5 h-5 text-amber-200" />
-                  <span>White-Glove Delivery & Assembly</span>
-                </Link>
-              </div>
-            </div>
+      {/* Hero & Category Collage Section:
+          Fits exactly in desktop viewport height (100vh - header),
+          Cards on Line 1 and Line 2 have almost the same height (flex-1 min-h-0),
+          and their sum fits into the screen height. */}
+      <section className="w-full max-w-[1720px] mx-auto px-4 sm:px-5 lg:px-6 py-2.5 sm:py-3 lg:py-3.5 flex flex-col gap-3 sm:gap-4 lg:gap-4 lg:h-[calc(100vh-70px)] lg:min-h-[560px] lg:max-h-[calc(100vh-70px)] box-border">
+        {/* Row 1: Top Hero Showcase (9 cols) & Companion Cart Rail (3 cols) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 lg:gap-4 w-full lg:flex-1 min-h-0 items-stretch">
+          <div className="lg:col-span-9 flex h-full min-h-0">
+            <VerticalHeroBento
+              eyebrow="Sculptural Living"
+              headline={"Solid White Oak\nDining"}
+              highlightText="· Bouclé Lounges & Ceramics"
+              description="Handcrafted solid oak tables, Italian leather lounges, bouclé accent seating, and ambient ceramic lighting engineered to endure generations."
+              ctaLabel="Explore Visual Catalog"
+              ctaHref="/home-living/catalog"
+              footnote="White-Glove Room Assembly · Lifetime Solid Wood Frame Guarantee"
+              image="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200&q=80"
+              imageAlt="Nordic & Clay Sculptural Furniture"
+              badge="White-Glove Assembly"
+              bgColor="#F7F4ED"
+            />
           </div>
-        </section>
 
-        {/* Content Container */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+          {/* Companion Cart Rail */}
+          <div className="lg:col-span-3 hidden lg:flex h-full min-h-0">
+            <StorefrontCartRail sampleProducts={homeProducts} />
+          </div>
+        </div>
+
+        {/* Row 2: 3-Card Category Bento Grid (Card 1: 25%, Card 2: 25%, Card 3: 50%) */}
+        <div className="w-full lg:flex-1 min-h-0">
+          <VerticalCategoryBentoGrid
+            card1={{
+              title: "Solid Oak\nDining",
+              count: "65+ pieces",
+              image: "https://images.unsplash.com/photo-1577140917170-285929fb55b7?auto=format&fit=crop&w=800&q=80",
+              href: "/home-living/catalog",
+            }}
+            card2={{
+              title: "Living Room\nLounges",
+              count: "110+ pieces",
+              image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80",
+              href: "/home-living/catalog",
+            }}
+            card3={{
+              title: "Top Collation",
+              href: "/home-living/catalog",
+              backgroundImage: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1000&q=80",
+              pills: [
+                {
+                  label: "Ceramic Lamps",
+                  count: "80+ designs",
+                  image: "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=120&q=80",
+                  href: "/home-living/catalog",
+                },
+                {
+                  label: "Bouclé Armchairs",
+                  count: "45+ models",
+                  image: "https://images.unsplash.com/photo-1580481077114-1e05f63d0c3a?auto=format&fit=crop&w=120&q=80",
+                  href: "/home-living/catalog",
+                },
+                {
+                  label: "Wool Area Rugs",
+                  count: "70+ textiles",
+                  image: "https://images.unsplash.com/photo-1600121848594-d8644e57abab?auto=format&fit=crop&w=120&q=80",
+                  href: "/home-living/catalog",
+                },
+              ],
+            }}
+          />
+        </div>
+      </section>
+
+      {/* Content Container */}
+      <main className="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 space-y-16 pb-16">
           {/* Craftsmanship Guarantees */}
           <section className="grid grid-cols-2 md:grid-cols-4 gap-4 py-2">
             <div className="p-5 rounded-2xl bg-white border border-stone-300/60 shadow-xs flex items-center gap-3.5">
@@ -244,10 +274,9 @@ export default function HomeLivingStorefrontPage() {
               </Link>
             </div>
           </section>
-        </div>
-      </main>
+        </main>
 
-      <StoreFooter store={store} />
+        <StoreFooter store={store} />
     </div>
   );
 }

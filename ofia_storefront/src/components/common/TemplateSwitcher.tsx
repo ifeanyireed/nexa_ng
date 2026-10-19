@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -16,6 +17,8 @@ import {
   Pill,
   Zap,
   Gift,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { VerticalType } from "@/types/storefront";
@@ -113,79 +116,102 @@ const TEMPLATES: Array<{
 export default function TemplateSwitcher() {
   const pathname = usePathname();
   const { totalCount, setIsCartOpen } = useCart();
+  const [isCollapsed, setIsCollapsed] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
-  // Determine current active template
-  const currentTemplate = TEMPLATES.find((t) => pathname.startsWith(t.href)) || TEMPLATES[0];
+  useEffect(() => {
+    setMounted(true);
+    const saved = localStorage.getItem("ofia_verticals_nav_collapsed");
+    if (saved !== null) {
+      setIsCollapsed(saved === "true");
+    } else {
+      // Default collapsed on storefront vertical pages to keep UI clean and fit screen height
+      setIsCollapsed(true);
+    }
+  }, []);
+
+  const handleToggle = (collapsed: boolean) => {
+    setIsCollapsed(collapsed);
+    localStorage.setItem("ofia_verticals_nav_collapsed", String(collapsed));
+  };
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
-    <div className="sticky top-0 z-50 w-full bg-[#0F1117]/95 backdrop-blur-md border-b border-white/10 text-white shadow-xl transition-all">
-      <div className="max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-14 py-2.5 flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
-        {/* Left: Ecosystem Brand & Template Selector Label */}
-        <div className="flex items-center gap-2 shrink-0">
-          <Link
-            href="/templates"
-            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs sm:text-sm font-bold text-zinc-200 transition-colors"
-            title="Browse all 10 Templates Directory"
-          >
-            <Layers className="w-4 h-4 text-[#0069FF]" />
-            <span className="hidden sm:inline">10 Storefront Templates</span>
-            <span className="sm:hidden">10 Templates</span>
-          </Link>
-          <span className="text-zinc-600 hidden md:inline">|</span>
-        </div>
-
-        {/* Center: 7 Vertical Template Quick Jump Tabs */}
-        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto py-0.5">
-          {TEMPLATES.map((t) => {
-            const Icon = t.icon;
-            const isActive = pathname.startsWith(t.href);
-
-            return (
-              <Link
-                key={t.id}
-                href={t.href}
-                className={`flex items-center gap-2 px-3 sm:px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
-                  isActive
-                    ? "bg-white text-zinc-900 shadow-md font-bold scale-[1.02]"
-                    : "text-zinc-300 hover:text-white hover:bg-white/10"
-                }`}
-              >
-                <Icon
-                  className={`w-4 h-4 ${
-                    isActive ? "text-[#0069FF]" : "text-zinc-400"
-                  }`}
-                />
-                <span>{t.label}</span>
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* Right: Account & Cart Buttons */}
-        <div className="flex items-center gap-2 shrink-0">
-          <Link
-            href="/account"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs sm:text-sm font-medium transition-colors"
-            title="Customer Account: Profile, Addresses, Orders, Bookings"
-          >
-            <User className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Account</span>
-          </Link>
-
+    <>
+      {/* Floating Toggle Button when Collapsed/Hidden */}
+      {isCollapsed ? (
+        <div className="fixed bottom-5 right-6 z-50 hidden lg:flex items-center">
           <button
-            onClick={() => setIsCartOpen(true)}
-            className="relative flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-bold transition-all shadow-sm cursor-pointer"
+            onClick={() => handleToggle(false)}
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-950/90 hover:bg-zinc-950 text-white text-xs font-bold shadow-xl backdrop-blur-md border border-white/20 hover:scale-105 active:scale-95 transition-all cursor-pointer group"
+            title="Expand 10 Industry Verticals Navigation"
           >
-            <ShoppingBag className="w-4 h-4" />
-            <span className="hidden sm:inline">Bag</span>
-            {totalCount > 0 && (
-              <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white text-blue-700 text-[10px] sm:text-xs font-black flex items-center justify-center">
-                {totalCount}
-              </span>
-            )}
+            <Layers className="w-3.5 h-3.5 text-[#0069FF] group-hover:rotate-12 transition-transform" />
+            <span>10 Verticals</span>
+            <ChevronUp className="w-3.5 h-3.5 text-zinc-400 group-hover:text-white transition-colors" />
           </button>
         </div>
-      </div>
-    </div>
+      ) : (
+        /* Full Expanded Verticals Bar */
+        <div className="sticky top-0 z-50 w-full bg-[#0F1117]/95 backdrop-blur-md border-b border-white/10 text-white shadow-xl transition-all animate-in slide-in-from-top-2 duration-200">
+          <div className="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-10 py-2 flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
+            {/* Left: Ecosystem Brand */}
+            <div className="flex items-center gap-2 shrink-0">
+              <Link
+                href="/templates"
+                className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-zinc-200 transition-colors"
+                title="Browse all 10 Templates Directory"
+              >
+                <Layers className="w-3.5 h-3.5 text-[#0069FF]" />
+                <span className="hidden sm:inline">10 Storefront Templates</span>
+                <span className="sm:hidden">10 Templates</span>
+              </Link>
+            </div>
+
+            {/* Center: 10 Vertical Jump Tabs */}
+            <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto py-0.5 no-scrollbar">
+              {TEMPLATES.map((t) => {
+                const Icon = t.icon;
+                const isActive = pathname.startsWith(t.href);
+
+                return (
+                  <Link
+                    key={t.id}
+                    href={t.href}
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+                      isActive
+                        ? "bg-white text-zinc-900 shadow-md font-bold scale-[1.02]"
+                        : "text-zinc-300 hover:text-white hover:bg-white/10"
+                    }`}
+                  >
+                    <Icon
+                      className={`w-3.5 h-3.5 ${
+                        isActive ? "text-[#0069FF]" : "text-zinc-400"
+                      }`}
+                    />
+                    <span>{t.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Right: Collapse / Hide Button */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => handleToggle(true)}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-medium transition-colors cursor-pointer"
+                title="Collapse Verticals Bar"
+              >
+                <ChevronUp className="w-3.5 h-3.5 text-zinc-300" />
+                <span>Hide</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

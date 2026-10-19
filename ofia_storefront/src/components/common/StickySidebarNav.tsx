@@ -14,6 +14,7 @@ import {
   Percent,
   Settings,
   User,
+  LogOut,
   Phone,
   MessageSquare,
   MapPin,
@@ -117,6 +118,17 @@ export default function StickySidebarNav() {
     setIsWalletOpen(false);
     setIsCartOpen(false);
     setShowPromoBadge(false);
+  };
+
+  const handleLogout = () => {
+    closeAllDrawers();
+    try {
+      localStorage.removeItem("ofia_user_session");
+      localStorage.removeItem("ofia_auth_token");
+    } catch {}
+    if (pathname === "/account") {
+      window.location.href = `/${currentVertical}`;
+    }
   };
 
   // Live Concierge Chat state
@@ -456,7 +468,7 @@ export default function StickySidebarNav() {
           </div>
 
           {/* 4. Calendar / Bookings & Appointments */}
-          <div className="relative group flex items-center justify-center w-full">
+          <div className="relative group flex items-center justify-center w-full mb-3.5 xl:mb-4.5">
             <Link
               href={bookingInfo.href}
               onClick={closeAllDrawers}
@@ -523,7 +535,7 @@ export default function StickySidebarNav() {
           </div>
         </nav>
 
-        {/* Bottom Pinned Controls (Settings & Account) */}
+        {/* Bottom Pinned Controls (Settings, Account & Logout) */}
         <div className="flex flex-col items-center gap-2 w-full px-3 pt-3 pb-2">
           {/* Store Info & Policies */}
           <div className="relative group flex items-center justify-center w-full">
@@ -550,6 +562,20 @@ export default function StickySidebarNav() {
             </Link>
             <span className="pointer-events-none absolute left-full ml-3.5 px-3 py-1.5 bg-zinc-900 text-white text-xs font-semibold rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-50">
               Customer Account
+            </span>
+          </div>
+
+          {/* Logout Button */}
+          <div className="relative group flex items-center justify-center w-full">
+            <button
+              onClick={handleLogout}
+              className="w-10 h-10 rounded-full flex items-center justify-center text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
+              title="Log Out"
+            >
+              <LogOut className="w-4.5 h-4.5" />
+            </button>
+            <span className="pointer-events-none absolute left-full ml-3.5 px-3 py-1.5 bg-zinc-900 text-white text-xs font-semibold rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-50">
+              Log Out
             </span>
           </div>
         </div>
@@ -624,6 +650,14 @@ export default function StickySidebarNav() {
         >
           <User className="w-5 h-5" />
         </Link>
+
+        <button
+          onClick={handleLogout}
+          className="p-2 rounded-2xl flex flex-col items-center text-stone-400 hover:text-rose-600 transition-colors cursor-pointer"
+          title="Log Out"
+        >
+          <LogOut className="w-5 h-5" />
+        </button>
       </nav>
 
       {/* LIVE CONCIERGE CHAT DRAWER (LIGHT MODE, MATCHING CART DRAWER) */}

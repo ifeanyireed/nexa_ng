@@ -178,7 +178,7 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
   const CtaIcon = cta.icon;
 
   return (
-    <header className="w-full bg-white z-30 transition-colors pt-2.5 pb-1.5">
+    <header className="sticky top-0 w-full bg-white/95 backdrop-blur-md z-30 transition-colors pt-2.5 pb-1.5">
       <div className="max-w-[1720px] mx-auto px-4 sm:px-5 lg:px-6 flex items-center justify-between gap-4 sm:gap-6">
         {/* Brand & Store Identity with Ofia logo just like in footer */}
         <Link href={`/${store.slug}`} className="flex items-center gap-2.5 group">

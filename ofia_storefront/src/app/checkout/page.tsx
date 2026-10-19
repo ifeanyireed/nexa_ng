@@ -48,7 +48,7 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F6F1] text-[#111318] py-10 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white text-[#111318] py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Navigation & Header */}
         <div className="flex items-center justify-between pb-6 border-b border-stone-200">

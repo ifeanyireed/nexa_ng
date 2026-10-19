@@ -29,7 +29,7 @@ export default function GadgetsStorefrontPage() {
   const gadgetProducts = MOCK_PRODUCTS.filter((p) => p.vertical === "gadgets");
 
   return (
-    <div className="min-h-screen bg-[#ECEEF2] text-slate-900 flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-slate-900 flex flex-col justify-between">
       <StoreHeader store={store} />
 
       {/* Hero & Category Collage Section:

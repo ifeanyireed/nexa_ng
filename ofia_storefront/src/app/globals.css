@@ -12,9 +12,9 @@
   --color-brand-light: #e8f1ff;
   --color-brand-glow: rgba(0, 105, 255, 0.3);
 
-  --color-canvas: #F8F6F1;
+  --color-canvas: #FFFFFF;
   --color-surface: #FFFFFF;
-  --color-surface-dim: #F0EDE6;
+  --color-surface-dim: #F8F9FA;
 
   --color-ink: #111318;
   --color-ink-muted: #5F6368;
@@ -30,7 +30,7 @@ html {
 }
 
 body {
-  background: radial-gradient(circle at 50% 0%, #F5EDE6 0%, #F8F6F1 50%, #FAF8F5 100%);
+  background: #FFFFFF;
   color: #111318;
   overflow-x: hidden;
   font-family: var(--font-dropa);

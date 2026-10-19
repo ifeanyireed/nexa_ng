@@ -28,7 +28,7 @@ export default function HardwareHomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#ECEEF2] text-[#1E252B] flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-[#1E252B] flex flex-col justify-between">
       {/* Industrial Grade Strip */}
       <div className="bg-[#151D24] text-amber-400 text-xs py-1.5 px-4 text-center font-mono tracking-wider flex items-center justify-center gap-2 border-b border-stone-800">
         <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />

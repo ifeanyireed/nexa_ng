@@ -28,7 +28,7 @@ export default function BeautyStorefrontPage() {
   const beautyServices = MOCK_SERVICES.filter((s) => s.vertical === "beauty");
 
   return (
-    <div className="min-h-screen bg-[#ECEEF2] text-[#201D1A] flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-[#201D1A] flex flex-col justify-between">
       <StoreHeader store={store} />
 
       {/* Hero & Category Collage Section:

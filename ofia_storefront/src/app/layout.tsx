@@ -29,12 +29,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${dropa.variable} antialiased`}>
-      <body className="min-h-screen bg-[#F8F6F1] text-[#111318] selection:bg-[#0069ff]/20 selection:text-[#0069ff]">
+      <body className="min-h-screen bg-white text-[#111318] selection:bg-[#0069ff]/20 selection:text-[#0069ff]">
         <CartProvider>
           <TemplateSwitcher />
-          <div className="flex min-h-screen w-full">
+          <div className="flex min-h-screen w-full bg-white">
             <StickySidebarNav />
-            <div className="flex-1 min-w-0 pb-16 lg:pb-0">
+            <div className="flex-1 min-w-0 pb-16 lg:pb-0 bg-white">
               {children}
             </div>
           </div>

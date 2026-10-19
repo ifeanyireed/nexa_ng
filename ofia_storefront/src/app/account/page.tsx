@@ -249,7 +249,7 @@ export default function CustomerAccountPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF8F5] text-zinc-900 flex flex-col font-sans">
+    <div className="min-h-screen bg-white text-zinc-900 flex flex-col font-sans">
       <TemplateSwitcher />
 
       {/* Account Hero Banner */}

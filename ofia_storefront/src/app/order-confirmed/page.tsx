@@ -70,7 +70,7 @@ function ConfirmationContent() {
 
 export default function OrderConfirmedPage() {
   return (
-    <div className="min-h-screen bg-[#F8F6F1] text-[#111318] flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white text-[#111318] flex items-center justify-center py-16 px-4 sm:px-6 lg:px-8">
       <Suspense fallback={<div className="text-center text-xs text-stone-500">Loading order details...</div>}>
         <ConfirmationContent />
       </Suspense>

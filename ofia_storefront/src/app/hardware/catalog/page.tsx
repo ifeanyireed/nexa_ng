@@ -56,7 +56,7 @@ function HardwareCatalogContent() {
   }, [products, searchQuery, selectedType]);
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-[#1E252B] flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-[#1E252B] flex flex-col justify-between">
       <StoreHeader store={store} />
 
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
@@ -247,7 +247,7 @@ function HardwareCatalogContent() {
 
 export default function HardwareCatalogPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center p-8">Loading Technical Hardware Catalog...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center p-8">Loading Technical Hardware Catalog...</div>}>
       <HardwareCatalogContent />
     </Suspense>
   );

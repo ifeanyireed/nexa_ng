@@ -30,7 +30,7 @@ export default function PropertyStorefrontPage() {
   const properties = MOCK_PRODUCTS.filter((p) => p.vertical === "property");
 
   return (
-    <div className="min-h-screen bg-[#ECEEF2] text-[#111318] flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-[#111318] flex flex-col justify-between">
       <StoreHeader store={store} />
 
       {/* Hero & Category Collage Section:

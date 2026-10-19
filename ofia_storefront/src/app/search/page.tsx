@@ -104,7 +104,7 @@ function SearchContent() {
   ];
 
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-stone-900 flex flex-col justify-between">
       <StoreHeader store={currentStore} />
 
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
@@ -389,7 +389,7 @@ function SearchContent() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-stone-50 flex items-center justify-center p-8">Loading Search Index...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center p-8">Loading Search Index...</div>}>
       <SearchContent />
     </Suspense>
   );

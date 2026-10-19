@@ -30,7 +30,7 @@ export default function PharmacyHomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#ECEEF2] text-[#13221C] flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-[#13221C] flex flex-col justify-between">
       {/* Regulated Dispensary Alert Strip */}
       <div className="bg-[#0C4A3E] text-emerald-100 text-xs py-1.5 px-4 text-center font-medium tracking-wide flex items-center justify-center gap-2 border-b border-emerald-900">
         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />

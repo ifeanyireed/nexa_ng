@@ -55,7 +55,7 @@ function RetailCatalogContent() {
   }, [products, searchQuery, selectedDept, onlyGiftWrap]);
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] text-[#222129] flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-[#222129] flex flex-col justify-between">
       <StoreHeader store={store} />
 
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
@@ -220,7 +220,7 @@ function RetailCatalogContent() {
 
 export default function RetailCatalogPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center p-8">Loading Specialty Catalog...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center p-8">Loading Specialty Catalog...</div>}>
       <RetailCatalogContent />
     </Suspense>
   );

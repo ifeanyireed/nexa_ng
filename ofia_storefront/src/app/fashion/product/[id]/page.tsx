@@ -57,7 +57,7 @@ export default function FashionProductDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] text-[#1A1A1A] flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-[#1A1A1A] flex flex-col justify-between">
       <StoreHeader store={store} />
 
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-12">

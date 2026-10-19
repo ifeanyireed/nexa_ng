@@ -35,7 +35,7 @@ export default function RetailCustomizationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] text-[#222129] flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-[#222129] flex flex-col justify-between">
       <StoreHeader store={store} />
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">

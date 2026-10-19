@@ -27,7 +27,7 @@ export default function FoodStorefrontPage() {
   const foodProducts = MOCK_PRODUCTS.filter((p) => p.vertical === "food");
 
   return (
-    <div className="min-h-screen bg-[#ECEEF2] text-[#1E1B18] flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-[#1E1B18] flex flex-col justify-between">
       <StoreHeader store={store} />
 
       {/* Hero & Category Collage Section:

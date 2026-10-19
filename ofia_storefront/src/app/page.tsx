@@ -179,9 +179,9 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#F8F6F1] text-[#111318] flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-[#111318] flex flex-col justify-between">
       {/* Top Launchpad Bar */}
-      <header className="w-full bg-[#FAF8F5]/90 backdrop-blur-md border-b border-stone-200/80 sticky top-11 z-40">
+      <header className="w-full bg-white/90 backdrop-blur-md border-b border-stone-200/80 sticky top-11 z-40">
         <div className="max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-14 py-3.5 sm:py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3 group">
             <img

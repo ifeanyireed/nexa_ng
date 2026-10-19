@@ -30,7 +30,7 @@ export default function CarsStorefrontPage() {
   const inspectionService = MOCK_SERVICES.find((s) => s.vertical === "cars");
 
   return (
-    <div className="min-h-screen bg-[#ECEEF2] text-[#0F172A] flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-[#0F172A] flex flex-col justify-between">
       <StoreHeader store={store} />
 
       {/* Hero & Category Collage Section:

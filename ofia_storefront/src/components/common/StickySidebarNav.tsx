@@ -404,7 +404,7 @@ export default function StickySidebarNav() {
     <>
       {/* Desktop Sticky Icon Sidebar - Always Visible on Left */}
       <aside
-        className="sticky top-0 h-screen max-h-screen h-dvh w-18 md:w-20 bg-[#ECEEF2] z-40 hidden lg:flex flex-col items-center justify-between pb-4 shrink-0 select-none overflow-hidden border-r border-stone-300/30"
+        className="sticky top-0 h-screen max-h-screen h-dvh w-18 md:w-20 bg-white z-40 hidden lg:flex flex-col items-center justify-between pb-4 shrink-0 select-none overflow-hidden"
         aria-label="Storefront Icon Navigation"
       >
         {/* Primary Navigation Stack - Dropped vertical start position aligning with Hero Card */}
@@ -524,7 +524,7 @@ export default function StickySidebarNav() {
         </nav>
 
         {/* Bottom Pinned Controls (Settings & Account) */}
-        <div className="flex flex-col items-center gap-2 w-full px-3 pt-3 pb-2 border-t border-stone-300/40">
+        <div className="flex flex-col items-center gap-2 w-full px-3 pt-3 pb-2">
           {/* Store Info & Policies */}
           <div className="relative group flex items-center justify-center w-full">
             <Link
@@ -557,7 +557,7 @@ export default function StickySidebarNav() {
 
       {/* Mobile Sticky Bottom Icon Bar (Always Visible on Small Screens) */}
       <nav
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#ECEEF2]/95 backdrop-blur-md border-t border-stone-300/60 px-3 py-2 flex items-center justify-around shadow-lg"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md px-3 py-2 flex items-center justify-around shadow-lg"
         aria-label="Mobile Navigation Bar"
       >
         <Link

@@ -180,7 +180,7 @@ function TrackingContent() {
 
 export default function OrderTrackingPage() {
   return (
-    <div className="min-h-screen bg-[#F8F6F1] text-[#111318] py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white text-[#111318] py-12 px-4 sm:px-6 lg:px-8">
       <Suspense fallback={<div className="text-center py-20 text-stone-500">Loading tracking information...</div>}>
         <TrackingContent />
       </Suspense>

@@ -55,7 +55,7 @@ function PharmacyCatalogContent() {
   }, [products, searchQuery, selectedForm, rxFilter]);
 
   return (
-    <div className="min-h-screen bg-[#F7FAF9] text-[#13221C] flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-[#13221C] flex flex-col justify-between">
       <StoreHeader store={store} />
 
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
@@ -272,7 +272,7 @@ function PharmacyCatalogContent() {
 
 export default function PharmacyCatalogPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#F7FAF9] flex items-center justify-center p-8">Loading Pharmacy Catalog...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center p-8">Loading Pharmacy Catalog...</div>}>
       <PharmacyCatalogContent />
     </Suspense>
   );

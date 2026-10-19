@@ -54,7 +54,7 @@ export default function PropertyDetailPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-[#111318] flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-[#111318] flex flex-col justify-between">
       <StoreHeader store={store} />
 
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-10">

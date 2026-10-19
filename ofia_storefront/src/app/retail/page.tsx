@@ -29,7 +29,7 @@ export default function RetailHomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#ECEEF2] text-[#222129] flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-[#222129] flex flex-col justify-between">
       {/* Luxury Packaging Banner Strip */}
       <div className="bg-[#1C1826] text-amber-200 text-xs py-1.5 px-4 text-center font-medium tracking-wide flex items-center justify-center gap-2 border-b border-indigo-950">
         <span className="w-2 h-2 rounded-full bg-amber-300 animate-pulse" />

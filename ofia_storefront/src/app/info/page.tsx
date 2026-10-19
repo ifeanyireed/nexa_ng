@@ -31,7 +31,7 @@ function StoreInfoContent() {
   const store = MOCK_STORES[vertical] || MOCK_STORES["fashion"];
 
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-stone-900 flex flex-col justify-between">
       <StoreHeader store={store} />
 
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full space-y-12">
@@ -226,7 +226,7 @@ function StoreInfoContent() {
 
 export default function StoreInfoPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-stone-50 flex items-center justify-center p-8">Loading Store Details...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-white flex items-center justify-center p-8">Loading Store Details...</div>}>
       <StoreInfoContent />
     </Suspense>
   );

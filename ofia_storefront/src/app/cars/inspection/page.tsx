@@ -41,7 +41,7 @@ export default function CarsInspectionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] flex flex-col justify-between">
+    <div className="min-h-screen bg-white text-[#0F172A] flex flex-col justify-between">
       <StoreHeader store={store} />
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">

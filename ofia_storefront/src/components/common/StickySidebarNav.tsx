@@ -416,7 +416,7 @@ export default function StickySidebarNav() {
     <>
       {/* Desktop Sticky Icon Sidebar - Always Visible on Left */}
       <aside
-        className="sticky top-0 h-screen max-h-screen h-dvh w-18 md:w-20 bg-white z-40 hidden lg:flex flex-col items-center justify-between pb-5 shrink-0 select-none overflow-y-auto no-scrollbar"
+        className="sticky top-0 h-screen max-h-screen h-dvh w-18 md:w-20 bg-white z-40 hidden lg:flex flex-col items-center justify-between pb-5 shrink-0 select-none"
         aria-label="Storefront Icon Navigation"
       >
         {/* Primary Navigation Stack */}
@@ -427,10 +427,12 @@ export default function StickySidebarNav() {
               href={`/${currentVertical}`}
               onClick={closeAllDrawers}
               className={getDesktopNavClasses(activeNav === "home")}
+              title="Home"
             >
               <LayoutGrid className="w-5 h-5" />
             </Link>
-            <span className="pointer-events-none absolute left-full ml-3.5 px-3 py-1.5 bg-zinc-900 text-white text-xs font-semibold rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-50">
+            <span className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-zinc-900 text-white text-xs font-medium rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 transition-all duration-150 shadow-xl z-50 flex items-center">
+              <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-zinc-900 rotate-45 rounded-xs" />
               Home
             </span>
           </div>
@@ -441,10 +443,12 @@ export default function StickySidebarNav() {
               href={lookbookHref}
               onClick={closeAllDrawers}
               className={getDesktopNavClasses(activeNav === "lookbook")}
+              title="Editorial Lookbook"
             >
               <Compass className="w-5 h-5" />
             </Link>
-            <span className="pointer-events-none absolute left-full ml-3.5 px-3 py-1.5 bg-zinc-900 text-white text-xs font-semibold rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-50">
+            <span className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-zinc-900 text-white text-xs font-medium rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 transition-all duration-150 shadow-xl z-50 flex items-center">
+              <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-zinc-900 rotate-45 rounded-xs" />
               Editorial Lookbook
             </span>
           </div>
@@ -454,6 +458,7 @@ export default function StickySidebarNav() {
             <button
               onClick={openCartDrawer}
               className={`relative ${getDesktopNavClasses(activeNav === "cart")} cursor-pointer`}
+              title="Shopping Bag"
             >
               <ShoppingCart className="w-5 h-5" />
               {totalCount > 0 && (
@@ -462,8 +467,9 @@ export default function StickySidebarNav() {
                 </span>
               )}
             </button>
-            <span className="pointer-events-none absolute left-full ml-3.5 px-3 py-1.5 bg-zinc-900 text-white text-xs font-semibold rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-50">
-              Bag ({totalCount} items)
+            <span className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-zinc-900 text-white text-xs font-medium rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 transition-all duration-150 shadow-xl z-50 flex items-center">
+              <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-zinc-900 rotate-45 rounded-xs" />
+              {totalCount > 0 ? `Shopping Bag (${totalCount})` : "Shopping Bag"}
             </span>
           </div>
 
@@ -473,10 +479,12 @@ export default function StickySidebarNav() {
               href={bookingInfo.href}
               onClick={closeAllDrawers}
               className={getDesktopNavClasses(activeNav === "booking")}
+              title={bookingInfo.label}
             >
               <Calendar className="w-5 h-5" />
             </Link>
-            <span className="pointer-events-none absolute left-full ml-3.5 px-3 py-1.5 bg-zinc-900 text-white text-xs font-semibold rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-50">
+            <span className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-zinc-900 text-white text-xs font-medium rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 transition-all duration-150 shadow-xl z-50 flex items-center">
+              <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-zinc-900 rotate-45 rounded-xs" />
               {bookingInfo.label}
             </span>
           </div>
@@ -487,10 +495,12 @@ export default function StickySidebarNav() {
               href={catalogHref}
               onClick={closeAllDrawers}
               className={getDesktopNavClasses(activeNav === "catalog")}
+              title="Collections & Catalog"
             >
               <Tag className="w-5 h-5" />
             </Link>
-            <span className="pointer-events-none absolute left-full ml-3.5 px-3 py-1.5 bg-zinc-900 text-white text-xs font-semibold rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-50">
+            <span className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-zinc-900 text-white text-xs font-medium rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 transition-all duration-150 shadow-xl z-50 flex items-center">
+              <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-zinc-900 rotate-45 rounded-xs" />
               Collections & Catalog
             </span>
           </div>
@@ -500,10 +510,12 @@ export default function StickySidebarNav() {
             <button
               onClick={openInquiryDrawer}
               className={`${getDesktopNavClasses(activeNav === "mail")} cursor-pointer`}
+              title="Live Concierge Chat"
             >
               <Mail className="w-5 h-5" />
             </button>
-            <span className="pointer-events-none absolute left-full ml-3.5 px-3 py-1.5 bg-zinc-900 text-white text-xs font-semibold rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-50">
+            <span className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-zinc-900 text-white text-xs font-medium rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 transition-all duration-150 shadow-xl z-50 flex items-center">
+              <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-zinc-900 rotate-45 rounded-xs" />
               Live Concierge Chat
             </span>
           </div>
@@ -513,10 +525,12 @@ export default function StickySidebarNav() {
             <button
               onClick={openWalletDrawer}
               className={`${getDesktopNavClasses(activeNav === "wallet")} cursor-pointer`}
+              title="Store Wallet & Refunds"
             >
               <Wallet className="w-5 h-5" />
             </button>
-            <span className="pointer-events-none absolute left-full ml-3.5 px-3 py-1.5 bg-zinc-900 text-white text-xs font-semibold rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-50">
+            <span className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-zinc-900 text-white text-xs font-medium rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 transition-all duration-150 shadow-xl z-50 flex items-center">
+              <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-zinc-900 rotate-45 rounded-xs" />
               Store Wallet & Refunds
             </span>
           </div>
@@ -526,10 +540,12 @@ export default function StickySidebarNav() {
             <button
               onClick={togglePromoBadge}
               className={`${getDesktopNavClasses(activeNav === "promo")} cursor-pointer`}
+              title="Active Offers & Vouchers"
             >
               <Percent className="w-5 h-5" />
             </button>
-            <span className="pointer-events-none absolute left-full ml-3.5 px-3 py-1.5 bg-zinc-900 text-white text-xs font-semibold rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-50">
+            <span className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-zinc-900 text-white text-xs font-medium rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 transition-all duration-150 shadow-xl z-50 flex items-center">
+              <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-zinc-900 rotate-45 rounded-xs" />
               Active Offers & Vouchers
             </span>
           </div>
@@ -543,10 +559,12 @@ export default function StickySidebarNav() {
               href={`/info?vertical=${currentVertical}`}
               onClick={closeAllDrawers}
               className={getDesktopBottomClasses(activeNav === "settings")}
+              title="Store Info & Policies"
             >
               <Settings className="w-4.5 h-4.5" />
             </Link>
-            <span className="pointer-events-none absolute left-full ml-3.5 px-3 py-1.5 bg-zinc-900 text-white text-xs font-semibold rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-50">
+            <span className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-zinc-900 text-white text-xs font-medium rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 transition-all duration-150 shadow-xl z-50 flex items-center">
+              <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-zinc-900 rotate-45 rounded-xs" />
               Store Info & Policies
             </span>
           </div>
@@ -557,10 +575,12 @@ export default function StickySidebarNav() {
               href="/account"
               onClick={closeAllDrawers}
               className={getDesktopBottomClasses(activeNav === "account")}
+              title="Customer Account"
             >
               <User className="w-4.5 h-4.5" />
             </Link>
-            <span className="pointer-events-none absolute left-full ml-3.5 px-3 py-1.5 bg-zinc-900 text-white text-xs font-semibold rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-50">
+            <span className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-zinc-900 text-white text-xs font-medium rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 transition-all duration-150 shadow-xl z-50 flex items-center">
+              <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-zinc-900 rotate-45 rounded-xs" />
               Customer Account
             </span>
           </div>
@@ -574,7 +594,8 @@ export default function StickySidebarNav() {
             >
               <LogOut className="w-4.5 h-4.5" />
             </button>
-            <span className="pointer-events-none absolute left-full ml-3.5 px-3 py-1.5 bg-zinc-900 text-white text-xs font-semibold rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-50">
+            <span className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-zinc-900 text-white text-xs font-medium rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 transition-all duration-150 shadow-xl z-50 flex items-center">
+              <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-zinc-900 rotate-45 rounded-xs" />
               Log Out
             </span>
           </div>

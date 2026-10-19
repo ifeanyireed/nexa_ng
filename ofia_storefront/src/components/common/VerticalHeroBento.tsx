@@ -36,7 +36,7 @@ export default function VerticalHeroBento({
       style={{ backgroundColor: bgColor }}
     >
       {/* Left Column: Text, Pill CTA, Footnote */}
-      <div className="w-full md:w-[48%] lg:w-[45%] p-5 sm:p-6 lg:p-5 xl:p-7 z-20 flex flex-col justify-between shrink-0 h-full">
+      <div className="w-full md:w-[42%] lg:w-[38%] xl:w-[36%] p-5 sm:p-6 lg:p-5 xl:p-7 z-20 flex flex-col justify-between shrink-0 h-full">
         <div className="space-y-2 lg:space-y-3">
           {/* Eyebrow & Badge */}
           <div className="flex items-center gap-2">
@@ -87,8 +87,8 @@ export default function VerticalHeroBento({
         </div>
       </div>
 
-      {/* Right Column: Hero Image with Angled Transparency Gradient Mask */}
-      <div className="relative md:absolute md:right-0 md:top-0 md:bottom-0 w-full md:w-[58%] lg:w-[62%] xl:w-[65%] h-64 md:h-full overflow-hidden z-10 pointer-events-none">
+      {/* Right Column: Hero Image with Angled Transparency Gradient Mask (spans across 70%-80% of card) */}
+      <div className="relative md:absolute md:right-0 md:top-0 md:bottom-0 w-full md:w-[70%] lg:w-[74%] xl:w-[78%] 2xl:w-[80%] h-72 sm:h-80 md:h-full overflow-hidden z-10 pointer-events-none">
         <img
           src={image}
           alt={imageAlt}
@@ -98,7 +98,7 @@ export default function VerticalHeroBento({
         <div
           className="hidden md:block absolute inset-0 pointer-events-none"
           style={{
-            background: `linear-gradient(112deg, ${bgColor} 0%, ${bgColor} 6%, ${bgColor}cc 18%, ${bgColor}4d 28%, transparent 42%)`,
+            background: `linear-gradient(112deg, ${bgColor} 0%, ${bgColor} 4%, ${bgColor}b3 12%, ${bgColor}33 20%, transparent 28%)`,
           }}
         />
         {/* Mobile top-to-bottom subtle blend */}

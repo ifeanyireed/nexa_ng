@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -28,9 +28,17 @@ import {
   RotateCcw,
   CreditCard,
   Send,
+  MessageCircle,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { MOCK_STORES } from "@/data/mockStores";
+
+interface ChatMessage {
+  id: string;
+  sender: "bot" | "user";
+  text: string;
+  time: string;
+}
 
 export default function StickySidebarNav() {
   const pathname = usePathname();
@@ -42,18 +50,36 @@ export default function StickySidebarNav() {
   const [showPromoBadge, setShowPromoBadge] = useState(false);
   const [copiedPromo, setCopiedPromo] = useState(false);
 
-  // Form states
-  const [inquirySubmitted, setInquirySubmitted] = useState(false);
-  const [inquiryForm, setInquiryForm] = useState({ name: "", contact: "", message: "" });
+  // Extract current vertical from pathname if present
+  const segments = pathname.split("/").filter(Boolean);
+  const currentVertical = segments[0] || "fashion";
+  const store = MOCK_STORES[currentVertical] || MOCK_STORES.fashion;
+
+  // Live Concierge Chat state
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+    {
+      id: "msg-welcome-1",
+      sender: "bot",
+      text: `Hello! Welcome to ${store.name}. How can I assist you with products, sizing, or store orders today?`,
+      time: "Just now",
+    },
+  ]);
+  const [chatInput, setChatInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+  const chatBottomRef = useRef<HTMLDivElement>(null);
+
+  // Wallet / Refund states
   const [refundFormOpen, setRefundFormOpen] = useState(false);
   const [refundSubmitted, setRefundSubmitted] = useState(false);
   const [refundOrderRef, setRefundOrderRef] = useState("OF-8419");
   const [refundReason, setRefundReason] = useState("Size exchange or fit adjustment");
 
-  // Extract current vertical from pathname if present
-  const segments = pathname.split("/").filter(Boolean);
-  const currentVertical = segments[0] || "fashion";
-  const store = MOCK_STORES[currentVertical] || MOCK_STORES.fashion;
+  // Auto-scroll chat
+  useEffect(() => {
+    if (isInquiryOpen) {
+      chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [chatMessages, isTyping, isInquiryOpen]);
 
   // Check if current page is the vertical storefront home
   const isVerticalHome =
@@ -89,7 +115,7 @@ export default function StickySidebarNav() {
         return {
           href: "/fashion/custom-tailoring",
           label: "Book Fitting Atelier",
-          shortLabel: "Bespoke Fitting",
+          shortLabel: "Fitting",
         };
       case "cars":
         return {
@@ -164,15 +190,64 @@ export default function StickySidebarNav() {
     setTimeout(() => setCopiedPromo(false), 2000);
   };
 
-  const handleSendInquiry = (e: React.FormEvent) => {
-    e.preventDefault();
-    setInquirySubmitted(true);
+  // Conversational response logic
+  const handleSendMessage = (textToSend?: string) => {
+    const text = (textToSend || chatInput).trim();
+    if (!text) return;
+
+    const userMessage: ChatMessage = {
+      id: `msg-${Date.now()}`,
+      sender: "user",
+      text,
+      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    };
+
+    setChatMessages((prev) => [...prev, userMessage]);
+    setChatInput("");
+    setIsTyping(true);
+
+    setTimeout(() => {
+      let replyText = `Thanks for messaging ${store.name}! Our showroom concierge has received this and will respond shortly. You can also chat with us directly on WhatsApp via the button above for instant photo sharing.`;
+
+      const lower = text.toLowerCase();
+      if (lower.includes("sizing") || lower.includes("size") || lower.includes("fit")) {
+        replyText = `Our pieces follow bespoke contemporary tailoring. You can see exact garment measurements on each catalog item, or schedule a fitting with our master tailor via the Calendar icon.`;
+      } else if (lower.includes("delivery") || lower.includes("dispatch") || lower.includes("shipping") || lower.includes("lagos")) {
+        replyText = `We dispatch directly from our Lekki showroom with live GPS courier tracking across Nigeria. Lagos deliveries arrive within 24-48 hours, with same-day express dispatch available!`;
+      } else if (lower.includes("return") || lower.includes("exchange") || lower.includes("refund")) {
+        replyText = `All purchases are backed by Ofia Buyer Protection. If you need a size exchange or refund, you can request it anytime via the Store Wallet icon in the left menu!`;
+      } else if (lower.includes("custom") || lower.includes("tailor") || lower.includes("book") || lower.includes("appointment")) {
+        replyText = `We specialize in bespoke tailoring and tailored orders. Tap the Calendar icon on the sidebar to book your private session directly.`;
+      } else if (lower.includes("price") || lower.includes("discount") || lower.includes("promo") || lower.includes("coupon")) {
+        replyText = `You can apply code SUMMER50 at checkout for up to 50% off select seasonal capsule items. Tap the % icon on the sidebar to copy active coupons!`;
+      } else if (lower.includes("hours") || lower.includes("location") || lower.includes("address")) {
+        replyText = `Our showroom is located at ${store.contact.address}. We are open ${store.contact.operatingHours}.`;
+      }
+
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          id: `msg-${Date.now()}-reply`,
+          sender: "bot",
+          text: replyText,
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        },
+      ]);
+      setIsTyping(false);
+    }, 900);
   };
 
   const handleSubmitRefund = (e: React.FormEvent) => {
     e.preventDefault();
     setRefundSubmitted(true);
   };
+
+  const quickPrompts = [
+    "What is your sizing guide?",
+    "How fast is dispatch in Lagos?",
+    "Can I book a custom fitting?",
+    "What is your return policy?",
+  ];
 
   return (
     <>
@@ -269,7 +344,7 @@ export default function StickySidebarNav() {
             </span>
           </div>
 
-          {/* 6. Mail / Quick Inquiry Slide-Over Drawer (WhatsApp, Phone, Chat) */}
+          {/* 6. Mail / Live Concierge Chat Drawer (Light Mode) */}
           <div className="relative group flex items-center justify-center w-full">
             <button
               onClick={() => setIsInquiryOpen(true)}
@@ -282,7 +357,7 @@ export default function StickySidebarNav() {
               <Mail className="w-5 h-5" />
             </button>
             <span className="pointer-events-none absolute left-full ml-3.5 px-3 py-1.5 bg-zinc-900 text-white text-xs font-semibold rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity shadow-lg z-50">
-              Contact Concierge (WhatsApp & Chat)
+              Live Concierge Chat
             </span>
           </div>
 
@@ -402,7 +477,7 @@ export default function StickySidebarNav() {
         <button
           onClick={() => setIsInquiryOpen(true)}
           className="p-2 rounded-2xl flex flex-col items-center text-stone-500 hover:text-zinc-900 cursor-pointer"
-          title="Inquiry"
+          title="Live Chat"
         >
           <Mail className="w-5 h-5" />
         </button>
@@ -426,219 +501,233 @@ export default function StickySidebarNav() {
         </Link>
       </nav>
 
-      {/* QUICK INQUIRY SLIDE-OVER DRAWER (WhatsApp, Phone, Chat) */}
+      {/* LIVE CONCIERGE CHAT DRAWER (LIGHT MODE, MATCHING CART DRAWER) */}
       {isInquiryOpen && (
         <div className="fixed inset-0 z-50 flex justify-end">
           {/* Backdrop */}
           <div
             onClick={() => setIsInquiryOpen(false)}
-            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
           />
 
-          {/* Drawer Body */}
-          <aside className="relative z-10 w-full sm:w-[440px] h-full bg-[#111216] text-white flex flex-col justify-between p-6 sm:p-7 shadow-2xl overflow-y-auto animate-in slide-in-from-right duration-300">
-            <div className="space-y-6">
-              {/* Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-white/10">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={store.logo}
-                    alt={store.name}
-                    className="w-9 h-9 object-contain shrink-0"
-                  />
-                  <div>
-                    <h3 className="font-bold text-base text-white leading-tight">{store.name} Concierge</h3>
-                    <div className="flex items-center gap-1.5 text-xs text-emerald-400 mt-0.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span>Verified Merchant Online</span>
-                    </div>
+          {/* Drawer Body - Light Mode (Matching CartDrawer.tsx) */}
+          <aside className="relative w-full max-w-md bg-white h-full shadow-2xl z-10 flex flex-col justify-between overflow-hidden animate-in slide-in-from-right duration-300">
+            {/* Header (Matching Cart Drawer Header) */}
+            <div className="p-4 sm:p-5 border-b border-stone-200 flex items-center justify-between bg-stone-50/90 shrink-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <img
+                  src={store.logo}
+                  alt={store.name}
+                  className="w-9 h-9 object-contain rounded-xl border border-stone-200 bg-white p-1 shrink-0"
+                />
+                <div className="min-w-0">
+                  <h3 className="font-dropa font-bold text-base text-zinc-900 truncate">
+                    {store.name} Concierge
+                  </h3>
+                  <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Online · Typically replies in ~2m</span>
                   </div>
                 </div>
+              </div>
+
+              <div className="flex items-center gap-1.5 shrink-0">
+                {/* Direct WhatsApp Switch */}
+                <a
+                  href={`https://wa.me/${store.contact.whatsapp?.replace(/[^0-9]/g, "") || "2348025550192"}?text=${encodeURIComponent(
+                    `Hello ${store.name}, I'm browsing your storefront on Ofia and have an inquiry.`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition-colors flex items-center gap-1 text-xs font-semibold cursor-pointer"
+                  title="Switch to WhatsApp"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">WhatsApp</span>
+                </a>
+
+                {/* Direct Call Switch */}
+                <a
+                  href={`tel:${store.contact.phone}`}
+                  className="p-1.5 rounded-full text-stone-500 hover:text-zinc-900 hover:bg-stone-200 transition-colors"
+                  title={`Call ${store.contact.phone}`}
+                >
+                  <Phone className="w-4 h-4" />
+                </a>
+
+                {/* Close Button */}
                 <button
                   onClick={() => setIsInquiryOpen(false)}
-                  className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-                  aria-label="Close Inquiry Drawer"
+                  className="p-1.5 rounded-full text-stone-500 hover:text-zinc-900 hover:bg-stone-200 transition-colors cursor-pointer"
+                  aria-label="Close Chat"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
+            </div>
 
-              {/* Direct Channels (WhatsApp & Phone) */}
-              <div className="space-y-2.5">
-                <p className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-                  Instant Support Channels
-                </p>
-
-                {/* WhatsApp Button */}
-                <a
-                  href={`https://wa.me/${store.contact.whatsapp?.replace(/[^0-9]/g, "") || "2348025550192"}?text=${encodeURIComponent(
-                    `Hello ${store.name}, I am browsing your storefront on Ofia and would like to make an inquiry.`
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-emerald-600/15 border border-emerald-500/30 hover:bg-emerald-600/25 transition-all text-emerald-400 group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center shrink-0">
-                      <MessageSquare className="w-5 h-5 text-emerald-400" />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors">
-                        Chat on WhatsApp
-                      </p>
-                      <p className="text-xs text-emerald-400/80">Direct concierge · Fast response</p>
-                    </div>
-                  </div>
-                  <ArrowUpRight className="w-4 h-4 text-emerald-400 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-                </a>
-
-                {/* Phone Call Button */}
-                <a
-                  href={`tel:${store.contact.phone}`}
-                  className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-white group cursor-pointer"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center shrink-0">
-                      <Phone className="w-5 h-5 text-blue-400" />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-sm font-bold text-white group-hover:text-blue-300 transition-colors">
-                        Call Direct Line
-                      </p>
-                      <p className="text-xs text-zinc-400">{store.contact.phone}</p>
-                    </div>
-                  </div>
-                  <ArrowUpRight className="w-4 h-4 text-zinc-400 group-hover:text-white transition-colors" />
-                </a>
+            {/* Chat Thread Messages (Scrollable) */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 bg-[#FAF9F5] min-h-0">
+              {/* Showroom & Operating Hours Badge */}
+              <div className="p-3 rounded-2xl bg-white border border-stone-200/80 shadow-2xs space-y-1.5 text-xs text-stone-600">
+                <div className="flex items-center gap-2 text-stone-800 font-semibold">
+                  <MapPin className="w-3.5 h-3.5 text-blue-600" />
+                  <span className="truncate">{store.contact.address}</span>
+                </div>
+                <div className="flex items-center gap-2 text-[11px] text-stone-500">
+                  <Clock className="w-3.5 h-3.5 text-amber-500" />
+                  <span>{store.contact.operatingHours}</span>
+                </div>
               </div>
 
-              {/* In-Store Live Message Form */}
+              {/* Quick Suggestion Chips */}
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-stone-400 px-1">
+                  Suggested Questions
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {quickPrompts.map((prompt) => (
+                    <button
+                      key={prompt}
+                      onClick={() => handleSendMessage(prompt)}
+                      className="text-left text-xs px-3 py-1.5 rounded-full bg-white hover:bg-stone-100 text-stone-700 border border-stone-200/80 font-medium transition-all shadow-2xs hover:border-stone-300 cursor-pointer"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Message Bubbles */}
               <div className="space-y-3 pt-2">
-                <p className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-                  Send Store Inquiry
-                </p>
-
-                {inquirySubmitted ? (
-                  <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-center space-y-2 animate-in fade-in">
-                    <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto" />
-                    <h4 className="font-bold text-sm text-white">Inquiry Dispatched!</h4>
-                    <p className="text-xs text-emerald-300/80 leading-relaxed">
-                      Your message has been forwarded to the {store.name} desk. A representative will contact you via WhatsApp or Email shortly.
-                    </p>
-                    <button
-                      onClick={() => setInquirySubmitted(false)}
-                      className="text-xs text-zinc-400 underline hover:text-white pt-1 cursor-pointer"
+                {chatMessages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex gap-2.5 items-end ${
+                      msg.sender === "user" ? "justify-end" : "justify-start"
+                    }`}
+                  >
+                    {msg.sender === "bot" && (
+                      <img
+                        src={store.logo}
+                        alt="Bot"
+                        className="w-6 h-6 rounded-full object-contain border border-stone-200 bg-white p-0.5 shrink-0 mb-1"
+                      />
+                    )}
+                    <div
+                      className={`max-w-[82%] sm:max-w-[78%] p-3.5 text-xs sm:text-sm leading-relaxed ${
+                        msg.sender === "user"
+                          ? "bg-[#111318] text-white rounded-2xl rounded-tr-xs shadow-xs"
+                          : "bg-white text-zinc-900 border border-stone-200/80 rounded-2xl rounded-tl-xs shadow-2xs"
+                      }`}
                     >
-                      Send another inquiry
-                    </button>
+                      <p>{msg.text}</p>
+                      <span
+                        className={`text-[10px] mt-1.5 block font-medium ${
+                          msg.sender === "user" ? "text-stone-400 text-right" : "text-stone-400"
+                        }`}
+                      >
+                        {msg.time}
+                      </span>
+                    </div>
                   </div>
-                ) : (
-                  <form onSubmit={handleSendInquiry} className="space-y-3">
-                    <div>
-                      <input
-                        type="text"
-                        required
-                        placeholder="Your Full Name"
-                        value={inquiryForm.name}
-                        onChange={(e) => setInquiryForm({ ...inquiryForm, name: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-hidden focus:border-blue-500 transition-colors"
-                      />
+                ))}
+
+                {/* Typing Indicator */}
+                {isTyping && (
+                  <div className="flex items-center gap-2 text-stone-500 text-xs">
+                    <img
+                      src={store.logo}
+                      alt="Bot"
+                      className="w-6 h-6 rounded-full object-contain border border-stone-200 bg-white p-0.5 shrink-0"
+                    />
+                    <div className="bg-white border border-stone-200 px-3.5 py-2 rounded-2xl rounded-tl-xs shadow-2xs flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-stone-400 animate-bounce" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-stone-400 animate-bounce [animation-delay:0.2s]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-stone-400 animate-bounce [animation-delay:0.4s]" />
                     </div>
-                    <div>
-                      <input
-                        type="text"
-                        required
-                        placeholder="WhatsApp / Phone or Email"
-                        value={inquiryForm.contact}
-                        onChange={(e) => setInquiryForm({ ...inquiryForm, contact: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-hidden focus:border-blue-500 transition-colors"
-                      />
-                    </div>
-                    <div>
-                      <textarea
-                        required
-                        rows={3}
-                        placeholder={`Ask about items, sizing, deliveries, or bespoke requests...`}
-                        value={inquiryForm.message}
-                        onChange={(e) => setInquiryForm({ ...inquiryForm, message: e.target.value })}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-xs text-white placeholder-zinc-500 focus:outline-hidden focus:border-blue-500 transition-colors resize-none"
-                      />
-                    </div>
-                    <button
-                      type="submit"
-                      className="w-full py-3 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs tracking-tight transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>Send Message to Merchant</span>
-                    </button>
-                  </form>
+                  </div>
                 )}
-              </div>
-
-              {/* Showroom Operating Hours & Location */}
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2.5 text-xs text-zinc-400">
-                <div className="flex items-start gap-2.5">
-                  <Clock className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-semibold text-white block">Operating Hours</span>
-                    <span>{store.contact.operatingHours}</span>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2.5 pt-1 border-t border-white/5">
-                  <MapPin className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-semibold text-white block">Showroom Address</span>
-                    <span>{store.contact.address}</span>
-                  </div>
-                </div>
+                <div ref={chatBottomRef} />
               </div>
             </div>
 
-            <div className="pt-4 border-t border-white/10 text-[11px] text-zinc-500 flex items-center justify-between">
-              <span>Direct Merchant Inquiries</span>
-              <span className="text-zinc-400">Avg. Reply &lt; 15 mins</span>
+            {/* Chat Input Bar (Sticky at Bottom) */}
+            <div className="p-3.5 sm:p-4 border-t border-stone-200 bg-white shrink-0">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleSendMessage();
+                }}
+                className="flex items-center gap-2"
+              >
+                <input
+                  type="text"
+                  placeholder="Ask a question or inquire about an order..."
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  className="flex-1 px-4 py-2.5 rounded-full bg-stone-100 border border-stone-200 text-xs sm:text-sm text-zinc-900 placeholder-stone-400 focus:outline-hidden focus:bg-white focus:border-zinc-900 transition-all"
+                />
+                <button
+                  type="submit"
+                  disabled={!chatInput.trim()}
+                  className="w-10 h-10 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white flex items-center justify-center transition-all disabled:opacity-30 disabled:cursor-not-allowed shrink-0 shadow-xs cursor-pointer"
+                  title="Send Message"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </form>
+              <div className="text-[10px] text-stone-400 text-center mt-2 flex items-center justify-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>Verified Direct Line · Powered by Ofia Live Commerce</span>
+              </div>
             </div>
           </aside>
         </div>
       )}
 
-      {/* STORE WALLET & CUSTOMER REFUNDS DRAWER */}
+      {/* STORE WALLET & CUSTOMER REFUNDS DRAWER (LIGHT MODE, MATCHING CART DRAWER) */}
       {isWalletOpen && (
         <div className="fixed inset-0 z-50 flex justify-end">
           {/* Backdrop */}
           <div
             onClick={() => setIsWalletOpen(false)}
-            className="fixed inset-0 bg-black/50 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
           />
 
-          {/* Drawer Body */}
-          <aside className="relative z-10 w-full sm:w-[440px] h-full bg-[#111216] text-white flex flex-col justify-between p-6 sm:p-7 shadow-2xl overflow-y-auto animate-in slide-in-from-right duration-300">
-            <div className="space-y-6">
-              {/* Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-white/10">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-400 shrink-0">
-                    <Wallet className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-base text-white leading-tight">Store Wallet & Refunds</h3>
-                    <p className="text-xs text-zinc-400">{store.name} Customer Balance</p>
-                  </div>
+          {/* Drawer Body - Light Mode (Matching CartDrawer.tsx) */}
+          <aside className="relative w-full max-w-md bg-white h-full shadow-2xl z-10 flex flex-col justify-between overflow-hidden animate-in slide-in-from-right duration-300">
+            {/* Header */}
+            <div className="p-4 sm:p-5 border-b border-stone-200 flex items-center justify-between bg-stone-50/90 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center text-amber-800 shrink-0">
+                  <Wallet className="w-5 h-5" />
                 </div>
-                <button
-                  onClick={() => setIsWalletOpen(false)}
-                  className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-                  aria-label="Close Wallet Drawer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div>
+                  <h3 className="font-dropa font-bold text-base text-zinc-900 leading-tight">
+                    Store Wallet &amp; Refunds
+                  </h3>
+                  <p className="text-xs text-stone-500">{store.name} Customer Credit</p>
+                </div>
               </div>
+              <button
+                onClick={() => setIsWalletOpen(false)}
+                className="p-1.5 rounded-full text-stone-500 hover:text-zinc-900 hover:bg-stone-200 transition-colors cursor-pointer"
+                aria-label="Close Wallet Drawer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-              {/* Wallet Card */}
-              <div className="relative overflow-hidden rounded-3xl p-5 bg-gradient-to-br from-zinc-800 via-zinc-900 to-zinc-950 border border-white/15 shadow-xl space-y-4">
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5 bg-[#FAF9F5] min-h-0">
+              {/* Wallet Balance Card */}
+              <div className="relative overflow-hidden rounded-3xl p-5 bg-gradient-to-br from-zinc-900 via-zinc-950 to-[#111216] text-white border border-stone-800 shadow-xl space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-zinc-400 tracking-wide">Available Store Credit</span>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                  <span className="text-xs font-semibold text-stone-300 tracking-wide">
+                    Available Store Credit
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                     Instant at Checkout
                   </span>
                 </div>
@@ -647,24 +736,24 @@ export default function StickySidebarNav() {
                   <span className="font-dropa text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                     {store.currency === "$" ? "$120.00" : "₦38,500.00"}
                   </span>
-                  <p className="text-[11px] text-zinc-400 mt-1">
-                    Applicable automatically toward any item or booking on this shop.
+                  <p className="text-[11px] text-stone-300/80 mt-1">
+                    Applicable automatically toward any item or booking across {store.name}.
                   </p>
                 </div>
 
-                <div className="pt-2 flex items-center gap-2">
+                <div className="pt-1 flex items-center gap-2">
                   <button
                     onClick={() => {
                       setIsWalletOpen(false);
                       setIsCartOpen(true);
                     }}
-                    className="flex-1 py-2 rounded-xl bg-white text-zinc-950 hover:bg-zinc-200 font-bold text-xs transition-colors shadow-xs cursor-pointer text-center"
+                    className="flex-1 py-2 rounded-xl bg-white text-zinc-950 hover:bg-stone-100 font-bold text-xs transition-colors shadow-xs cursor-pointer text-center"
                   >
                     Apply Credit to Bag
                   </button>
                   <button
                     onClick={() => setRefundFormOpen(!refundFormOpen)}
-                    className="flex-1 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs transition-colors border border-white/10 cursor-pointer text-center"
+                    className="flex-1 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs transition-colors border border-white/15 cursor-pointer text-center"
                   >
                     Request Refund
                   </button>
@@ -673,35 +762,37 @@ export default function StickySidebarNav() {
 
               {/* Request Refund Form Accordion */}
               {refundFormOpen && (
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3 animate-in fade-in">
+                <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-2xs space-y-3 animate-in fade-in">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-white uppercase tracking-wider">
+                    <span className="text-xs font-bold text-zinc-900 uppercase tracking-wider">
                       Submit Return / Refund Request
                     </span>
                     <button
                       onClick={() => setRefundFormOpen(false)}
-                      className="text-zinc-500 hover:text-zinc-300 text-xs"
+                      className="text-stone-400 hover:text-stone-700 text-xs cursor-pointer"
                     >
                       Cancel
                     </button>
                   </div>
 
                   {refundSubmitted ? (
-                    <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-center space-y-1">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-400 mx-auto" />
-                      <p className="text-xs font-bold text-white">Refund Request Logged</p>
-                      <p className="text-[11px] text-emerald-300/80">
+                    <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-center space-y-1">
+                      <CheckCircle2 className="w-5 h-5 text-emerald-600 mx-auto" />
+                      <p className="text-xs font-bold text-emerald-900">Refund Request Logged</p>
+                      <p className="text-[11px] text-emerald-700 leading-relaxed">
                         Refund reference #RF-9482 has been created. Funds return directly to your Store Wallet upon merchant verification.
                       </p>
                     </div>
                   ) : (
                     <form onSubmit={handleSubmitRefund} className="space-y-2.5">
                       <div>
-                        <label className="text-[11px] text-zinc-400 block mb-1">Order Reference</label>
+                        <label className="text-[11px] text-stone-600 font-semibold block mb-1">
+                          Select Order
+                        </label>
                         <select
                           value={refundOrderRef}
                           onChange={(e) => setRefundOrderRef(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white focus:outline-hidden"
+                          className="w-full px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs text-zinc-900 focus:outline-hidden"
                         >
                           <option value="OF-8419">Order #OF-8419 (Delivered 3 days ago)</option>
                           <option value="OF-7910">Order #OF-7910 (Delivered 1 week ago)</option>
@@ -710,19 +801,21 @@ export default function StickySidebarNav() {
                       </div>
 
                       <div>
-                        <label className="text-[11px] text-zinc-400 block mb-1">Reason for Refund / Exchange</label>
+                        <label className="text-[11px] text-stone-600 font-semibold block mb-1">
+                          Reason for Refund / Exchange
+                        </label>
                         <input
                           type="text"
                           required
                           value={refundReason}
                           onChange={(e) => setRefundReason(e.target.value)}
-                          className="w-full px-3 py-2 rounded-xl bg-zinc-900 border border-white/10 text-xs text-white focus:outline-hidden"
+                          className="w-full px-3 py-2 rounded-xl bg-stone-50 border border-stone-200 text-xs text-zinc-900 focus:outline-hidden"
                         />
                       </div>
 
                       <button
                         type="submit"
-                        className="w-full py-2.5 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs transition-colors shadow-xs cursor-pointer"
+                        className="w-full py-2.5 rounded-full bg-zinc-900 hover:bg-zinc-800 text-white font-bold text-xs transition-colors shadow-xs cursor-pointer"
                       >
                         Submit Refund Request
                       </button>
@@ -733,52 +826,52 @@ export default function StickySidebarNav() {
 
               {/* Refund & Transaction Activity */}
               <div className="space-y-3">
-                <p className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-                  Recent Wallet & Refund Activity
+                <p className="text-xs font-bold uppercase tracking-wider text-stone-500">
+                  Recent Wallet &amp; Refund Activity
                 </p>
 
                 <div className="space-y-2 text-xs">
-                  <div className="p-3 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between">
+                  <div className="p-3 rounded-2xl bg-white border border-stone-200/80 shadow-2xs flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-500/15 flex items-center justify-center text-emerald-400">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
                         <RotateCcw className="w-4 h-4" />
                       </div>
                       <div>
-                        <p className="font-semibold text-white">Refund #RF-9481 Approved</p>
-                        <p className="text-[11px] text-zinc-400">Size Exchange Adjustment · Store Credit</p>
+                        <p className="font-bold text-zinc-900">Refund #RF-9481 Approved</p>
+                        <p className="text-[11px] text-stone-500">Size Exchange Adjustment · Store Credit</p>
                       </div>
                     </div>
-                    <span className="font-bold text-emerald-400">
+                    <span className="font-bold text-emerald-600">
                       +{store.currency === "$" ? "$45.00" : "₦18,500.00"}
                     </span>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between">
+                  <div className="p-3 rounded-2xl bg-white border border-stone-200/80 shadow-2xs flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-blue-500/15 flex items-center justify-center text-blue-400">
+                      <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
                         <CreditCard className="w-4 h-4" />
                       </div>
                       <div>
-                        <p className="font-semibold text-white">Order #OF-8419 Redemption</p>
-                        <p className="text-[11px] text-zinc-400">Applied at Checkout</p>
+                        <p className="font-bold text-zinc-900">Order #OF-8419 Redemption</p>
+                        <p className="text-[11px] text-stone-500">Applied at Checkout</p>
                       </div>
                     </div>
-                    <span className="font-bold text-zinc-300">
+                    <span className="font-bold text-stone-700">
                       -{store.currency === "$" ? "$30.00" : "₦12,000.00"}
                     </span>
                   </div>
 
-                  <div className="p-3 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-between">
+                  <div className="p-3 rounded-2xl bg-white border border-stone-200/80 shadow-2xs flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-amber-500/15 flex items-center justify-center text-amber-400">
+                      <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
                         <Sparkles className="w-4 h-4" />
                       </div>
                       <div>
-                        <p className="font-semibold text-white">Verified Customer Welcome</p>
-                        <p className="text-[11px] text-zinc-400">Patron Tier Loyalty Credit</p>
+                        <p className="font-bold text-zinc-900">Verified Customer Welcome</p>
+                        <p className="text-[11px] text-stone-500">Patron Tier Loyalty Credit</p>
                       </div>
                     </div>
-                    <span className="font-bold text-emerald-400">
+                    <span className="font-bold text-emerald-600">
                       +{store.currency === "$" ? "$105.00" : "₦32,000.00"}
                     </span>
                   </div>
@@ -786,10 +879,10 @@ export default function StickySidebarNav() {
               </div>
 
               {/* Ofia Buyer Protection Banner */}
-              <div className="p-4 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-3 text-xs text-zinc-400">
-                <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+              <div className="p-4 rounded-2xl bg-white border border-stone-200/80 shadow-2xs flex items-start gap-3 text-xs text-stone-600">
+                <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-bold text-white text-xs">Ofia Buyer Protection</h4>
+                  <h4 className="font-bold text-zinc-900 text-xs">Ofia Buyer Escrow Protection</h4>
                   <p className="text-[11px] leading-relaxed mt-0.5">
                     All customer refunds and size exchanges are backed by Ofia escrow. Store wallet credits never expire.
                   </p>
@@ -797,8 +890,9 @@ export default function StickySidebarNav() {
               </div>
             </div>
 
-            <div className="pt-4 border-t border-white/10 text-[11px] text-zinc-500 flex items-center justify-between">
-              <Link href="/account" className="text-zinc-400 hover:text-white underline">
+            {/* Footer */}
+            <div className="p-4 border-t border-stone-200 bg-white text-[11px] text-stone-500 flex items-center justify-between shrink-0">
+              <Link href="/account" className="text-zinc-900 font-semibold hover:underline">
                 View Complete Account History
               </Link>
               <span>Instant Escrow Return</span>

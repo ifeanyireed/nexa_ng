@@ -416,11 +416,11 @@ export default function StickySidebarNav() {
     <>
       {/* Desktop Sticky Icon Sidebar - Always Visible on Left */}
       <aside
-        className="sticky top-0 h-screen max-h-screen h-dvh w-18 md:w-20 bg-white z-40 hidden lg:flex flex-col items-center justify-between pb-4 shrink-0 select-none overflow-hidden"
+        className="sticky top-0 h-screen max-h-screen h-dvh w-18 md:w-20 bg-white z-40 hidden lg:flex flex-col items-center justify-between pb-5 shrink-0 select-none overflow-y-auto no-scrollbar"
         aria-label="Storefront Icon Navigation"
       >
-        {/* Primary Navigation Stack - Dropped vertical start position aligning with Hero Card */}
-        <nav className="flex flex-col items-center gap-2 xl:gap-2.5 w-full px-3 pt-16 xl:pt-[70px]">
+        {/* Primary Navigation Stack */}
+        <nav className="flex flex-col items-center gap-3.5 xl:gap-4 w-full px-3 pt-12 xl:pt-14">
           {/* 1. Storefront Home */}
           <div className="relative group flex items-center justify-center w-full">
             <Link
@@ -468,7 +468,7 @@ export default function StickySidebarNav() {
           </div>
 
           {/* 4. Calendar / Bookings & Appointments */}
-          <div className="relative group flex items-center justify-center w-full mb-3.5 xl:mb-4.5">
+          <div className="relative group flex items-center justify-center w-full mb-7 xl:mb-9">
             <Link
               href={bookingInfo.href}
               onClick={closeAllDrawers}
@@ -536,7 +536,7 @@ export default function StickySidebarNav() {
         </nav>
 
         {/* Bottom Pinned Controls (Settings, Account & Logout) */}
-        <div className="flex flex-col items-center gap-2 w-full px-3 pt-3 pb-2">
+        <div className="flex flex-col items-center gap-3 xl:gap-3.5 w-full px-3 pt-4 pb-2">
           {/* Store Info & Policies */}
           <div className="relative group flex items-center justify-center w-full">
             <Link

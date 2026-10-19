@@ -88,17 +88,17 @@ export default function VerticalHeroBento({
       </div>
 
       {/* Right Column: Hero Image with Angled Transparency Gradient Mask (spans across 70%-80% of card) */}
-      <div className="relative md:absolute md:right-0 md:top-0 md:bottom-0 w-full md:w-[70%] lg:w-[74%] xl:w-[78%] 2xl:w-[80%] h-72 sm:h-80 md:h-full overflow-hidden z-10 pointer-events-none">
+      <div className="relative md:absolute md:right-0 md:top-0 md:bottom-0 w-full md:w-[70%] lg:w-[74%] xl:w-[78%] 2xl:w-[80%] h-72 sm:h-80 md:h-full overflow-hidden z-10 pointer-events-none hero-image-fade-mask">
         <img
           src={image}
           alt={imageAlt}
-          className="w-full h-full object-cover object-center hero-image-fade-mask"
+          className="w-[calc(100%+32px)] md:w-[calc(100%+64px)] max-w-none h-full object-cover object-center -ml-8 md:-ml-16 hero-image-fade-mask"
         />
         {/* Soft atmospheric wash ensuring zero contrast clashes */}
         <div
           className="hidden md:block absolute inset-0 pointer-events-none"
           style={{
-            background: `linear-gradient(112deg, ${bgColor} 0%, ${bgColor} 4%, ${bgColor}b3 12%, ${bgColor}33 20%, transparent 28%)`,
+            background: `linear-gradient(112deg, ${bgColor} 0%, ${bgColor} 8%, ${bgColor}80 18%, transparent 28%)`,
           }}
         />
         {/* Mobile top-to-bottom subtle blend */}

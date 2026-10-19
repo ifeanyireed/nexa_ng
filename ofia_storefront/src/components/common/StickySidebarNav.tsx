@@ -569,7 +569,7 @@ export default function StickySidebarNav() {
           <div className="relative group flex items-center justify-center w-full">
             <button
               onClick={handleLogout}
-              className="w-10 h-10 rounded-full flex items-center justify-center text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
+              className={`${getDesktopBottomClasses(false)} cursor-pointer`}
               title="Log Out"
             >
               <LogOut className="w-4.5 h-4.5" />
@@ -653,7 +653,7 @@ export default function StickySidebarNav() {
 
         <button
           onClick={handleLogout}
-          className="p-2 rounded-2xl flex flex-col items-center text-stone-400 hover:text-rose-600 transition-colors cursor-pointer"
+          className={`${getMobileNavClasses(false)} cursor-pointer`}
           title="Log Out"
         >
           <LogOut className="w-5 h-5" />

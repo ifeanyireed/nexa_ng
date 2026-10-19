@@ -76,17 +76,20 @@ export default function PharmacyHomePage() {
               count: "320+ medications",
               image: "https://images.unsplash.com/photo-1471864190281-a93a3070b6de?auto=format&fit=crop&w=800&q=80",
               href: "/pharmacy/catalog",
+              theme: "light",
             }}
             card2={{
               title: "Vitamins &\nPreventative",
               count: "180+ supplements",
               image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
               href: "/pharmacy/catalog",
+              theme: "light",
             }}
             card3={{
               title: "Top Collation",
               href: "/pharmacy/catalog",
               backgroundImage: "https://images.unsplash.com/photo-1576602976047-174e57a47881?auto=format&fit=crop&w=1000&q=80",
+              theme: "light",
               pills: [
                 {
                   label: "BP & Glucose Monitors",

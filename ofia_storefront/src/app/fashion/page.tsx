@@ -52,17 +52,20 @@ export default function FashionStorefrontPage() {
               count: "180+ pieces",
               image: "https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80",
               href: "/fashion/catalog",
+              theme: "light",
             }}
             card2={{
               title: "Women's\nCollection",
               count: "260+ pieces",
               image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80",
               href: "/fashion/catalog",
+              theme: "light",
             }}
             card3={{
               title: "Top Collation",
               href: "/fashion/catalog",
               backgroundImage: "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=1000&q=80",
+              theme: "light",
               pills: [
                 {
                   label: "Linen Tunics",

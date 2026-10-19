@@ -68,17 +68,20 @@ export default function BeautyStorefrontPage() {
               count: "95+ formulas",
               image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80",
               href: "/beauty/products",
+              theme: "light",
             }}
             card2={{
               title: "Sanctuary Spa\nServices",
               count: "30+ treatments",
               image: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=800&q=80",
               href: "/beauty/services",
+              theme: "light",
             }}
             card3={{
               title: "Top Collation",
               href: "/beauty/products",
               backgroundImage: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1000&q=80",
+              theme: "light",
               pills: [
                 {
                   label: "Hydrating Cleansers",

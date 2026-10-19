@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import SwipeToggle from "@/components/common/SwipeToggle";
+import { useImageContrast, ContrastTheme } from "@/hooks/useImageContrast";
 
 export interface CategoryCardData {
   title: string;
   count: string;
   image: string;
   href: string;
+  theme?: ContrastTheme;
 }
 
 export interface FloatingPillItem {
@@ -26,6 +28,7 @@ export interface VerticalCategoryBentoGridProps {
     href: string;
     backgroundImage: string;
     pills: FloatingPillItem[];
+    theme?: ContrastTheme;
   };
 }
 
@@ -34,6 +37,10 @@ export default function VerticalCategoryBentoGrid({
   card2,
   card3,
 }: VerticalCategoryBentoGridProps) {
+  const isCard1Dark = useImageContrast(card1.image, card1.theme);
+  const isCard2Dark = useImageContrast(card2.image, card2.theme);
+  const isCard3Dark = useImageContrast(card3.backgroundImage, card3.theme);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-3 sm:gap-4 lg:gap-4 w-full h-full items-stretch">
       {/* Card 1: Portrait Category - Covers 25% of width on lg (first 2 cards together cover 50%) */}
@@ -41,17 +48,36 @@ export default function VerticalCategoryBentoGrid({
         {/* Background Image fills the card completely edge-to-edge */}
         <img
           src={card1.image}
-          alt={card1.title}
+          alt={card1.title.replace("\n", " ")}
           className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/20 pointer-events-none" />
+        {/* Adaptive Scrim Gradient Overlay for Contrast */}
+        <div
+          className={`absolute inset-0 pointer-events-none transition-opacity duration-300 ${
+            isCard1Dark
+              ? "bg-gradient-to-b from-black/50 via-black/10 to-black/35"
+              : "bg-gradient-to-b from-black/15 via-transparent to-black/15"
+          }`}
+        />
 
-        {/* Top-Left Header: Clean typography matching moodboard */}
-        <div className="relative z-10">
-          <h3 className="font-semibold text-base sm:text-lg xl:text-xl text-zinc-950 tracking-tight leading-snug whitespace-pre-line max-w-[130px] sm:max-w-[160px]">
+        {/* Top-Left Header: Contrast-Sensitive Typography */}
+        <div className="relative z-10 transition-colors duration-300">
+          <h3
+            className={`font-semibold text-base sm:text-lg xl:text-xl tracking-tight leading-snug whitespace-pre-line max-w-[130px] sm:max-w-[160px] transition-colors duration-300 ${
+              isCard1Dark
+                ? "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]"
+                : "text-zinc-950"
+            }`}
+          >
             {card1.title}
           </h3>
-          <p className="text-xs text-stone-600 font-medium mt-0.5">
+          <p
+            className={`text-xs font-medium mt-0.5 transition-colors duration-300 ${
+              isCard1Dark
+                ? "text-white/80 drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)]"
+                : "text-stone-600"
+            }`}
+          >
             {card1.count}
           </p>
         </div>
@@ -70,14 +96,33 @@ export default function VerticalCategoryBentoGrid({
           alt={card2.title.replace("\n", " ")}
           className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/20 pointer-events-none" />
+        {/* Adaptive Scrim Gradient Overlay for Contrast */}
+        <div
+          className={`absolute inset-0 pointer-events-none transition-opacity duration-300 ${
+            isCard2Dark
+              ? "bg-gradient-to-b from-black/50 via-black/10 to-black/35"
+              : "bg-gradient-to-b from-black/15 via-transparent to-black/15"
+          }`}
+        />
 
-        {/* Top-Left Header: Clean typography matching moodboard */}
-        <div className="relative z-10">
-          <h3 className="font-semibold text-base sm:text-lg xl:text-xl text-zinc-950 tracking-tight leading-snug whitespace-pre-line max-w-[130px] sm:max-w-[160px]">
+        {/* Top-Left Header: Contrast-Sensitive Typography */}
+        <div className="relative z-10 transition-colors duration-300">
+          <h3
+            className={`font-semibold text-base sm:text-lg xl:text-xl tracking-tight leading-snug whitespace-pre-line max-w-[130px] sm:max-w-[160px] transition-colors duration-300 ${
+              isCard2Dark
+                ? "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]"
+                : "text-zinc-950"
+            }`}
+          >
             {card2.title}
           </h3>
-          <p className="text-xs text-stone-600 font-medium mt-0.5">
+          <p
+            className={`text-xs font-medium mt-0.5 transition-colors duration-300 ${
+              isCard2Dark
+                ? "text-white/80 drop-shadow-[0_1px_1px_rgba(0,0,0,0.4)]"
+                : "text-stone-600"
+            }`}
+          >
             {card2.count}
           </p>
         </div>
@@ -96,11 +141,24 @@ export default function VerticalCategoryBentoGrid({
           alt="Top Collation"
           className="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700"
         />
-        <div className="absolute inset-0 bg-black/15 pointer-events-none" />
+        {/* Adaptive Scrim Gradient Overlay for Contrast */}
+        <div
+          className={`absolute inset-0 pointer-events-none transition-opacity duration-300 ${
+            isCard3Dark
+              ? "bg-gradient-to-b from-black/50 via-black/10 to-black/35"
+              : "bg-black/15"
+          }`}
+        />
 
         {/* Top Header & Arrow matching moodboard */}
         <div className="relative z-10 flex items-center justify-between">
-          <h3 className="font-semibold text-base sm:text-lg xl:text-xl text-zinc-950 tracking-tight">
+          <h3
+            className={`font-semibold text-base sm:text-lg xl:text-xl tracking-tight transition-colors duration-300 ${
+              isCard3Dark
+                ? "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]"
+                : "text-zinc-950"
+            }`}
+          >
             {card3.title || "Top Collation"}
           </h3>
           <Link

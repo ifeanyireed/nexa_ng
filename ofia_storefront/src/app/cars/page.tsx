@@ -70,17 +70,20 @@ export default function CarsStorefrontPage() {
               count: "45+ vehicles",
               image: "https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80",
               href: "/cars/listings",
+              theme: "dark",
             }}
             card2={{
               title: "Performance\nSUVs",
               count: "70+ vehicles",
               image: "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=800&q=80",
               href: "/cars/listings",
+              theme: "light",
             }}
             card3={{
               title: "Top Collation",
               href: "/cars/listings",
               backgroundImage: "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=1000&q=80",
+              theme: "dark",
               pills: [
                 {
                   label: "AMG & Maybach",

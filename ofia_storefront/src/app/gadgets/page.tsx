@@ -69,17 +69,20 @@ export default function GadgetsStorefrontPage() {
               count: "120+ devices",
               image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&q=80",
               href: "/gadgets/catalog",
+              theme: "dark",
             }}
             card2={{
               title: "Pro Laptops\n& Mac",
               count: "85+ machines",
               image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80",
               href: "/gadgets/catalog",
+              theme: "dark",
             }}
             card3={{
               title: "Top Collation",
               href: "/gadgets/catalog",
               backgroundImage: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=1000&q=80",
+              theme: "dark",
               pills: [
                 {
                   label: "Studio Headphones & ANC",

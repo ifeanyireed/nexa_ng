@@ -70,17 +70,20 @@ export default function PropertyStorefrontPage() {
               count: "18 residences",
               image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80",
               href: "/property/listings",
+              theme: "light",
             }}
             card2={{
               title: "Private Serviced\nVillas",
               count: "24 estates",
               image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
               href: "/property/listings",
+              theme: "light",
             }}
             card3={{
               title: "Top Collation",
               href: "/property/listings",
               backgroundImage: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1000&q=80",
+              theme: "light",
               pills: [
                 {
                   label: "Eko Atlantic Towers",

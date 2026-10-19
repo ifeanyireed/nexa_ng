@@ -88,17 +88,20 @@ export default function FoodStorefrontPage() {
               count: "35+ dishes",
               image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
               href: "/food/menu",
+              theme: "light",
             }}
             card2={{
               title: "Wood-Fired\nGrills & Suya",
               count: "28+ cuts",
               image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80",
               href: "/food/menu",
+              theme: "dark",
             }}
             card3={{
               title: "Top Collation",
               href: "/food/menu",
               backgroundImage: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1000&q=80",
+              theme: "dark",
               pills: [
                 {
                   label: "Pastries & Cakes",

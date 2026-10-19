@@ -74,17 +74,20 @@ export default function HardwareHomePage() {
               count: "75+ systems",
               image: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80",
               href: "/hardware/catalog",
+              theme: "light",
             }}
             card2={{
               title: "Lithium LiFePO4\nStorage",
               count: "50+ battery racks",
               image: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=800&q=80",
               href: "/hardware/catalog",
+              theme: "dark",
             }}
             card3={{
               title: "Top Collation",
               href: "/hardware/catalog",
               backgroundImage: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1000&q=80",
+              theme: "dark",
               pills: [
                 {
                   label: "Power Tool Sets",

@@ -87,18 +87,25 @@ export default function VerticalHeroBento({
         </div>
       </div>
 
-      {/* Right Column: Hero Image FILLS THE CARD completely from edge to edge */}
-      <div className="relative md:absolute md:right-0 md:top-0 md:bottom-0 w-full md:w-[54%] lg:w-[57%] h-64 md:h-full overflow-hidden z-10">
+      {/* Right Column: Hero Image with Angled Transparency Gradient Mask */}
+      <div className="relative md:absolute md:right-0 md:top-0 md:bottom-0 w-full md:w-[58%] lg:w-[62%] xl:w-[65%] h-64 md:h-full overflow-hidden z-10 pointer-events-none">
         <img
           src={image}
           alt={imageAlt}
-          className="w-full h-full object-cover object-center"
+          className="w-full h-full object-cover object-center hero-image-fade-mask"
         />
-        {/* Soft edge blend into the card background on the left */}
+        {/* Soft atmospheric wash ensuring zero contrast clashes */}
         <div
-          className="hidden md:block absolute inset-y-0 left-0 w-24 pointer-events-none"
+          className="hidden md:block absolute inset-0 pointer-events-none"
           style={{
-            background: `linear-gradient(to right, ${bgColor}, transparent)`,
+            background: `linear-gradient(112deg, ${bgColor} 0%, ${bgColor} 6%, ${bgColor}cc 18%, ${bgColor}4d 28%, transparent 42%)`,
+          }}
+        />
+        {/* Mobile top-to-bottom subtle blend */}
+        <div
+          className="md:hidden absolute inset-x-0 top-0 h-16 pointer-events-none"
+          style={{
+            background: `linear-gradient(to bottom, ${bgColor}, transparent)`,
           }}
         />
       </div>

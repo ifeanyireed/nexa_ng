@@ -67,17 +67,20 @@ export default function HomeLivingStorefrontPage() {
               count: "65+ pieces",
               image: "https://images.unsplash.com/photo-1577140917170-285929fb55b7?auto=format&fit=crop&w=800&q=80",
               href: "/home-living/catalog",
+              theme: "light",
             }}
             card2={{
               title: "Living Room\nLounges",
               count: "110+ pieces",
               image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80",
               href: "/home-living/catalog",
+              theme: "dark",
             }}
             card3={{
               title: "Top Collation",
               href: "/home-living/catalog",
               backgroundImage: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1000&q=80",
+              theme: "light",
               pills: [
                 {
                   label: "Ceramic Lamps",

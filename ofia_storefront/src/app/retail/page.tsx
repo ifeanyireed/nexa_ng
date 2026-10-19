@@ -75,17 +75,20 @@ export default function RetailHomePage() {
               count: "400+ titles",
               image: "https://images.unsplash.com/photo-1495640388908-05fa85288e61?auto=format&fit=crop&w=800&q=80",
               href: "/retail/catalog",
+              theme: "dark",
             }}
             card2={{
               title: "Specialty\nKeepsakes",
               count: "220+ items",
               image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80",
               href: "/retail/customization",
+              theme: "light",
             }}
             card3={{
               title: "Top Collation",
               href: "/retail/catalog",
               backgroundImage: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=1000&q=80",
+              theme: "light",
               pills: [
                 {
                   label: "Artisan Stationery",

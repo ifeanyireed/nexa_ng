@@ -195,7 +195,6 @@ export default function AudienceListsPage() {
   const [newListName, setNewListName] = useState("");
   const [newListDesc, setNewListDesc] = useState("");
   const [newListTags, setNewListTags] = useState("B2B, Retail, High-Value");
-  const [initialSubscribersCount, setInitialSubscribersCount] = useState("50");
 
   // Subscriber Modal
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
@@ -251,13 +250,12 @@ export default function AudienceListsPage() {
     if (!newListName.trim()) return;
 
     const parsedTags = newListTags.split(",").map((t) => t.trim()).filter(Boolean);
-    const count = parseInt(initialSubscribersCount) || 0;
 
     const payload = {
       name: newListName.trim(),
       description: newListDesc.trim(),
       tags: parsedTags,
-      subscriberCount: count,
+      subscriberCount: 0,
     };
 
     try {
@@ -274,7 +272,7 @@ export default function AudienceListsPage() {
         name: newListName,
         description: newListDesc,
         tags: parsedTags,
-        subscriberCount: count,
+        subscriberCount: 0,
         createdAt: new Date().toISOString(),
       };
       setLists((prev) => [fallbackList, ...prev]);
@@ -322,9 +320,15 @@ export default function AudienceListsPage() {
       });
       const data = await res.json();
       if (data?.list) {
-        setLists((prev) => prev.map((l) => (l.id === editingList.id ? data.list : l)));
+        setLists((prev) =>
+          prev.map((l) =>
+            l.id === editingList.id
+              ? { ...l, ...data.list, subscriberCount: data.list.subscriberCount ?? l.subscriberCount }
+              : l
+          )
+        );
         if (rosterList && rosterList.id === editingList.id) {
-          setRosterList(data.list);
+          setRosterList((prev) => (prev ? { ...prev, ...data.list } : data.list));
         }
       } else {
         throw new Error(data?.error || "Failed to update audience list");
@@ -538,6 +542,16 @@ export default function AudienceListsPage() {
             l.id === activeList.id ? { ...l, subscriberCount: l.subscriberCount + count } : l
           )
         );
+        if (rosterList && rosterList.id === activeList.id) {
+          crmFetch(`/api/erp/crm/lists/subscribers?listId=${activeList.id}`)
+            .then((r) => r.json())
+            .then((resData) => {
+              if (Array.isArray(resData?.subscribers)) {
+                setRosterSubscribers(resData.subscribers);
+              }
+            })
+            .catch(() => {});
+        }
         alert(`Successfully registered ${count} contact${count === 1 ? '' : 's'} into "${activeList.name}".`);
       }
     } catch {
@@ -742,20 +756,12 @@ export default function AudienceListsPage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <NexaInput
-              label="Audience Tags"
-              value={newListTags}
-              onChange={(e) => setNewListTags(e.target.value)}
-              placeholder="Commercial, Solar, North-Central"
-            />
-            <NexaInput
-              label="Initial Subscriber Count"
-              type="number"
-              value={initialSubscribersCount}
-              onChange={(e) => setInitialSubscribersCount(e.target.value)}
-            />
-          </div>
+          <NexaInput
+            label="Audience Tags"
+            value={newListTags}
+            onChange={(e) => setNewListTags(e.target.value)}
+            placeholder="Commercial, Solar, North-Central"
+          />
 
           <div className="flex justify-end gap-2 pt-4">
             <NexaButton variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>

@@ -10,8 +10,12 @@ const ERP_BASE =
 
 export async function GET(request: Request) {
   try {
+    const url = new URL(request.url);
+    const id = url.searchParams.get("id");
     const tenantSlug = getValidatedTenantSlug(request);
-    const res = await fetch(`${ERP_BASE}/crm/blasts?tenant=${encodeURIComponent(tenantSlug)}`, {
+    const idParam = id ? `&id=${encodeURIComponent(id)}` : "";
+
+    const res = await fetch(`${ERP_BASE}/crm/blasts?tenant=${encodeURIComponent(tenantSlug)}${idParam}`, {
       cache: "no-store",
       headers: {
         "x-tenant-slug": tenantSlug,

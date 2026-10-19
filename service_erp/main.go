@@ -50,8 +50,11 @@ func main() {
 		handlers.AutoSeedIfEmpty()
 	}
 
-	// Set up unified router & register all ERP routes (Finance, HR, Team Quests)
+	// Set up unified router & register all ERP routes (Finance, HR, Team Quests, CRM)
 	registerRoutes()
+
+	// Start background worker for scheduled CRM email blasts (persistent 60s ticker)
+	go handlers.StartScheduledBlastWorker()
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -174,6 +177,7 @@ func registerRoutes() {
 	registerRoute("/crm/lists", handlers.HandleCrmLists)
 	registerRoute("/crm/lists/subscribers", handlers.HandleCrmSubscribers)
 	registerRoute("/crm/blasts", handlers.HandleCrmBlasts)
+	registerRoute("/crm/cron/blasts", handlers.HandleCrmCronBlasts)
 	registerRoute("/crm/unsubscribe", handlers.HandleCrmUnsubscribe)
 	registerRoute("/crm/smtp-settings", handlers.HandleCrmSmtpSettings)
 
@@ -186,6 +190,7 @@ func registerRoutes() {
 	registerRoute("/api/v1/erp/crm/lists", handlers.HandleCrmLists)
 	registerRoute("/api/v1/erp/crm/lists/subscribers", handlers.HandleCrmSubscribers)
 	registerRoute("/api/v1/erp/crm/blasts", handlers.HandleCrmBlasts)
+	registerRoute("/api/v1/erp/crm/cron/blasts", handlers.HandleCrmCronBlasts)
 	registerRoute("/api/v1/erp/crm/unsubscribe", handlers.HandleCrmUnsubscribe)
 	registerRoute("/api/v1/erp/crm/smtp-settings", handlers.HandleCrmSmtpSettings)
 	registerRoute("/api/v1/erp/smtp-settings", handlers.HandleCrmSmtpSettings)

@@ -24,10 +24,16 @@ export async function GET(request: Request) {
       },
       signal: AbortSignal.timeout(10000),
     });
-    const data = await res.json().catch(() => null);
-    return NextResponse.json(data, { status: res.status });
+    const text = await res.text();
+    let data: any;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { error: text || `ERP service returned HTTP ${res.status}`, subscribers: [] };
+    }
+    return NextResponse.json(data || { subscribers: [] }, { status: res.status });
   } catch (err: any) {
-    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
+    return NextResponse.json({ error: "ERP service connection error: " + err.message, subscribers: [] }, { status: 502 });
   }
 }
 

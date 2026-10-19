@@ -24,6 +24,7 @@ import {
   User,
   Phone,
   Building2,
+  RefreshCw,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -43,6 +44,9 @@ import { crmFetch } from "@/lib/crm-client";
 export default function EmailMarketingBlastsPage() {
   const [blasts, setBlasts] = useState<CrmEmailBlast[]>([]);
   const [lists, setLists] = useState<CrmEmailList[]>([]);
+  const [selectedBlastForLogs, setSelectedBlastForLogs] = useState<CrmEmailBlast | null>(null);
+  const [blastLogs, setBlastLogs] = useState<any[]>([]);
+  const [isLoadingLogs, setIsLoadingLogs] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [isLoading, setIsLoading] = useState(true);
@@ -130,6 +134,40 @@ export default function EmailMarketingBlastsPage() {
     loadData();
   }, []);
 
+  // Polling for live blast dispatch progress when any blast is SENDING
+  useEffect(() => {
+    const hasActiveSending = blasts.some((b) => b.status === "SENDING");
+    if (!hasActiveSending) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await crmFetch("/api/erp/crm/blasts").then((r) => r.json());
+        if (res?.blasts) {
+          setBlasts(res.blasts);
+        }
+      } catch {}
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [blasts]);
+
+  async function openBlastLogs(blast: CrmEmailBlast) {
+    setSelectedBlastForLogs(blast);
+    setIsLoadingLogs(true);
+    try {
+      const res = await crmFetch(`/api/erp/crm/blasts?id=${blast.id}`).then((r) => r.json());
+      if (res?.blast?.recipients) {
+        setBlastLogs(res.blast.recipients);
+      } else {
+        setBlastLogs([]);
+      }
+    } catch {
+      setBlastLogs([]);
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  }
+
   useEffect(() => {
     if (!selectedListId) {
       setListSubscribers([]);
@@ -174,7 +212,7 @@ export default function EmailMarketingBlastsPage() {
   const filteredListSubscribers = useMemo(() => {
     return listSubscribers.filter((s) => {
       const q = contactSearchQuery.trim().toLowerCase();
-      const fullName = `${s.firstName || ""} ${s.lastName || ""}`.trim().toLowerCase();
+      const fullName = (s.name || `${s.firstName || ""} ${s.lastName || ""}`).trim().toLowerCase();
       const matchesSearch =
         !q ||
         (s.email && s.email.toLowerCase().includes(q)) ||
@@ -185,8 +223,8 @@ export default function EmailMarketingBlastsPage() {
       if (!matchesSearch) return false;
 
       if (contactFieldFilter === "HAS_EMAIL") return Boolean(s.email && s.email.includes("@"));
-      if (contactFieldFilter === "HAS_NAME") return Boolean((s.firstName && s.firstName.trim()) || (s.lastName && s.lastName.trim()));
-      if (contactFieldFilter === "MISSING_NAME") return !Boolean((s.firstName && s.firstName.trim()) || (s.lastName && s.lastName.trim()));
+      if (contactFieldFilter === "HAS_NAME") return Boolean((s.name && s.name.trim()) || (s.firstName && s.firstName.trim()) || (s.lastName && s.lastName.trim()));
+      if (contactFieldFilter === "MISSING_NAME") return !Boolean((s.name && s.name.trim()) || (s.firstName && s.firstName.trim()) || (s.lastName && s.lastName.trim()));
       if (contactFieldFilter === "HAS_COMPANY") return Boolean(s.company && s.company.trim());
       if (contactFieldFilter === "HAS_LINKEDIN") return Boolean(s.linkedinUrl && s.linkedinUrl.trim());
 
@@ -504,6 +542,7 @@ export default function EmailMarketingBlastsPage() {
                   <th className="py-3 px-4 text-center">Recipients</th>
                   <th className="py-3 px-4 text-center">Open Rate</th>
                   <th className="py-3 px-4 text-center">Click Rate</th>
+                  <th className="py-3 px-4 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--nexa-border)]">
@@ -541,15 +580,28 @@ export default function EmailMarketingBlastsPage() {
                               ? "success"
                               : blast.status === "SCHEDULED"
                               ? "warning"
+                              : blast.status === "SENDING"
+                              ? "brand"
+                              : blast.status === "FAILED"
+                              ? "danger"
                               : "neutral"
                           }
                         >
-                          {blast.status}
+                          {blast.status === "SENDING" ? (
+                            <span className="inline-flex items-center gap-1">
+                              <RefreshCw className="w-3 h-3 animate-spin text-[#0069FF]" />
+                              SENDING ({blast.sentCount || 0}/{blast.totalRecipients})
+                            </span>
+                          ) : (
+                            blast.status
+                          )}
                         </NexaBadge>
                       </td>
                       <td className="py-3.5 px-4 text-[var(--nexa-text-muted)]">
                         {blast.status === "SENT" && blast.sentAt ? (
                           <span>Sent on {new Date(blast.sentAt).toLocaleDateString()}</span>
+                        ) : blast.status === "SENDING" ? (
+                          <span className="text-blue-600 dark:text-blue-400 font-medium">In Progress...</span>
                         ) : blast.scheduledAt ? (
                           <span className="text-amber-600 dark:text-amber-400 font-medium">
                             {new Date(blast.scheduledAt).toLocaleDateString()}
@@ -566,6 +618,16 @@ export default function EmailMarketingBlastsPage() {
                       </td>
                       <td className="py-3.5 px-4 text-center font-bold text-blue-600 dark:text-blue-400">
                         {blast.status === "SENT" ? `${clickPct}% (${blast.clickCount})` : "—"}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        <button
+                          type="button"
+                          onClick={() => openBlastLogs(blast)}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#1A56DB] hover:underline"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          Logs
+                        </button>
                       </td>
                     </tr>
                   );
@@ -764,8 +826,8 @@ export default function EmailMarketingBlastsPage() {
                   {[
                     { id: "ALL", label: `All (${listSubscribers.length})` },
                     { id: "HAS_EMAIL", label: `Has Email (${listSubscribers.filter((s) => s.email).length})` },
-                    { id: "HAS_NAME", label: `Has Name (${listSubscribers.filter((s) => s.firstName || s.lastName).length})` },
-                    { id: "MISSING_NAME", label: `Missing Name (${listSubscribers.filter((s) => !s.firstName && !s.lastName).length})` },
+                    { id: "HAS_NAME", label: `Has Name (${listSubscribers.filter((s) => s.name || s.firstName || s.lastName).length})` },
+                    { id: "MISSING_NAME", label: `Missing Name (${listSubscribers.filter((s) => !s.name && !s.firstName && !s.lastName).length})` },
                     { id: "HAS_COMPANY", label: `Has Company (${listSubscribers.filter((s) => s.company).length})` },
                     { id: "HAS_LINKEDIN", label: `Has LinkedIn (${listSubscribers.filter((s) => s.linkedinUrl).length})` },
                   ].map((chip) => (
@@ -1103,6 +1165,103 @@ export default function EmailMarketingBlastsPage() {
             </NexaButton>
           </div>
         </form>
+      </NexaModal>
+
+      {/* DELIVERY LOGS MODAL */}
+      <NexaModal
+        isOpen={Boolean(selectedBlastForLogs)}
+        onClose={() => setSelectedBlastForLogs(null)}
+        title={`Delivery Logs: ${selectedBlastForLogs?.title || ""}`}
+        maxWidth="lg"
+      >
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+          <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-xs">
+            <div>
+              <span className="font-bold text-[var(--nexa-text-primary)]">Subject: </span>
+              <span className="text-[var(--nexa-text-muted)]">{selectedBlastForLogs?.subject}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <NexaBadge
+                variant={
+                  selectedBlastForLogs?.status === "SENT"
+                    ? "success"
+                    : selectedBlastForLogs?.status === "SENDING"
+                    ? "brand"
+                    : selectedBlastForLogs?.status === "FAILED"
+                    ? "danger"
+                    : "warning"
+                }
+              >
+                {selectedBlastForLogs?.status}
+              </NexaBadge>
+              <span className="text-[11px] font-mono font-semibold text-[var(--nexa-text-muted)]">
+                {selectedBlastForLogs?.sentCount || 0} / {selectedBlastForLogs?.totalRecipients || 0} sent
+              </span>
+            </div>
+          </div>
+
+          {isLoadingLogs ? (
+            <div className="text-center py-8 text-xs text-[var(--nexa-text-muted)] flex items-center justify-center gap-2">
+              <RefreshCw className="w-4 h-4 animate-spin text-[#0069FF]" />
+              Loading recipient delivery logs...
+            </div>
+          ) : blastLogs.length === 0 ? (
+            <div className="text-center py-8 text-xs text-[var(--nexa-text-muted)]">
+              No recipient-level logs recorded for this blast yet.
+            </div>
+          ) : (
+            <div className="border border-[var(--nexa-border)] rounded-lg overflow-hidden">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[var(--nexa-bg-surface)] border-b border-[var(--nexa-border)] font-bold text-[var(--nexa-text-muted)]">
+                  <tr>
+                    <th className="py-2.5 px-3">Recipient</th>
+                    <th className="py-2.5 px-3 text-center">Status</th>
+                    <th className="py-2.5 px-3">Dispatched / Details</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--nexa-border)]">
+                  {blastLogs.map((log) => (
+                    <tr key={log.id} className="hover:bg-[var(--nexa-bg-surface)]/50">
+                      <td className="py-2.5 px-3">
+                        <div className="font-semibold text-[var(--nexa-text-primary)]">{log.name || "Recipient"}</div>
+                        <div className="text-[11px] text-[var(--nexa-text-muted)] font-mono">{log.email}</div>
+                      </td>
+                      <td className="py-2.5 px-3 text-center">
+                        <NexaBadge
+                          variant={
+                            log.status === "SENT"
+                              ? "success"
+                              : log.status === "FAILED"
+                              ? "danger"
+                              : "neutral"
+                          }
+                          size="sm"
+                        >
+                          {log.status}
+                        </NexaBadge>
+                      </td>
+                      <td className="py-2.5 px-3 text-[11px] text-[var(--nexa-text-muted)]">
+                        {log.status === "SENT" && log.sentAt ? (
+                          <span>{new Date(log.sentAt).toLocaleTimeString()} ({new Date(log.sentAt).toLocaleDateString()})</span>
+                        ) : log.errorMessage ? (
+                          <span className="text-red-500 font-mono text-[10px]">{log.errorMessage}</span>
+                        ) : (
+                          <span>Pending delivery</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className="flex justify-end pt-2">
+            <NexaButton variant="secondary" onClick={() => setSelectedBlastForLogs(null)}>
+              Close
+            </NexaButton>
+          </div>
+        </div>
       </NexaModal>
     </ErpAdminShell>
   );

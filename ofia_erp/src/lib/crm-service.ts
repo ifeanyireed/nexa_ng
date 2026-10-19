@@ -106,7 +106,7 @@ export interface CrmEmailBlast {
   senderProvider?: string;
   senderOverride?: Partial<SmtpSettings>;
   recipientIds?: string[];
-  status: "DRAFT" | "SCHEDULED" | "SENDING" | "SENT" | "CANCELLED";
+  status: "DRAFT" | "SCHEDULED" | "SENDING" | "SENT" | "FAILED" | "CANCELLED";
   scheduledAt?: string;
   sentAt?: string;
   totalRecipients: number;

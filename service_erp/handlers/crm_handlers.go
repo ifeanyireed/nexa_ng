@@ -1,11 +1,19 @@
 package handlers
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"strings"
 	"time"
+
+	"service_erp/utils"
 )
 
 // Helper to get tenant slug from request headers or query
@@ -650,26 +658,27 @@ func HandleCrmUnsubscribe(w http.ResponseWriter, r *http.Request) {
 			reason = "One-click unsubscribe"
 		}
 
-		// Regardless of tenant or list: if list_id or tenant is provided, target specifically;
-		// otherwise execute global unsubscribe across ALL lists and ALL tenants!
+		tenantSlug := strings.ToLower(strings.TrimSpace(payload.TenantSlug))
+		if tenantSlug == "" {
+			tenantSlug = getTenantSlug(r)
+		}
+		if tenantSlug == "" {
+			http.Error(w, `{"error": "Tenant slug required for unsubscribe to maintain strict isolation"}`, http.StatusBadRequest)
+			return
+		}
+
 		var res any
 		var err error
-		if payload.ListId != "" && payload.TenantSlug != "" {
+		if payload.ListId != "" {
 			res, err = db.Exec(`UPDATE crm_email_subscribers
 				SET status = $1, unsubscribed_at = NOW(), unsubscribe_reason = $2
 				WHERE LOWER(email) = $3 AND list_id = $4 AND LOWER(tenant_slug) = $5`,
-				targetStatus, reason, email, payload.ListId, strings.ToLower(payload.TenantSlug))
-		} else if payload.TenantSlug != "" {
+				targetStatus, reason, email, payload.ListId, tenantSlug)
+		} else {
 			res, err = db.Exec(`UPDATE crm_email_subscribers
 				SET status = $1, unsubscribed_at = NOW(), unsubscribe_reason = $2
 				WHERE LOWER(email) = $3 AND LOWER(tenant_slug) = $4`,
-				targetStatus, reason, email, strings.ToLower(payload.TenantSlug))
-		} else {
-			// Global removal across all tenants and lists
-			res, err = db.Exec(`UPDATE crm_email_subscribers
-				SET status = $1, unsubscribed_at = NOW(), unsubscribe_reason = $2
-				WHERE LOWER(email) = $3`,
-				targetStatus, reason, email)
+				targetStatus, reason, email, tenantSlug)
 		}
 
 		if err != nil {
@@ -834,16 +843,39 @@ func HandleCrmLists(w http.ResponseWriter, r *http.Request) {
 			WHERE id = $4 AND LOWER(tenant_slug) = $5`,
 			name, description, tagsStr, id, slug)
 		if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]any{"error": err.Error(), "success": false})
 			return
+		}
+
+		var subCount int
+		_ = db.QueryRow(`SELECT COUNT(*) FROM crm_email_subscribers WHERE list_id = $1 AND status = 'SUBSCRIBED'`, id).Scan(&subCount)
+
+		var currentName, currentDesc, currentTags string
+		_ = db.QueryRow(`SELECT name, COALESCE(description, ''), COALESCE(tags, '') FROM crm_email_lists WHERE id = $1 AND LOWER(tenant_slug) = $2`, id, slug).Scan(&currentName, &currentDesc, &currentTags)
+
+		parsedTags := []string{}
+		if currentTags != "" {
+			_ = json.Unmarshal([]byte(currentTags), &parsedTags)
+			if len(parsedTags) == 0 {
+				for _, t := range strings.Split(currentTags, ",") {
+					trimmed := strings.TrimSpace(t)
+					if trimmed != "" {
+						parsedTags = append(parsedTags, trimmed)
+					}
+				}
+			}
 		}
 
 		json.NewEncoder(w).Encode(map[string]any{
 			"success": true,
 			"list": map[string]any{
-				"id":         id,
-				"tenantSlug": slug,
-				"name":       name,
+				"id":              id,
+				"tenantSlug":      slug,
+				"name":            currentName,
+				"description":     currentDesc,
+				"tags":            parsedTags,
+				"subscriberCount": subCount,
 			},
 		})
 		return
@@ -937,7 +969,7 @@ func HandleCrmSubscribers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Method == http.MethodPost {
+	if r.Method == http.MethodPost || r.Method == http.MethodPatch || r.Method == http.MethodPut {
 		var body map[string]any
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			http.Error(w, `{"error": "Invalid JSON body"}`, http.StatusBadRequest)
@@ -946,12 +978,15 @@ func HandleCrmSubscribers(w http.ResponseWriter, r *http.Request) {
 
 		listId, _ := body["listId"].(string)
 		if listId == "" {
-			http.Error(w, `{"error": "listId is required"}`, http.StatusBadRequest)
-			return
+			listId, _ = body["list_id"].(string)
 		}
 
-		// Handle bulk subscribers
+		// 1. Bulk subscribers append/upsert
 		if rawSubscribers, ok := body["subscribers"].([]any); ok && len(rawSubscribers) > 0 {
+			if listId == "" {
+				http.Error(w, `{"error": "listId is required for bulk subscribers"}`, http.StatusBadRequest)
+				return
+			}
 			addedCount := 0
 			for _, item := range rawSubscribers {
 				if subMap, ok := item.(map[string]any); ok {
@@ -960,6 +995,9 @@ func HandleCrmSubscribers(w http.ResponseWriter, r *http.Request) {
 						continue
 					}
 					id := fmt.Sprintf("SUB-%d-%d", time.Now().UnixMilli(), addedCount)
+					if customId, ok := subMap["id"].(string); ok && customId != "" {
+						id = customId
+					}
 					fn, _ := subMap["firstName"].(string)
 					ln, _ := subMap["lastName"].(string)
 					name := strings.TrimSpace(fn + " " + ln)
@@ -977,7 +1015,9 @@ func HandleCrmSubscribers(w http.ResponseWriter, r *http.Request) {
 					_, err := db.Exec(`INSERT INTO crm_email_subscribers
 						(id, list_id, tenant_slug, email, name, role, department, status, first_name, last_name, company, phone, linkedin_url, created_at)
 						VALUES ($1, $2, $3, $4, $5, 'Subscriber', $6, $7, $8, $9, $10, $11, $12, NOW())
-						ON CONFLICT (id) DO NOTHING`,
+						ON CONFLICT (id) DO UPDATE SET
+						email = EXCLUDED.email, name = EXCLUDED.name, first_name = EXCLUDED.first_name, last_name = EXCLUDED.last_name,
+						company = EXCLUDED.company, phone = EXCLUDED.phone, linkedin_url = EXCLUDED.linkedin_url, status = EXCLUDED.status`,
 						id, listId, slug, strings.ToLower(email), name, comp, status, fn, ln, comp, phone, linkedin)
 					if err == nil {
 						addedCount++
@@ -989,7 +1029,65 @@ func HandleCrmSubscribers(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Handle single subscriber
+		// 2. Single contact update by existing ID (PATCH / PUT / POST where id is provided and no new listId insertion)
+		subId, _ := body["id"].(string)
+		if subMap, ok := body["subscriber"].(map[string]any); ok && subId == "" {
+			subId, _ = subMap["id"].(string)
+		}
+		if subId != "" && listId == "" {
+			email, _ := body["email"].(string)
+			name, _ := body["name"].(string)
+			fn, _ := body["firstName"].(string)
+			ln, _ := body["lastName"].(string)
+			comp, _ := body["company"].(string)
+			phone, _ := body["phone"].(string)
+			linkedin, _ := body["linkedinUrl"].(string)
+			status, _ := body["status"].(string)
+
+			if name == "" && (fn != "" || ln != "") {
+				name = strings.TrimSpace(fn + " " + ln)
+			}
+
+			_, err := db.Exec(`UPDATE crm_email_subscribers SET
+				email = COALESCE(NULLIF($1, ''), email),
+				name = COALESCE(NULLIF($2, ''), name),
+				first_name = COALESCE(NULLIF($3, ''), first_name),
+				last_name = COALESCE(NULLIF($4, ''), last_name),
+				company = COALESCE(NULLIF($5, ''), company),
+				phone = COALESCE(NULLIF($6, ''), phone),
+				linkedin_url = COALESCE(NULLIF($7, ''), linkedin_url),
+				status = COALESCE(NULLIF($8, ''), status)
+				WHERE id = $9 AND LOWER(tenant_slug) = $10`,
+				email, name, fn, ln, comp, phone, linkedin, status, subId, slug)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]any{"error": err.Error(), "success": false})
+				return
+			}
+
+			json.NewEncoder(w).Encode(map[string]any{
+				"success": true,
+				"subscriber": map[string]any{
+					"id":          subId,
+					"email":       email,
+					"name":        name,
+					"firstName":   fn,
+					"lastName":    ln,
+					"company":     comp,
+					"phone":       phone,
+					"linkedinUrl": linkedin,
+					"status":      status,
+				},
+			})
+			return
+		}
+
+		// 3. Single contact append/upsert to list (POST / PUT / PATCH where listId is provided)
+		if listId == "" {
+			http.Error(w, `{"error": "listId is required"}`, http.StatusBadRequest)
+			return
+		}
+
 		subData, _ := body["subscriber"].(map[string]any)
 		if subData == nil {
 			subData = body
@@ -1022,10 +1120,12 @@ func HandleCrmSubscribers(w http.ResponseWriter, r *http.Request) {
 			(id, list_id, tenant_slug, email, name, role, department, status, first_name, last_name, company, phone, linkedin_url, created_at)
 			VALUES ($1, $2, $3, $4, $5, 'Subscriber', $6, $7, $8, $9, $10, $11, $12, NOW())
 			ON CONFLICT (id) DO UPDATE SET
-			email = EXCLUDED.email, name = EXCLUDED.name, status = EXCLUDED.status`,
+			email = EXCLUDED.email, name = EXCLUDED.name, first_name = EXCLUDED.first_name, last_name = EXCLUDED.last_name,
+			company = EXCLUDED.company, phone = EXCLUDED.phone, linkedin_url = EXCLUDED.linkedin_url, status = EXCLUDED.status`,
 			id, listId, slug, strings.ToLower(email), name, comp, status, fn, ln, comp, phone, linkedin)
 		if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]any{"error": err.Error(), "success": false})
 			return
 		}
 
@@ -1033,49 +1133,19 @@ func HandleCrmSubscribers(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]any{
 			"success": true,
 			"subscriber": map[string]any{
-				"id":         id,
-				"listId":     listId,
-				"tenantSlug": slug,
-				"email":      email,
-				"name":       name,
-				"status":     status,
+				"id":          id,
+				"listId":      listId,
+				"tenantSlug":  slug,
+				"email":       email,
+				"name":        name,
+				"firstName":   fn,
+				"lastName":    ln,
+				"company":     comp,
+				"phone":       phone,
+				"linkedinUrl": linkedin,
+				"status":      status,
 			},
 		})
-		return
-	}
-
-	if r.Method == http.MethodPatch || r.Method == http.MethodPut {
-		var body map[string]any
-		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-			http.Error(w, `{"error": "Invalid JSON body"}`, http.StatusBadRequest)
-			return
-		}
-
-		id, _ := body["id"].(string)
-		if subMap, ok := body["subscriber"].(map[string]any); ok && id == "" {
-			id, _ = subMap["id"].(string)
-		}
-		if id == "" {
-			http.Error(w, `{"error": "Subscriber ID required"}`, http.StatusBadRequest)
-			return
-		}
-
-		email, _ := body["email"].(string)
-		name, _ := body["name"].(string)
-		status, _ := body["status"].(string)
-
-		_, err := db.Exec(`UPDATE crm_email_subscribers SET
-			email = COALESCE(NULLIF($1, ''), email),
-			name = COALESCE(NULLIF($2, ''), name),
-			status = COALESCE(NULLIF($3, ''), status)
-			WHERE id = $4 AND LOWER(tenant_slug) = $5`,
-			email, name, status, id, slug)
-		if err != nil {
-			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
-			return
-		}
-
-		json.NewEncoder(w).Encode(map[string]any{"success": true, "subscriber": map[string]any{"id": id, "status": status}})
 		return
 	}
 
@@ -1101,6 +1171,335 @@ func HandleCrmSubscribers(w http.ResponseWriter, r *http.Request) {
 // 8. CRM EMAIL BLASTS
 // =============================================================================
 
+// Helper to create HMAC-SHA256 unsubscribe token compliant with Next.js frontend verifyUnsubscribeToken
+func generateUnsubscribeToken(tenantSlug, email, subscriberId, listId string) string {
+	secret := os.Getenv("CRM_UNSUBSCRIBE_SECRET")
+	if secret == "" {
+		secret = os.Getenv("JWT_SECRET")
+	}
+	if secret == "" {
+		secret = "ofia-crm-secret"
+	}
+
+	payloadData := map[string]any{
+		"tenantSlug": strings.ToLower(strings.TrimSpace(tenantSlug)),
+		"email":      strings.ToLower(strings.TrimSpace(email)),
+		"createdAt":  time.Now().UnixMilli(),
+	}
+	if subscriberId != "" {
+		payloadData["subscriberId"] = subscriberId
+	}
+	if listId != "" {
+		payloadData["listId"] = listId
+	}
+
+	jsonBytes, err := json.Marshal(payloadData)
+	if err != nil {
+		return ""
+	}
+
+	encodedPayload := base64.RawURLEncoding.EncodeToString(jsonBytes)
+	h := hmac.New(sha256.New, []byte(secret))
+	h.Write([]byte(encodedPayload))
+	signature := base64.RawURLEncoding.EncodeToString(h.Sum(nil))
+
+	return fmt.Sprintf("%s.%s", encodedPayload, signature)
+}
+
+// ExecuteBlastDelivery delivers a blast to all pending recipients using strict tenant SMTP settings
+func ExecuteBlastDelivery(targetDB *sql.DB, tenantSlug, blastId string) {
+	if targetDB == nil {
+		log.Printf("❌ ExecuteBlastDelivery: targetDB is nil for tenant '%s', blast '%s'", tenantSlug, blastId)
+		return
+	}
+
+	slug := strings.ToLower(strings.TrimSpace(tenantSlug))
+
+	// 1. Fetch Blast details
+	var title, subject, contentHtml string
+	var previewText, listId, senderName, senderEmail, senderOverride sql.NullString
+	err := targetDB.QueryRow(`
+		SELECT title, subject, content_html, preview_text, list_id, sender_name, sender_email, sender_override
+		FROM crm_email_blasts
+		WHERE id = $1 AND LOWER(tenant_slug) = $2
+		LIMIT 1`, blastId, slug).Scan(&title, &subject, &contentHtml, &previewText, &listId, &senderName, &senderEmail, &senderOverride)
+	if err != nil {
+		log.Printf("❌ ExecuteBlastDelivery: blast '%s' not found for tenant '%s': %v", blastId, slug, err)
+		return
+	}
+
+	// 2. Resolve SMTP configuration strictly for this tenant
+	var overrideCfg *utils.SmtpConfig
+	if senderOverride.Valid && strings.TrimSpace(senderOverride.String) != "" {
+		var parsed struct {
+			Host       string `json:"host"`
+			Port       int    `json:"port"`
+			Encryption string `json:"encryption"`
+			Username   string `json:"username"`
+			Password   string `json:"password"`
+			FromEmail  string `json:"fromEmail"`
+			FromName   string `json:"fromName"`
+		}
+		if err := json.Unmarshal([]byte(senderOverride.String), &parsed); err == nil && parsed.Host != "" && parsed.Password != "" {
+			overrideCfg = &utils.SmtpConfig{
+				Host:       parsed.Host,
+				Port:       parsed.Port,
+				Encryption: parsed.Encryption,
+				Username:   parsed.Username,
+				Password:   parsed.Password,
+				FromEmail:  parsed.FromEmail,
+				FromName:   parsed.FromName,
+			}
+		}
+	}
+
+	effectiveFromEmail := strings.TrimSpace(senderEmail.String)
+	effectiveFromName := strings.TrimSpace(senderName.String)
+	if overrideCfg != nil {
+		if effectiveFromEmail == "" {
+			effectiveFromEmail = overrideCfg.FromEmail
+		}
+		if effectiveFromName == "" {
+			effectiveFromName = overrideCfg.FromName
+		}
+	}
+
+	// Validate whether tenant has SMTP settings configured
+	if overrideCfg == nil || overrideCfg.Host == "" || overrideCfg.Password == "" {
+		tenantCfg, errSmtp := FetchSmtpConfigForSlug(targetDB, slug)
+		if errSmtp != nil || tenantCfg == nil || tenantCfg.Host == "" || tenantCfg.Password == "" {
+			failReason := fmt.Sprintf("Strict Multi-Tenancy Policy: No verified SMTP relay configured for workspace '%s'", slug)
+			log.Printf("❌ Blast '%s' aborted: %s", blastId, failReason)
+			_, _ = targetDB.Exec(`UPDATE crm_email_blasts SET status = 'FAILED', updated_at = NOW() WHERE id = $1 AND LOWER(tenant_slug) = $2`, blastId, slug)
+			_, _ = targetDB.Exec(`UPDATE crm_email_blast_recipients SET status = 'FAILED', error_message = $1 WHERE blast_id = $2 AND LOWER(tenant_slug) = $3 AND status = 'PENDING'`, failReason, blastId, slug)
+			return
+		}
+		if effectiveFromEmail == "" {
+			effectiveFromEmail = tenantCfg.FromEmail
+		}
+		if effectiveFromName == "" {
+			effectiveFromName = tenantCfg.FromName
+		}
+	}
+
+	// 3. Mark blast status as SENDING
+	_, _ = targetDB.Exec(`UPDATE crm_email_blasts SET status = 'SENDING', updated_at = NOW() WHERE id = $1 AND LOWER(tenant_slug) = $2`, blastId, slug)
+
+	// 4. Fetch pending recipients
+	rows, err := targetDB.Query(`
+		SELECT id, subscriber_id, email, name, first_name, last_name, company
+		FROM crm_email_blast_recipients
+		WHERE blast_id = $1 AND LOWER(tenant_slug) = $2 AND status = 'PENDING'
+		ORDER BY created_at ASC`, blastId, slug)
+	if err != nil {
+		log.Printf("❌ ExecuteBlastDelivery: error querying recipients for blast '%s': %v", blastId, err)
+		_, _ = targetDB.Exec(`UPDATE crm_email_blasts SET status = 'FAILED', updated_at = NOW() WHERE id = $1 AND LOWER(tenant_slug) = $2`, blastId, slug)
+		return
+	}
+	defer rows.Close()
+
+	type BlastRecipientItem struct {
+		ID           string
+		SubscriberID sql.NullString
+		Email        string
+		Name         sql.NullString
+		FirstName    sql.NullString
+		LastName     sql.NullString
+		Company      sql.NullString
+	}
+
+	var recipients []BlastRecipientItem
+	for rows.Next() {
+		var item BlastRecipientItem
+		if err := rows.Scan(&item.ID, &item.SubscriberID, &item.Email, &item.Name, &item.FirstName, &item.LastName, &item.Company); err == nil {
+			recipients = append(recipients, item)
+		}
+	}
+
+	if len(recipients) == 0 {
+		log.Printf("⚠️ ExecuteBlastDelivery: no pending recipients found for blast '%s'", blastId)
+		_, _ = targetDB.Exec(`UPDATE crm_email_blasts SET status = 'SENT', sent_at = NOW(), updated_at = NOW() WHERE id = $1 AND LOWER(tenant_slug) = $2`, blastId, slug)
+		return
+	}
+
+	sentCount := 0
+	failedCount := 0
+
+	for _, rec := range recipients {
+		contactName := strings.TrimSpace(rec.Name.String)
+		if contactName == "" {
+			contactName = strings.TrimSpace(fmt.Sprintf("%s %s", rec.FirstName.String, rec.LastName.String))
+		}
+		if contactName == "" {
+			contactName = rec.Email
+		}
+
+		firstName := strings.TrimSpace(rec.FirstName.String)
+		if firstName == "" {
+			firstName = contactName
+		}
+		lastName := strings.TrimSpace(rec.LastName.String)
+		company := strings.TrimSpace(rec.Company.String)
+
+		// Generate RFC 8058 compliant token and unsubscribe URLs
+		unsubToken := generateUnsubscribeToken(slug, rec.Email, rec.SubscriberID.String, listId.String)
+		unsubUrl := fmt.Sprintf("https://app.ofia.ng/crm/unsubscribe?token=%s", unsubToken)
+		oneClickUrl := fmt.Sprintf("https://app.ofia.ng/api/erp/crm/unsubscribe?token=%s", unsubToken)
+
+		// Interpolate merge tags
+		personalizedSubject := subject
+		personalizedSubject = strings.ReplaceAll(personalizedSubject, "{{contact_name}}", contactName)
+		personalizedSubject = strings.ReplaceAll(personalizedSubject, "{{first_name}}", firstName)
+		personalizedSubject = strings.ReplaceAll(personalizedSubject, "{{last_name}}", lastName)
+		personalizedSubject = strings.ReplaceAll(personalizedSubject, "{{company}}", company)
+		personalizedSubject = strings.ReplaceAll(personalizedSubject, "{{email}}", rec.Email)
+		personalizedSubject = strings.ReplaceAll(personalizedSubject, "{{unsubscribe_url}}", unsubUrl)
+
+		personalizedHTML := contentHtml
+		personalizedHTML = strings.ReplaceAll(personalizedHTML, "{{contact_name}}", contactName)
+		personalizedHTML = strings.ReplaceAll(personalizedHTML, "{{first_name}}", firstName)
+		personalizedHTML = strings.ReplaceAll(personalizedHTML, "{{last_name}}", lastName)
+		personalizedHTML = strings.ReplaceAll(personalizedHTML, "{{company}}", company)
+		personalizedHTML = strings.ReplaceAll(personalizedHTML, "{{email}}", rec.Email)
+		personalizedHTML = strings.ReplaceAll(personalizedHTML, "{{unsubscribe_url}}", unsubUrl)
+
+		headers := map[string]string{
+			"List-Unsubscribe":      fmt.Sprintf("<%s>, <mailto:%s?subject=Unsubscribe>", oneClickUrl, effectiveFromEmail),
+			"List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+		}
+
+		payload := utils.EmailPayload{
+			To:         rec.Email,
+			From:       effectiveFromEmail,
+			FromName:   effectiveFromName,
+			Subject:    personalizedSubject,
+			HTML:       personalizedHTML,
+			TenantSlug: slug,
+			Headers:    headers,
+		}
+
+		sendErr := DispatchStrictTenantEmail(targetDB, slug, overrideCfg, payload)
+		if sendErr == nil {
+			sentCount++
+			_, _ = targetDB.Exec(`
+				UPDATE crm_email_blast_recipients 
+				SET status = 'SENT', sent_at = NOW(), attempts = attempts + 1, error_message = NULL 
+				WHERE id = $1`, rec.ID)
+		} else {
+			failedCount++
+			errMsg := sendErr.Error()
+			log.Printf("⚠️ Failed sending blast email to %s: %s", rec.Email, errMsg)
+			_, _ = targetDB.Exec(`
+				UPDATE crm_email_blast_recipients 
+				SET status = 'FAILED', attempts = attempts + 1, error_message = $1 
+				WHERE id = $2`, errMsg, rec.ID)
+		}
+
+		// Update running progress on blast
+		if (sentCount+failedCount)%5 == 0 || (sentCount+failedCount) == len(recipients) {
+			_, _ = targetDB.Exec(`
+				UPDATE crm_email_blasts 
+				SET sent_count = $1, failed_count = $2, updated_at = NOW() 
+				WHERE id = $3 AND LOWER(tenant_slug) = $4`, sentCount, failedCount, blastId, slug)
+		}
+
+		// Controlled pacing (50ms) to respect SMTP socket rate limits
+		time.Sleep(50 * time.Millisecond)
+	}
+
+	finalStatus := "SENT"
+	if sentCount == 0 && failedCount > 0 {
+		finalStatus = "FAILED"
+	}
+
+	_, _ = targetDB.Exec(`
+		UPDATE crm_email_blasts 
+		SET status = $1, sent_at = NOW(), sent_count = $2, failed_count = $3, updated_at = NOW() 
+		WHERE id = $4 AND LOWER(tenant_slug) = $5`, finalStatus, sentCount, failedCount, blastId, slug)
+
+	log.Printf("✅ Blast '%s' for tenant '%s' completed: %d sent, %d failed (final status: %s)", blastId, slug, sentCount, failedCount, finalStatus)
+}
+
+// ProcessDueScheduledBlasts checks and dispatches all scheduled blasts that are due
+func ProcessDueScheduledBlasts(targetDB *sql.DB) int {
+	activeDB := targetDB
+	if activeDB == nil {
+		activeDB = db
+	}
+	if activeDB == nil {
+		return 0
+	}
+
+	rows, err := activeDB.Query(`
+		SELECT id, tenant_slug 
+		FROM crm_email_blasts
+		WHERE status = 'SCHEDULED' AND scheduled_at <= NOW()
+		LIMIT 10`)
+	if err != nil {
+		return 0
+	}
+	defer rows.Close()
+
+	type DueBlast struct {
+		ID         string
+		TenantSlug string
+	}
+	var due []DueBlast
+	for rows.Next() {
+		var b DueBlast
+		if err := rows.Scan(&b.ID, &b.TenantSlug); err == nil {
+			due = append(due, b)
+		}
+	}
+
+	dispatched := 0
+	for _, b := range due {
+		res, err := activeDB.Exec(`
+			UPDATE crm_email_blasts 
+			SET status = 'SENDING', updated_at = NOW() 
+			WHERE id = $1 AND status = 'SCHEDULED'`, b.ID)
+		if err == nil {
+			if affected, _ := res.RowsAffected(); affected > 0 {
+				tenantDB := getDBForSlug(b.TenantSlug)
+				if tenantDB == nil {
+					tenantDB = activeDB
+				}
+				go ExecuteBlastDelivery(tenantDB, b.TenantSlug, b.ID)
+				dispatched++
+			}
+		}
+	}
+	return dispatched
+}
+
+// HandleCrmCronBlasts handles external/internal cron triggers to process due scheduled blasts
+func HandleCrmCronBlasts(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != http.MethodPost && r.Method != http.MethodGet {
+		http.Error(w, `{"error": "Method not allowed"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	dispatched := ProcessDueScheduledBlasts(db)
+	json.NewEncoder(w).Encode(map[string]any{
+		"success":    true,
+		"dispatched": dispatched,
+		"timestamp":  time.Now().Format(time.RFC3339),
+	})
+}
+
+// StartScheduledBlastWorker runs a persistent background ticker checking for due scheduled blasts every minute
+func StartScheduledBlastWorker() {
+	ticker := time.NewTicker(60 * time.Second)
+	log.Printf("⏱️ CRM Scheduled Email Blast Worker initialized (interval: 60s)")
+	for range ticker.C {
+		dispatched := ProcessDueScheduledBlasts(db)
+		if dispatched > 0 {
+			log.Printf("📢 CRM Worker successfully dispatched %d scheduled email blast(s)", dispatched)
+		}
+	}
+}
+
 func HandleCrmBlasts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	db := getDB(r)
@@ -1113,8 +1512,83 @@ func HandleCrmBlasts(w http.ResponseWriter, r *http.Request) {
 	slug := getTenantSlug(r)
 
 	if r.Method == http.MethodGet {
+		blastId := r.URL.Query().Get("id")
+		if blastId != "" {
+			var id, tSlug, title, subject, contentHtml string
+			var listId, listName, senderName, senderEmail, senderProvider, status *string
+			var totalRecipients, sentCount, failedCount int
+			var scheduledAt, sentAt *time.Time
+			var createdAt, updatedAt time.Time
+
+			err := db.QueryRow(`SELECT id, tenant_slug, title, subject, content_html, list_id, list_name,
+				sender_name, sender_email, sender_provider, status, total_recipients, sent_count, failed_count,
+				scheduled_at, sent_at, created_at, COALESCE(updated_at, created_at)
+				FROM crm_email_blasts
+				WHERE id = $1 AND LOWER(tenant_slug) = $2 LIMIT 1`, blastId, slug).
+				Scan(&id, &tSlug, &title, &subject, &contentHtml, &listId, &listName, &senderName, &senderEmail, &senderProvider,
+					&status, &totalRecipients, &sentCount, &failedCount, &scheduledAt, &sentAt, &createdAt, &updatedAt)
+			if err != nil {
+				http.Error(w, `{"error": "Blast not found"}`, http.StatusNotFound)
+				return
+			}
+
+			// Fetch recipient delivery logs
+			recRows, errRec := db.Query(`SELECT id, subscriber_id, email, name, status, error_message, sent_at, created_at
+				FROM crm_email_blast_recipients
+				WHERE blast_id = $1 AND LOWER(tenant_slug) = $2
+				ORDER BY created_at ASC`, blastId, slug)
+			recipients := []map[string]any{}
+			if errRec == nil {
+				defer recRows.Close()
+				for recRows.Next() {
+					var rId, rEmail, rStatus string
+					var rSubId, rName, rErrMsg *string
+					var rSentAt *time.Time
+					var rCreatedAt time.Time
+					if err := recRows.Scan(&rId, &rSubId, &rEmail, &rName, &rStatus, &rErrMsg, &rSentAt, &rCreatedAt); err == nil {
+						recipients = append(recipients, map[string]any{
+							"id":           rId,
+							"subscriberId": rSubId,
+							"email":        rEmail,
+							"name":         rName,
+							"status":       rStatus,
+							"errorMessage": rErrMsg,
+							"sentAt":       rSentAt,
+							"createdAt":    rCreatedAt,
+						})
+					}
+				}
+			}
+
+			json.NewEncoder(w).Encode(map[string]any{
+				"success": true,
+				"blast": map[string]any{
+					"id":              id,
+					"tenantSlug":      tSlug,
+					"title":           title,
+					"subject":         subject,
+					"contentHtml":     contentHtml,
+					"listId":          listId,
+					"listName":        listName,
+					"senderName":      senderName,
+					"senderEmail":     senderEmail,
+					"senderProvider":  senderProvider,
+					"status":          status,
+					"totalRecipients": totalRecipients,
+					"sentCount":       sentCount,
+					"failedCount":     failedCount,
+					"scheduledAt":     scheduledAt,
+					"sentAt":          sentAt,
+					"createdAt":       createdAt,
+					"updatedAt":       updatedAt,
+					"recipients":      recipients,
+				},
+			})
+			return
+		}
+
 		rows, err := db.Query(`SELECT id, tenant_slug, title, subject, list_id, list_name, status,
-			total_recipients, sent_count, failed_count, scheduled_at, sent_at, created_at
+			total_recipients, sent_count, failed_count, scheduled_at, sent_at, created_at, sender_email, sender_provider
 			FROM crm_email_blasts
 			WHERE LOWER(tenant_slug) = $1
 			ORDER BY created_at DESC`, slug)
@@ -1127,11 +1601,11 @@ func HandleCrmBlasts(w http.ResponseWriter, r *http.Request) {
 		blasts := []map[string]any{}
 		for rows.Next() {
 			var id, tSlug, title, subject string
-			var listId, listName, status *string
+			var listId, listName, status, senderEmail, senderProvider *string
 			var totalRecipients, sentCount, failedCount int
 			var scheduledAt, sentAt *time.Time
 			var createdAt time.Time
-			if err := rows.Scan(&id, &tSlug, &title, &subject, &listId, &listName, &status, &totalRecipients, &sentCount, &failedCount, &scheduledAt, &sentAt, &createdAt); err == nil {
+			if err := rows.Scan(&id, &tSlug, &title, &subject, &listId, &listName, &status, &totalRecipients, &sentCount, &failedCount, &scheduledAt, &sentAt, &createdAt, &senderEmail, &senderProvider); err == nil {
 				blasts = append(blasts, map[string]any{
 					"id":              id,
 					"tenantSlug":      tSlug,
@@ -1146,6 +1620,8 @@ func HandleCrmBlasts(w http.ResponseWriter, r *http.Request) {
 					"scheduledAt":     scheduledAt,
 					"sentAt":          sentAt,
 					"createdAt":       createdAt,
+					"senderEmail":     senderEmail,
+					"senderProvider":  senderProvider,
 				})
 			}
 		}
@@ -1154,44 +1630,164 @@ func HandleCrmBlasts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodPost {
-		var body map[string]any
+		var body struct {
+			ID              string          `json:"id"`
+			Title           string          `json:"title"`
+			Subject         string          `json:"subject"`
+			PreviewText     string          `json:"previewText"`
+			ContentHTML     string          `json:"contentHtml"`
+			ListID          string          `json:"listId"`
+			ListName        string          `json:"listName"`
+			SenderName      string          `json:"senderName"`
+			SenderEmail     string          `json:"senderEmail"`
+			SenderProfileID string          `json:"senderProfileId"`
+			SenderProvider  string          `json:"senderProvider"`
+			SenderOverride  any             `json:"senderOverride"`
+			RecipientIDs    []string        `json:"recipientIds"`
+			TotalRecipients int             `json:"totalRecipients"`
+			ScheduledAt     *string         `json:"scheduledAt"`
+			DispatchNow     bool            `json:"dispatchNow"`
+		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			http.Error(w, `{"error": "Invalid JSON body"}`, http.StatusBadRequest)
 			return
 		}
 
 		id := fmt.Sprintf("BLS-%d", time.Now().UnixMilli())
-		if customId, ok := body["id"].(string); ok && customId != "" {
-			id = customId
+		if strings.TrimSpace(body.ID) != "" {
+			id = strings.TrimSpace(body.ID)
 		}
-		title, _ := body["title"].(string)
-		subject, _ := body["subject"].(string)
-		contentHtml, _ := body["contentHtml"].(string)
-		listId, _ := body["listId"].(string)
-		listName, _ := body["listName"].(string)
-		status, _ := body["status"].(string)
-		if status == "" {
-			status = "DRAFT"
+
+		title := strings.TrimSpace(body.Title)
+		if title == "" {
+			title = "Untitled Blast"
+		}
+		subject := strings.TrimSpace(body.Subject)
+		if subject == "" {
+			subject = "Important Announcement"
+		}
+
+		initialStatus := "DRAFT"
+		if body.DispatchNow {
+			initialStatus = "SENDING"
+		} else if body.ScheduledAt != nil && strings.TrimSpace(*body.ScheduledAt) != "" {
+			initialStatus = "SCHEDULED"
+		}
+
+		var senderOverrideJson *string
+		if body.SenderOverride != nil {
+			if b, err := json.Marshal(body.SenderOverride); err == nil && len(b) > 2 {
+				s := string(b)
+				senderOverrideJson = &s
+			}
+		}
+
+		var recipientIdsJson *string
+		if len(body.RecipientIDs) > 0 {
+			if b, err := json.Marshal(body.RecipientIDs); err == nil {
+				s := string(b)
+				recipientIdsJson = &s
+			}
+		}
+
+		// 1. Ingest recipients from crm_email_subscribers
+		type SubItem struct {
+			ID        string
+			Email     string
+			FirstName sql.NullString
+			LastName  sql.NullString
+			Company   sql.NullString
+		}
+		var subs []SubItem
+
+		subQuery := `SELECT id, email, first_name, last_name, company FROM crm_email_subscribers WHERE status = 'SUBSCRIBED' AND LOWER(tenant_slug) = $1`
+		subParams := []any{slug}
+
+		if body.ListID != "" {
+			subQuery += ` AND list_id = $2`
+			subParams = append(subParams, body.ListID)
+		}
+
+		if rows, err := db.Query(subQuery, subParams...); err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var s SubItem
+				if err := rows.Scan(&s.ID, &s.Email, &s.FirstName, &s.LastName, &s.Company); err == nil {
+					// Check recipient filter if customized
+					if len(body.RecipientIDs) > 0 {
+						matched := false
+						for _, rId := range body.RecipientIDs {
+							if rId == s.ID || strings.EqualFold(rId, s.Email) {
+								matched = true
+								break
+							}
+						}
+						if !matched {
+							continue
+						}
+					}
+					if s.Email != "" && strings.Contains(s.Email, "@") {
+						subs = append(subs, s)
+					}
+				}
+			}
+		}
+
+		totalRecipients := len(subs)
+		if totalRecipients == 0 && body.TotalRecipients > 0 {
+			totalRecipients = body.TotalRecipients
+		}
+
+		var scheduledAtTime *time.Time
+		if body.ScheduledAt != nil && *body.ScheduledAt != "" {
+			if t, err := time.Parse(time.RFC3339, *body.ScheduledAt); err == nil {
+				scheduledAtTime = &t
+			}
 		}
 
 		_, err := db.Exec(`INSERT INTO crm_email_blasts
-			(id, tenant_slug, title, subject, content_html, list_id, list_name, status, created_at)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
-			id, slug, title, subject, contentHtml, listId, listName, status)
+			(id, tenant_slug, title, subject, preview_text, content_html, list_id, list_name,
+			 sender_name, sender_email, sender_profile_id, sender_provider, sender_override,
+			 recipient_ids, status, scheduled_at, total_recipients, sent_count, failed_count, created_at, updated_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, 0, 0, NOW(), NOW())
+			ON CONFLICT (id) DO UPDATE SET
+			 title = EXCLUDED.title, subject = EXCLUDED.subject, content_html = EXCLUDED.content_html,
+			 status = EXCLUDED.status, scheduled_at = EXCLUDED.scheduled_at, total_recipients = EXCLUDED.total_recipients,
+			 updated_at = NOW()`,
+			id, slug, title, subject, body.PreviewText, body.ContentHTML, body.ListID, body.ListName,
+			body.SenderName, body.SenderEmail, body.SenderProfileID, body.SenderProvider, senderOverrideJson,
+			recipientIdsJson, initialStatus, scheduledAtTime, totalRecipients)
 		if err != nil {
 			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
 			return
+		}
+
+		// Insert recipients into crm_email_blast_recipients
+		for _, s := range subs {
+			recId := fmt.Sprintf("rec_%s_%s", id, s.ID)
+			sName := fmt.Sprintf("%s %s", s.FirstName.String, s.LastName.String)
+			_, _ = db.Exec(`INSERT INTO crm_email_blast_recipients
+				(id, blast_id, tenant_slug, subscriber_id, email, name, first_name, last_name, company, status, created_at)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'PENDING', NOW())
+				ON CONFLICT (id) DO NOTHING`,
+				recId, id, slug, s.ID, s.Email, sName, s.FirstName.String, s.LastName.String, s.Company.String)
+		}
+
+		// If immediate dispatch is requested, trigger delivery worker
+		if body.DispatchNow {
+			go ExecuteBlastDelivery(db, slug, id)
 		}
 
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(map[string]any{
 			"success": true,
 			"blast": map[string]any{
-				"id":         id,
-				"tenantSlug": slug,
-				"title":      title,
-				"subject":    subject,
-				"status":     status,
+				"id":              id,
+				"tenantSlug":      slug,
+				"title":           title,
+				"subject":         subject,
+				"status":          initialStatus,
+				"totalRecipients": totalRecipients,
 			},
 		})
 		return

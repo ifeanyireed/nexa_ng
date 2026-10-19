@@ -141,3 +141,33 @@ func DispatchTenantEmail(targetDB *sql.DB, tenantSlug string, payload utils.Emai
 	}
 	return proxyErr
 }
+
+// DispatchStrictTenantEmail sends an email strictly using the tenant's configured SMTP settings
+// or an explicitly provided sender override. Cross-tenant failover, platform SMTP fallback,
+// and shared HTTP proxy failovers are strictly prohibited to maintain multi-tenant isolation.
+func DispatchStrictTenantEmail(targetDB *sql.DB, tenantSlug string, overrideCfg *utils.SmtpConfig, payload utils.EmailPayload) error {
+	slug := strings.ToLower(strings.TrimSpace(tenantSlug))
+	var activeCfg *utils.SmtpConfig
+
+	if overrideCfg != nil && overrideCfg.Host != "" && overrideCfg.Password != "" {
+		activeCfg = overrideCfg
+	} else if slug != "" {
+		cfg, err := FetchSmtpConfigForSlug(targetDB, slug)
+		if err != nil || cfg == nil || cfg.Host == "" || cfg.Password == "" {
+			return fmt.Errorf("strict multi-tenant policy: workspace '%s' has no verified SMTP configuration", slug)
+		}
+		activeCfg = cfg
+	} else {
+		return fmt.Errorf("strict multi-tenant policy: tenant slug is required for email dispatch")
+	}
+
+	if payload.From == "" {
+		payload.From = activeCfg.FromEmail
+	}
+	if payload.FromName == "" {
+		payload.FromName = activeCfg.FromName
+	}
+
+	return utils.SendEmailDirect(*activeCfg, payload)
+}
+

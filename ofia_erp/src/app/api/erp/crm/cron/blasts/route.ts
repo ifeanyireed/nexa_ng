@@ -18,15 +18,17 @@ export async function POST(request: Request) {
       request.headers.has("x-tenant-slug");
     const tenantSlug = hasTenantParam ? getValidatedTenantSlug(request) : "all";
 
-    const res = await fetch(`${ERP_BASE}/crm/blasts?tenant=${encodeURIComponent(tenantSlug)}`, {
+    const res = await fetch(`${ERP_BASE}/crm/cron/blasts`, {
+      method: "POST",
       cache: "no-store",
       headers: {
+        "Content-Type": "application/json",
         "x-tenant-slug": tenantSlug,
       },
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(15000),
     });
     const data = await res.json().catch(() => null);
-    return NextResponse.json(data || { success: true, processed: 0 });
+    return NextResponse.json(data || { success: true, dispatched: 0 });
   } catch (err: any) {
     return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
   }

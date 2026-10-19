@@ -25,8 +25,9 @@ type EmailPayload struct {
 	TenantSlug   string `json:"tenant_slug,omitempty"`
 	SmtpHost     string `json:"smtp_host,omitempty"`
 	SmtpPort     int    `json:"smtp_port,omitempty"`
-	SmtpUsername string `json:"smtp_username,omitempty"`
-	SmtpPassword string `json:"smtp_password,omitempty"`
+	SmtpUsername string            `json:"smtp_username,omitempty"`
+	SmtpPassword string            `json:"smtp_password,omitempty"`
+	Headers      map[string]string `json:"headers,omitempty"`
 }
 
 // SmtpConfig represents custom or tenant SMTP credentials
@@ -188,6 +189,12 @@ func SendEmailDirect(cfg SmtpConfig, payload EmailPayload) error {
 		body = payload.HTML
 	}
 	header["Content-Type"] = contentType
+
+	for hk, hv := range payload.Headers {
+		if strings.TrimSpace(hk) != "" && strings.TrimSpace(hv) != "" {
+			header[strings.TrimSpace(hk)] = strings.TrimSpace(hv)
+		}
+	}
 
 	var message bytes.Buffer
 	for k, v := range header {

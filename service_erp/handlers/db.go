@@ -662,11 +662,16 @@ func EnsureCRMTablesOnDB(targetDB *sql.DB) {
 		updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 	);`)
 
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS name VARCHAR(191);`)
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS first_name VARCHAR(100);`)
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS last_name VARCHAR(100);`)
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS company VARCHAR(191);`)
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS phone VARCHAR(50);`)
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS linkedin_url VARCHAR(255);`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS role VARCHAR(100);`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS department VARCHAR(100);`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS unsubscribed_at TIMESTAMPTZ;`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS unsubscribe_reason TEXT;`)
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS list_id VARCHAR(64);`)
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS list_name VARCHAR(191);`)
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS preview_text VARCHAR(255);`)
@@ -675,10 +680,40 @@ func EnsureCRMTablesOnDB(targetDB *sql.DB) {
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS sender_email VARCHAR(191);`)
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS sender_provider VARCHAR(50);`)
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS recipient_ids TEXT;`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS total_recipients INT DEFAULT 0;`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS sent_count INT DEFAULT 0;`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS failed_count INT DEFAULT 0;`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMPTZ;`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS sent_at TIMESTAMPTZ;`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS sender_override TEXT;`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS crm_email_blast_recipients (
+		id VARCHAR(64) PRIMARY KEY,
+		blast_id VARCHAR(64) NOT NULL,
+		tenant_slug VARCHAR(191) NOT NULL,
+		subscriber_id VARCHAR(64),
+		email VARCHAR(191) NOT NULL,
+		name VARCHAR(191),
+		first_name VARCHAR(100),
+		last_name VARCHAR(100),
+		company VARCHAR(191),
+		status VARCHAR(50) DEFAULT 'PENDING',
+		error_message TEXT,
+		attempts INT DEFAULT 0,
+		sent_at TIMESTAMPTZ,
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
 
 	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_subscribers_email ON crm_email_subscribers (LOWER(email));`)
 	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_subscribers_tenant ON crm_email_subscribers (LOWER(tenant_slug));`)
 	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_leads_tenant ON crm_leads (LOWER(tenant_slug));`)
 	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_deals_tenant ON crm_deals (LOWER(tenant_slug));`)
 	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_accounts_tenant ON crm_accounts (LOWER(tenant_slug));`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_blasts_tenant ON crm_email_blasts (LOWER(tenant_slug));`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_blasts_sched ON crm_email_blasts (status, scheduled_at);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_blast_recipients_blast ON crm_email_blast_recipients (blast_id);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_blast_recipients_tenant ON crm_email_blast_recipients (LOWER(tenant_slug));`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_blast_recipients_status ON crm_email_blast_recipients (status);`)
+	_, _ = targetDB.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_subscribers_list_email ON crm_email_subscribers (list_id, LOWER(email));`)
 }

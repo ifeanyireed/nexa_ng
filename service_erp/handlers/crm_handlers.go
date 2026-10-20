@@ -1793,6 +1793,116 @@ func HandleCrmBlasts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.Method == http.MethodPut || r.Method == http.MethodPatch {
+		var body struct {
+			ID              string  `json:"id"`
+			Title           string  `json:"title"`
+			Subject         string  `json:"subject"`
+			PreviewText     string  `json:"previewText"`
+			ContentHTML     string  `json:"contentHtml"`
+			ListID          string  `json:"listId"`
+			ListName        string  `json:"listName"`
+			SenderName      string  `json:"senderName"`
+			SenderEmail     string  `json:"senderEmail"`
+			SenderProfileID string  `json:"senderProfileId"`
+			SenderProvider  string  `json:"senderProvider"`
+			ScheduledAt     *string `json:"scheduledAt"`
+			Status          string  `json:"status"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, `{"error": "Invalid JSON body"}`, http.StatusBadRequest)
+			return
+		}
+
+		blastId := r.URL.Query().Get("id")
+		if blastId == "" {
+			blastId = body.ID
+		}
+		if blastId == "" {
+			http.Error(w, `{"error": "Blast ID is required"}`, http.StatusBadRequest)
+			return
+		}
+
+		var scheduledAtTime *time.Time
+		if body.ScheduledAt != nil && *body.ScheduledAt != "" {
+			if t, err := time.Parse(time.RFC3339, *body.ScheduledAt); err == nil {
+				scheduledAtTime = &t
+			}
+		}
+
+		res, err := db.Exec(`UPDATE crm_email_blasts SET
+			title = COALESCE(NULLIF($1, ''), title),
+			subject = COALESCE(NULLIF($2, ''), subject),
+			preview_text = COALESCE(NULLIF($3, ''), preview_text),
+			content_html = COALESCE(NULLIF($4, ''), content_html),
+			list_id = COALESCE(NULLIF($5, ''), list_id),
+			list_name = COALESCE(NULLIF($6, ''), list_name),
+			sender_name = COALESCE(NULLIF($7, ''), sender_name),
+			sender_email = COALESCE(NULLIF($8, ''), sender_email),
+			sender_profile_id = COALESCE(NULLIF($9, ''), sender_profile_id),
+			sender_provider = COALESCE(NULLIF($10, ''), sender_provider),
+			scheduled_at = CASE WHEN $11::timestamptz IS NOT NULL THEN $11::timestamptz ELSE scheduled_at END,
+			status = COALESCE(NULLIF($12, ''), status),
+			updated_at = NOW()
+			WHERE id = $13 AND LOWER(tenant_slug) = $14`,
+			body.Title, body.Subject, body.PreviewText, body.ContentHTML,
+			body.ListID, body.ListName, body.SenderName, body.SenderEmail,
+			body.SenderProfileID, body.SenderProvider, scheduledAtTime,
+			body.Status, blastId, slug)
+
+		if err != nil {
+			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
+			return
+		}
+		rowsAffected, _ := res.RowsAffected()
+		if rowsAffected == 0 {
+			http.Error(w, `{"error": "Blast not found"}`, http.StatusNotFound)
+			return
+		}
+
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": true,
+			"message": "Blast updated successfully",
+			"id":      blastId,
+		})
+		return
+	}
+
+	if r.Method == http.MethodDelete {
+		blastId := r.URL.Query().Get("id")
+		if blastId == "" {
+			var body struct {
+				ID string `json:"id"`
+			}
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			blastId = body.ID
+		}
+		if blastId == "" {
+			http.Error(w, `{"error": "Blast ID is required"}`, http.StatusBadRequest)
+			return
+		}
+
+		// Delete recipient logs first
+		_, _ = db.Exec(`DELETE FROM crm_email_blast_recipients WHERE blast_id = $1 AND LOWER(tenant_slug) = $2`, blastId, slug)
+		res, err := db.Exec(`DELETE FROM crm_email_blasts WHERE id = $1 AND LOWER(tenant_slug) = $2`, blastId, slug)
+		if err != nil {
+			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
+			return
+		}
+		rowsAffected, _ := res.RowsAffected()
+		if rowsAffected == 0 {
+			http.Error(w, `{"error": "Blast not found"}`, http.StatusNotFound)
+			return
+		}
+
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": true,
+			"message": "Blast deleted successfully",
+			"id":      blastId,
+		})
+		return
+	}
+
 	http.Error(w, `{"error": "Method not allowed"}`, http.StatusMethodNotAllowed)
 }
 

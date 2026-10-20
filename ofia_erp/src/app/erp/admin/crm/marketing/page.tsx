@@ -25,6 +25,8 @@ import {
   Phone,
   Building2,
   RefreshCw,
+  Edit3,
+  Trash2,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -33,6 +35,7 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaModal } from "@/components/nexa/NexaModal";
+import { Pagination } from "@/components/nexa/Pagination";
 import {
   CrmEmailBlast,
   CrmEmailList,
@@ -50,6 +53,16 @@ export default function EmailMarketingBlastsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [isLoading, setIsLoading] = useState(true);
+
+  // Editing & Deletion State
+  const [editingBlastId, setEditingBlastId] = useState<string | null>(null);
+  const [blastToDelete, setBlastToDelete] = useState<CrmEmailBlast | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Sender Profiles & Multi-Domain State
   const [senderProfiles, setSenderProfiles] = useState<TenantSenderProfile[]>([]);

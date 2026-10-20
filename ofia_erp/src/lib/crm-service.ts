@@ -82,6 +82,7 @@ export interface CrmEmailSubscriber {
   tenantSlug: string;
   listId: string;
   email: string;
+  name?: string;
   firstName?: string;
   lastName?: string;
   company?: string;
@@ -1741,6 +1742,7 @@ export async function getCrmSubscribers(tenantSlug: string, listId: string): Pro
         tenantSlug: r.tenant_slug,
         listId: r.list_id,
         email: r.email,
+        name: [r.first_name, r.last_name].filter(Boolean).join(" ") || undefined,
         firstName: r.first_name,
         lastName: r.last_name,
         company: r.company,
@@ -1771,6 +1773,7 @@ export async function addCrmSubscriber(tenantSlug: string, listId: string, sub: 
     tenantSlug: slug,
     listId,
     email: emailVal || "",
+    name: sub.name || [sub.firstName, sub.lastName].filter(Boolean).join(" ") || undefined,
     firstName: sub.firstName || "",
     lastName: sub.lastName || "",
     company: sub.company || "",

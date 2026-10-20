@@ -50,3 +50,49 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
   }
 }
+
+export async function PUT(request: Request) {
+  try {
+    const url = new URL(request.url);
+    const id = url.searchParams.get("id");
+    const bodyText = await request.text();
+    const parsed = JSON.parse(bodyText || "{}");
+    const tenantSlug = getValidatedTenantSlug(request, parsed);
+    const idParam = id ? `?id=${encodeURIComponent(id)}` : "";
+
+    const res = await fetch(`${ERP_BASE}/crm/blasts${idParam}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "x-tenant-slug": tenantSlug,
+      },
+      body: bodyText,
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
+  } catch (err: any) {
+    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const url = new URL(request.url);
+    const id = url.searchParams.get("id");
+    const tenantSlug = getValidatedTenantSlug(request);
+    const idParam = id ? `?id=${encodeURIComponent(id)}` : "";
+
+    const res = await fetch(`${ERP_BASE}/crm/blasts${idParam}`, {
+      method: "DELETE",
+      headers: {
+        "x-tenant-slug": tenantSlug,
+      },
+      signal: AbortSignal.timeout(10000),
+    });
+    const data = await res.json().catch(() => null);
+    return NextResponse.json(data, { status: res.status });
+  } catch (err: any) {
+    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
+  }
+}

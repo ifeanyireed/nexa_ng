@@ -386,21 +386,88 @@ export default function EmailMarketingBlastsPage() {
       senderProvider,
       senderOverride,
       recipientIds: chosenRecipientIds,
-      recipients: chosenRecipientIds
-        ? chosenSubs.map((s) => ({
+      recipients: (chosenRecipientIds ? chosenSubs : listSubscribers)
+        .filter((s) => s.email && s.email.includes("@"))
+        .map((s) => {
+          const derivedName = `${s.firstName || ""} ${s.lastName || ""}`.trim() || s.name || s.email;
+          let derivedFn = (s.firstName || "").trim();
+          let derivedLn = (s.lastName || "").trim();
+          if (!derivedFn && derivedName && !derivedName.includes("@")) {
+            const parts = derivedName.split(/\s+/);
+            if (parts.length > 0) derivedFn = parts[0];
+            if (!derivedLn && parts.length > 1) derivedLn = parts.slice(1).join(" ");
+          }
+          return {
+            id: s.id,
             email: s.email,
-            name: `${s.firstName || ""} ${s.lastName || ""}`.trim() || s.email,
-            firstName: s.firstName || "",
-            lastName: s.lastName || "",
+            name: derivedName,
+            firstName: derivedFn,
+            lastName: derivedLn,
             company: s.company || "",
             role: "Subscriber",
-          }))
-        : undefined,
+          };
+        }),
       contentHtml,
       totalRecipients: recipientsCount,
       scheduledAt: scheduleType === "LATER" && scheduleDate ? new Date(scheduleDate).toISOString() : undefined,
       dispatchNow: scheduleType === "NOW",
     };
+
+    setIsSaving(true);
+    if (editingBlastId) {
+      const editPayload = {
+        id: editingBlastId,
+        title: blastTitle.trim(),
+        subject: blastSubject.trim(),
+        listId: selectedListId,
+        listName: chosenList ? chosenList.name : "Target Audience",
+        senderName: senderName.trim(),
+        senderEmail: senderEmail.trim(),
+        senderProfileId,
+        senderProvider,
+        senderOverride,
+        contentHtml,
+        scheduledAt: scheduleType === "LATER" && scheduleDate ? new Date(scheduleDate).toISOString() : undefined,
+        status: scheduleType === "NOW" ? "SENT" : "SCHEDULED",
+      };
+
+      try {
+        await crmFetch(`/api/erp/crm/blasts?id=${encodeURIComponent(editingBlastId)}`, {
+          method: "PUT",
+          body: JSON.stringify(editPayload),
+        });
+      } catch (err) {
+        console.warn("Error updating blast via API, updating local state:", err);
+      }
+
+      setBlasts((prev) =>
+        prev.map((b) =>
+          b.id === editingBlastId
+            ? {
+                ...b,
+                title: blastTitle.trim(),
+                subject: blastSubject.trim(),
+                listId: selectedListId,
+                listName: chosenList ? chosenList.name : b.listName,
+                senderName: senderName.trim(),
+                senderEmail: senderEmail.trim(),
+                senderProfileId,
+                senderProvider,
+                contentHtml,
+                scheduledAt: scheduleType === "LATER" && scheduleDate ? scheduleDate : undefined,
+                status: scheduleType === "NOW" ? "SENT" : "SCHEDULED",
+              }
+            : b
+        )
+      );
+
+      setIsSaving(false);
+      setIsModalOpen(false);
+      setEditingBlastId(null);
+      setBlastTitle("");
+      setBlastSubject("");
+      return;
+    }
 
     try {
       const res = await crmFetch("/api/erp/crm/blasts", {
@@ -436,12 +503,75 @@ export default function EmailMarketingBlastsPage() {
         createdAt: new Date().toISOString(),
       };
       setBlasts((prev) => [fallbackBlast, ...prev]);
+    } finally {
+      setIsSaving(false);
     }
 
     setIsModalOpen(false);
     setBlastTitle("");
     setBlastSubject("");
   };
+
+  function handleOpenCreateModal() {
+    setEditingBlastId(null);
+    setBlastTitle("");
+    setBlastSubject("");
+    if (lists.length > 0) setSelectedListId(lists[0].id);
+    if (senderProfiles.length > 0) {
+      const defaultProf = senderProfiles.find((p: any) => p.isDefault) || senderProfiles[0];
+      setSelectedProfileId(defaultProf.id);
+      setSenderName(defaultProf.fromName || defaultProf.profileName || "");
+      setSenderEmail(defaultProf.fromEmail || "");
+    }
+    setContentHtml(
+      "<h2>Exclusive Commercial Update</h2><p>Dear {{first_name}},</p><p>We are pleased to introduce our latest enterprise solutions designed for your organization.</p><p><a href='https://ofia.ng' style='background:#1A56DB;color:#fff;padding:8px 16px;border-radius:6px;text-decoration:none;'>Explore Platform</a></p>"
+    );
+    setScheduleType("NOW");
+    setScheduleDate("");
+    setRecipientSelectionMode("ALL");
+    setIsModalOpen(true);
+  }
+
+  function handleOpenEditModal(blast: CrmEmailBlast) {
+    setEditingBlastId(blast.id);
+    setBlastTitle(blast.title || "");
+    setBlastSubject(blast.subject || "");
+    setSelectedListId(blast.listId || (lists[0]?.id ?? ""));
+    setSenderName(blast.senderName || "");
+    setSenderEmail(blast.senderEmail || "");
+    if (blast.senderProfileId) {
+      setSelectedProfileId(blast.senderProfileId);
+    }
+    setContentHtml(blast.contentHtml || "");
+    if (blast.scheduledAt) {
+      setScheduleType("LATER");
+      try {
+        setScheduleDate(new Date(blast.scheduledAt).toISOString().slice(0, 16));
+      } catch {
+        setScheduleDate(blast.scheduledAt);
+      }
+    } else {
+      setScheduleType("NOW");
+      setScheduleDate("");
+    }
+    setIsModalOpen(true);
+  }
+
+  async function handleConfirmDelete() {
+    if (!blastToDelete) return;
+    setIsDeleting(true);
+    try {
+      await crmFetch(`/api/erp/crm/blasts?id=${encodeURIComponent(blastToDelete.id)}`, {
+        method: "DELETE",
+      });
+    } catch (err) {
+      console.warn("Error deleting blast via API, updating local state:", err);
+    } finally {
+      setBlasts((prev) => prev.filter((b) => b.id !== blastToDelete.id));
+      setBlastToDelete(null);
+      setIsDeleting(false);
+    }
+  }
 
   const filteredBlasts = blasts.filter((b) => {
     const matchSearch =
@@ -451,9 +581,44 @@ export default function EmailMarketingBlastsPage() {
     return matchSearch && matchStatus;
   });
 
-  const totalDelivered = blasts.reduce((acc, b) => acc + (b.status === "SENT" ? b.sentCount : 0), 0);
-  const totalOpens = blasts.reduce((acc, b) => acc + b.openCount, 0);
-  const avgOpenRate = totalDelivered > 0 ? ((totalOpens / totalDelivered) * 100).toFixed(1) : "58.4";
+  // Reset page on search or status change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
+
+  const totalItems = filteredBlasts.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
+  const paginatedBlasts = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredBlasts.slice(startIndex, startIndex + pageSize);
+  }, [filteredBlasts, currentPage, pageSize]);
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const refreshBlasts = async () => {
+    setIsRefreshing(true);
+    try {
+      const res = await crmFetch("/api/erp/crm/blasts").then((r) => r.json());
+      if (res?.blasts) {
+        setBlasts(res.blasts);
+      }
+    } catch {}
+    finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const totalDelivered = blasts.reduce((acc, b) => acc + (b.status === "SENT" ? (Number(b.sentCount) || 0) : 0), 0);
+  const totalOpens = blasts.reduce((acc, b) => acc + (Number(b.openCount) || 0), 0);
+  const totalClicks = blasts.reduce((acc, b) => acc + (Number(b.clickCount) || 0), 0);
+  const avgOpenRate = totalDelivered > 0 ? ((totalOpens / totalDelivered) * 100).toFixed(1) : totalOpens > 0 ? "100.0" : "0.0";
+  const avgClickRate = totalDelivered > 0 ? ((totalClicks / totalDelivered) * 100).toFixed(1) : totalClicks > 0 ? "100.0" : "0.0";
 
   return (
     <ErpAdminShell
@@ -462,6 +627,16 @@ export default function EmailMarketingBlastsPage() {
       activeModule="crm"
       action={
         <div className="flex items-center gap-2">
+          <NexaButton
+            variant="secondary"
+            className="gap-2 text-xs"
+            onClick={refreshBlasts}
+            disabled={isRefreshing}
+            title="Refresh blast deliverability stats"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-[#1A56DB]" : ""}`} />
+            {isRefreshing ? "Syncing..." : "Refresh"}
+          </NexaButton>
           <Link href="/erp/admin/crm/lists">
             <NexaButton variant="secondary" className="gap-2 text-xs">
               <Users className="w-3.5 h-3.5" />
@@ -471,7 +646,7 @@ export default function EmailMarketingBlastsPage() {
           <NexaButton
             variant="primary"
             className="gap-2 text-xs"
-            onClick={() => setIsModalOpen(true)}
+            onClick={handleOpenCreateModal}
           >
             <Send className="w-4 h-4" />
             Schedule New Blast
@@ -493,7 +668,7 @@ export default function EmailMarketingBlastsPage() {
             {
               label: "Average Open Rate",
               value: `${avgOpenRate}%`,
-              change: "Industry top quartile",
+              change: `${totalOpens} total verified opens`,
               changeType: "success",
               icon: <Eye className="w-4 h-4 text-blue-500" />,
             },
@@ -505,11 +680,11 @@ export default function EmailMarketingBlastsPage() {
               icon: <Users className="w-4 h-4 text-purple-500" />,
             },
             {
-              label: "Scheduled Queue",
-              value: blasts.filter((b) => b.status === "SCHEDULED").length.toString(),
-              change: "Ready for auto-delivery",
-              changeType: "neutral",
-              icon: <Clock className="w-4 h-4 text-amber-500" />,
+              label: "Tracked Click Rate",
+              value: `${avgClickRate}%`,
+              change: `${totalClicks} unique link clicks`,
+              changeType: "success",
+              icon: <Sparkles className="w-4 h-4 text-amber-500" />,
             },
           ]}
         />
@@ -550,7 +725,7 @@ export default function EmailMarketingBlastsPage() {
                 <tr>
                   <th className="py-3 px-4">Campaign Title & Subject</th>
                   <th className="py-3 px-4">Target Audience List</th>
-                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Status</th>
                   <th className="py-3 px-4">Schedule / Dispatched</th>
                   <th className="py-3 px-4 text-center">Recipients</th>
                   <th className="py-3 px-4 text-center">Open Rate</th>
@@ -559,104 +734,186 @@ export default function EmailMarketingBlastsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--nexa-border)]">
-                {filteredBlasts.map((blast) => {
-                  const openPct = blast.totalRecipients > 0 ? ((blast.openCount / blast.totalRecipients) * 100).toFixed(0) : "0";
-                  const clickPct = blast.totalRecipients > 0 ? ((blast.clickCount / blast.totalRecipients) * 100).toFixed(0) : "0";
+                {paginatedBlasts.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center text-[var(--nexa-text-muted)]">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <Mail className="w-8 h-8 text-[var(--nexa-text-muted)]/50" />
+                        <span className="text-xs font-semibold">No email campaigns found</span>
+                        <span className="text-[11px] text-[var(--nexa-text-muted)]">
+                          {searchQuery || statusFilter !== "ALL"
+                            ? "Try adjusting your search or status filter."
+                            : "Click 'Schedule New Blast' to create your first outbound campaign."}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedBlasts.map((blast) => {
+                    const openCount = Number(blast.openCount) || 0;
+                    const clickCount = Number(blast.clickCount) || 0;
+                    const sentCount = Number(blast.sentCount) || 0;
+                    const totalRecipients = Number(blast.totalRecipients) || 0;
+                    const effectiveBase = sentCount > 0 ? sentCount : totalRecipients;
+                    const openPct = effectiveBase > 0 ? ((openCount / effectiveBase) * 100).toFixed(0) : "0";
+                    const clickPct = effectiveBase > 0 ? ((clickCount / effectiveBase) * 100).toFixed(0) : "0";
 
-                  return (
-                    <tr key={blast.id} className="hover:bg-[var(--nexa-bg-surface)]/50 transition-colors">
-                      <td className="py-3.5 px-4 space-y-1">
-                        <div className="font-extrabold text-[var(--nexa-text-primary)]">{blast.title}</div>
-                        <div className="text-[11px] text-[var(--nexa-text-muted)] flex items-center gap-1.5 truncate max-w-md">
-                          <Mail className="w-3 h-3 text-[#1A56DB] shrink-0" />
-                          <span className="truncate">{blast.subject}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 pt-0.5">
-                          <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-muted)] border border-[var(--nexa-border)]">
-                            <Globe className="w-2.5 h-2.5 text-[#1A56DB]" />
-                            {blast.senderEmail?.includes("@") ? blast.senderEmail.split("@")[1] : "default domain"}
-                          </span>
-                          {blast.senderProvider && blast.senderProvider !== "custom" && (
-                            <span className="text-[10px] font-semibold text-blue-600 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20 capitalize">
-                              {blast.senderProvider}
+                    return (
+                      <tr key={blast.id} className="hover:bg-[var(--nexa-bg-surface)]/50 transition-colors">
+                        <td className="py-3.5 px-4 space-y-1">
+                          <div className="font-extrabold text-[var(--nexa-text-primary)]">{blast.title}</div>
+                          <div className="text-[11px] text-[var(--nexa-text-muted)] flex items-center gap-1.5 truncate max-w-md">
+                            <Mail className="w-3 h-3 text-[#1A56DB] shrink-0" />
+                            <span className="truncate">{blast.subject}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5 pt-0.5">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-muted)] border border-[var(--nexa-border)]">
+                              <Globe className="w-2.5 h-2.5 text-[#1A56DB]" />
+                              {blast.senderEmail?.includes("@") ? blast.senderEmail.split("@")[1] : "default domain"}
                             </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <span className="font-medium text-[var(--nexa-text-primary)]">{blast.listName}</span>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <NexaBadge
-                          variant={
-                            blast.status === "SENT"
-                              ? "success"
-                              : blast.status === "SCHEDULED"
-                              ? "warning"
-                              : blast.status === "SENDING"
-                              ? "brand"
-                              : blast.status === "FAILED"
-                              ? "danger"
-                              : "neutral"
-                          }
-                        >
-                          {blast.status === "SENDING" ? (
-                            <span className="inline-flex items-center gap-1">
-                              <RefreshCw className="w-3 h-3 animate-spin text-[#0069FF]" />
-                              SENDING ({blast.sentCount || 0}/{blast.totalRecipients})
+                            {blast.senderProvider && blast.senderProvider !== "custom" && (
+                              <span className="text-[10px] font-semibold text-blue-600 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20 capitalize">
+                                {blast.senderProvider}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="font-medium text-[var(--nexa-text-primary)]">{blast.listName}</span>
+                        </td>
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <NexaBadge
+                            className="whitespace-nowrap inline-flex items-center"
+                            variant={
+                              blast.status === "SENT"
+                                ? "success"
+                                : blast.status === "SCHEDULED"
+                                ? "warning"
+                                : blast.status === "SENDING"
+                                ? "brand"
+                                : blast.status === "FAILED"
+                                ? "danger"
+                                : "neutral"
+                            }
+                          >
+                            {blast.status === "SENDING" ? (
+                              <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                                <RefreshCw className="w-3 h-3 animate-spin text-[#0069FF] shrink-0" />
+                                <span>SENDING ({sentCount}/{totalRecipients})</span>
+                              </span>
+                            ) : blast.status === "SENT" ? (
+                              <span className="whitespace-nowrap">SENT ({sentCount}/{totalRecipients})</span>
+                            ) : (
+                              <span className="whitespace-nowrap">{blast.status}</span>
+                            )}
+                          </NexaBadge>
+                        </td>
+                        <td className="py-3.5 px-4 text-[var(--nexa-text-muted)]">
+                          {blast.status === "SENT" && blast.sentAt ? (
+                            <span>Sent on {new Date(blast.sentAt).toLocaleDateString()}</span>
+                          ) : blast.status === "SENDING" ? (
+                            <span className="text-blue-600 dark:text-blue-400 font-medium">In Progress...</span>
+                          ) : blast.scheduledAt ? (
+                            <span className="text-amber-600 dark:text-amber-400 font-medium">
+                              {new Date(blast.scheduledAt).toLocaleDateString()}
                             </span>
                           ) : (
-                            blast.status
+                            <span>Draft</span>
                           )}
-                        </NexaBadge>
-                      </td>
-                      <td className="py-3.5 px-4 text-[var(--nexa-text-muted)]">
-                        {blast.status === "SENT" && blast.sentAt ? (
-                          <span>Sent on {new Date(blast.sentAt).toLocaleDateString()}</span>
-                        ) : blast.status === "SENDING" ? (
-                          <span className="text-blue-600 dark:text-blue-400 font-medium">In Progress...</span>
-                        ) : blast.scheduledAt ? (
-                          <span className="text-amber-600 dark:text-amber-400 font-medium">
-                            {new Date(blast.scheduledAt).toLocaleDateString()}
-                          </span>
-                        ) : (
-                          <span>Draft</span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 text-center font-bold text-[var(--nexa-text-primary)]">
-                        {blast.totalRecipients}
-                      </td>
-                      <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400">
-                        {blast.status === "SENT" ? `${openPct}% (${blast.openCount})` : "—"}
-                      </td>
-                      <td className="py-3.5 px-4 text-center font-bold text-blue-600 dark:text-blue-400">
-                        {blast.status === "SENT" ? `${clickPct}% (${blast.clickCount})` : "—"}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => openBlastLogs(blast)}
-                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#1A56DB] hover:underline"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          Logs
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                        </td>
+                        <td className="py-3.5 px-4 text-center font-bold text-[var(--nexa-text-primary)]">
+                          {totalRecipients}
+                        </td>
+                        <td className="py-3.5 px-4 text-center font-bold text-emerald-600 dark:text-emerald-400">
+                          {blast.status === "SENT" ? `${openPct}% (${openCount})` : blast.status === "SENDING" && openCount > 0 ? `${openCount} opens` : "—"}
+                        </td>
+                        <td className="py-3.5 px-4 text-center font-bold text-blue-600 dark:text-blue-400">
+                          {blast.status === "SENT" ? `${clickPct}% (${clickCount})` : blast.status === "SENDING" && clickCount > 0 ? `${clickCount} clicks` : "—"}
+                        </td>
+                        <td className="py-3.5 px-4 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => openBlastLogs(blast)}
+                              title="View delivery logs"
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold text-[#1A56DB] hover:bg-[#1A56DB]/10 transition-colors cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              Logs
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditModal(blast)}
+                              title="Edit campaign"
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold text-[var(--nexa-text-muted)] hover:text-[#1A56DB] hover:bg-[#1A56DB]/10 transition-colors cursor-pointer"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setBlastToDelete(blast)}
+                              title="Delete campaign"
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
+          </div>
+
+          {/* Table Footer with Pagination Controller & Page Size Selector */}
+          <div className="p-3 border-t border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]/30 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs text-[var(--nexa-text-muted)]">
+              <span>Rows per page:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="px-2 py-1 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-semibold text-[var(--nexa-text-primary)] focus:outline-none focus:ring-1 focus:ring-[#1A56DB] cursor-pointer"
+              >
+                {[5, 10, 20, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              itemsPerPage={pageSize}
+              onPageChange={setCurrentPage}
+              className="pt-0 border-t-0"
+            />
           </div>
         </NexaCard>
       </div>
 
-      {/* SCHEDULE BLAST MODAL */}
+      {/* SCHEDULE / EDIT BLAST MODAL */}
       <NexaModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Schedule Email Blast"
-        subtitle="Configure your audience list, outbound sending domain, rich email copy, and dispatch timing."
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingBlastId(null);
+        }}
+        title={editingBlastId ? "Edit Email Campaign" : "Schedule Email Blast"}
+        subtitle={
+          editingBlastId
+            ? "Update campaign details, subject line, audience list, and email content copy."
+            : "Configure your audience list, outbound sending domain, rich email copy, and dispatch timing."
+        }
         maxWidth="3xl"
       >
         <form onSubmit={handleCreateBlast} className="space-y-4">
@@ -1164,16 +1421,28 @@ export default function EmailMarketingBlastsPage() {
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <NexaButton variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>
+            <NexaButton
+              variant="secondary"
+              type="button"
+              onClick={() => {
+                setIsModalOpen(false);
+                setEditingBlastId(null);
+              }}
+            >
               Cancel
             </NexaButton>
             <NexaButton
               variant="primary"
               type="submit"
-              disabled={recipientSelectionMode === "CUSTOM" && selectedSubscriberIds.length === 0}
+              disabled={isSaving || (recipientSelectionMode === "CUSTOM" && selectedSubscriberIds.length === 0)}
+              isLoading={isSaving}
             >
-              {scheduleType === "NOW"
-                ? `Dispatch Blast Now (${recipientSelectionMode === "CUSTOM" ? selectedSubscriberIds.length : (listSubscribers.filter(s => s.email && s.email.includes("@")).length || "All")})`
+              {isSaving
+                ? "Saving..."
+                : editingBlastId
+                ? "Save Changes"
+                : scheduleType === "NOW"
+                ? `Dispatch Blast Now (${recipientSelectionMode === "CUSTOM" ? selectedSubscriberIds.length : (listSubscribers.filter((s) => s.email && s.email.includes("@")).length || "All")})`
                 : "Schedule Blast"}
             </NexaButton>
           </div>
@@ -1272,6 +1541,41 @@ export default function EmailMarketingBlastsPage() {
           <div className="flex justify-end pt-2">
             <NexaButton variant="secondary" onClick={() => setSelectedBlastForLogs(null)}>
               Close
+            </NexaButton>
+          </div>
+        </div>
+      </NexaModal>
+
+      {/* DELETE CONFIRMATION MODAL */}
+      <NexaModal
+        isOpen={Boolean(blastToDelete)}
+        onClose={() => setBlastToDelete(null)}
+        title="Delete Email Campaign"
+        maxWidth="md"
+      >
+        <div className="space-y-4">
+          <p className="text-xs text-[var(--nexa-text-muted)] leading-relaxed">
+            Are you sure you want to delete <strong className="text-[var(--nexa-text-primary)] font-bold">{blastToDelete?.title ? `"${blastToDelete.title}"` : "this campaign"}</strong>? This will permanently remove the campaign record and all associated recipient delivery logs. This action cannot be undone.
+          </p>
+
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <NexaButton
+              variant="secondary"
+              type="button"
+              disabled={isDeleting}
+              onClick={() => setBlastToDelete(null)}
+            >
+              Cancel
+            </NexaButton>
+            <NexaButton
+              variant="danger"
+              type="button"
+              disabled={isDeleting}
+              isLoading={isDeleting}
+              onClick={handleConfirmDelete}
+              leftIcon={<Trash2 className="w-3.5 h-3.5" />}
+            >
+              {isDeleting ? "Deleting..." : "Delete Campaign"}
             </NexaButton>
           </div>
         </div>

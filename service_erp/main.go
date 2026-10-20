@@ -179,6 +179,8 @@ func registerRoutes() {
 	registerRoute("/crm/blasts", handlers.HandleCrmBlasts)
 	registerRoute("/crm/cron/blasts", handlers.HandleCrmCronBlasts)
 	registerRoute("/crm/unsubscribe", handlers.HandleCrmUnsubscribe)
+	registerRoute("/crm/track/open", handlers.HandleCrmTrackOpen)
+	registerRoute("/crm/track/click", handlers.HandleCrmTrackClick)
 	registerRoute("/crm/smtp-settings", handlers.HandleCrmSmtpSettings)
 
 	// Prefix aliases for /api/v1/erp/crm/*
@@ -192,6 +194,8 @@ func registerRoutes() {
 	registerRoute("/api/v1/erp/crm/blasts", handlers.HandleCrmBlasts)
 	registerRoute("/api/v1/erp/crm/cron/blasts", handlers.HandleCrmCronBlasts)
 	registerRoute("/api/v1/erp/crm/unsubscribe", handlers.HandleCrmUnsubscribe)
+	registerRoute("/api/v1/erp/crm/track/open", handlers.HandleCrmTrackOpen)
+	registerRoute("/api/v1/erp/crm/track/click", handlers.HandleCrmTrackClick)
 	registerRoute("/api/v1/erp/crm/smtp-settings", handlers.HandleCrmSmtpSettings)
 	registerRoute("/api/v1/erp/smtp-settings", handlers.HandleCrmSmtpSettings)
 }

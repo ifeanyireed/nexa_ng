@@ -683,6 +683,9 @@ func EnsureCRMTablesOnDB(targetDB *sql.DB) {
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS total_recipients INT DEFAULT 0;`)
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS sent_count INT DEFAULT 0;`)
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS failed_count INT DEFAULT 0;`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS open_count INT DEFAULT 0;`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS click_count INT DEFAULT 0;`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS bounce_count INT DEFAULT 0;`)
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMPTZ;`)
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS sent_at TIMESTAMPTZ;`)
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS sender_override TEXT;`)
@@ -702,8 +705,16 @@ func EnsureCRMTablesOnDB(targetDB *sql.DB) {
 		error_message TEXT,
 		attempts INT DEFAULT 0,
 		sent_at TIMESTAMPTZ,
+		opened_at TIMESTAMPTZ,
+		open_count INT DEFAULT 0,
+		clicked_at TIMESTAMPTZ,
+		click_count INT DEFAULT 0,
 		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 	);`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blast_recipients ADD COLUMN IF NOT EXISTS opened_at TIMESTAMPTZ;`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blast_recipients ADD COLUMN IF NOT EXISTS open_count INT DEFAULT 0;`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blast_recipients ADD COLUMN IF NOT EXISTS clicked_at TIMESTAMPTZ;`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blast_recipients ADD COLUMN IF NOT EXISTS click_count INT DEFAULT 0;`)
 
 	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_subscribers_email ON crm_email_subscribers (LOWER(email));`)
 	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_subscribers_tenant ON crm_email_subscribers (LOWER(tenant_slug));`)

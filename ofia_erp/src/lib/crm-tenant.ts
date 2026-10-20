@@ -19,6 +19,16 @@ export function getValidatedTenantSlug(request: Request, body?: any): string {
     }
   } catch {}
 
-  // 4. Default isolated tenant space
+  // 4. Host or x-forwarded-host subdomain extraction (e.g. neweratransports.ofia.ng)
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
+  if (host && host.includes(".")) {
+    const parts = host.split(":")[0].split(".");
+    const sub = parts[0].toLowerCase().trim();
+    if (sub && !["www", "admin", "app", "api", "localhost", "ofia", "vercel"].includes(sub)) {
+      return sub;
+    }
+  }
+
+  // 5. Default isolated tenant space
   return "default";
 }

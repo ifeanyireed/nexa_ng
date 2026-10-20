@@ -27,6 +27,9 @@ import {
   RefreshCw,
   Edit3,
   Trash2,
+  ExternalLink,
+  Download,
+  Check,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -50,6 +53,8 @@ export default function EmailMarketingBlastsPage() {
   const [selectedBlastForLogs, setSelectedBlastForLogs] = useState<CrmEmailBlast | null>(null);
   const [blastLogs, setBlastLogs] = useState<any[]>([]);
   const [isLoadingLogs, setIsLoadingLogs] = useState(false);
+  const [logFilter, setLogFilter] = useState<"ALL" | "OPENED" | "CLICKED" | "UNOPENED" | "FAILED">("ALL");
+  const [logSearchQuery, setLogSearchQuery] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [isLoading, setIsLoading] = useState(true);
@@ -166,6 +171,8 @@ export default function EmailMarketingBlastsPage() {
 
   async function openBlastLogs(blast: CrmEmailBlast) {
     setSelectedBlastForLogs(blast);
+    setLogFilter("ALL");
+    setLogSearchQuery("");
     setIsLoadingLogs(true);
     try {
       const res = await crmFetch(`/api/erp/crm/blasts?id=${blast.id}`).then((r) => r.json());
@@ -174,12 +181,92 @@ export default function EmailMarketingBlastsPage() {
       } else {
         setBlastLogs([]);
       }
+      if (res?.blast) {
+        setSelectedBlastForLogs(res.blast);
+      }
     } catch {
       setBlastLogs([]);
     } finally {
       setIsLoadingLogs(false);
     }
   }
+
+  async function refreshBlastLogs() {
+    if (!selectedBlastForLogs) return;
+    setIsLoadingLogs(true);
+    try {
+      const res = await crmFetch(`/api/erp/crm/blasts?id=${selectedBlastForLogs.id}`).then((r) => r.json());
+      if (res?.blast?.recipients) {
+        setBlastLogs(res.blast.recipients);
+      }
+      if (res?.blast) {
+        setSelectedBlastForLogs(res.blast);
+      }
+    } catch {
+    } finally {
+      setIsLoadingLogs(false);
+    }
+  }
+
+  function exportLogsToCSV() {
+    if (!blastLogs.length || !selectedBlastForLogs) return;
+    const headers = ["Recipient Name", "Email", "Status", "Sent At", "Opened At", "Open Count", "Clicked At", "Click Count", "Error Message"];
+    const rows = blastLogs.map((r) => [
+      `"${(r.name || "").replace(/"/g, '""')}"`,
+      `"${(r.email || "").replace(/"/g, '""')}"`,
+      `"${(r.status || "").replace(/"/g, '""')}"`,
+      `"${r.sentAt ? new Date(r.sentAt).toISOString() : ""}"`,
+      `"${r.openedAt ? new Date(r.openedAt).toISOString() : ""}"`,
+      r.openCount || 0,
+      `"${r.clickedAt ? new Date(r.clickedAt).toISOString() : ""}"`,
+      r.clickCount || 0,
+      `"${(r.errorMessage || "").replace(/"/g, '""')}"`,
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `delivery-engagement-logs-${selectedBlastForLogs.id}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  const logStats = useMemo(() => {
+    const total = blastLogs.length;
+    const opened = blastLogs.filter((l) => l.openedAt || (l.openCount && l.openCount > 0)).length;
+    const clicked = blastLogs.filter((l) => l.clickedAt || (l.clickCount && l.clickCount > 0)).length;
+    const failed = blastLogs.filter((l) => l.status === "FAILED").length;
+    const sent = blastLogs.filter((l) => l.status === "SENT").length;
+    const unopened = blastLogs.filter((l) => l.status === "SENT" && !l.openedAt && (!l.openCount || l.openCount === 0)).length;
+
+    const openRate = sent > 0 ? Math.round((opened / sent) * 100) : 0;
+    const clickRate = sent > 0 ? Math.round((clicked / sent) * 100) : 0;
+
+    return { total, opened, clicked, failed, sent, unopened, openRate, clickRate };
+  }, [blastLogs]);
+
+  const filteredBlastLogs = useMemo(() => {
+    return blastLogs.filter((log) => {
+      const q = logSearchQuery.trim().toLowerCase();
+      const matchesSearch =
+        !q ||
+        (log.email && log.email.toLowerCase().includes(q)) ||
+        (log.name && log.name.toLowerCase().includes(q));
+
+      if (!matchesSearch) return false;
+
+      const isOpened = Boolean(log.openedAt || (log.openCount && log.openCount > 0));
+      const isClicked = Boolean(log.clickedAt || (log.clickCount && log.clickCount > 0));
+
+      if (logFilter === "OPENED") return isOpened;
+      if (logFilter === "CLICKED") return isClicked;
+      if (logFilter === "UNOPENED") return !isOpened && log.status === "SENT";
+      if (logFilter === "FAILED") return log.status === "FAILED";
+
+      return true;
+    });
+  }, [blastLogs, logFilter, logSearchQuery]);
 
   useEffect(() => {
     if (!selectedListId) {
@@ -1449,96 +1536,305 @@ export default function EmailMarketingBlastsPage() {
         </form>
       </NexaModal>
 
-      {/* DELIVERY LOGS MODAL */}
+      {/* DELIVERY & ENGAGEMENT LOGS MODAL */}
       <NexaModal
         isOpen={Boolean(selectedBlastForLogs)}
         onClose={() => setSelectedBlastForLogs(null)}
-        title={`Delivery Logs: ${selectedBlastForLogs?.title || ""}`}
-        maxWidth="lg"
+        title={`Delivery & Engagement Logs: ${selectedBlastForLogs?.title || ""}`}
+        maxWidth="5xl"
       >
-        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
-          <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-xs">
-            <div>
-              <span className="font-bold text-[var(--nexa-text-primary)]">Subject: </span>
-              <span className="text-[var(--nexa-text-muted)]">{selectedBlastForLogs?.subject}</span>
+        <div className="space-y-4 max-h-[78vh] flex flex-col">
+          {/* Header Summary Strip */}
+          <div className="p-3.5 rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-[var(--nexa-text-primary)] truncate">
+                    {selectedBlastForLogs?.subject}
+                  </span>
+                  <NexaBadge
+                    variant={
+                      selectedBlastForLogs?.status === "SENT"
+                        ? "success"
+                        : selectedBlastForLogs?.status === "SENDING"
+                        ? "brand"
+                        : selectedBlastForLogs?.status === "FAILED"
+                        ? "danger"
+                        : "warning"
+                    }
+                    size="sm"
+                  >
+                    {selectedBlastForLogs?.status}
+                  </NexaBadge>
+                </div>
+                <div className="text-[11px] text-[var(--nexa-text-muted)] mt-0.5 flex items-center gap-2">
+                  <span>Audience: <strong className="text-[var(--nexa-text-secondary)]">{selectedBlastForLogs?.listName || "Target Audience"}</strong></span>
+                  <span>•</span>
+                  <span>Dispatched: {selectedBlastForLogs?.sentAt ? new Date(selectedBlastForLogs.sentAt).toLocaleString() : "Pending"}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={refreshBlastLogs}
+                  disabled={isLoadingLogs}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] text-xs font-semibold text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] hover:bg-[var(--nexa-bg-card)] transition-colors cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoadingLogs ? "animate-spin text-[#0069FF]" : ""}`} />
+                  Refresh
+                </button>
+                <button
+                  type="button"
+                  onClick={exportLogsToCSV}
+                  disabled={blastLogs.length === 0}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] text-xs font-semibold text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] hover:bg-[var(--nexa-bg-card)] transition-colors cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  Export CSV
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <NexaBadge
-                variant={
-                  selectedBlastForLogs?.status === "SENT"
-                    ? "success"
-                    : selectedBlastForLogs?.status === "SENDING"
-                    ? "brand"
-                    : selectedBlastForLogs?.status === "FAILED"
-                    ? "danger"
-                    : "warning"
-                }
-              >
-                {selectedBlastForLogs?.status}
-              </NexaBadge>
-              <span className="text-[11px] font-mono font-semibold text-[var(--nexa-text-muted)]">
-                {selectedBlastForLogs?.sentCount || 0} / {selectedBlastForLogs?.totalRecipients || 0} sent
-              </span>
+
+            {/* Quick Metrics Bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-[var(--nexa-border)]">
+              <div className="p-2 rounded-lg bg-[var(--nexa-bg-card)] border border-[var(--nexa-border)] text-center">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--nexa-text-muted)]">Dispatched</div>
+                <div className="text-base font-extrabold text-[var(--nexa-text-primary)] mt-0.5">
+                  {logStats.sent} <span className="text-[11px] font-normal text-[var(--nexa-text-muted)]">/ {logStats.total}</span>
+                </div>
+              </div>
+
+              <div className="p-2 rounded-lg bg-emerald-500/5 border border-emerald-500/20 text-center">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Total Opened</div>
+                <div className="text-base font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5 flex items-center justify-center gap-1">
+                  <Eye className="w-4 h-4 inline" />
+                  {logStats.opened}
+                  <span className="text-xs font-bold opacity-80">({logStats.openRate}%)</span>
+                </div>
+              </div>
+
+              <div className="p-2 rounded-lg bg-blue-500/5 border border-blue-500/20 text-center">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">Total Clicked</div>
+                <div className="text-base font-extrabold text-blue-600 dark:text-blue-400 mt-0.5 flex items-center justify-center gap-1">
+                  <ExternalLink className="w-4 h-4 inline" />
+                  {logStats.clicked}
+                  <span className="text-xs font-bold opacity-80">({logStats.clickRate}%)</span>
+                </div>
+              </div>
+
+              <div className="p-2 rounded-lg bg-[var(--nexa-bg-card)] border border-[var(--nexa-border)] text-center">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--nexa-text-muted)]">Unopened / Failed</div>
+                <div className="text-base font-extrabold text-[var(--nexa-text-primary)] mt-0.5">
+                  {logStats.unopened} <span className="text-xs font-normal text-red-500">({logStats.failed} fail)</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          {isLoadingLogs ? (
-            <div className="text-center py-8 text-xs text-[var(--nexa-text-muted)] flex items-center justify-center gap-2">
-              <RefreshCw className="w-4 h-4 animate-spin text-[#0069FF]" />
-              Loading recipient delivery logs...
+          {/* Filter Tabs & Search Controls */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            {/* Filter Tabs */}
+            <div className="inline-flex rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] p-0.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setLogFilter("ALL")}
+                className={`px-3 py-1.5 rounded-md font-semibold transition-all cursor-pointer ${
+                  logFilter === "ALL"
+                    ? "bg-[var(--nexa-bg-card)] text-[var(--nexa-text-primary)] shadow-sm"
+                    : "text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-secondary)]"
+                }`}
+              >
+                All ({logStats.total})
+              </button>
+              <button
+                type="button"
+                onClick={() => setLogFilter("OPENED")}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-semibold transition-all cursor-pointer ${
+                  logFilter === "OPENED"
+                    ? "bg-[var(--nexa-bg-card)] text-emerald-600 dark:text-emerald-400 shadow-sm"
+                    : "text-[var(--nexa-text-muted)] hover:text-emerald-600"
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                Opened ({logStats.opened})
+              </button>
+              <button
+                type="button"
+                onClick={() => setLogFilter("CLICKED")}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-semibold transition-all cursor-pointer ${
+                  logFilter === "CLICKED"
+                    ? "bg-[var(--nexa-bg-card)] text-blue-600 dark:text-blue-400 shadow-sm"
+                    : "text-[var(--nexa-text-muted)] hover:text-blue-600"
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
+                Clicked ({logStats.clicked})
+              </button>
+              <button
+                type="button"
+                onClick={() => setLogFilter("UNOPENED")}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-semibold transition-all cursor-pointer ${
+                  logFilter === "UNOPENED"
+                    ? "bg-[var(--nexa-bg-card)] text-[var(--nexa-text-primary)] shadow-sm"
+                    : "text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-secondary)]"
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-slate-400 inline-block" />
+                Unopened ({logStats.unopened})
+              </button>
+              {logStats.failed > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setLogFilter("FAILED")}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md font-semibold transition-all cursor-pointer ${
+                    logFilter === "FAILED"
+                      ? "bg-[var(--nexa-bg-card)] text-red-600 shadow-sm"
+                      : "text-red-500 hover:text-red-600"
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-red-500 inline-block" />
+                  Failed ({logStats.failed})
+                </button>
+              )}
             </div>
-          ) : blastLogs.length === 0 ? (
-            <div className="text-center py-8 text-xs text-[var(--nexa-text-muted)]">
-              No recipient-level logs recorded for this blast yet.
+
+            {/* Recipient Search */}
+            <div className="relative min-w-[220px] max-w-xs flex-1">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--nexa-text-muted)] pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search recipient or email..."
+                value={logSearchQuery}
+                onChange={(e) => setLogSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] text-xs text-[var(--nexa-text-primary)] placeholder-[var(--nexa-text-muted)] focus:outline-none focus:ring-1 focus:ring-[#0069FF]"
+              />
             </div>
-          ) : (
-            <div className="border border-[var(--nexa-border)] rounded-lg overflow-hidden">
+          </div>
+
+          {/* Recipient Table */}
+          <div className="flex-1 overflow-y-auto min-h-[260px] border border-[var(--nexa-border)] rounded-lg">
+            {isLoadingLogs ? (
+              <div className="text-center py-16 text-xs text-[var(--nexa-text-muted)] flex items-center justify-center gap-2">
+                <RefreshCw className="w-4 h-4 animate-spin text-[#0069FF]" />
+                Refreshing recipient engagement activity...
+              </div>
+            ) : filteredBlastLogs.length === 0 ? (
+              <div className="text-center py-16 text-xs text-[var(--nexa-text-muted)]">
+                {blastLogs.length === 0
+                  ? "No recipient delivery logs recorded for this blast yet."
+                  : "No recipients match the selected engagement filter or search query."}
+              </div>
+            ) : (
               <table className="w-full text-left text-xs">
-                <thead className="bg-[var(--nexa-bg-surface)] border-b border-[var(--nexa-border)] font-bold text-[var(--nexa-text-muted)]">
+                <thead className="bg-[var(--nexa-bg-surface)] border-b border-[var(--nexa-border)] font-bold text-[var(--nexa-text-muted)] sticky top-0 z-10">
                   <tr>
                     <th className="py-2.5 px-3">Recipient</th>
-                    <th className="py-2.5 px-3 text-center">Status</th>
-                    <th className="py-2.5 px-3">Dispatched / Details</th>
+                    <th className="py-2.5 px-3">Delivery Status</th>
+                    <th className="py-2.5 px-3">Email Opens</th>
+                    <th className="py-2.5 px-3">Link Clicks</th>
+                    <th className="py-2.5 px-3">Details / Errors</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--nexa-border)]">
-                  {blastLogs.map((log) => (
-                    <tr key={log.id} className="hover:bg-[var(--nexa-bg-surface)]/50">
-                      <td className="py-2.5 px-3">
-                        <div className="font-semibold text-[var(--nexa-text-primary)]">{log.name || "Recipient"}</div>
-                        <div className="text-[11px] text-[var(--nexa-text-muted)] font-mono">{log.email}</div>
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        <NexaBadge
-                          variant={
-                            log.status === "SENT"
-                              ? "success"
-                              : log.status === "FAILED"
-                              ? "danger"
-                              : "neutral"
-                          }
-                          size="sm"
-                        >
-                          {log.status}
-                        </NexaBadge>
-                      </td>
-                      <td className="py-2.5 px-3 text-[11px] text-[var(--nexa-text-muted)]">
-                        {log.status === "SENT" && log.sentAt ? (
-                          <span>{new Date(log.sentAt).toLocaleTimeString()} ({new Date(log.sentAt).toLocaleDateString()})</span>
-                        ) : log.errorMessage ? (
-                          <span className="text-red-500 font-mono text-[10px]">{log.errorMessage}</span>
-                        ) : (
-                          <span>Pending delivery</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredBlastLogs.map((log) => {
+                    const isOpened = Boolean(log.openedAt || (log.openCount && log.openCount > 0));
+                    const isClicked = Boolean(log.clickedAt || (log.clickCount && log.clickCount > 0));
+
+                    return (
+                      <tr key={log.id} className="hover:bg-[var(--nexa-bg-surface)]/50 transition-colors">
+                        <td className="py-2.5 px-3">
+                          <div className="font-semibold text-[var(--nexa-text-primary)]">
+                            {log.name && log.name.trim() ? log.name : "Recipient"}
+                          </div>
+                          <div className="text-[11px] text-[var(--nexa-text-muted)] font-mono">{log.email}</div>
+                        </td>
+
+                        <td className="py-2.5 px-3">
+                          <div className="flex items-center gap-1.5">
+                            <NexaBadge
+                              variant={
+                                log.status === "SENT"
+                                  ? "success"
+                                  : log.status === "FAILED"
+                                  ? "danger"
+                                  : "neutral"
+                              }
+                              size="sm"
+                            >
+                              {log.status}
+                            </NexaBadge>
+                          </div>
+                          {log.sentAt && (
+                            <div className="text-[10px] text-[var(--nexa-text-muted)] mt-0.5">
+                              {new Date(log.sentAt).toLocaleTimeString()} ({new Date(log.sentAt).toLocaleDateString()})
+                            </div>
+                          )}
+                        </td>
+
+                        <td className="py-2.5 px-3">
+                          {isOpened ? (
+                            <div>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                <Eye className="w-3 h-3" />
+                                Opened ({log.openCount || 1}x)
+                              </span>
+                              {log.openedAt && (
+                                <div className="text-[10px] text-[var(--nexa-text-muted)] mt-0.5">
+                                  {new Date(log.openedAt).toLocaleTimeString()} ({new Date(log.openedAt).toLocaleDateString()})
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-500/10 text-slate-500 border border-slate-500/20">
+                              Unopened
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="py-2.5 px-3">
+                          {isClicked ? (
+                            <div>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                                <ExternalLink className="w-3 h-3" />
+                                Clicked ({log.clickCount || 1}x)
+                              </span>
+                              {log.clickedAt && (
+                                <div className="text-[10px] text-[var(--nexa-text-muted)] mt-0.5">
+                                  {new Date(log.clickedAt).toLocaleTimeString()} ({new Date(log.clickedAt).toLocaleDateString()})
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-[var(--nexa-text-muted)]">—</span>
+                          )}
+                        </td>
+
+                        <td className="py-2.5 px-3 text-[11px] text-[var(--nexa-text-muted)]">
+                          {log.errorMessage ? (
+                            <span className="text-red-500 font-mono text-[10px] leading-tight block max-w-xs break-words">
+                              {log.errorMessage}
+                            </span>
+                          ) : log.status === "SENT" ? (
+                            <span className="text-emerald-600 dark:text-emerald-400 text-[11px] flex items-center gap-1 font-medium">
+                              <Check className="w-3 h-3" /> Delivered
+                            </span>
+                          ) : (
+                            <span>Pending</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
-            </div>
-          )}
+            )}
+          </div>
 
-          <div className="flex justify-end pt-2">
+          <div className="flex items-center justify-between pt-2 border-t border-[var(--nexa-border)]">
+            <span className="text-xs text-[var(--nexa-text-muted)]">
+              Showing {filteredBlastLogs.length} of {blastLogs.length} recipients
+            </span>
             <NexaButton variant="secondary" onClick={() => setSelectedBlastForLogs(null)}>
               Close
             </NexaButton>

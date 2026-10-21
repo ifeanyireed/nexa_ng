@@ -3195,7 +3195,7 @@ func HandleCrmCalls(w http.ResponseWriter, r *http.Request) {
 			argIdx++
 		}
 		if rep != "" {
-			query += fmt.Sprintf(" AND LOWER(rep_name) = LOWER($%d)", argIdx)
+			query += fmt.Sprintf(" AND (LOWER(rep_name) = LOWER($%d) OR LOWER(rep_email) = LOWER($%d))", argIdx, argIdx)
 			args = append(args, rep)
 			argIdx++
 		}

@@ -401,11 +401,16 @@ export function ErpAdminShell({
           badgeColor: "bg-amber-500/20 text-amber-300 border-amber-400/30",
           iconBg: "from-amber-600 to-orange-600",
         };
-      } else if (pathname.startsWith("/erp/ops/crm")) {
+      } else if (
+        pathname.startsWith("/erp/ops/crm") ||
+        pathname.startsWith("/erp/ops/calls") ||
+        pathname.startsWith("/ops/calls") ||
+        pathname.startsWith("/ops/crm")
+      ) {
         origin = {
           path: "/erp/ops/crm",
           label: "Sales Closer",
-          title: "Sales Closer Portal",
+          title: pathname.includes("calls") ? "Sales Closer Call Logger" : "Sales Closer Portal",
           roleKey: "sales_closer",
           badgeColor: "bg-emerald-500/20 text-emerald-300 border-emerald-400/30",
           iconBg: "from-emerald-600 to-teal-600",
@@ -528,7 +533,12 @@ export function ErpAdminShell({
           resolvedRole = "accountant";
         } else if (pathname.startsWith("/erp/marketer")) {
           resolvedRole = "marketer";
-        } else if (pathname.startsWith("/erp/ops/crm")) {
+        } else if (
+          pathname.startsWith("/erp/ops/crm") ||
+          pathname.startsWith("/erp/ops/calls") ||
+          pathname.startsWith("/ops/calls") ||
+          pathname.startsWith("/ops/crm")
+        ) {
           resolvedRole = "sales_closer";
         } else if (pathname.startsWith("/erp/ops")) {
           resolvedRole = "dispatcher";
@@ -617,7 +627,7 @@ export function ErpAdminShell({
           if (
             (allowedPage === "accounting" && pathname.startsWith("/erp/accountant")) ||
             (allowedPage === "hr" && pathname.startsWith("/erp/hr")) ||
-            (allowedPage === "sales_closer" && pathname.startsWith("/erp/ops/crm")) ||
+            (allowedPage === "sales_closer" && (pathname.startsWith("/erp/ops/crm") || pathname.startsWith("/erp/ops/calls") || pathname.startsWith("/ops/calls") || pathname.startsWith("/ops/crm"))) ||
             (allowedPage === "crm" && (pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer"))) ||
             (allowedPage === "shop" && pathname.startsWith("/erp/admin/shop")) ||
             (allowedPage === "mobility" && pathname.startsWith("/erp/admin/mobility")) ||
@@ -644,7 +654,7 @@ export function ErpAdminShell({
         permissionMatrix.admin?.crm !== false &&
         (permissionMatrix as any).tenant_provision?.crm !== false;
 
-      if (pathname.startsWith("/erp/ops/crm") && !isCrmProvisioned) {
+      if ((pathname.startsWith("/erp/ops/crm") || pathname.startsWith("/erp/ops/calls") || pathname.startsWith("/ops/calls") || pathname.startsWith("/ops/crm")) && !isCrmProvisioned) {
         const fallback = resolvedRole === "admin" ? "/erp/admin" : "/erp/employee";
         if (typeof window !== "undefined" && pathname !== fallback) {
           window.location.href = fallback;
@@ -661,7 +671,7 @@ export function ErpAdminShell({
             if (
               (allowedPage === "accounting" && pathname.startsWith("/erp/accountant")) ||
               (allowedPage === "hr" && pathname.startsWith("/erp/hr")) ||
-              (allowedPage === "sales_closer" && pathname.startsWith("/erp/ops/crm")) ||
+              (allowedPage === "sales_closer" && (pathname.startsWith("/erp/ops/crm") || pathname.startsWith("/erp/ops/calls") || pathname.startsWith("/ops/calls") || pathname.startsWith("/ops/crm"))) ||
               (allowedPage === "crm" && (pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer"))) ||
               (allowedPage === "shop" && pathname.startsWith("/erp/admin/shop")) ||
               (allowedPage === "mobility" && pathname.startsWith("/erp/admin/mobility")) ||
@@ -700,7 +710,15 @@ export function ErpAdminShell({
             window.location.href = "/erp/employee";
             return;
           }
-          if (!pathname.startsWith("/erp/employee") && !pathname.startsWith("/erp/ops/crm") && !pathname.startsWith("/erp/admin/crm") && !pathname.startsWith("/erp/marketer")) {
+          if (
+            !pathname.startsWith("/erp/employee") &&
+            !pathname.startsWith("/erp/ops/crm") &&
+            !pathname.startsWith("/erp/ops/calls") &&
+            !pathname.startsWith("/ops/calls") &&
+            !pathname.startsWith("/ops/crm") &&
+            !pathname.startsWith("/erp/admin/crm") &&
+            !pathname.startsWith("/erp/marketer")
+          ) {
             window.location.href = "/erp/ops/crm";
             return;
           }
@@ -823,7 +841,8 @@ export function ErpAdminShell({
         else if (pathname.includes("/admin/mobility")) pageHeading = "Ofia Mobility Manager";
         else if (pathname.includes("/admin/dispatch") || pathname.includes("/ops/dispatch")) pageHeading = "Ofia Dispatch Manager";
         else if (pathname.includes("/admin/users")) pageHeading = "Staff Directory & Roles";
-        else if (pathname.startsWith("/erp/ops/crm")) pageHeading = "Sales Closer Portal";
+        else if (pathname.startsWith("/erp/ops/calls") || pathname.startsWith("/ops/calls")) pageHeading = "Sales Closer Call Logger";
+        else if (pathname.startsWith("/erp/ops/crm") || pathname.startsWith("/ops/crm")) pageHeading = "Sales Closer Portal";
         else if (pathname.includes("/admin/ai")) pageHeading = "AI Swarm & Operations";
         else if (pathname.includes("/admin/marketplace")) pageHeading = "Marketplace & Storefronts";
         else if (pathname.startsWith("/erp/accountant")) pageHeading = "Finance & Accounting";
@@ -954,11 +973,16 @@ export function ErpAdminShell({
       ];
     }
 
-    if (pathname.startsWith("/erp/ops/crm")) {
+    if (
+      pathname.startsWith("/erp/ops/crm") ||
+      pathname.startsWith("/erp/ops/calls") ||
+      pathname.startsWith("/ops/calls") ||
+      pathname.startsWith("/ops/crm")
+    ) {
       return [
         { label: "Leads Directory", href: "/erp/ops/crm?tab=leads", icon: <Target className="w-3.5 h-3.5" />, badge: "Leads" },
         { label: "Sales Activity", href: "/erp/ops/crm?tab=activities", icon: <Calendar className="w-3.5 h-3.5" />, badge: "Activities" },
-        { label: "Call Logger", href: "/erp/admin/crm/calls", icon: <PhoneCall className="w-3.5 h-3.5" />, badge: "Calls" },
+        { label: "Call Logger", href: "/erp/ops/calls", icon: <PhoneCall className="w-3.5 h-3.5" />, badge: "Calls" },
       ];
     }
 
@@ -1118,6 +1142,12 @@ export function ErpAdminShell({
     if (pathname.startsWith("/erp/admin/mobility")) activeModKey = "mobility";
     else if (pathname.startsWith("/erp/ops/mobility")) activeModKey = "mobility_ops";
     else if (pathname.startsWith("/erp/admin/dispatch")) activeModKey = "dispatch";
+    else if (
+      pathname.startsWith("/erp/ops/crm") ||
+      pathname.startsWith("/erp/ops/calls") ||
+      pathname.startsWith("/ops/calls") ||
+      pathname.startsWith("/ops/crm")
+    ) activeModKey = "sales_closer";
     else if (pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer")) activeModKey = "crm";
     else if (pathname.startsWith("/erp/admin/ai")) activeModKey = "ai";
     else if (pathname.startsWith("/erp/admin/shop")) activeModKey = "shop";
@@ -1719,6 +1749,15 @@ export function ErpAdminShell({
                       }
                       return tab.href === "/erp/admin/dispatch";
                     }
+                    if (tab.href.startsWith("/erp/ops/crm")) {
+                      if (typeof window !== "undefined") {
+                        const currentTab = new URLSearchParams(window.location.search).get("tab") || "leads";
+                        const targetTab = new URLSearchParams(tab.href.split("?")[1] || "").get("tab") || "leads";
+                        return (pathname.startsWith("/erp/ops/crm") || pathname.startsWith("/ops/crm")) && currentTab === targetTab;
+                      }
+                      return pathname === "/erp/ops/crm" || pathname === "/ops/crm";
+                    }
+                    if (tab.href === "/erp/ops/calls") return pathname.startsWith("/erp/ops/calls") || pathname.startsWith("/ops/calls");
                     if (tab.href === "/erp/admin/shop") return pathname === "/erp/admin/shop";
                     if (tab.href === "/erp/admin/shop/catalog") return pathname.startsWith("/erp/admin/shop/catalog");
                     if (tab.href === "/erp/admin/shop/services") return pathname.startsWith("/erp/admin/shop/services");

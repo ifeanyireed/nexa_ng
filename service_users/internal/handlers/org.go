@@ -36,6 +36,11 @@ type CreateOrgRequest struct {
 	Slug          string `json:"slug"`
 	DatabaseURL   string `json:"database_url"`
 	CloudinaryURL string `json:"cloudinary_url"`
+	Vertical      string `json:"vertical"`
+	Domain        string `json:"domain"`
+	PlanTier      string `json:"plan_tier"`
+	OwnerName     string `json:"owner_name"`
+	OwnerEmail    string `json:"owner_email"`
 }
 
 type InviteMemberRequest struct {
@@ -79,12 +84,27 @@ func (h *OrgHandler) CreateOrg(w http.ResponseWriter, r *http.Request) {
 		slug = uuid.New().String()[:8]
 	}
 
+	vert := req.Vertical
+	if vert == "" {
+		vert = "retail"
+	}
+	tier := models.PlanTier(req.PlanTier)
+	if tier == "" {
+		tier = models.PlanFreeTrial
+	}
+	dom := req.Domain
+	if dom == "" {
+		dom = fmt.Sprintf("%s.ofia.ng", slug)
+	}
+
 	org := models.Organization{
 		ID:           uuid.New().String(),
 		Name:         req.Name,
 		Slug:         slug,
+		Domain:       dom,
+		Vertical:     vert,
 		OwnerID:      ownerID,
-		PlanTier:     models.PlanFreeTrial,
+		PlanTier:     tier,
 		BillingCycle: "MONTHLY",
 		Status:       "ACTIVE",
 		CreatedAt:    time.Now(),
@@ -206,6 +226,7 @@ func seedDefaultOrganizations(db *gorm.DB) {
 				BillingCycle: "MONTHLY",
 				Status:       "ACTIVE",
 				Domain:       "neweratransports.ofia.ng",
+				Vertical:     "cars",
 				LoginImage:   "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
 				Logo:         "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
 				PrimaryColor: "#1A56DB",
@@ -224,6 +245,7 @@ func seedDefaultOrganizations(db *gorm.DB) {
 				BillingCycle: "MONTHLY",
 				Status:       "ACTIVE",
 				Domain:       "reedbreed.cc",
+				Vertical:     "gadgets",
 				LoginImage:   "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg",
 				Logo:         "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg",
 				PrimaryColor: "#1A56DB",
@@ -332,6 +354,18 @@ func (h *OrgHandler) UpdateOrgProfile(w http.ResponseWriter, r *http.Request) {
 		updateFields["hero_subtitle"] = v
 	} else if v, ok := rawMap["hero_subtitle"]; ok && v != "" {
 		updateFields["hero_subtitle"] = v
+	}
+	if v, ok := rawMap["vertical"]; ok && v != "" {
+		updateFields["vertical"] = v
+	}
+	if v, ok := rawMap["shop_sub_modules"]; ok && v != nil {
+		if bytes, err := json.Marshal(v); err == nil {
+			updateFields["shop_sub_modules"] = string(bytes)
+		}
+	} else if v, ok := rawMap["shopSubModules"]; ok && v != nil {
+		if bytes, err := json.Marshal(v); err == nil {
+			updateFields["shop_sub_modules"] = string(bytes)
+		}
 	}
 	updateFields["updated_at"] = time.Now()
 

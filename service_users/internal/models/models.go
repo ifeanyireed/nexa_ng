@@ -62,6 +62,8 @@ type Organization struct {
 	SecondaryColor string    `gorm:"size:20" json:"secondaryColor,omitempty"`
 	HeroTitle      string    `gorm:"type:text" json:"heroTitle,omitempty"`
 	HeroSubtitle   string    `gorm:"type:text" json:"heroSubtitle,omitempty"`
+	Vertical       string    `gorm:"size:50;default:'retail'" json:"vertical,omitempty"`
+	ShopSubModules string    `gorm:"type:text" json:"shopSubModules,omitempty"`
 
 	// Dedicated Project Infrastructure (BYODB / BYOS)
 	DatabaseURL     string `gorm:"-" json:"database_url,omitempty"`

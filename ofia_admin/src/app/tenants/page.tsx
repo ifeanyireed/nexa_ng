@@ -207,6 +207,7 @@ function TenantManagementContent() {
     dispatch: true,
     users: true,
   });
+  const [newVertical, setNewVertical] = useState<string>("retail");
 
   // Dedicated Infrastructure (BYODB & BYOS) for New Tenant
   const [newDatabaseUrl, setNewDatabaseUrl] = useState("");
@@ -686,6 +687,7 @@ function TenantManagementContent() {
       });
 
       await USER_API.saveTenantRBAC(tenant.slug, matrixPayload);
+      await GTM_API.updateAdminOrganization(tenant.id, { shopSubModules: updatedSubs }).catch(() => null);
       const subItem = SHOP_SUB_MODULES.find((s) => s.key === subKey);
       showToast(`⚡ ${tenant.name}: '${subItem?.shortLabel || subKey}' sub-module ${newStatus ? "enabled" : "disabled"}`);
     } catch (err) {
@@ -727,6 +729,7 @@ function TenantManagementContent() {
         };
       });
       await USER_API.saveTenantRBAC(tenant.slug, matrixPayload);
+      await GTM_API.updateAdminOrganization(tenant.id, { shopSubModules: updatedSubs }).catch(() => null);
       showToast(`⚡ ${tenant.name}: All Shop sub-modules ${enableAll ? "enabled" : "disabled"}`);
     } catch {
       showToast(`${tenant.name}: Shop sub-modules updated locally`);
@@ -846,7 +849,7 @@ function TenantManagementContent() {
     try {
       await GTM_API.updateAdminOrganization(tenant.id, {
         vertical: verticalKey,
-      } as any).catch(() => null);
+      }).catch(() => null);
 
       const vertObj = TENANT_VERTICAL_ARCHETYPES.find((v) => v.id === verticalKey);
       showToast(`⚡ ${tenant.name}: Assigned to '${vertObj?.name || verticalKey}' vertical`);
@@ -1143,6 +1146,7 @@ function TenantManagementContent() {
       cloudinaryUrl: newCloudinaryUrl.trim(),
       isCustomDb: Boolean(newDatabaseUrl.trim()),
       isCustomStorage: Boolean(newCloudinaryUrl.trim()),
+      vertical: newVertical || "retail",
       createdAt: new Date().toISOString().split("T")[0],
     };
 
@@ -1156,6 +1160,8 @@ function TenantManagementContent() {
         owner_email: newOwnerEmail || `admin@${newOrgDomain}`,
         plan_tier: newPlanTier,
         billing_cycle: "MONTHLY",
+        vertical: newVertical || "retail",
+        shop_sub_modules: defaultShopSubs,
         database_url: newDatabaseUrl.trim(),
         cloudinary_url: newCloudinaryUrl.trim(),
       });
@@ -1195,6 +1201,7 @@ function TenantManagementContent() {
     setNewOwnerEmail("");
     setNewDatabaseUrl("");
     setNewCloudinaryUrl("");
+    setNewVertical("retail");
   };
 
   return (
@@ -1803,12 +1810,17 @@ function TenantManagementContent() {
                                     — {activeVerticalObj.tagline}
                                   </span>
                                   <a
-                                    href={`https://${focusedTenant.slug}.ofia.shop${activeVerticalObj.storefrontPath}`}
+                                    href={
+                                      typeof window !== "undefined" && window.location.hostname.includes("localhost")
+                                        ? `http://${focusedTenant.slug}.localhost:3005${activeVerticalObj.storefrontPath}`
+                                        : `https://${focusedTenant.slug}.ofia.ng${activeVerticalObj.storefrontPath}`
+                                    }
                                     target="_blank"
                                     rel="noreferrer"
                                     className="ml-auto text-[11px] font-mono text-[#1A56DB] hover:underline flex items-center gap-1"
+                                    title={`Subdomain: ${focusedTenant.slug}.ofia.ng`}
                                   >
-                                    Preview Storefront <ExternalLink className="w-3 h-3" />
+                                    Preview Storefront ({focusedTenant.slug}.ofia.ng) <ExternalLink className="w-3 h-3" />
                                   </a>
                                 </div>
                               </div>
@@ -2728,21 +2740,40 @@ function TenantManagementContent() {
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-              Subscription Plan
-            </label>
-            <select
-              value={newPlanTier}
-              onChange={(e) => setNewPlanTier(e.target.value as any)}
-              className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-bold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
-            >
-              <option value="GROWTH">GROWTH (₦24,000 / mo · 5,000 Leads · 10 Campaigns)</option>
-              <option value="ENTERPRISE">ENTERPRISE (₦100,000 / mo · 50,000 Leads · 100 Campaigns)</option>
-              <option value="SCALE">SCALE (₦48,000 / mo · 20,000 Leads · 25 Campaigns)</option>
-              <option value="STARTER">STARTER (₦9,000 / mo · 1,000 Leads · 3 Campaigns)</option>
-              <option value="FREE_TRIAL">FREE TRIAL (14-Day Pilot)</option>
-            </select>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                Subscription Plan
+              </label>
+              <select
+                value={newPlanTier}
+                onChange={(e) => setNewPlanTier(e.target.value as any)}
+                className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-bold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
+              >
+                <option value="GROWTH">GROWTH (₦24,000 / mo)</option>
+                <option value="ENTERPRISE">ENTERPRISE (₦100,000 / mo)</option>
+                <option value="SCALE">SCALE (₦48,000 / mo)</option>
+                <option value="STARTER">STARTER (₦9,000 / mo)</option>
+                <option value="FREE_TRIAL">FREE TRIAL (14-Day Pilot)</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                Industry Vertical Archetype *
+              </label>
+              <select
+                value={newVertical}
+                onChange={(e) => setNewVertical(e.target.value)}
+                className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-bold text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
+              >
+                {TENANT_VERTICAL_ARCHETYPES.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name} ({v.badge})
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* INITIAL MODULE SELECTION */}

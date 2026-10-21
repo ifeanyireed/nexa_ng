@@ -135,3 +135,63 @@ export interface SuiteStats {
   supportTicketsPending?: number;
   salesAnalytics?: { day: string; percentage: number; status: string; tooltip: string }[];
 }
+
+export type VerticalType =
+  | "fashion"
+  | "cars"
+  | "food"
+  | "property"
+  | "gadgets"
+  | "beauty"
+  | "home-living"
+  | "pharmacy"
+  | "hardware"
+  | "retail";
+
+export interface TenantStorefrontHandshake {
+  tenantId: string;
+  slug: string;
+  name: string;
+  domain: string;
+  subdomain: string;
+  vertical: VerticalType;
+  provisioning: {
+    isShopEnabled: boolean;
+    planTier: string;
+    shopSubModules: {
+      pos?: boolean;
+      inventory?: boolean;
+      catalog?: boolean;
+      services?: boolean;
+      orders?: boolean;
+      store?: boolean;
+      referrals?: boolean;
+      [key: string]: boolean | undefined;
+    };
+  };
+  storefrontConfig: {
+    storeName: string;
+    headline: string;
+    description?: string;
+    primaryColor: string;
+    secondaryColor: string;
+    logoUrl?: string;
+    bannerUrl?: string;
+    currency: string;
+    contact?: {
+      phone?: string;
+      email?: string;
+      address?: string;
+      whatsapp?: string;
+      operatingHours?: string;
+    };
+    sectionVisibility: {
+      hero: boolean;
+      products: boolean;
+      services: boolean;
+      reviews: boolean;
+      dispatchBooking: boolean;
+    };
+    badges: string[];
+  };
+}

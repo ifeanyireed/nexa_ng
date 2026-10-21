@@ -138,6 +138,8 @@ function SalesCloserPortalContent() {
   const [newWebsite, setNewWebsite] = useState("");
   const [newStatus, setNewStatus] = useState<CrmLead["status"]>("QUALIFIED");
   const [newNotes, setNewNotes] = useState("");
+  const [newLeadCloser, setNewLeadCloser] = useState<string>("");
+  const [staffClosers, setStaffClosers] = useState<{ name: string; email: string }[]>([]);
   const [isSavingLead, setIsSavingLead] = useState(false);
 
   const showToast = (msg: string) => {
@@ -148,9 +150,10 @@ function SalesCloserPortalContent() {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [leadsRes, actsRes] = await Promise.all([
+      const [leadsRes, actsRes, usersRes] = await Promise.all([
         crmFetch("/api/erp/crm/leads").then((r) => r.json()).catch(() => ({ leads: [] })),
         crmFetch("/api/erp/crm/activities").then((r) => r.json()).catch(() => ({ activities: [] })),
+        crmFetch("/api/erp/users").then((r) => (r.ok ? r.json() : [])).catch(() => []),
       ]);
 
       if (Array.isArray(leadsRes?.leads)) {
@@ -163,6 +166,33 @@ function SalesCloserPortalContent() {
         setActivities(actsRes.activities);
       } else {
         setActivities([]);
+      }
+
+      if (Array.isArray(usersRes)) {
+        const closers = usersRes.filter((u: any) => {
+          const role = (u.role || u.Role || "").toLowerCase();
+          const desig = (u.designation || u.Designation || "").toLowerCase();
+          let assignedPages: string[] = [];
+          if (Array.isArray(u.assignedPages)) {
+            assignedPages = u.assignedPages;
+          } else if (typeof u.assignedPages === "string") {
+            try {
+              assignedPages = JSON.parse(u.assignedPages || "[]");
+            } catch {}
+          }
+          return (
+            assignedPages.includes("sales_closer") ||
+            role === "sales_closer" ||
+            desig.includes("closer") ||
+            desig.includes("sales")
+          );
+        });
+        setStaffClosers(
+          closers.map((u: any) => ({
+            name: u.name || u.email,
+            email: u.email || "",
+          }))
+        );
       }
     } catch (err) {
       console.error("Failed to load CRM closer data:", err);
@@ -179,6 +209,9 @@ function SalesCloserPortalContent() {
   const availableClosers = useMemo(() => {
     const set = new Set<string>();
     if (currentCloserName) set.add(currentCloserName);
+    staffClosers.forEach((c) => {
+      if (c.name && c.name.trim()) set.add(c.name.trim());
+    });
     leads.forEach((l) => {
       if (l.assignedRep && l.assignedRep.trim()) set.add(l.assignedRep.trim());
     });
@@ -186,7 +219,7 @@ function SalesCloserPortalContent() {
       if (a.rep && a.rep.trim()) set.add(a.rep.trim());
     });
     return Array.from(set);
-  }, [leads, activities, currentCloserName]);
+  }, [leads, activities, currentCloserName, staffClosers]);
 
   // Closer matching helper (case-insensitive substring/partial match)
   const isMatchCloser = (repName?: string) => {
@@ -202,12 +235,14 @@ function SalesCloserPortalContent() {
   // Filtered Leads
   const filteredLeads = useMemo(() => {
     return leads.filter((l) => {
-      const matchesCloser = isMatchCloser(l.assignedRep);
-      const matchesSearch =
-        l.companyName.toLowerCase().includes(leadSearch.toLowerCase()) ||
-        l.contactName.toLowerCase().includes(leadSearch.toLowerCase()) ||
-        (l.contactEmail && l.contactEmail.toLowerCase().includes(leadSearch.toLowerCase())) ||
-        (l.location && l.location.toLowerCase().includes(leadSearch.toLowerCase()));
+      const rep = l.assignedRep || (l as any).owner || "";
+      const matchesCloser = isMatchCloser(rep);
+      const cName = (l.companyName || (l as any).company || "").toLowerCase();
+      const personName = (l.contactName || (l as any).name || "").toLowerCase();
+      const email = (l.contactEmail || (l as any).email || "").toLowerCase();
+      const loc = (l.location || "").toLowerCase();
+      const q = leadSearch.toLowerCase();
+      const matchesSearch = cName.includes(q) || personName.includes(q) || email.includes(q) || loc.includes(q);
       const matchesStatus = leadStatusFilter === "ALL" || l.status === leadStatusFilter;
       return matchesCloser && matchesSearch && matchesStatus;
     });
@@ -349,7 +384,9 @@ function SalesCloserPortalContent() {
         icpFitScore: 92,
         buyingSignals: ["Direct outreach lead", "High closing probability"],
         status: newStatus,
-        assignedRep: currentCloserName,
+        assignedRep: newLeadCloser && newLeadCloser.startsWith("Auto-Assign")
+          ? "Auto-Assign (Least-Loaded)"
+          : (newLeadCloser || currentCloserName),
         source: "Sales Closer Outreach",
         notes: newNotes.trim() || undefined,
       };
@@ -375,6 +412,7 @@ function SalesCloserPortalContent() {
       setNewContactEmail("");
       setNewContactPhone("");
       setNewNotes("");
+      setNewLeadCloser(currentCloserName);
     } catch (err) {
       console.error(err);
       showToast("Error adding new lead");
@@ -1259,6 +1297,27 @@ function SalesCloserPortalContent() {
                     <option value="IDENTIFIED">Identified</option>
                   </select>
                 </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-nexa-text-primary">
+                  Assigned Sales Closer
+                </label>
+                <select
+                  value={newLeadCloser || currentCloserName}
+                  onChange={(e) => setNewLeadCloser(e.target.value)}
+                  className="w-full px-3.5 py-2 text-xs font-bold rounded-xl bg-nexa-bg-base border border-nexa-border outline-none focus:border-emerald-500 text-nexa-text-primary cursor-pointer"
+                >
+                  <option value={currentCloserName}>Myself ({currentCloserName})</option>
+                  <option value="Auto-Assign (Least-Loaded)">⚡ Auto-Assign (Least-Loaded Closer)</option>
+                  {availableClosers
+                    .filter((c) => c !== currentCloserName)
+                    .map((c) => (
+                      <option key={c} value={c}>
+                        👤 {c}
+                      </option>
+                    ))}
+                </select>
               </div>
 
               <div className="space-y-1">

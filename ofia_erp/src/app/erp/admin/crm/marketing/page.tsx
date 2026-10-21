@@ -64,6 +64,7 @@ export default function EmailMarketingBlastsPage() {
   const [blastToDelete, setBlastToDelete] = useState<CrmEmailBlast | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isResumingBlastId, setIsResumingBlastId] = useState<string | null>(null);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -660,6 +661,36 @@ export default function EmailMarketingBlastsPage() {
     }
   }
 
+  const handleResumeBlast = async (blast: CrmEmailBlast) => {
+    try {
+      setIsResumingBlastId(blast.id);
+      const res = await crmFetch(`/api/erp/crm/blasts?id=${encodeURIComponent(blast.id)}&action=resume`, {
+        method: "PUT",
+        body: JSON.stringify({
+          id: blast.id,
+          status: "SENDING",
+        }),
+      });
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        throw new Error(errText || "Failed to resume blast delivery");
+      }
+
+      setBlasts((prev) =>
+        prev.map((b) => (b.id === blast.id ? { ...b, status: "SENDING" } : b))
+      );
+      if (selectedBlastForLogs && selectedBlastForLogs.id === blast.id) {
+        setSelectedBlastForLogs((prev) => prev ? { ...prev, status: "SENDING" } : null);
+        refreshBlastLogs();
+      }
+    } catch (err: any) {
+      console.error("Error resuming blast:", err);
+      alert("Could not resume blast: " + (err.message || "Unknown error"));
+    } finally {
+      setIsResumingBlastId(null);
+    }
+  };
+
   const filteredBlasts = blasts.filter((b) => {
     const matchSearch =
       b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -919,6 +950,23 @@ export default function EmailMarketingBlastsPage() {
                         </td>
                         <td className="py-3.5 px-4 text-center">
                           <div className="flex items-center justify-center gap-1">
+                            {/* Resume / Send Remaining for stalled SENDING or FAILED blasts */}
+                            {(blast.status === "SENDING" || blast.status === "FAILED" || (blast.sentCount || 0) < blast.totalRecipients) && (
+                              <button
+                                type="button"
+                                onClick={() => handleResumeBlast(blast)}
+                                disabled={isResumingBlastId === blast.id}
+                                title="Resume sending remaining emails"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                              >
+                                {isResumingBlastId === blast.id ? (
+                                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Send className="w-3.5 h-3.5" />
+                                )}
+                                Resume
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() => openBlastLogs(blast)}
@@ -1575,6 +1623,21 @@ export default function EmailMarketingBlastsPage() {
               </div>
 
               <div className="flex items-center gap-2">
+                {selectedBlastForLogs && (selectedBlastForLogs.status === "SENDING" || selectedBlastForLogs.status === "FAILED" || logStats.sent < logStats.total) && (
+                  <button
+                    type="button"
+                    onClick={() => handleResumeBlast(selectedBlastForLogs)}
+                    disabled={isResumingBlastId === selectedBlastForLogs.id}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    {isResumingBlastId === selectedBlastForLogs.id ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Send className="w-3.5 h-3.5" />
+                    )}
+                    Resume Delivery ({logStats.total - logStats.sent} remaining)
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={refreshBlastLogs}

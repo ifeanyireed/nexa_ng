@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -209,21 +210,53 @@ func HandleCrmLeads(w http.ResponseWriter, r *http.Request) {
 			var score int
 			var createdAt, updatedAt time.Time
 			if err := rows.Scan(&id, &tSlug, &name, &company, &email, &phone, &source, &score, &status, &owner, &value, &notes, &createdAt, &updatedAt); err == nil {
+				companyVal := ""
+				if company != nil {
+					companyVal = *company
+				}
+				emailVal := ""
+				if email != nil {
+					emailVal = *email
+				}
+				phoneVal := ""
+				if phone != nil {
+					phoneVal = *phone
+				}
+				ownerVal := ""
+				if owner != nil {
+					ownerVal = *owner
+				}
+				statusVal := "QUALIFIED"
+				if status != nil && *status != "" {
+					statusVal = *status
+				}
+				sourceVal := "Email Marketing"
+				if source != nil && *source != "" {
+					sourceVal = *source
+				}
+
 				leads = append(leads, map[string]any{
-					"id":         id,
-					"tenantSlug": tSlug,
-					"name":       name,
-					"company":    company,
-					"email":      email,
-					"phone":      phone,
-					"source":     source,
-					"score":      score,
-					"status":     status,
-					"owner":      owner,
-					"value":      value,
-					"notes":      notes,
-					"createdAt":  createdAt,
-					"updatedAt":  updatedAt,
+					"id":            id,
+					"tenantSlug":    tSlug,
+					"name":          name,
+					"contactName":   name,
+					"company":       companyVal,
+					"companyName":   companyVal,
+					"email":         emailVal,
+					"contactEmail":  emailVal,
+					"phone":         phoneVal,
+					"contactPhone":  phoneVal,
+					"source":        sourceVal,
+					"score":         score,
+					"icpFitScore":   score,
+					"status":        statusVal,
+					"owner":         ownerVal,
+					"assignedRep":   ownerVal,
+					"value":         value,
+					"notes":         notes,
+					"buyingSignals": []string{"Email Blast Engagement"},
+					"createdAt":     createdAt,
+					"updatedAt":     updatedAt,
 				})
 			}
 		}
@@ -243,29 +276,51 @@ func HandleCrmLeads(w http.ResponseWriter, r *http.Request) {
 			id = customId
 		}
 		name, _ := body["name"].(string)
+		if name == "" {
+			name, _ = body["contactName"].(string)
+		}
 		company, _ := body["company"].(string)
+		if company == "" {
+			company, _ = body["companyName"].(string)
+		}
 		email, _ := body["email"].(string)
+		if email == "" {
+			email, _ = body["contactEmail"].(string)
+		}
 		phone, _ := body["phone"].(string)
+		if phone == "" {
+			phone, _ = body["contactPhone"].(string)
+		}
 		source, _ := body["source"].(string)
 		status, _ := body["status"].(string)
 		owner, _ := body["owner"].(string)
+		if owner == "" {
+			owner, _ = body["assignedRep"].(string)
+		}
+		if owner == "" || strings.EqualFold(owner, "auto") || strings.HasPrefix(strings.ToLower(owner), "auto-assign") {
+			owner = resolveLeastLoadedCloser(db, slug)
+		}
 		value, _ := body["value"].(string)
 		notes, _ := body["notes"].(string)
 		score := 50
 		if s, ok := body["score"].(float64); ok {
+			score = int(s)
+		} else if s, ok := body["icpFitScore"].(float64); ok {
 			score = int(s)
 		}
 		if status == "" {
 			status = "NEW"
 		}
 
-		_, err := db.Exec(`INSERT INTO crm_leads (id, tenant_slug, name, company, email, phone, source, score, status, owner, value, notes, created_at, updated_at)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
+		_, err := db.Exec(`INSERT INTO crm_leads (id, tenant_slug, name, company, email, phone, source, score, status, owner, value, notes, company_name, contact_name, contact_email, contact_phone, assigned_rep, icp_fit_score, created_at, updated_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $4, $3, $5, $6, $10, $8, NOW(), NOW())
 			ON CONFLICT (id) DO UPDATE SET
 			name = EXCLUDED.name, company = EXCLUDED.company, email = EXCLUDED.email,
 			phone = EXCLUDED.phone, source = EXCLUDED.source, score = EXCLUDED.score,
 			status = EXCLUDED.status, owner = EXCLUDED.owner, value = EXCLUDED.value,
-			notes = EXCLUDED.notes, updated_at = NOW()`,
+			notes = EXCLUDED.notes, company_name = EXCLUDED.company_name, contact_name = EXCLUDED.contact_name,
+			contact_email = EXCLUDED.contact_email, contact_phone = EXCLUDED.contact_phone, assigned_rep = EXCLUDED.assigned_rep,
+			icp_fit_score = EXCLUDED.icp_fit_score, updated_at = NOW()`,
 			id, slug, name, company, email, phone, source, score, status, owner, value, notes)
 
 		if err != nil {
@@ -274,7 +329,26 @@ func HandleCrmLeads(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(map[string]any{"success": true, "lead": map[string]any{"id": id, "name": name, "tenantSlug": slug}})
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": true,
+			"lead": map[string]any{
+				"id":           id,
+				"name":         name,
+				"contactName":  name,
+				"company":      company,
+				"companyName":  company,
+				"email":        email,
+				"contactEmail": email,
+				"phone":        phone,
+				"contactPhone": phone,
+				"status":       status,
+				"owner":        owner,
+				"assignedRep":  owner,
+				"score":        score,
+				"icpFitScore":  score,
+				"tenantSlug":   slug,
+			},
+		})
 		return
 	}
 
@@ -292,13 +366,22 @@ func HandleCrmLeads(w http.ResponseWriter, r *http.Request) {
 
 		status, _ := body["status"].(string)
 		notes, _ := body["notes"].(string)
+		owner, _ := body["owner"].(string)
+		if owner == "" {
+			owner, _ = body["assignedRep"].(string)
+		}
+		if strings.EqualFold(owner, "auto") || strings.HasPrefix(strings.ToLower(owner), "auto-assign") {
+			owner = resolveLeastLoadedCloser(db, slug)
+		}
 
 		_, err := db.Exec(`UPDATE crm_leads SET
 			status = COALESCE(NULLIF($1, ''), status),
 			notes = COALESCE(NULLIF($2, ''), notes),
+			owner = COALESCE(NULLIF($3, ''), owner),
+			assigned_rep = COALESCE(NULLIF($3, ''), assigned_rep),
 			updated_at = NOW()
-			WHERE id = $3 AND LOWER(tenant_slug) = $4`,
-			status, notes, id, slug)
+			WHERE id = $4 AND LOWER(tenant_slug) = $5`,
+			status, notes, owner, id, slug)
 
 		if err != nil {
 			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
@@ -1306,6 +1389,7 @@ func HandleCrmTrackOpen(w http.ResponseWriter, r *http.Request) {
 						SET opened_at = COALESCE(opened_at, NOW()),
 						    open_count = COALESCE(open_count, 0) + 1
 						WHERE id = $1 AND blast_id = $2`, recId, blastId)
+					go AutoAssignLeadFromEngagement(targetDB, slug, blastId, recId, "OPEN", "")
 				}
 				_, _ = targetDB.Exec(`
 					UPDATE crm_email_blasts
@@ -1341,6 +1425,7 @@ func HandleCrmTrackClick(w http.ResponseWriter, r *http.Request) {
 						SET clicked_at = COALESCE(clicked_at, NOW()),
 						    click_count = COALESCE(click_count, 0) + 1
 						WHERE id = $1 AND blast_id = $2`, recId, blastId)
+					go AutoAssignLeadFromEngagement(targetDB, slug, blastId, recId, "CLICK", targetUrl)
 				}
 				_, _ = targetDB.Exec(`
 					UPDATE crm_email_blasts
@@ -1355,6 +1440,210 @@ func HandleCrmTrackClick(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, targetUrl, http.StatusFound)
+}
+
+// resolveLeastLoadedCloser finds an eligible sales closer with the fewest active leads
+func resolveLeastLoadedCloser(targetDB *sql.DB, slug string) string {
+	if targetDB == nil || slug == "" {
+		return "Senior Sales Specialist"
+	}
+
+	closerRows, errC := targetDB.Query(`
+		SELECT name, email
+		FROM "User"
+		WHERE (LOWER("tenantSlug") = LOWER($1) OR LOWER(company) = LOWER($1) OR "tenantSlug" = '' OR "tenantSlug" IS NULL)
+		  AND (
+			"assignedPages" ILIKE '%sales_closer%'
+			OR LOWER(role) = 'sales_closer'
+			OR LOWER(designation) LIKE '%closer%'
+			OR LOWER(designation) LIKE '%sales closer%'
+			OR LOWER(department) LIKE '%closer%'
+		  )
+		ORDER BY name ASC`, slug)
+
+	closers := []string{}
+	if errC == nil {
+		defer closerRows.Close()
+		for closerRows.Next() {
+			var cName, cEmail string
+			if err := closerRows.Scan(&cName, &cEmail); err == nil && strings.TrimSpace(cName) != "" {
+				closers = append(closers, strings.TrimSpace(cName))
+			}
+		}
+	}
+
+	if len(closers) == 0 {
+		var fallbackName string
+		_ = targetDB.QueryRow(`
+			SELECT name FROM "User"
+			WHERE (LOWER("tenantSlug") = LOWER($1) OR LOWER(company) = LOWER($1))
+			  AND LOWER(role) IN ('admin', 'manager', 'marketer')
+			LIMIT 1`, slug).Scan(&fallbackName)
+		if fallbackName != "" {
+			return fallbackName
+		}
+		return "Senior Sales Specialist"
+	}
+
+	if len(closers) == 1 {
+		return closers[0]
+	}
+
+	type closerLoad struct {
+		name  string
+		count int
+	}
+	closerLoads := make([]closerLoad, len(closers))
+	for i, c := range closers {
+		var cnt int
+		_ = targetDB.QueryRow(`
+			SELECT COUNT(*) FROM crm_leads 
+			WHERE LOWER(tenant_slug) = LOWER($1) 
+			  AND (owner = $2 OR assigned_rep = $2)
+			  AND status NOT IN ('ARCHIVED', 'CONVERTED')`, slug, c).Scan(&cnt)
+		closerLoads[i] = closerLoad{name: c, count: cnt}
+	}
+
+	sort.Slice(closerLoads, func(i, j int) bool {
+		return closerLoads[i].count < closerLoads[j].count
+	})
+	return closerLoads[0].name
+}
+
+// AutoAssignLeadFromEngagement creates or updates a lead and auto-assigns it to an eligible Sales Closer upon email blast open or click
+func AutoAssignLeadFromEngagement(targetDB *sql.DB, slug, blastId, recId, eventType, targetUrl string) {
+	if targetDB == nil || slug == "" || blastId == "" || recId == "" {
+		return
+	}
+
+	EnsureCRMTablesOnDB(targetDB)
+
+	// 1. Fetch recipient data from blast recipients
+	var email, name, firstName, lastName, company sql.NullString
+	var subscriberId sql.NullString
+	err := targetDB.QueryRow(`
+		SELECT email, name, first_name, last_name, company, subscriber_id
+		FROM crm_email_blast_recipients
+		WHERE id = $1 AND blast_id = $2 LIMIT 1`, recId, blastId).
+		Scan(&email, &name, &firstName, &lastName, &company, &subscriberId)
+	if err != nil || !email.Valid || strings.TrimSpace(email.String) == "" {
+		return
+	}
+
+	cleanEmail := strings.ToLower(strings.TrimSpace(email.String))
+
+	// 2. Fetch blast title & subject
+	var blastTitle, blastSubject sql.NullString
+	_ = targetDB.QueryRow(`SELECT title, subject FROM crm_email_blasts WHERE id = $1 LIMIT 1`, blastId).
+		Scan(&blastTitle, &blastSubject)
+
+	titleStr := blastTitle.String
+	if titleStr == "" {
+		titleStr = blastSubject.String
+	}
+	if titleStr == "" {
+		titleStr = "Email Blast Campaign"
+	}
+
+	contactName := strings.TrimSpace(name.String)
+	if contactName == "" {
+		contactName = strings.TrimSpace(fmt.Sprintf("%s %s", firstName.String, lastName.String))
+	}
+	if contactName == "" {
+		contactName = cleanEmail
+	}
+
+	companyStr := strings.TrimSpace(company.String)
+	if companyStr == "" {
+		companyStr = "Enterprise Partner"
+	}
+
+	// 3. Optional phone from subscriber if available
+	phoneStr := ""
+	if subscriberId.Valid && subscriberId.String != "" {
+		var subPhone sql.NullString
+		_ = targetDB.QueryRow(`SELECT phone FROM crm_email_subscribers WHERE id = $1 LIMIT 1`, subscriberId.String).Scan(&subPhone)
+		if subPhone.Valid {
+			phoneStr = subPhone.String
+		}
+	}
+
+	// 4. Intent scoring: clicks have high intent (95), opens have warm intent (80)
+	score := 80
+	actionText := "opened the email blast"
+	if strings.ToUpper(eventType) == "CLICK" {
+		score = 95
+		if targetUrl != "" {
+			actionText = fmt.Sprintf("clicked link (%s) in the email blast", targetUrl)
+		} else {
+			actionText = "clicked a link in the email blast"
+		}
+	}
+
+	// 5. Check if lead already exists in crm_leads for this tenant and email
+	var existingLeadId, existingOwner string
+	var existingScore int
+	leadExists := false
+	errLead := targetDB.QueryRow(`
+		SELECT id, COALESCE(owner, assigned_rep, ''), score
+		FROM crm_leads
+		WHERE LOWER(tenant_slug) = LOWER($1) AND LOWER(email) = $2
+		LIMIT 1`, slug, cleanEmail).Scan(&existingLeadId, &existingOwner, &existingScore)
+	if errLead == nil && existingLeadId != "" {
+		leadExists = true
+	}
+
+	assignedCloser := existingOwner
+
+	if !leadExists || assignedCloser == "" || strings.EqualFold(assignedCloser, "unassigned") || strings.Contains(strings.ToLower(assignedCloser), "queue") {
+		assignedCloser = resolveLeastLoadedCloser(targetDB, slug)
+	}
+
+	leadSource := fmt.Sprintf("Email Blast: %s", titleStr)
+	leadNotes := fmt.Sprintf("Lead auto-assigned to %s after client %s '%s'.", assignedCloser, actionText, titleStr)
+	buyingSignalsJSON := fmt.Sprintf(`["Email Blast Engagement", "%s"]`, eventType)
+
+	if leadExists {
+		// Update existing lead (preserve existing closer, bump score if higher)
+		newScore := existingScore
+		if score > existingScore {
+			newScore = score
+		}
+		_, _ = targetDB.Exec(`
+			UPDATE crm_leads SET
+				score = $1,
+				icp_fit_score = $1,
+				owner = CASE WHEN owner IS NULL OR owner = '' OR owner = 'Unassigned (Closer Queue)' THEN $2 ELSE owner END,
+				assigned_rep = CASE WHEN assigned_rep IS NULL OR assigned_rep = '' OR assigned_rep = 'Unassigned (Closer Queue)' THEN $2 ELSE assigned_rep END,
+				notes = notes || E'\n' || $3,
+				updated_at = NOW()
+			WHERE id = $4`, newScore, assignedCloser, leadNotes, existingLeadId)
+	} else {
+		// Insert brand new lead
+		newLeadId := fmt.Sprintf("LED-%d", time.Now().UnixMilli())
+		_, _ = targetDB.Exec(`
+			INSERT INTO crm_leads (
+				id, tenant_slug, name, company, email, phone, source, score, status, owner, value, notes,
+				assigned_rep, company_name, contact_name, contact_email, contact_phone, icp_fit_score, buying_signals, source_blast_id,
+				created_at, updated_at
+			) VALUES (
+				$1, $2, $3, $4, $5, $6, $7, $8, 'QUALIFIED', $9, '₦10,000,000', $10,
+				$9, $4, $3, $5, $6, $8, $11, $12,
+				NOW(), NOW()
+			)`,
+			newLeadId, slug, contactName, companyStr, cleanEmail, phoneStr, leadSource, score, assignedCloser, leadNotes,
+			buyingSignalsJSON, blastId)
+		existingLeadId = newLeadId
+	}
+
+	// 7. Log an upcoming activity for the closer to follow up
+	actId := fmt.Sprintf("ACT-%d", time.Now().UnixMilli())
+	actTitle := fmt.Sprintf("Outreach to %s (%s)", contactName, strings.ToUpper(eventType))
+	actNotes := fmt.Sprintf("Follow up with client after %s '%s'. Auto-assigned to sales closer %s.", actionText, titleStr, assignedCloser)
+	_, _ = targetDB.Exec(`
+		INSERT INTO crm_activities (id, tenant_slug, type, title, company, rep, date_time, status, notes, created_at)
+		VALUES ($1, $2, 'CALL', $3, $4, $5, 'Today, 03:00 PM', 'UPCOMING', $6, NOW())`,
+		actId, slug, actTitle, companyStr, assignedCloser, actNotes)
 }
 
 // Helper to replace personalization merge tags with fallback support: {{first_name|Valued Partner}}, {{first_name}}, {{company|Your Organization}}, etc.
@@ -1546,8 +1835,15 @@ func ExecuteBlastDelivery(targetDB *sql.DB, tenantSlug, blastId string) {
 		return
 	}
 
+	// Fetch current counts from crm_email_blast_recipients to preserve existing progress on resumed blasts
 	sentCount := 0
 	failedCount := 0
+	_ = targetDB.QueryRow(`
+		SELECT 
+			COALESCE(COUNT(*) FILTER (WHERE status = 'SENT'), 0),
+			COALESCE(COUNT(*) FILTER (WHERE status = 'FAILED'), 0)
+		FROM crm_email_blast_recipients
+		WHERE blast_id = $1 AND LOWER(tenant_slug) = $2`, blastId, slug).Scan(&sentCount, &failedCount)
 
 	for _, rec := range recipients {
 		rawName := strings.TrimSpace(rec.Name.String)
@@ -1645,7 +1941,7 @@ func ExecuteBlastDelivery(targetDB *sql.DB, tenantSlug, blastId string) {
 		}
 
 		// Update running progress on blast
-		if (sentCount+failedCount)%5 == 0 || (sentCount+failedCount) == len(recipients) {
+		if (sentCount+failedCount)%5 == 0 {
 			_, _ = targetDB.Exec(`
 				UPDATE crm_email_blasts 
 				SET sent_count = $1, failed_count = $2, updated_at = NOW() 
@@ -1656,20 +1952,25 @@ func ExecuteBlastDelivery(targetDB *sql.DB, tenantSlug, blastId string) {
 		time.Sleep(50 * time.Millisecond)
 	}
 
+	var pendingRemaining int
+	_ = targetDB.QueryRow(`SELECT COUNT(*) FROM crm_email_blast_recipients WHERE blast_id = $1 AND LOWER(tenant_slug) = $2 AND status = 'PENDING'`, blastId, slug).Scan(&pendingRemaining)
+
 	finalStatus := "SENT"
-	if sentCount == 0 && failedCount > 0 {
+	if pendingRemaining > 0 {
+		finalStatus = "SENDING"
+	} else if sentCount == 0 && failedCount > 0 {
 		finalStatus = "FAILED"
 	}
 
 	_, _ = targetDB.Exec(`
 		UPDATE crm_email_blasts 
-		SET status = $1, sent_at = NOW(), sent_count = $2, failed_count = $3, updated_at = NOW() 
+		SET status = $1, sent_at = CASE WHEN $1 = 'SENT' THEN NOW() ELSE sent_at END, sent_count = $2, failed_count = $3, updated_at = NOW() 
 		WHERE id = $4 AND LOWER(tenant_slug) = $5`, finalStatus, sentCount, failedCount, blastId, slug)
 
-	log.Printf("✅ Blast '%s' for tenant '%s' completed: %d sent, %d failed (final status: %s)", blastId, slug, sentCount, failedCount, finalStatus)
+	log.Printf("✅ Blast '%s' for tenant '%s' batch finished: %d total sent, %d total failed, %d remaining pending (final status: %s)", blastId, slug, sentCount, failedCount, pendingRemaining, finalStatus)
 }
 
-// ProcessDueScheduledBlasts checks and dispatches all scheduled blasts that are due
+// ProcessDueScheduledBlasts checks and dispatches all scheduled blasts that are due as well as stalled sending blasts
 func ProcessDueScheduledBlasts(targetDB *sql.DB) int {
 	activeDB := targetDB
 	if activeDB == nil {
@@ -1682,7 +1983,8 @@ func ProcessDueScheduledBlasts(targetDB *sql.DB) int {
 	rows, err := activeDB.Query(`
 		SELECT id, tenant_slug 
 		FROM crm_email_blasts
-		WHERE status = 'SCHEDULED' AND scheduled_at <= NOW()
+		WHERE (status = 'SCHEDULED' AND scheduled_at <= NOW())
+		   OR (status = 'SENDING' AND updated_at < NOW() - INTERVAL '3 minutes')
 		LIMIT 10`)
 	if err != nil {
 		return 0
@@ -1706,7 +2008,7 @@ func ProcessDueScheduledBlasts(targetDB *sql.DB) int {
 		res, err := activeDB.Exec(`
 			UPDATE crm_email_blasts 
 			SET status = 'SENDING', updated_at = NOW() 
-			WHERE id = $1 AND status = 'SCHEDULED'`, b.ID)
+			WHERE id = $1 AND (status = 'SCHEDULED' OR (status = 'SENDING' AND updated_at < NOW() - INTERVAL '3 minutes'))`, b.ID)
 		if err == nil {
 			if affected, _ := res.RowsAffected(); affected > 0 {
 				tenantDB := getDBForSlug(b.TenantSlug)
@@ -2185,6 +2487,16 @@ func HandleCrmBlasts(w http.ResponseWriter, r *http.Request) {
 		if rowsAffected == 0 {
 			http.Error(w, `{"error": "Blast not found"}`, http.StatusNotFound)
 			return
+		}
+
+		// Trigger blast delivery worker if status set to SENDING or resume action requested
+		action := r.URL.Query().Get("action")
+		if body.Status == "SENDING" || body.Status == "RESUME" || action == "resume" || action == "send" {
+			tenantDB := getDBForSlug(slug)
+			if tenantDB == nil {
+				tenantDB = db
+			}
+			go ExecuteBlastDelivery(tenantDB, slug, blastId)
 		}
 
 		json.NewEncoder(w).Encode(map[string]any{

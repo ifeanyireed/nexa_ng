@@ -146,10 +146,10 @@ func HandleUsers(w http.ResponseWriter, r *http.Request) {
 		id := r.URL.Query().Get("id")
 		if id != "" {
 			var u User
-			var ratingTrend sql.NullString
+			var ratingTrend, assignedPages sql.NullString
 			var tSlug sql.NullString
-			err := targetDB.QueryRow(`SELECT id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" WHERE id = $1`, id).
-				Scan(&u.ID, &tSlug, &u.Name, &u.Email, &u.Role, &u.Department, &u.Avatar, &u.ManagerName, &u.ManagerID, &ratingTrend, &u.Designation, &u.GradeLevel, &u.EmploymentDate, &u.Company, &u.Location, &u.Password)
+			err := targetDB.QueryRow(`SELECT id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password, "assignedPages" FROM "User" WHERE id = $1`, id).
+				Scan(&u.ID, &tSlug, &u.Name, &u.Email, &u.Role, &u.Department, &u.Avatar, &u.ManagerName, &u.ManagerID, &ratingTrend, &u.Designation, &u.GradeLevel, &u.EmploymentDate, &u.Company, &u.Location, &u.Password, &assignedPages)
 			if err != nil {
 				if err == sql.ErrNoRows {
 					w.WriteHeader(http.StatusNotFound)
@@ -167,6 +167,10 @@ func HandleUsers(w http.ResponseWriter, r *http.Request) {
 				raw := json.RawMessage(ratingTrend.String)
 				u.RatingTrend = &raw
 			}
+			if assignedPages.Valid && assignedPages.String != "" {
+				raw := json.RawMessage(assignedPages.String)
+				u.AssignedPages = &raw
+			}
 			json.NewEncoder(w).Encode(u)
 			return
 		}
@@ -176,9 +180,9 @@ func HandleUsers(w http.ResponseWriter, r *http.Request) {
 		var args []interface{}
 
 		if tenantSlug == "" || tenantSlug == "all" {
-			query = `SELECT id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" ORDER BY name ASC`
+			query = `SELECT id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password, "assignedPages" FROM "User" ORDER BY name ASC`
 		} else {
-			query = `SELECT id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password FROM "User" WHERE ("tenantSlug" = $1 OR LOWER(company) = $1 OR LOWER(email) LIKE $2) ORDER BY name ASC`
+			query = `SELECT id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password, "assignedPages" FROM "User" WHERE ("tenantSlug" = $1 OR LOWER(company) = $1 OR LOWER(email) LIKE $2) ORDER BY name ASC`
 			args = append(args, tenantSlug, "%@"+tenantSlug+"%")
 		}
 
@@ -193,15 +197,19 @@ func HandleUsers(w http.ResponseWriter, r *http.Request) {
 		users := []User{}
 		for rows.Next() {
 			var u User
-			var ratingTrend sql.NullString
+			var ratingTrend, assignedPages sql.NullString
 			var tSlug sql.NullString
-			if err := rows.Scan(&u.ID, &tSlug, &u.Name, &u.Email, &u.Role, &u.Department, &u.Avatar, &u.ManagerName, &u.ManagerID, &ratingTrend, &u.Designation, &u.GradeLevel, &u.EmploymentDate, &u.Company, &u.Location, &u.Password); err == nil {
+			if err := rows.Scan(&u.ID, &tSlug, &u.Name, &u.Email, &u.Role, &u.Department, &u.Avatar, &u.ManagerName, &u.ManagerID, &ratingTrend, &u.Designation, &u.GradeLevel, &u.EmploymentDate, &u.Company, &u.Location, &u.Password, &assignedPages); err == nil {
 				if tSlug.Valid {
 					u.TenantSlug = tSlug.String
 				}
 				if ratingTrend.Valid && ratingTrend.String != "" {
 					raw := json.RawMessage(ratingTrend.String)
 					u.RatingTrend = &raw
+				}
+				if assignedPages.Valid && assignedPages.String != "" {
+					raw := json.RawMessage(assignedPages.String)
+					u.AssignedPages = &raw
 				}
 				users = append(users, u)
 			}
@@ -230,22 +238,38 @@ func HandleUsers(w http.ResponseWriter, r *http.Request) {
 			u.Company = &tenantSlug
 		}
 
+		// Prevent duplicate email violation by resolving existing user ID if generated ID was passed
+		if strings.HasPrefix(u.ID, "USR-") {
+			var existingID string
+			errEmail := targetDB.QueryRow(`SELECT id FROM "User" WHERE LOWER(email) = LOWER($1) LIMIT 1`, strings.ToLower(strings.TrimSpace(u.Email))).Scan(&existingID)
+			if errEmail == nil && existingID != "" {
+				u.ID = existingID
+			}
+		}
+
 		var ratingTrendStr *string
 		if u.RatingTrend != nil {
 			s := string(*u.RatingTrend)
 			ratingTrendStr = &s
 		}
 
-		_, err := targetDB.Exec(`INSERT INTO "User" (id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password) 
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+		var assignedPagesStr *string
+		if u.AssignedPages != nil {
+			s := string(*u.AssignedPages)
+			assignedPagesStr = &s
+		}
+
+		_, err := targetDB.Exec(`INSERT INTO "User" (id, "tenantSlug", name, email, role, department, avatar, "managerName", "managerId", "ratingTrend", designation, "gradeLevel", "employmentDate", company, location, password, "assignedPages") 
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
 			ON CONFLICT (id) DO UPDATE SET 
 			"tenantSlug" = CASE WHEN EXCLUDED."tenantSlug" != '' THEN EXCLUDED."tenantSlug" ELSE "User"."tenantSlug" END,
 			name = EXCLUDED.name, email = LOWER(EXCLUDED.email), role = EXCLUDED.role, department = EXCLUDED.department, 
 			avatar = EXCLUDED.avatar, "managerName" = EXCLUDED."managerName", "managerId" = EXCLUDED."managerId", "ratingTrend" = EXCLUDED."ratingTrend",
 			designation = EXCLUDED.designation, "gradeLevel" = EXCLUDED."gradeLevel", "employmentDate" = EXCLUDED."employmentDate",
 			company = EXCLUDED.company, location = EXCLUDED.location, 
-			password = CASE WHEN EXCLUDED.password IS NOT NULL AND EXCLUDED.password != '' THEN EXCLUDED.password ELSE "User".password END`,
-			u.ID, tenantSlug, u.Name, strings.ToLower(strings.TrimSpace(u.Email)), u.Role, u.Department, u.Avatar, u.ManagerName, u.ManagerID, ratingTrendStr, u.Designation, u.GradeLevel, u.EmploymentDate, u.Company, u.Location, u.Password)
+			password = CASE WHEN EXCLUDED.password IS NOT NULL AND EXCLUDED.password != '' THEN EXCLUDED.password ELSE "User".password END,
+			"assignedPages" = COALESCE(EXCLUDED."assignedPages", "User"."assignedPages")`,
+			u.ID, tenantSlug, u.Name, strings.ToLower(strings.TrimSpace(u.Email)), u.Role, u.Department, u.Avatar, u.ManagerName, u.ManagerID, ratingTrendStr, u.Designation, u.GradeLevel, u.EmploymentDate, u.Company, u.Location, u.Password, assignedPagesStr)
 
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)

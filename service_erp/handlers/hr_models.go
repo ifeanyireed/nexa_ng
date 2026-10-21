@@ -19,6 +19,7 @@ type User struct {
 	Company        *string          `json:"company"`
 	Location       *string          `json:"location"`
 	Password       *string          `json:"password"`
+	AssignedPages  *json.RawMessage `json:"assignedPages"`
 }
 
 type Objective struct {

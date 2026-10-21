@@ -4,14 +4,35 @@ export const dynamic = "force-dynamic";
 
 const ERP_BASE = process.env.ERP_SERVICE_URL || process.env.NEXT_PUBLIC_ERP_SERVICE_URL || "https://ofia-erp-service.onrender.com";
 
-function getTenantSlug(request: Request, url: URL): string {
+function getTenantSlug(request: Request, url: URL, bodyText?: string): string {
   const headerSlug = request.headers.get("x-tenant-slug");
-  if (headerSlug) return headerSlug;
+  if (headerSlug && headerSlug.trim()) return headerSlug.trim().toLowerCase();
 
-  const querySlug = url.searchParams.get("tenant") || url.searchParams.get("tenant_slug");
-  if (querySlug) return querySlug;
+  const querySlug = url.searchParams.get("tenant") || url.searchParams.get("tenant_slug") || url.searchParams.get("slug");
+  if (querySlug && querySlug.trim()) return querySlug.trim().toLowerCase();
 
-  return "";
+  if (bodyText) {
+    try {
+      const parsed = JSON.parse(bodyText);
+      if (parsed?.tenantSlug && typeof parsed.tenantSlug === "string" && parsed.tenantSlug.trim()) {
+        return parsed.tenantSlug.trim().toLowerCase();
+      }
+      if (parsed?.tenant_slug && typeof parsed.tenant_slug === "string" && parsed.tenant_slug.trim()) {
+        return parsed.tenant_slug.trim().toLowerCase();
+      }
+    } catch {}
+  }
+
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
+  if (host && host.includes(".")) {
+    const parts = host.split(":")[0].split(".");
+    const sub = parts[0].toLowerCase().trim();
+    if (sub && !["www", "admin", "app", "api", "localhost", "ofia", "vercel"].includes(sub)) {
+      return sub;
+    }
+  }
+
+  return "neweratransports";
 }
 
 export async function GET(
@@ -28,10 +49,8 @@ export async function GET(
   try {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
+      "x-tenant-slug": tenantSlug,
     };
-    if (tenantSlug) {
-      headers["x-tenant-slug"] = tenantSlug;
-    }
 
     const authHeader = request.headers.get("authorization");
     if (authHeader) {
@@ -42,7 +61,7 @@ export async function GET(
       method: "GET",
       headers,
       cache: "no-store",
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(30000),
     });
 
     const data = await res.json().catch(() => null);
@@ -63,17 +82,15 @@ export async function POST(
   const path = Array.isArray(resolvedParams?.path) ? resolvedParams.path : [];
   const subPath = path.join("/");
   const url = new URL(request.url);
-  const tenantSlug = getTenantSlug(request, url);
   const body = await request.text();
+  const tenantSlug = getTenantSlug(request, url, body);
 
   const targetUrl = `${ERP_BASE}/${subPath}${url.search}`;
   try {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
+      "x-tenant-slug": tenantSlug,
     };
-    if (tenantSlug) {
-      headers["x-tenant-slug"] = tenantSlug;
-    }
     const authHeader = request.headers.get("authorization");
     if (authHeader) {
       headers["authorization"] = authHeader;
@@ -83,7 +100,7 @@ export async function POST(
       method: "POST",
       headers,
       body: body || "{}",
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(30000),
     });
 
     const data = await res.json().catch(() => ({}));
@@ -104,17 +121,15 @@ export async function PUT(
   const path = Array.isArray(resolvedParams?.path) ? resolvedParams.path : [];
   const subPath = path.join("/");
   const url = new URL(request.url);
-  const tenantSlug = getTenantSlug(request, url);
   const body = await request.text();
+  const tenantSlug = getTenantSlug(request, url, body);
 
   const targetUrl = `${ERP_BASE}/${subPath}${url.search}`;
   try {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
+      "x-tenant-slug": tenantSlug,
     };
-    if (tenantSlug) {
-      headers["x-tenant-slug"] = tenantSlug;
-    }
     const authHeader = request.headers.get("authorization");
     if (authHeader) {
       headers["authorization"] = authHeader;
@@ -124,7 +139,7 @@ export async function PUT(
       method: "PUT",
       headers,
       body: body || "{}",
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(30000),
     });
 
     const data = await res.json().catch(() => ({}));
@@ -151,10 +166,8 @@ export async function DELETE(
   try {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
+      "x-tenant-slug": tenantSlug,
     };
-    if (tenantSlug) {
-      headers["x-tenant-slug"] = tenantSlug;
-    }
     const authHeader = request.headers.get("authorization");
     if (authHeader) {
       headers["authorization"] = authHeader;
@@ -163,7 +176,7 @@ export async function DELETE(
     const res = await fetch(targetUrl, {
       method: "DELETE",
       headers,
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(30000),
     });
 
     const data = await res.json().catch(() => ({}));

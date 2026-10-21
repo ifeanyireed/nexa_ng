@@ -12,15 +12,20 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const id = url.searchParams.get("id");
+    const action = url.searchParams.get("action");
     const tenantSlug = getValidatedTenantSlug(request);
-    const idParam = id ? `&id=${encodeURIComponent(id)}` : "";
 
-    const res = await fetch(`${ERP_BASE}/crm/blasts?tenant=${encodeURIComponent(tenantSlug)}${idParam}`, {
+    const params = new URLSearchParams();
+    params.set("tenant", tenantSlug);
+    if (id) params.set("id", id);
+    if (action) params.set("action", action);
+
+    const res = await fetch(`${ERP_BASE}/crm/blasts?${params.toString()}`, {
       cache: "no-store",
       headers: {
         "x-tenant-slug": tenantSlug,
       },
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(30000),
     });
     const data = await res.json().catch(() => null);
     return NextResponse.json(data, { status: res.status });
@@ -31,18 +36,24 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const url = new URL(request.url);
+    const action = url.searchParams.get("action");
     const bodyText = await request.text();
     const parsed = JSON.parse(bodyText || "{}");
     const tenantSlug = getValidatedTenantSlug(request, parsed);
 
-    const res = await fetch(`${ERP_BASE}/crm/blasts`, {
+    const params = new URLSearchParams();
+    params.set("tenant", tenantSlug);
+    if (action) params.set("action", action);
+
+    const res = await fetch(`${ERP_BASE}/crm/blasts?${params.toString()}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "x-tenant-slug": tenantSlug,
       },
       body: bodyText,
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(30000),
     });
     const data = await res.json().catch(() => null);
     return NextResponse.json(data, { status: res.status });
@@ -55,19 +66,24 @@ export async function PUT(request: Request) {
   try {
     const url = new URL(request.url);
     const id = url.searchParams.get("id");
+    const action = url.searchParams.get("action");
     const bodyText = await request.text();
     const parsed = JSON.parse(bodyText || "{}");
     const tenantSlug = getValidatedTenantSlug(request, parsed);
-    const idParam = id ? `?id=${encodeURIComponent(id)}` : "";
 
-    const res = await fetch(`${ERP_BASE}/crm/blasts${idParam}`, {
+    const params = new URLSearchParams();
+    params.set("tenant", tenantSlug);
+    if (id) params.set("id", id);
+    if (action) params.set("action", action);
+
+    const res = await fetch(`${ERP_BASE}/crm/blasts?${params.toString()}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
         "x-tenant-slug": tenantSlug,
       },
       body: bodyText,
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(30000),
     });
     const data = await res.json().catch(() => null);
     return NextResponse.json(data, { status: res.status });
@@ -76,19 +92,26 @@ export async function PUT(request: Request) {
   }
 }
 
+export async function PATCH(request: Request) {
+  return PUT(request);
+}
+
 export async function DELETE(request: Request) {
   try {
     const url = new URL(request.url);
     const id = url.searchParams.get("id");
     const tenantSlug = getValidatedTenantSlug(request);
-    const idParam = id ? `?id=${encodeURIComponent(id)}` : "";
 
-    const res = await fetch(`${ERP_BASE}/crm/blasts${idParam}`, {
+    const params = new URLSearchParams();
+    params.set("tenant", tenantSlug);
+    if (id) params.set("id", id);
+
+    const res = await fetch(`${ERP_BASE}/crm/blasts?${params.toString()}`, {
       method: "DELETE",
       headers: {
         "x-tenant-slug": tenantSlug,
       },
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(30000),
     });
     const data = await res.json().catch(() => null);
     return NextResponse.json(data, { status: res.status });

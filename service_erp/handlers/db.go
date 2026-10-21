@@ -63,13 +63,14 @@ func extractTenantSlug(r *http.Request) string {
 		if strings.Contains(host, ".") {
 			parts := strings.Split(host, ".")
 			sub := parts[0]
-			if sub != "www" && sub != "admin" && sub != "app" && sub != "api" && sub != "localhost" {
+			if sub != "www" && sub != "admin" && sub != "app" && sub != "api" && sub != "localhost" &&
+				!strings.Contains(host, "onrender.com") && !strings.Contains(sub, "service") && !strings.Contains(sub, "erp") {
 				slug = sub
 			}
 		}
 	}
 	if slug == "" {
-		slug = "default"
+		slug = "neweratransports"
 	}
 	return strings.ToLower(strings.TrimSpace(slug))
 }
@@ -99,6 +100,10 @@ func getDBForSlug(slug string) *sql.DB {
 		}
 	}
 	if !ok || targetURL == "" {
+		if db != nil {
+			log.Printf("ℹ️ Multi-Tenancy: No dedicated database registered for '%s', using primary database pool", norm)
+			return db
+		}
 		log.Printf("❌ Strict Multi-Tenancy: No custom database configured for tenant '%s'. Fallback to platform database is disabled.", norm)
 		return nil
 	}
@@ -438,6 +443,7 @@ func EnsureHRTablesOnDB(targetDB *sql.DB) {
 		`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "employmentDate" varchar(191) DEFAULT NULL`,
 		`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "company" varchar(191) DEFAULT NULL`,
 		`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "location" varchar(191) DEFAULT NULL`,
+		`ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "assignedPages" text DEFAULT '[]'`,
 	}
 	for _, q := range cols {
 		_, _ = targetDB.Exec(q)
@@ -716,9 +722,19 @@ func EnsureCRMTablesOnDB(targetDB *sql.DB) {
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blast_recipients ADD COLUMN IF NOT EXISTS clicked_at TIMESTAMPTZ;`)
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_blast_recipients ADD COLUMN IF NOT EXISTS click_count INT DEFAULT 0;`)
 
+	_, _ = targetDB.Exec(`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS assigned_rep VARCHAR(191);`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS company_name VARCHAR(191);`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS contact_name VARCHAR(191);`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS contact_email VARCHAR(191);`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS contact_phone VARCHAR(50);`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS icp_fit_score INT DEFAULT 85;`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS buying_signals TEXT DEFAULT '[]';`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS source_blast_id VARCHAR(64);`)
+
 	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_subscribers_email ON crm_email_subscribers (LOWER(email));`)
 	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_subscribers_tenant ON crm_email_subscribers (LOWER(tenant_slug));`)
 	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_leads_tenant ON crm_leads (LOWER(tenant_slug));`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_leads_tenant_email ON crm_leads (LOWER(tenant_slug), LOWER(email));`)
 	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_deals_tenant ON crm_deals (LOWER(tenant_slug));`)
 	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_accounts_tenant ON crm_accounts (LOWER(tenant_slug));`)
 	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_blasts_tenant ON crm_email_blasts (LOWER(tenant_slug));`)

@@ -36,7 +36,7 @@ import { RoleKey, ASSIGNABLE_PAGES, getDefaultPagesForRole, AssignablePage, useT
 import { useAuth } from "@/components/nexa/AuthContext";
 import { useActiveTenant, DatabaseTenant } from "@/lib/tenant-context";
 import { resolveAvatarUrl } from "@/lib/avatar";
-import { INITIAL_USERS } from "@/lib/erp-store";
+import { INITIAL_USERS, getActiveTenantSlug } from "@/lib/erp-store";
 import { cn } from "@/lib/utils";
 
 interface ERPStaffUser {
@@ -446,29 +446,34 @@ function UserManagementContent() {
   const handleRoleChange = async (id: string, updatedRole: RoleKey) => {
     const target = users.find((u) => u.id === id);
     if (!target) return;
+    const activeSlug = activeTenant?.slug || getActiveTenantSlug() || "neweratransports";
     const newPages = target.assignedPages && target.assignedPages.length > 0
       ? target.assignedPages
       : getDefaultPagesForRole(updatedRole, target.department || target.designation);
     try {
       setIsSaving(true);
-      const res = await fetch("/api/erp/users", {
+      const res = await fetch(`/api/erp/users?tenant=${encodeURIComponent(activeSlug)}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(activeTenant?.slug ? { "x-tenant-slug": activeTenant.slug } : {}),
+          "x-tenant-slug": activeSlug,
         },
         body: JSON.stringify({
           ...target,
+          tenantSlug: activeSlug,
           role: updatedRole,
           assignedPages: newPages,
         }),
       });
-      if (!res.ok) throw new Error("Failed to update user role");
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.error || errJson?.message || `Failed to update user role (HTTP ${res.status})`);
+      }
       showToast(`Updated role for ${target.name} to ${updatedRole.toUpperCase()}`);
       await fetchUsers();
-    } catch (e) {
+    } catch (e: any) {
       console.error("Failed to update role:", e);
-      showToast("Error updating user role in database");
+      showToast(e?.message || "Error updating user role in database");
     } finally {
       setIsSaving(false);
       setEditingUserId(null);
@@ -521,12 +526,14 @@ function UserManagementContent() {
 
     try {
       setIsSaving(true);
+      const activeSlug = activeTenant?.slug || getActiveTenantSlug() || "neweratransports";
       const avatarNum = editingStaffUser
         ? editingStaffUser.avatar
         : `https://res.cloudinary.com/ihfqdysu/image/upload/ofia_ng_assets/character${(users.length % 20) + 1}.jpg`;
 
       const payload = {
         id: editingStaffUser ? editingStaffUser.id : `USR-${Date.now()}`,
+        tenantSlug: activeSlug,
         name: formName,
         email: formEmail,
         role: formRole,
@@ -540,16 +547,19 @@ function UserManagementContent() {
         assignedPages: formAssignedPages,
       };
 
-      const res = await fetch("/api/erp/users", {
+      const res = await fetch(`/api/erp/users?tenant=${encodeURIComponent(activeSlug)}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(activeTenant?.slug ? { "x-tenant-slug": activeTenant.slug } : {}),
+          "x-tenant-slug": activeSlug,
         },
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Failed to save staff member");
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.error || errJson?.message || `Failed to save staff member (HTTP ${res.status})`);
+      }
 
       if (typeof window !== "undefined") {
         const storedErpUser = localStorage.getItem("erp_current_user");
@@ -573,9 +583,9 @@ function UserManagementContent() {
       );
       setIsAddUserModalOpen(false);
       await fetchUsers();
-    } catch (e) {
+    } catch (e: any) {
       console.error("Failed to save user:", e);
-      showToast("Failed to save user to database");
+      showToast(e?.message || "Failed to save user to database");
     } finally {
       setIsSaving(false);
     }

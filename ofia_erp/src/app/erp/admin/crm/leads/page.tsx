@@ -48,6 +48,45 @@ export default function CrmLeadsPage() {
   const [newPhone, setNewPhone] = useState("");
   const [newIndustry, setNewIndustry] = useState("Corporate");
   const [newLocation, setNewLocation] = useState("Lagos");
+  const [assignedCloser, setAssignedCloser] = useState("Auto-Assign (Least-Loaded)");
+  const [availableClosers, setAvailableClosers] = useState<{ name: string; email: string }[]>([]);
+
+  useEffect(() => {
+    async function loadClosers() {
+      try {
+        const res = await crmFetch("/api/erp/users").then((r) => r.json());
+        if (Array.isArray(res)) {
+          const closers = res.filter((u: any) => {
+            const role = (u.role || u.Role || "").toLowerCase();
+            const desig = (u.designation || u.Designation || "").toLowerCase();
+            let assignedPages: string[] = [];
+            if (Array.isArray(u.assignedPages)) {
+              assignedPages = u.assignedPages;
+            } else if (typeof u.assignedPages === "string") {
+              try {
+                assignedPages = JSON.parse(u.assignedPages || "[]");
+              } catch {}
+            }
+            return (
+              assignedPages.includes("sales_closer") ||
+              role === "sales_closer" ||
+              desig.includes("closer") ||
+              desig.includes("sales")
+            );
+          });
+          setAvailableClosers(
+            closers.map((u: any) => ({
+              name: u.name || u.email,
+              email: u.email || "",
+            }))
+          );
+        }
+      } catch (err) {
+        console.warn("Could not load sales closers:", err);
+      }
+    }
+    loadClosers();
+  }, []);
 
   useEffect(() => {
     async function loadLeads() {
@@ -119,6 +158,7 @@ export default function CrmLeadsPage() {
       contactPhone: newPhone.trim(),
       industry: newIndustry.trim(),
       location: newLocation.trim(),
+      assignedRep: assignedCloser.startsWith("Auto-Assign") ? "Auto-Assign (Least-Loaded)" : assignedCloser,
       icpFitScore: 88,
       buyingSignals: ["Direct Manual Inbound"],
       status: "QUALIFIED" as const,
@@ -137,6 +177,9 @@ export default function CrmLeadsPage() {
         id: `LEAD-${Date.now().toString().slice(-4)}`,
         tenantSlug: "default",
         ...payload,
+        assignedRep: assignedCloser.startsWith("Auto-Assign")
+          ? availableClosers[0]?.name || "Senior Sales Specialist"
+          : assignedCloser,
         createdAt: new Date().toISOString(),
       };
       setLeads((prev) => [localLead, ...prev]);
@@ -147,6 +190,7 @@ export default function CrmLeadsPage() {
     setNewContact("");
     setNewEmail("");
     setNewPhone("");
+    setAssignedCloser("Auto-Assign (Least-Loaded)");
   };
 
   const handlePromoteToDeal = async (lead: CrmLead) => {
@@ -193,11 +237,11 @@ export default function CrmLeadsPage() {
 
   const filteredLeads = leads.filter((l) => {
     const q = searchQuery.toLowerCase();
-    const matchSearch =
-      l.companyName.toLowerCase().includes(q) ||
-      l.contactName.toLowerCase().includes(q) ||
-      l.contactEmail.toLowerCase().includes(q) ||
-      (l.location && l.location.toLowerCase().includes(q));
+    const cName = (l.companyName || (l as any).company || "").toLowerCase();
+    const personName = (l.contactName || (l as any).name || "").toLowerCase();
+    const email = (l.contactEmail || (l as any).email || "").toLowerCase();
+    const loc = (l.location || "").toLowerCase();
+    const matchSearch = cName.includes(q) || personName.includes(q) || email.includes(q) || loc.includes(q);
     const matchStatus = statusFilter === "ALL" || l.status === statusFilter;
     return matchSearch && matchStatus;
   });
@@ -466,6 +510,27 @@ export default function CrmLeadsPage() {
               onChange={(e) => setNewLocation(e.target.value)}
               placeholder="Victoria Island, Lagos"
             />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-[var(--nexa-text-secondary)] mb-1.5">
+              Sales Closer Assignment
+            </label>
+            <select
+              value={assignedCloser}
+              onChange={(e) => setAssignedCloser(e.target.value)}
+              className="w-full px-3 py-2 text-xs rounded-lg bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#1A56DB]"
+            >
+              <option value="Auto-Assign (Least-Loaded)">⚡ Auto-Assign (Least-Loaded Closer)</option>
+              {availableClosers.map((c) => (
+                <option key={c.email || c.name} value={c.name}>
+                  👤 {c.name} {c.email ? `(${c.email})` : ""}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-[11px] text-[var(--nexa-text-muted)]">
+              Sales closers are staff accounts that have the Sales Closer portal enabled on their account.
+            </p>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">

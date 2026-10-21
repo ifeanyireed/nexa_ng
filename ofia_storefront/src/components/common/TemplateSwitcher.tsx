@@ -21,6 +21,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { VerticalType } from "@/types/storefront";
 
 const TEMPLATES: Array<{
@@ -116,6 +117,7 @@ const TEMPLATES: Array<{
 export default function TemplateSwitcher() {
   const pathname = usePathname();
   const { totalCount, setIsCartOpen } = useCart();
+  const { tenantSlug, handshake } = useStorefrontTenant();
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [mounted, setMounted] = useState(false);
 
@@ -143,7 +145,14 @@ export default function TemplateSwitcher() {
     <>
       {/* Floating Toggle Button when Collapsed/Hidden */}
       {isCollapsed ? (
-        <div className="fixed bottom-5 right-6 z-50 hidden lg:flex items-center">
+        <div className="fixed bottom-5 right-6 z-50 hidden lg:flex items-center gap-2">
+          {tenantSlug && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-blue-600/90 text-white text-[11px] font-bold shadow-lg backdrop-blur-md border border-white/20">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>{handshake?.storefrontConfig.storeName || tenantSlug}</span>
+              <span className="opacity-75 font-mono text-[10px]">({tenantSlug}.ofia.ng)</span>
+            </div>
+          )}
           <button
             onClick={() => handleToggle(false)}
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-zinc-950/90 hover:bg-zinc-950 text-white text-xs font-bold shadow-xl backdrop-blur-md border border-white/20 hover:scale-105 active:scale-95 transition-all cursor-pointer group"
@@ -159,7 +168,7 @@ export default function TemplateSwitcher() {
         <div className="sticky top-0 z-50 w-full bg-[#0F1117]/95 backdrop-blur-md border-b border-white/10 text-white shadow-xl transition-all animate-in slide-in-from-top-2 duration-200">
           <div className="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-10 py-2 flex items-center justify-between gap-4 overflow-x-auto no-scrollbar">
             {/* Left: Ecosystem Brand */}
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2.5 shrink-0">
               <Link
                 href="/templates"
                 className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-zinc-200 transition-colors"
@@ -169,6 +178,14 @@ export default function TemplateSwitcher() {
                 <span className="hidden sm:inline">10 Storefront Templates</span>
                 <span className="sm:hidden">10 Templates</span>
               </Link>
+
+              {tenantSlug && (
+                <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-600/30 border border-blue-500/40 text-blue-300 text-xs font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>{handshake?.storefrontConfig.storeName || tenantSlug}</span>
+                  <span className="text-[10px] text-blue-200/70 font-mono">({tenantSlug}.ofia.ng)</span>
+                </div>
+              )}
             </div>
 
             {/* Center: 10 Vertical Jump Tabs */}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { CartProvider } from "@/context/CartContext";
+import { StorefrontTenantProvider } from "@/context/StorefrontTenantContext";
 import TemplateSwitcher from "@/components/common/TemplateSwitcher";
 import CartDrawer from "@/components/common/CartDrawer";
 import StickySidebarNav from "@/components/common/StickySidebarNav";
@@ -30,16 +31,18 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${dropa.variable} antialiased`}>
       <body className="min-h-screen bg-white text-[#111318] selection:bg-[#0069ff]/20 selection:text-[#0069ff]">
-        <CartProvider>
-          <TemplateSwitcher />
-          <div className="flex min-h-screen w-full bg-white">
-            <StickySidebarNav />
-            <div className="flex-1 min-w-0 pb-16 lg:pb-0 bg-white">
-              {children}
+        <StorefrontTenantProvider>
+          <CartProvider>
+            <TemplateSwitcher />
+            <div className="flex min-h-screen w-full bg-white">
+              <StickySidebarNav />
+              <div className="flex-1 min-w-0 pb-16 lg:pb-0 bg-white">
+                {children}
+              </div>
             </div>
-          </div>
-          <CartDrawer />
-        </CartProvider>
+            <CartDrawer />
+          </CartProvider>
+        </StorefrontTenantProvider>
       </body>
     </html>
   );

@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { VendorStore } from "@/types/storefront";
 import { useCart } from "@/context/CartContext";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 
 interface StoreHeaderProps {
   store: VendorStore;
@@ -30,6 +31,7 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const { totalCount, setIsCartOpen } = useCart();
+  const { isFeatureEnabled } = useStorefrontTenant();
 
   // Vertical-specific navigation links
   const getNavLinks = () => {
@@ -173,8 +175,36 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
     }
   };
 
-  const navLinks = getNavLinks();
-  const cta = getPrimaryCta();
+  const rawNavLinks = getNavLinks();
+  const navLinks = rawNavLinks.filter((l) => {
+    if (!isFeatureEnabled("services")) {
+      const lower = l.label.toLowerCase();
+      if (
+        lower.includes("service") ||
+        lower.includes("tailoring") ||
+        lower.includes("test-drive") ||
+        lower.includes("viewing") ||
+        lower.includes("consult") ||
+        lower.includes("appointment") ||
+        lower.includes("installation")
+      ) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  let cta = getPrimaryCta();
+  if (
+    !isFeatureEnabled("services") &&
+    (cta.label.includes("Book") || cta.label.includes("Viewing") || cta.label.includes("Fitting"))
+  ) {
+    cta = {
+      label: "Explore Catalog",
+      href: `/${store.vertical}/catalog`,
+      icon: ArrowRight,
+    };
+  }
   const CtaIcon = cta.icon;
 
   return (

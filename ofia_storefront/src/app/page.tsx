@@ -18,13 +18,32 @@ import {
   Gift,
 } from "lucide-react";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { extractSubdomainFromHost, SEED_TENANT_HANDSHAKES } from "@/lib/storefront-tenant";
 
 export const metadata: Metadata = {
   title: "Ofia Storefront · 10 Industry Verticals",
   description: "Enterprise multi-vertical commerce templates with tailored workflows for Fashion, Cars, Food, Property, Gadgets, Beauty, Home & Living, Pharmacy, Hardware, and Retail.",
 };
 
-export default function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ tenant?: string; store?: string; slug?: string }>;
+}) {
+  const resolvedParams = await searchParams;
+  const headerList = await headers();
+  const host = headerList.get("host");
+  const subdomain = extractSubdomainFromHost(host);
+  const tenantSlug = (resolvedParams.tenant || resolvedParams.store || resolvedParams.slug || subdomain || "").toLowerCase().trim();
+
+  // If a tenant subdomain or parameter is detected, route to their assigned vertical template!
+  if (tenantSlug) {
+    const seed = SEED_TENANT_HANDSHAKES[tenantSlug];
+    const targetVertical = seed?.vertical || "cars";
+    redirect(`/${targetVertical}?tenant=${encodeURIComponent(tenantSlug)}`);
+  }
   const verticals = [
     {
       slug: "fashion",

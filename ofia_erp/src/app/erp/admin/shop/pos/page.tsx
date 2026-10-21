@@ -29,6 +29,15 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaModal } from "@/components/nexa/NexaModal";
+import { useAuth } from "@/components/nexa/AuthContext";
+import { useActiveTenant } from "@/lib/tenant-context";
+import {
+  VERTICAL_DEFINITIONS,
+  detectTenantVertical,
+  getDefaultPosProductsForVertical,
+  VerticalKey,
+  PosProductItem,
+} from "@/lib/verticals";
 
 interface CartItem {
   id: string;
@@ -38,32 +47,49 @@ interface CartItem {
   category: string;
 }
 
-const POS_PRODUCTS = [
-  { id: "P-1", name: "Solar Inverter 5kVA", price: 580000, category: "Solar", stock: 8, sku: "SOL-5K" },
-  { id: "P-2", name: "LiFePO4 Battery 100Ah", price: 1150000, category: "Solar", stock: 14, sku: "BAT-100" },
-  { id: "P-3", name: "4K IP Security Camera", price: 45000, category: "CCTV", stock: 12, sku: "CAM-4K" },
-  { id: "P-4", name: "NVR 16-Channel POE", price: 140000, category: "CCTV", stock: 6, sku: "NVR-16" },
-  { id: "P-5", name: "Cat6 Cable Drum 305m", price: 65000, category: "Networking", stock: 9, sku: "CAB-CAT6" },
-  { id: "P-6", name: "Biometric Time Clock", price: 85000, category: "Access", stock: 5, sku: "BIO-CLK" },
-  { id: "P-7", name: "Solar Panel 450W Mono", price: 95000, category: "Solar", stock: 24, sku: "SOL-450W" },
-  { id: "P-8", name: "MC4 Connectors (Pair)", price: 2500, category: "Accessories", stock: 150, sku: "ACC-MC4" },
-];
-
 export default function POSTerminalPage() {
-  const [cart, setCart] = useState<CartItem[]>([
-    { id: "P-1", name: "Solar Inverter 5kVA", price: 580000, qty: 1, category: "Solar" },
-    { id: "P-8", name: "MC4 Connectors (Pair)", price: 2500, qty: 4, category: "Accessories" },
-  ]);
+  const { user } = useAuth();
+  const { activeTenant } = useActiveTenant(user?.email);
+  const provisionedVertical = (activeTenant?.vertical as VerticalKey) || detectTenantVertical(activeTenant?.slug, activeTenant?.name);
+
+  const [selectedVertical, setSelectedVertical] = useState<VerticalKey>(provisionedVertical);
+  const currentVerticalDef = VERTICAL_DEFINITIONS[selectedVertical] || VERTICAL_DEFINITIONS.retail;
+
+  // Strictly sync when activeTenant loads or updates
+  React.useEffect(() => {
+    if (activeTenant?.vertical && activeTenant.vertical in VERTICAL_DEFINITIONS) {
+      setSelectedVertical(activeTenant.vertical as VerticalKey);
+    }
+  }, [activeTenant?.vertical]);
+
+  const [products, setProducts] = useState<PosProductItem[]>(() =>
+    getDefaultPosProductsForVertical(provisionedVertical)
+  );
+
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    const initial = getDefaultPosProductsForVertical(provisionedVertical);
+    return initial.length > 0
+      ? [{ id: initial[0].id, name: initial[0].name, price: initial[0].price, qty: 1, category: initial[0].category }]
+      : [];
+  });
+
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"CASH" | "CARD" | "TRANSFER" | "SPLIT">("CASH");
-  const [cashTendered, setCashTendered] = useState<string>("600000");
+  const [cashTendered, setCashTendered] = useState<string>("50000");
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const categories = ["All", "Solar", "CCTV", "Networking", "Access", "Accessories"];
+  // Re-seed items when vertical changes
+  React.useEffect(() => {
+    const defaultItems = getDefaultPosProductsForVertical(selectedVertical);
+    setProducts(defaultItems);
+    setSelectedCategory("All");
+  }, [selectedVertical]);
 
-  const filteredProducts = POS_PRODUCTS.filter((p) => {
+  const categories = ["All", ...Array.from(new Set(products.map((p) => p.category)))];
+
+  const filteredProducts = products.filter((p) => {
     const matchCategory = selectedCategory === "All" || p.category === selectedCategory;
     const matchSearch =
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -71,7 +97,7 @@ export default function POSTerminalPage() {
     return matchCategory && matchSearch;
   });
 
-  const addToCart = (product: typeof POS_PRODUCTS[0]) => {
+  const addToCart = (product: PosProductItem) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
       if (existing) {
@@ -115,10 +141,23 @@ export default function POSTerminalPage() {
 
   return (
     <BusinessShell
-      title="Point of Sale (POS) Cashier Terminal"
-      subtitle="High-speed barcode touch checkout, multi-tender payments, shift drawer balance, and thermal receipts."
+      title={`${currentVerticalDef.name} — Retail POS Terminal`}
+      subtitle={`High-speed barcode touch checkout, instant cash/card receipting, and real-time inventory decrement for ${currentVerticalDef.productTermPlural.toLowerCase()}.`}
       action={
         <div className="flex items-center gap-2">
+          {/* Vertical Archetype Selector */}
+          <select
+            value={selectedVertical}
+            onChange={(e) => setSelectedVertical(e.target.value as VerticalKey)}
+            className="px-3 py-1.5 bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-full text-xs font-bold text-[var(--nexa-text-primary)] outline-none cursor-pointer"
+          >
+            {Object.values(VERTICAL_DEFINITIONS).map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.name}
+              </option>
+            ))}
+          </select>
+
           <Link href="/erp/admin/shop/pos/sessions">
             <NexaButton size="sm" variant="outline" leftIcon={<History className="w-3.5 h-3.5" />}>
               Shift History (Z-Report)

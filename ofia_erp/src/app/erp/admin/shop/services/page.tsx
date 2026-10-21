@@ -25,11 +25,13 @@ import { ErpStatGrid } from "@/components/erp/ErpStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
+import { NexaModal } from "@/components/nexa/NexaModal";
 import { useAuth } from "@/components/nexa/AuthContext";
 import { useActiveTenant } from "@/lib/tenant-context";
 import {
   VERTICAL_DEFINITIONS,
   detectTenantVertical,
+  getDefaultServicesForVertical,
   CommerceServiceItem,
   CommerceBookingItem,
   VerticalKey,
@@ -38,55 +40,63 @@ import {
 export default function ServicesAndBookingsPage() {
   const { user } = useAuth();
   const { activeTenant } = useActiveTenant(user?.email);
-  const verticalKey = detectTenantVertical(activeTenant?.slug, activeTenant?.name);
+  const provisionedVertical = (activeTenant?.vertical as VerticalKey) || detectTenantVertical(activeTenant?.slug, activeTenant?.name);
 
-  const [selectedVertical, setSelectedVertical] = useState<VerticalKey>(verticalKey);
-  const currentVerticalDef = VERTICAL_DEFINITIONS[selectedVertical];
+  const [selectedVertical, setSelectedVertical] = useState<VerticalKey>(provisionedVertical);
+  const currentVerticalDef = VERTICAL_DEFINITIONS[selectedVertical] || VERTICAL_DEFINITIONS.retail;
 
-  const [services, setServices] = useState<CommerceServiceItem[]>([
-    {
-      id: "SRV-01",
-      title: selectedVertical === "cars"
-        ? "Comprehensive 150-Point Pre-Purchase Mechanical Inspection"
-        : selectedVertical === "food"
-        ? "Private Executive Chef Dining & On-Site Service"
-        : selectedVertical === "fashion"
-        ? "Custom Bespoke Tailoring & Fitting Session"
-        : selectedVertical === "hardware"
-        ? "Solar Energy Load Audit & Roof Site Inspection"
-        : selectedVertical === "pharmacy"
-        ? "Clinical Medication Therapy & Health Review"
-        : "Standard Technical Diagnostic Consultation",
-      price: selectedVertical === "cars" ? 35000 : selectedVertical === "hardware" ? 25000 : 15000,
-      formattedPrice: selectedVertical === "cars" ? "₦35,000" : selectedVertical === "hardware" ? "₦25,000" : "₦15,000",
-      durationMinutes: 60,
-      providerName: "Engr. David Okon (Certified)",
+  // Strictly sync when activeTenant loads or updates
+  React.useEffect(() => {
+    if (activeTenant?.vertical && activeTenant.vertical in VERTICAL_DEFINITIONS) {
+      setSelectedVertical(activeTenant.vertical as VerticalKey);
+    }
+  }, [activeTenant?.vertical]);
+
+  const [services, setServices] = useState<CommerceServiceItem[]>(() =>
+    getDefaultServicesForVertical(provisionedVertical)
+  );
+
+  React.useEffect(() => {
+    setServices(getDefaultServicesForVertical(selectedVertical));
+  }, [selectedVertical]);
+
+  // Modal State for creating a service offering
+  const [isAddServiceModalOpen, setIsAddServiceModalOpen] = useState(false);
+  const [newServiceTitle, setNewServiceTitle] = useState("");
+  const [newServicePrice, setNewServicePrice] = useState("");
+  const [newServiceDuration, setNewServiceDuration] = useState("45");
+  const [newServiceProvider, setNewServiceProvider] = useState("Senior Specialist");
+  const [newServiceDesc, setNewServiceDesc] = useState("");
+
+  const handleOpenAddService = () => {
+    setNewServiceTitle("");
+    setNewServicePrice("");
+    setNewServiceDuration("45");
+    setNewServiceProvider("Certified Specialist");
+    setNewServiceDesc("");
+    setIsAddServiceModalOpen(true);
+  };
+
+  const handleSaveNewService = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newServiceTitle) return;
+
+    const numPrice = parseFloat(newServicePrice.replace(/[^0-9.]/g, "")) || 0;
+    const newSrv: CommerceServiceItem = {
+      id: `SRV-${Date.now().toString().slice(-4)}`,
+      title: newServiceTitle,
+      price: numPrice,
+      formattedPrice: numPrice === 0 ? "Free Consultation" : `₦${numPrice.toLocaleString()}`,
+      durationMinutes: parseInt(newServiceDuration) || 30,
+      providerName: newServiceProvider || "Specialist",
       vertical: selectedVertical,
       status: "ACTIVE",
-      description: "Complete hands-on inspection and diagnostic report delivery.",
-    },
-    {
-      id: "SRV-02",
-      title: selectedVertical === "cars"
-        ? "Express Test-Drive Demonstration (30 Mins)"
-        : selectedVertical === "food"
-        ? "Gourmet Event Buffet Catering (Per 25 Guests)"
-        : selectedVertical === "fashion"
-        ? "Rush Hemline & Alteration Adjustment"
-        : selectedVertical === "hardware"
-        ? "Turnkey Inverter & Battery Bank Installation"
-        : selectedVertical === "pharmacy"
-        ? "Routine Chronic Condition Monitoring (Vitals/Sugar)"
-        : "Express Device Screen & Battery Replacement",
-      price: selectedVertical === "cars" ? 0 : selectedVertical === "hardware" ? 75000 : 10000,
-      formattedPrice: selectedVertical === "cars" ? "Free" : selectedVertical === "hardware" ? "₦75,000" : "₦10,000",
-      durationMinutes: 30,
-      providerName: "Sales & Technical Desk",
-      vertical: selectedVertical,
-      status: "ACTIVE",
-      description: "Quick turnaround test or setup session with customer care.",
-    },
-  ]);
+      description: newServiceDesc || "Comprehensive customer appointment and service session.",
+    };
+
+    setServices([newSrv, ...services]);
+    setIsAddServiceModalOpen(false);
+  };
 
   const [bookings, setBookings] = useState<CommerceBookingItem[]>([
     {
@@ -187,8 +197,8 @@ export default function ServicesAndBookingsPage() {
             size="sm"
             variant="primary"
             leftIcon={<Plus className="w-4 h-4" />}
-            className="bg-[#1A56DB] text-white rounded-full font-bold shadow-xs"
-            onClick={() => alert(`Add new ${currentVerticalDef.serviceTerm} service option`)}
+            className="bg-[#1A56DB] text-white rounded-full font-bold shadow-xs cursor-pointer"
+            onClick={handleOpenAddService}
           >
             Create Service Offering
           </NexaButton>
@@ -338,6 +348,107 @@ export default function ServicesAndBookingsPage() {
           </NexaCard>
         </div>
       </div>
+
+      {/* CREATE SERVICE MODAL */}
+      <NexaModal
+        isOpen={isAddServiceModalOpen}
+        onClose={() => setIsAddServiceModalOpen(false)}
+        title={`Create New ${currentVerticalDef.serviceTerm}`}
+        subtitle={`Publish an appointment or service offering available for customer scheduling on the ${currentVerticalDef.name} storefront.`}
+        maxWidth="lg"
+      >
+        <form onSubmit={handleSaveNewService} className="space-y-4 pt-2">
+          <div>
+            <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+              Service Offering Title *
+            </label>
+            <input
+              type="text"
+              required
+              value={newServiceTitle}
+              onChange={(e) => setNewServiceTitle(e.target.value)}
+              placeholder={`e.g. VIP ${currentVerticalDef.serviceTerm}`}
+              className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+                Fee / Consultation Price (₦) *
+              </label>
+              <input
+                type="text"
+                value={newServicePrice}
+                onChange={(e) => setNewServicePrice(e.target.value)}
+                placeholder="e.g. 25000 (0 for Free)"
+                className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+                Estimated Duration (Minutes) *
+              </label>
+              <input
+                type="number"
+                min="5"
+                step="5"
+                required
+                value={newServiceDuration}
+                onChange={(e) => setNewServiceDuration(e.target.value)}
+                className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold font-mono"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+              Assigned Specialist / Lead Provider
+            </label>
+            <input
+              type="text"
+              value={newServiceProvider}
+              onChange={(e) => setNewServiceProvider(e.target.value)}
+              placeholder="e.g. Certified Specialist / Lead Consultant"
+              className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+              Service Description & Scope
+            </label>
+            <textarea
+              rows={3}
+              value={newServiceDesc}
+              onChange={(e) => setNewServiceDesc(e.target.value)}
+              placeholder="Outline what is included in this appointment session..."
+              className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-medium resize-none"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--nexa-border)]">
+            <NexaButton
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              onClick={() => setIsAddServiceModalOpen(false)}
+            >
+              Cancel
+            </NexaButton>
+            <NexaButton
+              type="submit"
+              variant="primary"
+              size="sm"
+              className="rounded-full bg-[#1A56DB] text-white font-bold"
+            >
+              Publish {currentVerticalDef.serviceTerm}
+            </NexaButton>
+          </div>
+        </form>
+      </NexaModal>
     </BusinessShell>
   );
 }

@@ -25,12 +25,14 @@ import { ErpStatGrid } from "@/components/erp/ErpStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
+import { NexaModal } from "@/components/nexa/NexaModal";
 import { Pagination } from "@/components/nexa/Pagination";
 import { useAuth } from "@/components/nexa/AuthContext";
 import { useActiveTenant } from "@/lib/tenant-context";
 import {
   VERTICAL_DEFINITIONS,
   detectTenantVertical,
+  getDefaultProductsForVertical,
   CommerceProductItem,
   VerticalKey,
 } from "@/lib/verticals";
@@ -38,11 +40,17 @@ import {
 export default function CatalogManagementPage() {
   const { user } = useAuth();
   const { activeTenant } = useActiveTenant(user?.email);
-  const verticalKey = detectTenantVertical(activeTenant?.slug, activeTenant?.name);
-  const verticalDef = VERTICAL_DEFINITIONS[verticalKey];
+  const provisionedVertical = (activeTenant?.vertical as VerticalKey) || detectTenantVertical(activeTenant?.slug, activeTenant?.name);
 
-  const [selectedVertical, setSelectedVertical] = useState<VerticalKey>(verticalKey);
-  const currentVerticalDef = VERTICAL_DEFINITIONS[selectedVertical];
+  const [selectedVertical, setSelectedVertical] = useState<VerticalKey>(provisionedVertical);
+  const currentVerticalDef = VERTICAL_DEFINITIONS[selectedVertical] || VERTICAL_DEFINITIONS.retail;
+
+  // Strictly sync when activeTenant loads or updates
+  React.useEffect(() => {
+    if (activeTenant?.vertical && activeTenant.vertical in VERTICAL_DEFINITIONS) {
+      setSelectedVertical(activeTenant.vertical as VerticalKey);
+    }
+  }, [activeTenant?.vertical]);
 
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("ALL");
@@ -50,92 +58,57 @@ export default function CatalogManagementPage() {
   const itemsPerPage = 8;
 
   // Initial vertical-tailored catalog items
-  const [products, setProducts] = useState<CommerceProductItem[]>([
-    {
-      id: "PROD-001",
-      name: selectedVertical === "cars"
-        ? "Toyota Land Cruiser 300 VXR 3.5L V6 Twin-Turbo"
-        : selectedVertical === "food"
-        ? "Smoked Seafood Jollof Feast Bowl"
-        : selectedVertical === "fashion"
-        ? "Raw Silk Agbada with Hand-Stitched Embroidery"
-        : selectedVertical === "pharmacy"
-        ? "Artemether + Lumefantrine 80/480mg High-Potency"
-        : selectedVertical === "hardware"
-        ? "Felicity 5kVA 48V Pure Sine Wave Solar Inverter"
-        : "Executive Wireless Noise-Cancelling Headset Pro",
-      price: selectedVertical === "cars" ? 185000000 : selectedVertical === "hardware" ? 485000 : 12500,
-      formattedPrice: selectedVertical === "cars" ? "₦185,000,000" : selectedVertical === "hardware" ? "₦485,000" : "₦12,500",
-      category: selectedVertical === "cars" ? "Luxury SUVs" : selectedVertical === "food" ? "Chef Specials" : "Featured",
-      stock: 4,
-      image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
+  const [products, setProducts] = useState<CommerceProductItem[]>(() =>
+    getDefaultProductsForVertical(provisionedVertical)
+  );
+
+  // Re-seed products dynamically when vertical switches
+  React.useEffect(() => {
+    setProducts(getDefaultProductsForVertical(selectedVertical));
+    setSelectedCategory("ALL");
+  }, [selectedVertical]);
+
+  // Modal State for adding new vertical item
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newPrice, setNewPrice] = useState("");
+  const [newCategory, setNewCategory] = useState("");
+  const [newStock, setNewStock] = useState("5");
+  const [newSku, setNewSku] = useState("");
+  const [newAttributes, setNewAttributes] = useState<Record<string, any>>({});
+
+  const handleOpenAddModal = () => {
+    setNewName("");
+    setNewPrice("");
+    setNewCategory(categories[0] || "General");
+    setNewStock("5");
+    setNewSku(`SKU-${selectedVertical.toUpperCase().slice(0, 4)}-${Math.floor(100 + Math.random() * 900)}`);
+    setNewAttributes({});
+    setIsAddModalOpen(true);
+  };
+
+  const handleSaveNewProduct = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName || !newPrice) return;
+
+    const numPrice = parseFloat(newPrice.replace(/[^0-9.]/g, "")) || 0;
+    const newItem: CommerceProductItem = {
+      id: `PROD-${Date.now().toString().slice(-4)}`,
+      name: newName,
+      price: numPrice,
+      formattedPrice: `₦${numPrice.toLocaleString()}`,
+      category: newCategory || "General",
+      stock: parseInt(newStock) || 1,
+      image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
       vertical: selectedVertical,
-      sku: "SKU-AUTO-01",
+      sku: newSku || `SKU-${Date.now().toString().slice(-4)}`,
       status: "ACTIVE",
-      attributes: {
-        condition: "Brand New (0km)",
-        year: 2024,
-        mileage: 0,
-        fuel: "Petrol V6",
-        prepTime: 20,
-        sizes: "M, L, XL",
-      },
-    },
-    {
-      id: "PROD-002",
-      name: selectedVertical === "cars"
-        ? "Mercedes-Benz GLE 450 4MATIC AMG Line"
-        : selectedVertical === "food"
-        ? "Charcoal-Grilled Peppered Chicken Platter"
-        : selectedVertical === "fashion"
-        ? "Structured Double-Breasted Wool Blazer"
-        : selectedVertical === "pharmacy"
-        ? "Multivitamin & Zinc Immune Support Syrup 200ml"
-        : selectedVertical === "hardware"
-        ? "100Ah 51.2V LiFePO4 Lithium Wall-Mount Battery"
-        : "Ultra-Fast 65W GaN Dual USB-C Charger",
-      price: selectedVertical === "cars" ? 120000000 : selectedVertical === "hardware" ? 1250000 : 8500,
-      formattedPrice: selectedVertical === "cars" ? "₦120,000,000" : selectedVertical === "hardware" ? "₦1,250,000" : "₦8,500",
-      category: selectedVertical === "cars" ? "Executive Sedans" : selectedVertical === "food" ? "Appetizers" : "Standard",
-      stock: 2,
-      image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
-      vertical: selectedVertical,
-      sku: "SKU-AUTO-02",
-      status: "ACTIVE",
-      attributes: {
-        condition: "Foreign Used (Tokunbo)",
-        year: 2022,
-        mileage: 28000,
-      },
-    },
-    {
-      id: "PROD-003",
-      name: selectedVertical === "cars"
-        ? "Lexus RX 350 F-Sport AWD Panoramic"
-        : selectedVertical === "food"
-        ? "Slow-Cooked Goat Meat Asun Special"
-        : selectedVertical === "fashion"
-        ? "Italian Leather Chelsea Ankle Boots"
-        : selectedVertical === "pharmacy"
-        ? "Blood Glucose Monitoring Device Kit + 50 Strips"
-        : selectedVertical === "hardware"
-        ? "550W Mono PERC Half-Cell Solar Panel Tier-1"
-        : "Mechanical Gaming Keyboard RGB Backlit",
-      price: selectedVertical === "cars" ? 78000000 : selectedVertical === "hardware" ? 115000 : 92000,
-      formattedPrice: selectedVertical === "cars" ? "₦78,000,000" : selectedVertical === "hardware" ? "₦115,000" : "₦92,000",
-      category: selectedVertical === "cars" ? "Crossover SUVs" : selectedVertical === "food" ? "Grills" : "Accessories",
-      stock: 1,
-      image: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
-      vertical: selectedVertical,
-      sku: "SKU-AUTO-03",
-      status: "LOW_STOCK",
-      attributes: {
-        condition: "Locally Pre-Owned",
-        year: 2021,
-        mileage: 45000,
-      },
-    },
-  ]);
+      attributes: newAttributes,
+    };
+
+    setProducts([newItem, ...products]);
+    setIsAddModalOpen(false);
+  };
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -183,8 +156,8 @@ export default function CatalogManagementPage() {
             size="sm"
             variant="primary"
             leftIcon={<Plus className="w-4 h-4" />}
-            className="bg-[#1A56DB] text-white rounded-full font-bold shadow-xs"
-            onClick={() => alert(`Open dynamic add modal for ${currentVerticalDef.productTerm}`)}
+            className="bg-[#1A56DB] text-white rounded-full font-bold shadow-xs cursor-pointer"
+            onClick={handleOpenAddModal}
           >
             Add {currentVerticalDef.productTerm}
           </NexaButton>
@@ -333,6 +306,174 @@ export default function CatalogManagementPage() {
           </div>
         </NexaCard>
       </div>
+
+      {/* DYNAMIC VERTICAL ADD ITEM MODAL */}
+      <NexaModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        title={`Add New ${currentVerticalDef.productTerm}`}
+        subtitle={`Configure standard merchandise pricing, physical stock inventory, and dynamic ${currentVerticalDef.badge} attributes.`}
+        maxWidth="2xl"
+      >
+        <form onSubmit={handleSaveNewProduct} className="space-y-4 pt-2">
+          {/* CORE FIELDS */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+                {currentVerticalDef.productTerm} Title / Model Name *
+              </label>
+              <input
+                type="text"
+                required
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder={`e.g. ${products[0]?.name || "Item title"}`}
+                className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+                Selling Price (₦) *
+              </label>
+              <input
+                type="text"
+                required
+                value={newPrice}
+                onChange={(e) => setNewPrice(e.target.value)}
+                placeholder="e.g. 150000"
+                className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+                Catalog Category *
+              </label>
+              <input
+                type="text"
+                required
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                placeholder="e.g. Featured / Executive"
+                className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+                Initial Physical Stock Units *
+              </label>
+              <input
+                type="number"
+                min="0"
+                required
+                value={newStock}
+                onChange={(e) => setNewStock(e.target.value)}
+                className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+                SKU / Barcode Reference
+              </label>
+              <input
+                type="text"
+                value={newSku}
+                onChange={(e) => setNewSku(e.target.value)}
+                className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold font-mono"
+              />
+            </div>
+          </div>
+
+          {/* DYNAMIC VERTICAL ATTRIBUTE FIELDS */}
+          {currentVerticalDef.attributeFields.length > 0 && (
+            <div className="pt-3 border-t border-[var(--nexa-border)] space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-extrabold text-[var(--nexa-text-primary)] uppercase tracking-wider">
+                  {currentVerticalDef.badge} Attributes
+                </span>
+                <span className="text-[10px] text-[var(--nexa-text-muted)] font-mono">
+                  Vertical: {selectedVertical}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {currentVerticalDef.attributeFields.map((field) => (
+                  <div key={field.key} className={field.type === "tags" ? "sm:col-span-2" : ""}>
+                    <label className="block text-xs font-semibold text-[var(--nexa-text-secondary)] mb-1">
+                      {field.label}
+                    </label>
+
+                    {field.type === "select" ? (
+                      <select
+                        value={newAttributes[field.key] || ""}
+                        onChange={(e) =>
+                          setNewAttributes({ ...newAttributes, [field.key]: e.target.value })
+                        }
+                        className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold"
+                      >
+                        <option value="">Select {field.label}...</option>
+                        {field.options?.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                    ) : field.type === "boolean" ? (
+                      <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!newAttributes[field.key]}
+                          onChange={(e) =>
+                            setNewAttributes({ ...newAttributes, [field.key]: e.target.checked })
+                          }
+                          className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-xs text-[var(--nexa-text-primary)] font-medium">
+                          Enabled / Yes
+                        </span>
+                      </label>
+                    ) : (
+                      <input
+                        type={field.type === "number" ? "number" : "text"}
+                        placeholder={field.placeholder}
+                        value={newAttributes[field.key] || ""}
+                        onChange={(e) =>
+                          setNewAttributes({ ...newAttributes, [field.key]: e.target.value })
+                        }
+                        className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ACTION BUTTONS */}
+          <div className="flex items-center justify-end gap-2 pt-4 border-t border-[var(--nexa-border)]">
+            <NexaButton
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              onClick={() => setIsAddModalOpen(false)}
+            >
+              Cancel
+            </NexaButton>
+            <NexaButton
+              type="submit"
+              variant="primary"
+              size="sm"
+              className="rounded-full bg-[#1A56DB] text-white font-bold"
+            >
+              Publish {currentVerticalDef.productTerm} to Catalog
+            </NexaButton>
+          </div>
+        </form>
+      </NexaModal>
     </BusinessShell>
   );
 }

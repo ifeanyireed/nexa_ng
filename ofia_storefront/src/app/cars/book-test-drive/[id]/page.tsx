@@ -21,10 +21,12 @@ import {
   Wrench,
   Search,
 } from "lucide-react";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 
 export default function BookTestDrivePage() {
   const params = useParams();
-  const store = MOCK_STORES.cars;
+  const { tenantSlug, store: dynamicStore } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES.cars;
 
   const vehicleId = (params?.id as string) || "car-001";
   const vehicle =
@@ -55,12 +57,30 @@ export default function BookTestDrivePage() {
     "04:00 PM - 05:00 PM",
   ];
 
-  const handleSubmitBooking = (e: React.FormEvent) => {
+  const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !phone) return;
     const ref = `TD-${Math.floor(100000 + Math.random() * 900000)}`;
     setBookingRef(ref);
     setConfirmed(true);
+
+    try {
+      await fetch("/api/storefront/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingNumber: ref,
+          tenantSlug: tenantSlug || "neweratransports",
+          customerName: fullName,
+          customerEmail: email,
+          customerPhone: phone,
+          serviceTitle: `${driveType}: ${vehicle.title}`,
+          dateTime: `${selectedDate} (${selectedSlot})`,
+          notes: `License: ${licenseNumber || "N/A"} | Address: ${address || "Showroom"}`,
+          vertical: "cars",
+        }),
+      });
+    } catch {}
   };
 
   return (

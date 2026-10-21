@@ -286,6 +286,9 @@ export interface CommerceServiceItem {
 
 export interface CommerceBookingItem {
   id: string;
+  bookingNumber?: string;
+  tenantSlug?: string;
+  tenantId?: string;
   customerName: string;
   customerEmail: string;
   customerPhone: string;
@@ -294,13 +297,17 @@ export interface CommerceBookingItem {
   status: "CONFIRMED" | "PENDING" | "COMPLETED" | "CANCELLED";
   notes?: string;
   vertical: VerticalKey;
+  createdAt?: string;
 }
 
 export interface CommerceOrderItem {
   id: string;
   orderNumber: string;
+  tenantSlug?: string;
+  tenantId?: string;
   customerName: string;
   customerEmail: string;
+  customerPhone?: string;
   channel: "STOREFRONT" | "POS_COUNTER" | "INQUIRY";
   itemsSummary: string;
   itemCount: number;
@@ -310,6 +317,7 @@ export interface CommerceOrderItem {
   paymentStatus: "PAID" | "PENDING" | "REFUNDED";
   createdAt: string;
   deliveryMethod: "DISPATCH" | "STORE_PICKUP";
+  shippingAddress?: string;
 }
 
 export interface TenantStorefrontHandshake {

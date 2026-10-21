@@ -18,10 +18,12 @@ import {
 } from "lucide-react";
 
 import { CartItem } from "@/types/storefront";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, removeFromCart, updateQuantity, subtotal, clearCart } = useCart();
+  const { tenantSlug, handshake, store } = useStorefrontTenant();
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -34,17 +36,60 @@ export default function CheckoutPage() {
   const deliveryFee = 3500;
   const grandTotal = subtotal + (items.length > 0 ? deliveryFee : 0);
 
-  const handlePlaceOrder = (e: React.FormEvent) => {
+  const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !phone || !address || items.length === 0) return;
 
     setIsProcessing(true);
 
-    setTimeout(() => {
+    const targetSlug = tenantSlug || "neweratransports";
+    const orderPayload = {
+      tenantSlug: targetSlug,
+      tenantId: handshake?.tenantId || `org-${targetSlug}`,
+      customerName: fullName,
+      customerEmail: email,
+      customerPhone: phone,
+      shippingAddress: address,
+      city: city,
+      paymentMethod: paymentMethod,
+      channel: "STOREFRONT",
+      items: items.map((i) => ({
+        id: i.id,
+        productId: i.productId,
+        title: i.title,
+        price: i.price,
+        quantity: i.quantity,
+        image: i.image,
+        selectedVariant: i.selectedVariant,
+      })),
+      itemsSummary: items.map((i) => `${i.title} (x${i.quantity})`).join(", "),
+      itemCount: items.reduce((acc, i) => acc + i.quantity, 0),
+      totalAmount: `₦${grandTotal.toLocaleString()}`,
+      rawAmount: grandTotal,
+      status: "IN_PREPARATION",
+      paymentStatus: "PAID",
+      deliveryMethod: "DISPATCH",
+    };
+
+    try {
+      const res = await fetch("/api/storefront/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderPayload),
+      });
+      const data = await res.json().catch(() => null);
+      const orderRef = data?.order?.orderNumber || `OFIA-${Math.floor(100000 + Math.random() * 900000)}`;
+
+      clearCart();
+      const redirectTenant = targetSlug ? `&tenant=${encodeURIComponent(targetSlug)}` : "";
+      router.push(`/order-confirmed?ref=${orderRef}&name=${encodeURIComponent(fullName)}${redirectTenant}`);
+    } catch {
       const orderRef = `OFIA-${Math.floor(100000 + Math.random() * 900000)}`;
       clearCart();
       router.push(`/order-confirmed?ref=${orderRef}&name=${encodeURIComponent(fullName)}`);
-    }, 1200);
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (

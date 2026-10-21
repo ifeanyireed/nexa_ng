@@ -16,9 +16,11 @@ import {
   FileText,
   MapPin,
 } from "lucide-react";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 
 export default function CarsInspectionPage() {
-  const store = MOCK_STORES["cars"];
+  const { tenantSlug, store: dynamicStore } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES["cars"];
   const service = MOCK_SERVICES.find((s) => s.id === "srv-car-01") || MOCK_SERVICES[0];
 
   const [date, setDate] = useState("2026-10-18");
@@ -35,9 +37,26 @@ export default function CarsInspectionPage() {
     "03:30 PM - 05:00 PM",
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
+
+    try {
+      await fetch("/api/storefront/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingNumber: `CAR-${Math.floor(10000 + Math.random() * 90000)}`,
+          tenantSlug: tenantSlug || "neweratransports",
+          customerName: clientName || "Valued Automotive Client",
+          customerPhone: phone || "+234 800 000 0000",
+          serviceTitle: "Comprehensive 150-Point Pre-Purchase Mechanical Inspection",
+          dateTime: `${date} (${timeSlot})`,
+          notes: `Vehicle: ${vehicleInfo}`,
+          vertical: "cars",
+        }),
+      });
+    } catch {}
   };
 
   return (

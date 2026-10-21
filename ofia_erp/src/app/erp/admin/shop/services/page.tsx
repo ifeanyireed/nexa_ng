@@ -18,6 +18,7 @@ import {
   UserCheck,
   Check,
   X,
+  RefreshCw,
 } from "lucide-react";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -112,10 +113,45 @@ export default function ServicesAndBookingsPage() {
     },
   ]);
 
-  const handleUpdateBookingStatus = (id: string, newStatus: CommerceBookingItem["status"]) => {
-    setBookings(
-      bookings.map((b) => (b.id === id ? { ...b, status: newStatus } : b))
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchBookings = React.useCallback(async () => {
+    const slug = activeTenant?.slug || "neweratransports";
+    setIsRefreshing(true);
+    try {
+      const res = await fetch(`/api/erp/shop/bookings?tenant=${encodeURIComponent(slug)}`, {
+        cache: "no-store",
+      });
+      const data = await res.json().catch(() => null);
+      if (data && Array.isArray(data.bookings) && data.bookings.length > 0) {
+        setBookings(data.bookings);
+      }
+    } catch {
+      // Keep existing
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [activeTenant?.slug]);
+
+  React.useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
+
+  const handleUpdateBookingStatus = async (id: string, newStatus: CommerceBookingItem["status"]) => {
+    // Optimistic update
+    setBookings((prev) =>
+      prev.map((b) => (b.id === id || (b as any).bookingNumber === id ? { ...b, status: newStatus } : b))
     );
+
+    try {
+      await fetch("/api/erp/shop/bookings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bookingId: id, status: newStatus }),
+      });
+    } catch {
+      fetchBookings();
+    }
   };
 
   return (
@@ -124,6 +160,17 @@ export default function ServicesAndBookingsPage() {
       subtitle={`Configure ${currentVerticalDef.serviceTerm.toLowerCase()}, schedule appointment slots, and manage customer service requests.`}
       action={
         <div className="flex items-center gap-2">
+          <NexaButton
+            size="sm"
+            variant="outline"
+            onClick={fetchBookings}
+            disabled={isRefreshing}
+            leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-blue-600" : ""}`} />}
+            className="rounded-full"
+          >
+            {isRefreshing ? "Syncing..." : "Sync Bookings"}
+          </NexaButton>
+
           <select
             value={selectedVertical}
             onChange={(e) => setSelectedVertical(e.target.value as VerticalKey)}

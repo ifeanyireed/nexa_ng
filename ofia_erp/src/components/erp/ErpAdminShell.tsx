@@ -137,15 +137,7 @@ export function ErpAdminShell({
   subTabs,
   isLoading,
 }: ErpAdminShellProps) {
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("erp_sidebar_collapsed");
-      if (stored !== null) {
-        return stored !== "true";
-      }
-    }
-    return true;
-  });
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
 
   const toggleSidebar = useCallback(() => {
     setIsSidebarOpen((prev) => {
@@ -274,6 +266,14 @@ export function ErpAdminShell({
   useEffect(() => {
     setIsMounted(true);
     let isCurrent = true;
+
+    // Restore cached sidebar collapsed state from localStorage upon client mount
+    try {
+      const stored = localStorage.getItem("erp_sidebar_collapsed");
+      if (stored !== null) {
+        setIsSidebarOpen(stored !== "true");
+      }
+    } catch {}
 
     // Restore cached tenant branding from localStorage upon client mount
     const slug = extractSubdomainOrParam();

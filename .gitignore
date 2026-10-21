@@ -52,6 +52,7 @@ service_erp/service_erp
 .neon/
 .agents/
 skills-lock.json
+.commerce_sync/
 
 # Local documentation & credentials
 users.md

@@ -112,6 +112,7 @@ export interface CrmEmailBlast {
   sentAt?: string;
   totalRecipients: number;
   sentCount: number;
+  failedCount?: number;
   openCount: number;
   clickCount: number;
   bounceCount: number;

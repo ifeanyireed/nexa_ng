@@ -15,6 +15,9 @@ function ConfirmationContent() {
   const searchParams = useSearchParams();
   const orderRef = searchParams.get("ref") || "OFIA-882194";
   const customerName = searchParams.get("name") || "Customer";
+  const tenantSlug = searchParams.get("tenant");
+  const returnHref = tenantSlug ? `/?tenant=${encodeURIComponent(tenantSlug)}` : "/templates";
+  const returnLabel = tenantSlug ? `Back to ${tenantSlug.toUpperCase()} Storefront` : "Explore All Templates";
 
   return (
     <div className="max-w-2xl mx-auto p-8 sm:p-12 rounded-3xl bg-white border border-stone-200 shadow-xl text-center space-y-6 animate-fade-in">
@@ -57,10 +60,10 @@ function ConfirmationContent() {
           <span>Track Live Dispatch</span>
         </Link>
         <Link
-          href="/templates"
+          href={returnHref}
           className="px-6 py-3 rounded-full border border-stone-300 hover:bg-stone-50 text-stone-700 font-bold text-xs flex items-center gap-2 transition-colors"
         >
-          <span>Explore All 7 Templates</span>
+          <span>{returnLabel}</span>
           <ArrowRight className="w-4 h-4" />
         </Link>
       </div>

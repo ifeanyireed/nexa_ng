@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -37,15 +37,16 @@ interface AdminShellProps {
 export const AdminShell = ({ children }: AdminShellProps) => {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+
+  useEffect(() => {
+    try {
       const stored = localStorage.getItem("erp_sidebar_collapsed");
       if (stored !== null) {
-        return stored !== "true";
+        setIsSidebarOpen(stored !== "true");
       }
-    }
-    return true;
-  });
+    } catch {}
+  }, []);
 
   const toggleSidebar = () => {
     setIsSidebarOpen((prev) => {

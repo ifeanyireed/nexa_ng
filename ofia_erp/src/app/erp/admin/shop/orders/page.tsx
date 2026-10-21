@@ -16,6 +16,7 @@ import {
   Eye,
   Building2,
   Package,
+  RefreshCw,
 } from "lucide-react";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -34,13 +35,14 @@ export default function OmnichannelOrdersPage() {
     {
       id: "ORD-9021",
       orderNumber: "OFIA-2026-9021",
+      tenantSlug: "neweratransports",
       customerName: "Chief Babatunde Alabi",
       customerEmail: "babatunde.alabi@gmail.com",
       channel: "STOREFRONT",
-      itemsSummary: "Felicity 5kVA Solar Inverter + 2x 100Ah Lithium Batteries",
-      itemCount: 3,
-      totalAmount: "₦2,985,000",
-      rawAmount: 2985000,
+      itemsSummary: "2024 Mercedes-Benz GLE 450 4MATIC (Executive Edition)",
+      itemCount: 1,
+      totalAmount: "₦98,000,000",
+      rawAmount: 98000000,
       status: "IN_PREPARATION",
       paymentStatus: "PAID",
       createdAt: "Today at 09:15 AM",
@@ -49,13 +51,14 @@ export default function OmnichannelOrdersPage() {
     {
       id: "ORD-9020",
       orderNumber: "OFIA-2026-9020",
+      tenantSlug: "neweratransports",
       customerName: "Mrs. Amaka Okoye",
       customerEmail: "amaka.okoye@yahoo.com",
       channel: "POS_COUNTER",
-      itemsSummary: "Charcoal Peppered Chicken (x4), Fried Plantain Platter",
+      itemsSummary: "Custom Leather Steering Wrap + 4x RunFlat Tires",
       itemCount: 5,
-      totalAmount: "₦38,500",
-      rawAmount: 38500,
+      totalAmount: "₦1,250,000",
+      rawAmount: 1250000,
       status: "READY_DISPATCH",
       paymentStatus: "PAID",
       createdAt: "Today at 10:45 AM",
@@ -64,6 +67,7 @@ export default function OmnichannelOrdersPage() {
     {
       id: "ORD-9019",
       orderNumber: "OFIA-2026-9019",
+      tenantSlug: "neweratransports",
       customerName: "Alhaji Musa Danjuma",
       customerEmail: "musa.danjuma@outlook.com",
       channel: "INQUIRY",
@@ -80,6 +84,29 @@ export default function OmnichannelOrdersPage() {
 
   const [filterChannel, setFilterChannel] = useState("ALL");
   const [search, setSearch] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchOrders = React.useCallback(async () => {
+    const slug = activeTenant?.slug || "neweratransports";
+    setIsRefreshing(true);
+    try {
+      const res = await fetch(`/api/erp/shop/orders?tenant=${encodeURIComponent(slug)}`, {
+        cache: "no-store",
+      });
+      const data = await res.json().catch(() => null);
+      if (data && Array.isArray(data.orders) && data.orders.length > 0) {
+        setOrders(data.orders);
+      }
+    } catch {
+      // Keep existing orders if network error
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [activeTenant?.slug]);
+
+  React.useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
 
   const filteredOrders = orders.filter((o) => {
     const matchesSearch =
@@ -90,10 +117,22 @@ export default function OmnichannelOrdersPage() {
     return matchesSearch && matchesChannel;
   });
 
-  const handleUpdateStatus = (id: string, newStatus: CommerceOrderItem["status"]) => {
-    setOrders(
-      orders.map((o) => (o.id === id ? { ...o, status: newStatus } : o))
+  const handleUpdateStatus = async (id: string, newStatus: CommerceOrderItem["status"]) => {
+    // Optimistic update
+    setOrders((prev) =>
+      prev.map((o) => (o.id === id || o.orderNumber === id ? { ...o, status: newStatus } : o))
     );
+
+    try {
+      await fetch("/api/erp/shop/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: id, status: newStatus }),
+      });
+    } catch {
+      // Re-fetch on error
+      fetchOrders();
+    }
   };
 
   return (
@@ -102,8 +141,19 @@ export default function OmnichannelOrdersPage() {
       subtitle="Unified order pipeline syncing Online Storefront checkouts, Retail POS receipts, and fulfillment dispatches."
       action={
         <div className="flex items-center gap-2">
+          <NexaButton
+            size="sm"
+            variant="outline"
+            onClick={fetchOrders}
+            disabled={isRefreshing}
+            leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-blue-600" : ""}`} />}
+            className="rounded-full"
+          >
+            {isRefreshing ? "Syncing..." : "Sync Storefront Orders"}
+          </NexaButton>
+
           <Link href="/erp/admin/shop/pos">
-            <NexaButton size="sm" variant="outline" leftIcon={<ShoppingCart className="w-3.5 h-3.5" />}>
+            <NexaButton size="sm" variant="primary" leftIcon={<ShoppingCart className="w-3.5 h-3.5" />} className="rounded-full">
               Open POS Register
             </NexaButton>
           </Link>

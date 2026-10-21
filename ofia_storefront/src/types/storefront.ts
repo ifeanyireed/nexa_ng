@@ -326,3 +326,51 @@ export interface TenantStorefrontHandshake {
     badges: string[];
   };
 }
+
+export interface StorefrontOrderPayload {
+  id: string;
+  orderNumber: string;
+  tenantSlug: string;
+  tenantId?: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  channel: "STOREFRONT" | "POS_COUNTER" | "INQUIRY";
+  shippingAddress: string;
+  city?: string;
+  paymentMethod?: string;
+  items: Array<{
+    id: string;
+    productId: string;
+    title: string;
+    price: number;
+    quantity: number;
+    image?: string;
+    selectedVariant?: string;
+  }>;
+  itemsSummary: string;
+  itemCount: number;
+  totalAmount: string;
+  rawAmount: number;
+  status: "PENDING" | "CONFIRMED" | "IN_PREPARATION" | "READY_DISPATCH" | "DELIVERED";
+  paymentStatus: "PAID" | "PENDING" | "REFUNDED";
+  deliveryMethod: "DISPATCH" | "STORE_PICKUP";
+  createdAt: string;
+  notes?: string;
+}
+
+export interface StorefrontBookingPayload {
+  id: string;
+  bookingNumber: string;
+  tenantSlug: string;
+  tenantId?: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  serviceTitle: string;
+  dateTime: string;
+  status: "CONFIRMED" | "PENDING" | "COMPLETED" | "CANCELLED";
+  notes?: string;
+  vertical: VerticalType;
+  createdAt: string;
+}

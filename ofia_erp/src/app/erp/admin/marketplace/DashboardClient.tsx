@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   LayoutDashboard, 
@@ -41,15 +41,16 @@ import { NICHE_DETAILS } from "@/lib/niche-data";
 import Link from "next/link";
 
 export default function DashboardClient() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
+  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
+
+  useEffect(() => {
+    try {
       const stored = localStorage.getItem("erp_sidebar_collapsed");
       if (stored !== null) {
-        return stored !== "true";
+        setIsSidebarOpen(stored !== "true");
       }
-    }
-    return true;
-  });
+    } catch {}
+  }, []);
 
   const toggleSidebar = () => {
     setIsSidebarOpen((prev) => {

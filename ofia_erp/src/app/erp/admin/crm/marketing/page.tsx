@@ -46,6 +46,7 @@ import {
 } from "@/lib/crm-service";
 import { TenantSenderProfile } from "@/lib/email-service";
 import { crmFetch } from "@/lib/crm-client";
+import { filterSalesClosers } from "@/lib/access-control";
 
 export default function EmailMarketingBlastsPage() {
   const [blasts, setBlasts] = useState<CrmEmailBlast[]>([]);
@@ -76,12 +77,7 @@ export default function EmailMarketingBlastsPage() {
   const [selectedProfileId, setSelectedProfileId] = useState<string>("");
 
   // Prospect Assignment & Sales Closers
-  const [salesClosers, setSalesClosers] = useState<{ name: string; email: string }[]>([
-    { name: "Abosede Ajayi", email: "abosede@example.com" },
-    { name: "Divine Favour Chi Egbomuche", email: "divine@example.com" },
-    { name: "Edith Abosede Friday", email: "edith@example.com" },
-    { name: "Chioma Okon", email: "chioma@example.com" },
-  ]);
+  const [salesClosers, setSalesClosers] = useState<{ id?: string; name: string; email: string }[]>([]);
   const [existingLeadsMap, setExistingLeadsMap] = useState<Record<string, { id: string; assignedRep: string }>>({});
   const [selectedCloserForLog, setSelectedCloserForLog] = useState<Record<string, string>>({});
   const [activeAssignPopoverLogId, setActiveAssignPopoverLogId] = useState<string | null>(null);
@@ -160,29 +156,13 @@ export default function EmailMarketingBlastsPage() {
         if (initialName) setSenderName(initialName);
         if (initialEmail) setSenderEmail(initialEmail);
 
-        if (Array.isArray(usersRes) && usersRes.length > 0) {
-          const closers = usersRes.filter((u: any) => {
-            const role = (u.role || u.Role || "").toLowerCase();
-            const desig = (u.designation || u.Designation || "").toLowerCase();
-            let assignedPages: string[] = [];
-            if (Array.isArray(u.assignedPages)) {
-              assignedPages = u.assignedPages;
-            } else if (typeof u.assignedPages === "string") {
-              try {
-                assignedPages = JSON.parse(u.assignedPages || "[]");
-              } catch {}
-            }
-            return (
-              assignedPages.includes("sales_closer") ||
-              role === "sales_closer" ||
-              desig.includes("closer") ||
-              desig.includes("sales")
-            );
-          });
-          if (closers.length > 0) {
-            setSalesClosers(closers.map((u: any) => ({ name: u.name || u.email, email: u.email || "" })));
-          }
-        }
+        const rawUsers = Array.isArray(usersRes)
+          ? usersRes
+          : Array.isArray(usersRes?.users)
+          ? usersRes.users
+          : [];
+        const validClosers = filterSalesClosers(rawUsers);
+        setSalesClosers(validClosers);
 
         if (Array.isArray(leadsRes?.leads)) {
           const lMap: Record<string, { id: string; assignedRep: string }> = {};

@@ -384,8 +384,7 @@ export function getDefaultPagesForRole(role: RoleKey | string, designation?: str
   if (
     normalizedRole === "sales_closer" ||
     desig.includes("sales closer") ||
-    desig.includes("closer") ||
-    desig.includes("marketing 6")
+    desig.includes("closer")
   ) {
     return ["sales_closer", "employee"];
   }
@@ -413,6 +412,80 @@ export function getDefaultPagesForRole(role: RoleKey | string, designation?: str
     default:
       return ["employee"];
   }
+}
+
+/**
+ * Determines whether a user or employee has been granted access to the Sales Closer Portal.
+ * An employee has access if:
+ * 1. Their assignedPages includes "sales_closer" (or "closer")
+ * 2. Their role is "sales_closer"
+ * 3. Their designation explicitly includes "sales closer" or "closer"
+ *
+ * System administrators and general employees without closer access are strictly excluded.
+ */
+export function isUserSalesCloser(u: any): boolean {
+  if (!u) return false;
+
+  const role = String(u.role || u.Role || "").toLowerCase().trim();
+  const desig = String(u.designation || u.Designation || "").toLowerCase().trim();
+
+  // Administrators have system-wide access but are not individual sales closer employees
+  // unless their designation explicitly designates them as a sales closer.
+  if (role === "admin" || role === "super_admin" || role === "superadmin") {
+    return desig.includes("sales closer");
+  }
+
+  // 1. Check assignedPages (handles arrays, JSON string, double-stringified JSON, comma-separated)
+  const rawPages = u.assignedPages ?? u.AssignedPages;
+  let pages: string[] = [];
+  if (Array.isArray(rawPages)) {
+    pages = rawPages.map((p: any) => String(p).trim().toLowerCase());
+  } else if (typeof rawPages === "string" && rawPages.trim()) {
+    try {
+      const parsed = JSON.parse(rawPages);
+      if (Array.isArray(parsed)) {
+        pages = parsed.map((p: any) => String(p).trim().toLowerCase());
+      } else if (typeof parsed === "string") {
+        try {
+          const nested = JSON.parse(parsed);
+          if (Array.isArray(nested)) pages = nested.map((p: any) => String(p).trim().toLowerCase());
+        } catch {
+          pages = [parsed.trim().toLowerCase()];
+        }
+      }
+    } catch {
+      pages = rawPages.split(",").map((s: string) => s.trim().toLowerCase());
+    }
+  }
+
+  if (pages.includes("sales_closer") || pages.includes("closer")) {
+    return true;
+  }
+
+  // 2. Direct role check
+  if (role === "sales_closer" || role === "closer" || role === "salescloser") {
+    return true;
+  }
+
+  // 3. Designation check
+  if (desig.includes("sales closer") || desig === "closer") {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Filters an array of user objects to strictly return only employees given access to the Sales Closer page.
+ */
+export function filterSalesClosers(users: any[]): { id: string; name: string; email: string }[] {
+  if (!Array.isArray(users)) return [];
+  const closers = users.filter(isUserSalesCloser);
+  return closers.map((u) => ({
+    id: u.id || u.ID || "",
+    name: u.name || u.Name || u.email || u.Email || "Sales Closer",
+    email: u.email || u.Email || "",
+  }));
 }
 
 export type PermissionMatrix = Record<RoleKey, Record<string, boolean>>;
@@ -1111,14 +1184,34 @@ export function isNavItemVisibleForUser(
 
   // Direct Assigned Pages Check:
   // If the user has assignedPages configured (e.g. A sales closer assigned Employee Portal + Sales Closer Portal):
-  if (user?.assignedPages && Array.isArray(user.assignedPages) && user.assignedPages.length > 0) {
+  const rawAssigned = user?.assignedPages ?? (user as any)?.AssignedPages;
+  let assignedPages: string[] = [];
+  if (Array.isArray(rawAssigned)) {
+    assignedPages = rawAssigned;
+  } else if (typeof rawAssigned === "string" && rawAssigned.trim()) {
+    try {
+      const parsed = JSON.parse(rawAssigned);
+      if (Array.isArray(parsed)) assignedPages = parsed;
+    } catch {
+      assignedPages = rawAssigned.split(",").map((s) => s.trim());
+    }
+  }
+
+  // If designated or role is sales_closer, ensure sales_closer is included
+  if (itemKey === "sales_closer") {
+    if (isUserSalesCloser(user)) {
+      return isModuleProvisioned("crm");
+    }
+  }
+
+  if (assignedPages.length > 0) {
     if (itemKey === "sales_closer") {
-      return isModuleProvisioned("crm") && user.assignedPages.includes("sales_closer");
+      return isModuleProvisioned("crm") && (assignedPages.includes("sales_closer") || assignedPages.includes("closer"));
     }
     if (itemKey === "crm") {
-      return isModuleProvisioned("crm") && user.assignedPages.includes("crm");
+      return isModuleProvisioned("crm") && assignedPages.includes("crm");
     }
-    return user.assignedPages.includes(itemKey);
+    return assignedPages.includes(itemKey);
   }
 
   const isLineMgr = Boolean(user?.isLineManager || role === "manager");

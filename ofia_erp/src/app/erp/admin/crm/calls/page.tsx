@@ -42,6 +42,7 @@ import { Pagination } from "@/components/nexa/Pagination";
 import { CrmCall, CrmLead } from "@/lib/crm-service";
 import { crmFetch } from "@/lib/crm-client";
 import { useAuth } from "@/components/nexa/AuthContext";
+import { filterSalesClosers } from "@/lib/access-control";
 
 type OutcomeType =
   | "CONNECTED_INTERESTED"
@@ -148,7 +149,7 @@ export default function CrmCallLoggerPage() {
       const [callsRes, leadsRes, usersRes] = await Promise.all([
         crmFetch("/api/erp/crm/calls").then((r) => r.json()).catch(() => null),
         crmFetch("/api/erp/crm/leads").then((r) => r.json()).catch(() => null),
-        fetch("/api/erp/users").then((r) => (r.ok ? r.json() : null)).catch(() => null),
+        crmFetch("/api/erp/users").then((r) => (r.ok ? r.json() : [])).catch(() => []),
       ]);
 
       if (callsRes?.calls) {
@@ -162,23 +163,25 @@ export default function CrmCallLoggerPage() {
         setLeads(leadsRes.leads);
       }
 
-      // Extract unique sales closers & staff
-      const closerNames: string[] = [];
-      if (Array.isArray(usersRes?.users)) {
-        usersRes.users.forEach((u: any) => {
-          if (
-            u.role === "sales_closer" ||
-            u.designation?.toLowerCase().includes("closer") ||
-            (Array.isArray(u.assignedPages) && u.assignedPages.includes("sales_closer"))
-          ) {
-            if (u.name && !closerNames.includes(u.name)) closerNames.push(u.name);
-          }
+      // Extract ONLY employees who are strictly given access to the Sales Closer page
+      const rawUsers = Array.isArray(usersRes)
+        ? usersRes
+        : Array.isArray(usersRes?.users)
+        ? usersRes.users
+        : [];
+
+      const closerUsers = filterSalesClosers(rawUsers);
+      const closerNames = Array.from(new Set(closerUsers.map((u) => u.name).filter(Boolean)));
+      setClosers(closerNames);
+
+      // Pre-select repName to current closer if valid, or the first available closer
+      if (closerNames.length > 0) {
+        setRepName((prev) => {
+          if (prev && closerNames.includes(prev)) return prev;
+          if (user?.name && closerNames.includes(user.name)) return user.name;
+          return closerNames[0];
         });
       }
-      if (closerNames.length === 0) {
-        closerNames.push("Divine Favour Chi Egbomuche", "Edith Abosede Friday", "Abosede Ajayi", "Chioma Okon");
-      }
-      setClosers(closerNames);
     } catch (err) {
       console.warn("Failed to load call logs:", err);
     } finally {
@@ -805,20 +808,21 @@ export default function CrmCallLoggerPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
-                Sales Closer / Logged By
+                Sales Closer / Logged By *
               </label>
               <select
                 value={repName}
                 onChange={(e) => setRepName(e.target.value)}
                 className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold"
+                required
               >
                 {closers.map((c) => (
                   <option key={c} value={c}>
                     {c}
                   </option>
                 ))}
-                {!closers.includes(repName) && repName && (
-                  <option value={repName}>{repName}</option>
+                {closers.length === 0 && (
+                  <option value="">No sales closers provisioned</option>
                 )}
               </select>
             </div>

@@ -45,7 +45,7 @@ import { NexaModal } from "@/components/nexa/NexaModal";
 import { CrmLead, CrmActivity } from "@/lib/crm-service";
 import { crmFetch } from "@/lib/crm-client";
 import { useAuth } from "@/components/nexa/AuthContext";
-import { useTenantProvisioning } from "@/lib/access-control";
+import { useTenantProvisioning, filterSalesClosers } from "@/lib/access-control";
 import { cn } from "@/lib/utils";
 
 const LEAD_STATUSES: { key: CrmLead["status"]; label: string; color: string }[] = [
@@ -169,32 +169,13 @@ function SalesCloserPortalContent() {
         setActivities([]);
       }
 
-      if (Array.isArray(usersRes)) {
-        const closers = usersRes.filter((u: any) => {
-          const role = (u.role || u.Role || "").toLowerCase();
-          const desig = (u.designation || u.Designation || "").toLowerCase();
-          let assignedPages: string[] = [];
-          if (Array.isArray(u.assignedPages)) {
-            assignedPages = u.assignedPages;
-          } else if (typeof u.assignedPages === "string") {
-            try {
-              assignedPages = JSON.parse(u.assignedPages || "[]");
-            } catch {}
-          }
-          return (
-            assignedPages.includes("sales_closer") ||
-            role === "sales_closer" ||
-            desig.includes("closer") ||
-            desig.includes("sales")
-          );
-        });
-        setStaffClosers(
-          closers.map((u: any) => ({
-            name: u.name || u.email,
-            email: u.email || "",
-          }))
-        );
-      }
+      const rawUsers = Array.isArray(usersRes)
+        ? usersRes
+        : Array.isArray(usersRes?.users)
+        ? usersRes.users
+        : [];
+      const validClosers = filterSalesClosers(rawUsers);
+      setStaffClosers(validClosers);
     } catch (err) {
       console.error("Failed to load CRM closer data:", err);
     } finally {
@@ -213,14 +194,8 @@ function SalesCloserPortalContent() {
     staffClosers.forEach((c) => {
       if (c.name && c.name.trim()) set.add(c.name.trim());
     });
-    leads.forEach((l) => {
-      if (l.assignedRep && l.assignedRep.trim()) set.add(l.assignedRep.trim());
-    });
-    activities.forEach((a) => {
-      if (a.rep && a.rep.trim()) set.add(a.rep.trim());
-    });
     return Array.from(set);
-  }, [leads, activities, currentCloserName, staffClosers]);
+  }, [currentCloserName, staffClosers]);
 
   // Closer matching helper (case-insensitive substring/partial match)
   const isMatchCloser = (repName?: string) => {

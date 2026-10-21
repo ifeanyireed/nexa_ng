@@ -28,6 +28,7 @@ import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaModal } from "@/components/nexa/NexaModal";
 import { CrmLead } from "@/lib/crm-service";
 import { crmFetch } from "@/lib/crm-client";
+import { filterSalesClosers } from "@/lib/access-control";
 
 export default function CrmLeadsPage() {
   const [leads, setLeads] = useState<CrmLead[]>([]);
@@ -50,38 +51,15 @@ export default function CrmLeadsPage() {
   const [newIndustry, setNewIndustry] = useState("Corporate");
   const [newLocation, setNewLocation] = useState("Lagos");
   const [assignedCloser, setAssignedCloser] = useState("Auto-Assign (Least-Loaded)");
-  const [availableClosers, setAvailableClosers] = useState<{ name: string; email: string }[]>([]);
+  const [availableClosers, setAvailableClosers] = useState<{ id?: string; name: string; email: string }[]>([]);
 
   useEffect(() => {
     async function loadClosers() {
       try {
-        const res = await crmFetch("/api/erp/users").then((r) => r.json());
-        if (Array.isArray(res)) {
-          const closers = res.filter((u: any) => {
-            const role = (u.role || u.Role || "").toLowerCase();
-            const desig = (u.designation || u.Designation || "").toLowerCase();
-            let assignedPages: string[] = [];
-            if (Array.isArray(u.assignedPages)) {
-              assignedPages = u.assignedPages;
-            } else if (typeof u.assignedPages === "string") {
-              try {
-                assignedPages = JSON.parse(u.assignedPages || "[]");
-              } catch {}
-            }
-            return (
-              assignedPages.includes("sales_closer") ||
-              role === "sales_closer" ||
-              desig.includes("closer") ||
-              desig.includes("sales")
-            );
-          });
-          setAvailableClosers(
-            closers.map((u: any) => ({
-              name: u.name || u.email,
-              email: u.email || "",
-            }))
-          );
-        }
+        const res = await crmFetch("/api/erp/users").then((r) => (r.ok ? r.json() : [])).catch(() => []);
+        const rawUsers = Array.isArray(res) ? res : Array.isArray(res?.users) ? res.users : [];
+        const validClosers = filterSalesClosers(rawUsers);
+        setAvailableClosers(validClosers);
       } catch (err) {
         console.warn("Could not load sales closers:", err);
       }

@@ -47,6 +47,7 @@ import { RoleGuard } from "@/components/auth/RoleGuard";
 import { CrmCall, CrmLead } from "@/lib/crm-service";
 import { crmFetch } from "@/lib/crm-client";
 import { useAuth } from "@/components/nexa/AuthContext";
+import { filterSalesClosers } from "@/lib/access-control";
 import { cn } from "@/lib/utils";
 
 type OutcomeType =
@@ -79,8 +80,8 @@ function SalesCloserCallLoggerContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
 
-  // Closer Identity Resolution
-  const closerName = useMemo(() => {
+  // Closer Identity Resolution from Session / Auth
+  const sessionCloserName = useMemo(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("erp_current_user");
       if (stored) {
@@ -92,10 +93,10 @@ function SalesCloserCallLoggerContent() {
       const nexaName = localStorage.getItem("nexa_user_name") || localStorage.getItem("erp_user_name");
       if (nexaName) return nexaName;
     }
-    return user?.name || "Abosede Ajayi";
+    return user?.name || "";
   }, [user]);
 
-  const closerEmail = useMemo(() => {
+  const sessionCloserEmail = useMemo(() => {
     if (typeof window !== "undefined") {
       const stored = localStorage.getItem("erp_current_user");
       if (stored) {
@@ -111,6 +112,8 @@ function SalesCloserCallLoggerContent() {
   }, [user]);
 
   // Data State
+  const [salesClosers, setSalesClosers] = useState<{ id: string; name: string; email: string }[]>([]);
+  const [selectedCloserName, setSelectedCloserName] = useState<string>("");
   const [calls, setCalls] = useState<CrmCall[]>([]);
   const [leads, setLeads] = useState<CrmLead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -122,6 +125,8 @@ function SalesCloserCallLoggerContent() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [selectedLeadId, setSelectedLeadId] = useState("");
+  const [modalCloserName, setModalCloserName] = useState("");
+  const [modalCloserEmail, setModalCloserEmail] = useState("");
   const [contactName, setContactName] = useState("");
   const [company, setCompany] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -129,6 +134,27 @@ function SalesCloserCallLoggerContent() {
   const [outcome, setOutcome] = useState<OutcomeType>("CONNECTED_INTERESTED");
   const [notes, setNotes] = useState("");
   const [followupDate, setFollowupDate] = useState("");
+
+  // Determine active closer persona
+  const activeCloserName = useMemo(() => {
+    if (selectedCloserName) return selectedCloserName;
+    if (user?.name && salesClosers.some((c) => c.name.toLowerCase() === user.name.toLowerCase())) {
+      return user.name;
+    }
+    if (sessionCloserName && salesClosers.some((c) => c.name.toLowerCase() === sessionCloserName.toLowerCase())) {
+      return sessionCloserName;
+    }
+    return salesClosers[0]?.name || sessionCloserName || "Sales Closer";
+  }, [selectedCloserName, user?.name, sessionCloserName, salesClosers]);
+
+  const activeCloserEmail = useMemo(() => {
+    const matched = salesClosers.find((c) => c.name.toLowerCase() === activeCloserName.toLowerCase());
+    if (matched?.email) return matched.email;
+    return sessionCloserEmail || "";
+  }, [salesClosers, activeCloserName, sessionCloserEmail]);
+
+  const closerName = activeCloserName;
+  const closerEmail = activeCloserEmail;
 
   // Live Stopwatch
   const [timerSeconds, setTimerSeconds] = useState(0);
@@ -161,14 +187,18 @@ function SalesCloserCallLoggerContent() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const repQuery = encodeURIComponent(closerEmail || closerName || "");
-      const [callsRes, leadsRes] = await Promise.all([
+      const targetRep = activeCloserEmail || activeCloserName || "";
+      const repQuery = encodeURIComponent(targetRep);
+      const [callsRes, leadsRes, usersRes] = await Promise.all([
         crmFetch(`/api/erp/crm/calls?rep=${repQuery}`)
           .then((r) => r.json())
           .catch(() => null),
         crmFetch("/api/erp/crm/leads")
           .then((r) => r.json())
           .catch(() => null),
+        crmFetch("/api/erp/users")
+          .then((r) => (r.ok ? r.json() : []))
+          .catch(() => []),
       ]);
 
       if (Array.isArray(leadsRes?.leads)) {
@@ -177,12 +207,21 @@ function SalesCloserCallLoggerContent() {
         setLeads([]);
       }
 
+      // Extract ONLY employees who are strictly given access to the Sales Closer page
+      const rawUsers = Array.isArray(usersRes)
+        ? usersRes
+        : Array.isArray(usersRes?.users)
+        ? usersRes.users
+        : [];
+      const validClosers = filterSalesClosers(rawUsers);
+      setSalesClosers(validClosers);
+
       const rawCalls: CrmCall[] = Array.isArray(callsRes?.calls) ? callsRes.calls : [];
 
       // STRICT CLOSER ISOLATION:
       // Guarantee that ONLY calls logged under the active closer's identity are displayed
-      const closerNameNorm = closerName.trim().toLowerCase();
-      const closerEmailNorm = closerEmail.trim().toLowerCase();
+      const closerNameNorm = activeCloserName.trim().toLowerCase();
+      const closerEmailNorm = activeCloserEmail.trim().toLowerCase();
 
       const closerCalls = rawCalls.filter((c) => {
         const cEmail = (c.repEmail || "").trim().toLowerCase();
@@ -194,7 +233,6 @@ function SalesCloserCallLoggerContent() {
             return true;
           }
         }
-        // If no rep was tagged and user is logged in, only include if rep matches
         return false;
       });
 
@@ -209,7 +247,7 @@ function SalesCloserCallLoggerContent() {
 
   useEffect(() => {
     loadData();
-  }, [closerName, closerEmail]);
+  }, [activeCloserName, activeCloserEmail]);
 
   // Handle URL query parameters to prefill modal
   useEffect(() => {
@@ -262,6 +300,8 @@ function SalesCloserCallLoggerContent() {
       setCompany("");
       setPhoneNumber("");
     }
+    setModalCloserName(activeCloserName);
+    setModalCloserEmail(activeCloserEmail);
     setTimerSeconds(0);
     setIsTimerRunning(false);
     setManualDurationMinutes("");
@@ -288,13 +328,16 @@ function SalesCloserCallLoggerContent() {
 
     setIsSaving(true);
     try {
+      const repName = (modalCloserName || activeCloserName).trim();
+      const repEmail = (modalCloserEmail || activeCloserEmail).trim();
+
       const payload = {
         leadId: selectedLeadId || undefined,
         contactName: contactName.trim(),
         company: company.trim(),
         phoneNumber: phoneNumber.trim(),
-        repName: closerName,
-        repEmail: closerEmail,
+        repName,
+        repEmail,
         direction,
         outcome,
         durationSeconds: effectiveDuration,
@@ -441,6 +484,32 @@ function SalesCloserCallLoggerContent() {
           </div>
 
           <div className="flex items-center gap-2.5 w-full sm:w-auto">
+            {salesClosers.length > 1 && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-card)] shadow-xs">
+                <User className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span className="text-xs font-bold text-[var(--nexa-text-muted)]">Desk:</span>
+                <select
+                  value={selectedCloserName || activeCloserName}
+                  onChange={(e) => {
+                    setSelectedCloserName(e.target.value);
+                    const chosen = salesClosers.find((c) => c.name === e.target.value);
+                    if (chosen) {
+                      setModalCloserName(chosen.name);
+                      setModalCloserEmail(chosen.email);
+                    }
+                  }}
+                  className="bg-transparent text-xs font-bold text-[var(--nexa-text-primary)] cursor-pointer focus:outline-none"
+                  title="Switch Sales Closer Workstation"
+                >
+                  {salesClosers.map((c) => (
+                    <option key={c.id || c.email || c.name} value={c.name}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <button
               onClick={loadData}
               disabled={isLoading}
@@ -744,16 +813,35 @@ function SalesCloserCallLoggerContent() {
         maxWidth="2xl"
       >
         <form onSubmit={handleSaveCall} className="space-y-4">
-          {/* Closer Identification Banner */}
-          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-xs">
+          {/* Closer Identification Banner / Dropdown */}
+          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
-              <span>
-                Logging as Sales Closer: <strong>{closerName}</strong>
-              </span>
+              <span className="font-semibold text-[var(--nexa-text-secondary)]">Sales Closer:</span>
+              {salesClosers.length > 1 ? (
+                <select
+                  value={modalCloserName || activeCloserName}
+                  onChange={(e) => {
+                    setModalCloserName(e.target.value);
+                    const chosen = salesClosers.find((c) => c.name === e.target.value);
+                    setModalCloserEmail(chosen?.email || "");
+                  }}
+                  className="px-2 py-1 rounded-lg text-xs font-bold bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] cursor-pointer focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                >
+                  {salesClosers.map((c) => (
+                    <option key={c.id || c.email || c.name} value={c.name}>
+                      {c.name} {c.email ? `(${c.email})` : ""}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <strong className="text-[var(--nexa-text-primary)] font-bold">
+                  {modalCloserName || activeCloserName}
+                </strong>
+              )}
             </div>
             <span className="text-[10px] font-mono text-emerald-700 dark:text-emerald-300 font-bold">
-              Personal Closer Desk
+              Isolated Closer Desk
             </span>
           </div>
 
@@ -998,7 +1086,7 @@ function SalesCloserCallLoggerContent() {
 
 export default function SalesCloserCallLoggerPage() {
   return (
-    <RoleGuard allowedRoles={["admin", "md", "sales_closer"]}>
+    <RoleGuard allowedRoles={["admin", "md", "sales_closer", "employee"]}>
       <Suspense
         fallback={
           <div className="min-h-screen flex items-center justify-center bg-[var(--nexa-bg-base)]">

@@ -94,9 +94,18 @@ export function RoleGuard({
         if (u && u.department) {
           userDept = u.department;
         }
-        if (u && Array.isArray(u.assignedPages)) {
-          assignedPages = u.assignedPages;
-        } else if (u && (u.designation?.toLowerCase().includes("sales closer") || role === "sales_closer")) {
+        const rawAssigned = u?.assignedPages ?? (u as any)?.AssignedPages;
+        if (Array.isArray(rawAssigned)) {
+          assignedPages = rawAssigned;
+        } else if (typeof rawAssigned === "string" && rawAssigned.trim()) {
+          try {
+            const parsed = JSON.parse(rawAssigned);
+            if (Array.isArray(parsed)) assignedPages = parsed;
+          } catch {
+            assignedPages = rawAssigned.split(",").map((s: string) => s.trim());
+          }
+        }
+        if (assignedPages.length === 0 && (u && (u.designation?.toLowerCase().includes("sales closer") || role === "sales_closer"))) {
           assignedPages = ["employee", "sales_closer"];
         }
       } catch {}

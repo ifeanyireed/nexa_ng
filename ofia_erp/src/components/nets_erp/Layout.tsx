@@ -159,15 +159,7 @@ export default function ERPLayout({ children }: { children: React.ReactNode }) {
     avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
   });
   const [departmentConfigs, setDepartmentConfigs] = useState<DepartmentAccessItem[]>([]);
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("erp_sidebar_collapsed");
-      if (stored !== null) {
-        return stored === "true";
-      }
-    }
-    return false;
-  });
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
 
   // Sync user and collapsed state from localStorage on mount
   useEffect(() => {

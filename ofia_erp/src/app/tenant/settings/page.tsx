@@ -324,7 +324,7 @@ export default function TenantSettingsPage() {
     setSmtpTestStatus(null);
   }, [activeTenant?.slug, orgName, ownerEmail, senderProfiles.length]);
 
-  const loadSenderProfiles = useCallback(async (tenantSlugToUse?: string) => {
+  const loadSenderProfiles = useCallback(async (tenantSlugToUse?: string, targetProfileId?: string) => {
     const targetSlug = tenantSlugToUse || activeTenant?.slug || slug;
     if (!targetSlug) return;
     setIsLoadingProfiles(true);
@@ -336,8 +336,9 @@ export default function TenantSettingsPage() {
         setSenderProfiles(loaded);
 
         if (loaded.length > 0) {
-          let current = loaded.find((p) => p.id === selectedProfileId);
-          if (!current && selectedProfileId !== "new") {
+          const profileToSelect = targetProfileId || selectedProfileId;
+          let current = loaded.find((p) => p.id === profileToSelect);
+          if (!current && profileToSelect !== "new") {
             current = loaded.find((p) => p.isDefault) || loaded[0];
           }
           if (current) {
@@ -558,6 +559,7 @@ export default function TenantSettingsPage() {
 
       setProfileSaveSuccess(true);
       setSmtpHasPassword(Boolean(smtpPassword || smtpHasPassword));
+      setSmtpTestStatus({ success: true, message: `Sender profile "${derivedName}" saved successfully!` });
       setTimeout(() => setProfileSaveSuccess(false), 3500);
 
       const savedId = data.profile?.id;
@@ -565,7 +567,7 @@ export default function TenantSettingsPage() {
         setSelectedProfileId(savedId);
         setActiveProfileId(savedId);
       }
-      await loadSenderProfiles(currentSlug);
+      await loadSenderProfiles(currentSlug, savedId);
     } catch (err: any) {
       setSmtpTestStatus({ success: false, message: err.message });
     } finally {
@@ -589,7 +591,8 @@ export default function TenantSettingsPage() {
         }),
       });
       if (res.ok) {
-        await loadSenderProfiles(currentSlug);
+        setSmtpTestStatus({ success: true, message: `"${p.profileName}" is now the default sender profile.` });
+        await loadSenderProfiles(currentSlug, p.id);
       }
     } catch (err) {
       console.warn("Failed to set default profile:", err);
@@ -608,6 +611,7 @@ export default function TenantSettingsPage() {
         method: "DELETE",
       });
       if (res.ok) {
+        setSmtpTestStatus({ success: true, message: `Sender profile "${title}" deleted successfully.` });
         await loadSenderProfiles(currentSlug);
       }
     } catch (err) {
@@ -877,18 +881,33 @@ export default function TenantSettingsPage() {
       }
 
       // 2. Send PUT request to API
-      const res = await fetch(`/api/organizations/${encodeURIComponent(targetIdentifier)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        await fetch("/api/organizations", {
-          method: "POST",
+      let saveError = "";
+      try {
+        const res = await fetch(`/api/organizations/${encodeURIComponent(targetIdentifier)}`, {
+          method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...payload, id: targetIdentifier }),
+          body: JSON.stringify(payload),
         });
+
+        if (!res.ok) {
+          const postRes = await fetch("/api/organizations", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...payload, id: targetIdentifier }),
+          });
+          if (!postRes.ok) {
+            const errData = await postRes.json().catch(() => null);
+            saveError = errData?.error || "Failed to persist workspace settings to database";
+          }
+        }
+      } catch (reqErr: any) {
+        console.warn("API organization update error:", reqErr);
+      }
+
+      if (saveError) {
+        setErrorMessage(saveError);
+      } else {
+        setErrorMessage("");
       }
 
       // 3. Update activeTenant reference immediately
@@ -1022,6 +1041,22 @@ export default function TenantSettingsPage() {
           <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             Workspace details saved successfully to the database.
+          </div>
+        )}
+
+        {errorMessage && (
+          <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-bold flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setErrorMessage("")}
+              className="text-xs text-rose-500 hover:text-rose-700 font-bold cursor-pointer"
+            >
+              Dismiss
+            </button>
           </div>
         )}
 

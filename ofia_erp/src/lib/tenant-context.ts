@@ -22,6 +22,8 @@ export interface DatabaseTenant {
   heroSubtitle?: string;
   erpEnabled?: boolean;
   shopEnabled?: boolean;
+  vertical?: string;
+  shopSubModules?: Record<string, boolean>;
 }
 
 let cachedTenants: DatabaseTenant[] | null = null;
@@ -379,6 +381,16 @@ export async function fetchDatabaseTenants(forceRefresh = false): Promise<Databa
             heroSubtitle: rawHeroSubtitle,
             erpEnabled: org.erpEnabled !== undefined ? org.erpEnabled : (org.erp_enabled !== undefined ? org.erp_enabled : true),
             shopEnabled: org.shopEnabled !== undefined ? org.shopEnabled : (org.shop_enabled !== undefined ? org.shop_enabled : true),
+            vertical: org.vertical || org.Vertical || (typeof window !== "undefined" ? localStorage.getItem("tenant_vertical_" + rawSlug) : null) || (rawSlug === "neweratransports" ? "cars" : rawSlug === "reedbreed" ? "gadgets" : "retail"),
+            shopSubModules: org.shopSubModules || org.shop_sub_modules || {
+              pos: true,
+              inventory: true,
+              catalog: true,
+              services: true,
+              orders: true,
+              store: true,
+              referrals: true,
+            },
           };
         });
 

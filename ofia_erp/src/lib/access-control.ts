@@ -893,12 +893,24 @@ export function useTenantProvisioning() {
     [matrix, isLoading]
   );
 
+  const isShopSubModuleProvisioned = useCallback(
+    (subKey: string): boolean => {
+      if (isLoading) return true;
+      if (tenant?.shopSubModules && tenant.shopSubModules[subKey] !== undefined) {
+        return Boolean(tenant.shopSubModules[subKey]);
+      }
+      return isModuleProvisioned(subKey);
+    },
+    [tenant, isModuleProvisioned, isLoading]
+  );
+
   return {
     matrix,
     tenant,
     departmentConfigs,
     isLoading,
     isModuleProvisioned,
+    isShopSubModuleProvisioned,
   };
 }
 

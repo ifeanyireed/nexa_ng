@@ -989,16 +989,38 @@ export function ErpAdminShell({
     }
 
     if (pathname.startsWith("/erp/admin/shop")) {
-      return [
+      const isSubAllowed = (key: string) => {
+        const adminVal = permissionMatrix.admin?.[key];
+        const provVal = (permissionMatrix as any).tenant_provision?.[key];
+        return adminVal !== false && provVal !== false;
+      };
+
+      const shopTabs: SubNavItem[] = [
         { label: "Shop Overview", href: "/erp/admin/shop", icon: <Store className="w-3.5 h-3.5" /> },
-        { label: "Catalog & Listings", href: "/erp/admin/shop/catalog", icon: <Package className="w-3.5 h-3.5" />, badge: "Items" },
-        { label: "Services & Bookings", href: "/erp/admin/shop/services", icon: <Calendar className="w-3.5 h-3.5" />, badge: "Bookings" },
-        { label: "Orders & Requests", href: "/erp/admin/shop/orders", icon: <ClipboardList className="w-3.5 h-3.5" />, badge: "Orders" },
-        { label: "Inventory (IMS)", href: "/erp/admin/shop/inventory", icon: <Boxes className="w-3.5 h-3.5" />, badge: "IMS" },
-        { label: "Point of Sale (POS)", href: "/erp/admin/shop/pos", icon: <ShoppingCart className="w-3.5 h-3.5" />, badge: "POS" },
-        { label: "My Store Studio", href: "/erp/admin/shop/store", icon: <Palette className="w-3.5 h-3.5" />, badge: "Studio" },
-        { label: "Viral Referrals", href: "/erp/admin/shop/referrals", icon: <Gift className="w-3.5 h-3.5" />, badge: "Growth" },
       ];
+      if (isSubAllowed("catalog")) {
+        shopTabs.push({ label: "Catalog & Listings", href: "/erp/admin/shop/catalog", icon: <Package className="w-3.5 h-3.5" />, badge: "Items" });
+      }
+      if (isSubAllowed("services")) {
+        shopTabs.push({ label: "Services & Bookings", href: "/erp/admin/shop/services", icon: <Calendar className="w-3.5 h-3.5" />, badge: "Bookings" });
+      }
+      if (isSubAllowed("orders")) {
+        shopTabs.push({ label: "Orders & Requests", href: "/erp/admin/shop/orders", icon: <ClipboardList className="w-3.5 h-3.5" />, badge: "Orders" });
+      }
+      if (isSubAllowed("inventory")) {
+        shopTabs.push({ label: "Inventory (IMS)", href: "/erp/admin/shop/inventory", icon: <Boxes className="w-3.5 h-3.5" />, badge: "IMS" });
+      }
+      if (isSubAllowed("pos")) {
+        shopTabs.push({ label: "Point of Sale (POS)", href: "/erp/admin/shop/pos", icon: <ShoppingCart className="w-3.5 h-3.5" />, badge: "POS" });
+      }
+      if (isSubAllowed("store")) {
+        shopTabs.push({ label: "My Store Studio", href: "/erp/admin/shop/store", icon: <Palette className="w-3.5 h-3.5" />, badge: "Studio" });
+      }
+      if (isSubAllowed("referrals")) {
+        shopTabs.push({ label: "Viral Referrals", href: "/erp/admin/shop/referrals", icon: <Gift className="w-3.5 h-3.5" />, badge: "Growth" });
+      }
+
+      return shopTabs;
     }
 
     if (pathname.startsWith("/erp/admin/marketplace")) {

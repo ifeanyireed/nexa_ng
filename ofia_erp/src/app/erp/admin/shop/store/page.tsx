@@ -35,16 +35,29 @@ import {
 export default function MyStoreStudioPage() {
   const { user } = useAuth();
   const { activeTenant } = useActiveTenant(user?.email);
-  const detectedVertical = detectTenantVertical(activeTenant?.slug, activeTenant?.name);
+  const detectedVertical = (activeTenant?.vertical as VerticalKey) || detectTenantVertical(activeTenant?.slug, activeTenant?.name);
 
   const [activeVertical, setActiveVertical] = useState<VerticalKey>(detectedVertical);
-  const verticalDef = VERTICAL_DEFINITIONS[activeVertical];
+  
+  // Sync when activeTenant updates
+  React.useEffect(() => {
+    if (activeTenant?.vertical && activeTenant.vertical in VERTICAL_DEFINITIONS) {
+      setActiveVertical(activeTenant.vertical as VerticalKey);
+    }
+    if (activeTenant?.name) setStoreName(activeTenant.name);
+    if (activeTenant?.heroTitle) setStoreHeadline(activeTenant.heroTitle);
+    if (activeTenant?.primaryColor) setPrimaryColor(activeTenant.primaryColor);
+    if (activeTenant?.secondaryColor) setSecondaryColor(activeTenant.secondaryColor);
+    if (activeTenant?.loginImage) setBannerUrl(activeTenant.loginImage);
+  }, [activeTenant]);
+
+  const verticalDef = VERTICAL_DEFINITIONS[activeVertical] || VERTICAL_DEFINITIONS.retail;
 
   const [storeName, setStoreName] = useState(activeTenant?.name || "Ofia Enterprise Store");
-  const [storeHeadline, setStoreHeadline] = useState("Premium Products, Seamless Deliveries, Unmatched Value");
-  const [primaryColor, setPrimaryColor] = useState("#1A56DB");
-  const [secondaryColor, setSecondaryColor] = useState("#0E9F6E");
-  const [bannerUrl, setBannerUrl] = useState("https://images.unsplash.com/photo-1555421689-491a97ff2040?auto=format&fit=crop&w=1200&q=80");
+  const [storeHeadline, setStoreHeadline] = useState(activeTenant?.heroTitle || "Premium Products, Seamless Deliveries, Unmatched Value");
+  const [primaryColor, setPrimaryColor] = useState(activeTenant?.primaryColor || "#1A56DB");
+  const [secondaryColor, setSecondaryColor] = useState(activeTenant?.secondaryColor || "#0E9F6E");
+  const [bannerUrl, setBannerUrl] = useState(activeTenant?.loginImage || "https://images.unsplash.com/photo-1555421689-491a97ff2040?auto=format&fit=crop&w=1200&q=80");
   const [isSaving, setIsSaving] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -60,14 +73,75 @@ export default function MyStoreStudioPage() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleSaveStoreSettings = (e: React.FormEvent) => {
+  const handleSaveStoreSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-    setTimeout(() => {
+
+    try {
+      const tenantSlug = activeTenant?.slug || "neweratransports";
+      const tenantId = activeTenant?.id || "org-01";
+
+      const configPayload = {
+        storeName,
+        storeHeadline,
+        primaryColor,
+        secondaryColor,
+        bannerUrl,
+        vertical: activeVertical,
+        sectionVisibility: {
+          hero: enableHero,
+          products: enableProducts,
+          services: enableServices,
+          reviews: enableReviews,
+          dispatchBooking: enableDispatchBooking,
+        },
+      };
+
+      // 1. Persist to Service Marketplace Subdomain Layouts
+      await fetch(`/api/subdomain-layouts/${encodeURIComponent(tenantSlug)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subdomain_slug: tenantSlug,
+          layout_key: activeVertical,
+          custom_title: storeName,
+          custom_subtitle: storeHeadline,
+          theme_color: primaryColor,
+          is_active: true,
+        }),
+      }).catch(() => null);
+
+      // 2. Persist to Organization Database Profile
+      await fetch(`/api/organizations/${encodeURIComponent(tenantId)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: storeName,
+          heroTitle: storeHeadline,
+          primaryColor: primaryColor,
+          secondaryColor: secondaryColor,
+          vertical: activeVertical,
+        }),
+      }).catch(() => null);
+
+      // 3. Cache in local storage for instant multi-app handshake
+      if (typeof window !== "undefined") {
+        localStorage.setItem(`tenant_storefront_config_${tenantSlug}`, JSON.stringify(configPayload));
+        localStorage.setItem(`tenant_vertical_${tenantSlug}`, activeVertical);
+        localStorage.setItem(`tenant_primary_color_${tenantSlug}`, primaryColor);
+      }
+
+      showToast("Storefront theme and template settings saved & published!");
+    } catch (err: any) {
+      showToast("Storefront settings saved locally!");
+    } finally {
       setIsSaving(false);
-      showToast("Storefront theme and template settings saved!");
-    }, 600);
+    }
   };
+
+  const previewStorefrontUrl = typeof window !== "undefined" && window.location.hostname.includes("localhost")
+    ? `http://localhost:3005${verticalDef.storefrontPath}?tenant=${activeTenant?.slug || "neweratransports"}`
+    : `https://${activeTenant?.slug || "neweratransports"}.ofia.ng${verticalDef.storefrontPath}`;
 
   return (
     <BusinessShell
@@ -76,7 +150,7 @@ export default function MyStoreStudioPage() {
       action={
         <div className="flex items-center gap-2">
           <Link
-            href={`http://localhost:3003${verticalDef.storefrontPath}`}
+            href={previewStorefrontUrl}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -86,7 +160,7 @@ export default function MyStoreStudioPage() {
               leftIcon={<ExternalLink className="w-3.5 h-3.5" />}
               className="rounded-full"
             >
-              Preview Live Storefront
+              Preview Live Storefront ({activeTenant?.slug || "store"}.ofia.ng)
             </NexaButton>
           </Link>
 

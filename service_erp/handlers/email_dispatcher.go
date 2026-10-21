@@ -11,8 +11,8 @@ import (
 	"service_erp/utils"
 )
 
-// FetchSmtpConfigForSlug retrieves SMTP configuration from tenant_smtp_settings table for a given slug
-func FetchSmtpConfigForSlug(targetDB *sql.DB, slug string) (*utils.SmtpConfig, error) {
+// FetchSenderProfileForSlug retrieves a specific profile (by id) or default sender profile from tenant_sender_profiles or tenant_smtp_settings
+func FetchSenderProfileForSlug(targetDB *sql.DB, slug string, profileId string) (*utils.SmtpConfig, error) {
 	activeDB := targetDB
 	if activeDB == nil {
 		activeDB = db
@@ -25,14 +25,44 @@ func FetchSmtpConfigForSlug(targetDB *sql.DB, slug string) (*utils.SmtpConfig, e
 	var host, fromEmail, fromName, username, password, encryption sql.NullString
 	var port sql.NullInt64
 
-	err := activeDB.QueryRow(`
-		SELECT host, port, encryption, from_email, from_name, username, password 
-		FROM tenant_smtp_settings 
-		WHERE LOWER(tenant_slug) = $1 
-		LIMIT 1`, normSlug).Scan(&host, &port, &encryption, &fromEmail, &fromName, &username, &password)
-	if err != nil {
-		// If not found in targetDB and targetDB != db, try platform db
-		if db != nil && activeDB != db {
+	pId := strings.TrimSpace(profileId)
+	var err error
+
+	// 1. Try to fetch requested profile by ID if specified
+	if pId != "" && pId != "default" && pId != "workspace_primary" {
+		err = activeDB.QueryRow(`
+			SELECT host, port, encryption, from_email, from_name, username, password 
+			FROM tenant_sender_profiles 
+			WHERE id = $1 AND LOWER(tenant_slug) = $2 
+			LIMIT 1`, pId, normSlug).Scan(&host, &port, &encryption, &fromEmail, &fromName, &username, &password)
+	}
+
+	// 2. If not found or profileId was empty, try default profile from tenant_sender_profiles
+	if err != nil || !host.Valid || host.String == "" {
+		err = activeDB.QueryRow(`
+			SELECT host, port, encryption, from_email, from_name, username, password 
+			FROM tenant_sender_profiles 
+			WHERE LOWER(tenant_slug) = $1 AND is_default = true 
+			LIMIT 1`, normSlug).Scan(&host, &port, &encryption, &fromEmail, &fromName, &username, &password)
+	}
+
+	// 3. If no default profile marked, try any profile from tenant_sender_profiles
+	if err != nil || !host.Valid || host.String == "" {
+		err = activeDB.QueryRow(`
+			SELECT host, port, encryption, from_email, from_name, username, password 
+			FROM tenant_sender_profiles 
+			WHERE LOWER(tenant_slug) = $1 
+			ORDER BY created_at ASC LIMIT 1`, normSlug).Scan(&host, &port, &encryption, &fromEmail, &fromName, &username, &password)
+	}
+
+	// 4. Fall back to tenant_smtp_settings
+	if err != nil || !host.Valid || host.String == "" {
+		err = activeDB.QueryRow(`
+			SELECT host, port, encryption, from_email, from_name, username, password 
+			FROM tenant_smtp_settings 
+			WHERE LOWER(tenant_slug) = $1 
+			LIMIT 1`, normSlug).Scan(&host, &port, &encryption, &fromEmail, &fromName, &username, &password)
+		if err != nil && db != nil && activeDB != db {
 			err = db.QueryRow(`
 				SELECT host, port, encryption, from_email, from_name, username, password 
 				FROM tenant_smtp_settings 
@@ -40,6 +70,7 @@ func FetchSmtpConfigForSlug(targetDB *sql.DB, slug string) (*utils.SmtpConfig, e
 				LIMIT 1`, normSlug).Scan(&host, &port, &encryption, &fromEmail, &fromName, &username, &password)
 		}
 	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +89,11 @@ func FetchSmtpConfigForSlug(targetDB *sql.DB, slug string) (*utils.SmtpConfig, e
 		FromEmail:  strings.TrimSpace(fromEmail.String),
 		FromName:   strings.TrimSpace(fromName.String),
 	}, nil
+}
+
+// FetchSmtpConfigForSlug retrieves SMTP configuration from tenant_smtp_settings or tenant_sender_profiles for a given slug
+func FetchSmtpConfigForSlug(targetDB *sql.DB, slug string) (*utils.SmtpConfig, error) {
+	return FetchSenderProfileForSlug(targetDB, slug, "")
 }
 
 // GetEnvSmtpConfig checks environment variables for SMTP settings

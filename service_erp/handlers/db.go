@@ -668,6 +668,47 @@ func EnsureCRMTablesOnDB(targetDB *sql.DB) {
 		updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 	);`)
 
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS tenant_sender_profiles (
+		id VARCHAR(191) PRIMARY KEY,
+		tenant_slug VARCHAR(191) NOT NULL,
+		profile_name VARCHAR(191) NOT NULL,
+		provider VARCHAR(50) DEFAULT 'custom',
+		host VARCHAR(191) NOT NULL,
+		port INT DEFAULT 587,
+		encryption VARCHAR(20) DEFAULT 'tls',
+		from_email VARCHAR(191) NOT NULL,
+		from_name VARCHAR(191) NOT NULL,
+		username VARCHAR(191) NOT NULL,
+		password VARCHAR(255) DEFAULT '',
+		is_default BOOLEAN DEFAULT FALSE,
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_tenant_sender_profiles_slug ON tenant_sender_profiles(LOWER(tenant_slug));`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS crm_calls (
+		id VARCHAR(64) PRIMARY KEY,
+		tenant_slug VARCHAR(191) NOT NULL,
+		lead_id VARCHAR(64),
+		deal_id VARCHAR(64),
+		contact_name VARCHAR(191) NOT NULL,
+		company VARCHAR(191),
+		phone_number VARCHAR(64) NOT NULL,
+		rep_name VARCHAR(191) NOT NULL,
+		rep_email VARCHAR(191),
+		direction VARCHAR(20) DEFAULT 'OUTBOUND',
+		outcome VARCHAR(50) NOT NULL,
+		duration_seconds INT DEFAULT 0,
+		notes TEXT,
+		followup_date VARCHAR(100),
+		call_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_calls_tenant ON crm_calls (LOWER(tenant_slug));`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_calls_lead ON crm_calls (lead_id);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_calls_date ON crm_calls (call_date);`)
+
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS name VARCHAR(191);`)
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS first_name VARCHAR(100);`)
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS last_name VARCHAR(100);`)

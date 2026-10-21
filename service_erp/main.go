@@ -182,6 +182,8 @@ func registerRoutes() {
 	registerRoute("/crm/track/open", handlers.HandleCrmTrackOpen)
 	registerRoute("/crm/track/click", handlers.HandleCrmTrackClick)
 	registerRoute("/crm/smtp-settings", handlers.HandleCrmSmtpSettings)
+	registerRoute("/crm/sender-profiles", handlers.HandleCrmSenderProfiles)
+	registerRoute("/crm/calls", handlers.HandleCrmCalls)
 
 	// Prefix aliases for /api/v1/erp/crm/*
 	registerRoute("/api/v1/erp/crm/accounts", handlers.HandleCrmAccounts)
@@ -189,6 +191,8 @@ func registerRoutes() {
 	registerRoute("/api/v1/erp/crm/leads/extract", handlers.HandleCrmLeadsExtract)
 	registerRoute("/api/v1/erp/crm/deals", handlers.HandleCrmDeals)
 	registerRoute("/api/v1/erp/crm/activities", handlers.HandleCrmActivities)
+	registerRoute("/api/v1/erp/crm/calls", handlers.HandleCrmCalls)
+	registerRoute("/api/v1/erp/calls", handlers.HandleCrmCalls)
 	registerRoute("/api/v1/erp/crm/lists", handlers.HandleCrmLists)
 	registerRoute("/api/v1/erp/crm/lists/subscribers", handlers.HandleCrmSubscribers)
 	registerRoute("/api/v1/erp/crm/blasts", handlers.HandleCrmBlasts)
@@ -198,6 +202,8 @@ func registerRoutes() {
 	registerRoute("/api/v1/erp/crm/track/click", handlers.HandleCrmTrackClick)
 	registerRoute("/api/v1/erp/crm/smtp-settings", handlers.HandleCrmSmtpSettings)
 	registerRoute("/api/v1/erp/smtp-settings", handlers.HandleCrmSmtpSettings)
+	registerRoute("/api/v1/erp/crm/sender-profiles", handlers.HandleCrmSenderProfiles)
+	registerRoute("/api/v1/erp/sender-profiles", handlers.HandleCrmSenderProfiles)
 }
 
 func enableCORS(next http.HandlerFunc) http.HandlerFunc {

@@ -648,6 +648,42 @@ func HandleCrmActivities(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.Method == http.MethodPatch || r.Method == http.MethodPut {
+		var body map[string]any
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, `{"error": "Invalid JSON body"}`, http.StatusBadRequest)
+			return
+		}
+		id, _ := body["id"].(string)
+		if id == "" {
+			id = r.URL.Query().Get("id")
+		}
+		if id == "" {
+			http.Error(w, `{"error": "Activity ID required"}`, http.StatusBadRequest)
+			return
+		}
+
+		status, _ := body["status"].(string)
+		notes, _ := body["notes"].(string)
+		title, _ := body["title"].(string)
+		dateTime, _ := body["dateTime"].(string)
+
+		_, err := db.Exec(`UPDATE crm_activities SET
+			status = COALESCE(NULLIF($1, ''), status),
+			notes = COALESCE(NULLIF($2, ''), notes),
+			title = COALESCE(NULLIF($3, ''), title),
+			date_time = COALESCE(NULLIF($4, ''), date_time)
+			WHERE id = $5 AND LOWER(tenant_slug) = $6`,
+			status, notes, title, dateTime, id, slug)
+
+		if err != nil {
+			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]any{"success": true, "activity": map[string]any{"id": id, "status": status}})
+		return
+	}
+
 	if r.Method == http.MethodDelete {
 		id := r.URL.Query().Get("id")
 		if id == "" {
@@ -1725,12 +1761,12 @@ func ExecuteBlastDelivery(targetDB *sql.DB, tenantSlug, blastId string) {
 
 	// 1. Fetch Blast details
 	var title, subject, contentHtml string
-	var previewText, listId, senderName, senderEmail, senderOverride sql.NullString
+	var previewText, listId, senderName, senderEmail, senderOverride, senderProfileId sql.NullString
 	err := targetDB.QueryRow(`
-		SELECT title, subject, content_html, preview_text, list_id, sender_name, sender_email, sender_override
+		SELECT title, subject, content_html, preview_text, list_id, sender_name, sender_email, sender_override, sender_profile_id
 		FROM crm_email_blasts
 		WHERE id = $1 AND LOWER(tenant_slug) = $2
-		LIMIT 1`, blastId, slug).Scan(&title, &subject, &contentHtml, &previewText, &listId, &senderName, &senderEmail, &senderOverride)
+		LIMIT 1`, blastId, slug).Scan(&title, &subject, &contentHtml, &previewText, &listId, &senderName, &senderEmail, &senderOverride, &senderProfileId)
 	if err != nil {
 		log.Printf("❌ ExecuteBlastDelivery: blast '%s' not found for tenant '%s': %v", blastId, slug, err)
 		return
@@ -1748,7 +1784,7 @@ func ExecuteBlastDelivery(targetDB *sql.DB, tenantSlug, blastId string) {
 			FromEmail  string `json:"fromEmail"`
 			FromName   string `json:"fromName"`
 		}
-		if err := json.Unmarshal([]byte(senderOverride.String), &parsed); err == nil && parsed.Host != "" && parsed.Password != "" {
+		if err := json.Unmarshal([]byte(senderOverride.String), &parsed); err == nil && parsed.Host != "" && parsed.Password != "" && parsed.Password != "••••••••" {
 			overrideCfg = &utils.SmtpConfig{
 				Host:       parsed.Host,
 				Port:       parsed.Port,
@@ -1774,7 +1810,7 @@ func ExecuteBlastDelivery(targetDB *sql.DB, tenantSlug, blastId string) {
 
 	// Validate whether tenant has SMTP settings configured
 	if overrideCfg == nil || overrideCfg.Host == "" || overrideCfg.Password == "" {
-		tenantCfg, errSmtp := FetchSmtpConfigForSlug(targetDB, slug)
+		tenantCfg, errSmtp := FetchSenderProfileForSlug(targetDB, slug, senderProfileId.String)
 		if errSmtp != nil || tenantCfg == nil || tenantCfg.Host == "" || tenantCfg.Password == "" {
 			failReason := fmt.Sprintf("Strict Multi-Tenancy Policy: No verified SMTP relay configured for workspace '%s'", slug)
 			log.Printf("❌ Blast '%s' aborted: %s", blastId, failReason)
@@ -1782,6 +1818,7 @@ func ExecuteBlastDelivery(targetDB *sql.DB, tenantSlug, blastId string) {
 			_, _ = targetDB.Exec(`UPDATE crm_email_blast_recipients SET status = 'FAILED', error_message = $1 WHERE blast_id = $2 AND LOWER(tenant_slug) = $3 AND status = 'PENDING'`, failReason, blastId, slug)
 			return
 		}
+		overrideCfg = tenantCfg
 		if effectiveFromEmail == "" {
 			effectiveFromEmail = tenantCfg.FromEmail
 		}
@@ -2489,8 +2526,72 @@ func HandleCrmBlasts(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		// Trigger blast delivery worker if status set to SENDING or resume action requested
+		// Trigger blast delivery worker if status set to SENDING, resume, or retry action requested
 		action := r.URL.Query().Get("action")
+		if action == "retry" || action == "retry_failed" || body.Status == "RETRY" {
+			// If a new sender_profile_id is provided, switch the blast's sender profile
+			if body.SenderProfileID != "" {
+				var pProv, pFromEmail, pFromName string
+				if err := db.QueryRow(`SELECT provider, from_email, from_name FROM tenant_sender_profiles WHERE id = $1 AND LOWER(tenant_slug) = $2`, body.SenderProfileID, slug).Scan(&pProv, &pFromEmail, &pFromName); err == nil {
+					_, _ = db.Exec(`UPDATE crm_email_blasts SET sender_profile_id = $1, sender_provider = $2, sender_email = $3, sender_name = $4 WHERE id = $5 AND LOWER(tenant_slug) = $6`,
+						body.SenderProfileID, pProv, pFromEmail, pFromName, blastId, slug)
+				}
+			}
+
+			// Reset all FAILED recipients to PENDING so they are redelivered
+			_, _ = db.Exec(`
+				UPDATE crm_email_blast_recipients
+				SET status = 'PENDING', error_message = NULL
+				WHERE blast_id = $1 AND LOWER(tenant_slug) = $2 AND status = 'FAILED'`, blastId, slug)
+
+			// Reset failed count and mark blast as SENDING
+			_, _ = db.Exec(`
+				UPDATE crm_email_blasts
+				SET status = 'SENDING', failed_count = 0, updated_at = NOW()
+				WHERE id = $1 AND LOWER(tenant_slug) = $2`, blastId, slug)
+
+			tenantDB := getDBForSlug(slug)
+			if tenantDB == nil {
+				tenantDB = db
+			}
+			go ExecuteBlastDelivery(tenantDB, slug, blastId)
+
+			json.NewEncoder(w).Encode(map[string]any{
+				"success": true,
+				"message": "Failed recipients queued for retry",
+				"id":      blastId,
+			})
+			return
+		}
+
+		if action == "retry_recipient" {
+			recipientId := r.URL.Query().Get("recipient_id")
+			if recipientId != "" {
+				_, _ = db.Exec(`
+					UPDATE crm_email_blast_recipients
+					SET status = 'PENDING', error_message = NULL
+					WHERE id = $1 AND blast_id = $2 AND LOWER(tenant_slug) = $3`, recipientId, blastId, slug)
+
+				_, _ = db.Exec(`
+					UPDATE crm_email_blasts
+					SET status = 'SENDING', updated_at = NOW()
+					WHERE id = $1 AND LOWER(tenant_slug) = $2`, blastId, slug)
+
+				tenantDB := getDBForSlug(slug)
+				if tenantDB == nil {
+					tenantDB = db
+				}
+				go ExecuteBlastDelivery(tenantDB, slug, blastId)
+
+				json.NewEncoder(w).Encode(map[string]any{
+					"success": true,
+					"message": "Recipient queued for retry",
+					"id":      blastId,
+				})
+				return
+			}
+		}
+
 		if body.Status == "SENDING" || body.Status == "RESUME" || action == "resume" || action == "send" {
 			tenantDB := getDBForSlug(slug)
 			if tenantDB == nil {
@@ -2729,6 +2830,613 @@ func HandleCrmSmtpSettings(w http.ResponseWriter, r *http.Request) {
 				"username":    body.Username,
 				"hasPassword": pwd != "",
 			},
+		})
+		return
+	}
+
+	http.Error(w, `{"error": "Method not allowed"}`, http.StatusMethodNotAllowed)
+}
+
+// =============================================================================
+// 11. TENANT SENDER PROFILES (MULTI-PROFILE SMTP & OUTREACH RELAYS)
+// =============================================================================
+
+func HandleCrmSenderProfiles(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	db := getDB(r)
+	EnsureCRMTablesOnDB(db)
+	if db == nil {
+		http.Error(w, `{"error": "Database unavailable"}`, http.StatusServiceUnavailable)
+		return
+	}
+
+	slug := getTenantSlug(r)
+
+	if r.Method == http.MethodGet {
+		// 1. Fetch all sender profiles for this tenant
+		rows, err := db.Query(`
+			SELECT id, tenant_slug, profile_name, provider, host, port, encryption,
+			       from_email, from_name, username, password, is_default, created_at, updated_at
+			FROM tenant_sender_profiles
+			WHERE LOWER(tenant_slug) = $1
+			ORDER BY is_default DESC, created_at ASC`, slug)
+
+		profiles := []map[string]any{}
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var id, tSlug, pName, provider, host, enc, fromEmail, fromName, username, pwd string
+				var port int
+				var isDef bool
+				var createdAt, updatedAt time.Time
+				if err := rows.Scan(&id, &tSlug, &pName, &provider, &host, &port, &enc, &fromEmail, &fromName, &username, &pwd, &isDef, &createdAt, &updatedAt); err == nil {
+					profiles = append(profiles, map[string]any{
+						"id":          id,
+						"tenantSlug":  tSlug,
+						"profileName": pName,
+						"provider":    provider,
+						"host":        host,
+						"port":        port,
+						"encryption":  enc,
+						"fromEmail":   fromEmail,
+						"fromName":    fromName,
+						"username":    username,
+						"hasPassword": pwd != "",
+						"password":    "••••••••",
+						"isDefault":   isDef,
+						"createdAt":   createdAt,
+						"updatedAt":   updatedAt,
+					})
+				}
+			}
+		}
+
+		// 2. Fetch default SMTP / legacy settings
+		var defaultSmtp map[string]any
+		var sProvider, sHost, sFromEmail, sFromName, sUsername, sPassword *string
+		var sPort int
+		var sEncryption *string
+		var sRateLimitedUntil *time.Time
+		var sRateLimitReason *string
+
+		errSmtp := db.QueryRow(`
+			SELECT provider, host, port, encryption, from_email, from_name, username, password, rate_limited_until, rate_limit_reason
+			FROM tenant_smtp_settings WHERE LOWER(tenant_slug) = $1 LIMIT 1`, slug).
+			Scan(&sProvider, &sHost, &sPort, &sEncryption, &sFromEmail, &sFromName, &sUsername, &sPassword, &sRateLimitedUntil, &sRateLimitReason)
+
+		if errSmtp == nil && sHost != nil && *sHost != "" {
+			defaultSmtp = map[string]any{
+				"tenantSlug":       slug,
+				"provider":         sProvider,
+				"host":             sHost,
+				"port":             sPort,
+				"encryption":       sEncryption,
+				"fromEmail":        sFromEmail,
+				"fromName":         sFromName,
+				"username":         sUsername,
+				"hasPassword":      sPassword != nil && *sPassword != "",
+				"password":         "••••••••",
+				"rateLimitedUntil": sRateLimitedUntil,
+				"rateLimitReason":  sRateLimitReason,
+				"isRateLimited":    sRateLimitedUntil != nil && sRateLimitedUntil.After(time.Now()),
+			}
+
+			// If no profiles existed in the table yet, seed it with this one so previous config is preserved
+			if len(profiles) == 0 && sFromEmail != nil && *sFromEmail != "" {
+				initId := fmt.Sprintf("prof_init_%s", strings.ReplaceAll(slug, "-", "_"))
+				prov := "custom"
+				if sProvider != nil && *sProvider != "" {
+					prov = *sProvider
+				}
+				name := fmt.Sprintf("%s Relay", strings.ToUpper(prov))
+				enc := "tls"
+				if sEncryption != nil && *sEncryption != "" {
+					enc = *sEncryption
+				}
+				fn := "Workspace Admin"
+				if sFromName != nil && *sFromName != "" {
+					fn = *sFromName
+				}
+				un := *sFromEmail
+				if sUsername != nil && *sUsername != "" {
+					un = *sUsername
+				}
+				pwdVal := ""
+				if sPassword != nil {
+					pwdVal = *sPassword
+				}
+
+				_, _ = db.Exec(`
+					INSERT INTO tenant_sender_profiles (id, tenant_slug, profile_name, provider, host, port, encryption, from_email, from_name, username, password, is_default, created_at, updated_at)
+					VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, true, NOW(), NOW())
+					ON CONFLICT (id) DO NOTHING`,
+					initId, slug, name, prov, *sHost, sPort, enc, *sFromEmail, fn, un, pwdVal)
+
+				profiles = append(profiles, map[string]any{
+					"id":          initId,
+					"tenantSlug":  slug,
+					"profileName": name,
+					"provider":    prov,
+					"host":        *sHost,
+					"port":        sPort,
+					"encryption":  enc,
+					"fromEmail":   *sFromEmail,
+					"fromName":    fn,
+					"username":    un,
+					"hasPassword": pwdVal != "",
+					"password":    "••••••••",
+					"isDefault":   true,
+					"createdAt":   time.Now(),
+					"updatedAt":   time.Now(),
+				})
+			}
+		}
+
+		json.NewEncoder(w).Encode(map[string]any{
+			"success":     true,
+			"profiles":    profiles,
+			"defaultSmtp": defaultSmtp,
+		})
+		return
+	}
+
+	if r.Method == http.MethodPost || r.Method == http.MethodPut {
+		var body struct {
+			ID          string `json:"id"`
+			ProfileName string `json:"profileName"`
+			Provider    string `json:"provider"`
+			Host        string `json:"host"`
+			Port        int    `json:"port"`
+			Encryption  string `json:"encryption"`
+			FromEmail   string `json:"fromEmail"`
+			FromName    string `json:"fromName"`
+			Username    string `json:"username"`
+			Password    string `json:"password"`
+			IsDefault   bool   `json:"isDefault"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
+			return
+		}
+
+		id := strings.TrimSpace(body.ID)
+		if id == "" || id == "new" {
+			id = fmt.Sprintf("prof_%d", time.Now().UnixMilli())
+		}
+
+		prov := body.Provider
+		if prov == "" {
+			prov = "custom"
+		}
+		pName := body.ProfileName
+		if pName == "" {
+			pName = fmt.Sprintf("%s Profile (%s)", strings.ToUpper(prov), body.FromEmail)
+		}
+		port := body.Port
+		if port == 0 {
+			port = 587
+		}
+		enc := body.Encryption
+		if enc == "" {
+			enc = "tls"
+		}
+		fn := body.FromName
+		if fn == "" {
+			fn = "Workspace Admin"
+		}
+		un := body.Username
+		if un == "" {
+			un = body.FromEmail
+		}
+
+		pwd := body.Password
+		if pwd == "••••••••" || pwd == "" {
+			var existingPwd string
+			_ = db.QueryRow(`SELECT password FROM tenant_sender_profiles WHERE id = $1 AND LOWER(tenant_slug) = $2`, id, slug).Scan(&existingPwd)
+			if existingPwd != "" {
+				pwd = existingPwd
+			} else {
+				_ = db.QueryRow(`SELECT password FROM tenant_smtp_settings WHERE LOWER(tenant_slug) = $1`, slug).Scan(&existingPwd)
+				pwd = existingPwd
+			}
+		}
+
+		// Count existing profiles
+		var count int
+		_ = db.QueryRow(`SELECT COUNT(*) FROM tenant_sender_profiles WHERE LOWER(tenant_slug) = $1`, slug).Scan(&count)
+		isDefault := body.IsDefault || count == 0
+
+		if isDefault {
+			_, _ = db.Exec(`UPDATE tenant_sender_profiles SET is_default = false, updated_at = NOW() WHERE LOWER(tenant_slug) = $1`, slug)
+		}
+
+		_, err := db.Exec(`
+			INSERT INTO tenant_sender_profiles (id, tenant_slug, profile_name, provider, host, port, encryption, from_email, from_name, username, password, is_default, updated_at)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+			ON CONFLICT (id) DO UPDATE SET
+				profile_name = EXCLUDED.profile_name,
+				provider = EXCLUDED.provider,
+				host = EXCLUDED.host,
+				port = EXCLUDED.port,
+				encryption = EXCLUDED.encryption,
+				from_email = EXCLUDED.from_email,
+				from_name = EXCLUDED.from_name,
+				username = EXCLUDED.username,
+				password = CASE WHEN EXCLUDED.password != '' THEN EXCLUDED.password ELSE tenant_sender_profiles.password END,
+				is_default = EXCLUDED.is_default,
+				updated_at = NOW()`,
+			id, slug, pName, prov, body.Host, port, enc, body.FromEmail, fn, un, pwd, isDefault)
+
+		if err != nil {
+			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
+			return
+		}
+
+		// If this profile is default, sync to legacy tenant_smtp_settings
+		if isDefault {
+			_, _ = db.Exec(`
+				INSERT INTO tenant_smtp_settings (tenant_slug, provider, host, port, encryption, from_email, from_name, username, password, updated_at)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+				ON CONFLICT (tenant_slug) DO UPDATE SET
+					provider = EXCLUDED.provider, host = EXCLUDED.host, port = EXCLUDED.port, encryption = EXCLUDED.encryption,
+					from_email = EXCLUDED.from_email, from_name = EXCLUDED.from_name, username = EXCLUDED.username,
+					password = CASE WHEN EXCLUDED.password != '' THEN EXCLUDED.password ELSE tenant_smtp_settings.password END,
+					updated_at = NOW()`,
+				slug, prov, body.Host, port, enc, body.FromEmail, fn, un, pwd)
+		}
+
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": true,
+			"profile": map[string]any{
+				"id":          id,
+				"tenantSlug":  slug,
+				"profileName": pName,
+				"provider":    prov,
+				"host":        body.Host,
+				"port":        port,
+				"encryption":  enc,
+				"fromEmail":   body.FromEmail,
+				"fromName":    fn,
+				"username":    un,
+				"hasPassword": pwd != "",
+				"isDefault":   isDefault,
+			},
+		})
+		return
+	}
+
+	if r.Method == http.MethodDelete {
+		id := r.URL.Query().Get("id")
+		if id == "" {
+			var body struct {
+				ID string `json:"id"`
+			}
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			id = body.ID
+		}
+		if id == "" {
+			http.Error(w, `{"error": "Profile ID is required"}`, http.StatusBadRequest)
+			return
+		}
+
+		var wasDefault bool
+		_ = db.QueryRow(`SELECT is_default FROM tenant_sender_profiles WHERE id = $1 AND LOWER(tenant_slug) = $2`, id, slug).Scan(&wasDefault)
+
+		_, err := db.Exec(`DELETE FROM tenant_sender_profiles WHERE id = $1 AND LOWER(tenant_slug) = $2`, id, slug)
+		if err != nil {
+			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
+			return
+		}
+
+		if wasDefault {
+			var nextId string
+			_ = db.QueryRow(`SELECT id FROM tenant_sender_profiles WHERE LOWER(tenant_slug) = $1 ORDER BY created_at ASC LIMIT 1`, slug).Scan(&nextId)
+			if nextId != "" {
+				_, _ = db.Exec(`UPDATE tenant_sender_profiles SET is_default = true, updated_at = NOW() WHERE id = $1`, nextId)
+				var nProv, nHost, nEnc, nFromEmail, nFromName, nUser, nPwd string
+				var nPort int
+				if err := db.QueryRow(`SELECT provider, host, port, encryption, from_email, from_name, username, password FROM tenant_sender_profiles WHERE id = $1`, nextId).
+					Scan(&nProv, &nHost, &nPort, &nEnc, &nFromEmail, &nFromName, &nUser, &nPwd); err == nil {
+					_, _ = db.Exec(`
+						INSERT INTO tenant_smtp_settings (tenant_slug, provider, host, port, encryption, from_email, from_name, username, password, updated_at)
+						VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+						ON CONFLICT (tenant_slug) DO UPDATE SET
+							provider = EXCLUDED.provider, host = EXCLUDED.host, port = EXCLUDED.port, encryption = EXCLUDED.encryption,
+							from_email = EXCLUDED.from_email, from_name = EXCLUDED.from_name, username = EXCLUDED.username, password = EXCLUDED.password, updated_at = NOW()`,
+						slug, nProv, nHost, nPort, nEnc, nFromEmail, nFromName, nUser, nPwd)
+				}
+			}
+		}
+
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": true,
+			"message": "Sender profile deleted successfully",
+		})
+		return
+	}
+
+	http.Error(w, `{"error": "Method not allowed"}`, http.StatusMethodNotAllowed)
+}
+
+// =============================================================================
+// 12. CRM CALL LOGGER & SALES CLOSER OUTCOMES
+// =============================================================================
+
+func HandleCrmCalls(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	db := getDB(r)
+	EnsureCRMTablesOnDB(db)
+	if db == nil {
+		http.Error(w, `{"error": "Database unavailable"}`, http.StatusServiceUnavailable)
+		return
+	}
+
+	slug := getTenantSlug(r)
+
+	if r.Method == http.MethodGet {
+		leadId := r.URL.Query().Get("lead_id")
+		rep := r.URL.Query().Get("rep")
+		outcome := r.URL.Query().Get("outcome")
+		direction := r.URL.Query().Get("direction")
+
+		query := `
+			SELECT id, tenant_slug, COALESCE(lead_id, ''), COALESCE(deal_id, ''),
+			       contact_name, COALESCE(company, ''), phone_number, rep_name,
+			       COALESCE(rep_email, ''), direction, outcome, duration_seconds,
+			       COALESCE(notes, ''), COALESCE(followup_date, ''), call_date, created_at
+			FROM crm_calls
+			WHERE LOWER(tenant_slug) = $1`
+		args := []any{slug}
+		argIdx := 2
+
+		if leadId != "" {
+			query += fmt.Sprintf(" AND lead_id = $%d", argIdx)
+			args = append(args, leadId)
+			argIdx++
+		}
+		if rep != "" {
+			query += fmt.Sprintf(" AND LOWER(rep_name) = LOWER($%d)", argIdx)
+			args = append(args, rep)
+			argIdx++
+		}
+		if outcome != "" {
+			query += fmt.Sprintf(" AND outcome = $%d", argIdx)
+			args = append(args, outcome)
+			argIdx++
+		}
+		if direction != "" {
+			query += fmt.Sprintf(" AND direction = $%d", argIdx)
+			args = append(args, direction)
+			argIdx++
+		}
+
+		query += " ORDER BY call_date DESC LIMIT 200"
+
+		rows, err := db.Query(query, args...)
+		if err != nil {
+			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		calls := []map[string]any{}
+		totalDuration := 0
+		connectedCount := 0
+		positiveCount := 0
+		wonCount := 0
+		todayCount := 0
+		now := time.Now()
+
+		for rows.Next() {
+			var id, tSlug, lId, dId, cName, comp, phone, rName, rEmail, dir, out, notes, follow string
+			var dur int
+			var cDate, createdAt time.Time
+			if err := rows.Scan(&id, &tSlug, &lId, &dId, &cName, &comp, &phone, &rName, &rEmail, &dir, &out, &dur, &notes, &follow, &cDate, &createdAt); err == nil {
+				calls = append(calls, map[string]any{
+					"id":              id,
+					"tenantSlug":      tSlug,
+					"leadId":          lId,
+					"dealId":          dId,
+					"contactName":     cName,
+					"company":         comp,
+					"phoneNumber":     phone,
+					"repName":         rName,
+					"repEmail":        rEmail,
+					"direction":       dir,
+					"outcome":         out,
+					"durationSeconds": dur,
+					"notes":           notes,
+					"followupDate":    follow,
+					"callDate":        cDate,
+					"createdAt":       createdAt,
+				})
+
+				totalDuration += dur
+				if strings.HasPrefix(out, "CONNECTED") {
+					connectedCount++
+				}
+				if out == "CONNECTED_WON" {
+					wonCount++
+					positiveCount++
+				} else if out == "CONNECTED_INTERESTED" || out == "CONNECTED_NEGOTIATING" {
+					positiveCount++
+				}
+				if cDate.Year() == now.Year() && cDate.YearDay() == now.YearDay() {
+					todayCount++
+				}
+			}
+		}
+
+		totalCalls := len(calls)
+		connectRate := 0
+		if totalCalls > 0 {
+			connectRate = int((float64(connectedCount) / float64(totalCalls)) * 100)
+		}
+		avgDuration := 0
+		if connectedCount > 0 {
+			avgDuration = totalDuration / connectedCount
+		}
+
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": true,
+			"calls":   calls,
+			"stats": map[string]any{
+				"totalCalls":      totalCalls,
+				"connectedCalls":  connectedCount,
+				"connectRate":     connectRate,
+				"positiveCount":   positiveCount,
+				"wonCount":        wonCount,
+				"avgDurationSec":  avgDuration,
+				"todayCalls":      todayCount,
+			},
+		})
+		return
+	}
+
+	if r.Method == http.MethodPost {
+		var body struct {
+			ID              string `json:"id"`
+			LeadID          string `json:"leadId"`
+			DealID          string `json:"dealId"`
+			ContactName     string `json:"contactName"`
+			Company         string `json:"company"`
+			PhoneNumber     string `json:"phoneNumber"`
+			RepName         string `json:"repName"`
+			RepEmail        string `json:"repEmail"`
+			Direction       string `json:"direction"`
+			Outcome         string `json:"outcome"`
+			DurationSeconds int    `json:"durationSeconds"`
+			Notes           string `json:"notes"`
+			FollowupDate    string `json:"followupDate"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
+			return
+		}
+
+		if strings.TrimSpace(body.ContactName) == "" {
+			http.Error(w, `{"error": "Contact name is required"}`, http.StatusBadRequest)
+			return
+		}
+		if strings.TrimSpace(body.PhoneNumber) == "" {
+			http.Error(w, `{"error": "Phone number is required"}`, http.StatusBadRequest)
+			return
+		}
+		if strings.TrimSpace(body.Outcome) == "" {
+			http.Error(w, `{"error": "Call outcome is required"}`, http.StatusBadRequest)
+			return
+		}
+
+		id := strings.TrimSpace(body.ID)
+		if id == "" {
+			id = fmt.Sprintf("CALL-%d", time.Now().UnixMilli())
+		}
+		dir := strings.ToUpper(strings.TrimSpace(body.Direction))
+		if dir != "INBOUND" {
+			dir = "OUTBOUND"
+		}
+		rep := strings.TrimSpace(body.RepName)
+		if rep == "" {
+			rep = "Sales Closer"
+		}
+
+		_, err := db.Exec(`
+			INSERT INTO crm_calls (
+				id, tenant_slug, lead_id, deal_id, contact_name, company, phone_number,
+				rep_name, rep_email, direction, outcome, duration_seconds, notes, followup_date, call_date, created_at, updated_at
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW(), NOW())`,
+			id, slug, body.LeadID, body.DealID, body.ContactName, body.Company, body.PhoneNumber,
+			rep, body.RepEmail, dir, body.Outcome, body.DurationSeconds, body.Notes, body.FollowupDate)
+
+		if err != nil {
+			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
+			return
+		}
+
+		// Also record in crm_activities timeline for unified CRM audit
+		actId := fmt.Sprintf("ACT-%d", time.Now().UnixMilli())
+		actTitle := fmt.Sprintf("%s Call: %s (%s)", dir, body.ContactName, body.Outcome)
+		actNotes := fmt.Sprintf("Call with %s (%s). Duration: %ds. Outcome: %s.\n%s", body.ContactName, body.PhoneNumber, body.DurationSeconds, body.Outcome, body.Notes)
+		_, _ = db.Exec(`
+			INSERT INTO crm_activities (id, tenant_slug, type, title, company, rep, date_time, status, notes, created_at)
+			VALUES ($1, $2, 'CALL', $3, $4, $5, 'Today, Just now', 'COMPLETED', $6, NOW())`,
+			actId, slug, actTitle, body.Company, rep, actNotes)
+
+		// If linked to a lead, update lead notes, assigned rep, and score
+		if strings.TrimSpace(body.LeadID) != "" {
+			leadLog := fmt.Sprintf("Call Log (%s) by %s: %s", body.Outcome, rep, body.Notes)
+			newScore := 80
+			newStatus := "CONTACTED"
+			if body.Outcome == "CONNECTED_WON" {
+				newScore = 100
+				newStatus = "WON"
+			} else if body.Outcome == "CONNECTED_INTERESTED" {
+				newScore = 95
+				newStatus = "QUALIFIED"
+			} else if body.Outcome == "CONNECTED_NEGOTIATING" {
+				newScore = 90
+				newStatus = "NEGOTIATION"
+			} else if body.Outcome == "NOT_INTERESTED" {
+				newStatus = "UNQUALIFIED"
+			}
+
+			_, _ = db.Exec(`
+				UPDATE crm_leads SET
+					notes = notes || E'\n' || $1,
+					status = CASE WHEN status = 'WON' THEN status ELSE $2 END,
+					score = GREATEST(score, $3),
+					owner = CASE WHEN owner IS NULL OR owner = '' OR owner = 'Unassigned (Closer Queue)' THEN $4 ELSE owner END,
+					assigned_rep = CASE WHEN assigned_rep IS NULL OR assigned_rep = '' OR assigned_rep = 'Unassigned (Closer Queue)' THEN $4 ELSE assigned_rep END,
+					updated_at = NOW()
+				WHERE id = $5 AND LOWER(tenant_slug) = $6`,
+				leadLog, newStatus, newScore, rep, body.LeadID, slug)
+		}
+
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": true,
+			"call": map[string]any{
+				"id":              id,
+				"tenantSlug":      slug,
+				"leadId":          body.LeadID,
+				"contactName":     body.ContactName,
+				"company":         body.Company,
+				"phoneNumber":     body.PhoneNumber,
+				"repName":         rep,
+				"direction":       dir,
+				"outcome":         body.Outcome,
+				"durationSeconds": body.DurationSeconds,
+				"notes":           body.Notes,
+				"followupDate":    body.FollowupDate,
+				"createdAt":       time.Now(),
+			},
+		})
+		return
+	}
+
+	if r.Method == http.MethodDelete {
+		id := r.URL.Query().Get("id")
+		if id == "" {
+			var body struct {
+				ID string `json:"id"`
+			}
+			_ = json.NewDecoder(r.Body).Decode(&body)
+			id = body.ID
+		}
+		if id == "" {
+			http.Error(w, `{"error": "Call ID is required"}`, http.StatusBadRequest)
+			return
+		}
+
+		_, err := db.Exec(`DELETE FROM crm_calls WHERE id = $1 AND LOWER(tenant_slug) = $2`, id, slug)
+		if err != nil {
+			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
+			return
+		}
+
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": true,
+			"message": "Call log entry deleted successfully",
 		})
 		return
 	}

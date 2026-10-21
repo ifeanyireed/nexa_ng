@@ -661,6 +661,10 @@ export default function EmailMarketingBlastsPage() {
     }
   }
 
+  const [isRetryingBlastId, setIsRetryingBlastId] = useState<string | null>(null);
+  const [isRetryingRecipientId, setIsRetryingRecipientId] = useState<string | null>(null);
+  const [retryProfileId, setRetryProfileId] = useState<string>("");
+
   const handleResumeBlast = async (blast: CrmEmailBlast) => {
     try {
       setIsResumingBlastId(blast.id);
@@ -688,6 +692,63 @@ export default function EmailMarketingBlastsPage() {
       alert("Could not resume blast: " + (err.message || "Unknown error"));
     } finally {
       setIsResumingBlastId(null);
+    }
+  };
+
+  const handleRetryBlast = async (blast: CrmEmailBlast, newProfileId?: string) => {
+    try {
+      setIsRetryingBlastId(blast.id);
+      const res = await crmFetch(`/api/erp/crm/blasts?id=${encodeURIComponent(blast.id)}&action=retry`, {
+        method: "PUT",
+        body: JSON.stringify({
+          id: blast.id,
+          status: "RETRY",
+          senderProfileId: newProfileId || blast.senderProfileId,
+        }),
+      });
+      if (!res.ok) {
+        const errText = await res.text().catch(() => "");
+        throw new Error(errText || "Failed to trigger retry for failed recipients");
+      }
+
+      setBlasts((prev) =>
+        prev.map((b) => (b.id === blast.id ? { ...b, status: "SENDING", failedCount: 0 } : b))
+      );
+      if (selectedBlastForLogs && selectedBlastForLogs.id === blast.id) {
+        setSelectedBlastForLogs((prev) => prev ? { ...prev, status: "SENDING", failedCount: 0 } : null);
+        refreshBlastLogs();
+      }
+    } catch (err: any) {
+      console.error("Error retrying blast:", err);
+      alert("Could not retry blast: " + (err.message || "Unknown error"));
+    } finally {
+      setIsRetryingBlastId(null);
+    }
+  };
+
+  const handleRetryRecipient = async (blastId: string, recipientId: string) => {
+    try {
+      setIsRetryingRecipientId(recipientId);
+      const res = await crmFetch(
+        `/api/erp/crm/blasts?id=${encodeURIComponent(blastId)}&action=retry_recipient&recipient_id=${encodeURIComponent(recipientId)}`,
+        {
+          method: "PUT",
+          body: JSON.stringify({ id: blastId }),
+        }
+      );
+      if (!res.ok) {
+        throw new Error("Failed to retry recipient");
+      }
+      setBlastLogs((prev) =>
+        prev.map((l) => (l.id === recipientId ? { ...l, status: "PENDING", errorMessage: null } : l))
+      );
+      if (selectedBlastForLogs) {
+        setSelectedBlastForLogs((prev) => (prev ? { ...prev, status: "SENDING" } : null));
+      }
+    } catch (err: any) {
+      alert("Failed to retry recipient: " + err.message);
+    } finally {
+      setIsRetryingRecipientId(null);
     }
   };
 
@@ -950,8 +1011,26 @@ export default function EmailMarketingBlastsPage() {
                         </td>
                         <td className="py-3.5 px-4 text-center">
                           <div className="flex items-center justify-center gap-1">
-                            {/* Resume / Send Remaining for stalled SENDING or FAILED blasts */}
-                            {(blast.status === "SENDING" || blast.status === "FAILED" || (blast.sentCount || 0) < blast.totalRecipients) && (
+                            {/* Retry Failed Sends for FAILED blasts or blasts with failed recipients */}
+                            {((blast.failedCount || 0) > 0 || blast.status === "FAILED") && (
+                              <button
+                                type="button"
+                                onClick={() => handleRetryBlast(blast)}
+                                disabled={isRetryingBlastId === blast.id}
+                                title="Retry all failed sends"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                              >
+                                {isRetryingBlastId === blast.id ? (
+                                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <RotateCcw className="w-3.5 h-3.5" />
+                                )}
+                                Retry ({blast.failedCount || "All"})
+                              </button>
+                            )}
+
+                            {/* Resume / Send Remaining for stalled SENDING blasts */}
+                            {blast.status === "SENDING" && (
                               <button
                                 type="button"
                                 onClick={() => handleResumeBlast(blast)}
@@ -1695,6 +1774,56 @@ export default function EmailMarketingBlastsPage() {
             </div>
           </div>
 
+          {/* FAILED SEND RETRY BANNER */}
+          {logStats.failed > 0 && selectedBlastForLogs && (
+            <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/25 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2 font-bold text-xs text-red-700 dark:text-red-400">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-500" />
+                  <span>{logStats.failed} recipient(s) failed delivery</span>
+                </div>
+                <p className="text-[11px] text-red-600/80 dark:text-red-400/80">
+                  Commonly caused by TLS/port timeouts (e.g. Hostinger on port 465). Switch to port 587 or pick a relay below to retry immediately.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                {senderProfiles.length > 0 && (
+                  <select
+                    value={retryProfileId || selectedBlastForLogs.senderProfileId || ""}
+                    onChange={(e) => setRetryProfileId(e.target.value)}
+                    className="px-2.5 py-1.5 rounded-lg border border-red-300 dark:border-red-800 bg-white dark:bg-neutral-900 text-xs font-semibold text-[var(--nexa-text-primary)] cursor-pointer"
+                  >
+                    <option value="">Keep Campaign Profile</option>
+                    {senderProfiles.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.profileName} ({p.provider.toUpperCase()})
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleRetryBlast(selectedBlastForLogs, retryProfileId || undefined)}
+                  disabled={isRetryingBlastId === selectedBlastForLogs.id}
+                  className="px-3.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer disabled:opacity-50 shrink-0"
+                >
+                  {isRetryingBlastId === selectedBlastForLogs.id ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      Retrying Sends...
+                    </>
+                  ) : (
+                    <>
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      Retry All Failed ({logStats.failed})
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Filter Tabs & Search Controls */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             {/* Filter Tabs */}
@@ -1875,9 +2004,27 @@ export default function EmailMarketingBlastsPage() {
 
                         <td className="py-2.5 px-3 text-[11px] text-[var(--nexa-text-muted)]">
                           {log.errorMessage ? (
-                            <span className="text-red-500 font-mono text-[10px] leading-tight block max-w-xs break-words">
-                              {log.errorMessage}
-                            </span>
+                            <div className="flex items-start justify-between gap-2">
+                              <span className="text-red-500 font-mono text-[10px] leading-tight block max-w-xs break-words">
+                                {log.errorMessage}
+                              </span>
+                              {selectedBlastForLogs && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRetryRecipient(selectedBlastForLogs.id, log.id)}
+                                  disabled={isRetryingRecipientId === log.id}
+                                  className="text-[10px] text-red-600 dark:text-red-400 hover:underline font-bold px-1.5 py-0.5 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 flex items-center gap-1 shrink-0 cursor-pointer disabled:opacity-50"
+                                  title="Retry this single recipient"
+                                >
+                                  {isRetryingRecipientId === log.id ? (
+                                    <RefreshCw className="w-2.5 h-2.5 animate-spin" />
+                                  ) : (
+                                    <RotateCcw className="w-2.5 h-2.5" />
+                                  )}
+                                  Retry
+                                </button>
+                              )}
+                            </div>
                           ) : log.status === "SENT" ? (
                             <span className="text-emerald-600 dark:text-emerald-400 text-[11px] flex items-center gap-1 font-medium">
                               <Check className="w-3 h-3" /> Delivered

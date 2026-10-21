@@ -15,6 +15,7 @@ import {
   Mail,
   MessageSquare,
   Phone,
+  PhoneCall,
   Plus,
   Search,
   Send,
@@ -155,6 +156,12 @@ export default function CrmDashboardPage() {
       activeModule="crm"
       action={
         <div className="flex items-center gap-2">
+          <Link href="/erp/admin/crm/calls">
+            <NexaButton variant="secondary" className="gap-2 text-xs">
+              <PhoneCall className="w-3.5 h-3.5 text-blue-600" />
+              Call Logger
+            </NexaButton>
+          </Link>
           <Link href="/erp/admin/crm/marketing">
             <NexaButton variant="secondary" className="gap-2 text-xs">
               <Send className="w-3.5 h-3.5" />

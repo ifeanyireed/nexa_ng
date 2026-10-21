@@ -10,6 +10,7 @@ import {
   Building2,
   Mail,
   Phone,
+  PhoneCall,
   Flame,
   Globe,
   CheckCircle2,
@@ -253,6 +254,12 @@ export default function CrmLeadsPage() {
       activeModule="crm"
       action={
         <div className="flex items-center gap-2">
+          <Link href="/erp/admin/crm/calls">
+            <NexaButton variant="secondary" className="gap-2 text-xs">
+              <PhoneCall className="w-3.5 h-3.5 text-blue-600" />
+              Call Logger
+            </NexaButton>
+          </Link>
           <NexaButton
             variant="secondary"
             className="gap-2 text-xs"
@@ -399,18 +406,27 @@ export default function CrmLeadsPage() {
                     </td>
 
                     <td className="py-3.5 px-4 text-right">
-                      {lead.status !== "CONVERTED" ? (
-                        <button
-                          onClick={() => handlePromoteToDeal(lead)}
-                          className="px-2.5 py-1 rounded-lg bg-[#1A56DB]/10 text-[#1A56DB] hover:bg-[#1A56DB] hover:text-white font-bold text-[11px] transition-colors cursor-pointer"
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Link
+                          href={`/erp/admin/crm/calls?leadId=${lead.id}&phone=${encodeURIComponent(lead.contactPhone || "")}&name=${encodeURIComponent(lead.contactName || "")}&company=${encodeURIComponent(lead.companyName || "")}`}
+                          title="Log Call with Lead"
+                          className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors"
                         >
-                          Promote to Deal
-                        </button>
-                      ) : (
-                        <span className="text-[11px] text-emerald-600 font-bold flex items-center justify-end gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Converted
-                        </span>
-                      )}
+                          <PhoneCall className="w-3.5 h-3.5" />
+                        </Link>
+                        {lead.status !== "CONVERTED" ? (
+                          <button
+                            onClick={() => handlePromoteToDeal(lead)}
+                            className="px-2.5 py-1 rounded-lg bg-[#1A56DB]/10 text-[#1A56DB] hover:bg-[#1A56DB] hover:text-white font-bold text-[11px] transition-colors cursor-pointer"
+                          >
+                            Promote to Deal
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-emerald-600 font-bold flex items-center justify-end gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Converted
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

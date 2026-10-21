@@ -136,6 +136,34 @@ export interface CrmActivity {
   createdAt: string;
 }
 
+export interface CrmCall {
+  id: string;
+  tenantSlug: string;
+  leadId?: string;
+  dealId?: string;
+  contactName: string;
+  company?: string;
+  phoneNumber: string;
+  repName: string;
+  repEmail?: string;
+  direction: "OUTBOUND" | "INBOUND";
+  outcome:
+    | "CONNECTED_INTERESTED"
+    | "CONNECTED_WON"
+    | "CONNECTED_FOLLOWUP"
+    | "CONNECTED_NEGOTIATING"
+    | "NOT_INTERESTED"
+    | "VOICEMAIL"
+    | "NO_ANSWER"
+    | "BUSY"
+    | "WRONG_NUMBER";
+  durationSeconds: number;
+  notes?: string;
+  followupDate?: string;
+  callDate: string;
+  createdAt: string;
+}
+
 // In-memory fallback caches
 const memoryDeals = new Map<string, CrmDeal[]>();
 const memoryLeads = new Map<string, CrmLead[]>();

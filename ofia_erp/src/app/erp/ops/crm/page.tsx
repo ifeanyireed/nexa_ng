@@ -8,6 +8,7 @@ import {
   Search,
   Plus,
   Phone,
+  PhoneCall,
   Mail,
   Calendar,
   CheckCircle2,
@@ -485,6 +486,17 @@ function SalesCloserPortalContent() {
             <RefreshCw className={cn("w-3.5 h-3.5 text-blue-600", isLoading && "animate-spin")} />
           </button>
 
+          <Link href="/erp/admin/crm/calls">
+            <NexaButton
+              size="sm"
+              variant="outline"
+              leftIcon={<PhoneCall className="w-3.5 h-3.5 text-blue-600" />}
+              className="rounded-full text-xs font-bold"
+            >
+              Call Logger
+            </NexaButton>
+          </Link>
+
           <NexaButton
             size="sm"
             variant="outline"
@@ -800,6 +812,15 @@ function SalesCloserPortalContent() {
                           </div>
 
                           <div className="flex items-center gap-1.5">
+                            <Link
+                              href={`/erp/admin/crm/calls?leadId=${lead.id}&phone=${encodeURIComponent(lead.contactPhone || "")}&name=${encodeURIComponent(lead.contactName || "")}&company=${encodeURIComponent(lead.companyName || "")}`}
+                              className="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border border-blue-500/20 cursor-pointer transition-colors flex items-center gap-1"
+                              title="Start Phone Call & Log Outcome"
+                            >
+                              <PhoneCall className="w-3 h-3" />
+                              Call
+                            </Link>
+
                             <button
                               onClick={() => handleOpenLogActivityForLead(lead)}
                               className="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border border-emerald-500/20 cursor-pointer transition-colors flex items-center gap-1"

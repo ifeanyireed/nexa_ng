@@ -64,6 +64,8 @@ import {
   Navigation,
   MapPin,
   AlertTriangle,
+  PhoneCall,
+  Phone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -956,6 +958,7 @@ export function ErpAdminShell({
       return [
         { label: "Leads Directory", href: "/erp/ops/crm?tab=leads", icon: <Target className="w-3.5 h-3.5" />, badge: "Leads" },
         { label: "Sales Activity", href: "/erp/ops/crm?tab=activities", icon: <Calendar className="w-3.5 h-3.5" />, badge: "Activities" },
+        { label: "Call Logger", href: "/erp/admin/crm/calls", icon: <PhoneCall className="w-3.5 h-3.5" />, badge: "Calls" },
       ];
     }
 
@@ -964,6 +967,7 @@ export function ErpAdminShell({
         { label: "Command Center", href: "/erp/admin/crm", icon: <BarChart3 className="w-3.5 h-3.5" /> },
         { label: "Audience Lists", href: "/erp/admin/crm/lists", icon: <Users className="w-3.5 h-3.5" /> },
         { label: "Email Blasts", href: "/erp/admin/crm/marketing", icon: <Send className="w-3.5 h-3.5" />, badge: "Email" },
+        { label: "Call Logger", href: "/erp/admin/crm/calls", icon: <PhoneCall className="w-3.5 h-3.5" />, badge: "Calls" },
         { label: "Leads Directory", href: "/erp/admin/crm/leads", icon: <Target className="w-3.5 h-3.5" /> },
         { label: "Sales Activities", href: "/erp/admin/crm/activities", icon: <Calendar className="w-3.5 h-3.5" /> },
         { label: "Deals Pipeline", href: "/erp/admin/crm/pipeline", icon: <TrendingUp className="w-3.5 h-3.5" /> },

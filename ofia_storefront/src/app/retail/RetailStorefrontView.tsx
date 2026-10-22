@@ -9,6 +9,7 @@ import VerticalHeroBento from "@/components/common/VerticalHeroBento";
 import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
 import StorefrontCartRail from "@/components/common/StorefrontCartRail";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import {
   BookOpen,
   Dumbbell,
@@ -24,7 +25,7 @@ import {
 export default function RetailStorefrontView() {
   const { store: dynamicStore, isFeatureEnabled, tenantSlug } = useStorefrontTenant();
   const store = dynamicStore || MOCK_STORES["retail"];
-  const products = MOCK_PRODUCTS.filter((p) => p.vertical === "retail");
+  const { products, isLiveMerchantCatalog } = useStorefrontProducts("retail");
 
   const canBookServices = isFeatureEnabled("services");
   const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
@@ -200,7 +201,14 @@ export default function RetailStorefrontView() {
         <section className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
             <div>
-              <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-purple-700">Curated Goods</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-purple-700">Curated Goods</span>
+                {isLiveMerchantCatalog && (
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    Live Catalog
+                  </span>
+                )}
+              </div>
               <h2 className="font-dropa text-3xl sm:text-4xl lg:text-5xl font-bold text-zinc-900 tracking-tight mt-1">
                 Featured Multi-Department Items
               </h2>

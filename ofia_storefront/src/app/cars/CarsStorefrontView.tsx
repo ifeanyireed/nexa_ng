@@ -9,6 +9,7 @@ import VerticalHeroBento from "@/components/common/VerticalHeroBento";
 import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
 import StorefrontCartRail from "@/components/common/StorefrontCartRail";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import {
   Car,
   ShieldCheck,
@@ -26,7 +27,7 @@ export default function CarsStorefrontView() {
   const { store: dynamicStore, isFeatureEnabled, tenantSlug } = useStorefrontTenant();
   const store = dynamicStore || MOCK_STORES.cars;
 
-  const carProducts = MOCK_PRODUCTS.filter((p) => p.vertical === "cars");
+  const { products: carProducts, isLiveMerchantCatalog } = useStorefrontProducts("cars");
   const inspectionService = MOCK_SERVICES.find((s) => s.vertical === "cars");
 
   const canBookServices = isFeatureEnabled("services");
@@ -146,9 +147,16 @@ export default function CarsStorefrontView() {
         <section className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
-              <span className="text-xs font-bold uppercase tracking-wider text-blue-600">
-                {store.name} Showroom
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-blue-600">
+                  {store.name} Showroom
+                </span>
+                {isLiveMerchantCatalog && (
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    Live Catalog
+                  </span>
+                )}
+              </div>
               <h2 className="font-dropa text-3xl sm:text-4xl font-extrabold text-slate-900 mt-1">
                 Verified Available Fleet
               </h2>

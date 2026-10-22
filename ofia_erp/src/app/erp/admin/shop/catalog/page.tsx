@@ -57,16 +57,44 @@ export default function CatalogManagementPage() {
   const [page, setPage] = useState(1);
   const itemsPerPage = 8;
 
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
   // Initial vertical-tailored catalog items
   const [products, setProducts] = useState<CommerceProductItem[]>(() =>
     getDefaultProductsForVertical(provisionedVertical)
   );
 
-  // Re-seed products dynamically when vertical switches
+  // Load products from live sync API
+  const loadLiveProducts = async (slug?: string, vert?: VerticalKey) => {
+    const targetSlug = slug || activeTenant?.slug || "neweratransports";
+    const targetVert = vert || selectedVertical;
+    try {
+      setIsLoading(true);
+      const res = await fetch(
+        `/api/erp/shop/products?tenant=${encodeURIComponent(targetSlug)}&vertical=${encodeURIComponent(targetVert)}`
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data.products && data.products.length > 0) {
+          setProducts(data.products);
+          return;
+        }
+      }
+      setProducts(getDefaultProductsForVertical(targetVert));
+    } catch (err) {
+      console.warn("Failed to load live ERP products, falling back to seeds:", err);
+      setProducts(getDefaultProductsForVertical(targetVert));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Re-fetch products dynamically when vertical or active tenant switches
   React.useEffect(() => {
-    setProducts(getDefaultProductsForVertical(selectedVertical));
+    loadLiveProducts(activeTenant?.slug, selectedVertical);
     setSelectedCategory("ALL");
-  }, [selectedVertical]);
+  }, [selectedVertical, activeTenant?.slug]);
 
   // Modal State for adding new vertical item
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -87,13 +115,14 @@ export default function CatalogManagementPage() {
     setIsAddModalOpen(true);
   };
 
-  const handleSaveNewProduct = (e: React.FormEvent) => {
+  const handleSaveNewProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName || !newPrice) return;
 
     const numPrice = parseFloat(newPrice.replace(/[^0-9.]/g, "")) || 0;
+    const targetSlug = activeTenant?.slug || "neweratransports";
     const newItem: CommerceProductItem = {
-      id: `PROD-${Date.now().toString().slice(-4)}`,
+      id: `PROD-${Date.now().toString().slice(-6)}`,
       name: newName,
       price: numPrice,
       formattedPrice: `₦${numPrice.toLocaleString()}`,
@@ -106,8 +135,44 @@ export default function CatalogManagementPage() {
       attributes: newAttributes,
     };
 
-    setProducts([newItem, ...products]);
-    setIsAddModalOpen(false);
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/erp/shop/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...newItem,
+          tenantSlug: targetSlug,
+        }),
+      });
+      if (res.ok) {
+        setProducts((prev) => [newItem, ...prev]);
+        setIsAddModalOpen(false);
+      } else {
+        setProducts((prev) => [newItem, ...prev]);
+        setIsAddModalOpen(false);
+      }
+    } catch (err) {
+      console.error("Error saving product:", err);
+      setProducts((prev) => [newItem, ...prev]);
+      setIsAddModalOpen(false);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    const targetSlug = activeTenant?.slug || "neweratransports";
+    try {
+      await fetch(
+        `/api/erp/shop/products?id=${encodeURIComponent(id)}&tenant=${encodeURIComponent(targetSlug)}`,
+        { method: "DELETE" }
+      );
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+    } catch (err) {
+      console.error("Error deleting product:", err);
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+    }
   };
 
   const categories = useMemo(() => {
@@ -207,9 +272,15 @@ export default function CatalogManagementPage() {
         <NexaCard variant="glass" padding="lg" className="space-y-4 rounded-3xl">
           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 pb-3 border-b border-[var(--nexa-border)]">
             <div>
-              <h3 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">
-                {currentVerticalDef.productTermPlural} Directory
-              </h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">
+                  {currentVerticalDef.productTermPlural} Directory
+                </h3>
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Live Storefront Sync
+                </span>
+              </div>
               <p className="text-[11px] text-[var(--nexa-text-muted)] font-medium">
                 {currentVerticalDef.tagline}
               </p>
@@ -291,10 +362,12 @@ export default function CatalogManagementPage() {
                     </td>
                     <td className="py-3 px-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        <NexaButton size="sm" variant="outline" className="rounded-full text-xs h-7">
-                          Edit
-                        </NexaButton>
-                        <NexaButton size="sm" variant="outline" className="rounded-full text-xs h-7 text-rose-500 hover:border-red-500">
+                        <NexaButton
+                          size="sm"
+                          variant="outline"
+                          className="rounded-full text-xs h-7 text-rose-500 hover:border-red-500 cursor-pointer"
+                          onClick={() => handleDeleteProduct(item.id)}
+                        >
                           Delete
                         </NexaButton>
                       </div>

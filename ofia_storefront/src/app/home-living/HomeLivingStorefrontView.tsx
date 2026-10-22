@@ -9,6 +9,7 @@ import VerticalHeroBento from "@/components/common/VerticalHeroBento";
 import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
 import StorefrontCartRail from "@/components/common/StorefrontCartRail";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import {
   Armchair,
   Ruler,
@@ -21,7 +22,7 @@ import {
 export default function HomeLivingStorefrontView() {
   const { store: dynamicStore, isFeatureEnabled, tenantSlug } = useStorefrontTenant();
   const store = dynamicStore || MOCK_STORES["home-living"];
-  const homeProducts = MOCK_PRODUCTS.filter((p) => p.vertical === "home-living");
+  const { products: homeProducts, isLiveMerchantCatalog } = useStorefrontProducts("home-living");
 
   const canBookServices = isFeatureEnabled("services") || isFeatureEnabled("dispatchBooking");
   const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
@@ -141,7 +142,14 @@ export default function HomeLivingStorefrontView() {
         <section className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
             <div>
-              <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-stone-600">Curated Living</span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-stone-600">Curated Living</span>
+                {isLiveMerchantCatalog && (
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    Live Catalog
+                  </span>
+                )}
+              </div>
               <h2 className="font-dropa text-3xl sm:text-4xl lg:text-5xl font-bold text-stone-900 tracking-tight mt-1">
                 Featured Furniture Pieces
               </h2>

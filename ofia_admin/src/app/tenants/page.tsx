@@ -782,6 +782,7 @@ function TenantManagementContent() {
           ...(tenant.erpModules || {}),
           ...(tenant.shopSubModules || {}),
           ...updatedSubs,
+          "on-demand": updatedSubs.on_demand !== undefined ? updatedSubs.on_demand : Boolean(updatedSubs["on-demand"]),
         };
       });
 
@@ -825,6 +826,7 @@ function TenantManagementContent() {
           ...(tenant.erpModules || {}),
           ...(tenant.shopSubModules || {}),
           ...updatedSubs,
+          "on-demand": updatedSubs.on_demand !== undefined ? updatedSubs.on_demand : Boolean(updatedSubs["on-demand"]),
         };
       });
       await USER_API.saveTenantRBAC(tenant.slug, matrixPayload);
@@ -1996,7 +1998,7 @@ function TenantManagementContent() {
                                       </span>
                                     </div>
                                     <p className="text-xs text-[var(--nexa-text-muted)] mt-0.5">
-                                      Operations control center, corporate vehicles & ROI, driver rosters, workshop compliance, route corridors, pricing margins, and 6 mobility service lines.
+                                      Operations control center, corporate vehicles & ROI, fleet ops & compliance hub, routine inspections, route corridors, pricing margins, and 6 mobility service lines.
                                     </p>
                                   </div>
                                 </div>

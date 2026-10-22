@@ -53,6 +53,7 @@ service_erp/service_erp
 .agents/
 skills-lock.json
 .commerce_sync/
+.mobility_sync/
 
 # Local documentation & credentials
 users.md

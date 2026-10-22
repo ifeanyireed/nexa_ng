@@ -16,6 +16,8 @@
 
   --color-nexa-bg-base: var(--nexa-bg-base);
   --color-nexa-bg-surface: var(--nexa-bg-surface);
+  --color-nexa-surface: var(--nexa-bg-surface);
+  --color-nexa-surface-hover: #F3F4F6;
   --color-nexa-bg-overlay: var(--nexa-bg-overlay);
   --color-nexa-bg-glass: var(--nexa-bg-glass);
 

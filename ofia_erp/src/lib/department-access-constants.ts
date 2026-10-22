@@ -115,7 +115,7 @@ export const ERP_PAGE_CATALOG: ErpPageDef[] = [
       { id: "command", label: "Live Telemetry & Fleet", path: "/erp/admin/mobility" },
       { id: "vehicles", label: "Vehicle Registry", path: "/erp/admin/mobility/vehicles" },
       { id: "drivers", label: "Driver Rosters", path: "/erp/admin/mobility/drivers" },
-      { id: "maintenance", label: "Service & Maintenance", path: "/erp/admin/mobility/maintenance" },
+      { id: "maintenance", label: "Fleet Ops, Inspection & Compliance", path: "/erp/admin/mobility/maintenance" },
       { id: "routes", label: "Fixed Routes & Terminals", path: "/erp/admin/mobility/routes" },
       { id: "pricing", label: "Tariffs & Pricing", path: "/erp/admin/mobility/pricing" },
       { id: "shuttle", label: "Zonal Campus Shuttles", path: "/erp/admin/mobility/shuttle" },

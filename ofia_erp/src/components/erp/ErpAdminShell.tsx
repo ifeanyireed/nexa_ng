@@ -294,22 +294,24 @@ export function ErpAdminShell({
       if (!isCurrent) return;
       const matched = resolveTenantFromList(list, user?.email, slug);
       const activeName = matched?.name || cachedName || "";
-      const tenantKey = matched?.slug || matched?.id || slug || "neweratransports";
+      const tenantKey = matched?.slug || matched?.id || slug || "";
       setTenantName(activeName);
       if (matched?.logo) {
         setTenantLogo(matched.logo);
       }
 
       // Fetch live provisioned matrix from Postgres backend before revealing
-      try {
-        const remote = await fetchTenantPermissionMatrix(tenantKey);
-        if (remote && Object.keys(remote).length > 0 && isCurrent) {
-          setPermissionMatrix(remote);
-        } else if (isCurrent) {
-          setPermissionMatrix(getTenantPermissionMatrix(tenantKey));
+      if (tenantKey) {
+        try {
+          const remote = await fetchTenantPermissionMatrix(tenantKey);
+          if (remote && Object.keys(remote).length > 0 && isCurrent) {
+            setPermissionMatrix(remote);
+          } else if (isCurrent) {
+            setPermissionMatrix(getTenantPermissionMatrix(tenantKey));
+          }
+        } catch (err) {
+          if (isCurrent) setPermissionMatrix(getTenantPermissionMatrix(tenantKey));
         }
-      } catch (err) {
-        if (isCurrent) setPermissionMatrix(getTenantPermissionMatrix(tenantKey));
       }
 
       // Fetch live department access configurations from Postgres backend
@@ -662,6 +664,20 @@ export function ErpAdminShell({
         }
       }
 
+      // Mobility Transport Services route protection:
+      // If a tenant has disabled a transport service, redirect away from that service route to mobility command center
+      if (pathname.startsWith("/erp/admin/mobility/services/")) {
+        const serviceKey = pathname.replace("/erp/admin/mobility/services/", "").split("/")[0].replace(/-/g, "_");
+        const adminVal = permissionMatrix.admin?.[serviceKey];
+        const provVal = (permissionMatrix as any).tenant_provision?.[serviceKey];
+        if (adminVal === false || provVal === false || (adminVal !== true && provVal !== true)) {
+          if (typeof window !== "undefined" && pathname !== "/erp/admin/mobility") {
+            window.location.href = "/erp/admin/mobility";
+            return;
+          }
+        }
+      }
+
       // Dynamic Department Access Check for Portal Protection:
       let isDepartmentGrantedCurrentPath = false;
       if (resolvedDept && loadedDeptConfigs.length > 0) {
@@ -916,41 +932,129 @@ export function ErpAdminShell({
     if (subTabs !== undefined) return subTabs;
 
     if (pathname.startsWith("/erp/admin/mobility")) {
-      return [
+      const isSubAllowed = (key: string) => {
+        const normKey = key.replace(/-/g, "_");
+        const dashKey = key.replace(/_/g, "-");
+
+        const adminVal = permissionMatrix.admin?.[normKey] ?? permissionMatrix.admin?.[dashKey];
+        const provVal = (permissionMatrix as any).tenant_provision?.[normKey] ?? (permissionMatrix as any).tenant_provision?.[dashKey];
+
+        // Explicitly disabled in either admin or tenant_provision
+        if (adminVal === false || provVal === false) return false;
+
+        // Transport service sub-modules (shuttle, interstate, on_demand, rental, school, staff)
+        // must ONLY be shown when explicitly enabled in admin or tenant_provision
+        const isTransportService = ["shuttle", "interstate", "on_demand", "rental", "school", "staff"].includes(normKey);
+        if (isTransportService) {
+          return adminVal === true || provVal === true;
+        }
+
+        // Standard fleet modules (ops, vehicles, drivers, maintenance, routes, finance) default to allowed
+        return adminVal !== false && provVal !== false;
+      };
+
+      const mobilityTabs: SubNavItem[] = [
         // Group 1: Fleet Management & Infrastructure
         { label: "Fleet Command", href: "/erp/admin/mobility", icon: <LayoutDashboard className="w-3.5 h-3.5" />, group: "Fleet Management" },
-        { label: "Live Dispatch", href: "/erp/ops/mobility", icon: <Radio className="w-3.5 h-3.5" />, badge: "Live", group: "Fleet Management" },
-        { label: "Vehicles & ROI", href: "/erp/admin/mobility/vehicles", icon: <Truck className="w-3.5 h-3.5" />, group: "Fleet Management" },
-        { label: "Drivers", href: "/erp/admin/mobility/drivers", icon: <Users className="w-3.5 h-3.5" />, group: "Fleet Management" },
-        { label: "Maintenance", href: "/erp/admin/mobility/maintenance", icon: <Settings className="w-3.5 h-3.5" />, group: "Fleet Management" },
-        { label: "Routes & Zones", href: "/erp/admin/mobility/routes", icon: <MapPin className="w-3.5 h-3.5" />, group: "Fleet Management" },
-        { label: "Pricing Engine", href: "/erp/admin/mobility/finance", icon: <DollarSign className="w-3.5 h-3.5" />, group: "Fleet Management" },
-
-        // Group 2: Transport Services (The 6 Services)
-        { label: "Shuttle", href: "/erp/admin/mobility/services/shuttle", icon: <Clock className="w-3.5 h-3.5" />, group: "Transport Services" },
-        { label: "Interstate", href: "/erp/admin/mobility/services/interstate", icon: <Navigation className="w-3.5 h-3.5" />, group: "Transport Services" },
-        { label: "On-Demand", href: "/erp/admin/mobility/services/on-demand", icon: <Zap className="w-3.5 h-3.5" />, group: "Transport Services" },
-        { label: "Bus Rental", href: "/erp/admin/mobility/services/rental", icon: <Car className="w-3.5 h-3.5" />, group: "Transport Services" },
-        { label: "School Bus", href: "/erp/admin/mobility/services/school", icon: <Building2 className="w-3.5 h-3.5" />, group: "Transport Services" },
-        { label: "Staff Transport", href: "/erp/admin/mobility/services/staff", icon: <Users className="w-3.5 h-3.5" />, group: "Transport Services" },
       ];
+
+      if (isSubAllowed("ops")) {
+        mobilityTabs.push({ label: "Live Dispatch", href: "/erp/ops/mobility", icon: <Radio className="w-3.5 h-3.5" />, badge: "Live", group: "Fleet Management" });
+      }
+      if (isSubAllowed("vehicles")) {
+        mobilityTabs.push({ label: "Vehicles & ROI", href: "/erp/admin/mobility/vehicles", icon: <Truck className="w-3.5 h-3.5" />, group: "Fleet Management" });
+      }
+      if (isSubAllowed("drivers")) {
+        mobilityTabs.push({ label: "Drivers", href: "/erp/admin/mobility/drivers", icon: <Users className="w-3.5 h-3.5" />, group: "Fleet Management" });
+      }
+      if (isSubAllowed("maintenance")) {
+        mobilityTabs.push({ label: "Ops & Compliance", href: "/erp/admin/mobility/maintenance", icon: <ShieldCheck className="w-3.5 h-3.5" />, badge: "Hub", group: "Fleet Management" });
+      }
+      if (isSubAllowed("routes")) {
+        mobilityTabs.push({ label: "Routes & Zones", href: "/erp/admin/mobility/routes", icon: <MapPin className="w-3.5 h-3.5" />, group: "Fleet Management" });
+      }
+      if (isSubAllowed("finance")) {
+        mobilityTabs.push({ label: "Pricing Engine", href: "/erp/admin/mobility/finance", icon: <DollarSign className="w-3.5 h-3.5" />, group: "Fleet Management" });
+      }
+
+      // Group 2: Transport Services (Only rendered if individually provisioned)
+      if (isSubAllowed("shuttle")) {
+        mobilityTabs.push({ label: "Shuttle", href: "/erp/admin/mobility/services/shuttle", icon: <Clock className="w-3.5 h-3.5" />, group: "Transport Services" });
+      }
+      if (isSubAllowed("interstate")) {
+        mobilityTabs.push({ label: "Interstate", href: "/erp/admin/mobility/services/interstate", icon: <Navigation className="w-3.5 h-3.5" />, group: "Transport Services" });
+      }
+      if (isSubAllowed("on_demand")) {
+        mobilityTabs.push({ label: "On-Demand", href: "/erp/admin/mobility/services/on-demand", icon: <Zap className="w-3.5 h-3.5" />, group: "Transport Services" });
+      }
+      if (isSubAllowed("rental")) {
+        mobilityTabs.push({ label: "Bus Rental", href: "/erp/admin/mobility/services/rental", icon: <Car className="w-3.5 h-3.5" />, group: "Transport Services" });
+      }
+      if (isSubAllowed("school")) {
+        mobilityTabs.push({ label: "School Bus", href: "/erp/admin/mobility/services/school", icon: <Building2 className="w-3.5 h-3.5" />, group: "Transport Services" });
+      }
+      if (isSubAllowed("staff")) {
+        mobilityTabs.push({ label: "Staff Transport", href: "/erp/admin/mobility/services/staff", icon: <Users className="w-3.5 h-3.5" />, group: "Transport Services" });
+      }
+
+      return mobilityTabs;
     }
 
     if (pathname.startsWith("/erp/ops/mobility")) {
-      return [
+      const isSubAllowed = (key: string) => {
+        const normKey = key.replace(/-/g, "_");
+        const dashKey = key.replace(/_/g, "-");
+
+        const adminVal = permissionMatrix.admin?.[normKey] ?? permissionMatrix.admin?.[dashKey];
+        const provVal = (permissionMatrix as any).tenant_provision?.[normKey] ?? (permissionMatrix as any).tenant_provision?.[dashKey];
+
+        // Explicitly disabled in either admin or tenant_provision
+        if (adminVal === false || provVal === false) return false;
+
+        // Transport service sub-modules (shuttle, interstate, on_demand, rental, school, staff)
+        // must ONLY be shown when explicitly enabled in admin or tenant_provision
+        const isTransportService = ["shuttle", "interstate", "on_demand", "rental", "school", "staff"].includes(normKey);
+        if (isTransportService) {
+          return adminVal === true || provVal === true;
+        }
+
+        // Standard fleet operations modules default to allowed
+        return adminVal !== false && provVal !== false;
+      };
+
+      const opsTabs: SubNavItem[] = [
         // Group 1: Job Assignment & Fleet Readiness
         { label: "Live Dispatch Console", href: "/erp/ops/mobility", icon: <Radio className="w-3.5 h-3.5" />, badge: "Live", group: "Job Assignment" },
-        { label: "Driver Rosters", href: "/erp/admin/mobility/drivers", icon: <Users className="w-3.5 h-3.5" />, group: "Job Assignment" },
-        { label: "Active Vehicles", href: "/erp/admin/mobility/vehicles", icon: <Truck className="w-3.5 h-3.5" />, group: "Job Assignment" },
-
-        // Group 2: Services & Manifests (The 6 Services)
-        { label: "Shuttle Service", href: "/erp/admin/mobility/services/shuttle", icon: <Clock className="w-3.5 h-3.5" />, group: "Services & Manifests" },
-        { label: "Interstate Transit", href: "/erp/admin/mobility/services/interstate", icon: <Navigation className="w-3.5 h-3.5" />, group: "Services & Manifests" },
-        { label: "On-Demand Hailing", href: "/erp/admin/mobility/services/on-demand", icon: <Zap className="w-3.5 h-3.5" />, group: "Services & Manifests" },
-        { label: "Bus Rental Charters", href: "/erp/admin/mobility/services/rental", icon: <Car className="w-3.5 h-3.5" />, group: "Services & Manifests" },
-        { label: "School Bus Manifest", href: "/erp/admin/mobility/services/school", icon: <Building2 className="w-3.5 h-3.5" />, group: "Services & Manifests" },
-        { label: "Staff Commute Trips", href: "/erp/admin/mobility/services/staff", icon: <Users className="w-3.5 h-3.5" />, group: "Services & Manifests" },
       ];
+
+      if (isSubAllowed("drivers")) {
+        opsTabs.push({ label: "Driver Rosters", href: "/erp/admin/mobility/drivers", icon: <Users className="w-3.5 h-3.5" />, group: "Job Assignment" });
+      }
+      if (isSubAllowed("vehicles")) {
+        opsTabs.push({ label: "Active Vehicles", href: "/erp/admin/mobility/vehicles", icon: <Truck className="w-3.5 h-3.5" />, group: "Job Assignment" });
+      }
+
+      // Group 2: Services & Manifests (Only rendered if individually provisioned)
+      if (isSubAllowed("shuttle")) {
+        opsTabs.push({ label: "Shuttle Service", href: "/erp/admin/mobility/services/shuttle", icon: <Clock className="w-3.5 h-3.5" />, group: "Services & Manifests" });
+      }
+      if (isSubAllowed("interstate")) {
+        opsTabs.push({ label: "Interstate Transit", href: "/erp/admin/mobility/services/interstate", icon: <Navigation className="w-3.5 h-3.5" />, group: "Services & Manifests" });
+      }
+      if (isSubAllowed("on_demand")) {
+        opsTabs.push({ label: "On-Demand Hailing", href: "/erp/admin/mobility/services/on-demand", icon: <Zap className="w-3.5 h-3.5" />, group: "Services & Manifests" });
+      }
+      if (isSubAllowed("rental")) {
+        opsTabs.push({ label: "Bus Rental Charters", href: "/erp/admin/mobility/services/rental", icon: <Car className="w-3.5 h-3.5" />, group: "Services & Manifests" });
+      }
+      if (isSubAllowed("school")) {
+        opsTabs.push({ label: "School Bus Manifest", href: "/erp/admin/mobility/services/school", icon: <Building2 className="w-3.5 h-3.5" />, group: "Services & Manifests" });
+      }
+      if (isSubAllowed("staff")) {
+        opsTabs.push({ label: "Staff Commute Trips", href: "/erp/admin/mobility/services/staff", icon: <Users className="w-3.5 h-3.5" />, group: "Services & Manifests" });
+      }
+
+      return opsTabs;
     }
 
     if (pathname.startsWith("/erp/admin/dispatch")) {

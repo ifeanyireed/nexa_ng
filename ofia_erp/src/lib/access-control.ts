@@ -513,6 +513,14 @@ export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
     manager: true,
     md: true,
     sales_closer: true,
+    // Transport service sub-modules (disabled by default unless provisioned)
+    shuttle: false,
+    interstate: false,
+    on_demand: false,
+    "on-demand": false,
+    rental: false,
+    school: false,
+    staff: false,
   },
   md: {
     mission: true,
@@ -750,6 +758,22 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
         (merged as any).tenant_provision = { ...res.matrix.tenant_provision };
       }
 
+      // Normalize on_demand and on-demand in merged.admin and tenant_provision
+      if (merged.admin) {
+        if (merged.admin.on_demand !== undefined) {
+          (merged.admin as any)["on-demand"] = merged.admin.on_demand;
+        } else if ((merged.admin as any)["on-demand"] !== undefined) {
+          merged.admin.on_demand = (merged.admin as any)["on-demand"];
+        }
+      }
+      if ((merged as any).tenant_provision) {
+        if ((merged as any).tenant_provision.on_demand !== undefined) {
+          (merged as any).tenant_provision["on-demand"] = (merged as any).tenant_provision.on_demand;
+        } else if ((merged as any).tenant_provision["on-demand"] !== undefined) {
+          (merged as any).tenant_provision.on_demand = (merged as any).tenant_provision["on-demand"];
+        }
+      }
+
       // 1. Tenant Administrator (admin) ALWAYS gets all modules allowed to the tenant by the Super Admin in Postgres
       for (const mod of ERP_MODULES) {
         const isAllowed = tp[mod.key] !== false && ad[mod.key] !== false;
@@ -890,19 +914,24 @@ export function useTenantProvisioning() {
         const matched = resolveTenantFromList(list, userEmail, searchParamSlug);
         setTenant(matched);
 
-        const tenantKey = matched?.slug || matched?.id || "neweratransports";
+        const tenantKey = matched?.slug || matched?.id || searchParamSlug || "";
 
         // Initial sync from local memory matrix
         setMatrix(getTenantPermissionMatrix(tenantKey));
 
         // Fetch live provisioned matrix from Postgres backend
-        const remoteMatrix = await fetchTenantPermissionMatrix(tenantKey);
-        if (remoteMatrix && Object.keys(remoteMatrix).length > 0 && isCurrent) {
-          setMatrix(remoteMatrix);
-        }
+        if (tenantKey) {
+          const remoteMatrix = await fetchTenantPermissionMatrix(tenantKey);
+          if (remoteMatrix && Object.keys(remoteMatrix).length > 0 && isCurrent) {
+            setMatrix(remoteMatrix);
+          }
 
-        // Fetch live department access configurations
-        const remoteDepts = await fetchTenantDepartmentAccess(tenantKey);
+          // Fetch live department access configurations
+          const remoteDepts = await fetchTenantDepartmentAccess(tenantKey);
+          if (remoteDepts && remoteDepts.length > 0 && isCurrent) {
+            setDepartmentConfigs(remoteDepts);
+          }
+        }
         if (remoteDepts && remoteDepts.length > 0 && isCurrent) {
           setDepartmentConfigs(remoteDepts);
         }

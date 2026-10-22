@@ -18,6 +18,7 @@ import {
   MapPin,
   RefreshCw,
   Send,
+  Trash2,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -35,6 +36,7 @@ export default function CrmLeadsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
 
   // AI Extraction Modal
   const [isExtractModalOpen, setIsExtractModalOpen] = useState(false);
@@ -211,6 +213,26 @@ export default function CrmLeadsPage() {
       alert(`Success! Lead "${lead.companyName}" promoted to active CRM Deal.`);
     } catch {
       alert("Promoted to CRM Deal (local pipeline updated).");
+    }
+  };
+
+  const handleDeleteLead = async (id: string, company: string) => {
+    if (!confirm(`Are you sure you want to delete lead "${company}"?`)) return;
+    setIsDeletingId(id);
+    try {
+      const res = await crmFetch(`/api/erp/crm/leads?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setLeads((prev) => prev.filter((l) => l.id !== id));
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data?.error || "Failed to delete lead");
+      }
+    } catch (err: any) {
+      alert("Error deleting lead: " + (err?.message || "Unknown error"));
+    } finally {
+      setIsDeletingId(null);
     }
   };
 
@@ -404,6 +426,19 @@ export default function CrmLeadsPage() {
                             <CheckCircle2 className="w-3.5 h-3.5" /> Converted
                           </span>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteLead(lead.id, lead.companyName)}
+                          disabled={isDeletingId === lead.id}
+                          className="p-1.5 rounded-lg border border-[var(--nexa-border)] hover:bg-rose-500/10 text-[var(--nexa-text-secondary)] hover:text-rose-600 transition-colors cursor-pointer disabled:opacity-50"
+                          title={`Delete lead ${lead.companyName}`}
+                        >
+                          {isDeletingId === lead.id ? (
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin text-rose-500" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
+                        </button>
                       </div>
                     </td>
                   </tr>

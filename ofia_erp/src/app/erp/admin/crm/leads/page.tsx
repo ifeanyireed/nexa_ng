@@ -66,7 +66,7 @@ export default function CrmLeadsPage() {
   // Edit Lead Modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<CrmLead | null>(null);
-  const [editStatus, setEditStatus] = useState<string>("QUALIFIED");
+  const [editStatus, setEditStatus] = useState<string>("ENRICHED");
   const [editAssignedCloser, setEditAssignedCloser] = useState<string>("Unassigned");
   const [editCompany, setEditCompany] = useState<string>("");
   const [editContact, setEditContact] = useState<string>("");
@@ -162,7 +162,7 @@ export default function CrmLeadsPage() {
       assignedRep: assignedCloser.startsWith("Auto-Assign") ? "Auto-Assign (Least-Loaded)" : assignedCloser,
       icpFitScore: 88,
       buyingSignals: ["Direct Manual Inbound"],
-      status: "QUALIFIED" as const,
+      status: "ENRICHED" as const,
       source: "Manual Staff Entry",
     };
 
@@ -296,7 +296,7 @@ export default function CrmLeadsPage() {
 
   const handleOpenEditModal = (lead: CrmLead) => {
     setEditingLead(lead);
-    setEditStatus(lead.status || "QUALIFIED");
+    setEditStatus(lead.status || "ENRICHED");
     setEditAssignedCloser(lead.assignedRep || "Unassigned");
     setEditCompany(lead.companyName || (lead as any).company || "");
     setEditContact(lead.contactName || (lead as any).name || "");

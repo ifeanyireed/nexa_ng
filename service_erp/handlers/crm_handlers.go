@@ -226,7 +226,7 @@ func HandleCrmLeads(w http.ResponseWriter, r *http.Request) {
 				if owner != nil {
 					ownerVal = *owner
 				}
-				statusVal := "QUALIFIED"
+				statusVal := "ENRICHED"
 				if status != nil && *status != "" {
 					statusVal = *status
 				}
@@ -309,7 +309,7 @@ func HandleCrmLeads(w http.ResponseWriter, r *http.Request) {
 			score = int(s)
 		}
 		if status == "" {
-			status = "NEW"
+			status = "ENRICHED"
 		}
 
 		_, err := db.Exec(`INSERT INTO crm_leads (id, tenant_slug, name, company, email, phone, source, score, status, owner, value, notes, company_name, contact_name, contact_email, contact_phone, assigned_rep, icp_fit_score, created_at, updated_at)

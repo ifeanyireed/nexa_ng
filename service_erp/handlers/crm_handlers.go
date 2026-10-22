@@ -2259,7 +2259,7 @@ func HandleCrmBlasts(w http.ResponseWriter, r *http.Request) {
 			total_recipients, sent_count, failed_count, COALESCE(open_count, 0), COALESCE(click_count, 0), COALESCE(bounce_count, 0),
 			scheduled_at, sent_at, created_at, sender_email, sender_provider
 			FROM crm_email_blasts
-			WHERE LOWER(tenant_slug) = $1
+			WHERE LOWER(tenant_slug) = $1 AND status != 'DELETED' AND status != 'ARCHIVED'
 			ORDER BY created_at DESC`, slug)
 		if err != nil {
 			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)

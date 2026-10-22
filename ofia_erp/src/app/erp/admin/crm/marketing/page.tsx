@@ -948,13 +948,30 @@ export default function EmailMarketingBlastsPage() {
     }
   };
 
-  const filteredBlasts = blasts.filter((b) => {
-    const matchSearch =
-      b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      b.subject.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchStatus = statusFilter === "ALL" || b.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  // Active blasts excluding any deleted or archived campaigns
+  const activeBlasts = useMemo(() => {
+    return blasts.filter((b) => {
+      if (!b || !b.id) return false;
+      const statusStr = String(b.status || "").toUpperCase();
+      if ((b as any).isDeleted || statusStr === "DELETED" || statusStr === "ARCHIVED" || (b as any).deletedAt) {
+        return false;
+      }
+      return true;
+    });
+  }, [blasts]);
+
+  const filteredBlasts = useMemo(() => {
+    return activeBlasts.filter((b) => {
+      const matchSearch =
+        !searchQuery.trim() ||
+        b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        b.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (b.listName && b.listName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (b.senderEmail && b.senderEmail.toLowerCase().includes(searchQuery.toLowerCase()));
+      const matchStatus = statusFilter === "ALL" || b.status === statusFilter;
+      return matchSearch && matchStatus;
+    });
+  }, [activeBlasts, searchQuery, statusFilter]);
 
   // Reset page on search or status change
   useEffect(() => {
@@ -989,11 +1006,53 @@ export default function EmailMarketingBlastsPage() {
     }
   };
 
-  const totalDelivered = blasts.reduce((acc, b) => acc + (b.status === "SENT" ? (Number(b.sentCount) || 0) : 0), 0);
-  const totalOpens = blasts.reduce((acc, b) => acc + (Number(b.openCount) || 0), 0);
-  const totalClicks = blasts.reduce((acc, b) => acc + (Number(b.clickCount) || 0), 0);
-  const avgOpenRate = totalDelivered > 0 ? ((totalOpens / totalDelivered) * 100).toFixed(1) : totalOpens > 0 ? "100.0" : "0.0";
-  const avgClickRate = totalDelivered > 0 ? ((totalClicks / totalDelivered) * 100).toFixed(1) : totalClicks > 0 ? "100.0" : "0.0";
+  // Top stats calculations based strictly on the currently listed campaigns (filteredBlasts), not including deleted ones
+  const statsCalculations = useMemo(() => {
+    const targetBlasts = filteredBlasts;
+
+    const totalDelivered = targetBlasts.reduce((acc, b) => {
+      const sent = Number(b.sentCount) || 0;
+      if (sent > 0) return acc + sent;
+      if (b.status === "SENT") return acc + (Number(b.totalRecipients) || 0);
+      return acc;
+    }, 0);
+
+    const totalOpens = targetBlasts.reduce((acc, b) => acc + (Number(b.openCount) || 0), 0);
+    const totalClicks = targetBlasts.reduce((acc, b) => acc + (Number(b.clickCount) || 0), 0);
+    const totalTargeted = targetBlasts.reduce((acc, b) => acc + (Number(b.totalRecipients) || 0), 0);
+
+    const totalDispatched = targetBlasts.filter(
+      (b) => b.status === "SENT" || b.status === "SENDING" || (Number(b.sentCount) || 0) > 0
+    ).length;
+
+    const avgOpenRate =
+      totalDelivered > 0
+        ? Math.min(100, (totalOpens / totalDelivered) * 100).toFixed(1)
+        : totalOpens > 0
+        ? "100.0"
+        : "0.0";
+
+    const avgClickRate =
+      totalDelivered > 0
+        ? Math.min(100, (totalClicks / totalDelivered) * 100).toFixed(1)
+        : totalClicks > 0
+        ? "100.0"
+        : "0.0";
+
+    const listedListIds = new Set(targetBlasts.map((b) => b.listId || b.listName).filter(Boolean));
+    const activeListCount = listedListIds.size;
+
+    return {
+      totalDispatched,
+      totalDelivered,
+      totalOpens,
+      totalClicks,
+      totalTargeted,
+      avgOpenRate,
+      avgClickRate,
+      activeListCount,
+    };
+  }, [filteredBlasts]);
 
   return (
     <ErpAdminShell
@@ -1035,29 +1094,29 @@ export default function EmailMarketingBlastsPage() {
           stats={[
             {
               label: "Total Blasts Dispatched",
-              value: blasts.filter((b) => b.status === "SENT").length.toString(),
-              change: `${totalDelivered} emails delivered`,
+              value: statsCalculations.totalDispatched.toString(),
+              change: `${statsCalculations.totalDelivered.toLocaleString()} emails delivered`,
               changeType: "success",
               icon: <Send className="w-4 h-4 text-emerald-500" />,
             },
             {
               label: "Average Open Rate",
-              value: `${avgOpenRate}%`,
-              change: `${totalOpens} total verified opens`,
+              value: `${statsCalculations.avgOpenRate}%`,
+              change: `${statsCalculations.totalOpens.toLocaleString()} total verified opens`,
               changeType: "success",
               icon: <Eye className="w-4 h-4 text-blue-500" />,
             },
             {
               label: "Audience Subscriber Lists",
-              value: lists.length.toString(),
-              change: `${lists.reduce((acc, l) => acc + l.subscriberCount, 0)} total contacts`,
+              value: (statsCalculations.activeListCount > 0 ? statsCalculations.activeListCount : lists.length).toString(),
+              change: `${statsCalculations.totalTargeted > 0 ? statsCalculations.totalTargeted.toLocaleString() + " recipients targeted" : lists.reduce((acc, l) => acc + l.subscriberCount, 0).toLocaleString() + " total contacts"}`,
               changeType: "success",
               icon: <Users className="w-4 h-4 text-purple-500" />,
             },
             {
               label: "Tracked Click Rate",
-              value: `${avgClickRate}%`,
-              change: `${totalClicks} unique link clicks`,
+              value: `${statsCalculations.avgClickRate}%`,
+              change: `${statsCalculations.totalClicks.toLocaleString()} unique link clicks`,
               changeType: "success",
               icon: <Sparkles className="w-4 h-4 text-amber-500" />,
             },

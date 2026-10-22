@@ -75,6 +75,7 @@ export default function CrmCallLoggerPage() {
   const [calls, setCalls] = useState<CrmCall[]>([]);
   const [leads, setLeads] = useState<CrmLead[]>([]);
   const [closers, setClosers] = useState<string[]>([]);
+  const [availableClosers, setAvailableClosers] = useState<{ id: string; name: string; email: string }[]>([]);
   const [stats, setStats] = useState({
     totalCalls: 0,
     connectedCalls: 0,
@@ -122,13 +123,25 @@ export default function CrmCallLoggerPage() {
   // Initialize current user name as default closer
   useEffect(() => {
     if (user?.name) {
-      setRepName(user.name);
-      setRepEmail(user.email || "");
+      setRepName((prev) => prev || user.name);
+      setRepEmail((prev) => prev || user.email || "");
     } else if (typeof window !== "undefined") {
       const stored = localStorage.getItem("nexa_user_name") || localStorage.getItem("erp_user_name");
-      if (stored) setRepName(stored);
+      if (stored) setRepName((prev) => prev || stored);
     }
   }, [user]);
+
+  // Keep repEmail in sync with repName
+  useEffect(() => {
+    if (repName && availableClosers.length > 0) {
+      const match = availableClosers.find(
+        (c) => c.name.toLowerCase() === repName.trim().toLowerCase()
+      );
+      if (match?.email) {
+        setRepEmail(match.email);
+      }
+    }
+  }, [repName, availableClosers]);
 
   // Stopwatch timer effect
   useEffect(() => {
@@ -159,8 +172,10 @@ export default function CrmCallLoggerPage() {
         setCalls([]);
       }
 
+      let loadedLeads: CrmLead[] = [];
       if (leadsRes?.leads) {
-        setLeads(leadsRes.leads);
+        loadedLeads = leadsRes.leads;
+        setLeads(loadedLeads);
       }
 
       // Extract ONLY employees who are strictly given access to the Sales Closer page
@@ -171,16 +186,28 @@ export default function CrmCallLoggerPage() {
         : [];
 
       const closerUsers = filterSalesClosers(rawUsers);
+      setAvailableClosers(closerUsers);
       const closerNames = Array.from(new Set(closerUsers.map((u) => u.name).filter(Boolean)));
       setClosers(closerNames);
 
-      // Pre-select repName to current closer if valid, or the first available closer
+      // Check URL search params for prefilled lead / closer assignment
+      const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+      const qLeadId = params?.get("leadId");
+      const qRep = params?.get("rep") || params?.get("assignedRep") || params?.get("closer");
+      const matchedLead = qLeadId ? loadedLeads.find((l) => l.id === qLeadId) : null;
+      const leadRep = matchedLead?.assignedRep;
+
+      // Pre-select repName
       if (closerNames.length > 0) {
         setRepName((prev) => {
+          if (qRep && closerNames.includes(qRep)) return qRep;
+          if (leadRep && closerNames.includes(leadRep)) return leadRep;
           if (prev && closerNames.includes(prev)) return prev;
           if (user?.name && closerNames.includes(user.name)) return user.name;
-          return closerNames[0];
+          return qRep || leadRep || prev || closerNames[0];
         });
+      } else if (qRep || leadRep) {
+        setRepName(qRep || leadRep || "");
       }
     } catch (err) {
       console.warn("Failed to load call logs:", err);
@@ -199,11 +226,13 @@ export default function CrmCallLoggerPage() {
       const qPhone = params.get("phone");
       const qName = params.get("name");
       const qCompany = params.get("company");
-      if (qLeadId || qPhone || qName || qCompany) {
+      const qRep = params.get("rep") || params.get("assignedRep") || params.get("closer");
+      if (qLeadId || qPhone || qName || qCompany || qRep) {
         if (qLeadId) setSelectedLeadId(qLeadId);
         if (qPhone) setPhoneNumber(qPhone);
         if (qName) setContactName(qName);
         if (qCompany) setCompany(qCompany);
+        if (qRep) setRepName(qRep);
         setIsModalOpen(true);
       }
     }
@@ -218,7 +247,7 @@ export default function CrmCallLoggerPage() {
       setContactName(l.contactName || (l as any).name || "");
       setCompany(l.companyName || (l as any).company || "");
       setPhoneNumber(l.contactPhone || (l as any).phone || "");
-      if (l.assignedRep && !repName) setRepName(l.assignedRep);
+      if (l.assignedRep) setRepName(l.assignedRep);
     }
   };
 
@@ -836,17 +865,27 @@ export default function CrmCallLoggerPage() {
               </label>
               <select
                 value={repName}
-                onChange={(e) => setRepName(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setRepName(val);
+                  const matched = availableClosers.find((c) => c.name === val);
+                  if (matched?.email) setRepEmail(matched.email);
+                }}
                 className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold"
                 required
               >
+                {isLoading && closers.length === 0 ? (
+                  <option value="">⏳ Loading sales closers...</option>
+                ) : closers.length === 0 ? (
+                  <option value="">No sales closers provisioned</option>
+                ) : null}
                 {closers.map((c) => (
                   <option key={c} value={c}>
-                    {c}
+                    👤 {c}
                   </option>
                 ))}
-                {closers.length === 0 && (
-                  <option value="">No sales closers provisioned</option>
+                {repName && !closers.includes(repName) && (
+                  <option value={repName}>👤 {repName}</option>
                 )}
               </select>
             </div>

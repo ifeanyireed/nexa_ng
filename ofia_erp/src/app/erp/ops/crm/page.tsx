@@ -788,7 +788,7 @@ function SalesCloserPortalContent() {
 
                           <div className="flex items-center gap-1.5">
                             <Link
-                              href={`/erp/ops/calls?leadId=${lead.id}&phone=${encodeURIComponent(lead.contactPhone || "")}&name=${encodeURIComponent(lead.contactName || "")}&company=${encodeURIComponent(lead.companyName || "")}`}
+                              href={`/erp/ops/calls?leadId=${lead.id}&phone=${encodeURIComponent(lead.contactPhone || "")}&name=${encodeURIComponent(lead.contactName || "")}&company=${encodeURIComponent(lead.companyName || "")}${lead.assignedRep ? `&rep=${encodeURIComponent(lead.assignedRep)}` : ""}`}
                               className="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border border-blue-500/20 cursor-pointer transition-colors flex items-center gap-1"
                               title="Start Phone Call & Log Outcome"
                             >

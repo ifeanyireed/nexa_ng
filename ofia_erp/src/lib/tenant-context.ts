@@ -49,7 +49,6 @@ export function extractSubdomainOrParam(searchParamSlug?: string | null): string
     const param =
       urlParams.get("tenant") ||
       urlParams.get("tenant_slug") ||
-      urlParams.get("company") ||
       urlParams.get("org") ||
       urlParams.get("orgId") ||
       urlParams.get("tenantId") ||

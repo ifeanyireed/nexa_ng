@@ -883,8 +883,7 @@ export function useTenantProvisioning() {
               urlParams.get("tenant") ||
               urlParams.get("tenant_slug") ||
               urlParams.get("orgId") ||
-              urlParams.get("org") ||
-              urlParams.get("company");
+              urlParams.get("org");
           }
         }
 

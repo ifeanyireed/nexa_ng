@@ -15,7 +15,6 @@ import {
   Globe,
   CheckCircle2,
   TrendingUp,
-  MapPin,
   RefreshCw,
   Send,
   Trash2,
@@ -242,7 +241,9 @@ export default function CrmLeadsPage() {
     const personName = (l.contactName || (l as any).name || "").toLowerCase();
     const email = (l.contactEmail || (l as any).email || "").toLowerCase();
     const loc = (l.location || "").toLowerCase();
-    const matchSearch = cName.includes(q) || personName.includes(q) || email.includes(q) || loc.includes(q);
+    const phone = (l.contactPhone || (l as any).phone || "").toLowerCase();
+    const matchSearch =
+      cName.includes(q) || personName.includes(q) || email.includes(q) || loc.includes(q) || phone.includes(q);
     const matchStatus = statusFilter === "ALL" || l.status === statusFilter;
     return matchSearch && matchStatus;
   });
@@ -358,7 +359,19 @@ export default function CrmLeadsPage() {
                         </span>
                       </div>
                       <div className="text-[11px] text-[var(--nexa-text-muted)] flex items-center gap-2">
-                        <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {lead.location}</span>
+                        <span className="flex items-center gap-1">
+                          <Phone className="w-3 h-3 text-[var(--nexa-text-muted)]" />
+                          {lead.contactPhone || (lead as any).phone ? (
+                            <a
+                              href={`tel:${lead.contactPhone || (lead as any).phone}`}
+                              className="hover:underline hover:text-[#1A56DB]"
+                            >
+                              {lead.contactPhone || (lead as any).phone}
+                            </a>
+                          ) : (
+                            <span>No phone</span>
+                          )}
+                        </span>
                         <span>•</span>
                         <span>{lead.industry}</span>
                       </div>

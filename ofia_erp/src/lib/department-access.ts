@@ -167,6 +167,13 @@ export function getUserDepartmentAccess(
         if (tabIdOrPath.includes(allowedId)) return true;
       }
 
+      // Check known aliases for CRM and other modules
+      if (pageKey === "crm") {
+        if (tabIdOrPath.includes("/erp/admin/crm/marketing") && (pageTabs.has("blasts") || pageTabs.has("marketing") || pageTabs.has("email"))) return true;
+        if (tabIdOrPath.includes("/erp/admin/crm/calls") && (pageTabs.has("calls") || pageTabs.has("leads") || pageTabs.has("activities"))) return true;
+        if (tabIdOrPath === "/erp/admin/crm" && (pageTabs.has("command") || pageTabs.has("overview"))) return true;
+      }
+
       return false;
     },
   };

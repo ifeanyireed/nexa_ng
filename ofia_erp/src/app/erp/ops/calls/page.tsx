@@ -164,7 +164,7 @@ function SalesCloserCallLoggerContent() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 15;
+  const [pageSize, setPageSize] = useState(15);
 
   // Search inside lead selector
   const [leadSearchText, setLeadSearchText] = useState("");
@@ -434,6 +434,13 @@ function SalesCloserCallLoggerContent() {
 
   // Paginated calls
   const totalPages = Math.ceil(filteredCalls.length / pageSize) || 1;
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
   const paginatedCalls = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
     return filteredCalls.slice(start, start + pageSize);
@@ -792,16 +799,35 @@ function SalesCloserCallLoggerContent() {
             </table>
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="pt-2">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-              />
+          {/* Table Footer with Pagination Controller & Page Size Selector */}
+          <div className="p-3 border-t border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]/30 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs text-[var(--nexa-text-muted)]">
+              <span>Rows per page:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="px-2 py-1 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-semibold text-[var(--nexa-text-primary)] focus:outline-none focus:ring-1 focus:ring-[#1A56DB] cursor-pointer"
+              >
+                {[10, 15, 25, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
             </div>
-          )}
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredCalls.length}
+              itemsPerPage={pageSize}
+              onPageChange={setCurrentPage}
+              className="pt-0 border-t-0"
+            />
+          </div>
         </NexaCard>
       </div>
 

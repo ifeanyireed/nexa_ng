@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   Target,
@@ -20,6 +20,7 @@ import {
   Trash2,
   Pencil,
   ChevronDown,
+  Users,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -28,6 +29,7 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaModal } from "@/components/nexa/NexaModal";
+import { Pagination } from "@/components/nexa/Pagination";
 import { CrmLead } from "@/lib/crm-service";
 import { crmFetch } from "@/lib/crm-client";
 import { filterSalesClosers } from "@/lib/access-control";
@@ -38,6 +40,10 @@ export default function CrmLeadsPage() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [isLoading, setIsLoading] = useState(true);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // AI Extraction Modal
   const [isExtractModalOpen, setIsExtractModalOpen] = useState(false);
@@ -358,11 +364,36 @@ export default function CrmLeadsPage() {
     const email = (l.contactEmail || (l as any).email || "").toLowerCase();
     const loc = (l.location || "").toLowerCase();
     const phone = (l.contactPhone || (l as any).phone || "").toLowerCase();
+    const audList = (l.audienceList || (l as any).listName || "").toLowerCase();
     const matchSearch =
-      cName.includes(q) || personName.includes(q) || email.includes(q) || loc.includes(q) || phone.includes(q);
+      cName.includes(q) ||
+      personName.includes(q) ||
+      email.includes(q) ||
+      loc.includes(q) ||
+      phone.includes(q) ||
+      audList.includes(q);
     const matchStatus = statusFilter === "ALL" || l.status === statusFilter;
     return matchSearch && matchStatus;
   });
+
+  // Reset page when search or status filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
+
+  const totalItems = filteredLeads.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
+  const paginatedLeads = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filteredLeads.slice(startIndex, startIndex + pageSize);
+  }, [filteredLeads, currentPage, pageSize]);
 
   return (
     <ErpAdminShell
@@ -434,7 +465,7 @@ export default function CrmLeadsPage() {
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1">
-            {["ALL", "MEETING_BOOKED", "QUALIFIED", "ENRICHED", "CONTACTED", "CONVERTED", "IDENTIFIED"].map((st) => (
+            {["ALL", "ENRICHED", "IDENTIFIED", "CONTACTED", "QUALIFIED", "MEETING_BOOKED", "CONVERTED"].map((st) => (
               <button
                 key={st}
                 onClick={() => setStatusFilter(st)}
@@ -464,7 +495,14 @@ export default function CrmLeadsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--nexa-border)]">
-                {filteredLeads.map((lead) => (
+                {paginatedLeads.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-xs text-[var(--nexa-text-muted)]">
+                      No leads found matching criteria.
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedLeads.map((lead) => (
                   <tr key={lead.id} className="hover:bg-[var(--nexa-bg-surface)]/50 transition-colors">
                     <td className="py-3.5 px-4 space-y-1">
                       <div className="flex items-center gap-2">
@@ -491,6 +529,14 @@ export default function CrmLeadsPage() {
                         <span>•</span>
                         <span>{lead.industry}</span>
                       </div>
+                      {((lead as any).audienceList || (lead as any).listName || (lead.source && lead.source.startsWith("Email Blast: "))) && (
+                        <div className="flex items-center gap-1.5 text-[10.5px] text-blue-600 dark:text-blue-400 font-semibold pt-0.5">
+                          <Users className="w-3 h-3 shrink-0 text-blue-500" />
+                          <span className="truncate max-w-[220px]" title={`Audience List: ${(lead as any).audienceList || (lead as any).listName || lead.source?.replace("Email Blast: ", "")}`}>
+                            {(lead as any).audienceList || (lead as any).listName || lead.source?.replace("Email Blast: ", "")}
+                          </span>
+                        </div>
+                      )}
                     </td>
 
                     <td className="py-3.5 px-4 space-y-0.5">
@@ -527,11 +573,11 @@ export default function CrmLeadsPage() {
                           className="appearance-none pl-2.5 pr-6 py-1 rounded-lg text-xs font-semibold cursor-pointer border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] hover:border-[#1A56DB]/50 transition-all focus:outline-none focus:ring-1 focus:ring-[#1A56DB] disabled:opacity-50"
                           title="Click to change lead status"
                         >
-                          <option value="QUALIFIED">QUALIFIED</option>
-                          <option value="MEETING_BOOKED">MEETING_BOOKED</option>
-                          <option value="CONTACTED">CONTACTED</option>
                           <option value="ENRICHED">ENRICHED</option>
                           <option value="IDENTIFIED">IDENTIFIED</option>
+                          <option value="CONTACTED">CONTACTED</option>
+                          <option value="QUALIFIED">QUALIFIED</option>
+                          <option value="MEETING_BOOKED">MEETING_BOOKED</option>
                           <option value="CONVERTED">CONVERTED</option>
                           <option value="ARCHIVED">ARCHIVED</option>
                         </select>
@@ -616,9 +662,40 @@ export default function CrmLeadsPage() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                ))
+              )}
               </tbody>
             </table>
+          </div>
+
+          {/* Table Footer with Pagination Controller & Page Size Selector */}
+          <div className="p-3 border-t border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]/30 flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-xs text-[var(--nexa-text-muted)]">
+              <span>Rows per page:</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="px-2 py-1 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-semibold text-[var(--nexa-text-primary)] focus:outline-none focus:ring-1 focus:ring-[#1A56DB] cursor-pointer"
+              >
+                {[5, 10, 20, 50].map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              itemsPerPage={pageSize}
+              onPageChange={setCurrentPage}
+              className="pt-0 border-t-0"
+            />
           </div>
         </NexaCard>
       </div>
@@ -799,11 +876,11 @@ export default function CrmLeadsPage() {
                 onChange={(e) => setEditStatus(e.target.value)}
                 className="w-full px-3 py-2 text-xs rounded-lg bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#1A56DB]"
               >
-                <option value="QUALIFIED">QUALIFIED</option>
-                <option value="MEETING_BOOKED">MEETING_BOOKED</option>
-                <option value="CONTACTED">CONTACTED</option>
                 <option value="ENRICHED">ENRICHED</option>
                 <option value="IDENTIFIED">IDENTIFIED</option>
+                <option value="CONTACTED">CONTACTED</option>
+                <option value="QUALIFIED">QUALIFIED</option>
+                <option value="MEETING_BOOKED">MEETING_BOOKED</option>
                 <option value="CONVERTED">CONVERTED</option>
                 <option value="ARCHIVED">ARCHIVED</option>
               </select>

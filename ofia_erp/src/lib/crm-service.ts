@@ -46,6 +46,8 @@ export interface CrmLead {
   status: "IDENTIFIED" | "ENRICHED" | "CONTACTED" | "QUALIFIED" | "MEETING_BOOKED" | "CONVERTED" | "ARCHIVED";
   assignedRep?: string;
   source?: string;
+  audienceList?: string;
+  listName?: string;
   notes?: string;
   convertedDealId?: string;
   convertedAt?: string;

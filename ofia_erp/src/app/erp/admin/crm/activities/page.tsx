@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import {
   Calendar,
@@ -22,6 +22,7 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaModal } from "@/components/nexa/NexaModal";
+import { Pagination } from "@/components/nexa/Pagination";
 import { CrmActivity } from "@/lib/crm-service";
 import { crmFetch } from "@/lib/crm-client";
 
@@ -29,6 +30,10 @@ export default function SalesActivitiesPage() {
   const [activities, setActivities] = useState<CrmActivity[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("ALL");
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // New Activity Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -116,6 +121,25 @@ export default function SalesActivitiesPage() {
     return matchSearch && matchType;
   });
 
+  // Reset page when search or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, typeFilter]);
+
+  const totalItems = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
+  const paginatedActivities = useMemo(() => {
+    const startIndex = (currentPage - 1) * pageSize;
+    return filtered.slice(startIndex, startIndex + pageSize);
+  }, [filtered, currentPage, pageSize]);
+
   const getActivityIcon = (actType: string) => {
     switch (actType) {
       case "CALL":
@@ -200,47 +224,83 @@ export default function SalesActivitiesPage() {
         </div>
 
         <div className="space-y-3">
-          {filtered.map((act) => (
-            <NexaCard key={act.id} className="p-4 hover:border-[#1A56DB]/40 transition-colors">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] flex items-center justify-center shrink-0">
-                    {getActivityIcon(act.type)}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">{act.title}</h4>
-                      <NexaBadge variant={act.status === "COMPLETED" ? "success" : "warning"}>
-                        {act.status}
-                      </NexaBadge>
+          {paginatedActivities.length === 0 ? (
+            <div className="p-8 text-center text-xs text-[var(--nexa-text-muted)] border border-dashed border-[var(--nexa-border)] rounded-2xl bg-[var(--nexa-bg-card)]">
+              No sales activities found matching criteria.
+            </div>
+          ) : (
+            paginatedActivities.map((act) => (
+              <NexaCard key={act.id} className="p-4 hover:border-[#1A56DB]/40 transition-colors">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] flex items-center justify-center shrink-0">
+                      {getActivityIcon(act.type)}
                     </div>
-                    <p className="text-xs text-[var(--nexa-text-muted)] mt-0.5">
-                      {act.company} • Rep: <span className="font-medium text-[var(--nexa-text-primary)]">{act.rep}</span>
-                    </p>
-                    {act.notes && (
-                      <p className="text-xs text-[var(--nexa-text-muted)] mt-1.5 bg-[var(--nexa-bg-surface)] p-2 rounded-lg border border-[var(--nexa-border)] max-w-xl">
-                        {act.notes}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">{act.title}</h4>
+                        <NexaBadge variant={act.status === "COMPLETED" ? "success" : "warning"}>
+                          {act.status}
+                        </NexaBadge>
+                      </div>
+                      <p className="text-xs text-[var(--nexa-text-muted)] mt-0.5">
+                        {act.company} • Rep: <span className="font-medium text-[var(--nexa-text-primary)]">{act.rep}</span>
                       </p>
+                      {act.notes && (
+                        <p className="text-xs text-[var(--nexa-text-muted)] mt-1.5 bg-[var(--nexa-bg-surface)] p-2 rounded-lg border border-[var(--nexa-border)] max-w-xl">
+                          {act.notes}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 self-end sm:self-center">
+                    <span className="text-xs font-bold text-[#1A56DB] bg-[#1A56DB]/10 px-2.5 py-1 rounded-full">
+                      {act.dateTime}
+                    </span>
+                    {act.status === "UPCOMING" && (
+                      <button
+                        onClick={() => handleMarkComplete(act.id)}
+                        className="text-xs font-bold px-3 py-1 rounded-lg border border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10 transition-colors cursor-pointer"
+                      >
+                        Mark Done
+                      </button>
                     )}
                   </div>
                 </div>
+              </NexaCard>
+            ))
+          )}
+        </div>
 
-                <div className="flex items-center gap-3 self-end sm:self-center">
-                  <span className="text-xs font-bold text-[#1A56DB] bg-[#1A56DB]/10 px-2.5 py-1 rounded-full">
-                    {act.dateTime}
-                  </span>
-                  {act.status === "UPCOMING" && (
-                    <button
-                      onClick={() => handleMarkComplete(act.id)}
-                      className="text-xs font-bold px-3 py-1 rounded-lg border border-emerald-500/30 text-emerald-600 hover:bg-emerald-500/10 transition-colors cursor-pointer"
-                    >
-                      Mark Done
-                    </button>
-                  )}
-                </div>
-              </div>
-            </NexaCard>
-          ))}
+        {/* Pagination Controller & Page Size Selector */}
+        <div className="p-3 border border-[var(--nexa-border)] rounded-2xl bg-[var(--nexa-bg-card)] flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-xs text-[var(--nexa-text-muted)]">
+            <span>Rows per page:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="px-2 py-1 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-semibold text-[var(--nexa-text-primary)] focus:outline-none focus:ring-1 focus:ring-[#1A56DB] cursor-pointer"
+            >
+              {[5, 10, 20, 50].map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            itemsPerPage={pageSize}
+            onPageChange={setCurrentPage}
+            className="pt-0 border-t-0"
+          />
         </div>
       </div>
 

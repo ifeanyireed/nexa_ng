@@ -21,7 +21,8 @@ export async function GET(request: NextRequest) {
 
   const queryTenant = searchParams.get("tenant") || searchParams.get("slug") || searchParams.get("store");
   const hostSubdomain = extractSubdomainFromHost(host);
-  const tenantSlug = (queryTenant || hostSubdomain || "").toLowerCase().trim();
+  const headerTenant = request.headers.get("x-tenant-slug");
+  const tenantSlug = (queryTenant || hostSubdomain || headerTenant || "").toLowerCase().trim();
 
   if (!tenantSlug) {
     return NextResponse.json(

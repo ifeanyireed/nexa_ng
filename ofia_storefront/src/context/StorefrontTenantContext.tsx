@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState, useMemo } from "
 import { TenantStorefrontHandshake, VendorStore, VerticalType } from "@/types/storefront";
 import {
   extractSubdomainFromHost,
+  resolveTenantFromHostAndQuery,
   buildDynamicVendorStore,
   SEED_TENANT_HANDSHAKES,
 } from "@/lib/storefront-tenant";
@@ -30,17 +31,21 @@ export function StorefrontTenantProvider({ children }: { children: React.ReactNo
     let resolvedSlug: string | null = null;
 
     if (typeof window !== "undefined") {
-      // 1. Query param takes precedence during development testing (e.g. localhost:3005?tenant=neweratransports)
       const urlParams = new URLSearchParams(window.location.search);
       const queryParam = urlParams.get("tenant") || urlParams.get("store") || urlParams.get("slug");
-      if (queryParam) {
-        resolvedSlug = queryParam.toLowerCase().trim();
-      }
 
-      // 2. Subdomain extraction from hostname (e.g. neweratransports.ofia.ng or neweratransports.localhost:3005)
-      if (!resolvedSlug) {
-        resolvedSlug = extractSubdomainFromHost(window.location.host);
-      }
+      let cookieSlug: string | null = null;
+      try {
+        const match = document.cookie.match(/(?:^|;\s*)ofia_tenant_slug=([^;]+)/);
+        if (match) cookieSlug = decodeURIComponent(match[1]);
+      } catch {}
+
+      const resolution = resolveTenantFromHostAndQuery(
+        window.location.host,
+        queryParam,
+        cookieSlug
+      );
+      resolvedSlug = resolution.tenantSlug;
     }
 
     setTenantSlug(resolvedSlug);
@@ -89,6 +94,14 @@ export function StorefrontTenantProvider({ children }: { children: React.ReactNo
             }
 
             setHandshake(activeHandshake);
+
+            // Synchronize tenant cookies for edge middleware
+            if (typeof document !== "undefined") {
+              try {
+                document.cookie = `ofia_tenant_slug=${encodeURIComponent(slug)}; path=/; max-age=2592000; SameSite=Lax`;
+                document.cookie = `ofia_tenant_vertical=${encodeURIComponent(activeHandshake.vertical)}; path=/; max-age=2592000; SameSite=Lax`;
+              } catch {}
+            }
 
             // Apply dynamic brand colors to CSS variables
             if (activeHandshake.storefrontConfig.primaryColor) {

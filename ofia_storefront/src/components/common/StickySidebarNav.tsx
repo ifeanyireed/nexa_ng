@@ -32,6 +32,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { MOCK_STORES } from "@/data/mockStores";
 
 interface ChatMessage {
@@ -59,6 +60,7 @@ type ValidVertical = (typeof VALID_VERTICALS)[number];
 export default function StickySidebarNav() {
   const pathname = usePathname();
   const { totalCount, setIsCartOpen, isCartOpen, activeVertical, setActiveVertical } = useCart();
+  const { vertical: tenantVertical, store: dynamicStore } = useStorefrontTenant();
 
   // Slide-over drawers state
   const [isInquiryOpen, setIsInquiryOpen] = useState(false);
@@ -66,7 +68,7 @@ export default function StickySidebarNav() {
   const [showPromoBadge, setShowPromoBadge] = useState(false);
   const [copiedPromo, setCopiedPromo] = useState(false);
 
-  // Extract current vertical safely from pathname if present, or fallback to CartContext
+  // Extract current vertical safely from pathname if present, or fallback to TenantContext or CartContext
   const segments = pathname.split("/").filter(Boolean);
   const detectedVertical = VALID_VERTICALS.find((v) => v === segments[0]);
 
@@ -79,10 +81,13 @@ export default function StickySidebarNav() {
 
   const currentVertical: ValidVertical =
     detectedVertical ||
+    (VALID_VERTICALS.includes(tenantVertical as ValidVertical)
+      ? (tenantVertical as ValidVertical)
+      : null) ||
     (VALID_VERTICALS.includes(activeVertical as ValidVertical)
       ? (activeVertical as ValidVertical)
       : "fashion");
-  const store = MOCK_STORES[currentVertical] || MOCK_STORES.fashion;
+  const store = dynamicStore || MOCK_STORES[currentVertical] || MOCK_STORES.fashion;
 
   // Drawer handlers ensuring mutual exclusivity
   const openInquiryDrawer = () => {

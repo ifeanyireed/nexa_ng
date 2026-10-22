@@ -43,7 +43,7 @@ export function extractSubdomainFromHost(host?: string | null): string | null {
     }
   }
 
-  // e.g. <subdomain>.ofia.ng (3 parts)
+  // e.g. <subdomain>.ofia.ng or <subdomain>.ofia.shop (3 parts)
   if (parts.length >= 3) {
     const sub = parts[0];
     if (sub && !SYSTEM_RESERVED_SUBDOMAINS.has(sub)) {
@@ -52,6 +52,136 @@ export function extractSubdomainFromHost(host?: string | null): string | null {
   }
 
   return null;
+}
+
+export interface ResolvedTenantResolution {
+  tenantSlug: string | null;
+  source: "query" | "subdomain" | "custom_domain" | "cookie" | null;
+  subdomain: string | null;
+  domain: string | null;
+}
+
+/**
+ * High-resilience tenant identity resolver for edge middleware and client context.
+ * Checks:
+ * 1. Query param (?tenant= / ?store= / ?slug=)
+ * 2. Host subdomain (<slug>.ofia.ng, <slug>.localhost:3005)
+ * 3. Custom domain matching against known seed stores (e.g. reedbreed.cc)
+ * 4. Fallback cookie (ofia_tenant_slug)
+ */
+export function resolveTenantFromHostAndQuery(
+  host?: string | null,
+  searchParamsTenant?: string | null,
+  cookieTenant?: string | null
+): ResolvedTenantResolution {
+  // 1. Explicit query parameter takes precedence (ideal for live preview links)
+  if (searchParamsTenant && searchParamsTenant.trim()) {
+    const slug = searchParamsTenant.toLowerCase().trim();
+    return {
+      tenantSlug: slug,
+      source: "query",
+      subdomain: extractSubdomainFromHost(host),
+      domain: host ? host.split(":")[0].toLowerCase().trim() : null,
+    };
+  }
+
+  if (host) {
+    const cleanHost = host.split(":")[0].toLowerCase().trim();
+
+    // 2. Subdomain extraction
+    const subdomain = extractSubdomainFromHost(cleanHost);
+    if (subdomain) {
+      return {
+        tenantSlug: subdomain,
+        source: "subdomain",
+        subdomain,
+        domain: cleanHost,
+      };
+    }
+
+    // 3. Custom domain lookup against known presets
+    for (const [slug, preset] of Object.entries(SEED_TENANT_HANDSHAKES)) {
+      if (preset.domain && preset.domain.toLowerCase().trim() === cleanHost) {
+        return {
+          tenantSlug: slug,
+          source: "custom_domain",
+          subdomain: null,
+          domain: cleanHost,
+        };
+      }
+    }
+  }
+
+  // 4. Fallback to cookie
+  if (cookieTenant && cookieTenant.trim()) {
+    const slug = cookieTenant.toLowerCase().trim();
+    return {
+      tenantSlug: slug,
+      source: "cookie",
+      subdomain: extractSubdomainFromHost(host),
+      domain: host ? host.split(":")[0].toLowerCase().trim() : null,
+    };
+  }
+
+  return {
+    tenantSlug: null,
+    source: null,
+    subdomain: null,
+    domain: host ? host.split(":")[0].toLowerCase().trim() : null,
+  };
+}
+
+/**
+ * Resolves a tenant's active vertical archetype from seed presets or cookies.
+ */
+export function resolveTenantVertical(
+  tenantSlug: string,
+  cookieVertical?: string | null
+): VerticalType {
+  if (
+    cookieVertical &&
+    ["fashion", "cars", "food", "property", "gadgets", "beauty", "home-living", "pharmacy", "hardware", "retail"].includes(
+      cookieVertical
+    )
+  ) {
+    return cookieVertical as VerticalType;
+  }
+  const seed = SEED_TENANT_HANDSHAKES[tenantSlug.toLowerCase()];
+  if (seed?.vertical) {
+    return seed.vertical;
+  }
+  return "cars"; // Default archetype
+}
+
+/**
+ * Top-level route segments that belong to global commerce workflows or explicit vertical templates.
+ */
+export const GLOBAL_STOREFRONT_ROUTES = new Set([
+  "checkout",
+  "order-confirmed",
+  "order-tracking",
+  "search",
+  "templates",
+  "account",
+  "dispatch",
+  "info",
+  "api",
+  "fashion",
+  "cars",
+  "food",
+  "property",
+  "gadgets",
+  "beauty",
+  "home-living",
+  "pharmacy",
+  "hardware",
+  "retail",
+]);
+
+export function isGlobalStorefrontRoute(pathname: string): boolean {
+  const segment = pathname.split("/").filter(Boolean)[0];
+  if (!segment) return true; // root path handled separately
+  return GLOBAL_STOREFRONT_ROUTES.has(segment.toLowerCase());
 }
 
 /**

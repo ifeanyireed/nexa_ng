@@ -36,7 +36,8 @@ export default async function Home({
   const headerList = await headers();
   const host = headerList.get("host");
   const subdomain = extractSubdomainFromHost(host);
-  const tenantSlug = (resolvedParams.tenant || resolvedParams.store || resolvedParams.slug || subdomain || "").toLowerCase().trim();
+  const headerTenant = headerList.get("x-tenant-slug");
+  const tenantSlug = (resolvedParams.tenant || resolvedParams.store || resolvedParams.slug || subdomain || headerTenant || "").toLowerCase().trim();
 
   // If a tenant subdomain or parameter is detected, route to their assigned vertical template!
   if (tenantSlug) {

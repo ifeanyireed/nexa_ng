@@ -434,7 +434,7 @@ export default function CrmLeadsPage() {
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1">
-            {["ALL", "MEETING_BOOKED", "QUALIFIED", "ENRICHED", "CONTACTED", "CONVERTED"].map((st) => (
+            {["ALL", "MEETING_BOOKED", "QUALIFIED", "ENRICHED", "CONTACTED", "CONVERTED", "IDENTIFIED"].map((st) => (
               <button
                 key={st}
                 onClick={() => setStatusFilter(st)}

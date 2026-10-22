@@ -1131,12 +1131,9 @@ export function ErpAdminShell({
 
   const rawSubTabs = getSubTabs();
   const activeSubTabs: SubNavItem[] = useMemo<SubNavItem[]>(() => {
-    if (!userDepartment || !departmentConfigs || departmentConfigs.length === 0 || currentRole === "admin") {
+    if (currentRole === "admin") {
       return rawSubTabs;
     }
-
-    const dAccess = getUserDepartmentAccess({ department: userDepartment, role: currentRole }, departmentConfigs);
-    if (!dAccess.matchedDepartment) return rawSubTabs;
 
     let activeModKey = "";
     if (pathname.startsWith("/erp/admin/mobility")) activeModKey = "mobility";
@@ -1161,8 +1158,28 @@ export function ErpAdminShell({
 
     if (!activeModKey) return rawSubTabs;
 
-    return rawSubTabs.filter((tab: SubNavItem) => dAccess.isTabAllowed(activeModKey, tab.href));
-  }, [rawSubTabs, userDepartment, departmentConfigs, currentRole, pathname]);
+    // Direct assigned page override: if a staff member was explicitly assigned this page, grant access to its navigation sub tabs
+    if (userAssignedPages && userAssignedPages.length > 0) {
+      if (
+        userAssignedPages.includes(activeModKey) ||
+        (activeModKey === "crm" && (userAssignedPages.includes("crm") || userAssignedPages.includes("marketing"))) ||
+        (activeModKey === "sales_closer" && (userAssignedPages.includes("sales_closer") || userAssignedPages.includes("crm"))) ||
+        (activeModKey === "dispatch" && (userAssignedPages.includes("dispatch") || userAssignedPages.includes("dispatcher") || userAssignedPages.includes("dispatch_ops")))
+      ) {
+        return rawSubTabs;
+      }
+    }
+
+    if (!userDepartment || !departmentConfigs || departmentConfigs.length === 0) {
+      return rawSubTabs;
+    }
+
+    const dAccess = getUserDepartmentAccess({ department: userDepartment, role: currentRole }, departmentConfigs);
+    if (!dAccess.matchedDepartment) return rawSubTabs;
+
+    const allowed = rawSubTabs.filter((tab: SubNavItem) => dAccess.isTabAllowed(activeModKey, tab.href));
+    return allowed.length > 0 ? allowed : rawSubTabs;
+  }, [rawSubTabs, userDepartment, departmentConfigs, currentRole, pathname, userAssignedPages]);
 
   const filteredNavItems = navItems.filter((item) => {
     const matchesSearch = item.label.toLowerCase().includes(searchQuery.toLowerCase());

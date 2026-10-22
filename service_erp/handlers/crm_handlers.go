@@ -1489,12 +1489,13 @@ func resolveLeastLoadedCloser(targetDB *sql.DB, slug string) string {
 		FROM "User"
 		WHERE (LOWER("tenantSlug") = LOWER($1) OR LOWER(company) = LOWER($1) OR "tenantSlug" = '' OR "tenantSlug" IS NULL)
 		  AND (
-			"assignedPages" ILIKE '%sales_closer%'
+			"assignedPages"::text ILIKE '%sales_closer%'
 			OR LOWER(role) = 'sales_closer'
 			OR LOWER(designation) LIKE '%closer%'
 			OR LOWER(designation) LIKE '%sales closer%'
 			OR LOWER(department) LIKE '%closer%'
 		  )
+		  AND LOWER(role) NOT IN ('admin', 'super_admin', 'superadmin')
 		ORDER BY name ASC`, slug)
 
 	closers := []string{}

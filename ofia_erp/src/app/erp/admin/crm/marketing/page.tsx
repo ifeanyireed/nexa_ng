@@ -78,7 +78,7 @@ export default function EmailMarketingBlastsPage() {
 
   // Prospect Assignment & Sales Closers
   const [salesClosers, setSalesClosers] = useState<{ id?: string; name: string; email: string }[]>([]);
-  const [existingLeadsMap, setExistingLeadsMap] = useState<Record<string, { id: string; assignedRep: string }>>({});
+  const [existingLeadsMap, setExistingLeadsMap] = useState<Record<string, { id: string; assignedRep: string; contactName?: string }>>({});
   const [selectedCloserForLog, setSelectedCloserForLog] = useState<Record<string, string>>({});
   const [activeAssignPopoverLogId, setActiveAssignPopoverLogId] = useState<string | null>(null);
   const [isAddingProspectId, setIsAddingProspectId] = useState<string | null>(null);
@@ -164,19 +164,32 @@ export default function EmailMarketingBlastsPage() {
         const validClosers = filterSalesClosers(rawUsers);
         setSalesClosers(validClosers);
 
-        if (Array.isArray(leadsRes?.leads)) {
-          const lMap: Record<string, { id: string; assignedRep: string }> = {};
-          leadsRes.leads.forEach((l: any) => {
-            const email = (l.contactEmail || l.email || "").trim().toLowerCase();
-            if (email) {
-              lMap[email] = {
-                id: l.id,
-                assignedRep: l.assignedRep || l.owner || "Assigned",
-              };
-            }
-          });
-          setExistingLeadsMap(lMap);
-        }
+        const rawLeads = Array.isArray(leadsRes)
+          ? leadsRes
+          : Array.isArray(leadsRes?.leads)
+          ? leadsRes.leads
+          : [];
+        const lMap: Record<string, { id: string; assignedRep: string; contactName?: string }> = {};
+        rawLeads.forEach((l: any) => {
+          const email = (l.contactEmail || l.email || l.contact_email || "").trim().toLowerCase();
+          const rep = l.assignedRep || l.owner || l.assigned_rep || "Assigned Closer";
+          if (email) {
+            lMap[email] = {
+              id: l.id,
+              assignedRep: rep,
+              contactName: l.contactName || l.name,
+            };
+          }
+          const name = (l.contactName || l.name || l.contact_name || "").trim().toLowerCase();
+          if (name && name !== "recipient" && name !== "campaign recipient") {
+            lMap[`name:${name}`] = {
+              id: l.id,
+              assignedRep: rep,
+              contactName: l.contactName || l.name,
+            };
+          }
+        });
+        setExistingLeadsMap(lMap);
       } catch (err) {
         console.warn("Using offline email marketing state:", err);
       } finally {
@@ -224,19 +237,32 @@ export default function EmailMarketingBlastsPage() {
         setSelectedBlastForLogs(blastRes.blast);
       }
 
-      if (Array.isArray(leadsRes?.leads)) {
-        const lMap: Record<string, { id: string; assignedRep: string }> = {};
-        leadsRes.leads.forEach((l: any) => {
-          const email = (l.contactEmail || l.email || "").trim().toLowerCase();
-          if (email) {
-            lMap[email] = {
-              id: l.id,
-              assignedRep: l.assignedRep || l.owner || "Assigned",
-            };
-          }
-        });
-        setExistingLeadsMap(lMap);
-      }
+      const rawLeads = Array.isArray(leadsRes)
+        ? leadsRes
+        : Array.isArray(leadsRes?.leads)
+        ? leadsRes.leads
+        : [];
+      const lMap: Record<string, { id: string; assignedRep: string; contactName?: string }> = {};
+      rawLeads.forEach((l: any) => {
+        const email = (l.contactEmail || l.email || l.contact_email || "").trim().toLowerCase();
+        const rep = l.assignedRep || l.owner || l.assigned_rep || "Assigned Closer";
+        if (email) {
+          lMap[email] = {
+            id: l.id,
+            assignedRep: rep,
+            contactName: l.contactName || l.name,
+          };
+        }
+        const name = (l.contactName || l.name || l.contact_name || "").trim().toLowerCase();
+        if (name && name !== "recipient" && name !== "campaign recipient") {
+          lMap[`name:${name}`] = {
+            id: l.id,
+            assignedRep: rep,
+            contactName: l.contactName || l.name,
+          };
+        }
+      });
+      setExistingLeadsMap(lMap);
     } catch {
       setBlastLogs([]);
     } finally {
@@ -258,24 +284,50 @@ export default function EmailMarketingBlastsPage() {
       if (blastRes?.blast) {
         setSelectedBlastForLogs(blastRes.blast);
       }
-      if (Array.isArray(leadsRes?.leads)) {
-        const lMap: Record<string, { id: string; assignedRep: string }> = {};
-        leadsRes.leads.forEach((l: any) => {
-          const email = (l.contactEmail || l.email || "").trim().toLowerCase();
-          if (email) {
-            lMap[email] = {
-              id: l.id,
-              assignedRep: l.assignedRep || l.owner || "Assigned",
-            };
-          }
-        });
-        setExistingLeadsMap(lMap);
-      }
+      const rawLeads = Array.isArray(leadsRes)
+        ? leadsRes
+        : Array.isArray(leadsRes?.leads)
+        ? leadsRes.leads
+        : [];
+      const lMap: Record<string, { id: string; assignedRep: string; contactName?: string }> = {};
+      rawLeads.forEach((l: any) => {
+        const email = (l.contactEmail || l.email || l.contact_email || "").trim().toLowerCase();
+        const rep = l.assignedRep || l.owner || l.assigned_rep || "Assigned Closer";
+        if (email) {
+          lMap[email] = {
+            id: l.id,
+            assignedRep: rep,
+            contactName: l.contactName || l.name,
+          };
+        }
+        const name = (l.contactName || l.name || l.contact_name || "").trim().toLowerCase();
+        if (name && name !== "recipient" && name !== "campaign recipient") {
+          lMap[`name:${name}`] = {
+            id: l.id,
+            assignedRep: rep,
+            contactName: l.contactName || l.name,
+          };
+        }
+      });
+      setExistingLeadsMap(lMap);
     } catch {
     } finally {
       setIsLoadingLogs(false);
     }
   }
+
+  const getExistingLead = (log: any) => {
+    if (!log) return null;
+    const email = (log.email || "").trim().toLowerCase();
+    if (email && existingLeadsMap[email]) {
+      return existingLeadsMap[email];
+    }
+    const name = (log.name || "").trim().toLowerCase();
+    if (name && existingLeadsMap[`name:${name}`]) {
+      return existingLeadsMap[`name:${name}`];
+    }
+    return null;
+  };
 
   const handleAddLeadAsProspect = async (log: any) => {
     setIsAddingProspectId(log.id);
@@ -284,10 +336,13 @@ export default function EmailMarketingBlastsPage() {
     const isOpened = Boolean(log.openedAt || (log.openCount && log.openCount > 0));
     const isClicked = Boolean(log.clickedAt || (log.clickCount && log.clickCount > 0));
 
+    const recipientName = (log.name && log.name.trim()) ? log.name.trim() : "Campaign Recipient";
+    const recipientEmail = (log.email || "").trim();
+
     const payload = {
       companyName: log.name && log.name.trim() ? `${log.name.trim()} Enterprise` : "Inbound Enterprise",
-      contactName: log.name && log.name.trim() ? log.name.trim() : "Campaign Recipient",
-      contactEmail: log.email.trim(),
+      contactName: recipientName,
+      contactEmail: recipientEmail,
       contactPhone: "",
       source: `Email Blast: ${selectedBlastForLogs?.title || "Campaign"}`,
       assignedRep: chosenCloser.startsWith("Auto-Assign") ? "Auto-Assign (Least-Loaded)" : chosenCloser,
@@ -308,23 +363,34 @@ export default function EmailMarketingBlastsPage() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Failed to create prospect in CRM");
+        throw new Error(err.error || `Failed to create prospect (HTTP ${res.status})`);
       }
 
       const data = await res.json().catch(() => ({}));
-      const repAssigned = data?.lead?.assignedRep || (chosenCloser.startsWith("Auto-Assign") ? "Divine Favour Chi Egbomuche" : chosenCloser);
+      const repAssigned = data?.lead?.assignedRep || data?.lead?.owner || (chosenCloser.startsWith("Auto-Assign") ? (salesClosers[0]?.name || "Sales Closer") : chosenCloser);
 
-      setExistingLeadsMap((prev) => ({
-        ...prev,
-        [log.email.trim().toLowerCase()]: {
-          id: data?.lead?.id || `LED-${Date.now()}`,
-          assignedRep: repAssigned,
-        },
-      }));
+      setExistingLeadsMap((prev) => {
+        const updated = { ...prev };
+        if (recipientEmail) {
+          updated[recipientEmail.toLowerCase()] = {
+            id: data?.lead?.id || `LED-${Date.now()}`,
+            assignedRep: repAssigned,
+            contactName: recipientName,
+          };
+        }
+        if (recipientName && recipientName !== "Campaign Recipient") {
+          updated[`name:${recipientName.toLowerCase()}`] = {
+            id: data?.lead?.id || `LED-${Date.now()}`,
+            assignedRep: repAssigned,
+            contactName: recipientName,
+          };
+        }
+        return updated;
+      });
 
       setActiveAssignPopoverLogId(null);
       setToastBanner({
-        message: `Successfully added ${log.email} to CRM Leads (Assigned: ${repAssigned})!`,
+        message: `Successfully added ${recipientEmail || recipientName} to CRM Leads (Assigned Closer: ${repAssigned})!`,
         type: "success",
       });
       setTimeout(() => setToastBanner(null), 5000);
@@ -2201,87 +2267,112 @@ export default function EmailMarketingBlastsPage() {
 
                         {/* CRM Prospect Lead Action */}
                         <td className="py-2.5 px-3">
-                          {existingLeadsMap[log.email.trim().toLowerCase()] ? (
-                            <div className="flex flex-col gap-0.5">
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 w-fit">
-                                <CheckCircle2 className="w-3 h-3" />
-                                Prospect in CRM
-                              </span>
-                              <span className="text-[10px] text-[var(--nexa-text-muted)] font-medium truncate max-w-[150px]">
-                                Closer: <strong className="text-[var(--nexa-text-secondary)]">{existingLeadsMap[log.email.trim().toLowerCase()].assignedRep || "Assigned"}</strong>
-                              </span>
-                            </div>
-                          ) : activeAssignPopoverLogId === log.id ? (
-                            <div className="p-2.5 rounded-xl bg-[var(--nexa-bg-card)] border border-[#1A56DB]/40 shadow-lg space-y-2 min-w-[220px] animate-in fade-in duration-150">
-                              <div className="flex items-center justify-between text-[11px] font-bold text-[var(--nexa-text-primary)]">
-                                <span>Assign Closer:</span>
-                                <button
-                                  type="button"
-                                  onClick={() => setActiveAssignPopoverLogId(null)}
-                                  className="text-[var(--nexa-text-muted)] hover:text-rose-500 text-xs px-1 cursor-pointer"
-                                >
-                                  ✕
-                                </button>
-                              </div>
-                              <select
-                                value={selectedCloserForLog[log.id] || "Auto-Assign (Least-Loaded)"}
-                                onChange={(e) =>
-                                  setSelectedCloserForLog((prev) => ({
-                                    ...prev,
-                                    [log.id]: e.target.value,
-                                  }))
-                                }
-                                className="w-full px-2 py-1.5 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] text-xs font-semibold text-[var(--nexa-text-primary)] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1A56DB]"
+                          {(() => {
+                            const existingLead = getExistingLead(log);
+                            if (existingLead) {
+                              return (
+                                <div className="flex flex-col gap-1 items-start">
+                                  <button
+                                    type="button"
+                                    disabled
+                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-700 text-[11px] font-bold cursor-not-allowed opacity-75 shadow-none whitespace-nowrap"
+                                    title={`Already a prospect in CRM Leads (Assigned Closer: ${existingLead.assignedRep})`}
+                                  >
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
+                                    <span>Prospect in Leads</span>
+                                  </button>
+                                  <div className="text-[10px] text-[var(--nexa-text-muted)] flex items-center gap-1">
+                                    <span className="truncate max-w-[140px]">
+                                      Closer: <strong className="text-[var(--nexa-text-secondary)] font-semibold">{existingLead.assignedRep}</strong>
+                                    </span>
+                                    <Link
+                                      href="/erp/admin/crm/leads"
+                                      className="text-[#1A56DB] dark:text-[#3B82F6] hover:underline shrink-0"
+                                      title="Open Leads Directory"
+                                    >
+                                      <ExternalLink className="w-2.5 h-2.5 inline" />
+                                    </Link>
+                                  </div>
+                                </div>
+                              );
+                            }
+
+                            if (activeAssignPopoverLogId === log.id) {
+                              return (
+                                <div className="p-2.5 rounded-xl bg-[var(--nexa-bg-card)] border border-[#1A56DB]/40 shadow-lg space-y-2 min-w-[220px] animate-in fade-in duration-150">
+                                  <div className="flex items-center justify-between text-[11px] font-bold text-[var(--nexa-text-primary)]">
+                                    <span>Assign Closer:</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setActiveAssignPopoverLogId(null)}
+                                      className="text-[var(--nexa-text-muted)] hover:text-rose-500 text-xs px-1 cursor-pointer"
+                                    >
+                                      ✕
+                                    </button>
+                                  </div>
+                                  <select
+                                    value={selectedCloserForLog[log.id] || "Auto-Assign (Least-Loaded)"}
+                                    onChange={(e) =>
+                                      setSelectedCloserForLog((prev) => ({
+                                        ...prev,
+                                        [log.id]: e.target.value,
+                                      }))
+                                    }
+                                    className="w-full px-2 py-1.5 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] text-xs font-semibold text-[var(--nexa-text-primary)] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1A56DB]"
+                                  >
+                                    <option value="Auto-Assign (Least-Loaded)">⚡ Auto-Assign (Least-Loaded)</option>
+                                    {salesClosers.map((c) => (
+                                      <option key={c.email || c.name} value={c.name}>
+                                        {c.name}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <div className="flex items-center gap-1.5 justify-end pt-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => setActiveAssignPopoverLogId(null)}
+                                      className="px-2 py-1 rounded-md text-[10px] font-bold text-[var(--nexa-text-secondary)] hover:bg-[var(--nexa-bg-surface)] cursor-pointer"
+                                    >
+                                      Cancel
+                                    </button>
+                                    <button
+                                      type="button"
+                                      disabled={isAddingProspectId === log.id}
+                                      onClick={() => handleAddLeadAsProspect(log)}
+                                      className="px-2.5 py-1 rounded-md bg-[#1A56DB] hover:bg-[#1545B0] text-white text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                                    >
+                                      {isAddingProspectId === log.id ? (
+                                        <RefreshCw className="w-3 h-3 animate-spin" />
+                                      ) : (
+                                        <Check className="w-3 h-3" />
+                                      )}
+                                      Save Prospect
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveAssignPopoverLogId(log.id);
+                                  if (!selectedCloserForLog[log.id]) {
+                                    setSelectedCloserForLog((prev) => ({
+                                      ...prev,
+                                      [log.id]: "Auto-Assign (Least-Loaded)",
+                                    }));
+                                  }
+                                }}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#1A56DB]/10 hover:bg-[#1A56DB]/20 text-[#1A56DB] dark:text-[#3B82F6] border border-[#1A56DB]/25 text-[11px] font-bold transition-all cursor-pointer shadow-2xs whitespace-nowrap"
+                                title="Add recipient as a prospect to CRM Leads page"
                               >
-                                <option value="Auto-Assign (Least-Loaded)">⚡ Auto-Assign (Least-Loaded)</option>
-                                {salesClosers.map((c) => (
-                                  <option key={c.email || c.name} value={c.name}>
-                                    {c.name}
-                                  </option>
-                                ))}
-                              </select>
-                              <div className="flex items-center gap-1.5 justify-end pt-1">
-                                <button
-                                  type="button"
-                                  onClick={() => setActiveAssignPopoverLogId(null)}
-                                  className="px-2 py-1 rounded-md text-[10px] font-bold text-[var(--nexa-text-secondary)] hover:bg-[var(--nexa-bg-surface)] cursor-pointer"
-                                >
-                                  Cancel
-                                </button>
-                                <button
-                                  type="button"
-                                  disabled={isAddingProspectId === log.id}
-                                  onClick={() => handleAddLeadAsProspect(log)}
-                                  className="px-2.5 py-1 rounded-md bg-[#1A56DB] hover:bg-[#1545B0] text-white text-[10px] font-bold flex items-center gap-1 transition-all cursor-pointer shadow-xs disabled:opacity-50"
-                                >
-                                  {isAddingProspectId === log.id ? (
-                                    <RefreshCw className="w-3 h-3 animate-spin" />
-                                  ) : (
-                                    <Check className="w-3 h-3" />
-                                  )}
-                                  Save Prospect
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setActiveAssignPopoverLogId(log.id);
-                                if (!selectedCloserForLog[log.id]) {
-                                  setSelectedCloserForLog((prev) => ({
-                                    ...prev,
-                                    [log.id]: "Auto-Assign (Least-Loaded)",
-                                  }));
-                                }
-                              }}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#1A56DB]/10 hover:bg-[#1A56DB]/20 text-[#1A56DB] dark:text-[#3B82F6] border border-[#1A56DB]/25 text-[11px] font-bold transition-all cursor-pointer shadow-2xs whitespace-nowrap"
-                              title="Add recipient as a prospect to CRM Leads page"
-                            >
-                              <Plus className="w-3 h-3" />
-                              Add Prospect
-                            </button>
-                          )}
+                                <Plus className="w-3 h-3" />
+                                Add Prospect
+                              </button>
+                            );
+                          })()}
                         </td>
                       </tr>
                     );

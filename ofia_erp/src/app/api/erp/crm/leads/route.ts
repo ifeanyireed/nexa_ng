@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     const parsed = JSON.parse(bodyText || "{}");
     const tenantSlug = getValidatedTenantSlug(request, parsed);
 
-    const res = await fetch(`${ERP_BASE}/crm/leads`, {
+    const res = await fetch(`${ERP_BASE}/crm/leads?tenant=${encodeURIComponent(tenantSlug)}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

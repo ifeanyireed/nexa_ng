@@ -70,9 +70,9 @@ export default function CrmLeadsPage() {
   useEffect(() => {
     async function loadLeads() {
       try {
-        const res = await crmFetch("/api/erp/crm/leads").then((r) => r.json());
-        if (res?.leads) setLeads(res.leads);
-        else setLeads([]);
+        const res = await crmFetch("/api/erp/crm/leads").then((r) => r.json()).catch(() => null);
+        const rawLeads = Array.isArray(res) ? res : Array.isArray(res?.leads) ? res.leads : [];
+        setLeads(rawLeads);
       } catch {
         setLeads([]);
       } finally {

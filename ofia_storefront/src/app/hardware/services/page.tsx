@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_SERVICES } from "@/data/mockStores";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { MOCK_SERVICES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import {
@@ -18,8 +19,18 @@ import {
 } from "lucide-react";
 
 export default function HardwareServicesPage() {
-  const store = MOCK_STORES["hardware"];
+  const { store: dynamicStore, tenantSlug, isFeatureEnabled } = useStorefrontTenant();
+  const store = dynamicStore || {
+    id: "hardware",
+    name: "Hardware Engineering",
+    slug: "hardware",
+    vertical: "hardware" as const,
+    currency: "₦",
+  };
+
   const services = MOCK_SERVICES.filter((s) => s.vertical === "hardware");
+  const canUseServices = isFeatureEnabled("services");
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
   const [activeTab, setActiveTab] = useState<"book-service" | "contractor-rfq">("book-service");
   const [selectedService, setSelectedService] = useState(services[0]?.id || "srv-hdw-01");
@@ -28,23 +39,54 @@ export default function HardwareServicesPage() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [rfqDetails, setRfqDetails] = useState("");
+  const [orderRef, setOrderRef] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const currentService = services.find((s) => s.id === selectedService) || services[0];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    if (!clientName || !phone) return;
+
+    const ref = `ENG-${Math.floor(10000 + Math.random() * 90000)}`;
+    setOrderRef(ref);
+    setIsSubmitting(true);
+
+    try {
+      await fetch("/api/storefront/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingNumber: ref,
+          tenantSlug: tenantSlug || "neweratransports",
+          customerName: clientName,
+          customerPhone: phone,
+          serviceTitle:
+            activeTab === "book-service"
+              ? `${currentService?.title || "Field Engineering Inspection"}`
+              : "Wholesale Contractor Bill of Materials RFQ",
+          dateTime: activeTab === "book-service" ? `${date} (Site Inspection)` : "Immediate Wholesale RFQ Review",
+          notes: `Address: ${address || "On-site"} | Details: ${rfqDetails || "Standard project scope"}`,
+          vertical: "hardware",
+        }),
+      });
+    } catch (err) {
+      console.warn("Failed to submit hardware booking:", err);
+    } finally {
+      setIsSubmitting(false);
+      setSubmitted(true);
+    }
   };
 
   return (
     <div className="min-h-screen bg-white text-[#1E252B] flex flex-col justify-between">
-      <StoreHeader store={store} />
+      <StoreHeader store={store as any} />
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
         <div className="flex items-center justify-between">
           <Link
-            href="/hardware"
+            href={`/hardware${tenantQuery}`}
             className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -60,7 +102,7 @@ export default function HardwareServicesPage() {
 
             <div className="space-y-2">
               <span className="text-xs font-bold uppercase tracking-wider text-amber-700 bg-amber-50 px-3 py-1 rounded-full">
-                Engineering Work Order #ENG-{(Math.random() * 90000 + 10000).toFixed(0)}
+                Engineering Work Order #{orderRef || "ENG-82910"}
               </span>
               <h1 className="font-dropa text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">
                 {activeTab === "book-service" ? "Field Engineering Service Booked" : "Contractor RFQ Dispatched"}
@@ -74,16 +116,16 @@ export default function HardwareServicesPage() {
 
             <div className="pt-2 flex flex-col sm:flex-row justify-center gap-3">
               <Link
-                href="/hardware"
+                href={`/hardware${tenantQuery}`}
                 className="px-6 py-3 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-xs"
               >
                 Return to Hardware Store
               </Link>
               <Link
-                href="/account"
+                href={`/hardware/calculator${tenantQuery}`}
                 className="px-6 py-3 rounded-full border border-stone-300 text-slate-900 font-bold text-xs hover:bg-stone-50"
               >
-                View in Account Dashboard
+                Run Load Calculator
               </Link>
             </div>
           </div>

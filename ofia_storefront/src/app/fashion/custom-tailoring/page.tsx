@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { MOCK_STORES } from "@/data/mockStores";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import {
@@ -22,7 +22,17 @@ import {
 } from "lucide-react";
 
 export default function CustomTailoringPage() {
-  const store = MOCK_STORES.fashion;
+  const { store: dynamicStore, tenantSlug, isFeatureEnabled } = useStorefrontTenant();
+  const store = dynamicStore || {
+    id: "fashion",
+    name: "Fashion Atelier",
+    slug: "fashion",
+    vertical: "fashion" as const,
+    currency: "₦",
+  };
+
+  const canUseServices = isFeatureEnabled("services");
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
   const [serviceType, setServiceType] = useState<
     "Bespoke Tailoring" | "Garment Alteration" | "Styling & Fitting Session"
@@ -52,6 +62,7 @@ export default function CustomTailoringPage() {
 
   const [confirmed, setConfirmed] = useState(false);
   const [bookingRef, setBookingRef] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const timeSlots = [
     "10:00 AM - 11:30 AM",
@@ -60,21 +71,44 @@ export default function CustomTailoringPage() {
     "04:00 PM - 05:30 PM",
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !phone) return;
     const ref = `AURA-FIT-${Math.floor(100000 + Math.random() * 900000)}`;
     setBookingRef(ref);
-    setConfirmed(true);
+    setIsSubmitting(true);
+
+    try {
+      await fetch("/api/storefront/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingNumber: ref,
+          tenantSlug: tenantSlug || "neweratransports",
+          customerName: fullName,
+          customerPhone: phone,
+          customerEmail: email,
+          serviceTitle: `${serviceType} (${sessionLocation})`,
+          dateTime: `${selectedDate} (${selectedSlot})`,
+          notes: `Fit: ${fitPreference} | Measurements: Chest ${chestBust || "N/A"}, Waist ${waist || "N/A"}, Hips ${hips || "N/A"} | Addr: ${address || "Atelier"}`,
+          vertical: "fashion",
+        }),
+      });
+    } catch (err) {
+      console.warn("Failed to submit fashion tailoring booking:", err);
+    } finally {
+      setIsSubmitting(false);
+      setConfirmed(true);
+    }
   };
 
   return (
     <div className="min-h-screen bg-white text-[#1A1A1A] flex flex-col justify-between">
-      <StoreHeader store={store} />
+      <StoreHeader store={store as any} />
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
         <Link
-          href="/fashion"
+          href={`/fashion${tenantQuery}`}
           className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-500 hover:text-amber-800 transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -121,13 +155,13 @@ export default function CustomTailoringPage() {
 
             <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
               <Link
-                href="/fashion/catalog"
+                href={`/fashion/catalog${tenantQuery}`}
                 className="px-6 py-2.5 rounded-full bg-amber-800 text-white font-bold text-xs hover:bg-amber-900 transition-colors shadow-sm"
               >
                 Browse Fabrics & Ready Catalog
               </Link>
               <Link
-                href="/fashion"
+                href={`/fashion${tenantQuery}`}
                 className="px-6 py-2.5 rounded-full border border-stone-300 text-stone-700 font-bold text-xs hover:bg-stone-50 transition-colors"
               >
                 Return to Fashion Studio

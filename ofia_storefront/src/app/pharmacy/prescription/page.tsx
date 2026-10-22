@@ -3,7 +3,7 @@
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { MOCK_STORES } from "@/data/mockStores";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import {
@@ -23,32 +23,69 @@ function PrescriptionContent() {
   const searchParams = useSearchParams();
   const preselectedMed = searchParams.get("medication") || "";
 
-  const store = MOCK_STORES["pharmacy"];
+  const { store: dynamicStore, tenantSlug, isFeatureEnabled } = useStorefrontTenant();
+  const store = dynamicStore || {
+    id: "pharmacy",
+    name: "Pharmacy Dispensary",
+    slug: "pharmacy",
+    vertical: "pharmacy" as const,
+    currency: "₦",
+  };
+
+  const canUseServices = isFeatureEnabled("services");
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
   const [fileName, setFileName] = useState<string | null>(null);
   const [patientName, setPatientName] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState(preselectedMed ? `Prescription requested for: ${preselectedMed}` : "");
   const [refillType, setRefillType] = useState<"one-time" | "monthly">("one-time");
+  const [ticketRef, setTicketRef] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fileName) {
       alert("Please upload an image or PDF of your prescription script.");
       return;
     }
-    setSubmitted(true);
+
+    const ref = `RX-${Math.floor(10000 + Math.random() * 90000)}`;
+    setTicketRef(ref);
+    setIsSubmitting(true);
+
+    try {
+      await fetch("/api/storefront/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingNumber: ref,
+          tenantSlug: tenantSlug || "neweratransports",
+          customerName: patientName || "Patient",
+          customerPhone: phone || "+234 800 000 0000",
+          serviceTitle: `Clinical Rx Dispense (${refillType === "monthly" ? "Monthly Refill" : "One-Time"})`,
+          dateTime: "Immediate Clinical Verification",
+          notes: `File: ${fileName} | Notes: ${notes}`,
+          vertical: "pharmacy",
+        }),
+      });
+    } catch (err) {
+      console.warn("Failed to submit prescription booking:", err);
+    } finally {
+      setIsSubmitting(false);
+      setSubmitted(true);
+    }
   };
 
   return (
     <div className="min-h-screen bg-white text-[#13221C] flex flex-col justify-between">
-      <StoreHeader store={store} />
+      <StoreHeader store={store as any} />
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
         <div className="flex items-center justify-between">
           <Link
-            href="/pharmacy"
+            href={`/pharmacy${tenantQuery}`}
             className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 hover:text-teal-900 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -64,7 +101,7 @@ function PrescriptionContent() {
 
             <div className="space-y-2">
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">
-                Verification Ticket #RX-{(Math.random() * 90000 + 10000).toFixed(0)}
+                Verification Ticket #{ticketRef || "RX-84920"}
               </span>
               <h1 className="font-dropa text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">
                 Prescription Uploaded Successfully
@@ -83,16 +120,16 @@ function PrescriptionContent() {
 
             <div className="pt-2 flex flex-col sm:flex-row justify-center gap-3">
               <Link
-                href="/pharmacy"
+                href={`/pharmacy${tenantQuery}`}
                 className="px-6 py-3 rounded-full bg-teal-800 hover:bg-teal-900 text-white font-bold text-xs shadow-xs"
               >
                 Return to Dispensary
               </Link>
               <Link
-                href="/account"
+                href={`/checkout${tenantQuery}`}
                 className="px-6 py-3 rounded-full border border-teal-200 text-teal-900 font-bold text-xs hover:bg-teal-50"
               >
-                View in Account Dashboard
+                View Checkout / Refill Cart
               </Link>
             </div>
           </div>

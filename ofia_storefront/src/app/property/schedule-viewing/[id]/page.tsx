@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { MOCK_PRODUCTS } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import {
@@ -22,7 +23,14 @@ import {
 
 export default function ScheduleViewingPage() {
   const params = useParams();
-  const store = MOCK_STORES.property;
+  const { store: dynamicStore, tenantSlug, isFeatureEnabled } = useStorefrontTenant();
+  const store = dynamicStore || {
+    id: "property",
+    name: "Luxury Real Estate",
+    slug: "property",
+    vertical: "property" as const,
+    currency: "₦",
+  };
 
   const propertyId = (params?.id as string) || "prp-001";
   const property =
@@ -31,8 +39,10 @@ export default function ScheduleViewingPage() {
     MOCK_PRODUCTS[0];
 
   const meta = property.propertyMeta;
+  const canUseServices = isFeatureEnabled("services");
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
-  // Form State (Blueprint Section 2 & 3: Viewings, inspections, cleaning, relocation support)
+  // Form State
   const [viewingType, setViewingType] = useState<
     "In-Person Guided Tour" | "Live Video Walkthrough" | "Move-In Deep Cleaning" | "Relocation & Dispatch Support"
   >("In-Person Guided Tour");
@@ -44,6 +54,7 @@ export default function ScheduleViewingPage() {
   const [notes, setNotes] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [viewingRef, setViewingRef] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const timeSlots = [
     "10:00 AM - 11:00 AM",
@@ -52,21 +63,44 @@ export default function ScheduleViewingPage() {
     "04:30 PM - 05:30 PM (Sunset Tour)",
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !phone) return;
     const ref = `VW-${Math.floor(100000 + Math.random() * 900000)}`;
     setViewingRef(ref);
-    setConfirmed(true);
+    setIsSubmitting(true);
+
+    try {
+      await fetch("/api/storefront/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingNumber: ref,
+          tenantSlug: tenantSlug || "neweratransports",
+          customerName: fullName,
+          customerPhone: phone,
+          customerEmail: email,
+          serviceTitle: `${viewingType}: ${property.title}`,
+          dateTime: `${selectedDate} (${selectedSlot})`,
+          notes: `Location: ${meta?.location || "Prime"} | Notes: ${notes || "None"}`,
+          vertical: "property",
+        }),
+      });
+    } catch (err) {
+      console.warn("Failed to submit viewing booking:", err);
+    } finally {
+      setIsSubmitting(false);
+      setConfirmed(true);
+    }
   };
 
   return (
     <div className="min-h-screen bg-white text-[#111318] flex flex-col justify-between">
-      <StoreHeader store={store} />
+      <StoreHeader store={store as any} />
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
         <Link
-          href={`/property/listing/${property.id}`}
+          href={`/property/listing/${property.id}${tenantQuery}`}
           className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -117,13 +151,13 @@ export default function ScheduleViewingPage() {
 
             <div className="pt-4 flex flex-wrap items-center justify-center gap-3">
               <Link
-                href="/property/listings"
+                href={`/property/listings${tenantQuery}`}
                 className="px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-colors"
               >
                 Browse More Residences
               </Link>
               <Link
-                href={`/property/listing/${property.id}`}
+                href={`/property/listing/${property.id}${tenantQuery}`}
                 className="px-6 py-3 rounded-full border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs transition-colors"
               >
                 View Residence Details

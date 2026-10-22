@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_SERVICES } from "@/data/mockStores";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { MOCK_SERVICES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import {
@@ -16,8 +17,18 @@ import {
 } from "lucide-react";
 
 export default function RetailCustomizationPage() {
-  const store = MOCK_STORES["retail"];
+  const { store: dynamicStore, tenantSlug, isFeatureEnabled } = useStorefrontTenant();
+  const store = dynamicStore || {
+    id: "retail",
+    name: "Specialty Retail Atelier",
+    slug: "retail",
+    vertical: "retail" as const,
+    currency: "₦",
+  };
+
   const services = MOCK_SERVICES.filter((s) => s.vertical === "retail");
+  const canUseServices = isFeatureEnabled("services");
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
   const [activeTab, setActiveTab] = useState<"registry" | "engraving" | "preorder">("registry");
   const [registryType, setRegistryType] = useState<"wedding" | "baby" | "birthday">("wedding");
@@ -27,21 +38,54 @@ export default function RetailCustomizationPage() {
   const [eventDate, setEventDate] = useState("2026-12-10");
   const [engravingText, setEngravingText] = useState("");
   const [itemType, setItemType] = useState("Anthology Hardcover Book");
+  const [ticketId, setTicketId] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    if (!organizerName || !phone) return;
+
+    const ref = `RTL-${Math.floor(10000 + Math.random() * 90000)}`;
+    setTicketId(ref);
+    setIsSubmitting(true);
+
+    try {
+      await fetch("/api/storefront/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingNumber: ref,
+          tenantSlug: tenantSlug || "neweratransports",
+          customerName: organizerName,
+          customerPhone: phone,
+          serviceTitle:
+            activeTab === "registry"
+              ? `Gift Registry: ${registryTitle || registryType}`
+              : activeTab === "engraving"
+              ? `Laser Engraving Dedication: ${itemType}`
+              : `Collector Edition Pre-Order: ${itemType}`,
+          dateTime: activeTab === "registry" ? `Event Date: ${eventDate}` : "Immediate Production Queue",
+          notes: activeTab === "engraving" ? `Inscription: "${engravingText}"` : `Registry: ${registryTitle}`,
+          vertical: "retail",
+        }),
+      });
+    } catch (err) {
+      console.warn("Failed to submit retail customization booking:", err);
+    } finally {
+      setIsSubmitting(false);
+      setSubmitted(true);
+    }
   };
 
   return (
     <div className="min-h-screen bg-white text-[#222129] flex flex-col justify-between">
-      <StoreHeader store={store} />
+      <StoreHeader store={store as any} />
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
         <div className="flex items-center justify-between">
           <Link
-            href="/retail"
+            href={`/retail${tenantQuery}`}
             className="inline-flex items-center gap-1.5 text-xs font-bold text-purple-900 hover:text-purple-700 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -57,7 +101,7 @@ export default function RetailCustomizationPage() {
 
             <div className="space-y-2">
               <span className="text-xs font-bold uppercase tracking-wider text-purple-700 bg-purple-50 px-3 py-1 rounded-full">
-                Registry / Atelier ID #RTL-{(Math.random() * 90000 + 10000).toFixed(0)}
+                Registry / Atelier ID #{ticketId || "RTL-92810"}
               </span>
               <h1 className="font-dropa text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">
                 {activeTab === "registry"
@@ -75,16 +119,16 @@ export default function RetailCustomizationPage() {
 
             <div className="pt-2 flex flex-col sm:flex-row justify-center gap-3">
               <Link
-                href="/retail"
+                href={`/retail${tenantQuery}`}
                 className="px-6 py-3 rounded-full bg-purple-900 hover:bg-purple-800 text-white font-bold text-xs shadow-xs"
               >
                 Return to Store
               </Link>
               <Link
-                href="/account"
+                href={`/retail/catalog${tenantQuery}`}
                 className="px-6 py-3 rounded-full border border-purple-200 text-purple-950 font-bold text-xs hover:bg-purple-50"
               >
-                View in Account Dashboard
+                Browse Full Collection
               </Link>
             </div>
           </div>

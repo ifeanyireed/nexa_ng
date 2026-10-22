@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { MOCK_STORES, MOCK_SERVICES } from "@/data/mockStores";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { MOCK_SERVICES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import {
@@ -19,8 +20,18 @@ import {
 } from "lucide-react";
 
 export default function PharmacyConsultationPage() {
-  const store = MOCK_STORES["pharmacy"];
+  const { store: dynamicStore, tenantSlug, isFeatureEnabled } = useStorefrontTenant();
+  const store = dynamicStore || {
+    id: "pharmacy",
+    name: "Pharmacy Clinical Care",
+    slug: "pharmacy",
+    vertical: "pharmacy" as const,
+    currency: "₦",
+  };
+
   const services = MOCK_SERVICES.filter((s) => s.vertical === "pharmacy");
+  const canUseServices = isFeatureEnabled("services");
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
   const [selectedService, setSelectedService] = useState(services[0]?.id || "srv-phm-01");
   const [sessionType, setSessionType] = useState<"virtual" | "in-person">("virtual");
@@ -28,7 +39,9 @@ export default function PharmacyConsultationPage() {
   const [timeSlot, setTimeSlot] = useState("11:00 AM - 11:30 AM");
   const [patientName, setPatientName] = useState("");
   const [phone, setPhone] = useState("");
+  const [bookingRef, setBookingRef] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const availableSlots = [
     "09:30 AM - 10:00 AM",
@@ -39,19 +52,45 @@ export default function PharmacyConsultationPage() {
 
   const currentService = services.find((s) => s.id === selectedService) || services[0];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    if (!patientName || !phone) return;
+
+    const ref = `PHM-${Math.floor(10000 + Math.random() * 90000)}`;
+    setBookingRef(ref);
+    setIsSubmitting(true);
+
+    try {
+      await fetch("/api/storefront/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingNumber: ref,
+          tenantSlug: tenantSlug || "neweratransports",
+          customerName: patientName,
+          customerPhone: phone,
+          serviceTitle: `${currentService?.title || "Clinical Pharmacist Consultation"} (${sessionType === "virtual" ? "Tele-Health" : "In-Person"})`,
+          dateTime: `${date} at ${timeSlot}`,
+          notes: `Specialist: ${currentService?.specialistName || "Resident Pharmacist"} | Session: ${sessionType}`,
+          vertical: "pharmacy",
+        }),
+      });
+    } catch (err) {
+      console.warn("Failed to submit consultation booking:", err);
+    } finally {
+      setIsSubmitting(false);
+      setSubmitted(true);
+    }
   };
 
   return (
     <div className="min-h-screen bg-white text-[#13221C] flex flex-col justify-between">
-      <StoreHeader store={store} />
+      <StoreHeader store={store as any} />
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
         <div className="flex items-center justify-between">
           <Link
-            href="/pharmacy"
+            href={`/pharmacy${tenantQuery}`}
             className="inline-flex items-center gap-1.5 text-xs font-bold text-teal-700 hover:text-teal-900 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -67,7 +106,7 @@ export default function PharmacyConsultationPage() {
 
             <div className="space-y-2">
               <span className="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">
-                Appointment Reference #PHM-{(Math.random() * 90000 + 10000).toFixed(0)}
+                Appointment Reference #{bookingRef || "PHM-72910"}
               </span>
               <h1 className="font-dropa text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">
                 Consultation Appointment Confirmed
@@ -79,16 +118,16 @@ export default function PharmacyConsultationPage() {
 
             <div className="pt-2 flex flex-col sm:flex-row justify-center gap-3">
               <Link
-                href="/pharmacy"
+                href={`/pharmacy${tenantQuery}`}
                 className="px-6 py-3 rounded-full bg-teal-800 hover:bg-teal-900 text-white font-bold text-xs shadow-xs"
               >
                 Return to Pharmacy
               </Link>
               <Link
-                href="/account"
+                href={`/checkout${tenantQuery}`}
                 className="px-6 py-3 rounded-full border border-teal-200 text-teal-900 font-bold text-xs hover:bg-teal-50"
               >
-                View in Account Bookings
+                Go to Cart / Checkout
               </Link>
             </div>
           </div>

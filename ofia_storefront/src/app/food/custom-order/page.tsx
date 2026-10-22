@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { MOCK_STORES } from "@/data/mockStores";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import {
@@ -18,7 +18,17 @@ import {
 } from "lucide-react";
 
 export default function FoodCustomOrderPage() {
-  const store = MOCK_STORES.food;
+  const { store: dynamicStore, tenantSlug, isFeatureEnabled } = useStorefrontTenant();
+  const store = dynamicStore || {
+    id: "food",
+    name: "Gourmet Bistro",
+    slug: "food",
+    vertical: "food" as const,
+    currency: "₦",
+  };
+
+  const canUseServices = isFeatureEnabled("services");
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
   const [eventType, setEventType] = useState<
     "Celebration Cake" | "Private Chef Dining" | "Corporate Executive Catering" | "Wedding Reception"
@@ -34,22 +44,46 @@ export default function FoodCustomOrderPage() {
   const [customNotes, setCustomNotes] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [ticketId, setTicketId] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !phone) return;
     const ref = `CUST-${Math.floor(100000 + Math.random() * 900000)}`;
     setTicketId(ref);
-    setSubmitted(true);
+    setIsSubmitting(true);
+
+    try {
+      await fetch("/api/storefront/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingNumber: ref,
+          tenantSlug: tenantSlug || "neweratransports",
+          customerName: fullName,
+          customerPhone: phone,
+          customerEmail: email,
+          serviceTitle: `Custom Culinary: ${eventType} (${guestCount} Guests)`,
+          dateTime: targetDate,
+          notes: `Budget: ${budgetRange} | Theme: ${flavorTheme || "None"} | Notes: ${customNotes || "None"}`,
+          vertical: "food",
+        }),
+      });
+    } catch (err) {
+      console.warn("Failed to submit custom food order:", err);
+    } finally {
+      setIsSubmitting(false);
+      setSubmitted(true);
+    }
   };
 
   return (
     <div className="min-h-screen bg-white text-[#1E1B18] flex flex-col justify-between">
-      <StoreHeader store={store} />
+      <StoreHeader store={store as any} />
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
         <Link
-          href="/food/menu"
+          href={`/food/menu${tenantQuery}`}
           className="inline-flex items-center gap-1.5 text-xs font-bold text-stone-500 hover:text-amber-600 transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -100,13 +134,13 @@ export default function FoodCustomOrderPage() {
 
             <div className="pt-4 flex flex-wrap items-center justify-center gap-3">
               <Link
-                href="/food/menu"
+                href={`/food/menu${tenantQuery}`}
                 className="px-6 py-3 rounded-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold text-xs transition-colors"
               >
                 Back to Food Menu
               </Link>
               <Link
-                href="/food"
+                href={`/food${tenantQuery}`}
                 className="px-6 py-3 rounded-full border border-stone-300 hover:bg-stone-50 text-stone-700 font-bold text-xs transition-colors"
               >
                 Return to Bistro Home

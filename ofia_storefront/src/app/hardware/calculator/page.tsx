@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { MOCK_STORES } from "@/data/mockStores";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import {
@@ -40,7 +40,17 @@ const APPLIANCES: Appliance[] = [
 ];
 
 export default function HardwareCalculatorPage() {
-  const store = MOCK_STORES["hardware"];
+  const { store: dynamicStore, tenantSlug, isFeatureEnabled } = useStorefrontTenant();
+  const store = dynamicStore || {
+    id: "hardware",
+    name: "Hardware Engineering",
+    slug: "hardware",
+    vertical: "hardware" as const,
+    currency: "₦",
+  };
+
+  const canUseServices = isFeatureEnabled("services");
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
   const [quantities, setQuantities] = useState<Record<string, number>>(() => {
     const init: Record<string, number> = {};
@@ -103,7 +113,7 @@ export default function HardwareCalculatorPage() {
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
         <div className="flex items-center justify-between">
           <Link
-            href="/hardware"
+            href={`/hardware${tenantQuery}`}
             className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
@@ -251,20 +261,22 @@ export default function HardwareCalculatorPage() {
               {/* Action Buttons */}
               <div className="space-y-2 pt-2">
                 <Link
-                  href="/hardware/catalog"
+                  href={`/hardware/catalog${tenantQuery}`}
                   className="w-full py-3.5 px-6 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs sm:text-sm text-center shadow-lg transition-all flex items-center justify-center gap-2"
                 >
                   <span>Order Configured Hardware System</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
 
-                <Link
-                  href="/hardware/services"
-                  className="w-full py-3 px-6 rounded-full border border-stone-700 bg-stone-800/60 hover:bg-stone-800 text-white font-bold text-xs text-center transition-all flex items-center justify-center gap-2"
-                >
-                  <Wrench className="w-3.5 h-3.5" />
-                  <span>Request COREN Physical Site Verification</span>
-                </Link>
+                {canUseServices && (
+                  <Link
+                    href={`/hardware/services${tenantQuery}`}
+                    className="w-full py-3 px-6 rounded-full border border-stone-700 bg-stone-800/60 hover:bg-stone-800 text-white font-bold text-xs text-center transition-all flex items-center justify-center gap-2"
+                  >
+                    <Wrench className="w-3.5 h-3.5" />
+                    <span>Request COREN Physical Site Verification</span>
+                  </Link>
+                )}
               </div>
             </div>
           </div>

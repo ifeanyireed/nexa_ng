@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { MOCK_STORES } from "@/data/mockStores";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import {
@@ -23,7 +23,17 @@ import {
 } from "lucide-react";
 
 export default function GadgetsRepairsPage() {
-  const store = MOCK_STORES.gadgets;
+  const { store: dynamicStore, tenantSlug, isFeatureEnabled } = useStorefrontTenant();
+  const store = dynamicStore || {
+    id: "gadgets",
+    name: "Tech & Gadgets Lab",
+    slug: "gadgets",
+    vertical: "gadgets" as const,
+    currency: "₦",
+  };
+
+  const canUseServices = isFeatureEnabled("services");
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
   const [activeTab, setActiveTab] = useState<"book-repair" | "warranty-check">("book-repair");
 
@@ -46,6 +56,7 @@ export default function GadgetsRepairsPage() {
   const [pickupAddress, setPickupAddress] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [repairRef, setRepairRef] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Warranty Check State
   const [imeiOrRef, setImeiOrRef] = useState("");
@@ -57,12 +68,35 @@ export default function GadgetsRepairsPage() {
     tier?: string;
   } | null>(null);
 
-  const handleRepairSubmit = (e: React.FormEvent) => {
+  const handleRepairSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !phone) return;
     const ref = `FIX-${Math.floor(100000 + Math.random() * 900000)}`;
     setRepairRef(ref);
-    setConfirmed(true);
+    setIsSubmitting(true);
+
+    try {
+      await fetch("/api/storefront/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingNumber: ref,
+          tenantSlug: tenantSlug || "neweratransports",
+          customerName: fullName,
+          customerPhone: phone,
+          customerEmail: email,
+          serviceTitle: `Diagnostics & Repair: ${brandModel || deviceType} (${issueCategory})`,
+          dateTime: `${preferredDate} (${serviceOption})`,
+          notes: `Pickup Address: ${pickupAddress || "Lab Walk-in"} | Issue: ${issueDetails || "Inspection"}`,
+          vertical: "gadgets",
+        }),
+      });
+    } catch (err) {
+      console.warn("Failed to submit repair booking:", err);
+    } finally {
+      setIsSubmitting(false);
+      setConfirmed(true);
+    }
   };
 
   const handleWarrantySearch = (e: React.FormEvent) => {
@@ -84,7 +118,7 @@ export default function GadgetsRepairsPage() {
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
         <Link
-          href="/gadgets"
+          href={`/gadgets${tenantQuery}`}
           className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -225,13 +259,13 @@ export default function GadgetsRepairsPage() {
 
             <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
               <Link
-                href="/gadgets/catalog"
+                href={`/gadgets/catalog${tenantQuery}`}
                 className="px-6 py-2.5 rounded-full bg-blue-600 text-white font-bold text-xs hover:bg-blue-500 transition-colors shadow-sm"
               >
                 Browse Gadgets Catalog
               </Link>
               <Link
-                href="/gadgets"
+                href={`/gadgets${tenantQuery}`}
                 className="px-6 py-2.5 rounded-full border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-50 transition-colors"
               >
                 Return to Gadgets Home

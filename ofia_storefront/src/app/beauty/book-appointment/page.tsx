@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { MOCK_STORES, MOCK_SERVICES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
@@ -19,8 +20,19 @@ import {
 
 function AppointmentBookingForm() {
   const searchParams = useSearchParams();
-  const store = MOCK_STORES.beauty;
+  const { store: dynamicStore, tenantSlug, isFeatureEnabled } = useStorefrontTenant();
+  const store = dynamicStore || {
+    id: "beauty",
+    name: "Aesthetic Sanctuary",
+    slug: "beauty",
+    vertical: "beauty" as const,
+    currency: "₦",
+    contact: { address: "14 Victoria Arobieke Street, Lekki Phase 1, Lagos" },
+  };
+
   const services = MOCK_SERVICES.filter((s) => s.vertical === "beauty");
+  const canUseServices = isFeatureEnabled("services");
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
   const initialServiceId = searchParams.get("service") || services[0]?.id || "srv-bty-01";
   const [selectedServiceId, setSelectedServiceId] = useState(initialServiceId);
@@ -36,6 +48,7 @@ function AppointmentBookingForm() {
   const [notes, setNotes] = useState("");
   const [confirmed, setConfirmed] = useState(false);
   const [appointmentCode, setAppointmentCode] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const timeSlots = [
     "09:30 AM",
@@ -45,12 +58,35 @@ function AppointmentBookingForm() {
     "05:00 PM",
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientName || !clientPhone) return;
     const code = `SPA-${Math.floor(100000 + Math.random() * 900000)}`;
     setAppointmentCode(code);
-    setConfirmed(true);
+    setIsSubmitting(true);
+
+    try {
+      await fetch("/api/storefront/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingNumber: code,
+          tenantSlug: tenantSlug || "neweratransports",
+          customerName: clientName,
+          customerPhone: clientPhone,
+          customerEmail: clientEmail,
+          serviceTitle: `${activeService?.title || "Aesthetic Ritual Session"} (${activeService?.specialistName || "Specialist"})`,
+          dateTime: `${selectedDate} at ${selectedSlot}`,
+          notes: `Notes: ${notes || "None"}`,
+          vertical: "beauty",
+        }),
+      });
+    } catch (err) {
+      console.warn("Failed to submit beauty appointment booking:", err);
+    } finally {
+      setIsSubmitting(false);
+      setConfirmed(true);
+    }
   };
 
   if (confirmed) {
@@ -97,13 +133,13 @@ function AppointmentBookingForm() {
 
         <div className="pt-4 flex flex-wrap items-center justify-center gap-3">
           <Link
-            href="/beauty/products"
+            href={`/beauty/products${tenantQuery}`}
             className="px-6 py-3 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-colors"
           >
             Shop Home Skincare
           </Link>
           <Link
-            href="/beauty"
+            href={`/beauty${tenantQuery}`}
             className="px-6 py-3 rounded-full border border-rose-200 hover:bg-rose-50 text-zinc-700 font-bold text-xs transition-colors"
           >
             Return to Sanctuary Home
@@ -289,7 +325,9 @@ function AppointmentBookingForm() {
 }
 
 export default function BeautyBookAppointmentPage() {
-  const store = MOCK_STORES.beauty;
+  const { store: dynamicStore, tenantSlug } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES.beauty;
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
   return (
     <div className="min-h-screen bg-white text-[#201D1A] flex flex-col justify-between">
@@ -297,7 +335,7 @@ export default function BeautyBookAppointmentPage() {
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-8">
         <Link
-          href="/beauty/services"
+          href={`/beauty/services${tenantQuery}`}
           className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-500 hover:text-rose-700 transition-colors"
         >
           <ChevronLeft className="w-4 h-4" />

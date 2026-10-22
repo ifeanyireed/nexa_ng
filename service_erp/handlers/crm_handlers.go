@@ -1976,6 +1976,11 @@ func ExecuteBlastDelivery(targetDB *sql.DB, tenantSlug, blastId string) {
 				UPDATE crm_email_blast_recipients 
 				SET status = 'FAILED', attempts = attempts + 1, error_message = $1 
 				WHERE id = $2`, errMsg, rec.ID)
+
+			// If transient TCP timeout or rate limit, back off slightly to allow SMTP socket recovery
+			if strings.Contains(strings.ToLower(errMsg), "timeout") || strings.Contains(strings.ToLower(errMsg), "rate") {
+				time.Sleep(300 * time.Millisecond)
+			}
 		}
 
 		// Update running progress on blast
@@ -2008,12 +2013,8 @@ func ExecuteBlastDelivery(targetDB *sql.DB, tenantSlug, blastId string) {
 	log.Printf("✅ Blast '%s' for tenant '%s' batch finished: %d total sent, %d total failed, %d remaining pending (final status: %s)", blastId, slug, sentCount, failedCount, pendingRemaining, finalStatus)
 }
 
-// ProcessDueScheduledBlasts checks and dispatches all scheduled blasts that are due as well as stalled sending blasts
-func ProcessDueScheduledBlasts(targetDB *sql.DB) int {
-	activeDB := targetDB
-	if activeDB == nil {
-		activeDB = db
-	}
+// processSingleDBDueBlasts runs due/stalled blast checks on a specific DB
+func processSingleDBDueBlasts(activeDB *sql.DB, defaultSlug string) int {
 	if activeDB == nil {
 		return 0
 	}
@@ -2037,6 +2038,9 @@ func ProcessDueScheduledBlasts(targetDB *sql.DB) int {
 	for rows.Next() {
 		var b DueBlast
 		if err := rows.Scan(&b.ID, &b.TenantSlug); err == nil {
+			if b.TenantSlug == "" {
+				b.TenantSlug = defaultSlug
+			}
 			due = append(due, b)
 		}
 	}
@@ -2059,6 +2063,38 @@ func ProcessDueScheduledBlasts(targetDB *sql.DB) int {
 		}
 	}
 	return dispatched
+}
+
+// ProcessDueScheduledBlasts checks and dispatches all scheduled blasts that are due as well as stalled sending blasts across all databases
+func ProcessDueScheduledBlasts(targetDB *sql.DB) int {
+	activeDB := targetDB
+	if activeDB == nil {
+		activeDB = db
+	}
+	if activeDB == nil {
+		return 0
+	}
+
+	totalDispatched := processSingleDBDueBlasts(activeDB, "")
+
+	// Also check all custom tenant databases registered in tenant_infrastructures
+	if db != nil {
+		rows, err := db.Query(`SELECT tenant_slug FROM tenant_infrastructures WHERE is_custom_db = true`)
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var tSlug string
+				if err := rows.Scan(&tSlug); err == nil && tSlug != "" {
+					tenantDB := getDBForSlug(tSlug)
+					if tenantDB != nil && tenantDB != activeDB {
+						totalDispatched += processSingleDBDueBlasts(tenantDB, tSlug)
+					}
+				}
+			}
+		}
+	}
+
+	return totalDispatched
 }
 
 // HandleCrmCronBlasts handles external/internal cron triggers to process due scheduled blasts

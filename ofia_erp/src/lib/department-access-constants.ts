@@ -170,7 +170,9 @@ export const ERP_PAGE_CATALOG: ErpPageDef[] = [
     tabs: [
       { id: "command", label: "CRM Overview", path: "/erp/admin/crm" },
       { id: "lists", label: "Contact Lists", path: "/erp/admin/crm/lists" },
-      { id: "blasts", label: "Email Blasts", path: "/erp/admin/crm/blasts" },
+      { id: "blasts", label: "Email Blasts", path: "/erp/admin/crm/marketing" },
+      { id: "marketing", label: "Email Blasts", path: "/erp/admin/crm/marketing" },
+      { id: "calls", label: "Call Logger", path: "/erp/admin/crm/calls" },
       { id: "leads", label: "Lead Pipeline", path: "/erp/admin/crm/leads" },
       { id: "activities", label: "Sales Activities", path: "/erp/admin/crm/activities" },
       { id: "pipeline", label: "Deals Stages", path: "/erp/admin/crm/pipeline" },
@@ -337,7 +339,7 @@ export const DEFAULT_DEPARTMENT_ACCESS: DepartmentAccessItem[] = [
     departmentName: "Commercial & Growth",
     accessiblePages: ["crm", "ai", "marketplace", "shop", "employee"],
     accessibleTabs: {
-      crm: ["command", "lists", "blasts", "leads", "activities", "pipeline", "contacts"],
+      crm: ["command", "lists", "blasts", "marketing", "calls", "leads", "activities", "pipeline", "contacts"],
       ai: ["command", "campaigns", "studio", "strategy", "knowledge", "analytics", "team", "telegram"],
       marketplace: ["overview", "shop", "bookings", "leads", "deals", "articles"],
       shop: ["catalog", "referrals"],

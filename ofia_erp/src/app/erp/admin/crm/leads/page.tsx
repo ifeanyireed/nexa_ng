@@ -524,19 +524,7 @@ export default function CrmLeadsPage() {
                             })
                           }
                           disabled={updatingLeadId === lead.id}
-                          className={`appearance-none pl-2.5 pr-6 py-1 rounded-lg text-xs font-semibold cursor-pointer border transition-all focus:outline-none focus:ring-1 focus:ring-[#1A56DB] disabled:opacity-50 ${
-                            lead.status === "MEETING_BOOKED"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800"
-                              : lead.status === "QUALIFIED"
-                              ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800"
-                              : lead.status === "CONVERTED"
-                              ? "bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-400 dark:border-teal-800"
-                              : lead.status === "CONTACTED"
-                              ? "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800"
-                              : lead.status === "ENRICHED"
-                              ? "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800"
-                              : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)]"
-                          }`}
+                          className="appearance-none pl-2.5 pr-6 py-1 rounded-lg text-xs font-semibold cursor-pointer border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] hover:border-[#1A56DB]/50 transition-all focus:outline-none focus:ring-1 focus:ring-[#1A56DB] disabled:opacity-50"
                           title="Click to change lead status"
                         >
                           <option value="QUALIFIED">QUALIFIED</option>

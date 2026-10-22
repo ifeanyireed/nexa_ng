@@ -53,7 +53,7 @@ export async function PATCH(request: Request) {
     const parsed = JSON.parse(bodyText || "{}");
     const tenantSlug = getValidatedTenantSlug(request, parsed);
 
-    const res = await fetch(`${ERP_BASE}/crm/leads`, {
+    const res = await fetch(`${ERP_BASE}/crm/leads?tenant=${encodeURIComponent(tenantSlug)}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",

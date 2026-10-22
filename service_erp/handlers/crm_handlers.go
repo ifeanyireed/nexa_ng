@@ -366,12 +366,31 @@ func HandleCrmLeads(w http.ResponseWriter, r *http.Request) {
 
 		status, _ := body["status"].(string)
 		notes, _ := body["notes"].(string)
-		owner, _ := body["owner"].(string)
-		if owner == "" {
-			owner, _ = body["assignedRep"].(string)
+		owner, hasOwner := body["owner"].(string)
+		if !hasOwner {
+			owner, hasOwner = body["assignedRep"].(string)
 		}
-		if strings.EqualFold(owner, "auto") || strings.HasPrefix(strings.ToLower(owner), "auto-assign") {
+		if hasOwner && (owner == "" || strings.EqualFold(owner, "unassigned")) {
+			owner = "Unassigned"
+		} else if strings.EqualFold(owner, "auto") || strings.HasPrefix(strings.ToLower(owner), "auto-assign") {
 			owner = resolveLeastLoadedCloser(db, slug)
+		}
+
+		name, _ := body["name"].(string)
+		if name == "" {
+			name, _ = body["contactName"].(string)
+		}
+		company, _ := body["company"].(string)
+		if company == "" {
+			company, _ = body["companyName"].(string)
+		}
+		email, _ := body["email"].(string)
+		if email == "" {
+			email, _ = body["contactEmail"].(string)
+		}
+		phone, _ := body["phone"].(string)
+		if phone == "" {
+			phone, _ = body["contactPhone"].(string)
 		}
 
 		_, err := db.Exec(`UPDATE crm_leads SET
@@ -379,15 +398,30 @@ func HandleCrmLeads(w http.ResponseWriter, r *http.Request) {
 			notes = COALESCE(NULLIF($2, ''), notes),
 			owner = COALESCE(NULLIF($3, ''), owner),
 			assigned_rep = COALESCE(NULLIF($3, ''), assigned_rep),
+			name = COALESCE(NULLIF($4, ''), name),
+			contact_name = COALESCE(NULLIF($4, ''), contact_name),
+			company = COALESCE(NULLIF($5, ''), company),
+			company_name = COALESCE(NULLIF($5, ''), company_name),
+			email = COALESCE(NULLIF($6, ''), email),
+			contact_email = COALESCE(NULLIF($6, ''), contact_email),
+			phone = COALESCE(NULLIF($7, ''), phone),
+			contact_phone = COALESCE(NULLIF($7, ''), contact_phone),
 			updated_at = NOW()
-			WHERE id = $4 AND LOWER(tenant_slug) = $5`,
-			status, notes, owner, id, slug)
+			WHERE id = $8 AND LOWER(tenant_slug) = $9`,
+			status, notes, owner, name, company, email, phone, id, slug)
 
 		if err != nil {
 			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
 			return
 		}
-		json.NewEncoder(w).Encode(map[string]any{"success": true, "lead": map[string]any{"id": id}})
+		json.NewEncoder(w).Encode(map[string]any{
+			"success": true,
+			"lead": map[string]any{
+				"id":          id,
+				"status":      status,
+				"assignedRep": owner,
+			},
+		})
 		return
 	}
 

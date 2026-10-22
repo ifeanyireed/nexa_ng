@@ -18,6 +18,8 @@ import {
   RefreshCw,
   Send,
   Trash2,
+  Pencil,
+  ChevronDown,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -53,6 +55,19 @@ export default function CrmLeadsPage() {
   const [newLocation, setNewLocation] = useState("Lagos");
   const [assignedCloser, setAssignedCloser] = useState("Auto-Assign (Least-Loaded)");
   const [availableClosers, setAvailableClosers] = useState<{ id?: string; name: string; email: string }[]>([]);
+  const [updatingLeadId, setUpdatingLeadId] = useState<string | null>(null);
+
+  // Edit Lead Modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingLead, setEditingLead] = useState<CrmLead | null>(null);
+  const [editStatus, setEditStatus] = useState<string>("QUALIFIED");
+  const [editAssignedCloser, setEditAssignedCloser] = useState<string>("Unassigned");
+  const [editCompany, setEditCompany] = useState<string>("");
+  const [editContact, setEditContact] = useState<string>("");
+  const [editEmail, setEditEmail] = useState<string>("");
+  const [editPhone, setEditPhone] = useState<string>("");
+  const [editNotes, setEditNotes] = useState<string>("");
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   useEffect(() => {
     async function loadClosers() {
@@ -235,6 +250,107 @@ export default function CrmLeadsPage() {
     }
   };
 
+  const handleUpdateLeadField = async (
+    leadId: string,
+    updates: { status?: string; assignedRep?: string; notes?: string }
+  ) => {
+    setUpdatingLeadId(leadId);
+    // Optimistic update
+    setLeads((prev) =>
+      prev.map((l) => (l.id === leadId ? ({ ...l, ...updates } as any) : l))
+    );
+
+    try {
+      const res = await crmFetch("/api/erp/crm/leads", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: leadId,
+          ...updates,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data?.lead?.assignedRep) {
+          setLeads((prev) =>
+            prev.map((l) =>
+              l.id === leadId ? { ...l, assignedRep: data.lead.assignedRep } : l
+            )
+          );
+        }
+      } else {
+        console.warn("Failed to update lead field");
+      }
+    } catch (err) {
+      console.error("Error updating lead field:", err);
+    } finally {
+      setUpdatingLeadId(null);
+    }
+  };
+
+  const handleOpenEditModal = (lead: CrmLead) => {
+    setEditingLead(lead);
+    setEditStatus(lead.status || "QUALIFIED");
+    setEditAssignedCloser(lead.assignedRep || "Unassigned");
+    setEditCompany(lead.companyName || (lead as any).company || "");
+    setEditContact(lead.contactName || (lead as any).name || "");
+    setEditEmail(lead.contactEmail || (lead as any).email || "");
+    setEditPhone(lead.contactPhone || (lead as any).phone || "");
+    setEditNotes(lead.notes || "");
+    setIsEditModalOpen(true);
+  };
+
+  const handleSaveEditLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLead) return;
+    setIsSavingEdit(true);
+
+    const payload = {
+      id: editingLead.id,
+      companyName: editCompany.trim(),
+      contactName: editContact.trim(),
+      contactEmail: editEmail.trim(),
+      contactPhone: editPhone.trim(),
+      status: editStatus,
+      assignedRep: editAssignedCloser === "Unassigned" ? "" : editAssignedCloser,
+      notes: editNotes.trim(),
+    };
+
+    try {
+      const res = await crmFetch("/api/erp/crm/leads", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => null);
+      const resolvedRep =
+        data?.lead?.assignedRep || (editAssignedCloser === "Unassigned" ? "" : editAssignedCloser);
+
+      setLeads((prev) =>
+        prev.map((l) =>
+          l.id === editingLead.id
+            ? {
+                ...l,
+                companyName: editCompany.trim(),
+                contactName: editContact.trim(),
+                contactEmail: editEmail.trim(),
+                contactPhone: editPhone.trim(),
+                status: editStatus as any,
+                assignedRep: resolvedRep,
+                notes: editNotes.trim(),
+              }
+            : l
+        )
+      );
+      setIsEditModalOpen(false);
+      setEditingLead(null);
+    } catch (err: any) {
+      alert("Failed to update lead: " + (err?.message || "Unknown error"));
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
   const filteredLeads = leads.filter((l) => {
     const q = searchQuery.toLowerCase();
     const cName = (l.companyName || (l as any).company || "").toLowerCase();
@@ -399,27 +515,84 @@ export default function CrmLeadsPage() {
                     </td>
 
                     <td className="py-3.5 px-4">
-                      <NexaBadge
-                        variant={
-                          lead.status === "MEETING_BOOKED"
-                            ? "success"
-                            : lead.status === "QUALIFIED"
-                            ? "brand"
-                            : lead.status === "CONVERTED"
-                            ? "success"
-                            : "neutral"
-                        }
-                      >
-                        {lead.status}
-                      </NexaBadge>
+                      <div className="relative inline-block">
+                        <select
+                          value={lead.status}
+                          onChange={(e) =>
+                            handleUpdateLeadField(lead.id, {
+                              status: e.target.value as any,
+                            })
+                          }
+                          disabled={updatingLeadId === lead.id}
+                          className={`appearance-none pl-2.5 pr-6 py-1 rounded-lg text-xs font-semibold cursor-pointer border transition-all focus:outline-none focus:ring-1 focus:ring-[#1A56DB] disabled:opacity-50 ${
+                            lead.status === "MEETING_BOOKED"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800"
+                              : lead.status === "QUALIFIED"
+                              ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800"
+                              : lead.status === "CONVERTED"
+                              ? "bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-400 dark:border-teal-800"
+                              : lead.status === "CONTACTED"
+                              ? "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800"
+                              : lead.status === "ENRICHED"
+                              ? "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800"
+                              : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)]"
+                          }`}
+                          title="Click to change lead status"
+                        >
+                          <option value="QUALIFIED">QUALIFIED</option>
+                          <option value="MEETING_BOOKED">MEETING_BOOKED</option>
+                          <option value="CONTACTED">CONTACTED</option>
+                          <option value="ENRICHED">ENRICHED</option>
+                          <option value="IDENTIFIED">IDENTIFIED</option>
+                          <option value="CONVERTED">CONVERTED</option>
+                          <option value="ARCHIVED">ARCHIVED</option>
+                        </select>
+                        <ChevronDown className="w-3 h-3 text-[var(--nexa-text-muted)] absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
                     </td>
 
-                    <td className="py-3.5 px-4 text-[var(--nexa-text-muted)]">
-                      {lead.assignedRep || "Unassigned"}
+                    <td className="py-3.5 px-4">
+                      <div className="relative inline-block min-w-[130px] max-w-[190px]">
+                        <select
+                          value={lead.assignedRep || ""}
+                          onChange={(e) =>
+                            handleUpdateLeadField(lead.id, {
+                              assignedRep: e.target.value,
+                            })
+                          }
+                          disabled={updatingLeadId === lead.id}
+                          className="w-full appearance-none pl-2 pr-6 py-1 rounded-lg text-xs font-medium cursor-pointer border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] hover:border-[#1A56DB]/50 transition-all focus:outline-none focus:ring-1 focus:ring-[#1A56DB] disabled:opacity-50 truncate"
+                          title="Click to assign sales closer"
+                        >
+                          <option value="">Unassigned</option>
+                          <option value="Auto-Assign (Least-Loaded)">⚡ Auto-Assign</option>
+                          {availableClosers.map((c) => (
+                            <option key={c.email || c.name} value={c.name}>
+                              {c.name}
+                            </option>
+                          ))}
+                          {lead.assignedRep &&
+                            lead.assignedRep !== "Unassigned" &&
+                            !availableClosers.some((c) => c.name === lead.assignedRep) && (
+                              <option value={lead.assignedRep}>
+                                {lead.assignedRep}
+                              </option>
+                            )}
+                        </select>
+                        <ChevronDown className="w-3 h-3 text-[var(--nexa-text-muted)] absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
                     </td>
 
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditModal(lead)}
+                          className="p-1.5 rounded-lg border border-[var(--nexa-border)] hover:bg-[#1A56DB]/10 text-[var(--nexa-text-secondary)] hover:text-[#1A56DB] transition-colors cursor-pointer"
+                          title={`Edit ${lead.companyName}`}
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
                         <Link
                           href={`/erp/admin/crm/calls?leadId=${lead.id}&phone=${encodeURIComponent(lead.contactPhone || "")}&name=${encodeURIComponent(lead.contactName || "")}&company=${encodeURIComponent(lead.companyName || "")}`}
                           title="Log Call with Lead"
@@ -581,6 +754,124 @@ export default function CrmLeadsPage() {
             </NexaButton>
             <NexaButton variant="primary" type="submit">
               Save Lead
+            </NexaButton>
+          </div>
+        </form>
+      </NexaModal>
+
+      {/* EDIT LEAD MODAL */}
+      <NexaModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setEditingLead(null);
+        }}
+        title="Edit Lead Profile & Assignment"
+        subtitle="Update lead status, closer assignment, and contact details."
+      >
+        <form onSubmit={handleSaveEditLead} className="space-y-4">
+          <NexaInput
+            label="Company Name"
+            value={editCompany}
+            onChange={(e) => setEditCompany(e.target.value)}
+            placeholder="Company name"
+            required
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <NexaInput
+              label="Contact Name"
+              value={editContact}
+              onChange={(e) => setEditContact(e.target.value)}
+              placeholder="Contact person name"
+              required
+            />
+            <NexaInput
+              label="Contact Email"
+              type="email"
+              value={editEmail}
+              onChange={(e) => setEditEmail(e.target.value)}
+              placeholder="contact@company.ng"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <NexaInput
+              label="Phone Number"
+              value={editPhone}
+              onChange={(e) => setEditPhone(e.target.value)}
+              placeholder="+2348030000000"
+            />
+            <div>
+              <label className="block text-xs font-semibold text-[var(--nexa-text-secondary)] mb-1.5">
+                Lead Status
+              </label>
+              <select
+                value={editStatus}
+                onChange={(e) => setEditStatus(e.target.value)}
+                className="w-full px-3 py-2 text-xs rounded-lg bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#1A56DB]"
+              >
+                <option value="QUALIFIED">QUALIFIED</option>
+                <option value="MEETING_BOOKED">MEETING_BOOKED</option>
+                <option value="CONTACTED">CONTACTED</option>
+                <option value="ENRICHED">ENRICHED</option>
+                <option value="IDENTIFIED">IDENTIFIED</option>
+                <option value="CONVERTED">CONVERTED</option>
+                <option value="ARCHIVED">ARCHIVED</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-[var(--nexa-text-secondary)] mb-1.5">
+              Assigned Sales Closer
+            </label>
+            <select
+              value={editAssignedCloser}
+              onChange={(e) => setEditAssignedCloser(e.target.value)}
+              className="w-full px-3 py-2 text-xs rounded-lg bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#1A56DB]"
+            >
+              <option value="Unassigned">⭕ Unassigned</option>
+              <option value="Auto-Assign (Least-Loaded)">⚡ Auto-Assign (Least-Loaded Closer)</option>
+              {availableClosers.map((c) => (
+                <option key={c.email || c.name} value={c.name}>
+                  👤 {c.name} {c.email ? `(${c.email})` : ""}
+                </option>
+              ))}
+              {editAssignedCloser &&
+                editAssignedCloser !== "Unassigned" &&
+                !availableClosers.some((c) => c.name === editAssignedCloser) && (
+                  <option value={editAssignedCloser}>👤 {editAssignedCloser}</option>
+                )}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-[var(--nexa-text-secondary)] mb-1.5">
+              Notes
+            </label>
+            <textarea
+              value={editNotes}
+              onChange={(e) => setEditNotes(e.target.value)}
+              placeholder="Add key insights, deal notes, or next action items..."
+              rows={3}
+              className="w-full px-3 py-2 text-xs rounded-lg bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#1A56DB]"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4">
+            <NexaButton
+              variant="secondary"
+              type="button"
+              onClick={() => {
+                setIsEditModalOpen(false);
+                setEditingLead(null);
+              }}
+            >
+              Cancel
+            </NexaButton>
+            <NexaButton variant="primary" type="submit" disabled={isSavingEdit}>
+              {isSavingEdit ? "Saving..." : "Save Changes"}
             </NexaButton>
           </div>
         </form>

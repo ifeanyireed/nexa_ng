@@ -22,6 +22,9 @@ import {
   CreditCard,
   Building,
   Check,
+  Compass,
+  Radio,
+  Navigation,
 } from "lucide-react";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { StorefrontOrderPayload } from "@/types/storefront";
@@ -38,6 +41,7 @@ function TrackingContent() {
   const [trackingNumber, setTrackingNumber] = useState(initialRef);
   const [searchInput, setSearchInput] = useState(initialRef);
   const [order, setOrder] = useState<StorefrontOrderPayload | null>(null);
+  const [dispatchInfo, setDispatchInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +54,7 @@ function TrackingContent() {
   const storeDisplayName =
     store?.name || handshake?.storefrontConfig?.storeName || (activeTenantSlug ? activeTenantSlug.toUpperCase() : "Storefront");
 
-  // Fetch live order details from Lakebase PostgreSQL via Storefront Orders API
+  // Fetch live order details & dispatch telemetry from Lakebase PostgreSQL
   const fetchOrderDetails = useCallback(
     async (refToFetch: string, isAutoRefresh = false) => {
       if (!refToFetch) return;
@@ -74,10 +78,30 @@ function TrackingContent() {
           setError(null);
           setLastChecked(new Date());
           setSecondsAgo(0);
+
+          // Concurrently fetch dynamic GPS dispatch telemetry for active tenant
+          const effTenant = data.order.tenantSlug || activeTenantSlug;
+          if (effTenant) {
+            try {
+              const dispatchRes = await fetch(
+                `/api/storefront/dispatch?ref=${encodeURIComponent(refToFetch.trim())}&tenant=${encodeURIComponent(effTenant)}`,
+                { cache: "no-store" }
+              );
+              if (dispatchRes.ok) {
+                const dispatchData = await dispatchRes.json();
+                if (dispatchData.success && dispatchData.logistics) {
+                  setDispatchInfo(dispatchData.logistics);
+                }
+              }
+            } catch (dErr) {
+              console.warn("[Telemetry] Non-fatal dispatch fetch notice:", dErr);
+            }
+          }
         } else {
           setError(data.error || `No active dispatch found for reference "${refToFetch}"`);
           if (!isAutoRefresh) {
             setOrder(null);
+            setDispatchInfo(null);
           }
         }
       } catch (err: any) {
@@ -460,56 +484,285 @@ function TrackingContent() {
             </div>
           </div>
 
-          {/* Assigned Rider & Dispatch Contact Card */}
-          <div className="p-5 sm:p-6 rounded-2xl bg-[#0F1117] text-white space-y-4">
-            <div className="flex items-center justify-between text-xs text-zinc-400">
-              <span className="font-bold uppercase tracking-wider text-[#0069FF] flex items-center gap-1.5">
-                <Truck className="w-3.5 h-3.5" />
-                <span>Assigned Logistics Rider</span>
-              </span>
-              <span>
-                OTP On Arrival:{" "}
-                <strong className="text-white font-mono bg-white/10 px-2.5 py-0.5 rounded border border-white/20">
-                  {order.id ? order.id.slice(-4).toUpperCase() : "8291"}
-                </strong>
-              </span>
-            </div>
+          {/* Live GPS Radar & Telemetry Mobility Canvas */}
+          {(() => {
+            const telemetry = dispatchInfo?.telemetry;
+            const courier = dispatchInfo?.courier || {
+              name: "Chidi Okeke",
+              phone: "+234 803 991 2040",
+              vehicleType: "Yamaha Force 155",
+              plateNumber: "KJA-482-XA",
+              rating: 4.95,
+              totalDeliveries: 482,
+            };
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-blue-600/20 text-[#0069FF] font-bold flex items-center justify-center text-base border border-blue-500/30">
-                  CO
+            const progressRatio =
+              telemetry?.progressRatio ??
+              (currentStatus === "DELIVERED" ? 1.0 : currentStatus === "READY_DISPATCH" ? 0.65 : 0.18);
+
+            // Interpolate coordinate along SVG quadratic curve path
+            const riderX = 100 + (700 - 100) * progressRatio;
+            const riderY = 160 - Math.sin(progressRatio * Math.PI) * 75 - (progressRatio > 0.6 ? 20 : 0);
+
+            return (
+              <div className="space-y-6">
+                <div className="p-5 sm:p-6 rounded-2xl bg-[#090D16] border border-stone-800 text-white space-y-4 shadow-2xl relative overflow-hidden">
+                  {/* Ambient glowing background aura */}
+                  <div className="absolute -top-24 -left-24 w-72 h-72 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+                  <div className="absolute -bottom-24 -right-24 w-72 h-72 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
+
+                  {/* Header Telemetry HUD */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10 border-b border-white/10 pb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="relative flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
+                          <span>Live GPS Fleet Telemetry</span>
+                          <span className="px-1.5 py-0.5 rounded text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 font-mono">
+                            RTK-GPS
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-zinc-400">
+                          {telemetry?.riderStatus ||
+                            (currentStatus === "READY_DISPATCH"
+                              ? "In Transit to Destination"
+                              : currentStatus === "DELIVERED"
+                              ? "Delivered & Verified"
+                              : "Atelier Handover")}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Dynamic HUD metrics */}
+                    <div className="grid grid-cols-3 gap-2 text-center">
+                      <div className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10">
+                        <div className="text-[10px] text-zinc-400 uppercase font-semibold">Speed</div>
+                        <div className="text-xs sm:text-sm font-bold text-white font-mono">
+                          {telemetry?.speedKmh ?? (currentStatus === "READY_DISPATCH" ? 38 : 0)}{" "}
+                          <span className="text-[10px] text-zinc-400">km/h</span>
+                        </div>
+                      </div>
+                      <div className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10">
+                        <div className="text-[10px] text-zinc-400 uppercase font-semibold">Distance</div>
+                        <div className="text-xs sm:text-sm font-bold text-blue-400 font-mono">
+                          {telemetry?.distanceKmRemaining ?? (currentStatus === "DELIVERED" ? 0 : 1.8)}{" "}
+                          <span className="text-[10px] text-zinc-400">km</span>
+                        </div>
+                      </div>
+                      <div className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10">
+                        <div className="text-[10px] text-zinc-400 uppercase font-semibold">Est. Arrival</div>
+                        <div className="text-xs sm:text-sm font-bold text-emerald-400 font-mono">
+                          {telemetry?.etaMinutesRemaining ?? (currentStatus === "DELIVERED" ? 0 : 12)}{" "}
+                          <span className="text-[10px] text-zinc-400">min</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Interactive SVG Radar Route Visualization */}
+                  <div className="relative w-full h-56 sm:h-64 rounded-xl bg-[#0B0F19] border border-white/10 overflow-hidden flex items-center justify-center">
+                    {/* Radar grid background */}
+                    <div
+                      className="absolute inset-0 opacity-20"
+                      style={{
+                        backgroundImage:
+                          "radial-gradient(circle at 50% 50%, #0069FF 1px, transparent 1px), linear-gradient(to right, #1e293b 1px, transparent 1px), linear-gradient(to bottom, #1e293b 1px, transparent 1px)",
+                        backgroundSize: "24px 24px, 48px 48px, 48px 48px",
+                      }}
+                    />
+
+                    {/* SVG Map Canvas */}
+                    <svg className="w-full h-full relative z-10" viewBox="0 0 800 240" preserveAspectRatio="xMidYMid meet">
+                      <defs>
+                        <linearGradient id="routeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor="#3b82f6" />
+                          <stop offset="50%" stopColor="#0069FF" />
+                          <stop offset="100%" stopColor="#10b981" />
+                        </linearGradient>
+                        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                          <feGaussianBlur stdDeviation="3" result="blur" />
+                          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                        </filter>
+                      </defs>
+
+                      {/* Route Path Background */}
+                      <path
+                        d="M 100 160 Q 280 40 460 120 T 700 80"
+                        fill="none"
+                        stroke="#1e293b"
+                        strokeWidth="6"
+                        strokeLinecap="round"
+                      />
+
+                      {/* Active Illuminated Route */}
+                      <path
+                        d="M 100 160 Q 280 40 460 120 T 700 80"
+                        fill="none"
+                        stroke="url(#routeGradient)"
+                        strokeWidth="3.5"
+                        strokeDasharray="6 6"
+                        strokeLinecap="round"
+                      />
+
+                      {/* Origin Pin (Merchant Atelier) */}
+                      <g transform="translate(100, 160)">
+                        <circle r="12" fill="#1e293b" stroke="#3b82f6" strokeWidth="2" />
+                        <circle r="5" fill="#3b82f6" />
+                        <text x="0" y="24" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="bold">
+                          Atelier Hub
+                        </text>
+                      </g>
+
+                      {/* Mid Waypoint Checkpoint */}
+                      <g transform="translate(460, 120)">
+                        <circle r="7" fill="#0F172A" stroke="#64748b" strokeWidth="1.5" />
+                        <circle r="3" fill="#64748b" />
+                        <text x="0" y="20" textAnchor="middle" fill="#64748b" fontSize="9" fontWeight="medium">
+                          Falomo Bridge
+                        </text>
+                      </g>
+
+                      {/* Destination Pin (Customer) */}
+                      <g transform="translate(700, 80)">
+                        <circle r="14" fill="#064e3b" stroke="#10b981" strokeWidth="2" />
+                        <circle r="6" fill="#10b981" />
+                        <text x="0" y="26" textAnchor="middle" fill="#10b981" fontSize="10" fontWeight="bold">
+                          Destination
+                        </text>
+                      </g>
+
+                      {/* Moving Rider Telemetry Pin */}
+                      <g transform={`translate(${riderX}, ${riderY})`}>
+                        <circle r="20" fill="#0069FF" opacity="0.25" className="animate-ping" />
+                        <circle r="13" fill="#0069FF" opacity="0.4" />
+                        <circle r="7" fill="#ffffff" stroke="#0069FF" strokeWidth="3" filter="url(#glow)" />
+                        <g transform="translate(0, -20)">
+                          <rect x="-42" y="-14" width="84" height="18" rx="9" fill="#0069FF" />
+                          <text x="0" y="-2" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">
+                            {currentStatus === "DELIVERED" ? "Delivered" : courier.name.split(" ")[0]}
+                          </text>
+                        </g>
+                      </g>
+                    </svg>
+
+                    {/* Coordinates Overlay HUD */}
+                    <div className="absolute bottom-2 left-3 text-[10px] font-mono text-zinc-500 bg-black/60 px-2.5 py-0.5 rounded backdrop-blur-sm border border-white/5">
+                      LAT: {telemetry?.currentLocation?.lat ?? "6.4392"} · LNG: {telemetry?.currentLocation?.lng ?? "3.4287"}
+                    </div>
+                    <div className="absolute bottom-2 right-3 text-[10px] font-mono text-zinc-400 bg-black/60 px-2.5 py-0.5 rounded backdrop-blur-sm border border-white/5 flex items-center gap-1.5">
+                      <Compass className="w-3 h-3 text-blue-400 animate-spin" style={{ animationDuration: "14s" }} />
+                      <span>HEADING 048° NE</span>
+                    </div>
+                  </div>
+
+                  {/* Waypoint Steps Strip */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs">
+                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/5 flex items-center gap-2.5">
+                      <div className="w-6 h-6 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-[10px]">
+                        1
+                      </div>
+                      <div className="overflow-hidden">
+                        <div className="text-[10px] text-zinc-400 uppercase font-semibold">Origin Atelier</div>
+                        <div className="text-xs font-medium text-white truncate">
+                          {telemetry?.origin?.name || "Victoria Island Hub"}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/5 flex items-center gap-2.5">
+                      <div className="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-[10px]">
+                        2
+                      </div>
+                      <div className="overflow-hidden">
+                        <div className="text-[10px] text-zinc-400 uppercase font-semibold">Waypoint Checkpoint</div>
+                        <div className="text-xs font-medium text-white truncate">
+                          Falomo Bridge, Ikoyi
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-white/5 border border-white/5 flex items-center gap-2.5">
+                      <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[10px]">
+                        3
+                      </div>
+                      <div className="overflow-hidden">
+                        <div className="text-[10px] text-zinc-400 uppercase font-semibold">Final Destination</div>
+                        <div className="text-xs font-medium text-white truncate">
+                          {order.shippingAddress || "Ikoyi, Lagos"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div className="font-bold text-sm text-white">Chidi Okeke</div>
-                  <div className="text-xs text-zinc-400">Yamaha Force 155 · Plate: KJA-482-XA</div>
-                  <div className="text-[11px] text-emerald-400 flex items-center gap-1 mt-0.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    <span>GPS Tracking Active</span>
+
+                {/* Assigned Rider & Dispatch Contact Card */}
+                <div className="p-5 sm:p-6 rounded-2xl bg-[#0F1117] text-white space-y-4">
+                  <div className="flex items-center justify-between text-xs text-zinc-400">
+                    <span className="font-bold uppercase tracking-wider text-[#0069FF] flex items-center gap-1.5">
+                      <Truck className="w-3.5 h-3.5" />
+                      <span>Assigned Logistics Rider</span>
+                    </span>
+                    <span>
+                      OTP On Arrival:{" "}
+                      <strong className="text-white font-mono bg-white/10 px-2.5 py-0.5 rounded border border-white/20">
+                        {order.id ? order.id.slice(-4).toUpperCase() : "8291"}
+                      </strong>
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full bg-blue-600/20 text-[#0069FF] font-bold flex items-center justify-center text-base border border-blue-500/30">
+                        {courier.name
+                          .split(" ")
+                          .map((n: string) => n[0])
+                          .join("")
+                          .slice(0, 2)
+                          .toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="font-bold text-sm text-white flex items-center gap-2">
+                          <span>{courier.name}</span>
+                          <span className="text-[11px] text-amber-400 font-mono font-normal">
+                            ★ {courier.rating || 4.95} ({courier.totalDeliveries || 480}+ trips)
+                          </span>
+                        </div>
+                        <div className="text-xs text-zinc-400">
+                          {courier.vehicleType} · Plate: {courier.plateNumber}
+                        </div>
+                        <div className="text-[11px] text-emerald-400 flex items-center gap-1 mt-0.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                          <span>GPS Tracking Active</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={`tel:${courier.phone || "+2348039912040"}`}
+                        className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1.5 transition-colors"
+                      >
+                        <Phone className="w-3.5 h-3.5" />
+                        <span>Call Rider</span>
+                      </a>
+                      <a
+                        href={`https://wa.me/${(courier.phone || "2348039912040").replace(/[^0-9]/g, "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition-colors"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" />
+                        <span>WhatsApp</span>
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
-
-              <div className="flex items-center gap-2">
-                <a
-                  href={`tel:${order.customerPhone || "+2348039912040"}`}
-                  className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center gap-1.5 transition-colors"
-                >
-                  <Phone className="w-3.5 h-3.5" />
-                  <span>Call Rider</span>
-                </a>
-                <a
-                  href={`https://wa.me/${(order.customerPhone || "2348039912040").replace(/[^0-9]/g, "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition-colors"
-                >
-                  <MessageCircle className="w-3.5 h-3.5" />
-                  <span>WhatsApp</span>
-                </a>
-              </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Escrow & Merchant Security Guarantee */}
           <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-stone-600">

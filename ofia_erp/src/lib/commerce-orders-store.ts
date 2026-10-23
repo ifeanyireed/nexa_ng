@@ -4,6 +4,7 @@ import { neon } from "@neondatabase/serverless";
 import { CommerceOrderItem, CommerceBookingItem } from "./verticals";
 import { decrementInventoryForOrder } from "./commerce-inventory-store";
 import { sendOrderStatusNotification } from "./commerce-notifications";
+import { publishCommerceEvent } from "./commerce-event-hub";
 
 const NEON_CONNECTION_STRING =
   process.env.DATABASE_URL ||
@@ -312,6 +313,11 @@ export async function saveErpOrder(order: Partial<CommerceOrderItem>): Promise<C
     memoryOrders = updated;
   }
 
+  // Publish real-time SSE commerce event
+  try {
+    publishCommerceEvent(slug, { type: "ORDER_CREATED", data: newOrder });
+  } catch {}
+
   return newOrder;
 }
 
@@ -323,11 +329,11 @@ export async function updateErpOrderStatus(
   ensureStorageReady();
   const sql = getSql();
   const cleanTenant = tenantSlug ? tenantSlug.toLowerCase().trim() : null;
+  let matchedOrder: any = null;
 
   // 1. Update Neon PostgreSQL & dispatch customer notification
   if (sql) {
     try {
-      let matchedOrder: any = null;
       if (cleanTenant) {
         const rows = await sql`
           SELECT id, order_number, tenant_slug, tenant_id, customer_name, customer_email, customer_phone, shipping_address
@@ -389,6 +395,16 @@ export async function updateErpOrderStatus(
     } catch {
       memoryOrders = updated;
     }
+  }
+
+  const eventSlug = matchedOrder?.tenant_slug || cleanTenant;
+  if (eventSlug) {
+    try {
+      publishCommerceEvent(eventSlug, {
+        type: "ORDER_STATUS_CHANGED",
+        data: { id: orderIdOrNum, status: newStatus },
+      });
+    } catch {}
   }
 
   return found;

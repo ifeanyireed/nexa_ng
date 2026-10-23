@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   CreditCard,
   DollarSign,
@@ -10,6 +10,12 @@ import {
   TrendingUp,
   Users,
   Wallet,
+  Building2,
+  Clock,
+  ArrowRight,
+  RefreshCw,
+  Store,
+  ShieldCheck,
 } from "lucide-react";
 import { SuperAdminShell } from "@/components/admin/SuperAdminShell";
 import { AdminStatGrid } from "@/components/admin/AdminStatCard";
@@ -17,74 +23,229 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 
 export default function MarketplaceAnalyticsPage() {
+  const [data, setData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchAnalytics = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/admin/commerce/analytics", { cache: "no-store" });
+      const json = await res.json();
+      if (json.success) {
+        setData(json);
+      }
+    } catch {
+      // Keep state
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
+
+  const metrics = data?.metrics || {
+    formattedGmv: "₦0",
+    totalOrders: 0,
+    formattedActiveEscrow: "₦0",
+    formattedReleasedEscrow: "₦0",
+    formattedCommission: "₦0",
+    commissionRate: "1.5%",
+  };
+
+  const tenantLeaderboard = data?.tenantLeaderboard || [];
+  const channelBreakdown = data?.channelBreakdown || [];
+  const recentOrders = data?.recentOrders || [];
+
   return (
     <SuperAdminShell
-      title="Marketplace GMV & Financial Analytics"
-      subtitle="Detailed breakdown of Gross Merchandise Value, Paystack transaction splits, merchant withdrawal volume, and category revenue."
+      title="Platform GMV & Multi-Tenant Commission Ledger"
+      subtitle="Executive financial analytics across all registered tenant storefronts, POS counters, active escrow vaults, and platform commission yields."
+      action={
+        <button
+          onClick={fetchAnalytics}
+          disabled={isLoading}
+          className="px-3.5 py-1.5 rounded-xl border border-nexa-border hover:bg-nexa-bg-surface text-xs font-bold text-nexa-text-primary flex items-center gap-1.5 transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-blue-500" : ""}`} />
+          <span>Refresh Ledger</span>
+        </button>
+      }
     >
       <div className="space-y-8">
+        {/* TOP 4 FINANCIAL METRICS */}
         <AdminStatGrid
           stats={[
             {
-              label: "Total Cumulative GMV",
-              value: "₦342,800,000",
-              change: "+24% QoQ Growth",
+              label: "Total Platform GMV",
+              value: metrics.formattedGmv,
+              change: `${metrics.totalOrders} Global Orders`,
               trend: "up",
               changeType: "success",
               icon: <DollarSign className="w-5 h-5 text-emerald-500" />,
-              sub: "Gross Merchandise Volume",
+              sub: "Lakebase Neon PostgreSQL Consolidated",
             },
             {
-              label: "Platform Fee Yield (5%)",
-              value: "₦17,140,000",
-              change: "5% Direct Take",
+              label: `Platform Take (${metrics.commissionRate})`,
+              value: metrics.formattedCommission,
+              change: "Platform Cut",
               trend: "up",
               changeType: "info",
               icon: <Wallet className="w-5 h-5 text-blue-500" />,
-              sub: "Direct revenue to Ofia treasury",
+              sub: "Gross commission yield across tenants",
             },
             {
-              label: "Merchant Escrow Held",
-              value: "₦8,450,000",
-              change: "Secured Escrow",
+              label: "Active Escrow In Vault",
+              value: metrics.formattedActiveEscrow,
+              change: "Held in Escrow",
               trend: "up",
               changeType: "purple",
               icon: <ShoppingBag className="w-5 h-5 text-purple-500" />,
-              sub: "Pending job completion confirmation",
+              sub: "Protected pending OTP delivery sign-off",
+            },
+            {
+              label: "Released Escrow Disbursed",
+              value: metrics.formattedReleasedEscrow,
+              change: "Finalized Sales",
+              trend: "up",
+              changeType: "success",
+              icon: <ShieldCheck className="w-5 h-5 text-emerald-500" />,
+              sub: "Delivered & verified merchant disbursements",
             },
           ]}
-          columns={3}
+          columns={4}
         />
 
-        {/* State Breakdown */}
+        {/* TENANT VOLUME LEADERBOARD */}
         <NexaCard variant="glass" className="p-7 space-y-5 border border-nexa-border rounded-3xl">
           <div className="flex items-center justify-between">
-            <h3 className="font-extrabold text-base text-display text-nexa-text-primary">
-              Regional GMV Breakdown
-            </h3>
-            <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-mono">
-              3 Dominant States
+            <div>
+              <h3 className="font-extrabold text-base text-display text-nexa-text-primary flex items-center gap-2">
+                <Store className="w-4 h-4 text-blue-500" />
+                Multi-Tenant Volume & Platform Commission Leaderboard
+              </h3>
+              <p className="text-xs text-nexa-text-secondary mt-0.5">
+                Breakdown of sales volume, order counts, and 1.5% platform commission fees generated by each tenant.
+              </p>
+            </div>
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20 font-mono">
+              {tenantLeaderboard.length} Active Tenants
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-1">
-            <div className="p-5 rounded-2xl bg-nexa-bg-surface/50 border border-nexa-border space-y-2 hover:border-nexa-brand/30 transition-all">
-              <div className="font-bold text-sm text-nexa-text-primary">Lagos State</div>
-              <div className="text-2xl font-black font-mono text-emerald-500">₦52,400,000 (62%)</div>
-              <p className="text-xs text-nexa-text-secondary leading-relaxed">Top Areas: Lekki, Ikeja, Victoria Island, Yaba</p>
-            </div>
-            <div className="p-5 rounded-2xl bg-nexa-bg-surface/50 border border-nexa-border space-y-2 hover:border-nexa-brand/30 transition-all">
-              <div className="font-bold text-sm text-nexa-text-primary">Abuja FCT</div>
-              <div className="text-2xl font-black font-mono text-blue-500">₦21,800,000 (26%)</div>
-              <p className="text-xs text-nexa-text-secondary leading-relaxed">Top Areas: Maitama, Wuse 2, Garki, Jabi</p>
-            </div>
-            <div className="p-5 rounded-2xl bg-nexa-bg-surface/50 border border-nexa-border space-y-2 hover:border-nexa-brand/30 transition-all">
-              <div className="font-bold text-sm text-nexa-text-primary">Rivers (Port Harcourt)</div>
-              <div className="text-2xl font-black font-mono text-purple-500">₦10,050,000 (12%)</div>
-              <p className="text-xs text-nexa-text-secondary leading-relaxed">Top Areas: GRA Phase 2, Peter Odili, Trans Amadi</p>
-            </div>
+          <div className="overflow-x-auto rounded-2xl border border-nexa-border">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-nexa-bg-base text-nexa-text-muted border-b border-nexa-border font-semibold">
+                <tr>
+                  <th className="py-3 px-4">Tenant Identifier</th>
+                  <th className="py-3 px-3">Order Count</th>
+                  <th className="py-3 px-3">Gross Sales (GMV)</th>
+                  <th className="py-3 px-3">Platform Cut (1.5%)</th>
+                  <th className="py-3 px-4 text-right">Escrow Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-nexa-border text-nexa-text-primary font-medium">
+                {tenantLeaderboard.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-8 text-center text-nexa-text-secondary text-xs">
+                      {isLoading ? "Querying Lakebase Neon PostgreSQL..." : "No tenant orders recorded yet."}
+                    </td>
+                  </tr>
+                ) : (
+                  tenantLeaderboard.map((tenant: any) => (
+                    <tr key={tenant.tenantSlug} className="hover:bg-nexa-bg-surface/50 transition-colors">
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-xs">{tenant.tenantSlug.toUpperCase()}</div>
+                        <div className="text-[10px] text-nexa-text-muted font-mono">{tenant.tenantSlug}.ofia.ng</div>
+                      </td>
+                      <td className="py-3.5 px-3">
+                        <span className="font-mono font-bold">{tenant.orderCount} Orders</span>
+                      </td>
+                      <td className="py-3.5 px-3 font-bold text-emerald-500 font-mono">
+                        {tenant.formattedGmv}
+                      </td>
+                      <td className="py-3.5 px-3 font-bold text-blue-500 font-mono">
+                        {tenant.formattedCommission}
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <NexaBadge variant="brand" size="sm">
+                          Escrow Active
+                        </NexaBadge>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </NexaCard>
+
+        {/* CHANNEL BREAKDOWN & RECENT ORDERS */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Channel distribution (4 cols) */}
+          <NexaCard variant="glass" className="lg:col-span-4 p-6 space-y-4 border border-nexa-border rounded-3xl">
+            <h4 className="font-bold text-sm text-nexa-text-primary flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-purple-500" />
+              Omnichannel Sales Split
+            </h4>
+            <div className="space-y-3">
+              {channelBreakdown.map((c: any) => (
+                <div
+                  key={c.channel}
+                  className="p-3 rounded-2xl bg-nexa-bg-surface/50 border border-nexa-border flex items-center justify-between text-xs"
+                >
+                  <div>
+                    <div className="font-bold text-nexa-text-primary">{c.channel.replace("_", " ")}</div>
+                    <div className="text-[11px] text-nexa-text-muted font-mono">{c.orderCount} Transactions</div>
+                  </div>
+                  <div className="text-right font-mono font-bold text-emerald-500">
+                    {c.formattedGmv}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </NexaCard>
+
+          {/* Recent Global Orders Stream (8 cols) */}
+          <NexaCard variant="glass" className="lg:col-span-8 p-6 space-y-4 border border-nexa-border rounded-3xl">
+            <h4 className="font-bold text-sm text-nexa-text-primary flex items-center gap-2">
+              <Clock className="w-4 h-4 text-blue-500" />
+              Recent Cross-Tenant Orders Audit Feed
+            </h4>
+            <div className="space-y-2">
+              {recentOrders.map((o: any) => (
+                <div
+                  key={o.id}
+                  className="p-3 rounded-xl bg-nexa-bg-surface/40 border border-nexa-border flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-nexa-text-primary">{o.orderNumber}</span>
+                      <NexaBadge variant="neutral" size="sm" className="font-mono text-[10px]">
+                        {o.tenantSlug}
+                      </NexaBadge>
+                      <NexaBadge
+                        variant={o.channel === "POS_COUNTER" ? "green" : "brand"}
+                        size="sm"
+                        className="text-[10px]"
+                      >
+                        {o.channel.replace("_", " ")}
+                      </NexaBadge>
+                    </div>
+                    <div className="text-[11px] text-nexa-text-muted mt-0.5">
+                      Customer: {o.customerName}
+                    </div>
+                  </div>
+                  <div className="text-right sm:shrink-0">
+                    <div className="font-mono font-bold text-emerald-500">{o.totalAmount}</div>
+                    <div className="text-[10px] text-nexa-text-muted">{o.status}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </NexaCard>
+        </div>
       </div>
     </SuperAdminShell>
   );

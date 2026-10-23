@@ -35,6 +35,7 @@ export default function OmnichannelOrdersPage() {
   const [filterChannel, setFilterChannel] = useState("ALL");
   const [search, setSearch] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [liveAlert, setLiveAlert] = useState<string | null>(null);
 
   const fetchOrders = React.useCallback(async () => {
     const slug = activeTenant?.slug;
@@ -58,6 +59,45 @@ export default function OmnichannelOrdersPage() {
   React.useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  // Live real-time SSE stream listener (zero polling)
+  React.useEffect(() => {
+    const slug = activeTenant?.slug;
+    if (!slug || typeof window === "undefined") return;
+
+    let eventSource: EventSource | null = null;
+    try {
+      eventSource = new EventSource(`/api/erp/shop/orders/stream?tenant=${encodeURIComponent(slug)}`);
+
+      eventSource.onmessage = (e) => {
+        try {
+          const event = JSON.parse(e.data);
+          if (event.type === "ORDER_CREATED" && event.data) {
+            setOrders((prev) => {
+              if (prev.some((o) => o.id === event.data.id || o.orderNumber === event.data.orderNumber)) {
+                return prev;
+              }
+              return [event.data, ...prev];
+            });
+            setLiveAlert(`New Order Received: ${event.data.orderNumber} (${event.data.totalAmount})`);
+            setTimeout(() => setLiveAlert(null), 6000);
+          } else if (event.type === "ORDER_STATUS_CHANGED" && event.data) {
+            setOrders((prev) =>
+              prev.map((o) =>
+                o.id === event.data.id || o.orderNumber === event.data.id
+                  ? { ...o, status: event.data.status }
+                  : o
+              )
+            );
+          }
+        } catch {}
+      };
+    } catch {}
+
+    return () => {
+      if (eventSource) eventSource.close();
+    };
+  }, [activeTenant?.slug]);
 
   const filteredOrders = orders.filter((o) => {
     const matchesSearch =
@@ -113,6 +153,25 @@ export default function OmnichannelOrdersPage() {
       }
     >
       <div className="space-y-8">
+        {/* REAL-TIME SSE ORDER ALERT BANNER */}
+        {liveAlert && (
+          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold flex items-center justify-between shadow-lg shadow-emerald-600/20 animate-fade-in border border-emerald-400/40">
+            <div className="flex items-center gap-2.5">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
+              </span>
+              <span>🔔 {liveAlert}</span>
+            </div>
+            <button
+              onClick={() => setLiveAlert(null)}
+              className="p-1 rounded-lg hover:bg-white/20 transition-colors text-white"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {/* KPI CARDS */}
         <ErpStatGrid
           stats={[

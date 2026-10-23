@@ -25,6 +25,7 @@ export interface TenantOrg {
   heroSubtitle?: string;
   databaseUrl?: string;
   cloudinaryUrl?: string;
+  dbMode?: "DEDICATED";
   isCustomDb?: boolean;
   isCustomStorage?: boolean;
   createdAt: string;
@@ -267,7 +268,8 @@ export const INITIAL_TENANTS: TenantOrg[] = [
     },
     databaseUrl: "",
     cloudinaryUrl: "",
-    isCustomDb: false,
+    dbMode: "DEDICATED",
+    isCustomDb: true,
     isCustomStorage: false,
     createdAt: "2026-06-15",
   },
@@ -326,7 +328,8 @@ export const INITIAL_TENANTS: TenantOrg[] = [
     },
     databaseUrl: "",
     cloudinaryUrl: "",
-    isCustomDb: false,
+    dbMode: "DEDICATED",
+    isCustomDb: true,
     isCustomStorage: false,
     createdAt: "2026-05-01",
   },

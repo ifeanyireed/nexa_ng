@@ -15,7 +15,16 @@ export async function GET(
   { params }: { params: Promise<{ orgId?: string }> | { orgId?: string } }
 ) {
   const resolvedParams = await params;
-  const orgId = encodeURIComponent(resolvedParams?.orgId || "");
+  const rawOrg = (resolvedParams?.orgId || "").trim();
+
+  if (!rawOrg) {
+    return NextResponse.json(
+      { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+      { status: 400 }
+    );
+  }
+
+  const orgId = encodeURIComponent(rawOrg);
 
   try {
     const res = await fetch(`${USER_BASE}/organizations/${orgId}/rbac`, {
@@ -23,7 +32,7 @@ export async function GET(
       headers: {
         "Content-Type": "application/json",
         ...(request.headers.get("authorization") ? { authorization: request.headers.get("authorization")! } : {}),
-        ...(request.headers.get("x-tenant-slug") ? { "x-tenant-slug": request.headers.get("x-tenant-slug")! } : {}),
+        "x-tenant-slug": rawOrg.toLowerCase(),
       },
       cache: "no-store",
       signal: AbortSignal.timeout(10000),
@@ -44,7 +53,16 @@ export async function PUT(
   { params }: { params: Promise<{ orgId?: string }> | { orgId?: string } }
 ) {
   const resolvedParams = await params;
-  const orgId = encodeURIComponent(resolvedParams?.orgId || "");
+  const rawOrg = (resolvedParams?.orgId || "").trim();
+
+  if (!rawOrg) {
+    return NextResponse.json(
+      { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+      { status: 400 }
+    );
+  }
+
+  const orgId = encodeURIComponent(rawOrg);
 
   try {
     const body = await request.text();
@@ -53,7 +71,7 @@ export async function PUT(
       headers: {
         "Content-Type": "application/json",
         ...(request.headers.get("authorization") ? { authorization: request.headers.get("authorization")! } : {}),
-        ...(request.headers.get("x-tenant-slug") ? { "x-tenant-slug": request.headers.get("x-tenant-slug")! } : {}),
+        "x-tenant-slug": rawOrg.toLowerCase(),
       },
       body,
       signal: AbortSignal.timeout(10000),

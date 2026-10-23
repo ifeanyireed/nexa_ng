@@ -91,8 +91,9 @@ export const USER_API = {
     return fetchJSON<any>(`${USER_BASE}/organizations/${orgId}`);
   },
 
-  getOrgSubscription: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6") => {
-    return fetchJSON<any>(`${USER_BASE}/organizations/${orgId}/subscription`);
+  getOrgSubscription: async (orgId: string) => {
+    if (!orgId) throw new Error("tenant / orgId parameter is required for multi-tenant isolation");
+    return fetchJSON<any>(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}/subscription`);
   },
 
   getPlanCatalog: async () => {
@@ -100,17 +101,20 @@ export const USER_API = {
   },
 
   updateBYOKKeys: async (orgId: string, data: any) => {
-    return fetchJSON<any>(`${USER_BASE}/organizations/${orgId}/byok`, {
+    if (!orgId) throw new Error("tenant / orgId parameter is required for multi-tenant isolation");
+    return fetchJSON<any>(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}/byok`, {
       method: "PUT",
       body: JSON.stringify(data),
     });
   },
 
-  getTenantRBAC: async (orgId = "default") => {
+  getTenantRBAC: async (orgId: string) => {
+    if (!orgId) throw new Error("tenant / orgId parameter is required for multi-tenant isolation");
     return fetchJSON<{ tenant_id: string; matrix: any }>(`/api/organizations/${encodeURIComponent(orgId)}/rbac`);
   },
 
-  saveTenantRBAC: async (orgId = "default", matrix: any) => {
+  saveTenantRBAC: async (orgId: string, matrix: any) => {
+    if (!orgId) throw new Error("tenant / orgId parameter is required for multi-tenant isolation");
     return fetchJSON<{ success: boolean; message: string; tenant_id: string; matrix: any }>(
       `/api/organizations/${encodeURIComponent(orgId)}/rbac`,
       {
@@ -190,17 +194,20 @@ export const SUBSCRIPTION_API = {
 
 // 3. AUTONOMOUS AI GTM SWARM SERVICE (:8082)
 export const GTM_API = {
-  getAgents: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6") => {
-    return fetchJSON<any[]>(`${GTM_BASE}/${orgId}/agents`);
+  getAgents: async (orgId: string) => {
+    if (!orgId) throw new Error("tenant / orgId parameter is required for multi-tenant isolation");
+    return fetchJSON<any[]>(`${GTM_BASE}/${encodeURIComponent(orgId)}/agents`);
   },
 
-  getAgent: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6", agentKey: string) => {
-    return fetchJSON<any>(`${GTM_BASE}/${orgId}/agents/${agentKey}`);
+  getAgent: async (orgId: string, agentKey: string) => {
+    if (!orgId) throw new Error("tenant / orgId parameter is required for multi-tenant isolation");
+    return fetchJSON<any>(`${GTM_BASE}/${encodeURIComponent(orgId)}/agents/${encodeURIComponent(agentKey)}`);
   },
 
-  chatWithAgent: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6", agentKey: string, message: string) => {
+  chatWithAgent: async (orgId: string, agentKey: string, message: string) => {
+    if (!orgId) throw new Error("tenant / orgId parameter is required for multi-tenant isolation");
     return fetchJSON<{ sender: string; text: string; model_used: string; latency_ms: number }>(
-      `${GTM_BASE}/${orgId}/agents/${agentKey}/chat`,
+      `${GTM_BASE}/${encodeURIComponent(orgId)}/agents/${encodeURIComponent(agentKey)}/chat`,
       {
         method: "POST",
         body: JSON.stringify({ message }),
@@ -208,37 +215,44 @@ export const GTM_API = {
     );
   },
 
-  getStrategy: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6") => {
-    return fetchJSON<any>(`${GTM_BASE}/${orgId}/strategy`);
+  getStrategy: async (orgId: string) => {
+    if (!orgId) throw new Error("tenant / orgId parameter is required for multi-tenant isolation");
+    return fetchJSON<any>(`${GTM_BASE}/${encodeURIComponent(orgId)}/strategy`);
   },
 
-  getCampaigns: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6") => {
-    return fetchJSON<any[]>(`${GTM_BASE}/${orgId}/campaigns`);
+  getCampaigns: async (orgId: string) => {
+    if (!orgId) throw new Error("tenant / orgId parameter is required for multi-tenant isolation");
+    return fetchJSON<any[]>(`${GTM_BASE}/${encodeURIComponent(orgId)}/campaigns`);
   },
 
-  createCampaign: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6", data: { name: string; target_audience: string; channels: string[]; initial_goal?: string }) => {
-    return fetchJSON<any>(`${GTM_BASE}/${orgId}/campaigns`, {
+  createCampaign: async (orgId: string, data: { name: string; target_audience: string; channels: string[]; initial_goal?: string }) => {
+    if (!orgId) throw new Error("tenant / orgId parameter is required for multi-tenant isolation");
+    return fetchJSON<any>(`${GTM_BASE}/${encodeURIComponent(orgId)}/campaigns`, {
       method: "POST",
       body: JSON.stringify(data),
     });
   },
 
-  getLeads: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6") => {
-    return fetchJSON<any[]>(`${GTM_BASE}/${orgId}/leads`);
+  getLeads: async (orgId: string) => {
+    if (!orgId) throw new Error("tenant / orgId parameter is required for multi-tenant isolation");
+    return fetchJSON<any[]>(`${GTM_BASE}/${encodeURIComponent(orgId)}/leads`);
   },
 
-  getApprovals: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6") => {
-    return fetchJSON<any[]>(`${GTM_BASE}/${orgId}/approvals`);
+  getApprovals: async (orgId: string) => {
+    if (!orgId) throw new Error("tenant / orgId parameter is required for multi-tenant isolation");
+    return fetchJSON<any[]>(`${GTM_BASE}/${encodeURIComponent(orgId)}/approvals`);
   },
 
-  authorizeApproval: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6", id: string) => {
-    return fetchJSON<{ status: string; id: string }>(`${GTM_BASE}/${orgId}/approvals/${id}/authorize`, {
+  authorizeApproval: async (orgId: string, id: string) => {
+    if (!orgId) throw new Error("tenant / orgId parameter is required for multi-tenant isolation");
+    return fetchJSON<{ status: string; id: string }>(`${GTM_BASE}/${encodeURIComponent(orgId)}/approvals/${encodeURIComponent(id)}/authorize`, {
       method: "POST",
     });
   },
 
-  rejectApproval: async (orgId = "1aa8c687-b71d-4188-9de2-371aa5dfa9e6", id: string) => {
-    return fetchJSON<{ status: string; id: string }>(`${GTM_BASE}/${orgId}/approvals/${id}/reject`, {
+  rejectApproval: async (orgId: string, id: string) => {
+    if (!orgId) throw new Error("tenant / orgId parameter is required for multi-tenant isolation");
+    return fetchJSON<{ status: string; id: string }>(`${GTM_BASE}/${encodeURIComponent(orgId)}/approvals/${encodeURIComponent(id)}/reject`, {
       method: "POST",
     });
   },

@@ -111,13 +111,19 @@ export async function getTenantDatabaseConfig(tenantSlug: string): Promise<Tenan
 
     if (rows && rows.length > 0) {
       const row = rows[0];
-      const dedicatedUrl = (row.database_url || "").trim() || MASTER_REGISTRY_URL;
+      const customUrl = (row.database_url || "").trim();
+      if (!customUrl) {
+        console.warn(
+          `[Tenant DB Resolver] Architectural Warning: Tenant '${cleanSlug}' operates in DEDICATED mode but has not configured a standalone database_url in ofia_admin.`
+        );
+      }
+      const dedicatedUrl = customUrl || MASTER_REGISTRY_URL;
 
       const config: TenantDbConfig = {
         tenantSlug: cleanSlug,
         dbMode: "DEDICATED",
         connectionString: dedicatedUrl,
-        isCustom: true,
+        isCustom: Boolean(customUrl),
         resolvedAt: new Date().toISOString(),
       };
 
@@ -134,7 +140,7 @@ export async function getTenantDatabaseConfig(tenantSlug: string): Promise<Tenan
     tenantSlug: cleanSlug,
     dbMode: "DEDICATED",
     connectionString: MASTER_REGISTRY_URL,
-    isCustom: true,
+    isCustom: false,
     resolvedAt: new Date().toISOString(),
   };
 

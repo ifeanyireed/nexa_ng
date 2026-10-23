@@ -13,8 +13,20 @@ export async function GET(
   if (errorResponse) return errorResponse;
 
   const { orgId } = await params;
+  const rawOrg = (orgId || "").trim();
+
+  if (!rawOrg) {
+    return NextResponse.json(
+      { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+      { status: 400 }
+    );
+  }
+
   try {
-    const res = await fetch(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}/subscription`, {
+    const res = await fetch(`${USER_BASE}/organizations/${encodeURIComponent(rawOrg)}/subscription`, {
+      headers: {
+        "x-tenant-slug": rawOrg.toLowerCase(),
+      },
       cache: "no-store",
     });
     if (res.ok) {
@@ -26,7 +38,7 @@ export async function GET(
   }
 
   return NextResponse.json({
-    organization_id: orgId,
+    organization_id: rawOrg,
     plan_tier: "GROWTH",
     status: "ACTIVE",
     limits: {
@@ -48,6 +60,14 @@ export async function PUT(
   if (errorResponse) return errorResponse;
 
   const { orgId } = await params;
+  const rawOrg = (orgId || "").trim();
+
+  if (!rawOrg) {
+    return NextResponse.json(
+      { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+      { status: 400 }
+    );
+  }
   let body: any = {};
   try {
     body = await request.json();

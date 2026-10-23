@@ -319,7 +319,20 @@ function SubscriptionManagementContent() {
     const syncDatabaseTenants = async () => {
       setIsSavingDb(true);
       try {
-        const remoteOrgs = await GTM_API.getAdminOrganizations().catch(() => null);
+        let remoteOrgs: any[] | null = null;
+        try {
+          const adminTenantsRes = await fetch("/api/admin/tenants", { cache: "no-store" });
+          if (adminTenantsRes.ok) {
+            const data = await adminTenantsRes.json();
+            if (data.success && Array.isArray(data.tenants) && data.tenants.length > 0) {
+              remoteOrgs = data.tenants;
+            }
+          }
+        } catch {}
+
+        if (!remoteOrgs) {
+          remoteOrgs = await GTM_API.getAdminOrganizations().catch(() => null);
+        }
         let baseList = INITIAL_TENANTS;
 
         if (Array.isArray(remoteOrgs) && remoteOrgs.length > 0) {

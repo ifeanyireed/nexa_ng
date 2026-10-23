@@ -316,7 +316,7 @@ function TenantManagementContent() {
               campaignsLimit: Number(org.campaignsLimit !== undefined ? org.campaignsLimit : org.campaigns_limit !== undefined ? org.campaigns_limit : planTier === "ENTERPRISE" ? 100 : 10),
               monthlyAiSpendUSD: Math.round(mrr * 0.12),
               integrationHealth: org.integrationHealth || "Healthy",
-              vertical: org.vertical || org.Vertical || (orgSlug === "neweratransports" ? "cars" : orgSlug === "reedbreed" ? "gadgets" : "retail"),
+              vertical: org.vertical || org.Vertical || "retail",
               erpModules: org.erpModules || { ...INITIAL_TENANTS[0].erpModules },
               shopSubModules: org.shopSubModules || {
                 pos: true,
@@ -1272,9 +1272,9 @@ function TenantManagementContent() {
           ownerName: newOwnerName,
           ownerEmail: newOwnerEmail,
           planTier: newPlanTier,
-          dbMode: newDatabaseUrl.trim() ? "DEDICATED" : "SHARED",
+          dbMode: "DEDICATED",
           databaseUrl: newDatabaseUrl.trim(),
-          isCustomDb: Boolean(newDatabaseUrl.trim()),
+          isCustomDb: true,
           mrr: newTenant.mrr,
           vertical: newVertical || "retail",
         }),
@@ -2428,15 +2428,15 @@ function TenantManagementContent() {
                                 <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 uppercase">
                                   {tenant.status}
                                 </span>
-                                {tenant.isCustomDb || Boolean(tenant.databaseUrl) ? (
+                                {tenant.databaseUrl ? (
                                   <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 uppercase flex items-center gap-1">
                                     <Database className="w-2.5 h-2.5" />
-                                    Dedicated Database
+                                    Dedicated DB Configured
                                   </span>
                                 ) : (
-                                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-600 border border-slate-500/20 uppercase flex items-center gap-1">
-                                    <Layers className="w-2.5 h-2.5 text-blue-500" />
-                                    Dedicated DB
+                                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20 uppercase flex items-center gap-1">
+                                    <Database className="w-2.5 h-2.5" />
+                                    Dedicated DB (Pending Setup)
                                   </span>
                                 )}
                                 {tenant.isCustomStorage && (
@@ -2922,15 +2922,15 @@ function TenantManagementContent() {
             </div>
           </div>
 
-          {/* DEDICATED INFRASTRUCTURE (BYODB & BYOS) */}
+          {/* DEDICATED INFRASTRUCTURE (DATABASE-PER-TENANT MANDATE) */}
           <div className="space-y-3 pt-3 border-t border-[var(--nexa-border)]">
             <div>
               <label className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
                 <Database className="w-3.5 h-3.5 text-[#1A56DB]" />
-                Dedicated Infrastructure (BYODB & BYOS - Optional)
+                Dedicated Infrastructure (DEDICATED Database-Per-Tenant Architecture)
               </label>
               <p className="text-[11px] text-[var(--nexa-text-secondary)]">
-                Provide custom Neon Project and Cloudinary URLs for physical project-level isolation. Leave empty to use shared platform infrastructure.
+                Every tenant workspace operates strictly in DEDICATED database mode. Configure the tenant&apos;s isolated PostgreSQL connection string (Neon) for direct persistence.
               </p>
             </div>
 

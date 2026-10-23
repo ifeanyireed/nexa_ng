@@ -17,12 +17,22 @@ export async function GET(
   { params }: { params: Promise<{ orgId: string }> }
 ) {
   const { orgId } = await params;
+  const rawOrg = (orgId || "").trim();
+
+  if (!rawOrg) {
+    return NextResponse.json(
+      { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+      { status: 400 }
+    );
+  }
+
   try {
-    const res = await fetch(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}`, {
+    const res = await fetch(`${USER_BASE}/organizations/${encodeURIComponent(rawOrg)}`, {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
         ...(request.headers.get("authorization") ? { authorization: request.headers.get("authorization")! } : {}),
+        "x-tenant-slug": rawOrg.toLowerCase(),
       },
       cache: "no-store",
       signal: AbortSignal.timeout(10000),
@@ -43,6 +53,14 @@ export async function PUT(
   { params }: { params: Promise<{ orgId: string }> }
 ) {
   const { orgId } = await params;
+  const rawOrg = (orgId || "").trim();
+
+  if (!rawOrg) {
+    return NextResponse.json(
+      { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+      { status: 400 }
+    );
+  }
   try {
     const rawBody = await request.text();
 
@@ -61,7 +79,7 @@ export async function PUT(
             is_custom_db = ${isCustom},
             name = COALESCE(${parsed.name}, name),
             updated_at = NOW()
-        WHERE id = ${orgId} OR LOWER(slug) = ${orgId.toLowerCase().trim()}
+        WHERE id = ${rawOrg} OR LOWER(slug) = ${rawOrg.toLowerCase()}
         RETURNING slug;
       `;
 

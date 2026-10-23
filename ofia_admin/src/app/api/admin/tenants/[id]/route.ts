@@ -9,11 +9,20 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const rawId = (id || "").trim();
+
+  if (!rawId) {
+    return NextResponse.json(
+      { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+      { status: 400 }
+    );
+  }
+
   try {
     const sql = neon(MASTER_CONNECTION_STRING);
     const rows = await sql`
       SELECT * FROM platform_tenants
-      WHERE id = ${id} OR LOWER(slug) = ${id.toLowerCase().trim()}
+      WHERE id = ${rawId} OR LOWER(slug) = ${rawId.toLowerCase()}
       LIMIT 1;
     `;
 
@@ -32,6 +41,14 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  const rawId = (id || "").trim();
+
+  if (!rawId) {
+    return NextResponse.json(
+      { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+      { status: 400 }
+    );
+  }
   try {
     const body = await request.json();
     const sql = neon(MASTER_CONNECTION_STRING);
@@ -55,7 +72,7 @@ export async function PUT(
           mrr = COALESCE(${body.mrr}, mrr),
           vertical = COALESCE(${body.vertical}, vertical),
           updated_at = NOW()
-      WHERE id = ${id} OR LOWER(slug) = ${id.toLowerCase().trim()}
+      WHERE id = ${rawId} OR LOWER(slug) = ${rawId.toLowerCase()}
       RETURNING *;
     `;
 

@@ -264,8 +264,7 @@ function SalesCloserPortalContent() {
         color: "green" as const,
         label: outcomeLabel,
         tooltip: `Call Logger: ${outcomeLabel} (Click to log new call)`,
-        badgeClass: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/25 border-emerald-500/30",
-        dotClass: "bg-emerald-500",
+        badgeClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600 hover:text-white",
       };
     }
 
@@ -293,8 +292,7 @@ function SalesCloserPortalContent() {
         color: "yellow" as const,
         label: outcomeLabel,
         tooltip: `Call Logger: ${outcomeLabel} (Click to log new call)`,
-        badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25 border-amber-500/30",
-        dotClass: "bg-amber-500",
+        badgeClass: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-600 hover:text-white",
       };
     }
 
@@ -310,8 +308,7 @@ function SalesCloserPortalContent() {
         color: "red" as const,
         label: outcomeLabel,
         tooltip: `Call Logger: ${outcomeLabel} (Click to log new call)`,
-        badgeClass: "bg-rose-500/15 text-rose-700 dark:text-rose-400 hover:bg-rose-500/25 border-rose-500/30",
-        dotClass: "bg-rose-500",
+        badgeClass: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30 hover:bg-rose-600 hover:text-white",
       };
     }
 
@@ -319,8 +316,7 @@ function SalesCloserPortalContent() {
       color: "blue" as const,
       label: "Not on call logger",
       tooltip: "Not on call logger - click to log call",
-      badgeClass: "bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-blue-500/20",
-      dotClass: "bg-blue-500",
+      badgeClass: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/30 hover:bg-blue-600 hover:text-white",
     };
   };
 
@@ -934,17 +930,11 @@ function SalesCloserPortalContent() {
                               return (
                                 <Link
                                   href={`/erp/ops/calls?leadId=${lead.id}&phone=${encodeURIComponent(lead.contactPhone || "")}&name=${encodeURIComponent(lead.contactName || "")}&company=${encodeURIComponent(lead.companyName || "")}${lead.assignedRep ? `&rep=${encodeURIComponent(lead.assignedRep)}` : ""}`}
-                                  className={`px-2.5 py-1 text-[10px] font-bold rounded-lg border cursor-pointer transition-colors flex items-center gap-1.5 relative ${ind.badgeClass}`}
+                                  className={`px-2.5 py-1 text-[10px] font-bold rounded-lg border cursor-pointer transition-colors flex items-center gap-1 ${ind.badgeClass}`}
                                   title={ind.tooltip}
                                 >
                                   <PhoneCall className="w-3 h-3" />
                                   Call
-                                  {ind.color !== "blue" && (
-                                    <span
-                                      className={`w-2 h-2 rounded-full ring-1 ring-[var(--nexa-bg-surface)] ml-0.5 ${ind.dotClass}`}
-                                      title={ind.label}
-                                    />
-                                  )}
                                 </Link>
                               );
                             })()}

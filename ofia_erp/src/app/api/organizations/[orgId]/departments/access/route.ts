@@ -9,7 +9,14 @@ export async function GET(
   { params }: { params: Promise<{ orgId?: string }> | { orgId?: string } }
 ) {
   const resolvedParams = await params;
-  const orgId = resolvedParams?.orgId || "";
+  const orgId = (resolvedParams?.orgId || "").trim().toLowerCase();
+
+  if (!orgId) {
+    return NextResponse.json(
+      { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+      { status: 400 }
+    );
+  }
 
   try {
     const res = await fetch(`${ERP_BASE}/departments?tenant=${encodeURIComponent(orgId)}`, {

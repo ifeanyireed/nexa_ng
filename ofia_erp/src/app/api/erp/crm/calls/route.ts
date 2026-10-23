@@ -13,6 +13,13 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const tenantSlug = getValidatedTenantSlug(request);
 
+    if (!tenantSlug) {
+      return NextResponse.json(
+        { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
+
     const params = new URLSearchParams();
     params.set("tenant", tenantSlug);
     const leadId = searchParams.get("lead_id");
@@ -45,6 +52,13 @@ export async function POST(request: Request) {
     const parsed = JSON.parse(bodyText || "{}");
     const tenantSlug = getValidatedTenantSlug(request, parsed);
 
+    if (!tenantSlug) {
+      return NextResponse.json(
+        { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
+
     const res = await fetch(`${ERP_BASE}/crm/calls`, {
       method: "POST",
       headers: {
@@ -66,6 +80,13 @@ export async function DELETE(request: Request) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
     const tenantSlug = getValidatedTenantSlug(request);
+
+    if (!tenantSlug) {
+      return NextResponse.json(
+        { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
 
     if (!id) {
       return NextResponse.json({ error: "Call ID is required" }, { status: 400 });

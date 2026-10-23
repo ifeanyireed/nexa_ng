@@ -5,18 +5,20 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const tenantSlug = searchParams.get("tenant") || searchParams.get("slug") || request.headers.get("x-tenant-slug");
+  const rawTenant = searchParams.get("tenant") || searchParams.get("slug") || request.headers.get("x-tenant-slug");
 
-  if (!tenantSlug) {
+  if (!rawTenant) {
     return NextResponse.json(
-      { success: false, error: "tenant parameter is required" },
+      { success: false, error: "tenant parameter is required for multi-tenant isolation" },
       { status: 400 }
     );
   }
 
+  const tenantSlug = rawTenant.toLowerCase().trim();
+
   try {
     const orders = await getErpOrders(tenantSlug);
-    return NextResponse.json({ success: true, count: orders.length, orders });
+    return NextResponse.json({ success: true, tenantSlug, count: orders.length, orders });
   } catch (err: any) {
     return NextResponse.json(
       { success: false, error: "Failed to fetch ERP shop orders: " + err.message },
@@ -28,14 +30,16 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const tenantSlug = body.tenantSlug || request.headers.get("x-tenant-slug");
+    const rawTenant = body.tenantSlug || request.headers.get("x-tenant-slug");
 
-    if (!tenantSlug) {
+    if (!rawTenant) {
       return NextResponse.json(
-        { success: false, error: "tenantSlug is required" },
+        { success: false, error: "tenant parameter is required for multi-tenant isolation" },
         { status: 400 }
       );
     }
+
+    const tenantSlug = rawTenant.toLowerCase().trim();
 
     if (!body.customerName || !body.customerPhone) {
       return NextResponse.json(
@@ -58,7 +62,14 @@ export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
     const { orderId, status } = body;
-    const tenantSlug = body.tenantSlug || request.headers.get("x-tenant-slug") || undefined;
+    const rawTenant = body.tenantSlug || request.headers.get("x-tenant-slug");
+
+    if (!rawTenant) {
+      return NextResponse.json(
+        { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
 
     if (!orderId || !status) {
       return NextResponse.json(
@@ -67,6 +78,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    const tenantSlug = rawTenant.toLowerCase().trim();
     const updated = await updateErpOrderStatus(orderId, status, tenantSlug);
     return NextResponse.json({ success: updated });
   } catch (err: any) {

@@ -1,24 +1,10 @@
 import fs from "fs";
 import path from "path";
-import { neon } from "@neondatabase/serverless";
 import { CommerceOrderItem, CommerceBookingItem } from "./verticals";
 import { decrementInventoryForOrder } from "./commerce-inventory-store";
 import { sendOrderStatusNotification } from "./commerce-notifications";
 import { publishCommerceEvent } from "./commerce-event-hub";
-import { getTenantSql, MASTER_CONNECTION_STRING } from "./tenant-db-resolver";
-
-const NEON_CONNECTION_STRING = MASTER_CONNECTION_STRING;
-
-function getSql() {
-  try {
-    if (NEON_CONNECTION_STRING) {
-      return neon(NEON_CONNECTION_STRING);
-    }
-  } catch (err) {
-    console.warn("[Commerce Store] Neon SQL initialization warning:", err);
-  }
-  return null;
-}
+import { getTenantSql } from "./tenant-db-resolver";
 
 function getSyncDir() {
   const candidates = [
@@ -40,82 +26,9 @@ const BOOKINGS_FILE = path.join(SYNC_DIR, "bookings.json");
 let memoryOrders: CommerceOrderItem[] = [];
 let memoryBookings: CommerceBookingItem[] = [];
 
-// Fallback Seed Orders
-const SEED_ORDERS: CommerceOrderItem[] = [
-  {
-    id: "ORD-9021",
-    orderNumber: "OFIA-2026-9021",
-    tenantSlug: "neweratransports",
-    tenantId: "org-01",
-    customerName: "Chief Babatunde Alabi",
-    customerEmail: "babatunde.alabi@gmail.com",
-    customerPhone: "+234 802 334 5566",
-    channel: "STOREFRONT",
-    itemsSummary: "2024 Mercedes-Benz GLE 450 4MATIC (Executive Edition)",
-    itemCount: 1,
-    totalAmount: "₦98,000,000",
-    rawAmount: 98000000,
-    status: "IN_PREPARATION",
-    paymentStatus: "PAID",
-    deliveryMethod: "DISPATCH",
-    shippingAddress: "Plot 12, Alexander Road, Ikoyi, Lagos",
-    createdAt: "Today at 09:15 AM",
-  },
-  {
-    id: "ORD-9020",
-    orderNumber: "OFIA-2026-9020",
-    tenantSlug: "neweratransports",
-    tenantId: "org-01",
-    customerName: "Mrs. Amaka Okoye",
-    customerEmail: "amaka.okoye@yahoo.com",
-    channel: "POS_COUNTER",
-    itemsSummary: "Custom Leather Steering Wrap + 4x RunFlat Tires",
-    itemCount: 5,
-    totalAmount: "₦1,250,000",
-    rawAmount: 1250000,
-    status: "READY_DISPATCH",
-    paymentStatus: "PAID",
-    deliveryMethod: "STORE_PICKUP",
-    createdAt: "Today at 10:45 AM",
-  },
-  {
-    id: "ORD-9018",
-    orderNumber: "OFIA-2026-9018",
-    tenantSlug: "reedbreed",
-    tenantId: "org-02",
-    customerName: "Engr. Nnamdi Eze",
-    customerEmail: "nnamdi.eze@techcorp.ng",
-    customerPhone: "+234 809 112 3344",
-    channel: "STOREFRONT",
-    itemsSummary: "Apple MacBook Pro 16\" M3 Max (36GB RAM / 1TB SSD)",
-    itemCount: 1,
-    totalAmount: "₦4,350,000",
-    rawAmount: 4350000,
-    status: "CONFIRMED",
-    paymentStatus: "PAID",
-    deliveryMethod: "DISPATCH",
-    shippingAddress: "Block 4, Lekki Phase 1, Lagos",
-    createdAt: "Today at 10:30 AM",
-  },
-];
-
-const SEED_BOOKINGS: CommerceBookingItem[] = [
-  {
-    id: "BK-101",
-    bookingNumber: "TD-88219",
-    tenantSlug: "neweratransports",
-    tenantId: "org-01",
-    customerName: "Dr. Emmanuel Adeleke",
-    customerEmail: "emmanuel.adeleke@gmail.com",
-    customerPhone: "+234 803 456 7890",
-    serviceTitle: "Comprehensive 150-Point Pre-Purchase Mechanical Inspection",
-    dateTime: "Tomorrow at 10:00 AM",
-    status: "CONFIRMED",
-    vertical: "cars",
-    notes: "Customer requested morning slot before noon at showroom.",
-    createdAt: "Today at 08:00 AM",
-  },
-];
+// Fallback Seed Lists (strictly dynamic - zero hardcoded tenant data)
+const SEED_ORDERS: CommerceOrderItem[] = [];
+const SEED_BOOKINGS: CommerceBookingItem[] = [];
 
 function ensureStorageReady() {
   try {
@@ -132,52 +45,32 @@ function ensureStorageReady() {
 }
 
 export async function getErpOrders(tenantSlug?: string): Promise<CommerceOrderItem[]> {
+  if (!tenantSlug) return [];
   ensureStorageReady();
-  const sql = await getTenantSql(tenantSlug || "");
-  const clean = tenantSlug ? tenantSlug.toLowerCase().trim() : null;
+  const clean = tenantSlug.toLowerCase().trim();
+  const sql = await getTenantSql(clean);
 
   // 1. Query Neon PostgreSQL database
   if (sql) {
     try {
-      let rows: any[] = [];
-      if (clean) {
-        rows = await sql`
-          SELECT id, order_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
-                 customer_name, COALESCE(customer_email, '') as customer_email,
-                 customer_phone, channel, status, payment_status, delivery_method,
-                 COALESCE(shipping_address, '') as shipping_address,
-                 COALESCE(city, 'Lagos') as city,
-                 COALESCE(payment_method, 'card') as payment_method,
-                 COALESCE(items_summary, '') as items_summary,
-                 item_count, total_amount, raw_amount,
-                 COALESCE(currency, '₦') as currency,
-                 COALESCE(items, '[]'::jsonb) as items,
-                 COALESCE(notes, '') as notes,
-                 created_at, updated_at
-          FROM shop_orders
-          WHERE LOWER(tenant_slug) = ${clean}
-          ORDER BY created_at DESC
-          LIMIT 100
-        `;
-      } else {
-        rows = await sql`
-          SELECT id, order_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
-                 customer_name, COALESCE(customer_email, '') as customer_email,
-                 customer_phone, channel, status, payment_status, delivery_method,
-                 COALESCE(shipping_address, '') as shipping_address,
-                 COALESCE(city, 'Lagos') as city,
-                 COALESCE(payment_method, 'card') as payment_method,
-                 COALESCE(items_summary, '') as items_summary,
-                 item_count, total_amount, raw_amount,
-                 COALESCE(currency, '₦') as currency,
-                 COALESCE(items, '[]'::jsonb) as items,
-                 COALESCE(notes, '') as notes,
-                 created_at, updated_at
-          FROM shop_orders
-          ORDER BY created_at DESC
-          LIMIT 100
-        `;
-      }
+      const rows = await sql`
+        SELECT id, order_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
+               customer_name, COALESCE(customer_email, '') as customer_email,
+               customer_phone, channel, status, payment_status, delivery_method,
+               COALESCE(shipping_address, '') as shipping_address,
+               COALESCE(city, 'Lagos') as city,
+               COALESCE(payment_method, 'card') as payment_method,
+               COALESCE(items_summary, '') as items_summary,
+               item_count, total_amount, raw_amount,
+               COALESCE(currency, '₦') as currency,
+               COALESCE(items, '[]'::jsonb) as items,
+               COALESCE(notes, '') as notes,
+               created_at, updated_at
+        FROM shop_orders
+        WHERE LOWER(tenant_slug) = ${clean}
+        ORDER BY created_at DESC
+        LIMIT 100
+      `;
 
       if (rows && rows.length > 0) {
         const pgOrders: CommerceOrderItem[] = rows.map((r) => ({
@@ -219,20 +112,17 @@ export async function getErpOrders(tenantSlug?: string): Promise<CommerceOrderIt
     if (fs.existsSync(ORDERS_FILE)) {
       const data = fs.readFileSync(ORDERS_FILE, "utf8");
       const parsed = JSON.parse(data);
-      allOrders = Array.isArray(parsed) && parsed.length > 0 ? parsed : SEED_ORDERS;
+      allOrders = Array.isArray(parsed) && parsed.length > 0 ? parsed : [];
     } else {
-      allOrders = memoryOrders.length > 0 ? memoryOrders : SEED_ORDERS;
+      allOrders = memoryOrders.length > 0 ? memoryOrders : [];
     }
   } catch {
-    allOrders = memoryOrders.length > 0 ? memoryOrders : SEED_ORDERS;
+    allOrders = memoryOrders.length > 0 ? memoryOrders : [];
   }
 
-  if (!tenantSlug) return allOrders;
-  const matched = allOrders.filter(
+  return allOrders.filter(
     (o) => (o.tenantSlug || "").toLowerCase().trim() === clean
   );
-
-  return matched.length > 0 ? matched : allOrders;
 }
 
 export async function saveErpOrder(order: Partial<CommerceOrderItem>): Promise<CommerceOrderItem> {
@@ -323,37 +213,31 @@ export async function updateErpOrderStatus(
   newStatus: CommerceOrderItem["status"],
   tenantSlug?: string
 ): Promise<boolean> {
+  if (!tenantSlug) {
+    throw new Error("tenantSlug is required for multi-tenant isolation");
+  }
   ensureStorageReady();
-  const sql = await getTenantSql(tenantSlug || "");
-  const cleanTenant = tenantSlug ? tenantSlug.toLowerCase().trim() : null;
+  const cleanTenant = tenantSlug.toLowerCase().trim();
+  const sql = await getTenantSql(cleanTenant);
   let matchedOrder: any = null;
 
   // 1. Update Neon PostgreSQL & dispatch customer notification
   if (sql) {
     try {
-      if (cleanTenant) {
-        const rows = await sql`
-          SELECT id, order_number, tenant_slug, tenant_id, customer_name, customer_email, customer_phone, shipping_address
-          FROM shop_orders
-          WHERE (id = ${orderIdOrNum} OR order_number = ${orderIdOrNum})
-            AND LOWER(tenant_slug) = ${cleanTenant}
-          LIMIT 1
-        `;
-        if (rows && rows.length > 0) matchedOrder = rows[0];
-      } else {
-        const rows = await sql`
-          SELECT id, order_number, tenant_slug, tenant_id, customer_name, customer_email, customer_phone, shipping_address
-          FROM shop_orders
-          WHERE id = ${orderIdOrNum} OR order_number = ${orderIdOrNum}
-          LIMIT 1
-        `;
-        if (rows && rows.length > 0) matchedOrder = rows[0];
-      }
+      const rows = await sql`
+        SELECT id, order_number, tenant_slug, tenant_id, customer_name, customer_email, customer_phone, shipping_address
+        FROM shop_orders
+        WHERE (id = ${orderIdOrNum} OR order_number = ${orderIdOrNum})
+          AND LOWER(tenant_slug) = ${cleanTenant}
+        LIMIT 1
+      `;
+      if (rows && rows.length > 0) matchedOrder = rows[0];
 
       await sql`
         UPDATE shop_orders
         SET status = ${newStatus}, updated_at = NOW()
-        WHERE id = ${orderIdOrNum} OR order_number = ${orderIdOrNum}
+        WHERE (id = ${orderIdOrNum} OR order_number = ${orderIdOrNum})
+          AND LOWER(tenant_slug) = ${cleanTenant}
       `;
 
       if (matchedOrder) {
@@ -375,7 +259,7 @@ export async function updateErpOrderStatus(
   }
 
   // 2. Update local sync file
-  const current = await getErpOrders(cleanTenant || undefined);
+  const current = await getErpOrders(cleanTenant);
   let found = false;
 
   const updated = current.map((o) => {
@@ -408,36 +292,24 @@ export async function updateErpOrderStatus(
 }
 
 export async function getErpBookings(tenantSlug?: string): Promise<CommerceBookingItem[]> {
+  if (!tenantSlug) return [];
   ensureStorageReady();
-  const sql = await getTenantSql(tenantSlug || "");
-  const clean = tenantSlug ? tenantSlug.toLowerCase().trim() : null;
+  const clean = tenantSlug.toLowerCase().trim();
+  const sql = await getTenantSql(clean);
 
   // 1. Query Neon PostgreSQL database
   if (sql) {
     try {
-      let rows: any[] = [];
-      if (clean) {
-        rows = await sql`
-          SELECT id, booking_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
-                 customer_name, COALESCE(customer_email, '') as customer_email,
-                 customer_phone, service_title, date_time, status, vertical,
-                 COALESCE(notes, '') as notes, amount, created_at, updated_at
-          FROM shop_bookings
-          WHERE LOWER(tenant_slug) = ${clean}
-          ORDER BY created_at DESC
-          LIMIT 100
-        `;
-      } else {
-        rows = await sql`
-          SELECT id, booking_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
-                 customer_name, COALESCE(customer_email, '') as customer_email,
-                 customer_phone, service_title, date_time, status, vertical,
-                 COALESCE(notes, '') as notes, amount, created_at, updated_at
-          FROM shop_bookings
-          ORDER BY created_at DESC
-          LIMIT 100
-        `;
-      }
+      const rows = await sql`
+        SELECT id, booking_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
+               customer_name, COALESCE(customer_email, '') as customer_email,
+               customer_phone, service_title, date_time, status, vertical,
+               COALESCE(notes, '') as notes, amount, created_at, updated_at
+        FROM shop_bookings
+        WHERE LOWER(tenant_slug) = ${clean}
+        ORDER BY created_at DESC
+        LIMIT 100
+      `;
 
       if (rows && rows.length > 0) {
         const pgBookings: CommerceBookingItem[] = rows.map((r) => ({
@@ -450,6 +322,7 @@ export async function getErpBookings(tenantSlug?: string): Promise<CommerceBooki
           status: r.status,
           notes: r.notes,
           vertical: r.vertical,
+          tenantSlug: r.tenant_slug,
         }));
 
         try {
@@ -469,20 +342,17 @@ export async function getErpBookings(tenantSlug?: string): Promise<CommerceBooki
     if (fs.existsSync(BOOKINGS_FILE)) {
       const data = fs.readFileSync(BOOKINGS_FILE, "utf8");
       const parsed = JSON.parse(data);
-      allBookings = Array.isArray(parsed) && parsed.length > 0 ? parsed : SEED_BOOKINGS;
+      allBookings = Array.isArray(parsed) && parsed.length > 0 ? parsed : [];
     } else {
-      allBookings = memoryBookings.length > 0 ? memoryBookings : SEED_BOOKINGS;
+      allBookings = memoryBookings.length > 0 ? memoryBookings : [];
     }
   } catch {
-    allBookings = memoryBookings.length > 0 ? memoryBookings : SEED_BOOKINGS;
+    allBookings = memoryBookings.length > 0 ? memoryBookings : [];
   }
 
-  if (!tenantSlug) return allBookings;
-  const matched = allBookings.filter(
+  return allBookings.filter(
     (b) => (b.tenantSlug || "").toLowerCase().trim() === clean
   );
-
-  return matched.length > 0 ? matched : allBookings;
 }
 
 export async function saveErpBooking(booking: Partial<CommerceBookingItem>): Promise<CommerceBookingItem> {
@@ -531,7 +401,7 @@ export async function saveErpBooking(booking: Partial<CommerceBookingItem>): Pro
   }
 
   // 2. Save to local sync file
-  const current = await getErpBookings();
+  const current = await getErpBookings(slug);
   const filtered = current.filter((b) => b.id !== newBooking.id);
   const updated = [newBooking, ...filtered];
   try {
@@ -545,10 +415,15 @@ export async function saveErpBooking(booking: Partial<CommerceBookingItem>): Pro
 
 export async function updateErpBookingStatus(
   bookingIdOrNum: string,
-  newStatus: CommerceBookingItem["status"]
+  newStatus: CommerceBookingItem["status"],
+  tenantSlug: string
 ): Promise<boolean> {
+  if (!tenantSlug) {
+    throw new Error("tenantSlug is required for multi-tenant isolation");
+  }
   ensureStorageReady();
-  const sql = getSql();
+  const cleanSlug = tenantSlug.toLowerCase().trim();
+  const sql = await getTenantSql(cleanSlug);
 
   // 1. Update Neon PostgreSQL
   if (sql) {
@@ -556,7 +431,8 @@ export async function updateErpBookingStatus(
       await sql`
         UPDATE shop_bookings
         SET status = ${newStatus}, updated_at = NOW()
-        WHERE id = ${bookingIdOrNum} OR booking_number = ${bookingIdOrNum}
+        WHERE (id = ${bookingIdOrNum} OR booking_number = ${bookingIdOrNum})
+          AND LOWER(tenant_slug) = ${cleanSlug}
       `;
     } catch (err) {
       console.warn("[Commerce Store] Neon booking status update failed:", err);
@@ -564,7 +440,27 @@ export async function updateErpBookingStatus(
   }
 
   // 2. Update local sync file
-  const current = await getErpBookings();
+  const current = await getErpBookings(cleanSlug);
+  let found = false;
+
+  const updated = current.map((b) => {
+    if (b.id === bookingIdOrNum || (b as any).bookingNumber === bookingIdOrNum) {
+      found = true;
+      return { ...b, status: newStatus };
+    }
+    return b;
+  });
+
+  if (found) {
+    try {
+      fs.writeFileSync(BOOKINGS_FILE, JSON.stringify(updated, null, 2), "utf8");
+    } catch {
+      memoryBookings = updated;
+    }
+  }
+
+  return found;
+}
   let found = false;
 
   const updated = current.map((b) => {

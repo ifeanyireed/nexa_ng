@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { neon } from "@neondatabase/serverless";
+import { getTenantSql } from "@/lib/tenant-db-resolver";
 
 export const dynamic = "force-dynamic";
 
@@ -8,23 +8,6 @@ const ERP_BASE =
   process.env.ERP_SERVICE_URL ||
   process.env.NEXT_PUBLIC_ERP_SERVICE_URL ||
   "https://ofia-erp-service.onrender.com";
-
-const NEON_CONNECTION_STRING =
-  process.env.DATABASE_URL ||
-  process.env.POSTGRES_URL ||
-  process.env.NEON_DATABASE_URL ||
-  "postgresql://neondb_owner:npg_YBd2DvyRxTG7@ep-falling-star-b4lrdr76-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
-
-function getSql() {
-  try {
-    if (NEON_CONNECTION_STRING) {
-      return neon(NEON_CONNECTION_STRING);
-    }
-  } catch (err) {
-    console.warn("[Reset Password] Neon SQL init warning:", err);
-  }
-  return null;
-}
 
 export async function POST(request: Request) {
   try {
@@ -51,8 +34,15 @@ export async function POST(request: Request) {
     const effectiveTenantSlug = (
       tenantSlug ||
       request.headers.get("x-tenant-slug") ||
-      "neweratransports"
-    ).trim();
+      ""
+    ).trim().toLowerCase();
+
+    if (!effectiveTenantSlug) {
+      return NextResponse.json(
+        { error: "tenant parameter is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
 
     if (!normalizedEmail && !targetUserId) {
       return NextResponse.json(
@@ -71,22 +61,20 @@ export async function POST(request: Request) {
 
     const hashedPassword = bcrypt.hashSync(newPassword, 10);
 
-    // 1. Direct PostgreSQL Neon update if table 'users' is present
+    // 1. Direct PostgreSQL Neon update using tenant's dedicated database
     let directDbUpdated = false;
-    const sql = getSql();
-    if (sql) {
-      try {
-        if (normalizedEmail) {
-          await sql`
-            UPDATE users
-            SET password_hash = ${hashedPassword}, updated_at = NOW()
-            WHERE LOWER(email) = ${normalizedEmail}
-          `;
-          directDbUpdated = true;
-        }
-      } catch (dbErr) {
-        // Table or schema differ, continue gracefully
+    try {
+      const sql = await getTenantSql(effectiveTenantSlug);
+      if (sql && normalizedEmail) {
+        await sql`
+          UPDATE users
+          SET password_hash = ${hashedPassword}, updated_at = NOW()
+          WHERE LOWER(email) = ${normalizedEmail}
+        `;
+        directDbUpdated = true;
       }
+    } catch (dbErr) {
+      // Table or schema differ, continue gracefully with microservice sync
     }
 
     // 2. Fetch existing user details if required fields (name, role, department) are missing
@@ -95,7 +83,7 @@ export async function POST(request: Request) {
     let targetDepartment = (department || body.Department || "").trim();
     let targetDesignation = (designation || body.Designation || targetDepartment || "").trim();
     let targetAvatar = (avatar || body.Avatar || "/character1.jpg").trim();
-    let targetCompany = (company || body.Company || "Corporate Staff").trim();
+    let targetCompany = (company || body.Company || effectiveTenantSlug.toUpperCase()).trim();
     let targetLocation = (location || body.Location || "Lagos, Nigeria").trim();
     let targetPages = assignedPages || body.assignedPages || [];
 
@@ -126,7 +114,7 @@ export async function POST(request: Request) {
                 targetDesignation =
                   matched.designation || matched.Designation || targetDepartment;
               if (!targetAvatar) targetAvatar = matched.avatar || matched.Avatar || "/character1.jpg";
-              if (!targetCompany) targetCompany = matched.company || matched.Company || "Corporate Staff";
+              if (!targetCompany) targetCompany = matched.company || matched.Company || effectiveTenantSlug.toUpperCase();
               if (!targetLocation) targetLocation = matched.location || matched.Location || "Lagos, Nigeria";
             }
           }

@@ -110,12 +110,7 @@ export function extractSubdomainOrParam(searchParamSlug?: string | null): string
   return "";
 }
 
-const DEFAULT_TENANT_ADMINS: Record<string, { name: string; email: string }> = {
-  neweratransports: { name: "Ifeanyi Felix", email: "netslogistics1@gmail.com" },
-  "org-01": { name: "Ifeanyi Felix", email: "netslogistics1@gmail.com" },
-  "edusuite-ng": { name: "Ifeanyi Felix", email: "netslogistics1@gmail.com" },
-  "1aa8c687-b71d-4188-9de2-371aa5dfa9e6": { name: "Ifeanyi Felix", email: "netslogistics1@gmail.com" },
-};
+const DEFAULT_TENANT_ADMINS: Record<string, { name: string; email: string }> = {};
 
 export const DEFAULT_TENANT_BRANDING: Record<
   string,
@@ -128,44 +123,7 @@ export const DEFAULT_TENANT_BRANDING: Record<
     heroTitle?: string;
     heroSubtitle?: string;
   }
-> = {
-  neweratransports: {
-    logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
-    favicon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
-    primaryColor: "#0069FF",
-    secondaryColor: "#0E9F6E",
-    loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
-    heroTitle: "Powering next-generation transport, logistics & fleet intelligence.",
-    heroSubtitle: "Real-time zonal dispatch, fleet telemetry, manifest auditing, and ledger reconciliation in one synchronized ecosystem.",
-  },
-  "org-01": {
-    logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
-    favicon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
-    primaryColor: "#0069FF",
-    secondaryColor: "#0E9F6E",
-    loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
-    heroTitle: "Powering next-generation transport, logistics & fleet intelligence.",
-    heroSubtitle: "Real-time zonal dispatch, fleet telemetry, manifest auditing, and ledger reconciliation in one synchronized ecosystem.",
-  },
-  "edusuite-ng": {
-    logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
-    favicon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
-    primaryColor: "#0069FF",
-    secondaryColor: "#0E9F6E",
-    loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
-    heroTitle: "Empowering schools, educators & learners across Africa.",
-    heroSubtitle: "Automated student grading, fee collections, biometric attendance, and curriculum tracking.",
-  },
-  "1aa8c687-b71d-4188-9de2-371aa5dfa9e6": {
-    logo: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
-    favicon: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
-    primaryColor: "#0069FF",
-    secondaryColor: "#0E9F6E",
-    loginImage: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
-    heroTitle: "Powering next-generation transport, logistics & fleet intelligence.",
-    heroSubtitle: "Real-time zonal dispatch, fleet telemetry, manifest auditing, and ledger reconciliation in one synchronized ecosystem.",
-  },
-};
+> = {};
 
 /**
  * Dynamically applies a tenant's brand colors to CSS variables and updates the browser tab favicon

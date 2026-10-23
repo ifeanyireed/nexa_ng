@@ -623,11 +623,12 @@ function UserManagementContent() {
 
     try {
       setIsResettingPassword(true);
+      const effectiveSlug = activeTenant?.slug || getActiveTenantSlug();
       const res = await fetch("/api/erp/users/reset-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(activeTenant?.slug ? { "x-tenant-slug": activeTenant.slug } : {}),
+          ...(effectiveSlug ? { "x-tenant-slug": effectiveSlug } : {}),
         },
         body: JSON.stringify({
           ...resetModalUser,
@@ -642,7 +643,7 @@ function UserManagementContent() {
           location: resetModalUser.location,
           assignedPages: resetModalUser.assignedPages,
           password: resetPasswordValue || "12345678",
-          tenantSlug: activeTenant?.slug,
+          tenantSlug: effectiveSlug,
         }),
       });
 

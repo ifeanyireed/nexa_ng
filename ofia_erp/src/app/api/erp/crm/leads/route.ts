@@ -11,6 +11,13 @@ const ERP_BASE =
 export async function GET(request: Request) {
   try {
     const tenantSlug = getValidatedTenantSlug(request);
+    if (!tenantSlug) {
+      return NextResponse.json(
+        { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
+
     const res = await fetch(`${ERP_BASE}/crm/leads?tenant=${encodeURIComponent(tenantSlug)}`, {
       cache: "no-store",
       headers: {
@@ -30,6 +37,13 @@ export async function POST(request: Request) {
     const bodyText = await request.text();
     const parsed = JSON.parse(bodyText || "{}");
     const tenantSlug = getValidatedTenantSlug(request, parsed);
+
+    if (!tenantSlug) {
+      return NextResponse.json(
+        { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
 
     const res = await fetch(`${ERP_BASE}/crm/leads?tenant=${encodeURIComponent(tenantSlug)}`, {
       method: "POST",
@@ -53,6 +67,13 @@ export async function PATCH(request: Request) {
     const parsed = JSON.parse(bodyText || "{}");
     const tenantSlug = getValidatedTenantSlug(request, parsed);
 
+    if (!tenantSlug) {
+      return NextResponse.json(
+        { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
+
     const res = await fetch(`${ERP_BASE}/crm/leads?tenant=${encodeURIComponent(tenantSlug)}`, {
       method: "PATCH",
       headers: {
@@ -74,6 +95,13 @@ export async function DELETE(request: Request) {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
     const tenantSlug = getValidatedTenantSlug(request);
+
+    if (!tenantSlug) {
+      return NextResponse.json(
+        { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
 
     if (!id) {
       return NextResponse.json({ error: "Lead ID is required" }, { status: 400 });

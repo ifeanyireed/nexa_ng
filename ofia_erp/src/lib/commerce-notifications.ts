@@ -1,4 +1,4 @@
-import { neon } from "@neondatabase/serverless";
+import { getTenantSql } from "./tenant-db-resolver";
 
 export interface OrderNotificationPayload {
   orderId?: string;
@@ -12,23 +12,6 @@ export interface OrderNotificationPayload {
   shippingAddress?: string;
 }
 
-const NEON_CONNECTION_STRING =
-  process.env.DATABASE_URL ||
-  process.env.POSTGRES_URL ||
-  process.env.NEON_DATABASE_URL ||
-  "postgresql://neondb_owner:npg_YBd2DvyRxTG7@ep-falling-star-b4lrdr76-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
-
-function getSql() {
-  try {
-    if (NEON_CONNECTION_STRING) {
-      return neon(NEON_CONNECTION_STRING);
-    }
-  } catch (err) {
-    console.warn("[Notifications] Neon SQL initialization warning:", err);
-  }
-  return null;
-}
-
 export async function sendOrderStatusNotification(payload: OrderNotificationPayload): Promise<{
   success: boolean;
   notificationsSent: number;
@@ -38,7 +21,7 @@ export async function sendOrderStatusNotification(payload: OrderNotificationPayl
   }
 
   const cleanSlug = payload.tenantSlug.toLowerCase().trim();
-  const sql = getSql();
+  const sql = await getTenantSql(cleanSlug);
   let sentCount = 0;
 
   const trackingUrl = `https://${cleanSlug}.ofia.ng/order-tracking?ref=${encodeURIComponent(payload.orderNumber)}`;
@@ -102,7 +85,7 @@ export async function sendOrderStatusNotification(payload: OrderNotificationPayl
 export async function getTenantNotifications(tenantSlug: string, orderNumber?: string) {
   if (!tenantSlug) return [];
   const cleanSlug = tenantSlug.toLowerCase().trim();
-  const sql = getSql();
+  const sql = await getTenantSql(cleanSlug);
 
   if (sql) {
     try {

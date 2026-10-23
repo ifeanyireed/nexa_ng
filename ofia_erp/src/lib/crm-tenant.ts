@@ -19,7 +19,7 @@ export function getValidatedTenantSlug(request: Request, body?: any): string {
     }
   } catch {}
 
-  // 4. Host or x-forwarded-host subdomain extraction (e.g. neweratransports.ofia.ng)
+  // 4. Host or x-forwarded-host subdomain extraction (e.g. workspace.ofia.ng)
   const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
   if (host && host.includes(".")) {
     const parts = host.split(":")[0].split(".");
@@ -29,6 +29,14 @@ export function getValidatedTenantSlug(request: Request, body?: any): string {
     }
   }
 
-  // 5. Default isolated tenant space
-  return "default";
+  // 5. Fail closed - Zero hardcoded tenant fallback
+  return "";
+}
+
+export function requireTenantSlug(request: Request, body?: any): string {
+  const slug = getValidatedTenantSlug(request, body);
+  if (!slug) {
+    throw new Error("tenant parameter is required for multi-tenant isolation");
+  }
+  return slug;
 }

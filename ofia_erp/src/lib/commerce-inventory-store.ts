@@ -1,7 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { neon } from "@neondatabase/serverless";
-import { getTenantSql, MASTER_CONNECTION_STRING } from "./tenant-db-resolver";
+import { getTenantSql } from "./tenant-db-resolver";
 
 export interface ShopInventoryItem {
   id: string;
@@ -21,18 +20,6 @@ export interface ShopInventoryItem {
   updatedAt: string;
 }
 
-const NEON_CONNECTION_STRING = MASTER_CONNECTION_STRING;
-
-function getSql() {
-  try {
-    if (NEON_CONNECTION_STRING) {
-      return neon(NEON_CONNECTION_STRING);
-    }
-  } catch (err) {
-    console.warn("[Inventory Store] Neon SQL initialization warning:", err);
-  }
-  return null;
-}
 
 function getSyncDir() {
   const candidates = [

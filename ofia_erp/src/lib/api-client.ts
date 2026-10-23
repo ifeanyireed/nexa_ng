@@ -102,8 +102,9 @@ export const USER_API = {
     return fetchJSON<any>(`${USER_BASE}/organizations/${orgId}`);
   },
 
-  getOrgSubscription: async (orgId = "org-01") => {
-    return fetchJSON<any>(`${USER_BASE}/organizations/${orgId}/subscription`);
+  getOrgSubscription: async (orgId: string) => {
+    if (!orgId) throw new Error("orgId is required");
+    return fetchJSON<any>(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}/subscription`);
   },
 
   getPlanCatalog: async () => {
@@ -111,17 +112,20 @@ export const USER_API = {
   },
 
   updateBYOKKeys: async (orgId: string, data: any) => {
-    return fetchJSON<any>(`${USER_BASE}/organizations/${orgId}/byok`, {
+    if (!orgId) throw new Error("orgId is required");
+    return fetchJSON<any>(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}/byok`, {
       method: "PUT",
       body: JSON.stringify(data),
     });
   },
 
-  getTenantRBAC: async (orgId = "default") => {
+  getTenantRBAC: async (orgId: string) => {
+    if (!orgId) throw new Error("orgId is required");
     return fetchJSON<{ tenant_id: string; matrix: any }>(`/api/organizations/${encodeURIComponent(orgId)}/rbac`);
   },
 
-  saveTenantRBAC: async (orgId = "default", matrix: any) => {
+  saveTenantRBAC: async (orgId: string, matrix: any) => {
+    if (!orgId) throw new Error("orgId is required");
     return fetchJSON<{ success: boolean; message: string; tenant_id: string; matrix: any }>(
       `/api/organizations/${encodeURIComponent(orgId)}/rbac`,
       {
@@ -131,11 +135,13 @@ export const USER_API = {
     );
   },
 
-  getTenantDepartmentAccess: async (orgId = "default") => {
+  getTenantDepartmentAccess: async (orgId: string) => {
+    if (!orgId) throw new Error("orgId is required");
     return fetchJSON<any[]>(`/api/organizations/${encodeURIComponent(orgId)}/departments/access`);
   },
 
-  saveTenantDepartmentAccess: async (orgId = "default", departments: any[]) => {
+  saveTenantDepartmentAccess: async (orgId: string, departments: any[]) => {
+    if (!orgId) throw new Error("orgId is required");
     return fetchJSON<{ success: boolean; message: string; departments: any[] }>(
       `/api/organizations/${encodeURIComponent(orgId)}/departments/access`,
       {

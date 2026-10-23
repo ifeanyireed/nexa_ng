@@ -30,7 +30,6 @@ export function publishCommerceEvent(tenantSlug: string, event: Omit<CommerceStr
   };
 
   emitter.emit(`commerce:${cleanSlug}`, payload);
-  emitter.emit("commerce:global", payload);
 }
 
 export function subscribeCommerceEvents(

@@ -32,7 +32,8 @@ function getTenantSlug(request: Request, url: URL, bodyText?: string): string {
     }
   }
 
-  return "neweratransports";
+  // Fail closed - zero hardcoded fallback tenant
+  return "";
 }
 
 export async function GET(
@@ -44,6 +45,13 @@ export async function GET(
   const subPath = path.join("/");
   const url = new URL(request.url);
   const tenantSlug = getTenantSlug(request, url);
+
+  if (!tenantSlug) {
+    return NextResponse.json(
+      { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+      { status: 400 }
+    );
+  }
 
   const targetUrl = `${ERP_BASE}/${subPath}${url.search}`;
   try {
@@ -85,6 +93,13 @@ export async function POST(
   const body = await request.text();
   const tenantSlug = getTenantSlug(request, url, body);
 
+  if (!tenantSlug) {
+    return NextResponse.json(
+      { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+      { status: 400 }
+    );
+  }
+
   const targetUrl = `${ERP_BASE}/${subPath}${url.search}`;
   try {
     const headers: Record<string, string> = {
@@ -124,6 +139,13 @@ export async function PUT(
   const body = await request.text();
   const tenantSlug = getTenantSlug(request, url, body);
 
+  if (!tenantSlug) {
+    return NextResponse.json(
+      { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+      { status: 400 }
+    );
+  }
+
   const targetUrl = `${ERP_BASE}/${subPath}${url.search}`;
   try {
     const headers: Record<string, string> = {
@@ -161,6 +183,13 @@ export async function DELETE(
   const subPath = path.join("/");
   const url = new URL(request.url);
   const tenantSlug = getTenantSlug(request, url);
+
+  if (!tenantSlug) {
+    return NextResponse.json(
+      { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+      { status: 400 }
+    );
+  }
 
   const targetUrl = `${ERP_BASE}/${subPath}${url.search}`;
   try {

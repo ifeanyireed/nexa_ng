@@ -74,11 +74,12 @@ export default function OmnichannelOrdersPage() {
       prev.map((o) => (o.id === id || o.orderNumber === id ? { ...o, status: newStatus } : o))
     );
 
+    const slug = activeTenant?.slug;
     try {
       await fetch("/api/erp/shop/orders", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: id, status: newStatus }),
+        body: JSON.stringify({ orderId: id, status: newStatus, tenantSlug: slug }),
       });
     } catch {
       // Re-fetch on error

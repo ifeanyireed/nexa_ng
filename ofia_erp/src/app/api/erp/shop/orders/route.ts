@@ -5,10 +5,17 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const tenantSlug = searchParams.get("tenant") || searchParams.get("slug");
+  const tenantSlug = searchParams.get("tenant") || searchParams.get("slug") || request.headers.get("x-tenant-slug");
+
+  if (!tenantSlug) {
+    return NextResponse.json(
+      { success: false, error: "tenant parameter is required" },
+      { status: 400 }
+    );
+  }
 
   try {
-    const orders = await getErpOrders(tenantSlug || undefined);
+    const orders = await getErpOrders(tenantSlug);
     return NextResponse.json({ success: true, count: orders.length, orders });
   } catch (err: any) {
     return NextResponse.json(
@@ -21,6 +28,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const tenantSlug = body.tenantSlug || request.headers.get("x-tenant-slug");
+
+    if (!tenantSlug) {
+      return NextResponse.json(
+        { success: false, error: "tenantSlug is required" },
+        { status: 400 }
+      );
+    }
 
     if (!body.customerName || !body.customerPhone) {
       return NextResponse.json(
@@ -29,7 +44,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const saved = await saveErpOrder(body);
+    const saved = await saveErpOrder({ ...body, tenantSlug });
     return NextResponse.json({ success: true, order: saved }, { status: 201 });
   } catch (err: any) {
     return NextResponse.json(
@@ -43,6 +58,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
     const { orderId, status } = body;
+    const tenantSlug = body.tenantSlug || request.headers.get("x-tenant-slug") || undefined;
 
     if (!orderId || !status) {
       return NextResponse.json(
@@ -51,7 +67,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const updated = await updateErpOrderStatus(orderId, status);
+    const updated = await updateErpOrderStatus(orderId, status, tenantSlug);
     return NextResponse.json({ success: updated });
   } catch (err: any) {
     return NextResponse.json(

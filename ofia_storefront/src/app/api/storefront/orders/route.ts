@@ -47,6 +47,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const rawTenant = body.tenantSlug || request.headers.get("x-tenant-slug");
+    if (!rawTenant) {
+      return NextResponse.json(
+        { success: false, error: "tenantSlug is required" },
+        { status: 400 }
+      );
+    }
+    const tenantSlug = rawTenant.toLowerCase().trim();
+
     const orderNumber =
       body.orderNumber || `OFIA-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const orderId = body.id || `ORD-${Date.now().toString().slice(-6)}`;
@@ -54,8 +63,8 @@ export async function POST(request: NextRequest) {
     const newOrder: StorefrontOrderPayload = {
       id: orderId,
       orderNumber: orderNumber,
-      tenantSlug: (body.tenantSlug || "neweratransports").toLowerCase().trim(),
-      tenantId: body.tenantId || `org-${body.tenantSlug || "neweratransports"}`,
+      tenantSlug: tenantSlug,
+      tenantId: body.tenantId || `org-${tenantSlug}`,
       customerName: body.customerName,
       customerEmail: body.customerEmail || "",
       customerPhone: body.customerPhone,

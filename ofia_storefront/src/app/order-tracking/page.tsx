@@ -45,10 +45,10 @@ function TrackingContent() {
   const [secondsAgo, setSecondsAgo] = useState(0);
 
   // Return navigation details
-  const activeTenantSlug = order?.tenantSlug || tenantParam || "neweratransports";
+  const activeTenantSlug = order?.tenantSlug || tenantParam || "";
   const returnHref = activeTenantSlug ? `/?tenant=${encodeURIComponent(activeTenantSlug)}` : "/";
   const storeDisplayName =
-    store?.name || handshake?.storefrontConfig?.storeName || activeTenantSlug.toUpperCase();
+    store?.name || handshake?.storefrontConfig?.storeName || (activeTenantSlug ? activeTenantSlug.toUpperCase() : "Storefront");
 
   // Fetch live order details from Lakebase PostgreSQL via Storefront Orders API
   const fetchOrderDetails = useCallback(

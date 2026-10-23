@@ -35,12 +35,20 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Go binaries
+# Go binaries and build artifacts
 service_ai/ai_gtm_service
 service_marketplace/marketplace_service
 service_users/user_subscription_service
 service_logistics/logistics_service
 service_erp/service_erp
+bin/
+*/bin/
+*/bin/*
+server
+*/server
+tmp/
+*/tmp/
+*/tmp/*
 *.exe
 *.test
 *.sql

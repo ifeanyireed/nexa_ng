@@ -3,13 +3,20 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func main() {
-	reedbreedDB := "postgresql://neondb_owner:npg_Nw9HiC5DWeXJ@ep-jolly-art-b47p157j-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+	reedbreedDB := os.Getenv("TENANT_DB_REEDBREED")
+	if reedbreedDB == "" {
+		reedbreedDB = os.Getenv("DATABASE_URL")
+	}
+	if reedbreedDB == "" {
+		log.Fatal("DATABASE_URL or TENANT_DB_REEDBREED environment variable is required")
+	}
 	db, err := gorm.Open(postgres.New(postgres.Config{
 		DSN:                  reedbreedDB,
 		PreferSimpleProtocol: true,

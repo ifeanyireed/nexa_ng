@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 	"time"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -20,12 +21,14 @@ func init() {
 }
 
 func connectDB() (*gorm.DB, error) {
-	dsnList := []string{
-		"u721451974_nexa:*Reedb4b4@tcp(srv2113.hstgr.io:3306)/u721451974_nexa_db?charset=utf8mb4&parseTime=True&loc=Local&tls=preferred&timeout=15s",
-		"u721451974_nexa:*Reedb4b4@tcp(77.37.35.183:3306)/u721451974_nexa_db?charset=utf8mb4&parseTime=True&loc=Local&tls=preferred&timeout=15s",
-		"u721451974_nexa:*Reedb4b4@tcp(srv2113.hstgr.io:3306)/u721451974_nexa_db?charset=utf8mb4&parseTime=True&loc=Local&tls=custom-skip&timeout=15s",
-		"u721451974_nexa:*Reedb4b4@tcp(srv2113.hstgr.io:3306)/u721451974_nexa_db?charset=utf8mb4&parseTime=True&loc=Local&tls=false&timeout=15s",
+	envDSN := os.Getenv("DATABASE_URL")
+	if envDSN == "" {
+		envDSN = os.Getenv("DB_DSN")
 	}
+	if envDSN == "" {
+		return nil, fmt.Errorf("DATABASE_URL or DB_DSN environment variable is required")
+	}
+	dsnList := []string{envDSN}
 
 	var lastErr error
 	for i, dsn := range dsnList {

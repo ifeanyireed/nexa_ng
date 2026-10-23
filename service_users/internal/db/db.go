@@ -77,19 +77,29 @@ func InitDB() *gorm.DB {
 	seedSuperAdmins(DB)
 	seedBlogContent(DB)
 
-	// Seed neweratransports dedicated project infrastructure if not present
-	var existingInfra models.TenantInfrastructure
-	if err := DB.Where("tenant_slug = ?", "neweratransports").First(&existingInfra).Error; err != nil {
-		DB.Create(&models.TenantInfrastructure{
-			TenantSlug:      "neweratransports",
-			DatabaseURL:     "postgresql://neondb_owner:npg_C7HvEVY5Nruo@ep-tiny-block-b53y1iw8-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
-			CloudinaryURL:   "cloudinary://768523141117821:KeVQI7I7tuGlCxUIdWC9M6RdWjg@wnmabxiy",
-			IsCustomDB:      true,
-			IsCustomStorage: true,
-			MigrationStatus: "COMPLETED",
-			CreatedAt:       time.Now(),
-			UpdatedAt:       time.Now(),
-		})
+	// Seed neweratransports dedicated project infrastructure if configured via env
+	neweraDB := os.Getenv("TENANT_DB_NEWERATRANSPORTS")
+	if neweraDB == "" {
+		neweraDB = os.Getenv("NEWERATRANSPORTS_DATABASE_URL")
+	}
+	neweraCloudinary := os.Getenv("TENANT_CLOUDINARY_NEWERATRANSPORTS")
+	if neweraCloudinary == "" {
+		neweraCloudinary = os.Getenv("NEWERATRANSPORTS_CLOUDINARY_URL")
+	}
+	if neweraDB != "" || neweraCloudinary != "" {
+		var existingInfra models.TenantInfrastructure
+		if err := DB.Where("tenant_slug = ?", "neweratransports").First(&existingInfra).Error; err != nil {
+			DB.Create(&models.TenantInfrastructure{
+				TenantSlug:      "neweratransports",
+				DatabaseURL:     neweraDB,
+				CloudinaryURL:   neweraCloudinary,
+				IsCustomDB:      neweraDB != "",
+				IsCustomStorage: neweraCloudinary != "",
+				MigrationStatus: "COMPLETED",
+				CreatedAt:       time.Now(),
+				UpdatedAt:       time.Now(),
+			})
+		}
 	}
 
 	log.Println("Database connection initialized successfully for service_users")

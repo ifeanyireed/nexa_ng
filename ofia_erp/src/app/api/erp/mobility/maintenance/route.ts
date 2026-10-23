@@ -19,7 +19,7 @@ const NEON_CONNECTION_STRING =
   process.env.DATABASE_URL ||
   process.env.POSTGRES_URL ||
   process.env.NEON_DATABASE_URL ||
-  "postgresql://neondb_owner:npg_PlmqORh64gNG@ep-steep-bar-ayq6g77r-pooler.c-5.us-east-2.aws.neon.tech/neondb?sslmode=require";
+  "";
 
 function getNeonSql() {
   try {

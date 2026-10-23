@@ -5,13 +5,13 @@
 
 return [
     // API Authentication Key (Generate a secure random string)
-    'api_key' => 'ep_live_6f3b92d8a4c1e7f50b4a1d9c2e8f7a3b',
+    'api_key' => 'ep_live_sample_token',
 
     // SMTP Configuration (Hostinger / ResultsPro SMTP)
-    'smtp_host'     => 'mail.resultspro.ng', 
+    'smtp_host'     => 'mail.example.com', 
     'smtp_auth'     => true,                 
-    'smtp_username' => 'hello@resultspro.ng',
-    'smtp_password' => '*Reedb4b4',
+    'smtp_username' => 'hello@example.com',
+    'smtp_password' => 'your_smtp_password_here',
     // ENCRYPTION_STARTTLS (587) or ENCRYPTION_SMTPS (465)
     'smtp_secure'   => PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS, 
     'smtp_port'     => 465,

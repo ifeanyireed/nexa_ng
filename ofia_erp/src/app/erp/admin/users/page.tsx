@@ -630,8 +630,17 @@ function UserManagementContent() {
           ...(activeTenant?.slug ? { "x-tenant-slug": activeTenant.slug } : {}),
         },
         body: JSON.stringify({
+          ...resetModalUser,
           userId: resetModalUser.id,
           email: resetModalUser.email,
+          name: resetModalUser.name,
+          role: resetModalUser.role,
+          department: resetModalUser.department,
+          designation: resetModalUser.designation,
+          avatar: resetModalUser.avatar,
+          company: resetModalUser.company,
+          location: resetModalUser.location,
+          assignedPages: resetModalUser.assignedPages,
           password: resetPasswordValue || "12345678",
           tenantSlug: activeTenant?.slug,
         }),
@@ -682,34 +691,32 @@ function UserManagementContent() {
   const getRoleBadge = (role: RoleKey) => {
     switch (role) {
       case "admin":
-        return <NexaBadge variant="red" size="sm" className="rounded-full">Admin</NexaBadge>;
+        return <NexaBadge variant="neutral" size="sm" className="rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">Admin</NexaBadge>;
       case "md":
-        return <NexaBadge variant="brand" size="sm" className="rounded-full bg-purple-500/10 text-purple-600 border border-purple-500/20">MD (Exec)</NexaBadge>;
+        return <NexaBadge variant="neutral" size="sm" className="rounded-full bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">MD (Exec)</NexaBadge>;
       case "hr":
-        return <NexaBadge variant="green" size="sm" className="rounded-full">HR Lead</NexaBadge>;
+        return <NexaBadge variant="neutral" size="sm" className="rounded-full bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20">HR Lead</NexaBadge>;
       case "manager":
-        return <NexaBadge variant="brand" size="sm" className="rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20">Manager</NexaBadge>;
+        return <NexaBadge variant="neutral" size="sm" className="rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">Manager</NexaBadge>;
       case "accountant":
-        return <NexaBadge variant="neutral" size="sm" className="rounded-full bg-teal-500/10 text-teal-600 border border-teal-500/20">Accountant</NexaBadge>;
+        return <NexaBadge variant="neutral" size="sm" className="rounded-full bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20">Accountant</NexaBadge>;
       case "marketer":
-        return <NexaBadge variant="neutral" size="sm" className="rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">Marketer</NexaBadge>;
+        return <NexaBadge variant="neutral" size="sm" className="rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">Marketer</NexaBadge>;
       case "sales_closer":
-        return (
-          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50 inline-flex items-center">
-            Sales Closer
-          </span>
-        );
+        return <NexaBadge variant="neutral" size="sm" className="rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">Sales Closer</NexaBadge>;
       case "employee":
-        return (
-          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200 dark:border-sky-800/50 inline-flex items-center">
-            Employee
-          </span>
-        );
+        return <NexaBadge variant="neutral" size="sm" className="rounded-full bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">Employee</NexaBadge>;
+      case "dispatcher":
+        return <NexaBadge variant="neutral" size="sm" className="rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20">Dispatcher</NexaBadge>;
+      case "cashier":
+        return <NexaBadge variant="neutral" size="sm" className="rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">Cashier</NexaBadge>;
+      case "inventory_officer":
+        return <NexaBadge variant="neutral" size="sm" className="rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">Inventory Officer</NexaBadge>;
       default:
         return (
-          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 inline-flex items-center capitalize">
-            {role.replace("_", " ")}
-          </span>
+          <NexaBadge variant="neutral" size="sm" className="rounded-full bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20 capitalize">
+            {((role as string) || "user").replace("_", " ")}
+          </NexaBadge>
         );
     }
   };

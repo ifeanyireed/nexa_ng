@@ -10,10 +10,19 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const tenantSlug = searchParams.get("tenant") || searchParams.get("slug");
+  const rawTenant = searchParams.get("tenant") || searchParams.get("slug") || request.headers.get("x-tenant-slug");
+
+  if (!rawTenant) {
+    return NextResponse.json(
+      { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+      { status: 400 }
+    );
+  }
+
+  const tenantSlug = rawTenant.toLowerCase().trim();
 
   try {
-    const bookings = await getStorefrontBookings(tenantSlug || undefined);
+    const bookings = await getStorefrontBookings(tenantSlug);
     return NextResponse.json({ success: true, count: bookings.length, bookings });
   } catch (err: any) {
     return NextResponse.json(
@@ -34,6 +43,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const rawTenant = body.tenantSlug || request.headers.get("x-tenant-slug");
+    if (!rawTenant) {
+      return NextResponse.json(
+        { success: false, error: "tenantSlug is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
+    const tenantSlug = rawTenant.toLowerCase().trim();
+
     const bookingNumber =
       body.bookingNumber || `BK-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const bookingId = body.id || `BK-${Date.now().toString().slice(-6)}`;
@@ -41,8 +59,8 @@ export async function POST(request: NextRequest) {
     const newBooking: StorefrontBookingPayload = {
       id: bookingId,
       bookingNumber: bookingNumber,
-      tenantSlug: (body.tenantSlug || "neweratransports").toLowerCase().trim(),
-      tenantId: body.tenantId || `org-${body.tenantSlug || "neweratransports"}`,
+      tenantSlug: tenantSlug,
+      tenantId: body.tenantId || `org-${tenantSlug}`,
       customerName: body.customerName,
       customerEmail: body.customerEmail || "",
       customerPhone: body.customerPhone,
@@ -66,7 +84,7 @@ export async function POST(request: NextRequest) {
       const erpNextUrl = process.env.ERP_NEXT_URL || "http://localhost:3002";
       const erpServiceUrl = process.env.ERP_SERVICE_URL || "http://localhost:8084";
 
-      // 1. Forward to ERP Next.js API route (saves to Neon via @neondatabase/serverless)
+      // 1. Forward to ERP Next.js API route
       fetch(`${erpNextUrl}/api/erp/shop/bookings?tenant=${encodeURIComponent(newBooking.tenantSlug)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -109,7 +127,20 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const { bookingId, status } = await request.json();
+    const body = await request.json();
+    const { bookingId, status } = body;
+    const rawTenant =
+      body.tenantSlug ||
+      request.nextUrl.searchParams.get("tenant") ||
+      request.headers.get("x-tenant-slug");
+
+    if (!rawTenant) {
+      return NextResponse.json(
+        { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
+
     if (!bookingId || !status) {
       return NextResponse.json(
         { success: false, error: "bookingId and status are required" },
@@ -117,7 +148,11 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const updated = await updateStorefrontBookingStatus(bookingId, status);
+    const updated = await updateStorefrontBookingStatus(
+      bookingId,
+      status,
+      rawTenant.toLowerCase().trim()
+    );
     return NextResponse.json({ success: updated });
   } catch (err: any) {
     return NextResponse.json(

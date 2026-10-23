@@ -26,8 +26,8 @@ export async function GET(request: NextRequest) {
 
   if (!tenantSlug) {
     return NextResponse.json(
-      { error: "No tenant subdomain or parameter provided", isTenantResolved: false },
-      { status: 404 }
+      { error: "tenant parameter is required for multi-tenant isolation", isTenantResolved: false },
+      { status: 400 }
     );
   }
 

@@ -60,6 +60,11 @@ export default function BookTestDrivePage() {
   const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !phone) return;
+    const cleanTenant = (tenantSlug || "").toLowerCase().trim();
+    if (!cleanTenant) {
+      alert("Missing tenant context. Please access storefront using a valid tenant URL.");
+      return;
+    }
     const ref = `TD-${Math.floor(100000 + Math.random() * 900000)}`;
     setBookingRef(ref);
     setConfirmed(true);
@@ -70,7 +75,7 @@ export default function BookTestDrivePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           bookingNumber: ref,
-          tenantSlug: tenantSlug || "neweratransports",
+          tenantSlug: cleanTenant,
           customerName: fullName,
           customerEmail: email,
           customerPhone: phone,

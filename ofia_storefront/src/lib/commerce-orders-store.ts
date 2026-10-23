@@ -1,21 +1,7 @@
 import fs from "fs";
 import path from "path";
-import { neon } from "@neondatabase/serverless";
 import { StorefrontOrderPayload, StorefrontBookingPayload } from "@/types/storefront";
 import { getTenantSql, MASTER_CONNECTION_STRING } from "./tenant-db-resolver";
-
-const NEON_CONNECTION_STRING = MASTER_CONNECTION_STRING;
-
-function getSql() {
-  try {
-    if (NEON_CONNECTION_STRING) {
-      return neon(NEON_CONNECTION_STRING);
-    }
-  } catch (err) {
-    console.warn("[Storefront Commerce Store] Neon SQL initialization warning:", err);
-  }
-  return null;
-}
 
 function getSyncDir() {
   const candidates = [
@@ -37,98 +23,16 @@ const BOOKINGS_FILE = path.join(SYNC_DIR, "bookings.json");
 let memoryOrders: StorefrontOrderPayload[] = [];
 let memoryBookings: StorefrontBookingPayload[] = [];
 
-// Initial Seed Orders for standard test tenants
-const SEED_ORDERS: StorefrontOrderPayload[] = [
-  {
-    id: "ORD-9021",
-    orderNumber: "OFIA-2026-9021",
-    tenantSlug: "neweratransports",
-    tenantId: "org-01",
-    customerName: "Chief Babatunde Alabi",
-    customerEmail: "babatunde.alabi@gmail.com",
-    customerPhone: "+234 802 334 5566",
-    channel: "STOREFRONT",
-    items: [
-      {
-        id: "item-01",
-        productId: "car-001",
-        title: "2024 Mercedes-Benz GLE 450 4MATIC (Executive Edition)",
-        price: 98000000,
-        quantity: 1,
-      },
-    ],
-    itemsSummary: "2024 Mercedes-Benz GLE 450 4MATIC",
-    itemCount: 1,
-    totalAmount: "₦98,000,000",
-    rawAmount: 98000000,
-    status: "IN_PREPARATION",
-    paymentStatus: "PAID",
-    deliveryMethod: "DISPATCH",
-    shippingAddress: "Plot 12, Alexander Road, Ikoyi, Lagos",
-    city: "Lagos",
-    paymentMethod: "card",
-    createdAt: "Today at 09:15 AM",
-  },
-  {
-    id: "ORD-9018",
-    orderNumber: "OFIA-2026-9018",
-    tenantSlug: "reedbreed",
-    tenantId: "org-02",
-    customerName: "Engr. Nnamdi Eze",
-    customerEmail: "nnamdi.eze@techcorp.ng",
-    customerPhone: "+234 809 112 3344",
-    channel: "STOREFRONT",
-    items: [
-      {
-        id: "item-02",
-        productId: "gadget-001",
-        title: "Apple MacBook Pro 16\" M3 Max (36GB RAM / 1TB SSD)",
-        price: 4350000,
-        quantity: 1,
-      },
-    ],
-    itemsSummary: "Apple MacBook Pro 16\" M3 Max",
-    itemCount: 1,
-    totalAmount: "₦4,350,000",
-    rawAmount: 4350000,
-    status: "CONFIRMED",
-    paymentStatus: "PAID",
-    deliveryMethod: "DISPATCH",
-    shippingAddress: "Block 4, Lekki Phase 1, Lagos",
-    city: "Lagos",
-    paymentMethod: "transfer",
-    createdAt: "Today at 10:30 AM",
-  },
-];
-
-const SEED_BOOKINGS: StorefrontBookingPayload[] = [
-  {
-    id: "BK-101",
-    bookingNumber: "TD-88219",
-    tenantSlug: "neweratransports",
-    tenantId: "org-01",
-    customerName: "Dr. Emmanuel Adeleke",
-    customerEmail: "emmanuel.adeleke@gmail.com",
-    customerPhone: "+234 803 456 7890",
-    serviceTitle: "Comprehensive 150-Point Pre-Purchase Mechanical Inspection",
-    dateTime: "Tomorrow at 10:00 AM",
-    status: "CONFIRMED",
-    vertical: "cars",
-    notes: "Customer requested morning slot before noon at showroom.",
-    createdAt: "Today at 08:00 AM",
-  },
-];
-
 function ensureStorageReady() {
   try {
     if (!fs.existsSync(SYNC_DIR)) {
       fs.mkdirSync(SYNC_DIR, { recursive: true });
     }
     if (!fs.existsSync(ORDERS_FILE)) {
-      fs.writeFileSync(ORDERS_FILE, JSON.stringify(SEED_ORDERS, null, 2), "utf8");
+      fs.writeFileSync(ORDERS_FILE, "[]", "utf8");
     }
     if (!fs.existsSync(BOOKINGS_FILE)) {
-      fs.writeFileSync(BOOKINGS_FILE, JSON.stringify(SEED_BOOKINGS, null, 2), "utf8");
+      fs.writeFileSync(BOOKINGS_FILE, "[]", "utf8");
     }
   } catch (err) {
     // If filesystem not writeable, fall back to memory
@@ -179,152 +83,107 @@ function mapRowToStorefrontOrder(r: any): StorefrontOrderPayload {
   };
 }
 
-export async function getStorefrontOrders(tenantSlug?: string): Promise<StorefrontOrderPayload[]> {
+/**
+ * Retrieves orders strictly partitioned by tenantSlug against their dedicated database.
+ */
+export async function getStorefrontOrders(tenantSlug: string): Promise<StorefrontOrderPayload[]> {
   ensureStorageReady();
-  const sql = await getTenantSql(tenantSlug || "");
-  const clean = tenantSlug ? tenantSlug.toLowerCase().trim() : null;
+  const clean = (tenantSlug || "").toLowerCase().trim();
+  if (!clean) return [];
 
-  // 1. Query Neon PostgreSQL
+  const sql = await getTenantSql(clean);
+
+  // 1. Query dedicated Neon PostgreSQL database
   if (sql) {
     try {
-      let rows: any[] = [];
-      if (clean) {
-        rows = await sql`
-          SELECT id, order_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
-                 customer_name, COALESCE(customer_email, '') as customer_email,
-                 customer_phone, channel, status, payment_status, delivery_method,
-                 COALESCE(shipping_address, '') as shipping_address,
-                 COALESCE(city, 'Lagos') as city,
-                 COALESCE(payment_method, 'card') as payment_method,
-                 COALESCE(items_summary, '') as items_summary,
-                 item_count, total_amount, raw_amount,
-                 COALESCE(currency, '₦') as currency,
-                 COALESCE(items, '[]'::jsonb) as items,
-                 COALESCE(notes, '') as notes,
-                 created_at, updated_at
-          FROM shop_orders
-          WHERE LOWER(tenant_slug) = ${clean}
-          ORDER BY created_at DESC
-          LIMIT 100
-        `;
-      } else {
-        rows = await sql`
-          SELECT id, order_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
-                 customer_name, COALESCE(customer_email, '') as customer_email,
-                 customer_phone, channel, status, payment_status, delivery_method,
-                 COALESCE(shipping_address, '') as shipping_address,
-                 COALESCE(city, 'Lagos') as city,
-                 COALESCE(payment_method, 'card') as payment_method,
-                 COALESCE(items_summary, '') as items_summary,
-                 item_count, total_amount, raw_amount,
-                 COALESCE(currency, '₦') as currency,
-                 COALESCE(items, '[]'::jsonb) as items,
-                 COALESCE(notes, '') as notes,
-                 created_at, updated_at
-          FROM shop_orders
-          ORDER BY created_at DESC
-          LIMIT 100
-        `;
-      }
+      const rows = await sql`
+        SELECT id, order_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
+               customer_name, COALESCE(customer_email, '') as customer_email,
+               customer_phone, channel, status, payment_status, delivery_method,
+               COALESCE(shipping_address, '') as shipping_address,
+               COALESCE(city, 'Lagos') as city,
+               COALESCE(payment_method, 'card') as payment_method,
+               COALESCE(items_summary, '') as items_summary,
+               item_count, total_amount, raw_amount,
+               COALESCE(currency, '₦') as currency,
+               COALESCE(items, '[]'::jsonb) as items,
+               COALESCE(notes, '') as notes,
+               created_at, updated_at
+        FROM shop_orders
+        WHERE LOWER(tenant_slug) = ${clean}
+        ORDER BY created_at DESC
+        LIMIT 100
+      `;
 
       if (rows && rows.length > 0) {
-        const pgOrders = rows.map(mapRowToStorefrontOrder);
-        try {
-          fs.writeFileSync(ORDERS_FILE, JSON.stringify(pgOrders, null, 2), "utf8");
-        } catch {}
-        return pgOrders;
+        return rows.map(mapRowToStorefrontOrder);
       }
     } catch (err) {
-      console.warn("[Storefront Commerce Store] Neon orders query failed, using sync cache:", err);
+      console.warn(`[Storefront Commerce Store] Dedicated orders query failed for tenant '${clean}':`, err);
     }
   }
 
-  // 2. Fallback to local sync file cache
-  let allOrders: StorefrontOrderPayload[] = [];
+  // 2. Fallback to local sync file cache strictly partitioned by tenant
   try {
     if (fs.existsSync(ORDERS_FILE)) {
       const data = fs.readFileSync(ORDERS_FILE, "utf8");
       const parsed = JSON.parse(data);
-      allOrders = Array.isArray(parsed) && parsed.length > 0 ? parsed : SEED_ORDERS;
-    } else {
-      allOrders = memoryOrders.length > 0 ? memoryOrders : SEED_ORDERS;
+      if (Array.isArray(parsed)) {
+        return parsed.filter((o) => (o.tenantSlug || "").toLowerCase().trim() === clean);
+      }
     }
-  } catch {
-    allOrders = memoryOrders.length > 0 ? memoryOrders : SEED_ORDERS;
-  }
+  } catch {}
 
-  if (!clean) return allOrders;
-  const filtered = allOrders.filter(
-    (o) => (o.tenantSlug || "").toLowerCase().trim() === clean
-  );
-  return filtered.length > 0 ? filtered : allOrders;
+  return memoryOrders.filter((o) => (o.tenantSlug || "").toLowerCase().trim() === clean);
 }
 
+/**
+ * Retrieves a single order by ID or orderNumber strictly scoped to the tenant.
+ */
 export async function getStorefrontOrderByIdOrRef(
   idOrRef: string,
-  tenantSlug?: string
+  tenantSlug: string
 ): Promise<StorefrontOrderPayload | null> {
   ensureStorageReady();
-  const sql = await getTenantSql(tenantSlug || "");
-  const cleanRef = idOrRef.trim().toLowerCase();
-  const cleanTenant = tenantSlug ? tenantSlug.trim().toLowerCase() : null;
+  const cleanRef = (idOrRef || "").trim().toLowerCase();
+  const cleanTenant = (tenantSlug || "").trim().toLowerCase();
+  if (!cleanRef || !cleanTenant) return null;
 
-  // 1. Direct query in Neon PostgreSQL
+  const sql = await getTenantSql(cleanTenant);
+
+  // 1. Direct query in dedicated Neon PostgreSQL strictly scoped to tenant
   if (sql) {
     try {
-      let rows: any[] = [];
-      if (cleanTenant) {
-        rows = await sql`
-          SELECT id, order_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
-                 customer_name, COALESCE(customer_email, '') as customer_email,
-                 customer_phone, channel, status, payment_status, delivery_method,
-                 COALESCE(shipping_address, '') as shipping_address,
-                 COALESCE(city, 'Lagos') as city,
-                 COALESCE(payment_method, 'card') as payment_method,
-                 COALESCE(items_summary, '') as items_summary,
-                 item_count, total_amount, raw_amount,
-                 COALESCE(currency, '₦') as currency,
-                 COALESCE(items, '[]'::jsonb) as items,
-                 COALESCE(notes, '') as notes,
-                 created_at, updated_at
-          FROM shop_orders
-          WHERE (LOWER(order_number) = ${cleanRef} OR LOWER(id) = ${cleanRef})
-            AND LOWER(tenant_slug) = ${cleanTenant}
-          LIMIT 1
-        `;
-      }
-
-      if (!rows || rows.length === 0) {
-        rows = await sql`
-          SELECT id, order_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
-                 customer_name, COALESCE(customer_email, '') as customer_email,
-                 customer_phone, channel, status, payment_status, delivery_method,
-                 COALESCE(shipping_address, '') as shipping_address,
-                 COALESCE(city, 'Lagos') as city,
-                 COALESCE(payment_method, 'card') as payment_method,
-                 COALESCE(items_summary, '') as items_summary,
-                 item_count, total_amount, raw_amount,
-                 COALESCE(currency, '₦') as currency,
-                 COALESCE(items, '[]'::jsonb) as items,
-                 COALESCE(notes, '') as notes,
-                 created_at, updated_at
-          FROM shop_orders
-          WHERE LOWER(order_number) = ${cleanRef} OR LOWER(id) = ${cleanRef}
-          LIMIT 1
-        `;
-      }
+      const rows = await sql`
+        SELECT id, order_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
+               customer_name, COALESCE(customer_email, '') as customer_email,
+               customer_phone, channel, status, payment_status, delivery_method,
+               COALESCE(shipping_address, '') as shipping_address,
+               COALESCE(city, 'Lagos') as city,
+               COALESCE(payment_method, 'card') as payment_method,
+               COALESCE(items_summary, '') as items_summary,
+               item_count, total_amount, raw_amount,
+               COALESCE(currency, '₦') as currency,
+               COALESCE(items, '[]'::jsonb) as items,
+               COALESCE(notes, '') as notes,
+               created_at, updated_at
+        FROM shop_orders
+        WHERE (LOWER(order_number) = ${cleanRef} OR LOWER(id) = ${cleanRef})
+          AND LOWER(tenant_slug) = ${cleanTenant}
+        LIMIT 1
+      `;
 
       if (rows && rows.length > 0) {
         return mapRowToStorefrontOrder(rows[0]);
       }
     } catch (err) {
-      console.warn("[Storefront Commerce Store] Neon query by ref failed:", err);
+      console.warn(`[Storefront Commerce Store] Query by ref failed for tenant '${cleanTenant}':`, err);
     }
   }
 
-  // 2. Fallback to cached orders
-  const allOrders = await getStorefrontOrders();
-  const match = allOrders.find(
+  // 2. Fallback to cached orders strictly filtered by tenant
+  const tenantOrders = await getStorefrontOrders(cleanTenant);
+  const match = tenantOrders.find(
     (o) =>
       o.id.toLowerCase() === cleanRef ||
       o.orderNumber.toLowerCase() === cleanRef ||
@@ -334,11 +193,19 @@ export async function getStorefrontOrderByIdOrRef(
   return match || null;
 }
 
+/**
+ * Saves a new storefront order strictly into the tenant's dedicated database.
+ */
 export async function saveStorefrontOrder(order: StorefrontOrderPayload): Promise<StorefrontOrderPayload> {
   ensureStorageReady();
-  const sql = await getTenantSql(order.tenantSlug || "");
+  const cleanTenant = (order.tenantSlug || "").toLowerCase().trim();
+  if (!cleanTenant) {
+    throw new Error("[Storefront Commerce Store] tenantSlug is required to save storefront order.");
+  }
 
-  // 1. Save to Neon PostgreSQL
+  const sql = await getTenantSql(cleanTenant);
+
+  // 1. Save to dedicated Neon PostgreSQL database
   if (sql) {
     try {
       await sql`
@@ -348,7 +215,7 @@ export async function saveStorefrontOrder(order: StorefrontOrderPayload): Promis
           shipping_address, city, payment_method, items_summary, item_count,
           total_amount, raw_amount, notes, items, created_at, updated_at
         ) VALUES (
-          ${order.id}, ${order.orderNumber}, ${order.tenantSlug}, ${order.tenantId || ""},
+          ${order.id}, ${order.orderNumber}, ${cleanTenant}, ${order.tenantId || ""},
           ${order.customerName}, ${order.customerEmail || ""}, ${order.customerPhone},
           ${order.channel || "STOREFRONT"}, ${order.status || "IN_PREPARATION"}, ${order.paymentStatus || "PAID"},
           ${order.deliveryMethod || "DISPATCH"}, ${order.shippingAddress || ""}, ${order.city || "Lagos"},
@@ -361,104 +228,108 @@ export async function saveStorefrontOrder(order: StorefrontOrderPayload): Promis
           updated_at = NOW()
       `;
     } catch (err) {
-      console.warn("[Storefront Commerce Store] Neon saveOrder warning:", err);
+      console.warn(`[Storefront Commerce Store] Dedicated saveOrder warning for tenant '${cleanTenant}':`, err);
     }
   }
 
   // 2. Deduplicate and save to local sync file
-  const currentOrders = await getStorefrontOrders();
-  const filtered = currentOrders.filter(
-    (o) => o.id !== order.id && o.orderNumber !== order.orderNumber
-  );
-  const updated = [order, ...filtered];
-
   try {
+    let allOrders: StorefrontOrderPayload[] = [];
+    if (fs.existsSync(ORDERS_FILE)) {
+      const data = fs.readFileSync(ORDERS_FILE, "utf8");
+      allOrders = JSON.parse(data);
+      if (!Array.isArray(allOrders)) allOrders = [];
+    }
+    const filtered = allOrders.filter(
+      (o) => o.id !== order.id && o.orderNumber !== order.orderNumber
+    );
+    const updated = [order, ...filtered];
     fs.writeFileSync(ORDERS_FILE, JSON.stringify(updated, null, 2), "utf8");
   } catch {
-    memoryOrders = updated;
+    memoryOrders = [order, ...memoryOrders.filter((o) => o.id !== order.id)];
   }
 
   return order;
 }
 
+/**
+ * Updates order status strictly scoped to tenant.
+ */
 export async function updateStorefrontOrderStatus(
   orderIdOrNum: string,
   newStatus: StorefrontOrderPayload["status"],
-  tenantSlug?: string
+  tenantSlug: string
 ): Promise<boolean> {
   ensureStorageReady();
-  const sql = await getTenantSql(tenantSlug || "");
+  const cleanTenant = (tenantSlug || "").trim().toLowerCase();
+  const cleanRef = (orderIdOrNum || "").trim();
+  if (!cleanTenant || !cleanRef) return false;
 
-  // 1. Update Neon PostgreSQL
+  const sql = await getTenantSql(cleanTenant);
+
+  // 1. Update dedicated Neon PostgreSQL strictly partitioned by tenant_slug
   if (sql) {
     try {
       await sql`
         UPDATE shop_orders
         SET status = ${newStatus}, updated_at = NOW()
-        WHERE id = ${orderIdOrNum} OR order_number = ${orderIdOrNum}
+        WHERE (id = ${cleanRef} OR order_number = ${cleanRef})
+          AND LOWER(tenant_slug) = ${cleanTenant}
       `;
     } catch (err) {
-      console.warn("[Storefront Commerce Store] Neon update status warning:", err);
+      console.warn(`[Storefront Commerce Store] Update status failed for tenant '${cleanTenant}':`, err);
     }
   }
 
-  // 2. Update local sync file
-  const currentOrders = await getStorefrontOrders();
-  let found = false;
-
-  const updated = currentOrders.map((o) => {
-    if (o.id === orderIdOrNum || o.orderNumber === orderIdOrNum) {
-      found = true;
-      return { ...o, status: newStatus };
+  // 2. Update local sync file for this tenant
+  try {
+    if (fs.existsSync(ORDERS_FILE)) {
+      const data = fs.readFileSync(ORDERS_FILE, "utf8");
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) {
+        const updated = parsed.map((o) => {
+          if (
+            (o.id === cleanRef || o.orderNumber === cleanRef) &&
+            (o.tenantSlug || "").toLowerCase().trim() === cleanTenant
+          ) {
+            return { ...o, status: newStatus };
+          }
+          return o;
+        });
+        fs.writeFileSync(ORDERS_FILE, JSON.stringify(updated, null, 2), "utf8");
+      }
     }
-    return o;
-  });
+  } catch {}
 
-  if (found) {
-    try {
-      fs.writeFileSync(ORDERS_FILE, JSON.stringify(updated, null, 2), "utf8");
-    } catch {
-      memoryOrders = updated;
-    }
-  }
-
-  return found;
+  return true;
 }
 
-export async function getStorefrontBookings(tenantSlug?: string): Promise<StorefrontBookingPayload[]> {
+/**
+ * Retrieves bookings strictly partitioned by tenantSlug.
+ */
+export async function getStorefrontBookings(tenantSlug: string): Promise<StorefrontBookingPayload[]> {
   ensureStorageReady();
-  const sql = await getTenantSql(tenantSlug || "");
-  const clean = tenantSlug ? tenantSlug.toLowerCase().trim() : null;
+  const clean = (tenantSlug || "").toLowerCase().trim();
+  if (!clean) return [];
 
-  // 1. Neon PostgreSQL query
+  const sql = await getTenantSql(clean);
+
+  // 1. Neon PostgreSQL query strictly scoped to tenant
   if (sql) {
     try {
-      let rows: any[] = [];
-      if (clean) {
-        rows = await sql`
-          SELECT id, booking_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
-                 customer_name, COALESCE(customer_email, '') as customer_email,
-                 customer_phone, service_title, date_time, status, vertical,
-                 COALESCE(notes, '') as notes, amount, created_at, updated_at
-          FROM shop_bookings
-          WHERE LOWER(tenant_slug) = ${clean}
-          ORDER BY created_at DESC
-          LIMIT 100
-        `;
-      } else {
-        rows = await sql`
-          SELECT id, booking_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
-                 customer_name, COALESCE(customer_email, '') as customer_email,
-                 customer_phone, service_title, date_time, status, vertical,
-                 COALESCE(notes, '') as notes, amount, created_at, updated_at
-          FROM shop_bookings
-          ORDER BY created_at DESC
-          LIMIT 100
-        `;
-      }
+      const rows = await sql`
+        SELECT id, booking_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
+               customer_name, COALESCE(customer_email, '') as customer_email,
+               customer_phone, service_title, date_time, status, vertical,
+               COALESCE(notes, '') as notes, amount, created_at, updated_at
+        FROM shop_bookings
+        WHERE LOWER(tenant_slug) = ${clean}
+        ORDER BY created_at DESC
+        LIMIT 100
+      `;
 
       if (rows && rows.length > 0) {
-        const pgBookings: StorefrontBookingPayload[] = rows.map((r) => ({
+        return rows.map((r) => ({
           id: r.id,
           bookingNumber: r.booking_number,
           tenantSlug: r.tenant_slug,
@@ -471,48 +342,50 @@ export async function getStorefrontBookings(tenantSlug?: string): Promise<Storef
           status: r.status,
           notes: r.notes,
           vertical: r.vertical,
-          createdAt: r.created_at ? new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "Recently",
+          createdAt: r.created_at
+            ? new Date(r.created_at).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })
+            : "Recently",
         }));
-
-        try {
-          fs.writeFileSync(BOOKINGS_FILE, JSON.stringify(pgBookings, null, 2), "utf8");
-        } catch {}
-
-        return pgBookings;
       }
     } catch (err) {
-      console.warn("[Storefront Commerce Store] Neon bookings query failed, using sync cache:", err);
+      console.warn(`[Storefront Commerce Store] Bookings query failed for tenant '${clean}':`, err);
     }
   }
 
-  // 2. Fallback to local sync file cache
-  let allBookings: StorefrontBookingPayload[] = [];
+  // 2. Fallback to local sync file cache strictly partitioned by tenant
   try {
     if (fs.existsSync(BOOKINGS_FILE)) {
       const data = fs.readFileSync(BOOKINGS_FILE, "utf8");
       const parsed = JSON.parse(data);
-      allBookings = Array.isArray(parsed) && parsed.length > 0 ? parsed : SEED_BOOKINGS;
-    } else {
-      allBookings = memoryBookings.length > 0 ? memoryBookings : SEED_BOOKINGS;
+      if (Array.isArray(parsed)) {
+        return parsed.filter((b) => (b.tenantSlug || "").toLowerCase().trim() === clean);
+      }
     }
-  } catch {
-    allBookings = memoryBookings.length > 0 ? memoryBookings : SEED_BOOKINGS;
-  }
+  } catch {}
 
-  if (!clean) return allBookings;
-  const filtered = allBookings.filter(
-    (b) => (b.tenantSlug || "").toLowerCase().trim() === clean
-  );
-  return filtered.length > 0 ? filtered : allBookings;
+  return memoryBookings.filter((b) => (b.tenantSlug || "").toLowerCase().trim() === clean);
 }
 
+/**
+ * Saves a new booking strictly into the tenant's dedicated database.
+ */
 export async function saveStorefrontBooking(
   booking: StorefrontBookingPayload
 ): Promise<StorefrontBookingPayload> {
   ensureStorageReady();
-  const sql = await getTenantSql(booking.tenantSlug || "");
+  const cleanTenant = (booking.tenantSlug || "").toLowerCase().trim();
+  if (!cleanTenant) {
+    throw new Error("[Storefront Commerce Store] tenantSlug is required to save storefront booking.");
+  }
 
-  // 1. Save to Neon PostgreSQL
+  const sql = await getTenantSql(cleanTenant);
+
+  // 1. Save to dedicated Neon PostgreSQL database
   if (sql) {
     try {
       await sql`
@@ -520,7 +393,7 @@ export async function saveStorefrontBooking(
           id, booking_number, tenant_slug, tenant_id, customer_name, customer_email,
           customer_phone, service_title, date_time, status, vertical, notes, created_at, updated_at
         ) VALUES (
-          ${booking.id}, ${booking.bookingNumber}, ${booking.tenantSlug}, ${booking.tenantId || ""},
+          ${booking.id}, ${booking.bookingNumber}, ${cleanTenant}, ${booking.tenantId || ""},
           ${booking.customerName}, ${booking.customerEmail || ""}, ${booking.customerPhone},
           ${booking.serviceTitle}, ${booking.dateTime}, ${booking.status || "CONFIRMED"},
           ${booking.vertical || "cars"}, ${booking.notes || ""}, NOW(), NOW()
@@ -530,65 +403,78 @@ export async function saveStorefrontBooking(
           updated_at = NOW()
       `;
     } catch (err) {
-      console.warn("[Storefront Commerce Store] Neon saveBooking warning:", err);
+      console.warn(`[Storefront Commerce Store] Dedicated saveBooking warning for tenant '${cleanTenant}':`, err);
     }
   }
 
   // 2. Deduplicate and save to local sync file
-  const current = await getStorefrontBookings();
-  const filtered = current.filter(
-    (b) => b.id !== booking.id && b.bookingNumber !== booking.bookingNumber
-  );
-  const updated = [booking, ...filtered];
-
   try {
+    let allBookings: StorefrontBookingPayload[] = [];
+    if (fs.existsSync(BOOKINGS_FILE)) {
+      const data = fs.readFileSync(BOOKINGS_FILE, "utf8");
+      allBookings = JSON.parse(data);
+      if (!Array.isArray(allBookings)) allBookings = [];
+    }
+    const filtered = allBookings.filter(
+      (b) => b.id !== booking.id && b.bookingNumber !== booking.bookingNumber
+    );
+    const updated = [booking, ...filtered];
     fs.writeFileSync(BOOKINGS_FILE, JSON.stringify(updated, null, 2), "utf8");
   } catch {
-    memoryBookings = updated;
+    memoryBookings = [booking, ...memoryBookings.filter((b) => b.id !== booking.id)];
   }
 
   return booking;
 }
 
+/**
+ * Updates booking status strictly scoped to tenant.
+ */
 export async function updateStorefrontBookingStatus(
   bookingIdOrNum: string,
-  newStatus: StorefrontBookingPayload["status"]
+  newStatus: StorefrontBookingPayload["status"],
+  tenantSlug: string
 ): Promise<boolean> {
   ensureStorageReady();
-  const sql = getSql();
+  const cleanTenant = (tenantSlug || "").trim().toLowerCase();
+  const cleanRef = (bookingIdOrNum || "").trim();
+  if (!cleanTenant || !cleanRef) return false;
 
-  // 1. Update Neon PostgreSQL
+  const sql = await getTenantSql(cleanTenant);
+
+  // 1. Update dedicated Neon PostgreSQL strictly partitioned by tenant_slug
   if (sql) {
     try {
       await sql`
         UPDATE shop_bookings
         SET status = ${newStatus}, updated_at = NOW()
-        WHERE id = ${bookingIdOrNum} OR booking_number = ${bookingIdOrNum}
+        WHERE (id = ${cleanRef} OR booking_number = ${cleanRef})
+          AND LOWER(tenant_slug) = ${cleanTenant}
       `;
     } catch (err) {
-      console.warn("[Storefront Commerce Store] Neon update booking status warning:", err);
+      console.warn(`[Storefront Commerce Store] Update booking status failed for tenant '${cleanTenant}':`, err);
     }
   }
 
   // 2. Update local sync file
-  const current = await getStorefrontBookings();
-  let found = false;
-
-  const updated = current.map((b) => {
-    if (b.id === bookingIdOrNum || b.bookingNumber === bookingIdOrNum) {
-      found = true;
-      return { ...b, status: newStatus };
+  try {
+    if (fs.existsSync(BOOKINGS_FILE)) {
+      const data = fs.readFileSync(BOOKINGS_FILE, "utf8");
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) {
+        const updated = parsed.map((b) => {
+          if (
+            (b.id === cleanRef || b.bookingNumber === cleanRef) &&
+            (b.tenantSlug || "").toLowerCase().trim() === cleanTenant
+          ) {
+            return { ...b, status: newStatus };
+          }
+          return b;
+        });
+        fs.writeFileSync(BOOKINGS_FILE, JSON.stringify(updated, null, 2), "utf8");
+      }
     }
-    return b;
-  });
+  } catch {}
 
-  if (found) {
-    try {
-      fs.writeFileSync(BOOKINGS_FILE, JSON.stringify(updated, null, 2), "utf8");
-    } catch {
-      memoryBookings = updated;
-    }
-  }
-
-  return found;
+  return true;
 }

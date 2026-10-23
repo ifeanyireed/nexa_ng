@@ -36,7 +36,7 @@ function TrackingContent() {
 
   const urlRef = searchParams.get("ref") || searchParams.get("orderNumber") || searchParams.get("id");
   const tenantParam = searchParams.get("tenant") || contextSlug || "";
-  const initialRef = urlRef || "OFIA-2026-9021";
+  const initialRef = urlRef || "";
 
   const [trackingNumber, setTrackingNumber] = useState(initialRef);
   const [searchInput, setSearchInput] = useState(initialRef);
@@ -58,6 +58,13 @@ function TrackingContent() {
   const fetchOrderDetails = useCallback(
     async (refToFetch: string, isAutoRefresh = false) => {
       if (!refToFetch) return;
+
+      if (!activeTenantSlug) {
+        setError("Missing tenant context. Please provide a tenant parameter (?tenant=) to track this order.");
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
 
       if (isAutoRefresh) {
         setRefreshing(true);

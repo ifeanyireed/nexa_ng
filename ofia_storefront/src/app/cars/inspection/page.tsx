@@ -39,6 +39,11 @@ export default function CarsInspectionPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanTenant = (tenantSlug || "").toLowerCase().trim();
+    if (!cleanTenant) {
+      alert("Missing tenant context. Please access storefront using a valid tenant URL.");
+      return;
+    }
     setSubmitted(true);
 
     try {
@@ -47,7 +52,7 @@ export default function CarsInspectionPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           bookingNumber: `CAR-${Math.floor(10000 + Math.random() * 90000)}`,
-          tenantSlug: tenantSlug || "neweratransports",
+          tenantSlug: cleanTenant,
           customerName: clientName || "Valued Automotive Client",
           customerPhone: phone || "+234 800 000 0000",
           serviceTitle: "Comprehensive 150-Point Pre-Purchase Mechanical Inspection",

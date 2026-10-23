@@ -11,12 +11,21 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const tenantSlug = searchParams.get("tenant") || searchParams.get("slug");
+  const rawTenant = searchParams.get("tenant") || searchParams.get("slug") || request.headers.get("x-tenant-slug");
   const ref = searchParams.get("ref") || searchParams.get("orderNumber") || searchParams.get("id");
+
+  if (!rawTenant) {
+    return NextResponse.json(
+      { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+      { status: 400 }
+    );
+  }
+
+  const tenantSlug = rawTenant.toLowerCase().trim();
 
   try {
     if (ref) {
-      const order = await getStorefrontOrderByIdOrRef(ref, tenantSlug || undefined);
+      const order = await getStorefrontOrderByIdOrRef(ref, tenantSlug);
       if (order) {
         return NextResponse.json({ success: true, order });
       }
@@ -26,7 +35,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const orders = await getStorefrontOrders(tenantSlug || undefined);
+    const orders = await getStorefrontOrders(tenantSlug);
     return NextResponse.json({ success: true, count: orders.length, orders });
   } catch (err: any) {
     return NextResponse.json(
@@ -152,7 +161,20 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const { orderId, status } = await request.json();
+    const body = await request.json();
+    const { orderId, status } = body;
+    const rawTenant =
+      body.tenantSlug ||
+      request.nextUrl.searchParams.get("tenant") ||
+      request.headers.get("x-tenant-slug");
+
+    if (!rawTenant) {
+      return NextResponse.json(
+        { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
+
     if (!orderId || !status) {
       return NextResponse.json(
         { success: false, error: "orderId and status are required" },
@@ -160,7 +182,11 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const updated = await updateStorefrontOrderStatus(orderId, status);
+    const updated = await updateStorefrontOrderStatus(
+      orderId,
+      status,
+      rawTenant.toLowerCase().trim()
+    );
     return NextResponse.json({ success: updated });
   } catch (err: any) {
     return NextResponse.json(

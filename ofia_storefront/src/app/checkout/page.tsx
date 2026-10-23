@@ -42,7 +42,12 @@ export default function CheckoutPage() {
 
     setIsProcessing(true);
 
-    const targetSlug = tenantSlug || "neweratransports";
+    const targetSlug = (tenantSlug || "").toLowerCase().trim();
+    if (!targetSlug) {
+      setIsProcessing(false);
+      alert("Missing tenant context. Please access storefront using a valid tenant URL.");
+      return;
+    }
     const orderPayload = {
       tenantSlug: targetSlug,
       tenantId: handshake?.tenantId || `org-${targetSlug}`,

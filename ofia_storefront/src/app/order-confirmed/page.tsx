@@ -13,7 +13,7 @@ import {
 
 function ConfirmationContent() {
   const searchParams = useSearchParams();
-  const orderRef = searchParams.get("ref") || "OFIA-882194";
+  const orderRef = searchParams.get("ref") || "";
   const customerName = searchParams.get("name") || "Customer";
   const tenantSlug = searchParams.get("tenant");
   const returnHref = tenantSlug ? `/?tenant=${encodeURIComponent(tenantSlug)}` : "/templates";

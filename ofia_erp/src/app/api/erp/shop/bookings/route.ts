@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getErpBookings, updateErpBookingStatus } from "@/lib/commerce-orders-store";
+import { getErpBookings, saveErpBooking, updateErpBookingStatus } from "@/lib/commerce-orders-store";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +13,27 @@ export async function GET(request: NextRequest) {
   } catch (err: any) {
     return NextResponse.json(
       { success: false, error: "Failed to fetch ERP shop bookings: " + err.message },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+
+    if (!body.customerName || !body.customerPhone || !body.serviceTitle) {
+      return NextResponse.json(
+        { success: false, error: "customerName, customerPhone, and serviceTitle are required" },
+        { status: 400 }
+      );
+    }
+
+    const saved = await saveErpBooking(body);
+    return NextResponse.json({ success: true, booking: saved }, { status: 201 });
+  } catch (err: any) {
+    return NextResponse.json(
+      { success: false, error: "Failed to create booking: " + err.message },
       { status: 500 }
     );
   }

@@ -204,6 +204,12 @@ func registerRoutes() {
 	registerRoute("/api/v1/erp/smtp-settings", handlers.HandleCrmSmtpSettings)
 	registerRoute("/api/v1/erp/crm/sender-profiles", handlers.HandleCrmSenderProfiles)
 	registerRoute("/api/v1/erp/sender-profiles", handlers.HandleCrmSenderProfiles)
+
+	// 6. Omnichannel Shop Commerce Endpoints (Orders & Appointments Desk)
+	registerRoute("/shop/orders", handlers.HandleShopOrders)
+	registerRoute("/shop/bookings", handlers.HandleShopBookings)
+	registerRoute("/api/v1/erp/shop/orders", handlers.HandleShopOrders)
+	registerRoute("/api/v1/erp/shop/bookings", handlers.HandleShopBookings)
 }
 
 func enableCORS(next http.HandlerFunc) http.HandlerFunc {

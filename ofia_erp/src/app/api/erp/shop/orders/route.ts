@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getErpOrders, updateErpOrderStatus } from "@/lib/commerce-orders-store";
+import { getErpOrders, saveErpOrder, updateErpOrderStatus } from "@/lib/commerce-orders-store";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +13,27 @@ export async function GET(request: NextRequest) {
   } catch (err: any) {
     return NextResponse.json(
       { success: false, error: "Failed to fetch ERP shop orders: " + err.message },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+
+    if (!body.customerName || !body.customerPhone) {
+      return NextResponse.json(
+        { success: false, error: "customerName and customerPhone are required" },
+        { status: 400 }
+      );
+    }
+
+    const saved = await saveErpOrder(body);
+    return NextResponse.json({ success: true, order: saved }, { status: 201 });
+  } catch (err: any) {
+    return NextResponse.json(
+      { success: false, error: "Failed to create order: " + err.message },
       { status: 500 }
     );
   }

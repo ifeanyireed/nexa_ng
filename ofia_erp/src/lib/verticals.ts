@@ -318,6 +318,9 @@ export interface CommerceOrderItem {
   createdAt: string;
   deliveryMethod: "DISPATCH" | "STORE_PICKUP";
   shippingAddress?: string;
+  city?: string;
+  paymentMethod?: string;
+  notes?: string;
 }
 
 export interface TenantStorefrontHandshake {

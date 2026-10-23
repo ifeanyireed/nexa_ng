@@ -39,6 +39,7 @@ export default function CrmLeadsPage() {
   const [calls, setCalls] = useState<CrmCall[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [callStatusFilter, setCallStatusFilter] = useState("ALL");
   const [isLoading, setIsLoading] = useState(true);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
 
@@ -494,6 +495,16 @@ export default function CrmLeadsPage() {
     }
   };
 
+  const callCounts = useMemo(() => {
+    const counts: Record<string, number> = { ALL: leads.length, green: 0, yellow: 0, red: 0, blue: 0 };
+    for (const l of leads) {
+      const c = getLeadCallInfo(l);
+      const ind = getCallIndicator(c);
+      counts[ind.color] = (counts[ind.color] || 0) + 1;
+    }
+    return counts;
+  }, [leads, latestCallByLead]);
+
   const filteredLeads = leads.filter((l) => {
     const q = searchQuery.toLowerCase();
     const cName = (l.companyName || (l as any).company || "").toLowerCase();
@@ -510,13 +521,21 @@ export default function CrmLeadsPage() {
       phone.includes(q) ||
       audList.includes(q);
     const matchStatus = statusFilter === "ALL" || l.status === statusFilter;
-    return matchSearch && matchStatus;
+
+    let matchCallStatus = true;
+    if (callStatusFilter !== "ALL") {
+      const c = getLeadCallInfo(l);
+      const ind = getCallIndicator(c);
+      matchCallStatus = ind.color === callStatusFilter;
+    }
+
+    return matchSearch && matchStatus && matchCallStatus;
   });
 
   // Reset page when search or status filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter]);
+  }, [searchQuery, statusFilter, callStatusFilter]);
 
   const totalItems = filteredLeads.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));

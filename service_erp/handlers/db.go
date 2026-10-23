@@ -802,4 +802,74 @@ func EnsureCRMTablesOnDB(targetDB *sql.DB) {
 	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_blast_recipients_tenant ON crm_email_blast_recipients (LOWER(tenant_slug));`)
 	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_blast_recipients_status ON crm_email_blast_recipients (status);`)
 	_, _ = targetDB.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_subscribers_list_email ON crm_email_subscribers (list_id, LOWER(email));`)
+
+	// Omnichannel Commerce Tables
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS shop_orders (
+		id VARCHAR(64) PRIMARY KEY,
+		order_number VARCHAR(100) NOT NULL,
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT '',
+		customer_name VARCHAR(191) NOT NULL,
+		customer_email VARCHAR(191) DEFAULT '',
+		customer_phone VARCHAR(64) NOT NULL,
+		channel VARCHAR(50) NOT NULL DEFAULT 'STOREFRONT',
+		status VARCHAR(50) NOT NULL DEFAULT 'IN_PREPARATION',
+		payment_status VARCHAR(50) NOT NULL DEFAULT 'PAID',
+		delivery_method VARCHAR(50) NOT NULL DEFAULT 'DISPATCH',
+		shipping_address TEXT DEFAULT '',
+		city VARCHAR(100) DEFAULT 'Lagos',
+		payment_method VARCHAR(50) DEFAULT 'card',
+		items_summary TEXT DEFAULT '',
+		item_count INT DEFAULT 1,
+		total_amount VARCHAR(100) NOT NULL,
+		raw_amount NUMERIC(15,2) DEFAULT 0,
+		currency VARCHAR(10) DEFAULT '₦',
+		items JSONB DEFAULT '[]'::jsonb,
+		notes TEXT DEFAULT '',
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		CONSTRAINT uq_shop_orders_tenant_number UNIQUE (tenant_slug, order_number)
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_shop_orders_tenant ON shop_orders(LOWER(tenant_slug));`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_shop_orders_number ON shop_orders(order_number);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_shop_orders_status ON shop_orders(LOWER(tenant_slug), status);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_shop_orders_created ON shop_orders(LOWER(tenant_slug), created_at DESC);`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS shop_order_items (
+		id VARCHAR(64) PRIMARY KEY,
+		order_id VARCHAR(64) NOT NULL REFERENCES shop_orders(id) ON DELETE CASCADE,
+		tenant_slug VARCHAR(191) NOT NULL,
+		product_id VARCHAR(191) DEFAULT '',
+		title VARCHAR(255) NOT NULL,
+		price NUMERIC(15,2) DEFAULT 0,
+		quantity INT DEFAULT 1,
+		image_url TEXT DEFAULT '',
+		options JSONB DEFAULT '{}'::jsonb,
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_shop_order_items_order ON shop_order_items(order_id);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_shop_order_items_tenant ON shop_order_items(LOWER(tenant_slug));`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS shop_bookings (
+		id VARCHAR(64) PRIMARY KEY,
+		booking_number VARCHAR(100) NOT NULL,
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT '',
+		customer_name VARCHAR(191) NOT NULL,
+		customer_email VARCHAR(191) DEFAULT '',
+		customer_phone VARCHAR(64) NOT NULL,
+		service_title VARCHAR(255) NOT NULL,
+		date_time VARCHAR(100) NOT NULL,
+		status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+		vertical VARCHAR(50) NOT NULL DEFAULT 'cars',
+		notes TEXT DEFAULT '',
+		amount NUMERIC(15,2) DEFAULT 0,
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		CONSTRAINT uq_shop_bookings_tenant_number UNIQUE (tenant_slug, booking_number)
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_shop_bookings_tenant ON shop_bookings(LOWER(tenant_slug));`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_shop_bookings_number ON shop_bookings(booking_number);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_shop_bookings_status ON shop_bookings(LOWER(tenant_slug), status);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_shop_bookings_created ON shop_bookings(LOWER(tenant_slug), created_at DESC);`)
 }

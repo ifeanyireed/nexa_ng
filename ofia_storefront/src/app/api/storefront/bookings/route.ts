@@ -61,8 +61,31 @@ export async function POST(request: NextRequest) {
 
     const saved = await saveStorefrontBooking(newBooking);
 
-    // Forward to marketplace_service if available
+    // Forward to ofia_erp and service_erp for Neon PostgreSQL persistence
     try {
+      const erpNextUrl = process.env.ERP_NEXT_URL || "http://localhost:3002";
+      const erpServiceUrl = process.env.ERP_SERVICE_URL || "http://localhost:8084";
+
+      // 1. Forward to ERP Next.js API route (saves to Neon via @neondatabase/serverless)
+      fetch(`${erpNextUrl}/api/erp/shop/bookings?tenant=${encodeURIComponent(newBooking.tenantSlug)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newBooking),
+        signal: AbortSignal.timeout(2000),
+      }).catch(() => null);
+
+      // 2. Forward to service_erp Go microservice if available
+      fetch(`${erpServiceUrl}/shop/bookings?tenant=${encodeURIComponent(newBooking.tenantSlug)}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-tenant-slug": newBooking.tenantSlug,
+        },
+        body: JSON.stringify(newBooking),
+        signal: AbortSignal.timeout(2000),
+      }).catch(() => null);
+
+      // 3. Forward to marketplace_service
       const marketplaceUrl = process.env.MARKETPLACE_SERVICE_URL || "http://localhost:8083";
       fetch(`${marketplaceUrl}/api/v1/bookings`, {
         method: "POST",

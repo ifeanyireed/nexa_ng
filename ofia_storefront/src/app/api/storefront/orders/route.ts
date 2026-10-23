@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   getStorefrontOrders,
+  getStorefrontOrderByIdOrRef,
   saveStorefrontOrder,
   updateStorefrontOrderStatus,
 } from "@/lib/commerce-orders-store";
@@ -11,8 +12,20 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const tenantSlug = searchParams.get("tenant") || searchParams.get("slug");
+  const ref = searchParams.get("ref") || searchParams.get("orderNumber") || searchParams.get("id");
 
   try {
+    if (ref) {
+      const order = await getStorefrontOrderByIdOrRef(ref, tenantSlug || undefined);
+      if (order) {
+        return NextResponse.json({ success: true, order });
+      }
+      return NextResponse.json(
+        { success: false, error: `Order with reference '${ref}' not found` },
+        { status: 404 }
+      );
+    }
+
     const orders = await getStorefrontOrders(tenantSlug || undefined);
     return NextResponse.json({ success: true, count: orders.length, orders });
   } catch (err: any) {

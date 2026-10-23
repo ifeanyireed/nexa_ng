@@ -53,7 +53,7 @@ function ConfirmationContent() {
 
       <div className="pt-4 flex flex-wrap items-center justify-center gap-3">
         <Link
-          href={`/order-tracking?ref=${orderRef}`}
+          href={`/order-tracking?ref=${encodeURIComponent(orderRef)}${tenantSlug ? `&tenant=${encodeURIComponent(tenantSlug)}` : ""}`}
           className="px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-blue-600/30 transition-colors"
         >
           <Truck className="w-4 h-4" />

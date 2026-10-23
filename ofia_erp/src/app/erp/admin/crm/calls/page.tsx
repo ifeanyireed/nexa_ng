@@ -661,7 +661,7 @@ export default function CrmCallLoggerPage() {
                             className={`inline-block font-mono text-[11px] font-bold px-2 py-0.5 rounded ${
                               call.durationSeconds > 0
                                 ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
-                                : "bg-neutral-100 dark:bg-neutral-800 text-[var(--nexa-text-muted)]"
+                                : "text-[var(--nexa-text-muted)] border border-[var(--nexa-border)]"
                             }`}
                           >
                             {formatDurationDisplay(call.durationSeconds)}

@@ -40,7 +40,7 @@ export default function CampaignsPage() {
             name: c.name,
             targetAudience: c.target_audience || c.targetAudience,
             status: (c.status === "ACTIVE" ? "Active" : c.status === "APPROVAL" ? "Approval" : c.status === "COMPLETED" ? "Completed" : "Planning") as any,
-            channels: c.channels_json ? JSON.parse(c.channels_json) : (c.channels || ["Email", "WhatsApp"]),
+            channels: c.channels_json ? JSON.parse(c.channels_json) : (c.channels || ["Voicebip Phone", "WhatsApp Follow-up"]),
             prospectsCount: c.prospects_count || c.prospectsCount || 250,
             sentCount: c.sent_count || c.sentCount || 180,
             replyRate: c.replies_count ? Math.round((c.replies_count / (c.sent_count || 1)) * 100) : 32,
@@ -90,17 +90,17 @@ export default function CampaignsPage() {
                 </span>
               </div>
               <h1 className="text-2xl font-extrabold text-[var(--nexa-text-primary)] text-display tracking-tight">
-                Multi-Channel Campaigns
+                Voice Outreach Campaigns
               </h1>
               <p className="text-xs text-[var(--nexa-text-muted)] mt-1">
-                Orchestrated across Email, WhatsApp Business, LinkedIn, and Meta Ads.
+                Automated phone qualification batches targeted at corporate B2B mobility accounts.
               </p>
             </div>
 
             <div className="flex items-center gap-3">
-              <Link href="/campaigns/new">
+              <Link href="/erp/admin/ai/campaigns/new">
                 <NexaButton size="sm" variant="primary" leftIcon={<Plus className="w-4 h-4" />}>
-                  Launch New Campaign
+                  Launch Voice Campaign
                 </NexaButton>
               </Link>
             </div>

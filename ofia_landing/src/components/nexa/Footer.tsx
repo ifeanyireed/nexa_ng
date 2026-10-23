@@ -128,7 +128,7 @@ export const Footer = () => {
               </li>
               <li>
                 <Link href="/products?category=ai" className="hover:text-nexa-brand transition-colors">
-                  Autonomous AI Swarm
+                  Ofia AI Voice Agent
                 </Link>
               </li>
             </ul>

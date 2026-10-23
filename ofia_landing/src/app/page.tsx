@@ -21,6 +21,7 @@ import {
   ChevronRight,
   Database,
   Radio,
+  PhoneCall,
 } from "lucide-react";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -61,10 +62,10 @@ export default function Home() {
       accent: "text-emerald-500",
     },
     {
-      title: "Autonomous AI Swarm",
+      title: "Ofia AI Voice Agent",
       badge: "Pillar 05",
-      desc: "Deploy 15 autonomous AI agents with an encrypted BYOK vault, multi-LLM model gateway, WhatsApp triage, and Telegram bot gateways.",
-      icon: <Bot className="w-6 h-6 text-amber-500" />,
+      desc: "Autonomous telephone outreach and sales qualification engine. Connects through Voicebip direct Nigerian PSTN routes (+234) and Gemini intelligence to qualify B2B accounts, transcribe conversations, and sync outcomes into CRM.",
+      icon: <PhoneCall className="w-6 h-6 text-amber-500" />,
       bg: "bg-amber-500/10",
       accent: "text-amber-500",
     },
@@ -74,7 +75,7 @@ export default function Home() {
     { label: "Core Architecture", value: "5 Microservices", sub: "Go & Neon Lakebase Postgres" },
     { label: "Vertical Stores", value: "10 Industry Engines", sub: "Auto, Food, Fashion, Health & more" },
     { label: "Mobility & Transit", value: "6 Transport Lines", sub: "Interstate, Shuttle, Charter, Driver App" },
-    { label: "Autonomous AI", value: "15 Specialized Agents", sub: "Continuous 24/7 Multi-Channel Swarm" },
+    { label: "Voice Intelligence", value: "Real-Time AI Voice Agent", sub: "Voicebip (+234) & CRM Sync" },
   ];
 
   return (
@@ -121,7 +122,7 @@ export default function Home() {
             transition={{ duration: 0.75, delay: 0.28, ease: [0.22, 1, 0.36, 1] }}
             className="text-lg sm:text-xl text-nexa-text-secondary max-w-3xl mx-auto mb-10 leading-relaxed font-normal"
           >
-            Not a fragmented collection of disjointed apps. A unified multi-tenant ecosystem — custom storefront, ERP operations, autonomous AI, logistics, and marketplace discovery — so you enter data once, and it coordinates everywhere.
+            Not a fragmented collection of disjointed apps. A unified multi-tenant ecosystem — custom storefront, ERP operations, autonomous Voice AI, logistics, and marketplace discovery — so you enter data once, and it coordinates everywhere.
           </motion.p>
 
           {/* Actions */}
@@ -284,8 +285,8 @@ export default function Home() {
                     desc: "Confirming an order generates a waybill and dispatches the closest rider with live GPS and proof-of-delivery.",
                   },
                   {
-                    title: "Autonomous Lead Re-engagement",
-                    desc: "Unclosed chat inquiries automatically trigger your AI GTM Swarm to follow up on WhatsApp with personalized product links.",
+                    title: "Autonomous Voice Outreach & Qualification",
+                    desc: "Authorize corporate sales outreach calls placed through Voicebip telecom lines with real-time objection handling, live transcripts, and instant CRM pipeline updates.",
                   },
                 ].map((item, idx) => (
                   <motion.div

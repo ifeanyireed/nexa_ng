@@ -65,7 +65,7 @@ const TOOL_TYPES = [
   "Hospital Manager (EMR, Clinic Triage & HMO Billing)",
   "School Manager (Admissions, Academics & Fee Billing)",
   "Hotel Manager (Reservations, Check-in & Folio Billing)",
-  "Autonomous AI Outreach & WhatsApp SDR Swarm",
+  "Ofia Voice Agent (Autonomous Phone Outreach & B2B Qualification)",
   "Other (Type below)",
 ];
 

@@ -907,7 +907,7 @@ export function ErpAdminShell({
   }[] = [
     // 1. OPERATIONS & REVENUE APPS
     { label: "Overview", icon: <LayoutDashboard className="w-6 h-6" />, href: "/erp/admin", key: "overview", section: "Operations" },
-    { label: "Ofia AI Swarm", icon: <Bot className="w-6 h-6" />, href: "/erp/admin/ai", badge: "15 AI", key: "ai", section: "Operations" },
+    { label: "Ofia Voice Agent", icon: <PhoneCall className="w-6 h-6" />, href: "/erp/admin/ai", badge: "Voice", key: "ai", section: "Operations" },
     { label: "Marketplace Manager", icon: <ShoppingBag className="w-6 h-6" />, href: "/erp/admin/marketplace", key: "marketplace", section: "Operations" },
     { label: "Ofia Shop Manager", icon: <Store className="w-6 h-6" />, href: "/erp/admin/shop", badge: "Retail", key: "shop", section: "Operations" },
     { label: "Ofia Mobility Manager", icon: <Truck className="w-6 h-6" />, href: "/erp/admin/mobility", badge: "Mobility", key: "mobility", section: "Operations" },
@@ -1105,18 +1105,10 @@ export function ErpAdminShell({
 
     if (pathname.startsWith("/erp/admin/ai")) {
       return [
-        { label: "Command Center", href: "/erp/admin/ai", icon: <Bot className="w-3.5 h-3.5" /> },
-        { label: "Campaigns", href: "/erp/admin/ai/campaigns", icon: <Send className="w-3.5 h-3.5" /> },
-        { label: "AI Studio", href: "/erp/admin/ai/studio", icon: <Zap className="w-3.5 h-3.5" /> },
-        { label: "Strategy", href: "/erp/admin/ai/strategy", icon: <TrendingUp className="w-3.5 h-3.5" /> },
-        { label: "Knowledge Base", href: "/erp/admin/ai/knowledge", icon: <Database className="w-3.5 h-3.5" /> },
-        { label: "Analytics", href: "/erp/admin/ai/analytics", icon: <BarChart3 className="w-3.5 h-3.5" /> },
-        { label: "Agent Fleet", href: "/erp/admin/ai/team", icon: <Users className="w-3.5 h-3.5" />, badge: "15 AI" },
-        { label: "Telegram Bot", href: "/erp/admin/ai/telegram", icon: <Radio className="w-3.5 h-3.5" /> },
-        { label: "Approvals", href: "/erp/admin/ai/approvals", icon: <FileCheck2 className="w-3.5 h-3.5" /> },
-        { label: "Integrations", href: "/erp/admin/ai/integrations", icon: <Key className="w-3.5 h-3.5" /> },
-        { label: "BYOK & Vault", href: "/erp/admin/ai/pricing", icon: <Key className="w-3.5 h-3.5" /> },
-        { label: "Settings", href: "/erp/admin/ai/settings", icon: <Settings className="w-3.5 h-3.5" /> },
+        { label: "Voice Command Center", href: "/erp/admin/ai", icon: <PhoneCall className="w-3.5 h-3.5" /> },
+        { label: "Voice Campaigns", href: "/erp/admin/ai/campaigns", icon: <Send className="w-3.5 h-3.5" /> },
+        { label: "Call Logs & Transcripts", href: "/erp/admin/ai/calls", icon: <Radio className="w-3.5 h-3.5" />, badge: "CRM" },
+        { label: "Voice & Telephony Settings", href: "/erp/admin/ai/settings", icon: <Settings className="w-3.5 h-3.5" /> },
       ];
     }
 

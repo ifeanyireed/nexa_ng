@@ -10,9 +10,9 @@ export const metadata = {
 const SEED_FALLBACK_POSTS = [
   {
     id: 'post-seed-01',
-    title: 'Unveiling Ofia: Autonomous AI Swarms & Next-Gen African Commerce',
-    slug: 'unveiling-ofia-autonomous-ai-swarms',
-    excerpt: 'How Ofia is transforming enterprise commerce in Nigeria through autonomous lead qualification, real-time escrow, and intelligent multi-tenant workflows.',
+    title: 'Unveiling Ofia: Autonomous AI Voice Intelligence & Next-Gen African Commerce',
+    slug: 'unveiling-ofia-autonomous-ai-voice',
+    excerpt: 'How Ofia is transforming enterprise commerce in Nigeria through autonomous voice outreach, real-time escrow, and intelligent multi-tenant workflows.',
     cover_image: 'https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png',
     category: 'Ecosystem & AI',
     status: 'PUBLISHED',

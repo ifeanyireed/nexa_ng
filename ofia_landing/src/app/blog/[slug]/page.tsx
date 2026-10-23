@@ -7,10 +7,10 @@ export const dynamicParams = true;
 const SEED_FALLBACK_POSTS = [
   {
     id: 'post-seed-01',
-    title: 'Unveiling Ofia: Autonomous AI Swarms & Next-Gen African Commerce',
-    slug: 'unveiling-ofia-autonomous-ai-swarms',
-    excerpt: 'How Ofia is transforming enterprise commerce in Nigeria through autonomous lead qualification, real-time escrow, and intelligent multi-tenant workflows.',
-    content: '<h2>The Future of African Commerce Has Arrived</h2><p>Today marks a major milestone as Ofia officially unveils our unified suite of enterprise tools built specifically for fast-growing businesses across Nigeria and West Africa.</p><p>From high-volume logistics and distributed point-of-sale systems to autonomous AI agents driving customer acquisition, the Ofia platform removes friction at every step of modern trade.</p><h3>Why Autonomous AI Matters for Emerging Markets</h3><p>Traditional CRM tools require endless manual data entry and disjointed communication channels. In high-velocity commercial environments like Lagos, Kano, and Port Harcourt, deals move rapidly across WhatsApp, direct calls, and store visits.</p><p>Our AI Swarm continuously monitors lead inquiries, automates customer follow-ups, and integrates directly with live inventory and escrow payouts.</p>',
+    title: 'Unveiling Ofia: Autonomous AI Voice Intelligence & Next-Gen African Commerce',
+    slug: 'unveiling-ofia-autonomous-ai-voice',
+    excerpt: 'How Ofia is transforming enterprise commerce in Nigeria through autonomous voice outreach, real-time escrow, and intelligent multi-tenant workflows.',
+    content: '<h2>The Future of African Commerce Has Arrived</h2><p>Today marks a major milestone as Ofia officially unveils our unified suite of enterprise tools built specifically for fast-growing businesses across Nigeria and West Africa.</p><p>From high-volume logistics and distributed point-of-sale systems to autonomous AI voice agents conducting sales qualification calls, the Ofia platform removes friction at every step of modern trade.</p><h3>Why Autonomous Voice AI Matters for Emerging Markets</h3><p>Traditional CRM tools require endless manual data entry and disjointed communication channels. In high-velocity commercial environments like Lagos, Kano, and Port Harcourt, deals move rapidly across direct phone calls and store visits.</p><p>Our AI Voice Agent conducts authorized outbound telephone outreach via Voicebip telecom lines (+234), automates lead qualification with natural objection handling, and logs transcripts and summaries directly into CRM.</p>',
     cover_image: 'https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png',
     category: 'Ecosystem & AI',
     status: 'PUBLISHED',

@@ -357,9 +357,9 @@ export default function BlogPostContent({ post }: { post: BlogPost }) {
                   </div>
                   <div className="p-5 flex-1 flex flex-col">
                     <span className="text-[10px] fw-700 text-muted uppercase tracking-widest mb-2">Ecosystem &amp; AI</span>
-                    <h4 className="text-sm fw-700 text-navy leading-snug mb-3">Unveiling Ofia: Autonomous AI Swarms</h4>
+                    <h4 className="text-sm fw-700 text-navy leading-snug mb-3">Unveiling Ofia: Autonomous AI Voice Intelligence</h4>
                     <div className="mt-auto">
-                      <Link href="/blog/unveiling-ofia-autonomous-ai-swarms" className="text-xs fw-600 text-blue-600 hover:underline">Read full article</Link>
+                      <Link href="/blog/unveiling-ofia-autonomous-ai-voice" className="text-xs fw-600 text-blue-600 hover:underline">Read full article</Link>
                     </div>
                   </div>
                 </div>

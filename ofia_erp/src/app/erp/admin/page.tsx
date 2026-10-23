@@ -316,7 +316,7 @@ const ALL_OPERATIONS: ModuleOperation[] = [
     time: "4 hours ago",
     type: "AI Pipeline",
     status: "Qualified",
-    link: "/erp/admin/ai/leads",
+    link: "/erp/admin/ai",
   },
   {
     id: "OP-9806",

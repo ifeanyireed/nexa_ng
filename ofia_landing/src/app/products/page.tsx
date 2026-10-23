@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Sparkles,
   Zap,
+  PhoneCall,
 } from "lucide-react";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaButton } from "@/components/nexa/NexaButton";
@@ -338,6 +339,32 @@ const PRODUCTS: ProductItem[] = [
     iconColor: "text-emerald-600",
     href: "/pricing",
   },
+
+  // ==========================================
+  // 12. Ofia Voice Agent
+  // ==========================================
+  {
+    id: "voice-agent",
+    name: "Ofia Voice Agent",
+    category: "enterprise",
+    categoryLabel: "Autonomous Sales & Telephony",
+    badge: "AI Voice Engine",
+    badgeVariant: "brand",
+    tagline: "Autonomous AI telephone outreach, B2B qualification & CRM logging",
+    description:
+      "Enterprise conversational voice intelligence powered by Google Gemini and Voicebip Nigerian telecom infrastructure (+234). Places authorized outbound phone calls to corporate prospects, navigates natural objections, scores lead intent, and automatically records audio, turn-by-turn transcripts, and qualification summaries directly into CRM.",
+    features: [
+      "Voicebip enterprise telephony carrier with verified Nigerian PSTN routes (+234)",
+      "Adaptive conversational AI tuned for Nigerian corporate B2B sales cadence",
+      "Full turn-by-turn dialogue transcription & automated executive summaries",
+      "Automatic qualification scoring (0–100) & instant CRM pipeline updates",
+      "Built-in compliance: mandatory AI disclosures & WAT business calling hours window",
+    ],
+    icon: <PhoneCall className="w-6 h-6" />,
+    iconBg: "bg-blue-500/10",
+    iconColor: "text-blue-600",
+    href: "/pricing",
+  },
 ];
 
 export default function ProductsPage() {
@@ -357,6 +384,8 @@ export default function ProductsPage() {
             setSelectedCategory("commerce");
           } else if (cat === "logistics") {
             setSelectedCategory("mobility");
+          } else if (cat === "ai" || cat === "voice") {
+            setSelectedCategory("enterprise");
           }
         }
       };

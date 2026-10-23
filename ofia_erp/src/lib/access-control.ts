@@ -140,11 +140,11 @@ export interface ErpModuleDef {
 export const ERP_MODULES: ErpModuleDef[] = [
   {
     key: "ai",
-    label: "Ofia AI Swarm",
+    label: "Ofia Voice Agent",
     category: "Operations",
-    description: "15 autonomous marketing, sales, and lead automation agent swarm.",
+    description: "Autonomous phone caller for corporate sales outreach and qualification.",
     href: "/erp/admin/ai",
-    badge: "15 AI",
+    badge: "Voice",
   },
   {
     key: "crm",

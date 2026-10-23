@@ -13,10 +13,8 @@ import {
   ArrowRight,
   ArrowLeft,
   CheckCircle2,
-  Mail,
-  MessageSquare,
+  PhoneCall,
   Radio,
-  Layers,
   Target,
   Zap,
 } from "lucide-react";
@@ -24,10 +22,10 @@ import {
 export default function NewCampaignPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
-  const [campaignName, setCampaignName] = useState("K-12 Tuition Automation Blitz Q3");
-  const [goal, setGoal] = useState("Book 30 enterprise demos with private school bursars");
-  const [selectedChannels, setSelectedChannels] = useState<string[]>(["Email", "WhatsApp"]);
-  const [audience, setAudience] = useState("Private school proprietors in Lagos & Abuja (250+ students)");
+  const [campaignName, setCampaignName] = useState("Lagos Corporate Staff Commute Outreach");
+  const [goal, setGoal] = useState("Qualify 50 corporate accounts for dedicated 30-seater staff shuttle contracts");
+  const [selectedChannels, setSelectedChannels] = useState<string[]>(["Voicebip PSTN", "WhatsApp Deck"]);
+  const [audience, setAudience] = useState("HR & Operations Directors in Victoria Island, Ikeja, and Lekki (100+ employees)");
   const [isGenerating, setIsGenerating] = useState(false);
 
   const toggleChannel = (ch: string) => {
@@ -42,17 +40,20 @@ export default function NewCampaignPage() {
     setIsGenerating(true);
     setTimeout(() => {
       setIsGenerating(false);
-      router.push("/campaigns");
-    }, 2000);
+      router.push("/erp/admin/ai/campaigns");
+    }, 1200);
   };
 
   return (
-    <AppShell>
+    <AppShell
+      title="Create Voice Outreach Campaign"
+      subtitle="Configure target corporate list, qualifying criteria, and Voicebip telephony batch dialing."
+    >
       <div className="max-w-3xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <Link
-            href="/campaigns"
+            href="/erp/admin/ai/campaigns"
             className="inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] transition-colors"
           >
             <ArrowLeft className="w-4 h-4" /> Back to Campaigns
@@ -63,10 +64,10 @@ export default function NewCampaignPage() {
 
         <div>
           <h1 className="text-2xl font-extrabold text-[var(--nexa-text-primary)] text-display tracking-tight">
-            Deploy New Autonomous Campaign
+            Launch Autonomous Voice Campaign
           </h1>
           <p className="text-xs text-[var(--nexa-text-muted)] mt-1">
-            Specify your goal. Your AI revenue team will craft the strategy, extract leads, and prepare execution assets.
+            Specify your qualification objective. The Voice Agent will place outbound calls through Voicebip and log outcomes into CRM.
           </p>
         </div>
 
@@ -79,10 +80,10 @@ export default function NewCampaignPage() {
               </div>
               <div>
                 <h3 className="font-bold text-base text-[var(--nexa-text-primary)]">
-                  Step 1: Campaign Objective & Core Offer
+                  Step 1: Campaign Objective & Qualification Goal
                 </h3>
                 <p className="text-xs text-[var(--nexa-text-muted)]">
-                  What business outcome should your AI team achieve?
+                  What business outcome should the Voice Agent qualify?
                 </p>
               </div>
             </div>
@@ -96,21 +97,21 @@ export default function NewCampaignPage() {
 
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-[var(--nexa-text-muted)]">
-                  Primary Outcome / Target KPI
+                  Target Qualification Goal / KPI
                 </label>
                 <textarea
                   value={goal}
                   onChange={(e) => setGoal(e.target.value)}
                   rows={3}
                   className="w-full p-3 text-sm rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none focus:border-[#1A56DB]"
-                  placeholder="e.g. Book 30 demos with school directors in Lagos"
+                  placeholder="e.g. Qualify 50 corporate accounts for dedicated staff shuttle contracts"
                 />
               </div>
 
               <div className="p-3.5 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-start gap-2.5 text-xs text-[var(--nexa-text-secondary)]">
                 <Sparkles className="w-4 h-4 text-[#1A56DB] shrink-0 mt-0.5" />
                 <span>
-                  <strong>AI Suggestion:</strong> Marcus Aurel (GTM Strategist) recommends focusing on "Tuition Leakage Prevention" as the core hook.
+                  <strong>Recommended Strategy:</strong> Highlight &ldquo;Zero transit downtime &amp; 30% staff commute cost reduction&rdquo; as the primary hook.
                 </span>
               </div>
             </div>
@@ -122,7 +123,7 @@ export default function NewCampaignPage() {
                 onClick={() => setStep(2)}
                 rightIcon={<ArrowRight className="w-4 h-4" />}
               >
-                Proceed to Channels & Audience
+                Proceed to Audience & Carrier
               </NexaButton>
             </div>
           </NexaCard>
@@ -137,10 +138,10 @@ export default function NewCampaignPage() {
               </div>
               <div>
                 <h3 className="font-bold text-base text-[var(--nexa-text-primary)]">
-                  Step 2: Audience & Multi-Channel Mix
+                  Step 2: Target Audience & Delivery Carrier
                 </h3>
                 <p className="text-xs text-[var(--nexa-text-muted)]">
-                  Select where your agents will identify and engage prospects.
+                  Select target corporate criteria and delivery channels.
                 </p>
               </div>
             </div>
@@ -148,7 +149,7 @@ export default function NewCampaignPage() {
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-[var(--nexa-text-muted)]">
-                  Target Audience Description
+                  Target Corporate Audience Description
                 </label>
                 <textarea
                   value={audience}
@@ -162,8 +163,8 @@ export default function NewCampaignPage() {
                 <label className="text-xs font-semibold text-[var(--nexa-text-muted)] block mb-2">
                   Select Execution Channels
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                  {["Email", "WhatsApp", "LinkedIn", "Meta Ads"].map((ch) => {
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {["Voicebip PSTN", "WhatsApp Deck", "CRM Activity Sync"].map((ch) => {
                     const isSelected = selectedChannels.includes(ch);
                     return (
                       <button
@@ -194,13 +195,13 @@ export default function NewCampaignPage() {
                 onClick={() => setStep(3)}
                 rightIcon={<ArrowRight className="w-4 h-4" />}
               >
-                Review & Auto-Generate
+                Review & Activate
               </NexaButton>
             </div>
           </NexaCard>
         )}
 
-        {/* Step 3: Synthesis & Auto-Generation */}
+        {/* Step 3: Synthesis & Activation */}
         {step === 3 && (
           <NexaCard variant="glass" padding="lg" className="space-y-6">
             <div className="flex items-center gap-3 pb-4 border-b border-[var(--nexa-border)]">
@@ -209,10 +210,10 @@ export default function NewCampaignPage() {
               </div>
               <div>
                 <h3 className="font-bold text-base text-[var(--nexa-text-primary)]">
-                  Step 3: AI Team Orchestration Summary
+                  Step 3: Voice Outreach Blueprint
                 </h3>
                 <p className="text-xs text-[var(--nexa-text-muted)]">
-                  Review the deployment blueprint before agents commence execution.
+                  Confirm parameters before starting automated qualification calls.
                 </p>
               </div>
             </div>
@@ -233,17 +234,17 @@ export default function NewCampaignPage() {
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-[var(--nexa-text-muted)]">Orchestrating Agents:</span>
-                <span className="text-[var(--nexa-text-secondary)]">
-                  Olivia (Leads), Julian (Copy), Devon (Manager), Noah (Outreach)
+                <span className="font-semibold text-[var(--nexa-text-muted)]">Telephony Carrier:</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                  Voicebip Direct (PSTN +234)
                 </span>
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-[#FFFBEB] dark:bg-[#F59E0B]/10 border border-[#C88A3A]/20 flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-[#C88A3A] shrink-0 mt-0.5" />
+            <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" />
               <div className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-                <strong>Human-in-the-Loop Safe:</strong> All generated email sequences, WhatsApp dialogs, and ad copies will be routed to your <strong>Approval Center</strong> for one-click authorization before sending.
+                <strong>CRM Auto-Logging:</strong> Every completed call will automatically sync transcripts, sentiment, and qualification tags directly into <code>crm_calls</code> and <code>crm_leads</code>.
               </div>
             </div>
 
@@ -256,9 +257,9 @@ export default function NewCampaignPage() {
                 variant="primary"
                 isLoading={isGenerating}
                 onClick={handleDeploy}
-                leftIcon={<Zap className="w-4 h-4" />}
+                leftIcon={<PhoneCall className="w-4 h-4" />}
               >
-                Deploy AI Revenue Team
+                Launch Voice Outreach
               </NexaButton>
             </div>
           </NexaCard>

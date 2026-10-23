@@ -18,8 +18,8 @@ interface AppShellProps {
 
 export const AppShell = ({
   children,
-  title = "Ofia AI",
-  subtitle = "15 multi-agent LLM worker units coordinating outbound cold outreach, lead scoring, and growth analytics.",
+  title = "Ofia Voice Agent",
+  subtitle = "Autonomous telephone outreach and sales qualification engine for corporate B2B mobility.",
   action,
   subTabs,
   isLoading,

@@ -159,8 +159,54 @@ export const USER_API = {
   },
 };
 
-// 3. AUTONOMOUS AI GTM SWARM SERVICE (:8082)
+// 3. OFIA DEDICATED VOICE AGENT SERVICE (:8082)
+export const VOICE_AGENT_API = {
+  initiateCall: async (data: {
+    contactName: string;
+    phoneNumber: string;
+    company?: string;
+    leadId?: string;
+    campaignId?: string;
+    provider?: string;
+  }, orgId = "default") => {
+    return fetchJSON<any>(`${GTM_BASE}/${orgId}/voice/calls/initiate`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  listCalls: async (orgId = "default") => {
+    return fetchJSON<{ success: boolean; calls: any[]; count: number }>(`${GTM_BASE}/${orgId}/voice/calls`);
+  },
+
+  getCall: async (id: string, orgId = "default") => {
+    return fetchJSON<any>(`${GTM_BASE}/${orgId}/voice/calls/${id}`);
+  },
+
+  finalizeCall: async (id: string, orgId = "default") => {
+    return fetchJSON<any>(`${GTM_BASE}/${orgId}/voice/calls/${id}/finalize`, {
+      method: "POST",
+    });
+  },
+
+  getConfig: async (orgId = "default") => {
+    return fetchJSON<any>(`${GTM_BASE}/${orgId}/voice/config`);
+  },
+
+  updateConfig: async (config: any, orgId = "default") => {
+    return fetchJSON<any>(`${GTM_BASE}/${orgId}/voice/config`, {
+      method: "PUT",
+      body: JSON.stringify(config),
+    });
+  },
+};
+
 export const GTM_API = {
+  // Voice Agent mappings
+  initiateVoiceCall: (data: any, orgId = "default") => VOICE_AGENT_API.initiateCall(data, orgId),
+  getVoiceCalls: (orgId = "default") => VOICE_AGENT_API.listCalls(orgId),
+  getVoiceConfig: (orgId = "default") => VOICE_AGENT_API.getConfig(orgId),
+  updateVoiceConfig: (config: any, orgId = "default") => VOICE_AGENT_API.updateConfig(config, orgId),
   getAgents: async (orgId = "org-01") => {
     return fetchJSON<any[]>(`${GTM_BASE}/${orgId}/agents`);
   },

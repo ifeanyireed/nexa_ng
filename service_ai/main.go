@@ -12,11 +12,8 @@ import (
 	"github.com/joho/godotenv"
 
 	"nexa/ai_gtm_service/internal/db"
-	"nexa/ai_gtm_service/internal/email"
 	"nexa/ai_gtm_service/internal/handlers"
 	"nexa/ai_gtm_service/internal/middleware"
-	"nexa/ai_gtm_service/internal/outreach"
-	"nexa/ai_gtm_service/internal/telegram"
 )
 
 func main() {
@@ -30,21 +27,10 @@ func main() {
 	database := db.InitDB()
 
 	authHandler := handlers.NewAuthHandler(database)
-	agentsHandler := handlers.NewAgentsHandler(database)
 	campaignsHandler := handlers.NewCampaignsHandler(database)
 	leadsHandler := handlers.NewLeadsHandler(database)
-	approvalsHandler := handlers.NewApprovalsHandler(database)
-	strategyHandler := handlers.NewStrategyHandler(database)
 	settingsHandler := handlers.NewSettingsHandler(database)
-	voiceHandler := handlers.NewVoiceHandler()
-	obsHandler := handlers.NewObservabilityHandler(database)
-	wabaEngine := outreach.NewWABAEngine(database)
-	telegramEngine := telegram.NewTelegramBotEngine(database)
-	emailOrchestrator := email.InitEmailOrchestrator(database)
-	emailWizardHandler := handlers.NewEmailWizardHandler(database, emailOrchestrator)
-	adminEmailHandler := handlers.NewAdminEmailHandler(database, emailOrchestrator)
-	adminOverviewHandler := handlers.NewAdminOverviewHandler(database)
-	analyticsHandler := handlers.NewAnalyticsHandler(database)
+	voiceHandler := handlers.NewVoiceHandler(database)
 
 	r := chi.NewRouter()
 
@@ -66,10 +52,10 @@ func main() {
 	// Health Check
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"service": "ai-gtm-service", "status": "healthy", "port": 8082, "database": "u721451974_nexa_db", "agents_count": 15, "telegram_bot": "enabled"}`))
+		w.Write([]byte(`{"service": "ofia-voice-agent-service", "status": "healthy", "port": 8082, "voice_agent": "active"}`))
 	})
 
-	// Real-Time Voice WebSocket Stream
+	// Real-Time Voice WebSocket Stream (Audio, Text, State & CRM Events)
 	r.Get("/ws/voice", voiceHandler.HandleVoiceStream)
 
 	// Public & Protected Auth Routes
@@ -83,117 +69,59 @@ func main() {
 		})
 	})
 
-	// API v1 Routes
+	// Primary Dedicated Voice Agent Routes
+	r.Route("/api/v1/voice", func(r chi.Router) {
+		r.Post("/calls/initiate", voiceHandler.InitiateOutboundCall)
+		r.Get("/calls", voiceHandler.ListVoiceCalls)
+		r.Get("/calls/{id}", voiceHandler.GetVoiceCall)
+		r.Post("/calls/{id}/finalize", voiceHandler.FinalizeVoiceCall)
+		r.Get("/config", voiceHandler.GetVoiceConfig)
+		r.Put("/config", voiceHandler.UpdateVoiceConfig)
+		r.Post("/webhook/telephony", voiceHandler.HandleTelephonyWebhook)
+	})
+
+	// Backward-compatible Organization-scoped Voice & Campaign Routes
 	r.Route("/api/v1/gtm", func(r chi.Router) {
-		// Workspace Users & RBAC Team Management
+		// Workspace Users
 		r.Route("/{orgId}/users", func(r chi.Router) {
 			r.Get("/", authHandler.ListWorkspaceUsers)
 			r.Post("/invite", authHandler.InviteUser)
 			r.Put("/{userId}/role", authHandler.UpdateUserRole)
 		})
 
-		// Global & Tenant-specific Telegram Webhook
-		r.Post("/telegram/webhook", telegramEngine.HandleWebhook)
-		r.Post("/{orgId}/telegram/webhook", telegramEngine.HandleWebhook)
-
-		// Tenant Integration Settings
-		r.Route("/{orgId}/settings", func(r chi.Router) {
-			r.Get("/", settingsHandler.GetSettings)
-			r.Put("/email", settingsHandler.UpdateEmailSettings)
-			r.Put("/waba", settingsHandler.UpdateWABASettings)
-			r.Put("/byok", settingsHandler.UpdateBYOKKeys)
-			r.Put("/ads", settingsHandler.UpdateAdsSettings)
-			r.Put("/telegram", settingsHandler.UpdateTelegramSettings)
-			r.Put("/social", settingsHandler.UpdateSocialSettings)
-			r.Post("/test", settingsHandler.TestConnection)
+		// Dedicated Voice Endpoints
+		r.Route("/{orgId}/voice", func(r chi.Router) {
+			r.Post("/calls/initiate", voiceHandler.InitiateOutboundCall)
+			r.Get("/calls", voiceHandler.ListVoiceCalls)
+			r.Get("/calls/{id}", voiceHandler.GetVoiceCall)
+			r.Post("/calls/{id}/finalize", voiceHandler.FinalizeVoiceCall)
+			r.Get("/config", voiceHandler.GetVoiceConfig)
+			r.Put("/config", voiceHandler.UpdateVoiceConfig)
+			r.Post("/webhook/telephony", voiceHandler.HandleTelephonyWebhook)
 		})
 
-		// Provider-Agnostic Email Infrastructure & 3-Step Guided Domain Wizard
-		r.Route("/{orgId}/email", func(r chi.Router) {
-			r.Get("/providers", emailWizardHandler.GetProviderStatus)
-			r.Post("/verify-domain", emailWizardHandler.InitiateDomainVerification)
-			r.Post("/check-dns", emailWizardHandler.CheckDNSPropagation)
-			r.Post("/switch-provider", emailWizardHandler.SwitchActiveProvider)
-			r.Post("/test-dispatch", emailWizardHandler.TestDispatchEmail)
-		})
-
-		// WhatsApp Meta Cloud API Webhook
-		r.Route("/{orgId}/whatsapp/webhook", func(r chi.Router) {
-			r.Get("/", wabaEngine.VerifyWebhook)
-			r.Post("/", wabaEngine.HandleInboundWebhook)
-		})
-
-		// Agents Swarm
-		r.Route("/{orgId}/agents", func(r chi.Router) {
-			r.Get("/", agentsHandler.ListAgents)
-			r.Get("/{agentKey}", agentsHandler.GetAgent)
-			r.Post("/{agentKey}/chat", agentsHandler.ChatWithAgent)
-		})
-
-		// GTM Strategy
-		r.Route("/{orgId}/strategy", func(r chi.Router) {
-			r.Get("/", strategyHandler.GetStrategy)
-		})
-
-		// Campaigns
+		// Outreach Campaigns for Voice
 		r.Route("/{orgId}/campaigns", func(r chi.Router) {
 			r.Get("/", campaignsHandler.ListCampaigns)
 			r.Post("/", campaignsHandler.CreateCampaign)
 		})
 
-		// Leads & Extraction
+		// CRM Leads for Voice
 		r.Route("/{orgId}/leads", func(r chi.Router) {
 			r.Get("/", leadsHandler.ListLeads)
 			r.Post("/extract", leadsHandler.ExtractLeads)
 		})
 
-		// Approvals
-		r.Route("/{orgId}/approvals", func(r chi.Router) {
-			r.Get("/", approvalsHandler.ListApprovals)
-			r.Post("/{id}/authorize", approvalsHandler.AuthorizeApproval)
-			r.Post("/{id}/reject", approvalsHandler.RejectApproval)
-		})
-
-		// Inbound Email Webhook (Reply Tracking & AI Sentiment Extraction)
-		r.Post("/{orgId}/email/inbound-webhook", analyticsHandler.HandleInboundEmailWebhook)
-
-		// Analytics, Reply Intelligence & Social Engagement
-		r.Route("/{orgId}/analytics", func(r chi.Router) {
-			r.Get("/overview", analyticsHandler.GetOverviewAnalytics)
-			r.Get("/replies", analyticsHandler.GetEmailReplies)
-			r.Get("/social", analyticsHandler.GetSocialAnalytics)
-		})
-
-		// Observability Traces & Circuit Breakers
-		r.Get("/{orgId}/observability/traces", obsHandler.GetTraces)
-		r.Post("/admin/circuit-breaker/{agentKey}", obsHandler.TripCircuitBreaker)
-
-		// Super Admin Platform Cockpit (Direct Database Read & Write)
-		r.Route("/admin", func(r chi.Router) {
-			r.Get("/overview", adminOverviewHandler.GetOverview)
-			r.Get("/organizations", adminOverviewHandler.ListOrganizations)
-			r.Post("/organizations", adminOverviewHandler.CreateOrganization)
-			r.Put("/organizations/{id}", adminOverviewHandler.UpdateOrganization)
-			r.Get("/users", adminOverviewHandler.GetUsers)
-			r.Get("/features", adminOverviewHandler.GetFeatureFlags)
-			r.Post("/features/{key}/toggle", adminOverviewHandler.ToggleFeatureFlag)
-			r.Get("/audit-logs", adminOverviewHandler.GetAuditLogs)
-			r.Post("/circuit-breaker/{agentKey}/reset", adminOverviewHandler.ResetCircuitBreaker)
-			r.Post("/killswitch/trip", adminOverviewHandler.TripGlobalKillswitch)
-			r.Post("/killswitch/reset", adminOverviewHandler.ResetGlobalKillswitch)
-
-			// Admin Global Email Infrastructure & Cross-Tenant Limits
-			r.Route("/email", func(r chi.Router) {
-				r.Get("/settings", adminEmailHandler.GetGlobalSettings)
-				r.Put("/settings", adminEmailHandler.UpdateGlobalSettings)
-				r.Post("/test-platform", adminEmailHandler.TestPlatformDispatch)
-				r.Get("/analytics", adminEmailHandler.GetEmailAnalytics)
-			})
+		// Tenant Settings
+		r.Route("/{orgId}/settings", func(r chi.Router) {
+			r.Get("/", settingsHandler.GetSettings)
+			r.Put("/email", settingsHandler.UpdateEmailSettings)
+			r.Put("/byok", settingsHandler.UpdateBYOKKeys)
 		})
 	})
 
 	addr := fmt.Sprintf(":%s", port)
-	log.Printf("🤖 AI GTM Microservice starting on port %s (Telegram CRO Bot Active)...", port)
+	log.Printf("🎙️ Ofia Voice Agent Microservice starting on port %s...", port)
 	if err := http.ListenAndServe(addr, r); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}

@@ -61,42 +61,7 @@ func (WorkspaceMember) TableName() string {
 	return "WorkspaceMember"
 }
 
-type AIAgent struct {
-	ID                   string    `gorm:"primaryKey;size:191" json:"id"`
-	OrganizationID       string    `gorm:"size:191;not null;uniqueIndex:org_agent_key_uniq" json:"organization_id"`
-	Key                  string    `gorm:"size:50;not null;uniqueIndex:org_agent_key_uniq" json:"key"` // cro, lead_hunter, gtm_strategist...
-	Name                 string    `gorm:"size:191;not null" json:"name"`
-	Role                 string    `gorm:"size:191;not null" json:"role"`
-	Category             string    `gorm:"size:50;not null" json:"category"`
-	Status               string    `gorm:"size:30;not null;default:'ONLINE'" json:"status"` // WORKING, ONLINE, IDLE, TRIPPED
-	CurrentTask          string    `gorm:"type:text" json:"current_task"`
-	TaskProgress         int       `gorm:"default:0" json:"task_progress"`
-	ConfidenceScore      float64   `gorm:"default:95.0" json:"confidence_score"`
-	Recommendation       string    `gorm:"type:text" json:"recommendation"`
-	CircuitBreakerActive bool      `gorm:"default:false" json:"circuit_breaker_active"`
-	CreatedAt            time.Time `json:"created_at"`
-	UpdatedAt            time.Time `json:"updated_at"`
-}
 
-func (AIAgent) TableName() string {
-	return "gtm_agent"
-}
-
-type GTMStrategy struct {
-	ID                string    `gorm:"primaryKey;size:191" json:"id"`
-	OrganizationID    string    `gorm:"size:191;not null" json:"organization_id"`
-	Title             string    `gorm:"size:191;not null" json:"title"`
-	TargetTAM         string    `gorm:"size:191" json:"target_tam"`
-	ValueProposition  string    `gorm:"type:text;not null" json:"value_proposition"`
-	StrategyGraphJSON string    `gorm:"type:json;not null" json:"strategy_graph_json"`
-	Status            string    `gorm:"size:30;not null;default:'ACTIVE'" json:"status"`
-	CreatedAt         time.Time `json:"created_at"`
-	UpdatedAt         time.Time `json:"updated_at"`
-}
-
-func (GTMStrategy) TableName() string {
-	return "gtm_strategy"
-}
 
 type GTMCampaign struct {
 	ID             string    `gorm:"primaryKey;size:191" json:"id"`
@@ -144,43 +109,7 @@ func (GTMLead) TableName() string {
 	return "gtm_lead"
 }
 
-type GTMApproval struct {
-	ID                 string    `gorm:"primaryKey;size:191" json:"id"`
-	OrganizationID     string    `gorm:"size:191;not null" json:"organization_id"`
-	CampaignID         *string   `gorm:"size:191" json:"campaign_id,omitempty"`
-	Title              string    `gorm:"size:191;not null" json:"title"`
-	Type               string    `gorm:"size:50;not null" json:"type"` // EMAIL_CAMPAIGN, WHATSAPP_BROADCAST, AD_SPEND, STRATEGY_SHIFT
-	CreatorAgentKey    string    `gorm:"size:50;not null" json:"creator_agent_key"`
-	RiskLevel          string    `gorm:"size:20;not null;default:'MEDIUM'" json:"risk_level"` // LOW, MEDIUM, HIGH
-	TargetChannel      string    `gorm:"size:50;not null" json:"target_channel"`
-	PreviewDataJSON    string    `gorm:"type:json;not null" json:"preview_data_json"`
-	Status             string    `gorm:"size:30;not null;default:'PENDING'" json:"status"` // PENDING, APPROVED, REJECTED
-	AuthorizedByUserID *string   `gorm:"size:191" json:"authorized_by_user_id,omitempty"`
-	AuthorizedAt       *time.Time `json:"authorized_at,omitempty"`
-	CreatedAt          time.Time `json:"created_at"`
-}
 
-func (GTMApproval) TableName() string {
-	return "gtm_approval"
-}
-
-type GTMObservabilityTrace struct {
-	ID               string    `gorm:"primaryKey;size:191" json:"id"`
-	OrganizationID   string    `gorm:"size:191;not null" json:"organization_id"`
-	AgentKey         string    `gorm:"size:50;not null" json:"agent_key"`
-	ModelProvider    string    `gorm:"size:50;not null" json:"model_provider"` // ANTHROPIC, OPENAI, GOOGLE, GROQ
-	ModelName        string    `gorm:"size:100;not null" json:"model_name"`
-	PromptTokens     int       `gorm:"default:0" json:"prompt_tokens"`
-	CompletionTokens int       `gorm:"default:0" json:"completion_tokens"`
-	TotalCostUSD     float64   `gorm:"default:0.0" json:"total_cost_usd"`
-	LatencyMs        int       `gorm:"default:0" json:"latency_ms"`
-	Status           string    `gorm:"size:20;not null;default:'SUCCESS'" json:"status"` // SUCCESS, ERROR, RETRIED
-	CreatedAt        time.Time `json:"created_at"`
-}
-
-func (GTMObservabilityTrace) TableName() string {
-	return "gtm_observability_trace"
-}
 
 type GTMTenantSettings struct {
 	ID                           string    `gorm:"primaryKey;size:191" json:"id"`
@@ -323,27 +252,7 @@ func (GTMEmailReply) TableName() string {
 	return "gtm_email_reply"
 }
 
-type GTMSocialPostMetrics struct {
-	ID             string    `gorm:"primaryKey;size:191" json:"id"`
-	OrganizationID string    `gorm:"size:191;not null;index" json:"organization_id"`
-	CampaignID     string    `gorm:"size:191" json:"campaign_id"`
-	Channel        string    `gorm:"size:50;not null" json:"channel"` // LINKEDIN, FACEBOOK, INSTAGRAM, TWITTER
-	ExternalPostID string    `gorm:"size:191" json:"external_post_id"`
-	ContentSnippet string    `gorm:"size:255;not null" json:"content_snippet"`
-	Impressions    int       `gorm:"default:0" json:"impressions"`
-	Reach          int       `gorm:"default:0" json:"reach"`
-	Likes          int       `gorm:"default:0" json:"likes"`
-	Comments       int       `gorm:"default:0" json:"comments"`
-	Shares         int       `gorm:"default:0" json:"shares"`
-	Clicks         int       `gorm:"default:0" json:"clicks"`
-	EngagementRate float64   `gorm:"default:0.0" json:"engagement_rate"`
-	PublishedAt    time.Time `json:"published_at"`
-	LastPolledAt   time.Time `json:"last_polled_at"`
-}
 
-func (GTMSocialPostMetrics) TableName() string {
-	return "gtm_social_post_metrics"
-}
 
 type GTMFeatureFlag struct {
 	ID                string    `gorm:"primaryKey;size:191" json:"id"`

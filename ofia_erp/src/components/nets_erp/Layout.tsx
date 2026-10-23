@@ -365,7 +365,7 @@ export default function ERPLayout({ children }: { children: React.ReactNode }) {
         items.push({ name: "CRM & Growth", route: "/erp/admin/crm", icon: <BarChartIcon /> });
       }
       if (dAccess.isPageAllowed("ai") && !hasRoute("/erp/admin/ai")) {
-        items.push({ name: "Ofia AI Swarm", route: "/erp/admin/ai", icon: <DashboardIcon /> });
+        items.push({ name: "Ofia Voice Agent", route: "/erp/admin/ai", icon: <DashboardIcon /> });
       }
       if (dAccess.isPageAllowed("hr") && !hasRoute("/hr") && !hasRoute("/erp/hr")) {
         items.push({ name: "HR Management", route: "/hr", icon: <UsersIcon /> });

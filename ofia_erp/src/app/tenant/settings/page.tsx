@@ -33,6 +33,11 @@ import {
   Plus,
   Star,
   Check,
+  Phone,
+  PhoneCall,
+  PhoneForwarded,
+  Volume2,
+  Clock,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -118,6 +123,31 @@ export default function TenantSettingsPage() {
   const [deepseekKey, setDeepseekKey] = useState("sk-••••••••••••••••••••••••");
   const [byokVisible, setByokVisible] = useState<{ [key: string]: boolean }>({});
 
+  // Voice Agent Telephony & Guardrail States
+  const [telephonyProvider, setTelephonyProvider] = useState<"voicebip" | "termii" | "twilio" | "africas_talking" | "webrtc_browser">("voicebip");
+  const [voicebipApiKey, setVoicebipApiKey] = useState("");
+  const [voicebipApiSecret, setVoicebipApiSecret] = useState("");
+  const [voicebipSipEndpoint, setVoicebipSipEndpoint] = useState("sip.voicebip.com:5060");
+  const [telephonyAccountSid, setTelephonyAccountSid] = useState("");
+  const [telephonyAuthToken, setTelephonyAuthToken] = useState("");
+  const [telephonyFromNumber, setTelephonyFromNumber] = useState("+234 1 888 0000");
+  const [termiiApiKey, setTermiiApiKey] = useState("");
+  const [voiceAgentName, setVoiceAgentName] = useState("Ofia Executive Voice Assistant");
+  const [voiceAccent, setVoiceAccent] = useState("en-NG-Standard-A");
+  const [elevenLabsApiKey, setElevenLabsApiKey] = useState("");
+  const [aiDisclosureEnabled, setAiDisclosureEnabled] = useState(true);
+  const [aiDisclosureText, setAiDisclosureText] = useState(
+    "Hello, I am Ofia's automated executive assistant calling on behalf of the corporate mobility team."
+  );
+  const [humanEscalationNumber, setHumanEscalationNumber] = useState("+234 800 000 0000");
+  const [callingHoursStart, setCallingHoursStart] = useState("09:00");
+  const [callingHoursEnd, setCallingHoursEnd] = useState("17:00");
+  const [maxCallDurationSec, setMaxCallDurationSec] = useState(300);
+  const [maxRetries, setMaxRetries] = useState(2);
+  const [autoWhatsAppDeck, setAutoWhatsAppDeck] = useState(true);
+  const [isSavingVoice, setIsSavingVoice] = useState(false);
+  const [voiceSaveSuccess, setVoiceSaveSuccess] = useState(false);
+
   const toggleByokVis = (k: string) => {
     setByokVisible(prev => ({ ...prev, [k]: !prev[k] }));
   };
@@ -192,6 +222,50 @@ export default function TenantSettingsPage() {
       setAiChannelStatus("Verification network error: " + err.message);
     } finally {
       setIsTestingAiChannel(false);
+    }
+  };
+
+  const handleSaveVoiceSettings = async () => {
+    const currentSlug = activeTenant?.slug || slug;
+    if (!currentSlug) return;
+    setIsSavingVoice(true);
+    setVoiceSaveSuccess(false);
+    try {
+      await fetch("/api/erp/byok", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "save_voice",
+          tenantSlug: currentSlug,
+          voiceConfig: {
+            telephony_provider: telephonyProvider,
+            voicebip_api_key: voicebipApiKey,
+            voicebip_api_secret: voicebipApiSecret,
+            voicebip_sip_endpoint: voicebipSipEndpoint,
+            from_phone_number: telephonyFromNumber,
+            telephony_account_sid: telephonyAccountSid,
+            telephony_auth_token: telephonyAuthToken,
+            termii_api_key: termiiApiKey,
+            agent_name: voiceAgentName,
+            voice_id: voiceAccent,
+            elevenlabs_api_key: elevenLabsApiKey,
+            ai_disclosure_enabled: aiDisclosureEnabled,
+            ai_disclosure_text: aiDisclosureText,
+            human_escalation_phone: humanEscalationNumber,
+            calling_hours_start: callingHoursStart,
+            calling_hours_end: callingHoursEnd,
+            max_duration_sec: maxCallDurationSec,
+            max_retries: maxRetries,
+            auto_whatsapp_deck: autoWhatsAppDeck,
+          },
+        }),
+      });
+      setVoiceSaveSuccess(true);
+      setTimeout(() => setVoiceSaveSuccess(false), 3000);
+    } catch (err) {
+      console.warn("Failed to save voice config:", err);
+    } finally {
+      setIsSavingVoice(false);
     }
   };
 
@@ -394,6 +468,28 @@ export default function TenantSettingsPage() {
           if (s.awsSesAccessKey) setAwsSesAccessKey(s.awsSesAccessKey);
           if (s.awsSesSecretKey) setAwsSesSecretKey(s.awsSesSecretKey);
           if (s.awsSesRegion) setAwsSesRegion(s.awsSesRegion);
+        }
+        if (data.voiceConfig) {
+          const vc = data.voiceConfig;
+          if (vc.telephony_provider) setTelephonyProvider(vc.telephony_provider);
+          if (vc.voicebip_api_key) setVoicebipApiKey(vc.voicebip_api_key);
+          if (vc.voicebip_api_secret) setVoicebipApiSecret(vc.voicebip_api_secret);
+          if (vc.voicebip_sip_endpoint) setVoicebipSipEndpoint(vc.voicebip_sip_endpoint);
+          if (vc.from_phone_number) setTelephonyFromNumber(vc.from_phone_number);
+          if (vc.telephony_account_sid) setTelephonyAccountSid(vc.telephony_account_sid);
+          if (vc.telephony_auth_token) setTelephonyAuthToken(vc.telephony_auth_token);
+          if (vc.termii_api_key) setTermiiApiKey(vc.termii_api_key);
+          if (vc.agent_name) setVoiceAgentName(vc.agent_name);
+          if (vc.voice_id) setVoiceAccent(vc.voice_id);
+          if (vc.elevenlabs_api_key) setElevenLabsApiKey(vc.elevenlabs_api_key);
+          if (vc.ai_disclosure_enabled !== undefined) setAiDisclosureEnabled(vc.ai_disclosure_enabled);
+          if (vc.ai_disclosure_text) setAiDisclosureText(vc.ai_disclosure_text);
+          if (vc.human_escalation_phone) setHumanEscalationNumber(vc.human_escalation_phone);
+          if (vc.calling_hours_start) setCallingHoursStart(vc.calling_hours_start);
+          if (vc.calling_hours_end) setCallingHoursEnd(vc.calling_hours_end);
+          if (vc.max_duration_sec) setMaxCallDurationSec(vc.max_duration_sec);
+          if (vc.max_retries) setMaxRetries(vc.max_retries);
+          if (vc.auto_whatsapp_deck !== undefined) setAutoWhatsAppDeck(vc.auto_whatsapp_deck);
         }
       }
     } catch (err) {
@@ -989,6 +1085,27 @@ export default function TenantSettingsPage() {
         awsSesAccessKey,
         awsSesSecretKey,
         awsSesRegion,
+        voiceConfig: {
+          telephony_provider: telephonyProvider,
+          voicebip_api_key: voicebipApiKey,
+          voicebip_api_secret: voicebipApiSecret,
+          voicebip_sip_endpoint: voicebipSipEndpoint,
+          from_phone_number: telephonyFromNumber,
+          telephony_account_sid: telephonyAccountSid,
+          telephony_auth_token: telephonyAuthToken,
+          termii_api_key: termiiApiKey,
+          agent_name: voiceAgentName,
+          voice_id: voiceAccent,
+          elevenlabs_api_key: elevenLabsApiKey,
+          ai_disclosure_enabled: aiDisclosureEnabled,
+          ai_disclosure_text: aiDisclosureText,
+          human_escalation_phone: humanEscalationNumber,
+          calling_hours_start: callingHoursStart,
+          calling_hours_end: callingHoursEnd,
+          max_duration_sec: maxCallDurationSec,
+          max_retries: maxRetries,
+          auto_whatsapp_deck: autoWhatsAppDeck,
+        },
       };
 
       try {
@@ -2417,6 +2534,397 @@ export default function TenantSettingsPage() {
                     {aiChannelStatus}
                   </span>
                 )}
+              </div>
+            </NexaCard>
+
+            {/* OFIA AI VOICE AGENT TELEPHONY INFRASTRUCTURE CARD */}
+            <NexaCard variant="glass" padding="lg" className="space-y-5 border border-[var(--nexa-border)] shadow-xs rounded-3xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--nexa-border)] pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-[#1A56DB] flex items-center justify-center">
+                    <PhoneCall className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-[var(--nexa-text-primary)] flex items-center gap-2">
+                      Ofia Voice Agent Telephony & Carrier Infrastructure
+                      <NexaBadge variant="brand">PSTN & SIP</NexaBadge>
+                    </h3>
+                    <p className="text-[11px] text-[var(--nexa-text-muted)]">
+                      Configure your telephony carrier for automated outbound calling to Nigerian GSM/PSTN numbers (+234).
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-blue-600 bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  <span>Telecom Whitelisted</span>
+                </div>
+              </div>
+
+              {/* TELEPHONY PROVIDER SELECTOR */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)] block">
+                  Telephony Carrier & Audio Pipeline
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5">
+                  {[
+                    { id: "voicebip", title: "Voicebip Service", desc: "Enterprise Nigerian PSTN & SIP (+234)" },
+                    { id: "termii", title: "Termii Voice", desc: "Local Nigerian Telco Routes (+234)" },
+                    { id: "twilio", title: "Twilio Voice", desc: "Programmable SIP & Audio Stream" },
+                    { id: "africas_talking", title: "Africa's Talking", desc: "Pan-African Voice Gateway" },
+                    { id: "webrtc_browser", title: "In-Browser WebRTC", desc: "Interactive Simulator & Testing" },
+                  ].map((p) => {
+                    const isSel = telephonyProvider === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setTelephonyProvider(p.id as any)}
+                        className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                          isSel
+                            ? "bg-[#1A56DB]/10 border-[#1A56DB] text-[#1A56DB] font-bold shadow-xs"
+                            : "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] hover:border-slate-400"
+                        }`}
+                      >
+                        <div className="text-xs font-bold flex items-center justify-between">
+                          {p.title}
+                          {isSel && <CheckCircle2 className="w-3.5 h-3.5 text-[#1A56DB]" />}
+                        </div>
+                        <div className="text-[10px] text-[var(--nexa-text-muted)] mt-0.5">{p.desc}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* TELEPHONY CREDENTIALS */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)]">
+                <div>
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)] block mb-1">
+                    Outbound Caller ID (From Number)
+                  </label>
+                  <input
+                    type="text"
+                    value={telephonyFromNumber}
+                    onChange={(e) => setTelephonyFromNumber(e.target.value)}
+                    placeholder="+234 1 888 0000"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none font-mono text-[var(--nexa-text-primary)]"
+                  />
+                  <span className="text-[10px] text-[var(--nexa-text-muted)] mt-1 block">
+                    Verified Nigerian CLI phone number presented to prospects.
+                  </span>
+                </div>
+
+                {telephonyProvider === "voicebip" && (
+                  <>
+                    <div>
+                      <label className="text-xs font-bold text-[var(--nexa-text-primary)] block mb-1">
+                        Voicebip API Key / Token
+                      </label>
+                      <input
+                        type="password"
+                        value={voicebipApiKey}
+                        onChange={(e) => setVoicebipApiKey(e.target.value)}
+                        placeholder="vb_live_••••••••••••••••"
+                        className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none font-mono text-[var(--nexa-text-primary)]"
+                      />
+                      <span className="text-[10px] text-[var(--nexa-text-muted)] mt-1 block">
+                        Voicebip Console &rarr; API & SIP Tokens.
+                      </span>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-[var(--nexa-text-primary)] block mb-1">
+                        Voicebip API Secret
+                      </label>
+                      <input
+                        type="password"
+                        value={voicebipApiSecret}
+                        onChange={(e) => setVoicebipApiSecret(e.target.value)}
+                        placeholder="••••••••••••••••"
+                        className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none font-mono text-[var(--nexa-text-primary)]"
+                      />
+                      <span className="text-[10px] text-[var(--nexa-text-muted)] mt-1 block">
+                        HMAC signature key for outbound dialing.
+                      </span>
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-[var(--nexa-text-primary)] block mb-1">
+                        Voicebip SIP Endpoint / Trunk
+                      </label>
+                      <input
+                        type="text"
+                        value={voicebipSipEndpoint}
+                        onChange={(e) => setVoicebipSipEndpoint(e.target.value)}
+                        placeholder="sip.voicebip.com:5060"
+                        className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none font-mono text-[var(--nexa-text-primary)]"
+                      />
+                      <span className="text-[10px] text-[var(--nexa-text-muted)] mt-1 block">
+                        Direct SIP trunk for sub-second audio streaming.
+                      </span>
+                    </div>
+                  </>
+                )}
+
+                {telephonyProvider === "termii" && (
+                  <div className="sm:col-span-2">
+                    <label className="text-xs font-bold text-[var(--nexa-text-primary)] block mb-1">
+                      Termii API Key
+                    </label>
+                    <input
+                      type="password"
+                      value={termiiApiKey}
+                      onChange={(e) => setTermiiApiKey(e.target.value)}
+                      placeholder="TL••••••••••••••••"
+                      className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none font-mono text-[var(--nexa-text-primary)]"
+                    />
+                    <span className="text-[10px] text-[var(--nexa-text-muted)] mt-1 block">
+                      Obtained from Termii Dashboard &rarr; Settings &rarr; API Tokens.
+                    </span>
+                  </div>
+                )}
+
+                {telephonyProvider === "twilio" && (
+                  <>
+                    <div>
+                      <label className="text-xs font-bold text-[var(--nexa-text-primary)] block mb-1">
+                        Twilio Account SID
+                      </label>
+                      <input
+                        type="text"
+                        value={telephonyAccountSid}
+                        onChange={(e) => setTelephonyAccountSid(e.target.value)}
+                        placeholder="AC••••••••••••••••"
+                        className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none font-mono text-[var(--nexa-text-primary)]"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-[var(--nexa-text-primary)] block mb-1">
+                        Twilio Auth Token
+                      </label>
+                      <input
+                        type="password"
+                        value={telephonyAuthToken}
+                        onChange={(e) => setTelephonyAuthToken(e.target.value)}
+                        placeholder="••••••••••••••••"
+                        className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none font-mono text-[var(--nexa-text-primary)]"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {telephonyProvider === "webrtc_browser" && (
+                  <div className="sm:col-span-2 flex items-center p-3 rounded-xl bg-blue-500/10 text-xs text-[#1A56DB] gap-2">
+                    <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <span>In-Browser testing mode uses local WebRTC and WebSockets. No external telephony carrier credits required.</span>
+                  </div>
+                )}
+              </div>
+            </NexaCard>
+
+            {/* OFIA AI VOICE PERSONA & COMPLIANCE GUARDRAILS CARD */}
+            <NexaCard variant="glass" padding="lg" className="space-y-5 border border-[var(--nexa-border)] shadow-xs rounded-3xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--nexa-border)] pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                    <Volume2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-[var(--nexa-text-primary)] flex items-center gap-2">
+                      Voice Persona, Speech Synthesis & Compliance Guardrails
+                      <NexaBadge variant="green">Regulatory Compliant</NexaBadge>
+                    </h3>
+                    <p className="text-[11px] text-[var(--nexa-text-muted)]">
+                      Control speaking cadence, mandatory AI disclosure, human escalation triggers, and permissible calling windows.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* AGENT NAME */}
+                <div>
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)] block mb-1">
+                    Spoken Agent Identity
+                  </label>
+                  <input
+                    type="text"
+                    value={voiceAgentName}
+                    onChange={(e) => setVoiceAgentName(e.target.value)}
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none text-[var(--nexa-text-primary)] font-semibold"
+                  />
+                  <span className="text-[10px] text-[var(--nexa-text-muted)] mt-1 block">
+                    The name the agent introduces itself with to corporate prospects.
+                  </span>
+                </div>
+
+                {/* VOICE ACCENT */}
+                <div>
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)] block mb-1">
+                    Spoken Accent & Locale
+                  </label>
+                  <select
+                    value={voiceAccent}
+                    onChange={(e) => setVoiceAccent(e.target.value)}
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none text-[var(--nexa-text-primary)] font-semibold"
+                  >
+                    <option value="en-NG-Standard-A">Nigerian English (Lagos Business Professional)</option>
+                    <option value="en-GB-Standard-B">British English (Corporate International)</option>
+                    <option value="af-ZA-Standard-A">Neutral African English</option>
+                  </select>
+                  <span className="text-[10px] text-[var(--nexa-text-muted)] mt-1 block">
+                    Calibrated for optimal natural cadence over Nigerian mobile telephone connections.
+                  </span>
+                </div>
+
+                {/* HUMAN ESCALATION NUMBER */}
+                <div>
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)] block mb-1 flex items-center gap-1.5">
+                    <PhoneForwarded className="w-3.5 h-3.5 text-[#1A56DB]" />
+                    Human Closer Escalation Phone
+                  </label>
+                  <input
+                    type="text"
+                    value={humanEscalationNumber}
+                    onChange={(e) => setHumanEscalationNumber(e.target.value)}
+                    placeholder="+234 800 000 0000"
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none font-mono text-[var(--nexa-text-primary)]"
+                  />
+                  <span className="text-[10px] text-[var(--nexa-text-muted)] mt-1 block">
+                    Call will immediately bridge to this closer number if prospect asks for human director.
+                  </span>
+                </div>
+
+                {/* CALLING WINDOWS */}
+                <div>
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)] block mb-1 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-amber-500" />
+                    Permissible Calling Window (West Africa Time)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="time"
+                      value={callingHoursStart}
+                      onChange={(e) => setCallingHoursStart(e.target.value)}
+                      className="px-3 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none text-[var(--nexa-text-primary)]"
+                    />
+                    <span className="text-xs text-[var(--nexa-text-muted)]">to</span>
+                    <input
+                      type="time"
+                      value={callingHoursEnd}
+                      onChange={(e) => setCallingHoursEnd(e.target.value)}
+                      className="px-3 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none text-[var(--nexa-text-primary)]"
+                    />
+                  </div>
+                  <span className="text-[10px] text-[var(--nexa-text-muted)] mt-1 block">
+                    Outreach dials strictly within Nigerian business hours (09:00 - 17:00 WAT).
+                  </span>
+                </div>
+
+                {/* MAX DURATION & RETRIES */}
+                <div>
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)] block mb-1">
+                    Max Call Duration (Seconds)
+                  </label>
+                  <input
+                    type="number"
+                    value={maxCallDurationSec}
+                    onChange={(e) => setMaxCallDurationSec(Number(e.target.value) || 300)}
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none font-mono text-[var(--nexa-text-primary)]"
+                  />
+                  <span className="text-[10px] text-[var(--nexa-text-muted)] mt-1 block">
+                    Hard ceiling per call to prevent runaway telephony minutes (Default: 300s = 5m).
+                  </span>
+                </div>
+
+                {/* MAX RETRIES */}
+                <div>
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)] block mb-1">
+                    Max Dial Attempts per Contact
+                  </label>
+                  <input
+                    type="number"
+                    value={maxRetries}
+                    onChange={(e) => setMaxRetries(Number(e.target.value) || 2)}
+                    className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none font-mono text-[var(--nexa-text-primary)]"
+                  />
+                  <span className="text-[10px] text-[var(--nexa-text-muted)] mt-1 block">
+                    Stops retrying if prospect does not answer after configured attempts.
+                  </span>
+                </div>
+              </div>
+
+              {/* MANDATORY AI DISCLOSURE */}
+              <div className="space-y-2 p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)]">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                    Mandatory AI Identity Disclosure
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer text-xs text-[var(--nexa-text-secondary)]">
+                    <input
+                      type="checkbox"
+                      checked={aiDisclosureEnabled}
+                      onChange={(e) => setAiDisclosureEnabled(e.target.checked)}
+                      className="rounded text-[#1A56DB] focus:ring-0"
+                    />
+                    <span>Enforce on all calls</span>
+                  </label>
+                </div>
+                <textarea
+                  rows={2}
+                  value={aiDisclosureText}
+                  onChange={(e) => setAiDisclosureText(e.target.value)}
+                  className="w-full px-3.5 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none text-[var(--nexa-text-primary)] resize-none"
+                />
+                <span className="text-[10px] text-[var(--nexa-text-muted)] block">
+                  Mandatory opening disclosure ensuring compliance with direct-marketing and telecommunications regulations.
+                </span>
+              </div>
+
+              {/* AUTOMATION TOGGLES */}
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-500/5 border border-emerald-500/20">
+                <div className="flex items-center gap-2.5">
+                  <MessageSquare className="w-4 h-4 text-emerald-600" />
+                  <div>
+                    <span className="text-xs font-bold text-[var(--nexa-text-primary)] block">
+                      Auto-Dispatch WhatsApp Route Deck
+                    </span>
+                    <span className="text-[10px] text-[var(--nexa-text-muted)]">
+                      Immediately sends Ofia corporate transport PDF to prospect's WhatsApp if call outcome is interested.
+                    </span>
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={autoWhatsAppDeck}
+                  onChange={(e) => setAutoWhatsAppDeck(e.target.checked)}
+                  className="rounded text-emerald-600 focus:ring-0 cursor-pointer"
+                />
+              </div>
+
+              {/* SAVE BUTTON */}
+              <div className="pt-2 flex items-center justify-between border-t border-[var(--nexa-border)]">
+                <span className="text-[11px] text-[var(--nexa-text-muted)]">
+                  Voice configuration is synchronized to the Ofia Voice microservice and CRM dispatcher.
+                </span>
+                <div className="flex items-center gap-2">
+                  {voiceSaveSuccess && (
+                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <Check className="w-3.5 h-3.5" />
+                      Voice Settings Saved!
+                    </span>
+                  )}
+                  <NexaButton
+                    size="sm"
+                    variant="primary"
+                    onClick={handleSaveVoiceSettings}
+                    disabled={isSavingVoice}
+                    leftIcon={isSavingVoice ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                    className="bg-[#1A56DB] text-white hover:bg-[#1545B0] rounded-xl font-bold shadow-xs px-4 py-2"
+                  >
+                    {isSavingVoice ? "Saving..." : "Save Voice Agent Settings"}
+                  </NexaButton>
+                </div>
               </div>
             </NexaCard>
           </div>

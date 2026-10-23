@@ -610,17 +610,35 @@ export default function CrmLeadsPage() {
           ]}
         />
 
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="w-full sm:w-80">
-            <NexaInput
-              placeholder="Search company, contact, or email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              leftIcon={<Search className="w-4 h-4" />}
-            />
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          <div className="flex items-center gap-2 w-full md:w-auto flex-1 max-w-lg">
+            <div className="flex-1 min-w-[200px]">
+              <NexaInput
+                placeholder="Search company, contact, or email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                leftIcon={<Search className="w-4 h-4" />}
+              />
+            </div>
+            {/* Call Status Dropdown Filter */}
+            <div className="relative">
+              <select
+                value={callStatusFilter}
+                onChange={(e) => setCallStatusFilter(e.target.value)}
+                className="appearance-none pl-3 pr-8 py-2 rounded-xl text-xs font-semibold border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] hover:border-[#1A56DB]/50 transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1A56DB] shrink-0"
+                title="Filter by Call Status"
+              >
+                <option value="ALL">All Call Statuses ({callCounts.ALL})</option>
+                <option value="green">🟢 Interested, Proposal, Won ({callCounts.green})</option>
+                <option value="yellow">🟡 Callback, Busy, Voicemail ({callCounts.yellow})</option>
+                <option value="red">🔴 Wrong No, Not Interested ({callCounts.red})</option>
+                <option value="blue">🔵 Not on Call Logger ({callCounts.blue})</option>
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-[var(--nexa-text-muted)] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1">
+          <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1">
             {["ALL", "ENRICHED", "IDENTIFIED", "CONTACTED", "QUALIFIED", "MEETING_BOOKED", "CONVERTED"].map((st) => (
               <button
                 key={st}
@@ -637,27 +655,94 @@ export default function CrmLeadsPage() {
           </div>
         </div>
 
-        {/* Call Logger Status Legend */}
-        <div className="flex items-center gap-2.5 text-[11px] text-[var(--nexa-text-muted)] flex-wrap px-1">
-          <span className="font-bold text-[var(--nexa-text-secondary)] flex items-center gap-1.5">
+        {/* Call Logger Status Filter Chips */}
+        <div className="flex items-center gap-2 text-xs text-[var(--nexa-text-muted)] flex-wrap px-1">
+          <span className="font-bold text-[var(--nexa-text-secondary)] flex items-center gap-1.5 mr-1">
             <PhoneCall className="w-3.5 h-3.5 text-[#1A56DB]" /> Call Status:
           </span>
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold border border-emerald-500/20">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span>Interested, Proposal, Won (Green)</span>
-          </span>
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 font-semibold border border-amber-500/20">
-            <span className="w-2 h-2 rounded-full bg-amber-500" />
-            <span>Callback, No Answer, Busy, Voicemail (Yellow)</span>
-          </span>
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-rose-500/10 text-rose-700 dark:text-rose-400 font-semibold border border-rose-500/20">
-            <span className="w-2 h-2 rounded-full bg-rose-500" />
-            <span>Wrong Number, Not Interested (Red)</span>
-          </span>
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-400 font-semibold border border-blue-500/20">
-            <span className="w-2 h-2 rounded-full bg-blue-500" />
-            <span>Not on Call Logger (Blue)</span>
-          </span>
+
+          <button
+            type="button"
+            onClick={() => setCallStatusFilter("ALL")}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              callStatusFilter === "ALL"
+                ? "bg-[#1A56DB] text-white shadow-xs"
+                : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] border border-[var(--nexa-border)]"
+            }`}
+          >
+            <span>All Calls</span>
+            <span className="text-[10px] opacity-80 font-normal">({callCounts.ALL})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCallStatusFilter(callStatusFilter === "green" ? "ALL" : "green")}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+              callStatusFilter === "green"
+                ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                : "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
+            }`}
+            title="Filter by Interested, Proposal, Deal Won"
+          >
+            <span className={`w-2 h-2 rounded-full ${callStatusFilter === "green" ? "bg-white" : "bg-emerald-500"}`} />
+            <span>Interested, Proposal, Won</span>
+            <span className="text-[10px] opacity-80 font-normal">({callCounts.green})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCallStatusFilter(callStatusFilter === "yellow" ? "ALL" : "yellow")}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+              callStatusFilter === "yellow"
+                ? "bg-amber-600 text-white border-amber-600 shadow-xs"
+                : "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20"
+            }`}
+            title="Filter by Callback, No Answer, Busy, Voicemail"
+          >
+            <span className={`w-2 h-2 rounded-full ${callStatusFilter === "yellow" ? "bg-white" : "bg-amber-500"}`} />
+            <span>Callback, No Answer, Busy</span>
+            <span className="text-[10px] opacity-80 font-normal">({callCounts.yellow})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCallStatusFilter(callStatusFilter === "red" ? "ALL" : "red")}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+              callStatusFilter === "red"
+                ? "bg-rose-600 text-white border-rose-600 shadow-xs"
+                : "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20"
+            }`}
+            title="Filter by Wrong Number, Not Interested"
+          >
+            <span className={`w-2 h-2 rounded-full ${callStatusFilter === "red" ? "bg-white" : "bg-rose-500"}`} />
+            <span>Wrong Number, Not Interested</span>
+            <span className="text-[10px] opacity-80 font-normal">({callCounts.red})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setCallStatusFilter(callStatusFilter === "blue" ? "ALL" : "blue")}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+              callStatusFilter === "blue"
+                ? "bg-blue-600 text-white border-blue-600 shadow-xs"
+                : "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/20"
+            }`}
+            title="Filter by Not on Call Logger"
+          >
+            <span className={`w-2 h-2 rounded-full ${callStatusFilter === "blue" ? "bg-white" : "bg-blue-500"}`} />
+            <span>Not on Call Logger</span>
+            <span className="text-[10px] opacity-80 font-normal">({callCounts.blue})</span>
+          </button>
+
+          {callStatusFilter !== "ALL" && (
+            <button
+              type="button"
+              onClick={() => setCallStatusFilter("ALL")}
+              className="text-xs font-bold text-[#1A56DB] hover:underline cursor-pointer ml-1"
+            >
+              Reset filter
+            </button>
+          )}
         </div>
 
         <NexaCard className="overflow-hidden">

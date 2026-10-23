@@ -30,12 +30,13 @@ import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaModal } from "@/components/nexa/NexaModal";
 import { Pagination } from "@/components/nexa/Pagination";
-import { CrmLead } from "@/lib/crm-service";
+import { CrmLead, CrmCall } from "@/lib/crm-service";
 import { crmFetch } from "@/lib/crm-client";
 import { filterSalesClosers } from "@/lib/access-control";
 
 export default function CrmLeadsPage() {
   const [leads, setLeads] = useState<CrmLead[]>([]);
+  const [calls, setCalls] = useState<CrmCall[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [isLoading, setIsLoading] = useState(true);
@@ -90,19 +91,160 @@ export default function CrmLeadsPage() {
   }, []);
 
   useEffect(() => {
-    async function loadLeads() {
+    async function loadData() {
       try {
-        const res = await crmFetch("/api/erp/crm/leads").then((r) => r.json()).catch(() => null);
-        const rawLeads = Array.isArray(res) ? res : Array.isArray(res?.leads) ? res.leads : [];
+        const [leadsRes, callsRes] = await Promise.all([
+          crmFetch("/api/erp/crm/leads").then((r) => r.json()).catch(() => null),
+          crmFetch("/api/erp/crm/calls").then((r) => r.json()).catch(() => null),
+        ]);
+        const rawLeads = Array.isArray(leadsRes) ? leadsRes : Array.isArray(leadsRes?.leads) ? leadsRes.leads : [];
         setLeads(rawLeads);
+        const rawCalls = Array.isArray(callsRes?.calls) ? callsRes.calls : [];
+        setCalls(rawCalls);
       } catch {
         setLeads([]);
+        setCalls([]);
       } finally {
         setIsLoading(false);
       }
     }
-    loadLeads();
+    loadData();
   }, []);
+
+  // Memoize latest call by leadId, phone number, and contact info
+  const latestCallByLead = useMemo(() => {
+    const map = new Map<string, CrmCall>();
+    // calls is ordered by callDate DESC (most recent first)
+    for (const c of calls) {
+      if (c.leadId && !map.has(`id:${c.leadId}`)) {
+        map.set(`id:${c.leadId}`, c);
+      }
+      if (c.phoneNumber) {
+        const clean = c.phoneNumber.replace(/[^0-9]/g, "");
+        if (clean.length >= 7 && !map.has(`phone:${clean.slice(-10)}`)) {
+          map.set(`phone:${clean.slice(-10)}`, c);
+        }
+      }
+      if (c.contactName && c.company) {
+        const key = `name_comp:${c.contactName.trim().toLowerCase()}_${c.company.trim().toLowerCase()}`;
+        if (!map.has(key)) {
+          map.set(key, c);
+        }
+      }
+    }
+    return map;
+  }, [calls]);
+
+  const getLeadCallInfo = (lead: CrmLead) => {
+    let call: CrmCall | undefined;
+    if (lead.id) {
+      call = latestCallByLead.get(`id:${lead.id}`);
+    }
+    if (!call && (lead.contactPhone || (lead as any).phone)) {
+      const clean = (lead.contactPhone || (lead as any).phone).replace(/[^0-9]/g, "");
+      if (clean.length >= 7) {
+        call = latestCallByLead.get(`phone:${clean.slice(-10)}`);
+      }
+    }
+    if (!call && lead.contactName && lead.companyName) {
+      const key = `name_comp:${lead.contactName.trim().toLowerCase()}_${lead.companyName.trim().toLowerCase()}`;
+      call = latestCallByLead.get(key);
+    }
+    return call;
+  };
+
+  const getCallIndicator = (call?: CrmCall) => {
+    if (!call || !call.outcome) {
+      return {
+        color: "blue" as const,
+        label: "Not on call logger",
+        tooltip: "Not on call logger - click to log call",
+        badgeClass: "bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/40",
+        dotClass: "bg-blue-500",
+      };
+    }
+
+    const outcome = String(call.outcome).toUpperCase().trim();
+
+    // GREEN: interested, proposal, deal won
+    if (
+      outcome === "CONNECTED_INTERESTED" ||
+      outcome === "CONNECTED_NEGOTIATING" ||
+      outcome === "CONNECTED_WON" ||
+      outcome.includes("INTERESTED") ||
+      outcome.includes("NEGOTIATING") ||
+      outcome.includes("WON")
+    ) {
+      const outcomeLabel =
+        outcome === "CONNECTED_WON" || outcome.includes("WON")
+          ? "Deal Closed / Won"
+          : outcome === "CONNECTED_NEGOTIATING" || outcome.includes("NEGOTIATING")
+          ? "Proposal / Negotiating"
+          : "Interested & Qualified";
+      return {
+        color: "green" as const,
+        label: outcomeLabel,
+        tooltip: `Call Logger: ${outcomeLabel} (Click to log new call)`,
+        badgeClass: "bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 shadow-xs",
+        dotClass: "bg-emerald-500",
+      };
+    }
+
+    // YELLOW: call back, no answer, busy, voicemail
+    if (
+      outcome === "CONNECTED_FOLLOWUP" ||
+      outcome === "NO_ANSWER" ||
+      outcome === "BUSY" ||
+      outcome === "VOICEMAIL" ||
+      outcome.includes("FOLLOWUP") ||
+      outcome.includes("CALLBACK") ||
+      outcome.includes("ANSWER") ||
+      outcome.includes("BUSY") ||
+      outcome.includes("VOICEMAIL")
+    ) {
+      const outcomeLabel =
+        outcome === "CONNECTED_FOLLOWUP" || outcome.includes("FOLLOWUP")
+          ? "Callback Scheduled"
+          : outcome === "VOICEMAIL" || outcome.includes("VOICEMAIL")
+          ? "Left Voicemail"
+          : outcome === "BUSY" || outcome.includes("BUSY")
+          ? "Busy / Line Busy"
+          : "No Answer / Ringing";
+      return {
+        color: "yellow" as const,
+        label: outcomeLabel,
+        tooltip: `Call Logger: ${outcomeLabel} (Click to log new call)`,
+        badgeClass: "bg-amber-50 text-amber-600 hover:bg-amber-600 hover:text-white border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800 shadow-xs",
+        dotClass: "bg-amber-500",
+      };
+    }
+
+    // RED: wrong number, not interested
+    if (
+      outcome === "WRONG_NUMBER" ||
+      outcome === "NOT_INTERESTED" ||
+      outcome.includes("WRONG") ||
+      outcome.includes("NOT_INTERESTED")
+    ) {
+      const outcomeLabel = outcome === "WRONG_NUMBER" || outcome.includes("WRONG") ? "Wrong Number" : "Not Interested";
+      return {
+        color: "red" as const,
+        label: outcomeLabel,
+        tooltip: `Call Logger: ${outcomeLabel} (Click to log new call)`,
+        badgeClass: "bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800 shadow-xs",
+        dotClass: "bg-rose-500",
+      };
+    }
+
+    // Fallback: Blue (not on call logger or unclassified)
+    return {
+      color: "blue" as const,
+      label: "Not on call logger",
+      tooltip: "Not on call logger - click to log call",
+      badgeClass: "bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900/40",
+      dotClass: "bg-blue-500",
+    };
+  };
 
   const handleExtractLeads = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -481,6 +623,29 @@ export default function CrmLeadsPage() {
           </div>
         </div>
 
+        {/* Call Logger Status Legend */}
+        <div className="flex items-center gap-2.5 text-[11px] text-[var(--nexa-text-muted)] flex-wrap px-1">
+          <span className="font-bold text-[var(--nexa-text-secondary)] flex items-center gap-1.5">
+            <PhoneCall className="w-3.5 h-3.5 text-[#1A56DB]" /> Call Status:
+          </span>
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 font-semibold border border-emerald-500/20">
+            <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span>Interested, Proposal, Won (Green)</span>
+          </span>
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-400 font-semibold border border-amber-500/20">
+            <span className="w-2 h-2 rounded-full bg-amber-500" />
+            <span>Callback, No Answer, Busy, Voicemail (Yellow)</span>
+          </span>
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-rose-500/10 text-rose-700 dark:text-rose-400 font-semibold border border-rose-500/20">
+            <span className="w-2 h-2 rounded-full bg-rose-500" />
+            <span>Wrong Number, Not Interested (Red)</span>
+          </span>
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-blue-500/10 text-blue-700 dark:text-blue-400 font-semibold border border-blue-500/20">
+            <span className="w-2 h-2 rounded-full bg-blue-500" />
+            <span>Not on Call Logger (Blue)</span>
+          </span>
+        </div>
+
         <NexaCard className="overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
@@ -627,13 +792,25 @@ export default function CrmLeadsPage() {
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
-                        <Link
-                          href={`/erp/admin/crm/calls?leadId=${lead.id}&phone=${encodeURIComponent(lead.contactPhone || "")}&name=${encodeURIComponent(lead.contactName || "")}&company=${encodeURIComponent(lead.companyName || "")}${lead.assignedRep ? `&rep=${encodeURIComponent(lead.assignedRep)}` : ""}`}
-                          title="Log Call with Lead"
-                          className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors"
-                        >
-                          <PhoneCall className="w-3.5 h-3.5" />
-                        </Link>
+                        {(() => {
+                          const call = getLeadCallInfo(lead);
+                          const ind = getCallIndicator(call);
+                          return (
+                            <Link
+                              href={`/erp/admin/crm/calls?leadId=${lead.id}&phone=${encodeURIComponent(lead.contactPhone || (lead as any).phone || "")}&name=${encodeURIComponent(lead.contactName || "")}&company=${encodeURIComponent(lead.companyName || "")}${lead.assignedRep ? `&rep=${encodeURIComponent(lead.assignedRep)}` : ""}`}
+                              title={ind.tooltip}
+                              className={`p-1.5 rounded-lg border transition-all relative flex items-center justify-center cursor-pointer ${ind.badgeClass}`}
+                            >
+                              <PhoneCall className="w-3.5 h-3.5" />
+                              {ind.color !== "blue" && (
+                                <span
+                                  className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full ring-2 ring-[var(--nexa-bg-surface)] ${ind.dotClass}`}
+                                  title={ind.label}
+                                />
+                              )}
+                            </Link>
+                          );
+                        })()}
                         {lead.status !== "CONVERTED" ? (
                           <button
                             onClick={() => handlePromoteToDeal(lead)}

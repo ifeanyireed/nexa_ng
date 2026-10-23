@@ -940,17 +940,17 @@ export function ErpAdminShell({
         const provVal = (permissionMatrix as any).tenant_provision?.[normKey] ?? (permissionMatrix as any).tenant_provision?.[dashKey];
 
         // Explicitly disabled in either admin or tenant_provision
-        if (adminVal === false || provVal === false) return false;
+        if ((adminVal as any) === false || (provVal as any) === false) return false;
 
         // Transport service sub-modules (shuttle, interstate, on_demand, rental, school, staff)
         // must ONLY be shown when explicitly enabled in admin or tenant_provision
         const isTransportService = ["shuttle", "interstate", "on_demand", "rental", "school", "staff"].includes(normKey);
         if (isTransportService) {
-          return adminVal === true || provVal === true;
+          return (adminVal as any) === true || (provVal as any) === true;
         }
 
         // Standard fleet modules (ops, vehicles, drivers, maintenance, routes, finance) default to allowed
-        return adminVal !== false && provVal !== false;
+        return (adminVal as any) !== false && (provVal as any) !== false;
       };
 
       const mobilityTabs: SubNavItem[] = [
@@ -1009,17 +1009,17 @@ export function ErpAdminShell({
         const provVal = (permissionMatrix as any).tenant_provision?.[normKey] ?? (permissionMatrix as any).tenant_provision?.[dashKey];
 
         // Explicitly disabled in either admin or tenant_provision
-        if (adminVal === false || provVal === false) return false;
+        if ((adminVal as any) === false || (provVal as any) === false) return false;
 
         // Transport service sub-modules (shuttle, interstate, on_demand, rental, school, staff)
         // must ONLY be shown when explicitly enabled in admin or tenant_provision
         const isTransportService = ["shuttle", "interstate", "on_demand", "rental", "school", "staff"].includes(normKey);
         if (isTransportService) {
-          return adminVal === true || provVal === true;
+          return (adminVal as any) === true || (provVal as any) === true;
         }
 
         // Standard fleet operations modules default to allowed
-        return adminVal !== false && provVal !== false;
+        return (adminVal as any) !== false && (provVal as any) !== false;
       };
 
       const opsTabs: SubNavItem[] = [

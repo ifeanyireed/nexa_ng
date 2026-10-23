@@ -932,9 +932,6 @@ export function useTenantProvisioning() {
             setDepartmentConfigs(remoteDepts);
           }
         }
-        if (remoteDepts && remoteDepts.length > 0 && isCurrent) {
-          setDepartmentConfigs(remoteDepts);
-        }
       } catch (err) {
         console.warn("[Provisioning] Failed to fetch tenant provisioning:", err);
       } finally {

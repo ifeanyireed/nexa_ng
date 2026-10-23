@@ -42,7 +42,7 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaModal } from "@/components/nexa/NexaModal";
-import { CrmLead, CrmActivity } from "@/lib/crm-service";
+import { CrmLead, CrmActivity, CrmCall } from "@/lib/crm-service";
 import { crmFetch } from "@/lib/crm-client";
 import { useAuth } from "@/components/nexa/AuthContext";
 import { useTenantProvisioning, filterSalesClosers } from "@/lib/access-control";
@@ -141,6 +141,7 @@ function SalesCloserPortalContent() {
   const [newNotes, setNewNotes] = useState("");
   const [newLeadCloser, setNewLeadCloser] = useState<string>("");
   const [staffClosers, setStaffClosers] = useState<{ name: string; email: string }[]>([]);
+  const [calls, setCalls] = useState<CrmCall[]>([]);
   const [isSavingLead, setIsSavingLead] = useState(false);
 
   const showToast = (msg: string) => {
@@ -151,10 +152,11 @@ function SalesCloserPortalContent() {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const [leadsRes, actsRes, usersRes] = await Promise.all([
+      const [leadsRes, actsRes, usersRes, callsRes] = await Promise.all([
         crmFetch("/api/erp/crm/leads").then((r) => r.json()).catch(() => ({ leads: [] })),
         crmFetch("/api/erp/crm/activities").then((r) => r.json()).catch(() => ({ activities: [] })),
         crmFetch("/api/erp/users").then((r) => (r.ok ? r.json() : [])).catch(() => []),
+        crmFetch("/api/erp/crm/calls").then((r) => r.json()).catch(() => ({ calls: [] })),
       ]);
 
       if (Array.isArray(leadsRes?.leads)) {
@@ -169,6 +171,12 @@ function SalesCloserPortalContent() {
         setActivities([]);
       }
 
+      if (Array.isArray(callsRes?.calls)) {
+        setCalls(callsRes.calls);
+      } else {
+        setCalls([]);
+      }
+
       const rawUsers = Array.isArray(usersRes)
         ? usersRes
         : Array.isArray(usersRes?.users)
@@ -181,6 +189,139 @@ function SalesCloserPortalContent() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Memoize latest call by leadId, phone number, and contact info
+  const latestCallByLead = useMemo(() => {
+    const map = new Map<string, CrmCall>();
+    for (const c of calls) {
+      if (c.leadId && !map.has(`id:${c.leadId}`)) {
+        map.set(`id:${c.leadId}`, c);
+      }
+      if (c.phoneNumber) {
+        const clean = c.phoneNumber.replace(/[^0-9]/g, "");
+        if (clean.length >= 7 && !map.has(`phone:${clean.slice(-10)}`)) {
+          map.set(`phone:${clean.slice(-10)}`, c);
+        }
+      }
+      if (c.contactName && c.company) {
+        const key = `name_comp:${c.contactName.trim().toLowerCase()}_${c.company.trim().toLowerCase()}`;
+        if (!map.has(key)) {
+          map.set(key, c);
+        }
+      }
+    }
+    return map;
+  }, [calls]);
+
+  const getLeadCallInfo = (lead: CrmLead) => {
+    let call: CrmCall | undefined;
+    if (lead.id) {
+      call = latestCallByLead.get(`id:${lead.id}`);
+    }
+    if (!call && (lead.contactPhone || (lead as any).phone)) {
+      const clean = (lead.contactPhone || (lead as any).phone).replace(/[^0-9]/g, "");
+      if (clean.length >= 7) {
+        call = latestCallByLead.get(`phone:${clean.slice(-10)}`);
+      }
+    }
+    if (!call && lead.contactName && lead.companyName) {
+      const key = `name_comp:${lead.contactName.trim().toLowerCase()}_${lead.companyName.trim().toLowerCase()}`;
+      call = latestCallByLead.get(key);
+    }
+    return call;
+  };
+
+  const getCallIndicator = (call?: CrmCall) => {
+    if (!call || !call.outcome) {
+      return {
+        color: "blue" as const,
+        label: "Not on call logger",
+        tooltip: "Not on call logger - click to log call",
+        badgeClass: "bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-blue-500/20",
+        dotClass: "bg-blue-500",
+      };
+    }
+
+    const outcome = String(call.outcome).toUpperCase().trim();
+
+    // GREEN: interested, proposal, deal won
+    if (
+      outcome === "CONNECTED_INTERESTED" ||
+      outcome === "CONNECTED_NEGOTIATING" ||
+      outcome === "CONNECTED_WON" ||
+      outcome.includes("INTERESTED") ||
+      outcome.includes("NEGOTIATING") ||
+      outcome.includes("WON")
+    ) {
+      const outcomeLabel =
+        outcome === "CONNECTED_WON" || outcome.includes("WON")
+          ? "Deal Closed / Won"
+          : outcome === "CONNECTED_NEGOTIATING" || outcome.includes("NEGOTIATING")
+          ? "Proposal / Negotiating"
+          : "Interested & Qualified";
+      return {
+        color: "green" as const,
+        label: outcomeLabel,
+        tooltip: `Call Logger: ${outcomeLabel} (Click to log new call)`,
+        badgeClass: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/25 border-emerald-500/30",
+        dotClass: "bg-emerald-500",
+      };
+    }
+
+    // YELLOW: call back, no answer, busy, voicemail
+    if (
+      outcome === "CONNECTED_FOLLOWUP" ||
+      outcome === "NO_ANSWER" ||
+      outcome === "BUSY" ||
+      outcome === "VOICEMAIL" ||
+      outcome.includes("FOLLOWUP") ||
+      outcome.includes("CALLBACK") ||
+      outcome.includes("ANSWER") ||
+      outcome.includes("BUSY") ||
+      outcome.includes("VOICEMAIL")
+    ) {
+      const outcomeLabel =
+        outcome === "CONNECTED_FOLLOWUP" || outcome.includes("FOLLOWUP")
+          ? "Callback Scheduled"
+          : outcome === "VOICEMAIL" || outcome.includes("VOICEMAIL")
+          ? "Left Voicemail"
+          : outcome === "BUSY" || outcome.includes("BUSY")
+          ? "Busy / Line Busy"
+          : "No Answer / Ringing";
+      return {
+        color: "yellow" as const,
+        label: outcomeLabel,
+        tooltip: `Call Logger: ${outcomeLabel} (Click to log new call)`,
+        badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-400 hover:bg-amber-500/25 border-amber-500/30",
+        dotClass: "bg-amber-500",
+      };
+    }
+
+    // RED: wrong number, not interested
+    if (
+      outcome === "WRONG_NUMBER" ||
+      outcome === "NOT_INTERESTED" ||
+      outcome.includes("WRONG") ||
+      outcome.includes("NOT_INTERESTED")
+    ) {
+      const outcomeLabel = outcome === "WRONG_NUMBER" || outcome.includes("WRONG") ? "Wrong Number" : "Not Interested";
+      return {
+        color: "red" as const,
+        label: outcomeLabel,
+        tooltip: `Call Logger: ${outcomeLabel} (Click to log new call)`,
+        badgeClass: "bg-rose-500/15 text-rose-700 dark:text-rose-400 hover:bg-rose-500/25 border-rose-500/30",
+        dotClass: "bg-rose-500",
+      };
+    }
+
+    return {
+      color: "blue" as const,
+      label: "Not on call logger",
+      tooltip: "Not on call logger - click to log call",
+      badgeClass: "bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-blue-500/20",
+      dotClass: "bg-blue-500",
+    };
   };
 
   useEffect(() => {
@@ -787,14 +928,26 @@ function SalesCloserPortalContent() {
                           </div>
 
                           <div className="flex items-center gap-1.5">
-                            <Link
-                              href={`/erp/ops/calls?leadId=${lead.id}&phone=${encodeURIComponent(lead.contactPhone || "")}&name=${encodeURIComponent(lead.contactName || "")}&company=${encodeURIComponent(lead.companyName || "")}${lead.assignedRep ? `&rep=${encodeURIComponent(lead.assignedRep)}` : ""}`}
-                              className="px-2.5 py-1 text-[10px] font-bold rounded-lg bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border border-blue-500/20 cursor-pointer transition-colors flex items-center gap-1"
-                              title="Start Phone Call & Log Outcome"
-                            >
-                              <PhoneCall className="w-3 h-3" />
-                              Call
-                            </Link>
+                            {(() => {
+                              const call = getLeadCallInfo(lead);
+                              const ind = getCallIndicator(call);
+                              return (
+                                <Link
+                                  href={`/erp/ops/calls?leadId=${lead.id}&phone=${encodeURIComponent(lead.contactPhone || "")}&name=${encodeURIComponent(lead.contactName || "")}&company=${encodeURIComponent(lead.companyName || "")}${lead.assignedRep ? `&rep=${encodeURIComponent(lead.assignedRep)}` : ""}`}
+                                  className={`px-2.5 py-1 text-[10px] font-bold rounded-lg border cursor-pointer transition-colors flex items-center gap-1.5 relative ${ind.badgeClass}`}
+                                  title={ind.tooltip}
+                                >
+                                  <PhoneCall className="w-3 h-3" />
+                                  Call
+                                  {ind.color !== "blue" && (
+                                    <span
+                                      className={`w-2 h-2 rounded-full ring-1 ring-[var(--nexa-bg-surface)] ml-0.5 ${ind.dotClass}`}
+                                      title={ind.label}
+                                    />
+                                  )}
+                                </Link>
+                              );
+                            })()}
 
                             <button
                               onClick={() => handleOpenLogActivityForLead(lead)}

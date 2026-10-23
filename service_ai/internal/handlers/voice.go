@@ -114,6 +114,20 @@ func (h *VoiceHandler) FinalizeVoiceCall(w http.ResponseWriter, r *http.Request)
 // GetVoiceConfig returns the current tenant voice configuration
 func (h *VoiceHandler) GetVoiceConfig(w http.ResponseWriter, r *http.Request) {
 	orgID := chi.URLParam(r, "orgId")
+	if orgID == "" {
+		orgID = r.URL.Query().Get("tenant")
+	}
+	if orgID == "" {
+		orgID = r.URL.Query().Get("slug")
+	}
+	if orgID == "" {
+		orgID = r.Header.Get("x-tenant-slug")
+	}
+	if orgID == "" {
+		orgID = "default"
+	}
+	orgID = strings.ToLower(strings.TrimSpace(orgID))
+
 	cfg := h.engine.GetConfig(orgID)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -129,7 +143,19 @@ func (h *VoiceHandler) UpdateVoiceConfig(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	cfg.OrganizationID = orgID
+	if orgID == "" {
+		orgID = cfg.OrganizationID
+	}
+	if orgID == "" {
+		orgID = r.URL.Query().Get("tenant")
+	}
+	if orgID == "" {
+		orgID = r.Header.Get("x-tenant-slug")
+	}
+	if orgID == "" {
+		orgID = "default"
+	}
+	cfg.OrganizationID = strings.ToLower(strings.TrimSpace(orgID))
 	h.engine.SaveConfig(&cfg)
 
 	w.Header().Set("Content-Type", "application/json")

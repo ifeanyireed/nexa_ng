@@ -7,6 +7,7 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
+import { getActiveTenantSlug } from "@/lib/erp-store";
 import {
   PhoneCall,
   Radio,
@@ -64,7 +65,8 @@ export default function VoiceSettingsPage() {
   useEffect(() => {
     async function loadConfig() {
       try {
-        const res = await fetch("/api/erp/byok?slug=default");
+        const activeSlug = (typeof window !== "undefined" ? getActiveTenantSlug() : "") || "default";
+        const res = await fetch(`/api/erp/byok?slug=${encodeURIComponent(activeSlug)}`);
         if (res.ok) {
           const data = await res.json();
           if (data.voiceConfig) {
@@ -110,9 +112,10 @@ export default function VoiceSettingsPage() {
     setIsSaving(true);
     setStatusMsg(null);
     try {
+      const activeSlug = (typeof window !== "undefined" ? getActiveTenantSlug() : "") || "default";
       const payload = {
         action: "save_voice",
-        tenantSlug: "default",
+        tenantSlug: activeSlug,
         voiceConfig: {
           telephony_provider: telephonyProvider.toUpperCase(),
           voicebip_api_key: voicebipApiKey,

@@ -37,6 +37,7 @@ import { NexaInput } from "@/components/nexa/NexaInput";
 import { DashboardSkeleton } from "@/components/nexa/PageSkeleton";
 import { VOICE_AGENT_API } from "@/lib/api-client";
 import { crmFetch } from "@/lib/crm-client";
+import { getActiveTenantSlug } from "@/lib/erp-store";
 
 interface VoiceTurn {
   speaker: "assistant" | "prospect" | "system";
@@ -84,7 +85,7 @@ export default function VoiceAgentDashboard() {
   // 1. Fetch live call history from CRM (crm_calls)
   async function loadCallHistory() {
     try {
-      const res = await crmFetch("/crm/calls");
+      const res = await crmFetch("/api/erp/crm/calls");
       if (res.ok) {
         const data = await res.json();
         if (data && Array.isArray(data.calls)) {
@@ -159,12 +160,16 @@ export default function VoiceAgentDashboard() {
     setIsInCall(true);
     setCallStatus("CONNECTING");
 
-    // Establish WebSocket connection to service_ai /ws/voice
-    const wsUrl =
+    // Establish WebSocket connection to service_ai /ws/voice with tenant parameter
+    const activeSlug = (typeof window !== "undefined" ? getActiveTenantSlug() : "") || "default";
+    const rawWs =
       process.env.NEXT_PUBLIC_VOICE_WS_URL ||
       (typeof window !== "undefined" && window.location.protocol === "https:"
         ? `wss://${window.location.hostname}:8082/ws/voice`
         : `ws://localhost:8082/ws/voice`);
+    const wsUrl = rawWs.includes("?")
+      ? `${rawWs}&tenant=${encodeURIComponent(activeSlug)}`
+      : `${rawWs}?tenant=${encodeURIComponent(activeSlug)}`;
 
     try {
       const socket = new WebSocket(wsUrl);
@@ -172,7 +177,7 @@ export default function VoiceAgentDashboard() {
 
       socket.onopen = () => {
         setCallStatus("RINGING");
-        // Dispatch session start event
+        // Dispatch session start event with tenant orgId
         socket.send(
           JSON.stringify({
             event: "start_session",
@@ -180,6 +185,7 @@ export default function VoiceAgentDashboard() {
             company: targetCompany,
             phoneNumber: targetPhone,
             provider: telephonyProvider,
+            orgId: activeSlug,
           })
         );
       };
@@ -325,7 +331,7 @@ export default function VoiceAgentDashboard() {
         ? "CONNECTED_INTERESTED"
         : "CONNECTED_FOLLOWUP";
 
-      await crmFetch("/crm/calls", {
+      await crmFetch("/api/erp/crm/calls", {
         method: "POST",
         body: JSON.stringify({
           contactName: targetContact,

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -243,12 +244,22 @@ func (e *VoiceEngine) HandleWebSocketStream(w http.ResponseWriter, r *http.Reque
 			leadID, _ := incoming["leadId"].(string)
 			campaignID, _ := incoming["campaignId"].(string)
 			orgID, _ := incoming["orgId"].(string)
-			prov, _ := incoming["provider"].(string)
-			if prov == "" {
-				prov = "VOICEBIP"
+			if orgID == "" {
+				orgID = r.URL.Query().Get("tenant")
+			}
+			if orgID == "" {
+				orgID = r.URL.Query().Get("orgId")
+			}
+			if orgID == "" {
+				orgID = r.Header.Get("x-tenant-slug")
 			}
 			if orgID == "" {
 				orgID = "default"
+			}
+			orgID = strings.ToLower(strings.TrimSpace(orgID))
+			prov, _ := incoming["provider"].(string)
+			if prov == "" {
+				prov = "VOICEBIP"
 			}
 			if contactName == "" {
 				contactName = "Prospective Partner"

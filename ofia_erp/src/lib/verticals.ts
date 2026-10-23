@@ -321,6 +321,7 @@ export interface CommerceOrderItem {
   city?: string;
   paymentMethod?: string;
   notes?: string;
+  items?: any[];
 }
 
 export interface TenantStorefrontHandshake {

@@ -31,70 +31,21 @@ export default function OmnichannelOrdersPage() {
   const { user } = useAuth();
   const { activeTenant } = useActiveTenant(user?.email);
 
-  const [orders, setOrders] = useState<CommerceOrderItem[]>([
-    {
-      id: "ORD-9021",
-      orderNumber: "OFIA-2026-9021",
-      tenantSlug: "neweratransports",
-      customerName: "Chief Babatunde Alabi",
-      customerEmail: "babatunde.alabi@gmail.com",
-      channel: "STOREFRONT",
-      itemsSummary: "2024 Mercedes-Benz GLE 450 4MATIC (Executive Edition)",
-      itemCount: 1,
-      totalAmount: "₦98,000,000",
-      rawAmount: 98000000,
-      status: "IN_PREPARATION",
-      paymentStatus: "PAID",
-      createdAt: "Today at 09:15 AM",
-      deliveryMethod: "DISPATCH",
-    },
-    {
-      id: "ORD-9020",
-      orderNumber: "OFIA-2026-9020",
-      tenantSlug: "neweratransports",
-      customerName: "Mrs. Amaka Okoye",
-      customerEmail: "amaka.okoye@yahoo.com",
-      channel: "POS_COUNTER",
-      itemsSummary: "Custom Leather Steering Wrap + 4x RunFlat Tires",
-      itemCount: 5,
-      totalAmount: "₦1,250,000",
-      rawAmount: 1250000,
-      status: "READY_DISPATCH",
-      paymentStatus: "PAID",
-      createdAt: "Today at 10:45 AM",
-      deliveryMethod: "STORE_PICKUP",
-    },
-    {
-      id: "ORD-9019",
-      orderNumber: "OFIA-2026-9019",
-      tenantSlug: "neweratransports",
-      customerName: "Alhaji Musa Danjuma",
-      customerEmail: "musa.danjuma@outlook.com",
-      channel: "INQUIRY",
-      itemsSummary: "Toyota Land Cruiser 300 VXR (Reservation Deposit)",
-      itemCount: 1,
-      totalAmount: "₦10,000,000",
-      rawAmount: 10000000,
-      status: "CONFIRMED",
-      paymentStatus: "PAID",
-      createdAt: "Yesterday at 04:20 PM",
-      deliveryMethod: "STORE_PICKUP",
-    },
-  ]);
-
+  const [orders, setOrders] = useState<CommerceOrderItem[]>([]);
   const [filterChannel, setFilterChannel] = useState("ALL");
   const [search, setSearch] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchOrders = React.useCallback(async () => {
-    const slug = activeTenant?.slug || "neweratransports";
+    const slug = activeTenant?.slug;
+    if (!slug) return;
     setIsRefreshing(true);
     try {
       const res = await fetch(`/api/erp/shop/orders?tenant=${encodeURIComponent(slug)}`, {
         cache: "no-store",
       });
       const data = await res.json().catch(() => null);
-      if (data && Array.isArray(data.orders) && data.orders.length > 0) {
+      if (data && Array.isArray(data.orders)) {
         setOrders(data.orders);
       }
     } catch {

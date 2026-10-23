@@ -57,7 +57,7 @@ export default function VoiceCallLogsPage() {
   async function loadCalls() {
     setIsLoading(true);
     try {
-      const res = await crmFetch("/crm/calls");
+      const res = await crmFetch("/api/erp/crm/calls");
       if (res.ok) {
         const data = await res.json();
         const mapped: CallLogItem[] = (Array.isArray(data) ? data : data.calls || []).map((c: any) => ({

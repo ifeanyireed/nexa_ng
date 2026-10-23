@@ -2,6 +2,8 @@ import fs from "fs";
 import path from "path";
 import { neon } from "@neondatabase/serverless";
 import { CommerceOrderItem, CommerceBookingItem } from "./verticals";
+import { decrementInventoryForOrder } from "./commerce-inventory-store";
+import { sendOrderStatusNotification } from "./commerce-notifications";
 
 const NEON_CONNECTION_STRING =
   process.env.DATABASE_URL ||

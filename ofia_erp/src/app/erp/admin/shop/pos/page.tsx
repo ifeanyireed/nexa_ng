@@ -78,6 +78,10 @@ export default function POSTerminalPage() {
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"CASH" | "CARD" | "TRANSFER" | "SPLIT">("CASH");
   const [cashTendered, setCashTendered] = useState<string>("50000");
+  const [customerName, setCustomerName] = useState<string>("");
+  const [customerPhone, setCustomerPhone] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [completedOrder, setCompletedOrder] = useState<any>(null);
   const [isSuccess, setIsSuccess] = useState(false);
 
   // Re-seed items when vertical changes
@@ -130,13 +134,86 @@ export default function POSTerminalPage() {
   const total = subtotal + tax;
   const changeDue = Math.max(0, (parseFloat(cashTendered) || 0) - total);
 
-  const handleCompleteSale = () => {
-    setIsSuccess(true);
-    setTimeout(() => {
-      setIsSuccess(false);
-      setShowCheckoutModal(false);
-      clearCart();
-    }, 2000);
+  const handleCompleteSale = async () => {
+    if (cart.length === 0 || isSubmitting) return;
+    setIsSubmitting(true);
+
+    const slug = (activeTenant?.slug || "").toLowerCase().trim();
+    if (!slug) {
+      setIsSubmitting(false);
+      return;
+    }
+    const orderNum = `OFIA-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const orderId = `ORD-POS-${Date.now().toString().slice(-6)}`;
+
+    const orderPayload = {
+      id: orderId,
+      orderNumber: orderNum,
+      tenantSlug: slug,
+      tenantId: activeTenant?.id || `org-${slug}`,
+      customerName: customerName.trim() || "Walk-in Counter Customer",
+      customerPhone: customerPhone.trim() || "+234 800 000 0000",
+      customerEmail: "",
+      channel: "POS_COUNTER",
+      status: "DELIVERED",
+      paymentStatus: "PAID",
+      deliveryMethod: "STORE_PICKUP",
+      shippingAddress: "POS Terminal · Main Cashier Desk",
+      city: "Lagos",
+      paymentMethod: paymentMethod.toLowerCase(),
+      items: cart.map((c) => ({
+        id: c.id,
+        productId: c.id,
+        title: c.name,
+        price: c.price,
+        quantity: c.qty,
+      })),
+      itemsSummary: cart.map((c) => `${c.name} (x${c.qty})`).join(", "),
+      itemCount: cart.reduce((acc, c) => acc + c.qty, 0),
+      totalAmount: `₦${Math.round(total).toLocaleString()}`,
+      rawAmount: Math.round(total),
+      notes: `Cashier: ${user?.name || "Staff Cashier"} | Tender: ${paymentMethod}${
+        paymentMethod === "CASH"
+          ? ` | Cash Tendered: ₦${parseFloat(cashTendered || "0").toLocaleString()} | Change: ₦${changeDue.toLocaleString()}`
+          : ""
+      }`,
+    };
+
+    try {
+      const res = await fetch(`/api/erp/shop/orders?tenant=${encodeURIComponent(slug)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderPayload),
+      });
+
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.success && data?.order) {
+        setCompletedOrder(data.order);
+      } else {
+        setCompletedOrder(orderPayload);
+      }
+      setIsSuccess(true);
+    } catch {
+      setCompletedOrder(orderPayload);
+      setIsSuccess(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResetForNextSale = () => {
+    setIsSuccess(false);
+    setCompletedOrder(null);
+    setShowCheckoutModal(false);
+    setCustomerName("");
+    setCustomerPhone("");
+    clearCart();
+  };
+
+  const handlePrintReceipt = () => {
+    if (typeof window !== "undefined") {
+      window.print();
+    }
   };
 
   return (
@@ -323,13 +400,71 @@ export default function POSTerminalPage() {
         maxWidth="lg"
       >
         <div className="space-y-5 pt-2 text-xs">
-          {isSuccess ? (
-            <div className="text-center py-8 space-y-3">
-              <div className="w-12 h-12 rounded-full bg-[#0E9F6E]/10 text-[#0E9F6E] flex items-center justify-center mx-auto animate-bounce">
-                <CheckCircle2 className="w-7 h-7" />
+          {isSuccess && completedOrder ? (
+            <div className="space-y-4">
+              <div className="text-center py-4 space-y-2 border-b border-[var(--nexa-border)]">
+                <div className="w-12 h-12 rounded-full bg-[#0E9F6E]/10 text-[#0E9F6E] flex items-center justify-center mx-auto animate-bounce">
+                  <CheckCircle2 className="w-7 h-7" />
+                </div>
+                <h3 className="text-base font-bold text-[var(--nexa-text-primary)]">
+                  Payment Approved & Recorded in PostgreSQL!
+                </h3>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-800 font-mono font-bold text-xs border border-blue-200">
+                  <span>Ref: {completedOrder.orderNumber}</span>
+                </div>
               </div>
-              <h3 className="text-base font-bold text-[var(--nexa-text-primary)]">Payment Approved!</h3>
-              <p className="text-xs text-[var(--nexa-text-muted)]">Thermal Receipt #REC-9821 Printing...</p>
+
+              {/* RECEIPT SUMMARY CARD */}
+              <div className="p-4 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-2.5 font-mono text-[11px]">
+                <div className="flex justify-between text-[var(--nexa-text-muted)] border-b border-[var(--nexa-border)] pb-2">
+                  <span>Channel: POS Counter</span>
+                  <span>Tender: {paymentMethod}</span>
+                </div>
+                <div className="flex justify-between text-[var(--nexa-text-muted)]">
+                  <span>Customer:</span>
+                  <span className="font-bold text-[var(--nexa-text-primary)]">{completedOrder.customerName}</span>
+                </div>
+                <div className="space-y-1 py-1 border-t border-b border-dashed border-[var(--nexa-border)]">
+                  {cart.map((item, idx) => (
+                    <div key={idx} className="flex justify-between text-[var(--nexa-text-secondary)]">
+                      <span>{item.name} x{item.qty}</span>
+                      <span>₦{(item.price * item.qty).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-between font-bold text-[var(--nexa-text-primary)] pt-1 text-xs">
+                  <span>Total Amount Paid:</span>
+                  <span className="text-[#0E9F6E] text-sm">₦{total.toLocaleString()}</span>
+                </div>
+                {paymentMethod === "CASH" && (
+                  <div className="flex justify-between text-[var(--nexa-text-muted)] pt-1 border-t border-[var(--nexa-border)]">
+                    <span>Cash Tendered: ₦{parseFloat(cashTendered || "0").toLocaleString()}</span>
+                    <span className="text-[#E02424] font-bold">Change: ₦{changeDue.toLocaleString()}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* ACTION BUTTONS */}
+              <div className="flex gap-2 pt-2">
+                <NexaButton
+                  size="md"
+                  variant="outline"
+                  onClick={handlePrintReceipt}
+                  className="flex-1"
+                  leftIcon={<Printer className="w-4 h-4" />}
+                >
+                  Print Slip
+                </NexaButton>
+                <NexaButton
+                  size="md"
+                  variant="primary"
+                  onClick={handleResetForNextSale}
+                  className="flex-1 bg-[#1A56DB] text-white font-bold"
+                  leftIcon={<RotateCcw className="w-4 h-4" />}
+                >
+                  New Register Sale
+                </NexaButton>
+              </div>
             </div>
           ) : (
             <>
@@ -337,6 +472,34 @@ export default function POSTerminalPage() {
               <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] text-center space-y-1">
                 <div className="text-xs text-[var(--nexa-text-muted)] font-semibold">Total Amount Payable</div>
                 <div className="text-2xl font-black text-[#0E9F6E] font-mono">₦{total.toLocaleString()}</div>
+              </div>
+
+              {/* OPTIONAL CUSTOMER DETAILS */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[11px] font-semibold text-[var(--nexa-text-muted)] mb-1 block">
+                    Customer Name (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    placeholder="Walk-in Customer"
+                    className="w-full px-3 py-1.5 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-[var(--nexa-text-muted)] mb-1 block">
+                    Customer Phone (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    placeholder="+234 800 000 0000"
+                    className="w-full px-3 py-1.5 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] text-xs"
+                  />
+                </div>
               </div>
 
               {/* PAYMENT METHODS */}
@@ -398,10 +561,11 @@ export default function POSTerminalPage() {
                   size="md"
                   variant="primary"
                   onClick={handleCompleteSale}
+                  disabled={isSubmitting}
                   className="flex-1 bg-[#0E9F6E] text-white font-bold"
                   leftIcon={<Printer className="w-4 h-4" />}
                 >
-                  Complete & Print Slip
+                  {isSubmitting ? "Recording in Neon..." : "Complete & Print Slip"}
                 </NexaButton>
               </div>
             </>

@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { MASTER_CONNECTION_STRING, invalidateTenantDbCache } from "@/lib/tenant-db-resolver";
+import { neon } from "@neondatabase/serverless";
 
 export const dynamic = "force-dynamic";
 
@@ -42,14 +44,40 @@ export async function PUT(
 ) {
   const { orgId } = await params;
   try {
-    const body = await request.text();
+    const rawBody = await request.text();
+
+    // 1. Persist database URL and mode into Neon platform_tenants
+    try {
+      const parsed = JSON.parse(rawBody);
+      const sql = neon(MASTER_CONNECTION_STRING);
+      const dbUrl = (parsed.database_url || parsed.databaseUrl || "").trim();
+      const dbMode = "DEDICATED";
+      const isCustom = true;
+
+      const [updated] = await sql`
+        UPDATE platform_tenants
+        SET database_url = ${dbUrl},
+            db_mode = ${dbMode},
+            is_custom_db = ${isCustom},
+            name = COALESCE(${parsed.name}, name),
+            updated_at = NOW()
+        WHERE id = ${orgId} OR LOWER(slug) = ${orgId.toLowerCase().trim()}
+        RETURNING slug;
+      `;
+
+      if (updated?.slug) {
+        invalidateTenantDbCache(updated.slug);
+      }
+    } catch {}
+
+    // 2. Forward to microservice
     const res = await fetch(`${USER_BASE}/organizations/${encodeURIComponent(orgId)}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
         ...(request.headers.get("authorization") ? { authorization: request.headers.get("authorization")! } : {}),
       },
-      body,
+      body: rawBody,
       signal: AbortSignal.timeout(10000),
     });
 

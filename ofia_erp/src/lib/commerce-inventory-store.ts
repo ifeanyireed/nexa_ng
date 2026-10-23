@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { neon } from "@neondatabase/serverless";
+import { getTenantSql, MASTER_CONNECTION_STRING } from "./tenant-db-resolver";
 
 export interface ShopInventoryItem {
   id: string;
@@ -20,11 +21,7 @@ export interface ShopInventoryItem {
   updatedAt: string;
 }
 
-const NEON_CONNECTION_STRING =
-  process.env.DATABASE_URL ||
-  process.env.POSTGRES_URL ||
-  process.env.NEON_DATABASE_URL ||
-  "postgresql://neondb_owner:npg_YBd2DvyRxTG7@ep-falling-star-b4lrdr76-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
+const NEON_CONNECTION_STRING = MASTER_CONNECTION_STRING;
 
 function getSql() {
   try {
@@ -85,8 +82,8 @@ function mapRowToInventory(r: any): ShopInventoryItem {
 export async function getTenantInventory(tenantSlug: string): Promise<ShopInventoryItem[]> {
   if (!tenantSlug) return [];
   ensureInventoryFileReady();
-  const sql = getSql();
   const clean = tenantSlug.toLowerCase().trim();
+  const sql = await getTenantSql(clean);
 
   // 1. Query Neon PostgreSQL
   if (sql) {
@@ -139,8 +136,8 @@ export async function decrementInventoryForOrder(order: {
     return { success: false, decremented: 0, triggeredLowStock: [] };
   }
   ensureInventoryFileReady();
-  const sql = getSql();
   const clean = order.tenantSlug.toLowerCase().trim();
+  const sql = await getTenantSql(clean);
   const items = order.items || [];
   if (items.length === 0) return { success: true, decremented: 0, triggeredLowStock: [] };
 
@@ -201,8 +198,8 @@ export async function restockInventoryItem(
 ): Promise<ShopInventoryItem | null> {
   if (!skuOrId || !tenantSlug) return null;
   ensureInventoryFileReady();
-  const sql = getSql();
   const clean = tenantSlug.toLowerCase().trim();
+  const sql = await getTenantSql(clean);
   const cleanKey = skuOrId.trim();
 
   if (sql) {

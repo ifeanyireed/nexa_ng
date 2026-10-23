@@ -91,6 +91,9 @@ import {
   Clock,
   Navigation,
   School,
+  Eye,
+  EyeOff,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -233,6 +236,12 @@ function TenantManagementContent() {
   const [editTenantLogo, setEditTenantLogo] = useState("");
   const [editTenantDatabaseUrl, setEditTenantDatabaseUrl] = useState("");
   const [editTenantCloudinaryUrl, setEditTenantCloudinaryUrl] = useState("");
+  const [editDbMode, setEditDbMode] = useState<"DEDICATED">("DEDICATED");
+  const [showDbPassword, setShowDbPassword] = useState(false);
+  const [isTestingDb, setIsTestingDb] = useState(false);
+  const [dbTestResult, setDbTestResult] = useState<{ success: boolean; latencyMs?: number; version?: string; error?: string } | null>(null);
+  const [isProvisioningDb, setIsProvisioningDb] = useState(false);
+  const [provisionResult, setProvisionResult] = useState<{ success: boolean; message: string } | null>(null);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [logoUploadError, setLogoUploadError] = useState<string | null>(null);
   const [savingModuleKeys, setSavingModuleKeys] = useState<Record<string, boolean>>({});
@@ -261,8 +270,21 @@ function TenantManagementContent() {
     const syncDatabaseTenants = async () => {
       setIsSavingDb(true);
       try {
-        // 1. Fetch live organizations from API / Postgres database
-        const remoteOrgs = await GTM_API.getAdminOrganizations().catch(() => null);
+        // 1. Fetch live organizations from Postgres database (platform_tenants registry)
+        let remoteOrgs: any[] | null = null;
+        try {
+          const adminTenantsRes = await fetch("/api/admin/tenants", { cache: "no-store" });
+          if (adminTenantsRes.ok) {
+            const data = await adminTenantsRes.json();
+            if (data.success && Array.isArray(data.tenants) && data.tenants.length > 0) {
+              remoteOrgs = data.tenants;
+            }
+          }
+        } catch {}
+
+        if (!remoteOrgs) {
+          remoteOrgs = await GTM_API.getAdminOrganizations().catch(() => null);
+        }
         let baseList = INITIAL_TENANTS;
 
         if (Array.isArray(remoteOrgs) && remoteOrgs.length > 0) {
@@ -966,12 +988,69 @@ function TenantManagementContent() {
     setEditTenantLogo(t.logo || "");
     setEditTenantDatabaseUrl(t.databaseUrl || "");
     setEditTenantCloudinaryUrl(t.cloudinaryUrl || "");
+    setEditDbMode("DEDICATED");
+    setShowDbPassword(false);
+    setDbTestResult(null);
+    setProvisionResult(null);
     setLogoUploadError(null);
+  };
+
+  // Test custom database connection
+  const handleTestCustomDb = async (url: string) => {
+    if (!url || !url.trim()) {
+      setDbTestResult({ success: false, error: "Please enter a PostgreSQL connection URL to test." });
+      return;
+    }
+    setIsTestingDb(true);
+    setDbTestResult(null);
+    try {
+      const res = await fetch("/api/admin/tenants/test-db", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ databaseUrl: url.trim() }),
+      });
+      const data = await res.json();
+      setDbTestResult(data);
+    } catch (err: any) {
+      setDbTestResult({ success: false, error: err.message || "Diagnostic test request failed." });
+    } finally {
+      setIsTestingDb(false);
+    }
+  };
+
+  // Bootstrap commerce tables on dedicated standalone database
+  const handleProvisionCustomDb = async (url: string) => {
+    if (!url || !url.trim()) {
+      showToast("Please provide a valid PostgreSQL connection string first.");
+      return;
+    }
+    setIsProvisioningDb(true);
+    setProvisionResult(null);
+    try {
+      const res = await fetch("/api/admin/tenants/provision-db", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ databaseUrl: url.trim() }),
+      });
+      const data = await res.json();
+      setProvisionResult(data);
+      if (data.success) {
+        showToast("Dedicated database provisioned with commerce schemas!");
+      } else {
+        showToast("Schema bootstrap warning: " + (data.error || data.message));
+      }
+    } catch (err: any) {
+      setProvisionResult({ success: false, message: err.message });
+    } finally {
+      setIsProvisioningDb(false);
+    }
   };
 
   // Save Edited Tenant Details to Neon Postgres database
   const handleSaveEditTenant = async () => {
     if (!selectedTenantForEdit) return;
+
+    const isDedicated = editDbMode === "DEDICATED" && Boolean(editTenantDatabaseUrl.trim());
 
     const updatedData = {
       name: editTenantName,
@@ -987,12 +1066,23 @@ function TenantManagementContent() {
       campaignsLimit: parseInt(editTenantCampaignsLimit || "0", 10),
       database_url: editTenantDatabaseUrl.trim(),
       cloudinary_url: editTenantCloudinaryUrl.trim(),
+      db_mode: editDbMode,
+      is_custom_db: isDedicated,
     };
 
     setIsSavingDb(true);
     try {
-      await GTM_API.updateAdminOrganization(selectedTenantForEdit.id, updatedData);
-      showToast(`Tenant '${editTenantName}' profile updated and synced to database!`);
+      // 1. Persist directly to Neon platform_tenants registry
+      await fetch(`/api/admin/tenants/${encodeURIComponent(selectedTenantForEdit.id)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updatedData),
+      }).catch(() => null);
+
+      // 2. Sync to microservices
+      await GTM_API.updateAdminOrganization(selectedTenantForEdit.id, updatedData).catch(() => null);
+
+      showToast(`⚡ ${editTenantName}: Profile and Database-Per-Tenant architecture saved!`);
       const remoteOrgs = await GTM_API.getAdminOrganizations().catch(() => null);
       if (Array.isArray(remoteOrgs) && remoteOrgs.length > 0) {
         setTenants(
@@ -1170,6 +1260,25 @@ function TenantManagementContent() {
       if (createdRemote && createdRemote.id) {
         newTenant.id = createdRemote.id;
       }
+
+      // Persist to Neon platform_tenants table
+      await fetch("/api/admin/tenants", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newOrgName,
+          slug,
+          domain: newOrgDomain,
+          ownerName: newOwnerName,
+          ownerEmail: newOwnerEmail,
+          planTier: newPlanTier,
+          dbMode: newDatabaseUrl.trim() ? "DEDICATED" : "SHARED",
+          databaseUrl: newDatabaseUrl.trim(),
+          isCustomDb: Boolean(newDatabaseUrl.trim()),
+          mrr: newTenant.mrr,
+          vertical: newVertical || "retail",
+        }),
+      }).catch(() => null);
 
       // Save initial RBAC matrix to Postgres TenantRolePermission table
       const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant", "dispatcher"];
@@ -2319,10 +2428,15 @@ function TenantManagementContent() {
                                 <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 uppercase">
                                   {tenant.status}
                                 </span>
-                                {tenant.isCustomDb && (
-                                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 uppercase flex items-center gap-1">
+                                {tenant.isCustomDb || Boolean(tenant.databaseUrl) ? (
+                                  <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 border border-indigo-500/20 uppercase flex items-center gap-1">
                                     <Database className="w-2.5 h-2.5" />
-                                    BYODB
+                                    Dedicated Database
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-600 border border-slate-500/20 uppercase flex items-center gap-1">
+                                    <Layers className="w-2.5 h-2.5 text-blue-500" />
+                                    Dedicated DB
                                   </span>
                                 )}
                                 {tenant.isCustomStorage && (
@@ -3108,34 +3222,151 @@ function TenantManagementContent() {
             </div>
           </div>
 
-          {/* DEDICATED INFRASTRUCTURE (BYODB & BYOS) */}
-          <div className="space-y-3 pt-3 border-t border-[var(--nexa-border)]">
-            <div>
-              <label className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
-                <Database className="w-3.5 h-3.5 text-[#1A56DB]" />
-                Dedicated Infrastructure (BYODB & BYOS)
-              </label>
-              <p className="text-[11px] text-[var(--nexa-text-secondary)]">
-                Provide or update the tenant&apos;s isolated Neon Postgres project connection string and Cloudinary storage credentials.
-              </p>
+          {/* DATABASE-PER-TENANT ARCHITECTURE & DEDICATED PERSISTENCE */}
+          <div className="space-y-4 pt-3 border-t border-[var(--nexa-border)]">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
+                  <Database className="w-4 h-4 text-[#1A56DB]" />
+                  <span>Database-Per-Tenant Architecture</span>
+                </label>
+                <p className="text-[11px] text-[var(--nexa-text-secondary)] mt-0.5">
+                  Strict dedicated persistence: this tenant connects directly to their standalone PostgreSQL database.
+                </p>
+              </div>
+              <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 font-extrabold uppercase flex items-center gap-1">
+                <Database className="w-3 h-3" />
+                DEDICATED ONLY
+              </span>
             </div>
+
+            <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[#1A56DB]/30 space-y-3">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[11px] font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
+                      <span>Dedicated PostgreSQL Connection String</span>
+                      <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 font-bold uppercase">
+                        Direct Dynamic Connection
+                      </span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowDbPassword(!showDbPassword)}
+                      className="text-[11px] font-bold text-[#1A56DB] hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      {showDbPassword ? <EyeOff className="w-3 h-3" /> : <Eye className="w-3 h-3" />}
+                      <span>{showDbPassword ? "Mask Password" : "Show URL"}</span>
+                    </button>
+                  </div>
+                  <input
+                    type={showDbPassword ? "text" : "password"}
+                    placeholder="postgresql://neondb_owner:***@ep-dedicated-tenant.us-east-2.aws.neon.tech/neondb?sslmode=require"
+                    value={editTenantDatabaseUrl}
+                    onChange={(e) => {
+                      setEditTenantDatabaseUrl(e.target.value);
+                      setDbTestResult(null);
+                      setProvisionResult(null);
+                    }}
+                    className="w-full px-3.5 py-2.5 bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-xl text-xs font-mono outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
+                  />
+                  <p className="text-[10px] text-[var(--nexa-text-muted)]">
+                    All commerce routes, storefront orders, ERP inventory, and dispatch tracking dynamically connect to this standalone database for this tenant.
+                  </p>
+                </div>
+
+                {/* Diagnostic & Provisioning Buttons */}
+                <div className="flex items-center gap-2 pt-1 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => handleTestCustomDb(editTenantDatabaseUrl)}
+                    disabled={isTestingDb || !editTenantDatabaseUrl.trim()}
+                    className="px-3.5 py-1.5 rounded-xl border border-[var(--nexa-border)] hover:bg-[var(--nexa-bg-surface)] text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5 transition-colors disabled:opacity-40 cursor-pointer"
+                  >
+                    {isTestingDb ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin text-[#1A56DB]" />
+                        <span>Pinging Database...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-3 h-3 text-amber-500" />
+                        <span>Test Connection</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleProvisionCustomDb(editTenantDatabaseUrl)}
+                    disabled={isProvisioningDb || !editTenantDatabaseUrl.trim()}
+                    className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 transition-colors disabled:opacity-40 cursor-pointer"
+                  >
+                    {isProvisioningDb ? (
+                      <>
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        <span>Provisioning Schemas...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Database className="w-3 h-3" />
+                        <span>Bootstrap Commerce Tables</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Real-Time Diagnostic Test Result Banner */}
+                {dbTestResult && (
+                  <div
+                    className={cn(
+                      "p-3 rounded-xl border text-xs flex items-start gap-2.5",
+                      dbTestResult.success
+                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-800 dark:text-emerald-300"
+                        : "bg-rose-500/10 border-rose-500/20 text-rose-800 dark:text-rose-300"
+                    )}
+                  >
+                    {dbTestResult.success ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                    )}
+                    <div className="flex-1 space-y-0.5">
+                      <div className="font-bold">
+                        {dbTestResult.success
+                          ? `Connection Verified in ${dbTestResult.latencyMs}ms`
+                          : "Connection Failed"}
+                      </div>
+                      <p className="text-[11px] opacity-90">
+                        {dbTestResult.success
+                          ? `Successfully connected to standalone engine. ${dbTestResult.version ? `Server: ${dbTestResult.version.split(" on ")[0]}` : ""}`
+                          : dbTestResult.error}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Provision Result Banner */}
+                {provisionResult && (
+                  <div
+                    className={cn(
+                      "p-3 rounded-xl border text-xs flex items-start gap-2.5",
+                      provisionResult.success
+                        ? "bg-blue-500/10 border-blue-500/20 text-blue-800 dark:text-blue-300"
+                        : "bg-amber-500/10 border-amber-500/20 text-amber-800 dark:text-amber-300"
+                    )}
+                  >
+                    <CheckCircle2 className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <div className="font-bold">Schema Provisioning</div>
+                      <p className="text-[11px] opacity-90">{provisionResult.message}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
 
             <div className="space-y-1.5">
               <label className="text-[11px] font-semibold text-[var(--nexa-text-secondary)]">
-                Dedicated Neon Database URL
-              </label>
-              <input
-                type="password"
-                placeholder="postgresql://neondb_owner:***@ep-xxxx-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require"
-                value={editTenantDatabaseUrl}
-                onChange={(e) => setEditTenantDatabaseUrl(e.target.value)}
-                className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-mono outline-none focus:border-[#1A56DB]"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold text-[var(--nexa-text-secondary)]">
-                Dedicated Cloudinary Storage URL
+                Dedicated Cloudinary Storage URL (BYOS - Optional)
               </label>
               <input
                 type="password"

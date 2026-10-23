@@ -1,24 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { neon } from "@neondatabase/serverless";
+import { getTenantSql } from "@/lib/tenant-db-resolver";
 
 export const dynamic = "force-dynamic";
-
-const NEON_CONNECTION_STRING =
-  process.env.DATABASE_URL ||
-  process.env.POSTGRES_URL ||
-  process.env.NEON_DATABASE_URL ||
-  "postgresql://neondb_owner:npg_YBd2DvyRxTG7@ep-falling-star-b4lrdr76-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
-
-function getSql() {
-  try {
-    if (NEON_CONNECTION_STRING) {
-      return neon(NEON_CONNECTION_STRING);
-    }
-  } catch (err) {
-    console.warn("[Dispatch API] Neon SQL initialization warning:", err);
-  }
-  return null;
-}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -41,7 +24,7 @@ export async function GET(request: NextRequest) {
 
   const tenantSlug = rawTenant.toLowerCase().trim();
   const cleanRef = ref.trim().toLowerCase();
-  const sql = getSql();
+  const sql = await getTenantSql(tenantSlug);
 
   try {
     let order: any = null;

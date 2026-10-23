@@ -5,12 +5,9 @@ import { CommerceOrderItem, CommerceBookingItem } from "./verticals";
 import { decrementInventoryForOrder } from "./commerce-inventory-store";
 import { sendOrderStatusNotification } from "./commerce-notifications";
 import { publishCommerceEvent } from "./commerce-event-hub";
+import { getTenantSql, MASTER_CONNECTION_STRING } from "./tenant-db-resolver";
 
-const NEON_CONNECTION_STRING =
-  process.env.DATABASE_URL ||
-  process.env.POSTGRES_URL ||
-  process.env.NEON_DATABASE_URL ||
-  "postgresql://neondb_owner:npg_YBd2DvyRxTG7@ep-falling-star-b4lrdr76-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
+const NEON_CONNECTION_STRING = MASTER_CONNECTION_STRING;
 
 function getSql() {
   try {
@@ -136,7 +133,7 @@ function ensureStorageReady() {
 
 export async function getErpOrders(tenantSlug?: string): Promise<CommerceOrderItem[]> {
   ensureStorageReady();
-  const sql = getSql();
+  const sql = await getTenantSql(tenantSlug || "");
   const clean = tenantSlug ? tenantSlug.toLowerCase().trim() : null;
 
   // 1. Query Neon PostgreSQL database
@@ -240,11 +237,11 @@ export async function getErpOrders(tenantSlug?: string): Promise<CommerceOrderIt
 
 export async function saveErpOrder(order: Partial<CommerceOrderItem>): Promise<CommerceOrderItem> {
   ensureStorageReady();
-  const sql = getSql();
   if (!order.tenantSlug) {
     throw new Error("tenantSlug is required for saving orders");
   }
   const slug = order.tenantSlug.toLowerCase().trim();
+  const sql = await getTenantSql(slug);
   const orderId = order.id || `ORD-${Date.now().toString().slice(-6)}`;
   const orderNum = order.orderNumber || `OFIA-2026-${Math.floor(1000 + Math.random() * 9000)}`;
 
@@ -327,7 +324,7 @@ export async function updateErpOrderStatus(
   tenantSlug?: string
 ): Promise<boolean> {
   ensureStorageReady();
-  const sql = getSql();
+  const sql = await getTenantSql(tenantSlug || "");
   const cleanTenant = tenantSlug ? tenantSlug.toLowerCase().trim() : null;
   let matchedOrder: any = null;
 
@@ -412,7 +409,7 @@ export async function updateErpOrderStatus(
 
 export async function getErpBookings(tenantSlug?: string): Promise<CommerceBookingItem[]> {
   ensureStorageReady();
-  const sql = getSql();
+  const sql = await getTenantSql(tenantSlug || "");
   const clean = tenantSlug ? tenantSlug.toLowerCase().trim() : null;
 
   // 1. Query Neon PostgreSQL database
@@ -490,11 +487,11 @@ export async function getErpBookings(tenantSlug?: string): Promise<CommerceBooki
 
 export async function saveErpBooking(booking: Partial<CommerceBookingItem>): Promise<CommerceBookingItem> {
   ensureStorageReady();
-  const sql = getSql();
   if (!booking.tenantSlug) {
     throw new Error("tenantSlug is required for saving bookings");
   }
   const slug = booking.tenantSlug.toLowerCase().trim();
+  const sql = await getTenantSql(slug);
   const bookingId = booking.id || `BK-${Date.now().toString().slice(-6)}`;
   const bookingNum = (booking as any).bookingNumber || `TD-${Math.floor(10000 + Math.random() * 90000)}`;
 

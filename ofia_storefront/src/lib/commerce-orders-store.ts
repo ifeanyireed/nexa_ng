@@ -2,12 +2,9 @@ import fs from "fs";
 import path from "path";
 import { neon } from "@neondatabase/serverless";
 import { StorefrontOrderPayload, StorefrontBookingPayload } from "@/types/storefront";
+import { getTenantSql, MASTER_CONNECTION_STRING } from "./tenant-db-resolver";
 
-const NEON_CONNECTION_STRING =
-  process.env.DATABASE_URL ||
-  process.env.POSTGRES_URL ||
-  process.env.NEON_DATABASE_URL ||
-  "postgresql://neondb_owner:npg_YBd2DvyRxTG7@ep-falling-star-b4lrdr76-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
+const NEON_CONNECTION_STRING = MASTER_CONNECTION_STRING;
 
 function getSql() {
   try {
@@ -184,7 +181,7 @@ function mapRowToStorefrontOrder(r: any): StorefrontOrderPayload {
 
 export async function getStorefrontOrders(tenantSlug?: string): Promise<StorefrontOrderPayload[]> {
   ensureStorageReady();
-  const sql = getSql();
+  const sql = await getTenantSql(tenantSlug || "");
   const clean = tenantSlug ? tenantSlug.toLowerCase().trim() : null;
 
   // 1. Query Neon PostgreSQL
@@ -268,7 +265,7 @@ export async function getStorefrontOrderByIdOrRef(
   tenantSlug?: string
 ): Promise<StorefrontOrderPayload | null> {
   ensureStorageReady();
-  const sql = getSql();
+  const sql = await getTenantSql(tenantSlug || "");
   const cleanRef = idOrRef.trim().toLowerCase();
   const cleanTenant = tenantSlug ? tenantSlug.trim().toLowerCase() : null;
 
@@ -339,7 +336,7 @@ export async function getStorefrontOrderByIdOrRef(
 
 export async function saveStorefrontOrder(order: StorefrontOrderPayload): Promise<StorefrontOrderPayload> {
   ensureStorageReady();
-  const sql = getSql();
+  const sql = await getTenantSql(order.tenantSlug || "");
 
   // 1. Save to Neon PostgreSQL
   if (sql) {
@@ -386,10 +383,11 @@ export async function saveStorefrontOrder(order: StorefrontOrderPayload): Promis
 
 export async function updateStorefrontOrderStatus(
   orderIdOrNum: string,
-  newStatus: StorefrontOrderPayload["status"]
+  newStatus: StorefrontOrderPayload["status"],
+  tenantSlug?: string
 ): Promise<boolean> {
   ensureStorageReady();
-  const sql = getSql();
+  const sql = await getTenantSql(tenantSlug || "");
 
   // 1. Update Neon PostgreSQL
   if (sql) {
@@ -429,7 +427,7 @@ export async function updateStorefrontOrderStatus(
 
 export async function getStorefrontBookings(tenantSlug?: string): Promise<StorefrontBookingPayload[]> {
   ensureStorageReady();
-  const sql = getSql();
+  const sql = await getTenantSql(tenantSlug || "");
   const clean = tenantSlug ? tenantSlug.toLowerCase().trim() : null;
 
   // 1. Neon PostgreSQL query
@@ -512,7 +510,7 @@ export async function saveStorefrontBooking(
   booking: StorefrontBookingPayload
 ): Promise<StorefrontBookingPayload> {
   ensureStorageReady();
-  const sql = getSql();
+  const sql = await getTenantSql(booking.tenantSlug || "");
 
   // 1. Save to Neon PostgreSQL
   if (sql) {

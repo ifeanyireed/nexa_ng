@@ -3254,7 +3254,8 @@ func HandleCrmCalls(w http.ResponseWriter, r *http.Request) {
 			SELECT id, tenant_slug, COALESCE(lead_id, ''), COALESCE(deal_id, ''),
 			       contact_name, COALESCE(company, ''), phone_number, rep_name,
 			       COALESCE(rep_email, ''), direction, outcome, duration_seconds,
-			       COALESCE(notes, ''), COALESCE(followup_date, ''), call_date, created_at
+			       COALESCE(notes, ''), COALESCE(followup_date, ''), call_date, created_at,
+			       COALESCE(recording_url, ''), COALESCE(transcript, ''), COALESCE(ai_summary, ''), COALESCE(is_ai, false)
 			FROM crm_calls
 			WHERE LOWER(tenant_slug) = $1`
 		args := []any{slug}
@@ -3302,7 +3303,9 @@ func HandleCrmCalls(w http.ResponseWriter, r *http.Request) {
 			var id, tSlug, lId, dId, cName, comp, phone, rName, rEmail, dir, out, notes, follow string
 			var dur int
 			var cDate, createdAt time.Time
-			if err := rows.Scan(&id, &tSlug, &lId, &dId, &cName, &comp, &phone, &rName, &rEmail, &dir, &out, &dur, &notes, &follow, &cDate, &createdAt); err == nil {
+			var recUrl, transcript, aiSummary string
+			var isAi bool
+			if err := rows.Scan(&id, &tSlug, &lId, &dId, &cName, &comp, &phone, &rName, &rEmail, &dir, &out, &dur, &notes, &follow, &cDate, &createdAt, &recUrl, &transcript, &aiSummary, &isAi); err == nil {
 				calls = append(calls, map[string]any{
 					"id":              id,
 					"tenantSlug":      tSlug,
@@ -3318,6 +3321,10 @@ func HandleCrmCalls(w http.ResponseWriter, r *http.Request) {
 					"durationSeconds": dur,
 					"notes":           notes,
 					"followupDate":    follow,
+					"recordingUrl":    recUrl,
+					"transcript":      transcript,
+					"aiSummary":       aiSummary,
+					"isAi":            isAi,
 					"callDate":        cDate,
 					"createdAt":       createdAt,
 				})
@@ -3379,6 +3386,10 @@ func HandleCrmCalls(w http.ResponseWriter, r *http.Request) {
 			DurationSeconds int    `json:"durationSeconds"`
 			Notes           string `json:"notes"`
 			FollowupDate    string `json:"followupDate"`
+			RecordingURL    string `json:"recordingUrl"`
+			Transcript      string `json:"transcript"`
+			AiSummary       string `json:"aiSummary"`
+			IsAi            bool   `json:"isAi"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			http.Error(w, `{"error": "Invalid request body"}`, http.StatusBadRequest)
@@ -3408,16 +3419,31 @@ func HandleCrmCalls(w http.ResponseWriter, r *http.Request) {
 		}
 		rep := strings.TrimSpace(body.RepName)
 		if rep == "" {
-			rep = "Sales Closer"
+			if body.IsAi {
+				rep = "Ofia Voice Agent"
+			} else {
+				rep = "Sales Closer"
+			}
 		}
 
 		_, err := db.Exec(`
 			INSERT INTO crm_calls (
 				id, tenant_slug, lead_id, deal_id, contact_name, company, phone_number,
-				rep_name, rep_email, direction, outcome, duration_seconds, notes, followup_date, call_date, created_at, updated_at
-			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW(), NOW())`,
+				rep_name, rep_email, direction, outcome, duration_seconds, notes, followup_date,
+				recording_url, transcript, ai_summary, is_ai, call_date, created_at, updated_at
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW(), NOW(), NOW())
+			ON CONFLICT (id) DO UPDATE SET
+				outcome = EXCLUDED.outcome,
+				duration_seconds = EXCLUDED.duration_seconds,
+				notes = EXCLUDED.notes,
+				followup_date = EXCLUDED.followup_date,
+				recording_url = EXCLUDED.recording_url,
+				transcript = EXCLUDED.transcript,
+				ai_summary = EXCLUDED.ai_summary,
+				updated_at = NOW()`,
 			id, slug, body.LeadID, body.DealID, body.ContactName, body.Company, body.PhoneNumber,
-			rep, body.RepEmail, dir, body.Outcome, body.DurationSeconds, body.Notes, body.FollowupDate)
+			rep, body.RepEmail, dir, body.Outcome, body.DurationSeconds, body.Notes, body.FollowupDate,
+			body.RecordingURL, body.Transcript, body.AiSummary, body.IsAi)
 
 		if err != nil {
 			http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)

@@ -727,6 +727,12 @@ func EnsureCRMTablesOnDB(targetDB *sql.DB) {
 	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_calls_lead ON crm_calls (lead_id);`)
 	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_crm_calls_date ON crm_calls (call_date);`)
 
+	_, _ = targetDB.Exec(`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS recording_url TEXT;`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS transcript TEXT;`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS ai_summary TEXT;`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS qualification_json JSONB;`)
+	_, _ = targetDB.Exec(`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS is_ai BOOLEAN DEFAULT FALSE;`)
+
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS name VARCHAR(191);`)
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS first_name VARCHAR(100);`)
 	_, _ = targetDB.Exec(`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS last_name VARCHAR(100);`)

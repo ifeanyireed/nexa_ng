@@ -761,8 +761,23 @@ export default function CrmLeadsPage() {
               <tbody className="divide-y divide-[var(--nexa-border)]">
                 {paginatedLeads.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-xs text-[var(--nexa-text-muted)]">
-                      No leads found matching criteria.
+                    <td colSpan={6} className="py-10 text-center text-xs text-[var(--nexa-text-muted)]">
+                      <div>No leads found matching criteria.</div>
+                      {(statusFilter !== "ALL" || callStatusFilter !== "ALL" || searchQuery) && (
+                        <div className="pt-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setStatusFilter("ALL");
+                              setCallStatusFilter("ALL");
+                              setSearchQuery("");
+                            }}
+                            className="text-xs font-bold text-[#1A56DB] hover:underline cursor-pointer"
+                          >
+                            Clear all filters
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ) : (

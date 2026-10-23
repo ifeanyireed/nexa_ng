@@ -77,31 +77,6 @@ func InitDB() *gorm.DB {
 	seedSuperAdmins(DB)
 	seedBlogContent(DB)
 
-	// Seed neweratransports dedicated project infrastructure if configured via env
-	neweraDB := os.Getenv("TENANT_DB_NEWERATRANSPORTS")
-	if neweraDB == "" {
-		neweraDB = os.Getenv("NEWERATRANSPORTS_DATABASE_URL")
-	}
-	neweraCloudinary := os.Getenv("TENANT_CLOUDINARY_NEWERATRANSPORTS")
-	if neweraCloudinary == "" {
-		neweraCloudinary = os.Getenv("NEWERATRANSPORTS_CLOUDINARY_URL")
-	}
-	if neweraDB != "" || neweraCloudinary != "" {
-		var existingInfra models.TenantInfrastructure
-		if err := DB.Where("tenant_slug = ?", "neweratransports").First(&existingInfra).Error; err != nil {
-			DB.Create(&models.TenantInfrastructure{
-				TenantSlug:      "neweratransports",
-				DatabaseURL:     neweraDB,
-				CloudinaryURL:   neweraCloudinary,
-				IsCustomDB:      neweraDB != "",
-				IsCustomStorage: neweraCloudinary != "",
-				MigrationStatus: "COMPLETED",
-				CreatedAt:       time.Now(),
-				UpdatedAt:       time.Now(),
-			})
-		}
-	}
-
 	log.Println("Database connection initialized successfully for service_users")
 	return DB
 }

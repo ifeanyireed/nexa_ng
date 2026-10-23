@@ -140,7 +140,7 @@ export function resolveTenantVertical(
 ): VerticalType {
   if (
     cookieVertical &&
-    ["fashion", "cars", "food", "property", "gadgets", "beauty", "home-living", "pharmacy", "hardware", "retail"].includes(
+    ["fashion", "cars", "food", "property", "gadgets", "beauty", "home-living", "pharmacy", "hardware", "retail", "dispatch"].includes(
       cookieVertical
     )
   ) {
@@ -279,6 +279,53 @@ export const SEED_TENANT_HANDSHAKES: Record<string, TenantStorefrontHandshake> =
         dispatchBooking: true,
       },
       badges: ["2-Year Device Warranty", "Same-Day Courier Delivery", "Diagnostic Clinic Onsite"],
+    },
+  },
+
+  speedycouriers: {
+    tenantId: "3cc400ea-4790-6230-0c75-f64f0520fb18",
+    slug: "speedycouriers",
+    name: "Speedy Couriers & Logistics",
+    domain: "speedycouriers.ofia.ng",
+    subdomain: "speedycouriers",
+    vertical: "dispatch",
+    provisioning: {
+      isShopEnabled: true,
+      planTier: "ENTERPRISE",
+      shopSubModules: {
+        pos: true,
+        inventory: false,
+        catalog: false,
+        services: true,
+        orders: true,
+        store: true,
+        referrals: true,
+      },
+    },
+    storefrontConfig: {
+      storeName: "Speedy Couriers & Express Dispatch",
+      headline: "Instant Citywide Motorcycle & Cargo Dispatch",
+      description: "Rapid on-demand parcel pickup, e-commerce cash-on-delivery logistics, and corporate document dispatch across Lagos.",
+      primaryColor: "#2563EB",
+      secondaryColor: "#1E293B",
+      logoUrl: "/ofia-logo.png",
+      bannerUrl: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1600&h=600&q=80",
+      currency: "₦",
+      contact: {
+        phone: "+234 803 123 4567",
+        email: "operations@speedycouriers.ofia.ng",
+        address: "Hub 12, Commercial Corridor, Ikeja & Lekki, Lagos",
+        whatsapp: "+2348031234567",
+        operatingHours: "24/7 Operations · Weekend Dispatch Available",
+      },
+      sectionVisibility: {
+        hero: true,
+        products: false,
+        services: true,
+        reviews: true,
+        dispatchBooking: true,
+      },
+      badges: ["Licensed Courier Operator", "Real-Time GPS Tracking", "Delivery OTP Security Handover"],
     },
   },
 };

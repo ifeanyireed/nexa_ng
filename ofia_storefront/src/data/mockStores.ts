@@ -230,6 +230,29 @@ export const MOCK_STORES: Record<string, VendorStore> = {
     badges: ["Authentic Publishers & Brands", "Complimentary Gift Wrapping", "Personalized Laser Engraving"],
     features: ["Multi-Department Hub", "Author & ISBN Lookup", "Pre-Order Drops & Personalization"],
   },
+
+  dispatch: {
+    id: "store_dispatch_01",
+    slug: "dispatch",
+    name: "Dispatch & Express Couriers",
+    vertical: "dispatch",
+    tagline: "Instant Citywide Courier Pickup, Parcel Delivery & Cargo Logistics",
+    description: "Reliable point-to-point motorcycle dispatch, scheduled e-commerce parcel deliveries, and bulk cargo logistics with real-time GPS telemetry and delivery OTP verification.",
+    logo: "/ofia-logo.png",
+    coverImage: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1600&h=600&q=80",
+    primaryColor: "#2563EB",
+    accentColor: "#1E40AF",
+    currency: "₦",
+    contact: {
+      phone: "+234 812 000 8899",
+      email: "dispatch@ofia.ng",
+      address: "Hub 4, Commercial Avenue, Yaba & Lekki Phase 1, Lagos",
+      whatsapp: "+2348120008899",
+      operatingHours: "24/7 Operations & Weekend Delivery",
+    },
+    badges: ["24/7 Active Fleet", "Live GPS Telemetry", "Delivery OTP Handover Security"],
+    features: ["Instant Fare Calculator", "Real-Time Radar Tracking", "E-Commerce Merchant Fulfillment"],
+  },
 };
 
 export const MOCK_PRODUCTS: Product[] = [

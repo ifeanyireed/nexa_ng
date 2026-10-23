@@ -105,6 +105,64 @@ function TrackingContent() {
             }
           }
         } else {
+          // Direct dispatch shipment lookup fallback
+          try {
+            const dispatchRes = await fetch(
+              `/api/storefront/dispatch?ref=${encodeURIComponent(refToFetch.trim())}&tenant=${encodeURIComponent(activeTenantSlug)}`,
+              { cache: "no-store" }
+            );
+            if (dispatchRes.ok) {
+              const dispatchData = await dispatchRes.json();
+              if (dispatchData.success) {
+                const sOrder: StorefrontOrderPayload = {
+                  id: dispatchData.trackingNumber || refToFetch,
+                  orderNumber: dispatchData.orderNumber || refToFetch,
+                  tenantSlug: dispatchData.tenantSlug || activeTenantSlug,
+                  customerName: dispatchData.logistics?.telemetry?.destination?.name || "Recipient",
+                  customerPhone: "",
+                  channel: "STOREFRONT",
+                  shippingAddress: dispatchData.logistics?.telemetry?.destination?.address || "Lagos",
+                  city: dispatchData.logistics?.telemetry?.destination?.city || "Lagos",
+                  paymentMethod: "card",
+                  items: [
+                    {
+                      id: "dp-1",
+                      name: dispatchData.parcel?.category || "Express Courier Parcel",
+                      quantity: 1,
+                      price: dispatchData.parcel?.shippingFee || 2500,
+                    },
+                  ],
+                  itemsSummary:
+                    dispatchData.parcel?.description ||
+                    dispatchData.parcel?.category ||
+                    "Express Courier Parcel",
+                  itemCount: 1,
+                  totalAmount: `₦${Number(dispatchData.parcel?.shippingFee || 2500).toLocaleString()}`,
+                  rawAmount: Number(dispatchData.parcel?.shippingFee || 2500),
+                  status:
+                    dispatchData.orderStatus === "PENDING"
+                      ? "IN_PREPARATION"
+                      : dispatchData.orderStatus === "DELIVERED"
+                      ? "DELIVERED"
+                      : "READY_DISPATCH",
+                  paymentStatus: "PAID",
+                  deliveryMethod: "DISPATCH",
+                  createdAt: "Recently",
+                  notes: `Delivery OTP: ${dispatchData.deliveryOtp || "Verified"}`,
+                };
+
+                setOrder(sOrder);
+                if (dispatchData.logistics) {
+                  setDispatchInfo(dispatchData.logistics);
+                }
+                setError(null);
+                setLastChecked(new Date());
+                setSecondsAgo(0);
+                return;
+              }
+            }
+          } catch {}
+
           setError(data.error || `No active dispatch found for reference "${refToFetch}"`);
           if (!isAutoRefresh) {
             setOrder(null);

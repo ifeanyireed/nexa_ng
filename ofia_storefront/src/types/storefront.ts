@@ -8,7 +8,8 @@ export type VerticalType =
   | "home-living"
   | "pharmacy"
   | "hardware"
-  | "retail";
+  | "retail"
+  | "dispatch";
 
 export interface VendorStore {
   id: string;

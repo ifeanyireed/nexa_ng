@@ -101,6 +101,10 @@ export async function POST(request: NextRequest) {
     }
 
     const cleanSlug = slug.toLowerCase().trim();
+    const effectiveDomain =
+      domain && !domain.endsWith(".ofia.ng") && !domain.endsWith(".ofia.shop")
+        ? domain.trim()
+        : `${cleanSlug}.ofia.ng`;
     const id = body.id || `org-${Date.now()}`;
     const effectiveDbMode = "DEDICATED";
     const effectiveIsCustom = true;
@@ -112,7 +116,7 @@ export async function POST(request: NextRequest) {
         id, name, slug, domain, owner_name, owner_email, plan_tier, status,
         db_mode, database_url, is_custom_db, mrr, vertical, created_at, updated_at
       ) VALUES (
-        ${id}, ${name}, ${cleanSlug}, ${domain || `${cleanSlug}.ofia.ng`},
+        ${id}, ${name}, ${cleanSlug}, ${effectiveDomain},
         ${ownerName || "Tenant Admin"}, ${ownerEmail || `admin@${cleanSlug}.ng`},
         ${planTier}, 'Active', ${effectiveDbMode}, ${databaseUrl.trim()},
         ${effectiveIsCustom}, ${mrr}, ${vertical}, NOW(), NOW()

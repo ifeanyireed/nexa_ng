@@ -5,10 +5,20 @@ import { TenantStorefrontHandshake, VendorStore, VerticalType } from "@/types/st
 import {
   extractSubdomainFromHost,
   resolveTenantFromHostAndQuery,
+  resolveTenantVertical,
   buildDynamicVendorStore,
   SEED_TENANT_HANDSHAKES,
 } from "@/lib/storefront-tenant";
 import { MOCK_STORES } from "@/data/mockStores";
+import StorefrontLoadingScreen from "@/components/common/StorefrontLoadingScreen";
+import UnprovisionedStorefrontErrorView from "@/components/common/UnprovisionedStorefrontErrorView";
+
+export interface TenantResolutionError {
+  code?: number;
+  title?: string;
+  message?: string;
+  slug?: string;
+}
 
 interface StorefrontTenantContextType {
   tenantSlug: string | null;
@@ -18,6 +28,7 @@ interface StorefrontTenantContextType {
   isShopEnabled: boolean;
   isFeatureEnabled: (featureKey: string) => boolean;
   isLoading: boolean;
+  tenantError: TenantResolutionError | null;
 }
 
 const StorefrontTenantContext = createContext<StorefrontTenantContextType | undefined>(undefined);
@@ -26,25 +37,16 @@ export function StorefrontTenantProvider({ children }: { children: React.ReactNo
   const [tenantSlug, setTenantSlug] = useState<string | null>(null);
   const [handshake, setHandshake] = useState<TenantStorefrontHandshake | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [tenantError, setTenantError] = useState<TenantResolutionError | null>(null);
+  const [isMounted, setIsMounted] = useState<boolean>(false);
 
   useEffect(() => {
+    setIsMounted(true);
     let resolvedSlug: string | null = null;
 
     if (typeof window !== "undefined") {
-      const urlParams = new URLSearchParams(window.location.search);
-      const queryParam = urlParams.get("tenant") || urlParams.get("store") || urlParams.get("slug");
-
-      let cookieSlug: string | null = null;
-      try {
-        const match = document.cookie.match(/(?:^|;\s*)ofia_tenant_slug=([^;]+)/);
-        if (match) cookieSlug = decodeURIComponent(match[1]);
-      } catch {}
-
-      const resolution = resolveTenantFromHostAndQuery(
-        window.location.host,
-        queryParam,
-        cookieSlug
-      );
+      // Resolve tenant strictly from host (subdomain or custom domain), ignoring query params
+      const resolution = resolveTenantFromHostAndQuery(window.location.host);
       resolvedSlug = resolution.tenantSlug;
     }
 
@@ -94,6 +96,7 @@ export function StorefrontTenantProvider({ children }: { children: React.ReactNo
             }
 
             setHandshake(activeHandshake);
+            setTenantError(null);
 
             // Synchronize tenant cookies for edge middleware
             if (typeof document !== "undefined") {
@@ -118,7 +121,19 @@ export function StorefrontTenantProvider({ children }: { children: React.ReactNo
         // Fallback to seed preset
         if (SEED_TENANT_HANDSHAKES[slug]) {
           setHandshake(SEED_TENANT_HANDSHAKES[slug]);
+          setTenantError(null);
+          return;
         }
+
+        // Slug is NOT provisioned on the platform: fail fast with technical error!
+        const errData = await res.json().catch(() => null);
+        setTenantError({
+          code: res.status === 404 ? 404 : 400,
+          title: "Storefront Workspace Not Provisioned",
+          message: errData?.error || `The merchant workspace '${slug}' has not been provisioned or is inactive on Ofia Platform.`,
+          slug: slug,
+        });
+        setHandshake(null);
       } catch (err) {
         console.warn("[Storefront Tenant Context] Failed to resolve handshake:", err);
       } finally {
@@ -191,9 +206,37 @@ export function StorefrontTenantProvider({ children }: { children: React.ReactNo
       isShopEnabled,
       isFeatureEnabled,
       isLoading,
+      tenantError,
     }),
-    [tenantSlug, handshake, store, vertical, isShopEnabled, isLoading]
+    [tenantSlug, handshake, store, vertical, isShopEnabled, isLoading, tenantError]
   );
+
+  // Avoid SSR / client hydration mismatches before initial client mount
+  if (!isMounted) {
+    return (
+      <StorefrontTenantContext.Provider value={contextValue}>
+        {children}
+      </StorefrontTenantContext.Provider>
+    );
+  }
+
+  // 1. If tenant resolution failed with an unprovisioned slug error: render dedicated 404 view
+  if (tenantError) {
+    return (
+      <StorefrontTenantContext.Provider value={contextValue}>
+        <UnprovisionedStorefrontErrorView error={tenantError} />
+      </StorefrontTenantContext.Provider>
+    );
+  }
+
+  // 2. While resolving tenant credentials: display smooth grey wireframe skeleton (no vertical flashing)
+  if (isLoading && tenantSlug) {
+    return (
+      <StorefrontTenantContext.Provider value={contextValue}>
+        <StorefrontLoadingScreen tenantSlug={tenantSlug} />
+      </StorefrontTenantContext.Provider>
+    );
+  }
 
   return (
     <StorefrontTenantContext.Provider value={contextValue}>

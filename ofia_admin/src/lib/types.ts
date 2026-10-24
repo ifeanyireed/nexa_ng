@@ -146,7 +146,8 @@ export type VerticalType =
   | "home-living"
   | "pharmacy"
   | "hardware"
-  | "retail";
+  | "retail"
+  | "dispatch";
 
 export interface TenantStorefrontHandshake {
   tenantId: string;
@@ -185,12 +186,14 @@ export interface TenantStorefrontHandshake {
       whatsapp?: string;
       operatingHours?: string;
     };
+    allowEscrow?: boolean;
     sectionVisibility: {
       hero: boolean;
       products: boolean;
       services: boolean;
       reviews: boolean;
       dispatchBooking: boolean;
+      escrowOption?: boolean;
     };
     badges: string[];
   };

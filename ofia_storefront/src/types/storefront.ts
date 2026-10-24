@@ -317,12 +317,14 @@ export interface TenantStorefrontHandshake {
       whatsapp?: string;
       operatingHours?: string;
     };
+    allowEscrow?: boolean;
     sectionVisibility: {
       hero: boolean;
       products: boolean;
       services: boolean;
       reviews: boolean;
       dispatchBooking: boolean;
+      escrowOption?: boolean;
     };
     badges: string[];
   };
@@ -334,7 +336,7 @@ export interface StorefrontOrderPayload {
   tenantSlug: string;
   tenantId?: string;
   customerName: string;
-  customerEmail: string;
+  customerEmail?: string;
   customerPhone: string;
   channel: "STOREFRONT" | "POS_COUNTER" | "INQUIRY";
   shippingAddress: string;
@@ -342,8 +344,9 @@ export interface StorefrontOrderPayload {
   paymentMethod?: string;
   items: Array<{
     id: string;
-    productId: string;
-    title: string;
+    productId?: string;
+    title?: string;
+    name?: string;
     price: number;
     quantity: number;
     image?: string;
@@ -356,7 +359,12 @@ export interface StorefrontOrderPayload {
   status: "PENDING" | "CONFIRMED" | "IN_PREPARATION" | "READY_DISPATCH" | "DELIVERED";
   paymentStatus: "PAID" | "PENDING" | "REFUNDED";
   deliveryMethod: "DISPATCH" | "STORE_PICKUP";
-  createdAt: string;
+  isEscrow?: boolean;
+  escrowStatus?: "NONE" | "DIRECT_SETTLEMENT" | "HELD" | "RELEASED" | "REFUNDED";
+  settlementStatus?: "AVAILABLE" | "HELD_ESCROW" | "WITHDRAWN";
+  merchantAmount?: number;
+  platformFee?: number;
+  createdAt?: string;
   notes?: string;
 }
 
@@ -374,4 +382,11 @@ export interface StorefrontBookingPayload {
   notes?: string;
   vertical: VerticalType;
   createdAt: string;
+  technicianId?: string;
+  technicianName?: string;
+  isEscrow?: boolean;
+  escrowStatus?: "NONE" | "DIRECT_SETTLEMENT" | "HELD" | "RELEASED" | "REFUNDED";
+  settlementStatus?: "AVAILABLE" | "HELD_ESCROW" | "WITHDRAWN";
+  merchantAmount?: number;
+  platformFee?: number;
 }

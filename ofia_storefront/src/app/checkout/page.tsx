@@ -30,8 +30,16 @@ export default function CheckoutPage() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("Lagos");
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "transfer" | "crypto">("card");
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "transfer">("card");
+  const [requestEscrow, setRequestEscrow] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Escrow is strictly opt-in on request IF tenant allows escrow option
+  const tenantAllowsEscrow = Boolean(
+    handshake?.storefrontConfig?.allowEscrow ??
+    handshake?.storefrontConfig?.sectionVisibility?.escrowOption ??
+    false
+  );
 
   const deliveryFee = 3500;
   const grandTotal = subtotal + (items.length > 0 ? deliveryFee : 0);
@@ -48,6 +56,9 @@ export default function CheckoutPage() {
       alert("Missing tenant context. Please access storefront using a valid tenant URL.");
       return;
     }
+
+    const isEscrowActive = tenantAllowsEscrow && requestEscrow;
+
     const orderPayload = {
       tenantSlug: targetSlug,
       tenantId: handshake?.tenantId || `org-${targetSlug}`,
@@ -58,6 +69,9 @@ export default function CheckoutPage() {
       city: city,
       paymentMethod: paymentMethod,
       channel: "STOREFRONT",
+      isEscrow: isEscrowActive,
+      escrowStatus: isEscrowActive ? "HELD" : "NONE",
+      settlementStatus: isEscrowActive ? "HELD_ESCROW" : "AVAILABLE",
       items: items.map((i) => ({
         id: i.id,
         productId: i.productId,
@@ -87,11 +101,13 @@ export default function CheckoutPage() {
 
       clearCart();
       const redirectTenant = targetSlug ? `&tenant=${encodeURIComponent(targetSlug)}` : "";
-      router.push(`/order-confirmed?ref=${orderRef}&name=${encodeURIComponent(fullName)}${redirectTenant}`);
+      const escrowParam = `&escrow=${isEscrowActive ? "1" : "0"}`;
+      router.push(`/order-confirmed?ref=${orderRef}&name=${encodeURIComponent(fullName)}${redirectTenant}${escrowParam}`);
     } catch {
       const orderRef = `OFIA-${Math.floor(100000 + Math.random() * 900000)}`;
       clearCart();
-      router.push(`/order-confirmed?ref=${orderRef}&name=${encodeURIComponent(fullName)}`);
+      const isEscrowActive = tenantAllowsEscrow && requestEscrow;
+      router.push(`/order-confirmed?ref=${orderRef}&name=${encodeURIComponent(fullName)}&escrow=${isEscrowActive ? "1" : "0"}`);
     } finally {
       setIsProcessing(false);
     }
@@ -242,45 +258,67 @@ export default function CheckoutPage() {
                   <span>Payment Method</span>
                 </h3>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => setPaymentMethod("card")}
-                    className={`p-3.5 rounded-2xl border text-center transition-all ${
+                    className={`p-4 rounded-2xl border text-center transition-all ${
                       paymentMethod === "card"
                         ? "border-blue-600 bg-blue-50/50 ring-2 ring-blue-600/20 text-blue-900 font-bold"
                         : "border-stone-200 hover:border-stone-300 text-stone-700"
                     }`}
                   >
                     <CreditCard className="w-5 h-5 mx-auto mb-1 text-blue-600" />
-                    <span className="text-xs block">Card / Paystack</span>
+                    <span className="text-xs block font-bold">Debit / Credit Card</span>
+                    <span className="text-[10px] text-stone-500 block">Mastercard, Visa, Verve</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setPaymentMethod("transfer")}
-                    className={`p-3.5 rounded-2xl border text-center transition-all ${
+                    className={`p-4 rounded-2xl border text-center transition-all ${
                       paymentMethod === "transfer"
                         ? "border-blue-600 bg-blue-50/50 ring-2 ring-blue-600/20 text-blue-900 font-bold"
                         : "border-stone-200 hover:border-stone-300 text-stone-700"
                     }`}
                   >
                     <Building className="w-5 h-5 mx-auto mb-1 text-blue-600" />
-                    <span className="text-xs block">Instant Transfer</span>
+                    <span className="text-xs block font-bold">Instant Bank Transfer</span>
+                    <span className="text-[10px] text-stone-500 block">Virtual Account Checkout</span>
                   </button>
+                </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod("crypto")}
-                    className={`p-3.5 rounded-2xl border text-center transition-all ${
-                      paymentMethod === "crypto"
-                        ? "border-blue-600 bg-blue-50/50 ring-2 ring-blue-600/20 text-blue-900 font-bold"
-                        : "border-stone-200 hover:border-stone-300 text-stone-700"
-                    }`}
-                  >
-                    <ShieldCheck className="w-5 h-5 mx-auto mb-1 text-blue-600" />
-                    <span className="text-xs block">Escrow / USDT</span>
-                  </button>
+                {/* Conditional Opt-In Escrow Protection (Only if tenant allows Escrow Option) */}
+                {tenantAllowsEscrow ? (
+                  <div className="mt-4 p-4 rounded-2xl border border-blue-200 bg-blue-50/60 transition-all">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={requestEscrow}
+                        onChange={(e) => setRequestEscrow(e.target.checked)}
+                        className="mt-0.5 w-4 h-4 rounded text-blue-600 cursor-pointer accent-blue-600"
+                      />
+                      <div className="flex-1 text-xs">
+                        <span className="font-bold text-blue-950 flex items-center gap-1.5">
+                          <ShieldCheck className="w-4 h-4 text-blue-600" />
+                          Request Ofia Escrow Protection (Optional)
+                        </span>
+                        <p className="text-blue-800/80 mt-0.5 leading-relaxed text-[11px]">
+                          Hold payment safely in the Ofia Escrow Vault until delivery OTP confirmation. (Leave unchecked for standard instant merchant settlement).
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                ) : null}
+
+                {/* Settlement Notice */}
+                <div className="flex items-center gap-2 pt-2 text-[11px] text-stone-500">
+                  <Lock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span>
+                    {tenantAllowsEscrow && requestEscrow
+                      ? "Escrow Protection Active · Payment safely locked in vault until recipient confirms delivery"
+                      : "Direct Merchant Settlement · Instant automated split directly to merchant earnings wallet"}
+                  </span>
                 </div>
               </div>
 

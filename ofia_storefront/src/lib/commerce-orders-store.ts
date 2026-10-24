@@ -71,6 +71,11 @@ function mapRowToStorefrontOrder(r: any): StorefrontOrderPayload {
     status: r.status,
     paymentStatus: r.payment_status || "PAID",
     deliveryMethod: r.delivery_method || "DISPATCH",
+    isEscrow: Boolean(r.is_escrow),
+    escrowStatus: r.escrow_status || (r.is_escrow ? "HELD" : "NONE"),
+    settlementStatus: r.settlement_status || (r.is_escrow ? "HELD_ESCROW" : "AVAILABLE"),
+    merchantAmount: Number(r.merchant_amount) || 0,
+    platformFee: Number(r.platform_fee) || 0,
     createdAt: r.created_at
       ? new Date(r.created_at).toLocaleDateString("en-US", {
           month: "short",
@@ -108,6 +113,11 @@ export async function getStorefrontOrders(tenantSlug: string): Promise<Storefron
                COALESCE(currency, '₦') as currency,
                COALESCE(items, '[]'::jsonb) as items,
                COALESCE(notes, '') as notes,
+               COALESCE(is_escrow, FALSE) as is_escrow,
+               COALESCE(escrow_status, 'NONE') as escrow_status,
+               COALESCE(settlement_status, 'AVAILABLE') as settlement_status,
+               COALESCE(merchant_amount, 0) as merchant_amount,
+               COALESCE(platform_fee, 0) as platform_fee,
                created_at, updated_at
         FROM shop_orders
         WHERE LOWER(tenant_slug) = ${clean}
@@ -166,6 +176,11 @@ export async function getStorefrontOrderByIdOrRef(
                COALESCE(currency, '₦') as currency,
                COALESCE(items, '[]'::jsonb) as items,
                COALESCE(notes, '') as notes,
+               COALESCE(is_escrow, FALSE) as is_escrow,
+               COALESCE(escrow_status, 'NONE') as escrow_status,
+               COALESCE(settlement_status, 'AVAILABLE') as settlement_status,
+               COALESCE(merchant_amount, 0) as merchant_amount,
+               COALESCE(platform_fee, 0) as platform_fee,
                created_at, updated_at
         FROM shop_orders
         WHERE (LOWER(order_number) = ${cleanRef} OR LOWER(id) = ${cleanRef})
@@ -203,6 +218,13 @@ export async function saveStorefrontOrder(order: StorefrontOrderPayload): Promis
     throw new Error("[Storefront Commerce Store] tenantSlug is required to save storefront order.");
   }
 
+  const rawAmount = Number(order.rawAmount) || 0;
+  const platformFee = order.platformFee ?? Math.round(rawAmount * 0.015 * 100) / 100; // 1.5% commission
+  const merchantAmount = order.merchantAmount ?? Math.max(0, rawAmount - platformFee); // 98.5%
+  const isEscrow = Boolean(order.isEscrow);
+  const escrowStatus = isEscrow ? "HELD" : "NONE";
+  const settlementStatus = isEscrow ? "HELD_ESCROW" : "AVAILABLE";
+
   const sql = await getTenantSql(cleanTenant);
 
   // 1. Save to dedicated Neon PostgreSQL database
@@ -213,20 +235,74 @@ export async function saveStorefrontOrder(order: StorefrontOrderPayload): Promis
           id, order_number, tenant_slug, tenant_id, customer_name, customer_email,
           customer_phone, channel, status, payment_status, delivery_method,
           shipping_address, city, payment_method, items_summary, item_count,
-          total_amount, raw_amount, notes, items, created_at, updated_at
+          total_amount, raw_amount, is_escrow, escrow_status, settlement_status,
+          merchant_amount, platform_fee, notes, items, created_at, updated_at
         ) VALUES (
           ${order.id}, ${order.orderNumber}, ${cleanTenant}, ${order.tenantId || ""},
           ${order.customerName}, ${order.customerEmail || ""}, ${order.customerPhone},
           ${order.channel || "STOREFRONT"}, ${order.status || "IN_PREPARATION"}, ${order.paymentStatus || "PAID"},
           ${order.deliveryMethod || "DISPATCH"}, ${order.shippingAddress || ""}, ${order.city || "Lagos"},
           ${order.paymentMethod || "card"}, ${order.itemsSummary || ""}, ${order.itemCount || 1},
-          ${order.totalAmount || "₦0"}, ${order.rawAmount || 0}, ${order.notes || ""},
+          ${order.totalAmount || "₦0"}, ${rawAmount}, ${isEscrow}, ${escrowStatus}, ${settlementStatus},
+          ${merchantAmount}, ${platformFee}, ${order.notes || ""},
           ${JSON.stringify(order.items || [])}::jsonb, NOW(), NOW()
         )
         ON CONFLICT (tenant_slug, order_number) DO UPDATE SET
           status = EXCLUDED.status,
           updated_at = NOW()
       `;
+
+      // 1b. Multi-Tenant Wallet Credit & Split Execution
+      if (rawAmount > 0) {
+        const walletId = `wal-${cleanTenant}`;
+        const txId = `tx-${Date.now().toString().slice(-8)}`;
+
+        if (isEscrow) {
+          // Escrow: Lock 98.5% into escrow_balance pending delivery OTP confirmation
+          await sql`
+            INSERT INTO tenant_wallets (
+              id, tenant_slug, tenant_id, available_balance, escrow_balance, total_withdrawn, currency, created_at, updated_at
+            ) VALUES (
+              ${walletId}, ${cleanTenant}, ${order.tenantId || ""}, 0, ${merchantAmount}, 0, 'NGN', NOW(), NOW()
+            )
+            ON CONFLICT (tenant_slug) DO UPDATE SET
+              escrow_balance = tenant_wallets.escrow_balance + ${merchantAmount},
+              updated_at = NOW()
+          `;
+
+          await sql`
+            INSERT INTO tenant_wallet_transactions (
+              id, tenant_slug, tenant_id, type, amount, reference, description, channel, is_escrow, status, created_at
+            ) VALUES (
+              ${txId}, ${cleanTenant}, ${order.tenantId || ""}, 'ESCROW_HOLD', ${merchantAmount},
+              ${order.orderNumber}, ${`Order #${order.orderNumber} placed into Ofia Escrow Vault pending delivery confirmation.`},
+              ${order.channel || "STOREFRONT"}, TRUE, 'SUCCESS', NOW()
+            )
+          `;
+        } else {
+          // Default Direct Settlement: Instant split, credit available_balance immediately for anytime withdrawal
+          await sql`
+            INSERT INTO tenant_wallets (
+              id, tenant_slug, tenant_id, available_balance, escrow_balance, total_withdrawn, currency, created_at, updated_at
+            ) VALUES (
+              ${walletId}, ${cleanTenant}, ${order.tenantId || ""}, ${merchantAmount}, 0, 0, 'NGN', NOW(), NOW()
+            )
+            ON CONFLICT (tenant_slug) DO UPDATE SET
+              available_balance = tenant_wallets.available_balance + ${merchantAmount},
+              updated_at = NOW()
+          `;
+
+          await sql`
+            INSERT INTO tenant_wallet_transactions (
+              id, tenant_slug, tenant_id, type, amount, reference, description, channel, is_escrow, status, created_at
+            ) VALUES (
+              ${txId}, ${cleanTenant}, ${order.tenantId || ""}, 'SALE_CREDIT', ${merchantAmount},
+              ${order.orderNumber}, ${`Instant sale settlement (98.5% split) credited for order #${order.orderNumber}. Available for immediate withdrawal.`},
+              ${order.channel || "STOREFRONT"}, FALSE, 'SUCCESS', NOW()
+            )
+          `;
+        }
+      }
     } catch (err) {
       console.warn(`[Storefront Commerce Store] Dedicated saveOrder warning for tenant '${cleanTenant}':`, err);
     }
@@ -270,12 +346,64 @@ export async function updateStorefrontOrderStatus(
   // 1. Update dedicated Neon PostgreSQL strictly partitioned by tenant_slug
   if (sql) {
     try {
-      await sql`
-        UPDATE shop_orders
-        SET status = ${newStatus}, updated_at = NOW()
-        WHERE (id = ${cleanRef} OR order_number = ${cleanRef})
-          AND LOWER(tenant_slug) = ${cleanTenant}
-      `;
+      if (newStatus === "DELIVERED") {
+        // Check if order was held under Escrow Protection
+        const existing = await sql`
+          SELECT id, order_number, raw_amount, merchant_amount, is_escrow, escrow_status
+          FROM shop_orders
+          WHERE (id = ${cleanRef} OR order_number = ${cleanRef})
+            AND LOWER(tenant_slug) = ${cleanTenant}
+          LIMIT 1
+        `;
+
+        if (existing.length > 0 && existing[0].is_escrow && existing[0].escrow_status === "HELD") {
+          const ord = existing[0];
+          const mAmount = Number(ord.merchant_amount) || Math.max(0, Number(ord.raw_amount) * 0.985);
+
+          await sql`
+            UPDATE shop_orders
+            SET status = 'DELIVERED',
+                escrow_status = 'RELEASED',
+                settlement_status = 'AVAILABLE',
+                updated_at = NOW()
+            WHERE (id = ${cleanRef} OR order_number = ${cleanRef})
+              AND LOWER(tenant_slug) = ${cleanTenant}
+          `;
+
+          await sql`
+            UPDATE tenant_wallets
+            SET escrow_balance = GREATEST(0, escrow_balance - ${mAmount}),
+                available_balance = available_balance + ${mAmount},
+                updated_at = NOW()
+            WHERE LOWER(tenant_slug) = ${cleanTenant}
+          `;
+
+          const releaseTxId = `tx-rel-${Date.now().toString().slice(-8)}`;
+          await sql`
+            INSERT INTO tenant_wallet_transactions (
+              id, tenant_slug, tenant_id, type, amount, reference, description, channel, is_escrow, status, created_at
+            ) VALUES (
+              ${releaseTxId}, ${cleanTenant}, '', 'ESCROW_RELEASE', ${mAmount},
+              ${ord.order_number}, ${`Escrow payout released for order #${ord.order_number} upon delivery OTP confirmation. Credited to available balance.`},
+              'STOREFRONT', FALSE, 'SUCCESS', NOW()
+            )
+          `;
+        } else {
+          await sql`
+            UPDATE shop_orders
+            SET status = ${newStatus}, updated_at = NOW()
+            WHERE (id = ${cleanRef} OR order_number = ${cleanRef})
+              AND LOWER(tenant_slug) = ${cleanTenant}
+          `;
+        }
+      } else {
+        await sql`
+          UPDATE shop_orders
+          SET status = ${newStatus}, updated_at = NOW()
+          WHERE (id = ${cleanRef} OR order_number = ${cleanRef})
+            AND LOWER(tenant_slug) = ${cleanTenant}
+        `;
+      }
     } catch (err) {
       console.warn(`[Storefront Commerce Store] Update status failed for tenant '${cleanTenant}':`, err);
     }
@@ -320,8 +448,15 @@ export async function getStorefrontBookings(tenantSlug: string): Promise<Storefr
       const rows = await sql`
         SELECT id, booking_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
                customer_name, COALESCE(customer_email, '') as customer_email,
-               customer_phone, service_title, date_time, status, vertical,
-               COALESCE(notes, '') as notes, amount, created_at, updated_at
+               customer_phone,
+               COALESCE(service_title, service_name, 'Inspection / Service') as service_title,
+               COALESCE(date_time, slot_date || ' ' || slot_time, 'TBD') as date_time,
+               status, COALESCE(vertical, 'cars') as vertical,
+               COALESCE(notes, '') as notes,
+               COALESCE(total_amount, '₦0') as amount,
+               COALESCE(technician_id, '') as technician_id,
+               COALESCE(technician_name, '') as technician_name,
+               created_at, updated_at
         FROM shop_bookings
         WHERE LOWER(tenant_slug) = ${clean}
         ORDER BY created_at DESC
@@ -329,7 +464,7 @@ export async function getStorefrontBookings(tenantSlug: string): Promise<Storefr
       `;
 
       if (rows && rows.length > 0) {
-        return rows.map((r) => ({
+        return rows.map((r: any) => ({
           id: r.id,
           bookingNumber: r.booking_number,
           tenantSlug: r.tenant_slug,
@@ -342,6 +477,8 @@ export async function getStorefrontBookings(tenantSlug: string): Promise<Storefr
           status: r.status,
           notes: r.notes,
           vertical: r.vertical,
+          technicianId: r.technician_id || undefined,
+          technicianName: r.technician_name || undefined,
           createdAt: r.created_at
             ? new Date(r.created_at).toLocaleDateString("en-US", {
                 month: "short",
@@ -383,6 +520,13 @@ export async function saveStorefrontBooking(
     throw new Error("[Storefront Commerce Store] tenantSlug is required to save storefront booking.");
   }
 
+  const rawAmount = Number((booking as any).rawAmount || (booking as any).amount) || 0;
+  const isEscrow = Boolean(booking.isEscrow);
+  const platformFee = Math.round(rawAmount * 0.015 * 100) / 100;
+  const merchantAmount = Math.max(0, rawAmount - platformFee);
+  const escrowStatus = isEscrow ? "HELD" : "NONE";
+  const settlementStatus = isEscrow ? "HELD_ESCROW" : "AVAILABLE";
+
   const sql = await getTenantSql(cleanTenant);
 
   // 1. Save to dedicated Neon PostgreSQL database
@@ -391,17 +535,71 @@ export async function saveStorefrontBooking(
       await sql`
         INSERT INTO shop_bookings (
           id, booking_number, tenant_slug, tenant_id, customer_name, customer_email,
-          customer_phone, service_title, date_time, status, vertical, notes, created_at, updated_at
+          customer_phone, service_title, date_time, status, vertical, notes,
+          raw_amount, is_escrow, escrow_status, settlement_status, merchant_amount,
+          platform_fee, created_at, updated_at
         ) VALUES (
           ${booking.id}, ${booking.bookingNumber}, ${cleanTenant}, ${booking.tenantId || ""},
           ${booking.customerName}, ${booking.customerEmail || ""}, ${booking.customerPhone},
           ${booking.serviceTitle}, ${booking.dateTime}, ${booking.status || "CONFIRMED"},
-          ${booking.vertical || "cars"}, ${booking.notes || ""}, NOW(), NOW()
+          ${booking.vertical || "cars"}, ${booking.notes || ""},
+          ${rawAmount}, ${isEscrow}, ${escrowStatus}, ${settlementStatus}, ${merchantAmount},
+          ${platformFee}, NOW(), NOW()
         )
         ON CONFLICT (tenant_slug, booking_number) DO UPDATE SET
           status = EXCLUDED.status,
           updated_at = NOW()
       `;
+
+      // 1b. Update tenant wallet
+      if (rawAmount > 0) {
+        const walletId = `wal-${cleanTenant}`;
+        const txId = `tx-bk-${Date.now().toString().slice(-8)}`;
+
+        if (isEscrow) {
+          await sql`
+            INSERT INTO tenant_wallets (
+              id, tenant_slug, tenant_id, available_balance, escrow_balance, total_withdrawn, currency, created_at, updated_at
+            ) VALUES (
+              ${walletId}, ${cleanTenant}, ${booking.tenantId || ""}, 0, ${merchantAmount}, 0, 'NGN', NOW(), NOW()
+            )
+            ON CONFLICT (tenant_slug) DO UPDATE SET
+              escrow_balance = tenant_wallets.escrow_balance + ${merchantAmount},
+              updated_at = NOW()
+          `;
+
+          await sql`
+            INSERT INTO tenant_wallet_transactions (
+              id, tenant_slug, tenant_id, type, amount, reference, description, channel, is_escrow, status, created_at
+            ) VALUES (
+              ${txId}, ${cleanTenant}, ${booking.tenantId || ""}, 'ESCROW_HOLD', ${merchantAmount},
+              ${booking.bookingNumber}, ${`Service booking #${booking.bookingNumber} (${booking.serviceTitle}) held in Escrow pending service completion.`},
+              'STOREFRONT_BOOKING', TRUE, 'SUCCESS', NOW()
+            )
+          `;
+        } else {
+          await sql`
+            INSERT INTO tenant_wallets (
+              id, tenant_slug, tenant_id, available_balance, escrow_balance, total_withdrawn, currency, created_at, updated_at
+            ) VALUES (
+              ${walletId}, ${cleanTenant}, ${booking.tenantId || ""}, ${merchantAmount}, 0, 0, 'NGN', NOW(), NOW()
+            )
+            ON CONFLICT (tenant_slug) DO UPDATE SET
+              available_balance = tenant_wallets.available_balance + ${merchantAmount},
+              updated_at = NOW()
+          `;
+
+          await sql`
+            INSERT INTO tenant_wallet_transactions (
+              id, tenant_slug, tenant_id, type, amount, reference, description, channel, is_escrow, status, created_at
+            ) VALUES (
+              ${txId}, ${cleanTenant}, ${booking.tenantId || ""}, 'SALE_CREDIT', ${merchantAmount},
+              ${booking.bookingNumber}, ${`Direct split settlement (98.5%) for service booking #${booking.bookingNumber}. Available for immediate withdrawal.`},
+              'STOREFRONT_BOOKING', FALSE, 'SUCCESS', NOW()
+            )
+          `;
+        }
+      }
     } catch (err) {
       console.warn(`[Storefront Commerce Store] Dedicated saveBooking warning for tenant '${cleanTenant}':`, err);
     }
@@ -433,7 +631,9 @@ export async function saveStorefrontBooking(
 export async function updateStorefrontBookingStatus(
   bookingIdOrNum: string,
   newStatus: StorefrontBookingPayload["status"],
-  tenantSlug: string
+  tenantSlug: string,
+  technicianId?: string,
+  technicianName?: string
 ): Promise<boolean> {
   ensureStorageReady();
   const cleanTenant = (tenantSlug || "").trim().toLowerCase();
@@ -445,12 +645,71 @@ export async function updateStorefrontBookingStatus(
   // 1. Update dedicated Neon PostgreSQL strictly partitioned by tenant_slug
   if (sql) {
     try {
-      await sql`
-        UPDATE shop_bookings
-        SET status = ${newStatus}, updated_at = NOW()
-        WHERE (id = ${cleanRef} OR booking_number = ${cleanRef})
-          AND LOWER(tenant_slug) = ${cleanTenant}
-      `;
+      if (newStatus === "COMPLETED") {
+        const existing = await sql`
+          SELECT id, booking_number, raw_amount, merchant_amount, is_escrow, escrow_status
+          FROM shop_bookings
+          WHERE (id = ${cleanRef} OR booking_number = ${cleanRef})
+            AND LOWER(tenant_slug) = ${cleanTenant}
+          LIMIT 1
+        `;
+
+        if (existing.length > 0 && existing[0].is_escrow && existing[0].escrow_status === "HELD") {
+          const bk = existing[0];
+          const mAmount = Number(bk.merchant_amount) || Math.max(0, Number(bk.raw_amount) * 0.985);
+
+          await sql`
+            UPDATE shop_bookings
+            SET status = 'COMPLETED',
+                escrow_status = 'RELEASED',
+                settlement_status = 'AVAILABLE',
+                technician_id = COALESCE(${technicianId || null}, technician_id),
+                technician_name = COALESCE(${technicianName || null}, technician_name),
+                updated_at = NOW()
+            WHERE (id = ${cleanRef} OR booking_number = ${cleanRef})
+              AND LOWER(tenant_slug) = ${cleanTenant}
+          `;
+
+          await sql`
+            UPDATE tenant_wallets
+            SET escrow_balance = GREATEST(0, escrow_balance - ${mAmount}),
+                available_balance = available_balance + ${mAmount},
+                updated_at = NOW()
+            WHERE LOWER(tenant_slug) = ${cleanTenant}
+          `;
+
+          const releaseTxId = `tx-bk-rel-${Date.now().toString().slice(-8)}`;
+          await sql`
+            INSERT INTO tenant_wallet_transactions (
+              id, tenant_slug, tenant_id, type, amount, reference, description, channel, is_escrow, status, created_at
+            ) VALUES (
+              ${releaseTxId}, ${cleanTenant}, '', 'ESCROW_RELEASE', ${mAmount},
+              ${bk.booking_number}, ${`Escrow released for service #${bk.booking_number} upon completion. Credited to available balance.`},
+              'STOREFRONT_BOOKING', FALSE, 'SUCCESS', NOW()
+            )
+          `;
+        } else {
+          await sql`
+            UPDATE shop_bookings
+            SET status = ${newStatus},
+                technician_id = COALESCE(${technicianId || null}, technician_id),
+                technician_name = COALESCE(${technicianName || null}, technician_name),
+                updated_at = NOW()
+            WHERE (id = ${cleanRef} OR booking_number = ${cleanRef})
+              AND LOWER(tenant_slug) = ${cleanTenant}
+          `;
+        }
+      } else {
+        await sql`
+          UPDATE shop_bookings
+          SET status = ${newStatus},
+              technician_id = COALESCE(${technicianId || null}, technician_id),
+              technician_name = COALESCE(${technicianName || null}, technician_name),
+              updated_at = NOW()
+          WHERE (id = ${cleanRef} OR booking_number = ${cleanRef})
+            AND LOWER(tenant_slug) = ${cleanTenant}
+        `;
+      }
     } catch (err) {
       console.warn(`[Storefront Commerce Store] Update booking status failed for tenant '${cleanTenant}':`, err);
     }
@@ -467,7 +726,12 @@ export async function updateStorefrontBookingStatus(
             (b.id === cleanRef || b.bookingNumber === cleanRef) &&
             (b.tenantSlug || "").toLowerCase().trim() === cleanTenant
           ) {
-            return { ...b, status: newStatus };
+            return {
+              ...b,
+              status: newStatus,
+              technicianId: technicianId || b.technicianId,
+              technicianName: technicianName || b.technicianName,
+            };
           }
           return b;
         });

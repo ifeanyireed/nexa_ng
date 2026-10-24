@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import HardwareStorefrontView from "./HardwareStorefrontView";
+import { resolveStorefrontMetadata } from "@/lib/storefront-metadata";
 
-export const metadata: Metadata = {
-  title: "Hardware & Solar Engineering Storefront | OFIA",
-  description: "Tier-1 hybrid inverters, LiFePO4 battery storage, solar panels, and COREN-certified turnkey engineering installation.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return resolveStorefrontMetadata(
+    "Hardware & Energy Storefront | OFIA",
+    "Commercial energy solutions, industrial solar power hardware, and building engineering supplies."
+  );
+}
 
 export default function HardwareStorefrontPage() {
   return <HardwareStorefrontView />;

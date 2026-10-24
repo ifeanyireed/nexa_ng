@@ -27,6 +27,13 @@ interface StoreHeaderProps {
   store: VendorStore;
 }
 
+function toTitleCase(str?: string | null): string {
+  if (!str) return "";
+  return str
+    .toLowerCase()
+    .replace(/(?:^|\s|[-/])\w/g, (match) => match.toUpperCase());
+}
+
 export default function StoreHeader({ store }: StoreHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
@@ -215,10 +222,10 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
           <img
             src={store.logo}
             alt={store.name}
-            className="w-9 h-9 object-contain shrink-0 group-hover:scale-105 transition-transform"
+            className="w-8 h-8 sm:w-9 sm:h-9 object-contain shrink-0 group-hover:scale-105 transition-transform"
           />
-          <span className="font-dropa font-extrabold text-2xl tracking-tighter text-zinc-950 uppercase">
-            {store.name}
+          <span className="font-dropa font-semibold text-base sm:text-lg tracking-tight text-zinc-900">
+            {toTitleCase(store.name)}
           </span>
         </Link>
 

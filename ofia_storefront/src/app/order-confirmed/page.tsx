@@ -16,6 +16,7 @@ function ConfirmationContent() {
   const orderRef = searchParams.get("ref") || "";
   const customerName = searchParams.get("name") || "Customer";
   const tenantSlug = searchParams.get("tenant");
+  const isEscrow = searchParams.get("escrow") === "1";
   const returnHref = tenantSlug ? `/?tenant=${encodeURIComponent(tenantSlug)}` : "/templates";
   const returnLabel = tenantSlug ? `Back to ${tenantSlug.toUpperCase()} Storefront` : "Explore All Templates";
 
@@ -46,8 +47,8 @@ function ConfirmationContent() {
           Standard orders are processed within 2-4 hours. You will receive an SMS and email notification once your rider picks up the parcel.
         </p>
         <div className="pt-2 border-t border-stone-200 flex items-center justify-between text-stone-500">
-          <span>Escrow Protection: Active</span>
-          <span className="text-emerald-700 font-bold">Verified by Ofia Commerce</span>
+          <span>{isEscrow ? "Escrow Protection: Active (Vault Secured)" : "Direct Settlement: Split Cleared (100% Paid)"}</span>
+          <span className="text-emerald-700 font-bold">{isEscrow ? "Held until Delivery OTP" : "Merchant Credited Directly"}</span>
         </div>
       </div>
 

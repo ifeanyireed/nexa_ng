@@ -10,9 +10,10 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
 
-  // 1. Bypass Next.js static files, public assets, and common icons
+  // 1. Bypass Next.js static files, public assets, common icons, and unprovisioned error view
   if (
     pathname.startsWith("/_next") ||
+    pathname.startsWith("/unprovisioned") ||
     pathname === "/favicon.ico" ||
     pathname === "/icon.png" ||
     pathname === "/ofia-logo.png" ||
@@ -24,41 +25,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Resolve tenant identity from query (?tenant= / ?store= / ?slug=), subdomain (*.ofia.ng / *.localhost:3005), or custom domain
-  const queryTenant =
-    request.nextUrl.searchParams.get("tenant") ||
-    request.nextUrl.searchParams.get("store") ||
-    request.nextUrl.searchParams.get("slug");
-  const cookieTenant = request.cookies.get("ofia_tenant_slug")?.value;
+  // 2. Resolve tenant identity STRICTLY from host subdomain (*.ofia.ng / *.localhost:3005) or custom domain
+  // Query parameters (?tenant= / ?store= / ?slug=) are explicitly disabled for tenant routing
   const cookieVertical = request.cookies.get("ofia_tenant_vertical")?.value;
 
-  const { tenantSlug, source, domain, subdomain } = resolveTenantFromHostAndQuery(
-    host,
-    queryTenant,
-    cookieTenant
-  );
+  const { tenantSlug, source, domain, subdomain } = resolveTenantFromHostAndQuery(host);
 
-  // 3. If no tenant is resolved, serve platform landing page and public templates directory
+  // 3. If no tenant is resolved from host (e.g. bare localhost:3005 or ofia.shop), serve platform landing page
   if (!tenantSlug) {
     return NextResponse.next();
   }
 
   // 4. Resolve the tenant's vertical archetype (e.g. cars, gadgets, pharmacy, fashion)
   let vertical = resolveTenantVertical(tenantSlug, cookieVertical);
-
-  // If vertical is not in cookie and not a static seed, fetch from dynamic tenant config
-  if (!cookieVertical && !SEED_TENANT_HANDSHAKES[tenantSlug]) {
-    try {
-      const configUrl = new URL(`/api/storefront/config?tenant=${encodeURIComponent(tenantSlug)}`, request.url);
-      const res = await fetch(configUrl, { cache: "no-store", signal: AbortSignal.timeout(1500) });
-      if (res.ok) {
-        const data = await res.json();
-        if (data?.handshake?.vertical) {
-          vertical = data.handshake.vertical;
-        }
-      }
-    } catch {}
-  }
 
   // 5. Inject multi-tenant context headers for server components, SSR layouts, and API routes
   const requestHeaders = new Headers(request.headers);
@@ -77,35 +56,45 @@ export async function middleware(request: NextRequest) {
     });
   }
 
-  // 7. Prepare rewritten URL preserving query parameters and tenant identity
+  // 7. Prepare rewritten URL preserving path and tenant identity
   const rewriteUrl = request.nextUrl.clone();
-  if (!rewriteUrl.searchParams.has("tenant")) {
-    rewriteUrl.searchParams.set("tenant", tenantSlug);
-  }
+  rewriteUrl.searchParams.delete("tenant");
+  rewriteUrl.searchParams.delete("store");
+  rewriteUrl.searchParams.delete("slug");
 
   // Case A: Root path "/" on a tenant subdomain, custom domain, or ?tenant= URL
   // Rewrites internally to the merchant's provisioned vertical (e.g. /cars or /pharmacy)
   // while keeping the browser address bar cleanly at "/" (e.g. https://neweratransports.ofia.ng/)
   if (pathname === "/" || pathname === "") {
-    rewriteUrl.pathname = `/${vertical}`;
-    const response = NextResponse.rewrite(rewriteUrl, {
+    // If it's a known seed preset, rewrite directly to vertical
+    if (SEED_TENANT_HANDSHAKES[tenantSlug]) {
+      rewriteUrl.pathname = `/${vertical}`;
+      const response = NextResponse.rewrite(rewriteUrl, {
+        request: {
+          headers: requestHeaders,
+        },
+      });
+
+      // Set cookies for fast edge resolution on subsequent navigations
+      response.cookies.set("ofia_tenant_slug", tenantSlug, {
+        path: "/",
+        maxAge: 2592000,
+        sameSite: "lax",
+      });
+      response.cookies.set("ofia_tenant_vertical", vertical, {
+        path: "/",
+        maxAge: 2592000,
+        sameSite: "lax",
+      });
+      return response;
+    }
+
+    // For non-seed tenants, pass through to page.tsx to verify against PostgreSQL platform_tenants
+    return NextResponse.next({
       request: {
         headers: requestHeaders,
       },
     });
-
-    // Set cookies for fast edge resolution on subsequent navigations
-    response.cookies.set("ofia_tenant_slug", tenantSlug, {
-      path: "/",
-      maxAge: 2592000,
-      sameSite: "lax",
-    });
-    response.cookies.set("ofia_tenant_vertical", vertical, {
-      path: "/",
-      maxAge: 2592000,
-      sameSite: "lax",
-    });
-    return response;
   }
 
   // Case B: Global commerce routes (e.g. /checkout, /order-confirmed, /order-tracking, /search, /templates)

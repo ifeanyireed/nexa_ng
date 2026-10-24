@@ -19,6 +19,7 @@ import {
   Layers,
   Sparkles,
   ExternalLink,
+  RefreshCw,
 } from "lucide-react";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -65,14 +66,16 @@ export default function CatalogManagementPage() {
     getDefaultProductsForVertical(provisionedVertical)
   );
 
-  // Load products from live sync API
+  // Load products from dedicated database / live sync API
   const loadLiveProducts = async (slug?: string, vert?: VerticalKey) => {
-    const targetSlug = slug || activeTenant?.slug || "neweratransports";
+    const targetSlug = (slug || activeTenant?.slug || "").toLowerCase().trim();
+    if (!targetSlug) return;
     const targetVert = vert || selectedVertical;
     try {
       setIsLoading(true);
       const res = await fetch(
-        `/api/erp/shop/products?tenant=${encodeURIComponent(targetSlug)}&vertical=${encodeURIComponent(targetVert)}`
+        `/api/erp/shop/products?tenant=${encodeURIComponent(targetSlug)}&vertical=${encodeURIComponent(targetVert)}`,
+        { cache: "no-store" }
       );
       if (res.ok) {
         const data = await res.json();
@@ -92,7 +95,9 @@ export default function CatalogManagementPage() {
 
   // Re-fetch products dynamically when vertical or active tenant switches
   React.useEffect(() => {
-    loadLiveProducts(activeTenant?.slug, selectedVertical);
+    if (activeTenant?.slug) {
+      loadLiveProducts(activeTenant.slug, selectedVertical);
+    }
     setSelectedCategory("ALL");
   }, [selectedVertical, activeTenant?.slug]);
 
@@ -105,6 +110,15 @@ export default function CatalogManagementPage() {
   const [newSku, setNewSku] = useState("");
   const [newAttributes, setNewAttributes] = useState<Record<string, any>>({});
 
+  // Modal State for editing item
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<CommerceProductItem | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editPrice, setEditPrice] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editStock, setEditStock] = useState("5");
+  const [editSku, setEditSku] = useState("");
+
   const handleOpenAddModal = () => {
     setNewName("");
     setNewPrice("");
@@ -115,12 +129,24 @@ export default function CatalogManagementPage() {
     setIsAddModalOpen(true);
   };
 
+  const handleOpenEditModal = (item: CommerceProductItem) => {
+    setEditingItem(item);
+    setEditName(item.name);
+    setEditPrice(String(item.price));
+    setEditCategory(item.category);
+    setEditStock(String(item.stock));
+    setEditSku(item.sku);
+    setIsEditModalOpen(true);
+  };
+
   const handleSaveNewProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newName || !newPrice) return;
 
+    const targetSlug = (activeTenant?.slug || "").toLowerCase().trim();
+    if (!targetSlug) return;
+
     const numPrice = parseFloat(newPrice.replace(/[^0-9.]/g, "")) || 0;
-    const targetSlug = activeTenant?.slug || "neweratransports";
     const newItem: CommerceProductItem = {
       id: `PROD-${Date.now().toString().slice(-6)}`,
       name: newName,
@@ -148,6 +174,7 @@ export default function CatalogManagementPage() {
       if (res.ok) {
         setProducts((prev) => [newItem, ...prev]);
         setIsAddModalOpen(false);
+        loadLiveProducts(targetSlug, selectedVertical);
       } else {
         setProducts((prev) => [newItem, ...prev]);
         setIsAddModalOpen(false);
@@ -161,14 +188,62 @@ export default function CatalogManagementPage() {
     }
   };
 
+  const handleSaveEditProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingItem || !editName) return;
+
+    const targetSlug = (activeTenant?.slug || "").toLowerCase().trim();
+    if (!targetSlug) return;
+
+    const numPrice = parseFloat(editPrice.replace(/[^0-9.]/g, "")) || 0;
+    const updatedItem: CommerceProductItem = {
+      ...editingItem,
+      name: editName,
+      price: numPrice,
+      formattedPrice: `₦${numPrice.toLocaleString()}`,
+      category: editCategory || "General",
+      stock: parseInt(editStock) || 0,
+      sku: editSku || editingItem.sku,
+      status: (parseInt(editStock) || 0) > 0 ? "ACTIVE" : "OUT_OF_STOCK",
+    };
+
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/erp/shop/products", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...updatedItem,
+          tenantSlug: targetSlug,
+        }),
+      });
+      if (res.ok) {
+        setProducts((prev) => prev.map((p) => (p.id === updatedItem.id ? updatedItem : p)));
+        setIsEditModalOpen(false);
+        loadLiveProducts(targetSlug, selectedVertical);
+      } else {
+        setProducts((prev) => prev.map((p) => (p.id === updatedItem.id ? updatedItem : p)));
+        setIsEditModalOpen(false);
+      }
+    } catch (err) {
+      console.error("Error updating product:", err);
+      setProducts((prev) => prev.map((p) => (p.id === updatedItem.id ? updatedItem : p)));
+      setIsEditModalOpen(false);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleDeleteProduct = async (id: string) => {
-    const targetSlug = activeTenant?.slug || "neweratransports";
+    const targetSlug = (activeTenant?.slug || "").toLowerCase().trim();
+    if (!targetSlug) return;
     try {
       await fetch(
         `/api/erp/shop/products?id=${encodeURIComponent(id)}&tenant=${encodeURIComponent(targetSlug)}`,
         { method: "DELETE" }
       );
       setProducts((prev) => prev.filter((p) => p.id !== id));
+      loadLiveProducts(targetSlug, selectedVertical);
     } catch (err) {
       console.error("Error deleting product:", err);
       setProducts((prev) => prev.filter((p) => p.id !== id));
@@ -196,6 +271,18 @@ export default function CatalogManagementPage() {
       subtitle={`Manage ${currentVerticalDef.productTermPlural.toLowerCase()}, vertical attributes, inventory availability, and storefront presentation.`}
       action={
         <div className="flex items-center gap-2">
+          {/* Live Sync button */}
+          <NexaButton
+            size="sm"
+            variant="outline"
+            onClick={() => loadLiveProducts(activeTenant?.slug, selectedVertical)}
+            disabled={isLoading}
+            leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin text-blue-600" : ""}`} />}
+            className="rounded-full"
+          >
+            {isLoading ? "Syncing..." : "Sync DB"}
+          </NexaButton>
+
           {/* Vertical Switcher Pill Dropdown */}
           <select
             value={selectedVertical}
@@ -362,6 +449,15 @@ export default function CatalogManagementPage() {
                     </td>
                     <td className="py-3 px-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        <NexaButton
+                          size="sm"
+                          variant="outline"
+                          className="rounded-full text-xs h-7 text-blue-600 hover:border-blue-500 cursor-pointer"
+                          onClick={() => handleOpenEditModal(item)}
+                          leftIcon={<Edit className="w-3 h-3" />}
+                        >
+                          Edit
+                        </NexaButton>
                         <NexaButton
                           size="sm"
                           variant="outline"
@@ -543,6 +639,107 @@ export default function CatalogManagementPage() {
               className="rounded-full bg-[#1A56DB] text-white font-bold"
             >
               Publish {currentVerticalDef.productTerm} to Catalog
+            </NexaButton>
+          </div>
+        </form>
+      </NexaModal>
+
+      {/* EDIT ITEM MODAL */}
+      <NexaModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        title={`Edit ${editingItem?.name || currentVerticalDef.productTerm}`}
+        subtitle={`Update selling price, inventory stock count, and SKU reference in dedicated database.`}
+        maxWidth="lg"
+      >
+        <form onSubmit={handleSaveEditProduct} className="space-y-4 pt-2">
+          <div>
+            <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+              Product Title / Model Name *
+            </label>
+            <input
+              type="text"
+              required
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+                Selling Price (₦) *
+              </label>
+              <input
+                type="text"
+                required
+                value={editPrice}
+                onChange={(e) => setEditPrice(e.target.value)}
+                className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+                Category *
+              </label>
+              <input
+                type="text"
+                required
+                value={editCategory}
+                onChange={(e) => setEditCategory(e.target.value)}
+                className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+                Stock Quantity *
+              </label>
+              <input
+                type="number"
+                min="0"
+                required
+                value={editStock}
+                onChange={(e) => setEditStock(e.target.value)}
+                className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
+                SKU / Barcode Reference
+              </label>
+              <input
+                type="text"
+                value={editSku}
+                onChange={(e) => setEditSku(e.target.value)}
+                className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold font-mono"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-4 border-t border-[var(--nexa-border)]">
+            <NexaButton
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              onClick={() => setIsEditModalOpen(false)}
+            >
+              Cancel
+            </NexaButton>
+            <NexaButton
+              type="submit"
+              variant="primary"
+              size="sm"
+              disabled={isSaving}
+              className="rounded-full bg-[#1A56DB] text-white font-bold"
+            >
+              {isSaving ? "Saving..." : "Save Changes"}
             </NexaButton>
           </div>
         </form>

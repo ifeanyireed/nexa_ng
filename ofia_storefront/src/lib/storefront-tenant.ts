@@ -77,26 +77,21 @@ export interface ResolvedTenantResolution {
  * 3. Custom domain matching against known seed stores (e.g. reedbreed.cc)
  * 4. Fallback cookie (ofia_tenant_slug)
  */
+/**
+ * Strict Host-Based Tenant Identity Resolver for edge middleware and client context.
+ * Strict multi-tenant isolation: Tenant storefront identity is governed strictly by
+ * the request Host (subdomain or custom domain). Query parameters (?tenant=) are forbidden
+ * and ignored to ensure authentic branded isolation.
+ */
 export function resolveTenantFromHostAndQuery(
   host?: string | null,
-  searchParamsTenant?: string | null,
+  _searchParamsTenant?: string | null, // Query parameter tenant routing removed per strict architecture
   cookieTenant?: string | null
 ): ResolvedTenantResolution {
-  // 1. Explicit query parameter takes precedence (ideal for live preview links)
-  if (searchParamsTenant && searchParamsTenant.trim()) {
-    const slug = searchParamsTenant.toLowerCase().trim();
-    return {
-      tenantSlug: slug,
-      source: "query",
-      subdomain: extractSubdomainFromHost(host),
-      domain: host ? host.split(":")[0].toLowerCase().trim() : null,
-    };
-  }
-
   if (host) {
     const cleanHost = host.split(":")[0].toLowerCase().trim();
 
-    // 2. Subdomain extraction
+    // 1. Subdomain extraction (<slug>.ofia.ng, <slug>.localhost:3005)
     const subdomain = extractSubdomainFromHost(cleanHost);
     if (subdomain) {
       return {
@@ -107,7 +102,7 @@ export function resolveTenantFromHostAndQuery(
       };
     }
 
-    // 3. Custom domain lookup against known presets
+    // 2. Custom domain lookup against known presets (e.g. reedbreed.cc)
     for (const [slug, preset] of Object.entries(SEED_TENANT_HANDSHAKES)) {
       if (preset.domain && preset.domain.toLowerCase().trim() === cleanHost) {
         return {
@@ -120,17 +115,6 @@ export function resolveTenantFromHostAndQuery(
     }
   }
 
-  // 4. Fallback to cookie
-  if (cookieTenant && cookieTenant.trim()) {
-    const slug = cookieTenant.toLowerCase().trim();
-    return {
-      tenantSlug: slug,
-      source: "cookie",
-      subdomain: extractSubdomainFromHost(host),
-      domain: host ? host.split(":")[0].toLowerCase().trim() : null,
-    };
-  }
-
   return {
     tenantSlug: null,
     source: null,
@@ -140,7 +124,25 @@ export function resolveTenantFromHostAndQuery(
 }
 
 /**
- * Resolves a tenant's active vertical archetype from seed presets or cookies.
+ * Detects the most appropriate vertical from tenant slug keywords if not explicitly configured.
+ */
+export function detectTenantVerticalFromSlug(slug: string): VerticalType {
+  const s = (slug || "").toLowerCase().trim();
+  if (s.includes("fashion") || s.includes("cloth") || s.includes("apparel") || s.includes("wear") || s.includes("couture") || s.includes("tailor") || s.includes("boutique")) return "fashion";
+  if (s.includes("car") || s.includes("auto") || s.includes("motor") || s.includes("transport") || s.includes("vehicle") || s.includes("ride") || s.includes("drive")) return "cars";
+  if (s.includes("food") || s.includes("eat") || s.includes("bistro") || s.includes("cafe") || s.includes("grill") || s.includes("kitchen") || s.includes("bake") || s.includes("restaurant") || s.includes("meal")) return "food";
+  if (s.includes("pharma") || s.includes("rx") || s.includes("drug") || s.includes("med") || s.includes("health") || s.includes("clinic") || s.includes("chemist")) return "pharmacy";
+  if (s.includes("gadget") || s.includes("tech") || s.includes("phone") || s.includes("laptop") || s.includes("device") || s.includes("compute")) return "gadgets";
+  if (s.includes("beauty") || s.includes("salon") || s.includes("spa") || s.includes("cosmetic") || s.includes("skin") || s.includes("glow") || s.includes("hair")) return "beauty";
+  if (s.includes("property") || s.includes("realt") || s.includes("estate") || s.includes("house") || s.includes("apart") || s.includes("shortlet") || s.includes("stay")) return "property";
+  if (s.includes("furniture") || s.includes("decor") || s.includes("interior") || s.includes("furnish") || s.includes("living")) return "home-living";
+  if (s.includes("solar") || s.includes("energy") || s.includes("hardware") || s.includes("power") || s.includes("inverter") || s.includes("tool") || s.includes("industrial")) return "hardware";
+  if (s.includes("courier") || s.includes("dispatch") || s.includes("logistics") || s.includes("cargo") || s.includes("express") || s.includes("waybill")) return "dispatch";
+  return "retail";
+}
+
+/**
+ * Resolves a tenant's active vertical archetype from seed presets, cookies, or slug heuristic.
  */
 export function resolveTenantVertical(
   tenantSlug: string,
@@ -154,11 +156,12 @@ export function resolveTenantVertical(
   ) {
     return cookieVertical as VerticalType;
   }
-  const seed = SEED_TENANT_HANDSHAKES[tenantSlug.toLowerCase()];
+  const clean = (tenantSlug || "").toLowerCase().trim();
+  const seed = SEED_TENANT_HANDSHAKES[clean];
   if (seed?.vertical) {
     return seed.vertical;
   }
-  return "cars"; // Default archetype
+  return detectTenantVerticalFromSlug(clean);
 }
 
 /**
@@ -174,6 +177,7 @@ export const GLOBAL_STOREFRONT_ROUTES = new Set([
   "dispatch",
   "info",
   "api",
+  "unprovisioned",
   "fashion",
   "cars",
   "food",
@@ -334,6 +338,100 @@ export const SEED_TENANT_HANDSHAKES: Record<string, TenantStorefrontHandshake> =
         dispatchBooking: true,
       },
       badges: ["Licensed Courier Operator", "Real-Time GPS Tracking", "Delivery OTP Security Handover"],
+    },
+  },
+
+  funmyclothing: {
+    tenantId: "99d52e05-3cb1-45d1-acc8-4edf9e2abcd8",
+    slug: "funmyclothing",
+    name: "Funmy Clothing",
+    domain: "funmyclothing.ofia.ng",
+    subdomain: "funmyclothing",
+    vertical: "fashion",
+    provisioning: {
+      isShopEnabled: true,
+      planTier: "GROWTH",
+      shopSubModules: {
+        pos: true,
+        inventory: true,
+        catalog: true,
+        services: true,
+        orders: true,
+        store: true,
+        referrals: true,
+      },
+    },
+    storefrontConfig: {
+      storeName: "Funmy Clothing & Haute Couture",
+      headline: "Contemporary Bespoke Fashion & Ready-To-Wear Elegance",
+      description: "Curated seasonal capsules, bespoke tailored cuts, and artisan outerwear crafted with sustainable heritage textiles.",
+      primaryColor: "#B45309",
+      secondaryColor: "#18181B",
+      logoUrl: "/ofia-logo.png",
+      bannerUrl: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1600&h=600&q=80",
+      currency: "₦",
+      contact: {
+        phone: "+234 802 555 0192",
+        email: "funmyclothing@gmail.com",
+        address: "14 Victoria Arobieke Street, Lekki Phase 1, Lagos",
+        whatsapp: "+2348025550192",
+        operatingHours: "Mon - Sat: 9:00 AM - 7:30 PM",
+      },
+      sectionVisibility: {
+        hero: true,
+        products: true,
+        services: true,
+        reviews: true,
+        dispatchBooking: true,
+      },
+      badges: ["Artisan Handcrafted", "Size Customization Available", "Global Express Dispatch"],
+    },
+  },
+
+  "funmy-clothing": {
+    tenantId: "99d52e05-3cb1-45d1-acc8-4edf9e2abcd8",
+    slug: "funmyclothing",
+    name: "Funmy Clothing",
+    domain: "funmyclothing.ofia.ng",
+    subdomain: "funmyclothing",
+    vertical: "fashion",
+    provisioning: {
+      isShopEnabled: true,
+      planTier: "GROWTH",
+      shopSubModules: {
+        pos: true,
+        inventory: true,
+        catalog: true,
+        services: true,
+        orders: true,
+        store: true,
+        referrals: true,
+      },
+    },
+    storefrontConfig: {
+      storeName: "Funmy Clothing & Haute Couture",
+      headline: "Contemporary Bespoke Fashion & Ready-To-Wear Elegance",
+      description: "Curated seasonal capsules, bespoke tailored cuts, and artisan outerwear crafted with sustainable heritage textiles.",
+      primaryColor: "#B45309",
+      secondaryColor: "#18181B",
+      logoUrl: "/ofia-logo.png",
+      bannerUrl: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1600&h=600&q=80",
+      currency: "₦",
+      contact: {
+        phone: "+234 802 555 0192",
+        email: "funmyclothing@gmail.com",
+        address: "14 Victoria Arobieke Street, Lekki Phase 1, Lagos",
+        whatsapp: "+2348025550192",
+        operatingHours: "Mon - Sat: 9:00 AM - 7:30 PM",
+      },
+      sectionVisibility: {
+        hero: true,
+        products: true,
+        services: true,
+        reviews: true,
+        dispatchBooking: true,
+      },
+      badges: ["Artisan Handcrafted", "Size Customization Available", "Global Express Dispatch"],
     },
   },
 };

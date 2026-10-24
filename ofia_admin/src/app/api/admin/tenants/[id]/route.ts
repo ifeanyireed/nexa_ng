@@ -57,10 +57,17 @@ export async function PUT(
     const databaseUrl = (body.database_url || body.databaseUrl || "").trim();
     const isCustomDb = true;
 
+    const newSlug = body.slug ? body.slug.toLowerCase().trim() : null;
+    let newDomain = body.domain ? body.domain.trim() : null;
+    if (newSlug && (!newDomain || newDomain.endsWith(".ofia.ng") || newDomain.endsWith(".ofia.shop"))) {
+      newDomain = `${newSlug}.ofia.ng`;
+    }
+
     const [updated] = await sql`
       UPDATE platform_tenants
       SET name = COALESCE(${body.name}, name),
-          domain = COALESCE(${body.domain}, domain),
+          slug = COALESCE(${newSlug}, slug),
+          domain = COALESCE(${newDomain}, domain),
           owner_name = COALESCE(${body.ownerName || body.owner_name}, owner_name),
           owner_email = COALESCE(${body.ownerEmail || body.owner_email}, owner_email),
           plan_tier = COALESCE(${body.planTier || body.plan_tier}, plan_tier),

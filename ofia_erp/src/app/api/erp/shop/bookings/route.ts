@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { bookingId, status } = body;
+    const { bookingId, status, technicianId, technicianName } = body;
     const rawTenant = body.tenantSlug || request.headers.get("x-tenant-slug");
 
     if (!rawTenant) {
@@ -78,7 +78,13 @@ export async function PATCH(request: NextRequest) {
     }
 
     const tenantSlug = rawTenant.toLowerCase().trim();
-    const updated = await updateErpBookingStatus(bookingId, status, tenantSlug);
+    const updated = await updateErpBookingStatus(
+      bookingId,
+      status,
+      tenantSlug,
+      technicianId,
+      technicianName
+    );
     return NextResponse.json({ success: updated });
   } catch (err: any) {
     return NextResponse.json(

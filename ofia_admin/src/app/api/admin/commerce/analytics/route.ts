@@ -18,8 +18,9 @@ export async function GET() {
       SELECT
         COALESCE(SUM(raw_amount), 0) as total_gmv,
         COUNT(*)::int as total_orders,
-        COALESCE(SUM(CASE WHEN payment_status = 'PAID' AND status != 'DELIVERED' THEN raw_amount ELSE 0 END), 0) as active_escrow,
-        COALESCE(SUM(CASE WHEN status = 'DELIVERED' THEN raw_amount ELSE 0 END), 0) as released_escrow
+        COALESCE(SUM(CASE WHEN is_escrow = TRUE AND escrow_status = 'HELD' THEN raw_amount ELSE 0 END), 0) as active_escrow,
+        COALESCE(SUM(CASE WHEN is_escrow = TRUE AND escrow_status = 'RELEASED' THEN raw_amount ELSE 0 END), 0) as released_escrow,
+        COALESCE(SUM(CASE WHEN (is_escrow IS FALSE OR is_escrow IS NULL) AND payment_status = 'PAID' THEN raw_amount ELSE 0 END), 0) as direct_settlement
       FROM shop_orders;
     `;
 
@@ -71,6 +72,8 @@ export async function GET() {
         formattedActiveEscrow: `₦${Number(totals?.active_escrow || 0).toLocaleString()}`,
         releasedEscrow: Number(totals?.released_escrow) || 0,
         formattedReleasedEscrow: `₦${Number(totals?.released_escrow || 0).toLocaleString()}`,
+        directSettlement: Number(totals?.direct_settlement) || 0,
+        formattedDirectSettlement: `₦${Number(totals?.direct_settlement || 0).toLocaleString()}`,
         platformCommission: platformCommission,
         formattedCommission: `₦${platformCommission.toLocaleString()}`,
         commissionRate: "1.5%",

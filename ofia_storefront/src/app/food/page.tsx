@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import FoodStorefrontView from "./FoodStorefrontView";
+import { resolveStorefrontMetadata } from "@/lib/storefront-metadata";
 
-export const metadata: Metadata = {
-  title: "Food Storefront | OFIA",
-  description: "Gourmet Afro-fusion, wood-fired grills, and artisan pastries made fresh to order.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return resolveStorefrontMetadata(
+    "Food & Dining Storefront | OFIA",
+    "Gourmet culinary experiences, artisanal catering, and express food delivery."
+  );
+}
 
 export default function FoodStorefrontPage() {
   return <FoodStorefrontView />;

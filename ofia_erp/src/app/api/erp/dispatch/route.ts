@@ -259,13 +259,13 @@ export async function GET(request: Request) {
                 {
                   id: `wpt-1-${ord.id}`,
                   location: `${tenantKey.toUpperCase()} Central Hub`,
-                  status: ord.status === "IN_PREPARATION" ? "PENDING" : "COMPLETED",
+                  status: ord.status === "IN_PREPARATION" ? "PENDING" : "PICKED_UP",
                   timestamp: new Date(ord.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
                 },
                 {
                   id: `wpt-2-${ord.id}`,
                   location: ord.shipping_address || "Destination",
-                  status: ord.status === "DELIVERED" ? "DELIVERED" : "IN_PROGRESS",
+                  status: ord.status === "DELIVERED" ? "DELIVERED" : "IN_TRANSIT",
                   timestamp: ord.status === "DELIVERED" ? "Delivered" : "In Progress",
                 },
               ],

@@ -253,6 +253,7 @@ export default function OmnichannelOrdersPage() {
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Channel</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Items Summary</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Total Amount</th>
+                  <th className="pb-3 px-3 font-bold uppercase tracking-wider">Settlement Mode</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider">Fulfillment Status</th>
                   <th className="pb-3 px-3 font-bold uppercase tracking-wider text-right">Logistics Action</th>
                 </tr>
@@ -281,6 +282,23 @@ export default function OmnichannelOrdersPage() {
                       {ord.itemsSummary}
                     </td>
                     <td className="py-3.5 px-3 font-bold text-[#1A56DB]">{ord.totalAmount}</td>
+                    <td className="py-3.5 px-3">
+                      {ord.isEscrow ? (
+                        ord.status === "DELIVERED" || ord.escrowStatus === "RELEASED" ? (
+                          <NexaBadge variant="green" size="sm" className="rounded-full text-[9px] font-mono">
+                            Escrow Released
+                          </NexaBadge>
+                        ) : (
+                          <NexaBadge variant="amber" size="sm" className="rounded-full text-[9px] font-mono">
+                            Escrow Held (Vault)
+                          </NexaBadge>
+                        )
+                      ) : (
+                        <NexaBadge variant="green" size="sm" className="rounded-full text-[9px] font-mono">
+                          Instant Cleared (98.5%)
+                        </NexaBadge>
+                      )}
+                    </td>
                     <td className="py-3.5 px-3">
                       <NexaBadge
                         variant={

@@ -53,6 +53,7 @@ const VALID_VERTICALS = [
   "pharmacy",
   "hardware",
   "retail",
+  "dispatch",
 ] as const;
 
 type ValidVertical = (typeof VALID_VERTICALS)[number];

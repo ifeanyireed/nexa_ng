@@ -7,21 +7,29 @@ import TemplateSwitcher from "@/components/common/TemplateSwitcher";
 import CartDrawer from "@/components/common/CartDrawer";
 import StickySidebarNav from "@/components/common/StickySidebarNav";
 
+import { resolveStorefrontMetadata } from "@/lib/storefront-metadata";
+
 const dropa = localFont({
   src: "../fonts/Dropa-Regular.woff2",
   variable: "--font-dropa",
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: "Ofia Storefront · 10 Industry Vertical Experience Templates",
-  description: "Industry-native storefronts tailored to Fashion, Cars, Food, Property, Gadgets, Beauty, Home & Living, Pharmacy, Hardware, and Retail.",
-  icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/ofia-logo.png",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const meta = await resolveStorefrontMetadata(
+    "Ofia Storefront · 11 Industry Verticals",
+    "Enterprise multi-vertical commerce templates tailored to Fashion, Cars, Food, Property, Gadgets, Beauty, Home & Living, Pharmacy, Hardware, Retail, and Fleet Dispatch."
+  );
+
+  return {
+    ...meta,
+    icons: {
+      icon: "/favicon.ico",
+      shortcut: "/favicon.ico",
+      apple: "/ofia-logo.png",
+    },
+  };
+}
 
 export default function RootLayout({
   children,

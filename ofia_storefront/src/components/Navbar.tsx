@@ -30,7 +30,7 @@ export default function Navbar() {
               <rect x="27" y="15" width="4" height="13" rx="2" fill="currentColor" fillOpacity="0.75" />
             </svg>
           </div>
-          <span className="font-dropa text-2xl font-bold tracking-tight text-[#111318]">
+          <span className="font-dropa text-base sm:text-lg font-semibold tracking-tight text-[#111318]">
             Veloura
           </span>
         </Link>

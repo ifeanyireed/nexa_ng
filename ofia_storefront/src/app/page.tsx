@@ -16,6 +16,7 @@ import {
   Pill,
   Zap,
   Gift,
+  Bike,
 } from "lucide-react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
@@ -25,23 +26,19 @@ import { neon } from "@neondatabase/serverless";
 import { MASTER_REGISTRY_URL } from "@/lib/tenant-db-resolver";
 
 export const metadata: Metadata = {
-  title: "Ofia Storefront · 10 Industry Verticals",
-  description: "Enterprise multi-vertical commerce templates with tailored workflows for Fashion, Cars, Food, Property, Gadgets, Beauty, Home & Living, Pharmacy, Hardware, and Retail.",
+  title: "Ofia Storefront · 11 Industry Verticals",
+  description: "Enterprise multi-vertical commerce templates with tailored workflows for Fashion, Cars, Food, Property, Gadgets, Beauty, Home & Living, Pharmacy, Hardware, Retail, and Fleet Dispatch.",
 };
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: Promise<{ tenant?: string; store?: string; slug?: string }>;
-}) {
-  const resolvedParams = await searchParams;
+export default async function Home() {
   const headerList = await headers();
   const host = headerList.get("host");
   const subdomain = extractSubdomainFromHost(host);
   const headerTenant = headerList.get("x-tenant-slug");
-  const tenantSlug = (resolvedParams.tenant || resolvedParams.store || resolvedParams.slug || subdomain || headerTenant || "").toLowerCase().trim();
+  // Tenant identity is strictly governed by host subdomain or x-tenant-slug header, never query parameters
+  const tenantSlug = (subdomain || headerTenant || "").toLowerCase().trim();
 
-  // If a tenant subdomain or parameter is detected, route to their assigned vertical template!
+  // If a tenant subdomain is detected, route to their assigned vertical template!
   if (tenantSlug) {
     let targetVertical = SEED_TENANT_HANDSHAKES[tenantSlug]?.vertical;
     if (!targetVertical) {
@@ -57,7 +54,10 @@ export default async function Home({
         }
       } catch {}
     }
-    redirect(`/${targetVertical || "retail"}?tenant=${encodeURIComponent(tenantSlug)}`);
+    if (!targetVertical) {
+      redirect("/unprovisioned");
+    }
+    redirect(`/${targetVertical}`);
   }
   const verticals = [
     {
@@ -210,6 +210,21 @@ export default async function Home({
       ],
       cover: MOCK_STORES.retail.coverImage,
     },
+    {
+      slug: "dispatch",
+      name: "Courier & Fleet Dispatch",
+      icon: Bike,
+      color: "bg-blue-700",
+      accent: "text-blue-800 bg-blue-50 border-blue-200",
+      tagline: "Point-to-Point Courier, Waybill Tracking & Cargo Fleet",
+      heroAction: "Instant fare calculator & GPS radar tracking",
+      keyScreens: [
+        { label: "Courier Booking Desk", path: "/dispatch" },
+        { label: "Live Telemetry & Radar", path: "/dispatch" },
+        { label: "Waybill Tracking HUD", path: "/order-tracking" },
+      ],
+      cover: MOCK_STORES.dispatch.coverImage,
+    },
   ];
 
   return (
@@ -223,7 +238,7 @@ export default async function Home({
               alt="Ofia"
               className="w-11 h-11 object-contain shrink-0 group-hover:scale-105 transition-transform"
             />
-            <span className="font-dropa font-bold text-xl sm:text-2xl text-stone-900 tracking-tight leading-none">
+            <span className="font-dropa font-semibold text-base sm:text-lg text-stone-900 tracking-tight leading-none">
               Ofia Storefront
             </span>
           </Link>
@@ -257,7 +272,7 @@ export default async function Home({
 
             <h1 className="font-dropa text-4xl sm:text-6xl lg:text-7xl font-normal tracking-tight text-stone-900 leading-tight">
               One Core Engine. <br />
-              <span className="text-blue-600 font-bold">10 Industry-Native</span> Experiences.
+              <span className="text-blue-600 font-bold">11 Industry-Native</span> Experiences.
             </h1>
 
             <p className="text-base sm:text-lg text-stone-600 font-light max-w-2xl mx-auto leading-relaxed">

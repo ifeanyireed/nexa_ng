@@ -4,6 +4,7 @@ export interface TenantDbConfig {
   tenantSlug: string;
   dbMode: "DEDICATED";
   connectionString: string;
+  vertical?: string;
   isCustom: boolean;
   resolvedAt: string;
 }
@@ -48,7 +49,7 @@ export async function getTenantDatabaseConfig(tenantSlug: string): Promise<Tenan
 
   try {
     const rows = await registrySql`
-      SELECT slug, db_mode, database_url, is_custom_db
+      SELECT slug, vertical, db_mode, database_url, is_custom_db
       FROM platform_tenants
       WHERE LOWER(slug) = ${cleanSlug}
       LIMIT 1;
@@ -62,6 +63,7 @@ export async function getTenantDatabaseConfig(tenantSlug: string): Promise<Tenan
         tenantSlug: cleanSlug,
         dbMode: "DEDICATED",
         connectionString: dedicatedUrl,
+        vertical: row.vertical || undefined,
         isCustom: true,
         resolvedAt: new Date().toISOString(),
       };

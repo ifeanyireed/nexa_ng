@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { bookingId, status } = body;
+    const { bookingId, status, technicianId, technicianName } = body;
     const rawTenant =
       body.tenantSlug ||
       request.nextUrl.searchParams.get("tenant") ||
@@ -151,7 +151,9 @@ export async function PATCH(request: NextRequest) {
     const updated = await updateStorefrontBookingStatus(
       bookingId,
       status,
-      rawTenant.toLowerCase().trim()
+      rawTenant.toLowerCase().trim(),
+      technicianId,
+      technicianName
     );
     return NextResponse.json({ success: updated });
   } catch (err: any) {

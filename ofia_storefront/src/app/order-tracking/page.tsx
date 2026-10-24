@@ -258,7 +258,8 @@ function TrackingContent() {
   // Build dynamic milestone steps according to real-time order.status
   const currentStatus = order?.status || "IN_PREPARATION";
 
-  const isStep1Done = true; // Escrow confirmed upon order entry
+  const isEscrowOrder = Boolean((order as any)?.isEscrow ?? (order as any)?.is_escrow ?? false);
+  const isStep1Done = true; // Payment confirmed upon order entry
   const isStep2Done = currentStatus === "READY_DISPATCH" || currentStatus === "DELIVERED";
   const isStep2Active = currentStatus === "IN_PREPARATION" || currentStatus === "PENDING" || currentStatus === "CONFIRMED";
   const isStep3Done = currentStatus === "DELIVERED";
@@ -267,9 +268,11 @@ function TrackingContent() {
 
   const steps = [
     {
-      title: "Order Received & Escrow Secured",
+      title: isEscrowOrder ? "Order Received & Escrow Secured" : "Order Received & Payment Cleared",
       time: order?.createdAt || "Verified",
-      desc: "Merchant received order. Payment held securely in Ofia Escrow Vault.",
+      desc: isEscrowOrder
+        ? "Merchant received order. Payment held securely in Ofia Escrow Vault."
+        : "Merchant received order. Direct payment split confirmed into merchant ledger.",
       completed: isStep1Done,
       current: false,
     },
@@ -296,11 +299,15 @@ function TrackingContent() {
       current: isStep3Active,
     },
     {
-      title: "Delivered & Verified via Escrow",
+      title: isEscrowOrder ? "Delivered & Verified via Escrow" : "Delivered & Verified",
       time: isStep4Done ? "Delivered" : "Est. Today",
       desc: isStep4Done
-        ? "Recipient confirmed receipt. Escrow payment released to merchant."
-        : `Recipient OTP verification code: ${order?.id ? order.id.slice(-4).toUpperCase() : "8291"}. Present to rider upon arrival.`,
+        ? isEscrowOrder
+          ? "Recipient confirmed receipt. Escrow payment released to merchant."
+          : "Recipient confirmed receipt. Order finalized."
+        : isEscrowOrder
+        ? `Recipient OTP verification code: ${order?.id ? order.id.slice(-4).toUpperCase() : "8291"}. Present to rider upon arrival.`
+        : "Delivery confirmation upon rider arrival.",
       completed: isStep4Done,
       current: false,
     },
@@ -909,7 +916,11 @@ function TrackingContent() {
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>
-                Funds held securely in <strong>Ofia Escrow</strong> until successful recipient OTP verification.
+                {isEscrowOrder ? (
+                  <>Funds held securely in <strong>Ofia Escrow</strong> until successful recipient OTP verification.</>
+                ) : (
+                  <>Direct merchant settlement verified. <strong>100% Cleared Payment</strong> credited to merchant wallet.</>
+                )}
               </span>
             </div>
             <Link

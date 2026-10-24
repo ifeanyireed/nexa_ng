@@ -67,6 +67,34 @@ export default function MyStoreStudioPage() {
   const [enableServices, setEnableServices] = useState(true);
   const [enableReviews, setEnableReviews] = useState(true);
   const [enableDispatchBooking, setEnableDispatchBooking] = useState(true);
+  const [enableEscrowOption, setEnableEscrowOption] = useState(false);
+
+  // Sync when activeTenant updates
+  React.useEffect(() => {
+    if (activeTenant?.vertical && activeTenant.vertical in VERTICAL_DEFINITIONS) {
+      setActiveVertical(activeTenant.vertical as VerticalKey);
+    }
+    if (activeTenant?.name) setStoreName(activeTenant.name);
+    if (activeTenant?.heroTitle) setStoreHeadline(activeTenant.heroTitle);
+    if (activeTenant?.primaryColor) setPrimaryColor(activeTenant.primaryColor);
+    if (activeTenant?.secondaryColor) setSecondaryColor(activeTenant.secondaryColor);
+    if (activeTenant?.loginImage) setBannerUrl(activeTenant.loginImage);
+
+    // Load persisted escrow configuration
+    if (typeof window !== "undefined" && activeTenant?.slug) {
+      try {
+        const raw = localStorage.getItem(`tenant_storefront_config_${activeTenant.slug}`);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (typeof parsed.allowEscrow === "boolean") {
+            setEnableEscrowOption(parsed.allowEscrow);
+          } else if (parsed.sectionVisibility?.escrowOption !== undefined) {
+            setEnableEscrowOption(Boolean(parsed.sectionVisibility.escrowOption));
+          }
+        }
+      } catch {}
+    }
+  }, [activeTenant]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -88,12 +116,14 @@ export default function MyStoreStudioPage() {
         secondaryColor,
         bannerUrl,
         vertical: activeVertical,
+        allowEscrow: enableEscrowOption,
         sectionVisibility: {
           hero: enableHero,
           products: enableProducts,
           services: enableServices,
           reviews: enableReviews,
           dispatchBooking: enableDispatchBooking,
+          escrowOption: enableEscrowOption,
         },
       };
 
@@ -129,6 +159,7 @@ export default function MyStoreStudioPage() {
         localStorage.setItem(`tenant_storefront_config_${tenantSlug}`, JSON.stringify(configPayload));
         localStorage.setItem(`tenant_vertical_${tenantSlug}`, activeVertical);
         localStorage.setItem(`tenant_primary_color_${tenantSlug}`, primaryColor);
+        localStorage.setItem(`tenant_allow_escrow_${tenantSlug}`, String(enableEscrowOption));
       }
 
       showToast("Storefront theme and template settings saved & published!");
@@ -225,11 +256,11 @@ export default function MyStoreStudioPage() {
 
         {/* 2 COLUMN STUDIO: THEME CONFIG & TEMPLATE SELECTOR */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* LEFT: 10 VERTICAL TEMPLATE SWITCHER (5 COLS) */}
+          {/* LEFT: 11 VERTICAL TEMPLATE SWITCHER (5 COLS) */}
           <NexaCard variant="glass" padding="lg" className="lg:col-span-5 space-y-4 rounded-3xl">
             <div className="pb-3 border-b border-[var(--nexa-border)]">
               <h3 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">
-                10 Vertical Experience Templates
+                11 Vertical Experience Templates
               </h3>
               <p className="text-[11px] text-[var(--nexa-text-muted)] font-medium">
                 Choose the industry archetype that best powers your customer experience
@@ -331,7 +362,10 @@ export default function MyStoreStudioPage() {
 
               {/* SECTION TOGGLES */}
               <div className="pt-3 border-t border-[var(--nexa-border)] space-y-3">
-                <h4 className="text-xs font-bold text-[var(--nexa-text-primary)]">Modular Storefront Sections</h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-[var(--nexa-text-primary)]">Modular Storefront Sections & Features</h4>
+                  <span className="text-[10px] text-[var(--nexa-text-muted)] font-mono">Dynamic Tenant Controls</span>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {[
                     { label: "Hero Banner & Value Props", checked: enableHero, setChecked: setEnableHero },
@@ -339,12 +373,13 @@ export default function MyStoreStudioPage() {
                     { label: `${verticalDef.serviceTerm} Booking`, checked: enableServices, setChecked: setEnableServices },
                     { label: "Customer Reviews & Badges", checked: enableReviews, setChecked: setEnableReviews },
                     { label: "Logistics Pickup & Dispatch CTA", checked: enableDispatchBooking, setChecked: setEnableDispatchBooking },
+                    { label: "Escrow Protection Option (Checkout)", checked: enableEscrowOption, setChecked: setEnableEscrowOption },
                   ].map((sec, idx) => (
                     <label
                       key={idx}
                       className="p-3 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-between text-xs font-medium cursor-pointer"
                     >
-                      <span>{sec.label}</span>
+                      <span className="pr-2">{sec.label}</span>
                       <input
                         type="checkbox"
                         checked={sec.checked}
@@ -353,6 +388,18 @@ export default function MyStoreStudioPage() {
                       />
                     </label>
                   ))}
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 text-[11px] leading-relaxed text-blue-900 dark:text-blue-300">
+                  <div className="font-bold flex items-center gap-1.5 mb-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                    <span>Settlement & Escrow Policy Architecture</span>
+                  </div>
+                  <p>
+                    {enableEscrowOption
+                      ? "Escrow Option Enabled: Customers at checkout can choose to request Ofia Escrow Protection (funds held in vault until delivery OTP confirmation). Unrequested orders settle directly into your wallet."
+                      : "Default Direct Settlement: Escrow option is disabled at checkout. All customer payments automatically execute the 98.5% split into your Available Balance instantly, allowing withdrawals anytime without waiting for delivery."}
+                  </p>
                 </div>
               </div>
 

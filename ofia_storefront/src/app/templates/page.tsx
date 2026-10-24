@@ -15,12 +15,13 @@ import {
   Pill,
   Zap,
   Gift,
+  Bike,
 } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Templates · Ofia Storefront 10 Industry Verticals",
-  description: "Explore the 10 purpose-built storefront templates with tailored workflows and screens.",
+  title: "Templates · Ofia Storefront 11 Industry Verticals",
+  description: "Explore the 11 purpose-built storefront templates with tailored workflows and screens.",
 };
 
 export default function TemplatesDirectoryPage() {
@@ -248,6 +249,27 @@ export default function TemplatesDirectoryPage() {
         "Milestone gift registry generator",
       ],
     },
+    {
+      vertical: "dispatch",
+      title: "Courier & Fleet Dispatch",
+      slug: "dispatch",
+      tagline: "Point-to-Point Citywide Courier, Parcel Delivery & Cargo Fleet",
+      description: "Logistics booking desk featuring instant fare estimation based on vehicle class (motorbike, van, truck), real-time radar telemetry tracking, and handover delivery OTP security.",
+      icon: Bike,
+      cover: MOCK_STORES.dispatch.coverImage,
+      badge: "Mobility & Couriers",
+      screens: [
+        { name: "Courier Dispatch Booking Desk", href: "/dispatch" },
+        { name: "Waybill Tracking HUD", href: "/order-tracking" },
+        { name: "Real-Time Radar Telemetry", href: "/dispatch" },
+      ],
+      features: [
+        "Vehicle class selector (Bike, Van, Truck)",
+        "Automated distance & weight fare estimation",
+        "Delivery OTP security verification",
+        "Synchronized waybill tracking",
+      ],
+    },
   ];
 
   return (
@@ -261,7 +283,7 @@ export default function TemplatesDirectoryPage() {
               <span>Ofia Storefront Architecture</span>
             </div>
             <h1 className="font-dropa text-3xl sm:text-5xl font-bold tracking-tight text-stone-900">
-              10 Industry-Native Storefront Templates
+              11 Industry-Native Storefront Templates
             </h1>
             <p className="text-sm sm:text-base text-stone-600 font-light leading-relaxed">
               Every vertical on Ofia is engineered with dedicated screens, domain-specific metadata, customized checkouts, and booking workflows tailored to each industry.

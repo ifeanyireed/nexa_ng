@@ -195,6 +195,7 @@ function TenantManagementContent() {
 
   // New Tenant Form state
   const [newOrgName, setNewOrgName] = useState("");
+  const [newOrgSlug, setNewOrgSlug] = useState("");
   const [newOrgDomain, setNewOrgDomain] = useState("");
   const [newOwnerName, setNewOwnerName] = useState("");
   const [newOwnerEmail, setNewOwnerEmail] = useState("");
@@ -1190,12 +1191,18 @@ function TenantManagementContent() {
 
   // Create new tenant and persist to Postgres database
   const handleCreateTenant = async () => {
-    if (!newOrgName || !newOrgDomain) {
-      alert("Please provide organization name and domain.");
+    if (!newOrgName || (!newOrgDomain && !newOrgSlug)) {
+      alert("Please provide organization name and domain or slug.");
       return;
     }
 
-    const slug = normalizeSubdomainSlug(newOrgName);
+    // Enforce 1:1 identity: Workspace slug and Storefront slug are always identical as specified on the provisioning form
+    const rawSpecifiedSlug =
+      newOrgSlug.trim() ||
+      (newOrgDomain.includes(".ofia.") ? newOrgDomain.split(".")[0] : "") ||
+      normalizeSubdomainSlug(newOrgName);
+    const slug = normalizeSubdomainSlug(rawSpecifiedSlug);
+
     const existingSlugs = new Set(tenants.map((t) => t.slug));
     const check = validateSubdomainAvailability(slug, existingSlugs);
 
@@ -1203,6 +1210,12 @@ function TenantManagementContent() {
       alert(`Cannot provision tenant: ${check.message}\nSuggested: ${check.suggestions.join(", ")}`);
       return;
     }
+
+    // Always keep workspace & storefront domain aligned with slug if on .ofia.ng / .ofia.shop
+    const domain =
+      newOrgDomain.trim() && !newOrgDomain.endsWith(".ofia.ng") && !newOrgDomain.endsWith(".ofia.shop")
+        ? newOrgDomain.trim()
+        : `${slug}.ofia.ng`;
 
     setIsSavingDb(true);
     const defaultShopSubs: Record<string, boolean> = {};
@@ -1878,7 +1891,7 @@ function TenantManagementContent() {
                                       </h5>
                                     </div>
                                     <p className="text-[11px] text-[var(--nexa-text-muted)] mt-0.5">
-                                      Determines industry-native schema, product terms, booking models, and storefront presentation across all 10 Blueprint verticals.
+                                      Determines industry-native schema, product terms, booking models, and storefront presentation across all 11 Blueprint verticals.
                                     </p>
                                   </div>
 
@@ -2773,13 +2786,14 @@ function TenantManagementContent() {
             </label>
             <input
               type="text"
-              placeholder="e.g. Apex Health Logistics"
+              placeholder="e.g. Funmy Clothing"
               value={newOrgName}
               onChange={(e) => {
                 const val = e.target.value;
                 setNewOrgName(val);
-                if (!newOrgDomain || newOrgDomain.endsWith(".ofia.ng")) {
-                  const s = normalizeSubdomainSlug(val);
+                const s = normalizeSubdomainSlug(val);
+                setNewOrgSlug(s);
+                if (!newOrgDomain || newOrgDomain.endsWith(".ofia.ng") || newOrgDomain.endsWith(".ofia.shop")) {
                   setNewOrgDomain(s ? `${s}.ofia.ng` : "");
                 }
               }}
@@ -2788,20 +2802,50 @@ function TenantManagementContent() {
           </div>
 
           <div className="space-y-1.5">
+            <label className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center justify-between">
+              <span>Workspace & Storefront Slug *</span>
+              <span className="text-[10px] text-[#1A56DB] font-semibold">Strict 1:1 Identity Enforced</span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. funmyclothing"
+              value={newOrgSlug}
+              onChange={(e) => {
+                const s = normalizeSubdomainSlug(e.target.value);
+                setNewOrgSlug(s);
+                if (!newOrgDomain || newOrgDomain.endsWith(".ofia.ng") || newOrgDomain.endsWith(".ofia.shop")) {
+                  setNewOrgDomain(s ? `${s}.ofia.ng` : "");
+                }
+              }}
+              className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-mono outline-none focus:border-[#1A56DB]"
+            />
+            <p className="text-[11px] text-[var(--nexa-text-secondary)]">
+              Identical identifier for workspace (<span className="font-mono text-[#1A56DB]">{newOrgSlug || "slug"}.ofia.ng</span>) and digital storefront (<span className="font-mono text-[#1A56DB]">{newOrgSlug || "slug"}.ofia.shop</span>).
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
             <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
               Domain / Subdomain *
             </label>
             <input
               type="text"
-              placeholder="e.g. apexhealth.ng"
+              placeholder="e.g. funmyclothing.ofia.ng"
               value={newOrgDomain}
-              onChange={(e) => setNewOrgDomain(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setNewOrgDomain(val);
+                if (val.includes(".ofia.")) {
+                  const sub = val.split(".")[0];
+                  setNewOrgSlug(normalizeSubdomainSlug(sub));
+                }
+              }}
               className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs outline-none focus:border-[#1A56DB]"
             />
-            {newOrgName && (
+            {(newOrgSlug || newOrgName) && (
               <div className="mt-1">
                 {(() => {
-                  const s = normalizeSubdomainSlug(newOrgName);
+                  const s = normalizeSubdomainSlug(newOrgSlug || newOrgName);
                   const existingSlugs = new Set(tenants.map((t) => t.slug));
                   const res = validateSubdomainAvailability(s, existingSlugs);
                   return (
@@ -2819,7 +2863,7 @@ function TenantManagementContent() {
                       )}
                       <span>
                         {res.isAvailable
-                          ? `Subdomain '${res.workspaceDomain}' & storefront '${res.storefrontDomain}' are available`
+                          ? `Workspace '${res.workspaceDomain}' & storefront '${res.storefrontDomain}' are available and identical`
                           : res.message}
                       </span>
                     </div>
@@ -3102,12 +3146,18 @@ function TenantManagementContent() {
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
-                Workspace Subdomain / Slug *
+                Workspace & Storefront Slug *
               </label>
               <input
                 type="text"
                 value={editTenantSlug}
-                onChange={(e) => setEditTenantSlug(e.target.value)}
+                onChange={(e) => {
+                  const clean = normalizeSubdomainSlug(e.target.value);
+                  setEditTenantSlug(clean);
+                  if (!editTenantDomain || editTenantDomain.endsWith(".ofia.ng") || editTenantDomain.endsWith(".ofia.shop")) {
+                    setEditTenantDomain(`${clean}.ofia.ng`);
+                  }
+                }}
                 className="w-full px-3.5 py-2 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs font-mono outline-none focus:border-[#1A56DB]"
               />
             </div>

@@ -17,12 +17,14 @@ import {
   Pill,
   Zap,
   Gift,
+  Truck,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { VerticalType } from "@/types/storefront";
+import { extractSubdomainFromHost } from "@/lib/storefront-tenant";
 
 const TEMPLATES: Array<{
   id: VerticalType;
@@ -112,6 +114,14 @@ const TEMPLATES: Array<{
     icon: Gift,
     color: "#7C3AED",
   },
+  {
+    id: "dispatch",
+    label: "Dispatch",
+    storeName: "Ofia Fleet Courier",
+    href: "/dispatch",
+    icon: Truck,
+    color: "#2563EB",
+  },
 ];
 
 export default function TemplateSwitcher() {
@@ -137,7 +147,14 @@ export default function TemplateSwitcher() {
     localStorage.setItem("ofia_verticals_nav_collapsed", String(collapsed));
   };
 
-  if (!mounted) {
+  // Strict tenant branding: NEVER display the floating or expanded verticals switcher on tenant subdomains or custom domains.
+  // Only display on the platform root domain (e.g. ofia.ng / domain.com / bare localhost)
+  const isTenantWorkspace = Boolean(
+    tenantSlug ||
+      (typeof window !== "undefined" && extractSubdomainFromHost(window.location.host))
+  );
+
+  if (!mounted || isTenantWorkspace) {
     return null;
   }
 

@@ -14,6 +14,13 @@ interface StoreFooterProps {
   store: VendorStore;
 }
 
+function toTitleCase(str?: string | null): string {
+  if (!str) return "";
+  return str
+    .toLowerCase()
+    .replace(/(?:^|\s|[-/])\w/g, (match) => match.toUpperCase());
+}
+
 const VERTICAL_FOOTER_CONFIG: Record<
   VerticalType,
   {
@@ -189,6 +196,22 @@ const VERTICAL_FOOTER_CONFIG: Record<
       { label: "Customer Account & Orders", href: "/account" },
     ],
   },
+  dispatch: {
+    servicesHeading: "Mobility & Fleet Services",
+    services: [
+      { label: "Point-to-Point Express Courier", href: "/dispatch", badge: "Express" },
+      { label: "Same-Day Scheduled Delivery", href: "/dispatch" },
+      { label: "Corporate Bulk Haulage", href: "/dispatch", badge: "B2B" },
+      { label: "Real-time Telemetry Tracking", href: "/order-tracking" },
+    ],
+    pagesHeading: "Mobility Operations",
+    pages: [
+      { label: "Dispatch Hub Home", href: "/dispatch" },
+      { label: "Waybill Tracking HUD", href: "/order-tracking" },
+      { label: "Service Policies & SLA", href: "/info?vertical=dispatch" },
+      { label: "Customer Account", href: "/account" },
+    ],
+  },
 };
 
 export default function StoreFooter({ store }: StoreFooterProps) {
@@ -207,7 +230,9 @@ export default function StoreFooter({ store }: StoreFooterProps) {
                 alt={store.name}
                 className="w-9 h-9 object-contain shrink-0"
               />
-              <span className="font-dropa font-bold text-xl text-white">{store.name}</span>
+              <span className="font-dropa font-semibold text-base sm:text-lg text-white">
+                {toTitleCase(store.name)}
+              </span>
             </div>
             <p className="text-xs text-zinc-400 leading-relaxed max-w-sm">
               {store.description}
@@ -312,7 +337,7 @@ export default function StoreFooter({ store }: StoreFooterProps) {
 
         {/* Bottom credits */}
         <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between text-xs text-zinc-500 gap-3">
-          <p>© {new Date().getFullYear()} {store.name} · Powered by Ofia Commerce & Logistics Platform</p>
+          <p>© {new Date().getFullYear()} {toTitleCase(store.name)} · Powered by Ofia Commerce & Logistics Platform</p>
           <div className="flex flex-wrap items-center gap-4 text-zinc-400">
             <Link
               href={`/info?vertical=${store.vertical}`}

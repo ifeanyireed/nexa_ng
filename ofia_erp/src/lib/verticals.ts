@@ -8,7 +8,8 @@ export type VerticalKey =
   | "home-living"
   | "pharmacy"
   | "hardware"
-  | "retail";
+  | "retail"
+  | "dispatch";
 
 export interface VerticalDefinition {
   id: VerticalKey;
@@ -212,6 +213,23 @@ export const VERTICAL_DEFINITIONS: Record<VerticalKey, VerticalDefinition> = {
       { key: "personalizationOption", label: "Custom Engraving / Monogramming", type: "boolean" },
     ],
   },
+  dispatch: {
+    id: "dispatch",
+    name: "Courier & Fleet Dispatch",
+    tagline: "Point-to-point courier, waybill tracking, fleet operations & delivery OTP",
+    badge: "Mobility & Couriers",
+    icon: "Bike",
+    productTerm: "Delivery Fare Tier",
+    productTermPlural: "Delivery Services & Supplies",
+    serviceTerm: "Express Courier Booking",
+    storefrontPath: "/dispatch",
+    attributeFields: [
+      { key: "vehicleType", label: "Fleet Vehicle Class", type: "select", options: ["Motorbike Courier", "Express Delivery Van", "Bulk Cargo Truck"] },
+      { key: "maxWeightKg", label: "Max Parcel Weight (kg)", type: "number", placeholder: "15" },
+      { key: "serviceZone", label: "Service Corridor", type: "text", placeholder: "e.g. Lagos Metro / Interstate" },
+      { key: "deliverySpeed", label: "Delivery Speed SLA", type: "select", options: ["Instant Express (< 45 mins)", "Same-Day Scheduled", "Next-Day Freight"] },
+    ],
+  },
 };
 
 /**
@@ -226,6 +244,9 @@ export function detectTenantVertical(
   const name = (organizationName || "").toLowerCase();
   const combined = `${slug} ${name}`;
 
+  if (combined.includes("courier") || combined.includes("dispatch") || combined.includes("logistics") || combined.includes("haulage") || combined.includes("rider") || combined.includes("waybill")) {
+    return "dispatch";
+  }
   if (combined.includes("transport") || combined.includes("nets") || combined.includes("car") || combined.includes("auto") || combined.includes("fleet")) {
     return "cars";
   }
@@ -298,6 +319,14 @@ export interface CommerceBookingItem {
   notes?: string;
   vertical: VerticalKey;
   createdAt?: string;
+  technicianId?: string;
+  technicianName?: string;
+  amount?: string;
+  isEscrow?: boolean;
+  escrowStatus?: string;
+  settlementStatus?: string;
+  merchantAmount?: number;
+  platformFee?: number;
 }
 
 export interface CommerceOrderItem {
@@ -320,6 +349,11 @@ export interface CommerceOrderItem {
   shippingAddress?: string;
   city?: string;
   paymentMethod?: string;
+  isEscrow?: boolean;
+  escrowStatus?: "NONE" | "DIRECT_SETTLEMENT" | "HELD" | "RELEASED" | "REFUNDED";
+  settlementStatus?: "AVAILABLE" | "HELD_ESCROW" | "WITHDRAWN";
+  merchantAmount?: number;
+  platformFee?: number;
   notes?: string;
   items?: any[];
 }
@@ -354,6 +388,7 @@ export interface TenantStorefrontHandshake {
     logoUrl?: string;
     bannerUrl?: string;
     currency: string;
+    allowEscrow?: boolean;
     contact?: {
       phone?: string;
       email?: string;
@@ -367,6 +402,7 @@ export interface TenantStorefrontHandshake {
       services: boolean;
       reviews: boolean;
       dispatchBooking: boolean;
+      escrowOption?: boolean;
     };
     badges: string[];
   };
@@ -805,11 +841,45 @@ export function getDefaultProductsForVertical(v: VerticalKey): CommerceProductIt
           attributes: { department: "Specialty Gifts", brand: "Heritage Goods", barcode: "012345678903", personalizationOption: false },
         },
       ];
+    case "dispatch":
+      return [
+        {
+          id: "PROD-DISP-01",
+          name: "Point-to-Point Express Motorbike Courier",
+          price: 2500,
+          formattedPrice: "₦2,500",
+          category: "Courier Dispatch",
+          stock: 99,
+          image: "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80",
+          vertical: "dispatch",
+          sku: "DISP-BIKE-01",
+          status: "ACTIVE",
+          attributes: { vehicleType: "Motorbike Courier", maxWeightKg: 15, deliverySpeed: "Instant Express (< 45 mins)" },
+        },
+        {
+          id: "PROD-DISP-02",
+          name: "Citywide Same-Day Delivery Van Haulage",
+          price: 6500,
+          formattedPrice: "₦6,500",
+          category: "Freight Logistics",
+          stock: 50,
+          image: "https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&w=800&q=80",
+          vertical: "dispatch",
+          sku: "DISP-VAN-02",
+          status: "ACTIVE",
+          attributes: { vehicleType: "Express Delivery Van", maxWeightKg: 150, deliverySpeed: "Same-Day Scheduled" },
+        },
+      ];
   }
 }
 
 export function getDefaultServicesForVertical(v: VerticalKey): CommerceServiceItem[] {
   switch (v) {
+    case "dispatch":
+      return [
+        { id: "SRV-DISP-01", title: "Immediate Point-to-Point Rider Dispatch Request", price: 2500, formattedPrice: "₦2,500", durationMinutes: 45, providerName: "Courier Fleet Operations", vertical: "dispatch", status: "ACTIVE", description: "Real-time courier pickup with GPS radar telemetry and delivery OTP verification." },
+        { id: "SRV-DISP-02", title: "Scheduled Bulk E-Commerce Merchant Pickup", price: 8000, formattedPrice: "₦8,000", durationMinutes: 90, providerName: "Logistics Hub Manager", vertical: "dispatch", status: "ACTIVE", description: "Batch pickup for merchant orders with automated waybill printing." },
+      ];
     case "cars":
       return [
         { id: "SRV-CAR-01", title: "Comprehensive 150-Point Pre-Purchase Mechanical Inspection", price: 45000, formattedPrice: "₦45,000", durationMinutes: 90, providerName: "Chief Technical Inspector", vertical: "cars", status: "ACTIVE", description: "Complete engine, transmission, OBD2 diagnostics, suspension, and chassis audit." },
@@ -934,6 +1004,12 @@ export function getDefaultPosProductsForVertical(v: VerticalKey): PosProductItem
         { id: "POS-HARD-3", name: "16mm² Double Insulated Solar DC Cable (10m)", price: 38000, category: "Cabling", stock: 30, sku: "POS-CBL-16MM" },
         { id: "POS-HARD-4", name: "Digital Auto-Ranging Multimeter with Probe", price: 22000, category: "Test Tools", stock: 20, sku: "POS-DMM-PRO" },
         { id: "POS-HARD-5", name: "Heavy-Duty Battery Lug Crimping Plier", price: 28000, category: "Tools", stock: 15, sku: "POS-CRM-PLR" },
+      ];
+    case "dispatch":
+      return [
+        { id: "POS-DISP-1", name: "Prepaid Express Waybill Tracking Sticker (Pack of 10)", price: 3500, category: "Supplies", stock: 80, sku: "POS-WYB-STK" },
+        { id: "POS-DISP-2", name: "Tamper-Evident Security Flyer Bags (Pack of 25)", price: 4500, category: "Packaging", stock: 120, sku: "POS-SEC-BAG" },
+        { id: "POS-DISP-3", name: "Heavy-Duty Reinforced Fragile Packing Tape", price: 2000, category: "Packaging", stock: 95, sku: "POS-TAP-FRG" },
       ];
     case "retail":
     default:

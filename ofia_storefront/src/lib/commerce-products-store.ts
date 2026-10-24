@@ -2,7 +2,8 @@ import fs from "fs";
 import path from "path";
 import { Product, VerticalType } from "@/types/storefront";
 import { MOCK_PRODUCTS } from "@/data/mockStores";
-import { getTenantSql } from "./tenant-db-resolver";
+import { getTenantSql, getTenantDatabaseConfig } from "./tenant-db-resolver";
+import { SEED_TENANT_HANDSHAKES } from "./storefront-tenant";
 
 function getSyncDir() {
   const candidates = [
@@ -50,6 +51,25 @@ export async function getStorefrontProducts(
 
   // 1. Check live merchant inventory on their dedicated database
   if (normalizedSlug) {
+    // Resolve tenant's registered vertical
+    let tenantVertical: VerticalType | undefined = SEED_TENANT_HANDSHAKES[normalizedSlug]?.vertical;
+    if (!tenantVertical) {
+      try {
+        const dbConf = await getTenantDatabaseConfig(normalizedSlug);
+        if (dbConf.vertical) {
+          tenantVertical = dbConf.vertical as VerticalType;
+        }
+      } catch {}
+    }
+
+    // STRICT ISOLATION GUARD:
+    // If a specific vertical was requested (e.g. "fashion"), but this tenant is registered under a DIFFERENT vertical (e.g. "cars"),
+    // do NOT serve car inventory as fashion products! Return the vertical's curated template products.
+    if (vertical && tenantVertical && tenantVertical !== vertical) {
+      const fallbackList = MOCK_PRODUCTS.filter((p) => p.vertical === vertical);
+      return { products: fallbackList, isLiveMerchantCatalog: false };
+    }
+
     try {
       const sql = await getTenantSql(normalizedSlug);
       if (sql) {
@@ -62,10 +82,11 @@ export async function getStorefrontProducts(
         `;
 
         if (rows && rows.length > 0) {
+          const resolvedVertical = tenantVertical || vertical || "retail";
           const liveProducts: Product[] = rows.map((r: any) => ({
             id: r.product_id || r.id,
             storeSlug: normalizedSlug,
-            vertical: vertical || "retail",
+            vertical: resolvedVertical,
             title: r.product_name,
             price: Number(r.unit_price) || 0,
             category: r.category || "General",
@@ -117,6 +138,9 @@ export async function getStorefrontProducts(
         if (filtered.length > 0) {
           return { products: filtered, isLiveMerchantCatalog: true };
         }
+        // If merchant has cached products but none match the requested vertical, fall back to mock products
+        const fallbackList = MOCK_PRODUCTS.filter((p) => p.vertical === vertical);
+        return { products: fallbackList, isLiveMerchantCatalog: false };
       }
       return { products: merchantProducts, isLiveMerchantCatalog: true };
     }

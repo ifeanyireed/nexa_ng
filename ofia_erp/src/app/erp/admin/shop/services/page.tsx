@@ -19,6 +19,8 @@ import {
   Check,
   X,
   RefreshCw,
+  Star,
+  ShieldCheck,
 } from "lucide-react";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -36,6 +38,45 @@ import {
   CommerceBookingItem,
   VerticalKey,
 } from "@/lib/verticals";
+
+export interface SpecialistStaff {
+  id: string;
+  name: string;
+  role: string;
+  rating: number;
+  completedJobs: number;
+  isAvailable: boolean;
+  specialty: string;
+}
+
+export const VERTICAL_SPECIALISTS: Record<string, SpecialistStaff[]> = {
+  cars: [
+    { id: "TECH-01", name: "Engr. Babatunde Lawal", role: "Master Diagnostic Technician", rating: 4.9, completedJobs: 142, isAvailable: true, specialty: "Engine Diagnostics & OBD-II" },
+    { id: "TECH-02", name: "Chibuike Okonkwo", role: "Certified Vehicle Inspector", rating: 4.8, completedJobs: 98, isAvailable: true, specialty: "Pre-Purchase & Safety Audits" },
+    { id: "TECH-03", name: "Amina Yusuf", role: "Automotive Electrical Specialist", rating: 5.0, completedJobs: 87, isAvailable: false, specialty: "ECU Tuning & Hybrid Systems" },
+  ],
+  fashion: [
+    { id: "STYL-01", name: "Damilola Adebayo", role: "Lead Bespoke Stylist", rating: 4.9, completedJobs: 120, isAvailable: true, specialty: "Haute Couture & Tailoring" },
+    { id: "STYL-02", name: "Grace Effiong", role: "Personal Shopper & Fitter", rating: 4.8, completedJobs: 85, isAvailable: true, specialty: "Bridal & Red Carpet" },
+  ],
+  beauty: [
+    { id: "SPA-01", name: "Zainab Bello", role: "Senior Medical Esthetician", rating: 4.9, completedJobs: 210, isAvailable: true, specialty: "Skin Therapy & Peels" },
+    { id: "SPA-02", name: "Kehinde Daniels", role: "Master Hair Artiste & Therapist", rating: 4.8, completedJobs: 135, isAvailable: true, specialty: "Trichology & Treatments" },
+  ],
+  gadgets: [
+    { id: "GAD-01", name: "Samuel Okafor", role: "Apple / Android Certified Tech", rating: 4.9, completedJobs: 340, isAvailable: true, specialty: "Logic Board & Screen Repair" },
+    { id: "GAD-02", name: "Emeka Peters", role: "Drone & Camera Specialist", rating: 4.7, completedJobs: 72, isAvailable: true, specialty: "Sensor Calibration & Firmware" },
+  ],
+  retail: [
+    { id: "CS-01", name: "Folake Williams", role: "Senior Client Specialist", rating: 4.9, completedJobs: 160, isAvailable: true, specialty: "Consultations & Fitting" },
+    { id: "CS-02", name: "Ibrahim Musa", role: "Product Specialist", rating: 4.8, completedJobs: 95, isAvailable: true, specialty: "Demonstrations & Onboarding" },
+  ],
+  dispatch: [
+    { id: "RDR-01", name: "Chidi Okeke", role: "Senior Fleet Rider", rating: 4.9, completedJobs: 380, isAvailable: true, specialty: "Express Motorcycle Courier" },
+    { id: "RDR-02", name: "Tunde Bakare", role: "Van Freight Specialist", rating: 4.8, completedJobs: 215, isAvailable: true, specialty: "Bulk Cargo & Interstate Haulage" },
+    { id: "RDR-03", name: "Emeka Obi", role: "Cold-Chain Logistics Courier", rating: 4.9, completedJobs: 145, isAvailable: true, specialty: "Pharmaceutical & Perishable Delivery" },
+  ],
+};
 
 export default function ServicesAndBookingsPage() {
   const { user } = useAuth();
@@ -157,10 +198,69 @@ export default function ServicesAndBookingsPage() {
       await fetch("/api/erp/shop/bookings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bookingId: id, status: newStatus }),
+        body: JSON.stringify({
+          bookingId: id,
+          status: newStatus,
+          tenantSlug: activeTenant?.slug || "neweratransports",
+        }),
       });
     } catch {
       fetchBookings();
+    }
+  };
+
+  // State for technician / specialist assignment modal
+  const [assigningBooking, setAssigningBooking] = useState<CommerceBookingItem | null>(null);
+  const [selectedSpecialistId, setSelectedSpecialistId] = useState<string>("");
+  const [isAssigning, setIsAssigning] = useState(false);
+
+  const availableSpecialists = VERTICAL_SPECIALISTS[selectedVertical] || VERTICAL_SPECIALISTS.retail;
+
+  const handleAssignSpecialist = async () => {
+    if (!assigningBooking || !selectedSpecialistId) return;
+    const specialist = availableSpecialists.find((s) => s.id === selectedSpecialistId);
+    if (!specialist) return;
+
+    setIsAssigning(true);
+    const targetSlug = (activeTenant?.slug || "neweratransports").toLowerCase().trim();
+    const assignedName = `${specialist.name} · ${specialist.role}`;
+
+    // Optimistic UI update
+    setBookings((prev) =>
+      prev.map((b) =>
+        b.id === assigningBooking.id || (b as any).bookingNumber === assigningBooking.id
+          ? {
+              ...b,
+              status: "CONFIRMED",
+              technicianId: specialist.id,
+              technicianName: assignedName,
+            }
+          : b
+      )
+    );
+
+    try {
+      const res = await fetch("/api/erp/shop/bookings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          bookingId: assigningBooking.id,
+          status: "CONFIRMED",
+          technicianId: specialist.id,
+          technicianName: assignedName,
+          tenantSlug: targetSlug,
+        }),
+      });
+      if (res.ok) {
+        setAssigningBooking(null);
+        setSelectedSpecialistId("");
+        fetchBookings();
+      }
+    } catch (err) {
+      console.error("Failed to assign technician:", err);
+      fetchBookings();
+    } finally {
+      setIsAssigning(false);
     }
   };
 
@@ -284,6 +384,13 @@ export default function ServicesAndBookingsPage() {
 
                   <p className="text-xs text-[var(--nexa-text-secondary)] font-medium">{b.serviceTitle}</p>
 
+                  {b.technicianName && (
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-[#1A56DB] dark:text-blue-400 text-xs font-semibold">
+                      <UserCheck className="w-3.5 h-3.5 shrink-0" />
+                      <span>Assigned Specialist: <strong>{b.technicianName}</strong></span>
+                    </div>
+                  )}
+
                   {b.notes && (
                     <p className="text-[11px] text-[var(--nexa-text-muted)] italic bg-[var(--nexa-bg-surface)] p-2 rounded-xl border border-[var(--nexa-border)]">
                       "{b.notes}"
@@ -293,17 +400,28 @@ export default function ServicesAndBookingsPage() {
                   <div className="flex items-center justify-between pt-2 border-t border-[var(--nexa-border)] text-[11px]">
                     <span className="text-[var(--nexa-text-muted)] font-mono">{b.customerPhone}</span>
                     <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => {
+                          setAssigningBooking(b);
+                          setSelectedSpecialistId(b.technicianId || availableSpecialists[0]?.id || "");
+                        }}
+                        className="px-2.5 py-1 rounded-full bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 font-bold text-xs cursor-pointer flex items-center gap-1 border border-blue-200 dark:border-blue-800 transition-colors"
+                      >
+                        <User className="w-3 h-3" />
+                        {b.technicianName ? "Reassign Specialist" : "Assign Specialist"}
+                      </button>
+
                       {b.status === "PENDING" && (
                         <button
                           onClick={() => handleUpdateBookingStatus(b.id, "CONFIRMED")}
-                          className="px-2.5 py-1 rounded-full bg-emerald-600 text-white font-bold hover:bg-emerald-700 text-xs cursor-pointer flex items-center gap-1"
+                          className="px-2.5 py-1 rounded-full bg-emerald-600 text-white font-bold hover:bg-emerald-700 text-xs cursor-pointer flex items-center gap-1 transition-colors"
                         >
                           <Check className="w-3 h-3" /> Confirm
                         </button>
                       )}
                       <button
                         onClick={() => handleUpdateBookingStatus(b.id, "CANCELLED")}
-                        className="px-2.5 py-1 rounded-full bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-rose-500 font-bold hover:border-red-500 text-xs cursor-pointer"
+                        className="px-2.5 py-1 rounded-full bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-rose-500 font-bold hover:border-red-500 text-xs cursor-pointer transition-colors"
                       >
                         Cancel
                       </button>
@@ -448,6 +566,111 @@ export default function ServicesAndBookingsPage() {
             </NexaButton>
           </div>
         </form>
+      </NexaModal>
+
+      {/* ASSIGN TECHNICIAN / SPECIALIST MODAL */}
+      <NexaModal
+        isOpen={!!assigningBooking}
+        onClose={() => setAssigningBooking(null)}
+        title={`Assign Specialist · Booking #${assigningBooking?.id || (assigningBooking as any)?.bookingNumber}`}
+        subtitle={`Select a verified ${currentVerticalDef.name} specialist or technician to fulfill this appointment.`}
+        maxWidth="lg"
+      >
+        <div className="space-y-4 pt-2">
+          {/* Appointment Snapshot */}
+          <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-xs text-[var(--nexa-text-primary)]">
+                {assigningBooking?.customerName}
+              </span>
+              <NexaBadge variant="brand" size="sm" className="rounded-full font-mono">
+                {assigningBooking?.dateTime}
+              </NexaBadge>
+            </div>
+            <p className="text-xs text-[var(--nexa-text-secondary)] font-medium">
+              {assigningBooking?.serviceTitle}
+            </p>
+            {assigningBooking?.notes && (
+              <p className="text-[11px] text-[var(--nexa-text-muted)] italic">
+                "{assigningBooking.notes}"
+              </p>
+            )}
+          </div>
+
+          {/* Specialist List */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-[var(--nexa-text-primary)] block">
+              Available {currentVerticalDef.name} Staff & Certified Specialists
+            </label>
+            <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+              {availableSpecialists.map((spec) => (
+                <div
+                  key={spec.id}
+                  onClick={() => setSelectedSpecialistId(spec.id)}
+                  className={`p-3 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
+                    selectedSpecialistId === spec.id
+                      ? "border-[#1A56DB] bg-blue-50/60 dark:bg-blue-950/40 shadow-xs"
+                      : "border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] hover:border-blue-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 flex items-center justify-center font-bold text-xs">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-xs text-[var(--nexa-text-primary)]">{spec.name}</span>
+                        {spec.isAvailable ? (
+                          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">
+                            Available
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                            On Session
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-[var(--nexa-text-secondary)] font-medium">
+                        {spec.role} · <span className="text-[var(--nexa-text-muted)]">{spec.specialty}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-right text-[11px]">
+                    <div className="font-bold text-amber-500 flex items-center gap-0.5 justify-end">
+                      <Star className="w-3 h-3 fill-amber-400" /> {spec.rating}
+                    </div>
+                    <span className="text-[10px] text-[var(--nexa-text-muted)] font-mono">
+                      {spec.completedJobs} completed
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[var(--nexa-border)]">
+            <NexaButton
+              type="button"
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              onClick={() => setAssigningBooking(null)}
+            >
+              Cancel
+            </NexaButton>
+            <NexaButton
+              type="button"
+              variant="primary"
+              size="sm"
+              disabled={!selectedSpecialistId || isAssigning}
+              className="rounded-full bg-[#1A56DB] text-white font-bold"
+              onClick={handleAssignSpecialist}
+            >
+              {isAssigning ? "Assigning..." : "Confirm Staff Allocation"}
+            </NexaButton>
+          </div>
+        </div>
       </NexaModal>
     </BusinessShell>
   );

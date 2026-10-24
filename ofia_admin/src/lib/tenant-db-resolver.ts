@@ -324,12 +324,63 @@ export async function bootstrapDedicatedTenantSchema(connectionString: string): 
         status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
         payment_status VARCHAR(50) NOT NULL DEFAULT 'PAID',
         notes TEXT DEFAULT '',
+        is_escrow BOOLEAN DEFAULT FALSE,
+        escrow_status VARCHAR(50) DEFAULT 'NONE',
+        merchant_amount NUMERIC(15,2) DEFAULT 0,
+        platform_fee NUMERIC(15,2) DEFAULT 0,
+        settlement_status VARCHAR(50) DEFAULT 'AVAILABLE',
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
       );
     `;
 
-    // 6. Strict Multi-Tenant Composite Indexes
+    // 6. Tenant Wallets, Ledger & Payouts
+    await targetSql`
+      CREATE TABLE IF NOT EXISTS tenant_wallets (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        available_balance NUMERIC(15,2) NOT NULL DEFAULT 0,
+        escrow_balance NUMERIC(15,2) NOT NULL DEFAULT 0,
+        total_withdrawn NUMERIC(15,2) NOT NULL DEFAULT 0,
+        currency VARCHAR(10) NOT NULL DEFAULT 'NGN',
+        bank_name VARCHAR(100) DEFAULT '',
+        account_number VARCHAR(50) DEFAULT '',
+        account_name VARCHAR(150) DEFAULT '',
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT uq_tenant_wallet_slug UNIQUE (tenant_slug)
+      );
+
+      CREATE TABLE IF NOT EXISTS tenant_wallet_transactions (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        type VARCHAR(50) NOT NULL,
+        amount NUMERIC(15,2) NOT NULL,
+        reference VARCHAR(100) NOT NULL,
+        description TEXT NOT NULL,
+        channel VARCHAR(50) DEFAULT 'STOREFRONT',
+        is_escrow BOOLEAN DEFAULT FALSE,
+        status VARCHAR(50) NOT NULL DEFAULT 'SUCCESS',
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE TABLE IF NOT EXISTS tenant_payout_requests (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        amount NUMERIC(15,2) NOT NULL,
+        bank_name VARCHAR(100) NOT NULL,
+        account_number VARCHAR(50) NOT NULL,
+        account_name VARCHAR(150) NOT NULL,
+        status VARCHAR(50) NOT NULL DEFAULT 'PROCESSED',
+        notes TEXT DEFAULT '',
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+
+    // 7. Strict Multi-Tenant Composite Indexes
     await targetSql`
       CREATE INDEX IF NOT EXISTS idx_shop_orders_tenant_created ON shop_orders(LOWER(tenant_slug), created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_shop_orders_tenant_status ON shop_orders(LOWER(tenant_slug), status);
@@ -339,6 +390,9 @@ export async function bootstrapDedicatedTenantSchema(connectionString: string): 
       CREATE INDEX IF NOT EXISTS idx_shop_notifs_tenant_order ON shop_order_notifications(LOWER(tenant_slug), order_id);
       CREATE INDEX IF NOT EXISTS idx_shop_bookings_tenant_created ON shop_bookings(LOWER(tenant_slug), created_at DESC);
       CREATE INDEX IF NOT EXISTS idx_shop_bookings_tenant_status ON shop_bookings(LOWER(tenant_slug), status);
+      CREATE INDEX IF NOT EXISTS idx_tenant_wallets_tenant ON tenant_wallets(LOWER(tenant_slug));
+      CREATE INDEX IF NOT EXISTS idx_wallet_tx_tenant_created ON tenant_wallet_transactions(LOWER(tenant_slug), created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_payouts_tenant_created ON tenant_payout_requests(LOWER(tenant_slug), created_at DESC);
     `;
 
     return {

@@ -4,16 +4,18 @@ import {
   extractSubdomainFromHost,
   SEED_TENANT_HANDSHAKES,
 } from "@/lib/storefront-tenant";
+import { neon } from "@neondatabase/serverless";
+import { MASTER_REGISTRY_URL } from "@/lib/tenant-db-resolver";
 
 export const dynamic = "force-dynamic";
 
 const MARKETPLACE_BASE = process.env.MARKETPLACE_SERVICE_URL
   ? `${process.env.MARKETPLACE_SERVICE_URL.replace(/\/+$/, "")}/api/v1`
-  : "http://localhost:8083/api/v1";
+  : null;
 
 const USER_BASE = process.env.USER_SERVICE_URL
   ? `${process.env.USER_SERVICE_URL.replace(/\/+$/, "")}/api/v1`
-  : "http://localhost:8081/api/v1";
+  : null;
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -31,30 +33,104 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // 1. Check local seed presets first for instant high-reliability
+  // 1. Check seed presets first (for instant fast resolution)
   if (SEED_TENANT_HANDSHAKES[tenantSlug]) {
     const seed = SEED_TENANT_HANDSHAKES[tenantSlug];
     return NextResponse.json({
+      success: true,
       isTenantResolved: true,
       handshake: seed,
     });
   }
 
-  // 2. Fetch from service_marketplace subdomain layouts & service_users
+  // 2. Query platform_tenants registry directly in PostgreSQL
   try {
-    const [layoutRes, orgRes] = await Promise.all([
-      fetch(`${MARKETPLACE_BASE}/subdomain-layouts/${encodeURIComponent(tenantSlug)}`, {
-        cache: "no-store",
-        signal: AbortSignal.timeout(2500),
-      }).catch(() => null),
-      fetch(`${USER_BASE}/organizations/${encodeURIComponent(tenantSlug)}`, {
-        cache: "no-store",
-        signal: AbortSignal.timeout(2500),
-      }).catch(() => null),
-    ]);
+    const registrySql = neon(MASTER_REGISTRY_URL);
+    const rows = await registrySql`
+      SELECT id, name, slug, domain, vertical, status, db_mode,
+             logo, login_image, hero_title, hero_subtitle, shop_sub_modules
+      FROM platform_tenants
+      WHERE LOWER(slug) = ${tenantSlug}
+      LIMIT 1;
+    `;
 
-    const layoutData = layoutRes && layoutRes.ok ? await layoutRes.json().catch(() => null) : null;
-    const orgData = orgRes && orgRes.ok ? await orgRes.json().catch(() => null) : null;
+    if (rows && rows.length > 0) {
+      const r = rows[0];
+      const verticalKey: VerticalType = (r.vertical as VerticalType) || "retail";
+
+      const handshake: TenantStorefrontHandshake = {
+        tenantId: r.id || `org-${tenantSlug}`,
+        slug: r.slug,
+        name: r.name || tenantSlug,
+        domain: r.domain || `${tenantSlug}.ofia.ng`,
+        subdomain: tenantSlug,
+        vertical: verticalKey,
+        provisioning: {
+          isShopEnabled: true,
+          planTier: "GROWTH",
+          shopSubModules: r.shop_sub_modules || {
+            pos: true,
+            inventory: true,
+            catalog: true,
+            services: true,
+            orders: true,
+            store: true,
+            referrals: true,
+          },
+        },
+        storefrontConfig: {
+          storeName: r.name || `${tenantSlug} Store`,
+          headline: r.hero_title || "Premium Products & Reliable Service",
+          description: r.hero_subtitle || "",
+          primaryColor: "#0069FF",
+          secondaryColor: "#0F172A",
+          logoUrl: r.logo || "/ofia-logo.png",
+          bannerUrl: r.login_image || "https://images.unsplash.com/photo-1555421689-491a97ff2040?auto=format&fit=crop&w=1600&h=600&q=80",
+          currency: "₦",
+          contact: {
+            email: `contact@${tenantSlug}.ofia.ng`,
+          },
+          sectionVisibility: {
+            hero: true,
+            products: true,
+            services: true,
+            reviews: true,
+            dispatchBooking: true,
+          },
+          badges: ["Verified Ofia Merchant"],
+        },
+      };
+
+      return NextResponse.json({
+        success: true,
+        isTenantResolved: true,
+        handshake,
+      });
+    }
+  } catch (dbErr) {
+    console.warn(`[Storefront Handshake API] Database lookup error for '${tenantSlug}':`, dbErr);
+  }
+
+  // 3. Check remote microservices (service_marketplace & service_users) if explicitly configured
+  if (MARKETPLACE_BASE || USER_BASE) {
+    try {
+      const [layoutRes, orgRes] = await Promise.all([
+        MARKETPLACE_BASE
+          ? fetch(`${MARKETPLACE_BASE}/subdomain-layouts/${encodeURIComponent(tenantSlug)}`, {
+              cache: "no-store",
+              signal: AbortSignal.timeout(1500),
+            }).catch(() => null)
+          : Promise.resolve(null),
+        USER_BASE
+          ? fetch(`${USER_BASE}/organizations/${encodeURIComponent(tenantSlug)}`, {
+              cache: "no-store",
+              signal: AbortSignal.timeout(1500),
+            }).catch(() => null)
+          : Promise.resolve(null),
+      ]);
+
+      const layoutData = layoutRes && layoutRes.ok ? await layoutRes.json().catch(() => null) : null;
+      const orgData = orgRes && orgRes.ok ? await orgRes.json().catch(() => null) : null;
 
     if (layoutData || orgData) {
       const verticalKey: VerticalType =
@@ -106,6 +182,7 @@ export async function GET(request: NextRequest) {
       };
 
       return NextResponse.json({
+        success: true,
         isTenantResolved: true,
         handshake,
       });
@@ -113,48 +190,15 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     console.warn("[Storefront Handshake API] Remote fetch failed:", err);
   }
+}
 
-  // 3. Generative dynamic fallback if tenant not found in remote or seed
-  const fallbackHandshake: TenantStorefrontHandshake = {
-    tenantId: `org-${tenantSlug}`,
-    slug: tenantSlug,
-    name: tenantSlug.toUpperCase(),
-    domain: `${tenantSlug}.ofia.ng`,
-    subdomain: tenantSlug,
-    vertical: "retail",
-    provisioning: {
-      isShopEnabled: true,
-      planTier: "GROWTH",
-      shopSubModules: {
-        pos: true,
-        inventory: true,
-        catalog: true,
-        services: true,
-        orders: true,
-        store: true,
-        referrals: true,
-      },
+  // 4. If tenant is NOT provisioned anywhere, return HTTP 404 (strictly NO fallback vertical!)
+  return NextResponse.json(
+    {
+      success: false,
+      isTenantResolved: false,
+      error: `Storefront workspace '${tenantSlug}' is not provisioned on Ofia Platform.`,
     },
-    storefrontConfig: {
-      storeName: `${tenantSlug} Store`,
-      headline: "Welcome to Our Digital Storefront",
-      primaryColor: "#0069FF",
-      secondaryColor: "#0F172A",
-      logoUrl: "/ofia-logo.png",
-      currency: "₦",
-      sectionVisibility: {
-        hero: true,
-        products: true,
-        services: true,
-        reviews: true,
-        dispatchBooking: true,
-      },
-      badges: ["Official Storefront"],
-    },
-  };
-
-  return NextResponse.json({
-    isTenantResolved: true,
-    handshake: fallbackHandshake,
-  });
+    { status: 404 }
+  );
 }

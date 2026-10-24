@@ -54,12 +54,9 @@ export default function VerticalHeroBento({
           <h1 className="font-dropa text-2xl sm:text-4xl lg:text-3xl xl:text-4xl 2xl:text-[46px] font-bold text-zinc-950 tracking-tight leading-[1.08] whitespace-pre-line max-w-sm sm:max-w-md">
             {headline}
             {highlightText && (
-              <>
-                {" "}
-                <span className="text-stone-500 font-light block">
-                  {highlightText}
-                </span>
-              </>
+              <span className="text-sm sm:text-base lg:text-lg font-normal tracking-normal text-stone-500 block mt-1 sm:mt-1.5">
+                {highlightText}
+              </span>
             )}
           </h1>
 

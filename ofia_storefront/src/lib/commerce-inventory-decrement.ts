@@ -26,7 +26,7 @@ export async function decrementStorefrontInventory(
       const qty = Number(itm.quantity) || 1;
       const prodId = itm.productId || itm.id || "";
       const prodSku = (itm as any).sku || "";
-      const title = (itm.title || itm.name || "").trim();
+      const title = ((itm.title || itm.name || "") as string).trim();
 
       const updated = await sql`
         UPDATE shop_inventory

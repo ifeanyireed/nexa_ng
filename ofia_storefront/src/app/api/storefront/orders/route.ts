@@ -70,6 +70,10 @@ export async function POST(request: NextRequest) {
     const orderNumber =
       body.orderNumber || `OFIA-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const orderId = body.id || `ORD-${Date.now().toString().slice(-6)}`;
+    const rawAmount = Number(body.rawAmount) || 0;
+    const isEscrow = Boolean(body.isEscrow);
+    const platformFee = Math.round(rawAmount * 0.015 * 100) / 100; // 1.5% platform commission
+    const merchantAmount = Math.max(0, rawAmount - platformFee);
 
     const newOrder: StorefrontOrderPayload = {
       id: orderId,
@@ -97,7 +101,12 @@ export async function POST(request: NextRequest) {
       totalAmount:
         body.totalAmount ||
         (body.rawAmount ? `₦${Number(body.rawAmount).toLocaleString()}` : "₦0"),
-      rawAmount: Number(body.rawAmount) || 0,
+      rawAmount: rawAmount,
+      isEscrow: isEscrow,
+      escrowStatus: isEscrow ? "HELD" : "NONE",
+      settlementStatus: isEscrow ? "HELD_ESCROW" : "AVAILABLE",
+      merchantAmount: merchantAmount,
+      platformFee: platformFee,
       status: "IN_PREPARATION",
       paymentStatus: "PAID",
       deliveryMethod: body.deliveryMethod || "DISPATCH",

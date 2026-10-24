@@ -18,7 +18,7 @@ export default function FashionStorefrontView() {
   const { products: fashionProducts, isLiveMerchantCatalog } = useStorefrontProducts("fashion");
 
   const canBookServices = isFeatureEnabled("services");
-  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
+  const tenantQuery = "";
 
   return (
     <div className="min-h-screen bg-white text-[#111318] flex flex-col justify-between">

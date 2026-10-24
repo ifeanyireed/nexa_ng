@@ -111,3 +111,59 @@ export async function PUT(
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const rawId = (id || "").trim();
+
+  if (!rawId) {
+    return NextResponse.json(
+      { success: false, error: "tenant identifier is required" },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const sql = neon(MASTER_CONNECTION_STRING);
+    const rows = await sql`
+      SELECT * FROM platform_tenants
+      WHERE id = ${rawId} OR LOWER(slug) = ${rawId.toLowerCase()}
+      LIMIT 1;
+    `;
+
+    if (!rows || rows.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "Tenant workspace not found" },
+        { status: 404 }
+      );
+    }
+
+    const target = rows[0];
+
+    // Delete the tenant record from platform_tenants registry
+    await sql`
+      DELETE FROM platform_tenants
+      WHERE id = ${target.id};
+    `;
+
+    invalidateTenantDbCache(target.slug);
+
+    return NextResponse.json({
+      success: true,
+      message: `Tenant '${target.name}' (@${target.slug}) deleted successfully.`,
+      deletedTenant: {
+        id: target.id,
+        name: target.name,
+        slug: target.slug,
+      },
+    });
+  } catch (err: any) {
+    return NextResponse.json(
+      { success: false, error: "Failed to delete tenant: " + err.message },
+      { status: 500 }
+    );
+  }
+}

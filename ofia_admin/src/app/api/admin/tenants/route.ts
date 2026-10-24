@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { MASTER_CONNECTION_STRING, getTenantSql } from "@/lib/tenant-db-resolver";
+import { MASTER_CONNECTION_STRING, getTenantSql, invalidateTenantDbCache } from "@/lib/tenant-db-resolver";
 import { INITIAL_TENANTS } from "@/lib/admin-data";
 import { alignTenantModules, getDefaultModulesForVertical } from "@/lib/tenant-module-aligner";
 import { neon } from "@neondatabase/serverless";
@@ -173,6 +173,58 @@ export async function POST(request: NextRequest) {
   } catch (err: any) {
     return NextResponse.json(
       { success: false, error: "Failed to create tenant: " + err.message },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const idOrSlug = (searchParams.get("id") || searchParams.get("slug") || "").trim();
+
+  if (!idOrSlug) {
+    return NextResponse.json(
+      { success: false, error: "id or slug parameter is required" },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const sql = neon(MASTER_CONNECTION_STRING);
+    const rows = await sql`
+      SELECT * FROM platform_tenants
+      WHERE id = ${idOrSlug} OR LOWER(slug) = ${idOrSlug.toLowerCase()}
+      LIMIT 1;
+    `;
+
+    if (!rows || rows.length === 0) {
+      return NextResponse.json(
+        { success: false, error: "Tenant not found" },
+        { status: 404 }
+      );
+    }
+
+    const target = rows[0];
+
+    await sql`
+      DELETE FROM platform_tenants
+      WHERE id = ${target.id};
+    `;
+
+    invalidateTenantDbCache(target.slug);
+
+    return NextResponse.json({
+      success: true,
+      message: `Tenant '${target.name}' (@${target.slug}) deleted successfully.`,
+      deletedTenant: {
+        id: target.id,
+        name: target.name,
+        slug: target.slug,
+      },
+    });
+  } catch (err: any) {
+    return NextResponse.json(
+      { success: false, error: "Failed to delete tenant: " + err.message },
       { status: 500 }
     );
   }

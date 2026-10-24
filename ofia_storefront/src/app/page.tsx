@@ -47,6 +47,7 @@ export default async function Home() {
         const rows = await sql`
           SELECT vertical FROM platform_tenants
           WHERE LOWER(slug) = ${tenantSlug}
+             OR REPLACE(LOWER(slug), '-', '') = REPLACE(${tenantSlug}, '-', '')
           LIMIT 1;
         `;
         if (rows && rows.length > 0 && rows[0].vertical) {

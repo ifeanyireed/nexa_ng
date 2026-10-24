@@ -247,6 +247,10 @@ function TenantManagementContent() {
   const [logoUploadError, setLogoUploadError] = useState<string | null>(null);
   const [savingModuleKeys, setSavingModuleKeys] = useState<Record<string, boolean>>({});
 
+  // Tenant Deletion State
+  const [tenantToDelete, setTenantToDelete] = useState<TenantOrg | null>(null);
+  const [isDeletingTenant, setIsDeletingTenant] = useState<boolean>(false);
+
   // Notifications & Telemetry
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isSavingDb, setIsSavingDb] = useState(false);
@@ -1208,6 +1212,32 @@ function TenantManagementContent() {
     }
   };
 
+  // Permanently delete a tenant from platform_tenants registry
+  const handleDeleteTenant = async (tenant: TenantOrg) => {
+    setIsDeletingTenant(true);
+    try {
+      const res = await fetch(`/api/admin/tenants/${encodeURIComponent(tenant.id)}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`Tenant '${tenant.name}' deleted successfully.`);
+        setTenants((prev) => prev.filter((t) => t.id !== tenant.id && t.slug !== tenant.slug));
+        if (selectedTenantId === tenant.id || selectedTenantId === tenant.slug) {
+          setSelectedTenantId("all");
+          router.push("/tenants?tenant=all");
+        }
+        setTenantToDelete(null);
+      } else {
+        alert("Failed to delete tenant: " + (data.error || "Unknown error"));
+      }
+    } catch (err: any) {
+      alert("Error deleting tenant: " + (err.message || "Network error"));
+    } finally {
+      setIsDeletingTenant(false);
+    }
+  };
+
   // Toggle tenant suspension and persist status to Postgres database
   const handleToggleSuspend = async (id: string) => {
     const tenant = tenants.find((t) => t.id === id);
@@ -1681,6 +1711,15 @@ function TenantManagementContent() {
                       >
                         <LogIn className="w-3.5 h-3.5" />
                         <span>Impersonate Console</span>
+                      </button>
+
+                      <button
+                        onClick={() => setTenantToDelete(focusedTenant)}
+                        className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-rose-500/30 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 text-xs font-bold transition-colors cursor-pointer shadow-xs"
+                        title="Delete Workspace"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete Tenant</span>
                       </button>
                     </div>
                   </div>
@@ -2541,6 +2580,14 @@ function TenantManagementContent() {
                               title="Impersonate Tenant Console"
                             >
                               <LogIn className="w-3.5 h-3.5 text-[#1A56DB]" />
+                            </button>
+
+                            <button
+                              onClick={() => setTenantToDelete(tenant)}
+                              className="p-2 rounded-full border border-rose-500/30 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 text-xs transition-colors cursor-pointer"
+                              title="Delete Tenant Workspace"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </div>
@@ -3469,24 +3516,110 @@ function TenantManagementContent() {
             </div>
           </div>
 
-          <div className="pt-3 border-t border-[var(--nexa-border)] flex items-center justify-end gap-2">
-            <NexaButton
-              size="sm"
-              variant="outline"
-              onClick={() => setSelectedTenantForEdit(null)}
+          <div className="pt-3 border-t border-[var(--nexa-border)] flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const toDel = selectedTenantForEdit;
+                setSelectedTenantForEdit(null);
+                setTenantToDelete(toDel);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-500/30 text-rose-600 hover:bg-rose-500/10 text-xs font-semibold transition-colors cursor-pointer"
             >
-              Cancel
-            </NexaButton>
-            <NexaButton
-              size="sm"
-              variant="primary"
-              onClick={handleSaveEditTenant}
-              className="bg-[#1A56DB] text-white"
-            >
-              Save Tenant Details
-            </NexaButton>
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete Workspace</span>
+            </button>
+            <div className="flex items-center gap-2">
+              <NexaButton
+                size="sm"
+                variant="outline"
+                onClick={() => setSelectedTenantForEdit(null)}
+              >
+                Cancel
+              </NexaButton>
+              <NexaButton
+                size="sm"
+                variant="primary"
+                onClick={handleSaveEditTenant}
+                className="bg-[#1A56DB] text-white"
+              >
+                Save Tenant Details
+              </NexaButton>
+            </div>
           </div>
         </div>
+      </NexaModal>
+
+      {/* CONFIRM DELETE TENANT MODAL */}
+      <NexaModal
+        isOpen={Boolean(tenantToDelete)}
+        onClose={() => {
+          if (!isDeletingTenant) setTenantToDelete(null);
+        }}
+        title="Delete Tenant Workspace"
+        subtitle="Permanently remove this organization from the master platform registry."
+        maxWidth="md"
+      >
+        {tenantToDelete && (
+          <div className="space-y-4 pt-2">
+            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-rose-700 dark:text-rose-400">
+                  Are you sure you want to delete {tenantToDelete.name}?
+                </p>
+                <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
+                  This action will permanently remove <span className="font-mono font-bold text-[var(--nexa-text-primary)]">@{tenantToDelete.slug}</span> from the master tenant registry. All routing entries and cached connection credentials will be immediately cleared.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-1.5 text-xs">
+              <div className="flex justify-between">
+                <span className="text-[var(--nexa-text-muted)]">Tenant Name:</span>
+                <span className="font-semibold text-[var(--nexa-text-primary)]">{tenantToDelete.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--nexa-text-muted)]">Slug / Domain:</span>
+                <span className="font-mono text-[var(--nexa-text-primary)]">{tenantToDelete.slug} ({tenantToDelete.domain})</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[var(--nexa-text-muted)]">Vertical:</span>
+                <span className="font-medium capitalize text-[var(--nexa-text-primary)]">{tenantToDelete.vertical}</span>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-[var(--nexa-border)] flex items-center justify-end gap-2">
+              <NexaButton
+                size="sm"
+                variant="outline"
+                disabled={isDeletingTenant}
+                onClick={() => setTenantToDelete(null)}
+              >
+                Cancel
+              </NexaButton>
+              <NexaButton
+                size="sm"
+                variant="danger"
+                disabled={isDeletingTenant}
+                onClick={() => handleDeleteTenant(tenantToDelete)}
+                className="bg-rose-600 hover:bg-rose-700 text-white flex items-center gap-1.5"
+              >
+                {isDeletingTenant ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Confirm Delete</span>
+                  </>
+                )}
+              </NexaButton>
+            </div>
+          </div>
+        )}
       </NexaModal>
     </SuperAdminShell>
   );

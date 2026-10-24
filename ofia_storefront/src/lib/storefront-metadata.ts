@@ -27,6 +27,7 @@ export async function resolveStorefrontMetadata(
         const rows = await sql`
           SELECT name, logo, hero_title, hero_subtitle FROM platform_tenants
           WHERE LOWER(slug) = ${tenantSlug}
+             OR REPLACE(LOWER(slug), '-', '') = REPLACE(${tenantSlug}, '-', '')
           LIMIT 1;
         `;
         if (rows && rows.length > 0 && rows[0].name) {

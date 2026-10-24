@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
              logo, login_image, hero_title, hero_subtitle, shop_sub_modules, owner_email
       FROM platform_tenants
       WHERE LOWER(slug) = ${tenantSlug}
+         OR REPLACE(LOWER(slug), '-', '') = REPLACE(${tenantSlug}, '-', '')
       LIMIT 1;
     `;
 

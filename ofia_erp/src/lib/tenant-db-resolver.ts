@@ -51,6 +51,7 @@ export async function getTenantDatabaseConfig(tenantSlug: string): Promise<Tenan
       SELECT slug, db_mode, database_url, is_custom_db
       FROM platform_tenants
       WHERE LOWER(slug) = ${cleanSlug}
+         OR REPLACE(LOWER(slug), '-', '') = REPLACE(${cleanSlug}, '-', '')
       LIMIT 1;
     `;
 

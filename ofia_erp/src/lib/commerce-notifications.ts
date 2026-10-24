@@ -24,7 +24,11 @@ export async function sendOrderStatusNotification(payload: OrderNotificationPayl
   const sql = await getTenantSql(cleanSlug);
   let sentCount = 0;
 
-  const trackingUrl = `https://${cleanSlug}.ofia.ng/order-tracking?ref=${encodeURIComponent(payload.orderNumber)}`;
+  const isDev = process.env.NODE_ENV !== "production";
+  const storefrontBase =
+    process.env.NEXT_PUBLIC_STOREFRONT_URL ||
+    (isDev ? `http://${cleanSlug}.localhost:3005` : `https://${cleanSlug}.ofia.ng`);
+  const trackingUrl = `${storefrontBase.replace(/\/$/, "")}/order-tracking?ref=${encodeURIComponent(payload.orderNumber)}&tenant=${cleanSlug}`;
   const statusLabel = payload.newStatus.replace("_", " ");
 
   let subject = `Order #${payload.orderNumber} Status: ${statusLabel}`;

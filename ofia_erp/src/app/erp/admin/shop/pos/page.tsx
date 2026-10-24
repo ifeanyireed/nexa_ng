@@ -15,6 +15,7 @@ import {
   Printer,
   QrCode,
   Receipt,
+  RefreshCw,
   RotateCcw,
   Search,
   ShoppingCart,
@@ -83,13 +84,85 @@ export default function POSTerminalPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<any>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isLiveInventory, setIsLiveInventory] = useState(false);
+  const [isLoadingInventory, setIsLoadingInventory] = useState(false);
+  const [barcodeScanAlert, setBarcodeScanAlert] = useState<string | null>(null);
 
-  // Re-seed items when vertical changes
-  React.useEffect(() => {
+  // Fetch live merchant inventory strictly from tenant's dedicated database
+  const fetchLiveInventory = React.useCallback(async () => {
+    const slug = (activeTenant?.slug || "").toLowerCase().trim();
+    if (!slug) return;
+    setIsLoadingInventory(true);
+    try {
+      const res = await fetch(`/api/erp/shop/inventory?tenant=${encodeURIComponent(slug)}`, {
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && Array.isArray(data.inventory) && data.inventory.length > 0) {
+          const liveItems: PosProductItem[] = data.inventory.map((inv: any) => ({
+            id: inv.productId || inv.id,
+            name: inv.productName,
+            sku: inv.sku,
+            price: Number(inv.unitPrice) || 0,
+            stock: Number(inv.currentStock) || 0,
+            category: inv.category || "General",
+            vertical: selectedVertical,
+          }));
+          setProducts(liveItems);
+          setIsLiveInventory(true);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("[POS Terminal] Live inventory fetch failed, using fallback:", err);
+    } finally {
+      setIsLoadingInventory(false);
+    }
+
+    // Fallback to vertical default items
     const defaultItems = getDefaultPosProductsForVertical(selectedVertical);
     setProducts(defaultItems);
+    setIsLiveInventory(false);
+  }, [activeTenant?.slug, selectedVertical]);
+
+  // Strictly trigger when activeTenant or selectedVertical changes
+  React.useEffect(() => {
+    fetchLiveInventory();
     setSelectedCategory("All");
-  }, [selectedVertical]);
+  }, [fetchLiveInventory]);
+
+  // Instant barcode scanner enter key handler
+  const handleBarcodeKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchQuery.trim()) {
+      e.preventDefault();
+      const code = searchQuery.trim().toLowerCase();
+      const found = products.find(
+        (p) =>
+          p.sku.toLowerCase() === code ||
+          p.id.toLowerCase() === code ||
+          p.name.toLowerCase() === code
+      );
+      if (found) {
+        addToCart(found);
+        setBarcodeScanAlert(`Scanned: ${found.name} (${found.sku}) · Added to Register`);
+        setSearchQuery("");
+        setTimeout(() => setBarcodeScanAlert(null), 3000);
+      } else {
+        const partial = products.find(
+          (p) =>
+            p.sku.toLowerCase().includes(code) ||
+            p.name.toLowerCase().includes(code)
+        );
+        if (partial) {
+          addToCart(partial);
+          setBarcodeScanAlert(`Matched: ${partial.name} (${partial.sku}) · Added to Register`);
+          setSearchQuery("");
+          setTimeout(() => setBarcodeScanAlert(null), 3000);
+        }
+      }
+    }
+  };
 
   const categories = ["All", ...Array.from(new Set(products.map((p) => p.category)))];
 
@@ -193,9 +266,12 @@ export default function POSTerminalPage() {
         setCompletedOrder(orderPayload);
       }
       setIsSuccess(true);
+      // Immediately refresh inventory so decremented stock is visible
+      fetchLiveInventory();
     } catch {
       setCompletedOrder(orderPayload);
       setIsSuccess(true);
+      fetchLiveInventory();
     } finally {
       setIsSubmitting(false);
     }
@@ -208,6 +284,7 @@ export default function POSTerminalPage() {
     setCustomerName("");
     setCustomerPhone("");
     clearCart();
+    fetchLiveInventory();
   };
 
   const handlePrintReceipt = () => {
@@ -260,59 +337,116 @@ export default function POSTerminalPage() {
           <div className="flex items-center gap-2">
             <div className="flex-1">
               <NexaInput
-                placeholder="Scan Barcode or Search Items..."
+                placeholder="Scan Barcode or Search Items (Press Enter to quick-add)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleBarcodeKeyDown}
                 variant="search"
                 prefix={<Barcode className="w-4 h-4 text-[var(--nexa-text-muted)]" />}
               />
             </div>
+            <button
+              onClick={() => fetchLiveInventory()}
+              disabled={isLoadingInventory}
+              title="Refresh live merchant inventory from Neon"
+              className="p-3 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] hover:bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${isLoadingInventory ? "animate-spin text-blue-600" : ""}`} />
+            </button>
           </div>
 
-          {/* CATEGORY TABS */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all ${
-                  selectedCategory === cat
-                    ? "bg-[#1A56DB] text-white shadow-sm"
-                    : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-muted)] border border-[var(--nexa-border)] hover:text-[var(--nexa-text-primary)]"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
+          {/* BARCODE SCAN SUCCESS NOTIFICATION */}
+          {barcodeScanAlert && (
+            <div className="px-3.5 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-700 text-xs font-semibold flex items-center justify-between animate-fade-in">
+              <span className="flex items-center gap-2">
+                <Barcode className="w-4 h-4 text-emerald-600" />
+                {barcodeScanAlert}
+              </span>
+              <span className="text-[10px] font-mono uppercase bg-emerald-600 text-white px-1.5 py-0.5 rounded">
+                Scanned
+              </span>
+            </div>
+          )}
+
+          {/* DEDICATED INVENTORY SOURCE BADGE & CATEGORY TABS */}
+          <div className="flex items-center justify-between gap-2 overflow-x-auto pb-1 text-xs">
+            <div className="flex items-center gap-1.5">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all ${
+                    selectedCategory === cat
+                      ? "bg-[#1A56DB] text-white shadow-sm"
+                      : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-muted)] border border-[var(--nexa-border)] hover:text-[var(--nexa-text-primary)]"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className={`w-2 h-2 rounded-full ${isLiveInventory ? "bg-emerald-500 animate-pulse" : "bg-stone-400"}`} />
+              <span className="text-[11px] font-mono text-[var(--nexa-text-muted)] font-semibold">
+                {isLiveInventory ? `Dedicated DB (${products.length} SKUs)` : "Template Stock"}
+              </span>
+            </div>
           </div>
 
           {/* PRODUCTS GRID */}
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
-            {filteredProducts.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => addToCart(p)}
-                className="p-3.5 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] hover:border-[#1A56DB] transition-all text-left flex flex-col justify-between h-36 group cursor-pointer shadow-sm hover:shadow-md"
-              >
-                <div>
-                  <div className="flex justify-between items-start">
-                    <span className="text-[10px] font-mono text-[var(--nexa-text-muted)]">{p.sku}</span>
-                    <span className="text-[10px] text-[#0E9F6E] font-bold">{p.stock} left</span>
+            {filteredProducts.map((p) => {
+              const isOutOfStock = p.stock <= 0;
+              const isLowStock = p.stock > 0 && p.stock <= 3;
+
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => !isOutOfStock && addToCart(p)}
+                  disabled={isOutOfStock}
+                  className={`p-3.5 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] transition-all text-left flex flex-col justify-between h-36 group cursor-pointer shadow-sm ${
+                    isOutOfStock
+                      ? "opacity-50 cursor-not-allowed bg-[var(--nexa-bg-base)]"
+                      : "hover:border-[#1A56DB] hover:shadow-md"
+                  }`}
+                >
+                  <div>
+                    <div className="flex justify-between items-start">
+                      <span className="text-[10px] font-mono text-[var(--nexa-text-muted)]">{p.sku}</span>
+                      <span
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                          isOutOfStock
+                            ? "bg-rose-50 text-rose-600 border border-rose-200"
+                            : isLowStock
+                            ? "bg-amber-50 text-amber-600 border border-amber-200"
+                            : "text-[#0E9F6E]"
+                        }`}
+                      >
+                        {isOutOfStock ? "Out of Stock" : `${p.stock} left`}
+                      </span>
+                    </div>
+                    <h4 className="text-xs font-bold text-[var(--nexa-text-primary)] group-hover:text-[#1A56DB] transition-colors mt-1 line-clamp-2">
+                      {p.name}
+                    </h4>
                   </div>
-                  <h4 className="text-xs font-bold text-[var(--nexa-text-primary)] group-hover:text-[#1A56DB] transition-colors mt-1 line-clamp-2">
-                    {p.name}
-                  </h4>
-                </div>
-                <div className="pt-2 border-t border-[var(--nexa-border)] flex items-center justify-between">
-                  <span className="font-mono font-extrabold text-xs text-[#0E9F6E]">
-                    ₦{p.price.toLocaleString()}
-                  </span>
-                  <div className="w-6 h-6 rounded-lg bg-[var(--nexa-bg-base)] flex items-center justify-center text-[var(--nexa-text-muted)] group-hover:bg-[#1A56DB] group-hover:text-white transition-colors">
-                    <Plus className="w-3.5 h-3.5" />
+                  <div className="pt-2 border-t border-[var(--nexa-border)] flex items-center justify-between">
+                    <span className="font-mono font-extrabold text-xs text-[#0E9F6E]">
+                      ₦{p.price.toLocaleString()}
+                    </span>
+                    <div
+                      className={`w-6 h-6 rounded-lg bg-[var(--nexa-bg-base)] flex items-center justify-center text-[var(--nexa-text-muted)] transition-colors ${
+                        isOutOfStock
+                          ? "opacity-30"
+                          : "group-hover:bg-[#1A56DB] group-hover:text-white"
+                      }`}
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </div>
                   </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
         </div>
 

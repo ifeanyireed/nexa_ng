@@ -25,6 +25,9 @@ import {
   Compass,
   Radio,
   Navigation,
+  Mail,
+  Smartphone,
+  CheckCheck,
 } from "lucide-react";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { StorefrontOrderPayload } from "@/types/storefront";
@@ -47,6 +50,7 @@ function TrackingContent() {
   const [error, setError] = useState<string | null>(null);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const [secondsAgo, setSecondsAgo] = useState(0);
+  const [notifications, setNotifications] = useState<any[]>([]);
 
   // Return navigation details
   const activeTenantSlug = order?.tenantSlug || tenantParam || "";
@@ -102,6 +106,21 @@ function TrackingContent() {
               }
             } catch (dErr) {
               console.warn("[Telemetry] Non-fatal dispatch fetch notice:", dErr);
+            }
+
+            try {
+              const notifRes = await fetch(
+                `/api/storefront/notifications?ref=${encodeURIComponent(refToFetch.trim())}&tenant=${encodeURIComponent(effTenant)}`,
+                { cache: "no-store" }
+              );
+              if (notifRes.ok) {
+                const notifData = await notifRes.json();
+                if (notifData.success && Array.isArray(notifData.notifications)) {
+                  setNotifications(notifData.notifications);
+                }
+              }
+            } catch (nErr) {
+              console.warn("[Notifications] Non-fatal notification fetch notice:", nErr);
             }
           }
         } else {
@@ -547,6 +566,62 @@ function TrackingContent() {
                 Total Paid: <span className="text-blue-600 font-dropa text-base">{order.totalAmount}</span>
               </div>
             </div>
+          </div>
+
+          {/* Customer Omnichannel Touchpoints & Receipts */}
+          <div className="p-5 sm:p-6 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
+            <div className="flex items-center justify-between border-b border-stone-200 pb-3">
+              <div className="flex items-center gap-2 text-stone-800 font-bold text-xs uppercase tracking-wider">
+                <Mail className="w-4 h-4 text-emerald-600" />
+                <span>Customer Touchpoints & Omnichannel Receipts</span>
+              </div>
+              <span className="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold uppercase tracking-wider">
+                Audited
+              </span>
+            </div>
+
+            {notifications && notifications.length > 0 ? (
+              <div className="space-y-2">
+                {notifications.map((notif: any) => (
+                  <div
+                    key={notif.id}
+                    className="p-3 rounded-xl bg-white border border-stone-200/80 flex items-start justify-between gap-3 text-xs"
+                  >
+                    <div className="flex items-start gap-2.5">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+                        {notif.channel === "EMAIL" ? <Mail className="w-4 h-4" /> : <Smartphone className="w-4 h-4" />}
+                      </div>
+                      <div>
+                        <div className="font-bold text-zinc-900 flex items-center gap-2">
+                          <span>{notif.subject || `${notif.channel} Receipt`}</span>
+                          <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-700 font-mono font-semibold border border-emerald-200">
+                            {notif.deliveryStatus}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-stone-500 mt-0.5">
+                          Sent to: <span className="font-mono text-stone-700">{notif.recipient}</span> · Event: {notif.statusEvent}
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-[11px] text-stone-400 font-mono shrink-0">
+                      {new Date(notif.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-3 rounded-xl bg-white border border-stone-200/80 flex items-center justify-between text-xs text-stone-600">
+                <div className="flex items-center gap-2">
+                  <CheckCheck className="w-4 h-4 text-emerald-600" />
+                  <span>
+                    Order confirmation dispatched to <strong>{order.customerEmail || order.customerPhone}</strong>
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">
+                  DISPATCHED
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Live GPS Radar & Telemetry Mobility Canvas */}

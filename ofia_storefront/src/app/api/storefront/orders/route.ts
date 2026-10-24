@@ -5,6 +5,8 @@ import {
   saveStorefrontOrder,
   updateStorefrontOrderStatus,
 } from "@/lib/commerce-orders-store";
+import { sendStorefrontOrderPlacedNotification } from "@/lib/commerce-notifications";
+import { decrementStorefrontInventory } from "@/lib/commerce-inventory-decrement";
 import { StorefrontOrderPayload } from "@/types/storefront";
 
 export const dynamic = "force-dynamic";
@@ -109,6 +111,20 @@ export async function POST(request: NextRequest) {
     };
 
     const saved = await saveStorefrontOrder(newOrder);
+
+    // 1. Decrement dedicated merchant inventory for purchased items
+    try {
+      await decrementStorefrontInventory(saved);
+    } catch (invErr) {
+      console.warn("[Orders API] Inventory decrement warning:", invErr);
+    }
+
+    // 2. Dispatch omnichannel order confirmation receipt (Email & SMS)
+    try {
+      await sendStorefrontOrderPlacedNotification(saved);
+    } catch (notifErr) {
+      console.warn("[Orders API] Omnichannel notification warning:", notifErr);
+    }
 
     // Forward to ofia_erp and service_erp for Neon PostgreSQL persistence
     try {

@@ -6,6 +6,7 @@ import {
   JobStatus,
 } from "@/lib/dispatch-types";
 import { getTenantSql } from "@/lib/tenant-db-resolver";
+import { sendOrderStatusNotification } from "@/lib/commerce-notifications";
 
 const LOGISTICS_SERVICE_URL = process.env.LOGISTICS_SERVICE_URL || "http://localhost:8085";
 
@@ -208,6 +209,74 @@ export async function GET(request: Request) {
           }
         }
       }
+
+      // 3. Also pull Storefront retail orders requiring dispatch
+      const dbShopOrders = await sql`
+        SELECT id, order_number, tenant_slug, customer_name, customer_phone,
+               customer_email, shipping_address, city, total_amount, raw_amount,
+               status, delivery_method, items_summary, channel, created_at, updated_at
+        FROM shop_orders
+        WHERE LOWER(tenant_slug) = ${tenantKey}
+          AND (delivery_method = 'DISPATCH' OR channel = 'STOREFRONT')
+        ORDER BY created_at DESC
+        LIMIT 30;
+      `;
+
+      if (dbShopOrders && dbShopOrders.length > 0) {
+        const existingIds = new Set(jobs.map((j) => j.id));
+        for (const ord of dbShopOrders) {
+          if (!existingIds.has(ord.id) && !existingIds.has(ord.order_number)) {
+            let mappedStatus: JobStatus = "PENDING";
+            if (ord.status === "READY_DISPATCH") mappedStatus = "ASSIGNED";
+            else if (ord.status === "DELIVERED") mappedStatus = "DELIVERED";
+            else if (ord.status === "CANCELLED") mappedStatus = "EXCEPTION";
+
+            jobs.push({
+              id: ord.id,
+              orderNumber: ord.order_number,
+              trackingNumber: ord.order_number,
+              type: "VENDOR_DISPATCH",
+              status: mappedStatus,
+              priority: "STANDARD",
+              initiatorName: `${tenantKey.toUpperCase()} Storefront Atelier`,
+              initiatorPhone: "+234 800 000 0000",
+              pickupAddress: `${tenantKey.toUpperCase()} Central Hub, Commercial Logistics Corridor, Lagos`,
+              pickupCity: "Lagos",
+              pickupCoords: { lat: 6.4281, lng: 3.4219 },
+              recipientName: ord.customer_name,
+              recipientPhone: ord.customer_phone,
+              recipientAddress: ord.shipping_address || "Customer Delivery Address",
+              recipientCity: ord.city || "Lagos",
+              destCoords: { lat: 6.4549, lng: 3.4346 },
+              parcelDescription: ord.items_summary || "Storefront Retail Order",
+              weightKg: 2.0,
+              shippingFee: 2500,
+              currency: "NGN",
+              estimatedDelivery: ord.status === "DELIVERED" ? "Completed" : "Within 45 mins",
+              deliveryOtp: (ord.id || "8291").slice(-4).toUpperCase(),
+              courierId: ord.status === "READY_DISPATCH" ? "DRV-101" : undefined,
+              waypoints: [
+                {
+                  id: `wpt-1-${ord.id}`,
+                  location: `${tenantKey.toUpperCase()} Central Hub`,
+                  status: ord.status === "IN_PREPARATION" ? "PENDING" : "COMPLETED",
+                  timestamp: new Date(ord.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                },
+                {
+                  id: `wpt-2-${ord.id}`,
+                  location: ord.shipping_address || "Destination",
+                  status: ord.status === "DELIVERED" ? "DELIVERED" : "IN_PROGRESS",
+                  timestamp: ord.status === "DELIVERED" ? "Delivered" : "In Progress",
+                },
+              ],
+              createdAt: new Date(ord.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+              updatedAt: new Date(ord.updated_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            });
+            existingIds.add(ord.id);
+            existingIds.add(ord.order_number);
+          }
+        }
+      }
     }
   } catch (dbErr: any) {
     console.warn(`[Dispatch Route] Dedicated DB query notice for tenant '${tenantKey}':`, dbErr.message);
@@ -385,6 +454,37 @@ export async function PATCH(request: Request) {
         WHERE (id = ${jobId} OR tracking_number = ${jobId} OR order_number = ${jobId})
           AND LOWER(tenant_slug) = ${tenantKey};
       `;
+
+      const shopOrderStatus =
+        targetStatus === "DELIVERED"
+          ? "DELIVERED"
+          : targetStatus === "ASSIGNED" || targetStatus === "IN_TRANSIT" || targetStatus === "PICKED_UP"
+          ? "READY_DISPATCH"
+          : "IN_PREPARATION";
+
+      const updatedOrders = await sql`
+        UPDATE shop_orders
+        SET status = ${shopOrderStatus},
+            updated_at = NOW()
+        WHERE (id = ${jobId} OR order_number = ${jobId})
+          AND LOWER(tenant_slug) = ${tenantKey}
+        RETURNING id, order_number, tenant_slug, tenant_id, customer_name, customer_email, customer_phone, shipping_address;
+      `;
+
+      if (updatedOrders && updatedOrders.length > 0) {
+        const ord = updatedOrders[0];
+        sendOrderStatusNotification({
+          orderId: ord.id,
+          orderNumber: ord.order_number,
+          tenantSlug: ord.tenant_slug,
+          tenantId: ord.tenant_id,
+          customerName: ord.customer_name,
+          customerEmail: ord.customer_email,
+          customerPhone: ord.customer_phone,
+          shippingAddress: ord.shipping_address,
+          newStatus: shopOrderStatus,
+        }).catch(() => null);
+      }
     }
   } catch (err: any) {
     console.warn(`[Dispatch Route PATCH] Dedicated DB update notice:`, err.message);

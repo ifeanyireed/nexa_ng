@@ -490,238 +490,28 @@ export function filterSalesClosers(users: any[]): { id: string; name: string; em
 
 export type PermissionMatrix = Record<RoleKey, Record<string, boolean>>;
 
-export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = {
-  admin: {
-    mission: true,
-    ai: true,
-    crm: true,
-    users: true,
-    departments: true,
-    marketplace: true,
-    shop: true,
-    mobility: true,
-    mobility_ops: true,
-    dispatch: true,
-    dispatch_ops: true,
-    inventory: true,
-    pos: true,
-    referrals: true,
-    quests: true,
-    accounting: true,
-    hr: true,
-    employee: true,
-    manager: true,
-    md: true,
-    sales_closer: true,
-    // Transport service sub-modules (disabled by default unless provisioned)
-    shuttle: false,
-    interstate: false,
-    on_demand: false,
-    "on-demand": false,
-    rental: false,
-    school: false,
-    staff: false,
-  },
-  md: {
-    mission: true,
-    ai: true,
-    crm: true,
-    users: true,
-    departments: true,
-    marketplace: true,
-    shop: true,
-    mobility: true,
-    mobility_ops: true,
-    inventory: true,
-    pos: true,
-    referrals: true,
-    quests: true,
-    accounting: true,
-    hr: true,
-    employee: true,
-    manager: true,
-    md: true,
-  },
-  hr: {
-    mission: true,
-    ai: false,
-    crm: false,
-    users: true,
-    departments: true,
-    marketplace: false,
-    shop: false,
-    mobility: false,
-    inventory: false,
-    pos: false,
-    referrals: false,
-    quests: true,
-    accounting: false,
-    hr: true,
-    employee: true,
-    manager: true,
-    md: false,
-  },
-  accountant: {
-    mission: true,
-    ai: false,
-    crm: false,
-    users: false,
-    departments: false,
-    marketplace: false,
-    shop: true,
-    mobility: false,
-    inventory: true,
-    pos: true,
-    referrals: false,
-    quests: true,
-    accounting: true,
-    hr: false,
-    employee: true,
-    manager: false,
-    md: false,
-  },
-  marketer: {
-    mission: false,
-    ai: true,
-    crm: true,
-    users: false,
-    departments: false,
-    marketplace: true,
-    shop: true,
-    mobility: false,
-    inventory: false,
-    pos: false,
-    referrals: true,
-    quests: true,
-    accounting: false,
-    hr: false,
-    employee: true,
-    manager: false,
-    md: false,
-  },
-  sales_closer: {
-    mission: false,
-    ai: false,
-    crm: true,
-    sales_closer: true,
-    users: false,
-    departments: false,
-    marketplace: false,
-    shop: false,
-    mobility: false,
-    inventory: false,
-    pos: false,
-    referrals: false,
-    quests: true,
-    accounting: false,
-    hr: false,
-    employee: true,
-    manager: false,
-    md: false,
-  },
-  manager: {
-    mission: true,
-    ai: false,
-    crm: true,
-    users: false,
-    departments: false,
-    marketplace: false,
-    shop: true,
-    mobility: true,
-    mobility_ops: true,
-    inventory: true,
-    pos: false,
-    referrals: false,
-    quests: true,
-    accounting: false,
-    hr: false,
-    employee: true,
-    manager: true,
-    md: false,
-  },
-  employee: {
-    mission: false,
-    ai: false,
-    crm: false,
-    users: false,
-    departments: false,
-    marketplace: false,
-    shop: false,
-    mobility: false,
-    inventory: false,
-    pos: false,
-    referrals: false,
-    quests: true,
-    accounting: false,
-    hr: false,
-    employee: true,
-    manager: false,
-    md: false,
-  },
-  cashier: {
-    mission: false,
-    ai: false,
-    crm: false,
-    users: false,
-    departments: false,
-    marketplace: false,
-    shop: true,
-    mobility: false,
-    inventory: true,
-    pos: true,
-    referrals: false,
-    quests: true,
-    accounting: false,
-    hr: false,
-    employee: true,
-    manager: false,
-    md: false,
-  },
-  inventory_officer: {
-    mission: false,
-    ai: false,
-    crm: false,
-    users: false,
-    departments: false,
-    marketplace: false,
-    shop: true,
-    mobility: false,
-    inventory: true,
-    pos: false,
-    referrals: false,
-    quests: true,
-    accounting: false,
-    hr: false,
-    employee: true,
-    manager: false,
-    md: false,
-  },
-  dispatcher: {
-    mission: false,
-    ai: false,
-    crm: false,
-    users: false,
-    departments: false,
-    marketplace: false,
-    shop: false,
-    mobility: true,
-    mobility_ops: true,
-    dispatch: true,
-    dispatch_ops: true,
-    inventory: false,
-    pos: false,
-    referrals: false,
-    quests: true,
-    accounting: false,
-    hr: false,
-    employee: true,
-    manager: false,
-    md: false,
-  },
+/**
+ * Strict Zero-Default Empty Permission Matrix.
+ * Guarantees that unprovisioned modules are NEVER leaked or rendered.
+ */
+export const EMPTY_PERMISSION_MATRIX: PermissionMatrix = {
+  admin: { mission: true, overview: true },
+  md: { mission: true, overview: true },
+  hr: { mission: true },
+  manager: { mission: true },
+  accountant: { mission: true },
+  marketer: { mission: true },
+  sales_closer: { mission: true },
+  employee: { mission: true, employee: true },
+  cashier: { mission: true },
+  inventory_officer: { mission: true },
+  dispatcher: { mission: true },
 };
 
+export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = EMPTY_PERMISSION_MATRIX;
+
 export function getTenantPermissionMatrix(tenantId: string): PermissionMatrix {
-  return DEFAULT_PERMISSION_MATRIX;
+  return EMPTY_PERMISSION_MATRIX;
 }
 
 export function saveTenantPermissionMatrix(
@@ -741,7 +531,20 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
   try {
     const res = await USER_API.getTenantRBAC(tenantId);
     if (res && res.matrix && Object.keys(res.matrix).length > 0) {
-      const merged: PermissionMatrix = { ...DEFAULT_PERMISSION_MATRIX };
+      // Build permission matrix strictly starting from empty, NEVER assuming default true
+      const merged: PermissionMatrix = {
+        admin: { mission: true, overview: true },
+        md: { mission: true, overview: true },
+        hr: { mission: true },
+        manager: { mission: true },
+        accountant: { mission: true },
+        marketer: { mission: true },
+        sales_closer: { mission: true },
+        employee: { mission: true, employee: true },
+        cashier: { mission: true },
+        inventory_officer: { mission: true },
+        dispatcher: { mission: true },
+      };
 
       // Super Admin provisioned module set (stored under 'tenant_provision' or 'admin')
       const tp = res.matrix.tenant_provision || {};
@@ -749,7 +552,7 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
 
       for (const role of ERP_ROLES) {
         merged[role.key] = {
-          ...DEFAULT_PERMISSION_MATRIX[role.key],
+          ...(merged[role.key] || {}),
           ...(res.matrix[role.key] || {}),
         };
       }
@@ -774,16 +577,16 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
         }
       }
 
-      // 1. Tenant Administrator (admin) ALWAYS gets all modules allowed to the tenant by the Super Admin in Postgres
+      // 1. Tenant Administrator (admin) gets ONLY modules explicitly provisioned (=== true)
       for (const mod of ERP_MODULES) {
-        const isAllowed = tp[mod.key] !== false && ad[mod.key] !== false;
+        const isAllowed = tp[mod.key] === true || ad[mod.key] === true;
         merged.admin[mod.key] = isAllowed;
       }
 
       // Explicitly tie Sales Closer Portal and CRM access to workspace CRM module provisioning
-      const isCrmProvisioned = tp.crm !== false && ad.crm !== false;
+      const isCrmProvisioned = tp.crm === true || ad.crm === true;
       merged.admin.crm = isCrmProvisioned;
-      merged.admin.sales_closer = isCrmProvisioned && (tp.sales_closer !== false && ad.sales_closer !== false);
+      merged.admin.sales_closer = isCrmProvisioned && (tp.sales_closer === true || ad.sales_closer === true);
 
       if ((merged as any).tenant_provision) {
         (merged as any).tenant_provision.crm = isCrmProvisioned;
@@ -791,13 +594,13 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
       }
 
       // 2. For other roles, a module is enabled ONLY IF:
-      // a) Super Admin allowed the module for the tenant in the database, AND
-      // b) Tenant Admin granted it to that role
+      // a) Allowed for the tenant in the database, AND
+      // b) Granted to that role
       for (const role of ERP_ROLES) {
         if (role.key !== "admin") {
           for (const mod of ERP_MODULES) {
-            const isTenantAllowed = merged.admin[mod.key] !== false;
-            const isRoleGranted = merged[role.key][mod.key] ?? DEFAULT_PERMISSION_MATRIX[role.key]?.[mod.key] ?? false;
+            const isTenantAllowed = merged.admin[mod.key] === true;
+            const isRoleGranted = merged[role.key]?.[mod.key] === true;
             merged[role.key][mod.key] = isTenantAllowed && isRoleGranted;
           }
         }
@@ -825,7 +628,8 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
     console.warn(`[RBAC] Database lookup for tenant '${tenantId}':`, err);
   }
 
-  return DEFAULT_PERMISSION_MATRIX;
+  // Under NO circumstances fallback to all-modules. Return empty matrix when data is unavailable
+  return EMPTY_PERMISSION_MATRIX;
 }
 
 export async function saveTenantPermissionMatrixRemote(
@@ -859,13 +663,13 @@ export function isModuleEnabledForRole(
   const matrix = getTenantPermissionMatrix(tenantId);
   const roleKey = role as RoleKey;
 
-  // Tenant Admin gets all modules allowed to the tenant
+  // Tenant Admin gets strictly provisioned modules
   if (role === "admin") {
-    return matrix.admin?.[moduleKey] !== false;
+    return matrix.admin?.[moduleKey] === true;
   }
 
   if (!matrix[roleKey]) {
-    return DEFAULT_PERMISSION_MATRIX.employee[moduleKey] ?? false;
+    return false;
   }
   return Boolean(matrix[roleKey][moduleKey]);
 }
@@ -873,18 +677,20 @@ export function isModuleEnabledForRole(
 /**
  * React hook to reactively track ERP module provisioning for the active tenant.
  * Pulls from the Postgres database (via USER_API) and updates in real-time when Super Admin toggles permissions.
+ * Guarantees zero-fallback: while loading or if data fails, no unprovisioned modules are shown.
  */
 export function useTenantProvisioning() {
-  const [matrix, setMatrix] = useState<PermissionMatrix>(DEFAULT_PERMISSION_MATRIX);
-  const [departmentConfigs, setDepartmentConfigs] = useState<DepartmentAccessItem[]>(DEFAULT_DEPARTMENT_ACCESS);
+  const [matrix, setMatrix] = useState<PermissionMatrix | null>(null);
+  const [departmentConfigs, setDepartmentConfigs] = useState<DepartmentAccessItem[]>([]);
   const [tenant, setTenant] = useState<DatabaseTenant | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     let isCurrent = true;
 
-    async function loadProvisioning() {
+    async function loadProvisioning(attempt = 1) {
       try {
+        setIsLoading(true);
         const list = await fetchDatabaseTenants();
         if (!isCurrent) return;
 
@@ -916,14 +722,24 @@ export function useTenantProvisioning() {
 
         const tenantKey = matched?.slug || matched?.id || searchParamSlug || "";
 
-        // Initial sync from local memory matrix
-        setMatrix(getTenantPermissionMatrix(tenantKey));
-
         // Fetch live provisioned matrix from Postgres backend
         if (tenantKey) {
           const remoteMatrix = await fetchTenantPermissionMatrix(tenantKey);
-          if (remoteMatrix && Object.keys(remoteMatrix).length > 0 && isCurrent) {
-            setMatrix(remoteMatrix);
+          if (remoteMatrix && isCurrent) {
+            const hasAnyConfigured = Object.keys(remoteMatrix.admin || {}).length > 2;
+            if (hasAnyConfigured) {
+              setMatrix(remoteMatrix);
+              setIsLoading(false);
+            } else if (attempt < 5) {
+              // Still unpopulated or backend starting up: keep loading and retry
+              setTimeout(() => {
+                if (isCurrent) loadProvisioning(attempt + 1);
+              }, attempt * 1200);
+              return;
+            } else {
+              setMatrix(remoteMatrix);
+              setIsLoading(false);
+            }
           }
 
           // Fetch live department access configurations
@@ -931,11 +747,22 @@ export function useTenantProvisioning() {
           if (remoteDepts && remoteDepts.length > 0 && isCurrent) {
             setDepartmentConfigs(remoteDepts);
           }
+        } else {
+          setMatrix(EMPTY_PERMISSION_MATRIX);
+          setIsLoading(false);
         }
       } catch (err) {
         console.warn("[Provisioning] Failed to fetch tenant provisioning:", err);
-      } finally {
-        if (isCurrent) setIsLoading(false);
+        if (attempt < 5) {
+          setTimeout(() => {
+            if (isCurrent) loadProvisioning(attempt + 1);
+          }, attempt * 1500);
+          return;
+        }
+        if (isCurrent) {
+          setMatrix(EMPTY_PERMISSION_MATRIX);
+          setIsLoading(false);
+        }
       }
     }
 
@@ -967,39 +794,33 @@ export function useTenantProvisioning() {
 
   const isModuleProvisioned = useCallback(
     (moduleKey: string): boolean => {
-      if (isLoading) return false;
+      // While loading or if data is not yet resolved, NEVER display provisioned modules
+      if (isLoading || !matrix) return false;
       if (moduleKey === "mission" || moduleKey === "overview") return true;
       if (moduleKey === "departments") {
-        const isAdminAllowed = matrix.admin?.users !== false;
-        const isTenantProvisionAllowed = (matrix as any).tenant_provision?.users !== false;
-        return isAdminAllowed && isTenantProvisionAllowed;
+        return Boolean(matrix.admin?.users || (matrix as any).tenant_provision?.users);
       }
       if (moduleKey === "dispatch_ops") {
-        const isAdminAllowed = matrix.admin?.dispatch !== false;
-        const isTenantProvisionAllowed = (matrix as any).tenant_provision?.dispatch !== false;
-        return isAdminAllowed && isTenantProvisionAllowed;
+        return Boolean(matrix.admin?.dispatch || (matrix as any).tenant_provision?.dispatch);
       }
       if (moduleKey === "sales_closer") {
-        const isAdminAllowed = matrix.admin?.crm !== false;
-        const isTenantProvisionAllowed = (matrix as any).tenant_provision?.crm !== false;
-        return isAdminAllowed && isTenantProvisionAllowed;
+        return Boolean(matrix.admin?.crm || (matrix as any).tenant_provision?.crm);
       }
-      const isAdminAllowed = matrix.admin?.[moduleKey] !== false;
-      const isTenantProvisionAllowed = (matrix as any).tenant_provision?.[moduleKey] !== false;
-      return isAdminAllowed && isTenantProvisionAllowed;
+      return Boolean(matrix.admin?.[moduleKey] || (matrix as any).tenant_provision?.[moduleKey]);
     },
     [matrix, isLoading]
   );
 
   const isShopSubModuleProvisioned = useCallback(
     (subKey: string): boolean => {
-      if (isLoading) return true;
+      // While loading or if data is not yet resolved, NEVER display sub-modules
+      if (isLoading || !matrix) return false;
       if (tenant?.shopSubModules && tenant.shopSubModules[subKey] !== undefined) {
         return Boolean(tenant.shopSubModules[subKey]);
       }
       return isModuleProvisioned(subKey);
     },
-    [tenant, isModuleProvisioned, isLoading]
+    [tenant, isModuleProvisioned, isLoading, matrix]
   );
 
   return {

@@ -185,7 +185,7 @@ export function ErpAdminShell({
   const [tenantName, setTenantName] = useState<string>("");
   const [tenantLogo, setTenantLogo] = useState<string>("");
   const [isMounted, setIsMounted] = useState<boolean>(false);
-  const [permissionMatrix, setPermissionMatrix] = useState<PermissionMatrix>(DEFAULT_PERMISSION_MATRIX);
+  const [permissionMatrix, setPermissionMatrix] = useState<PermissionMatrix | null>(null);
   const [currentRole, setCurrentRole] = useState<RoleKey>("admin");
   const [departmentConfigs, setDepartmentConfigs] = useState<DepartmentAccessItem[]>(DEFAULT_DEPARTMENT_ACCESS);
   const [userDepartment, setUserDepartment] = useState<string>("");
@@ -243,7 +243,9 @@ export function ErpAdminShell({
       case "marketer":
         return { path: "/erp/marketer", label: "CRM", roleKey: "marketer" };
       case "sales_closer": {
-        const isCrmDisabled = permissionMatrix.admin?.crm === false || (permissionMatrix as any).tenant_provision?.crm === false;
+        const isCrmDisabled = permissionMatrix
+          ? permissionMatrix.admin?.crm === false || (permissionMatrix as any).tenant_provision?.crm === false
+          : true;
         if (isCrmDisabled) {
           return { path: "/erp/employee", label: "Employee", roleKey: "employee" };
         }
@@ -304,7 +306,7 @@ export function ErpAdminShell({
       if (tenantKey) {
         try {
           const remote = await fetchTenantPermissionMatrix(tenantKey);
-          if (remote && Object.keys(remote).length > 0 && isCurrent) {
+          if (remote && isCurrent) {
             setPermissionMatrix(remote);
           } else if (isCurrent) {
             setPermissionMatrix(getTenantPermissionMatrix(tenantKey));
@@ -652,9 +654,9 @@ export function ErpAdminShell({
 
       // CRM & Marketing Module Tenant Provisioning Check:
       // If the tenant does not have the CRM module, the Sales Closer Portal is inaccessible for ALL users
-      const isCrmProvisioned =
-        permissionMatrix.admin?.crm !== false &&
-        (permissionMatrix as any).tenant_provision?.crm !== false;
+      const isCrmProvisioned = permissionMatrix
+        ? permissionMatrix.admin?.crm === true || (permissionMatrix as any).tenant_provision?.crm === true
+        : false;
 
       if ((pathname.startsWith("/erp/ops/crm") || pathname.startsWith("/erp/ops/calls") || pathname.startsWith("/ops/calls") || pathname.startsWith("/ops/crm")) && !isCrmProvisioned) {
         const fallback = resolvedRole === "admin" ? "/erp/admin" : "/erp/employee";
@@ -668,8 +670,8 @@ export function ErpAdminShell({
       // If a tenant has disabled a transport service, redirect away from that service route to mobility command center
       if (pathname.startsWith("/erp/admin/mobility/services/")) {
         const serviceKey = pathname.replace("/erp/admin/mobility/services/", "").split("/")[0].replace(/-/g, "_");
-        const adminVal = permissionMatrix.admin?.[serviceKey];
-        const provVal = (permissionMatrix as any).tenant_provision?.[serviceKey];
+        const adminVal = permissionMatrix?.admin?.[serviceKey];
+        const provVal = (permissionMatrix as any)?.tenant_provision?.[serviceKey];
         if (adminVal === false || provVal === false || (adminVal !== true && provVal !== true)) {
           if (typeof window !== "undefined" && pathname !== "/erp/admin/mobility") {
             window.location.href = "/erp/admin/mobility";
@@ -933,6 +935,7 @@ export function ErpAdminShell({
 
     if (pathname.startsWith("/erp/admin/mobility")) {
       const isSubAllowed = (key: string) => {
+        if (!permissionMatrix) return false;
         const normKey = key.replace(/-/g, "_");
         const dashKey = key.replace(/_/g, "-");
 
@@ -942,15 +945,8 @@ export function ErpAdminShell({
         // Explicitly disabled in either admin or tenant_provision
         if ((adminVal as any) === false || (provVal as any) === false) return false;
 
-        // Transport service sub-modules (shuttle, interstate, on_demand, rental, school, staff)
-        // must ONLY be shown when explicitly enabled in admin or tenant_provision
-        const isTransportService = ["shuttle", "interstate", "on_demand", "rental", "school", "staff"].includes(normKey);
-        if (isTransportService) {
-          return (adminVal as any) === true || (provVal as any) === true;
-        }
-
-        // Standard fleet modules (ops, vehicles, drivers, maintenance, routes, finance) default to allowed
-        return (adminVal as any) !== false && (provVal as any) !== false;
+        // Must be explicitly enabled in either admin or tenant_provision
+        return (adminVal as any) === true || (provVal as any) === true;
       };
 
       const mobilityTabs: SubNavItem[] = [
@@ -1002,6 +998,7 @@ export function ErpAdminShell({
 
     if (pathname.startsWith("/erp/ops/mobility")) {
       const isSubAllowed = (key: string) => {
+        if (!permissionMatrix) return false;
         const normKey = key.replace(/-/g, "_");
         const dashKey = key.replace(/_/g, "-");
 
@@ -1011,15 +1008,8 @@ export function ErpAdminShell({
         // Explicitly disabled in either admin or tenant_provision
         if ((adminVal as any) === false || (provVal as any) === false) return false;
 
-        // Transport service sub-modules (shuttle, interstate, on_demand, rental, school, staff)
-        // must ONLY be shown when explicitly enabled in admin or tenant_provision
-        const isTransportService = ["shuttle", "interstate", "on_demand", "rental", "school", "staff"].includes(normKey);
-        if (isTransportService) {
-          return (adminVal as any) === true || (provVal as any) === true;
-        }
-
-        // Standard fleet operations modules default to allowed
-        return (adminVal as any) !== false && (provVal as any) !== false;
+        // Must be explicitly enabled in either admin or tenant_provision
+        return (adminVal as any) === true || (provVal as any) === true;
       };
 
       const opsTabs: SubNavItem[] = [
@@ -1114,9 +1104,10 @@ export function ErpAdminShell({
 
     if (pathname.startsWith("/erp/admin/shop")) {
       const isSubAllowed = (key: string) => {
+        if (!permissionMatrix) return false;
         const adminVal = permissionMatrix.admin?.[key];
         const provVal = (permissionMatrix as any).tenant_provision?.[key];
-        return adminVal !== false && provVal !== false;
+        return adminVal === true || provVal === true;
       };
 
       const shopTabs: SubNavItem[] = [
@@ -1282,30 +1273,32 @@ export function ErpAdminShell({
     if (!matchesSearch) return false;
 
     const isProvisioned = (key: string) => {
+      // While shell is loading or matrix is unresolved, do NOT display provisioned modules
+      if (!isShellReady || !permissionMatrix) return false;
       if (key === "overview" || key === "employee") return true;
       if (key === "departments") {
-        const isAdminAllowed = permissionMatrix.admin?.users !== false;
-        const isTpAllowed = (permissionMatrix as any).tenant_provision?.users !== false;
-        return isAdminAllowed && isTpAllowed;
+        const isAdminAllowed = permissionMatrix.admin?.users === true;
+        const isTpAllowed = (permissionMatrix as any).tenant_provision?.users === true;
+        return isAdminAllowed || isTpAllowed;
       }
       if (key === "mobility_ops") {
-        const isAdminAllowed = permissionMatrix.admin?.mobility !== false && permissionMatrix.admin?.ops !== false;
-        const isTpAllowed = (permissionMatrix as any).tenant_provision?.mobility !== false;
-        return isAdminAllowed && isTpAllowed;
+        const isAdminAllowed = permissionMatrix.admin?.mobility === true && (permissionMatrix.admin as any)?.ops === true;
+        const isTpAllowed = (permissionMatrix as any).tenant_provision?.mobility === true;
+        return isAdminAllowed || isTpAllowed;
       }
       if (key === "dispatch_ops") {
-        const isAdminAllowed = permissionMatrix.admin?.dispatch !== false;
-        const isTpAllowed = (permissionMatrix as any).tenant_provision?.dispatch !== false;
-        return isAdminAllowed && isTpAllowed;
+        const isAdminAllowed = permissionMatrix.admin?.dispatch === true;
+        const isTpAllowed = (permissionMatrix as any).tenant_provision?.dispatch === true;
+        return isAdminAllowed || isTpAllowed;
       }
       if (key === "sales_closer") {
-        const isAdminAllowed = permissionMatrix.admin?.crm !== false;
-        const isTpAllowed = (permissionMatrix as any).tenant_provision?.crm !== false;
-        return isAdminAllowed && isTpAllowed;
+        const isAdminAllowed = permissionMatrix.admin?.crm === true;
+        const isTpAllowed = (permissionMatrix as any).tenant_provision?.crm === true;
+        return isAdminAllowed || isTpAllowed;
       }
-      const isAdminAllowed = permissionMatrix.admin?.[key] !== false;
-      const isTpAllowed = (permissionMatrix as any).tenant_provision?.[key] !== false;
-      return isAdminAllowed && isTpAllowed;
+      const isAdminAllowed = permissionMatrix.admin?.[key] === true;
+      const isTpAllowed = (permissionMatrix as any).tenant_provision?.[key] === true;
+      return isAdminAllowed || isTpAllowed;
     };
 
     if (!isProvisioned(item.key)) return false;

@@ -318,8 +318,8 @@ function TenantManagementContent() {
               monthlyAiSpendUSD: Math.round(mrr * 0.12),
               integrationHealth: org.integrationHealth || "Healthy",
               vertical: org.vertical || org.Vertical || "retail",
-              erpModules: org.erpModules || { ...INITIAL_TENANTS[0].erpModules },
-              shopSubModules: org.shopSubModules || {
+              erpModules: org.erp_modules || org.erpModules || { ...INITIAL_TENANTS[0].erpModules },
+              shopSubModules: org.shop_sub_modules || org.shopSubModules || {
                 pos: true,
                 inventory: true,
                 catalog: true,
@@ -328,19 +328,19 @@ function TenantManagementContent() {
                 store: true,
                 referrals: true,
               },
-              mobilitySubModules: org.mobilitySubModules || {
-                ops: true,
-                vehicles: true,
-                drivers: true,
-                maintenance: true,
-                routes: true,
-                finance: true,
-                shuttle: true,
-                interstate: true,
-                on_demand: true,
-                rental: true,
-                school: true,
-                staff: true,
+              mobilitySubModules: org.mobility_sub_modules || org.mobilitySubModules || {
+                ops: false,
+                vehicles: false,
+                drivers: false,
+                maintenance: false,
+                routes: false,
+                finance: false,
+                shuttle: false,
+                interstate: false,
+                on_demand: false,
+                rental: false,
+                school: false,
+                staff: false,
               },
               databaseUrl: org.database_url || org.databaseUrl || "",
               cloudinaryUrl: org.cloudinary_url || org.cloudinaryUrl || "",
@@ -558,6 +558,15 @@ function TenantManagementContent() {
       });
 
       await USER_API.saveTenantRBAC(tenant.slug, matrixPayload);
+      await fetch(`/api/admin/tenants/${encodeURIComponent(tenant.id)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          erp_modules: updatedModules,
+          shop_sub_modules: tenant.shopSubModules,
+          mobility_sub_modules: tenant.mobilitySubModules,
+        }),
+      }).catch(() => null);
       showToast(`⚡ ${tenant.name}: '${moduleKey.toUpperCase()}' module synced to Neon Postgres`);
     } catch (err: any) {
       console.warn("Failed to persist module toggle:", err);
@@ -710,6 +719,15 @@ function TenantManagementContent() {
       });
 
       await USER_API.saveTenantRBAC(tenant.slug, matrixPayload);
+      await fetch(`/api/admin/tenants/${encodeURIComponent(tenant.id)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          erp_modules: tenant.erpModules,
+          shop_sub_modules: updatedSubs,
+          mobility_sub_modules: tenant.mobilitySubModules,
+        }),
+      }).catch(() => null);
       await GTM_API.updateAdminOrganization(tenant.id, { shopSubModules: updatedSubs }).catch(() => null);
       const subItem = SHOP_SUB_MODULES.find((s) => s.key === subKey);
       showToast(`⚡ ${tenant.name}: '${subItem?.shortLabel || subKey}' sub-module ${newStatus ? "enabled" : "disabled"}`);
@@ -752,6 +770,15 @@ function TenantManagementContent() {
         };
       });
       await USER_API.saveTenantRBAC(tenant.slug, matrixPayload);
+      await fetch(`/api/admin/tenants/${encodeURIComponent(tenant.id)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          erp_modules: tenant.erpModules,
+          shop_sub_modules: updatedSubs,
+          mobility_sub_modules: tenant.mobilitySubModules,
+        }),
+      }).catch(() => null);
       await GTM_API.updateAdminOrganization(tenant.id, { shopSubModules: updatedSubs }).catch(() => null);
       showToast(`⚡ ${tenant.name}: All Shop sub-modules ${enableAll ? "enabled" : "disabled"}`);
     } catch {
@@ -810,6 +837,15 @@ function TenantManagementContent() {
       });
 
       await USER_API.saveTenantRBAC(tenant.slug, matrixPayload);
+      await fetch(`/api/admin/tenants/${encodeURIComponent(tenant.id)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          erp_modules: tenant.erpModules,
+          shop_sub_modules: tenant.shopSubModules,
+          mobility_sub_modules: updatedSubs,
+        }),
+      }).catch(() => null);
       const subItem = MOBILITY_SUB_MODULES.find((s) => s.key === subKey);
       showToast(`⚡ ${tenant.name}: '${subItem?.shortLabel || subKey}' sub-module ${newStatus ? "enabled" : "disabled"}`);
     } catch (err) {
@@ -1069,11 +1105,14 @@ function TenantManagementContent() {
       cloudinary_url: editTenantCloudinaryUrl.trim(),
       db_mode: editDbMode,
       is_custom_db: isDedicated,
+      erp_modules: selectedTenantForEdit.erpModules,
+      shop_sub_modules: selectedTenantForEdit.shopSubModules,
+      mobility_sub_modules: selectedTenantForEdit.mobilitySubModules,
     };
 
     setIsSavingDb(true);
     try {
-      // 1. Persist directly to Neon platform_tenants registry
+      // 1. Persist directly to Neon platform_tenants registry & trigger automatic module alignment
       await fetch(`/api/admin/tenants/${encodeURIComponent(selectedTenantForEdit.id)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -1114,7 +1153,9 @@ function TenantManagementContent() {
               campaignsLimit: planTier === "ENTERPRISE" ? 100 : 10,
               monthlyAiSpendUSD: Math.round(mrr * 0.12),
               integrationHealth: "Healthy",
-              erpModules: org.erpModules || selectedTenantForEdit.erpModules || { ...INITIAL_TENANTS[0].erpModules },
+              erpModules: org.erp_modules || org.erpModules || selectedTenantForEdit.erpModules || { ...INITIAL_TENANTS[0].erpModules },
+              shopSubModules: org.shop_sub_modules || org.shopSubModules || selectedTenantForEdit.shopSubModules,
+              mobilitySubModules: org.mobility_sub_modules || org.mobilitySubModules || selectedTenantForEdit.mobilitySubModules,
               databaseUrl: org.database_url || org.databaseUrl || (org.id === selectedTenantForEdit.id ? editTenantDatabaseUrl.trim() : ""),
               cloudinaryUrl: org.cloudinary_url || org.cloudinaryUrl || (org.id === selectedTenantForEdit.id ? editTenantCloudinaryUrl.trim() : ""),
               isCustomDb: Boolean(org.is_custom_db || org.isCustomDb || org.database_url || org.databaseUrl || (org.id === selectedTenantForEdit.id && editTenantDatabaseUrl.trim())),

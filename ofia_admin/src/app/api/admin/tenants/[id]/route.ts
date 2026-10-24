@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MASTER_CONNECTION_STRING, invalidateTenantDbCache } from "@/lib/tenant-db-resolver";
+import { alignTenantModules } from "@/lib/tenant-module-aligner";
 import { neon } from "@neondatabase/serverless";
 
 export const dynamic = "force-dynamic";
@@ -63,6 +64,10 @@ export async function PUT(
       newDomain = `${newSlug}.ofia.ng`;
     }
 
+    const erpModules = body.erp_modules || body.erpModules || null;
+    const shopSubModules = body.shop_sub_modules || body.shopSubModules || null;
+    const mobilitySubModules = body.mobility_sub_modules || body.mobilitySubModules || null;
+
     const [updated] = await sql`
       UPDATE platform_tenants
       SET name = COALESCE(${body.name}, name),
@@ -78,14 +83,28 @@ export async function PUT(
           logo = COALESCE(${body.logo}, logo),
           mrr = COALESCE(${body.mrr}, mrr),
           vertical = COALESCE(${body.vertical}, vertical),
+          erp_modules = COALESCE(${erpModules ? JSON.stringify(erpModules) : null}::jsonb, erp_modules),
+          shop_sub_modules = COALESCE(${shopSubModules ? JSON.stringify(shopSubModules) : null}::jsonb, shop_sub_modules),
+          mobility_sub_modules = COALESCE(${mobilitySubModules ? JSON.stringify(mobilitySubModules) : null}::jsonb, mobility_sub_modules),
           updated_at = NOW()
       WHERE id = ${rawId} OR LOWER(slug) = ${rawId.toLowerCase()}
       RETURNING *;
     `;
 
-    if (updated?.slug) {
-      invalidateTenantDbCache(updated.slug);
+    const targetSlug = updated?.slug || rawId.toLowerCase();
+
+    // Automatically align and force synchronization into TenantRolePermission table
+    try {
+      await alignTenantModules(targetSlug, {
+        erpModules: erpModules || undefined,
+        shopSubModules: shopSubModules || undefined,
+        mobilitySubModules: mobilitySubModules || undefined,
+      });
+    } catch (alignErr: any) {
+      console.warn(`[Tenant API] Automatic module alignment warning for '${targetSlug}':`, alignErr.message);
     }
+
+    invalidateTenantDbCache(targetSlug);
 
     return NextResponse.json({ success: true, tenant: updated });
   } catch (err: any) {

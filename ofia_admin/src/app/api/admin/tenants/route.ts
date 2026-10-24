@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MASTER_CONNECTION_STRING, getTenantSql } from "@/lib/tenant-db-resolver";
 import { INITIAL_TENANTS } from "@/lib/admin-data";
+import { alignTenantModules, getDefaultModulesForVertical } from "@/lib/tenant-module-aligner";
 import { neon } from "@neondatabase/serverless";
 
 export const dynamic = "force-dynamic";
@@ -69,6 +70,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, tenants: seededRows });
     }
 
+    // Check query params if caller requested forced alignment sync
+    const url = new URL(request.url);
+    const syncParam = url.searchParams.get("sync");
+    if (syncParam === "true") {
+      for (const t of rows) {
+        try {
+          await alignTenantModules(t.slug);
+        } catch {}
+      }
+    }
+
     return NextResponse.json({ success: true, tenants: rows });
   } catch (err: any) {
     return NextResponse.json(
@@ -109,17 +121,28 @@ export async function POST(request: NextRequest) {
     const effectiveDbMode = "DEDICATED";
     const effectiveIsCustom = true;
 
+    const defaultPreset = getDefaultModulesForVertical(vertical);
+    const erpModules = body.erp_modules || body.erpModules || defaultPreset.erpModules;
+    const shopSubModules = body.shop_sub_modules || body.shopSubModules || defaultPreset.shopSubModules;
+    const mobilitySubModules = body.mobility_sub_modules || body.mobilitySubModules || defaultPreset.mobilitySubModules;
+
     const sql = neon(MASTER_CONNECTION_STRING);
 
     const [tenant] = await sql`
       INSERT INTO platform_tenants (
         id, name, slug, domain, owner_name, owner_email, plan_tier, status,
-        db_mode, database_url, is_custom_db, mrr, vertical, created_at, updated_at
+        db_mode, database_url, is_custom_db, mrr, vertical,
+        erp_modules, shop_sub_modules, mobility_sub_modules,
+        created_at, updated_at
       ) VALUES (
         ${id}, ${name}, ${cleanSlug}, ${effectiveDomain},
         ${ownerName || "Tenant Admin"}, ${ownerEmail || `admin@${cleanSlug}.ng`},
         ${planTier}, 'Active', ${effectiveDbMode}, ${databaseUrl.trim()},
-        ${effectiveIsCustom}, ${mrr}, ${vertical}, NOW(), NOW()
+        ${effectiveIsCustom}, ${mrr}, ${vertical},
+        ${JSON.stringify(erpModules)}::jsonb,
+        ${JSON.stringify(shopSubModules)}::jsonb,
+        ${JSON.stringify(mobilitySubModules)}::jsonb,
+        NOW(), NOW()
       )
       ON CONFLICT (slug) DO UPDATE
       SET name = EXCLUDED.name,
@@ -128,9 +151,23 @@ export async function POST(request: NextRequest) {
           database_url = EXCLUDED.database_url,
           is_custom_db = EXCLUDED.is_custom_db,
           plan_tier = EXCLUDED.plan_tier,
+          erp_modules = EXCLUDED.erp_modules,
+          shop_sub_modules = EXCLUDED.shop_sub_modules,
+          mobility_sub_modules = EXCLUDED.mobility_sub_modules,
           updated_at = NOW()
       RETURNING *;
     `;
+
+    // Automatically align and populate TenantRolePermission in database
+    try {
+      await alignTenantModules(cleanSlug, {
+        erpModules,
+        shopSubModules,
+        mobilitySubModules,
+      });
+    } catch (alignErr: any) {
+      console.warn(`[Tenant API] Automatic module alignment warning for new tenant '${cleanSlug}':`, alignErr.message);
+    }
 
     return NextResponse.json({ success: true, tenant });
   } catch (err: any) {

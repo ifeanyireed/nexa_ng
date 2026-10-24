@@ -130,6 +130,8 @@ func (p *Product) BeforeCreate(tx *gorm.DB) error {
 
 type Booking struct {
 	ID           string      `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	TenantSlug   string      `gorm:"index:idx_bookings_tenant;type:varchar(191);not null;default:''" json:"tenant_slug"`
+	TenantID     string      `gorm:"type:varchar(191);default:''" json:"tenant_id"`
 	ClientID     string      `gorm:"type:varchar(191);not null" json:"client_id"`
 	Client       *User       `gorm:"foreignKey:ClientID" json:"client,omitempty"`
 	ProProfileID string      `gorm:"type:varchar(191);not null" json:"pro_profile_id"`
@@ -183,6 +185,8 @@ func (t *Transaction) BeforeCreate(tx *gorm.DB) error {
 
 type Order struct {
 	ID              string    `gorm:"primaryKey;type:varchar(191)" json:"id"`
+	TenantSlug      string    `gorm:"index:idx_orders_tenant;type:varchar(191);not null;default:''" json:"tenant_slug"`
+	TenantID        string    `gorm:"type:varchar(191);default:''" json:"tenant_id"`
 	ClientID        string    `gorm:"type:varchar(191);not null" json:"client_id"`
 	Client          *User     `gorm:"foreignKey:ClientID" json:"client,omitempty"`
 	ProductID       string    `gorm:"type:varchar(191);not null" json:"product_id"`

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	internalDB "nexa/marketplace_service/internal/db"
 	"nexa/marketplace_service/internal/middleware"
 	"nexa/marketplace_service/internal/models"
@@ -20,6 +21,7 @@ type CreateOrderRequest struct {
 	Amount          float64 `json:"amount"`
 	ShippingAddress string  `json:"shipping_address"`
 	Phone           string  `json:"phone"`
+	TenantSlug      string  `json:"tenant_slug"`
 }
 
 // CreateOrder handles order creation and sends order SMS + Email notifications to both client and seller
@@ -37,6 +39,19 @@ func CreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tenantSlug := r.Header.Get("X-Tenant-Slug")
+	if tenantSlug == "" {
+		tenantSlug = r.URL.Query().Get("tenant")
+	}
+	if tenantSlug == "" {
+		tenantSlug = req.TenantSlug
+	}
+	tenantSlug = strings.ToLower(strings.TrimSpace(tenantSlug))
+	if tenantSlug == "" {
+		http.Error(w, `{"error":"tenant parameter is required for multi-tenant isolation"}`, http.StatusBadRequest)
+		return
+	}
+
 	if req.Quantity <= 0 {
 		req.Quantity = 1
 	}
@@ -49,6 +64,7 @@ func CreateOrder(w http.ResponseWriter, r *http.Request) {
 		Status:          "PAID",
 		ShippingAddress: req.ShippingAddress,
 		Phone:           req.Phone,
+		TenantSlug:      tenantSlug,
 	}
 
 	if err := internalDB.DB.Create(&order).Error; err != nil {

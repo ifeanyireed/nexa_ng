@@ -47,7 +47,6 @@ func main() {
 		log.Printf("Warning: MySQL database initialization returned: %v (falling back to graceful handling)", err)
 	} else {
 		handlers.SetGormDB(database)
-		handlers.AutoSeedIfEmpty()
 	}
 
 	// Set up unified router & register all ERP routes (Finance, HR, Team Quests, CRM)

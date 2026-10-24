@@ -185,107 +185,19 @@ func (h *OrgHandler) GetOrgDetails(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(org)
 }
 
-func seedDefaultOrganizations(db *gorm.DB) {
-	if db == nil {
-		return
-	}
-	var count int64
-	db.Model(&models.Organization{}).Count(&count)
-	if count == 0 {
-		defaultOwners := []models.User{
-			{
-				ID:        "1bb299db-2578-4018-8a53-e42e0308fa06",
-				Name:      "Ifeanyi Felix",
-				Email:     "netslogistics1@gmail.com",
-				Role:      models.RoleTenantOwner,
-				Password:  "$2a$10$7EqJtq98hPqEX7fNZaFWoOZhg.6eA5Z9qjS8yG4R.M1P8wG4R.M1P",
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			},
-			{
-				ID:        "ADM001",
-				Name:      "Ifeanyi Reed",
-				Email:     "ifeanyireed@gmail.com",
-				Role:      models.RoleTenantOwner,
-				Password:  "$2a$10$7EqJtq98hPqEX7fNZaFWoOZhg.6eA5Z9qjS8yG4R.M1P8wG4R.M1P",
-				CreatedAt: time.Now(),
-				UpdatedAt: time.Now(),
-			},
-		}
-		for _, o := range defaultOwners {
-			db.FirstOrCreate(&o, models.User{ID: o.ID})
-		}
-
-		defaultOrgs := []models.Organization{
-			{
-				ID:           "1aa8c687-b71d-4188-9de2-371aa5dfa9e6",
-				Name:         "New Era Transports",
-				Slug:         "neweratransports",
-				OwnerID:      "1bb299db-2578-4018-8a53-e42e0308fa06",
-				PlanTier:     models.PlanEnterprise,
-				BillingCycle: "MONTHLY",
-				Status:       "ACTIVE",
-				Domain:       "neweratransports.ofia.ng",
-				Vertical:     "cars",
-				LoginImage:   "https://res.cloudinary.com/ihfqdysu/image/upload/v1790831507/ofia_ng_assets/neweratransports/login_background.jpg",
-				Logo:         "https://res.cloudinary.com/ihfqdysu/image/upload/v1790736847/ofia_ng_assets/emfgp9dinkhpkaevpnsx.png",
-				PrimaryColor: "#1A56DB",
-				SecondaryColor: "#0E9F6E",
-				HeroTitle: "Powering next-generation transport, logistics & fleet intelligence.",
-				HeroSubtitle: "Real-time zonal dispatch, fleet telemetry, manifest auditing, and ledger reconciliation in one synchronized ecosystem.",
-				CreatedAt:    time.Now(),
-				UpdatedAt:    time.Now(),
-			},
-			{
-				ID:           "2bb399db-3689-5129-9b64-e53f0419fa07",
-				Name:         "Reed Breed Systems",
-				Slug:         "reedbreed",
-				OwnerID:      "ADM001",
-				PlanTier:     models.PlanEnterprise,
-				BillingCycle: "MONTHLY",
-				Status:       "ACTIVE",
-				Domain:       "reedbreed.cc",
-				Vertical:     "gadgets",
-				LoginImage:   "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg",
-				Logo:         "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686456/ofia_ng_assets/rr1m5fkqj8ei3eao1qjm.jpg",
-				PrimaryColor: "#1A56DB",
-				SecondaryColor: "#9061F9",
-				CreatedAt:    time.Now(),
-				UpdatedAt:    time.Now(),
-			},
-		}
-
-		for _, o := range defaultOrgs {
-			db.FirstOrCreate(&o, models.Organization{ID: o.ID})
-			sub := models.Subscription{
-				ID:                 fmt.Sprintf("sub-%s", o.ID),
-				OrganizationID:     o.ID,
-				PlanTier:           o.PlanTier,
-				Status:             o.Status,
-				CurrentPeriodStart: time.Now(),
-				CurrentPeriodEnd:   time.Now().AddDate(0, 1, 0),
-				CreatedAt:          time.Now(),
-				UpdatedAt:          time.Now(),
-			}
-			db.FirstOrCreate(&sub, models.Subscription{OrganizationID: o.ID})
-		}
-	}
-}
-
 // ListAllAdminOrgs returns all organizations for admin portal without requiring user-specific token
 func (h *OrgHandler) ListAllAdminOrgs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if h.db != nil {
-		seedDefaultOrganizations(h.db)
 		var orgs []models.Organization
 		h.db.Preload("Subscription").Preload("Owner").Find(&orgs)
 		for i := range orgs {
 			h.attachInfrastructure(&orgs[i])
 		}
 		json.NewEncoder(w).Encode(orgs)
-		return
+	} else {
+		json.NewEncoder(w).Encode([]models.Organization{})
 	}
-	json.NewEncoder(w).Encode([]models.Organization{})
 }
 
 // UpdateOrgProfile updates tenant organization details (name, slug, domain, ownerName, ownerEmail, planTier, status)

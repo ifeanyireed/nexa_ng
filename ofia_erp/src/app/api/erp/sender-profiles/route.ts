@@ -49,6 +49,12 @@ async function fetchFromErp(
 export async function GET(request: Request) {
   try {
     const tenantSlug = getValidatedTenantSlug(request);
+    if (!tenantSlug) {
+      return NextResponse.json(
+        { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
 
     // 1. Try to fetch from ERP microservice sender-profiles endpoint
     const { res, ok } = await fetchFromErp(
@@ -160,6 +166,12 @@ export async function POST(request: Request) {
     const bodyText = await request.text();
     const body = JSON.parse(bodyText || "{}");
     const tenantSlug = getValidatedTenantSlug(request, body);
+    if (!tenantSlug) {
+      return NextResponse.json(
+        { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
 
     if (!body.host?.trim() || !body.fromEmail?.trim()) {
       return NextResponse.json(
@@ -281,6 +293,12 @@ export async function DELETE(request: Request) {
   try {
     const url = new URL(request.url);
     const tenantSlug = getValidatedTenantSlug(request);
+    if (!tenantSlug) {
+      return NextResponse.json(
+        { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
     let id = url.searchParams.get("id") || "";
 
     if (!id) {

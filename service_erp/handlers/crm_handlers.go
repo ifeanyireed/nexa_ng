@@ -21,17 +21,7 @@ import (
 
 // Helper to get tenant slug from request headers or query
 func getTenantSlug(r *http.Request) string {
-	slug := r.Header.Get("x-tenant-slug")
-	if slug == "" {
-		slug = r.URL.Query().Get("tenant")
-	}
-	if slug == "" {
-		slug = r.URL.Query().Get("tenant_slug")
-	}
-	if slug == "" {
-		slug = "default"
-	}
-	return strings.ToLower(strings.TrimSpace(slug))
+	return extractTenantSlug(r)
 }
 
 // =============================================================================

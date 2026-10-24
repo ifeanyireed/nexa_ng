@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	internalDB "nexa/marketplace_service/internal/db"
 	"nexa/marketplace_service/internal/middleware"
 	"nexa/marketplace_service/internal/models"
@@ -20,6 +21,7 @@ type CreateBookingRequest struct {
 	ServiceName  string    `json:"service_name"`
 	Amount       float64   `json:"amount"`
 	Type         string    `json:"type"`
+	TenantSlug   string    `json:"tenant_slug"`
 }
 
 func CreateBooking(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +38,19 @@ func CreateBooking(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	tenantSlug := r.Header.Get("X-Tenant-Slug")
+	if tenantSlug == "" {
+		tenantSlug = r.URL.Query().Get("tenant")
+	}
+	if tenantSlug == "" {
+		tenantSlug = req.TenantSlug
+	}
+	tenantSlug = strings.ToLower(strings.TrimSpace(tenantSlug))
+	if tenantSlug == "" {
+		http.Error(w, `{"error":"tenant parameter is required for multi-tenant isolation"}`, http.StatusBadRequest)
+		return
+	}
+
 	if req.Type == "" {
 		req.Type = "STANDARD"
 	}
@@ -48,6 +63,7 @@ func CreateBooking(w http.ResponseWriter, r *http.Request) {
 		Amount:       req.Amount,
 		Type:         req.Type,
 		Status:       "PENDING",
+		TenantSlug:   tenantSlug,
 	}
 
 	if err := internalDB.DB.Create(&booking).Error; err != nil {

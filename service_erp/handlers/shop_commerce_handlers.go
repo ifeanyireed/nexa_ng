@@ -68,10 +68,8 @@ type ShopBooking struct {
 
 // HandleShopOrders handles GET (list), POST (create), and PATCH (status transition) for shop orders
 func HandleShopOrders(w http.ResponseWriter, r *http.Request) {
-	slug := extractTenantSlug(r)
-	targetDB := getDBForSlug(slug)
+	targetDB, slug := requireTenantDB(w, r)
 	if targetDB == nil {
-		http.Error(w, `{"error": "Database unavailable"}`, http.StatusServiceUnavailable)
 		return
 	}
 
@@ -395,10 +393,8 @@ func HandleShopOrders(w http.ResponseWriter, r *http.Request) {
 
 // HandleShopBookings handles GET (list), POST (create), and PATCH (status transition) for service appointments
 func HandleShopBookings(w http.ResponseWriter, r *http.Request) {
-	slug := extractTenantSlug(r)
-	targetDB := getDBForSlug(slug)
+	targetDB, slug := requireTenantDB(w, r)
 	if targetDB == nil {
-		http.Error(w, `{"error": "Database unavailable"}`, http.StatusServiceUnavailable)
 		return
 	}
 

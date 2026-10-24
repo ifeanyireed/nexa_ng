@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"database/sql"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -44,10 +46,16 @@ func RegisterTenantProject(slug string, databaseURL string, cloudinaryURL string
 func extractTenantSlug(r *http.Request) string {
 	slug := r.Header.Get("x-tenant-slug")
 	if slug == "" {
+		slug = r.Header.Get("x-org-id")
+	}
+	if slug == "" {
 		slug = r.URL.Query().Get("tenant")
 	}
 	if slug == "" {
 		slug = r.URL.Query().Get("tenant_slug")
+	}
+	if slug == "" {
+		slug = r.URL.Query().Get("slug")
 	}
 	if slug == "" {
 		slug = r.URL.Query().Get("tenantId")
@@ -69,42 +77,59 @@ func extractTenantSlug(r *http.Request) string {
 			}
 		}
 	}
-	if slug == "" {
-		slug = "neweratransports"
-	}
 	return strings.ToLower(strings.TrimSpace(slug))
+}
+
+func requireTenantSlug(w http.ResponseWriter, r *http.Request) string {
+	slug := extractTenantSlug(r)
+	if slug == "" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"error":   "tenant parameter is required for multi-tenant isolation",
+		})
+		return ""
+	}
+	return slug
 }
 
 func getDBForSlug(slug string) *sql.DB {
 	norm := strings.ToLower(strings.TrimSpace(slug))
-	if norm == "" || norm == "default" || norm == "platform" {
-		return db
+	if norm == "" {
+		return nil
 	}
 
 	targetURL, ok := tenantProjectRegistry[norm]
 	if !ok || targetURL == "" {
 		if db != nil {
 			var fetchedURL, fetchedStorage sql.NullString
+			// 1. Check platform_tenants registry
 			err := db.QueryRow(`
-				SELECT ti.database_url, ti.cloudinary_url 
-				FROM tenant_infrastructures ti
-				LEFT JOIN "Organization" o ON LOWER(o.slug) = LOWER(ti.tenant_slug)
-				WHERE (LOWER(ti.tenant_slug) = $1 OR LOWER(o.id::text) = $1)
-				  AND ti.is_custom_db = true
+				SELECT database_url, cloudinary_url 
+				FROM platform_tenants
+				WHERE (LOWER(slug) = $1 OR LOWER(id) = $1)
 				LIMIT 1`, norm).Scan(&fetchedURL, &fetchedStorage)
-			if err == nil && fetchedURL.Valid && fetchedURL.String != "" {
+			
+			// 2. Fallback check on tenant_infrastructures
+			if err != nil || !fetchedURL.Valid || fetchedURL.String == "" {
+				_ = db.QueryRow(`
+					SELECT database_url, cloudinary_url 
+					FROM tenant_infrastructures 
+					WHERE LOWER(tenant_slug) = $1 
+					LIMIT 1`, norm).Scan(&fetchedURL, &fetchedStorage)
+			}
+
+			if fetchedURL.Valid && fetchedURL.String != "" {
 				RegisterTenantProject(norm, fetchedURL.String, fetchedStorage.String)
 				targetURL = fetchedURL.String
 				ok = true
 			}
 		}
 	}
+
 	if !ok || targetURL == "" {
-		if db != nil {
-			log.Printf("ℹ️ Multi-Tenancy: No dedicated database registered for '%s', using primary database pool", norm)
-			return db
-		}
-		log.Printf("❌ Strict Multi-Tenancy: No custom database configured for tenant '%s'. Fallback to platform database is disabled.", norm)
+		log.Printf("❌ Strict Multi-Tenancy: No dedicated database configured for tenant '%s'. Fallback to primary database is strictly forbidden.", norm)
 		return nil
 	}
 
@@ -141,6 +166,7 @@ func getDBForSlug(slug string) *sql.DB {
 
 	EnsureHRTablesOnDB(sDB)
 	EnsureCRMTablesOnDB(sDB)
+	EnsureFinanceTablesOnDB(sDB)
 
 	tenantSqlPools.Store(norm, sDB)
 	tenantGormPools.Store(norm, gdb)
@@ -151,10 +177,28 @@ func getDB(r *http.Request) *sql.DB {
 	return getDBForSlug(extractTenantSlug(r))
 }
 
+func requireTenantDB(w http.ResponseWriter, r *http.Request) (*sql.DB, string) {
+	slug := requireTenantSlug(w, r)
+	if slug == "" {
+		return nil, ""
+	}
+	targetDB := getDBForSlug(slug)
+	if targetDB == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"error":   fmt.Sprintf("Dedicated database unavailable for tenant '%s'", slug),
+		})
+		return nil, slug
+	}
+	return targetDB, slug
+}
+
 func getGorm(r *http.Request) *gorm.DB {
 	slug := extractTenantSlug(r)
 	if slug == "" || slug == "default" || slug == "platform" {
-		return DB
+		return nil
 	}
 
 	if val, ok := tenantGormPools.Load(slug); ok {
@@ -173,6 +217,24 @@ func getGorm(r *http.Request) *gorm.DB {
 
 	log.Printf("❌ Strict Multi-Tenancy: getGorm could not load dedicated pool for tenant '%s'. Fallback to platform DB is disabled.", slug)
 	return nil
+}
+
+func requireTenantGorm(w http.ResponseWriter, r *http.Request) (*gorm.DB, string) {
+	slug := requireTenantSlug(w, r)
+	if slug == "" {
+		return nil, ""
+	}
+	gdb := getGorm(r)
+	if gdb == nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"error":   fmt.Sprintf("Dedicated database unavailable for tenant '%s'", slug),
+		})
+		return nil, slug
+	}
+	return gdb, slug
 }
 
 func SetDB(database *sql.DB) {
@@ -878,4 +940,316 @@ func EnsureCRMTablesOnDB(targetDB *sql.DB) {
 	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_shop_bookings_number ON shop_bookings(booking_number);`)
 	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_shop_bookings_status ON shop_bookings(LOWER(tenant_slug), status);`)
 	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_shop_bookings_created ON shop_bookings(LOWER(tenant_slug), created_at DESC);`)
+}
+
+// EnsureFinanceTablesOnDB provisions tenant-scoped finance & accounting tables on dedicated database
+func EnsureFinanceTablesOnDB(targetDB *sql.DB) {
+	if targetDB == nil {
+		return
+	}
+
+	// 1. Transactions
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS transactions (
+		id VARCHAR(64) PRIMARY KEY,
+		reference_id VARCHAR(64) DEFAULT '',
+		type VARCHAR(32) NOT NULL,
+		category VARCHAR(64) NOT NULL,
+		amount NUMERIC(15,2) NOT NULL DEFAULT 0,
+		date VARCHAR(64) NOT NULL,
+		description TEXT DEFAULT '',
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT '',
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_transactions_tenant ON transactions(LOWER(tenant_slug), created_at DESC);`)
+
+	// 2. Expenses
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS expenses (
+		id VARCHAR(64) PRIMARY KEY,
+		title VARCHAR(255) NOT NULL,
+		category VARCHAR(64) NOT NULL,
+		amount NUMERIC(15,2) NOT NULL DEFAULT 0,
+		status VARCHAR(32) NOT NULL DEFAULT 'Pending',
+		requested_by VARCHAR(128) DEFAULT '',
+		approved_by VARCHAR(128) DEFAULT '',
+		description TEXT DEFAULT '',
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT '',
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_expenses_tenant ON expenses(LOWER(tenant_slug), created_at DESC);`)
+
+	// 3. Invoices
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS invoices (
+		id VARCHAR(64) PRIMARY KEY,
+		invoice_number VARCHAR(64) NOT NULL,
+		customer_name VARCHAR(128) NOT NULL,
+		customer_email VARCHAR(128) DEFAULT '',
+		amount NUMERIC(15,2) NOT NULL DEFAULT 0,
+		due_date VARCHAR(64) NOT NULL,
+		status VARCHAR(32) NOT NULL DEFAULT 'Unpaid',
+		description TEXT DEFAULT '',
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT '',
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_invoices_tenant ON invoices(LOWER(tenant_slug), created_at DESC);`)
+
+	// 4. Clients
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS clients (
+		id VARCHAR(64) PRIMARY KEY,
+		name VARCHAR(128) NOT NULL,
+		sub_name VARCHAR(128) DEFAULT '',
+		email VARCHAR(128) DEFAULT '',
+		category VARCHAR(64) DEFAULT '',
+		status VARCHAR(32) DEFAULT 'Active',
+		company_name VARCHAR(128) DEFAULT '',
+		phone VARCHAR(64) DEFAULT '',
+		website VARCHAR(128) DEFAULT '',
+		vat VARCHAR(64) DEFAULT '',
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT '',
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+		updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_clients_tenant ON clients(LOWER(tenant_slug));`)
+
+	// 5. Reconciliations
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS reconciliations (
+		id VARCHAR(64) PRIMARY KEY,
+		title VARCHAR(255) NOT NULL,
+		type VARCHAR(64) NOT NULL,
+		period_start VARCHAR(64) NOT NULL,
+		period_end VARCHAR(64) NOT NULL,
+		expected_amount NUMERIC(15,2) NOT NULL DEFAULT 0,
+		actual_amount NUMERIC(15,2) NOT NULL DEFAULT 0,
+		discrepancy NUMERIC(15,2) NOT NULL DEFAULT 0,
+		status VARCHAR(32) NOT NULL DEFAULT 'Draft',
+		prepared_by VARCHAR(128) DEFAULT '',
+		notes TEXT DEFAULT '',
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT '',
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_reconciliations_tenant ON reconciliations(LOWER(tenant_slug), created_at DESC);`)
+
+	// 6. Bank Accounts & Reconciliations
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS bank_accounts (
+		id VARCHAR(64) PRIMARY KEY,
+		name VARCHAR(128) NOT NULL,
+		account_no VARCHAR(64) NOT NULL,
+		bank_name VARCHAR(128) NOT NULL,
+		currency VARCHAR(16) DEFAULT 'NGN',
+		status VARCHAR(32) DEFAULT 'Active',
+		balance NUMERIC(15,2) DEFAULT 0,
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT '',
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_bank_accounts_tenant ON bank_accounts(LOWER(tenant_slug));`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS bank_reconciliations (
+		id VARCHAR(64) PRIMARY KEY,
+		bank_account_id VARCHAR(64) NOT NULL,
+		statement_date VARCHAR(64) NOT NULL,
+		ending_balance NUMERIC(15,2) DEFAULT 0,
+		reconciled_balance NUMERIC(15,2) DEFAULT 0,
+		difference NUMERIC(15,2) DEFAULT 0,
+		status VARCHAR(32) DEFAULT 'In Progress',
+		prepared_by VARCHAR(128) DEFAULT '',
+		notes TEXT DEFAULT '',
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT '',
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_bank_reconciliations_tenant ON bank_reconciliations(LOWER(tenant_slug));`)
+
+	// 7. Chart of Accounts & Journals
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS accounts (
+		id VARCHAR(64) PRIMARY KEY,
+		code VARCHAR(32) NOT NULL,
+		name VARCHAR(128) NOT NULL,
+		category VARCHAR(64) NOT NULL,
+		normal_balance VARCHAR(16) NOT NULL,
+		opening_balance NUMERIC(15,2) DEFAULT 0,
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT ''
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_accounts_tenant ON accounts(LOWER(tenant_slug));`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS journal_entries (
+		id VARCHAR(64) PRIMARY KEY,
+		entry_date VARCHAR(64) NOT NULL,
+		reference_no VARCHAR(64) DEFAULT '',
+		description TEXT DEFAULT '',
+		status VARCHAR(32) DEFAULT 'Draft',
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT '',
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_journal_entries_tenant ON journal_entries(LOWER(tenant_slug), created_at DESC);`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS journal_items (
+		id VARCHAR(64) PRIMARY KEY,
+		journal_entry_id VARCHAR(64) NOT NULL,
+		account_id VARCHAR(64) NOT NULL,
+		description TEXT DEFAULT '',
+		debit NUMERIC(15,2) DEFAULT 0,
+		credit NUMERIC(15,2) DEFAULT 0,
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT ''
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_journal_items_tenant ON journal_items(LOWER(tenant_slug));`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS recurring_journals (
+		id VARCHAR(64) PRIMARY KEY,
+		profile_name VARCHAR(128) NOT NULL,
+		frequency VARCHAR(32) NOT NULL,
+		start_date VARCHAR(64) NOT NULL,
+		end_date VARCHAR(64) DEFAULT '',
+		next_run_date VARCHAR(64) NOT NULL,
+		status VARCHAR(32) DEFAULT 'Active',
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT '',
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_recurring_journals_tenant ON recurring_journals(LOWER(tenant_slug));`)
+
+	// 8. Payrolls & Remittances
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS payrolls (
+		id VARCHAR(64) PRIMARY KEY,
+		period_month VARCHAR(32) NOT NULL,
+		period_year INT NOT NULL,
+		total_amount NUMERIC(15,2) DEFAULT 0,
+		status VARCHAR(32) DEFAULT 'Draft',
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT '',
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_payrolls_tenant ON payrolls(LOWER(tenant_slug), created_at DESC);`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS employee_salaries (
+		id VARCHAR(64) PRIMARY KEY,
+		payroll_id VARCHAR(64) NOT NULL,
+		employee_name VARCHAR(128) NOT NULL,
+		basic_salary NUMERIC(15,2) DEFAULT 0,
+		allowances NUMERIC(15,2) DEFAULT 0,
+		deductions NUMERIC(15,2) DEFAULT 0,
+		net_salary NUMERIC(15,2) DEFAULT 0,
+		status VARCHAR(32) DEFAULT 'Draft',
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT ''
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_employee_salaries_tenant ON employee_salaries(LOWER(tenant_slug));`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS statutory_remittances (
+		id VARCHAR(64) PRIMARY KEY,
+		type VARCHAR(64) NOT NULL,
+		amount NUMERIC(15,2) DEFAULT 0,
+		period_month VARCHAR(32) NOT NULL,
+		period_year INT NOT NULL,
+		due_date VARCHAR(64) NOT NULL,
+		status VARCHAR(32) DEFAULT 'Pending',
+		payment_date VARCHAR(64) DEFAULT '',
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT '',
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_statutory_remittances_tenant ON statutory_remittances(LOWER(tenant_slug), created_at DESC);`)
+
+	// 9. Vendors & Bills
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS vendors (
+		id VARCHAR(64) PRIMARY KEY,
+		name VARCHAR(128) NOT NULL,
+		email VARCHAR(128) DEFAULT '',
+		phone VARCHAR(64) DEFAULT '',
+		company_name VARCHAR(128) DEFAULT '',
+		status VARCHAR(32) DEFAULT 'Active',
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT '',
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_vendors_tenant ON vendors(LOWER(tenant_slug));`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS bills (
+		id VARCHAR(64) PRIMARY KEY,
+		bill_number VARCHAR(64) NOT NULL,
+		vendor_id VARCHAR(64) NOT NULL,
+		amount NUMERIC(15,2) DEFAULT 0,
+		due_date VARCHAR(64) NOT NULL,
+		status VARCHAR(32) DEFAULT 'Unpaid',
+		description TEXT DEFAULT '',
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT '',
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_bills_tenant ON bills(LOWER(tenant_slug), created_at DESC);`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS debit_notes (
+		id VARCHAR(64) PRIMARY KEY,
+		debit_note_number VARCHAR(64) NOT NULL,
+		vendor_id VARCHAR(64) NOT NULL,
+		bill_id VARCHAR(64) DEFAULT '',
+		amount NUMERIC(15,2) DEFAULT 0,
+		reason TEXT DEFAULT '',
+		status VARCHAR(32) DEFAULT 'Open',
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT '',
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_debit_notes_tenant ON debit_notes(LOWER(tenant_slug));`)
+
+	// 10. Documents (Proposals, Estimates, Retainers, Credit Notes)
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS proposals (
+		id VARCHAR(64) PRIMARY KEY,
+		proposal_number VARCHAR(64) NOT NULL,
+		client_id VARCHAR(64) NOT NULL,
+		amount NUMERIC(15,2) DEFAULT 0,
+		status VARCHAR(32) DEFAULT 'Draft',
+		valid_until VARCHAR(64) DEFAULT '',
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT '',
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_proposals_tenant ON proposals(LOWER(tenant_slug));`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS estimates (
+		id VARCHAR(64) PRIMARY KEY,
+		estimate_number VARCHAR(64) NOT NULL,
+		client_id VARCHAR(64) NOT NULL,
+		amount NUMERIC(15,2) DEFAULT 0,
+		status VARCHAR(32) DEFAULT 'Draft',
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT '',
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_estimates_tenant ON estimates(LOWER(tenant_slug));`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS retainers (
+		id VARCHAR(64) PRIMARY KEY,
+		retainer_number VARCHAR(64) NOT NULL,
+		client_id VARCHAR(64) NOT NULL,
+		amount NUMERIC(15,2) DEFAULT 0,
+		status VARCHAR(32) DEFAULT 'Draft',
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT '',
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_retainers_tenant ON retainers(LOWER(tenant_slug));`)
+
+	_, _ = targetDB.Exec(`CREATE TABLE IF NOT EXISTS credit_notes (
+		id VARCHAR(64) PRIMARY KEY,
+		credit_note_number VARCHAR(64) NOT NULL,
+		client_id VARCHAR(64) NOT NULL,
+		invoice_id VARCHAR(64) DEFAULT '',
+		amount NUMERIC(15,2) DEFAULT 0,
+		reason TEXT DEFAULT '',
+		status VARCHAR(32) DEFAULT 'Open',
+		tenant_slug VARCHAR(191) NOT NULL,
+		tenant_id VARCHAR(191) DEFAULT '',
+		created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+	);`)
+	_, _ = targetDB.Exec(`CREATE INDEX IF NOT EXISTS idx_credit_notes_tenant ON credit_notes(LOWER(tenant_slug));`)
 }

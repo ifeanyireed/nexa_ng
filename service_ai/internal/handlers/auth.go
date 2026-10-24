@@ -143,13 +143,8 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		}
 		h.db.Create(&settings)
 	} else {
-		org = models.Organization{
-			ID:       "org-01",
-			Name:     req.BusinessName,
-			OwnerID:  user.ID,
-			PlanTier: "STARTER",
-			Status:   "ACTIVE",
-		}
+		http.Error(w, `{"error": "Database unavailable"}`, http.StatusServiceUnavailable)
+		return
 	}
 
 	token, err := middleware.GenerateToken(&user, org.ID)
@@ -205,18 +200,13 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 			if err := h.db.Where("owner_id = ?", user.ID).First(&org).Error; err == nil {
 				orgID = org.ID
 			} else {
-				orgID = "org-01"
+				http.Error(w, `{"error": "No associated organization found for user"}`, http.StatusNotFound)
+				return
 			}
 		}
 	} else {
-		// Fallback for offline dev
-		user = models.User{
-			ID:    "usr-01",
-			Email: req.Email,
-			Name:  "Grace Jude",
-			Role:  models.RoleTenantOwner,
-		}
-		orgID = "org-01"
+		http.Error(w, `{"error": "Database unavailable"}`, http.StatusServiceUnavailable)
+		return
 	}
 
 	token, err := middleware.GenerateToken(&user, orgID)

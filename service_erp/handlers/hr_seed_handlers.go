@@ -10,27 +10,10 @@ import (
 //go:embed seed_data.json
 var seedDataBytes []byte
 
-// AutoSeedIfEmpty checks if tables are empty and seeds the full dataset from export
+// AutoSeedIfEmpty is disabled to enforce AGENTS.md zero hardcoded tenant data rule
 func AutoSeedIfEmpty() {
-	if db == nil {
-		return
-	}
-
-	EnsureHRTables()
-
-	var reviewCount int
-	row := db.QueryRow(`SELECT COUNT(*) FROM "PerformanceReview"`)
-	if err := row.Scan(&reviewCount); err == nil && reviewCount > 0 {
-		log.Printf("ℹ️ Database already contains %d reviews in PerformanceReview table, skipping automatic seeding", reviewCount)
-		return
-	}
-
-	log.Println("⚡ Seeding ERP HR database from u859677653_hr_service_db export...")
-	if err := executeSeed(); err != nil {
-		log.Printf("⚠️ Auto-seed execution failed: %v", err)
-	} else {
-		log.Println("✅ ERP HR database seeded successfully (76 users, 188 objectives, 76 reviews, 1 cycle)!")
-	}
+	// Zero hardcoded tenant seeding: tenants must provision data dynamically via ofia_admin
+	return
 }
 
 func executeSeed() error {

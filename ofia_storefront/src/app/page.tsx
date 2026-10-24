@@ -21,6 +21,8 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { extractSubdomainFromHost, SEED_TENANT_HANDSHAKES } from "@/lib/storefront-tenant";
+import { neon } from "@neondatabase/serverless";
+import { MASTER_REGISTRY_URL } from "@/lib/tenant-db-resolver";
 
 export const metadata: Metadata = {
   title: "Ofia Storefront · 10 Industry Verticals",
@@ -41,9 +43,21 @@ export default async function Home({
 
   // If a tenant subdomain or parameter is detected, route to their assigned vertical template!
   if (tenantSlug) {
-    const seed = SEED_TENANT_HANDSHAKES[tenantSlug];
-    const targetVertical = seed?.vertical || "cars";
-    redirect(`/${targetVertical}?tenant=${encodeURIComponent(tenantSlug)}`);
+    let targetVertical = SEED_TENANT_HANDSHAKES[tenantSlug]?.vertical;
+    if (!targetVertical) {
+      try {
+        const sql = neon(MASTER_REGISTRY_URL);
+        const rows = await sql`
+          SELECT vertical FROM platform_tenants
+          WHERE LOWER(slug) = ${tenantSlug}
+          LIMIT 1;
+        `;
+        if (rows && rows.length > 0 && rows[0].vertical) {
+          targetVertical = rows[0].vertical;
+        }
+      } catch {}
+    }
+    redirect(`/${targetVertical || "retail"}?tenant=${encodeURIComponent(tenantSlug)}`);
   }
   const verticals = [
     {

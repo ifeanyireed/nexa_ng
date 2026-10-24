@@ -142,21 +142,18 @@ func GetDBForTenant(slugOrOrgID string) (*gorm.DB, error) {
 	tenantGormPools.Store(norm, gdb)
 
 	// Auto migrate logistics tables onto this dedicated database if not present
-	if !gdb.Migrator().HasTable(&models.Shipment{}) {
-		err = gdb.AutoMigrate(
-			&models.Shipment{},
-			&models.Waypoint{},
-			&models.CourierDriver{},
-			&models.CourierPayoutAccount{},
-			&models.DeliveryZoneRate{},
-			&models.DispatchTicket{},
-		)
-		if err != nil {
-			log.Printf("⚠️ Warning: AutoMigration on tenant '%s' DB failed: %v", norm, err)
-		} else {
-			log.Printf("✅ AutoMigrated logistics tables on dedicated DB for tenant '%s'", norm)
-		}
-	}
+	_ = gdb.AutoMigrate(
+		&models.Shipment{},
+		&models.Waypoint{},
+		&models.CourierDriver{},
+		&models.CourierPayoutAccount{},
+		&models.DeliveryZoneRate{},
+		&models.DispatchTicket{},
+	)
+	_ = gdb.Exec("CREATE INDEX IF NOT EXISTS idx_shipments_tenant_created ON shipments(LOWER(tenant_slug), created_at DESC);").Error
+	_ = gdb.Exec("CREATE INDEX IF NOT EXISTS idx_shipments_tenant_status ON shipments(LOWER(tenant_slug), status);").Error
+	_ = gdb.Exec("CREATE INDEX IF NOT EXISTS idx_drivers_tenant_status ON courier_drivers(LOWER(tenant_slug), status);").Error
+	_ = gdb.Exec("CREATE INDEX IF NOT EXISTS idx_dispatch_tenant_status ON dispatch_tickets(LOWER(tenant_slug), status);").Error
 
 	return gdb, nil
 }

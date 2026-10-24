@@ -6,39 +6,41 @@ import (
 
 // Shipment represents an order fulfillment package with waypoints
 type Shipment struct {
-	ID                string      `gorm:"primaryKey;size:64" json:"id"`
-	OrgID             string      `gorm:"index;size:64" json:"org_id"`
-	OrderID           string      `gorm:"index;size:64" json:"order_id"`
-	TrackingNumber    string      `gorm:"uniqueIndex;size:64" json:"tracking_number"`
-	Carrier           string      `gorm:"size:32;default:'IN_HOUSE'" json:"carrier"` // IN_HOUSE, GIGL, SENDBOX, KWIK, DHL
-	Status            string      `gorm:"size:32;default:'PENDING'" json:"status"`   // PENDING, ASSIGNED, ACCEPTED, PICKED_UP, IN_TRANSIT, DELIVERED, EXCEPTION, CANCELLED
-	Priority          string      `gorm:"size:20;default:'STANDARD'" json:"priority"` // STANDARD, HIGH, URGENT
-	CourierDriverID   *string     `gorm:"size:64;index" json:"courier_driver_id,omitempty"`
-	SenderName        string      `gorm:"size:128" json:"sender_name"`
-	SenderPhone       string      `gorm:"size:32" json:"sender_phone"`
-	SenderAddress     string      `gorm:"type:text" json:"sender_address"`
-	SenderCity        string      `gorm:"size:64" json:"sender_city"`
-	PickupAddress     string      `gorm:"type:text" json:"pickup_address,omitempty"`
-	PickupLat         float64     `json:"pickup_lat"`
-	PickupLng         float64     `json:"pickup_lng"`
-	RecipientName     string      `gorm:"size:128" json:"recipient_name"`
-	RecipientPhone    string      `gorm:"size:32" json:"recipient_phone"`
-	RecipientAddress  string      `gorm:"type:text" json:"recipient_address"`
-	RecipientCity     string      `gorm:"size:64" json:"recipient_city"`
-	DropoffAddress    string      `gorm:"type:text" json:"dropoff_address,omitempty"`
-	DropoffLat        float64     `json:"dropoff_lat"`
-	DropoffLng        float64     `json:"dropoff_lng"`
-	ParcelDescription string      `gorm:"type:text" json:"parcel_description,omitempty"`
-	WeightKg          float64     `gorm:"default:1.0" json:"weight_kg"`
-	ShippingFee       float64     `gorm:"default:0" json:"shipping_fee"`
-	DeliveryOTP       string      `gorm:"size:10;default:'8491'" json:"delivery_otp"`
+	ID                 string     `gorm:"primaryKey;size:64" json:"id"`
+	TenantSlug         string     `gorm:"index:idx_shipments_tenant;size:191;not null" json:"tenant_slug"`
+	TenantID           string     `gorm:"size:191;default:''" json:"tenant_id"`
+	OrgID              string     `gorm:"index;size:64" json:"org_id"`
+	OrderID            string     `gorm:"index;size:64" json:"order_id"`
+	TrackingNumber     string     `gorm:"uniqueIndex;size:64" json:"tracking_number"`
+	Carrier            string     `gorm:"size:32;default:'IN_HOUSE'" json:"carrier"` // IN_HOUSE, GIGL, SENDBOX, KWIK, DHL
+	Status             string     `gorm:"size:32;default:'PENDING'" json:"status"`   // PENDING, ASSIGNED, ACCEPTED, PICKED_UP, IN_TRANSIT, DELIVERED, EXCEPTION, CANCELLED
+	Priority           string     `gorm:"size:20;default:'STANDARD'" json:"priority"` // STANDARD, HIGH, URGENT
+	CourierDriverID    *string    `gorm:"size:64;index" json:"courier_driver_id,omitempty"`
+	SenderName         string     `gorm:"size:128" json:"sender_name"`
+	SenderPhone        string     `gorm:"size:32" json:"sender_phone"`
+	SenderAddress      string     `gorm:"type:text" json:"sender_address"`
+	SenderCity         string     `gorm:"size:64" json:"sender_city"`
+	PickupAddress      string     `gorm:"type:text" json:"pickup_address,omitempty"`
+	PickupLat          float64    `json:"pickup_lat"`
+	PickupLng          float64    `json:"pickup_lng"`
+	RecipientName      string     `gorm:"size:128" json:"recipient_name"`
+	RecipientPhone     string     `gorm:"size:32" json:"recipient_phone"`
+	RecipientAddress   string     `gorm:"type:text" json:"recipient_address"`
+	RecipientCity      string     `gorm:"size:64" json:"recipient_city"`
+	DropoffAddress     string     `gorm:"type:text" json:"dropoff_address,omitempty"`
+	DropoffLat         float64    `json:"dropoff_lat"`
+	DropoffLng         float64    `json:"dropoff_lng"`
+	ParcelDescription  string     `gorm:"type:text" json:"parcel_description,omitempty"`
+	WeightKg           float64    `gorm:"default:1.0" json:"weight_kg"`
+	ShippingFee        float64    `gorm:"default:0" json:"shipping_fee"`
+	DeliveryOTP        string     `gorm:"size:10;default:'8491'" json:"delivery_otp"`
 	RecipientSignature string     `gorm:"type:text" json:"recipient_signature,omitempty"`
-	EstimatedDelivery time.Time   `json:"estimated_delivery"`
-	DeliveredAt       *time.Time  `json:"delivered_at,omitempty"`
-	Notes             string      `gorm:"type:text" json:"notes,omitempty"`
-	Waypoints         []Waypoint  `gorm:"foreignKey:ShipmentID" json:"waypoints,omitempty"`
-	CreatedAt         time.Time   `json:"created_at"`
-	UpdatedAt         time.Time   `json:"updated_at"`
+	EstimatedDelivery  time.Time  `json:"estimated_delivery"`
+	DeliveredAt        *time.Time `json:"delivered_at,omitempty"`
+	Notes              string     `gorm:"type:text" json:"notes,omitempty"`
+	Waypoints          []Waypoint `gorm:"foreignKey:ShipmentID" json:"waypoints,omitempty"`
+	CreatedAt          time.Time  `json:"created_at"`
+	UpdatedAt          time.Time  `json:"updated_at"`
 }
 
 // Waypoint logs geographical milestone progress of a shipment
@@ -56,6 +58,8 @@ type Waypoint struct {
 // CourierDriver represents a fleet driver, field technician or 3rd party rider
 type CourierDriver struct {
 	ID               string    `gorm:"primaryKey;size:64" json:"id"`
+	TenantSlug       string    `gorm:"index:idx_drivers_tenant;size:191;not null" json:"tenant_slug"`
+	TenantID         string    `gorm:"size:191;default:''" json:"tenant_id"`
 	OrgID            string    `gorm:"index;size:64" json:"org_id"`
 	UserID           string    `gorm:"size:64;index" json:"user_id,omitempty"`
 	Name             string    `gorm:"size:128" json:"name"`
@@ -85,6 +89,8 @@ type CourierDriver struct {
 // CourierPayoutAccount holds verified Nigerian bank accounts for courier payouts
 type CourierPayoutAccount struct {
 	ID            string    `gorm:"primaryKey;size:64" json:"id"`
+	TenantSlug    string    `gorm:"index:idx_payouts_tenant;size:191;not null" json:"tenant_slug"`
+	TenantID      string    `gorm:"size:191;default:''" json:"tenant_id"`
 	OrgID         string    `gorm:"index;size:64" json:"org_id"`
 	CourierID     string    `gorm:"index;size:64" json:"courier_id"`
 	BankName      string    `gorm:"size:128" json:"bank_name"`
@@ -100,6 +106,8 @@ type CourierPayoutAccount struct {
 // DeliveryZoneRate configures pricing rules per Nigerian regional zone
 type DeliveryZoneRate struct {
 	ID            string    `gorm:"primaryKey;size:64" json:"id"`
+	TenantSlug    string    `gorm:"index:idx_zones_tenant;size:191;not null" json:"tenant_slug"`
+	TenantID      string    `gorm:"size:191;default:''" json:"tenant_id"`
 	OrgID         string    `gorm:"index;size:64" json:"org_id"`
 	ZoneName      string    `gorm:"size:64" json:"zone_name"` // Lagos Mainland, Lagos Island, Interstate South, Interstate North
 	OriginCity    string    `gorm:"size:64;default:'Lagos'" json:"origin_city"`
@@ -113,6 +121,8 @@ type DeliveryZoneRate struct {
 // DispatchTicket handles technician on-site appointment dispatch
 type DispatchTicket struct {
 	ID              string     `gorm:"primaryKey;size:64" json:"id"`
+	TenantSlug      string     `gorm:"index:idx_dispatch_tenant;size:191;not null" json:"tenant_slug"`
+	TenantID        string     `gorm:"size:191;default:''" json:"tenant_id"`
 	OrgID           string     `gorm:"index;size:64" json:"org_id"`
 	BookingID       string     `gorm:"index;size:64" json:"booking_id"`
 	TechnicianID    string     `gorm:"index;size:64" json:"technician_id"`

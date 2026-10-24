@@ -36,9 +36,10 @@ function toTitleCase(str?: string | null): string {
 
 export default function StoreHeader({ store }: StoreHeaderProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [logoError, setLogoError] = useState(false);
   const pathname = usePathname();
   const { totalCount, setIsCartOpen } = useCart();
-  const { isFeatureEnabled } = useStorefrontTenant();
+  const { isFeatureEnabled, tenantSlug } = useStorefrontTenant();
 
   // Vertical-specific navigation links
   const getNavLinks = () => {
@@ -217,13 +218,20 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
   return (
     <header className="sticky top-0 w-full bg-white/95 backdrop-blur-md z-30 transition-colors pt-2.5 pb-1.5">
       <div className="max-w-[1720px] mx-auto px-4 sm:px-5 lg:px-6 flex items-center justify-between gap-4 sm:gap-6">
-        {/* Brand & Store Identity with Ofia logo just like in footer */}
-        <Link href={`/${store.slug}`} className="flex items-center gap-2.5 group">
-          <img
-            src={store.logo}
-            alt={store.name}
-            className="w-8 h-8 sm:w-9 sm:h-9 object-contain shrink-0 group-hover:scale-105 transition-transform"
-          />
+        {/* Brand & Store Identity with dynamic tenant logo and fallback */}
+        <Link href={tenantSlug ? "/" : `/${store.slug}`} className="flex items-center gap-2.5 group">
+          {store.logo && !logoError ? (
+            <img
+              src={store.logo}
+              alt={store.name}
+              onError={() => setLogoError(true)}
+              className="w-8 h-8 sm:w-9 sm:h-9 object-contain shrink-0 group-hover:scale-105 transition-transform rounded-md"
+            />
+          ) : (
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-zinc-900 text-white flex items-center justify-center font-bold text-xs uppercase tracking-tight shrink-0 shadow-xs">
+              {(store.name || "OF").slice(0, 2)}
+            </div>
+          )}
           <span className="font-dropa font-semibold text-base sm:text-lg tracking-tight text-zinc-900">
             {toTitleCase(store.name)}
           </span>

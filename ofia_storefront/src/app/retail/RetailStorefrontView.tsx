@@ -57,7 +57,7 @@ export default function RetailStorefrontView() {
           <div className="lg:col-span-9 flex h-full min-h-0">
             <VerticalHeroBento
               eyebrow={store.tagline || "Curated Multi-Department Emporium"}
-              headline={store.name.split(" ")[0] ? `${store.name.split(" ")[0]}\nKeepsakes` : "Literature &\nKeepsakes"}
+              headline={store.name}
               highlightText="· Custom Engraved Gifts"
               description={store.description || "Discover rare literature anthologies, high-performance athletic gear, certified heirloom toys, and artisan gifts customized with personal monograms."}
               ctaLabel="Explore All Departments"
@@ -65,7 +65,7 @@ export default function RetailStorefrontView() {
               footnote="Complimentary Gift Wrapping · Custom Laser Engraving"
               image={store.coverImage || "https://images.unsplash.com/photo-1472851294608-062f824d29cc?auto=format&fit=crop&w=1200&q=80"}
               imageAlt={`${store.name} Curated Emporium`}
-              badge={tenantSlug ? "Curated Emporium" : "Artisan Emporium"}
+              badge={tenantSlug ? undefined : "Artisan Emporium"}
               bgColor="#F7F5FA"
             />
           </div>

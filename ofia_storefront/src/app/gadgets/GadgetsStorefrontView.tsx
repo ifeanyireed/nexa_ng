@@ -42,7 +42,7 @@ export default function GadgetsStorefrontView() {
           <div className="lg:col-span-9 flex h-full min-h-0">
             <VerticalHeroBento
               eyebrow={store.tagline || "Official Flagship Technology"}
-              headline={store.name.split(" ")[0] ? `${store.name.split(" ")[0]}\nTech` : "Flagship\nWorkstations"}
+              headline={store.name}
               highlightText="· Pro Laptops & Smart Audio"
               description={store.description || "Authorized retailer for flagship technology with guaranteed manufacturer warranties, trade-in credit, and express doorstep delivery."}
               ctaLabel={canBookServices ? "Book Hardware Diagnostics" : "Explore Tech Catalog"}
@@ -50,7 +50,7 @@ export default function GadgetsStorefrontView() {
               footnote="2-Year Hardware Warranty · Express Doorstep Dispatch"
               image={store.coverImage || "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80"}
               imageAlt={`${store.name} Flagship Technology`}
-              badge={tenantSlug ? "Verified Tech Hub" : "Official Retail"}
+              badge={tenantSlug ? undefined : "Official Retail"}
               bgColor="#F4F7FA"
             />
           </div>

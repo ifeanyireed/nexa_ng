@@ -43,7 +43,7 @@ export default function CarsStorefrontView() {
           <div className="lg:col-span-9 flex h-full min-h-0">
             <VerticalHeroBento
               eyebrow={store.tagline || "Certified Executive Fleet"}
-              headline={store.name.split(" ")[0] ? `${store.name.split(" ")[0]}\nFleet` : "Executive\nFleet"}
+              headline={store.name}
               highlightText="· Direct German Imports & Pre-Owned"
               description={store.description || "Curated luxury and executive fleet. Every vehicle undergoes a 150-point diagnostic audit with verified clean customs title and at-home valet test-drives."}
               ctaLabel={canBookServices ? "Book Valet Test-Drive" : "Explore Fleet Catalog"}
@@ -51,7 +51,7 @@ export default function CarsStorefrontView() {
               footnote="150-Point Valet Audit Verified · Clean Customs Clearance"
               image={store.coverImage || "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80"}
               imageAlt={`${store.name} Certified Luxury Fleet`}
-              badge={tenantSlug ? "Verified Workspace" : "150-Pt Inspected"}
+              badge={tenantSlug ? undefined : "150-Pt Inspected"}
               bgColor="#F4F6F9"
             />
           </div>

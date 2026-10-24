@@ -23,7 +23,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     ...meta,
-    icons: {
+    icons: meta.icons || {
       icon: "/favicon.ico",
       shortcut: "/favicon.ico",
       apple: "/ofia-logo.png",

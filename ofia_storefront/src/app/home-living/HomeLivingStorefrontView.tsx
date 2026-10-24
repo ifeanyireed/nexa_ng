@@ -38,7 +38,7 @@ export default function HomeLivingStorefrontView() {
           <div className="lg:col-span-9 flex h-full min-h-0">
             <VerticalHeroBento
               eyebrow={store.tagline || "Sculptural Living & Bespoke Timber"}
-              headline={store.name.split(" ")[0] ? `${store.name.split(" ")[0]}\nLiving` : "Solid Oak\nDining"}
+              headline={store.name}
               highlightText="· Bouclé Lounges & Ceramics"
               description={store.description || "Handcrafted solid oak tables, Italian leather lounges, bouclé accent seating, and ambient ceramic lighting engineered to endure generations."}
               ctaLabel={canBookServices ? "Explore Delivery & Setup" : "Explore Visual Catalog"}
@@ -46,7 +46,7 @@ export default function HomeLivingStorefrontView() {
               footnote="White-Glove Room Assembly · Lifetime Solid Wood Frame Guarantee"
               image={store.coverImage || "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=1200&q=80"}
               imageAlt={`${store.name} Living Collections`}
-              badge={tenantSlug ? "Verified Studio" : "White-Glove Assembly"}
+              badge={tenantSlug ? undefined : "White-Glove Assembly"}
               bgColor="#F7F4ED"
             />
           </div>

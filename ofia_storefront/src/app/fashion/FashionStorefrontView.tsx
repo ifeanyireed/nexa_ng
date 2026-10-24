@@ -31,7 +31,7 @@ export default function FashionStorefrontView() {
           <div className="lg:col-span-9 flex h-full min-h-0">
             <VerticalHeroBento
               eyebrow={store.tagline || "Capsule Drop & Couture"}
-              headline={store.name.split(" ")[0] ? `${store.name.split(" ")[0]}\nAtelier` : "Aura\nAtelier"}
+              headline={store.name}
               highlightText="· Artisanal Tailoring & Silhouettes"
               description={store.description || "Artisanal linen tunics, hand-embroidered kaftans, and architectural outerwear tailored for effortless tropical elegance."}
               ctaLabel={canBookServices ? "Schedule Bespoke Fitting" : "Explore Capsule Catalog"}
@@ -39,7 +39,7 @@ export default function FashionStorefrontView() {
               footnote="Free Doorstep Sizing Exchanges · 7-Day Fit Guarantee"
               image={store.coverImage || "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=80"}
               imageAlt={`${store.name} Capsule Collection`}
-              badge={tenantSlug ? "Verified Workspace" : "Capsule Drop"}
+              badge={tenantSlug ? undefined : "Capsule Drop"}
               bgColor="#FAF9F5"
             />
           </div>

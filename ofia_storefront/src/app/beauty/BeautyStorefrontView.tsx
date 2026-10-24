@@ -41,7 +41,7 @@ export default function BeautyStorefrontView() {
           <div className="lg:col-span-9 flex h-full min-h-0">
             <VerticalHeroBento
               eyebrow={store.tagline || "Clinical Botanicals & Sanctuary Spa"}
-              headline={store.name.split(" ")[0] ? `${store.name.split(" ")[0]}\nSanctuary` : "Radiant\nBarrier"}
+              headline={store.name}
               highlightText="· Bioactive Botanicals & Rituals"
               description={store.description || "Nourish your skin barrier with bioactive botanicals, cold-pressed seed oils, and restorative facial rituals by certified aestheticians."}
               ctaLabel={canBookServices ? "Book Sanctuary Facial" : "Explore Skincare Line"}
@@ -49,7 +49,7 @@ export default function BeautyStorefrontView() {
               footnote="100% Cruelty-Free & Dermatologist Certified · Zero Parabens"
               image={store.coverImage || "https://images.unsplash.com/photo-1560750588-73207b1ef5b8?auto=format&fit=crop&w=1200&q=80"}
               imageAlt={`${store.name} Botanical Skincare`}
-              badge={tenantSlug ? "Verified Sanctuary" : "Clean & Cruelty-Free"}
+              badge={tenantSlug ? undefined : "Clean & Cruelty-Free"}
               bgColor="#FAF4F4"
             />
           </div>

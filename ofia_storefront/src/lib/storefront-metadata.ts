@@ -21,30 +21,50 @@ export async function resolveStorefrontMetadata(
     const tenantSlug = (subdomain || headerTenant || "").toLowerCase().trim();
 
     if (tenantSlug) {
-      // 1. Resolve from known seed handshakes
-      const seed = SEED_TENANT_HANDSHAKES[tenantSlug];
-      if (seed?.name) {
-        return {
-          title: seed.name,
-          description: seed.storefrontConfig?.description || seed.storefrontConfig?.headline || fallbackDescription,
-        };
-      }
-
-      // 2. Query platform_tenants master database
+      // 1. Query platform_tenants master database dynamically
       try {
         const sql = neon(MASTER_REGISTRY_URL);
         const rows = await sql`
-          SELECT name, hero_title, hero_subtitle FROM platform_tenants
+          SELECT name, logo, hero_title, hero_subtitle FROM platform_tenants
           WHERE LOWER(slug) = ${tenantSlug}
           LIMIT 1;
         `;
         if (rows && rows.length > 0 && rows[0].name) {
-          return {
-            title: rows[0].name,
+          const tenantName = rows[0].name.trim();
+          const logoUrl = rows[0].logo ? rows[0].logo.trim() : "";
+          const meta: Metadata = {
+            title: tenantName,
             description: rows[0].hero_subtitle || rows[0].hero_title || fallbackDescription,
           };
+          if (logoUrl) {
+            meta.icons = {
+              icon: logoUrl,
+              shortcut: logoUrl,
+              apple: logoUrl,
+            };
+          }
+          return meta;
         }
-      } catch {}
+      } catch (err) {
+        console.warn(`[Storefront Metadata] Failed to query platform_tenants for '${tenantSlug}':`, err);
+      }
+
+      // 2. Fallback to known seed handshakes if database is unreachable
+      const seed = SEED_TENANT_HANDSHAKES[tenantSlug];
+      if (seed?.name) {
+        const meta: Metadata = {
+          title: seed.name,
+          description: seed.storefrontConfig?.description || seed.storefrontConfig?.headline || fallbackDescription,
+        };
+        if (seed.storefrontConfig?.logoUrl) {
+          meta.icons = {
+            icon: seed.storefrontConfig.logoUrl,
+            shortcut: seed.storefrontConfig.logoUrl,
+            apple: seed.storefrontConfig.logoUrl,
+          };
+        }
+        return meta;
+      }
 
       // 3. Fallback to title-cased slug
       const formattedName = tenantSlug

@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import RetailStorefrontView from "./RetailStorefrontView";
+import { resolveStorefrontMetadata } from "@/lib/storefront-metadata";
 
-export const metadata: Metadata = {
-  title: "Multi-Department Retail & Gift Storefront | OFIA",
-  description: "Curated literature anthologies, artisan keepsakes, lifestyle essentials, and complimentary monogram laser engraving.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return resolveStorefrontMetadata(
+    "General Retail Storefront | OFIA",
+    "Multi-category general merchant catalog with inventory tracking and instant delivery."
+  );
+}
 
 export default function RetailStorefrontPage() {
   return <RetailStorefrontView />;

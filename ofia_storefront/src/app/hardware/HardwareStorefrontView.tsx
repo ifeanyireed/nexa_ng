@@ -57,7 +57,7 @@ export default function HardwareStorefrontView() {
           <div className="lg:col-span-9 flex h-full min-h-0">
             <VerticalHeroBento
               eyebrow={store.tagline || "Industrial Power & Solar Systems"}
-              headline={store.name.split(" ")[0] ? `${store.name.split(" ")[0]}\nInverters` : "Tier-1 Hybrid\nInverters"}
+              headline={store.name}
               highlightText="· LiFePO4 Storage & Tools"
               description={store.description || "Pure sine wave hybrid inverters, tier-1 monocrystalline panels, server-rack lithium batteries, and certified engineering installation."}
               ctaLabel={canBookServices ? "Run Solar Load Calculator" : "Explore Technical Catalog"}
@@ -65,7 +65,7 @@ export default function HardwareStorefrontView() {
               footnote="5-Year Hardware Warranty · Certified Industrial Installation"
               image={store.coverImage || "https://images.unsplash.com/photo-1558449028-b53a39d100fc?auto=format&fit=crop&w=1200&q=80"}
               imageAlt={`${store.name} Power Infrastructure`}
-              badge={tenantSlug ? "COREN Certified" : "Tier-1 Certified"}
+              badge={tenantSlug ? undefined : "Tier-1 Certified"}
               bgColor="#F6F3EB"
             />
           </div>

@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import HomeLivingStorefrontView from "./HomeLivingStorefrontView";
+import { resolveStorefrontMetadata } from "@/lib/storefront-metadata";
 
-export const metadata: Metadata = {
-  title: "Home & Living Storefront | OFIA",
-  description: "Architectural furniture, bouclé seating, and heirloom solid wood living collections.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return resolveStorefrontMetadata(
+    "Home & Living Storefront | OFIA",
+    "Curated modern interior furniture, architectural furnishings, and white-glove decor delivery."
+  );
+}
 
 export default function HomeLivingStorefrontPage() {
   return <HomeLivingStorefrontView />;

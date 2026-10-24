@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { VendorStore, VerticalType } from "@/types/storefront";
 import {
@@ -215,6 +218,7 @@ const VERTICAL_FOOTER_CONFIG: Record<
 };
 
 export default function StoreFooter({ store }: StoreFooterProps) {
+  const [logoError, setLogoError] = useState(false);
   const footerConfig = VERTICAL_FOOTER_CONFIG[store.vertical] || VERTICAL_FOOTER_CONFIG.fashion;
 
   return (
@@ -225,11 +229,18 @@ export default function StoreFooter({ store }: StoreFooterProps) {
           {/* Col 1: Store Brand & Identity */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <img
-                src={store.logo}
-                alt={store.name}
-                className="w-9 h-9 object-contain shrink-0"
-              />
+              {store.logo && !logoError ? (
+                <img
+                  src={store.logo}
+                  alt={store.name}
+                  onError={() => setLogoError(true)}
+                  className="w-9 h-9 object-contain shrink-0 rounded-md"
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-lg bg-zinc-800 text-white flex items-center justify-center font-bold text-xs uppercase tracking-tight shrink-0 shadow-xs">
+                  {(store.name || "OF").slice(0, 2)}
+                </div>
+              )}
               <span className="font-dropa font-semibold text-base sm:text-lg text-white">
                 {toTitleCase(store.name)}
               </span>

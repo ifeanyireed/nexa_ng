@@ -60,7 +60,7 @@ export default function FoodStorefrontView() {
           <div className="lg:col-span-9 flex h-full min-h-0">
             <VerticalHeroBento
               eyebrow={store.tagline || "Gourmet Afro-Fusion"}
-              headline={store.name.split(" ")[0] ? `${store.name.split(" ")[0]}\nKitchen` : "Smoked\nFlame"}
+              headline={store.name}
               highlightText="· Wood-Fired Grills & Delicacies"
               description={store.description || "Gourmet slow-roasted meats, fragrant jollof dishes, and artisanal pastries prepared fresh to order."}
               ctaLabel={canBookServices ? "Reserve Chef Table / Catering" : "Explore Dining Menu"}
@@ -68,7 +68,7 @@ export default function FoodStorefrontView() {
               footnote="Cooked Fresh To Order · Thermal Dispatch Guarantee"
               image={store.coverImage || "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80"}
               imageAlt={`${store.name} Culinary Offerings`}
-              badge={tenantSlug ? "Verified Kitchen" : "Signature Kitchen"}
+              badge={tenantSlug ? undefined : "Signature Kitchen"}
               bgColor="#FDFBF7"
             />
           </div>

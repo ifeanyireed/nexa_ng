@@ -148,6 +148,13 @@ export function StorefrontTenantProvider({ children }: { children: React.ReactNo
     }
   }, []);
 
+  // Synchronize document title to Tenant's name
+  useEffect(() => {
+    if (handshake?.name && typeof document !== "undefined") {
+      document.title = handshake.name;
+    }
+  }, [handshake]);
+
   const vertical: VerticalType = useMemo(() => {
     if (handshake?.vertical) return handshake.vertical;
     return "fashion";

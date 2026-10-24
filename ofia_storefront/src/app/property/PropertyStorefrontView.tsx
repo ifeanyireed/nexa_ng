@@ -42,7 +42,7 @@ export default function PropertyStorefrontView() {
           <div className="lg:col-span-9 flex h-full min-h-0">
             <VerticalHeroBento
               eyebrow={store.tagline || "Waterfront Architecture & Residences"}
-              headline={store.name.split(" ")[0] ? `${store.name.split(" ")[0]}\nResidences` : "Prime\nResidences"}
+              headline={store.name}
               highlightText="· Serviced Luxury Villas & Short-Lets"
               description={store.description || "Curated luxury penthouses, private villas, and high-yield residences across prime corridors with verified land titles and 24/7 concierge service."}
               ctaLabel={canBookServices ? "Schedule Private Viewing" : "Explore Property Listings"}
@@ -50,7 +50,7 @@ export default function PropertyStorefrontView() {
               footnote="Verified Governor's Consent / C-of-O · 24/7 Shoreline Power"
               image={store.coverImage || "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686504/ofia_ng_assets/wuuq3envwns5v2hbkjr3.jpg"}
               imageAlt={`${store.name} Prime Portfolio`}
-              badge={tenantSlug ? "Verified Developer" : "Verified Title"}
+              badge={tenantSlug ? undefined : "Verified Title"}
               bgColor="#F4F8FC"
             />
           </div>

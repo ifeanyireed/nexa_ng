@@ -49,7 +49,7 @@ export default function PharmacyStorefrontView() {
           <div className="lg:col-span-9 flex h-full min-h-0">
             <VerticalHeroBento
               eyebrow={store.tagline || "Licensed NAFDAC Clinical Dispensary"}
-              headline={store.name.split(" ")[0] ? `${store.name.split(" ")[0]}\nDispensary` : "Rapid Rx\nRefills"}
+              headline={store.name}
               highlightText="· Cold-Chain Care & Tele-Pharmacy"
               description={store.description || "Verified pharmaceutical dispensing, temperature-controlled cold-chain logistics, and confidential clinical consultation with licensed resident pharmacists."}
               ctaLabel={canBookServices ? "Upload Doctor's Rx / Consult" : "Explore Medical Catalog"}
@@ -57,7 +57,7 @@ export default function PharmacyStorefrontView() {
               footnote="Licensed Clinical Pharmacists · 100% Verified Batch Numbers"
               image={store.coverImage || "https://images.unsplash.com/photo-1586015555751-63bb77f4322a?auto=format&fit=crop&w=1200&q=80"}
               imageAlt={`${store.name} Dispensary Care`}
-              badge={tenantSlug ? "Verified Dispensary" : "NAFDAC Regulated"}
+              badge={tenantSlug ? undefined : "NAFDAC Regulated"}
               bgColor="#F3F9F6"
             />
           </div>

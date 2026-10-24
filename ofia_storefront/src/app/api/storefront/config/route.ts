@@ -33,22 +33,12 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  // 1. Check seed presets first (for instant fast resolution)
-  if (SEED_TENANT_HANDSHAKES[tenantSlug]) {
-    const seed = SEED_TENANT_HANDSHAKES[tenantSlug];
-    return NextResponse.json({
-      success: true,
-      isTenantResolved: true,
-      handshake: seed,
-    });
-  }
-
-  // 2. Query platform_tenants registry directly in PostgreSQL
+  // 1. Query platform_tenants registry directly in PostgreSQL
   try {
     const registrySql = neon(MASTER_REGISTRY_URL);
     const rows = await registrySql`
-      SELECT id, name, slug, domain, vertical, status, db_mode,
-             logo, login_image, hero_title, hero_subtitle, shop_sub_modules
+      SELECT id, name, slug, domain, vertical, status, db_mode, plan_tier,
+             logo, login_image, hero_title, hero_subtitle, shop_sub_modules, owner_email
       FROM platform_tenants
       WHERE LOWER(slug) = ${tenantSlug}
       LIMIT 1;
@@ -67,7 +57,7 @@ export async function GET(request: NextRequest) {
         vertical: verticalKey,
         provisioning: {
           isShopEnabled: true,
-          planTier: "GROWTH",
+          planTier: (r.plan_tier as any) || "GROWTH",
           shopSubModules: r.shop_sub_modules || {
             pos: true,
             inventory: true,
@@ -79,16 +69,16 @@ export async function GET(request: NextRequest) {
           },
         },
         storefrontConfig: {
-          storeName: r.name || `${tenantSlug} Store`,
+          storeName: r.name || tenantSlug,
           headline: r.hero_title || "Premium Products & Reliable Service",
           description: r.hero_subtitle || "",
           primaryColor: "#0069FF",
           secondaryColor: "#0F172A",
-          logoUrl: r.logo || "/ofia-logo.png",
-          bannerUrl: r.login_image || "https://images.unsplash.com/photo-1555421689-491a97ff2040?auto=format&fit=crop&w=1600&h=600&q=80",
+          logoUrl: (r.logo || "").trim(),
+          bannerUrl: (r.login_image || "").trim(),
           currency: "₦",
           contact: {
-            email: `contact@${tenantSlug}.ofia.ng`,
+            email: r.owner_email || `contact@${tenantSlug}.ofia.ng`,
           },
           sectionVisibility: {
             hero: true,
@@ -97,7 +87,7 @@ export async function GET(request: NextRequest) {
             reviews: true,
             dispatchBooking: true,
           },
-          badges: ["Verified Ofia Merchant"],
+          badges: [],
         },
       };
 
@@ -109,6 +99,16 @@ export async function GET(request: NextRequest) {
     }
   } catch (dbErr) {
     console.warn(`[Storefront Handshake API] Database lookup error for '${tenantSlug}':`, dbErr);
+  }
+
+  // 2. Check seed presets fallback if DB is unreachable
+  if (SEED_TENANT_HANDSHAKES[tenantSlug]) {
+    const seed = SEED_TENANT_HANDSHAKES[tenantSlug];
+    return NextResponse.json({
+      success: true,
+      isTenantResolved: true,
+      handshake: seed,
+    });
   }
 
   // 3. Check remote microservices (service_marketplace & service_users) if explicitly configured

@@ -3,11 +3,12 @@ import {
   resolveTenantFromHostAndQuery,
   resolveTenantVertical,
   isGlobalStorefrontRoute,
+  SEED_TENANT_HANDSHAKES,
 } from "./lib/storefront-tenant";
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const host = request.headers.get("host") || "";
+  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "";
 
   // 1. Bypass Next.js static files, public assets, and common icons
   if (
@@ -23,7 +24,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Resolve tenant identity from query (?tenant= / ?store= / ?slug=), subdomain (*.ofia.ng / *.localhost), or custom domain
+  // 2. Resolve tenant identity from query (?tenant= / ?store= / ?slug=), subdomain (*.ofia.ng / *.localhost:3005), or custom domain
   const queryTenant =
     request.nextUrl.searchParams.get("tenant") ||
     request.nextUrl.searchParams.get("store") ||
@@ -43,7 +44,21 @@ export function middleware(request: NextRequest) {
   }
 
   // 4. Resolve the tenant's vertical archetype (e.g. cars, gadgets, pharmacy, fashion)
-  const vertical = resolveTenantVertical(tenantSlug, cookieVertical);
+  let vertical = resolveTenantVertical(tenantSlug, cookieVertical);
+
+  // If vertical is not in cookie and not a static seed, fetch from dynamic tenant config
+  if (!cookieVertical && !SEED_TENANT_HANDSHAKES[tenantSlug]) {
+    try {
+      const configUrl = new URL(`/api/storefront/config?tenant=${encodeURIComponent(tenantSlug)}`, request.url);
+      const res = await fetch(configUrl, { cache: "no-store", signal: AbortSignal.timeout(1500) });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.handshake?.vertical) {
+          vertical = data.handshake.vertical;
+        }
+      }
+    } catch {}
+  }
 
   // 5. Inject multi-tenant context headers for server components, SSR layouts, and API routes
   const requestHeaders = new Headers(request.headers);

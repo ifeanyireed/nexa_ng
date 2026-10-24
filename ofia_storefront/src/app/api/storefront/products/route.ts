@@ -38,6 +38,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const rawTenant = body.tenantSlug || body.storeSlug || request.headers.get("x-tenant-slug");
+
+    if (!rawTenant) {
+      return NextResponse.json(
+        { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
 
     if (!body.title || !body.price || !body.vertical) {
       return NextResponse.json(
@@ -46,7 +54,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const saved = await saveStorefrontProduct(body);
+    const saved = await saveStorefrontProduct({
+      ...body,
+      storeSlug: rawTenant.toLowerCase().trim(),
+    });
 
     return NextResponse.json({
       success: true,
@@ -63,7 +74,14 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
-  const tenantSlug = searchParams.get("tenant") || searchParams.get("slug");
+  const rawTenant = searchParams.get("tenant") || searchParams.get("slug") || request.headers.get("x-tenant-slug");
+
+  if (!rawTenant) {
+    return NextResponse.json(
+      { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+      { status: 400 }
+    );
+  }
 
   if (!id) {
     return NextResponse.json(
@@ -73,7 +91,7 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    const deleted = await deleteStorefrontProduct(id, tenantSlug || undefined);
+    const deleted = await deleteStorefrontProduct(id, rawTenant.toLowerCase().trim());
     return NextResponse.json({ success: deleted });
   } catch (err: any) {
     return NextResponse.json(

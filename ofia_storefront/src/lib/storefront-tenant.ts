@@ -26,22 +26,30 @@ const SYSTEM_RESERVED_SUBDOMAINS = new Set([
 export function extractSubdomainFromHost(host?: string | null): string | null {
   if (!host) return null;
 
+  // Strip port (e.g. "tenantslug.localhost:3005" -> "tenantslug.localhost")
   const cleanHost = host.split(":")[0].toLowerCase().trim();
 
   // If host is an IP address or direct localhost without subdomain
-  if (cleanHost === "localhost" || cleanHost === "127.0.0.1" || cleanHost === "0.0.0.0") {
+  if (
+    cleanHost === "localhost" ||
+    cleanHost === "127.0.0.1" ||
+    cleanHost === "0.0.0.0" ||
+    cleanHost.startsWith("192.168.") ||
+    cleanHost.startsWith("10.")
+  ) {
+    return null;
+  }
+
+  // Explicit support for: <tenant>.localhost or <tenant>.localhost:3005
+  if (cleanHost.endsWith(".localhost")) {
+    const sub = cleanHost.replace(/\.localhost$/, "");
+    if (sub && !SYSTEM_RESERVED_SUBDOMAINS.has(sub)) {
+      return sub.split(".")[0];
+    }
     return null;
   }
 
   const parts = cleanHost.split(".");
-
-  // e.g. <subdomain>.localhost (2 parts)
-  if (cleanHost.endsWith(".localhost") && parts.length >= 2) {
-    const sub = parts[0];
-    if (sub && !SYSTEM_RESERVED_SUBDOMAINS.has(sub)) {
-      return sub;
-    }
-  }
 
   // e.g. <subdomain>.ofia.ng or <subdomain>.ofia.shop (3 parts)
   if (parts.length >= 3) {

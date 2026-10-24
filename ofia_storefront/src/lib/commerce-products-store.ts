@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { Product, VerticalType } from "@/types/storefront";
 import { MOCK_PRODUCTS } from "@/data/mockStores";
+import { getTenantSql } from "./tenant-db-resolver";
 
 function getSyncDir() {
   const candidates = [
@@ -45,6 +46,49 @@ export async function getStorefrontProducts(
 ): Promise<{ products: Product[]; isLiveMerchantCatalog: boolean }> {
   ensureProductsFile();
 
+  const normalizedSlug = tenantSlug ? tenantSlug.toLowerCase().trim() : null;
+
+  // 1. Check live merchant inventory on their dedicated database
+  if (normalizedSlug) {
+    try {
+      const sql = await getTenantSql(normalizedSlug);
+      if (sql) {
+        const rows = await sql`
+          SELECT id, product_id, sku, product_name, category, current_stock, unit_price, status
+          FROM shop_inventory
+          WHERE LOWER(tenant_slug) = ${normalizedSlug}
+          ORDER BY (current_stock > 0) DESC, created_at DESC
+          LIMIT 100
+        `;
+
+        if (rows && rows.length > 0) {
+          const liveProducts: Product[] = rows.map((r: any) => ({
+            id: r.product_id || r.id,
+            storeSlug: normalizedSlug,
+            vertical: vertical || "retail",
+            title: r.product_name,
+            price: Number(r.unit_price) || 0,
+            category: r.category || "General",
+            images: [
+              "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
+            ],
+            rating: 5.0,
+            reviewsCount: 1,
+            inStock: r.current_stock > 0 && r.status !== "OUT_OF_STOCK",
+            highlights: [`SKU: ${r.sku}`, `${r.current_stock} units in stock`],
+            description: `${r.product_name} · Sourced from merchant inventory.`,
+            variants: [],
+            tags: [r.category || "General"],
+          }));
+
+          return { products: liveProducts, isLiveMerchantCatalog: true };
+        }
+      }
+    } catch (err) {
+      console.warn(`[CommerceProductsStore] Live inventory lookup error for tenant '${normalizedSlug}':`, err);
+    }
+  }
+
   let allProducts: Product[] = [];
 
   try {
@@ -59,9 +103,7 @@ export async function getStorefrontProducts(
     allProducts = memoryProducts.length > 0 ? memoryProducts : MOCK_PRODUCTS;
   }
 
-  const normalizedSlug = tenantSlug ? tenantSlug.toLowerCase().trim() : null;
-
-  // 1. If tenant is specified, search for merchant-specific products
+  // 2. If tenant is specified, search for merchant-specific products in local cache
   if (normalizedSlug) {
     const merchantProducts = allProducts.filter(
       (p) =>
@@ -80,7 +122,7 @@ export async function getStorefrontProducts(
     }
   }
 
-  // 2. Fallback to vertical mock seeds
+  // 3. Fallback to vertical mock seeds
   let fallbackList = allProducts;
   if (vertical) {
     fallbackList = allProducts.filter((p) => p.vertical === vertical);

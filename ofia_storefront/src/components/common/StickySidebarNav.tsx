@@ -342,7 +342,7 @@ export default function StickySidebarNav() {
     }`;
 
   const getDesktopBottomClasses = (isActive: boolean) =>
-    `w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+    `w-11 h-11 rounded-full flex items-center justify-center transition-all ${
       isActive
         ? "bg-[#111318] text-white shadow-md scale-100"
         : "text-stone-500 hover:text-zinc-950 hover:bg-black/5"
@@ -426,7 +426,7 @@ export default function StickySidebarNav() {
         aria-label="Storefront Icon Navigation"
       >
         {/* Primary Navigation Stack */}
-        <nav className="flex flex-col items-center gap-3.5 xl:gap-4 w-full px-3 pt-12 xl:pt-14">
+        <nav className="flex flex-col items-center gap-2 xl:gap-2.5 w-full px-3 pt-8 xl:pt-10">
           {/* 1. Storefront Home */}
           <div className="relative group flex items-center justify-center w-full">
             <Link
@@ -480,7 +480,7 @@ export default function StickySidebarNav() {
           </div>
 
           {/* 4. Calendar / Bookings & Appointments */}
-          <div className="relative group flex items-center justify-center w-full mb-7 xl:mb-9">
+          <div className="relative group flex items-center justify-center w-full mb-3.5 xl:mb-4">
             <Link
               href={bookingInfo.href}
               onClick={closeAllDrawers}
@@ -558,7 +558,7 @@ export default function StickySidebarNav() {
         </nav>
 
         {/* Bottom Pinned Controls (Settings, Account & Logout) */}
-        <div className="flex flex-col items-center gap-3 xl:gap-3.5 w-full px-3 pt-4 pb-2">
+        <div className="flex flex-col items-center gap-2 xl:gap-2.5 w-full px-3 pt-3 pb-2">
           {/* Store Info & Policies */}
           <div className="relative group flex items-center justify-center w-full">
             <Link
@@ -567,7 +567,7 @@ export default function StickySidebarNav() {
               className={getDesktopBottomClasses(activeNav === "settings")}
               title="Store Info & Policies"
             >
-              <Settings className="w-4.5 h-4.5" />
+              <Settings className="w-5 h-5" />
             </Link>
             <span className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-zinc-900 text-white text-xs font-medium rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 transition-all duration-150 shadow-xl z-50 flex items-center">
               <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-zinc-900 rotate-45 rounded-xs" />
@@ -583,7 +583,7 @@ export default function StickySidebarNav() {
               className={getDesktopBottomClasses(activeNav === "account")}
               title="Customer Account"
             >
-              <User className="w-4.5 h-4.5" />
+              <User className="w-5 h-5" />
             </Link>
             <span className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-zinc-900 text-white text-xs font-medium rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 transition-all duration-150 shadow-xl z-50 flex items-center">
               <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-zinc-900 rotate-45 rounded-xs" />
@@ -598,7 +598,7 @@ export default function StickySidebarNav() {
               className={`${getDesktopBottomClasses(false)} cursor-pointer`}
               title="Log Out"
             >
-              <LogOut className="w-4.5 h-4.5" />
+              <LogOut className="w-5 h-5" />
             </button>
             <span className="pointer-events-none absolute left-full ml-3 top-1/2 -translate-y-1/2 px-3 py-1.5 bg-zinc-900 text-white text-xs font-medium rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 scale-95 group-hover:scale-100 transition-all duration-150 shadow-xl z-50 flex items-center">
               <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-zinc-900 rotate-45 rounded-xs" />

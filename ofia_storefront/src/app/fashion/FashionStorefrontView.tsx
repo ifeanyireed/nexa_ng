@@ -136,7 +136,7 @@ export default function FashionStorefrontView() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-amber-700">Curated Capsule</span>
+                <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-amber-700">Signature Apparel</span>
                 {isLiveMerchantCatalog && (
                   <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                     Live Catalog
@@ -176,7 +176,7 @@ export default function FashionStorefrontView() {
                     )}
                     {product.isFeatured && (
                       <span className="px-3 py-1 rounded-full text-xs font-bold bg-zinc-900 text-white shadow-sm uppercase tracking-wider">
-                        Atelier Pick
+                        Featured Piece
                       </span>
                     )}
                   </div>
@@ -195,7 +195,7 @@ export default function FashionStorefrontView() {
                     </p>
                   </div>
 
-                  {product.fashionMeta && (
+                  {product.fashionMeta ? (
                     <div className="flex items-center justify-between pt-2.5 border-t border-stone-100">
                       <div className="flex items-center gap-1.5">
                         {product.fashionMeta.colors.map((c) => (
@@ -209,6 +209,17 @@ export default function FashionStorefrontView() {
                       </div>
                       <div className="text-xs font-mono text-stone-600 font-semibold">
                         Sizes: {product.fashionMeta.sizes.join(", ")}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between pt-2.5 border-t border-stone-100">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-4 h-4 rounded-full border border-stone-300 shadow-xs bg-[#111111]" title="Obsidian Black" />
+                        <span className="w-4 h-4 rounded-full border border-stone-300 shadow-xs bg-[#D6C7B2]" title="Raw Sandstone" />
+                        <span className="w-4 h-4 rounded-full border border-stone-300 shadow-xs bg-[#1F4E3D]" title="Forest Emerald" />
+                      </div>
+                      <div className="text-xs font-mono text-stone-600 font-semibold">
+                        Sizes: XS, S, M, L, XL
                       </div>
                     </div>
                   )}

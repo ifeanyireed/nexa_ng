@@ -27,7 +27,9 @@ import {
   Armchair,
 } from "lucide-react";
 import TemplateSwitcher from "@/components/common/TemplateSwitcher";
+import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { MOCK_STORES } from "@/data/mockStores";
 
 type AccountTab = "profile" | "addresses" | "orders" | "bookings";
@@ -216,6 +218,8 @@ const INITIAL_BOOKINGS: BookingItem[] = [
 ];
 
 export default function CustomerAccountPage() {
+  const { store: dynamicStore } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES.fashion;
   const [activeTab, setActiveTab] = useState<AccountTab>("profile");
   const [profile, setProfile] = useState(INITIAL_PROFILE);
   const [addresses, setAddresses] = useState(INITIAL_ADDRESSES);
@@ -251,25 +255,26 @@ export default function CustomerAccountPage() {
   return (
     <div className="min-h-screen bg-white text-zinc-900 flex flex-col font-sans">
       <TemplateSwitcher />
+      <StoreHeader store={store} />
 
-      {/* Account Hero Banner */}
-      <section className="bg-[#111216] text-white border-b border-white/10 pt-10 pb-12">
+      {/* Account Hero Banner - Clean Light Mode */}
+      <section className="bg-white text-zinc-900 border-b border-zinc-200/80 pt-8 pb-10">
         <div className="max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-14">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="flex items-center gap-4 sm:gap-6">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-2xl sm:text-3xl flex items-center justify-center border-2 border-white/20 shadow-xl shrink-0">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold text-2xl sm:text-3xl flex items-center justify-center border-2 border-white shadow-md shrink-0">
                 OA
               </div>
               <div className="space-y-1">
                 <div className="flex items-center gap-2.5 flex-wrap">
-                  <h1 className="font-dropa text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">
+                  <h1 className="font-dropa text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-zinc-950">
                     {profile.fullName}
                   </h1>
-                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                  <span className="px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 shadow-2xs">
                     {profile.membershipTier}
                   </span>
                 </div>
-                <p className="text-xs sm:text-sm text-zinc-400 flex items-center gap-3">
+                <p className="text-xs sm:text-sm text-stone-500 flex items-center gap-3">
                   <span>{profile.email}</span>
                   <span>•</span>
                   <span>{profile.phone}</span>
@@ -278,75 +283,77 @@ export default function CustomerAccountPage() {
             </div>
 
             {/* Quick Metrics */}
-            <div className="flex items-center gap-4 bg-white/5 border border-white/10 p-3 sm:p-4 rounded-full">
-              <div className="px-4 py-1 text-center border-r border-white/10">
-                <span className="text-xl sm:text-2xl font-bold font-dropa block text-white">
+            <div className="flex items-center gap-4 bg-stone-50 border border-zinc-200 p-3 sm:p-4 rounded-full shadow-2xs">
+              <div className="px-4 py-1 text-center border-r border-zinc-200">
+                <span className="text-xl sm:text-2xl font-bold font-dropa block text-zinc-950">
                   {orders.length}
                 </span>
-                <span className="text-[10px] sm:text-xs text-zinc-400 uppercase tracking-wider">
+                <span className="text-[10px] sm:text-xs text-stone-500 uppercase tracking-wider font-medium">
                   Total Orders
                 </span>
               </div>
               <div className="px-4 py-1 text-center">
-                <span className="text-xl sm:text-2xl font-bold font-dropa block text-emerald-400">
+                <span className="text-xl sm:text-2xl font-bold font-dropa block text-emerald-600">
                   {bookings.filter((b) => b.status === "Confirmed").length}
                 </span>
-                <span className="text-[10px] sm:text-xs text-zinc-400 uppercase tracking-wider">
+                <span className="text-[10px] sm:text-xs text-stone-500 uppercase tracking-wider font-medium">
                   Active Bookings
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Navigation Tabs Pill Bar */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pt-8 mt-4 border-t border-white/10">
-            <button
-              onClick={() => setActiveTab("profile")}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
-                activeTab === "profile"
-                  ? "bg-white text-zinc-900 shadow-md"
-                  : "bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white"
-              }`}
-            >
-              <User className="w-4 h-4" />
-              <span>Customer Profile</span>
-            </button>
+          {/* Navigation Tabs Pill Bar in Light Mode Rail */}
+          <div className="pt-6 mt-6 border-t border-zinc-200/80">
+            <div className="inline-flex items-center gap-1 bg-stone-100/90 border border-stone-200/80 p-1.5 rounded-full overflow-x-auto max-w-full">
+              <button
+                onClick={() => setActiveTab("profile")}
+                className={`flex items-center gap-2 px-5 sm:px-6 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                  activeTab === "profile"
+                    ? "bg-white text-zinc-950 shadow-xs font-bold"
+                    : "text-stone-600 hover:text-zinc-950 hover:bg-white/60"
+                }`}
+              >
+                <User className="w-4 h-4 text-stone-500" />
+                <span>Customer Profile</span>
+              </button>
 
-            <button
-              onClick={() => setActiveTab("addresses")}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
-                activeTab === "addresses"
-                  ? "bg-white text-zinc-900 shadow-md"
-                  : "bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white"
-              }`}
-            >
-              <MapPin className="w-4 h-4" />
-              <span>Delivery Addresses ({addresses.length})</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("addresses")}
+                className={`flex items-center gap-2 px-5 sm:px-6 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                  activeTab === "addresses"
+                    ? "bg-white text-zinc-950 shadow-xs font-bold"
+                    : "text-stone-600 hover:text-zinc-950 hover:bg-white/60"
+                }`}
+              >
+                <MapPin className="w-4 h-4 text-stone-500" />
+                <span>Delivery Addresses ({addresses.length})</span>
+              </button>
 
-            <button
-              onClick={() => setActiveTab("orders")}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
-                activeTab === "orders"
-                  ? "bg-white text-zinc-900 shadow-md"
-                  : "bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white"
-              }`}
-            >
-              <Package className="w-4 h-4" />
-              <span>Order History ({orders.length})</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("orders")}
+                className={`flex items-center gap-2 px-5 sm:px-6 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                  activeTab === "orders"
+                    ? "bg-white text-zinc-950 shadow-xs font-bold"
+                    : "text-stone-600 hover:text-zinc-950 hover:bg-white/60"
+                }`}
+              >
+                <Package className="w-4 h-4 text-stone-500" />
+                <span>Order History ({orders.length})</span>
+              </button>
 
-            <button
-              onClick={() => setActiveTab("bookings")}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
-                activeTab === "bookings"
-                  ? "bg-white text-zinc-900 shadow-md"
-                  : "bg-white/5 text-zinc-300 hover:bg-white/10 hover:text-white"
-              }`}
-            >
-              <Calendar className="w-4 h-4" />
-              <span>Bookings & Appointments ({bookings.length})</span>
-            </button>
+              <button
+                onClick={() => setActiveTab("bookings")}
+                className={`flex items-center gap-2 px-5 sm:px-6 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                  activeTab === "bookings"
+                    ? "bg-white text-zinc-950 shadow-xs font-bold"
+                    : "text-stone-600 hover:text-zinc-950 hover:bg-white/60"
+                }`}
+              >
+                <Calendar className="w-4 h-4 text-stone-500" />
+                <span>Bookings & Appointments ({bookings.length})</span>
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -881,7 +888,7 @@ export default function CustomerAccountPage() {
         )}
       </main>
 
-      <StoreFooter store={MOCK_STORES.fashion} />
+      <StoreFooter store={store} />
     </div>
   );
 }

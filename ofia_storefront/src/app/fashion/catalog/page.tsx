@@ -141,7 +141,7 @@ export default function FashionCatalogPage() {
                   </p>
                 </div>
 
-                {product.fashionMeta && (
+                {product.fashionMeta ? (
                   <div className="flex items-center justify-between pt-2 border-t border-stone-100">
                     <div className="flex items-center gap-1">
                       {product.fashionMeta.colors.map((c) => (
@@ -155,6 +155,17 @@ export default function FashionCatalogPage() {
                     </div>
                     <div className="text-[11px] font-mono text-stone-500 font-semibold">
                       Sizes: {product.fashionMeta.sizes.join(", ")}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between pt-2 border-t border-stone-100">
+                    <div className="flex items-center gap-1">
+                      <span className="w-3.5 h-3.5 rounded-full border border-stone-300 bg-[#111111]" title="Obsidian Black" />
+                      <span className="w-3.5 h-3.5 rounded-full border border-stone-300 bg-[#D6C7B2]" title="Raw Sandstone" />
+                      <span className="w-3.5 h-3.5 rounded-full border border-stone-300 bg-[#1F4E3D]" title="Forest Emerald" />
+                    </div>
+                    <div className="text-[11px] font-mono text-stone-500 font-semibold">
+                      Sizes: XS, S, M, L, XL
                     </div>
                   </div>
                 )}

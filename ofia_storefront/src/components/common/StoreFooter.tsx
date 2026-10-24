@@ -222,7 +222,7 @@ export default function StoreFooter({ store }: StoreFooterProps) {
   const footerConfig = VERTICAL_FOOTER_CONFIG[store.vertical] || VERTICAL_FOOTER_CONFIG.fashion;
 
   return (
-    <footer className="w-full bg-[#111216] text-white pt-14 pb-10 border-t border-white/10 mt-20">
+    <footer className="w-full bg-white text-zinc-900 pt-14 pb-10 border-t border-zinc-200 mt-20">
       <div className="max-w-[1720px] mx-auto px-6 sm:px-10 lg:px-14 space-y-12">
         {/* Main Footer Dynamic Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -237,22 +237,22 @@ export default function StoreFooter({ store }: StoreFooterProps) {
                   className="w-9 h-9 object-contain shrink-0 rounded-md"
                 />
               ) : (
-                <div className="w-9 h-9 rounded-lg bg-zinc-800 text-white flex items-center justify-center font-bold text-xs uppercase tracking-tight shrink-0 shadow-xs">
+                <div className="w-9 h-9 rounded-lg bg-zinc-900 text-white flex items-center justify-center font-bold text-xs uppercase tracking-tight shrink-0 shadow-xs">
                   {(store.name || "OF").slice(0, 2)}
                 </div>
               )}
-              <span className="font-dropa font-semibold text-base sm:text-lg text-white">
+              <span className="font-dropa font-semibold text-base sm:text-lg text-zinc-900">
                 {toTitleCase(store.name)}
               </span>
             </div>
-            <p className="text-xs text-zinc-400 leading-relaxed max-w-sm">
+            <p className="text-xs text-stone-600 leading-relaxed max-w-sm">
               {store.description}
             </p>
             <div className="flex flex-wrap gap-1.5 pt-1">
               {store.badges.map((b) => (
                 <span
                   key={b}
-                  className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-white/5 border border-white/10 text-zinc-300"
+                  className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-stone-50 border border-zinc-200 text-stone-700 shadow-2xs"
                 >
                   {b}
                 </span>
@@ -262,17 +262,17 @@ export default function StoreFooter({ store }: StoreFooterProps) {
 
           {/* Col 2: Dynamic Extra Pages / Catalog Links */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold text-zinc-300 uppercase tracking-wider">
+            <h4 className="text-xs font-bold text-zinc-900 uppercase tracking-wider">
               {footerConfig.pagesHeading}
             </h4>
-            <ul className="space-y-2 text-xs text-zinc-400 font-medium">
+            <ul className="space-y-2.5 text-xs text-stone-600 font-medium">
               {footerConfig.pages.map((p) => (
                 <li key={p.label}>
                   <Link
                     href={p.href}
-                    className="hover:text-white flex items-center gap-1.5 transition-colors group"
+                    className="hover:text-zinc-950 flex items-center gap-1.5 transition-colors group"
                   >
-                    <ArrowRight className="w-3 h-3 text-zinc-600 group-hover:text-blue-400 transition-colors" />
+                    <ArrowRight className="w-3 h-3 text-stone-400 group-hover:text-zinc-900 group-hover:translate-x-0.5 transition-all" />
                     <span>{p.label}</span>
                   </Link>
                 </li>
@@ -282,22 +282,22 @@ export default function StoreFooter({ store }: StoreFooterProps) {
 
           {/* Col 3: Dynamic Vertical Services & Workflows */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold text-zinc-300 uppercase tracking-wider">
+            <h4 className="text-xs font-bold text-zinc-900 uppercase tracking-wider">
               {footerConfig.servicesHeading}
             </h4>
-            <ul className="space-y-2 text-xs text-zinc-400 font-medium">
+            <ul className="space-y-2.5 text-xs text-stone-600 font-medium">
               {footerConfig.services.map((s) => (
                 <li key={s.label}>
                   <Link
                     href={s.href}
-                    className="hover:text-white flex items-center justify-between gap-2 transition-colors group"
+                    className="hover:text-zinc-950 flex items-center justify-between gap-2 transition-colors group"
                   >
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <CheckCircle2 className="w-3 h-3 text-blue-400 shrink-0" />
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
                       <span className="truncate">{s.label}</span>
                     </div>
                     {s.badge && (
-                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-300 font-bold shrink-0">
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 font-bold shrink-0">
                         {s.badge}
                       </span>
                     )}
@@ -309,36 +309,36 @@ export default function StoreFooter({ store }: StoreFooterProps) {
 
           {/* Col 4: Store Hours & Contact */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold text-zinc-300 uppercase tracking-wider">
+            <h4 className="text-xs font-bold text-zinc-900 uppercase tracking-wider">
               Store Hours & Contact
             </h4>
-            <ul className="space-y-2 text-xs text-zinc-400">
+            <ul className="space-y-2.5 text-xs text-stone-600">
               <li className="flex items-start gap-2">
-                <MapPin className="w-3.5 h-3.5 text-zinc-500 shrink-0 mt-0.5" />
+                <MapPin className="w-3.5 h-3.5 text-stone-400 shrink-0 mt-0.5" />
                 <span>{store.contact.address}</span>
               </li>
               <li className="flex items-center gap-2">
-                <Phone className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                <a href={`tel:${store.contact.phone}`} className="hover:text-white transition-colors">
+                <Phone className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                <a href={`tel:${store.contact.phone}`} className="hover:text-zinc-950 transition-colors">
                   {store.contact.phone}
                 </a>
               </li>
               <li className="flex items-center gap-2">
-                <Mail className="w-3.5 h-3.5 text-zinc-500 shrink-0" />
-                <a href={`mailto:${store.contact.email}`} className="hover:text-white transition-colors">
+                <Mail className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                <a href={`mailto:${store.contact.email}`} className="hover:text-zinc-950 transition-colors">
                   {store.contact.email}
                 </a>
               </li>
-              <li className="flex items-center gap-2 text-zinc-400 font-medium pt-1">
-                <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <li className="flex items-center gap-2 text-stone-700 font-medium pt-1">
+                <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                 <span>{store.contact.operatingHours}</span>
               </li>
               <li className="pt-2">
                 <Link
                   href={`/info?vertical=${store.vertical}`}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-colors border border-white/10 shadow-xs"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-stone-50 hover:bg-stone-100 text-zinc-900 text-xs font-semibold transition-all border border-zinc-200 shadow-2xs"
                 >
-                  <Info className="w-3.5 h-3.5 text-blue-400" />
+                  <Info className="w-3.5 h-3.5 text-blue-600" />
                   <span>Store Info & Policies</span>
                 </Link>
               </li>
@@ -347,21 +347,21 @@ export default function StoreFooter({ store }: StoreFooterProps) {
         </div>
 
         {/* Bottom credits */}
-        <div className="pt-8 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between text-xs text-zinc-500 gap-3">
+        <div className="pt-8 border-t border-zinc-200 flex flex-col sm:flex-row items-center justify-between text-xs text-stone-500 gap-3">
           <p>© {new Date().getFullYear()} {toTitleCase(store.name)} · Powered by Ofia Commerce & Logistics Platform</p>
-          <div className="flex flex-wrap items-center gap-4 text-zinc-400">
+          <div className="flex flex-wrap items-center gap-4 text-stone-500">
             <Link
               href={`/info?vertical=${store.vertical}`}
-              className="hover:text-white transition-colors flex items-center gap-1.5"
+              className="hover:text-zinc-950 transition-colors flex items-center gap-1.5"
             >
-              <Info className="w-3.5 h-3.5 text-blue-400" />
+              <Info className="w-3.5 h-3.5 text-blue-600" />
               <span>Store Info</span>
             </Link>
-            <span>·</span>
+            <span className="text-stone-300">·</span>
             <span>Customer Protection</span>
-            <span>·</span>
+            <span className="text-stone-300">·</span>
             <span>Delivery Policy</span>
-            <span>·</span>
+            <span className="text-stone-300">·</span>
             <span>Privacy</span>
           </div>
         </div>

@@ -338,6 +338,43 @@ export const MOCK_PRODUCTS: Product[] = [
       ],
     },
   },
+  {
+    id: "fsh-003",
+    storeSlug: "fashion",
+    vertical: "fashion",
+    title: "Monochrome Handwoven Kimono Tunic",
+    subtitle: "Organic cotton-silk blend with artisanal contrast hem",
+    price: 65000,
+    originalPrice: 80000,
+    category: "Couture & Tailoring",
+    images: [
+      "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80",
+      "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=800&q=80",
+    ],
+    rating: 4.9,
+    reviewsCount: 35,
+    inStock: true,
+    isFeatured: true,
+    description: "An architectural kimono silhouette balancing fluid drape with structured lapels, tailored from heritage organic cotton and silk fibers.",
+    highlights: ["Organic Cotton-Silk Blend", "Hand-finished piped contrast hem", "Internal tie fastening"],
+    fashionMeta: {
+      sizes: ["XS", "S", "M", "L", "XL"],
+      colors: [
+        { name: "Forest Emerald", hex: "#1F4E3D" },
+        { name: "Midnight Navy", hex: "#152238" },
+        { name: "Champagne Ivory", hex: "#DFD3B6" },
+      ],
+      materials: ["70% Organic Cotton", "30% Mulberry Silk"],
+      fit: "Relaxed fluid silhouette with adjustable belt",
+      careInstructions: "Delicate dry clean or gentle hand wash cold.",
+      sizeGuide: [
+        { size: "S", chest: "36 - 38 in", waist: "30 - 32 in", hips: "36 - 38 in" },
+        { size: "M", chest: "40 - 42 in", waist: "33 - 35 in", hips: "40 - 42 in" },
+        { size: "L", chest: "44 - 46 in", waist: "36 - 38 in", hips: "44 - 46 in" },
+      ],
+    },
+    tags: ["New Season", "Heritage Silk"],
+  },
 
   // =================== 2. CARS & AUTOMOTIVE ===================
   {

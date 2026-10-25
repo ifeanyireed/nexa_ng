@@ -1,34 +1,45 @@
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
+import { MASTER_CONNECTION_STRING } from "@/lib/tenant-db-resolver";
+import { neon } from "@neondatabase/serverless";
 
-const TENANT_STORAGE_REGISTRY: Record<string, string> = {
-  neweratransports: "cloudinary://768523141117821:KeVQI7I7tuGlCxUIdWC9M6RdWjg@wnmabxiy",
-  neweratrnsports: "cloudinary://768523141117821:KeVQI7I7tuGlCxUIdWC9M6RdWjg@wnmabxiy",
-};
-
-const PLATFORM_STORAGE_URL =
-  process.env.PLATFORM_CLOUDINARY_URL ||
-  "cloudinary://472234474198431:QoGMyc2f1ZLt_MNFWEs9kNKTEls@ihfqdysu";
-
-function configureCloudinary(tenantId?: string | null) {
+async function getCloudinaryUrlForTenant(tenantId?: string | null): Promise<string> {
   const norm = (tenantId || "").toLowerCase().trim();
-  const cloudinaryUrl = (norm && TENANT_STORAGE_REGISTRY[norm]) || PLATFORM_STORAGE_URL;
+  if (norm && MASTER_CONNECTION_STRING) {
+    try {
+      const sql = neon(MASTER_CONNECTION_STRING);
+      const rows = await sql`
+        SELECT cloudinary_url FROM platform_tenants
+        WHERE LOWER(slug) = ${norm}
+           OR REPLACE(LOWER(slug), '-', '') = REPLACE(${norm}, '-', '')
+        LIMIT 1;
+      `;
+      if (rows && rows.length > 0 && rows[0].cloudinary_url) {
+        return rows[0].cloudinary_url.replace(/^CLOUDINARY_URL=/, "").trim();
+      }
+    } catch (err) {
+      console.warn("[Upload Route] Could not resolve tenant Cloudinary URL:", err);
+    }
+  }
 
+  const envUrl = process.env.CLOUDINARY_URL || process.env.PLATFORM_CLOUDINARY_URL || "";
+  return envUrl.replace(/^CLOUDINARY_URL=/, "").trim();
+}
+
+function configureCloudinaryFromUrl(rawUrl: string): boolean {
+  if (!rawUrl) return false;
   try {
-    const parsed = new URL(cloudinaryUrl);
+    const parsed = new URL(rawUrl);
     cloudinary.config({
       cloud_name: parsed.hostname,
       api_key: parsed.username,
       api_secret: parsed.password,
       secure: true,
     });
-  } catch {
-    cloudinary.config({
-      cloud_name: "ihfqdysu",
-      api_key: "472234474198431",
-      api_secret: "QoGMyc2f1ZLt_MNFWEs9kNKTEls",
-      secure: true,
-    });
+    return true;
+  } catch (err) {
+    console.warn("[Upload Route] Failed to parse Cloudinary URL:", err);
+    return false;
   }
 }
 
@@ -70,7 +81,13 @@ export async function POST(request: Request) {
       }
     }
 
-    configureCloudinary(tenantId);
+    const cloudinaryUrl = await getCloudinaryUrlForTenant(tenantId);
+    if (!cloudinaryUrl || !configureCloudinaryFromUrl(cloudinaryUrl)) {
+      return NextResponse.json(
+        { error: "Cloudinary storage is not configured in environment or tenant settings." },
+        { status: 500 }
+      );
+    }
 
     if (!imagePayload) {
       return NextResponse.json({ error: "No image payload provided" }, { status: 400 });

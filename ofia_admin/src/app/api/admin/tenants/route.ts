@@ -100,7 +100,6 @@ export async function POST(request: NextRequest) {
       ownerName,
       ownerEmail,
       planTier = "GROWTH",
-      databaseUrl = "",
       mrr = 24000,
       vertical = "retail",
     } = body;
@@ -128,17 +127,22 @@ export async function POST(request: NextRequest) {
 
     const sql = neon(MASTER_CONNECTION_STRING);
 
+    const hasDatabaseUrl = body.database_url !== undefined || body.databaseUrl !== undefined;
+    const databaseUrl = hasDatabaseUrl ? (body.database_url || body.databaseUrl || "").trim() : "";
+    const hasCloudinaryUrl = body.cloudinary_url !== undefined || body.cloudinaryUrl !== undefined;
+    const cloudinaryUrl = hasCloudinaryUrl ? (body.cloudinary_url || body.cloudinaryUrl || "").trim() : "";
+
     const [tenant] = await sql`
       INSERT INTO platform_tenants (
         id, name, slug, domain, owner_name, owner_email, plan_tier, status,
-        db_mode, database_url, is_custom_db, mrr, vertical,
+        db_mode, database_url, cloudinary_url, is_custom_db, is_custom_storage, mrr, vertical,
         erp_modules, shop_sub_modules, mobility_sub_modules,
         created_at, updated_at
       ) VALUES (
         ${id}, ${name}, ${cleanSlug}, ${effectiveDomain},
         ${ownerName || "Tenant Admin"}, ${ownerEmail || `admin@${cleanSlug}.ng`},
-        ${planTier}, 'Active', ${effectiveDbMode}, ${databaseUrl.trim()},
-        ${effectiveIsCustom}, ${mrr}, ${vertical},
+        ${planTier}, 'Active', ${effectiveDbMode}, ${databaseUrl}, ${cloudinaryUrl},
+        ${effectiveIsCustom}, ${Boolean(cloudinaryUrl)}, ${mrr}, ${vertical},
         ${JSON.stringify(erpModules)}::jsonb,
         ${JSON.stringify(shopSubModules)}::jsonb,
         ${JSON.stringify(mobilitySubModules)}::jsonb,
@@ -148,8 +152,10 @@ export async function POST(request: NextRequest) {
       SET name = EXCLUDED.name,
           domain = EXCLUDED.domain,
           db_mode = EXCLUDED.db_mode,
-          database_url = EXCLUDED.database_url,
+          database_url = CASE WHEN EXCLUDED.database_url <> '' THEN EXCLUDED.database_url ELSE platform_tenants.database_url END,
+          cloudinary_url = CASE WHEN EXCLUDED.cloudinary_url <> '' THEN EXCLUDED.cloudinary_url ELSE platform_tenants.cloudinary_url END,
           is_custom_db = EXCLUDED.is_custom_db,
+          is_custom_storage = CASE WHEN EXCLUDED.cloudinary_url <> '' THEN true ELSE platform_tenants.is_custom_storage END,
           plan_tier = EXCLUDED.plan_tier,
           erp_modules = EXCLUDED.erp_modules,
           shop_sub_modules = EXCLUDED.shop_sub_modules,
@@ -177,6 +183,93 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const rawId = (body.id || body.slug || "").trim();
+
+    if (!rawId) {
+      return NextResponse.json(
+        { success: false, error: "id or slug parameter is required in request body" },
+        { status: 400 }
+      );
+    }
+
+    const sql = neon(MASTER_CONNECTION_STRING);
+
+    const hasDatabaseUrl = body.database_url !== undefined || body.databaseUrl !== undefined;
+    const databaseUrl = hasDatabaseUrl ? (body.database_url || body.databaseUrl || "").trim() : null;
+
+    const hasCloudinaryUrl = body.cloudinary_url !== undefined || body.cloudinaryUrl !== undefined;
+    const cloudinaryUrl = hasCloudinaryUrl ? (body.cloudinary_url || body.cloudinaryUrl || "").trim() : null;
+
+    const hasMrr = body.mrr !== undefined && body.mrr !== null;
+    const mrr = hasMrr ? Number(body.mrr) : null;
+
+    const newSlug = body.slug ? body.slug.toLowerCase().trim() : null;
+    let newDomain = body.domain ? body.domain.trim() : null;
+    if (newSlug && (!newDomain || newDomain.endsWith(".ofia.ng") || newDomain.endsWith(".ofia.shop"))) {
+      newDomain = `${newSlug}.ofia.ng`;
+    }
+
+    const erpModules = body.erp_modules || body.erpModules || null;
+    const shopSubModules = body.shop_sub_modules || body.shopSubModules || null;
+    const mobilitySubModules = body.mobility_sub_modules || body.mobilitySubModules || null;
+
+    const [updated] = await sql`
+      UPDATE platform_tenants
+      SET name = COALESCE(${body.name}, name),
+          slug = COALESCE(${newSlug}, slug),
+          domain = COALESCE(${newDomain}, domain),
+          owner_name = COALESCE(${body.ownerName || body.owner_name}, owner_name),
+          owner_email = COALESCE(${body.ownerEmail || body.owner_email}, owner_email),
+          plan_tier = COALESCE(${body.planTier || body.plan_tier}, plan_tier),
+          status = COALESCE(${body.status}, status),
+          db_mode = 'DEDICATED',
+          database_url = CASE WHEN ${hasDatabaseUrl} THEN ${databaseUrl} ELSE database_url END,
+          cloudinary_url = CASE WHEN ${hasCloudinaryUrl} THEN ${cloudinaryUrl} ELSE cloudinary_url END,
+          is_custom_db = true,
+          logo = COALESCE(${body.logo}, logo),
+          mrr = CASE WHEN ${hasMrr} THEN ${mrr} ELSE mrr END,
+          vertical = COALESCE(${body.vertical}, vertical),
+          erp_modules = COALESCE(${erpModules ? JSON.stringify(erpModules) : null}::jsonb, erp_modules),
+          shop_sub_modules = COALESCE(${shopSubModules ? JSON.stringify(shopSubModules) : null}::jsonb, shop_sub_modules),
+          mobility_sub_modules = COALESCE(${mobilitySubModules ? JSON.stringify(mobilitySubModules) : null}::jsonb, mobility_sub_modules),
+          updated_at = NOW()
+      WHERE id = ${rawId} OR LOWER(slug) = ${rawId.toLowerCase()}
+      RETURNING *;
+    `;
+
+    if (!updated) {
+      return NextResponse.json(
+        { success: false, error: `Tenant workspace '${rawId}' not found` },
+        { status: 404 }
+      );
+    }
+
+    const targetSlug = updated.slug || rawId.toLowerCase();
+
+    // Automatically align and force synchronization into TenantRolePermission table
+    try {
+      await alignTenantModules(targetSlug, {
+        erpModules: updated.erp_modules || undefined,
+        shopSubModules: updated.shop_sub_modules || undefined,
+        mobilitySubModules: updated.mobility_sub_modules || undefined,
+      });
+    } catch (alignErr: any) {
+      console.warn(`[Tenant API] Automatic module alignment warning for '${targetSlug}':`, alignErr.message);
+    }
+
+    invalidateTenantDbCache(targetSlug);
+
+    return NextResponse.json({ success: true, tenant: updated });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
+
+export const PATCH = PUT;
 
 export async function DELETE(request: NextRequest) {
   const { searchParams } = new URL(request.url);

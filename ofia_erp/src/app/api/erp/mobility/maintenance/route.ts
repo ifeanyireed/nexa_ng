@@ -3,7 +3,6 @@ import fs from "fs";
 import path from "path";
 import { neon } from "@neondatabase/serverless";
 import { getValidatedTenantSlug } from "@/lib/crm-tenant";
-import { NEWERATRANSPORTS_SEED } from "./seeds/neweratransports-seed";
 import {
   FleetVehicleUnit,
   RoutineInspectionRecord,
@@ -11,7 +10,7 @@ import {
   DriverAssignmentRecord,
   DocumentRecord,
   DocumentType,
-} from "./seeds/types";
+} from "./types";
 
 export const dynamic = "force-dynamic";
 
@@ -72,15 +71,6 @@ function getLocalTenantData(tenantSlug: string) {
     return memoryStore[normSlug];
   }
 
-  if (normSlug === "neweratransports") {
-    const seed = JSON.parse(JSON.stringify(NEWERATRANSPORTS_SEED));
-    try {
-      fs.writeFileSync(filePath, JSON.stringify(seed, null, 2), "utf-8");
-    } catch {}
-    memoryStore[normSlug] = seed;
-    return seed;
-  }
-
   const blankData = {
     vehicles: [],
     routineInspections: [],
@@ -132,12 +122,6 @@ async function fetchFromNeon(tenantSlug: string) {
     WHERE tenant_slug = ${normSlug}
     ORDER BY created_at DESC
   `;
-
-  // Seed New Era Transports into Neon on first run if empty
-  if (dbVehicles.length === 0 && normSlug === "neweratransports") {
-    await seedNewEraIntoNeon(sql, normSlug);
-    return fetchFromNeon(normSlug);
-  }
 
   // 2. Fetch papers
   const dbPapers = await sql`
@@ -274,100 +258,6 @@ async function fetchFromNeon(tenantSlug: string) {
   }));
 
   return { vehicles, routineInspections, partRepairs, drivers };
-}
-
-async function seedNewEraIntoNeon(sql: any, tenantSlug: string) {
-  const seed = NEWERATRANSPORTS_SEED;
-
-  for (const v of seed.vehicles) {
-    await sql`
-      INSERT INTO fleet_vehicles (
-        id, tenant_slug, plate_number, vehicle_type, make_model, region,
-        assigned_driver_name, assigned_driver_phone, assigned_driver_lasdri,
-        operational_status, open_repairs_count, total_maintenance_cost,
-        last_routine_inspection_json
-      ) VALUES (
-        ${v.id}, ${tenantSlug}, ${v.plateNumber}, ${v.vehicleType}, ${v.vehicleType}, ${v.region},
-        ${v.assignedDriverName}, ${v.assignedDriverPhone || ''}, ${Boolean(v.assignedDriverLasdri)},
-        ${v.operationalStatus}, ${v.openRepairsCount || 0}, ${v.totalMaintenanceCost || 0},
-        ${v.lastRoutineInspection ? JSON.stringify(v.lastRoutineInspection) : null}
-      )
-      ON CONFLICT (tenant_slug, plate_number) DO UPDATE SET
-        operational_status = EXCLUDED.operational_status,
-        open_repairs_count = EXCLUDED.open_repairs_count,
-        total_maintenance_cost = EXCLUDED.total_maintenance_cost,
-        last_routine_inspection_json = EXCLUDED.last_routine_inspection_json
-    `;
-
-    for (const [key, doc] of Object.entries(v.documents)) {
-      const docType = key as DocumentType;
-      await sql`
-        INSERT INTO fleet_papers (
-          id, tenant_slug, vehicle_id, vehicle_plate, paper_type, paper_name,
-          doc_ref_number, renewed_date, expiring_date, days_remaining,
-          status, renewal_amount
-        ) VALUES (
-          ${`${v.id}-${docType}`}, ${tenantSlug}, ${v.id}, ${v.plateNumber},
-          ${docType}, ${doc.label}, ${doc.docRefNumber || ''},
-          ${doc.renewedDate ? new Date(doc.renewedDate) : new Date()},
-          ${doc.expiringDate ? new Date(doc.expiringDate) : new Date()},
-          ${doc.daysRemaining || 0}, ${doc.status}, ${doc.renewalAmount || 0}
-        )
-        ON CONFLICT (tenant_slug, vehicle_id, paper_type) DO UPDATE SET
-          renewed_date = EXCLUDED.renewed_date,
-          expiring_date = EXCLUDED.expiring_date,
-          days_remaining = EXCLUDED.days_remaining,
-          status = EXCLUDED.status,
-          renewal_amount = EXCLUDED.renewal_amount
-      `;
-    }
-  }
-
-  for (const i of seed.routineInspections) {
-    await sql`
-      INSERT INTO routine_inspections (
-        id, tenant_slug, vehicle_id, vehicle_plate, inspector_name,
-        inspection_date, inspection_type, overall_status, checklist_json, notes
-      ) VALUES (
-        ${i.id}, ${tenantSlug}, ${`veh-${i.vehiclePlate}`}, ${i.vehiclePlate},
-        ${i.inspectorName}, ${new Date(i.inspectionDate)}, ${i.inspectionType},
-        ${i.overallStatus}, ${JSON.stringify(i.checklist)}, ${i.notes}
-      )
-      ON CONFLICT (id) DO NOTHING
-    `;
-  }
-
-  for (const r of seed.partRepairs) {
-    await sql`
-      INSERT INTO maintenance_repairs (
-        id, tenant_slug, vehicle_id, vehicle_plate, work_order_number,
-        part_name, category, damaged_date, repaired_date, turnaround_time_days,
-        cost_amount, workshop_vendor, status, jcc_signed_off, remark
-      ) VALUES (
-        ${r.id}, ${tenantSlug}, ${`veh-${r.vehiclePlate}`}, ${r.vehiclePlate},
-        ${r.workOrderNumber}, ${r.partName}, ${r.category}, ${new Date(r.damagedDate)},
-        ${r.repairedDate ? new Date(r.repairedDate) : null}, ${r.tatDays || 0},
-        ${r.costAmount || 0}, ${r.workshopVendor}, ${r.status}, ${Boolean(r.jccSignedOff)},
-        ${r.remark || ''}
-      )
-      ON CONFLICT (id) DO NOTHING
-    `;
-  }
-
-  for (const d of seed.drivers) {
-    await sql`
-      INSERT INTO fleet_drivers (
-        id, tenant_slug, name, phone, assigned_plate, assigned_vehicle_type,
-        region, license_number, license_expiry, lasdri_certified, status, assigned_date
-      ) VALUES (
-        ${d.id}, ${tenantSlug}, ${d.name}, ${d.phone || ''}, ${d.assignedPlate || ''},
-        ${d.assignedVehicleType || ''}, ${d.region || 'General'}, ${d.licenseNumber || ''},
-        ${d.licenseExpiry || ''}, ${Boolean(d.lasdriCertified)}, ${d.status},
-        ${d.assignedDate ? new Date(d.assignedDate) : null}
-      )
-      ON CONFLICT (tenant_slug, name) DO NOTHING
-    `;
-  }
 }
 
 // ---------------------------------------------------------------------------

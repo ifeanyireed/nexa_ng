@@ -55,6 +55,20 @@ tmp/
 *.sql.gz
 !database/migrations/*.sql
 
+# Seed files, scripts and seed directories
+*seed*.sql
+*seeds*.sql
+*seed*.json
+*seeds*.json
+*seed*.go
+*seeds*.go
+*seed*.ts
+*seeds*.ts
+**/seeds/*
+**/cmd/seed/*
+seed/
+seeds/
+
 # Neon & Agents local configs
 .neon
 .neon/

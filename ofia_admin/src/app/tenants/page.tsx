@@ -356,62 +356,11 @@ function TenantManagementContent() {
             };
           });
 
-          // Ensure non-duplicated merge with initial reference items
-          const existingSlugs = new Set(mappedRemote.map((m) => m.slug));
-          INITIAL_TENANTS.forEach((initT) => {
-            if (!existingSlugs.has(initT.slug)) {
-              mappedRemote.push(initT);
-            }
-          });
           baseList = mappedRemote;
         }
 
-        // 2. Fetch live RBAC permission matrix for each tenant from Postgres TenantRolePermission table (:8081)
-        const remotePromises = baseList.map(async (t) => {
-          try {
-            const res = await USER_API.getTenantRBAC(t.slug);
-            if (res && res.matrix) {
-              const adminMatrix = res.matrix.admin || res.matrix.employee || res.matrix.tenant_provision || {};
-              const modulesEnabled: Record<string, boolean> = {};
-              SUPER_ADMIN_ERP_MODULES.forEach((m) => {
-                modulesEnabled[m.key] = adminMatrix[m.key] ?? t.erpModules?.[m.key] ?? true;
-              });
-              const subModulesEnabled: Record<string, boolean> = {};
-              SHOP_SUB_MODULES.forEach((sub) => {
-                subModulesEnabled[sub.key] = adminMatrix[sub.key] ?? t.shopSubModules?.[sub.key] ?? true;
-              });
-              const mobilitySubModulesEnabled: Record<string, boolean> = {};
-              MOBILITY_SUB_MODULES.forEach((sub) => {
-                mobilitySubModulesEnabled[sub.key] = adminMatrix[sub.key] ?? t.mobilitySubModules?.[sub.key] ?? true;
-              });
-              return { 
-                id: t.id, 
-                modules: modulesEnabled, 
-                shopSubModules: subModulesEnabled, 
-                mobilitySubModules: mobilitySubModulesEnabled 
-              };
-            }
-          } catch {
-            return null;
-          }
-          return null;
-        });
-
-        const results = await Promise.all(remotePromises);
         if (isMounted) {
-          const finalTenants = baseList.map((t) => {
-            const found = results.find((r) => r && r.id === t.id);
-            if (found) {
-              return {
-                ...t,
-                erpModules: found.modules || t.erpModules,
-                shopSubModules: found.shopSubModules || t.shopSubModules,
-                mobilitySubModules: found.mobilitySubModules || t.mobilitySubModules,
-              };
-            }
-            return t;
-          });
-          setTenants(finalTenants);
+          setTenants(baseList);
         }
       } catch (err) {
         console.warn("Could not sync remote tenants from database:", err);
@@ -448,7 +397,7 @@ function TenantManagementContent() {
   const trialingCount = tenants.filter((t) => t.status === "Trialing").length;
 
   // Active focused tenant (if not "all")
-  const focusedTenant = selectedTenantId !== "all" ? tenants.find((t) => t.id === selectedTenantId) : null;
+  const focusedTenant = selectedTenantId !== "all" ? tenants.find((t) => t.id === selectedTenantId || t.slug === selectedTenantId) : null;
 
   const handleImpersonate = (t: TenantOrg) => {
     const isLocal =
@@ -462,9 +411,9 @@ function TenantManagementContent() {
     window.open(targetUrl, "_blank");
   };
 
-  // Toggle single module for a tenant with remote DB persistence in TenantRolePermission table
+  // Toggle single module for a tenant with remote DB persistence in platform_tenants & TenantRolePermission
   const handleToggleModule = async (tenantId: string, moduleKey: string) => {
-    const tenant = tenants.find((t) => t.id === tenantId);
+    const tenant = tenants.find((t) => t.id === tenantId || t.slug === tenantId);
     if (!tenant) return;
 
     const currentModules = tenant.erpModules || {};
@@ -473,13 +422,34 @@ function TenantManagementContent() {
 
     // Update local state immediately
     setTenants((prev) =>
-      prev.map((t) => (t.id === tenantId ? { ...t, erpModules: updatedModules } : t))
+      prev.map((t) => (t.id === tenant.id || t.slug === tenant.slug ? { ...t, erpModules: updatedModules } : t))
     );
 
-    // Persist to Neon Postgres database table TenantRolePermission
+    // Persist to Neon Postgres database table platform_tenants & TenantRolePermission
     setSavingModuleKeys((prev) => ({ ...prev, [moduleKey]: true }));
     setIsSavingDb(true);
     try {
+      const targetSlug = tenant.slug || tenant.id;
+      const res = await fetch(`/api/admin/tenants/${encodeURIComponent(targetSlug)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: tenant.id,
+          slug: tenant.slug,
+          erp_modules: updatedModules,
+          shop_sub_modules: tenant.shopSubModules,
+          mobility_sub_modules: tenant.mobilitySubModules,
+        }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || `HTTP ${res.status}`);
+      }
+
+      showToast(`⚡ ${tenant.name}: '${moduleKey.toUpperCase()}' module synced to Neon Postgres`);
+
+      // Extra background sync to central user service without blocking UI
       const defaultRoleKeys = [
         "tenant_provision",
         "admin",
@@ -560,21 +530,14 @@ function TenantManagementContent() {
           }
         }
       });
-
-      await USER_API.saveTenantRBAC(tenant.slug, matrixPayload);
-      await fetch(`/api/admin/tenants/${encodeURIComponent(tenant.id)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          erp_modules: updatedModules,
-          shop_sub_modules: tenant.shopSubModules,
-          mobility_sub_modules: tenant.mobilitySubModules,
-        }),
-      }).catch(() => null);
-      showToast(`⚡ ${tenant.name}: '${moduleKey.toUpperCase()}' module synced to Neon Postgres`);
+      USER_API.saveTenantRBAC(tenant.slug, matrixPayload).catch(() => null);
     } catch (err: any) {
       console.warn("Failed to persist module toggle:", err);
-      showToast(`${tenant.name}: Module toggled locally`);
+      showToast(`⚠️ Failed to persist module: ${err.message || "Network error"}`);
+      // Revert on failure
+      setTenants((prev) =>
+        prev.map((t) => (t.id === tenant.id || t.slug === tenant.slug ? { ...t, erpModules: currentModules } : t))
+      );
     } finally {
       setIsSavingDb(false);
       setSavingModuleKeys((prev) => ({ ...prev, [moduleKey]: false }));
@@ -583,20 +546,41 @@ function TenantManagementContent() {
 
   // Bulk toggle for a tenant
   const handleBulkToggleTenant = async (tenantId: string, enableAll: boolean) => {
-    const tenant = tenants.find((t) => t.id === tenantId);
+    const tenant = tenants.find((t) => t.id === tenantId || t.slug === tenantId);
     if (!tenant) return;
 
+    const previousModules = tenant.erpModules || {};
     const updatedModules: Record<string, boolean> = {};
     SUPER_ADMIN_ERP_MODULES.forEach((m) => {
       updatedModules[m.key] = enableAll;
     });
 
     setTenants((prev) =>
-      prev.map((t) => (t.id === tenantId ? { ...t, erpModules: updatedModules } : t))
+      prev.map((t) => (t.id === tenant.id || t.slug === tenant.slug ? { ...t, erpModules: updatedModules } : t))
     );
 
     setIsSavingDb(true);
     try {
+      const targetSlug = tenant.slug || tenant.id;
+      const res = await fetch(`/api/admin/tenants/${encodeURIComponent(targetSlug)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: tenant.id,
+          slug: tenant.slug,
+          erp_modules: updatedModules,
+          shop_sub_modules: tenant.shopSubModules,
+          mobility_sub_modules: tenant.mobilitySubModules,
+        }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || `HTTP ${res.status}`);
+      }
+
+      showToast(`⚡ ${tenant.name}: All modules ${enableAll ? "granted" : "revoked"} in Neon Postgres`);
+
       const defaultRoleKeys = [
         "tenant_provision",
         "admin",
@@ -672,10 +656,13 @@ function TenantManagementContent() {
           };
         }
       });
-      await USER_API.saveTenantRBAC(tenant.slug, matrixPayload);
-      showToast(`⚡ ${tenant.name}: All modules ${enableAll ? "granted" : "revoked"} in Neon Postgres`);
-    } catch {
-      showToast(`${tenant.name}: Modules updated`);
+      USER_API.saveTenantRBAC(tenant.slug, matrixPayload).catch(() => null);
+    } catch (err: any) {
+      console.warn("Failed to persist bulk modules toggle:", err);
+      showToast(`⚠️ Failed to persist modules: ${err.message || "Error"}`);
+      setTenants((prev) =>
+        prev.map((t) => (t.id === tenant.id || t.slug === tenant.slug ? { ...t, erpModules: previousModules } : t))
+      );
     } finally {
       setIsSavingDb(false);
     }
@@ -683,7 +670,7 @@ function TenantManagementContent() {
 
   // Toggle individual Shop Sub-Module (pos, inventory, catalog, services, orders, store, referrals)
   const handleToggleShopSubModule = async (tenantId: string, subKey: string) => {
-    const tenant = tenants.find((t) => t.id === tenantId);
+    const tenant = tenants.find((t) => t.id === tenantId || t.slug === tenantId);
     if (!tenant) return;
 
     const currentSubs = tenant.shopSubModules || {
@@ -702,7 +689,7 @@ function TenantManagementContent() {
     // Update local state immediately
     setTenants((prev) =>
       prev.map((t) =>
-        t.id === tenantId
+        t.id === tenant.id || t.slug === tenant.slug
           ? { ...t, shopSubModules: updatedSubs, erpModules: updatedModules }
           : t
       )
@@ -712,32 +699,47 @@ function TenantManagementContent() {
     setSavingModuleKeys((prev) => ({ ...prev, [`shop_${subKey}`]: true }));
     setIsSavingDb(true);
     try {
+      const targetSlug = tenant.slug || tenant.id;
+      const res = await fetch(`/api/admin/tenants/${encodeURIComponent(targetSlug)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: tenant.id,
+          slug: tenant.slug,
+          erp_modules: tenant.erpModules,
+          shop_sub_modules: updatedSubs,
+          mobility_sub_modules: tenant.mobilitySubModules,
+        }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || `HTTP ${res.status}`);
+      }
+
+      const subItem = SHOP_SUB_MODULES.find((s) => s.key === subKey);
+      showToast(`⚡ ${tenant.name}: '${subItem?.shortLabel || subKey}' sub-module ${newStatus ? "enabled" : "disabled"}`);
+
       const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant"];
       const matrixPayload: Record<string, Record<string, boolean>> = {};
-
       defaultRoleKeys.forEach((role) => {
         matrixPayload[role] = {
           ...(tenant.erpModules || {}),
           ...updatedSubs,
         };
       });
-
-      await USER_API.saveTenantRBAC(tenant.slug, matrixPayload);
-      await fetch(`/api/admin/tenants/${encodeURIComponent(tenant.id)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          erp_modules: tenant.erpModules,
-          shop_sub_modules: updatedSubs,
-          mobility_sub_modules: tenant.mobilitySubModules,
-        }),
-      }).catch(() => null);
-      await GTM_API.updateAdminOrganization(tenant.id, { shopSubModules: updatedSubs }).catch(() => null);
-      const subItem = SHOP_SUB_MODULES.find((s) => s.key === subKey);
-      showToast(`⚡ ${tenant.name}: '${subItem?.shortLabel || subKey}' sub-module ${newStatus ? "enabled" : "disabled"}`);
-    } catch (err) {
+      USER_API.saveTenantRBAC(tenant.slug, matrixPayload).catch(() => null);
+      GTM_API.updateAdminOrganization(tenant.id, { shopSubModules: updatedSubs }).catch(() => null);
+    } catch (err: any) {
       console.warn("Failed to persist shop sub-module toggle:", err);
-      showToast(`${tenant.name}: Sub-module toggled locally`);
+      showToast(`⚠️ Failed to persist sub-module: ${err.message || "Error"}`);
+      setTenants((prev) =>
+        prev.map((t) =>
+          t.id === tenant.id || t.slug === tenant.slug
+            ? { ...t, shopSubModules: currentSubs, erpModules: tenant.erpModules }
+            : t
+        )
+      );
     } finally {
       setIsSavingDb(false);
       setSavingModuleKeys((prev) => ({ ...prev, [`shop_${subKey}`]: false }));
@@ -746,9 +748,10 @@ function TenantManagementContent() {
 
   // Bulk toggle Shop Sub-Modules
   const handleBulkToggleShopSubModules = async (tenantId: string, enableAll: boolean) => {
-    const tenant = tenants.find((t) => t.id === tenantId);
+    const tenant = tenants.find((t) => t.id === tenantId || t.slug === tenantId);
     if (!tenant) return;
 
+    const previousSubs = tenant.shopSubModules || {};
     const updatedSubs: Record<string, boolean> = {};
     SHOP_SUB_MODULES.forEach((s) => {
       updatedSubs[s.key] = enableAll;
@@ -757,7 +760,7 @@ function TenantManagementContent() {
 
     setTenants((prev) =>
       prev.map((t) =>
-        t.id === tenantId
+        t.id === tenant.id || t.slug === tenant.slug
           ? { ...t, shopSubModules: updatedSubs, erpModules: updatedModules }
           : t
       )
@@ -765,6 +768,26 @@ function TenantManagementContent() {
 
     setIsSavingDb(true);
     try {
+      const targetSlug = tenant.slug || tenant.id;
+      const res = await fetch(`/api/admin/tenants/${encodeURIComponent(targetSlug)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: tenant.id,
+          slug: tenant.slug,
+          erp_modules: tenant.erpModules,
+          shop_sub_modules: updatedSubs,
+          mobility_sub_modules: tenant.mobilitySubModules,
+        }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || `HTTP ${res.status}`);
+      }
+
+      showToast(`⚡ ${tenant.name}: All Shop sub-modules ${enableAll ? "enabled" : "disabled"}`);
+
       const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant"];
       const matrixPayload: Record<string, Record<string, boolean>> = {};
       defaultRoleKeys.forEach((role) => {
@@ -773,20 +796,18 @@ function TenantManagementContent() {
           ...updatedSubs,
         };
       });
-      await USER_API.saveTenantRBAC(tenant.slug, matrixPayload);
-      await fetch(`/api/admin/tenants/${encodeURIComponent(tenant.id)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          erp_modules: tenant.erpModules,
-          shop_sub_modules: updatedSubs,
-          mobility_sub_modules: tenant.mobilitySubModules,
-        }),
-      }).catch(() => null);
-      await GTM_API.updateAdminOrganization(tenant.id, { shopSubModules: updatedSubs }).catch(() => null);
-      showToast(`⚡ ${tenant.name}: All Shop sub-modules ${enableAll ? "enabled" : "disabled"}`);
-    } catch {
-      showToast(`${tenant.name}: Shop sub-modules updated locally`);
+      USER_API.saveTenantRBAC(tenant.slug, matrixPayload).catch(() => null);
+      GTM_API.updateAdminOrganization(tenant.id, { shopSubModules: updatedSubs }).catch(() => null);
+    } catch (err: any) {
+      console.warn("Failed to persist bulk shop sub-modules:", err);
+      showToast(`⚠️ Failed to persist: ${err.message || "Error"}`);
+      setTenants((prev) =>
+        prev.map((t) =>
+          t.id === tenant.id || t.slug === tenant.slug
+            ? { ...t, shopSubModules: previousSubs, erpModules: tenant.erpModules }
+            : t
+        )
+      );
     } finally {
       setIsSavingDb(false);
     }
@@ -794,7 +815,7 @@ function TenantManagementContent() {
 
   // Toggle individual Mobility Sub-Module (ops, vehicles, drivers, maintenance, routes, finance, shuttle, interstate, on_demand, rental, school, staff)
   const handleToggleMobilitySubModule = async (tenantId: string, subKey: string) => {
-    const tenant = tenants.find((t) => t.id === tenantId);
+    const tenant = tenants.find((t) => t.id === tenantId || t.slug === tenantId);
     if (!tenant) return;
 
     const currentSubs = tenant.mobilitySubModules || {
@@ -818,7 +839,7 @@ function TenantManagementContent() {
     // Update local state immediately
     setTenants((prev) =>
       prev.map((t) =>
-        t.id === tenantId
+        t.id === tenant.id || t.slug === tenant.slug
           ? { ...t, mobilitySubModules: updatedSubs, erpModules: updatedModules }
           : t
       )
@@ -828,9 +849,29 @@ function TenantManagementContent() {
     setSavingModuleKeys((prev) => ({ ...prev, [`mobility_${subKey}`]: true }));
     setIsSavingDb(true);
     try {
+      const targetSlug = tenant.slug || tenant.id;
+      const res = await fetch(`/api/admin/tenants/${encodeURIComponent(targetSlug)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: tenant.id,
+          slug: tenant.slug,
+          erp_modules: tenant.erpModules,
+          shop_sub_modules: tenant.shopSubModules,
+          mobility_sub_modules: updatedSubs,
+        }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || `HTTP ${res.status}`);
+      }
+
+      const subItem = MOBILITY_SUB_MODULES.find((s) => s.key === subKey);
+      showToast(`⚡ ${tenant.name}: '${subItem?.shortLabel || subKey}' sub-module ${newStatus ? "enabled" : "disabled"}`);
+
       const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant", "dispatcher"];
       const matrixPayload: Record<string, Record<string, boolean>> = {};
-
       defaultRoleKeys.forEach((role) => {
         matrixPayload[role] = {
           ...(tenant.erpModules || {}),
@@ -839,22 +880,17 @@ function TenantManagementContent() {
           "on-demand": updatedSubs.on_demand !== undefined ? updatedSubs.on_demand : Boolean(updatedSubs["on-demand"]),
         };
       });
-
-      await USER_API.saveTenantRBAC(tenant.slug, matrixPayload);
-      await fetch(`/api/admin/tenants/${encodeURIComponent(tenant.id)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          erp_modules: tenant.erpModules,
-          shop_sub_modules: tenant.shopSubModules,
-          mobility_sub_modules: updatedSubs,
-        }),
-      }).catch(() => null);
-      const subItem = MOBILITY_SUB_MODULES.find((s) => s.key === subKey);
-      showToast(`⚡ ${tenant.name}: '${subItem?.shortLabel || subKey}' sub-module ${newStatus ? "enabled" : "disabled"}`);
-    } catch (err) {
+      USER_API.saveTenantRBAC(tenant.slug, matrixPayload).catch(() => null);
+    } catch (err: any) {
       console.warn("Failed to persist mobility sub-module toggle:", err);
-      showToast(`${tenant.name}: Sub-module toggled locally`);
+      showToast(`⚠️ Failed to persist sub-module: ${err.message || "Error"}`);
+      setTenants((prev) =>
+        prev.map((t) =>
+          t.id === tenant.id || t.slug === tenant.slug
+            ? { ...t, mobilitySubModules: currentSubs, erpModules: tenant.erpModules }
+            : t
+        )
+      );
     } finally {
       setIsSavingDb(false);
       setSavingModuleKeys((prev) => ({ ...prev, [`mobility_${subKey}`]: false }));
@@ -863,9 +899,10 @@ function TenantManagementContent() {
 
   // Bulk toggle Mobility Sub-Modules
   const handleBulkToggleMobilitySubModules = async (tenantId: string, enableAll: boolean) => {
-    const tenant = tenants.find((t) => t.id === tenantId);
+    const tenant = tenants.find((t) => t.id === tenantId || t.slug === tenantId);
     if (!tenant) return;
 
+    const previousSubs = tenant.mobilitySubModules || {};
     const updatedSubs: Record<string, boolean> = {};
     MOBILITY_SUB_MODULES.forEach((s) => {
       updatedSubs[s.key] = enableAll;
@@ -874,7 +911,7 @@ function TenantManagementContent() {
 
     setTenants((prev) =>
       prev.map((t) =>
-        t.id === tenantId
+        t.id === tenant.id || t.slug === tenant.slug
           ? { ...t, mobilitySubModules: updatedSubs, erpModules: updatedModules }
           : t
       )
@@ -882,6 +919,26 @@ function TenantManagementContent() {
 
     setIsSavingDb(true);
     try {
+      const targetSlug = tenant.slug || tenant.id;
+      const res = await fetch(`/api/admin/tenants/${encodeURIComponent(targetSlug)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: tenant.id,
+          slug: tenant.slug,
+          erp_modules: tenant.erpModules,
+          shop_sub_modules: tenant.shopSubModules,
+          mobility_sub_modules: updatedSubs,
+        }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || `HTTP ${res.status}`);
+      }
+
+      showToast(`⚡ ${tenant.name}: All Mobility sub-modules ${enableAll ? "enabled" : "disabled"}`);
+
       const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant", "dispatcher"];
       const matrixPayload: Record<string, Record<string, boolean>> = {};
       defaultRoleKeys.forEach((role) => {
@@ -892,10 +949,17 @@ function TenantManagementContent() {
           "on-demand": updatedSubs.on_demand !== undefined ? updatedSubs.on_demand : Boolean(updatedSubs["on-demand"]),
         };
       });
-      await USER_API.saveTenantRBAC(tenant.slug, matrixPayload);
-      showToast(`⚡ ${tenant.name}: All Mobility sub-modules ${enableAll ? "enabled" : "disabled"}`);
-    } catch {
-      showToast(`${tenant.name}: Mobility sub-modules updated locally`);
+      USER_API.saveTenantRBAC(tenant.slug, matrixPayload).catch(() => null);
+    } catch (err: any) {
+      console.warn("Failed to persist bulk mobility toggle:", err);
+      showToast(`⚠️ Failed to persist: ${err.message || "Error"}`);
+      setTenants((prev) =>
+        prev.map((t) =>
+          t.id === tenant.id || t.slug === tenant.slug
+            ? { ...t, mobilitySubModules: previousSubs, erpModules: tenant.erpModules }
+            : t
+        )
+      );
     } finally {
       setIsSavingDb(false);
     }
@@ -903,24 +967,44 @@ function TenantManagementContent() {
 
   // Assign Industry Vertical Archetype for Tenant
   const handleAssignVertical = async (tenantId: string, verticalKey: string) => {
-    const tenant = tenants.find((t) => t.id === tenantId);
+    const tenant = tenants.find((t) => t.id === tenantId || t.slug === tenantId);
     if (!tenant) return;
 
+    const prevVertical = tenant.vertical;
     setTenants((prev) =>
-      prev.map((t) => (t.id === tenantId ? { ...t, vertical: verticalKey } : t))
+      prev.map((t) => (t.id === tenant.id || t.slug === tenant.slug ? { ...t, vertical: verticalKey } : t))
     );
 
     setIsSavingDb(true);
     try {
+      const targetSlug = tenant.slug || tenant.id;
+      const res = await fetch(`/api/admin/tenants/${encodeURIComponent(targetSlug)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: tenant.id,
+          slug: tenant.slug,
+          vertical: verticalKey,
+        }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || `HTTP ${res.status}`);
+      }
+
       await GTM_API.updateAdminOrganization(tenant.id, {
         vertical: verticalKey,
       }).catch(() => null);
 
       const vertObj = TENANT_VERTICAL_ARCHETYPES.find((v) => v.id === verticalKey);
       showToast(`⚡ ${tenant.name}: Assigned to '${vertObj?.name || verticalKey}' vertical`);
-    } catch (err) {
+    } catch (err: any) {
       console.warn("Failed to persist vertical assignment:", err);
-      showToast(`${tenant.name}: Vertical archetype updated locally`);
+      showToast(`⚠️ Failed to persist vertical: ${err.message || "Error"}`);
+      setTenants((prev) =>
+        prev.map((t) => (t.id === tenant.id || t.slug === tenant.slug ? { ...t, vertical: prevVertical } : t))
+      );
     } finally {
       setIsSavingDb(false);
     }
@@ -988,29 +1072,46 @@ function TenantManagementContent() {
 
     setIsSavingDb(true);
     try {
+      const targetSlug = selectedTenantForQuota.slug || selectedTenantForQuota.id;
+      const res = await fetch(`/api/admin/tenants/${encodeURIComponent(targetSlug)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: selectedTenantForQuota.id,
+          slug: selectedTenantForQuota.slug,
+          plan_tier: editPlanTier,
+        }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || `HTTP ${res.status}`);
+      }
+
       await GTM_API.updateAdminOrganization(selectedTenantForQuota.id, {
         plan_tier: editPlanTier,
       }).catch(() => null);
+
       showToast(`Updated subscription limits for ${selectedTenantForQuota.name} in Neon Postgres!`);
-    } catch {
-      showToast(`Updated subscription limits for ${selectedTenantForQuota.name}`);
+      setTenants((prev) =>
+        prev.map((t) =>
+          t.id === selectedTenantForQuota.id || t.slug === selectedTenantForQuota.slug
+            ? {
+                ...t,
+                planTier: editPlanTier,
+                leadsLimit: updatedLeads,
+                campaignsLimit: updatedCampaigns,
+              }
+            : t
+        )
+      );
+      setSelectedTenantForQuota(null);
+    } catch (err: any) {
+      console.warn("Failed to persist quota:", err);
+      showToast(`⚠️ Failed to update quota: ${err.message || "Error"}`);
     } finally {
       setIsSavingDb(false);
     }
-
-    setTenants((prev) =>
-      prev.map((t) =>
-        t.id === selectedTenantForQuota.id
-          ? {
-              ...t,
-              planTier: editPlanTier,
-              leadsLimit: updatedLeads,
-              campaignsLimit: updatedCampaigns,
-            }
-          : t
-      )
-    );
-    setSelectedTenantForQuota(null);
   };
 
   // Open Edit Tenant Details Modal
@@ -1116,84 +1217,28 @@ function TenantManagementContent() {
 
     setIsSavingDb(true);
     try {
+      const targetSlug = selectedTenantForEdit.slug || selectedTenantForEdit.id;
       // 1. Persist directly to Neon platform_tenants registry & trigger automatic module alignment
-      await fetch(`/api/admin/tenants/${encodeURIComponent(selectedTenantForEdit.id)}`, {
+      const res = await fetch(`/api/admin/tenants/${encodeURIComponent(targetSlug)}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updatedData),
-      }).catch(() => null);
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || `HTTP ${res.status}`);
+      }
 
       // 2. Sync to microservices
       await GTM_API.updateAdminOrganization(selectedTenantForEdit.id, updatedData).catch(() => null);
 
       showToast(`⚡ ${editTenantName}: Profile and Database-Per-Tenant architecture saved!`);
-      const remoteOrgs = await GTM_API.getAdminOrganizations().catch(() => null);
-      if (Array.isArray(remoteOrgs) && remoteOrgs.length > 0) {
-        setTenants(
-          remoteOrgs.map((org: any, idx: number) => {
-            const rawPlan = org.planTier || org.plan_tier || org.PlanTier || "GROWTH";
-            const planTier = (["FREE_TRIAL", "STARTER", "GROWTH", "SCALE", "ENTERPRISE"].includes(rawPlan)
-              ? rawPlan
-              : "GROWTH") as TenantOrg["planTier"];
-            const isSuspended = (org.status || org.Status || "").toUpperCase() === "SUSPENDED";
-            const mrr = org.mrr !== undefined ? Number(org.mrr) : planTier === "ENTERPRISE" ? 100000 : planTier === "SCALE" ? 48000 : planTier === "STARTER" ? 9000 : planTier === "FREE_TRIAL" ? 0 : 24000;
-            const orgSlug = org.slug || org.Slug || `org-${idx + 1}`;
 
-            return {
-              id: org.id || org.ID || `org-${idx + 1}`,
-              name: org.name || org.Name || "Tenant Workspace",
-              slug: orgSlug,
-              domain: org.domain || org.Domain || `${orgSlug}.ofia.ng`,
-              logo: org.logo || org.Logo || (org.id === selectedTenantForEdit.id ? editTenantLogo : undefined),
-              ownerName: org.ownerName || org.owner_name || org.OwnerName || org.owner?.name || org.Owner?.Name || "System Admin",
-              ownerEmail: org.ownerEmail || org.owner_email || org.OwnerEmail || org.owner?.email || org.Owner?.Email || `admin@${orgSlug}.ng`,
-              planTier,
-              status: isSuspended ? "Suspended" : "Active",
-              mrr,
-              activeAgentsCount: 15,
-              leadsUsed: 1200,
-              leadsLimit: planTier === "ENTERPRISE" ? 50000 : 5000,
-              campaignsActive: 2,
-              campaignsLimit: planTier === "ENTERPRISE" ? 100 : 10,
-              monthlyAiSpendUSD: Math.round(mrr * 0.12),
-              integrationHealth: "Healthy",
-              erpModules: org.erp_modules || org.erpModules || selectedTenantForEdit.erpModules || { ...INITIAL_TENANTS[0].erpModules },
-              shopSubModules: org.shop_sub_modules || org.shopSubModules || selectedTenantForEdit.shopSubModules,
-              mobilitySubModules: org.mobility_sub_modules || org.mobilitySubModules || selectedTenantForEdit.mobilitySubModules,
-              databaseUrl: org.database_url || org.databaseUrl || (org.id === selectedTenantForEdit.id ? editTenantDatabaseUrl.trim() : ""),
-              cloudinaryUrl: org.cloudinary_url || org.cloudinaryUrl || (org.id === selectedTenantForEdit.id ? editTenantCloudinaryUrl.trim() : ""),
-              isCustomDb: Boolean(org.is_custom_db || org.isCustomDb || org.database_url || org.databaseUrl || (org.id === selectedTenantForEdit.id && editTenantDatabaseUrl.trim())),
-              isCustomStorage: Boolean(org.is_custom_storage || org.isCustomStorage || org.cloudinary_url || org.cloudinaryUrl || (org.id === selectedTenantForEdit.id && editTenantCloudinaryUrl.trim())),
-              createdAt: org.created_at
-                ? new Date(org.created_at).toISOString().split("T")[0]
-                : new Date().toISOString().split("T")[0],
-            };
-          })
-        );
-      } else {
-        setTenants((prev) =>
-          prev.map((t) =>
-            t.id === selectedTenantForEdit.id
-              ? {
-                  ...t,
-                  ...updatedData,
-                  databaseUrl: editTenantDatabaseUrl.trim(),
-                  cloudinaryUrl: editTenantCloudinaryUrl.trim(),
-                  isCustomDb: Boolean(editTenantDatabaseUrl.trim()),
-                  isCustomStorage: Boolean(editTenantCloudinaryUrl.trim()),
-                  logo: editTenantLogo,
-                }
-              : t
-          )
-        );
-      }
-      setSelectedTenantForEdit(null);
-    } catch (err) {
-      console.warn("Remote tenant update failed:", err);
-      showToast(`Tenant '${editTenantName}' updated locally`);
+      // Update local state directly with updatedData
       setTenants((prev) =>
         prev.map((t) =>
-          t.id === selectedTenantForEdit.id
+          t.id === selectedTenantForEdit.id || t.slug === selectedTenantForEdit.slug
             ? {
                 ...t,
                 ...updatedData,
@@ -1207,6 +1252,9 @@ function TenantManagementContent() {
         )
       );
       setSelectedTenantForEdit(null);
+    } catch (err: any) {
+      console.warn("Remote tenant update failed:", err);
+      showToast(`⚠️ Failed to save tenant: ${err.message || "Error"}`);
     } finally {
       setIsSavingDb(false);
     }
@@ -1216,7 +1264,8 @@ function TenantManagementContent() {
   const handleDeleteTenant = async (tenant: TenantOrg) => {
     setIsDeletingTenant(true);
     try {
-      const res = await fetch(`/api/admin/tenants/${encodeURIComponent(tenant.id)}`, {
+      const targetSlug = tenant.slug || tenant.id;
+      const res = await fetch(`/api/admin/tenants/${encodeURIComponent(targetSlug)}`, {
         method: "DELETE",
       });
       const data = await res.json();
@@ -1240,21 +1289,37 @@ function TenantManagementContent() {
 
   // Toggle tenant suspension and persist status to Postgres database
   const handleToggleSuspend = async (id: string) => {
-    const tenant = tenants.find((t) => t.id === id);
+    const tenant = tenants.find((t) => t.id === id || t.slug === id);
     if (!tenant) return;
     const nextStatus: TenantOrg["status"] = tenant.status === "Suspended" ? "Active" : "Suspended";
 
     setIsSavingDb(true);
     try {
-      await GTM_API.updateAdminOrganization(id, {
-        status: nextStatus === "Suspended" ? "SUSPENDED" : "ACTIVE",
+      const targetSlug = tenant.slug || tenant.id;
+      const res = await fetch(`/api/admin/tenants/${encodeURIComponent(targetSlug)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: tenant.id,
+          slug: tenant.slug,
+          status: nextStatus,
+        }),
       });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || `HTTP ${res.status}`);
+      }
+
+      await GTM_API.updateAdminOrganization(tenant.id, {
+        status: nextStatus === "Suspended" ? "SUSPENDED" : "ACTIVE",
+      }).catch(() => null);
+
       showToast(`${tenant.name} status updated to ${nextStatus} in Postgres!`);
-      setTenants((prev) => prev.map((t) => (t.id === id ? { ...t, status: nextStatus } : t)));
-    } catch (err) {
+      setTenants((prev) => prev.map((t) => (t.id === tenant.id || t.slug === tenant.slug ? { ...t, status: nextStatus } : t)));
+    } catch (err: any) {
       console.warn("Remote status update failed:", err);
-      showToast(`${tenant.name} status update failed`);
-      setTenants((prev) => prev.map((t) => (t.id === id ? { ...t, status: nextStatus } : t)));
+      showToast(`⚠️ Failed to update status: ${err.message || "Error"}`);
     } finally {
       setIsSavingDb(false);
     }
@@ -1299,12 +1364,12 @@ function TenantManagementContent() {
     });
 
     const newTenant: TenantOrg = {
-      id: `org-${String(tenants.length + 1).padStart(2, "0")}`,
+      id: `org-${Date.now()}`,
       name: newOrgName,
       slug,
-      domain: newOrgDomain,
+      domain,
       ownerName: newOwnerName || "System Admin",
-      ownerEmail: newOwnerEmail || `admin@${newOrgDomain}`,
+      ownerEmail: newOwnerEmail || `admin@${domain}`,
       planTier: newPlanTier,
       status: "Active",
       mrr: newPlanTier === "ENTERPRISE" ? 100000 : newPlanTier === "SCALE" ? 48000 : newPlanTier === "STARTER" ? 9000 : newPlanTier === "FREE_TRIAL" ? 0 : 24000,
@@ -1326,77 +1391,78 @@ function TenantManagementContent() {
       createdAt: new Date().toISOString().split("T")[0],
     };
 
-    // Persist to Postgres database via GTM_API and USER_API
     try {
-      const createdRemote = await GTM_API.createAdminOrganization({
+      // 1. Primary persistence: Save directly to Neon platform_tenants table & trigger auto-alignment
+      const createRes = await fetch("/api/admin/tenants", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: newTenant.id,
+          name: newOrgName,
+          slug,
+          domain,
+          ownerName: newOwnerName,
+          ownerEmail: newOwnerEmail,
+          planTier: newPlanTier,
+          dbMode: "DEDICATED",
+          databaseUrl: newDatabaseUrl.trim(),
+          cloudinaryUrl: newCloudinaryUrl.trim(),
+          isCustomDb: Boolean(newDatabaseUrl.trim()),
+          isCustomStorage: Boolean(newCloudinaryUrl.trim()),
+          mrr: newTenant.mrr,
+          vertical: newVertical || "retail",
+          erp_modules: newErpModules,
+          shop_sub_modules: defaultShopSubs,
+          mobility_sub_modules: defaultMobilitySubs,
+        }),
+      });
+
+      if (!createRes.ok) {
+        const errJson = await createRes.json().catch(() => ({}));
+        throw new Error(errJson.error || `Failed to create tenant: HTTP ${createRes.status}`);
+      }
+
+      const createData = await createRes.json();
+      if (createData.tenant?.id) {
+        newTenant.id = createData.tenant.id;
+      }
+
+      // 2. Sync to microservices in background
+      GTM_API.createAdminOrganization({
         name: newOrgName,
         slug,
-        domain: newOrgDomain,
+        domain,
         owner_name: newOwnerName || "System Admin",
-        owner_email: newOwnerEmail || `admin@${newOrgDomain}`,
+        owner_email: newOwnerEmail || `admin@${domain}`,
         plan_tier: newPlanTier,
         billing_cycle: "MONTHLY",
         vertical: newVertical || "retail",
         shop_sub_modules: defaultShopSubs,
         database_url: newDatabaseUrl.trim(),
         cloudinary_url: newCloudinaryUrl.trim(),
-      });
-      if (createdRemote && createdRemote.id) {
-        newTenant.id = createdRemote.id;
-      }
-
-      // Persist to Neon platform_tenants table
-      await fetch("/api/admin/tenants", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newOrgName,
-          slug,
-          domain: newOrgDomain,
-          ownerName: newOwnerName,
-          ownerEmail: newOwnerEmail,
-          planTier: newPlanTier,
-          dbMode: "DEDICATED",
-          databaseUrl: newDatabaseUrl.trim(),
-          isCustomDb: true,
-          mrr: newTenant.mrr,
-          vertical: newVertical || "retail",
-        }),
       }).catch(() => null);
 
-      // Save initial RBAC matrix to Postgres TenantRolePermission table
-      const defaultRoleKeys = ["tenant_provision", "admin", "md", "manager", "employee", "hr", "accountant", "dispatcher"];
-      const matrixPayload: Record<string, Record<string, boolean>> = {};
-      defaultRoleKeys.forEach((role) => {
-        matrixPayload[role] = {
-          ...newErpModules,
-          ...defaultShopSubs,
-          ...defaultMobilitySubs,
-        };
-      });
-      await USER_API.saveTenantRBAC(slug, matrixPayload).catch(() => null);
-
       showToast(`Tenant '${newOrgName}' successfully created & saved to Postgres!`);
-    } catch (err) {
-      console.warn("Remote tenant creation failed, provisioned locally:", err);
-      showToast(`Tenant '${newOrgName}' provisioned locally`);
+      setTenants([newTenant, ...tenants]);
+      setIsNewTenantModalOpen(false);
+      setSelectedTenantId(newTenant.id);
+      router.push(`/tenants?tenant=${newTenant.id}`);
+
+      // Reset form
+      setNewOrgName("");
+      setNewOrgSlug("");
+      setNewOrgDomain("");
+      setNewOwnerName("");
+      setNewOwnerEmail("");
+      setNewDatabaseUrl("");
+      setNewCloudinaryUrl("");
+      setNewVertical("retail");
+    } catch (err: any) {
+      console.error("Tenant creation error:", err);
+      alert("Failed to create tenant: " + (err.message || "Network error"));
     } finally {
       setIsSavingDb(false);
     }
-
-    setTenants([newTenant, ...tenants]);
-    setIsNewTenantModalOpen(false);
-    setSelectedTenantId(newTenant.id);
-    router.push(`/tenants?tenant=${newTenant.id}`);
-
-    // Reset form
-    setNewOrgName("");
-    setNewOrgDomain("");
-    setNewOwnerName("");
-    setNewOwnerEmail("");
-    setNewDatabaseUrl("");
-    setNewCloudinaryUrl("");
-    setNewVertical("retail");
   };
 
   return (

@@ -1,6 +1,22 @@
 package handlers
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"net/http"
+)
+
+var seedDataBytes []byte
+
+// AutoSeedIfEmpty is disabled to enforce AGENTS.md zero hardcoded tenant data rule
+func AutoSeedIfEmpty() {}
+
+func HandleSeed(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":  "disabled",
+		"message": "Static database seeding disabled per zero hardcoded tenant architecture. Workspaces are provisioned dynamically via ofia_admin.",
+	})
+}
 
 type User struct {
 	TenantSlug     string           `json:"tenantSlug,omitempty"`

@@ -13,7 +13,7 @@ export const MASTER_REGISTRY_URL =
   process.env.DATABASE_URL ||
   process.env.POSTGRES_URL ||
   process.env.NEON_DATABASE_URL ||
-  "postgresql://neondb_owner:npg_OihL3cnwGeW2@ep-plain-hill-b5whmxdg-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
+  "";
 
 export const MASTER_CONNECTION_STRING = MASTER_REGISTRY_URL;
 

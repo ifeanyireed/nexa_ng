@@ -18,8 +18,8 @@ if (!databaseUrl) {
 }
 
 if (!databaseUrl) {
-  databaseUrl =
-    "postgresql://neondb_owner:npg_YBd2DvyRxTG7@ep-falling-star-b4lrdr76-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
+  console.error("❌ Error: DATABASE_URL is not set in environment or .env.local");
+  process.exit(1);
 }
 
 async function main() {

@@ -4,7 +4,8 @@ import { randomUUID } from "crypto";
 
 const USER_SERVICE_DB_URL =
   process.env.USERS_DATABASE_URL ||
-  "postgresql://neondb_owner:npg_YBd2DvyRxTG7@ep-falling-star-b4lrdr76-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
+  process.env.DATABASE_URL ||
+  "";
 
 export interface TenantModulePreset {
   erpModules: Record<string, boolean>;

@@ -54,9 +54,14 @@ export async function PUT(
     const body = await request.json();
     const sql = neon(MASTER_CONNECTION_STRING);
 
-    const dbMode = "DEDICATED";
-    const databaseUrl = (body.database_url || body.databaseUrl || "").trim();
-    const isCustomDb = true;
+    const hasDatabaseUrl = body.database_url !== undefined || body.databaseUrl !== undefined;
+    const databaseUrl = hasDatabaseUrl ? (body.database_url || body.databaseUrl || "").trim() : null;
+
+    const hasCloudinaryUrl = body.cloudinary_url !== undefined || body.cloudinaryUrl !== undefined;
+    const cloudinaryUrl = hasCloudinaryUrl ? (body.cloudinary_url || body.cloudinaryUrl || "").trim() : null;
+
+    const hasMrr = body.mrr !== undefined && body.mrr !== null;
+    const mrr = hasMrr ? Number(body.mrr) : null;
 
     const newSlug = body.slug ? body.slug.toLowerCase().trim() : null;
     let newDomain = body.domain ? body.domain.trim() : null;
@@ -77,11 +82,12 @@ export async function PUT(
           owner_email = COALESCE(${body.ownerEmail || body.owner_email}, owner_email),
           plan_tier = COALESCE(${body.planTier || body.plan_tier}, plan_tier),
           status = COALESCE(${body.status}, status),
-          db_mode = ${dbMode},
-          database_url = ${databaseUrl},
-          is_custom_db = ${isCustomDb},
+          db_mode = 'DEDICATED',
+          database_url = CASE WHEN ${hasDatabaseUrl} THEN ${databaseUrl} ELSE database_url END,
+          cloudinary_url = CASE WHEN ${hasCloudinaryUrl} THEN ${cloudinaryUrl} ELSE cloudinary_url END,
+          is_custom_db = true,
           logo = COALESCE(${body.logo}, logo),
-          mrr = COALESCE(${body.mrr}, mrr),
+          mrr = CASE WHEN ${hasMrr} THEN ${mrr} ELSE mrr END,
           vertical = COALESCE(${body.vertical}, vertical),
           erp_modules = COALESCE(${erpModules ? JSON.stringify(erpModules) : null}::jsonb, erp_modules),
           shop_sub_modules = COALESCE(${shopSubModules ? JSON.stringify(shopSubModules) : null}::jsonb, shop_sub_modules),
@@ -91,14 +97,21 @@ export async function PUT(
       RETURNING *;
     `;
 
-    const targetSlug = updated?.slug || rawId.toLowerCase();
+    if (!updated) {
+      return NextResponse.json(
+        { success: false, error: `Tenant workspace '${rawId}' not found` },
+        { status: 404 }
+      );
+    }
+
+    const targetSlug = updated.slug || rawId.toLowerCase();
 
     // Automatically align and force synchronization into TenantRolePermission table
     try {
       await alignTenantModules(targetSlug, {
-        erpModules: erpModules || undefined,
-        shopSubModules: shopSubModules || undefined,
-        mobilitySubModules: mobilitySubModules || undefined,
+        erpModules: updated.erp_modules || undefined,
+        shopSubModules: updated.shop_sub_modules || undefined,
+        mobilitySubModules: updated.mobility_sub_modules || undefined,
       });
     } catch (alignErr: any) {
       console.warn(`[Tenant API] Automatic module alignment warning for '${targetSlug}':`, alignErr.message);
@@ -111,6 +124,8 @@ export async function PUT(
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
+
+export const PATCH = PUT;
 
 export async function DELETE(
   request: NextRequest,

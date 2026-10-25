@@ -7,7 +7,7 @@ const NEON_CONNECTION_STRING =
   process.env.DATABASE_URL ||
   process.env.POSTGRES_URL ||
   process.env.NEON_DATABASE_URL ||
-  "postgresql://neondb_owner:npg_YBd2DvyRxTG7@ep-falling-star-b4lrdr76-pooler.c-6.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require";
+  "";
 
 export async function GET() {
   try {

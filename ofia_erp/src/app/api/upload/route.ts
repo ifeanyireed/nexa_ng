@@ -110,7 +110,7 @@ export async function POST(request: Request) {
 
     const uploadResponse = await cloudinary.uploader.upload(imagePayload, {
       folder,
-      resource_type: "image",
+      resource_type: "auto",
       cloud_name: creds.cloudName,
       api_key: creds.apiKey,
       api_secret: creds.apiSecret,

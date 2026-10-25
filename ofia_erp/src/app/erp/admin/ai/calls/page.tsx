@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import {
   PhoneCall,
@@ -20,6 +20,9 @@ import {
   X,
   Target,
   ArrowRight,
+  UploadCloud,
+  Loader2,
+  Volume2,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -29,6 +32,7 @@ import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaModal } from "@/components/nexa/NexaModal";
 import { crmFetch } from "@/lib/crm-client";
+import { getActiveTenantSlug } from "@/lib/erp-store";
 
 interface CallLogItem {
   id: string;
@@ -53,6 +57,68 @@ export default function VoiceCallLogsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [outcomeFilter, setOutcomeFilter] = useState("ALL");
   const [selectedCall, setSelectedCall] = useState<CallLogItem | null>(null);
+  const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+  const audioInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleAudioUpload(e: React.ChangeEvent<HTMLInputElement>, call: CallLogItem | null) {
+    if (!call) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingAudio(true);
+    try {
+      const activeSlug = getActiveTenantSlug() || "";
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", `${activeSlug}/call_recordings`);
+      if (activeSlug) formData.append("tenantId", activeSlug);
+
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        headers: activeSlug ? { "x-tenant-slug": activeSlug } : {},
+        body: formData,
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error("Failed to upload audio to Cloudinary");
+      }
+
+      const uploadData = await uploadRes.json();
+      const newRecordingUrl = uploadData.url;
+
+      // Update call record in live tenant database
+      await crmFetch("/api/erp/crm/calls", {
+        method: "POST",
+        body: JSON.stringify({
+          id: call.id,
+          leadId: call.leadId,
+          contactName: call.contactName,
+          company: call.company,
+          phoneNumber: call.phoneNumber,
+          outcome: call.outcome,
+          durationSeconds: call.durationSeconds,
+          notes: call.notes,
+          aiSummary: call.aiSummary,
+          transcript: call.transcript,
+          recordingUrl: newRecordingUrl,
+          qualificationJson: call.qualificationJson,
+          isAi: call.isAi ?? true,
+        }),
+      });
+
+      // Update local state
+      setSelectedCall((prev) => (prev ? { ...prev, recordingUrl: newRecordingUrl } : null));
+      setCalls((prev) =>
+        prev.map((c) => (c.id === call.id ? { ...c, recordingUrl: newRecordingUrl } : c))
+      );
+    } catch (err: any) {
+      console.error("Audio upload failed:", err);
+      alert("Failed to upload audio: " + err.message);
+    } finally {
+      setIsUploadingAudio(false);
+      if (e.target) e.target.value = "";
+    }
+  }
 
   async function loadCalls() {
     setIsLoading(true);
@@ -429,16 +495,44 @@ export default function VoiceCallLogsPage() {
               );
             })()}
 
-            {/* Audio Recording Player (if present) */}
-            {selectedCall.recordingUrl && (
-              <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] flex items-center justify-between">
+            {/* Audio Recording Player & Dedicated Cloudinary Audio Sync */}
+            <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-2">
                   <Play className="w-3.5 h-3.5 text-[#1A56DB]" />
                   Call Audio Recording
                 </span>
-                <audio controls src={selectedCall.recordingUrl} className="h-8" />
+                <div className="flex items-center gap-2">
+                  <NexaBadge variant="brand" className="text-[10px] rounded-full">
+                    Tenant Cloudinary Audio
+                  </NexaBadge>
+                  <input
+                    type="file"
+                    ref={audioInputRef}
+                    accept="audio/*"
+                    className="hidden"
+                    onChange={(e) => handleAudioUpload(e, selectedCall)}
+                  />
+                  <NexaButton
+                    size="sm"
+                    variant="outline"
+                    disabled={isUploadingAudio}
+                    onClick={() => audioInputRef.current?.click()}
+                    leftIcon={isUploadingAudio ? <Loader2 className="w-3 h-3 animate-spin" /> : <UploadCloud className="w-3 h-3" />}
+                    className="text-xs font-semibold rounded-lg px-2.5 py-1"
+                  >
+                    {isUploadingAudio ? "Uploading..." : selectedCall.recordingUrl ? "Replace Audio" : "Upload Audio (.mp3, .wav)"}
+                  </NexaButton>
+                </div>
               </div>
-            )}
+              {selectedCall.recordingUrl ? (
+                <audio controls src={selectedCall.recordingUrl} className="w-full h-9 rounded-xl" />
+              ) : (
+                <p className="text-[11px] text-[var(--nexa-text-muted)] italic">
+                  No audio recording attached to this call session. Upload audio to persist to dedicated tenant storage.
+                </p>
+              )}
+            </div>
 
             {/* Turn-by-Turn Dialogue Transcript */}
             <div className="space-y-2">

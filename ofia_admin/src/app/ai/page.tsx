@@ -35,6 +35,10 @@ import {
   ChevronRight,
   Sparkles,
   Bot,
+  PhoneCall,
+  Radio,
+  Signal,
+  Headphones,
 } from "lucide-react";
 import {
   INITIAL_TENANTS,
@@ -206,13 +210,13 @@ export default function AdminOverviewPage() {
         <AdminStatGrid
           stats={[
             {
-              label: "Monthly AI Inference Spend",
+              label: "Telephony & Inference Spend",
               value: `₦${Math.round(Number(totalAiSpend)).toLocaleString()}`,
-              change: "Token Burn Reconciled",
+              change: "PSTN + LLM Reconciled",
               trend: "up",
               changeType: "info",
-              icon: <Cpu className="w-5 h-5 text-purple-500" />,
-              sub: "OpenAI, Anthropic & Gemini Ingest",
+              icon: <PhoneCall className="w-5 h-5 text-purple-500" />,
+              sub: "Voicebip +234 PSTN & Gemini Ingest",
             },
             {
               label: "Voice Agent Circuit Breakers",
@@ -224,7 +228,7 @@ export default function AdminOverviewPage() {
               sub: "Autonomous Safety Guardrails",
             },
             {
-              label: "Active AI Tenants",
+              label: "Active Telephony Tenants",
               value: `${totalOrgs} Organizations`,
               change: "Cross-Tenant Voice Agent",
               trend: "up",
@@ -233,13 +237,13 @@ export default function AdminOverviewPage() {
               sub: "Multi-Tenant Enterprise Workspaces",
             },
             {
-              label: "Outreach Dispatch Rate",
-              value: "99.4% Delivered",
-              change: "0 Spam Traps",
+              label: "PSTN Connect & Qual Rate",
+              value: "98.9% Connected",
+              change: "68.4% B2B Qualified",
               trend: "up",
               changeType: "success",
-              icon: <Mail className="w-5 h-5 text-amber-500" />,
-              sub: "Resend · Brevo · SES Relay Pools",
+              icon: <Radio className="w-5 h-5 text-emerald-500" />,
+              sub: "Voicebip +234 Direct SIP Termination",
             },
           ]}
           columns={4}
@@ -387,39 +391,53 @@ export default function AdminOverviewPage() {
               </div>
             </div>
 
-            {/* Outreach Infrastructure Health Card */}
+            {/* Voicebip Telephony Carrier Health Card */}
             <NexaCard variant="glass" padding="md" className="p-5 space-y-4 rounded-3xl border border-nexa-border">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold">
-                    <Mail className="w-4 h-4" />
+                  <div className="w-9 h-9 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold">
+                    <Radio className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-xs text-nexa-text-primary">
-                      Platform Email & Relay Infrastructure
-                    </h3>
-                    <p className="text-[11px] text-nexa-text-muted">Brevo & SMTP system recovery relay</p>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-xs text-nexa-text-primary">
+                        Voicebip Telephony Carrier
+                      </h3>
+                      <NexaBadge variant="success" className="rounded-full text-[9px] px-1.5 py-0 font-bold">
+                        PSTN Live
+                      </NexaBadge>
+                    </div>
+                    <p className="text-[11px] text-nexa-text-muted">Direct Nigerian Trunk: sip.voicebip.com:5060</p>
                   </div>
                 </div>
-                <Link href="/settings/email">
-                  <NexaButton size="sm" variant="outline" className="text-xs font-bold rounded-full">
-                    Configure
-                  </NexaButton>
-                </Link>
+                <NexaBadge variant="brand" className="rounded-full text-[10px] font-mono">
+                  +234 Direct CLI
+                </NexaBadge>
               </div>
 
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="p-2.5 rounded-2xl bg-nexa-bg-base border border-nexa-border">
-                  <div className="text-[9px] uppercase font-bold text-nexa-text-faint">Inbox Rate</div>
-                  <div className="font-bold font-mono text-emerald-500 text-xs mt-0.5">99.4%</div>
+                  <div className="text-[9px] uppercase font-bold text-nexa-text-faint">PSTN Connect</div>
+                  <div className="font-bold font-mono text-emerald-500 text-xs mt-0.5">98.9%</div>
                 </div>
                 <div className="p-2.5 rounded-2xl bg-nexa-bg-base border border-nexa-border">
-                  <div className="text-[9px] uppercase font-bold text-nexa-text-faint">Active Relays</div>
-                  <div className="font-bold font-mono text-nexa-text-primary text-xs mt-0.5">3 Clusters</div>
+                  <div className="text-[9px] uppercase font-bold text-nexa-text-faint">SIP Latency</div>
+                  <div className="font-bold font-mono text-nexa-text-primary text-xs mt-0.5">24ms</div>
                 </div>
                 <div className="p-2.5 rounded-2xl bg-nexa-bg-base border border-nexa-border">
-                  <div className="text-[9px] uppercase font-bold text-nexa-text-faint">Bounce Rate</div>
-                  <div className="font-bold font-mono text-blue-500 text-xs mt-0.5">0.58%</div>
+                  <div className="text-[9px] uppercase font-bold text-nexa-text-faint">Avg Call Time</div>
+                  <div className="font-bold font-mono text-blue-500 text-xs mt-0.5">2m 45s</div>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-2xl bg-nexa-bg-base/70 border border-nexa-border space-y-1.5 text-xs font-mono">
+                <div className="flex justify-between items-center text-[11px]">
+                  <span className="text-nexa-text-muted">Conversational Engine:</span>
+                  <span className="font-bold text-nexa-text-primary">Gemini 1.5 Flash</span>
+                </div>
+                <div className="flex justify-between items-center text-[11px]">
+                  <span className="text-nexa-text-muted">Audio Storage Sync:</span>
+                  <span className="font-bold text-emerald-500">Dedicated Tenant Cloudinary</span>
                 </div>
               </div>
             </NexaCard>

@@ -1057,13 +1057,16 @@ export function isNavItemVisibleForRole(
 
   // Functional Leads (HR, Accountant, Marketer, Dispatcher, Inventory, Cashier)
   const cap = ROLE_CAPABILITIES[role];
-  if (!cap) return itemKey === "employee";
+  if (!cap) return itemKey === "employee" && isModuleProvisioned("users");
 
   if (cap.controlPanels.includes(itemKey)) {
     return true;
   }
 
   if (cap.portals.includes(itemKey as any)) {
+    if (itemKey === "employee" || itemKey === "manager" || itemKey === "md") {
+      return isModuleProvisioned("users");
+    }
     return true;
   }
 

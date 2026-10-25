@@ -8,6 +8,8 @@ import CartDrawer from "@/components/common/CartDrawer";
 import StickySidebarNav from "@/components/common/StickySidebarNav";
 
 import { resolveStorefrontMetadata } from "@/lib/storefront-metadata";
+import { headers } from "next/headers";
+import { extractSubdomainFromHost } from "@/lib/storefront-tenant";
 
 const dropa = localFont({
   src: "../fonts/Dropa-Regular.woff2",
@@ -31,15 +33,20 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headerList = await headers();
+  const host = headerList.get("host");
+  const tenantSlug = (headerList.get("x-tenant-slug") || extractSubdomainFromHost(host) || "").toLowerCase().trim() || null;
+  const tenantVertical = headerList.get("x-tenant-vertical") || null;
+
   return (
     <html lang="en" className={`${dropa.variable} antialiased`}>
       <body className="min-h-screen bg-white text-[#111318] selection:bg-[#0069ff]/20 selection:text-[#0069ff]">
-        <StorefrontTenantProvider>
+        <StorefrontTenantProvider initialTenantSlug={tenantSlug} initialVertical={tenantVertical}>
           <CartProvider>
             <TemplateSwitcher />
             <div className="flex min-h-screen w-full bg-white">

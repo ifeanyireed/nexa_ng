@@ -47,7 +47,13 @@ export default function MyStoreStudioPage() {
   const detectedVertical = (activeTenant?.vertical as VerticalKey) || detectTenantVertical(activeTenant?.slug, activeTenant?.name);
 
   const [activeVertical, setActiveVertical] = useState<VerticalKey>(detectedVertical);
-  const verticalDef = VERTICAL_DEFINITIONS[activeVertical] || VERTICAL_DEFINITIONS.retail;
+  const verticalDef = VERTICAL_DEFINITIONS[activeVertical] || VERTICAL_DEFINITIONS.fashion;
+
+  useEffect(() => {
+    if (activeTenant?.vertical) {
+      setActiveVertical(activeTenant.vertical as VerticalKey);
+    }
+  }, [activeTenant?.vertical]);
 
   const [activeTab, setActiveTab] = useState<StudioTab>("brand");
   const [isSaving, setIsSaving] = useState(false);
@@ -375,7 +381,7 @@ export default function MyStoreStudioPage() {
         secondaryColor,
         logoUrl,
         bannerUrl,
-        vertical: activeVertical,
+        vertical: (activeTenant?.vertical as VerticalKey) || activeVertical,
         allowEscrow: enableEscrowOption,
         announcement: {
           enabled: announcementEnabled,
@@ -494,7 +500,7 @@ export default function MyStoreStudioPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           subdomain_slug: tenantSlug,
-          layout_key: activeVertical,
+          layout_key: (activeTenant?.vertical as VerticalKey) || activeVertical,
           custom_title: storeName,
           custom_subtitle: heroHeadline,
           theme_color: primaryColor,
@@ -505,7 +511,7 @@ export default function MyStoreStudioPage() {
       // 3. Local Multi-App Handshake Cache
       if (typeof window !== "undefined") {
         localStorage.setItem(`tenant_storefront_config_${tenantSlug}`, JSON.stringify(configPayload));
-        localStorage.setItem(`tenant_vertical_${tenantSlug}`, activeVertical);
+        localStorage.setItem(`tenant_vertical_${tenantSlug}`, (activeTenant?.vertical as VerticalKey) || activeVertical);
         localStorage.setItem(`tenant_primary_color_${tenantSlug}`, primaryColor);
         localStorage.setItem(`tenant_allow_escrow_${tenantSlug}`, String(enableEscrowOption));
       }

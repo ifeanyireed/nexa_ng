@@ -23,7 +23,7 @@ export interface TenantResolutionError {
 interface StorefrontTenantContextType {
   tenantSlug: string | null;
   handshake: TenantStorefrontHandshake | null;
-  store: VendorStore;
+  store: VendorStore | null;
   vertical: VerticalType;
   isShopEnabled: boolean;
   isFeatureEnabled: (featureKey: string) => boolean;
@@ -33,19 +33,121 @@ interface StorefrontTenantContextType {
 
 const StorefrontTenantContext = createContext<StorefrontTenantContextType | undefined>(undefined);
 
-export function StorefrontTenantProvider({ children }: { children: React.ReactNode }) {
-  const [tenantSlug, setTenantSlug] = useState<string | null>(null);
-  const [handshake, setHandshake] = useState<TenantStorefrontHandshake | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+export function StorefrontTenantProvider({
+  children,
+  initialTenantSlug = null,
+  initialVertical = null,
+}: {
+  children: React.ReactNode;
+  initialTenantSlug?: string | null;
+  initialVertical?: string | null;
+}) {
+  const [tenantSlug, setTenantSlug] = useState<string | null>(() => {
+    if (initialTenantSlug) return initialTenantSlug.toLowerCase().trim();
+    if (typeof window !== "undefined") {
+      const resolution = resolveTenantFromHostAndQuery(window.location.host);
+      return resolution.tenantSlug;
+    }
+    return null;
+  });
+
+  const [handshake, setHandshake] = useState<TenantStorefrontHandshake | null>(() => {
+    // If local studio cache exists on client, load for immediate reactivity
+    if (typeof window !== "undefined") {
+      const slug =
+        initialTenantSlug ||
+        resolveTenantFromHostAndQuery(window.location.host).tenantSlug;
+      if (slug) {
+        try {
+          const raw = localStorage.getItem(`tenant_storefront_config_${slug}`);
+          if (raw) {
+            const cachedStudioConfig = JSON.parse(raw);
+            const seed = SEED_TENANT_HANDSHAKES[slug];
+            const vert = (cachedStudioConfig.vertical as VerticalType) || seed?.vertical || "fashion";
+            return {
+              tenantId: seed?.tenantId || `org-${slug}`,
+              slug,
+              name: cachedStudioConfig.storeName || seed?.name || slug,
+              domain: seed?.domain || `${slug}.ofia.ng`,
+              subdomain: slug,
+              vertical: vert,
+              provisioning: seed?.provisioning || {
+                isShopEnabled: true,
+                planTier: "GROWTH",
+                shopSubModules: {
+                  pos: true,
+                  store: true,
+                  orders: true,
+                  catalog: true,
+                  services: true,
+                  inventory: true,
+                  referrals: true,
+                },
+              },
+              storefrontConfig: {
+                storeName: cachedStudioConfig.storeName || seed?.name || slug,
+                headline: cachedStudioConfig.hero?.headline || cachedStudioConfig.storeHeadline || "",
+                description: cachedStudioConfig.hero?.description || cachedStudioConfig.description || "",
+                primaryColor: cachedStudioConfig.primaryColor || "#0069FF",
+                secondaryColor: cachedStudioConfig.secondaryColor || "#0F172A",
+                logoUrl: cachedStudioConfig.logoUrl || "",
+                bannerUrl: cachedStudioConfig.hero?.image || cachedStudioConfig.bannerUrl || "",
+                currency: cachedStudioConfig.currency || "₦",
+                contact: cachedStudioConfig.contact || {
+                  email: `contact@${slug}.ofia.ng`,
+                  phone: "",
+                  address: "",
+                  whatsapp: "",
+                  operatingHours: "Mon-Sat: 9am - 8pm WAT",
+                },
+                allowEscrow: cachedStudioConfig.allowEscrow,
+                sectionVisibility: cachedStudioConfig.sectionVisibility || {
+                  hero: true,
+                  collections: true,
+                  valueBadges: true,
+                  products: true,
+                  services: true,
+                  featureBanner: true,
+                  reviews: true,
+                  dispatchBooking: true,
+                  escrowOption: false,
+                  announcement: false,
+                },
+                announcement: cachedStudioConfig.announcement || { enabled: false, text: "", link: "" },
+                header: cachedStudioConfig.header || {},
+                hero: cachedStudioConfig.hero || {},
+                collections: cachedStudioConfig.collections || {},
+                valueBadges: cachedStudioConfig.valueBadges || [],
+                featuredSection: cachedStudioConfig.featuredSection || {},
+                featureBanner: cachedStudioConfig.featureBanner || {},
+                footer: cachedStudioConfig.footer || {},
+                badges: cachedStudioConfig.badges || [],
+              },
+            };
+          }
+        } catch {}
+      }
+    }
+    return null;
+  });
+
+  const [isLoading, setIsLoading] = useState<boolean>(() => {
+    const slug =
+      initialTenantSlug ||
+      (typeof window !== "undefined"
+        ? resolveTenantFromHostAndQuery(window.location.host).tenantSlug
+        : null);
+    return Boolean(slug);
+  });
+
   const [tenantError, setTenantError] = useState<TenantResolutionError | null>(null);
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
   useEffect(() => {
     setIsMounted(true);
-    let resolvedSlug: string | null = null;
+    let resolvedSlug: string | null = initialTenantSlug;
 
-    if (typeof window !== "undefined") {
-      // Resolve tenant strictly from host (subdomain or custom domain), ignoring query params
+    if (!resolvedSlug && typeof window !== "undefined") {
       const resolution = resolveTenantFromHostAndQuery(window.location.host);
       resolvedSlug = resolution.tenantSlug;
     }
@@ -54,7 +156,6 @@ export function StorefrontTenantProvider({ children }: { children: React.ReactNo
 
     async function loadTenantHandshake(slug: string) {
       try {
-        // Check local storage studio cache first (immediate reactivity from My Store Studio saves)
         let cachedStudioConfig: any = null;
         if (typeof window !== "undefined") {
           const raw = localStorage.getItem(`tenant_storefront_config_${slug}`);
@@ -65,7 +166,7 @@ export function StorefrontTenantProvider({ children }: { children: React.ReactNo
           }
         }
 
-        // Fetch from storefront config API
+        // Fetch authoritative handshake from storefront config API
         const res = await fetch(`/api/storefront/config?tenant=${encodeURIComponent(slug)}`, {
           cache: "no-store",
         });
@@ -75,11 +176,10 @@ export function StorefrontTenantProvider({ children }: { children: React.ReactNo
           if (data?.handshake) {
             let activeHandshake: TenantStorefrontHandshake = data.handshake;
 
-            // Merge local studio cache if present
+            // Merge local studio cache if present (preserves active tenant's real vertical)
             if (cachedStudioConfig) {
               activeHandshake = {
                 ...activeHandshake,
-                vertical: (cachedStudioConfig.vertical as VerticalType) || activeHandshake.vertical,
                 storefrontConfig: {
                   ...activeHandshake.storefrontConfig,
                   storeName: cachedStudioConfig.storeName || activeHandshake.storefrontConfig.storeName,
@@ -101,6 +201,7 @@ export function StorefrontTenantProvider({ children }: { children: React.ReactNo
                   announcement: cachedStudioConfig.announcement || activeHandshake.storefrontConfig.announcement,
                   header: cachedStudioConfig.header || activeHandshake.storefrontConfig.header,
                   hero: cachedStudioConfig.hero || activeHandshake.storefrontConfig.hero,
+                  collections: cachedStudioConfig.collections || activeHandshake.storefrontConfig.collections,
                   valueBadges: cachedStudioConfig.valueBadges || activeHandshake.storefrontConfig.valueBadges,
                   featuredSection: cachedStudioConfig.featuredSection || activeHandshake.storefrontConfig.featuredSection,
                   featureBanner: cachedStudioConfig.featureBanner || activeHandshake.storefrontConfig.featureBanner,
@@ -139,7 +240,7 @@ export function StorefrontTenantProvider({ children }: { children: React.ReactNo
           return;
         }
 
-        // Slug is NOT provisioned on the platform: fail fast with technical error!
+        // Slug is NOT provisioned on the platform: fail fast with technical error
         const errData = await res.json().catch(() => null);
         setTenantError({
           code: res.status === 404 ? 404 : 400,
@@ -160,7 +261,7 @@ export function StorefrontTenantProvider({ children }: { children: React.ReactNo
     } else {
       setIsLoading(false);
     }
-  }, []);
+  }, [initialTenantSlug]);
 
   // Synchronize document title to Tenant's name
   useEffect(() => {
@@ -171,15 +272,18 @@ export function StorefrontTenantProvider({ children }: { children: React.ReactNo
 
   const vertical: VerticalType = useMemo(() => {
     if (handshake?.vertical) return handshake.vertical;
-    return "fashion";
-  }, [handshake]);
+    if (tenantSlug) return resolveTenantVertical(tenantSlug);
+    return (initialVertical as VerticalType) || "fashion";
+  }, [handshake, tenantSlug, initialVertical]);
 
-  const store: VendorStore = useMemo(() => {
+  // Dynamic store only exists when an authentic handshake is loaded.
+  // When no tenant is resolved, returns null so generic templates render their own vertical defaults
+  const store: VendorStore | null = useMemo(() => {
     if (handshake) {
       return buildDynamicVendorStore(handshake, MOCK_STORES[handshake.vertical]);
     }
-    return MOCK_STORES[vertical] || MOCK_STORES.fashion;
-  }, [handshake, vertical]);
+    return null;
+  }, [handshake]);
 
   const isShopEnabled = useMemo(() => {
     if (!handshake) return true;
@@ -232,15 +336,6 @@ export function StorefrontTenantProvider({ children }: { children: React.ReactNo
     [tenantSlug, handshake, store, vertical, isShopEnabled, isLoading, tenantError]
   );
 
-  // Avoid SSR / client hydration mismatches before initial client mount
-  if (!isMounted) {
-    return (
-      <StorefrontTenantContext.Provider value={contextValue}>
-        {children}
-      </StorefrontTenantContext.Provider>
-    );
-  }
-
   // 1. If tenant resolution failed with an unprovisioned slug error: render dedicated 404 view
   if (tenantError) {
     return (
@@ -250,8 +345,17 @@ export function StorefrontTenantProvider({ children }: { children: React.ReactNo
     );
   }
 
-  // 2. While resolving tenant credentials: display smooth grey wireframe skeleton (no vertical flashing)
-  if (isLoading && tenantSlug) {
+  // 2. While resolving tenant credentials: display smooth loading screen (NO mock pictures flash)
+  if (tenantSlug && (isLoading || !handshake)) {
+    return (
+      <StorefrontTenantContext.Provider value={contextValue}>
+        <StorefrontLoadingScreen tenantSlug={tenantSlug} />
+      </StorefrontTenantContext.Provider>
+    );
+  }
+
+  // 3. For tenant workspaces before client mount: keep displaying loading screen
+  if (tenantSlug && !isMounted) {
     return (
       <StorefrontTenantContext.Provider value={contextValue}>
         <StorefrontLoadingScreen tenantSlug={tenantSlug} />

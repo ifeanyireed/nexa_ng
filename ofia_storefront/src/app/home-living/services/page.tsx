@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
-import { MOCK_SERVICES } from "@/data/mockStores";
+import { MOCK_SERVICES, MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import {
@@ -19,13 +19,7 @@ import {
 
 export default function HomeLivingServicesPage() {
   const { store: dynamicStore, tenantSlug, isFeatureEnabled } = useStorefrontTenant();
-  const store = dynamicStore || {
-    id: "home-living",
-    name: "Artisan Furniture Studio",
-    slug: "home-living",
-    vertical: "home-living" as const,
-    currency: "₦",
-  };
+  const store = dynamicStore || MOCK_STORES["home-living"];
 
   const service = MOCK_SERVICES.find((s) => s.id === "srv-hml-01") || MOCK_SERVICES[0];
   const canUseServices = isFeatureEnabled("services") || isFeatureEnabled("dispatchBooking");

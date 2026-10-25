@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
-import { MOCK_PRODUCTS } from "@/data/mockStores";
+import { MOCK_PRODUCTS, MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import {
@@ -24,13 +24,7 @@ import {
 export default function ScheduleViewingPage() {
   const params = useParams();
   const { store: dynamicStore, tenantSlug, isFeatureEnabled } = useStorefrontTenant();
-  const store = dynamicStore || {
-    id: "property",
-    name: "Luxury Real Estate",
-    slug: "property",
-    vertical: "property" as const,
-    currency: "₦",
-  };
+  const store = dynamicStore || MOCK_STORES.property;
 
   const propertyId = (params?.id as string) || "prp-001";
   const property =

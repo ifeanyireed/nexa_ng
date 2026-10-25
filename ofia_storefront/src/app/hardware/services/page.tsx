@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
-import { MOCK_SERVICES } from "@/data/mockStores";
+import { MOCK_SERVICES, MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import {
@@ -20,13 +20,7 @@ import {
 
 export default function HardwareServicesPage() {
   const { store: dynamicStore, tenantSlug, isFeatureEnabled } = useStorefrontTenant();
-  const store = dynamicStore || {
-    id: "hardware",
-    name: "Hardware Engineering",
-    slug: "hardware",
-    vertical: "hardware" as const,
-    currency: "₦",
-  };
+  const store = dynamicStore || MOCK_STORES.hardware;
 
   const services = MOCK_SERVICES.filter((s) => s.vertical === "hardware");
   const canUseServices = isFeatureEnabled("services");

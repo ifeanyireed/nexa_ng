@@ -3,6 +3,7 @@ import { TenantStorefrontHandshake, VerticalType } from "@/types/storefront";
 import {
   extractSubdomainFromHost,
   SEED_TENANT_HANDSHAKES,
+  detectTenantVerticalFromSlug,
 } from "@/lib/storefront-tenant";
 import { neon } from "@neondatabase/serverless";
 import { MASTER_REGISTRY_URL } from "@/lib/tenant-db-resolver";
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
     if (rows && rows.length > 0) {
       const r = rows[0];
       const customConfig = (r.storefront_config && typeof r.storefront_config === "object") ? r.storefront_config : {};
-      const verticalKey: VerticalType = (customConfig.vertical as VerticalType) || (r.vertical as VerticalType) || "retail";
+      const verticalKey: VerticalType = (r.vertical as VerticalType) || (customConfig.vertical as VerticalType) || detectTenantVerticalFromSlug(tenantSlug);
 
       const handshake: TenantStorefrontHandshake = {
         tenantId: r.id || `org-${tenantSlug}`,
@@ -157,7 +158,7 @@ export async function GET(request: NextRequest) {
       const verticalKey: VerticalType =
         (orgData?.vertical as VerticalType) ||
         (layoutData?.layout_key as VerticalType) ||
-        "retail";
+        detectTenantVerticalFromSlug(tenantSlug);
 
       const handshake: TenantStorefrontHandshake = {
         tenantId: orgData?.id || layoutData?.id || `org-${tenantSlug}`,

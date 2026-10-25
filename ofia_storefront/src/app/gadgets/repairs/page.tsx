@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import {
@@ -24,13 +25,7 @@ import {
 
 export default function GadgetsRepairsPage() {
   const { store: dynamicStore, tenantSlug, isFeatureEnabled } = useStorefrontTenant();
-  const store = dynamicStore || {
-    id: "gadgets",
-    name: "Tech & Gadgets Lab",
-    slug: "gadgets",
-    vertical: "gadgets" as const,
-    currency: "₦",
-  };
+  const store = dynamicStore || MOCK_STORES.gadgets;
 
   const canUseServices = isFeatureEnabled("services");
   const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
-import { MOCK_SERVICES } from "@/data/mockStores";
+import { MOCK_SERVICES, MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import {
@@ -21,13 +21,7 @@ import {
 
 export default function PharmacyConsultationPage() {
   const { store: dynamicStore, tenantSlug, isFeatureEnabled } = useStorefrontTenant();
-  const store = dynamicStore || {
-    id: "pharmacy",
-    name: "Pharmacy Clinical Care",
-    slug: "pharmacy",
-    vertical: "pharmacy" as const,
-    currency: "₦",
-  };
+  const store = dynamicStore || MOCK_STORES.pharmacy;
 
   const services = MOCK_SERVICES.filter((s) => s.vertical === "pharmacy");
   const canUseServices = isFeatureEnabled("services");

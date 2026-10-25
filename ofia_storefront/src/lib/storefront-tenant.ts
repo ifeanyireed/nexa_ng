@@ -148,6 +148,14 @@ export function resolveTenantVertical(
   tenantSlug: string,
   cookieVertical?: string | null
 ): VerticalType {
+  const clean = (tenantSlug || "").toLowerCase().trim();
+  const seed = SEED_TENANT_HANDSHAKES[clean];
+  if (seed?.vertical) {
+    return seed.vertical;
+  }
+  if (clean) {
+    return detectTenantVerticalFromSlug(clean);
+  }
   if (
     cookieVertical &&
     ["fashion", "cars", "food", "property", "gadgets", "beauty", "home-living", "pharmacy", "hardware", "retail", "dispatch"].includes(
@@ -156,12 +164,7 @@ export function resolveTenantVertical(
   ) {
     return cookieVertical as VerticalType;
   }
-  const clean = (tenantSlug || "").toLowerCase().trim();
-  const seed = SEED_TENANT_HANDSHAKES[clean];
-  if (seed?.vertical) {
-    return seed.vertical;
-  }
-  return detectTenantVerticalFromSlug(clean);
+  return "fashion";
 }
 
 /**

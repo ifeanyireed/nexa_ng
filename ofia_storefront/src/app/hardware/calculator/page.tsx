@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import {
@@ -41,13 +42,7 @@ const APPLIANCES: Appliance[] = [
 
 export default function HardwareCalculatorPage() {
   const { store: dynamicStore, tenantSlug, isFeatureEnabled } = useStorefrontTenant();
-  const store = dynamicStore || {
-    id: "hardware",
-    name: "Hardware Engineering",
-    slug: "hardware",
-    vertical: "hardware" as const,
-    currency: "₦",
-  };
+  const store = dynamicStore || MOCK_STORES.hardware;
 
   const canUseServices = isFeatureEnabled("services");
   const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";

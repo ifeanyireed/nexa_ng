@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import {
@@ -24,13 +25,7 @@ function PrescriptionContent() {
   const preselectedMed = searchParams.get("medication") || "";
 
   const { store: dynamicStore, tenantSlug, isFeatureEnabled } = useStorefrontTenant();
-  const store = dynamicStore || {
-    id: "pharmacy",
-    name: "Pharmacy Dispensary",
-    slug: "pharmacy",
-    vertical: "pharmacy" as const,
-    currency: "₦",
-  };
+  const store = dynamicStore || MOCK_STORES.pharmacy;
 
   const canUseServices = isFeatureEnabled("services");
   const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";

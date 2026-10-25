@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
-import { MOCK_SERVICES } from "@/data/mockStores";
+import { MOCK_SERVICES, MOCK_STORES } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import {
@@ -18,13 +18,7 @@ import {
 
 export default function RetailCustomizationPage() {
   const { store: dynamicStore, tenantSlug, isFeatureEnabled } = useStorefrontTenant();
-  const store = dynamicStore || {
-    id: "retail",
-    name: "Specialty Retail Atelier",
-    slug: "retail",
-    vertical: "retail" as const,
-    currency: "₦",
-  };
+  const store = dynamicStore || MOCK_STORES.retail;
 
   const services = MOCK_SERVICES.filter((s) => s.vertical === "retail");
   const canUseServices = isFeatureEnabled("services");

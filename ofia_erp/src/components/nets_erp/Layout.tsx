@@ -355,9 +355,6 @@ export default function ERPLayout({ children }: { children: React.ReactNode }) {
       if (dAccess.isPageAllowed("mobility") && !hasRoute("/erp/admin/mobility")) {
         items.push({ name: "Mobility Ops", route: "/erp/admin/mobility", icon: <BoxIcon /> });
       }
-      if (dAccess.isPageAllowed("mobility_ops") && !hasRoute("/erp/ops/mobility")) {
-        items.push({ name: "Dispatch Telemetry", route: "/erp/ops/mobility", icon: <TransactionsIcon /> });
-      }
       if (dAccess.isPageAllowed("shop") && !hasRoute("/erp/admin/shop")) {
         items.push({ name: "Store & POS", route: "/erp/admin/shop", icon: <BoxIcon /> });
       }

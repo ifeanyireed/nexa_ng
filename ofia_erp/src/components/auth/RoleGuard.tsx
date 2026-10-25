@@ -33,7 +33,6 @@ function getPageKeyFromPath(path: string): string | null {
   if (path.startsWith("/erp/admin/crm") || path.startsWith("/erp/marketer")) return "crm";
   if (path.startsWith("/erp/admin/shop")) return "shop";
   if (path.startsWith("/erp/admin/mobility")) return "mobility";
-  if (path.startsWith("/erp/ops/mobility")) return "mobility_ops";
   if (path.startsWith("/erp/admin/dispatch")) return "dispatch";
   if (path.startsWith("/erp/ops/dispatch")) return "dispatch_ops";
   if (path.startsWith("/erp/admin/marketplace")) return "marketplace";
@@ -369,7 +368,7 @@ export function RoleGuard({
       else if (pathname.startsWith("/erp/admin/ai")) requiredMod = "ai";
       else if (pathname.startsWith("/erp/admin/shop")) requiredMod = "shop";
       else if (pathname.startsWith("/erp/admin/marketplace")) requiredMod = "marketplace";
-      else if (pathname.startsWith("/erp/admin/mobility") || pathname.startsWith("/erp/ops/mobility")) requiredMod = "mobility";
+      else if (pathname.startsWith("/erp/admin/mobility")) requiredMod = "mobility";
       else if (pathname.startsWith("/erp/admin/dispatch") || pathname.startsWith("/erp/ops/dispatch")) requiredMod = "dispatch";
       else if (pathname.startsWith("/erp/admin/users") || pathname.startsWith("/erp/admin/departments")) requiredMod = "users";
       else if (pathname.startsWith("/erp/employee")) requiredMod = "users";

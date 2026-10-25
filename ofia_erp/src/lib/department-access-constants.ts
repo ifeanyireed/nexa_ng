@@ -119,26 +119,6 @@ export const ERP_PAGE_CATALOG: ErpPageDef[] = [
     ],
   },
   {
-    key: "mobility_ops",
-    label: "Mobility Operations Console",
-    category: "Portals & Team",
-    description: "Real-time dispatch, vehicle telemetry, active trip queue, driver rosters, and manifests.",
-    href: "/erp/ops/mobility",
-    iconName: "Navigation",
-    badge: "Live",
-    tabs: [
-      { id: "console", label: "Dispatcher Live Console", path: "/erp/ops/mobility" },
-      { id: "drivers", label: "Active Drivers Map", path: "/erp/ops/mobility" },
-      { id: "vehicles", label: "Vehicle Status", path: "/erp/ops/mobility" },
-      { id: "shuttle", label: "Shuttle Dispatches", path: "/erp/ops/mobility" },
-      { id: "interstate", label: "Interstate Waybills", path: "/erp/ops/mobility" },
-      { id: "on-demand", label: "Ride Requests", path: "/erp/ops/mobility" },
-      { id: "rental", label: "Rentals Tracker", path: "/erp/ops/mobility" },
-      { id: "school", label: "School Bus Logs", path: "/erp/ops/mobility" },
-      { id: "staff", label: "Staff Shuttles", path: "/erp/ops/mobility" },
-    ],
-  },
-  {
     key: "dispatch",
     label: "Ofia Dispatch Manager",
     category: "Operations",
@@ -294,10 +274,9 @@ export const DEFAULT_DEPARTMENT_ACCESS: DepartmentAccessItem[] = [
   {
     departmentCode: "DEPT-FLT",
     departmentName: "Fleet Operations & Maintenance",
-    accessiblePages: ["mobility", "mobility_ops", "dispatch", "employee"],
+    accessiblePages: ["mobility", "dispatch", "employee"],
     accessibleTabs: {
       mobility: ["command", "vehicles", "drivers", "maintenance", "routes", "pricing", "shuttle", "interstate", "on-demand", "rental", "school", "staff"],
-      mobility_ops: ["console", "drivers", "vehicles", "shuttle", "interstate", "on-demand", "rental", "school", "staff"],
       dispatch: ["command", "operator"],
       employee: ["overview", "reviews", "quests", "profile"],
     },
@@ -307,7 +286,7 @@ export const DEFAULT_DEPARTMENT_ACCESS: DepartmentAccessItem[] = [
     departmentCode: "DEPT-IT",
     departmentName: "Systems & IT / ERP",
     accessiblePages: [
-      "overview", "ai", "marketplace", "shop", "mobility", "mobility_ops",
+      "overview", "ai", "marketplace", "shop", "mobility",
       "dispatch", "crm", "accounting", "hr", "users",
       "employee", "manager", "md"
     ],

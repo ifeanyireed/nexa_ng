@@ -4,6 +4,30 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  async redirects() {
+    return [
+      {
+        source: '/erp/ops/mobility',
+        destination: '/erp/admin/mobility',
+        permanent: false,
+      },
+      {
+        source: '/erp/ops/mobility/:path*',
+        destination: '/erp/admin/mobility/:path*',
+        permanent: false,
+      },
+      {
+        source: '/ops/mobility',
+        destination: '/erp/admin/mobility',
+        permanent: false,
+      },
+      {
+        source: '/ops/mobility/:path*',
+        destination: '/erp/admin/mobility/:path*',
+        permanent: false,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {
@@ -44,8 +68,6 @@ const nextConfig: NextConfig = {
       { source: '/ops/calls/:path*', destination: '/erp/ops/calls/:path*' },
       { source: '/ops/crm', destination: '/erp/ops/crm' },
       { source: '/ops/crm/:path*', destination: '/erp/ops/crm/:path*' },
-      { source: '/ops/mobility', destination: '/erp/ops/mobility' },
-      { source: '/ops/mobility/:path*', destination: '/erp/ops/mobility/:path*' },
       { source: '/ops/dispatch', destination: '/erp/ops/dispatch' },
       { source: '/ops/dispatch/:path*', destination: '/erp/ops/dispatch/:path*' },
       { source: '/ops', destination: '/erp/ops/crm' },

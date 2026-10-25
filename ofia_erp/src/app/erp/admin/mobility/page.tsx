@@ -24,10 +24,16 @@ export default function TenantFleetCommandCentre() {
       activeModule="mobility"
       action={
         <div className="flex items-center gap-2">
-          <Link href="/erp/ops/mobility">
+          <Link href="/erp/admin/mobility/maintenance">
+            <NexaButton size="sm" variant="secondary" className="gap-2 text-xs">
+              <ShieldAlert className="w-4 h-4 text-amber-500" />
+              Maintenance Hub
+            </NexaButton>
+          </Link>
+          <Link href="/erp/admin/mobility/vehicles">
             <NexaButton size="sm" variant="primary" className="gap-2 text-xs">
-              <Radio className="w-4 h-4 animate-pulse" />
-              Live Ops Console
+              <Car className="w-4 h-4" />
+              Manage Fleet
             </NexaButton>
           </Link>
         </div>

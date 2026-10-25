@@ -2380,7 +2380,7 @@ function TenantManagementContent() {
 
                                   <div className="flex items-center gap-2.5">
                                     <a
-                                      href="/erp/ops/mobility"
+                                      href="/erp/admin/mobility"
                                       target="_blank"
                                       rel="noreferrer"
                                       className={cn(
@@ -2390,7 +2390,7 @@ function TenantManagementContent() {
                                           : "bg-[var(--nexa-bg-base)]/50 border-[var(--nexa-border)]/50 text-[var(--nexa-text-muted)] pointer-events-none opacity-50"
                                       )}
                                     >
-                                      <span>Launch Live Ops Console</span>
+                                      <span>Launch Mobility Manager</span>
                                       <ExternalLink className="w-3 h-3" />
                                     </a>
                                   </div>

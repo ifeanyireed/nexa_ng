@@ -72,7 +72,7 @@ export interface MobilitySubModuleItem {
 }
 
 export const MOBILITY_SUB_MODULES: MobilitySubModuleItem[] = [
-  { key: "ops", label: "Live Operations & Dispatch Console", shortLabel: "Ops Console", description: "Real-time map telemetry, driver dispatch queue, incident management", iconName: "Radio", path: "/erp/ops/mobility", badge: "Live" },
+  { key: "ops", label: "Fleet Command & Operations", shortLabel: "Fleet Command", description: "Executive fleet command center, daily operations, revenue, and active trips", iconName: "Radio", path: "/erp/admin/mobility", badge: "Live" },
   { key: "vehicles", label: "Corporate Vehicles & ROI", shortLabel: "Vehicles & ROI", description: "Vehicle registry, seating capacity, asset tracking and monthly ROI", iconName: "Truck", path: "/erp/admin/mobility/vehicles", badge: "Fleet" },
   { key: "drivers", label: "Driver Roster & Performance", shortLabel: "Drivers & Roster", description: "Driver profiles, background checks, ratings, rosters and license compliance", iconName: "Users", path: "/erp/admin/mobility/drivers", badge: "Staff" },
   { key: "maintenance", label: "Fleet Ops, Inspection & Compliance Hub", shortLabel: "Ops & Compliance", description: "Unified hub: driver rosters, routine inspection logger, statutory papers countdown, and repairs TAT", iconName: "ShieldCheck", path: "/erp/admin/mobility/maintenance", badge: "Hub" },

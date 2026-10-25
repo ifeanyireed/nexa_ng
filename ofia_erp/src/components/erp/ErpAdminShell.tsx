@@ -423,7 +423,7 @@ export function ErpAdminShell({
         };
       } else if (pathname.startsWith("/erp/ops")) {
         origin = {
-          path: "/erp/ops/mobility",
+          path: "/erp/ops/dispatch",
           label: "Ops",
           title: "Operations Dispatch",
           roleKey: "dispatcher",
@@ -637,7 +637,6 @@ export function ErpAdminShell({
             (allowedPage === "crm" && (pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer"))) ||
             (allowedPage === "shop" && pathname.startsWith("/erp/admin/shop")) ||
             (allowedPage === "mobility" && pathname.startsWith("/erp/admin/mobility")) ||
-            (allowedPage === "mobility_ops" && pathname.startsWith("/erp/ops/mobility")) ||
             (allowedPage === "dispatch" && pathname.startsWith("/erp/admin/dispatch")) ||
             (allowedPage === "dispatch_ops" && (pathname.startsWith("/erp/ops/dispatch") || pathname.startsWith("/erp/admin/dispatch"))) ||
             (allowedPage === "marketplace" && pathname.startsWith("/erp/admin/marketplace")) ||
@@ -695,7 +694,6 @@ export function ErpAdminShell({
               (allowedPage === "crm" && (pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer"))) ||
               (allowedPage === "shop" && pathname.startsWith("/erp/admin/shop")) ||
               (allowedPage === "mobility" && pathname.startsWith("/erp/admin/mobility")) ||
-              (allowedPage === "mobility_ops" && pathname.startsWith("/erp/ops/mobility")) ||
               (allowedPage === "dispatch" && pathname.startsWith("/erp/admin/dispatch")) ||
               (allowedPage === "dispatch_ops" && (pathname.startsWith("/erp/ops/dispatch") || pathname.startsWith("/erp/admin/dispatch"))) ||
               (allowedPage === "marketplace" && pathname.startsWith("/erp/admin/marketplace")) ||
@@ -857,7 +855,6 @@ export function ErpAdminShell({
         if (pathname.includes("/admin/shop/inventory")) pageHeading = "Inventory Management";
         else if (pathname.includes("/admin/shop/pos")) pageHeading = "Point of Sale (POS)";
         else if (pathname.includes("/admin/shop/referrals")) pageHeading = "Referrals & Rewards";
-        else if (pathname.includes("/ops/mobility")) pageHeading = "Mobility Operations Console";
         else if (pathname.includes("/admin/mobility")) pageHeading = "Ofia Mobility Manager";
         else if (pathname.includes("/admin/dispatch") || pathname.includes("/ops/dispatch")) pageHeading = "Ofia Dispatch Manager";
         else if (pathname.includes("/admin/users")) pageHeading = "Staff Directory & Roles";
@@ -925,7 +922,6 @@ export function ErpAdminShell({
 
     // 3. PORTALS & WORKSPACES
     { label: "Sales Closer Portal", icon: <Target className="w-6 h-6" />, href: "/erp/ops/crm", badge: "Closer", key: "sales_closer", section: "Portals & Team" },
-    { label: "Mobility Operations", icon: <Radio className="w-6 h-6" />, href: "/erp/ops/mobility", badge: "Live", key: "mobility_ops", section: "Portals & Team" },
     { label: "Employee Portal", icon: <UserCheck className="w-6 h-6" />, href: "/erp/employee", key: "employee", section: "Portals & Team" },
     { label: "Manager Portal", icon: <Sliders className="w-6 h-6" />, href: "/erp/manager", key: "manager", section: "Portals & Team" },
     { label: "Executive Portal", icon: <TrendingUp className="w-6 h-6" />, href: "/erp/md", key: "md", section: "Portals & Team" },
@@ -956,9 +952,6 @@ export function ErpAdminShell({
         { label: "Fleet Command", href: "/erp/admin/mobility", icon: <LayoutDashboard className="w-3.5 h-3.5" />, group: "Fleet Management" },
       ];
 
-      if (isSubAllowed("ops")) {
-        mobilityTabs.push({ label: "Live Dispatch", href: "/erp/ops/mobility", icon: <Radio className="w-3.5 h-3.5" />, badge: "Live", group: "Fleet Management" });
-      }
       if (isSubAllowed("vehicles")) {
         mobilityTabs.push({ label: "Vehicles & ROI", href: "/erp/admin/mobility/vehicles", icon: <Truck className="w-3.5 h-3.5" />, group: "Fleet Management" });
       }
@@ -996,57 +989,6 @@ export function ErpAdminShell({
       }
 
       return mobilityTabs;
-    }
-
-    if (pathname.startsWith("/erp/ops/mobility")) {
-      const isSubAllowed = (key: string) => {
-        if (!permissionMatrix) return false;
-        const normKey = key.replace(/-/g, "_");
-        const dashKey = key.replace(/_/g, "-");
-
-        const adminVal = permissionMatrix.admin?.[normKey] ?? permissionMatrix.admin?.[dashKey];
-        const provVal = (permissionMatrix as any).tenant_provision?.[normKey] ?? (permissionMatrix as any).tenant_provision?.[dashKey];
-
-        // Explicitly disabled in either admin or tenant_provision
-        if ((adminVal as any) === false || (provVal as any) === false) return false;
-
-        // Must be explicitly enabled in either admin or tenant_provision
-        return (adminVal as any) === true || (provVal as any) === true;
-      };
-
-      const opsTabs: SubNavItem[] = [
-        // Group 1: Job Assignment & Fleet Readiness
-        { label: "Live Dispatch Console", href: "/erp/ops/mobility", icon: <Radio className="w-3.5 h-3.5" />, badge: "Live", group: "Job Assignment" },
-      ];
-
-      if (isSubAllowed("drivers")) {
-        opsTabs.push({ label: "Driver Rosters", href: "/erp/admin/mobility/drivers", icon: <Users className="w-3.5 h-3.5" />, group: "Job Assignment" });
-      }
-      if (isSubAllowed("vehicles")) {
-        opsTabs.push({ label: "Active Vehicles", href: "/erp/admin/mobility/vehicles", icon: <Truck className="w-3.5 h-3.5" />, group: "Job Assignment" });
-      }
-
-      // Group 2: Services & Manifests (Only rendered if individually provisioned)
-      if (isSubAllowed("shuttle")) {
-        opsTabs.push({ label: "Shuttle Service", href: "/erp/admin/mobility/services/shuttle", icon: <Clock className="w-3.5 h-3.5" />, group: "Services & Manifests" });
-      }
-      if (isSubAllowed("interstate")) {
-        opsTabs.push({ label: "Interstate Transit", href: "/erp/admin/mobility/services/interstate", icon: <Navigation className="w-3.5 h-3.5" />, group: "Services & Manifests" });
-      }
-      if (isSubAllowed("on_demand")) {
-        opsTabs.push({ label: "On-Demand Hailing", href: "/erp/admin/mobility/services/on-demand", icon: <Zap className="w-3.5 h-3.5" />, group: "Services & Manifests" });
-      }
-      if (isSubAllowed("rental")) {
-        opsTabs.push({ label: "Bus Rental Charters", href: "/erp/admin/mobility/services/rental", icon: <Car className="w-3.5 h-3.5" />, group: "Services & Manifests" });
-      }
-      if (isSubAllowed("school")) {
-        opsTabs.push({ label: "School Bus Manifest", href: "/erp/admin/mobility/services/school", icon: <Building2 className="w-3.5 h-3.5" />, group: "Services & Manifests" });
-      }
-      if (isSubAllowed("staff")) {
-        opsTabs.push({ label: "Staff Commute Trips", href: "/erp/admin/mobility/services/staff", icon: <Users className="w-3.5 h-3.5" />, group: "Services & Manifests" });
-      }
-
-      return opsTabs;
     }
 
     if (pathname.startsWith("/erp/admin/dispatch")) {
@@ -1247,7 +1189,6 @@ export function ErpAdminShell({
 
     let activeModKey = "";
     if (pathname.startsWith("/erp/admin/mobility")) activeModKey = "mobility";
-    else if (pathname.startsWith("/erp/ops/mobility")) activeModKey = "mobility_ops";
     else if (pathname.startsWith("/erp/admin/dispatch")) activeModKey = "dispatch";
     else if (
       pathname.startsWith("/erp/ops/crm") ||
@@ -1311,13 +1252,6 @@ export function ErpAdminShell({
         if (isAdminDisabled || isTpDisabled) return false;
         const isAdminAllowed = permissionMatrix.admin?.users === true;
         const isTpAllowed = (permissionMatrix as any).tenant_provision?.users === true;
-        return isAdminAllowed || isTpAllowed;
-      }
-      if (key === "mobility_ops") {
-        const isMobDisabled = permissionMatrix.admin?.mobility === false || (permissionMatrix as any).tenant_provision?.mobility === false;
-        if (isMobDisabled) return false;
-        const isAdminAllowed = permissionMatrix.admin?.mobility === true && (permissionMatrix.admin as any)?.ops === true;
-        const isTpAllowed = (permissionMatrix as any).tenant_provision?.mobility === true;
         return isAdminAllowed || isTpAllowed;
       }
       if (key === "dispatch_ops") {
@@ -1916,7 +1850,6 @@ export function ErpAdminShell({
                     if (tab.href === "/erp/admin/users") return pathname === "/erp/admin/users";
                     if (tab.href === "/erp/admin/departments") return pathname.startsWith("/erp/admin/departments");
                     if (tab.href === "/erp/admin/mobility") return pathname === "/erp/admin/mobility";
-                    if (tab.href === "/erp/ops/mobility") return pathname === "/erp/ops/mobility";
                     if (
                       tab.href === "/erp/admin" ||
                       tab.href === "/erp/admin/ai" ||
@@ -1966,7 +1899,6 @@ export function ErpAdminShell({
                   g.tabs.some((t) => {
                     if (pathname === t.href) return true;
                     if (t.href === "/erp/admin/mobility") return pathname === "/erp/admin/mobility";
-                    if (t.href === "/erp/ops/mobility") return pathname === "/erp/ops/mobility";
                     return pathname.startsWith(t.href);
                   })
                 )?.name;

@@ -230,14 +230,6 @@ export const ERP_MODULES: ErpModuleDef[] = [
     href: "/erp/md",
   },
   {
-    key: "mobility_ops",
-    label: "Mobility Operations",
-    category: "Portals & Team",
-    description: "Real-time dispatch, vehicle telemetry, active trip queue, and incident management.",
-    href: "/erp/ops/mobility",
-    badge: "Live",
-  },
-  {
     key: "sales_closer",
     label: "Sales Closer Portal",
     category: "Portals & Team",
@@ -337,14 +329,6 @@ export const ASSIGNABLE_PAGES: AssignablePage[] = [
     badge: "Mobility",
   },
   {
-    key: "mobility_ops",
-    label: "Mobility Operations",
-    description: "Real-time dispatch, vehicle telemetry, active trip queue, driver rosters, and manifests.",
-    route: "/erp/ops/mobility",
-    category: "Portals & Team",
-    badge: "Live",
-  },
-  {
     key: "dispatch",
     label: "Ofia Dispatch Manager",
     description: "Operational control center for dispatch agents, waybill tracking, and rider allocation.",
@@ -407,7 +391,7 @@ export function getDefaultPagesForRole(role: RoleKey | string, designation?: str
     case "inventory_officer":
       return ["employee", "shop"];
     case "dispatcher":
-      return ["employee", "dispatch", "dispatch_ops", "mobility", "mobility_ops"];
+      return ["employee", "dispatch", "dispatch_ops", "mobility"];
     case "employee":
     default:
       return ["employee"];
@@ -948,14 +932,14 @@ export const ROLE_CAPABILITIES: Record<RoleKey, RoleCapability> = {
   admin: {
     key: "admin",
     label: "Tenant Administrator",
-    controlPanels: ["overview", "ai", "crm", "marketplace", "shop", "mobility", "mobility_ops", "dispatch", "dispatch_ops", "accounting", "hr", "users", "departments"],
+    controlPanels: ["overview", "ai", "crm", "marketplace", "shop", "mobility", "dispatch", "dispatch_ops", "accounting", "hr", "users", "departments"],
     portals: ["employee", "manager", "md"],
     homeRoute: "/erp/admin",
   },
   md: {
     key: "md",
     label: "Managing Director",
-    controlPanels: ["accounting", "hr", "crm", "shop", "mobility", "mobility_ops"],
+    controlPanels: ["accounting", "hr", "crm", "shop", "mobility"],
     portals: ["md", "employee"],
     homeRoute: "/erp/md",
   },
@@ -1004,7 +988,7 @@ export const ROLE_CAPABILITIES: Record<RoleKey, RoleCapability> = {
   dispatcher: {
     key: "dispatcher",
     label: "Fleet Dispatcher",
-    controlPanels: ["dispatch", "dispatch_ops", "mobility", "mobility_ops"],
+    controlPanels: ["dispatch", "dispatch_ops", "mobility"],
     portals: ["employee"],
     homeRoute: "/erp/admin/dispatch",
   },
@@ -1102,13 +1086,13 @@ export function isNavItemVisibleForRole(
     const hasUsers = isModuleProvisioned("users");
     if (!hasUsers) {
       // MD cannot see employee/manager/md portals without users module
-      const mdExecutivePanels = ["accounting", "hr", "crm", "shop", "mobility", "mobility_ops"];
+      const mdExecutivePanels = ["accounting", "hr", "crm", "shop", "mobility"];
       return mdExecutivePanels.includes(itemKey);
     }
     if (itemKey === "md" || itemKey === "employee") return true;
     if (itemKey === "manager") return isLineManager;
     // MD also has executive control panel visibility into provisioned modules
-    const mdExecutivePanels = ["accounting", "hr", "crm", "shop", "mobility", "mobility_ops"];
+    const mdExecutivePanels = ["accounting", "hr", "crm", "shop", "mobility"];
     return mdExecutivePanels.includes(itemKey);
   }
 

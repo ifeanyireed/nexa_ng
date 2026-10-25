@@ -39,7 +39,8 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
   const [logoError, setLogoError] = useState(false);
   const pathname = usePathname();
   const { totalCount, setIsCartOpen } = useCart();
-  const { isFeatureEnabled, tenantSlug } = useStorefrontTenant();
+  const { isFeatureEnabled, tenantSlug, handshake } = useStorefrontTenant();
+  const announcement = handshake?.storefrontConfig?.announcement;
 
   // Vertical-specific navigation links
   const getNavLinks = () => {
@@ -213,10 +214,37 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
       icon: ArrowRight,
     };
   }
+
+  if (handshake?.storefrontConfig?.header?.ctaLabel) {
+    cta = {
+      label: handshake.storefrontConfig.header.ctaLabel,
+      href: handshake.storefrontConfig.header.ctaHref || cta.href,
+      icon: cta.icon,
+    };
+  }
   const CtaIcon = cta.icon;
 
   return (
-    <header className="sticky top-0 w-full bg-white/95 backdrop-blur-md z-30 transition-colors pt-2.5 pb-1.5">
+    <div className="sticky top-0 z-30 w-full">
+      {announcement?.enabled && announcement?.text && (
+        <div
+          className="w-full py-1.5 px-4 text-center text-xs font-semibold text-white flex items-center justify-center gap-2 shadow-xs transition-colors"
+          style={{ backgroundColor: store.primaryColor || "#111318" }}
+        >
+          {announcement.badge && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/20 uppercase tracking-wider">
+              {announcement.badge}
+            </span>
+          )}
+          <span>{announcement.text}</span>
+          {announcement.link && (
+            <Link href={announcement.link} className="underline hover:opacity-85 transition-opacity ml-1 font-bold">
+              Learn More →
+            </Link>
+          )}
+        </div>
+      )}
+      <header className="w-full bg-white/95 backdrop-blur-md transition-colors pt-2.5 pb-1.5 border-b border-stone-200/50">
       <div className="max-w-[1720px] mx-auto px-4 sm:px-5 lg:px-6 flex items-center justify-between gap-4 sm:gap-6">
         {/* Brand & Store Identity with dynamic tenant logo and fallback */}
         <Link href={tenantSlug ? "/" : `/${store.slug}`} className="flex items-center gap-2.5 group">
@@ -361,5 +389,6 @@ export default function StoreHeader({ store }: StoreHeaderProps) {
         </div>
       )}
     </header>
+    </div>
   );
 }

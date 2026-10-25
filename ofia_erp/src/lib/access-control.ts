@@ -834,7 +834,13 @@ export function useTenantProvisioning() {
       // While loading or if data is not yet resolved, NEVER display provisioned modules
       if (isLoading || !matrix) return false;
       if (moduleKey === "mission" || moduleKey === "overview") return true;
-      if (moduleKey === "departments") {
+      if (
+        moduleKey === "departments" ||
+        moduleKey === "users" ||
+        moduleKey === "employee" ||
+        moduleKey === "manager" ||
+        moduleKey === "md"
+      ) {
         return Boolean(matrix.admin?.users || (matrix as any).tenant_provision?.users);
       }
       if (moduleKey === "dispatch_ops") {
@@ -994,8 +1000,11 @@ export function isNavItemVisibleForRole(
     return false;
   }
 
-  // Admin gets all active workspace modules & all portals
+  // Admin gets all active workspace modules & all portals (employee, manager, md require users module)
   if (role === "admin") {
+    if (itemKey === "employee" || itemKey === "manager" || itemKey === "md") {
+      return isModuleProvisioned("users");
+    }
     return true;
   }
 
@@ -1005,13 +1014,16 @@ export function isNavItemVisibleForRole(
   if (userDepartment && departmentConfigs && departmentConfigs.length > 0) {
     const deptAccess = getUserDepartmentAccess({ department: userDepartment, role }, departmentConfigs);
     if (deptAccess.matchedDepartment && deptAccess.isPageAllowed(itemKey)) {
+      if (itemKey === "employee" || itemKey === "manager" || itemKey === "md") {
+        return isModuleProvisioned("users");
+      }
       return true;
     }
   }
 
-  // General employee only sees Employee Portal
+  // General employee only sees Employee Portal (if users module is provisioned)
   if (role === "employee") {
-    return itemKey === "employee";
+    return itemKey === "employee" && isModuleProvisioned("users");
   }
 
   // Sales Closer sees Sales Closer Portal and Employee Portal (only if CRM is provisioned)
@@ -1020,16 +1032,22 @@ export function isNavItemVisibleForRole(
     if (itemKey === "sales_closer") {
       return hasCrm;
     }
-    return itemKey === "employee";
+    return itemKey === "employee" && isModuleProvisioned("users");
   }
 
-  // Line Manager sees Manager Portal and Employee Portal
+  // Line Manager sees Manager Portal and Employee Portal (only if users module is provisioned)
   if (role === "manager") {
-    return itemKey === "manager" || itemKey === "employee";
+    return isModuleProvisioned("users") && (itemKey === "manager" || itemKey === "employee");
   }
 
-  // MD sees MD Executive Portal, Employee Portal, and Manager Portal if they are a line manager
+  // MD sees MD Executive Portal, Employee Portal, and Manager Portal if they are a line manager (all tied to users module)
   if (role === "md") {
+    const hasUsers = isModuleProvisioned("users");
+    if (!hasUsers) {
+      // MD cannot see employee/manager/md portals without users module
+      const mdExecutivePanels = ["accounting", "hr", "crm", "shop", "mobility", "mobility_ops"];
+      return mdExecutivePanels.includes(itemKey);
+    }
     if (itemKey === "md" || itemKey === "employee") return true;
     if (itemKey === "manager") return isLineManager;
     // MD also has executive control panel visibility into provisioned modules

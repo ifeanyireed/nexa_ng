@@ -8,13 +8,16 @@ import StoreFooter from "@/components/common/StoreFooter";
 import VerticalHeroBento from "@/components/common/VerticalHeroBento";
 import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
 import StorefrontCartRail from "@/components/common/StorefrontCartRail";
+import StorefrontValueBadges from "@/components/common/StorefrontValueBadges";
+import StorefrontFeatureBanner from "@/components/common/StorefrontFeatureBanner";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import { ArrowRight, Shirt, Scissors, Shield, Ruler, Truck, RefreshCw } from "lucide-react";
 
 export default function FashionStorefrontView() {
-  const { store: dynamicStore, isFeatureEnabled, tenantSlug } = useStorefrontTenant();
+  const { store: dynamicStore, isFeatureEnabled, tenantSlug, handshake } = useStorefrontTenant();
   const store = dynamicStore || MOCK_STORES.fashion;
+  const config = handshake?.storefrontConfig;
   const { products: fashionProducts, isLiveMerchantCatalog } = useStorefrontProducts("fashion");
 
   const canBookServices = isFeatureEnabled("services");
@@ -30,17 +33,17 @@ export default function FashionStorefrontView() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 lg:gap-4 w-full lg:flex-1 min-h-0 items-stretch">
           <div className="lg:col-span-9 flex h-full min-h-0">
             <VerticalHeroBento
-              eyebrow={store.tagline || "Capsule Drop & Couture"}
-              headline={store.name}
-              highlightText="· Artisanal Tailoring & Silhouettes"
-              description={store.description || "Artisanal linen tunics, hand-embroidered kaftans, and architectural outerwear tailored for effortless tropical elegance."}
-              ctaLabel={canBookServices ? "Schedule Bespoke Fitting" : "Explore Capsule Catalog"}
-              ctaHref={canBookServices ? `/fashion/custom-tailoring${tenantQuery}` : `/fashion/catalog${tenantQuery}`}
-              footnote="Free Doorstep Sizing Exchanges · 7-Day Fit Guarantee"
-              image={store.coverImage || "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=80"}
+              eyebrow={config?.hero?.eyebrow || store.tagline || "Capsule Drop & Couture"}
+              headline={config?.hero?.headline || store.name}
+              highlightText={config?.hero?.highlightText !== undefined ? config.hero.highlightText : "· Artisanal Tailoring & Silhouettes"}
+              description={config?.hero?.description || store.description || "Artisanal linen tunics, hand-embroidered kaftans, and architectural outerwear tailored for effortless tropical elegance."}
+              ctaLabel={config?.hero?.ctaLabel || (canBookServices ? "Schedule Bespoke Fitting" : "Explore Capsule Catalog")}
+              ctaHref={config?.hero?.ctaHref || (canBookServices ? `/fashion/custom-tailoring${tenantQuery}` : `/fashion/catalog${tenantQuery}`)}
+              footnote={config?.hero?.footnote || "Free Doorstep Sizing Exchanges · 7-Day Fit Guarantee"}
+              image={config?.hero?.image || store.coverImage || "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=80"}
               imageAlt={`${store.name} Capsule Collection`}
-              badge={tenantSlug ? undefined : "Capsule Drop"}
-              bgColor="#FAF9F5"
+              badge={config?.hero?.badge || (tenantSlug ? undefined : "Capsule Drop")}
+              bgColor={config?.hero?.bgColor || "#FAF9F5"}
             />
           </div>
 
@@ -100,43 +103,42 @@ export default function FashionStorefrontView() {
       {/* Content Container */}
       <main className="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 space-y-16 pb-16">
         {/* Value Badges */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 py-4">
-          <div className="p-5 rounded-2xl bg-white border border-stone-200/80 shadow-xs flex items-center gap-3.5">
-            <Ruler className="w-7 h-7 text-amber-600 shrink-0" />
-            <div>
-              <h4 className="text-sm sm:text-base font-bold text-zinc-900">Custom Sizing</h4>
-              <p className="text-xs text-stone-500 mt-0.5">Made-to-measure tailoring</p>
-            </div>
-          </div>
-          <div className="p-5 rounded-2xl bg-white border border-stone-200/80 shadow-xs flex items-center gap-3.5">
-            <Scissors className="w-7 h-7 text-amber-600 shrink-0" />
-            <div>
-              <h4 className="text-sm sm:text-base font-bold text-zinc-900">French Flax & Silk</h4>
-              <p className="text-xs text-stone-500 mt-0.5">Sustainable raw textiles</p>
-            </div>
-          </div>
-          <div className="p-5 rounded-2xl bg-white border border-stone-200/80 shadow-xs flex items-center gap-3.5">
-            <Truck className="w-7 h-7 text-amber-600 shrink-0" />
-            <div>
-              <h4 className="text-sm sm:text-base font-bold text-zinc-900">Ofia Dispatch</h4>
-              <p className="text-xs text-stone-500 mt-0.5">Express doorstep delivery</p>
-            </div>
-          </div>
-          <div className="p-5 rounded-2xl bg-white border border-stone-200/80 shadow-xs flex items-center gap-3.5">
-            <RefreshCw className="w-7 h-7 text-amber-600 shrink-0" />
-            <div>
-              <h4 className="text-sm sm:text-base font-bold text-zinc-900">Free Exchanges</h4>
-              <p className="text-xs text-stone-500 mt-0.5">7-day fit guarantee</p>
-            </div>
-          </div>
-        </section>
+        <StorefrontValueBadges
+          customBadges={config?.valueBadges}
+          isVisible={config?.sectionVisibility?.valueBadges !== false}
+          accentColor="text-amber-600"
+          defaultBadges={[
+            {
+              title: "Custom Sizing",
+              description: "Made-to-measure tailoring",
+              icon: <Ruler className="w-7 h-7 text-amber-600 shrink-0" />,
+            },
+            {
+              title: "French Flax & Silk",
+              description: "Sustainable raw textiles",
+              icon: <Scissors className="w-7 h-7 text-amber-600 shrink-0" />,
+            },
+            {
+              title: "Ofia Dispatch",
+              description: "Express doorstep delivery",
+              icon: <Truck className="w-7 h-7 text-amber-600 shrink-0" />,
+            },
+            {
+              title: "Free Exchanges",
+              description: "7-day fit guarantee",
+              icon: <RefreshCw className="w-7 h-7 text-amber-600 shrink-0" />,
+            },
+          ]}
+        />
 
         {/* Featured Seasonal Drops */}
         <section className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-amber-700">Signature Apparel</span>
+                <span className="text-xs sm:text-sm font-bold uppercase tracking-widest text-amber-700">
+                  {config?.featuredSection?.eyebrow || "Signature Apparel"}
+                </span>
                 {isLiveMerchantCatalog && (
                   <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                     Live Catalog
@@ -144,14 +146,14 @@ export default function FashionStorefrontView() {
                 )}
               </div>
               <h2 className="font-dropa text-3xl sm:text-4xl lg:text-5xl font-bold text-zinc-900 tracking-tight mt-1">
-                Featured Collection Drops
+                {config?.featuredSection?.title || "Featured Collection Drops"}
               </h2>
             </div>
             <Link
-              href={`/fashion/catalog${tenantQuery}`}
+              href={config?.featuredSection?.viewAllHref || `/fashion/catalog${tenantQuery}`}
               className="text-sm sm:text-base font-bold text-amber-700 hover:text-amber-800 flex items-center gap-1.5 group"
             >
-              <span>View All Pieces</span>
+              <span>{config?.featuredSection?.viewAllLabel || "View All Pieces"}</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
@@ -250,38 +252,21 @@ export default function FashionStorefrontView() {
           </div>
         </section>
 
-        {/* Bespoke Tailoring Feature Banner (Gated by Services Provisioning) */}
-        {canBookServices && (
-          <section className="rounded-3xl bg-amber-900 text-white p-8 sm:p-12 relative overflow-hidden shadow-xl flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="max-w-xl space-y-4 z-10">
-              <span className="text-xs sm:text-sm font-bold tracking-widest text-amber-300 uppercase">
-                Bespoke Fitting Service
-              </span>
-              <h3 className="font-dropa text-3xl sm:text-4xl lg:text-5xl font-normal leading-tight">
-                Custom Tailored to Your Exact Proportions
-              </h3>
-              <p className="text-amber-100/90 text-sm sm:text-base font-light leading-relaxed">
-                Book a private appointment with our master pattern maker or submit your anatomical measurements online for a personalized cut.
-              </p>
-              <div className="pt-2">
-                <Link
-                  href={`/fashion/custom-tailoring${tenantQuery}`}
-                  className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-full bg-white text-zinc-900 hover:bg-amber-100 font-bold text-sm sm:text-base transition-all shadow-md"
-                >
-                  <span>Schedule Fitting Appointment</span>
-                  <Ruler className="w-5 h-5 text-amber-700" />
-                </Link>
-              </div>
-            </div>
-
-            <div className="relative w-full md:w-80 aspect-square rounded-2xl overflow-hidden border border-amber-700/50 shadow-2xl">
-              <img
-                src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=600&q=80"
-                alt="Bespoke Tailoring Workshop"
-                className="w-full h-full object-cover"
-              />
-            </div>
-          </section>
+        {/* Bespoke Tailoring Feature Banner (Gated by Services Provisioning or Custom Config) */}
+        {((config?.featureBanner?.enabled ?? canBookServices)) && (
+          <StorefrontFeatureBanner
+            customBanner={config?.featureBanner}
+            isVisible={config?.sectionVisibility?.featureBanner !== false}
+            defaultEyebrow="Bespoke Fitting Service"
+            defaultHeadline="Custom Tailored to Your Exact Proportions"
+            defaultDescription="Book a private appointment with our master pattern maker or submit your anatomical measurements online for a personalized cut."
+            defaultCtaLabel="Schedule Fitting Appointment"
+            defaultCtaHref={`/fashion/custom-tailoring${tenantQuery}`}
+            defaultImage="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=600&q=80"
+            bgClassName="bg-amber-900 text-white border-amber-800"
+            accentTextClassName="text-amber-300"
+            ctaIcon={<Ruler className="w-5 h-5 text-amber-700" />}
+          />
         )}
       </main>
 

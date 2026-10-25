@@ -319,12 +319,68 @@ export interface TenantStorefrontHandshake {
     };
     allowEscrow?: boolean;
     sectionVisibility: {
-      hero: boolean;
-      products: boolean;
-      services: boolean;
-      reviews: boolean;
-      dispatchBooking: boolean;
+      hero?: boolean;
+      valueBadges?: boolean;
+      products?: boolean;
+      services?: boolean;
+      featureBanner?: boolean;
+      reviews?: boolean;
+      dispatchBooking?: boolean;
       escrowOption?: boolean;
+      announcement?: boolean;
+    };
+    announcement?: {
+      enabled?: boolean;
+      text?: string;
+      link?: string;
+      badge?: string;
+    };
+    header?: {
+      ctaLabel?: string;
+      ctaHref?: string;
+    };
+    hero?: {
+      enabled?: boolean;
+      eyebrow?: string;
+      headline?: string;
+      highlightText?: string;
+      description?: string;
+      ctaLabel?: string;
+      ctaHref?: string;
+      footnote?: string;
+      badge?: string;
+      bgColor?: string;
+      image?: string;
+    };
+    valueBadges?: Array<{
+      title: string;
+      description: string;
+      icon?: string;
+    }>;
+    featuredSection?: {
+      eyebrow?: string;
+      title?: string;
+      viewAllLabel?: string;
+      viewAllHref?: string;
+    };
+    featureBanner?: {
+      enabled?: boolean;
+      eyebrow?: string;
+      headline?: string;
+      description?: string;
+      ctaLabel?: string;
+      ctaHref?: string;
+      image?: string;
+    };
+    footer?: {
+      bio?: string;
+      copyright?: string;
+      socials?: {
+        instagram?: string;
+        twitter?: string;
+        facebook?: string;
+        linkedin?: string;
+      };
     };
     badges: string[];
   };

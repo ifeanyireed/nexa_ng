@@ -83,14 +83,28 @@ export function StorefrontTenantProvider({ children }: { children: React.ReactNo
                 storefrontConfig: {
                   ...activeHandshake.storefrontConfig,
                   storeName: cachedStudioConfig.storeName || activeHandshake.storefrontConfig.storeName,
-                  headline: cachedStudioConfig.storeHeadline || activeHandshake.storefrontConfig.headline,
+                  headline: cachedStudioConfig.hero?.headline || cachedStudioConfig.storeHeadline || activeHandshake.storefrontConfig.headline,
+                  description: cachedStudioConfig.hero?.description || cachedStudioConfig.description || activeHandshake.storefrontConfig.description,
                   primaryColor: cachedStudioConfig.primaryColor || activeHandshake.storefrontConfig.primaryColor,
                   secondaryColor: cachedStudioConfig.secondaryColor || activeHandshake.storefrontConfig.secondaryColor,
-                  bannerUrl: cachedStudioConfig.bannerUrl || activeHandshake.storefrontConfig.bannerUrl,
+                  logoUrl: cachedStudioConfig.logoUrl || activeHandshake.storefrontConfig.logoUrl,
+                  bannerUrl: cachedStudioConfig.hero?.image || cachedStudioConfig.bannerUrl || activeHandshake.storefrontConfig.bannerUrl,
+                  contact: {
+                    ...activeHandshake.storefrontConfig.contact,
+                    ...(cachedStudioConfig.contact || {}),
+                  },
+                  allowEscrow: cachedStudioConfig.allowEscrow ?? activeHandshake.storefrontConfig.allowEscrow,
                   sectionVisibility: {
                     ...activeHandshake.storefrontConfig.sectionVisibility,
                     ...(cachedStudioConfig.sectionVisibility || {}),
                   },
+                  announcement: cachedStudioConfig.announcement || activeHandshake.storefrontConfig.announcement,
+                  header: cachedStudioConfig.header || activeHandshake.storefrontConfig.header,
+                  hero: cachedStudioConfig.hero || activeHandshake.storefrontConfig.hero,
+                  valueBadges: cachedStudioConfig.valueBadges || activeHandshake.storefrontConfig.valueBadges,
+                  featuredSection: cachedStudioConfig.featuredSection || activeHandshake.storefrontConfig.featuredSection,
+                  featureBanner: cachedStudioConfig.featureBanner || activeHandshake.storefrontConfig.featureBanner,
+                  footer: cachedStudioConfig.footer || activeHandshake.storefrontConfig.footer,
                 },
               };
             }

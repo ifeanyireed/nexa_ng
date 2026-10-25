@@ -51,7 +51,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const newPassword = (password || "12345678").trim();
+    if (!password || !password.trim()) {
+      return NextResponse.json(
+        { error: "New password is required to reset user credentials" },
+        { status: 400 }
+      );
+    }
+
+    const newPassword = password.trim();
     if (newPassword.length < 6) {
       return NextResponse.json(
         { error: "Password must be at least 6 characters" },

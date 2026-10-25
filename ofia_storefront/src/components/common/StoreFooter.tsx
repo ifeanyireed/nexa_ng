@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { VendorStore, VerticalType } from "@/types/storefront";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import {
   Clock,
   MapPin,
@@ -219,6 +220,8 @@ const VERTICAL_FOOTER_CONFIG: Record<
 
 export default function StoreFooter({ store }: StoreFooterProps) {
   const [logoError, setLogoError] = useState(false);
+  const { handshake } = useStorefrontTenant();
+  const footerData = handshake?.storefrontConfig?.footer;
   const footerConfig = VERTICAL_FOOTER_CONFIG[store.vertical] || VERTICAL_FOOTER_CONFIG.fashion;
 
   return (
@@ -246,8 +249,32 @@ export default function StoreFooter({ store }: StoreFooterProps) {
               </span>
             </div>
             <p className="text-xs text-stone-600 leading-relaxed max-w-sm">
-              {store.description}
+              {footerData?.bio || store.description}
             </p>
+            {footerData?.socials && Object.values(footerData.socials).some(Boolean) && (
+              <div className="flex items-center gap-3 pt-1">
+                {footerData.socials.instagram && (
+                  <a href={footerData.socials.instagram} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-pink-600 transition-colors text-xs font-semibold">
+                    Instagram
+                  </a>
+                )}
+                {footerData.socials.twitter && (
+                  <a href={footerData.socials.twitter} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-sky-500 transition-colors text-xs font-semibold">
+                    Twitter (X)
+                  </a>
+                )}
+                {footerData.socials.facebook && (
+                  <a href={footerData.socials.facebook} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-blue-600 transition-colors text-xs font-semibold">
+                    Facebook
+                  </a>
+                )}
+                {footerData.socials.linkedin && (
+                  <a href={footerData.socials.linkedin} target="_blank" rel="noopener noreferrer" className="text-stone-400 hover:text-blue-700 transition-colors text-xs font-semibold">
+                    LinkedIn
+                  </a>
+                )}
+              </div>
+            )}
             <div className="flex flex-wrap gap-1.5 pt-1">
               {store.badges.map((b) => (
                 <span
@@ -348,7 +375,7 @@ export default function StoreFooter({ store }: StoreFooterProps) {
 
         {/* Bottom credits */}
         <div className="pt-8 border-t border-zinc-200 flex flex-col sm:flex-row items-center justify-between text-xs text-stone-500 gap-3">
-          <p>© {new Date().getFullYear()} {toTitleCase(store.name)} · Powered by Ofia Commerce & Logistics Platform</p>
+          <p>{footerData?.copyright || `© ${new Date().getFullYear()} ${toTitleCase(store.name)} · Powered by Ofia Commerce & Logistics Platform`}</p>
           <div className="flex flex-wrap items-center gap-4 text-stone-500">
             <Link
               href={`/info?vertical=${store.vertical}`}

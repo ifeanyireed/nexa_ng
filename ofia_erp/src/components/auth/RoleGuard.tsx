@@ -371,6 +371,10 @@ export function RoleGuard({
       else if (pathname.startsWith("/erp/admin/marketplace")) requiredMod = "marketplace";
       else if (pathname.startsWith("/erp/admin/mobility") || pathname.startsWith("/erp/ops/mobility")) requiredMod = "mobility";
       else if (pathname.startsWith("/erp/admin/dispatch") || pathname.startsWith("/erp/ops/dispatch")) requiredMod = "dispatch";
+      else if (pathname.startsWith("/erp/admin/users") || pathname.startsWith("/erp/admin/departments")) requiredMod = "users";
+      else if (pathname.startsWith("/erp/employee")) requiredMod = "users";
+      else if (pathname.startsWith("/erp/manager")) requiredMod = "users";
+      else if (pathname.startsWith("/erp/md")) requiredMod = "users";
     }
 
     const activeTenantSlug =

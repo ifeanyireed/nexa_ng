@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { MASTER_CONNECTION_STRING, getTenantSql, invalidateTenantDbCache } from "@/lib/tenant-db-resolver";
 import { INITIAL_TENANTS } from "@/lib/admin-data";
 import { alignTenantModules, getDefaultModulesForVertical } from "@/lib/tenant-module-aligner";
+import { ensureDefaultTenantAdmin } from "@/lib/tenant-admin-provisioner";
 import { neon } from "@neondatabase/serverless";
 
 export const dynamic = "force-dynamic";
@@ -175,6 +176,21 @@ export async function POST(request: NextRequest) {
       console.warn(`[Tenant API] Automatic module alignment warning for new tenant '${cleanSlug}':`, alignErr.message);
     }
 
+    // Automatically create default admin user account for the tenant on workspace provision
+    try {
+      await ensureDefaultTenantAdmin({
+        tenantSlug: cleanSlug,
+        tenantName: name,
+        ownerEmail: ownerEmail || `admin@${cleanSlug}.ng`,
+        ownerName: ownerName || `${name} Admin`,
+        domain: effectiveDomain,
+        vertical,
+        password: body.password || body.default_password || process.env.DEFAULT_TENANT_ADMIN_PASSWORD || undefined,
+      });
+    } catch (adminErr: any) {
+      console.warn(`[Tenant API] Default admin account creation warning for '${cleanSlug}':`, adminErr.message);
+    }
+
     return NextResponse.json({ success: true, tenant });
   } catch (err: any) {
     return NextResponse.json(
@@ -259,6 +275,21 @@ export async function PUT(request: NextRequest) {
       });
     } catch (alignErr: any) {
       console.warn(`[Tenant API] Automatic module alignment warning for '${targetSlug}':`, alignErr.message);
+    }
+
+    // Ensure default admin user account exists for tenant
+    try {
+      await ensureDefaultTenantAdmin({
+        tenantSlug: targetSlug,
+        tenantName: updated.name || targetSlug,
+        ownerEmail: updated.owner_email || body.ownerEmail || body.owner_email,
+        ownerName: updated.owner_name || body.ownerName || body.owner_name,
+        domain: updated.domain || body.domain,
+        vertical: updated.vertical || body.vertical,
+        password: body.password || body.default_password || process.env.DEFAULT_TENANT_ADMIN_PASSWORD || undefined,
+      });
+    } catch (adminErr: any) {
+      console.warn(`[Tenant API] Admin user sync note for '${targetSlug}':`, adminErr.message);
     }
 
     invalidateTenantDbCache(targetSlug);

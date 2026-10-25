@@ -38,7 +38,8 @@ export async function GET(request: NextRequest) {
     const registrySql = neon(MASTER_REGISTRY_URL);
     const rows = await registrySql`
       SELECT id, name, slug, domain, vertical, status, db_mode, plan_tier,
-             logo, login_image, hero_title, hero_subtitle, shop_sub_modules, owner_email
+             logo, login_image, hero_title, hero_subtitle, shop_sub_modules, owner_email,
+             storefront_config
       FROM platform_tenants
       WHERE LOWER(slug) = ${tenantSlug}
          OR REPLACE(LOWER(slug), '-', '') = REPLACE(${tenantSlug}, '-', '')
@@ -47,12 +48,13 @@ export async function GET(request: NextRequest) {
 
     if (rows && rows.length > 0) {
       const r = rows[0];
-      const verticalKey: VerticalType = (r.vertical as VerticalType) || "retail";
+      const customConfig = (r.storefront_config && typeof r.storefront_config === "object") ? r.storefront_config : {};
+      const verticalKey: VerticalType = (customConfig.vertical as VerticalType) || (r.vertical as VerticalType) || "retail";
 
       const handshake: TenantStorefrontHandshake = {
         tenantId: r.id || `org-${tenantSlug}`,
         slug: r.slug,
-        name: r.name || tenantSlug,
+        name: customConfig.storeName || r.name || tenantSlug,
         domain: r.domain || `${tenantSlug}.ofia.ng`,
         subdomain: tenantSlug,
         vertical: verticalKey,
@@ -70,25 +72,41 @@ export async function GET(request: NextRequest) {
           },
         },
         storefrontConfig: {
-          storeName: r.name || tenantSlug,
-          headline: r.hero_title || "Premium Products & Reliable Service",
-          description: r.hero_subtitle || "",
-          primaryColor: "#0069FF",
-          secondaryColor: "#0F172A",
-          logoUrl: (r.logo || "").trim(),
-          bannerUrl: (r.login_image || "").trim(),
-          currency: "₦",
+          storeName: customConfig.storeName || r.name || tenantSlug,
+          headline: customConfig.hero?.headline || customConfig.storeHeadline || r.hero_title || "Premium Products & Reliable Service",
+          description: customConfig.hero?.description || customConfig.description || r.hero_subtitle || "",
+          primaryColor: customConfig.primaryColor || "#0069FF",
+          secondaryColor: customConfig.secondaryColor || "#0F172A",
+          logoUrl: (customConfig.logoUrl || r.logo || "").trim(),
+          bannerUrl: (customConfig.hero?.image || customConfig.bannerUrl || r.login_image || "").trim(),
+          currency: customConfig.currency || "₦",
           contact: {
-            email: r.owner_email || `contact@${tenantSlug}.ofia.ng`,
+            email: customConfig.contact?.email || r.owner_email || `contact@${tenantSlug}.ofia.ng`,
+            phone: customConfig.contact?.phone || "",
+            address: customConfig.contact?.address || "",
+            whatsapp: customConfig.contact?.whatsapp || "",
+            operatingHours: customConfig.contact?.operatingHours || "Mon-Sat: 9am - 8pm WAT",
           },
+          allowEscrow: customConfig.allowEscrow,
           sectionVisibility: {
-            hero: true,
-            products: true,
-            services: true,
-            reviews: true,
-            dispatchBooking: true,
+            hero: customConfig.sectionVisibility?.hero !== false,
+            valueBadges: customConfig.sectionVisibility?.valueBadges !== false,
+            products: customConfig.sectionVisibility?.products !== false,
+            services: customConfig.sectionVisibility?.services !== false,
+            featureBanner: customConfig.sectionVisibility?.featureBanner !== false,
+            reviews: customConfig.sectionVisibility?.reviews !== false,
+            dispatchBooking: customConfig.sectionVisibility?.dispatchBooking !== false,
+            escrowOption: customConfig.sectionVisibility?.escrowOption ?? customConfig.allowEscrow,
+            announcement: customConfig.sectionVisibility?.announcement ?? customConfig.announcement?.enabled,
           },
-          badges: [],
+          announcement: customConfig.announcement || { enabled: false, text: "", link: "" },
+          header: customConfig.header || {},
+          hero: customConfig.hero || {},
+          valueBadges: customConfig.valueBadges || [],
+          featuredSection: customConfig.featuredSection || {},
+          featureBanner: customConfig.featureBanner || {},
+          footer: customConfig.footer || {},
+          badges: customConfig.badges || [],
         },
       };
 

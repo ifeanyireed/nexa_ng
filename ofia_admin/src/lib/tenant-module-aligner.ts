@@ -299,12 +299,14 @@ function buildRoleMatrix(
         } else if (MOBILITY_SUB_MODULE_KEYS.includes(key as any)) {
           isEnabled = isMobilityActive && Boolean(mobilitySubs[key]);
         } else if (key === "employee" || key === "manager" || key === "md") {
-          isEnabled = true;
+          isEnabled = isUsersActive;
         }
       } else if (role === "md") {
         // MD Executive Role
-        if (key === "mission" || key === "overview" || key === "md" || key === "employee") {
+        if (key === "mission" || key === "overview") {
           isEnabled = true;
+        } else if (key === "md" || key === "employee" || key === "manager") {
+          isEnabled = isUsersActive;
         } else if (key === "accounting") {
           isEnabled = isAccountingActive;
         } else if (key === "hr") {
@@ -318,34 +320,46 @@ function buildRoleMatrix(
         }
       } else if (role === "manager") {
         // Line Manager
-        if (key === "mission" || key === "manager" || key === "employee") {
+        if (key === "mission") {
           isEnabled = true;
+        } else if (key === "manager" || key === "employee") {
+          isEnabled = isUsersActive;
         } else if (key === "hr") {
           isEnabled = isHrActive;
         }
       } else if (role === "accountant") {
         // Chief Accountant
-        if (key === "mission" || key === "accounting" || key === "employee") {
+        if (key === "mission") {
           isEnabled = true;
+        } else if (key === "employee") {
+          isEnabled = isUsersActive;
+        } else if (key === "accounting") {
+          isEnabled = isAccountingActive;
         } else if (key === "orders" || key === "store") {
           isEnabled = isShopActive;
         }
       } else if (role === "hr") {
         // HR Director
-        if (key === "mission" || key === "hr" || key === "users" || key === "employee") {
+        if (key === "mission" || key === "hr") {
           isEnabled = true;
+        } else if (key === "users" || key === "employee") {
+          isEnabled = isUsersActive;
         }
       } else if (role === "sales_closer") {
         // Sales Closer Portal
-        if (key === "mission" || key === "employee") {
+        if (key === "mission") {
           isEnabled = true;
+        } else if (key === "employee") {
+          isEnabled = isUsersActive;
         } else if (key === "sales_closer" || key === "crm") {
           isEnabled = isCrmActive;
         }
       } else if (role === "marketer") {
         // Growth Marketer
-        if (key === "mission" || key === "employee") {
+        if (key === "mission") {
           isEnabled = true;
+        } else if (key === "employee") {
+          isEnabled = isUsersActive;
         } else if (key === "crm" || key === "sales_closer") {
           isEnabled = isCrmActive;
         } else if (key === "marketplace") {
@@ -355,8 +369,10 @@ function buildRoleMatrix(
         }
       } else if (role === "dispatcher") {
         // Fleet Dispatcher
-        if (key === "mission" || key === "employee") {
+        if (key === "mission") {
           isEnabled = true;
+        } else if (key === "employee") {
+          isEnabled = isUsersActive;
         } else if (key === "dispatch" || key === "dispatch_ops") {
           isEnabled = isDispatchActive;
         } else if (key === "mobility" || key === "mobility_ops") {
@@ -364,8 +380,10 @@ function buildRoleMatrix(
         }
       } else if (role === "employee") {
         // General Employee
-        if (key === "mission" || key === "employee") {
+        if (key === "mission") {
           isEnabled = true;
+        } else if (key === "employee") {
+          isEnabled = isUsersActive;
         }
       }
 

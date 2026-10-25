@@ -184,6 +184,7 @@ export function ErpAdminShell({
   const [isShellReady, setIsShellReady] = useState<boolean>(false);
   const [tenantName, setTenantName] = useState<string>("");
   const [tenantLogo, setTenantLogo] = useState<string>("");
+  const [currentTenant, setCurrentTenant] = useState<any>(null);
   const [isMounted, setIsMounted] = useState<boolean>(false);
   const [permissionMatrix, setPermissionMatrix] = useState<PermissionMatrix | null>(null);
   const [currentRole, setCurrentRole] = useState<RoleKey>("admin");
@@ -295,6 +296,7 @@ export function ErpAdminShell({
       const list = await fetchDatabaseTenants();
       if (!isCurrent) return;
       const matched = resolveTenantFromList(list, user?.email, slug);
+      setCurrentTenant(matched);
       const activeName = matched?.name || cachedName || "";
       const tenantKey = matched?.slug || matched?.id || slug || "";
       setTenantName(activeName);
@@ -1104,10 +1106,31 @@ export function ErpAdminShell({
 
     if (pathname.startsWith("/erp/admin/shop")) {
       const isSubAllowed = (key: string) => {
-        if (!permissionMatrix) return false;
-        const adminVal = permissionMatrix.admin?.[key];
-        const provVal = (permissionMatrix as any).tenant_provision?.[key];
-        return adminVal === true || provVal === true;
+        const isShopProvisioned = Boolean(
+          permissionMatrix?.admin?.shop ||
+          (permissionMatrix as any)?.tenant_provision?.shop ||
+          currentRole === "admin"
+        );
+
+        if (!isShopProvisioned) return false;
+
+        const tenantShopSubModules =
+          (currentTenant as any)?.shop_sub_modules ||
+          (currentTenant as any)?.shopSubModules;
+
+        if (tenantShopSubModules && tenantShopSubModules[key] !== undefined) {
+          return Boolean(tenantShopSubModules[key]);
+        }
+
+        if (permissionMatrix) {
+          const adminVal = permissionMatrix.admin?.[key];
+          const provVal = (permissionMatrix as any).tenant_provision?.[key];
+          if (adminVal !== undefined || provVal !== undefined) {
+            return adminVal === true || provVal === true;
+          }
+        }
+
+        return true;
       };
 
       const shopTabs: SubNavItem[] = [
@@ -1275,8 +1298,14 @@ export function ErpAdminShell({
     const isProvisioned = (key: string) => {
       // While shell is loading or matrix is unresolved, do NOT display provisioned modules
       if (!isShellReady || !permissionMatrix) return false;
-      if (key === "overview" || key === "employee") return true;
-      if (key === "departments") {
+      if (key === "overview") return true;
+      if (
+        key === "departments" ||
+        key === "users" ||
+        key === "employee" ||
+        key === "manager" ||
+        key === "md"
+      ) {
         const isAdminAllowed = permissionMatrix.admin?.users === true;
         const isTpAllowed = (permissionMatrix as any).tenant_provision?.users === true;
         return isAdminAllowed || isTpAllowed;
@@ -2009,6 +2038,17 @@ export function ErpAdminShell({
           !pathname.startsWith(sessionHome.path + "/");
 
         if (!isAwayFromRoleHome || !sessionHome) return null;
+
+        // If target role is employee, manager, or md, ensure the users module is provisioned for this tenant
+        const hasUsersModule = Boolean(permissionMatrix?.admin?.users || (permissionMatrix as any)?.tenant_provision?.users);
+        if (
+          !hasUsersModule &&
+          (sessionHome.roleKey === "employee" ||
+            sessionHome.roleKey === "manager" ||
+            sessionHome.roleKey === "md")
+        ) {
+          return null;
+        }
 
         return (
           <div className="fixed bottom-6 right-6 z-[100] animate-bounce-subtle">

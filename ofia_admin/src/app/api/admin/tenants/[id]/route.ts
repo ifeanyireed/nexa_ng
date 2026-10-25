@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { MASTER_CONNECTION_STRING, invalidateTenantDbCache } from "@/lib/tenant-db-resolver";
 import { alignTenantModules } from "@/lib/tenant-module-aligner";
+import { ensureDefaultTenantAdmin } from "@/lib/tenant-admin-provisioner";
 import { neon } from "@neondatabase/serverless";
 
 export const dynamic = "force-dynamic";
@@ -115,6 +116,21 @@ export async function PUT(
       });
     } catch (alignErr: any) {
       console.warn(`[Tenant API] Automatic module alignment warning for '${targetSlug}':`, alignErr.message);
+    }
+
+    // Automatically create / verify default admin user account for the tenant
+    try {
+      await ensureDefaultTenantAdmin({
+        tenantSlug: targetSlug,
+        tenantName: updated.name || targetSlug,
+        ownerEmail: updated.owner_email || body.ownerEmail || body.owner_email,
+        ownerName: updated.owner_name || body.ownerName || body.owner_name,
+        domain: updated.domain || body.domain,
+        vertical: updated.vertical || body.vertical,
+        password: body.password || body.default_password || process.env.DEFAULT_TENANT_ADMIN_PASSWORD || undefined,
+      });
+    } catch (adminErr: any) {
+      console.warn(`[Tenant API] Admin user sync note for '${targetSlug}':`, adminErr.message);
     }
 
     invalidateTenantDbCache(targetSlug);

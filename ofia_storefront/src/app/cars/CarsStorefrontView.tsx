@@ -8,6 +8,8 @@ import StoreFooter from "@/components/common/StoreFooter";
 import VerticalHeroBento from "@/components/common/VerticalHeroBento";
 import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
 import StorefrontCartRail from "@/components/common/StorefrontCartRail";
+import StorefrontValueBadges from "@/components/common/StorefrontValueBadges";
+import StorefrontFeatureBanner from "@/components/common/StorefrontFeatureBanner";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import {
@@ -24,8 +26,9 @@ import {
 } from "lucide-react";
 
 export default function CarsStorefrontView() {
-  const { store: dynamicStore, isFeatureEnabled, tenantSlug } = useStorefrontTenant();
+  const { store: dynamicStore, isFeatureEnabled, tenantSlug, handshake } = useStorefrontTenant();
   const store = dynamicStore || MOCK_STORES.cars;
+  const config = handshake?.storefrontConfig;
 
   const { products: carProducts, isLiveMerchantCatalog } = useStorefrontProducts("cars");
   const inspectionService = MOCK_SERVICES.find((s) => s.vertical === "cars");
@@ -42,17 +45,17 @@ export default function CarsStorefrontView() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 lg:gap-4 w-full lg:flex-1 min-h-0 items-stretch">
           <div className="lg:col-span-9 flex h-full min-h-0">
             <VerticalHeroBento
-              eyebrow={store.tagline || "Certified Executive Fleet"}
-              headline={store.name}
-              highlightText="· Direct German Imports & Pre-Owned"
-              description={store.description || "Curated luxury and executive fleet. Every vehicle undergoes a 150-point diagnostic audit with verified clean customs title and at-home valet test-drives."}
-              ctaLabel={canBookServices ? "Book Valet Test-Drive" : "Explore Fleet Catalog"}
-              ctaHref={canBookServices ? "/cars/book-test-drive/car-001" : "/cars/listings"}
-              footnote="150-Point Valet Audit Verified · Clean Customs Clearance"
-              image={store.coverImage || "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80"}
+              eyebrow={config?.hero?.eyebrow || store.tagline || "Certified Executive Fleet"}
+              headline={config?.hero?.headline || store.name}
+              highlightText={config?.hero?.highlightText !== undefined ? config.hero.highlightText : "· Direct German Imports & Pre-Owned"}
+              description={config?.hero?.description || store.description || "Curated luxury and executive fleet. Every vehicle undergoes a 150-point diagnostic audit with verified clean customs title and at-home valet test-drives."}
+              ctaLabel={config?.hero?.ctaLabel || (canBookServices ? "Book Valet Test-Drive" : "Explore Fleet Catalog")}
+              ctaHref={config?.hero?.ctaHref || (canBookServices ? "/cars/book-test-drive/car-001" : "/cars/listings")}
+              footnote={config?.hero?.footnote || "150-Point Valet Audit Verified · Clean Customs Clearance"}
+              image={config?.hero?.image || store.coverImage || "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=80"}
               imageAlt={`${store.name} Certified Luxury Fleet`}
-              badge={tenantSlug ? undefined : "150-Pt Inspected"}
-              bgColor="#F4F6F9"
+              badge={config?.hero?.badge || (tenantSlug ? undefined : "150-Pt Inspected")}
+              bgColor={config?.hero?.bgColor || "#F4F6F9"}
             />
           </div>
 
@@ -112,36 +115,33 @@ export default function CarsStorefrontView() {
       {/* Main Catalog & Inventory Feed */}
       <main className="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8 space-y-16 pb-16 pt-8">
         {/* Value Badges */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3.5">
-            <ShieldCheck className="w-7 h-7 text-blue-600 shrink-0" />
-            <div>
-              <h4 className="font-bold text-sm text-slate-900">150-Point Audit</h4>
-              <p className="text-xs text-slate-500">Every mechanical fault logged</p>
-            </div>
-          </div>
-          <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3.5">
-            <CheckCircle2 className="w-7 h-7 text-emerald-600 shrink-0" />
-            <div>
-              <h4 className="font-bold text-sm text-slate-900">Clean Customs Title</h4>
-              <p className="text-xs text-slate-500">Verified VIN & import duty</p>
-            </div>
-          </div>
-          <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3.5">
-            <Car className="w-7 h-7 text-indigo-600 shrink-0" />
-            <div>
-              <h4 className="font-bold text-sm text-slate-900">Valet Test-Drive</h4>
-              <p className="text-xs text-slate-500">Delivered to your residence</p>
-            </div>
-          </div>
-          <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-xs flex items-center gap-3.5">
-            <Settings2 className="w-7 h-7 text-amber-600 shrink-0" />
-            <div>
-              <h4 className="font-bold text-sm text-slate-900">Warranty Support</h4>
-              <p className="text-xs text-slate-500">12-Month engine & gearbox</p>
-            </div>
-          </div>
-        </section>
+        <StorefrontValueBadges
+          customBadges={config?.valueBadges}
+          isVisible={config?.sectionVisibility?.valueBadges !== false}
+          accentColor="text-blue-600"
+          defaultBadges={[
+            {
+              title: "150-Point Audit",
+              description: "Every mechanical fault logged",
+              icon: <ShieldCheck className="w-7 h-7 text-blue-600 shrink-0" />,
+            },
+            {
+              title: "Clean Customs Title",
+              description: "Verified VIN & import duty",
+              icon: <CheckCircle2 className="w-7 h-7 text-emerald-600 shrink-0" />,
+            },
+            {
+              title: "Valet Test-Drive",
+              description: "Delivered to your residence",
+              icon: <Car className="w-7 h-7 text-indigo-600 shrink-0" />,
+            },
+            {
+              title: "Warranty Support",
+              description: "12-Month engine & gearbox",
+              icon: <Settings2 className="w-7 h-7 text-amber-600 shrink-0" />,
+            },
+          ]}
+        />
 
         {/* Featured Fleet Vehicles */}
         <section className="space-y-6">
@@ -149,7 +149,7 @@ export default function CarsStorefrontView() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-blue-600">
-                  {store.name} Showroom
+                  {config?.featuredSection?.eyebrow || `${store.name} Showroom`}
                 </span>
                 {isLiveMerchantCatalog && (
                   <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
@@ -158,14 +158,14 @@ export default function CarsStorefrontView() {
                 )}
               </div>
               <h2 className="font-dropa text-3xl sm:text-4xl font-extrabold text-slate-900 mt-1">
-                Verified Available Fleet
+                {config?.featuredSection?.title || "Verified Available Fleet"}
               </h2>
             </div>
             <Link
-              href="/cars/listings"
+              href={config?.featuredSection?.viewAllHref || "/cars/listings"}
               className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors"
             >
-              <span>Explore All {carProducts.length} Vehicles</span>
+              <span>{config?.featuredSection?.viewAllLabel || `Explore All ${carProducts.length} Vehicles`}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -260,46 +260,21 @@ export default function CarsStorefrontView() {
           </div>
         </section>
 
-        {/* Mechanical Inspection Service Spotlight (Feature-Gated) */}
-        {inspectionService && canBookServices && (
-          <section className="rounded-3xl bg-slate-900 text-white p-8 sm:p-12 border border-slate-800 shadow-xl flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="space-y-4 max-w-xl">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/20 text-blue-300 text-xs sm:text-sm font-bold uppercase tracking-wider">
-                <ShieldCheck className="w-4 h-4" />
-                <span>Pre-Purchase Vehicle Diagnostics</span>
-              </div>
-              <h3 className="font-dropa text-3xl sm:text-4xl lg:text-5xl font-bold text-white">
-                {inspectionService.title}
-              </h3>
-              <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-                {inspectionService.description}
-              </p>
-              <div className="flex items-center gap-4 text-xs sm:text-sm text-slate-400 pt-1">
-                <span>Duration: {inspectionService.durationMinutes} Mins</span>
-                <span>•</span>
-                <span>Lead: {inspectionService.specialistName}</span>
-                <span>•</span>
-                <span className="font-bold text-white">{store.currency}{inspectionService.price.toLocaleString()}</span>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-3.5 w-full md:w-auto shrink-0">
-              <a
-                href={`tel:${store.contact.phone}`}
-                className="px-6 py-3.5 rounded-full bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm flex items-center justify-center gap-2.5 border border-slate-700 transition-colors"
-              >
-                <PhoneCall className="w-4 h-4 text-blue-400" />
-                <span>Call Diagnostics Desk</span>
-              </a>
-              <Link
-                href={`/cars/book-test-drive/${carProducts[0]?.id || "car-001"}`}
-                className="px-7 py-3.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm sm:text-base flex items-center justify-center gap-2.5 shadow-lg shadow-blue-600/30 transition-colors"
-              >
-                <Calendar className="w-5 h-5" />
-                <span>Book Inspection Slot</span>
-              </Link>
-            </div>
-          </section>
+        {/* Mechanical Inspection Service Spotlight (Feature-Gated or Custom Config) */}
+        {((config?.featureBanner?.enabled ?? (Boolean(inspectionService) && canBookServices))) && (
+          <StorefrontFeatureBanner
+            customBanner={config?.featureBanner}
+            isVisible={config?.sectionVisibility?.featureBanner !== false}
+            defaultEyebrow="Pre-Purchase Vehicle Diagnostics"
+            defaultHeadline={inspectionService?.title || "150-Point Diagnostic Inspection"}
+            defaultDescription={inspectionService?.description || "Book a comprehensive multi-point mechanical inspection with our certified diagnostic technicians before purchase."}
+            defaultCtaLabel="Book Inspection Slot"
+            defaultCtaHref={`/cars/book-test-drive/${carProducts[0]?.id || "car-001"}`}
+            defaultImage="https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=600&q=80"
+            bgClassName="bg-slate-900 text-white border-slate-800"
+            accentTextClassName="text-blue-400"
+            ctaIcon={<Calendar className="w-5 h-5" />}
+          />
         )}
       </main>
 

@@ -7,6 +7,7 @@ import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import VerticalHeroBento from "@/components/common/VerticalHeroBento";
 import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
+import { useCollectionsBento } from "@/hooks/useCollectionsBento";
 import StorefrontCartRail from "@/components/common/StorefrontCartRail";
 import StorefrontValueBadges from "@/components/common/StorefrontValueBadges";
 import StorefrontFeatureBanner from "@/components/common/StorefrontFeatureBanner";
@@ -22,6 +23,60 @@ export default function FashionStorefrontView() {
 
   const canBookServices = isFeatureEnabled("services");
   const tenantQuery = "";
+
+  const {
+    isEnabled: isCollectionsEnabled,
+    card1: bentoCard1,
+    card2: bentoCard2,
+    card3: bentoCard3,
+  } = useCollectionsBento({
+    config,
+    products: fashionProducts,
+    catalogPath: `/fashion/catalog${tenantQuery}`,
+    itemUnit: "pieces",
+    defaults: {
+      card1: {
+        title: "Men's\nCollection",
+        count: "180+ pieces",
+        image: "https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80",
+        href: `/fashion/catalog${tenantQuery}`,
+        theme: "light",
+      },
+      card2: {
+        title: "Women's\nCollection",
+        count: "260+ pieces",
+        image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80",
+        href: `/fashion/catalog${tenantQuery}`,
+        theme: "light",
+      },
+      card3: {
+        title: "Top Collation",
+        href: `/fashion/catalog${tenantQuery}`,
+        backgroundImage: "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=1000&q=80",
+        theme: "light",
+        pills: [
+          {
+            label: "Linen Tunics",
+            count: "1.2k+ pieces",
+            image: "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?auto=format&fit=crop&w=120&q=80",
+            href: `/fashion/catalog${tenantQuery}`,
+          },
+          {
+            label: "Kaftans & Agbada",
+            count: "850+ pieces",
+            image: "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=120&q=80",
+            href: `/fashion/catalog${tenantQuery}`,
+          },
+          {
+            label: "Leather Sandals & Bags",
+            count: "420+ pieces",
+            image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=120&q=80",
+            href: `/fashion/catalog${tenantQuery}`,
+          },
+        ],
+      },
+    },
+  });
 
   return (
     <div className="min-h-screen bg-white text-[#111318] flex flex-col justify-between">
@@ -54,50 +109,15 @@ export default function FashionStorefrontView() {
         </div>
 
         {/* Row 2: 3-Card Category Bento Grid */}
-        <div className="w-full lg:flex-1 min-h-0">
-          <VerticalCategoryBentoGrid
-            card1={{
-              title: "Men's\nCollection",
-              count: "180+ pieces",
-              image: "https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80",
-              href: `/fashion/catalog${tenantQuery}`,
-              theme: "light",
-            }}
-            card2={{
-              title: "Women's\nCollection",
-              count: "260+ pieces",
-              image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80",
-              href: `/fashion/catalog${tenantQuery}`,
-              theme: "light",
-            }}
-            card3={{
-              title: "Top Collation",
-              href: `/fashion/catalog${tenantQuery}`,
-              backgroundImage: "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=1000&q=80",
-              theme: "light",
-              pills: [
-                {
-                  label: "Linen Tunics",
-                  count: "1.2k+ pieces",
-                  image: "https://images.unsplash.com/photo-1598033129183-c4f50c736f10?auto=format&fit=crop&w=120&q=80",
-                  href: `/fashion/catalog${tenantQuery}`,
-                },
-                {
-                  label: "Kaftans & Agbada",
-                  count: "850+ pieces",
-                  image: "https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=120&q=80",
-                  href: `/fashion/catalog${tenantQuery}`,
-                },
-                {
-                  label: "Leather Sandals & Bags",
-                  count: "420+ pieces",
-                  image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=120&q=80",
-                  href: `/fashion/catalog${tenantQuery}`,
-                },
-              ],
-            }}
-          />
-        </div>
+        {isCollectionsEnabled && (
+          <div className="w-full lg:flex-1 min-h-0">
+            <VerticalCategoryBentoGrid
+              card1={bentoCard1}
+              card2={bentoCard2}
+              card3={bentoCard3}
+            />
+          </div>
+        )}
       </section>
 
       {/* Content Container */}

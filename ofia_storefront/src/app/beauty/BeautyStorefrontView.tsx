@@ -7,6 +7,7 @@ import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import VerticalHeroBento from "@/components/common/VerticalHeroBento";
 import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
+import { useCollectionsBento } from "@/hooks/useCollectionsBento";
 import StorefrontCartRail from "@/components/common/StorefrontCartRail";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
@@ -22,13 +23,68 @@ import {
 } from "lucide-react";
 
 export default function BeautyStorefrontView() {
-  const { store: dynamicStore, isFeatureEnabled, tenantSlug } = useStorefrontTenant();
+  const { store: dynamicStore, isFeatureEnabled, tenantSlug, handshake } = useStorefrontTenant();
   const store = dynamicStore || MOCK_STORES.beauty;
+  const config = handshake?.storefrontConfig;
   const { products: beautyProducts, isLiveMerchantCatalog } = useStorefrontProducts("beauty");
   const beautyServices = MOCK_SERVICES.filter((s) => s.vertical === "beauty");
 
   const canBookServices = isFeatureEnabled("services");
   const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
+
+  const {
+    isEnabled: isCollectionsEnabled,
+    card1: bentoCard1,
+    card2: bentoCard2,
+    card3: bentoCard3,
+  } = useCollectionsBento({
+    config,
+    products: beautyProducts,
+    catalogPath: `/beauty/products${tenantQuery}`,
+    itemUnit: "formulas",
+    defaults: {
+      card1: {
+        title: "Serums &\nElixirs",
+        count: "40+ formulas",
+        image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80",
+        href: `/beauty/products${tenantQuery}`,
+        theme: "light",
+      },
+      card2: {
+        title: "Facial\nRituals",
+        count: "15+ services",
+        image: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80",
+        href: canBookServices ? `/beauty/services${tenantQuery}` : `/beauty/products${tenantQuery}`,
+        theme: "light",
+      },
+      card3: {
+        title: "Atelier Picks",
+        href: `/beauty/products${tenantQuery}`,
+        backgroundImage: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1000&q=80",
+        theme: "light",
+        pills: [
+          {
+            label: "Hydration Creams",
+            count: "Top rated",
+            image: "https://images.unsplash.com/photo-1608248597359-5735b5a2bf61?auto=format&fit=crop&w=120&q=80",
+            href: `/beauty/products${tenantQuery}`,
+          },
+          {
+            label: "Pure Seed Oils",
+            count: "Cold-pressed",
+            image: "https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?auto=format&fit=crop&w=120&q=80",
+            href: `/beauty/products${tenantQuery}`,
+          },
+          {
+            label: "Exfoliants",
+            count: "Gentle acids",
+            image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=120&q=80",
+            href: `/beauty/products${tenantQuery}`,
+          },
+        ],
+      },
+    },
+  });
 
   return (
     <div className="min-h-screen bg-white text-[#201D1A] flex flex-col justify-between">
@@ -61,50 +117,15 @@ export default function BeautyStorefrontView() {
         </div>
 
         {/* Row 2: 3-Card Category Bento Grid */}
-        <div className="w-full lg:flex-1 min-h-0">
-          <VerticalCategoryBentoGrid
-            card1={{
-              title: "Serums &\nElixirs",
-              count: "40+ formulas",
-              image: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80",
-              href: `/beauty/products${tenantQuery}`,
-              theme: "light",
-            }}
-            card2={{
-              title: "Facial\nRituals",
-              count: "15+ services",
-              image: "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80",
-              href: canBookServices ? `/beauty/services${tenantQuery}` : `/beauty/products${tenantQuery}`,
-              theme: "light",
-            }}
-            card3={{
-              title: "Atelier Picks",
-              href: `/beauty/products${tenantQuery}`,
-              backgroundImage: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=1000&q=80",
-              theme: "light",
-              pills: [
-                {
-                  label: "Hydration Creams",
-                  count: "Top rated",
-                  image: "https://images.unsplash.com/photo-1608248597359-5735b5a2bf61?auto=format&fit=crop&w=120&q=80",
-                  href: `/beauty/products${tenantQuery}`,
-                },
-                {
-                  label: "Pure Seed Oils",
-                  count: "Cold-pressed",
-                  image: "https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?auto=format&fit=crop&w=120&q=80",
-                  href: `/beauty/products${tenantQuery}`,
-                },
-                {
-                  label: "Exfoliants",
-                  count: "Gentle acids",
-                  image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=120&q=80",
-                  href: `/beauty/products${tenantQuery}`,
-                },
-              ],
-            }}
-          />
-        </div>
+        {isCollectionsEnabled && (
+          <div className="w-full lg:flex-1 min-h-0">
+            <VerticalCategoryBentoGrid
+              card1={bentoCard1}
+              card2={bentoCard2}
+              card3={bentoCard3}
+            />
+          </div>
+        )}
       </section>
 
       {/* Content Container */}

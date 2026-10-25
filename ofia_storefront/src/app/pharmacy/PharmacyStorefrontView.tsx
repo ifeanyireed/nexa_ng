@@ -7,6 +7,7 @@ import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import VerticalHeroBento from "@/components/common/VerticalHeroBento";
 import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
+import { useCollectionsBento } from "@/hooks/useCollectionsBento";
 import StorefrontCartRail from "@/components/common/StorefrontCartRail";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
@@ -25,12 +26,67 @@ import {
 } from "lucide-react";
 
 export default function PharmacyStorefrontView() {
-  const { store: dynamicStore, isFeatureEnabled, tenantSlug } = useStorefrontTenant();
+  const { store: dynamicStore, isFeatureEnabled, tenantSlug, handshake } = useStorefrontTenant();
   const store = dynamicStore || MOCK_STORES["pharmacy"];
+  const config = handshake?.storefrontConfig;
   const { products, isLiveMerchantCatalog } = useStorefrontProducts("pharmacy");
 
   const canBookServices = isFeatureEnabled("services");
   const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
+
+  const {
+    isEnabled: isCollectionsEnabled,
+    card1: bentoCard1,
+    card2: bentoCard2,
+    card3: bentoCard3,
+  } = useCollectionsBento({
+    config,
+    products,
+    catalogPath: `/pharmacy/catalog${tenantQuery}`,
+    itemUnit: "items",
+    defaults: {
+      card1: {
+        title: "Prescription\nMedications",
+        count: "140+ verified items",
+        image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+        href: `/pharmacy/catalog${tenantQuery}`,
+        theme: "light",
+      },
+      card2: {
+        title: "Immunity &\nVitamins",
+        count: "85+ essentials",
+        image: "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=800&q=80",
+        href: `/pharmacy/catalog${tenantQuery}`,
+        theme: "light",
+      },
+      card3: {
+        title: "Diagnostics & Care",
+        href: `/pharmacy/catalog${tenantQuery}`,
+        backgroundImage: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1000&q=80",
+        theme: "light",
+        pills: [
+          {
+            label: "Cardiac & BP",
+            count: "Clinical grade",
+            image: "https://images.unsplash.com/photo-1628771065518-0d82f1938462?auto=format&fit=crop&w=120&q=80",
+            href: `/pharmacy/catalog${tenantQuery}`,
+          },
+          {
+            label: "Blood Glucose Kits",
+            count: "With test strips",
+            image: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=120&q=80",
+            href: `/pharmacy/catalog${tenantQuery}`,
+          },
+          {
+            label: "First Aid Supplies",
+            count: "Antiseptic packs",
+            image: "https://images.unsplash.com/photo-1603398938378-e54eab446dde?auto=format&fit=crop&w=120&q=80",
+            href: `/pharmacy/catalog${tenantQuery}`,
+          },
+        ],
+      },
+    },
+  });
 
   return (
     <div className="min-h-screen bg-white text-[#13221C] flex flex-col justify-between">
@@ -69,50 +125,15 @@ export default function PharmacyStorefrontView() {
         </div>
 
         {/* Row 2: 3-Card Category Bento Grid */}
-        <div className="w-full lg:flex-1 min-h-0">
-          <VerticalCategoryBentoGrid
-            card1={{
-              title: "Prescription\nMedications",
-              count: "140+ verified items",
-              image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
-              href: `/pharmacy/catalog${tenantQuery}`,
-              theme: "light",
-            }}
-            card2={{
-              title: "Immunity &\nVitamins",
-              count: "85+ essentials",
-              image: "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=800&q=80",
-              href: `/pharmacy/catalog${tenantQuery}`,
-              theme: "light",
-            }}
-            card3={{
-              title: "Diagnostics & Care",
-              href: `/pharmacy/catalog${tenantQuery}`,
-              backgroundImage: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1000&q=80",
-              theme: "light",
-              pills: [
-                {
-                  label: "Cardiac & BP",
-                  count: "Clinical grade",
-                  image: "https://images.unsplash.com/photo-1628771065518-0d82f1938462?auto=format&fit=crop&w=120&q=80",
-                  href: `/pharmacy/catalog${tenantQuery}`,
-                },
-                {
-                  label: "Blood Glucose Kits",
-                  count: "With test strips",
-                  image: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?auto=format&fit=crop&w=120&q=80",
-                  href: `/pharmacy/catalog${tenantQuery}`,
-                },
-                {
-                  label: "First Aid Supplies",
-                  count: "Antiseptic packs",
-                  image: "https://images.unsplash.com/photo-1603398938378-e54eab446dde?auto=format&fit=crop&w=120&q=80",
-                  href: `/pharmacy/catalog${tenantQuery}`,
-                },
-              ],
-            }}
-          />
-        </div>
+        {isCollectionsEnabled && (
+          <div className="w-full lg:flex-1 min-h-0">
+            <VerticalCategoryBentoGrid
+              card1={bentoCard1}
+              card2={bentoCard2}
+              card3={bentoCard3}
+            />
+          </div>
+        )}
       </section>
 
       {/* Content Container */}

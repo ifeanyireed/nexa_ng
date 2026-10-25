@@ -7,6 +7,7 @@ import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import VerticalHeroBento from "@/components/common/VerticalHeroBento";
 import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
+import { useCollectionsBento } from "@/hooks/useCollectionsBento";
 import StorefrontCartRail from "@/components/common/StorefrontCartRail";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
@@ -23,12 +24,67 @@ import {
 } from "lucide-react";
 
 export default function RetailStorefrontView() {
-  const { store: dynamicStore, isFeatureEnabled, tenantSlug } = useStorefrontTenant();
+  const { store: dynamicStore, isFeatureEnabled, tenantSlug, handshake } = useStorefrontTenant();
   const store = dynamicStore || MOCK_STORES["retail"];
+  const config = handshake?.storefrontConfig;
   const { products, isLiveMerchantCatalog } = useStorefrontProducts("retail");
 
   const canBookServices = isFeatureEnabled("services");
   const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
+
+  const {
+    isEnabled: isCollectionsEnabled,
+    card1: bentoCard1,
+    card2: bentoCard2,
+    card3: bentoCard3,
+  } = useCollectionsBento({
+    config,
+    products,
+    catalogPath: `/retail/catalog${tenantQuery}`,
+    itemUnit: "items",
+    defaults: {
+      card1: {
+        title: "Literature &\nRare Editions",
+        count: "400+ titles",
+        image: "https://images.unsplash.com/photo-1495640388908-05fa85288e61?auto=format&fit=crop&w=800&q=80",
+        href: `/retail/catalog${tenantQuery}`,
+        theme: "dark",
+      },
+      card2: {
+        title: "Specialty\nKeepsakes",
+        count: "220+ items",
+        image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80",
+        href: canBookServices ? `/retail/customization${tenantQuery}` : `/retail/catalog${tenantQuery}`,
+        theme: "light",
+      },
+      card3: {
+        title: "Top Collation",
+        href: `/retail/catalog${tenantQuery}`,
+        backgroundImage: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=1000&q=80",
+        theme: "light",
+        pills: [
+          {
+            label: "Artisan Stationery",
+            count: "180+ items",
+            image: "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=120&q=80",
+            href: `/retail/catalog${tenantQuery}`,
+          },
+          {
+            label: "Heirloom Toys",
+            count: "95+ crafts",
+            image: "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?auto=format&fit=crop&w=120&q=80",
+            href: `/retail/catalog${tenantQuery}`,
+          },
+          {
+            label: "Fitness & Travel Gear",
+            count: "130+ products",
+            image: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=120&q=80",
+            href: `/retail/catalog${tenantQuery}`,
+          },
+        ],
+      },
+    },
+  });
 
   const departments = [
     { name: "Books & Literature", count: "1,200+ Titles", icon: BookOpen, href: `/retail/catalog${tenantQuery}` },
@@ -77,50 +133,15 @@ export default function RetailStorefrontView() {
         </div>
 
         {/* Row 2: 3-Card Category Bento Grid */}
-        <div className="w-full lg:flex-1 min-h-0">
-          <VerticalCategoryBentoGrid
-            card1={{
-              title: "Literature &\nRare Editions",
-              count: "400+ titles",
-              image: "https://images.unsplash.com/photo-1495640388908-05fa85288e61?auto=format&fit=crop&w=800&q=80",
-              href: `/retail/catalog${tenantQuery}`,
-              theme: "dark",
-            }}
-            card2={{
-              title: "Specialty\nKeepsakes",
-              count: "220+ items",
-              image: "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80",
-              href: canBookServices ? `/retail/customization${tenantQuery}` : `/retail/catalog${tenantQuery}`,
-              theme: "light",
-            }}
-            card3={{
-              title: "Top Collation",
-              href: `/retail/catalog${tenantQuery}`,
-              backgroundImage: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=1000&q=80",
-              theme: "light",
-              pills: [
-                {
-                  label: "Artisan Stationery",
-                  count: "180+ items",
-                  image: "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=120&q=80",
-                  href: `/retail/catalog${tenantQuery}`,
-                },
-                {
-                  label: "Heirloom Toys",
-                  count: "95+ crafts",
-                  image: "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?auto=format&fit=crop&w=120&q=80",
-                  href: `/retail/catalog${tenantQuery}`,
-                },
-                {
-                  label: "Fitness & Travel Gear",
-                  count: "130+ products",
-                  image: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=120&q=80",
-                  href: `/retail/catalog${tenantQuery}`,
-                },
-              ],
-            }}
-          />
-        </div>
+        {isCollectionsEnabled && (
+          <div className="w-full lg:flex-1 min-h-0">
+            <VerticalCategoryBentoGrid
+              card1={bentoCard1}
+              card2={bentoCard2}
+              card3={bentoCard3}
+            />
+          </div>
+        )}
       </section>
 
       {/* Content Container */}

@@ -19,6 +19,12 @@ import {
   Palette,
   Image as ImageIcon,
   Check,
+  LayoutGrid,
+  RefreshCw,
+  Sun,
+  Moon,
+  Info,
+  ArrowUpRight,
 } from "lucide-react";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -32,7 +38,7 @@ import {
   VerticalKey,
 } from "@/lib/verticals";
 
-type StudioTab = "brand" | "hero" | "badges" | "catalog_banner" | "contact_footer" | "policies";
+type StudioTab = "brand" | "hero" | "collections" | "badges" | "catalog_banner" | "contact_footer" | "policies";
 
 export default function MyStoreStudioPage() {
   const { user } = useAuth();
@@ -72,6 +78,46 @@ export default function MyStoreStudioPage() {
   const [heroBadge, setHeroBadge] = useState(verticalDef.badge || "Verified Collection");
   const [heroBgColor, setHeroBgColor] = useState("#FAF9F5");
   const [bannerUrl, setBannerUrl] = useState(activeTenant?.loginImage || "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1200&q=80");
+
+  // 3b. COLLECTIONS BENTO (3 CARDS)
+  const [enableCollections, setEnableCollections] = useState(true);
+
+  // Card 1: Spotlight #1
+  const [card1Title, setCard1Title] = useState("Men's\nCollection");
+  const [card1Count, setCard1Count] = useState("180+ pieces");
+  const [card1Image, setCard1Image] = useState("https://images.unsplash.com/photo-1617137984095-74e4e5e3613f?auto=format&fit=crop&w=800&q=80");
+  const [card1Href, setCard1Href] = useState("");
+  const [card1Theme, setCard1Theme] = useState<"light" | "dark">("light");
+
+  // Card 2: Spotlight #2
+  const [card2Title, setCard2Title] = useState("Women's\nCollection");
+  const [card2Count, setCard2Count] = useState("260+ pieces");
+  const [card2Image, setCard2Image] = useState("https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80");
+  const [card2Href, setCard2Href] = useState("");
+  const [card2Theme, setCard2Theme] = useState<"light" | "dark">("light");
+
+  // Card 3: Wide Curated Bento
+  const [card3Mode, setCard3Mode] = useState<"static" | "auto">("auto");
+  const [card3Title, setCard3Title] = useState("Top Collation");
+  const [card3BackgroundImage, setCard3BackgroundImage] = useState("https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=1000&q=80");
+  const [card3Href, setCard3Href] = useState("");
+  const [card3Theme, setCard3Theme] = useState<"light" | "dark">("light");
+
+  // Card 3: Static Floating Pills
+  const [pill1Label, setPill1Label] = useState("Linen Tunics");
+  const [pill1Count, setPill1Count] = useState("1.2k+ pieces");
+  const [pill1Image, setPill1Image] = useState("https://images.unsplash.com/photo-1598033129183-c4f50c736f10?auto=format&fit=crop&w=120&q=80");
+  const [pill1Href, setPill1Href] = useState("");
+
+  const [pill2Label, setPill2Label] = useState("Kaftans & Agbada");
+  const [pill2Count, setPill2Count] = useState("850+ pieces");
+  const [pill2Image, setPill2Image] = useState("https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=120&q=80");
+  const [pill2Href, setPill2Href] = useState("");
+
+  const [pill3Label, setPill3Label] = useState("Leather Sandals & Bags");
+  const [pill3Count, setPill3Count] = useState("420+ pieces");
+  const [pill3Image, setPill3Image] = useState("https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=120&q=80");
+  const [pill3Href, setPill3Href] = useState("");
 
   // 4. VALUE & TRUST BADGES (4 BADGES)
   const [enableValueBadges, setEnableValueBadges] = useState(true);
@@ -182,6 +228,52 @@ export default function MyStoreStudioPage() {
           setBannerUrl(c.bannerUrl);
         }
 
+        // Collections Bento (3 Cards)
+        if (c.collections) {
+          if (typeof c.collections.enabled === "boolean") setEnableCollections(c.collections.enabled);
+          if (c.collections.card1) {
+            if (c.collections.card1.title !== undefined) setCard1Title(c.collections.card1.title);
+            if (c.collections.card1.count !== undefined) setCard1Count(c.collections.card1.count);
+            if (c.collections.card1.image !== undefined) setCard1Image(c.collections.card1.image);
+            if (c.collections.card1.href !== undefined) setCard1Href(c.collections.card1.href);
+            if (c.collections.card1.theme) setCard1Theme(c.collections.card1.theme);
+          }
+          if (c.collections.card2) {
+            if (c.collections.card2.title !== undefined) setCard2Title(c.collections.card2.title);
+            if (c.collections.card2.count !== undefined) setCard2Count(c.collections.card2.count);
+            if (c.collections.card2.image !== undefined) setCard2Image(c.collections.card2.image);
+            if (c.collections.card2.href !== undefined) setCard2Href(c.collections.card2.href);
+            if (c.collections.card2.theme) setCard2Theme(c.collections.card2.theme);
+          }
+          if (c.collections.card3) {
+            if (c.collections.card3.mode) setCard3Mode(c.collections.card3.mode);
+            if (c.collections.card3.title !== undefined) setCard3Title(c.collections.card3.title);
+            if (c.collections.card3.backgroundImage !== undefined) setCard3BackgroundImage(c.collections.card3.backgroundImage);
+            if (c.collections.card3.href !== undefined) setCard3Href(c.collections.card3.href);
+            if (c.collections.card3.theme) setCard3Theme(c.collections.card3.theme);
+            if (Array.isArray(c.collections.card3.pills)) {
+              if (c.collections.card3.pills[0]) {
+                if (c.collections.card3.pills[0].label !== undefined) setPill1Label(c.collections.card3.pills[0].label);
+                if (c.collections.card3.pills[0].count !== undefined) setPill1Count(c.collections.card3.pills[0].count);
+                if (c.collections.card3.pills[0].image !== undefined) setPill1Image(c.collections.card3.pills[0].image);
+                if (c.collections.card3.pills[0].href !== undefined) setPill1Href(c.collections.card3.pills[0].href);
+              }
+              if (c.collections.card3.pills[1]) {
+                if (c.collections.card3.pills[1].label !== undefined) setPill2Label(c.collections.card3.pills[1].label);
+                if (c.collections.card3.pills[1].count !== undefined) setPill2Count(c.collections.card3.pills[1].count);
+                if (c.collections.card3.pills[1].image !== undefined) setPill2Image(c.collections.card3.pills[1].image);
+                if (c.collections.card3.pills[1].href !== undefined) setPill2Href(c.collections.card3.pills[1].href);
+              }
+              if (c.collections.card3.pills[2]) {
+                if (c.collections.card3.pills[2].label !== undefined) setPill3Label(c.collections.card3.pills[2].label);
+                if (c.collections.card3.pills[2].count !== undefined) setPill3Count(c.collections.card3.pills[2].count);
+                if (c.collections.card3.pills[2].image !== undefined) setPill3Image(c.collections.card3.pills[2].image);
+                if (c.collections.card3.pills[2].href !== undefined) setPill3Href(c.collections.card3.pills[2].href);
+              }
+            }
+          }
+        }
+
         // Value Badges
         if (Array.isArray(c.valueBadges) && c.valueBadges.length > 0) {
           if (c.valueBadges[0]) {
@@ -246,6 +338,7 @@ export default function MyStoreStudioPage() {
         if (typeof c.allowEscrow === "boolean") setEnableEscrowOption(c.allowEscrow);
         if (c.sectionVisibility) {
           if (typeof c.sectionVisibility.hero === "boolean") setEnableHero(c.sectionVisibility.hero);
+          if (typeof c.sectionVisibility.collections === "boolean") setEnableCollections(c.sectionVisibility.collections);
           if (typeof c.sectionVisibility.valueBadges === "boolean") setEnableValueBadges(c.sectionVisibility.valueBadges);
           if (typeof c.sectionVisibility.products === "boolean") setEnableProducts(c.sectionVisibility.products);
           if (typeof c.sectionVisibility.services === "boolean") setEnableServices(c.sectionVisibility.services);
@@ -306,6 +399,35 @@ export default function MyStoreStudioPage() {
           bgColor: heroBgColor,
           image: bannerUrl,
         },
+        collections: {
+          enabled: enableCollections,
+          card1: {
+            title: card1Title,
+            count: card1Count,
+            image: card1Image,
+            href: card1Href,
+            theme: card1Theme,
+          },
+          card2: {
+            title: card2Title,
+            count: card2Count,
+            image: card2Image,
+            href: card2Href,
+            theme: card2Theme,
+          },
+          card3: {
+            mode: card3Mode,
+            title: card3Title,
+            backgroundImage: card3BackgroundImage,
+            href: card3Href,
+            theme: card3Theme,
+            pills: [
+              { label: pill1Label, count: pill1Count, image: pill1Image, href: pill1Href },
+              { label: pill2Label, count: pill2Count, image: pill2Image, href: pill2Href },
+              { label: pill3Label, count: pill3Count, image: pill3Image, href: pill3Href },
+            ],
+          },
+        },
         valueBadges: [
           { title: badge1Title, description: badge1Desc, icon: "ruler" },
           { title: badge2Title, description: badge2Desc, icon: "scissors" },
@@ -347,6 +469,7 @@ export default function MyStoreStudioPage() {
         sectionVisibility: {
           announcement: announcementEnabled,
           hero: enableHero,
+          collections: enableCollections,
           valueBadges: enableValueBadges,
           products: enableProducts,
           services: enableServices,
@@ -406,6 +529,7 @@ export default function MyStoreStudioPage() {
   const tabs: Array<{ id: StudioTab; label: string; icon: React.ReactNode }> = [
     { id: "brand", label: "Brand & Identity", icon: <Palette className="w-3.5 h-3.5" /> },
     { id: "hero", label: "Hero Showcase", icon: <Sparkles className="w-3.5 h-3.5" /> },
+    { id: "collections", label: "Collections Bento", icon: <LayoutGrid className="w-3.5 h-3.5" /> },
     { id: "badges", label: "Value Badges (4)", icon: <Award className="w-3.5 h-3.5" /> },
     { id: "catalog_banner", label: "Catalog & Feature Banner", icon: <Layers className="w-3.5 h-3.5" /> },
     { id: "contact_footer", label: "Contact & Footer", icon: <Phone className="w-3.5 h-3.5" /> },
@@ -834,6 +958,528 @@ export default function MyStoreStudioPage() {
                 className="bg-[#1A56DB] text-white rounded-full font-bold px-6 shadow-sm"
               >
                 {isSaving ? "Saving..." : "Save Hero Showcase"}
+              </NexaButton>
+            </div>
+          </NexaCard>
+        )}
+
+        {/* TAB 2b: COLLECTIONS BENTO (3 CARDS) */}
+        {activeTab === "collections" && (
+          <NexaCard variant="glass" padding="lg" className="space-y-6 rounded-3xl">
+            {/* Header & Section Toggle */}
+            <div className="pb-3 border-b border-[var(--nexa-border)] flex items-center justify-between">
+              <div>
+                <h3 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">
+                  Collections Bento Grid (3-Card Showcase)
+                </h3>
+                <p className="text-[11px] text-[var(--nexa-text-muted)] font-medium">
+                  Customize the 3-card collection bento displayed on your storefront homepage. Configure Cards 1 & 2 as spotlight collections, and Card 3 with floating collection pills (static or auto-populated from your live catalog).
+                </p>
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <span className="text-xs font-bold text-[var(--nexa-text-secondary)]">
+                  {enableCollections ? "Bento Active" : "Hidden"}
+                </span>
+                <input
+                  type="checkbox"
+                  checked={enableCollections}
+                  onChange={(e) => setEnableCollections(e.target.checked)}
+                  className="w-4 h-4 rounded text-[#1A56DB] cursor-pointer"
+                />
+              </label>
+            </div>
+
+            {/* Spotlight Cards 1 & 2 (2 Columns) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* CARD 1 */}
+              <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-[#1A56DB] bg-blue-500/10 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    Card 1 (Left Spotlight)
+                  </span>
+                  <div className="flex items-center gap-1.5 bg-[var(--nexa-bg-surface)] p-1 rounded-xl border border-[var(--nexa-border)]">
+                    <button
+                      type="button"
+                      onClick={() => setCard1Theme("light")}
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-lg transition-all ${
+                        card1Theme === "light"
+                          ? "bg-[#1A56DB] text-white shadow-xs"
+                          : "text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
+                      }`}
+                    >
+                      Light Text
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCard1Theme("dark")}
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-lg transition-all ${
+                        card1Theme === "dark"
+                          ? "bg-stone-900 text-white shadow-xs"
+                          : "text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
+                      }`}
+                    >
+                      Dark Text
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Title (Supports Line Breaks with \n)</label>
+                  <input
+                    type="text"
+                    value={card1Title}
+                    onChange={(e) => setCard1Title(e.target.value)}
+                    placeholder="e.g. Men's\nCollection"
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none"
+                  />
+                  <p className="text-[10px] text-[var(--nexa-text-muted)]">Use \n to break title onto multiple lines</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Item Count / Subtitle</label>
+                    <input
+                      type="text"
+                      value={card1Count}
+                      onChange={(e) => setCard1Count(e.target.value)}
+                      placeholder="e.g. 180+ pieces"
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Target Link (href)</label>
+                    <input
+                      type="text"
+                      value={card1Href}
+                      onChange={(e) => setCard1Href(e.target.value)}
+                      placeholder={`e.g. ${verticalDef.storefrontPath}/catalog`}
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Background Image URL</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={card1Image}
+                      onChange={(e) => setCard1Image(e.target.value)}
+                      placeholder="https://images.unsplash.com/..."
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none"
+                    />
+                    {card1Image && (
+                      <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-[var(--nexa-border)]">
+                        <img src={card1Image} alt="Card 1" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD 2 */}
+              <div className="p-4 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-purple-600 bg-purple-500/10 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    Card 2 (Center Spotlight)
+                  </span>
+                  <div className="flex items-center gap-1.5 bg-[var(--nexa-bg-surface)] p-1 rounded-xl border border-[var(--nexa-border)]">
+                    <button
+                      type="button"
+                      onClick={() => setCard2Theme("light")}
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-lg transition-all ${
+                        card2Theme === "light"
+                          ? "bg-[#1A56DB] text-white shadow-xs"
+                          : "text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
+                      }`}
+                    >
+                      Light Text
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCard2Theme("dark")}
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-lg transition-all ${
+                        card2Theme === "dark"
+                          ? "bg-stone-900 text-white shadow-xs"
+                          : "text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)]"
+                      }`}
+                    >
+                      Dark Text
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Title (Supports Line Breaks with \n)</label>
+                  <input
+                    type="text"
+                    value={card2Title}
+                    onChange={(e) => setCard2Title(e.target.value)}
+                    placeholder="e.g. Women's\nCollection"
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none"
+                  />
+                  <p className="text-[10px] text-[var(--nexa-text-muted)]">Use \n to break title onto multiple lines</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Item Count / Subtitle</label>
+                    <input
+                      type="text"
+                      value={card2Count}
+                      onChange={(e) => setCard2Count(e.target.value)}
+                      placeholder="e.g. 260+ pieces"
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Target Link (href)</label>
+                    <input
+                      type="text"
+                      value={card2Href}
+                      onChange={(e) => setCard2Href(e.target.value)}
+                      placeholder={`e.g. ${verticalDef.storefrontPath}/catalog`}
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Background Image URL</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={card2Image}
+                      onChange={(e) => setCard2Image(e.target.value)}
+                      placeholder="https://images.unsplash.com/..."
+                      className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none"
+                    />
+                    {card2Image && (
+                      <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-[var(--nexa-border)]">
+                        <img src={card2Image} alt="Card 2" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* CARD 3: WIDE CURATED BENTO SHOWCASE (WITH TOGGLE) */}
+            <div className="p-5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--nexa-border)]">
+                <div>
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    Card 3 (Wide Curated Bento — 50% Width)
+                  </span>
+                  <h4 className="font-extrabold text-sm text-[var(--nexa-text-primary)] mt-1">
+                    Curated Collection & Floating Pills
+                  </h4>
+                </div>
+
+                {/* THE CARD 3 MODE TOGGLE */}
+                <div className="flex items-center gap-1 bg-[var(--nexa-bg-surface)] p-1 rounded-2xl border border-[var(--nexa-border)] shadow-xs">
+                  <button
+                    type="button"
+                    onClick={() => setCard3Mode("auto")}
+                    className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl transition-all ${
+                      card3Mode === "auto"
+                        ? "bg-[#1A56DB] text-white shadow-xs"
+                        : "text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)]"
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Auto-Populate (Live Catalog)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCard3Mode("static")}
+                    className={`flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl transition-all ${
+                      card3Mode === "static"
+                        ? "bg-[#1A56DB] text-white shadow-xs"
+                        : "text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)]"
+                    }`}
+                  >
+                    <Sliders className="w-3.5 h-3.5" />
+                    Static Custom Pills
+                  </button>
+                </div>
+              </div>
+
+              {/* CARD 3 BASE SETTINGS (Title, Link, Image, Contrast Theme) */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Card Title</label>
+                  <input
+                    type="text"
+                    value={card3Title}
+                    onChange={(e) => setCard3Title(e.target.value)}
+                    placeholder="e.g. Top Collation"
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Arrow Action Link (href)</label>
+                  <input
+                    type="text"
+                    value={card3Href}
+                    onChange={(e) => setCard3Href(e.target.value)}
+                    placeholder={`e.g. ${verticalDef.storefrontPath}/catalog`}
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Contrast Theme</label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setCard3Theme("light")}
+                      className={`flex-1 text-xs font-bold py-2 rounded-xl border transition-all ${
+                        card3Theme === "light"
+                          ? "bg-[#1A56DB] text-white border-[#1A56DB]"
+                          : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)]"
+                      }`}
+                    >
+                      Light Text
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCard3Theme("dark")}
+                      className={`flex-1 text-xs font-bold py-2 rounded-xl border transition-all ${
+                        card3Theme === "dark"
+                          ? "bg-stone-900 text-white border-stone-900"
+                          : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)]"
+                      }`}
+                    >
+                      Dark Text
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Card 3 Background Image URL</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={card3BackgroundImage}
+                    onChange={(e) => setCard3BackgroundImage(e.target.value)}
+                    placeholder="https://images.unsplash.com/..."
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none"
+                  />
+                  {card3BackgroundImage && (
+                    <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-[var(--nexa-border)]">
+                      <img src={card3BackgroundImage} alt="Card 3 Background" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* CARD 3 PILLS MODE RENDER */}
+              {card3Mode === "auto" ? (
+                <div className="p-4 rounded-2xl bg-blue-500/5 border border-blue-500/20 space-y-3">
+                  <div className="flex items-center gap-2 text-blue-600 font-bold text-xs">
+                    <Sparkles className="w-4 h-4 shrink-0" />
+                    <span>Live Catalog Auto-Population Mode Active</span>
+                  </div>
+                  <p className="text-[11px] text-[var(--nexa-text-muted)] leading-relaxed">
+                    Floating collection pills are dynamically calculated from your live inventory products.
+                    The top 3 categories with the most in-stock items are automatically highlighted, pairing each category&apos;s first product thumbnail, live piece count, and direct filter link.
+                  </p>
+                  <div className="pt-2 flex flex-wrap gap-2 items-center">
+                    <span className="text-[10px] font-semibold text-[var(--nexa-text-secondary)]">Simulated Auto Pills:</span>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 dark:bg-stone-800/80 border border-[var(--nexa-border)] text-xs font-bold text-[var(--nexa-text-primary)] shadow-xs">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                      <span>Top Category #1</span>
+                      <span className="text-[10px] text-[var(--nexa-text-muted)] font-normal">· auto count</span>
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 dark:bg-stone-800/80 border border-[var(--nexa-border)] text-xs font-bold text-[var(--nexa-text-primary)] shadow-xs">
+                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                      <span>Top Category #2</span>
+                      <span className="text-[10px] text-[var(--nexa-text-muted)] font-normal">· auto count</span>
+                    </div>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/80 dark:bg-stone-800/80 border border-[var(--nexa-border)] text-xs font-bold text-[var(--nexa-text-primary)] shadow-xs">
+                      <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+                      <span>Top Category #3</span>
+                      <span className="text-[10px] text-[var(--nexa-text-muted)] font-normal">· auto count</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4 pt-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold text-[var(--nexa-text-primary)]">
+                      Manual Floating Pills (3 Pills)
+                    </span>
+                    <span className="text-[10px] text-[var(--nexa-text-muted)] font-medium">
+                      Configure custom pills with custom thumbnail, count label, and link
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* PILL 1 */}
+                    <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-2.5">
+                      <span className="text-[10px] font-bold text-[#1A56DB] uppercase tracking-wider">Floating Pill #1</span>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-[var(--nexa-text-primary)]">Label</label>
+                        <input
+                          type="text"
+                          value={pill1Label}
+                          onChange={(e) => setPill1Label(e.target.value)}
+                          placeholder="e.g. Linen Tunics"
+                          className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-[var(--nexa-text-primary)]">Count Badge</label>
+                        <input
+                          type="text"
+                          value={pill1Count}
+                          onChange={(e) => setPill1Count(e.target.value)}
+                          placeholder="e.g. 1.2k+ pieces"
+                          className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-[var(--nexa-text-primary)]">Thumbnail Image URL</label>
+                        <div className="flex gap-1.5">
+                          <input
+                            type="text"
+                            value={pill1Image}
+                            onChange={(e) => setPill1Image(e.target.value)}
+                            placeholder="https://..."
+                            className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none"
+                          />
+                          {pill1Image && (
+                            <img src={pill1Image} alt="Pill 1" className="w-7 h-7 rounded-full object-cover shrink-0 border border-[var(--nexa-border)]" />
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-[var(--nexa-text-primary)]">Target Link (href)</label>
+                        <input
+                          type="text"
+                          value={pill1Href}
+                          onChange={(e) => setPill1Href(e.target.value)}
+                          placeholder={`e.g. ${verticalDef.storefrontPath}/catalog`}
+                          className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* PILL 2 */}
+                    <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-2.5">
+                      <span className="text-[10px] font-bold text-[#1A56DB] uppercase tracking-wider">Floating Pill #2</span>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-[var(--nexa-text-primary)]">Label</label>
+                        <input
+                          type="text"
+                          value={pill2Label}
+                          onChange={(e) => setPill2Label(e.target.value)}
+                          placeholder="e.g. Kaftans & Agbada"
+                          className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-[var(--nexa-text-primary)]">Count Badge</label>
+                        <input
+                          type="text"
+                          value={pill2Count}
+                          onChange={(e) => setPill2Count(e.target.value)}
+                          placeholder="e.g. 850+ pieces"
+                          className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-[var(--nexa-text-primary)]">Thumbnail Image URL</label>
+                        <div className="flex gap-1.5">
+                          <input
+                            type="text"
+                            value={pill2Image}
+                            onChange={(e) => setPill2Image(e.target.value)}
+                            placeholder="https://..."
+                            className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none"
+                          />
+                          {pill2Image && (
+                            <img src={pill2Image} alt="Pill 2" className="w-7 h-7 rounded-full object-cover shrink-0 border border-[var(--nexa-border)]" />
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-[var(--nexa-text-primary)]">Target Link (href)</label>
+                        <input
+                          type="text"
+                          value={pill2Href}
+                          onChange={(e) => setPill2Href(e.target.value)}
+                          placeholder={`e.g. ${verticalDef.storefrontPath}/catalog`}
+                          className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* PILL 3 */}
+                    <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-2.5">
+                      <span className="text-[10px] font-bold text-[#1A56DB] uppercase tracking-wider">Floating Pill #3</span>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-[var(--nexa-text-primary)]">Label</label>
+                        <input
+                          type="text"
+                          value={pill3Label}
+                          onChange={(e) => setPill3Label(e.target.value)}
+                          placeholder="e.g. Leather Sandals & Bags"
+                          className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-[var(--nexa-text-primary)]">Count Badge</label>
+                        <input
+                          type="text"
+                          value={pill3Count}
+                          onChange={(e) => setPill3Count(e.target.value)}
+                          placeholder="e.g. 420+ pieces"
+                          className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-[var(--nexa-text-primary)]">Thumbnail Image URL</label>
+                        <div className="flex gap-1.5">
+                          <input
+                            type="text"
+                            value={pill3Image}
+                            onChange={(e) => setPill3Image(e.target.value)}
+                            placeholder="https://..."
+                            className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none"
+                          />
+                          {pill3Image && (
+                            <img src={pill3Image} alt="Pill 3" className="w-7 h-7 rounded-full object-cover shrink-0 border border-[var(--nexa-border)]" />
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-[var(--nexa-text-primary)]">Target Link (href)</label>
+                        <input
+                          type="text"
+                          value={pill3Href}
+                          onChange={(e) => setPill3Href(e.target.value)}
+                          placeholder={`e.g. ${verticalDef.storefrontPath}/catalog`}
+                          className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Save Button for Collections Bento */}
+            <div className="pt-4 border-t border-[var(--nexa-border)] flex justify-end">
+              <NexaButton
+                size="md"
+                variant="primary"
+                onClick={() => handleSaveStoreSettings()}
+                disabled={isSaving}
+                className="bg-[#1A56DB] text-white rounded-full font-bold px-6 shadow-sm"
+              >
+                {isSaving ? "Saving..." : "Save Collections Bento"}
               </NexaButton>
             </div>
           </NexaCard>

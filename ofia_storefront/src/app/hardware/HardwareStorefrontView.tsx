@@ -7,6 +7,7 @@ import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import VerticalHeroBento from "@/components/common/VerticalHeroBento";
 import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
+import { useCollectionsBento } from "@/hooks/useCollectionsBento";
 import StorefrontCartRail from "@/components/common/StorefrontCartRail";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
@@ -23,12 +24,67 @@ import {
 } from "lucide-react";
 
 export default function HardwareStorefrontView() {
-  const { store: dynamicStore, isFeatureEnabled, tenantSlug } = useStorefrontTenant();
+  const { store: dynamicStore, isFeatureEnabled, tenantSlug, handshake } = useStorefrontTenant();
   const store = dynamicStore || MOCK_STORES["hardware"];
+  const config = handshake?.storefrontConfig;
   const { products, isLiveMerchantCatalog } = useStorefrontProducts("hardware");
 
   const canBookServices = isFeatureEnabled("services");
   const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
+
+  const {
+    isEnabled: isCollectionsEnabled,
+    card1: bentoCard1,
+    card2: bentoCard2,
+    card3: bentoCard3,
+  } = useCollectionsBento({
+    config,
+    products,
+    catalogPath: `/hardware/catalog${tenantQuery}`,
+    itemUnit: "units",
+    defaults: {
+      card1: {
+        title: "Hybrid Inverters\n& Solar",
+        count: "75+ systems",
+        image: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80",
+        href: `/hardware/catalog${tenantQuery}`,
+        theme: "light",
+      },
+      card2: {
+        title: "Lithium LiFePO4\nStorage",
+        count: "50+ battery racks",
+        image: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=800&q=80",
+        href: `/hardware/catalog${tenantQuery}`,
+        theme: "dark",
+      },
+      card3: {
+        title: "Top Collation",
+        href: `/hardware/catalog${tenantQuery}`,
+        backgroundImage: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1000&q=80",
+        theme: "dark",
+        pills: [
+          {
+            label: "Power Tool Sets",
+            count: "140+ tools",
+            image: "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=120&q=80",
+            href: `/hardware/catalog${tenantQuery}`,
+          },
+          {
+            label: "Copper Armored Cable",
+            count: "85+ gauges",
+            image: "https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?auto=format&fit=crop&w=120&q=80",
+            href: `/hardware/catalog${tenantQuery}`,
+          },
+          {
+            label: "Transfer Switches",
+            count: "35+ panels",
+            image: "https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=120&q=80",
+            href: `/hardware/catalog${tenantQuery}`,
+          },
+        ],
+      },
+    },
+  });
 
   const categories = [
     { name: "Hybrid Inverters", count: "24 Systems", icon: Zap, href: `/hardware/catalog${tenantQuery}` },
@@ -77,50 +133,15 @@ export default function HardwareStorefrontView() {
         </div>
 
         {/* Row 2: 3-Card Category Bento Grid */}
-        <div className="w-full lg:flex-1 min-h-0">
-          <VerticalCategoryBentoGrid
-            card1={{
-              title: "Hybrid Inverters\n& Solar",
-              count: "75+ systems",
-              image: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80",
-              href: `/hardware/catalog${tenantQuery}`,
-              theme: "light",
-            }}
-            card2={{
-              title: "Lithium LiFePO4\nStorage",
-              count: "50+ battery racks",
-              image: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=800&q=80",
-              href: `/hardware/catalog${tenantQuery}`,
-              theme: "dark",
-            }}
-            card3={{
-              title: "Top Collation",
-              href: `/hardware/catalog${tenantQuery}`,
-              backgroundImage: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1000&q=80",
-              theme: "dark",
-              pills: [
-                {
-                  label: "Power Tool Sets",
-                  count: "140+ tools",
-                  image: "https://images.unsplash.com/photo-1504148455328-c376907d081c?auto=format&fit=crop&w=120&q=80",
-                  href: `/hardware/catalog${tenantQuery}`,
-                },
-                {
-                  label: "Copper Armored Cable",
-                  count: "85+ gauges",
-                  image: "https://images.unsplash.com/photo-1558346490-a72e53ae2d4f?auto=format&fit=crop&w=120&q=80",
-                  href: `/hardware/catalog${tenantQuery}`,
-                },
-                {
-                  label: "Transfer Switches",
-                  count: "35+ panels",
-                  image: "https://images.unsplash.com/photo-1581092335397-9583fe92d232?auto=format&fit=crop&w=120&q=80",
-                  href: `/hardware/catalog${tenantQuery}`,
-                },
-              ],
-            }}
-          />
-        </div>
+        {isCollectionsEnabled && (
+          <div className="w-full lg:flex-1 min-h-0">
+            <VerticalCategoryBentoGrid
+              card1={bentoCard1}
+              card2={bentoCard2}
+              card3={bentoCard3}
+            />
+          </div>
+        )}
       </section>
 
       {/* Content Container */}

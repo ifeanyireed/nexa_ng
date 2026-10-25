@@ -7,6 +7,7 @@ import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import VerticalHeroBento from "@/components/common/VerticalHeroBento";
 import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
+import { useCollectionsBento } from "@/hooks/useCollectionsBento";
 import StorefrontCartRail from "@/components/common/StorefrontCartRail";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
@@ -21,12 +22,67 @@ import {
 } from "lucide-react";
 
 export default function FoodStorefrontView() {
-  const { store: dynamicStore, isFeatureEnabled, tenantSlug } = useStorefrontTenant();
+  const { store: dynamicStore, isFeatureEnabled, tenantSlug, handshake } = useStorefrontTenant();
   const store = dynamicStore || MOCK_STORES.food;
+  const config = handshake?.storefrontConfig;
   const { products: foodProducts, isLiveMerchantCatalog } = useStorefrontProducts("food");
 
   const canBookServices = isFeatureEnabled("services");
   const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
+
+  const {
+    isEnabled: isCollectionsEnabled,
+    card1: bentoCard1,
+    card2: bentoCard2,
+    card3: bentoCard3,
+  } = useCollectionsBento({
+    config,
+    products: foodProducts,
+    catalogPath: `/food/menu${tenantQuery}`,
+    itemUnit: "dishes",
+    defaults: {
+      card1: {
+        title: "Grills &\nPlatters",
+        count: "35+ specialties",
+        image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80",
+        href: `/food/menu${tenantQuery}`,
+        theme: "dark",
+      },
+      card2: {
+        title: "Signature\nBowls",
+        count: "20+ chef bowls",
+        image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
+        href: `/food/menu${tenantQuery}`,
+        theme: "dark",
+      },
+      card3: {
+        title: "Pantry & Drinks",
+        href: `/food/menu${tenantQuery}`,
+        backgroundImage: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1000&q=80",
+        theme: "dark",
+        pills: [
+          {
+            label: "Smoked Jollof",
+            count: "Top seller",
+            image: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=120&q=80",
+            href: `/food/menu${tenantQuery}`,
+          },
+          {
+            label: "Artisanal Mocktails",
+            count: "Chilled fresh",
+            image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=120&q=80",
+            href: `/food/menu${tenantQuery}`,
+          },
+          {
+            label: "Pastries & Pies",
+            count: "Baked daily",
+            image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=120&q=80",
+            href: `/food/menu${tenantQuery}`,
+          },
+        ],
+      },
+    },
+  });
 
   return (
     <div className="min-h-screen bg-white text-[#1E1B18] flex flex-col justify-between">
@@ -80,50 +136,15 @@ export default function FoodStorefrontView() {
         </div>
 
         {/* Row 2: 3-Card Category Bento Grid */}
-        <div className="w-full lg:flex-1 min-h-0">
-          <VerticalCategoryBentoGrid
-            card1={{
-              title: "Grills &\nPlatters",
-              count: "35+ specialties",
-              image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80",
-              href: `/food/menu${tenantQuery}`,
-              theme: "dark",
-            }}
-            card2={{
-              title: "Signature\nBowls",
-              count: "20+ chef bowls",
-              image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
-              href: `/food/menu${tenantQuery}`,
-              theme: "dark",
-            }}
-            card3={{
-              title: "Pantry & Drinks",
-              href: `/food/menu${tenantQuery}`,
-              backgroundImage: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1000&q=80",
-              theme: "dark",
-              pills: [
-                {
-                  label: "Smoked Jollof",
-                  count: "Top seller",
-                  image: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=120&q=80",
-                  href: `/food/menu${tenantQuery}`,
-                },
-                {
-                  label: "Artisanal Mocktails",
-                  count: "Chilled fresh",
-                  image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=120&q=80",
-                  href: `/food/menu${tenantQuery}`,
-                },
-                {
-                  label: "Pastries & Pies",
-                  count: "Baked daily",
-                  image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=120&q=80",
-                  href: `/food/menu${tenantQuery}`,
-                },
-              ],
-            }}
-          />
-        </div>
+        {isCollectionsEnabled && (
+          <div className="w-full lg:flex-1 min-h-0">
+            <VerticalCategoryBentoGrid
+              card1={bentoCard1}
+              card2={bentoCard2}
+              card3={bentoCard3}
+            />
+          </div>
+        )}
       </section>
 
       {/* Content Container */}

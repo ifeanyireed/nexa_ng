@@ -7,6 +7,7 @@ import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import VerticalHeroBento from "@/components/common/VerticalHeroBento";
 import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
+import { useCollectionsBento } from "@/hooks/useCollectionsBento";
 import StorefrontCartRail from "@/components/common/StorefrontCartRail";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
@@ -24,12 +25,67 @@ import {
 } from "lucide-react";
 
 export default function PropertyStorefrontView() {
-  const { store: dynamicStore, isFeatureEnabled, tenantSlug } = useStorefrontTenant();
+  const { store: dynamicStore, isFeatureEnabled, tenantSlug, handshake } = useStorefrontTenant();
   const store = dynamicStore || MOCK_STORES.property;
+  const config = handshake?.storefrontConfig;
   const { products: properties, isLiveMerchantCatalog } = useStorefrontProducts("property");
 
   const canBookServices = isFeatureEnabled("services");
   const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
+
+  const {
+    isEnabled: isCollectionsEnabled,
+    card1: bentoCard1,
+    card2: bentoCard2,
+    card3: bentoCard3,
+  } = useCollectionsBento({
+    config,
+    products: properties,
+    catalogPath: `/property/listings${tenantQuery}`,
+    itemUnit: "properties",
+    defaults: {
+      card1: {
+        title: "Waterfront\nPenthouses",
+        count: "12 units available",
+        image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80",
+        href: `/property/listings${tenantQuery}`,
+        theme: "dark",
+      },
+      card2: {
+        title: "Contemporary\nVillas",
+        count: "8 exclusive estates",
+        image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
+        href: `/property/listings${tenantQuery}`,
+        theme: "dark",
+      },
+      card3: {
+        title: "Commercial & Land",
+        href: `/property/listings${tenantQuery}`,
+        backgroundImage: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1000&q=80",
+        theme: "dark",
+        pills: [
+          {
+            label: "Serviced Short-Lets",
+            count: "Daily rates",
+            image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=120&q=80",
+            href: `/property/listings${tenantQuery}`,
+          },
+          {
+            label: "Grade-A Offices",
+            count: "Corporate floors",
+            image: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=120&q=80",
+            href: `/property/listings${tenantQuery}`,
+          },
+          {
+            label: "Gated Land Parcels",
+            count: "Governor's consent",
+            image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=120&q=80",
+            href: `/property/listings${tenantQuery}`,
+          },
+        ],
+      },
+    },
+  });
 
   return (
     <div className="min-h-screen bg-white text-[#111318] flex flex-col justify-between">
@@ -62,50 +118,15 @@ export default function PropertyStorefrontView() {
         </div>
 
         {/* Row 2: 3-Card Category Bento Grid */}
-        <div className="w-full lg:flex-1 min-h-0">
-          <VerticalCategoryBentoGrid
-            card1={{
-              title: "Waterfront\nPenthouses",
-              count: "12 units available",
-              image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80",
-              href: `/property/listings${tenantQuery}`,
-              theme: "dark",
-            }}
-            card2={{
-              title: "Contemporary\nVillas",
-              count: "8 exclusive estates",
-              image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
-              href: `/property/listings${tenantQuery}`,
-              theme: "dark",
-            }}
-            card3={{
-              title: "Commercial & Land",
-              href: `/property/listings${tenantQuery}`,
-              backgroundImage: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1000&q=80",
-              theme: "dark",
-              pills: [
-                {
-                  label: "Serviced Short-Lets",
-                  count: "Daily rates",
-                  image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=120&q=80",
-                  href: `/property/listings${tenantQuery}`,
-                },
-                {
-                  label: "Grade-A Offices",
-                  count: "Corporate floors",
-                  image: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=120&q=80",
-                  href: `/property/listings${tenantQuery}`,
-                },
-                {
-                  label: "Gated Land Parcels",
-                  count: "Governor's consent",
-                  image: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=120&q=80",
-                  href: `/property/listings${tenantQuery}`,
-                },
-              ],
-            }}
-          />
-        </div>
+        {isCollectionsEnabled && (
+          <div className="w-full lg:flex-1 min-h-0">
+            <VerticalCategoryBentoGrid
+              card1={bentoCard1}
+              card2={bentoCard2}
+              card3={bentoCard3}
+            />
+          </div>
+        )}
       </section>
 
       {/* Content Container */}

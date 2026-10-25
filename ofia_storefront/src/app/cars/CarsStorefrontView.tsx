@@ -7,6 +7,7 @@ import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import VerticalHeroBento from "@/components/common/VerticalHeroBento";
 import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
+import { useCollectionsBento } from "@/hooks/useCollectionsBento";
 import StorefrontCartRail from "@/components/common/StorefrontCartRail";
 import StorefrontValueBadges from "@/components/common/StorefrontValueBadges";
 import StorefrontFeatureBanner from "@/components/common/StorefrontFeatureBanner";
@@ -34,6 +35,60 @@ export default function CarsStorefrontView() {
   const inspectionService = MOCK_SERVICES.find((s) => s.vertical === "cars");
 
   const canBookServices = isFeatureEnabled("services");
+
+  const {
+    isEnabled: isCollectionsEnabled,
+    card1: bentoCard1,
+    card2: bentoCard2,
+    card3: bentoCard3,
+  } = useCollectionsBento({
+    config,
+    products: carProducts,
+    catalogPath: "/cars/listings",
+    itemUnit: "vehicles",
+    defaults: {
+      card1: {
+        title: "Executive\nSedans",
+        count: "45+ vehicles",
+        image: "https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80",
+        href: "/cars/listings",
+        theme: "dark",
+      },
+      card2: {
+        title: "Performance\nSUVs",
+        count: "70+ vehicles",
+        image: "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=800&q=80",
+        href: "/cars/listings",
+        theme: "light",
+      },
+      card3: {
+        title: "Top Collation",
+        href: "/cars/listings",
+        backgroundImage: "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=1000&q=80",
+        theme: "dark",
+        pills: [
+          {
+            label: "AMG & Maybach",
+            count: "28 units",
+            image: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=120&q=80",
+            href: "/cars/listings",
+          },
+          {
+            label: "Range Rover & Defender",
+            count: "34 units",
+            image: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=120&q=80",
+            href: "/cars/listings",
+          },
+          {
+            label: "Porsche & Exotic",
+            count: "15 units",
+            image: "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=120&q=80",
+            href: "/cars/listings",
+          },
+        ],
+      },
+    },
+  });
 
   return (
     <div className="min-h-screen bg-white text-[#0F172A] flex flex-col justify-between">
@@ -66,50 +121,15 @@ export default function CarsStorefrontView() {
         </div>
 
         {/* Row 2: 3-Card Category Bento Grid */}
-        <div className="w-full lg:flex-1 min-h-0">
-          <VerticalCategoryBentoGrid
-            card1={{
-              title: "Executive\nSedans",
-              count: "45+ vehicles",
-              image: "https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=800&q=80",
-              href: "/cars/listings",
-              theme: "dark",
-            }}
-            card2={{
-              title: "Performance\nSUVs",
-              count: "70+ vehicles",
-              image: "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=800&q=80",
-              href: "/cars/listings",
-              theme: "light",
-            }}
-            card3={{
-              title: "Top Collation",
-              href: "/cars/listings",
-              backgroundImage: "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=1000&q=80",
-              theme: "dark",
-              pills: [
-                {
-                  label: "AMG & Maybach",
-                  count: "28 units",
-                  image: "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?auto=format&fit=crop&w=120&q=80",
-                  href: "/cars/listings",
-                },
-                {
-                  label: "Range Rover & Defender",
-                  count: "34 units",
-                  image: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=120&q=80",
-                  href: "/cars/listings",
-                },
-                {
-                  label: "Porsche & Exotic",
-                  count: "15 units",
-                  image: "https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&w=120&q=80",
-                  href: "/cars/listings",
-                },
-              ],
-            }}
-          />
-        </div>
+        {isCollectionsEnabled && (
+          <div className="w-full lg:flex-1 min-h-0">
+            <VerticalCategoryBentoGrid
+              card1={bentoCard1}
+              card2={bentoCard2}
+              card3={bentoCard3}
+            />
+          </div>
+        )}
       </section>
 
       {/* Main Catalog & Inventory Feed */}

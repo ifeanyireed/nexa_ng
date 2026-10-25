@@ -7,6 +7,7 @@ import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import VerticalHeroBento from "@/components/common/VerticalHeroBento";
 import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
+import { useCollectionsBento } from "@/hooks/useCollectionsBento";
 import StorefrontCartRail from "@/components/common/StorefrontCartRail";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
@@ -20,12 +21,67 @@ import {
 } from "lucide-react";
 
 export default function HomeLivingStorefrontView() {
-  const { store: dynamicStore, isFeatureEnabled, tenantSlug } = useStorefrontTenant();
+  const { store: dynamicStore, isFeatureEnabled, tenantSlug, handshake } = useStorefrontTenant();
   const store = dynamicStore || MOCK_STORES["home-living"];
+  const config = handshake?.storefrontConfig;
   const { products: homeProducts, isLiveMerchantCatalog } = useStorefrontProducts("home-living");
 
   const canBookServices = isFeatureEnabled("services") || isFeatureEnabled("dispatchBooking");
   const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
+
+  const {
+    isEnabled: isCollectionsEnabled,
+    card1: bentoCard1,
+    card2: bentoCard2,
+    card3: bentoCard3,
+  } = useCollectionsBento({
+    config,
+    products: homeProducts,
+    catalogPath: `/home-living/catalog${tenantQuery}`,
+    itemUnit: "pieces",
+    defaults: {
+      card1: {
+        title: "Living &\nSofas",
+        count: "35+ pieces",
+        image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80",
+        href: `/home-living/catalog${tenantQuery}`,
+        theme: "light",
+      },
+      card2: {
+        title: "Dining &\nTables",
+        count: "25+ pieces",
+        image: "https://images.unsplash.com/photo-1615066390971-03e4e1c36ddf?auto=format&fit=crop&w=800&q=80",
+        href: `/home-living/catalog${tenantQuery}`,
+        theme: "light",
+      },
+      card3: {
+        title: "Lamps & Ceramics",
+        href: `/home-living/catalog${tenantQuery}`,
+        backgroundImage: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=1000&q=80",
+        theme: "light",
+        pills: [
+          {
+            label: "Modular Sectionals",
+            count: "Custom fabric",
+            image: "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&w=120&q=80",
+            href: `/home-living/catalog${tenantQuery}`,
+          },
+          {
+            label: "Solid Oak Dining",
+            count: "6-10 seaters",
+            image: "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?auto=format&fit=crop&w=120&q=80",
+            href: `/home-living/catalog${tenantQuery}`,
+          },
+          {
+            label: "Ceramic Vessels",
+            count: "Hand-thrown",
+            image: "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=120&q=80",
+            href: `/home-living/catalog${tenantQuery}`,
+          },
+        ],
+      },
+    },
+  });
 
   return (
     <div className="min-h-screen bg-white text-[#1E1F22] flex flex-col justify-between">
@@ -58,50 +114,15 @@ export default function HomeLivingStorefrontView() {
         </div>
 
         {/* Row 2: 3-Card Category Bento Grid */}
-        <div className="w-full lg:flex-1 min-h-0">
-          <VerticalCategoryBentoGrid
-            card1={{
-              title: "Living &\nSofas",
-              count: "35+ pieces",
-              image: "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80",
-              href: `/home-living/catalog${tenantQuery}`,
-              theme: "light",
-            }}
-            card2={{
-              title: "Dining &\nTables",
-              count: "25+ pieces",
-              image: "https://images.unsplash.com/photo-1615066390971-03e4e1c36ddf?auto=format&fit=crop&w=800&q=80",
-              href: `/home-living/catalog${tenantQuery}`,
-              theme: "light",
-            }}
-            card3={{
-              title: "Lamps & Ceramics",
-              href: `/home-living/catalog${tenantQuery}`,
-              backgroundImage: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=1000&q=80",
-              theme: "light",
-              pills: [
-                {
-                  label: "Modular Sectionals",
-                  count: "Custom fabric",
-                  image: "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&w=120&q=80",
-                  href: `/home-living/catalog${tenantQuery}`,
-                },
-                {
-                  label: "Solid Oak Dining",
-                  count: "6-10 seaters",
-                  image: "https://images.unsplash.com/photo-1530018607912-eff2daa1bac4?auto=format&fit=crop&w=120&q=80",
-                  href: `/home-living/catalog${tenantQuery}`,
-                },
-                {
-                  label: "Ceramic Vessels",
-                  count: "Hand-thrown",
-                  image: "https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=120&q=80",
-                  href: `/home-living/catalog${tenantQuery}`,
-                },
-              ],
-            }}
-          />
-        </div>
+        {isCollectionsEnabled && (
+          <div className="w-full lg:flex-1 min-h-0">
+            <VerticalCategoryBentoGrid
+              card1={bentoCard1}
+              card2={bentoCard2}
+              card3={bentoCard3}
+            />
+          </div>
+        )}
       </section>
 
       {/* Content Container */}

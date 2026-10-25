@@ -7,6 +7,7 @@ import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import VerticalHeroBento from "@/components/common/VerticalHeroBento";
 import VerticalCategoryBentoGrid from "@/components/common/VerticalCategoryBentoGrid";
+import { useCollectionsBento } from "@/hooks/useCollectionsBento";
 import StorefrontCartRail from "@/components/common/StorefrontCartRail";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
@@ -24,12 +25,67 @@ import {
 } from "lucide-react";
 
 export default function GadgetsStorefrontView() {
-  const { store: dynamicStore, isFeatureEnabled, tenantSlug } = useStorefrontTenant();
+  const { store: dynamicStore, isFeatureEnabled, tenantSlug, handshake } = useStorefrontTenant();
   const store = dynamicStore || MOCK_STORES.gadgets;
+  const config = handshake?.storefrontConfig;
   const { products: gadgetProducts, isLiveMerchantCatalog } = useStorefrontProducts("gadgets");
 
   const canBookServices = isFeatureEnabled("services");
   const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
+
+  const {
+    isEnabled: isCollectionsEnabled,
+    card1: bentoCard1,
+    card2: bentoCard2,
+    card3: bentoCard3,
+  } = useCollectionsBento({
+    config,
+    products: gadgetProducts,
+    catalogPath: `/gadgets/catalog${tenantQuery}`,
+    itemUnit: "devices",
+    defaults: {
+      card1: {
+        title: "Laptops &\nWorkstations",
+        count: "40+ models",
+        image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80",
+        href: `/gadgets/catalog${tenantQuery}`,
+        theme: "dark",
+      },
+      card2: {
+        title: "Pro Smart\nPhones",
+        count: "30+ flagships",
+        image: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=800&q=80",
+        href: `/gadgets/catalog${tenantQuery}`,
+        theme: "dark",
+      },
+      card3: {
+        title: "Audio & Drones",
+        href: `/gadgets/catalog${tenantQuery}`,
+        backgroundImage: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=1000&q=80",
+        theme: "dark",
+        pills: [
+          {
+            label: "Noise Cancelling",
+            count: "Top rated",
+            image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=120&q=80",
+            href: `/gadgets/catalog${tenantQuery}`,
+          },
+          {
+            label: "Pro Drones & Gimbals",
+            count: "4K 60fps",
+            image: "https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=120&q=80",
+            href: `/gadgets/catalog${tenantQuery}`,
+          },
+          {
+            label: "GaN Fast Chargers",
+            count: "65W - 140W",
+            image: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=120&q=80",
+            href: `/gadgets/catalog${tenantQuery}`,
+          },
+        ],
+      },
+    },
+  });
 
   return (
     <div className="min-h-screen bg-white text-slate-900 flex flex-col justify-between">
@@ -62,50 +118,15 @@ export default function GadgetsStorefrontView() {
         </div>
 
         {/* Row 2: 3-Card Category Bento Grid */}
-        <div className="w-full lg:flex-1 min-h-0">
-          <VerticalCategoryBentoGrid
-            card1={{
-              title: "Laptops &\nWorkstations",
-              count: "40+ models",
-              image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80",
-              href: `/gadgets/catalog${tenantQuery}`,
-              theme: "dark",
-            }}
-            card2={{
-              title: "Pro Smart\nPhones",
-              count: "30+ flagships",
-              image: "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=800&q=80",
-              href: `/gadgets/catalog${tenantQuery}`,
-              theme: "dark",
-            }}
-            card3={{
-              title: "Audio & Drones",
-              href: `/gadgets/catalog${tenantQuery}`,
-              backgroundImage: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=1000&q=80",
-              theme: "dark",
-              pills: [
-                {
-                  label: "Noise Cancelling",
-                  count: "Top rated",
-                  image: "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=120&q=80",
-                  href: `/gadgets/catalog${tenantQuery}`,
-                },
-                {
-                  label: "Pro Drones & Gimbals",
-                  count: "4K 60fps",
-                  image: "https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=120&q=80",
-                  href: `/gadgets/catalog${tenantQuery}`,
-                },
-                {
-                  label: "GaN Fast Chargers",
-                  count: "65W - 140W",
-                  image: "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?auto=format&fit=crop&w=120&q=80",
-                  href: `/gadgets/catalog${tenantQuery}`,
-                },
-              ],
-            }}
-          />
-        </div>
+        {isCollectionsEnabled && (
+          <div className="w-full lg:flex-1 min-h-0">
+            <VerticalCategoryBentoGrid
+              card1={bentoCard1}
+              card2={bentoCard2}
+              card3={bentoCard3}
+            />
+          </div>
+        )}
       </section>
 
       {/* Content Container */}

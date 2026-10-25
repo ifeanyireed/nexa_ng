@@ -7,6 +7,8 @@ import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
 import { useCart } from "@/context/CartContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import {
   Ruler,
   ShoppingBag,
@@ -22,12 +24,21 @@ import {
 export default function FashionProductDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const store = MOCK_STORES.fashion;
+  const { store: dynamicStore, tenantSlug } = useStorefrontTenant();
+  const { products: liveProducts } = useStorefrontProducts("fashion");
+  const tenantQuery = tenantSlug ? `?tenant=${tenantSlug}` : "";
+
+  const store = {
+    ...MOCK_STORES.fashion,
+    ...(dynamicStore || {}),
+  };
   const { addToCart } = useCart();
 
   const productId = (params?.id as string) || "fsh-001";
+  const allProducts = liveProducts.length > 0 ? liveProducts : MOCK_PRODUCTS.filter((p) => p.vertical === "fashion");
   const product =
-    MOCK_PRODUCTS.find((p) => p.id === productId && p.vertical === "fashion") ||
+    allProducts.find((p) => p.id === productId) ||
+    allProducts[0] ||
     MOCK_PRODUCTS[0];
 
   const [selectedImage, setSelectedImage] = useState(0);
@@ -63,11 +74,11 @@ export default function FashionProductDetailPage() {
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full space-y-12">
         {/* Breadcrumbs */}
         <div className="flex items-center gap-2 text-xs text-stone-500">
-          <Link href="/fashion" className="hover:text-zinc-900 transition-colors">
-            Aura & Loom
+          <Link href={`/fashion${tenantQuery}`} className="hover:text-zinc-900 transition-colors">
+            {store.name}
           </Link>
           <span>/</span>
-          <Link href="/fashion/catalog" className="hover:text-zinc-900 transition-colors">
+          <Link href={`/fashion/catalog${tenantQuery}`} className="hover:text-zinc-900 transition-colors">
             Catalog
           </Link>
           <span>/</span>

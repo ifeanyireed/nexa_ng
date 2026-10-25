@@ -1,23 +1,50 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
 import StoreHeader from "@/components/common/StoreHeader";
 import StoreFooter from "@/components/common/StoreFooter";
+import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
+import { useStorefrontProducts } from "@/hooks/useStorefrontProducts";
 import { Filter, ArrowUpDown, ArrowRight, Check } from "lucide-react";
 
-export default function FashionCatalogPage() {
-  const store = MOCK_STORES.fashion;
-  const allProducts = MOCK_PRODUCTS.filter((p) => p.vertical === "fashion");
+function FashionCatalogContent() {
+  const searchParams = useSearchParams();
+  const categoryParam = searchParams.get("category");
 
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const { store: dynamicStore, tenantSlug, handshake } = useStorefrontTenant();
+  const store = dynamicStore || MOCK_STORES.fashion;
+  const config = handshake?.storefrontConfig;
+
+  const { products: liveProducts } = useStorefrontProducts("fashion");
+  const allProducts =
+    liveProducts && liveProducts.length > 0
+      ? liveProducts
+      : MOCK_PRODUCTS.filter((p) => p.vertical === "fashion");
+
+  const [selectedCategory, setSelectedCategory] = useState(categoryParam || "All");
   const [selectedSize, setSelectedSize] = useState("All");
   const [selectedColor, setSelectedColor] = useState("All");
   const [sortBy, setSortBy] = useState<"featured" | "price-asc" | "price-desc">("featured");
 
-  const categories = ["All", "Resort & Traditional", "Outerwear", "Tops & Tunics", "Accessories"];
+  useEffect(() => {
+    if (categoryParam) {
+      setSelectedCategory(categoryParam);
+    }
+  }, [categoryParam]);
+
+  const categories = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of allProducts) {
+      if (p.category) set.add(p.category);
+    }
+    return ["All", ...Array.from(set)];
+  }, [allProducts]);
+
   const sizes = ["All", "XS", "S", "M", "L", "XL"];
+  const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
   const filteredProducts = useMemo(() => {
     return allProducts
@@ -42,13 +69,13 @@ export default function FashionCatalogPage() {
         {/* Catalog Banner */}
         <div className="space-y-2 border-b border-stone-200 pb-6">
           <div className="text-xs font-bold text-amber-700 uppercase tracking-widest">
-            Aura & Loom Ateliers · Autumn / Resort Collection
+            {config?.hero?.headline || store.name} · {config?.hero?.eyebrow || "Curated Capsule Catalog"}
           </div>
           <h1 className="font-dropa text-3xl sm:text-4xl font-bold text-zinc-900 tracking-tight">
             Apparel & Garment Catalog
           </h1>
           <p className="text-stone-500 text-xs sm:text-sm font-light max-w-2xl">
-            Filter through our curated hand-embroidered tunics, bespoke two-pieces, and structured seasonal outerwear.
+            {store.description || "Filter through our curated hand-embroidered tunics, bespoke two-pieces, and structured seasonal outerwear."}
           </p>
         </div>
 
@@ -176,7 +203,7 @@ export default function FashionCatalogPage() {
                   </span>
 
                   <Link
-                    href={`/fashion/product/${product.id}`}
+                    href={`/fashion/product/${product.id}${tenantQuery}`}
                     className="px-4 py-2 rounded-full bg-zinc-900 hover:bg-amber-600 text-white text-xs font-bold transition-colors flex items-center gap-1.5"
                   >
                     <span>View & Select Size</span>
@@ -191,5 +218,13 @@ export default function FashionCatalogPage() {
 
       <StoreFooter store={store} />
     </div>
+  );
+}
+
+export default function FashionCatalogPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white" />}>
+      <FashionCatalogContent />
+    </Suspense>
   );
 }

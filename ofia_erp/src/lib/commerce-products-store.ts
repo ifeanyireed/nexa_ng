@@ -1,7 +1,61 @@
 import fs from "fs";
 import path from "path";
 import { CommerceProductItem, VerticalKey } from "./verticals";
-import { getTenantSql } from "./tenant-db-resolver";
+import { getTenantSql, getTenantDatabaseConfig } from "./tenant-db-resolver";
+
+export const VERTICAL_EDITORIAL_FALLBACK_IMAGES: Record<string, string[]> = {
+  fashion: [
+    "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1509631179647-0177331693ae?auto=format&fit=crop&w=800&q=80",
+  ],
+  cars: [
+    "https://images.unsplash.com/photo-1594502184342-2e12f877aa73?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=80",
+  ],
+  food: [
+    "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=800&q=80",
+  ],
+  beauty: [
+    "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1608248597359-5735b5a2bf61?auto=format&fit=crop&w=800&q=80",
+  ],
+  gadgets: [
+    "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1592750475338-74b7b21085ab?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=800&q=80",
+  ],
+  "home-living": [
+    "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1615066390971-03e4e1c36ddf?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?auto=format&fit=crop&w=800&q=80",
+  ],
+  hardware: [
+    "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80",
+  ],
+  pharmacy: [
+    "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=800&q=80",
+  ],
+  property: [
+    "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80",
+  ],
+  retail: [
+    "https://images.unsplash.com/photo-1495640388908-05fa85288e61?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=800&q=80",
+    "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?auto=format&fit=crop&w=800&q=80",
+  ],
+};
 
 function getSyncDir() {
   const candidates = [
@@ -196,12 +250,24 @@ export async function getErpProducts(tenantSlug?: string, vertical?: VerticalKey
         }
 
         if (rows && rows.length > 0) {
-          return rows.map((r: any) => {
+          let tenantVertical: VerticalKey | undefined = undefined;
+          try {
+            const dbConf = await getTenantDatabaseConfig(normalizedSlug);
+            if (dbConf.vertical) {
+              tenantVertical = dbConf.vertical as VerticalKey;
+            }
+          } catch {}
+
+          const effectiveVertical: VerticalKey = (vertical || tenantVertical || "retail") as VerticalKey;
+          const verticalFallbacks = VERTICAL_EDITORIAL_FALLBACK_IMAGES[effectiveVertical] || VERTICAL_EDITORIAL_FALLBACK_IMAGES.retail;
+
+          return rows.map((r: any, idx: number) => {
             const meta = (typeof r.metadata === "string" ? JSON.parse(r.metadata || "{}") : r.metadata) || {};
             const imgs: string[] = Array.isArray(meta.images) && meta.images.length > 0
-              ? meta.images
+              ? meta.images.filter(Boolean)
               : (r.image_url ? [r.image_url] : []);
-            const primaryImg = r.image_url || imgs[0] || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80";
+            const fallbackImg = verticalFallbacks[idx % verticalFallbacks.length];
+            const primaryImg = (r.image_url && r.image_url.trim()) || imgs[0] || fallbackImg;
 
             return {
               id: r.product_id || r.id,
@@ -212,7 +278,7 @@ export async function getErpProducts(tenantSlug?: string, vertical?: VerticalKey
               stock: Number(r.current_stock) || 0,
               image: primaryImg,
               images: imgs.length > 0 ? imgs : [primaryImg],
-              vertical: (vertical || "retail") as VerticalKey,
+              vertical: effectiveVertical,
               sku: r.sku,
               status: r.status === "OUT_OF_STOCK" ? "OUT_OF_STOCK" : "ACTIVE",
               attributes: meta.attributes || (meta.image ? meta : {}),

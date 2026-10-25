@@ -64,6 +64,52 @@ async function ensureDispatchTables(sql: any) {
       CREATE UNIQUE INDEX IF NOT EXISTS idx_dispatch_shipments_tenant_tracking 
         ON dispatch_shipments(LOWER(tenant_slug), tracking_number);
     `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS dispatch_couriers (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        name VARCHAR(191) NOT NULL,
+        phone VARCHAR(64) NOT NULL,
+        vehicle_type VARCHAR(32) NOT NULL DEFAULT 'MOTORBIKE',
+        plate_number VARCHAR(32) NOT NULL,
+        is_available BOOLEAN DEFAULT TRUE,
+        current_lat NUMERIC(10, 7) DEFAULT 0,
+        current_lng NUMERIC(10, 7) DEFAULT 0,
+        current_zone VARCHAR(100) DEFAULT '',
+        rating NUMERIC(3, 2) DEFAULT 5.0,
+        total_trips INT DEFAULT 0,
+        active_jobs INT DEFAULT 0,
+        status VARCHAR(32) DEFAULT 'AVAILABLE',
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_dispatch_couriers_tenant 
+        ON dispatch_couriers(LOWER(tenant_slug), is_available);
+    `;
+
+    await sql`
+      CREATE TABLE IF NOT EXISTS dispatch_waypoints (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        shipment_id VARCHAR(64) NOT NULL REFERENCES dispatch_shipments(id) ON DELETE CASCADE,
+        location VARCHAR(255) NOT NULL,
+        status VARCHAR(32) NOT NULL,
+        notes TEXT DEFAULT '',
+        latitude NUMERIC(10, 7) DEFAULT 0,
+        longitude NUMERIC(10, 7) DEFAULT 0,
+        timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+
+    await sql`
+      CREATE INDEX IF NOT EXISTS idx_dispatch_waypoints_tenant_shipment 
+        ON dispatch_waypoints(LOWER(tenant_slug), shipment_id, timestamp DESC);
+    `;
   } catch (err: any) {
     // Non-fatal if index or table already exists
     console.warn("[Dispatch API] ensureDispatchTables notice:", err.message);

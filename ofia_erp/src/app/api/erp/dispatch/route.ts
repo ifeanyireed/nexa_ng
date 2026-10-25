@@ -23,6 +23,104 @@ function getTenantKey(request: Request): string | null {
   return null;
 }
 
+let tablesEnsured = false;
+
+async function ensureDispatchTables(sql: any) {
+  if (!sql || tablesEnsured) return;
+  try {
+    await sql`
+      CREATE TABLE IF NOT EXISTS dispatch_shipments (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        tracking_number VARCHAR(64) NOT NULL,
+        order_number VARCHAR(64) NOT NULL,
+        job_type VARCHAR(32) NOT NULL DEFAULT 'CUSTOMER_PICKUP',
+        status VARCHAR(32) NOT NULL DEFAULT 'PENDING',
+        priority VARCHAR(16) NOT NULL DEFAULT 'STANDARD',
+        sender_name VARCHAR(191) NOT NULL,
+        sender_phone VARCHAR(64) NOT NULL,
+        pickup_address TEXT NOT NULL,
+        pickup_city VARCHAR(100) DEFAULT '',
+        pickup_notes TEXT DEFAULT '',
+        pickup_lat NUMERIC(10, 7) DEFAULT 0,
+        pickup_lng NUMERIC(10, 7) DEFAULT 0,
+        recipient_name VARCHAR(191) NOT NULL,
+        recipient_phone VARCHAR(64) NOT NULL,
+        recipient_address TEXT NOT NULL,
+        recipient_city VARCHAR(100) DEFAULT '',
+        recipient_notes TEXT DEFAULT '',
+        dropoff_lat NUMERIC(10, 7) DEFAULT 0,
+        dropoff_lng NUMERIC(10, 7) DEFAULT 0,
+        parcel_category VARCHAR(64) NOT NULL DEFAULT 'Documents',
+        parcel_description TEXT DEFAULT '',
+        weight_tier VARCHAR(32) DEFAULT 'light',
+        weight_kg NUMERIC(6, 2) DEFAULT 1.0,
+        vehicle_type VARCHAR(32) DEFAULT 'MOTORBIKE',
+        speed_tier VARCHAR(32) DEFAULT 'instant',
+        shipping_fee NUMERIC(12, 2) NOT NULL DEFAULT 0,
+        currency VARCHAR(8) NOT NULL DEFAULT 'NGN',
+        payment_method VARCHAR(32) NOT NULL DEFAULT 'card',
+        payment_status VARCHAR(32) NOT NULL DEFAULT 'PAID',
+        delivery_otp VARCHAR(16) NOT NULL,
+        courier_driver_id VARCHAR(64) DEFAULT NULL,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_dispatch_shipments_tenant_created 
+        ON dispatch_shipments(LOWER(tenant_slug), created_at DESC);
+
+      CREATE INDEX IF NOT EXISTS idx_dispatch_shipments_tenant_status 
+        ON dispatch_shipments(LOWER(tenant_slug), status);
+
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_dispatch_shipments_tenant_tracking 
+        ON dispatch_shipments(LOWER(tenant_slug), tracking_number);
+
+      CREATE TABLE IF NOT EXISTS dispatch_couriers (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        name VARCHAR(191) NOT NULL,
+        phone VARCHAR(64) NOT NULL,
+        vehicle_type VARCHAR(32) NOT NULL DEFAULT 'MOTORBIKE',
+        plate_number VARCHAR(32) NOT NULL,
+        is_available BOOLEAN DEFAULT TRUE,
+        current_lat NUMERIC(10, 7) DEFAULT 0,
+        current_lng NUMERIC(10, 7) DEFAULT 0,
+        current_zone VARCHAR(100) DEFAULT '',
+        rating NUMERIC(3, 2) DEFAULT 5.0,
+        total_trips INT DEFAULT 0,
+        active_jobs INT DEFAULT 0,
+        status VARCHAR(32) DEFAULT 'AVAILABLE',
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_dispatch_couriers_tenant 
+        ON dispatch_couriers(LOWER(tenant_slug), is_available);
+
+      CREATE TABLE IF NOT EXISTS dispatch_waypoints (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        shipment_id VARCHAR(64) NOT NULL REFERENCES dispatch_shipments(id) ON DELETE CASCADE,
+        location VARCHAR(255) NOT NULL,
+        status VARCHAR(32) NOT NULL,
+        notes TEXT DEFAULT '',
+        latitude NUMERIC(10, 7) DEFAULT 0,
+        longitude NUMERIC(10, 7) DEFAULT 0,
+        timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_dispatch_waypoints_tenant_shipment 
+        ON dispatch_waypoints(LOWER(tenant_slug), shipment_id, timestamp DESC);
+    `;
+    tablesEnsured = true;
+  } catch (err: any) {
+    console.warn("[Dispatch Route] ensureDispatchTables notice:", err.message);
+  }
+}
+
 const DEFAULT_COURIERS: CourierDriver[] = [
   {
     id: "DRV-101",
@@ -150,6 +248,7 @@ export async function GET(request: Request) {
   try {
     const sql = await getTenantSql(tenantKey);
     if (sql) {
+      await ensureDispatchTables(sql);
       const dbShipments = await sql`
         SELECT *
         FROM dispatch_shipments
@@ -356,6 +455,7 @@ export async function POST(request: Request) {
   try {
     const sql = await getTenantSql(tenantKey);
     if (sql) {
+      await ensureDispatchTables(sql);
       await sql`
         INSERT INTO dispatch_shipments (
           id, tenant_slug, tracking_number, order_number, job_type, status, priority,
@@ -446,6 +546,7 @@ export async function PATCH(request: Request) {
   try {
     const sql = await getTenantSql(tenantKey);
     if (sql) {
+      await ensureDispatchTables(sql);
       await sql`
         UPDATE dispatch_shipments
         SET status = ${targetStatus},

@@ -610,6 +610,20 @@ export async function bootstrapDedicatedTenantSchema(connectionString: string): 
       );
 
       CREATE INDEX IF NOT EXISTS idx_dispatch_couriers_tenant ON dispatch_couriers(LOWER(tenant_slug), is_available);
+
+      CREATE TABLE IF NOT EXISTS dispatch_waypoints (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        shipment_id VARCHAR(64) NOT NULL REFERENCES dispatch_shipments(id) ON DELETE CASCADE,
+        location VARCHAR(255) NOT NULL,
+        status VARCHAR(32) NOT NULL,
+        notes TEXT DEFAULT '',
+        latitude NUMERIC(10, 7) DEFAULT 0,
+        longitude NUMERIC(10, 7) DEFAULT 0,
+        timestamp TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_dispatch_waypoints_tenant_shipment ON dispatch_waypoints(LOWER(tenant_slug), shipment_id, timestamp DESC);
     `;
 
     return {

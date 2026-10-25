@@ -56,18 +56,17 @@ tmp/
 !database/migrations/*.sql
 
 # Seed files, scripts and seed directories
-*seed*.sql
-*seeds*.sql
-*seed*.json
-*seeds*.json
-*seed*.go
-*seeds*.go
-*seed*.ts
-*seeds*.ts
-**/seeds/*
-**/cmd/seed/*
-seed/
-seeds/
+*seed*
+*seeds*
+**/seeds/**
+**/seed/**
+**/cmd/seed/**
+*seed*.*
+*-seed.*
+*-seeds.*
+*.seed
+*.seed.*
+*.seeds.*
 
 # Neon & Agents local configs
 .neon
@@ -89,7 +88,3 @@ CLAUDE.md
 *.xls
 *.csv
 fleet-papers_1.html
-**/seeds/*-seed.ts
-**/seeds/*-seed.json
-*seed*.json
-!service_erp/handlers/seed_data.json

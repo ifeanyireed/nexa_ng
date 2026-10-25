@@ -170,9 +170,10 @@ export default function MyStoreStudioPage() {
     }
   };
 
+  const tenantSlug = activeTenant?.slug || "";
   const previewStorefrontUrl = typeof window !== "undefined" && window.location.hostname.includes("localhost")
-    ? `http://localhost:3005${verticalDef.storefrontPath}?tenant=${activeTenant?.slug || "neweratransports"}`
-    : `https://${activeTenant?.slug || "neweratransports"}.ofia.ng${verticalDef.storefrontPath}`;
+    ? `http://localhost:3005${verticalDef.storefrontPath}${tenantSlug ? `?tenant=${tenantSlug}` : ""}`
+    : `https://${tenantSlug ? `${tenantSlug}.ofia.shop` : "ofia.shop"}${verticalDef.storefrontPath}`;
 
   return (
     <BusinessShell
@@ -191,7 +192,7 @@ export default function MyStoreStudioPage() {
               leftIcon={<ExternalLink className="w-3.5 h-3.5" />}
               className="rounded-full"
             >
-              Preview Live Storefront ({activeTenant?.slug || "store"}.ofia.ng)
+              Preview Live Storefront ({tenantSlug ? `${tenantSlug}.ofia.shop` : "ofia.shop"})
             </NexaButton>
           </Link>
 

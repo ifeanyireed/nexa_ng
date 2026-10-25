@@ -171,28 +171,53 @@ export async function getErpProducts(tenantSlug?: string, vertical?: VerticalKey
     try {
       const sql = await getTenantSql(normalizedSlug);
       if (sql) {
-        const rows = await sql`
-          SELECT id, tenant_slug, COALESCE(tenant_id, '') as tenant_id, product_id, sku,
-                 product_name, category, warehouse, current_stock, min_stock,
-                 unit_cost, unit_price, status, supplier, created_at, updated_at
-          FROM shop_inventory
-          WHERE LOWER(tenant_slug) = ${normalizedSlug}
-          ORDER BY created_at DESC;
-        `;
+        let rows: any[] = [];
+        try {
+          rows = await sql`
+            SELECT id, tenant_slug, COALESCE(tenant_id, '') as tenant_id, product_id, sku,
+                   product_name, category, warehouse, current_stock, min_stock,
+                   unit_cost, unit_price, status, supplier,
+                   COALESCE(image_url, '') as image_url,
+                   COALESCE(metadata, '{}'::jsonb) as metadata,
+                   created_at, updated_at
+            FROM shop_inventory
+            WHERE LOWER(tenant_slug) = ${normalizedSlug}
+            ORDER BY created_at DESC;
+          `;
+        } catch (colErr) {
+          rows = await sql`
+            SELECT id, tenant_slug, COALESCE(tenant_id, '') as tenant_id, product_id, sku,
+                   product_name, category, warehouse, current_stock, min_stock,
+                   unit_cost, unit_price, status, supplier, created_at, updated_at
+            FROM shop_inventory
+            WHERE LOWER(tenant_slug) = ${normalizedSlug}
+            ORDER BY created_at DESC;
+          `;
+        }
+
         if (rows && rows.length > 0) {
-          return rows.map((r: any) => ({
-            id: r.product_id || r.id,
-            name: r.product_name,
-            price: Number(r.unit_price) || 0,
-            formattedPrice: `₦${Number(r.unit_price || 0).toLocaleString()}`,
-            category: r.category || "General",
-            stock: Number(r.current_stock) || 0,
-            image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
-            vertical: (vertical || "retail") as VerticalKey,
-            sku: r.sku,
-            status: r.status === "OUT_OF_STOCK" ? "OUT_OF_STOCK" : "ACTIVE",
-            attributes: {},
-          }));
+          return rows.map((r: any) => {
+            const meta = (typeof r.metadata === "string" ? JSON.parse(r.metadata || "{}") : r.metadata) || {};
+            const imgs: string[] = Array.isArray(meta.images) && meta.images.length > 0
+              ? meta.images
+              : (r.image_url ? [r.image_url] : []);
+            const primaryImg = r.image_url || imgs[0] || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80";
+
+            return {
+              id: r.product_id || r.id,
+              name: r.product_name,
+              price: Number(r.unit_price) || 0,
+              formattedPrice: `₦${Number(r.unit_price || 0).toLocaleString()}`,
+              category: r.category || "General",
+              stock: Number(r.current_stock) || 0,
+              image: primaryImg,
+              images: imgs.length > 0 ? imgs : [primaryImg],
+              vertical: (vertical || "retail") as VerticalKey,
+              sku: r.sku,
+              status: r.status === "OUT_OF_STOCK" ? "OUT_OF_STOCK" : "ACTIVE",
+              attributes: meta.attributes || (meta.image ? meta : {}),
+            };
+          });
         }
       }
     } catch (dbErr) {
@@ -260,20 +285,37 @@ export async function saveErpProduct(item: Partial<CommerceProductItem> & { tena
   const attrs = item.attributes || {};
   const verticalMetaKey = `${item.vertical === "home-living" ? "homeLiving" : item.vertical}Meta`;
 
+  const resolvedImages: string[] = Array.isArray(item.images) && item.images.length > 0
+    ? item.images.filter(Boolean)
+    : (item.image ? [item.image] : []);
+  const primaryImage: string = item.image || resolvedImages[0] || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80";
+  const finalImagesList: string[] = resolvedImages.length > 0 ? resolvedImages : [primaryImage];
+
   // 1. Direct persistence to Neon PostgreSQL shop_inventory table
   try {
     const sql = await getTenantSql(cleanSlug);
     if (sql) {
+      try {
+        await sql`ALTER TABLE shop_inventory ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT '';`;
+        await sql`ALTER TABLE shop_inventory ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb;`;
+      } catch {}
+
+      const productMetadata = {
+        ...attrs,
+        image: primaryImage,
+        images: finalImagesList,
+      };
+
       await sql`
         INSERT INTO shop_inventory (
           id, tenant_slug, tenant_id, product_id, sku, product_name, category,
           warehouse, current_stock, min_stock, unit_cost, unit_price, status, supplier,
-          created_at, updated_at
+          image_url, metadata, created_at, updated_at
         ) VALUES (
           ${id}, ${cleanSlug}, ${`org-${cleanSlug}`}, ${id}, ${sku},
           ${title}, ${item.category || "General"}, 'Main Warehouse', ${stock}, 2,
           ${Math.round(numPrice * 0.7)}, ${numPrice}, ${stock > 0 ? "IN_STOCK" : "OUT_OF_STOCK"}, 'Direct Supplier',
-          NOW(), NOW()
+          ${primaryImage}, ${JSON.stringify(productMetadata)}::jsonb, NOW(), NOW()
         )
         ON CONFLICT (tenant_slug, sku) DO UPDATE SET
           product_name = EXCLUDED.product_name,
@@ -281,6 +323,8 @@ export async function saveErpProduct(item: Partial<CommerceProductItem> & { tena
           current_stock = EXCLUDED.current_stock,
           unit_price = EXCLUDED.unit_price,
           status = EXCLUDED.status,
+          image_url = EXCLUDED.image_url,
+          metadata = EXCLUDED.metadata,
           updated_at = NOW();
       `;
     }
@@ -300,7 +344,8 @@ export async function saveErpProduct(item: Partial<CommerceProductItem> & { tena
     formattedPrice: `₦${numPrice.toLocaleString()}`,
     category: item.category || "General",
     stock: stock,
-    images: item.image ? [item.image] : ["https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80"],
+    image: primaryImage,
+    images: finalImagesList,
     rating: 5.0,
     reviewsCount: 12,
     inStock: stock > 0,

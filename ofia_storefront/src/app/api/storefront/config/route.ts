@@ -90,6 +90,7 @@ export async function GET(request: NextRequest) {
           allowEscrow: customConfig.allowEscrow,
           sectionVisibility: {
             hero: customConfig.sectionVisibility?.hero !== false,
+            collections: customConfig.sectionVisibility?.collections !== false,
             valueBadges: customConfig.sectionVisibility?.valueBadges !== false,
             products: customConfig.sectionVisibility?.products !== false,
             services: customConfig.sectionVisibility?.services !== false,
@@ -102,6 +103,7 @@ export async function GET(request: NextRequest) {
           announcement: customConfig.announcement || { enabled: false, text: "", link: "" },
           header: customConfig.header || {},
           hero: customConfig.hero || {},
+          collections: customConfig.collections || {},
           valueBadges: customConfig.valueBadges || [],
           featuredSection: customConfig.featuredSection || {},
           featureBanner: customConfig.featureBanner || {},

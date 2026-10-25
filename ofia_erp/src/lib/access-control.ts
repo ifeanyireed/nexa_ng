@@ -502,7 +502,7 @@ export const EMPTY_PERMISSION_MATRIX: PermissionMatrix = {
   accountant: { mission: true },
   marketer: { mission: true },
   sales_closer: { mission: true },
-  employee: { mission: true, employee: true },
+  employee: { mission: true },
   cashier: { mission: true },
   inventory_officer: { mission: true },
   dispatcher: { mission: true },
@@ -568,7 +568,7 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
         accountant: { mission: true },
         marketer: { mission: true },
         sales_closer: { mission: true },
-        employee: { mission: true, employee: true },
+        employee: { mission: true },
         cashier: { mission: true },
         inventory_officer: { mission: true },
         dispatcher: { mission: true },
@@ -607,20 +607,41 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
 
       // 1. Tenant Administrator (admin) gets ONLY modules explicitly provisioned (=== true)
       for (const mod of ERP_MODULES) {
-        const isAllowed = tp[mod.key] === true || ad[mod.key] === true;
-        merged.admin[mod.key] = isAllowed;
+        const isExplicitlyDisabled = tp[mod.key] === false || ad[mod.key] === false;
+        const isExplicitlyEnabled = tp[mod.key] === true || ad[mod.key] === true;
+        merged.admin[mod.key] = isExplicitlyEnabled && !isExplicitlyDisabled;
       }
 
       // Also ensure sub-modules like pos, inventory, catalog, store, orders, services, referrals are aligned
       const subKeys = ["pos", "inventory", "catalog", "orders", "services", "store", "referrals"];
       for (const key of subKeys) {
         if (tp[key] !== undefined || ad[key] !== undefined) {
-          merged.admin[key] = tp[key] === true || ad[key] === true;
+          const isExplicitlyDisabled = tp[key] === false || ad[key] === false;
+          const isExplicitlyEnabled = tp[key] === true || ad[key] === true;
+          merged.admin[key] = isExplicitlyEnabled && !isExplicitlyDisabled;
         }
       }
 
+      // Explicitly tie User Management and all employee/manager/md portals to workspace Users module provisioning
+      const isUsersExplicitlyDisabled = tp.users === false || ad.users === false;
+      const isUsersExplicitlyEnabled = tp.users === true || ad.users === true;
+      const isUsersProvisioned = isUsersExplicitlyEnabled && !isUsersExplicitlyDisabled;
+
+      merged.admin.users = isUsersProvisioned;
+      merged.admin.employee = isUsersProvisioned;
+      merged.admin.manager = isUsersProvisioned;
+      merged.admin.md = isUsersProvisioned;
+
+      if ((merged as any).tenant_provision) {
+        (merged as any).tenant_provision.users = isUsersProvisioned;
+        (merged as any).tenant_provision.employee = isUsersProvisioned;
+        (merged as any).tenant_provision.manager = isUsersProvisioned;
+        (merged as any).tenant_provision.md = isUsersProvisioned;
+      }
+
       // Explicitly tie Sales Closer Portal and CRM access to workspace CRM module provisioning
-      const isCrmProvisioned = tp.crm === true || ad.crm === true;
+      const isCrmDisabled = tp.crm === false || ad.crm === false;
+      const isCrmProvisioned = (tp.crm === true || ad.crm === true) && !isCrmDisabled;
       merged.admin.crm = isCrmProvisioned;
       merged.admin.sales_closer = isCrmProvisioned && (tp.sales_closer === true || ad.sales_closer === true);
 
@@ -638,6 +659,17 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
             const isTenantAllowed = merged.admin[mod.key] === true;
             const isRoleGranted = merged[role.key]?.[mod.key] === true;
             merged[role.key][mod.key] = isTenantAllowed && isRoleGranted;
+          }
+        }
+      }
+
+      if (!isUsersProvisioned) {
+        for (const role of ERP_ROLES) {
+          if (merged[role.key]) {
+            merged[role.key].users = false;
+            merged[role.key].employee = false;
+            merged[role.key].manager = false;
+            merged[role.key].md = false;
           }
         }
       }
@@ -698,6 +730,21 @@ export function isModuleEnabledForRole(
 ): boolean {
   const matrix = getTenantPermissionMatrix(tenantId);
   const roleKey = role as RoleKey;
+
+  const isAdminDisabled = matrix.admin?.[moduleKey] === false;
+  const isTpDisabled = (matrix as any)?.tenant_provision?.[moduleKey] === false;
+  if (isAdminDisabled || isTpDisabled) return false;
+
+  if (
+    moduleKey === "users" ||
+    moduleKey === "departments" ||
+    moduleKey === "employee" ||
+    moduleKey === "manager" ||
+    moduleKey === "md"
+  ) {
+    const isUsersDisabled = matrix.admin?.users === false || (matrix as any)?.tenant_provision?.users === false;
+    if (isUsersDisabled) return false;
+  }
 
   // Tenant Admin gets strictly provisioned modules
   if (role === "admin") {
@@ -841,14 +888,24 @@ export function useTenantProvisioning() {
         moduleKey === "manager" ||
         moduleKey === "md"
       ) {
+        const isAdminDisabled = matrix.admin?.users === false;
+        const isTpDisabled = (matrix as any).tenant_provision?.users === false;
+        if (isAdminDisabled || isTpDisabled) return false;
         return Boolean(matrix.admin?.users || (matrix as any).tenant_provision?.users);
       }
       if (moduleKey === "dispatch_ops") {
+        const isDispDisabled = matrix.admin?.dispatch === false || (matrix as any).tenant_provision?.dispatch === false;
+        if (isDispDisabled) return false;
         return Boolean(matrix.admin?.dispatch || (matrix as any).tenant_provision?.dispatch);
       }
       if (moduleKey === "sales_closer") {
+        const isCrmDisabled = matrix.admin?.crm === false || (matrix as any).tenant_provision?.crm === false;
+        if (isCrmDisabled) return false;
         return Boolean(matrix.admin?.crm || (matrix as any).tenant_provision?.crm);
       }
+      const isAdminDisabled = matrix.admin?.[moduleKey] === false;
+      const isTpDisabled = (matrix as any).tenant_provision?.[moduleKey] === false;
+      if (isAdminDisabled || isTpDisabled) return false;
       return Boolean(matrix.admin?.[moduleKey] || (matrix as any).tenant_provision?.[moduleKey]);
     },
     [matrix, isLoading]

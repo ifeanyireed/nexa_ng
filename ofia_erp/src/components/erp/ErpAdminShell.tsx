@@ -1306,25 +1306,37 @@ export function ErpAdminShell({
         key === "manager" ||
         key === "md"
       ) {
+        const isAdminDisabled = permissionMatrix.admin?.users === false;
+        const isTpDisabled = (permissionMatrix as any).tenant_provision?.users === false;
+        if (isAdminDisabled || isTpDisabled) return false;
         const isAdminAllowed = permissionMatrix.admin?.users === true;
         const isTpAllowed = (permissionMatrix as any).tenant_provision?.users === true;
         return isAdminAllowed || isTpAllowed;
       }
       if (key === "mobility_ops") {
+        const isMobDisabled = permissionMatrix.admin?.mobility === false || (permissionMatrix as any).tenant_provision?.mobility === false;
+        if (isMobDisabled) return false;
         const isAdminAllowed = permissionMatrix.admin?.mobility === true && (permissionMatrix.admin as any)?.ops === true;
         const isTpAllowed = (permissionMatrix as any).tenant_provision?.mobility === true;
         return isAdminAllowed || isTpAllowed;
       }
       if (key === "dispatch_ops") {
+        const isDispDisabled = permissionMatrix.admin?.dispatch === false || (permissionMatrix as any).tenant_provision?.dispatch === false;
+        if (isDispDisabled) return false;
         const isAdminAllowed = permissionMatrix.admin?.dispatch === true;
         const isTpAllowed = (permissionMatrix as any).tenant_provision?.dispatch === true;
         return isAdminAllowed || isTpAllowed;
       }
       if (key === "sales_closer") {
+        const isCrmDisabled = permissionMatrix.admin?.crm === false || (permissionMatrix as any).tenant_provision?.crm === false;
+        if (isCrmDisabled) return false;
         const isAdminAllowed = permissionMatrix.admin?.crm === true;
         const isTpAllowed = (permissionMatrix as any).tenant_provision?.crm === true;
         return isAdminAllowed || isTpAllowed;
       }
+      const isAdminDisabled = permissionMatrix.admin?.[key] === false;
+      const isTpDisabled = (permissionMatrix as any).tenant_provision?.[key] === false;
+      if (isAdminDisabled || isTpDisabled) return false;
       const isAdminAllowed = permissionMatrix.admin?.[key] === true;
       const isTpAllowed = (permissionMatrix as any).tenant_provision?.[key] === true;
       return isAdminAllowed || isTpAllowed;

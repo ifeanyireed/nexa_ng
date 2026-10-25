@@ -287,6 +287,7 @@ export interface CommerceProductItem {
   category: string;
   stock: number;
   image: string;
+  images?: string[];
   vertical: VerticalKey;
   sku: string;
   status: "ACTIVE" | "LOW_STOCK" | "OUT_OF_STOCK" | "DRAFT";

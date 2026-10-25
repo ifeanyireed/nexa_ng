@@ -320,6 +320,7 @@ export interface TenantStorefrontHandshake {
     allowEscrow?: boolean;
     sectionVisibility: {
       hero?: boolean;
+      collections?: boolean;
       valueBadges?: boolean;
       products?: boolean;
       services?: boolean;
@@ -357,6 +358,36 @@ export interface TenantStorefrontHandshake {
       description: string;
       icon?: string;
     }>;
+    collections?: {
+      enabled?: boolean;
+      card1?: {
+        title?: string;
+        count?: string;
+        image?: string;
+        href?: string;
+        theme?: "light" | "dark";
+      };
+      card2?: {
+        title?: string;
+        count?: string;
+        image?: string;
+        href?: string;
+        theme?: "light" | "dark";
+      };
+      card3?: {
+        mode?: "static" | "auto";
+        title?: string;
+        backgroundImage?: string;
+        theme?: "light" | "dark";
+        href?: string;
+        pills?: Array<{
+          label: string;
+          count: string;
+          image: string;
+          href: string;
+        }>;
+      };
+    };
     featuredSection?: {
       eyebrow?: string;
       title?: string;

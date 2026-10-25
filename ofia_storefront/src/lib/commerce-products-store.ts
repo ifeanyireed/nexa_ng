@@ -73,13 +73,26 @@ export async function getStorefrontProducts(
     try {
       const sql = await getTenantSql(normalizedSlug);
       if (sql) {
-        const rows = await sql`
-          SELECT id, product_id, sku, product_name, category, current_stock, unit_price, status
-          FROM shop_inventory
-          WHERE LOWER(tenant_slug) = ${normalizedSlug}
-          ORDER BY (current_stock > 0) DESC, created_at DESC
-          LIMIT 100
-        `;
+        let rows: any[] = [];
+        try {
+          rows = await sql`
+            SELECT id, product_id, sku, product_name, category, current_stock, unit_price, status,
+                   COALESCE(image_url, '') as image_url,
+                   COALESCE(metadata, '{}'::jsonb) as metadata
+            FROM shop_inventory
+            WHERE LOWER(tenant_slug) = ${normalizedSlug}
+            ORDER BY (current_stock > 0) DESC, created_at DESC
+            LIMIT 100
+          `;
+        } catch {
+          rows = await sql`
+            SELECT id, product_id, sku, product_name, category, current_stock, unit_price, status
+            FROM shop_inventory
+            WHERE LOWER(tenant_slug) = ${normalizedSlug}
+            ORDER BY (current_stock > 0) DESC, created_at DESC
+            LIMIT 100
+          `;
+        }
 
         if (rows && rows.length > 0) {
           const resolvedVertical = tenantVertical || vertical || "retail";
@@ -111,50 +124,58 @@ export async function getStorefrontProducts(
             ],
           ];
 
-          const liveProducts: Product[] = rows.map((r: any, idx: number) => ({
-            id: r.product_id || r.id,
-            storeSlug: normalizedSlug,
-            vertical: resolvedVertical,
-            title: r.product_name,
-            subtitle: isFashion
-              ? "Artisanal cut tailored with sustainable heritage textiles"
-              : undefined,
-            price: Number(r.unit_price) || 0,
-            category: r.category || (isFashion ? "Couture & Tailoring" : "General"),
-            images: isFashion
-              ? [FASHION_EDITORIAL_IMAGES[idx % FASHION_EDITORIAL_IMAGES.length]]
-              : [
-                  "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
-                ],
-            rating: 4.9,
-            reviewsCount: 18 + idx * 7,
-            inStock: r.current_stock > 0 && r.status !== "OUT_OF_STOCK",
-            isFeatured: true,
-            isNewDrop: idx === 0,
-            highlights: [
-              `SKU: ${r.sku}`,
-              `${r.current_stock} units ready in atelier`,
-              "Artisanal Tailored Fit",
-            ],
-            description: `${r.product_name} · Sourced directly from merchant live inventory.`,
-            fashionMeta: isFashion
-              ? {
-                  sizes: ["XS", "S", "M", "L", "XL", "Bespoke Fit"],
-                  colors: FASHION_PALETTES[idx % FASHION_PALETTES.length],
-                  materials: ["100% Normandy Flax Linen", "Handwoven Aso-Oke"],
-                  fit: "Relaxed tailored silhouette with comfortable drape",
-                  careInstructions: "Specialist dry clean or delicate cold hand wash.",
-                  sizeGuide: [
-                    { size: "S", chest: "36 - 38 in", waist: "30 - 32 in", hips: "36 - 38 in" },
-                    { size: "M", chest: "40 - 42 in", waist: "33 - 35 in", hips: "40 - 42 in" },
-                    { size: "L", chest: "44 - 46 in", waist: "36 - 38 in", hips: "44 - 46 in" },
-                    { size: "XL", chest: "48 - 50 in", waist: "40 - 42 in", hips: "48 - 50 in" },
-                  ],
-                }
-              : undefined,
-            variants: [],
-            tags: [r.category || (isFashion ? "Fashion" : "General"), "Bespoke"],
-          }));
+          const liveProducts: Product[] = rows.map((r: any, idx: number) => {
+            const meta = (typeof r.metadata === "string" ? JSON.parse(r.metadata || "{}") : r.metadata) || {};
+            const metaImages: string[] = Array.isArray(meta.images) && meta.images.length > 0
+              ? meta.images
+              : (r.image_url ? [r.image_url] : []);
+            const resolvedImages = metaImages.length > 0
+              ? metaImages
+              : (isFashion
+                  ? [FASHION_EDITORIAL_IMAGES[idx % FASHION_EDITORIAL_IMAGES.length]]
+                  : ["https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80"]);
+
+            return {
+              id: r.product_id || r.id,
+              storeSlug: normalizedSlug,
+              vertical: resolvedVertical,
+              title: r.product_name,
+              subtitle: isFashion
+                ? "Artisanal cut tailored with sustainable heritage textiles"
+                : undefined,
+              price: Number(r.unit_price) || 0,
+              category: r.category || (isFashion ? "Couture & Tailoring" : "General"),
+              images: resolvedImages,
+              rating: 4.9,
+              reviewsCount: 18 + idx * 7,
+              inStock: r.current_stock > 0 && r.status !== "OUT_OF_STOCK",
+              isFeatured: true,
+              isNewDrop: idx === 0,
+              highlights: [
+                `SKU: ${r.sku}`,
+                `${r.current_stock} units ready in atelier`,
+                "Artisanal Tailored Fit",
+              ],
+              description: `${r.product_name} · Sourced directly from merchant live inventory.`,
+              fashionMeta: isFashion
+                ? {
+                    sizes: (meta.sizes as string[]) || ["XS", "S", "M", "L", "XL", "Bespoke Fit"],
+                    colors: FASHION_PALETTES[idx % FASHION_PALETTES.length],
+                    materials: ["100% Normandy Flax Linen", "Handwoven Aso-Oke"],
+                    fit: "Relaxed tailored silhouette with comfortable drape",
+                    careInstructions: "Specialist dry clean or delicate cold hand wash.",
+                    sizeGuide: [
+                      { size: "S", chest: "36 - 38 in", waist: "30 - 32 in", hips: "36 - 38 in" },
+                      { size: "M", chest: "40 - 42 in", waist: "33 - 35 in", hips: "40 - 42 in" },
+                      { size: "L", chest: "44 - 46 in", waist: "36 - 38 in", hips: "44 - 46 in" },
+                      { size: "XL", chest: "48 - 50 in", waist: "40 - 42 in", hips: "48 - 50 in" },
+                    ],
+                  }
+                : undefined,
+              variants: [],
+              tags: [r.category || (isFashion ? "Fashion" : "General"), "Bespoke"],
+            };
+          });
 
           return { products: liveProducts, isLiveMerchantCatalog: true };
         }

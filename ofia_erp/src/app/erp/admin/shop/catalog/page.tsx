@@ -20,6 +20,10 @@ import {
   Sparkles,
   ExternalLink,
   RefreshCw,
+  Upload,
+  Image as ImageIcon,
+  Loader2,
+  X,
 } from "lucide-react";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -37,6 +41,240 @@ import {
   CommerceProductItem,
   VerticalKey,
 } from "@/lib/verticals";
+
+function ProductImageManager({
+  imageUrl,
+  setImageUrl,
+  images,
+  setImages,
+  urlInput,
+  setUrlInput,
+  isUploading,
+  uploadError,
+  onUploadFile,
+  productTerm,
+}: {
+  imageUrl: string;
+  setImageUrl: (url: string) => void;
+  images: string[];
+  setImages: React.Dispatch<React.SetStateAction<string[]>>;
+  urlInput: string;
+  setUrlInput: (val: string) => void;
+  isUploading: boolean;
+  uploadError: string;
+  onUploadFile: (file: File) => void;
+  productTerm: string;
+}) {
+  const handleAddUrl = () => {
+    const trimmed = urlInput.trim();
+    if (!trimmed) return;
+    if (!images.includes(trimmed)) {
+      setImages((prev) => [...prev, trimmed]);
+    }
+    if (!imageUrl) {
+      setImageUrl(trimmed);
+    }
+    setUrlInput("");
+  };
+
+  const handleRemoveImage = (targetUrl: string) => {
+    const next = images.filter((img) => img !== targetUrl);
+    setImages(next);
+    if (imageUrl === targetUrl) {
+      setImageUrl(next[0] || "");
+    }
+  };
+
+  return (
+    <div className="pt-3 border-t border-[var(--nexa-border)] space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <span className="text-xs font-extrabold text-[var(--nexa-text-primary)] uppercase tracking-wider block">
+            {productTerm} Media & Image Slots
+          </span>
+          <p className="text-[11px] text-[var(--nexa-text-muted)] font-medium">
+            Upload cover photo and high-resolution gallery angles for your live storefront.
+          </p>
+        </div>
+        {imageUrl ? (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+            <CheckCircle2 className="w-3 h-3" />
+            Cover Set
+          </span>
+        ) : (
+          <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+            No Photo Attached
+          </span>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-start">
+        {/* Visual Primary Preview Slot */}
+        <div className="sm:col-span-1">
+          <div className="relative aspect-square w-full rounded-2xl border-2 border-dashed border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] overflow-hidden flex flex-col items-center justify-center group hover:border-[#1A56DB] transition-all shadow-inner">
+            {imageUrl ? (
+              <>
+                <img
+                  src={imageUrl}
+                  alt="Product preview"
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = "none";
+                  }}
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(imageUrl)}
+                    className="p-1.5 rounded-full bg-rose-600 text-white hover:bg-rose-700 transition-colors shadow-lg cursor-pointer"
+                    title="Remove primary image"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md text-[9px] font-bold bg-black/75 text-white backdrop-blur-sm">
+                  Primary Cover
+                </span>
+              </>
+            ) : (
+              <div className="p-4 text-center">
+                <ImageIcon className="w-8 h-8 text-[var(--nexa-text-muted)] mx-auto mb-1.5 opacity-40" />
+                <span className="text-[11px] font-bold text-[var(--nexa-text-secondary)] block">
+                  Image Slot Empty
+                </span>
+                <span className="text-[9px] text-[var(--nexa-text-muted)] block mt-0.5">
+                  Browse file or paste link
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Upload Controls & URL input */}
+        <div className="sm:col-span-2 space-y-3">
+          {/* File Upload Option */}
+          <div>
+            <label className="block text-[11px] font-bold text-[var(--nexa-text-primary)] mb-1">
+              Upload from Device
+            </label>
+            <div className="flex items-center gap-2.5">
+              <label
+                className={`cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all border ${
+                  isUploading
+                    ? "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)] text-[var(--nexa-text-muted)] cursor-not-allowed"
+                    : "bg-[#1A56DB] hover:bg-blue-700 text-white border-blue-600 shadow-sm"
+                }`}
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Uploading Photo...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>Choose Image File</span>
+                  </>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={isUploading}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) onUploadFile(file);
+                    e.target.value = "";
+                  }}
+                  className="hidden"
+                />
+              </label>
+              <span className="text-[10px] text-[var(--nexa-text-muted)] font-medium">
+                JPG, PNG, WEBP (Max 8MB)
+              </span>
+            </div>
+            {uploadError && (
+              <p className="text-[10px] text-rose-500 font-semibold mt-1">
+                {uploadError}
+              </p>
+            )}
+          </div>
+
+          {/* Web URL Option */}
+          <div>
+            <label className="block text-[11px] font-bold text-[var(--nexa-text-primary)] mb-1">
+              Or Paste Web Image URL
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="url"
+                placeholder="https://images.unsplash.com/photo-..."
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddUrl();
+                  }
+                }}
+                className="flex-1 px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-mono"
+              />
+              <button
+                type="button"
+                onClick={handleAddUrl}
+                disabled={!urlInput.trim()}
+                className="px-3.5 py-2 text-xs font-bold rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-[#1A56DB] text-[var(--nexa-text-primary)] disabled:opacity-40 transition-colors cursor-pointer"
+              >
+                Attach
+              </button>
+            </div>
+          </div>
+
+          {/* Gallery Slots */}
+          {images.length > 0 && (
+            <div className="pt-1">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider">
+                  Gallery Slots ({images.length}) · Click any slot to set as cover
+                </span>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                {images.map((imgUrl, i) => (
+                  <div
+                    key={i}
+                    className={`relative w-12 h-12 rounded-xl border-2 overflow-hidden cursor-pointer transition-all ${
+                      imageUrl === imgUrl
+                        ? "border-[#1A56DB] ring-2 ring-blue-500/40 scale-105 shadow-md"
+                        : "border-[var(--nexa-border)] opacity-70 hover:opacity-100"
+                    }`}
+                    onClick={() => setImageUrl(imgUrl)}
+                    title="Click to set as primary cover"
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={`Gallery slot ${i + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveImage(imgUrl);
+                      }}
+                      className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/80 text-white flex items-center justify-center hover:bg-rose-600 transition-colors cursor-pointer"
+                      title="Delete image slot"
+                    >
+                      <X className="w-2.5 h-2.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function CatalogManagementPage() {
   const { user } = useAuth();
@@ -109,6 +347,11 @@ export default function CatalogManagementPage() {
   const [newStock, setNewStock] = useState("5");
   const [newSku, setNewSku] = useState("");
   const [newAttributes, setNewAttributes] = useState<Record<string, any>>({});
+  const [newImageUrl, setNewImageUrl] = useState("");
+  const [newImages, setNewImages] = useState<string[]>([]);
+  const [newUrlInput, setNewUrlInput] = useState("");
+  const [isUploadingNewImage, setIsUploadingNewImage] = useState(false);
+  const [addUploadError, setAddUploadError] = useState("");
 
   // Modal State for editing item
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -118,6 +361,59 @@ export default function CatalogManagementPage() {
   const [editCategory, setEditCategory] = useState("");
   const [editStock, setEditStock] = useState("5");
   const [editSku, setEditSku] = useState("");
+  const [editAttributes, setEditAttributes] = useState<Record<string, any>>({});
+  const [editImageUrl, setEditImageUrl] = useState("");
+  const [editImages, setEditImages] = useState<string[]>([]);
+  const [editUrlInput, setEditUrlInput] = useState("");
+  const [isUploadingEditImage, setIsUploadingEditImage] = useState(false);
+  const [editUploadError, setEditUploadError] = useState("");
+
+  const uploadProductImage = async (
+    file: File,
+    onSuccess: (url: string) => void,
+    setLoading: (loading: boolean) => void,
+    setError: (error: string) => void
+  ) => {
+    if (!file) return;
+    if (file.size > 8 * 1024 * 1024) {
+      setError("Image file exceeds 8MB limit.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onloadend = async () => {
+        try {
+          const base64Image = reader.result;
+          const res = await fetch("/api/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              image: base64Image,
+              tenantId: activeTenant?.slug || activeTenant?.id || "default",
+            }),
+          });
+          const data = await res.json();
+          if (res.ok && data.url) {
+            onSuccess(data.url);
+          } else {
+            setError(data.error || "Upload failed. Please check connection or enter image URL directly.");
+          }
+        } catch (uploadErr: any) {
+          setError(uploadErr.message || "Failed to upload image.");
+        } finally {
+          setLoading(false);
+        }
+      };
+    } catch (err: any) {
+      setError(err.message || "Failed to process image file.");
+      setLoading(false);
+    }
+  };
 
   const handleOpenAddModal = () => {
     setNewName("");
@@ -126,6 +422,10 @@ export default function CatalogManagementPage() {
     setNewStock("5");
     setNewSku(`SKU-${selectedVertical.toUpperCase().slice(0, 4)}-${Math.floor(100 + Math.random() * 900)}`);
     setNewAttributes({});
+    setNewImageUrl("");
+    setNewImages([]);
+    setNewUrlInput("");
+    setAddUploadError("");
     setIsAddModalOpen(true);
   };
 
@@ -136,6 +436,14 @@ export default function CatalogManagementPage() {
     setEditCategory(item.category);
     setEditStock(String(item.stock));
     setEditSku(item.sku);
+    setEditAttributes(item.attributes || {});
+    const existingImages = Array.isArray(item.images) && item.images.length > 0
+      ? item.images
+      : (item.image ? [item.image] : []);
+    setEditImages(existingImages);
+    setEditImageUrl(item.image || existingImages[0] || "");
+    setEditUrlInput("");
+    setEditUploadError("");
     setIsEditModalOpen(true);
   };
 
@@ -147,6 +455,11 @@ export default function CatalogManagementPage() {
     if (!targetSlug) return;
 
     const numPrice = parseFloat(newPrice.replace(/[^0-9.]/g, "")) || 0;
+    const finalImages = newImages.length > 0
+      ? newImages
+      : (newImageUrl.trim() ? [newImageUrl.trim()] : []);
+    const primaryImg = newImageUrl.trim() || finalImages[0] || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80";
+
     const newItem: CommerceProductItem = {
       id: `PROD-${Date.now().toString().slice(-6)}`,
       name: newName,
@@ -154,7 +467,8 @@ export default function CatalogManagementPage() {
       formattedPrice: `₦${numPrice.toLocaleString()}`,
       category: newCategory || "General",
       stock: parseInt(newStock) || 1,
-      image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80",
+      image: primaryImg,
+      images: finalImages.length > 0 ? finalImages : [primaryImg],
       vertical: selectedVertical,
       sku: newSku || `SKU-${Date.now().toString().slice(-4)}`,
       status: "ACTIVE",
@@ -196,6 +510,11 @@ export default function CatalogManagementPage() {
     if (!targetSlug) return;
 
     const numPrice = parseFloat(editPrice.replace(/[^0-9.]/g, "")) || 0;
+    const finalImages = editImages.length > 0
+      ? editImages
+      : (editImageUrl.trim() ? [editImageUrl.trim()] : (editingItem.images || []));
+    const primaryImg = editImageUrl.trim() || finalImages[0] || editingItem.image;
+
     const updatedItem: CommerceProductItem = {
       ...editingItem,
       name: editName,
@@ -204,7 +523,10 @@ export default function CatalogManagementPage() {
       category: editCategory || "General",
       stock: parseInt(editStock) || 0,
       sku: editSku || editingItem.sku,
+      image: primaryImg,
+      images: finalImages.length > 0 ? finalImages : [primaryImg],
       status: (parseInt(editStock) || 0) > 0 ? "ACTIVE" : "OUT_OF_STOCK",
+      attributes: editAttributes,
     };
 
     setIsSaving(true);
@@ -419,8 +741,19 @@ export default function CatalogManagementPage() {
                   <tr key={item.id} className="hover:bg-[var(--nexa-bg-base)]/50 transition-colors">
                     <td className="py-3 px-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-center font-bold text-xs text-[#1A56DB]">
-                          <Package className="w-4 h-4" />
+                        <div className="w-10 h-10 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] flex items-center justify-center font-bold text-xs text-[#1A56DB] overflow-hidden shrink-0 shadow-sm relative">
+                          {item.image ? (
+                            <img
+                              src={item.image}
+                              alt={item.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLElement).style.display = "none";
+                              }}
+                            />
+                          ) : (
+                            <Package className="w-4 h-4" />
+                          )}
                         </div>
                         <div>
                           <div className="font-bold text-xs text-[var(--nexa-text-primary)]">{item.name}</div>
@@ -556,6 +889,30 @@ export default function CatalogManagementPage() {
             </div>
           </div>
 
+          {/* PRODUCT IMAGE & MEDIA SLOTS */}
+          <ProductImageManager
+            imageUrl={newImageUrl}
+            setImageUrl={setNewImageUrl}
+            images={newImages}
+            setImages={setNewImages}
+            urlInput={newUrlInput}
+            setUrlInput={setNewUrlInput}
+            isUploading={isUploadingNewImage}
+            uploadError={addUploadError}
+            onUploadFile={(file) =>
+              uploadProductImage(
+                file,
+                (url) => {
+                  setNewImageUrl(url);
+                  setNewImages((prev) => (prev.includes(url) ? prev : [url, ...prev]));
+                },
+                setIsUploadingNewImage,
+                setAddUploadError
+              )
+            }
+            productTerm={currentVerticalDef.productTerm}
+          />
+
           {/* DYNAMIC VERTICAL ATTRIBUTE FIELDS */}
           {currentVerticalDef.attributeFields.length > 0 && (
             <div className="pt-3 border-t border-[var(--nexa-border)] space-y-3">
@@ -649,8 +1006,8 @@ export default function CatalogManagementPage() {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         title={`Edit ${editingItem?.name || currentVerticalDef.productTerm}`}
-        subtitle={`Update selling price, inventory stock count, and SKU reference in dedicated database.`}
-        maxWidth="lg"
+        subtitle={`Update selling price, inventory stock count, high-res photos, and attributes in dedicated database.`}
+        maxWidth="2xl"
       >
         <form onSubmit={handleSaveEditProduct} className="space-y-4 pt-2">
           <div>
@@ -721,6 +1078,95 @@ export default function CatalogManagementPage() {
               />
             </div>
           </div>
+
+          {/* PRODUCT IMAGE & MEDIA SLOTS */}
+          <ProductImageManager
+            imageUrl={editImageUrl}
+            setImageUrl={setEditImageUrl}
+            images={editImages}
+            setImages={setEditImages}
+            urlInput={editUrlInput}
+            setUrlInput={setEditUrlInput}
+            isUploading={isUploadingEditImage}
+            uploadError={editUploadError}
+            onUploadFile={(file) =>
+              uploadProductImage(
+                file,
+                (url) => {
+                  setEditImageUrl(url);
+                  setEditImages((prev) => (prev.includes(url) ? prev : [url, ...prev]));
+                },
+                setIsUploadingEditImage,
+                setEditUploadError
+              )
+            }
+            productTerm={currentVerticalDef.productTerm}
+          />
+
+          {/* DYNAMIC VERTICAL ATTRIBUTE FIELDS IN EDIT MODAL */}
+          {currentVerticalDef.attributeFields.length > 0 && (
+            <div className="pt-3 border-t border-[var(--nexa-border)] space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-extrabold text-[var(--nexa-text-primary)] uppercase tracking-wider">
+                  {currentVerticalDef.badge} Attributes
+                </span>
+                <span className="text-[10px] text-[var(--nexa-text-muted)] font-mono">
+                  Vertical: {selectedVertical}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {currentVerticalDef.attributeFields.map((field) => (
+                  <div key={field.key} className={field.type === "tags" ? "sm:col-span-2" : ""}>
+                    <label className="block text-xs font-semibold text-[var(--nexa-text-secondary)] mb-1">
+                      {field.label}
+                    </label>
+
+                    {field.type === "select" ? (
+                      <select
+                        value={editAttributes[field.key] || ""}
+                        onChange={(e) =>
+                          setEditAttributes({ ...editAttributes, [field.key]: e.target.value })
+                        }
+                        className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold"
+                      >
+                        <option value="">Select {field.label}...</option>
+                        {field.options?.map((opt) => (
+                          <option key={opt} value={opt}>
+                            {opt}
+                          </option>
+                        ))}
+                      </select>
+                    ) : field.type === "boolean" ? (
+                      <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={!!editAttributes[field.key]}
+                          onChange={(e) =>
+                            setEditAttributes({ ...editAttributes, [field.key]: e.target.checked })
+                          }
+                          className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-xs text-[var(--nexa-text-primary)] font-medium">
+                          Enabled / Yes
+                        </span>
+                      </label>
+                    ) : (
+                      <input
+                        type={field.type === "number" ? "number" : "text"}
+                        placeholder={field.placeholder}
+                        value={editAttributes[field.key] || ""}
+                        onChange={(e) =>
+                          setEditAttributes({ ...editAttributes, [field.key]: e.target.value })
+                        }
+                        className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center justify-end gap-2 pt-4 border-t border-[var(--nexa-border)]">
             <NexaButton

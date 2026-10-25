@@ -464,17 +464,18 @@ function TenantManagementContent() {
       ];
       const matrixPayload: Record<string, Record<string, boolean>> = {};
       const isCrmActive = updatedModules.crm ?? (moduleKey === "crm" ? newStatus : false);
+      const isUsersActive = updatedModules.users ?? (moduleKey === "users" ? newStatus : false);
 
       defaultRoleKeys.forEach((role) => {
         if (role === "employee") {
           matrixPayload[role] = {
-            employee: true,
+            employee: isUsersActive,
             quests: updatedModules.quests ?? true,
             mission: false,
             ai: false,
             crm: false,
             sales_closer: false,
-            users: false,
+            users: isUsersActive,
             marketplace: false,
             shop: false,
             inventory: false,
@@ -489,13 +490,13 @@ function TenantManagementContent() {
           };
         } else if (role === "sales_closer") {
           matrixPayload[role] = {
-            employee: true,
+            employee: isUsersActive,
             quests: true,
             crm: isCrmActive,
             sales_closer: isCrmActive,
             mission: false,
             ai: false,
-            users: false,
+            users: isUsersActive,
             marketplace: false,
             shop: false,
             inventory: false,
@@ -510,17 +511,22 @@ function TenantManagementContent() {
           };
         } else if (role === "marketer") {
           matrixPayload[role] = {
-            employee: true,
+            employee: isUsersActive,
             quests: true,
             crm: isCrmActive,
             sales_closer: isCrmActive,
             ai: updatedModules.ai ?? true,
             marketplace: updatedModules.marketplace ?? true,
+            users: isUsersActive,
             ...(tenant.shopSubModules || {}),
           };
         } else {
           matrixPayload[role] = {
             ...updatedModules,
+            users: isUsersActive,
+            employee: isUsersActive,
+            manager: isUsersActive,
+            md: isUsersActive,
             sales_closer: isCrmActive,
             ...(tenant.shopSubModules || {}),
             ...(tenant.mobilitySubModules || {}),

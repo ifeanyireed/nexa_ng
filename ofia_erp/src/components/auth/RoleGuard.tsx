@@ -399,14 +399,23 @@ export function RoleGuard({
         return;
       }
 
-      if (role === "admin") {
-        moduleAllowed = Boolean(
+      if (requiredMod === "users" || requiredMod === "employee" || requiredMod === "manager" || requiredMod === "md") {
+        const isUsersDisabled = activeMatrix.admin?.users === false || (activeMatrix as any)?.tenant_provision?.users === false;
+        if (isUsersDisabled) {
+          moduleAllowed = false;
+        } else {
+          moduleAllowed = Boolean(activeMatrix.admin?.users || (activeMatrix as any)?.tenant_provision?.users);
+        }
+      } else if (role === "admin") {
+        const isExplicitlyDisabled = activeMatrix.admin?.[requiredMod] === false || (activeMatrix as any)?.tenant_provision?.[requiredMod] === false;
+        moduleAllowed = !isExplicitlyDisabled && Boolean(
           activeMatrix.admin?.[requiredMod] ||
           (activeMatrix as any)?.tenant_provision?.[requiredMod]
         );
       } else {
         const roleKey = role as RoleKey;
-        const tenantHasMod = Boolean(
+        const isExplicitlyDisabled = activeMatrix.admin?.[requiredMod] === false || (activeMatrix as any)?.tenant_provision?.[requiredMod] === false;
+        const tenantHasMod = !isExplicitlyDisabled && Boolean(
           activeMatrix.admin?.[requiredMod] ||
           (activeMatrix as any)?.tenant_provision?.[requiredMod]
         );

@@ -279,10 +279,17 @@ export async function bootstrapDedicatedTenantSchema(connectionString: string): 
         unit_price NUMERIC(15,2) DEFAULT 0,
         status VARCHAR(50) DEFAULT 'IN_STOCK',
         supplier VARCHAR(191) DEFAULT 'Official Manufacturer',
+        image_url TEXT DEFAULT '',
+        metadata JSONB DEFAULT '{}'::jsonb,
         created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT uq_dedicated_inventory_tenant_sku UNIQUE (tenant_slug, sku)
       );
+    `;
+
+    await targetSql`
+      ALTER TABLE shop_inventory ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT '';
+      ALTER TABLE shop_inventory ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb;
     `;
 
     // 4. Notifications

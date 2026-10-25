@@ -121,7 +121,7 @@ function LoginContent() {
                 Sign in to Ofia SuperAdmin
               </h1>
               <p className="text-xs text-[var(--nexa-text-muted)] leading-relaxed">
-                Autonomous Multi-Tenant Infrastructure, Swarm Fleet & Marketplace Ops.
+                Autonomous Multi-Tenant Infrastructure, Voice Agent Fleet & Marketplace Ops.
               </p>
             </div>
 

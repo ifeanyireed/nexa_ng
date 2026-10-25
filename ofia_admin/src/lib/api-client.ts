@@ -192,7 +192,7 @@ export const SUBSCRIPTION_API = {
   },
 };
 
-// 3. AUTONOMOUS AI GTM SWARM SERVICE (:8082)
+// 3. OFIA VOICE AGENT SERVICE (:8082)
 export const GTM_API = {
   getAgents: async (orgId: string) => {
     if (!orgId) throw new Error("tenant / orgId parameter is required for multi-tenant isolation");

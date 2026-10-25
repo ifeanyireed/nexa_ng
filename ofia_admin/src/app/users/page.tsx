@@ -177,7 +177,7 @@ export default function AdminUsersPage() {
     { key: "canManageInfrastructure", label: "BYOK Model Gateway & Channel Pipe Config", desc: "Inject OpenAI/Anthropic keys, configure WhatsApp WABA, and verified DNS." },
     { key: "canManageTeamRBAC", label: "Team Management & RBAC Role Assignment", desc: "Invite workspace members and modify access control roles." },
     { key: "canApproveActions", label: "1-Click Approvals (Email Drops & Ad Budget)", desc: "Sign off on pending email broadcasts, WhatsApp outreach, and Meta budget raises." },
-    { key: "canCreateCampaigns", label: "Draft & Launch Autonomous Campaigns", desc: "Configure target ICPs, multi-stage sequences, and trigger revenue swarms." },
+    { key: "canCreateCampaigns", label: "Draft & Launch Autonomous Campaigns", desc: "Configure target ICPs, multi-stage sequences, and trigger voice agent campaigns." },
     { key: "canManageLeads", label: "Leads Intelligence, CRM & Dialogue Handoff", desc: "Filter enriched prospects, view conversation transcripts, and book sales calls." },
     { key: "canViewAnalytics", label: "View Executive Briefings & Revenue Dashboards", desc: "Read-only access to morning briefings, velocity metrics, and audit logs." },
   ];

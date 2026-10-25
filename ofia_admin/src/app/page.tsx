@@ -42,7 +42,7 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 
 export default function MasterOverviewPage() {
-  const [isSwarmActive, setIsSwarmActive] = useState(true);
+  const [isVoiceAgentActive, setIsVoiceAgentActive] = useState(true);
 
   const kpis: AdminStatItem[] = [
     {
@@ -109,9 +109,9 @@ export default function MasterOverviewPage() {
       href: "/marketplace/disputes",
     },
     {
-      label: "AI Specialist Swarm",
+      label: "Ofia Voice Agent",
       icon: <Bot className="w-6 h-6 text-blue-500" />,
-      desc: "15 Autonomous Agents",
+      desc: "15 Voice AI Agents",
       href: "/ai/swarm",
     },
     {
@@ -132,7 +132,7 @@ export default function MasterOverviewPage() {
     {
       id: "ORG-0421",
       customer: "New Era Transports Ltd",
-      service: "Enterprise ERP Workspace & AI Swarm Provisioned",
+      service: "Enterprise ERP Workspace & Ofia Voice Agent Provisioned",
       amount: "₦1,250,000",
       time: "8 mins ago",
       type: "Provisioning",
@@ -152,7 +152,7 @@ export default function MasterOverviewPage() {
     {
       id: "GTM-8820",
       customer: "Dangote Logistics Inbound SDR",
-      service: "Cold Email Swarm: 1,420 Verified B2B Leads Dispatched",
+      service: "Ofia Voice Agent: 1,420 Autonomous Call Qualifications Completed",
       amount: "99.4% Delivery",
       time: "1 hour ago",
       type: "AI Campaign",
@@ -174,7 +174,7 @@ export default function MasterOverviewPage() {
   return (
     <SuperAdminShell
       title="Master Overview & Cross-App Governance"
-      subtitle="Unified Super Admin command center orchestrating Ofia AI Autonomous Swarm, Ofia Discovery Marketplace, and Ofia Enterprise ERP."
+      subtitle="Unified Super Admin command center orchestrating Ofia Voice Agent, Ofia Discovery Marketplace, and Ofia Enterprise ERP."
       action={
         <div className="flex items-center gap-2.5">
           <Link href="/settings/email">
@@ -462,19 +462,19 @@ export default function MasterOverviewPage() {
                   Real-time health telemetry across core Go backends, multi-tenant databases, and email queues.
                 </p>
                 <div className="bg-nexa-bg-base p-4 rounded-2xl border border-nexa-border flex items-center justify-between">
-                  <span className="text-xs font-bold">Autonomous AI Swarm</span>
+                  <span className="text-xs font-bold">Ofia Voice Agent</span>
                   <button
                     type="button"
-                    onClick={() => setIsSwarmActive(!isSwarmActive)}
+                    onClick={() => setIsVoiceAgentActive(!isVoiceAgentActive)}
                     className={cn(
                       "w-12 h-6 rounded-full relative p-1 transition-colors cursor-pointer",
-                      isSwarmActive ? "bg-emerald-500" : "bg-slate-400"
+                      isVoiceAgentActive ? "bg-emerald-500" : "bg-slate-400"
                     )}
                   >
                     <div
                       className={cn(
                         "w-4 h-4 bg-white rounded-full shadow-sm transition-transform",
-                        isSwarmActive ? "translate-x-6" : "translate-x-0"
+                        isVoiceAgentActive ? "translate-x-6" : "translate-x-0"
                       )}
                     />
                   </button>
@@ -507,7 +507,7 @@ export default function MasterOverviewPage() {
               <div className="space-y-3.5">
                 {[
                   { term: "Lagos Technician Bookings", growth: "98.2% SLA", niche: "Ofia Compass" },
-                  { term: "Autonomous Cold SDR Swarm", growth: "1,420 Dispatched", niche: "Ofia AI" },
+                  { term: "Ofia Voice Agent Dispatch", growth: "1,420 Completed", niche: "Ofia Voice" },
                   { term: "Contracted Enterprise MRR", growth: "₦1.18M MRR", niche: "ERP Workspaces" },
                 ].map((trend, i) => (
                   <div

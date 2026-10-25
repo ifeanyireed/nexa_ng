@@ -110,7 +110,7 @@ export const TENANT_VERTICAL_ARCHETYPES: VerticalArchetype[] = [
 ];
 
 export const SUPER_ADMIN_ERP_MODULES: ErpModuleItem[] = [
-  { key: "ai", label: "Ofia AI Swarm", category: "Core", description: "15 autonomous specialist AI agents for marketing, outreach, and operations.", iconName: "Bot", color: "#0069FF", badge: "15 AI" },
+  { key: "ai", label: "Ofia Voice Agent", category: "Core", description: "15 autonomous specialist voice AI agents for telephony qualification, customer support, and outreach operations.", iconName: "Bot", color: "#0069FF", badge: "15 AI" },
   { key: "crm", label: "CRM & Email Marketing", category: "Sales & Commerce", description: "B2B sales pipelines, contact lists, scheduled email blasts, and lead scoring.", iconName: "BarChart3", color: "#EC4899", badge: "CRM" },
   { key: "marketplace", label: "Ofia Compass Manager", category: "Sales & Commerce", description: "Public storefront, listing catalog, and customer direct bookings.", iconName: "ShoppingBag", color: "#0E9F6E" },
   { key: "shop", label: "Ofia Shop Manager", category: "Sales & Commerce", description: "Multi-warehouse inventory (IMS), POS cashier registers, and viral referrals.", iconName: "Store", color: "#10B981", badge: "Retail" },
@@ -736,6 +736,8 @@ export const INITIAL_SWARM_HEALTH: AgentHealthMetric[] = [
   },
 ];
 
+export const INITIAL_VOICE_AGENT_HEALTH: AgentHealthMetric[] = INITIAL_SWARM_HEALTH;
+
 export const INITIAL_MODEL_METRICS: ModelGatewayMetric[] = [
   {
     provider: "Anthropic",
@@ -817,7 +819,7 @@ export const INITIAL_AUDIT_LOGS: AuditLogEntry[] = [
     action: "PLAN_UPGRADE_MANUAL",
     targetType: "Billing",
     targetId: "Reed Breed Systems",
-    details: "Upgraded tenant to ENTERPRISE tier with full ERP & Swarm authorization",
+    details: "Upgraded tenant to ENTERPRISE tier with full ERP & Voice Agent authorization",
     ipAddress: "197.210.84.12",
     timestamp: "4 hours ago",
   },
@@ -1035,7 +1037,7 @@ export const INITIAL_CONTACT_MESSAGES: ContactMessageItem[] = [
     email: "garba@shehutrading.ng",
     phone: "+2348067772233",
     subject: "Billing / Payments",
-    message: "We would like to pay for the annual Enterprise AI Swarm license via corporate bank transfer with invoice deduction. Kindly send your corporate bank account details.",
+    message: "We would like to pay for the annual Enterprise Ofia Voice Agent license via corporate bank transfer with invoice deduction. Kindly send your corporate bank account details.",
     priority: "URGENT",
     status: "OPEN",
     assignedTo: "Finance & Accounts",

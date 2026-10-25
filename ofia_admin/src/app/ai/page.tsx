@@ -102,7 +102,7 @@ export default function AdminOverviewPage() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     await loadLiveAdminData();
-    showToast("Synchronized live AI swarm metrics with Neon Postgres database!");
+    showToast("Synchronized live Ofia Voice Agent metrics with Neon Postgres database!");
   };
 
   const handleToggleKillswitch = async (armed: boolean) => {
@@ -162,7 +162,7 @@ export default function AdminOverviewPage() {
           <div>
             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
               <NexaBadge variant="purple" dot>
-                Autonomous Swarm Cockpit
+                Ofia Voice Agent Cockpit
               </NexaBadge>
               <span className="text-xs text-[var(--nexa-text-muted)] flex items-center gap-1.5 font-mono">
                 Database: <strong className="text-[#1A56DB]">Neon Postgres (neondb)</strong>
@@ -172,10 +172,10 @@ export default function AdminOverviewPage() {
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--nexa-text-primary)] text-display tracking-tight">
-              Autonomous AI Swarm Central Cockpit
+              Ofia Voice Agent Central Cockpit
             </h1>
             <p className="text-xs text-[var(--nexa-text-muted)] mt-1">
-              Executive supervision of autonomous specialist fleet, LLM model routing, inference token burn, and safety killswitches.
+              Executive supervision of autonomous voice agent fleet, Voicebip telephony routes, LLM model routing, and safety killswitches.
             </p>
           </div>
 
@@ -215,7 +215,7 @@ export default function AdminOverviewPage() {
               sub: "OpenAI, Anthropic & Gemini Ingest",
             },
             {
-              label: "Swarm Circuit Breakers",
+              label: "Voice Agent Circuit Breakers",
               value: `${trippedBreakers} Tripped`,
               change: `${15 - trippedBreakers}/15 Online`,
               trend: "up",
@@ -226,7 +226,7 @@ export default function AdminOverviewPage() {
             {
               label: "Active AI Tenants",
               value: `${totalOrgs} Organizations`,
-              change: "Cross-Tenant Swarm",
+              change: "Cross-Tenant Voice Agent",
               trend: "up",
               changeType: "info",
               icon: <Building2 className="w-5 h-5 text-blue-500" />,
@@ -331,7 +331,7 @@ export default function AdminOverviewPage() {
                 variant="outline"
                 className="w-full py-2.5 rounded-2xl border-dashed border-nexa-border text-xs font-bold text-nexa-brand hover:bg-nexa-brand/5 flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                Inspect All 15 Autonomous Agents in Swarm Console <ArrowRight className="w-3.5 h-3.5" />
+                Inspect All 15 Voice Agents in Console <ArrowRight className="w-3.5 h-3.5" />
               </NexaButton>
             </Link>
           </div>

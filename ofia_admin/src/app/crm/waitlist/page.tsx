@@ -99,7 +99,7 @@ const EXHAUSTIVE_TOOL_TYPES = [
   "Law Firm, Legal Practice & Retainer Suite",
   "Event Center, Hall Rental & Sound Stage Suite",
   "Beauty Salon, Spa Wellness & Barbershop Suite",
-  "Autonomous AI Outreach & SDR Marketing Swarm",
+  "Ofia Voice Agent & Autonomous Telephony Qualification",
   "Multi-Store POS & Real-Time Cashier Registers",
   "Milestone Escrow & Automated Direct Invoicing",
   "Double-Entry Accounting & Charts of Accounts",

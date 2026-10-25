@@ -56,14 +56,14 @@ export default function AdminSwarmPage() {
                 15 Agent Heartbeats Active
               </NexaBadge>
               <span className="text-xs text-[var(--nexa-text-muted)]">
-                Autonomous Workforce Infrastructure
+                Ofia Voice Agent Telemetry
               </span>
             </div>
             <h1 className="text-2xl font-extrabold text-[var(--nexa-text-primary)] text-display tracking-tight">
-              AI Agent Health & Circuit Breakers
+              Ofia Voice Agent Health & Circuit Breakers
             </h1>
             <p className="text-xs text-[var(--nexa-text-muted)] mt-1">
-              Real-time throughput, model inference latency, error rates, and granular safety circuit breakers per agent.
+              Real-time throughput, telephony route latency, error rates, and granular safety circuit breakers per voice agent.
             </p>
           </div>
 

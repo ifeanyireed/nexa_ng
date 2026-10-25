@@ -87,7 +87,7 @@ Our platform provides unified multi-tenant infrastructure for African commerce a
 - Enterprise ERP Suite (General Ledger, FIRS 7.5% VAT, 360 appraisals, offline POS)
 - Mobility & Transport OS (interstate, shuttles, charters, school & staff transport)
 - Logistics & Fulfillment dispatch with courier APIs and rider GPS tracking
-- Autonomous AI Swarm for CRM and lead qualification
+- Ofia Voice Agent for PSTN telephony qualification, CRM, and customer support
 
 Instructions:
 - Be polite, professional, concise, and helpful.

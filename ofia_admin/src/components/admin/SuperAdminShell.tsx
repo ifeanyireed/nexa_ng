@@ -83,7 +83,8 @@ const getMobileNavLabel = (label: string): string => {
     "System & Infrastructure": "System",
     "Tenant Workspaces": "Tenants",
     "Plans & Billing": "Billing",
-    "Autonomous Swarm": "AI Swarm",
+    "Ofia Voice Agent": "Voice Agent",
+    "Voice Agent Cockpit": "Voice Agent",
     "Agent Playground": "Playground",
     "Email Relay & SMTP": "Email Relay",
     "Compass Marketplace": "Marketplace",
@@ -167,7 +168,7 @@ export function SuperAdminShell({
     {
       id: "3",
       title: "Autonomous Outreach Milestone",
-      message: "GTM Agent Swarm qualified 350 enterprise leads across 5 tenants today.",
+      message: "Ofia Voice Agent qualified 350 enterprise leads across 5 tenants today.",
       type: "AI",
       time: "1h ago",
       isRead: true,
@@ -195,7 +196,7 @@ export function SuperAdminShell({
     if (pathname.startsWith("/ai")) {
       return [
         { label: "AI Cockpit", href: "/ai", icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
-        { label: "Agent Swarm", href: "/ai/swarm", icon: <Bot className="w-3.5 h-3.5" />, badge: "15 AI" },
+        { label: "Voice Agents", href: "/ai/swarm", icon: <Bot className="w-3.5 h-3.5" />, badge: "15 AI" },
         { label: "LLM Observability", href: "/ai/observability", icon: <Activity className="w-3.5 h-3.5" /> },
       ];
     }
@@ -273,7 +274,7 @@ export function SuperAdminShell({
     href: string;
     badge?: string;
     key: string;
-    section: "Governance & Hub" | "Tenants & Subscriptions" | "Autonomous AI Swarm" | "Ofia Compass & Commerce" | "Mobility & Transport" | "CRM & Growth" | "Workspace";
+    section: "Governance & Hub" | "Tenants & Subscriptions" | "Ofia Voice Agent" | "Ofia Compass & Commerce" | "Mobility & Transport" | "CRM & Growth" | "Workspace";
   }[] = [
     // 1. GOVERNANCE & HUB
     {
@@ -335,14 +336,14 @@ export function SuperAdminShell({
       section: "Tenants & Subscriptions",
     },
 
-    // 3. AUTONOMOUS AI SWARM
+    // 3. OFIA VOICE AGENT
     {
-      label: "AI Swarm Cockpit",
+      label: "Ofia Voice Agent",
       icon: <Bot className="w-6 h-6" />,
       href: "/ai",
       badge: "15 AI",
       key: "ai",
-      section: "Autonomous AI Swarm",
+      section: "Ofia Voice Agent",
     },
 
     // 4. OFIA COMPASS & COMMERCE

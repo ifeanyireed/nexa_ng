@@ -423,7 +423,7 @@ export default function SupportDashboard() {
                   <option value="ERP & POS">Enterprise ERP & POS</option>
                   <option value="Logistics">Logistics & Dispatch</option>
                   <option value="Mobility">Mobility & Transit</option>
-                  <option value="AI Swarm">AI Swarm & Automation</option>
+                  <option value="Ofia Voice Agent">Ofia Voice Agent & Automation</option>
                   <option value="Billing">Billing & Subscription</option>
                 </select>
               </div>

@@ -13,7 +13,7 @@ const dropa = localFont({
 export const metadata: Metadata = {
   title: "Ofia Business Suite SUPER-ADMIN | Master Overview",
   description:
-    "Unified Super Admin & Multi-App Governance for Ofia AI Swarm, Ofia Compass, and Multi-Tenant Workspaces.",
+    "Unified Super Admin & Multi-App Governance for Ofia Voice Agent, Ofia Compass, and Multi-Tenant Workspaces.",
   icons: {
     icon: [{ url: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" }, { url: "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/aa9nvrmyrc38lbpz1mkp.png" }],
   },

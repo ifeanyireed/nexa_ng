@@ -604,7 +604,7 @@ function SubscriptionManagementContent() {
                 {selectedProductCategory === "ALL"
                   ? "All Subscription Blueprints"
                   : selectedProductCategory === "OFIA_AI"
-                  ? "Ofia AI Swarm Plans"
+                  ? "Ofia Voice Agent Plans"
                   : selectedProductCategory === "OFIA_SHOP"
                   ? "Ofia Shop Storefront Plans"
                   : selectedProductCategory === "OFIA_COMPASS"
@@ -1177,7 +1177,7 @@ function SubscriptionManagementContent() {
             <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Features (1 per line)</label>
             <textarea
               rows={3}
-              placeholder="e.g.&#10;5 Autonomous AI Swarms&#10;5,000 Verified Enrichment Leads&#10;Email + WhatsApp SDR Pipelines"
+              placeholder="e.g.&#10;5 Ofia Voice Agents&#10;5,000 Verified Enrichment Leads&#10;Email + WhatsApp SDR Pipelines"
               value={newPlanFeatures}
               onChange={(e) => setNewPlanFeatures(e.target.value)}
               className="w-full p-3 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-xl text-xs outline-none focus:border-[#1A56DB] font-medium text-[var(--nexa-text-primary)]"

@@ -38,6 +38,7 @@ import {
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
+import { Pagination } from "@/components/nexa/Pagination";
 import { useAuth } from "@/components/nexa/AuthContext";
 import { useActiveTenant, extractSubdomainOrParam } from "@/lib/tenant-context";
 
@@ -162,6 +163,61 @@ function calculateDaysRemaining(expiringDateStr: string): { daysRemaining: numbe
 }
 
 // =============================================================================
+// REUSABLE TAB PAGINATION CONTROLLER
+// =============================================================================
+
+function TablePaginationFooter({
+  currentPage,
+  totalItems,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+}: {
+  currentPage: number;
+  totalItems: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+}) {
+  if (totalItems === 0) return null;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+  return (
+    <div className="px-4 py-3 border-t border-slate-200 bg-slate-50/70 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex items-center gap-2 text-xs text-slate-500 shrink-0">
+        <span className="font-medium">Rows per page:</span>
+        <select
+          value={pageSize}
+          onChange={(e) => {
+            onPageSizeChange(Number(e.target.value));
+            onPageChange(1);
+          }}
+          aria-label="Select rows per page"
+          className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 cursor-pointer shadow-xs"
+        >
+          {[10, 15, 25, 50, 100].map((size) => (
+            <option key={size} value={size}>
+              {size}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="flex-1 md:ml-4">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          itemsPerPage={pageSize}
+          onPageChange={onPageChange}
+          className="!pt-0 !border-t-0"
+        />
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
 // MAIN COMPONENT: CONSOLIDATED FLEET OPERATIONS & COMPLIANCE HUB
 // =============================================================================
 
@@ -177,6 +233,14 @@ export default function ConsolidatedFleetOperationsHub() {
 
   const [selectedRegion, setSelectedRegion] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Pagination states per subpage
+  const [pageSize, setPageSize] = useState<number>(15);
+  const [matrixPage, setMatrixPage] = useState<number>(1);
+  const [driversPage, setDriversPage] = useState<number>(1);
+  const [inspectionPage, setInspectionPage] = useState<number>(1);
+  const [papersPage, setPapersPage] = useState<number>(1);
+  const [repairsPage, setRepairsPage] = useState<number>(1);
 
   // Live Component State loaded dynamically per tenant from API
   const [vehicles, setVehicles] = useState<FleetVehicleUnit[]>([]);
@@ -262,6 +326,10 @@ export default function ConsolidatedFleetOperationsHub() {
   useEffect(() => {
     let isCurrent = true;
     async function loadTenantData() {
+      if (!tenantSlug) {
+        setIsLoadingData(false);
+        return;
+      }
       setIsLoadingData(true);
       try {
         const res = await fetch(
@@ -349,6 +417,69 @@ export default function ConsolidatedFleetOperationsHub() {
       return matchesRegion && matchesSearch;
     });
   }, [drivers, selectedRegion, searchQuery]);
+
+  // Reset all page controllers when search query or selected region changes
+  useEffect(() => {
+    setMatrixPage(1);
+    setDriversPage(1);
+    setInspectionPage(1);
+    setPapersPage(1);
+    setRepairsPage(1);
+  }, [searchQuery, selectedRegion]);
+
+  // Adjust page index if outside total pages
+  useEffect(() => {
+    const totalMatrixPages = Math.max(1, Math.ceil(filteredVehicles.length / pageSize));
+    if (matrixPage > totalMatrixPages) setMatrixPage(totalMatrixPages);
+  }, [filteredVehicles.length, matrixPage, pageSize]);
+
+  useEffect(() => {
+    const totalDriversPages = Math.max(1, Math.ceil(filteredDrivers.length / pageSize));
+    if (driversPage > totalDriversPages) setDriversPage(totalDriversPages);
+  }, [filteredDrivers.length, driversPage, pageSize]);
+
+  useEffect(() => {
+    const totalInspectionPages = Math.max(1, Math.ceil(filteredInspections.length / pageSize));
+    if (inspectionPage > totalInspectionPages) setInspectionPage(totalInspectionPages);
+  }, [filteredInspections.length, inspectionPage, pageSize]);
+
+  useEffect(() => {
+    const totalPapersPages = Math.max(1, Math.ceil(filteredVehicles.length / pageSize));
+    if (papersPage > totalPapersPages) setPapersPage(totalPapersPages);
+  }, [filteredVehicles.length, papersPage, pageSize]);
+
+  useEffect(() => {
+    const totalRepairsPages = Math.max(1, Math.ceil(filteredRepairs.length / pageSize));
+    if (repairsPage > totalRepairsPages) setRepairsPage(totalRepairsPages);
+  }, [filteredRepairs.length, repairsPage, pageSize]);
+
+  // ---------------------------------------------------------------------------
+  // PAGINATED DATA SLICES (Strictly 15 items per page default)
+  // ---------------------------------------------------------------------------
+  const paginatedVehicles = useMemo(() => {
+    const start = (matrixPage - 1) * pageSize;
+    return filteredVehicles.slice(start, start + pageSize);
+  }, [filteredVehicles, matrixPage, pageSize]);
+
+  const paginatedDrivers = useMemo(() => {
+    const start = (driversPage - 1) * pageSize;
+    return filteredDrivers.slice(start, start + pageSize);
+  }, [filteredDrivers, driversPage, pageSize]);
+
+  const paginatedInspections = useMemo(() => {
+    const start = (inspectionPage - 1) * pageSize;
+    return filteredInspections.slice(start, start + pageSize);
+  }, [filteredInspections, inspectionPage, pageSize]);
+
+  const paginatedPapersVehicles = useMemo(() => {
+    const start = (papersPage - 1) * pageSize;
+    return filteredVehicles.slice(start, start + pageSize);
+  }, [filteredVehicles, papersPage, pageSize]);
+
+  const paginatedRepairs = useMemo(() => {
+    const start = (repairsPage - 1) * pageSize;
+    return filteredRepairs.slice(start, start + pageSize);
+  }, [filteredRepairs, repairsPage, pageSize]);
 
   // ---------------------------------------------------------------------------
   // AGGREGATED METRICS
@@ -1093,7 +1224,7 @@ export default function ConsolidatedFleetOperationsHub() {
                       </td>
                     </tr>
                   ) : (
-                    filteredVehicles.map((veh) => {
+                    paginatedVehicles.map((veh) => {
                       const hStatus = veh.documents.hackney;
                       const rStatus = veh.documents.roadWorthiness;
                       const lStatus = veh.documents.license;
@@ -1306,6 +1437,14 @@ export default function ConsolidatedFleetOperationsHub() {
                 </tbody>
               </table>
             </div>
+
+            <TablePaginationFooter
+              currentPage={matrixPage}
+              totalItems={filteredVehicles.length}
+              pageSize={pageSize}
+              onPageChange={setMatrixPage}
+              onPageSizeChange={setPageSize}
+            />
           </div>
         )}
 
@@ -1364,7 +1503,7 @@ export default function ConsolidatedFleetOperationsHub() {
                       </td>
                     </tr>
                   ) : (
-                    filteredDrivers.map((driver) => (
+                    paginatedDrivers.map((driver) => (
                       <tr key={driver.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="p-3.5">
                           <div className="flex items-center gap-2">
@@ -1448,6 +1587,14 @@ export default function ConsolidatedFleetOperationsHub() {
                 </tbody>
               </table>
             </div>
+
+            <TablePaginationFooter
+              currentPage={driversPage}
+              totalItems={filteredDrivers.length}
+              pageSize={pageSize}
+              onPageChange={setDriversPage}
+              onPageSizeChange={setPageSize}
+            />
           </div>
         )}
 
@@ -1512,7 +1659,7 @@ export default function ConsolidatedFleetOperationsHub() {
                       </td>
                     </tr>
                   ) : (
-                    filteredInspections.map((insp) => (
+                    paginatedInspections.map((insp) => (
                       <tr key={insp.id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="p-3.5 font-mono font-bold text-slate-900">
                           {insp.id}
@@ -1593,6 +1740,14 @@ export default function ConsolidatedFleetOperationsHub() {
                 </tbody>
               </table>
             </div>
+
+            <TablePaginationFooter
+              currentPage={inspectionPage}
+              totalItems={filteredInspections.length}
+              pageSize={pageSize}
+              onPageChange={setInspectionPage}
+              onPageSizeChange={setPageSize}
+            />
           </div>
         )}
 
@@ -1633,7 +1788,7 @@ export default function ConsolidatedFleetOperationsHub() {
                       </td>
                     </tr>
                   ) : (
-                    filteredVehicles.map((veh) => {
+                    paginatedPapersVehicles.map((veh) => {
                       const renderDocCell = (doc: DocumentRecord) => (
                         <div>
                           <div className="flex items-center gap-1.5">
@@ -1695,6 +1850,14 @@ export default function ConsolidatedFleetOperationsHub() {
                 </tbody>
               </table>
             </div>
+
+            <TablePaginationFooter
+              currentPage={papersPage}
+              totalItems={filteredVehicles.length}
+              pageSize={pageSize}
+              onPageChange={setPapersPage}
+              onPageSizeChange={setPageSize}
+            />
           </div>
         )}
 
@@ -1753,7 +1916,7 @@ export default function ConsolidatedFleetOperationsHub() {
                       </td>
                     </tr>
                   ) : (
-                    filteredRepairs.map((rep) => {
+                    paginatedRepairs.map((rep) => {
                       const isOverSla = rep.tatDays > 3;
 
                       return (
@@ -1831,6 +1994,14 @@ export default function ConsolidatedFleetOperationsHub() {
                 </tbody>
               </table>
             </div>
+
+            <TablePaginationFooter
+              currentPage={repairsPage}
+              totalItems={filteredRepairs.length}
+              pageSize={pageSize}
+              onPageChange={setRepairsPage}
+              onPageSizeChange={setPageSize}
+            />
           </div>
         )}
 

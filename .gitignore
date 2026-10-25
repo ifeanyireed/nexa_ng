@@ -81,4 +81,15 @@ skills-lock.json
 users.md
 background.jpeg
 AGENTS.md
+AGENT.md
 CLAUDE.md
+
+# Data import, trackers & tenant seed files
+*.xlsx
+*.xls
+*.csv
+fleet-papers_1.html
+**/seeds/*-seed.ts
+**/seeds/*-seed.json
+*seed*.json
+!service_erp/handlers/seed_data.json

@@ -38,8 +38,8 @@ function DispatchBookingContent() {
   const { tenantSlug, store, handshake } = useStorefrontTenant();
 
   // Branding context
-  const activeTenantSlug = tenantSlug || searchParams.get("tenant") || "speedycouriers";
-  const storeName = store?.name || handshake?.storefrontConfig?.storeName || "Ofia Express Dispatch";
+  const activeTenantSlug = (tenantSlug || searchParams.get("tenant") || "").toLowerCase().trim();
+  const storeName = store?.name || handshake?.storefrontConfig?.storeName || (activeTenantSlug ? activeTenantSlug.toUpperCase() : "Ofia Dispatch");
   const storePhone = store?.contact?.phone || "+234 803 123 4567";
   const storeWhatsApp = store?.contact?.whatsapp || "";
   const storeAddress = store?.contact?.address || "Lekki Phase 1 & Ikeja Logistics Corridor, Lagos";
@@ -118,6 +118,11 @@ function DispatchBookingContent() {
   const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+
+    if (!activeTenantSlug) {
+      setErrorMessage("tenant parameter is required for multi-tenant isolation. Please access via your operator subdomain (e.g. yourbrand.ofia.ng) or append ?tenant=yourbrand");
+      return;
+    }
 
     if (!pickupAddress || !dropoffAddress || !recipientName || !senderName || !senderPhone || !recipientPhone) {
       setErrorMessage("Please complete all required sender and recipient details.");

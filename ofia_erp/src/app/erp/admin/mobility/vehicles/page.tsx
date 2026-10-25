@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Truck,
   Plus,
@@ -35,6 +35,9 @@ import {
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
+import { Pagination } from "@/components/nexa/Pagination";
+import { useAuth } from "@/components/nexa/AuthContext";
+import { useActiveTenant, extractSubdomainOrParam } from "@/lib/tenant-context";
 
 // --- Types & Data Interfaces ---
 
@@ -286,14 +289,77 @@ const INITIAL_FUEL_LOGS: FuelRefillLog[] = [
   }
 ];
 
+function TablePaginationFooter({
+  currentPage,
+  totalItems,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+}: {
+  currentPage: number;
+  totalItems: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+}) {
+  if (totalItems === 0) return null;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+
+  return (
+    <div className="px-4 py-3 border-t border-slate-200 bg-slate-50/70 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex items-center gap-2 text-xs text-slate-500 shrink-0">
+        <span className="font-medium">Rows per page:</span>
+        <select
+          value={pageSize}
+          onChange={(e) => {
+            onPageSizeChange(Number(e.target.value));
+            onPageChange(1);
+          }}
+          aria-label="Select rows per page"
+          className="px-2.5 py-1 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-800 focus:outline-none focus:border-blue-500 cursor-pointer shadow-xs"
+        >
+          {[10, 15, 25, 50, 100].map((size) => (
+            <option key={size} value={size}>
+              {size}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="flex-1 md:ml-4">
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={totalItems}
+          itemsPerPage={pageSize}
+          onPageChange={onPageChange}
+          className="!pt-0 !border-t-0"
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function CorporateVehiclesPage() {
+  const { user } = useAuth();
+  const { activeTenant } = useActiveTenant(user?.email);
+  const tenantSlug = activeTenant?.slug || extractSubdomainOrParam() || "";
+
   const [vehicles, setVehicles] = useState<VehicleFinancials[]>(INITIAL_VEHICLES);
   const [fuelLogs, setFuelLogs] = useState<FuelRefillLog[]>(INITIAL_FUEL_LOGS);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+
   const [activeTab, setActiveTab] = useState<"matrix" | "fuel_telemetry" | "simulator">("matrix");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [roiFilter, setRoiFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
+
+  // Pagination
+  const [pageSize, setPageSize] = useState<number>(15);
+  const [matrixPage, setMatrixPage] = useState<number>(1);
+  const [fuelPage, setFuelPage] = useState<number>(1);
 
   // Selected Vehicle for Financial Deep Dive Modal
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleFinancials | null>(null);
@@ -304,16 +370,136 @@ export default function CorporateVehiclesPage() {
 
   // Fuel modal form state
   const [fuelForm, setFuelForm] = useState({
-    vehicleId: INITIAL_VEHICLES[0].id,
+    vehicleId: "",
     litres: 65,
-    pricePerLitre: 950,
+    pricePerLitre: 1370,
     odometerKm: 141300,
     station: "TotalEnergies Lekki Phase 1"
   });
 
+  // Register modal form state
+  const [registerForm, setRegisterForm] = useState({
+    makeModel: "",
+    plate: "",
+    category: "Coaster Bus" as VehicleFinancials["type"],
+    seats: 28,
+    region: "Lagos",
+    acquisitionCost: 38000000,
+    fuelEconomyTarget: 6.5,
+    paybackHorizon: 36
+  });
+
   // Simulator State
-  const [simFuelPriceChange, setSimFuelPriceChange] = useState<number>(0); // e.g. +₦100 or -₦50
-  const [simUtilizationChange, setSimUtilizationChange] = useState<number>(0); // percentage change e.g. +10%
+  const [simFuelPriceChange, setSimFuelPriceChange] = useState<number>(0);
+  const [simUtilizationChange, setSimUtilizationChange] = useState<number>(0);
+
+  // Fetch live fleet data from API
+  const fetchFleetData = async () => {
+    if (!tenantSlug) return;
+    try {
+      setIsLoading(true);
+      const res = await fetch(`/api/erp/mobility/vehicles?tenant=${tenantSlug}`);
+      const data = await res.json();
+      if (data.success && data.vehicles) {
+        setVehicles(data.vehicles);
+        if (data.fuelLogs) {
+          setFuelLogs(data.fuelLogs);
+        }
+        if (data.vehicles.length > 0 && !fuelForm.vehicleId) {
+          setFuelForm((prev) => ({ ...prev, vehicleId: data.vehicles[0].id }));
+        }
+      }
+    } catch (err) {
+      console.error("[Corporate Vehicles] Failed to fetch data:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchFleetData();
+  }, [tenantSlug]);
+
+  // Reset pagination when search / filter changes
+  useEffect(() => {
+    setMatrixPage(1);
+    setFuelPage(1);
+  }, [searchQuery, statusFilter, roiFilter]);
+
+  // Handle Register Vehicle Submission
+  const handleRegisterVehicle = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!registerForm.plate.trim() || !tenantSlug) return;
+    try {
+      setIsSaving(true);
+      const res = await fetch("/api/erp/mobility/vehicles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-tenant-slug": tenantSlug },
+        body: JSON.stringify({
+          action: "register_vehicle",
+          ...registerForm,
+          tenantSlug
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsRegisterModalOpen(false);
+        setRegisterForm({
+          makeModel: "",
+          plate: "",
+          category: "Coaster Bus",
+          seats: 28,
+          region: "Lagos",
+          acquisitionCost: 38000000,
+          fuelEconomyTarget: 6.5,
+          paybackHorizon: 36
+        });
+        await fetchFleetData();
+      } else {
+        alert(data.error || "Failed to register vehicle");
+      }
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Handle Fuel Refill Submission
+  const handleLogFuel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const targetVeh = vehicles.find((v) => v.id === fuelForm.vehicleId) || vehicles[0];
+    if (!targetVeh || !tenantSlug) return;
+
+    try {
+      setIsSaving(true);
+      const res = await fetch("/api/erp/mobility/vehicles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-tenant-slug": tenantSlug },
+        body: JSON.stringify({
+          action: "log_fuel",
+          vehicleId: targetVeh.id,
+          plate: targetVeh.plate,
+          litres: fuelForm.litres,
+          pricePerLitre: fuelForm.pricePerLitre,
+          odometerKm: fuelForm.odometerKm,
+          station: fuelForm.station,
+          tenantSlug
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsFuelModalOpen(false);
+        await fetchFleetData();
+      } else {
+        alert(data.error || "Failed to log fuel refill");
+      }
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // --- Calculations Helper Functions ---
 
@@ -456,45 +642,16 @@ export default function CorporateVehiclesPage() {
     });
   }, [vehicles, searchQuery, statusFilter, roiFilter, simFuelPriceChange, simUtilizationChange]);
 
-  // Handle Fuel Refill Submission
-  const handleLogFuel = (e: React.FormEvent) => {
-    e.preventDefault();
-    const targetVeh = vehicles.find((v) => v.id === fuelForm.vehicleId);
-    if (!targetVeh) return;
+  // Paginated Slices
+  const paginatedVehicles = useMemo(() => {
+    const start = (matrixPage - 1) * pageSize;
+    return filteredVehicles.slice(start, start + pageSize);
+  }, [filteredVehicles, matrixPage, pageSize]);
 
-    const totalCost = fuelForm.litres * fuelForm.pricePerLitre;
-    const newLog: FuelRefillLog = {
-      id: `fuel-${Date.now()}`,
-      vehicleId: targetVeh.id,
-      plate: targetVeh.plate,
-      date: "Today, Just now",
-      litres: Number(fuelForm.litres),
-      pricePerLitre: Number(fuelForm.pricePerLitre),
-      totalCost,
-      odometerKm: Number(fuelForm.odometerKm),
-      driver: targetVeh.assignedDriver,
-      station: fuelForm.station,
-      efficiencyKmPerLitre: targetVeh.fuelTargetKmPerLitre
-    };
-
-    setFuelLogs([newLog, ...fuelLogs]);
-
-    // Update vehicle's fuel total and odometer
-    setVehicles(
-      vehicles.map((v) => {
-        if (v.id === targetVeh.id) {
-          return {
-            ...v,
-            fuelLitres: v.fuelLitres + Number(fuelForm.litres),
-            currentMileage: Math.max(v.currentMileage, Number(fuelForm.odometerKm))
-          };
-        }
-        return v;
-      })
-    );
-
-    setIsFuelModalOpen(false);
-  };
+  const paginatedFuelLogs = useMemo(() => {
+    const start = (fuelPage - 1) * pageSize;
+    return fuelLogs.slice(start, start + pageSize);
+  }, [fuelLogs, fuelPage, pageSize]);
 
   return (
     <ErpAdminShell
@@ -725,7 +882,7 @@ export default function CorporateVehiclesPage() {
           <div className="space-y-6">
             {viewMode === "cards" ? (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {filteredVehicles.map((v) => {
+                {paginatedVehicles.map((v) => {
                   const calc = getVehicleCalculations(v);
 
                   return (
@@ -937,7 +1094,7 @@ export default function CorporateVehiclesPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-nexa-border">
-                      {filteredVehicles.map((v) => {
+                      {paginatedVehicles.map((v) => {
                         const calc = getVehicleCalculations(v);
 
                         return (
@@ -1040,6 +1197,15 @@ export default function CorporateVehiclesPage() {
                 </div>
               </div>
             )}
+
+            {/* Pagination Controls */}
+            <TablePaginationFooter
+              currentPage={matrixPage}
+              totalItems={filteredVehicles.length}
+              pageSize={pageSize}
+              onPageChange={setMatrixPage}
+              onPageSizeChange={setPageSize}
+            />
           </div>
         )}
 
@@ -1180,7 +1346,7 @@ export default function CorporateVehiclesPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-nexa-border">
-                      {fuelLogs.map((log) => (
+                      {paginatedFuelLogs.map((log) => (
                         <tr key={log.id} className="hover:bg-nexa-bg-base/40 transition-colors">
                           <td className="p-3 font-medium text-nexa-text-primary">
                             {log.date}
@@ -1211,6 +1377,15 @@ export default function CorporateVehiclesPage() {
                     </tbody>
                   </table>
                 </div>
+
+                {/* Fuel Pagination Controls */}
+                <TablePaginationFooter
+                  currentPage={fuelPage}
+                  totalItems={fuelLogs.length}
+                  pageSize={pageSize}
+                  onPageChange={setFuelPage}
+                  onPageSizeChange={setPageSize}
+                />
               </div>
             </div>
           </div>
@@ -1647,13 +1822,16 @@ export default function CorporateVehiclesPage() {
                 </button>
               </div>
 
-              <div className="space-y-4 text-xs">
+              <form onSubmit={handleRegisterVehicle} className="space-y-4 text-xs">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1.5">Make & Model</label>
                     <input
                       type="text"
+                      required
                       placeholder="e.g. Toyota Coaster"
+                      value={registerForm.makeModel}
+                      onChange={(e) => setRegisterForm({ ...registerForm, makeModel: e.target.value })}
                       className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-600 transition-all shadow-xs"
                     />
                   </div>
@@ -1661,8 +1839,11 @@ export default function CorporateVehiclesPage() {
                     <label className="block font-semibold text-slate-700 mb-1.5">Plate Number</label>
                     <input
                       type="text"
+                      required
                       placeholder="e.g. LAG-402KJ"
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-600 transition-all shadow-xs"
+                      value={registerForm.plate}
+                      onChange={(e) => setRegisterForm({ ...registerForm, plate: e.target.value.toUpperCase() })}
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 uppercase focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-600 transition-all shadow-xs"
                     />
                   </div>
                 </div>
@@ -1670,18 +1851,26 @@ export default function CorporateVehiclesPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1.5">Vehicle Type</label>
-                    <select className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-600 transition-all shadow-xs">
-                      <option className="bg-white text-slate-900">Coaster Bus</option>
-                      <option className="bg-white text-slate-900">Minibus</option>
-                      <option className="bg-white text-slate-900">Executive Van</option>
-                      <option className="bg-white text-slate-900">Sedan</option>
+                    <select
+                      value={registerForm.category}
+                      onChange={(e) => setRegisterForm({ ...registerForm, category: e.target.value as any })}
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-600 transition-all shadow-xs"
+                    >
+                      <option value="Coaster Bus" className="bg-white text-slate-900">Coaster Bus</option>
+                      <option value="Minibus" className="bg-white text-slate-900">Minibus</option>
+                      <option value="Executive Van" className="bg-white text-slate-900">Executive Van</option>
+                      <option value="Sedan" className="bg-white text-slate-900">Sedan</option>
                     </select>
                   </div>
                   <div>
                     <label className="block font-semibold text-slate-700 mb-1.5">Acquisition Cost (₦)</label>
                     <input
                       type="number"
+                      required
+                      min="0"
                       placeholder="25,000,000"
+                      value={registerForm.acquisitionCost}
+                      onChange={(e) => setRegisterForm({ ...registerForm, acquisitionCost: Number(e.target.value) })}
                       className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-600 transition-all shadow-xs"
                     />
                   </div>
@@ -1693,7 +1882,11 @@ export default function CorporateVehiclesPage() {
                     <input
                       type="number"
                       step="0.1"
+                      required
+                      min="0.5"
                       placeholder="6.5"
+                      value={registerForm.fuelEconomyTarget}
+                      onChange={(e) => setRegisterForm({ ...registerForm, fuelEconomyTarget: Number(e.target.value) })}
                       className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-600 transition-all shadow-xs"
                     />
                   </div>
@@ -1701,7 +1894,11 @@ export default function CorporateVehiclesPage() {
                     <label className="block font-semibold text-slate-700 mb-1.5">Payback Horizon (Months)</label>
                     <input
                       type="number"
+                      required
+                      min="1"
                       placeholder="36"
+                      value={registerForm.paybackHorizon}
+                      onChange={(e) => setRegisterForm({ ...registerForm, paybackHorizon: Number(e.target.value) })}
                       className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-600 transition-all shadow-xs"
                     />
                   </div>
@@ -1721,15 +1918,15 @@ export default function CorporateVehiclesPage() {
                     Cancel
                   </NexaButton>
                   <NexaButton
-                    type="button"
+                    type="submit"
                     variant="primary"
-                    onClick={() => setIsRegisterModalOpen(false)}
+                    disabled={isSaving}
                     className="text-xs"
                   >
-                    Save Vehicle
+                    {isSaving ? "Saving..." : "Save Vehicle"}
                   </NexaButton>
                 </div>
-              </div>
+              </form>
             </div>
           </div>
         )}

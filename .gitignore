@@ -88,3 +88,4 @@ CLAUDE.md
 *.xls
 *.csv
 fleet-papers_1.html
+scripts/test_*.mjs

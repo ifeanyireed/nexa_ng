@@ -7,8 +7,8 @@ import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { CardsGridSkeleton } from "@/components/nexa/PageSkeleton";
-import { INITIAL_CAMPAIGNS, Campaign } from "@/lib/gtm-data";
-import { GTM_API } from "@/lib/api-client";
+import { Campaign } from "@/lib/gtm-data";
+import { crmFetch } from "@/lib/crm-client";
 import {
   Megaphone,
   Plus,
@@ -25,7 +25,7 @@ import {
 
 export default function CampaignsPage() {
   const [activeTab, setActiveTab] = useState<string>("All");
-  const [campaigns, setCampaigns] = useState<Campaign[]>(INITIAL_CAMPAIGNS);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const stages = ["All", "Active", "Approval", "Planning", "Completed"];
@@ -33,33 +33,46 @@ export default function CampaignsPage() {
   useEffect(() => {
     async function loadCampaigns() {
       try {
-        const liveCampaigns = await GTM_API.getCampaigns("org-01");
-        if (Array.isArray(liveCampaigns) && liveCampaigns.length > 0) {
-          const mapped: Campaign[] = liveCampaigns.map((c: any) => ({
-            id: c.id,
-            name: c.name,
-            targetAudience: c.target_audience || c.targetAudience,
-            status: (c.status === "ACTIVE" ? "Active" : c.status === "APPROVAL" ? "Approval" : c.status === "COMPLETED" ? "Completed" : "Planning") as any,
-            channels: c.channels_json ? JSON.parse(c.channels_json) : (c.channels || ["Voicebip Phone", "WhatsApp Follow-up"]),
-            prospectsCount: c.prospects_count || c.prospectsCount || 250,
-            sentCount: c.sent_count || c.sentCount || 180,
-            replyRate: c.replies_count ? Math.round((c.replies_count / (c.sent_count || 1)) * 100) : 32,
-            meetingsBooked: c.meetings_count || c.meetingsBooked || 8,
-            revenuePipeline: c.pipeline_value || c.revenuePipeline || 45000,
-            createdAt: c.created_at || "2026-08-01",
-            startDate: c.start_date || "2026-08-05",
-            strategySummary: "Targeted outreach to decision makers",
-            conversionFunnel: [
-              { stage: "Scanned", count: c.prospects_count || 250, pct: 100 },
-              { stage: "Sent", count: c.sent_count || 180, pct: 72 },
-              { stage: "Replied", count: c.replies_count || 38, pct: 21 },
-              { stage: "Meeting", count: c.meetings_count || 8, pct: 4.4 },
-            ],
-          }));
-          setCampaigns(mapped);
+        const res = await crmFetch("/api/erp/crm/campaigns");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.campaigns)) {
+            const mapped: Campaign[] = data.campaigns.map((c: any) => ({
+              id: c.id,
+              name: c.name,
+              targetAudience: c.target_audience || c.targetAudience || "Target Accounts",
+              status: (c.status === "ACTIVE" || c.status === "Active"
+                ? "Active"
+                : c.status === "APPROVAL" || c.status === "Approval"
+                ? "Approval"
+                : c.status === "COMPLETED" || c.status === "Completed"
+                ? "Completed"
+                : "Planning") as any,
+              channels: Array.isArray(c.channels)
+                ? c.channels
+                : c.channels_json
+                ? JSON.parse(c.channels_json)
+                : ["Voicebip Phone", "WhatsApp Follow-up"],
+              prospectsCount: Number(c.prospects_count || c.prospectsCount || 0),
+              sentCount: Number(c.sent_count || c.sentCount || 0),
+              replyRate: Number(c.replyRate || (c.sent_count ? Math.round((Number(c.replies_count) / Number(c.sent_count)) * 100) : 0)),
+              meetingsBooked: Number(c.meetings_count || c.meetingsBooked || 0),
+              revenuePipeline: Number(c.pipeline_value || c.revenuePipeline || 0),
+              createdAt: c.createdAt || c.created_at || new Date().toISOString(),
+              startDate: c.startDate || c.start_date || new Date().toISOString().slice(0, 10),
+              strategySummary: c.strategySummary || c.strategy_summary || c.goal || "Targeted qualification outreach",
+              conversionFunnel: c.conversionFunnel || [
+                { stage: "Scanned", count: Number(c.prospects_count) || 0, pct: 100 },
+                { stage: "Sent", count: Number(c.sent_count) || 0, pct: 0 },
+                { stage: "Replied", count: Number(c.replies_count) || 0, pct: 0 },
+                { stage: "Meeting", count: Number(c.meetings_count) || 0, pct: 0 },
+              ],
+            }));
+            setCampaigns(mapped);
+          }
         }
       } catch (err) {
-        console.warn("Using cached campaigns data:", err);
+        console.warn("Failed to fetch campaigns from CRM database:", err);
       } finally {
         setIsLoading(false);
       }
@@ -93,7 +106,7 @@ export default function CampaignsPage() {
                 Voice Outreach Campaigns
               </h1>
               <p className="text-xs text-[var(--nexa-text-muted)] mt-1">
-                Automated phone qualification batches targeted at corporate B2B mobility accounts.
+                Automated phone qualification batches targeted at verified B2B decision makers.
               </p>
             </div>
 
@@ -123,9 +136,25 @@ export default function CampaignsPage() {
             ))}
           </div>
 
-          {/* Campaigns Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {filteredCampaigns.map((camp) => (
+          {/* Campaigns Grid or Empty State */}
+          {filteredCampaigns.length === 0 ? (
+            <NexaCard className="p-12 text-center">
+              <Megaphone className="w-10 h-10 text-[var(--nexa-text-muted)] mx-auto mb-3 opacity-40" />
+              <h3 className="text-base font-bold text-[var(--nexa-text-primary)]">
+                No Campaigns Found
+              </h3>
+              <p className="text-xs text-[var(--nexa-text-muted)] max-w-sm mx-auto mt-1 mb-4">
+                Launch your first autonomous outbound voice campaign to begin qualifying B2B prospects at scale.
+              </p>
+              <Link href="/erp/admin/ai/campaigns/new">
+                <NexaButton size="sm" variant="primary" leftIcon={<Plus className="w-4 h-4" />}>
+                  Create First Campaign
+                </NexaButton>
+              </Link>
+            </NexaCard>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {filteredCampaigns.map((camp) => (
               <NexaCard key={camp.id} variant="glass" padding="lg" className="space-y-4">
                 <div className="flex items-start justify-between gap-2">
                   <div>
@@ -204,6 +233,7 @@ export default function CampaignsPage() {
               </NexaCard>
             ))}
           </div>
+          )}
         </div>
       )}
     </AppShell>

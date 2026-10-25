@@ -27,6 +27,8 @@ import {
   ArrowRight,
   ShieldCheck,
   Zap,
+  UserCheck,
+  Settings,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -72,10 +74,13 @@ export default function VoiceAgentDashboard() {
   const [inputText, setInputText] = useState("");
   const [lastOutcome, setLastOutcome] = useState<any | null>(null);
 
-  // Target Prospect Form
-  const [targetContact, setTargetContact] = useState("Adeola Adeleke");
-  const [targetCompany, setTargetCompany] = useState("Zenith Global Logistics");
-  const [targetPhone, setTargetPhone] = useState("+234 803 123 4567");
+  // Target Prospect Form (Loaded dynamically from CRM leads or user input)
+  const [targetContact, setTargetContact] = useState("");
+  const [targetCompany, setTargetCompany] = useState("");
+  const [targetPhone, setTargetPhone] = useState("");
+  const [selectedLeadId, setSelectedLeadId] = useState<string>("");
+  const [availableLeads, setAvailableLeads] = useState<any[]>([]);
+  const [voiceConfig, setVoiceConfig] = useState<any>(null);
   const [telephonyProvider, setTelephonyProvider] = useState("VOICEBIP");
 
   const wsRef = useRef<WebSocket | null>(null);
@@ -93,35 +98,68 @@ export default function VoiceAgentDashboard() {
         }
       }
     } catch (err) {
-      console.warn("Failed to fetch CRM calls, checking voice microservice:", err);
-      try {
-        const voiceRes = await VOICE_AGENT_API.listCalls();
-        if (voiceRes && voiceRes.calls) {
-          setCalls(
-            voiceRes.calls.map((c: any) => ({
-              id: c.id,
-              contactName: c.contact_name || c.contactName,
-              company: c.company,
-              phoneNumber: c.phone_number || c.phoneNumber,
-              outcome: c.outcome || "CONNECTED_FOLLOWUP",
-              durationSeconds: c.duration_seconds || 60,
-              notes: c.summary || c.notes || "",
-              transcript: c.transcript,
-              callDate: c.started_at || new Date().toISOString(),
-              isAi: true,
-            }))
-          );
-        }
-      } catch (voiceErr) {
-        console.error("Failed to load calls:", voiceErr);
-      }
+      console.warn("Failed to fetch CRM calls:", err);
     } finally {
       setIsLoading(false);
     }
   }
 
+  // 2. Fetch live leads and voice configuration for active tenant
+  async function loadLeadsAndConfig() {
+    try {
+      const activeSlug = (typeof window !== "undefined" ? getActiveTenantSlug() : "") || "";
+      const [leadsRes, byokRes] = await Promise.all([
+        crmFetch("/api/erp/crm/leads"),
+        fetch(`/api/erp/byok?tenant=${encodeURIComponent(activeSlug)}`).catch(() => null),
+      ]);
+
+      if (leadsRes && leadsRes.ok) {
+        const leadsData = await leadsRes.json();
+        const raw = Array.isArray(leadsData) ? leadsData : leadsData.leads || [];
+        setAvailableLeads(raw);
+        // Pre-select first valid lead with a phone number
+        const firstValid = raw.find((l: any) => l.phone || l.contactPhone);
+        if (firstValid) {
+          setSelectedLeadId(firstValid.id);
+          setTargetContact(firstValid.name || firstValid.contactName || "");
+          setTargetCompany(firstValid.company || firstValid.companyName || "");
+          setTargetPhone(firstValid.phone || firstValid.contactPhone || "");
+        }
+      }
+
+      if (byokRes && byokRes.ok) {
+        const byokData = await byokRes.json();
+        if (byokData?.voiceConfig) {
+          setVoiceConfig(byokData.voiceConfig);
+          if (byokData.voiceConfig.telephony_provider) {
+            setTelephonyProvider(byokData.voiceConfig.telephony_provider);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("Could not load leads or voice config:", e);
+    }
+  }
+
+  function handleSelectLead(leadId: string) {
+    setSelectedLeadId(leadId);
+    if (!leadId) {
+      setTargetContact("");
+      setTargetCompany("");
+      setTargetPhone("");
+      return;
+    }
+    const lead = availableLeads.find((l) => l.id === leadId);
+    if (lead) {
+      setTargetContact(lead.name || lead.contactName || "");
+      setTargetCompany(lead.company || lead.companyName || "");
+      setTargetPhone(lead.phone || lead.contactPhone || "");
+    }
+  }
+
   useEffect(() => {
     loadCallHistory();
+    loadLeadsAndConfig();
   }, []);
 
   // Scroll to bottom of live transcript
@@ -200,7 +238,11 @@ export default function VoiceAgentDashboard() {
               ...prev,
               {
                 speaker: "assistant",
-                text: data.greeting || "Good day. I am Ofia's automated executive assistant calling on behalf of Ofia Mobility.",
+                text:
+                  data.greeting ||
+                  (voiceConfig?.opening_hook
+                    ? voiceConfig.opening_hook.replace("{{contact_name}}", targetContact || "there")
+                    : `Good day. I am ${voiceConfig?.agent_name || "Ofia's Voice Assistant"} calling on behalf of ${targetCompany || "our sales team"}.`),
                 time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
               },
             ]);
@@ -248,10 +290,17 @@ export default function VoiceAgentDashboard() {
   function fallbackSimulatedCall() {
     setCallStatus("IN_PROGRESS");
     setIsAgentSpeaking(true);
+    const agentName = voiceConfig?.agent_name || "Ofia Voice Agent";
+    const companyName = targetCompany || "your organization";
+    const contactName = targetContact || "there";
+    const openingText = voiceConfig?.opening_hook
+      ? voiceConfig.opening_hook.replace(/\{contactName\}/gi, contactName).replace(/\{company\}/gi, companyName)
+      : `Good day ${contactName}. This is ${agentName} calling on behalf of enterprise operations regarding our tailored solutions for ${companyName}.`;
+
     setTurns([
       {
         speaker: "assistant",
-        text: `Good day ${targetContact}. I am Ofia's automated assistant calling on behalf of Ofia Mobility regarding corporate shuttle services for ${targetCompany}.`,
+        text: openingText,
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       },
     ]);
@@ -285,14 +334,15 @@ export default function VoiceAgentDashboard() {
       setIsAgentSpeaking(true);
       setTimeout(() => {
         setIsAgentSpeaking(false);
-        let reply = "Thank you. We help corporate teams in Lagos and Abuja streamline staff transportation with dedicated buses and real-time tracking.";
+        const valProp = voiceConfig?.value_proposition || "our products, commercial services, and managed operations";
+        let reply = `Thank you. We assist corporate teams to streamline ${valProp} with verified service level guarantees.`;
         const lower = text.toLowerCase();
-        if (lower.includes("cost") || lower.includes("price") || lower.includes("expensive")) {
-          reply = "Our corporate shuttle subscriptions typically reduce staff transportation expenses by 25 to 30 percent. May I confirm how many staff members currently commute on your key routes?";
-        } else if (lower.includes("bus") || lower.includes("already") || lower.includes("vendor")) {
-          reply = "Understood. Many corporate clients initially did too, but switched to Ofia because our live GPS tracking and standby backup buses eliminated morning staff delays. Could we send a 1-page route brief to your WhatsApp?";
-        } else if (lower.includes("yes") || lower.includes("send") || lower.includes("interested")) {
-          reply = "Fantastic! I will have our enterprise logistics team send a customized route brief to your team today and schedule a 10-minute demo.";
+        if (lower.includes("cost") || lower.includes("price") || lower.includes("expensive") || lower.includes("rate")) {
+          reply = "Our enterprise service agreements are customized to your transaction volume, typically yielding a 20 to 30 percent operational cost efficiency. May I confirm your primary volume requirements?";
+        } else if (lower.includes("already") || lower.includes("vendor") || lower.includes("have") || lower.includes("working with")) {
+          reply = "Understood. Many of our corporate clients initially had existing providers as well, but partnered with us for live visibility, dedicated account management, and automated escrow. Could we send a 1-page overview to your email or WhatsApp?";
+        } else if (lower.includes("yes") || lower.includes("send") || lower.includes("interested") || lower.includes("sure")) {
+          reply = "Wonderful! I will have our enterprise account team prepare a customized proposal for your review today and arrange a quick 10-minute briefing.";
         }
         setTurns((prev) => [
           ...prev,
@@ -320,28 +370,33 @@ export default function VoiceAgentDashboard() {
     setIsInCall(false);
     setCallStatus("COMPLETED");
 
-    // Write to CRM crm_calls directly if not using live backend
+    // Write to CRM crm_calls directly
     try {
       const summaryText =
         turns.length > 2
-          ? "Outbound phone consultation held. Discussed staff transportation logistics, vehicle tracking, and corporate shuttle subscription pricing."
+          ? `Outbound voice consultation completed for ${targetCompany || "client"}. Explored requirements, SLA guarantees, and requested commercial follow-up.`
           : "Initial voice outreach attempted. AI disclosure delivered.";
 
       const outcome = turns.some((t) => t.text.toLowerCase().includes("interested") || t.text.toLowerCase().includes("send"))
         ? "CONNECTED_INTERESTED"
         : "CONNECTED_FOLLOWUP";
 
+      const nextAction = outcome === "CONNECTED_INTERESTED"
+        ? `Send customized proposal and schedule discovery call with ${targetContact || "decision maker"}`
+        : `Follow up with ${targetContact || "prospect"} via email or WhatsApp`;
+
       await crmFetch("/api/erp/crm/calls", {
         method: "POST",
         body: JSON.stringify({
-          contactName: targetContact,
+          leadId: selectedLeadId || undefined,
+          contactName: targetContact || "Corporate Prospect",
           company: targetCompany,
           phoneNumber: targetPhone,
           direction: "OUTBOUND",
           outcome: outcome,
           durationSeconds: Math.max(callDuration, 35),
           notes: summaryText,
-          repName: "Ofia Voice Agent",
+          repName: voiceConfig?.agent_name || "Ofia Voice Agent",
           isAi: true,
           transcript: turns.map((t) => `[${t.time}] ${t.speaker.toUpperCase()}: ${t.text}`).join("\n"),
           aiSummary: summaryText,
@@ -352,7 +407,7 @@ export default function VoiceAgentDashboard() {
         outcome: outcome,
         duration: Math.max(callDuration, 35),
         summary: summaryText,
-        nextAction: "Send customized corporate shuttle deck on WhatsApp",
+        nextAction,
         crmSynced: true,
       });
 
@@ -362,11 +417,16 @@ export default function VoiceAgentDashboard() {
     }
   }
 
-  // Compute live KPIs
+  // Compute live KPIs dynamically from real database records
   const totalCalls = calls.length;
-  const connectedCalls = calls.filter((c) => c.outcome.startsWith("CONNECTED")).length;
-  const qualifiedLeads = calls.filter((c) => c.outcome === "CONNECTED_INTERESTED" || c.outcome === "CONNECTED_WON").length;
-  const connectRate = totalCalls > 0 ? Math.round((connectedCalls / totalCalls) * 100) : 74;
+  const connectedCalls = calls.filter((c) => c.outcome?.startsWith("CONNECTED") || (c.durationSeconds || 0) > 0).length;
+  const qualifiedLeads = calls.filter((c) => c.outcome === "CONNECTED_INTERESTED" || c.outcome === "QUALIFIED" || c.outcome === "CONNECTED_WON").length;
+  const connectRate = totalCalls > 0 ? Math.round((connectedCalls / totalCalls) * 100) : 0;
+  const totalDuration = calls.reduce((acc, c) => acc + (c.durationSeconds || 0), 0);
+  const avgDurationSec = connectedCalls > 0 ? Math.round(totalDuration / connectedCalls) : 0;
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayCalls = calls.filter((c) => (c.callDate || "").slice(0, 10) === todayStr).length;
 
   if (isLoading) {
     return (
@@ -380,7 +440,7 @@ export default function VoiceAgentDashboard() {
     <ErpAdminShell
       activeModule="ai"
       title="Ofia Voice Agent"
-      subtitle="Autonomous AI phone caller for corporate sales outreach and staff transportation qualification."
+      subtitle="Autonomous AI phone caller for outbound enterprise sales qualification and CRM pipeline updates."
       action={
         <div className="flex items-center gap-2">
           <NexaBadge variant="success" dot>
@@ -410,34 +470,34 @@ export default function VoiceAgentDashboard() {
       }
     >
       <div className="space-y-6">
-        {/* 1. TOP STATS GRID */}
+        {/* 1. TOP STATS GRID (COMPUTED LIVE FROM DATABASE) */}
         <ErpStatGrid
           stats={[
             {
               label: "Total Outreach Calls",
-              value: totalCalls.toString(),
-              change: "+18 today",
-              trend: "up",
+              value: totalCalls.toLocaleString(),
+              change: `${todayCalls} today`,
+              trend: todayCalls > 0 ? "up" : "neutral",
               icon: <PhoneCall className="w-5 h-5 text-blue-500" />,
             },
             {
               label: "Connection Rate",
               value: `${connectRate}%`,
-              change: "+6.4% vs benchmark",
-              trend: "up",
+              change: `${connectedCalls} connected`,
+              trend: connectRate > 50 ? "up" : "neutral",
               icon: <Activity className="w-5 h-5 text-emerald-500" />,
             },
             {
               label: "Qualified Corporate Leads",
-              value: qualifiedLeads.toString(),
-              change: "Targeting 1,800 prospects",
-              trend: "up",
+              value: qualifiedLeads.toLocaleString(),
+              change: `${totalCalls > 0 ? Math.round((qualifiedLeads / totalCalls) * 100) : 0}% qual rate`,
+              trend: qualifiedLeads > 0 ? "up" : "neutral",
               icon: <Target className="w-5 h-5 text-purple-500" />,
             },
             {
               label: "Avg Call Duration",
-              value: "2m 14s",
-              change: "Spoken voice pacing",
+              value: formatSeconds(avgDurationSec),
+              change: `${totalDuration}s total talk time`,
               trend: "neutral",
               icon: <Clock className="w-5 h-5 text-amber-500" />,
             },
@@ -480,42 +540,80 @@ export default function VoiceAgentDashboard() {
               </div>
 
               {/* TARGET PROSPECT SELECTION */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-4 p-3 rounded-2xl bg-[var(--nexa-bg-base)]/50 border border-[var(--nexa-border)]">
-                <div>
-                  <label className="text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider block mb-1">
-                    Contact Name
-                  </label>
-                  <input
-                    disabled={isInCall}
-                    value={targetContact}
-                    onChange={(e) => setTargetContact(e.target.value)}
-                    className="w-full text-xs font-semibold bg-transparent border-none p-0 focus:outline-none text-[var(--nexa-text-primary)]"
-                    placeholder="e.g. Adeola Adeleke"
-                  />
+              <div className="space-y-3 my-4 p-4 rounded-2xl bg-[var(--nexa-bg-base)]/50 border border-[var(--nexa-border)]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-[var(--nexa-border)]/60">
+                  <div className="flex items-center gap-2">
+                    <UserCheck className="w-4 h-4 text-[#1A56DB]" />
+                    <span className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                      Target Prospect (From Tenant CRM)
+                    </span>
+                  </div>
+                  {availableLeads.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-[var(--nexa-text-muted)] shrink-0">Select Lead:</span>
+                      <select
+                        disabled={isInCall}
+                        value={selectedLeadId}
+                        onChange={(e) => handleSelectLead(e.target.value)}
+                        className="text-xs px-2.5 py-1 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-primary)] focus:outline-none max-w-[240px] truncate"
+                      >
+                        <option value="">-- Custom / Manual Entry --</option>
+                        {availableLeads.map((l) => (
+                          <option key={l.id} value={l.id}>
+                            {l.name} {l.company ? `(${l.company})` : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <label className="text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider block mb-1">
-                    Company / Target
-                  </label>
-                  <input
-                    disabled={isInCall}
-                    value={targetCompany}
-                    onChange={(e) => setTargetCompany(e.target.value)}
-                    className="w-full text-xs font-semibold bg-transparent border-none p-0 focus:outline-none text-[var(--nexa-text-primary)]"
-                    placeholder="e.g. Zenith Global Logistics"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider block mb-1">
-                    Phone (+234 GSM/PSTN)
-                  </label>
-                  <input
-                    disabled={isInCall}
-                    value={targetPhone}
-                    onChange={(e) => setTargetPhone(e.target.value)}
-                    className="w-full text-xs font-semibold bg-transparent border-none p-0 focus:outline-none text-[var(--nexa-text-primary)] font-mono"
-                    placeholder="+234..."
-                  />
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider block mb-1">
+                      Contact Name
+                    </label>
+                    <input
+                      disabled={isInCall}
+                      value={targetContact}
+                      onChange={(e) => {
+                        setSelectedLeadId("");
+                        setTargetContact(e.target.value);
+                      }}
+                      className="w-full text-xs font-semibold bg-transparent border-none p-0 focus:outline-none text-[var(--nexa-text-primary)]"
+                      placeholder="e.g. Lead Contact..."
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider block mb-1">
+                      Company / Target
+                    </label>
+                    <input
+                      disabled={isInCall}
+                      value={targetCompany}
+                      onChange={(e) => {
+                        setSelectedLeadId("");
+                        setTargetCompany(e.target.value);
+                      }}
+                      className="w-full text-xs font-semibold bg-transparent border-none p-0 focus:outline-none text-[var(--nexa-text-primary)]"
+                      placeholder="e.g. Target Organization..."
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider block mb-1">
+                      Phone (+234 GSM/PSTN)
+                    </label>
+                    <input
+                      disabled={isInCall}
+                      value={targetPhone}
+                      onChange={(e) => {
+                        setSelectedLeadId("");
+                        setTargetPhone(e.target.value);
+                      }}
+                      className="w-full text-xs font-semibold bg-transparent border-none p-0 focus:outline-none text-[var(--nexa-text-primary)] font-mono"
+                      placeholder="+234..."
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -528,7 +626,7 @@ export default function VoiceAgentDashboard() {
                       Voice Agent is Idle
                     </p>
                     <p className="text-xs text-[var(--nexa-text-muted)] max-w-sm mt-1">
-                      Click "Start Voice Call" to initiate a real-time conversation. The agent will introduce itself, qualify corporate transportation needs, and log outcomes.
+                      Click "Start Voice Outreach" to initiate a real-time conversation. The agent will introduce itself, qualify business requirements, and log outcomes.
                     </p>
                   </div>
                 ) : (
@@ -595,11 +693,12 @@ export default function VoiceAgentDashboard() {
                     </span>
                     <div className="flex flex-wrap gap-1.5">
                       {[
-                        "We already have bus contractors",
-                        "How much does your shuttle cost?",
-                        "Yes, send me a proposal on WhatsApp",
+                        "How much does your service cost?",
+                        "We already work with an existing provider",
+                        "Could you send a tailored proposal to my WhatsApp?",
+                        "What is your SLA and delivery guarantee?",
                         "Call me back next Tuesday at 10am",
-                        "Not interested, stop calling",
+                        "Not interested right now, thank you",
                       ].map((prompt, i) => (
                         <button
                           key={i}
@@ -672,7 +771,13 @@ export default function VoiceAgentDashboard() {
                   <ShieldCheck className="w-4 h-4 text-[#1A56DB]" />
                   Voice Agent Persona & Guardrails
                 </h4>
-                <NexaBadge variant="neutral">Gemini 1.5/2.0</NexaBadge>
+                <Link
+                  href="/erp/admin/ai/settings"
+                  className="text-xs text-[#1A56DB] hover:underline flex items-center gap-1 font-semibold"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                  Edit Script
+                </Link>
               </div>
 
               <div className="space-y-3">
@@ -681,16 +786,16 @@ export default function VoiceAgentDashboard() {
                     Agent Identity
                   </label>
                   <p className="text-xs font-semibold text-[var(--nexa-text-primary)]">
-                    Ofia Executive Voice Assistant (B2B Corporate Sales)
+                    {voiceConfig?.agent_name || "Ofia Executive Voice Assistant"} ({voiceConfig?.tone || "B2B Professional"})
                   </p>
                 </div>
 
                 <div>
                   <label className="text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider block mb-1">
-                    Mandatory AI Disclosure
+                    Opening Hook & Disclosure
                   </label>
                   <p className="text-xs text-[var(--nexa-text-secondary)] p-2.5 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] leading-relaxed italic">
-                    "Hello, I am Ofia's automated executive assistant calling on behalf of the corporate sales team."
+                    "{voiceConfig?.opening_hook || "Hello, I am calling on behalf of the corporate sales team regarding our enterprise services."}"
                   </p>
                 </div>
 
@@ -699,7 +804,7 @@ export default function VoiceAgentDashboard() {
                     Target Value Proposition
                   </label>
                   <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-                    Managed corporate bus shuttles for staff in Lagos & Abuja. Guaranteed on-time arrival with standby backup buses and live GPS tracking in the Ofia App. 25-35% cost reduction.
+                    {voiceConfig?.value_proposition || "Guaranteed service delivery, dedicated account management, and real-time operational visibility with transparent corporate billing."}
                   </p>
                 </div>
 

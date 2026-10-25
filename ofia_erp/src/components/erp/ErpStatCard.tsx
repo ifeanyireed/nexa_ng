@@ -18,19 +18,21 @@ export interface ErpStatItem {
 export function ErpStatGrid({
   stats,
   columns = 4,
+  className,
 }: {
   stats: ErpStatItem[];
   columns?: 2 | 3 | 4;
+  className?: string;
 }) {
   const colClass =
     columns === 4
       ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
       : columns === 3
-      ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+      ? "grid-cols-1 md:grid-cols-3"
       : "grid-cols-1 sm:grid-cols-2";
 
   return (
-    <section className={cn("grid gap-6", colClass)}>
+    <section className={cn("grid gap-6 justify-center", colClass, className)}>
       {stats.map((kpi, i) => (
         <NexaCard
           key={i}

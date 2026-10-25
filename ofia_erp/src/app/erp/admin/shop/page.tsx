@@ -50,16 +50,7 @@ export default function ShopManagerDashboardPage() {
   const { isModuleProvisioned, isShopSubModuleProvisioned, isLoading } = useTenantProvisioning();
 
   const detectedVertical = (activeTenant?.vertical as VerticalKey) || detectTenantVertical(activeTenant?.slug, activeTenant?.name);
-  const [selectedVertical, setSelectedVertical] = useState<VerticalKey>(detectedVertical);
-
-  // Sync vertical when activeTenant updates
-  React.useEffect(() => {
-    if (activeTenant?.vertical && activeTenant.vertical in VERTICAL_DEFINITIONS) {
-      setSelectedVertical(activeTenant.vertical as VerticalKey);
-    }
-  }, [activeTenant?.vertical]);
-
-  const verticalDef = VERTICAL_DEFINITIONS[selectedVertical] || VERTICAL_DEFINITIONS.retail;
+  const verticalDef = VERTICAL_DEFINITIONS[detectedVertical] || VERTICAL_DEFINITIONS.retail;
 
   // Sub-module provisioning flags
   const hasCatalog = isShopSubModuleProvisioned("catalog");
@@ -75,6 +66,7 @@ export default function ShopManagerDashboardPage() {
       <BusinessShell
         title="Ofia Shop Manager & Commerce Workspace"
         subtitle="Enterprise omnichannel commerce, POS registers, multi-warehouse inventory, and storefront studio."
+        activeModule="shop"
       >
         <NexaCard variant="glass" padding="lg" className="text-center py-16 space-y-4 max-w-xl mx-auto border border-dashed border-[var(--nexa-border)] rounded-3xl mt-8">
           <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto">
@@ -109,21 +101,9 @@ export default function ShopManagerDashboardPage() {
     <BusinessShell
       title="Ofia Shop Manager & Commerce Workspace"
       subtitle={`Unified operating desk for ${verticalDef.name}: Omnichannel catalog, service bookings, POS counter, multi-warehouse inventory, and storefront studio.`}
+      activeModule="shop"
       action={
         <div className="flex items-center gap-2">
-          {/* Vertical Archetype Selector */}
-          <select
-            value={selectedVertical}
-            onChange={(e) => setSelectedVertical(e.target.value as VerticalKey)}
-            className="px-3 py-1.5 bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-full text-xs font-bold text-[var(--nexa-text-primary)] outline-none cursor-pointer"
-          >
-            {Object.values(VERTICAL_DEFINITIONS).map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.name}
-              </option>
-            ))}
-          </select>
-
           {hasStore && (
             <Link href="/erp/admin/shop/store">
               <NexaButton size="sm" variant="outline" leftIcon={<Palette className="w-3.5 h-3.5" />} className="rounded-full">

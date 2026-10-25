@@ -510,7 +510,25 @@ export const EMPTY_PERMISSION_MATRIX: PermissionMatrix = {
 
 export const DEFAULT_PERMISSION_MATRIX: PermissionMatrix = EMPTY_PERMISSION_MATRIX;
 
+const tenantMatrixMemoryCache = new Map<string, PermissionMatrix>();
+
 export function getTenantPermissionMatrix(tenantId: string): PermissionMatrix {
+  const cleanId = (tenantId || "").toLowerCase().trim();
+  if (cleanId && tenantMatrixMemoryCache.has(cleanId)) {
+    return tenantMatrixMemoryCache.get(cleanId)!;
+  }
+  if (typeof window !== "undefined" && cleanId) {
+    try {
+      const stored = localStorage.getItem(`ofia_rbac_${cleanId}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed === "object" && parsed.admin && Object.keys(parsed.admin).length > 2) {
+          tenantMatrixMemoryCache.set(cleanId, parsed);
+          return parsed;
+        }
+      }
+    } catch {}
+  }
   return EMPTY_PERMISSION_MATRIX;
 }
 
@@ -518,13 +536,23 @@ export function saveTenantPermissionMatrix(
   tenantId: string,
   matrix: PermissionMatrix
 ): void {
-  if (typeof window === "undefined") return;
-  // Dispatch in-memory custom event for real-time reactivity in shells and components
-  window.dispatchEvent(
-    new CustomEvent("ofia_rbac_updated", {
-      detail: { tenantId, matrix },
-    })
-  );
+  const cleanId = (tenantId || "").toLowerCase().trim();
+  if (cleanId && matrix) {
+    tenantMatrixMemoryCache.set(cleanId, matrix);
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem(`ofia_rbac_${cleanId}`, JSON.stringify(matrix));
+      } catch {}
+    }
+  }
+  if (typeof window !== "undefined") {
+    // Dispatch in-memory custom event for real-time reactivity in shells and components
+    window.dispatchEvent(
+      new CustomEvent("ofia_rbac_updated", {
+        detail: { tenantId: cleanId, matrix },
+      })
+    );
+  }
 }
 
 export async function fetchTenantPermissionMatrix(tenantId: string): Promise<PermissionMatrix> {
@@ -581,6 +609,14 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
       for (const mod of ERP_MODULES) {
         const isAllowed = tp[mod.key] === true || ad[mod.key] === true;
         merged.admin[mod.key] = isAllowed;
+      }
+
+      // Also ensure sub-modules like pos, inventory, catalog, store, orders, services, referrals are aligned
+      const subKeys = ["pos", "inventory", "catalog", "orders", "services", "store", "referrals"];
+      for (const key of subKeys) {
+        if (tp[key] !== undefined || ad[key] !== undefined) {
+          merged.admin[key] = tp[key] === true || ad[key] === true;
+        }
       }
 
       // Explicitly tie Sales Closer Portal and CRM access to workspace CRM module provisioning
@@ -665,13 +701,14 @@ export function isModuleEnabledForRole(
 
   // Tenant Admin gets strictly provisioned modules
   if (role === "admin") {
-    return matrix.admin?.[moduleKey] === true;
+    return Boolean(matrix.admin?.[moduleKey] || (matrix as any)?.tenant_provision?.[moduleKey]);
   }
 
   if (!matrix[roleKey]) {
     return false;
   }
-  return Boolean(matrix[roleKey][moduleKey]);
+  const isAllowedForTenant = Boolean(matrix.admin?.[moduleKey] || (matrix as any)?.tenant_provision?.[moduleKey]);
+  return isAllowedForTenant && Boolean(matrix[roleKey][moduleKey]);
 }
 
 /**

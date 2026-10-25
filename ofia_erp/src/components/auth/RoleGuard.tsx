@@ -6,7 +6,11 @@ import { useAuth } from "@/components/nexa/AuthContext";
 import {
   RoleKey,
   isModuleEnabledForRole,
+  fetchTenantPermissionMatrix,
+  getTenantPermissionMatrix,
+  PermissionMatrix,
 } from "@/lib/access-control";
+import { extractSubdomainOrParam } from "@/lib/tenant-context";
 import {
   fetchTenantDepartmentAccess,
   getUserDepartmentAccess,
@@ -55,16 +59,34 @@ export function RoleGuard({
   const [userRole, setUserRole] = useState<RoleKey>("employee");
   const [redirectTarget, setRedirectTarget] = useState<string>("/login");
   const [departmentConfigs, setDepartmentConfigs] = useState<DepartmentAccessItem[]>(DEFAULT_DEPARTMENT_ACCESS);
+  const [matrix, setMatrix] = useState<PermissionMatrix | null>(() => {
+    if (typeof window === "undefined") return null;
+    const slug = extractSubdomainOrParam() || localStorage.getItem("nexa_tenant_slug") || "";
+    return slug ? getTenantPermissionMatrix(slug) : null;
+  });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const slug = localStorage.getItem("nexa_tenant_slug") || "neweratransports";
-    fetchTenantDepartmentAccess(slug).then((configs) => {
-      if (configs && configs.length > 0) {
-        setDepartmentConfigs(configs);
+    const slug = extractSubdomainOrParam() || localStorage.getItem("nexa_tenant_slug") || "";
+    if (slug) {
+      const cached = getTenantPermissionMatrix(slug);
+      if (cached && Object.keys(cached.admin || {}).length > 2) {
+        setMatrix(cached);
+      } else {
+        fetchTenantPermissionMatrix(slug).then((m) => {
+          if (m && Object.keys(m.admin || {}).length > 2) {
+            setMatrix(m);
+          }
+        });
       }
-    });
+
+      fetchTenantDepartmentAccess(slug).then((configs) => {
+        if (configs && configs.length > 0) {
+          setDepartmentConfigs(configs);
+        }
+      });
+    }
 
     const handleDeptUpdate = (e: Event) => {
       const customEvent = e as CustomEvent;
@@ -72,8 +94,19 @@ export function RoleGuard({
         setDepartmentConfigs(customEvent.detail.departments);
       }
     };
+    const handleRbacUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail?.matrix) {
+        setMatrix(customEvent.detail.matrix);
+      }
+    };
+
     window.addEventListener("ofia_dept_access_updated", handleDeptUpdate);
-    return () => window.removeEventListener("ofia_dept_access_updated", handleDeptUpdate);
+    window.addEventListener("ofia_rbac_updated", handleRbacUpdate);
+    return () => {
+      window.removeEventListener("ofia_dept_access_updated", handleDeptUpdate);
+      window.removeEventListener("ofia_rbac_updated", handleRbacUpdate);
+    };
   }, []);
 
   useEffect(() => {
@@ -181,7 +214,7 @@ export function RoleGuard({
       if (isAllowedByAssigned) {
         // Enforce CRM module provisioning: if accessing sales_closer or CRM, tenant MUST have CRM module
         if (targetPageKey === "sales_closer" || targetPageKey === "crm") {
-          const tenantSlug = localStorage.getItem("nexa_tenant_slug") || "neweratransports";
+          const tenantSlug = extractSubdomainOrParam() || localStorage.getItem("nexa_tenant_slug") || "";
           const isCrmProvisioned = isModuleEnabledForRole(tenantSlug, "admin", "crm");
           if (!isCrmProvisioned) {
             setIsAuthorized(false);
@@ -227,7 +260,7 @@ export function RoleGuard({
         pathname.startsWith("/ops/crm") ||
         pathname.startsWith("/erp/admin/crm")
       ) {
-        const tenantSlug = localStorage.getItem("nexa_tenant_slug") || "neweratransports";
+        const tenantSlug = extractSubdomainOrParam() || localStorage.getItem("nexa_tenant_slug") || "";
         const isCrmProvisioned = isModuleEnabledForRole(tenantSlug, "admin", "crm");
         if (!isCrmProvisioned) {
           setIsAuthorized(false);
@@ -336,11 +369,46 @@ export function RoleGuard({
       else if (pathname.startsWith("/erp/admin/ai")) requiredMod = "ai";
       else if (pathname.startsWith("/erp/admin/shop")) requiredMod = "shop";
       else if (pathname.startsWith("/erp/admin/marketplace")) requiredMod = "marketplace";
+      else if (pathname.startsWith("/erp/admin/mobility") || pathname.startsWith("/erp/ops/mobility")) requiredMod = "mobility";
+      else if (pathname.startsWith("/erp/admin/dispatch") || pathname.startsWith("/erp/ops/dispatch")) requiredMod = "dispatch";
     }
 
+    const activeTenantSlug =
+      extractSubdomainOrParam() ||
+      localStorage.getItem("nexa_tenant_slug") ||
+      localStorage.getItem("tenant_slug") ||
+      "";
+
     if (requiredMod && !isDepartmentAllowed) {
-      const tenantName = localStorage.getItem("nexa_tenant_slug") || localStorage.getItem("nexa_org_name") || "neweratransports";
-      moduleAllowed = isModuleEnabledForRole(tenantName, role, requiredMod);
+      const activeMatrix = matrix || (activeTenantSlug ? getTenantPermissionMatrix(activeTenantSlug) : null);
+      const isMatrixReady = activeMatrix && Object.keys(activeMatrix.admin || {}).length > 2;
+
+      if (!isMatrixReady) {
+        if (activeTenantSlug) {
+          fetchTenantPermissionMatrix(activeTenantSlug).then((remoteM) => {
+            if (remoteM && Object.keys(remoteM.admin || {}).length > 2) {
+              setMatrix(remoteM);
+            }
+          });
+        }
+        setIsAuthorized(null);
+        return;
+      }
+
+      if (role === "admin") {
+        moduleAllowed = Boolean(
+          activeMatrix.admin?.[requiredMod] ||
+          (activeMatrix as any)?.tenant_provision?.[requiredMod]
+        );
+      } else {
+        const roleKey = role as RoleKey;
+        const tenantHasMod = Boolean(
+          activeMatrix.admin?.[requiredMod] ||
+          (activeMatrix as any)?.tenant_provision?.[requiredMod]
+        );
+        const roleHasMod = Boolean(activeMatrix[roleKey]?.[requiredMod]);
+        moduleAllowed = tenantHasMod && roleHasMod;
+      }
     }
 
     const permitted = roleAllowed && moduleAllowed;
@@ -355,7 +423,7 @@ export function RoleGuard({
     } else {
       setIsAuthorized(true);
     }
-  }, [pathname, user, allowedRoles, requiredModule, fallbackRoute, router, departmentConfigs]);
+  }, [pathname, user, allowedRoles, requiredModule, fallbackRoute, router, departmentConfigs, matrix]);
 
   if (isAuthorized === null) {
     return (

@@ -80,7 +80,7 @@ export async function GET(request: NextRequest) {
         COALESCE(recording_url, '') AS recording_url,
         COALESCE(transcript, '') AS transcript,
         COALESCE(ai_summary, '') AS ai_summary,
-        COALESCE(qualification_json, '') AS qualification_json,
+        COALESCE(qualification_json::text, '') AS qualification_json,
         COALESCE(is_ai, false) AS is_ai,
         call_date,
         created_at,
@@ -204,10 +204,18 @@ export async function POST(request: NextRequest) {
     const recordingUrl = body.recordingUrl || body.recording_url || "";
     const transcript = body.transcript || "";
     const aiSummary = body.aiSummary || body.ai_summary || notes;
-    const qualificationJson =
-      typeof body.qualificationJson === "object"
-        ? JSON.stringify(body.qualificationJson)
-        : (body.qualificationJson || body.qualification_json || "");
+    let qualJsonStr: string | null = null;
+    const rawQual = body.qualificationJson || body.qualification_json;
+    if (typeof rawQual === "object" && rawQual !== null) {
+      qualJsonStr = JSON.stringify(rawQual);
+    } else if (typeof rawQual === "string" && rawQual.trim()) {
+      try {
+        JSON.parse(rawQual);
+        qualJsonStr = rawQual.trim();
+      } catch {
+        qualJsonStr = null;
+      }
+    }
     const isAi =
       body.isAi !== undefined
         ? Boolean(body.isAi)
@@ -224,7 +232,7 @@ export async function POST(request: NextRequest) {
       ) VALUES (
         ${callId}, ${tenantSlug}, '', ${leadId}, ${dealId}, ${contactName}, ${company}, ${phoneNumber},
         ${repName}, ${repEmail}, ${direction}, ${outcome}, ${durationSeconds}, ${notes}, ${followupDate},
-        ${recordingUrl}, ${transcript}, ${aiSummary}, ${qualificationJson}, ${isAi}, ${callDate}, NOW(), NOW()
+        ${recordingUrl}, ${transcript}, ${aiSummary}, ${qualJsonStr ? sql`${qualJsonStr}::jsonb` : null}, ${isAi}, ${callDate}, NOW(), NOW()
       )
       ON CONFLICT (id) DO UPDATE SET
         outcome = EXCLUDED.outcome,
@@ -237,7 +245,10 @@ export async function POST(request: NextRequest) {
         followup_date = EXCLUDED.followup_date,
         updated_at = NOW()
       WHERE LOWER(crm_calls.tenant_slug) = ${tenantSlug}
-      RETURNING *;
+      RETURNING 
+        id, tenant_slug, lead_id, contact_name, company, phone_number, outcome,
+        duration_seconds, recording_url, transcript, ai_summary, is_ai, call_date,
+        COALESCE(qualification_json::text, '') AS qualification_json;
     `;
 
     return NextResponse.json({

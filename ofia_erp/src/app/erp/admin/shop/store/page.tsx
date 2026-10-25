@@ -1149,7 +1149,7 @@ export default function MyStoreStudioPage() {
             </div>
 
             {/* CARD 3: WIDE CURATED BENTO SHOWCASE (WITH TOGGLE) */}
-            <div className="p-5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-5">
+            <div className="p-5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-5 overflow-hidden">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[var(--nexa-border)]">
                 <div>
                   <span className="text-[10px] font-bold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-wider">
@@ -1295,7 +1295,7 @@ export default function MyStoreStudioPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {/* PILL 1 */}
-                    <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-2.5">
+                    <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-2.5 overflow-hidden">
                       <span className="text-[10px] font-bold text-[#1A56DB] uppercase tracking-wider">Floating Pill #1</span>
                       <div className="space-y-1">
                         <label className="text-[11px] font-bold text-[var(--nexa-text-primary)]">Label</label>
@@ -1341,7 +1341,7 @@ export default function MyStoreStudioPage() {
                     </div>
 
                     {/* PILL 2 */}
-                    <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-2.5">
+                    <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-2.5 overflow-hidden">
                       <span className="text-[10px] font-bold text-[#1A56DB] uppercase tracking-wider">Floating Pill #2</span>
                       <div className="space-y-1">
                         <label className="text-[11px] font-bold text-[var(--nexa-text-primary)]">Label</label>
@@ -1387,7 +1387,7 @@ export default function MyStoreStudioPage() {
                     </div>
 
                     {/* PILL 3 */}
-                    <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-2.5">
+                    <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-2.5 overflow-hidden">
                       <span className="text-[10px] font-bold text-[#1A56DB] uppercase tracking-wider">Floating Pill #3</span>
                       <div className="space-y-1">
                         <label className="text-[11px] font-bold text-[var(--nexa-text-primary)]">Label</label>

@@ -235,6 +235,9 @@ function TenantManagementContent() {
   const [editTenantLeadsLimit, setEditTenantLeadsLimit] = useState("5000");
   const [editTenantCampaignsLimit, setEditTenantCampaignsLimit] = useState("10");
   const [editTenantLogo, setEditTenantLogo] = useState("");
+  const [editTenantLoginImage, setEditTenantLoginImage] = useState("");
+  const [isUploadingLoginImage, setIsUploadingLoginImage] = useState(false);
+  const [loginImageUploadError, setLoginImageUploadError] = useState<string | null>(null);
   const [editTenantDatabaseUrl, setEditTenantDatabaseUrl] = useState("");
   const [editTenantCloudinaryUrl, setEditTenantCloudinaryUrl] = useState("");
   const [editDbMode, setEditDbMode] = useState<"DEDICATED">("DEDICATED");
@@ -309,6 +312,7 @@ function TenantManagementContent() {
               slug: orgSlug,
               domain: org.domain || org.Domain || `${orgSlug}.ofia.ng`,
               logo: org.logo || org.Logo || undefined,
+              loginImage: org.login_image || org.loginImage || org.LoginImage || undefined,
               ownerName: org.ownerName || org.owner_name || org.OwnerName || org.owner?.name || org.Owner?.Name || "System Admin",
               ownerEmail: org.ownerEmail || org.owner_email || org.OwnerEmail || org.owner?.email || org.Owner?.Email || `admin@${orgSlug}.ng`,
               planTier,
@@ -1070,6 +1074,53 @@ function TenantManagementContent() {
     }
   };
 
+  const handleLoginImageUploadFile = async (file: File) => {
+    if (!file) return;
+
+    if (file.size > 8 * 1024 * 1024) {
+      setLoginImageUploadError("Image size exceeds 8MB limit. Please choose a smaller file.");
+      return;
+    }
+
+    setLoginImageUploadError(null);
+    setIsUploadingLoginImage(true);
+
+    try {
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+      });
+      reader.readAsDataURL(file);
+      const base64Data = await base64Promise;
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image: base64Data,
+          tenantId: editTenantSlug || selectedTenantForEdit?.slug || "tenant",
+        }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.error || `Upload failed with HTTP ${res.status}`);
+      }
+
+      const data = await res.json();
+      if (data.url) {
+        setEditTenantLoginImage(data.url);
+        showToast("Login/cover background uploaded to dedicated Cloudinary storage!");
+      }
+    } catch (err: any) {
+      console.error("Login image upload error:", err);
+      setLoginImageUploadError(err.message || "Failed to upload image. Please check your network and try again.");
+    } finally {
+      setIsUploadingLoginImage(false);
+    }
+  };
+
   // Save Quota and Plan edit to database
   const handleSaveQuota = async () => {
     if (!selectedTenantForQuota) return;
@@ -1134,6 +1185,7 @@ function TenantManagementContent() {
     setEditTenantLeadsLimit(String(t.leadsLimit));
     setEditTenantCampaignsLimit(String(t.campaignsLimit));
     setEditTenantLogo(t.logo || "");
+    setEditTenantLoginImage(t.loginImage || "");
     setEditTenantDatabaseUrl(t.databaseUrl || "");
     setEditTenantCloudinaryUrl(t.cloudinaryUrl || "");
     setEditDbMode("DEDICATED");
@@ -1141,6 +1193,7 @@ function TenantManagementContent() {
     setDbTestResult(null);
     setProvisionResult(null);
     setLogoUploadError(null);
+    setLoginImageUploadError(null);
   };
 
   // Test custom database connection
@@ -1209,6 +1262,7 @@ function TenantManagementContent() {
       planTier: editTenantPlanTier,
       status: editTenantStatus,
       logo: editTenantLogo,
+      login_image: editTenantLoginImage.trim(),
       mrr: parseInt(editTenantMrr || "0", 10),
       leadsLimit: parseInt(editTenantLeadsLimit || "0", 10),
       campaignsLimit: parseInt(editTenantCampaignsLimit || "0", 10),
@@ -1253,6 +1307,7 @@ function TenantManagementContent() {
                 isCustomDb: Boolean(editTenantDatabaseUrl.trim()),
                 isCustomStorage: Boolean(editTenantCloudinaryUrl.trim()),
                 logo: editTenantLogo,
+                loginImage: editTenantLoginImage.trim(),
               }
             : t
         )
@@ -3288,6 +3343,102 @@ function TenantManagementContent() {
                     <AlertTriangle className="w-3 h-3 shrink-0" /> {logoUploadError}
                   </p>
                 )}
+              </div>
+            </div>
+
+            {/* LOGIN & STOREFRONT COVER GRAPHIC */}
+            <div className="pt-3 border-t border-[var(--nexa-border)] space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-[#1A56DB]" />
+                    Login Screen & Storefront Cover Graphic
+                  </label>
+                  <p className="text-[11px] text-[var(--nexa-text-muted)]">
+                    Hero cover background image displayed on employee login and storefront headers. Uploaded directly to tenant Cloudinary.
+                  </p>
+                </div>
+                {editTenantLoginImage && (
+                  <button
+                    type="button"
+                    onClick={() => setEditTenantLoginImage("")}
+                    className="text-[11px] text-rose-500 hover:text-rose-600 font-bold flex items-center gap-1 cursor-pointer transition-colors"
+                    title="Remove Cover Image"
+                  >
+                    <Trash2 className="w-3 h-3" /> Remove
+                  </button>
+                )}
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                <div className="relative group shrink-0">
+                  <div className="w-28 h-16 rounded-2xl border-2 border-dashed border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] flex items-center justify-center overflow-hidden shadow-inner group-hover:border-[#1A56DB] transition-all">
+                    {editTenantLoginImage ? (
+                      <img
+                        src={editTenantLoginImage}
+                        alt="Cover Preview"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="text-center p-2">
+                        <ImageIcon className="w-5 h-5 mx-auto text-[var(--nexa-text-muted)] opacity-60" />
+                        <span className="text-[9px] text-[var(--nexa-text-muted)] font-mono block mt-0.5">No Cover</span>
+                      </div>
+                    )}
+                  </div>
+                  {isUploadingLoginImage && (
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-xs rounded-2xl flex items-center justify-center">
+                      <Loader2 className="w-5 h-5 text-white animate-spin" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2 flex-1 w-full">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <label className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#1A56DB] hover:bg-[#1545B0] text-white text-xs font-bold transition-all cursor-pointer shadow-xs">
+                      {isUploadingLoginImage ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Uploading to Cloudinary...</span>
+                        </>
+                      ) : (
+                        <>
+                          <UploadCloud className="w-3.5 h-3.5" />
+                          <span>Upload Cover Image</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={isUploadingLoginImage}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleLoginImageUploadFile(file);
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+
+                    <span className="text-[11px] text-[var(--nexa-text-muted)]">or paste CDN image URL:</span>
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type="url"
+                      placeholder="https://images.unsplash.com/... or https://res.cloudinary.com/..."
+                      value={editTenantLoginImage}
+                      onChange={(e) => setEditTenantLoginImage(e.target.value)}
+                      className="w-full px-3 py-1.5 bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-xl text-xs font-mono outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)]"
+                    />
+                  </div>
+
+                  {loginImageUploadError && (
+                    <p className="text-[11px] text-rose-500 font-medium flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3 shrink-0" /> {loginImageUploadError}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>

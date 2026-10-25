@@ -247,6 +247,7 @@ export async function PUT(request: NextRequest) {
           cloudinary_url = CASE WHEN ${hasCloudinaryUrl} THEN ${cloudinaryUrl} ELSE cloudinary_url END,
           is_custom_db = true,
           logo = COALESCE(${body.logo}, logo),
+          login_image = COALESCE(${body.login_image || body.loginImage}, login_image),
           mrr = CASE WHEN ${hasMrr} THEN ${mrr} ELSE mrr END,
           vertical = COALESCE(${body.vertical}, vertical),
           erp_modules = COALESCE(${erpModules ? JSON.stringify(erpModules) : null}::jsonb, erp_modules),

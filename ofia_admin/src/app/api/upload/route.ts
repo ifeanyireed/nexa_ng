@@ -3,7 +3,30 @@ import { v2 as cloudinary } from "cloudinary";
 import { MASTER_CONNECTION_STRING } from "@/lib/tenant-db-resolver";
 import { neon } from "@neondatabase/serverless";
 
-async function getCloudinaryUrlForTenant(tenantId?: string | null): Promise<string> {
+interface CloudinaryCredentials {
+  cloudName: string;
+  apiKey: string;
+  apiSecret: string;
+}
+
+function parseCloudinaryUrl(rawUrl: string): CloudinaryCredentials | null {
+  if (!rawUrl) return null;
+  const cleaned = rawUrl.replace(/^CLOUDINARY_URL=/, "").trim();
+  try {
+    const parsed = new URL(cleaned);
+    if (!parsed.hostname || !parsed.username || !parsed.password) return null;
+    return {
+      cloudName: parsed.hostname,
+      apiKey: parsed.username,
+      apiSecret: parsed.password,
+    };
+  } catch (err) {
+    console.warn("[Admin Upload Route] Failed to parse Cloudinary URL:", err);
+    return null;
+  }
+}
+
+async function getCloudinaryCredentialsForTenant(tenantId?: string | null): Promise<CloudinaryCredentials | null> {
   const norm = (tenantId || "").toLowerCase().trim();
   if (norm && MASTER_CONNECTION_STRING) {
     try {
@@ -15,48 +38,36 @@ async function getCloudinaryUrlForTenant(tenantId?: string | null): Promise<stri
         LIMIT 1;
       `;
       if (rows && rows.length > 0 && rows[0].cloudinary_url) {
-        return rows[0].cloudinary_url.replace(/^CLOUDINARY_URL=/, "").trim();
+        const creds = parseCloudinaryUrl(rows[0].cloudinary_url);
+        if (creds) return creds;
       }
     } catch (err) {
-      console.warn("[Upload Route] Could not resolve tenant Cloudinary URL:", err);
+      console.warn("[Admin Upload Route] Could not resolve tenant Cloudinary URL:", err);
     }
   }
 
   const envUrl = process.env.CLOUDINARY_URL || process.env.PLATFORM_CLOUDINARY_URL || "";
-  return envUrl.replace(/^CLOUDINARY_URL=/, "").trim();
-}
-
-function configureCloudinaryFromUrl(rawUrl: string): boolean {
-  if (!rawUrl) return false;
-  try {
-    const parsed = new URL(rawUrl);
-    cloudinary.config({
-      cloud_name: parsed.hostname,
-      api_key: parsed.username,
-      api_secret: parsed.password,
-      secure: true,
-    });
-    return true;
-  } catch (err) {
-    console.warn("[Upload Route] Failed to parse Cloudinary URL:", err);
-    return false;
-  }
+  return parseCloudinaryUrl(envUrl);
 }
 
 export async function POST(request: Request) {
   try {
+    const url = new URL(request.url);
     const contentType = request.headers.get("content-type") || "";
 
     let imagePayload: string | null = null;
-    let folder = "ofia_ng_assets/logos";
-    let tenantId: string | null = request.headers.get("x-tenant-slug");
+    let tenantId: string | null =
+      url.searchParams.get("tenant") ||
+      request.headers.get("x-tenant-slug") ||
+      null;
+    let targetFolder: string | null = null;
 
     if (contentType.includes("multipart/form-data")) {
       const formData = await request.formData();
       const file = formData.get("file") as File | null;
-      const targetPath = formData.get("target_path") as string | null;
-      const formTenant = formData.get("tenantId") as string | null;
+      const formTenant = (formData.get("tenantId") || formData.get("tenantSlug") || formData.get("tenant")) as string | null;
       if (formTenant) tenantId = formTenant;
+      targetFolder = (formData.get("folder") || formData.get("target_path")) as string | null;
 
       if (!file) {
         return NextResponse.json({ error: "No file provided in form data" }, { status: 400 });
@@ -66,41 +77,52 @@ export async function POST(request: Request) {
       const buffer = Buffer.from(bytes);
       const mime = file.type || "image/jpeg";
       imagePayload = `data:${mime};base64,${buffer.toString("base64")}`;
-
-      if (targetPath) {
-        folder = `ofia_ng_assets/${targetPath}`;
-      } else if (tenantId) {
-        folder = `ofia_ng_assets/${tenantId}`;
-      }
     } else {
       const body = await request.json();
       imagePayload = body.image;
-      if (body.tenantId) {
-        tenantId = body.tenantId;
-        folder = `ofia_ng_assets/${tenantId}`;
+      if (body.tenantId || body.tenantSlug || body.tenant) {
+        tenantId = body.tenantId || body.tenantSlug || body.tenant;
       }
-    }
-
-    const cloudinaryUrl = await getCloudinaryUrlForTenant(tenantId);
-    if (!cloudinaryUrl || !configureCloudinaryFromUrl(cloudinaryUrl)) {
-      return NextResponse.json(
-        { error: "Cloudinary storage is not configured in environment or tenant settings." },
-        { status: 500 }
-      );
+      if (body.folder || body.targetPath) {
+        targetFolder = body.folder || body.targetPath;
+      }
     }
 
     if (!imagePayload) {
       return NextResponse.json({ error: "No image payload provided" }, { status: 400 });
     }
 
+    const cleanTenant = (tenantId || "").toLowerCase().trim();
+    const creds = await getCloudinaryCredentialsForTenant(cleanTenant);
+
+    if (!creds) {
+      return NextResponse.json(
+        { error: "Cloudinary storage credentials not configured for tenant or platform." },
+        { status: 500 }
+      );
+    }
+
+    const folder = targetFolder
+      ? `ofia_ng_assets/${targetFolder}`
+      : cleanTenant
+      ? `ofia_ng_assets/${cleanTenant}`
+      : "ofia_ng_assets/logos";
+
     const uploadResponse = await cloudinary.uploader.upload(imagePayload, {
       folder,
       resource_type: "image",
+      cloud_name: creds.cloudName,
+      api_key: creds.apiKey,
+      api_secret: creds.apiSecret,
+      secure: true,
     });
 
     return NextResponse.json({
+      success: true,
       url: uploadResponse.secure_url,
       public_id: uploadResponse.public_id,
+      cloudName: creds.cloudName,
+      tenant: cleanTenant,
     });
   } catch (error: any) {
     console.error("Cloudinary upload error in ofia_admin:", error);

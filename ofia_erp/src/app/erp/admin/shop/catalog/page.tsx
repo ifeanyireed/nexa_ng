@@ -207,7 +207,7 @@ function ProductImageManager({
             <div className="flex gap-2">
               <input
                 type="url"
-                placeholder="https://images.unsplash.com/photo-..."
+                placeholder="https://images.unsplash.com/photo-... or upload from device"
                 value={urlInput}
                 onChange={(e) => setUrlInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -226,6 +226,32 @@ function ProductImageManager({
               >
                 Attach
               </button>
+              <label
+                className={`px-3.5 py-2 text-xs font-bold rounded-xl transition-all border cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                  isUploading
+                    ? "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)] text-[var(--nexa-text-muted)] cursor-not-allowed"
+                    : "bg-[#1A56DB] hover:bg-blue-700 text-white border-blue-600 shadow-sm"
+                }`}
+                title="Upload image from device to tenant Cloudinary storage"
+              >
+                {isUploading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Upload className="w-3.5 h-3.5" />
+                )}
+                <span>{isUploading ? "Uploading..." : "Upload File"}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  disabled={isUploading}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) onUploadFile(file);
+                    e.target.value = "";
+                  }}
+                  className="hidden"
+                />
+              </label>
             </div>
           </div>
 
@@ -389,12 +415,19 @@ export default function CatalogManagementPage() {
       reader.onloadend = async () => {
         try {
           const base64Image = reader.result;
+          let currentTenant = activeTenant?.slug || activeTenant?.id || "";
+          if (!currentTenant && typeof window !== "undefined") {
+            const params = new URLSearchParams(window.location.search);
+            currentTenant = params.get("tenant") || "";
+          }
+
           const res = await fetch("/api/upload", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               image: base64Image,
-              tenantId: activeTenant?.slug || activeTenant?.id || "default",
+              tenantId: currentTenant,
+              tenantSlug: currentTenant,
             }),
           });
           const data = await res.json();

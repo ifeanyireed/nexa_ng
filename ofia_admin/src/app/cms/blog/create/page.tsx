@@ -336,7 +336,7 @@ function CreateBlogPostContent() {
                   {coverImage ? (
                     <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
                   ) : (
-                    <span className="text-sm font-medium">{isUploading ? 'Uploading...' : 'Click to upload'}</span>
+                    <span className="text-sm font-medium">{isUploading ? 'Uploading to Cloudinary...' : 'Click to upload image file'}</span>
                   )}
                   <input 
                     type="file" 
@@ -345,6 +345,25 @@ function CreateBlogPostContent() {
                     disabled={isUploading}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
                   />
+                </div>
+                <div className="mt-2 flex gap-2">
+                  <input
+                    type="url"
+                    placeholder="https://... or paste direct CDN image URL"
+                    value={coverImage}
+                    onChange={(e) => setCoverImage(e.target.value)}
+                    className="flex-1 px-3 py-1.5 text-xs font-mono rounded-lg border border-slate-200 outline-none focus:border-blue-500 text-slate-800"
+                  />
+                  <label className="px-3 py-1.5 text-xs font-bold rounded-lg bg-[#1A56DB] hover:bg-blue-700 text-white cursor-pointer shrink-0 flex items-center gap-1 shadow-xs">
+                    <span>{isUploading ? 'Uploading...' : 'Upload Image'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={isUploading}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
                 {coverImage && (
                   <button onClick={() => setCoverImage('')} className="text-xs text-rose-500 font-medium mt-2 hover:underline">

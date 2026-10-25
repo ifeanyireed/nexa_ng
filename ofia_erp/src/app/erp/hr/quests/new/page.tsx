@@ -7,6 +7,7 @@ import { BusinessShell } from "@/components/business/BusinessShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
+import { ImageUploadInput } from "@/components/common/ImageUploadInput";
 import {
   Trophy,
   Users,
@@ -1271,6 +1272,17 @@ function CreateQuestWizardContent() {
                     />
                   </div>
                 </div>
+              </div>
+
+              <div className="pt-2 border-t border-[var(--nexa-border)]">
+                <ImageUploadInput
+                  label="Event Cover Graphic & Championship Banner"
+                  value={formData.coverImage}
+                  onChange={(url) => setFormData({ ...formData, coverImage: url })}
+                  aspectRatio="wide"
+                  placeholder="https://images.unsplash.com/... or upload event poster"
+                  helperText="High-resolution event banner displayed on employee quest dashboards, spectator screens, and leaderboards."
+                />
               </div>
 
               <div className="p-4 rounded-2xl bg-gray-900 border border-gray-800 text-white space-y-2">

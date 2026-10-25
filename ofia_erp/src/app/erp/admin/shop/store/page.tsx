@@ -37,6 +37,7 @@ import {
   detectTenantVertical,
   VerticalKey,
 } from "@/lib/verticals";
+import { ImageUploadInput } from "@/components/common/ImageUploadInput";
 
 type StudioTab = "brand" | "hero" | "collections" | "badges" | "catalog_banner" | "contact_footer" | "policies";
 
@@ -655,22 +656,16 @@ export default function MyStoreStudioPage() {
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Logo Image URL</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={logoUrl}
-                    onChange={(e) => setLogoUrl(e.target.value)}
-                    placeholder="https://.../logo.png"
-                    className="flex-1 px-3.5 py-2 text-xs font-mono rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none"
-                  />
-                  {logoUrl && (
-                    <div className="w-8 h-8 rounded-lg bg-stone-100 dark:bg-stone-800 p-1 border border-[var(--nexa-border)] flex items-center justify-center shrink-0">
-                      <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
-                    </div>
-                  )}
-                </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <ImageUploadInput
+                  label="Store Brand Logo"
+                  value={logoUrl}
+                  onChange={setLogoUrl}
+                  tenantSlug={activeTenant?.slug}
+                  placeholder="https://.../logo.png or upload official logo"
+                  aspectRatio="square"
+                  helperText="Official company logo displayed across Storefront navigation, footer, invoices, and checkout. Uploaded directly to your dedicated Cloudinary storage."
+                />
               </div>
 
               <div className="space-y-1.5">
@@ -919,14 +914,15 @@ export default function MyStoreStudioPage() {
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Hero Showcase Image URL</label>
-                <input
-                  type="text"
+              <div className="space-y-1.5 sm:col-span-2">
+                <ImageUploadInput
+                  label="Hero Showcase Background Graphic"
                   value={bannerUrl}
-                  onChange={(e) => setBannerUrl(e.target.value)}
-                  placeholder="https://images.unsplash.com/..."
-                  className="w-full px-3.5 py-2 text-xs font-mono rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none"
+                  onChange={setBannerUrl}
+                  tenantSlug={activeTenant?.slug}
+                  aspectRatio="wide"
+                  placeholder="https://images.unsplash.com/... or upload hero banner"
+                  helperText="Main hero showcase image on your storefront landing page."
                 />
               </div>
 
@@ -1059,21 +1055,15 @@ export default function MyStoreStudioPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Background Image URL</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={card1Image}
-                      onChange={(e) => setCard1Image(e.target.value)}
-                      placeholder="https://images.unsplash.com/..."
-                      className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none"
-                    />
-                    {card1Image && (
-                      <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-[var(--nexa-border)]">
-                        <img src={card1Image} alt="Card 1" className="w-full h-full object-cover" />
-                      </div>
-                    )}
-                  </div>
+                  <ImageUploadInput
+                    label="Background Image"
+                    value={card1Image}
+                    onChange={setCard1Image}
+                    tenantSlug={activeTenant?.slug}
+                    aspectRatio="video"
+                    placeholder="https://images.unsplash.com/... or upload"
+                    helperText="Spotlight background image for Bento Card 1."
+                  />
                 </div>
               </div>
 
@@ -1145,21 +1135,15 @@ export default function MyStoreStudioPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Background Image URL</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={card2Image}
-                      onChange={(e) => setCard2Image(e.target.value)}
-                      placeholder="https://images.unsplash.com/..."
-                      className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none"
-                    />
-                    {card2Image && (
-                      <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-[var(--nexa-border)]">
-                        <img src={card2Image} alt="Card 2" className="w-full h-full object-cover" />
-                      </div>
-                    )}
-                  </div>
+                  <ImageUploadInput
+                    label="Background Image"
+                    value={card2Image}
+                    onChange={setCard2Image}
+                    tenantSlug={activeTenant?.slug}
+                    aspectRatio="video"
+                    placeholder="https://images.unsplash.com/... or upload"
+                    helperText="Center spotlight background image for Bento Card 2."
+                  />
                 </div>
               </div>
             </div>
@@ -1257,21 +1241,15 @@ export default function MyStoreStudioPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Card 3 Background Image URL</label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={card3BackgroundImage}
-                    onChange={(e) => setCard3BackgroundImage(e.target.value)}
-                    placeholder="https://images.unsplash.com/..."
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] outline-none"
-                  />
-                  {card3BackgroundImage && (
-                    <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 border border-[var(--nexa-border)]">
-                      <img src={card3BackgroundImage} alt="Card 3 Background" className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                </div>
+                <ImageUploadInput
+                  label="Card 3 Background Image"
+                  value={card3BackgroundImage}
+                  onChange={setCard3BackgroundImage}
+                  tenantSlug={activeTenant?.slug}
+                  aspectRatio="banner"
+                  placeholder="https://images.unsplash.com/... or upload"
+                  helperText="Wide background image for Bento Card 3."
+                />
               </div>
 
               {/* CARD 3 PILLS MODE RENDER */}
@@ -1340,19 +1318,15 @@ export default function MyStoreStudioPage() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-[var(--nexa-text-primary)]">Thumbnail Image URL</label>
-                        <div className="flex gap-1.5">
-                          <input
-                            type="text"
-                            value={pill1Image}
-                            onChange={(e) => setPill1Image(e.target.value)}
-                            placeholder="https://..."
-                            className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none"
-                          />
-                          {pill1Image && (
-                            <img src={pill1Image} alt="Pill 1" className="w-7 h-7 rounded-full object-cover shrink-0 border border-[var(--nexa-border)]" />
-                          )}
-                        </div>
+                        <ImageUploadInput
+                          label="Thumbnail Image"
+                          value={pill1Image}
+                          onChange={setPill1Image}
+                          tenantSlug={activeTenant?.slug}
+                          placeholder="https://... or upload"
+                          compact
+                          aspectRatio="pill"
+                        />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[11px] font-bold text-[var(--nexa-text-primary)]">Target Link (href)</label>
@@ -1390,19 +1364,15 @@ export default function MyStoreStudioPage() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-[var(--nexa-text-primary)]">Thumbnail Image URL</label>
-                        <div className="flex gap-1.5">
-                          <input
-                            type="text"
-                            value={pill2Image}
-                            onChange={(e) => setPill2Image(e.target.value)}
-                            placeholder="https://..."
-                            className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none"
-                          />
-                          {pill2Image && (
-                            <img src={pill2Image} alt="Pill 2" className="w-7 h-7 rounded-full object-cover shrink-0 border border-[var(--nexa-border)]" />
-                          )}
-                        </div>
+                        <ImageUploadInput
+                          label="Thumbnail Image"
+                          value={pill2Image}
+                          onChange={setPill2Image}
+                          tenantSlug={activeTenant?.slug}
+                          placeholder="https://... or upload"
+                          compact
+                          aspectRatio="pill"
+                        />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[11px] font-bold text-[var(--nexa-text-primary)]">Target Link (href)</label>
@@ -1440,19 +1410,15 @@ export default function MyStoreStudioPage() {
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[11px] font-bold text-[var(--nexa-text-primary)]">Thumbnail Image URL</label>
-                        <div className="flex gap-1.5">
-                          <input
-                            type="text"
-                            value={pill3Image}
-                            onChange={(e) => setPill3Image(e.target.value)}
-                            placeholder="https://..."
-                            className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none"
-                          />
-                          {pill3Image && (
-                            <img src={pill3Image} alt="Pill 3" className="w-7 h-7 rounded-full object-cover shrink-0 border border-[var(--nexa-border)]" />
-                          )}
-                        </div>
+                        <ImageUploadInput
+                          label="Thumbnail Image"
+                          value={pill3Image}
+                          onChange={setPill3Image}
+                          tenantSlug={activeTenant?.slug}
+                          placeholder="https://... or upload"
+                          compact
+                          aspectRatio="pill"
+                        />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[11px] font-bold text-[var(--nexa-text-primary)]">Target Link (href)</label>
@@ -1768,13 +1734,14 @@ export default function MyStoreStudioPage() {
                   </div>
 
                   <div className="space-y-1.5 sm:col-span-2">
-                    <label className="text-xs font-bold text-[var(--nexa-text-primary)]">Banner Graphic URL</label>
-                    <input
-                      type="text"
+                    <ImageUploadInput
+                      label="Banner Graphic Image"
                       value={featureBannerImage}
-                      onChange={(e) => setFeatureBannerImage(e.target.value)}
-                      placeholder="https://images.unsplash.com/..."
-                      className="w-full px-3.5 py-2 text-xs font-mono rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none"
+                      onChange={setFeatureBannerImage}
+                      tenantSlug={activeTenant?.slug}
+                      aspectRatio="wide"
+                      placeholder="https://images.unsplash.com/... or upload banner"
+                      helperText="Background graphic for the featured promotional service CTA banner."
                     />
                   </div>
                 </div>

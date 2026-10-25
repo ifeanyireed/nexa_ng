@@ -14,6 +14,7 @@ import {
   ShieldCheck, 
   Plus, 
   X, 
+  Upload,
   Save, 
   Eye,
   Info,
@@ -35,10 +36,13 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { getNicheData } from "@/lib/niche-data";
 import { useAuth } from "@/components/nexa/AuthContext";
+import { useActiveTenant } from "@/lib/tenant-context";
+import { ImageUploadInput } from "@/components/common/ImageUploadInput";
 import { api } from "@/lib/api";
 
 export default function ProfileEditorPage() {
   const { user } = useAuth();
+  const { activeTenant } = useActiveTenant(user?.email);
   const nicheKey = user?.pro_profile?.niche || "home-services";
   const data = getNicheData(nicheKey);
   const [activeTab, setActiveTab] = useState("info");
@@ -52,6 +56,8 @@ export default function ProfileEditorPage() {
     email: "",
     website: "",
     location: "",
+    logo: "",
+    coverImage: "",
     tags: [] as string[],
     hours: {
       weekday: "08:00 AM - 06:00 PM",
@@ -81,6 +87,8 @@ export default function ProfileEditorPage() {
         email: p.businessEmail || user.email || "",
         website: "", // Not in schema yet, mock it
         location: p.city ? `${p.area ? p.area + ", " : ""}${p.city}` : "",
+        logo: p.logo || "",
+        coverImage: p.cover_image || p.coverImage || "",
         tags: p.specialties ? p.specialties.split(",") : [],
         hours: {
           weekday: "08:00 AM - 06:00 PM",
@@ -108,7 +116,9 @@ export default function ProfileEditorPage() {
         niche: user?.pro_profile?.niche || "home-services",
         accepts_pos: profileData.acceptsPos,
         home_delivery: profileData.homeDelivery,
-        catalog: JSON.stringify(profileData.catalog)
+        catalog: JSON.stringify(profileData.catalog),
+        logo: profileData.logo,
+        cover_image: profileData.coverImage,
       });
       setMessage({ text: "Profile updated successfully!", type: "success" });
       setTimeout(() => setMessage({ text: "", type: "" }), 3000);
@@ -340,21 +350,28 @@ export default function ProfileEditorPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="space-y-12"
               >
-                 <div className="flex flex-col md:flex-row gap-12">
-                    <div className="space-y-4">
-                       <label className="text-xs font-bold uppercase tracking-widest text-nexa-text-faint">Business Logo</label>
-                       <div className="w-48 h-48 rounded-[40px] border-2 border-dashed border-nexa-border bg-nexa-bg-base flex flex-col items-center justify-center text-center p-6 group hover:border-nexa-brand transition-all cursor-pointer overflow-hidden relative">
-                          <div className={cn("absolute inset-0 opacity-10", data.colorClass)} />
-                          <Camera className="w-10 h-10 text-nexa-text-faint group-hover:scale-110 transition-transform mb-3" />
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-nexa-text-faint">Replace Logo</p>
-                       </div>
+                 <div className="flex flex-col md:flex-row gap-8 items-start">
+                    <div className="w-full md:w-56">
+                       <ImageUploadInput
+                         label="Business Logo"
+                         value={profileData.logo}
+                         onChange={(url) => setProfileData((prev) => ({ ...prev, logo: url }))}
+                         tenantSlug={activeTenant?.slug}
+                         aspectRatio="square"
+                         placeholder="https://... or upload logo"
+                         helperText="Square company logo uploaded to tenant Cloudinary"
+                       />
                     </div>
-                    <div className="flex-1 space-y-4">
-                       <label className="text-xs font-bold uppercase tracking-widest text-nexa-text-faint">Cover Image</label>
-                       <div className="h-48 rounded-3xl border-2 border-dashed border-nexa-border bg-nexa-bg-base flex flex-col items-center justify-center text-center p-8 group hover:border-nexa-brand transition-all cursor-pointer relative overflow-hidden">
-                          <ImageIcon className="w-10 h-10 text-nexa-text-faint group-hover:scale-110 transition-transform mb-3" />
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-nexa-text-faint">Upload high-resolution cover photo</p>
-                       </div>
+                    <div className="flex-1 w-full">
+                       <ImageUploadInput
+                         label="Cover Image"
+                         value={profileData.coverImage}
+                         onChange={(url) => setProfileData((prev) => ({ ...prev, coverImage: url }))}
+                         tenantSlug={activeTenant?.slug}
+                         aspectRatio="banner"
+                         placeholder="https://... or upload cover image"
+                         helperText="High-resolution banner photo for your marketplace storefront profile"
+                       />
                     </div>
                  </div>
 
@@ -473,6 +490,45 @@ export default function ProfileEditorPage() {
                                )}
                              </div>
                            ))}
+
+                           {/* Upload Photo Button */}
+                           <label
+                             className="aspect-[4/3] rounded-2xl border-2 border-dashed border-blue-500/40 bg-blue-500/5 hover:border-blue-500 transition-all flex flex-col items-center justify-center text-[#1A56DB] cursor-pointer p-4 group"
+                           >
+                             <Upload className="w-6 h-6 mb-2 group-hover:scale-110 transition-transform" />
+                             <span className="text-[10px] font-bold uppercase tracking-wider text-center">Upload Photo</span>
+                             <span className="text-[9px] text-[var(--nexa-text-muted)] mt-0.5">To Cloudinary CDN</span>
+                             <input
+                               type="file"
+                               accept="image/*"
+                               className="hidden"
+                               onChange={async (e) => {
+                                 const file = e.target.files?.[0];
+                                 if (!file) return;
+                                 const title = prompt("Enter a title for this showcase photo:", file.name.replace(/\.[^/.]+$/, "")) || "Showcase Photo";
+                                 const formData = new FormData();
+                                 formData.append("file", file);
+                                 if (activeTenant?.slug) formData.append("tenantSlug", activeTenant.slug);
+                                 try {
+                                   const res = await fetch("/api/upload", { method: "POST", body: formData });
+                                   const data = await res.json();
+                                   if (data.url) {
+                                     const updated = [...profileData.catalog];
+                                     updated[groupIdx].items.push({
+                                       id: `item-${Date.now()}`,
+                                       title,
+                                       type: "photo",
+                                       url: data.url,
+                                     });
+                                     setProfileData({ ...profileData, catalog: updated });
+                                   }
+                                 } catch (err) {
+                                   console.error("Upload error:", err);
+                                 }
+                                 e.target.value = "";
+                               }}
+                             />
+                           </label>
 
                            {/* Add Tile Button */}
                            <button 

@@ -43,18 +43,18 @@ export default function VoiceSettingsPage() {
   const [voiceId, setVoiceId] = useState("en-NG-Standard-A");
   const [modelName, setModelName] = useState("gemini-1.5-flash");
   const [openingHook, setOpeningHook] = useState(
-    "We help corporate teams in Lagos and Abuja streamline staff transportation with dedicated buses and real-time tracking."
+    "Good day, I am calling on behalf of the executive sales team regarding our enterprise services."
   );
   const [valueProposition, setValueProposition] = useState(
-    "25-35% cost reduction on corporate transport with guaranteed standby replacement buses."
+    "Guaranteed SLA delivery, dedicated account management, and real-time operational visibility with transparent corporate billing."
   );
   const [maxDurationSec, setMaxDurationSec] = useState(300);
-  const [humanEscalationPhone, setHumanEscalationPhone] = useState("+2348000000000");
+  const [humanEscalationPhone, setHumanEscalationPhone] = useState("+234 800 000 0000");
 
   // Guardrails State
   const [aiDisclosureEnabled, setAiDisclosureEnabled] = useState(true);
   const [aiDisclosureText, setAiDisclosureText] = useState(
-    "Hello, I am Ofia's automated executive assistant calling on behalf of the corporate mobility team."
+    "Hello, I am an automated AI executive assistant calling on behalf of the corporate sales team."
   );
   const [callingHoursStart, setCallingHoursStart] = useState("09:00");
   const [callingHoursEnd, setCallingHoursEnd] = useState("17:00");
@@ -66,7 +66,7 @@ export default function VoiceSettingsPage() {
     async function loadConfig() {
       try {
         const activeSlug = (typeof window !== "undefined" ? getActiveTenantSlug() : "") || "default";
-        const res = await fetch(`/api/erp/byok?slug=${encodeURIComponent(activeSlug)}`);
+        const res = await fetch(`/api/erp/byok?tenant=${encodeURIComponent(activeSlug)}`);
         if (res.ok) {
           const data = await res.json();
           if (data.voiceConfig) {

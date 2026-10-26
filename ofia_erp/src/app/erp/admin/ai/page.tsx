@@ -776,55 +776,106 @@ export default function VoiceAgentDashboard() {
                   className="text-xs text-[#1A56DB] hover:underline flex items-center gap-1 font-semibold"
                 >
                   <Settings className="w-3.5 h-3.5" />
-                  Edit Script
+                  Edit Script & Guardrails
                 </Link>
               </div>
 
-              <div className="space-y-3">
-                <div>
-                  <label className="text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider block mb-1">
-                    Agent Identity
-                  </label>
-                  <p className="text-xs font-semibold text-[var(--nexa-text-primary)]">
-                    {voiceConfig?.agent_name || "Ofia Executive Voice Assistant"} ({voiceConfig?.tone || "B2B Professional"})
-                  </p>
+              <div className="space-y-3.5">
+                {/* 1. Identity, Voice & Model */}
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <label className="text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider block mb-0.5">
+                      Agent Identity & Tone
+                    </label>
+                    <p className="text-xs font-semibold text-[var(--nexa-text-primary)]">
+                      {voiceConfig?.agent_name || "Ofia Executive Voice Assistant"}
+                    </p>
+                    <p className="text-[11px] text-[var(--nexa-text-muted)] font-mono">
+                      Voice: {voiceConfig?.voice_id || "en-NG-Standard-A"} • Tone: {voiceConfig?.tone || "B2B Professional"}
+                    </p>
+                  </div>
+                  <NexaBadge variant="neutral" className="font-mono text-[10px] shrink-0">
+                    {voiceConfig?.model_name || "gemini-1.5-flash"}
+                  </NexaBadge>
                 </div>
 
+                {/* 2. Mandatory AI Disclosure & Opening Hook */}
                 <div>
-                  <label className="text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider block mb-1">
-                    Opening Hook & Disclosure
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider">
+                      Mandatory AI Disclosure & Hook
+                    </label>
+                    <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                      {voiceConfig?.ai_disclosure_enabled !== false ? "Active Notice" : "Disabled"}
+                    </span>
+                  </div>
                   <p className="text-xs text-[var(--nexa-text-secondary)] p-2.5 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] leading-relaxed italic">
-                    "{voiceConfig?.opening_hook || "Hello, I am calling on behalf of the corporate sales team regarding our enterprise services."}"
+                    "{voiceConfig?.opening_hook || "Good day, I am calling on behalf of the executive sales team regarding our enterprise services."}"
                   </p>
                 </div>
 
+                {/* 3. Target Value Proposition */}
                 <div>
                   <label className="text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider block mb-1">
                     Target Value Proposition
                   </label>
                   <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-                    {voiceConfig?.value_proposition || "Guaranteed service delivery, dedicated account management, and real-time operational visibility with transparent corporate billing."}
+                    {voiceConfig?.value_proposition || "Guaranteed SLA delivery, dedicated account management, and real-time operational visibility with transparent corporate billing."}
                   </p>
                 </div>
 
+                {/* 4. Enforced Operational Safety Guardrails */}
+                <div className="p-3 rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-2">
+                  <div className="text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                    Enforced Safety Guardrails
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-[11px]">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-[var(--nexa-text-muted)]">Max Duration:</span>
+                      <span className="font-mono font-semibold text-[var(--nexa-text-primary)]">
+                        {Math.floor((voiceConfig?.max_duration_sec || 300) / 60)}m ({voiceConfig?.max_duration_sec || 300}s)
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-[var(--nexa-text-muted)]">Calling Window:</span>
+                      <span className="font-mono font-semibold text-[var(--nexa-text-primary)]">
+                        {voiceConfig?.calling_hours_start || "09:00"} - {voiceConfig?.calling_hours_end || "17:00"} (WAT)
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-[var(--nexa-text-muted)]">Human Escalation:</span>
+                      <span className="font-mono font-semibold text-[var(--nexa-text-primary)] truncate">
+                        {voiceConfig?.human_escalation_phone || "+234 800 000 0000"}
+                      </span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-[var(--nexa-text-muted)]">Dial Retries:</span>
+                      <span className="font-mono font-semibold text-[var(--nexa-text-primary)]">
+                        Max {voiceConfig?.max_retries || 2} attempts
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5. Autonomous Actions Permitted */}
                 <div>
                   <label className="text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider block mb-1">
                     Automated Actions Permitted
                   </label>
-                  <ul className="text-xs text-[var(--nexa-text-secondary)] space-y-1">
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                      Write structured call outcome to <code className="font-mono text-[10px]">crm_calls</code>
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                      Boost lead score to 95 for interested prospects
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                      Schedule follow-up callback tasks for human sales closer
-                    </li>
+                  <ul className="text-xs text-[var(--nexa-text-secondary)] space-y-1.5">
+                    {(voiceConfig?.allowed_actions || [
+                      "Write structured call outcome to crm_calls",
+                      "Boost lead score to 95 for qualified prospects",
+                      "Schedule follow-up callback tasks for human sales closers",
+                      "Instant WhatsApp proposal dispatch upon qualification",
+                    ]).map((act: string, idx: number) => (
+                      <li key={idx} className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                        <span>{act}</span>
+                      </li>
+                    ))}
                   </ul>
                 </div>
               </div>

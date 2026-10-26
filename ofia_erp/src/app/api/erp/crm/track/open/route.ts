@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { processEmailEngagement } from "@/lib/crm-email-engagement";
 
 export const dynamic = "force-dynamic";
 
@@ -17,11 +18,18 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const token = url.searchParams.get("token") || "";
 
-    // Forward telemetry asynchronously to ERP service without blocking user
     if (token) {
-      fetch(`${ERP_BASE}/crm/track/open?token=${encodeURIComponent(token)}`, {
-        cache: "no-store",
-      }).catch(() => {});
+      // Process open engagement directly on tenant DB with strict deduplication check
+      processEmailEngagement(token, "OPEN").catch((err) =>
+        console.warn("[CRM Track Open] Direct process error:", err)
+      );
+
+      // Also forward telemetry asynchronously to ERP microservice if reachable
+      if (ERP_BASE) {
+        fetch(`${ERP_BASE}/crm/track/open?token=${encodeURIComponent(token)}`, {
+          cache: "no-store",
+        }).catch(() => {});
+      }
     }
 
     return new NextResponse(transparent1x1GIF, {

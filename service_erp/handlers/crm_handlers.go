@@ -1641,15 +1641,37 @@ func AutoAssignLeadFromEngagement(targetDB *sql.DB, slug, blastId, recId, eventT
 		}
 	}
 
-	// 5. Check if lead already exists in crm_leads for this tenant and email
+	// 5. Check if lead already exists in crm_leads for this tenant by email OR phone
 	var existingLeadId, existingOwner string
 	var existingScore int
 	leadExists := false
-	errLead := targetDB.QueryRow(`
-		SELECT id, COALESCE(owner, assigned_rep, ''), score
-		FROM crm_leads
-		WHERE LOWER(tenant_slug) = LOWER($1) AND LOWER(email) = $2
-		LIMIT 1`, slug, cleanEmail).Scan(&existingLeadId, &existingOwner, &existingScore)
+
+	var errLead error
+	if phoneStr != "" {
+		cleanPhone := regexp.MustCompile(`[^0-9]`).ReplaceAllString(phoneStr, "")
+		lastDigits := cleanPhone
+		if len(cleanPhone) >= 10 {
+			lastDigits = cleanPhone[len(cleanPhone)-10:]
+		}
+		errLead = targetDB.QueryRow(`
+			SELECT id, COALESCE(owner, assigned_rep, ''), score
+			FROM crm_leads
+			WHERE LOWER(tenant_slug) = LOWER($1)
+			  AND (
+				LOWER(email) = $2
+				OR LOWER(contact_email) = $2
+				OR (phone != '' AND phone LIKE '%' || $3)
+				OR (contact_phone != '' AND contact_phone LIKE '%' || $3)
+			  )
+			LIMIT 1`, slug, cleanEmail, lastDigits).Scan(&existingLeadId, &existingOwner, &existingScore)
+	} else {
+		errLead = targetDB.QueryRow(`
+			SELECT id, COALESCE(owner, assigned_rep, ''), score
+			FROM crm_leads
+			WHERE LOWER(tenant_slug) = LOWER($1)
+			  AND (LOWER(email) = $2 OR LOWER(contact_email) = $2)
+			LIMIT 1`, slug, cleanEmail).Scan(&existingLeadId, &existingOwner, &existingScore)
+	}
 	if errLead == nil && existingLeadId != "" {
 		leadExists = true
 	}
@@ -1665,7 +1687,7 @@ func AutoAssignLeadFromEngagement(targetDB *sql.DB, slug, blastId, recId, eventT
 	buyingSignalsJSON := fmt.Sprintf(`["Email Blast Engagement", "%s"]`, eventType)
 
 	if leadExists {
-		// Update existing lead (preserve existing closer, bump score if higher)
+		// Update existing lead (preserve existing closer, bump score if higher, enrich phone if missing)
 		newScore := existingScore
 		if score > existingScore {
 			newScore = score
@@ -1674,11 +1696,13 @@ func AutoAssignLeadFromEngagement(targetDB *sql.DB, slug, blastId, recId, eventT
 			UPDATE crm_leads SET
 				score = $1,
 				icp_fit_score = $1,
+				phone = CASE WHEN (phone IS NULL OR phone = '') AND $5 != '' THEN $5 ELSE phone END,
+				contact_phone = CASE WHEN (contact_phone IS NULL OR contact_phone = '') AND $5 != '' THEN $5 ELSE contact_phone END,
 				owner = CASE WHEN owner IS NULL OR owner = '' OR owner = 'Unassigned (Closer Queue)' THEN $2 ELSE owner END,
 				assigned_rep = CASE WHEN assigned_rep IS NULL OR assigned_rep = '' OR assigned_rep = 'Unassigned (Closer Queue)' THEN $2 ELSE assigned_rep END,
 				notes = notes || E'\n' || $3,
 				updated_at = NOW()
-			WHERE id = $4`, newScore, assignedCloser, leadNotes, existingLeadId)
+			WHERE id = $4`, newScore, assignedCloser, leadNotes, existingLeadId, phoneStr)
 	} else {
 		// Insert brand new lead
 		newLeadId := fmt.Sprintf("LED-%d", time.Now().UnixMilli())

@@ -30,6 +30,8 @@ async function ensureVoiceConfigTable(sql: any) {
       auto_whatsapp_deck BOOLEAN DEFAULT true,
       telephony_provider VARCHAR(50) DEFAULT 'VOICEBIP',
       voicebip_sip_endpoint VARCHAR(191) DEFAULT 'sip.voicebip.com:5060',
+      voicebip_workspace_id VARCHAR(191) DEFAULT '',
+      voicebip_agent_id VARCHAR(191) DEFAULT '',
       voicebip_api_key TEXT DEFAULT '',
       voicebip_api_secret TEXT DEFAULT '',
       from_phone_number VARCHAR(50) DEFAULT '+234 1 888 0000',
@@ -38,6 +40,8 @@ async function ensureVoiceConfigTable(sql: any) {
       updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     );
   `;
+  await sql`ALTER TABLE crm_voice_config ADD COLUMN IF NOT EXISTS voicebip_workspace_id VARCHAR(191) DEFAULT '';`;
+  await sql`ALTER TABLE crm_voice_config ADD COLUMN IF NOT EXISTS voicebip_agent_id VARCHAR(191) DEFAULT '';`;
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_voice_config_tenant ON crm_voice_config (LOWER(tenant_slug));`;
 }
 
@@ -73,6 +77,8 @@ export async function GET(request: NextRequest) {
         COALESCE(auto_whatsapp_deck, true) AS auto_whatsapp_deck,
         COALESCE(telephony_provider, 'VOICEBIP') AS telephony_provider,
         COALESCE(voicebip_sip_endpoint, 'sip.voicebip.com:5060') AS voicebip_sip_endpoint,
+        COALESCE(voicebip_workspace_id, '') AS voicebip_workspace_id,
+        COALESCE(voicebip_agent_id, '') AS voicebip_agent_id,
         COALESCE(voicebip_api_key, '') AS voicebip_api_key,
         COALESCE(voicebip_api_secret, '') AS voicebip_api_secret,
         COALESCE(from_phone_number, '+234 1 888 0000') AS from_phone_number,
@@ -153,6 +159,8 @@ export async function GET(request: NextRequest) {
       auto_whatsapp_deck: voiceRow.auto_whatsapp_deck,
       telephony_provider: voiceRow.telephony_provider,
       voicebip_sip_endpoint: voiceRow.voicebip_sip_endpoint,
+      voicebip_workspace_id: voiceRow.voicebip_workspace_id || "",
+      voicebip_agent_id: voiceRow.voicebip_agent_id || "",
       voicebip_api_key: voiceRow.voicebip_api_key,
       voicebip_api_secret: voiceRow.voicebip_api_secret,
       from_phone_number: voiceRow.from_phone_number,
@@ -239,6 +247,8 @@ export async function POST(request: NextRequest) {
       const autoWhatsAppDeck = vc.auto_whatsapp_deck !== undefined ? Boolean(vc.auto_whatsapp_deck) : true;
       const telephonyProvider = (vc.telephony_provider || "VOICEBIP").toUpperCase().trim();
       const voicebipSipEndpoint = (vc.voicebip_sip_endpoint || "sip.voicebip.com:5060").trim();
+      const voicebipWorkspaceId = (vc.voicebip_workspace_id || "").trim();
+      const voicebipAgentId = (vc.voicebip_agent_id || "").trim();
       const voicebipApiKey = (vc.voicebip_api_key || "").trim();
       const voicebipApiSecret = (vc.voicebip_api_secret || "").trim();
       const fromPhoneNumber = (vc.from_phone_number || "+234 1 888 0000").trim();
@@ -258,14 +268,16 @@ export async function POST(request: NextRequest) {
           opening_hook, value_proposition, ai_disclosure_enabled, ai_disclosure_text,
           max_duration_sec, calling_hours_start, calling_hours_end, max_retries,
           human_escalation_phone, auto_whatsapp_deck, telephony_provider,
-          voicebip_sip_endpoint, voicebip_api_key, voicebip_api_secret,
+          voicebip_sip_endpoint, voicebip_workspace_id, voicebip_agent_id,
+          voicebip_api_key, voicebip_api_secret,
           from_phone_number, allowed_actions_json, updated_at
         ) VALUES (
           ${tenantSlug}, '', ${agentName}, ${tone}, ${voiceId}, ${modelName},
           ${openingHook}, ${valueProposition}, ${aiDisclosureEnabled}, ${aiDisclosureText},
           ${maxDurationSec}, ${callingHoursStart}, ${callingHoursEnd}, ${maxRetries},
           ${humanEscalationPhone}, ${autoWhatsAppDeck}, ${telephonyProvider},
-          ${voicebipSipEndpoint}, ${voicebipApiKey}, ${voicebipApiSecret},
+          ${voicebipSipEndpoint}, ${voicebipWorkspaceId}, ${voicebipAgentId},
+          ${voicebipApiKey}, ${voicebipApiSecret},
           ${fromPhoneNumber}, ${allowedActionsJson}::jsonb, NOW()
         )
         ON CONFLICT (tenant_slug) DO UPDATE SET
@@ -285,6 +297,8 @@ export async function POST(request: NextRequest) {
           auto_whatsapp_deck = EXCLUDED.auto_whatsapp_deck,
           telephony_provider = EXCLUDED.telephony_provider,
           voicebip_sip_endpoint = EXCLUDED.voicebip_sip_endpoint,
+          voicebip_workspace_id = EXCLUDED.voicebip_workspace_id,
+          voicebip_agent_id = EXCLUDED.voicebip_agent_id,
           voicebip_api_key = EXCLUDED.voicebip_api_key,
           voicebip_api_secret = EXCLUDED.voicebip_api_secret,
           from_phone_number = EXCLUDED.from_phone_number,

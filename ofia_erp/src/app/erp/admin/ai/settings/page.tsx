@@ -32,6 +32,8 @@ export default function VoiceSettingsPage() {
   const [telephonyProvider, setTelephonyProvider] = useState<"voicebip" | "webrtc_browser" | "termii" | "twilio">("voicebip");
   const [voicebipApiKey, setVoicebipApiKey] = useState("");
   const [voicebipApiSecret, setVoicebipApiSecret] = useState("");
+  const [voicebipWorkspaceId, setVoicebipWorkspaceId] = useState("");
+  const [voicebipAgentId, setVoicebipAgentId] = useState("");
   const [voicebipSipEndpoint, setVoicebipSipEndpoint] = useState("sip.voicebip.com:5060");
   const [fromPhoneNumber, setFromPhoneNumber] = useState("+234 1 888 0000");
   const [termiiApiKey, setTermiiApiKey] = useState("");
@@ -79,6 +81,8 @@ export default function VoiceSettingsPage() {
             }
             if (vc.voicebip_api_key) setVoicebipApiKey(vc.voicebip_api_key);
             if (vc.voicebip_api_secret) setVoicebipApiSecret(vc.voicebip_api_secret);
+            if (vc.voicebip_workspace_id) setVoicebipWorkspaceId(vc.voicebip_workspace_id);
+            if (vc.voicebip_agent_id) setVoicebipAgentId(vc.voicebip_agent_id);
             if (vc.voicebip_sip_endpoint) setVoicebipSipEndpoint(vc.voicebip_sip_endpoint);
             if (vc.from_phone_number) setFromPhoneNumber(vc.from_phone_number);
             if (vc.termii_api_key) setTermiiApiKey(vc.termii_api_key);
@@ -120,6 +124,8 @@ export default function VoiceSettingsPage() {
           telephony_provider: telephonyProvider.toUpperCase(),
           voicebip_api_key: voicebipApiKey,
           voicebip_api_secret: voicebipApiSecret,
+          voicebip_workspace_id: voicebipWorkspaceId,
+          voicebip_agent_id: voicebipAgentId,
           voicebip_sip_endpoint: voicebipSipEndpoint,
           from_phone_number: fromPhoneNumber,
           termii_api_key: termiiApiKey,
@@ -337,6 +343,20 @@ export default function VoiceSettingsPage() {
                       onChange={(e) => setVoicebipApiSecret(e.target.value)}
                       placeholder="••••••••••••••••"
                       helperText="Secret key used for HMAC signature on outbound call requests."
+                    />
+                    <NexaInput
+                      label="Voicebip Workspace ID"
+                      value={voicebipWorkspaceId}
+                      onChange={(e) => setVoicebipWorkspaceId(e.target.value)}
+                      placeholder="ws_••••••••••••••••"
+                      helperText="Workspace ID from Voicebip Portal &rarr; Workspaces."
+                    />
+                    <NexaInput
+                      label="Voicebip Agent ID"
+                      value={voicebipAgentId}
+                      onChange={(e) => setVoicebipAgentId(e.target.value)}
+                      placeholder="agt_••••••••••••••••"
+                      helperText="Agent ID from Voicebip Portal &rarr; AI Agents."
                     />
                     <NexaInput
                       label="Voicebip SIP Endpoint / Trunk"

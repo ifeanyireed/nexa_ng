@@ -85,6 +85,8 @@ export default function VoiceAgentDashboard() {
 
   const wsRef = useRef<WebSocket | null>(null);
   const timerRef = useRef<any>(null);
+  const pollRef = useRef<any>(null);
+  const currentCallIdRef = useRef<string>("");
   const transcriptBottomRef = useRef<HTMLDivElement>(null);
 
   // 1. Fetch live call history from CRM (crm_calls)
@@ -177,10 +179,12 @@ export default function VoiceAgentDashboard() {
       }, 1000);
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (pollRef.current) clearInterval(pollRef.current);
       setCallDuration(0);
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (pollRef.current) clearInterval(pollRef.current);
     };
   }, [isInCall]);
 
@@ -191,15 +195,140 @@ export default function VoiceAgentDashboard() {
     return `${mins.toString().padStart(2, "0")}:${remainder.toString().padStart(2, "0")}`;
   }
 
-  // 2. Start Live Interactive Voice Session via WebSocket
-  function startVoiceCall() {
+  // 2. Start Live Voice Session (Real PSTN via Voicebip or In-Browser Simulator)
+  async function startVoiceCall() {
     setLastOutcome(null);
     setTurns([]);
+
+    const activeSlug = (typeof window !== "undefined" ? getActiveTenantSlug() : "") || "";
+    if (!activeSlug) {
+      alert("Tenant context is required.");
+      return;
+    }
+
+    if (!targetPhone.trim()) {
+      alert("Please enter a valid destination phone number before initiating outreach.");
+      return;
+    }
+
     setIsInCall(true);
     setCallStatus("CONNECTING");
 
-    // Establish WebSocket connection to service_ai /ws/voice with tenant parameter
-    const activeSlug = (typeof window !== "undefined" ? getActiveTenantSlug() : "") || "default";
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+
+    // A. Real Voicebip Telephony Call
+    if (telephonyProvider === "VOICEBIP") {
+      setTurns([
+        {
+          speaker: "assistant",
+          text: `Connecting to Voicebip telephony gateway... Initiating live PSTN phone call to ${targetPhone.trim()}.`,
+          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+        },
+      ]);
+
+      try {
+        const res = await fetch(`/api/erp/telephony/outbound?tenant=${encodeURIComponent(activeSlug)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            tenantSlug: activeSlug,
+            targetPhone: targetPhone.trim(),
+            targetContact: targetContact.trim() || undefined,
+            targetCompany: targetCompany.trim() || undefined,
+            leadId: selectedLeadId || undefined,
+            provider: "VOICEBIP",
+          }),
+        });
+
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data.success) {
+          setCallStatus("FAILED");
+          setIsInCall(false);
+          setTurns((prev) => [
+            ...prev,
+            {
+              speaker: "assistant",
+              text: `❌ Call Dispatch Failed: ${data.error || "Unable to initiate call via Voicebip carrier gateway."}`,
+              time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            },
+          ]);
+          return;
+        }
+
+        currentCallIdRef.current = data.callId;
+        setCallStatus("RINGING");
+        setTurns((prev) => [
+          ...prev,
+          {
+            speaker: "assistant",
+            text: `📞 Live Call Initiated! Voicebip is dialing ${data.toNumber} from caller ID ${data.fromNumber}. (Call ID: ${data.callId}). Your phone will ring shortly.`,
+            time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          },
+        ]);
+
+        // Poll carrier status
+        let pollCount = 0;
+        pollRef.current = setInterval(async () => {
+          pollCount++;
+          if (pollCount > 40) {
+            if (pollRef.current) clearInterval(pollRef.current);
+            return;
+          }
+
+          try {
+            const statusRes = await fetch(
+              `/api/erp/telephony/outbound?callId=${encodeURIComponent(data.callId)}&tenant=${encodeURIComponent(activeSlug)}`
+            );
+            if (statusRes.ok) {
+              const statusData = await statusRes.json();
+              const c = statusData?.call;
+              if (c) {
+                if (c.status === "in_progress" || c.status === "answered") {
+                  setCallStatus("IN_PROGRESS");
+                  setIsAgentSpeaking(true);
+                } else if (c.status === "completed") {
+                  setCallStatus("COMPLETED");
+                  setIsInCall(false);
+                  if (pollRef.current) clearInterval(pollRef.current);
+                  loadCallHistory();
+                } else if (c.status === "failed") {
+                  setCallStatus("FAILED");
+                  setIsInCall(false);
+                  if (pollRef.current) clearInterval(pollRef.current);
+                  setTurns((prev) => [
+                    ...prev,
+                    {
+                      speaker: "assistant",
+                      text: `⚠️ Call Ended: Carrier reported status "${c.status}" (reason: ${c.failure_reason || "unanswered / busy"}).`,
+                      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+                    },
+                  ]);
+                  loadCallHistory();
+                }
+              }
+            }
+          } catch {}
+        }, 3000);
+      } catch (err: any) {
+        setCallStatus("FAILED");
+        setIsInCall(false);
+        setTurns((prev) => [
+          ...prev,
+          {
+            speaker: "assistant",
+            text: `Network error dispatching call: ${err.message}`,
+            time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          },
+        ]);
+      }
+      return;
+    }
+
+    // B. WebSocket or In-Browser Simulator
     const rawWs =
       process.env.NEXT_PUBLIC_VOICE_WS_URL ||
       (typeof window !== "undefined" && window.location.protocol === "https:"
@@ -215,7 +344,6 @@ export default function VoiceAgentDashboard() {
 
       socket.onopen = () => {
         setCallStatus("RINGING");
-        // Dispatch session start event with tenant orgId
         socket.send(
           JSON.stringify({
             event: "start_session",
@@ -358,6 +486,11 @@ export default function VoiceAgentDashboard() {
 
   // End call & trigger post-call CRM synchronisation
   async function endCall() {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(
         JSON.stringify({

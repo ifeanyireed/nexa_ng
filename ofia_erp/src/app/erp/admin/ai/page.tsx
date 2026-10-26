@@ -520,12 +520,12 @@ export default function VoiceAgentDashboard() {
             <NexaCard className="p-6">
               <div className="flex items-center justify-between pb-4 border-b border-[var(--nexa-border)]">
                 <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${
+                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center border transition-all ${
                     isInCall
                       ? isAgentSpeaking
-                        ? "bg-emerald-500/20 text-emerald-500 animate-pulse"
-                        : "bg-blue-500/20 text-blue-500"
-                      : "bg-neutral-100 dark:bg-neutral-800 text-[var(--nexa-text-muted)]"
+                        ? "bg-emerald-500/15 text-emerald-500 border-emerald-500/30 animate-pulse"
+                        : "bg-blue-500/15 text-[#1A56DB] dark:text-[#60A5FA] border-blue-500/30 shadow-sm"
+                      : "bg-[#1A56DB]/10 text-[#1A56DB] dark:bg-[#1A56DB]/15 dark:text-[#60A5FA] border-[#1A56DB]/20"
                   }`}>
                     {isInCall ? <PhoneCall className="w-5 h-5" /> : <Phone className="w-5 h-5" />}
                   </div>

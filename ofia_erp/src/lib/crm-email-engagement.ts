@@ -171,7 +171,7 @@ export async function processEmailEngagement(
           created_at, updated_at
         ) VALUES (
           ${newLeadId}, ${tenantSlug}, '', ${contactName}, ${companyName}, ${finalEmail}, ${phoneStr},
-          ${`Email Blast: ${blastTitle}`}, ${score}, 'QUALIFIED', '', '', '₦10,000,000', ${noteEntry},
+          ${`Email Blast: ${blastTitle}`}, ${score}, 'CURIOUS', '', '', '₦10,000,000', ${noteEntry},
           ${companyName}, ${contactName}, ${finalEmail}, ${phoneStr},
           ${score}, ${buyingSignals}::jsonb, ${blastId},
           NOW(), NOW()

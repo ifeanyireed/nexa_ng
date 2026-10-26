@@ -49,6 +49,7 @@ import { useTenantProvisioning, filterSalesClosers } from "@/lib/access-control"
 import { cn } from "@/lib/utils";
 
 const LEAD_STATUSES: { key: CrmLead["status"]; label: string; color: string }[] = [
+  { key: "CURIOUS", label: "Curious", color: "bg-cyan-500/10 text-cyan-600 border-cyan-500/20" },
   { key: "IDENTIFIED", label: "Identified", color: "bg-slate-500/10 text-slate-600 border-slate-500/20" },
   { key: "ENRICHED", label: "Enriched", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
   { key: "CONTACTED", label: "Contacted", color: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
@@ -137,7 +138,7 @@ function SalesCloserPortalContent() {
   const [newIndustry, setNewIndustry] = useState("Corporate Commercial");
   const [newLocation, setNewLocation] = useState("Lagos, Nigeria");
   const [newWebsite, setNewWebsite] = useState("");
-  const [newStatus, setNewStatus] = useState<CrmLead["status"]>("QUALIFIED");
+  const [newStatus, setNewStatus] = useState<CrmLead["status"]>("ENRICHED");
   const [newNotes, setNewNotes] = useState("");
   const [newLeadCloser, setNewLeadCloser] = useState<string>("");
   const [staffClosers, setStaffClosers] = useState<{ name: string; email: string }[]>([]);
@@ -1432,6 +1433,7 @@ function SalesCloserPortalContent() {
                     onChange={(e) => setNewStatus(e.target.value as CrmLead["status"])}
                     className="w-full px-3.5 py-2 text-xs font-bold rounded-xl bg-nexa-bg-base border border-nexa-border outline-none focus:border-emerald-500 text-nexa-text-primary cursor-pointer"
                   >
+                    <option value="CURIOUS">Curious</option>
                     <option value="QUALIFIED">Qualified</option>
                     <option value="MEETING_BOOKED">Meeting / Demo Booked</option>
                     <option value="CONTACTED">Contacted</option>

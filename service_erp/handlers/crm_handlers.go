@@ -216,7 +216,7 @@ func HandleCrmLeads(w http.ResponseWriter, r *http.Request) {
 				if owner != nil {
 					ownerVal = *owner
 				}
-				statusVal := "ENRICHED"
+				statusVal := "CURIOUS"
 				if status != nil && *status != "" {
 					statusVal = *status
 				}
@@ -299,7 +299,7 @@ func HandleCrmLeads(w http.ResponseWriter, r *http.Request) {
 			score = int(s)
 		}
 		if status == "" {
-			status = "ENRICHED"
+			status = "CURIOUS"
 		}
 
 		_, err := db.Exec(`INSERT INTO crm_leads (id, tenant_slug, name, company, email, phone, source, score, status, owner, value, notes, company_name, contact_name, contact_email, contact_phone, assigned_rep, icp_fit_score, created_at, updated_at)
@@ -1712,7 +1712,7 @@ func AutoAssignLeadFromEngagement(targetDB *sql.DB, slug, blastId, recId, eventT
 				assigned_rep, company_name, contact_name, contact_email, contact_phone, icp_fit_score, buying_signals, source_blast_id,
 				created_at, updated_at
 			) VALUES (
-				$1, $2, $3, $4, $5, $6, $7, $8, 'QUALIFIED', $9, '₦10,000,000', $10,
+				$1, $2, $3, $4, $5, $6, $7, $8, 'CURIOUS', $9, '₦10,000,000', $10,
 				$9, $4, $3, $5, $6, $8, $11, $12,
 				NOW(), NOW()
 			)`,
@@ -2783,7 +2783,7 @@ func HandleCrmLeadsExtract(w http.ResponseWriter, r *http.Request) {
 	leadId := fmt.Sprintf("LED-AI-%d", time.Now().UnixMilli())
 
 	_, err := db.Exec(`INSERT INTO crm_leads (id, tenant_slug, name, company, email, phone, source, score, status, owner, value, notes, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, 'AI Prospector Engine', 95, 'ENRICHED', 'AI Assistant', '₦15,000,000', $7, NOW(), NOW())`,
+		VALUES ($1, $2, $3, $4, $5, $6, 'AI Prospector Engine', 95, 'CURIOUS', 'AI Assistant', '₦15,000,000', $7, NOW(), NOW())`,
 		leadId, slug, pick.Contact, pick.Company, pick.Email, pick.Phone, fmt.Sprintf("Extracted matching query: %s in %s.", body.Query, body.Location))
 	if err != nil {
 		http.Error(w, fmt.Sprintf(`{"error": "%s"}`, err.Error()), http.StatusInternalServerError)
@@ -2800,7 +2800,7 @@ func HandleCrmLeadsExtract(w http.ResponseWriter, r *http.Request) {
 			"company":    pick.Company,
 			"email":      pick.Email,
 			"phone":      pick.Phone,
-			"status":     "ENRICHED",
+			"status":     "CURIOUS",
 			"score":      95,
 			"source":     "AI Prospector Engine",
 			"createdAt":  time.Now(),

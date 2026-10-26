@@ -631,7 +631,7 @@ func EnsureCRMTablesOnDB(targetDB *sql.DB) {
 		phone VARCHAR(50),
 		source VARCHAR(100),
 		score INT DEFAULT 50,
-		status VARCHAR(50) DEFAULT 'ENRICHED',
+		status VARCHAR(50) DEFAULT 'CURIOUS',
 		owner VARCHAR(191),
 		value VARCHAR(100),
 		notes TEXT,

@@ -43,7 +43,7 @@ export interface CrmLead {
   contactPhone?: string;
   icpFitScore: number;
   buyingSignals: string[];
-  status: "IDENTIFIED" | "ENRICHED" | "CONTACTED" | "QUALIFIED" | "MEETING_BOOKED" | "CONVERTED" | "ARCHIVED";
+  status: "CURIOUS" | "IDENTIFIED" | "ENRICHED" | "CONTACTED" | "QUALIFIED" | "MEETING_BOOKED" | "CONVERTED" | "ARCHIVED";
   assignedRep?: string;
   source?: string;
   audienceList?: string;
@@ -902,7 +902,7 @@ export async function createCrmLead(tenantSlug: string, lead: Partial<CrmLead>):
     contactPhone: lead.contactPhone || "",
     icpFitScore: lead.icpFitScore || 90,
     buyingSignals: lead.buyingSignals || ["Enriched via CRM intelligence"],
-    status: lead.status || "QUALIFIED",
+    status: lead.status || "CURIOUS",
     assignedRep: lead.assignedRep || "Growth Marketer",
     source: lead.source || "Direct Inbound",
     notes: lead.notes || "",

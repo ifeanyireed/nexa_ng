@@ -16,7 +16,7 @@ async function ensureCrmLeadsTable(sql: any) {
       phone VARCHAR(100) DEFAULT '',
       source VARCHAR(100) DEFAULT 'Direct Outreach',
       score INT DEFAULT 80,
-      status VARCHAR(50) DEFAULT 'QUALIFIED',
+      status VARCHAR(50) DEFAULT 'CURIOUS',
       owner VARCHAR(191) DEFAULT '',
       assigned_rep VARCHAR(191) DEFAULT '',
       value VARCHAR(100) DEFAULT '',
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
         COALESCE(phone, '') AS phone,
         COALESCE(source, 'Direct Outreach') AS source,
         COALESCE(score, 75) AS score,
-        COALESCE(status, 'QUALIFIED') AS status,
+        COALESCE(status, 'CURIOUS') AS status,
         COALESCE(owner, '') AS owner,
         COALESCE(assigned_rep, '') AS assigned_rep,
         COALESCE(value, '') AS value,
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
     const phone = (body.phone || body.contactPhone || "").trim();
     const source = (body.source || "Voice Outreach").trim();
     const score = Number(body.score) || 80;
-    const status = (body.status || "QUALIFIED").trim();
+    const status = (body.status || "CURIOUS").trim();
     const owner = (body.owner || body.assignedRep || "").trim();
     const assignedRep = (body.assignedRep || body.owner || "").trim();
     const value = (body.value || "").trim();

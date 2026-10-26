@@ -68,7 +68,7 @@ export default function CrmLeadsPage() {
   // Edit Lead Modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<CrmLead | null>(null);
-  const [editStatus, setEditStatus] = useState<string>("ENRICHED");
+  const [editStatus, setEditStatus] = useState<string>("CURIOUS");
   const [editAssignedCloser, setEditAssignedCloser] = useState<string>("Unassigned");
   const [editCompany, setEditCompany] = useState<string>("");
   const [editContact, setEditContact] = useState<string>("");
@@ -273,7 +273,7 @@ export default function CrmLeadsPage() {
         contactPhone: "+2348021122334",
         icpFitScore: 95,
         buyingSignals: ["Verified executive contact", "Corporate entity matched"],
-        status: "ENRICHED",
+        status: "CURIOUS",
         source: "AI Prospector Engine",
         assignedRep: "Senior Sales Specialist",
         notes: "Enriched via automated AI crawler.",
@@ -300,7 +300,7 @@ export default function CrmLeadsPage() {
       assignedRep: assignedCloser.startsWith("Auto-Assign") ? "Auto-Assign (Least-Loaded)" : assignedCloser,
       icpFitScore: 88,
       buyingSignals: ["Direct Manual Inbound"],
-      status: "ENRICHED" as const,
+      status: "CURIOUS" as const,
       source: "Manual Staff Entry",
     };
 
@@ -434,7 +434,7 @@ export default function CrmLeadsPage() {
 
   const handleOpenEditModal = (lead: CrmLead) => {
     setEditingLead(lead);
-    setEditStatus(lead.status || "ENRICHED");
+    setEditStatus(lead.status || "CURIOUS");
     setEditAssignedCloser(lead.assignedRep || "Unassigned");
     setEditCompany(lead.companyName || (lead as any).company || "");
     setEditContact(lead.contactName || (lead as any).name || "");
@@ -639,7 +639,7 @@ export default function CrmLeadsPage() {
           </div>
 
           <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1">
-            {["ALL", "ENRICHED", "IDENTIFIED", "CONTACTED", "QUALIFIED", "MEETING_BOOKED", "CONVERTED"].map((st) => (
+            {["ALL", "CURIOUS", "ENRICHED", "IDENTIFIED", "CONTACTED", "QUALIFIED", "MEETING_BOOKED", "CONVERTED"].map((st) => (
               <button
                 key={st}
                 onClick={() => setStatusFilter(st)}
@@ -852,6 +852,7 @@ export default function CrmLeadsPage() {
                           className="appearance-none pl-2.5 pr-6 py-1 rounded-lg text-xs font-semibold cursor-pointer border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] hover:border-[#1A56DB]/50 transition-all focus:outline-none focus:ring-1 focus:ring-[#1A56DB] disabled:opacity-50"
                           title="Click to change lead status"
                         >
+                          <option value="CURIOUS">CURIOUS</option>
                           <option value="ENRICHED">ENRICHED</option>
                           <option value="IDENTIFIED">IDENTIFIED</option>
                           <option value="CONTACTED">CONTACTED</option>
@@ -1164,6 +1165,7 @@ export default function CrmLeadsPage() {
                 onChange={(e) => setEditStatus(e.target.value)}
                 className="w-full px-3 py-2 text-xs rounded-lg bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#1A56DB]"
               >
+                <option value="CURIOUS">CURIOUS</option>
                 <option value="ENRICHED">ENRICHED</option>
                 <option value="IDENTIFIED">IDENTIFIED</option>
                 <option value="CONTACTED">CONTACTED</option>

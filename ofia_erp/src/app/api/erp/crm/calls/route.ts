@@ -189,11 +189,31 @@ export async function POST(request: NextRequest) {
     await ensureCrmCallsTable(sql);
 
     const callId = body.id || `CALL-AI-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-    const leadId = body.leadId || body.lead_id || "";
+    let leadId = body.leadId || body.lead_id || "";
     const dealId = body.dealId || body.deal_id || "";
     const contactName = body.contactName || body.contact_name || "Corporate Prospect";
     const company = body.company || "";
     const phoneNumber = body.phoneNumber || body.phone_number || "";
+
+    // Auto-link to existing lead by phone or name if leadId wasn't passed
+    if (!leadId && phoneNumber) {
+      try {
+        const rawClean = phoneNumber.replace(/[^0-9]/g, "");
+        const lastDigits = rawClean.length >= 10 ? rawClean.slice(-10) : rawClean;
+        const [matchedLead] = await sql`
+          SELECT id FROM crm_leads
+          WHERE LOWER(tenant_slug) = ${tenantSlug}
+            AND (
+              phone LIKE ${'%' + lastDigits}
+              OR (LOWER(name) = ${String(contactName || '').toLowerCase().trim()} AND LENGTH(${String(contactName || '').trim()}) > 0)
+            )
+          LIMIT 1;
+        `;
+        if (matchedLead?.id) {
+          leadId = matchedLead.id;
+        }
+      } catch {}
+    }
     const repName = body.repName || body.rep_name || (body.isAi || body.is_ai ? "Ofia Voice Agent" : "Sales Rep");
     const repEmail = body.repEmail || body.rep_email || (body.isAi || body.is_ai ? "voice-agent@ofia.ng" : "");
     const direction = body.direction || "OUTBOUND";

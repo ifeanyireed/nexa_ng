@@ -160,6 +160,27 @@ export async function POST(request: NextRequest) {
       await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(191) DEFAULT '';`;
       await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS telephony_sid VARCHAR(191);`;
 
+      // 5. Automatically link to existing lead entry if leadId wasn't explicitly passed
+      let resolvedLeadId = leadId || "";
+      if (!resolvedLeadId) {
+        try {
+          const rawClean = formattedToNumber.replace(/[^0-9]/g, "");
+          const lastDigits = rawClean.length >= 10 ? rawClean.slice(-10) : rawClean;
+          const [matchedLead] = await sql`
+            SELECT id FROM crm_leads
+            WHERE LOWER(tenant_slug) = ${tenantSlug}
+              AND (
+                phone LIKE ${'%' + lastDigits}
+                OR (LOWER(name) = ${String(targetContact || '').toLowerCase().trim()} AND LENGTH(${String(targetContact || '').trim()}) > 0)
+              )
+            LIMIT 1;
+          `;
+          if (matchedLead?.id) {
+            resolvedLeadId = matchedLead.id;
+          }
+        } catch {}
+      }
+
       const internalCallId = `CALL-VB-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
       await sql`
         INSERT INTO crm_calls (
@@ -170,7 +191,7 @@ export async function POST(request: NextRequest) {
           ${internalCallId},
           ${tenantSlug},
           '',
-          ${leadId || ''},
+          ${resolvedLeadId},
           ${targetContact || 'Corporate Prospect'},
           ${targetCompany || ''},
           ${formattedToNumber},

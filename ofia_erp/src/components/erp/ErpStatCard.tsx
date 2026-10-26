@@ -39,18 +39,22 @@ export function ErpStatGrid({
           variant="glass"
           className="p-6 relative overflow-hidden group hover:border-nexa-brand/30 transition-all rounded-3xl"
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-11 h-11 rounded-2xl bg-nexa-brand/10 text-nexa-brand flex items-center justify-center group-hover:scale-110 transition-transform">
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <div className="w-11 h-11 rounded-2xl bg-nexa-brand/10 text-nexa-brand flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
               {kpi.icon}
             </div>
             {kpi.change && (
               <span
                 className={cn(
-                  "text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border",
+                  "text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border whitespace-nowrap shrink-0",
                   kpi.changeType === "danger"
                     ? "bg-red-500/10 text-red-500 border-red-500/20"
                     : kpi.changeType === "warning"
                     ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                    : kpi.changeType === "info"
+                    ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                    : kpi.changeType === "neutral"
+                    ? "bg-neutral-500/10 text-[var(--nexa-text-muted)] border-[var(--nexa-border)]"
                     : "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
                 )}
               >
@@ -58,14 +62,14 @@ export function ErpStatGrid({
               </span>
             )}
           </div>
-          <p className="text-xs text-nexa-text-faint font-bold uppercase tracking-wider mb-1">
+          <p className="text-xs text-nexa-text-faint font-bold uppercase tracking-wider mb-1 truncate whitespace-nowrap">
             {kpi.label}
           </p>
-          <h3 className="text-2xl font-extrabold text-display text-nexa-text-primary mb-1">
+          <h3 className="text-2xl font-extrabold text-display text-nexa-text-primary mb-1 truncate whitespace-nowrap">
             {kpi.value}
           </h3>
           {kpi.sub && (
-            <p className="text-[11px] text-nexa-text-secondary font-medium">{kpi.sub}</p>
+            <p className="text-[11px] text-nexa-text-secondary font-medium truncate whitespace-nowrap">{kpi.sub}</p>
           )}
         </NexaCard>
       ))}
@@ -79,18 +83,22 @@ export function ErpStatCard(props: ErpStatItem) {
       variant="glass"
       className="p-6 relative overflow-hidden group hover:border-nexa-brand/30 transition-all rounded-3xl"
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="w-11 h-11 rounded-2xl bg-nexa-brand/10 text-nexa-brand flex items-center justify-center group-hover:scale-110 transition-transform">
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <div className="w-11 h-11 rounded-2xl bg-nexa-brand/10 text-nexa-brand flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
           {props.icon}
         </div>
         {props.change && (
           <span
             className={cn(
-              "text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border",
+              "text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border whitespace-nowrap shrink-0",
               props.changeType === "danger"
                 ? "bg-red-500/10 text-red-500 border-red-500/20"
                 : props.changeType === "warning"
                 ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                : props.changeType === "info"
+                ? "bg-blue-500/10 text-blue-500 border-blue-500/20"
+                : props.changeType === "neutral"
+                ? "bg-neutral-500/10 text-[var(--nexa-text-muted)] border-[var(--nexa-border)]"
                 : "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
             )}
           >
@@ -98,14 +106,14 @@ export function ErpStatCard(props: ErpStatItem) {
           </span>
         )}
       </div>
-      <p className="text-xs text-nexa-text-faint font-bold uppercase tracking-wider mb-1">
+      <p className="text-xs text-nexa-text-faint font-bold uppercase tracking-wider mb-1 truncate whitespace-nowrap">
         {props.label}
       </p>
-      <h3 className="text-2xl font-extrabold text-display text-nexa-text-primary mb-1">
+      <h3 className="text-2xl font-extrabold text-display text-nexa-text-primary mb-1 truncate whitespace-nowrap">
         {props.value}
       </h3>
       {props.sub && (
-        <p className="text-[11px] text-nexa-text-secondary font-medium">{props.sub}</p>
+        <p className="text-[11px] text-nexa-text-secondary font-medium truncate whitespace-nowrap">{props.sub}</p>
       )}
     </NexaCard>
   );

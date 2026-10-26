@@ -449,6 +449,7 @@ export default function VoiceAgentDashboard() {
           <NexaButton
             variant="primary"
             size="sm"
+            className="whitespace-nowrap shrink-0 inline-flex items-center"
             onClick={() => {
               if (isInCall) endCall();
               else startVoiceCall();
@@ -476,30 +477,38 @@ export default function VoiceAgentDashboard() {
             {
               label: "Total Outreach Calls",
               value: totalCalls.toLocaleString(),
-              change: `${todayCalls} today`,
+              change: todayCalls > 0 ? `+${todayCalls} today` : "Live Synced",
               trend: todayCalls > 0 ? "up" : "neutral",
+              changeType: todayCalls > 0 ? "success" : "neutral",
               icon: <PhoneCall className="w-5 h-5 text-blue-500" />,
+              sub: `${todayCalls} calls placed today`,
             },
             {
               label: "Connection Rate",
               value: `${connectRate}%`,
-              change: `${connectedCalls} connected`,
+              change: `${connectedCalls} answered`,
               trend: connectRate > 50 ? "up" : "neutral",
+              changeType: connectRate >= 50 ? "success" : "neutral",
               icon: <Activity className="w-5 h-5 text-emerald-500" />,
+              sub: `${connectedCalls} of ${totalCalls} calls connected`,
             },
             {
-              label: "Qualified Corporate Leads",
+              label: "Qualified Leads",
               value: qualifiedLeads.toLocaleString(),
-              change: `${totalCalls > 0 ? Math.round((qualifiedLeads / totalCalls) * 100) : 0}% qual rate`,
+              change: `${totalCalls > 0 ? Math.round((qualifiedLeads / totalCalls) * 100) : 0}% rate`,
               trend: qualifiedLeads > 0 ? "up" : "neutral",
+              changeType: qualifiedLeads > 0 ? "success" : "neutral",
               icon: <Target className="w-5 h-5 text-purple-500" />,
+              sub: `${qualifiedLeads} high-intent accounts`,
             },
             {
               label: "Avg Call Duration",
               value: formatSeconds(avgDurationSec),
-              change: `${totalDuration}s total talk time`,
+              change: `${Math.round(totalDuration / 60)}m talk time`,
               trend: "neutral",
+              changeType: "info",
               icon: <Clock className="w-5 h-5 text-amber-500" />,
+              sub: `${totalDuration}s total spoken airtime`,
             },
           ]}
         />
@@ -712,15 +721,15 @@ export default function VoiceAgentDashboard() {
                   </div>
                 </div>
               ) : (
-                <div className="mt-4 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-[var(--nexa-text-muted)]">Telephony Gateway:</span>
+                <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[var(--nexa-border)]/60">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-xs text-[var(--nexa-text-muted)] shrink-0">Telephony Gateway:</span>
                     <select
                       value={telephonyProvider}
                       onChange={(e) => setTelephonyProvider(e.target.value)}
-                      className="text-xs px-2.5 py-1.5 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-primary)] focus:outline-none"
+                      className="text-xs px-2.5 py-1.5 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-primary)] focus:outline-none max-w-[260px] sm:max-w-[300px] truncate"
                     >
-                      <option value="VOICEBIP">Voicebip Telephony (Direct Nigerian PSTN/SIP)</option>
+                      <option value="VOICEBIP">Voicebip Direct (PSTN +234 / SIP)</option>
                       <option value="WEBRTC_BROWSER">In-Browser Voice Simulator</option>
                       <option value="TERMII">Termii Voice (Nigeria PSTN)</option>
                       <option value="TWILIO">Twilio SIP Media Streams</option>
@@ -728,8 +737,13 @@ export default function VoiceAgentDashboard() {
                     </select>
                   </div>
 
-                  <NexaButton variant="primary" size="sm" onClick={startVoiceCall}>
-                    <PhoneCall className="w-3.5 h-3.5 mr-1.5" />
+                  <NexaButton
+                    variant="primary"
+                    size="sm"
+                    className="whitespace-nowrap shrink-0 inline-flex items-center self-end sm:self-auto"
+                    onClick={startVoiceCall}
+                  >
+                    <PhoneCall className="w-3.5 h-3.5 mr-1.5 shrink-0" />
                     Start Voice Outreach
                   </NexaButton>
                 </div>

@@ -21,6 +21,11 @@ import {
   Pencil,
   ChevronDown,
   Users,
+  UserCheck,
+  Eye,
+  Calendar,
+  Clock,
+  Activity,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -40,6 +45,7 @@ export default function CrmLeadsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [callStatusFilter, setCallStatusFilter] = useState("ALL");
+  const [repFilter, setRepFilter] = useState("ALL");
   const [isLoading, setIsLoading] = useState(true);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
 
@@ -77,6 +83,144 @@ export default function CrmLeadsPage() {
   const [editNotes, setEditNotes] = useState<string>("");
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
+  // Buying Signals Modal
+  const [isSignalsModalOpen, setIsSignalsModalOpen] = useState(false);
+  const [selectedSignalsLead, setSelectedSignalsLead] = useState<CrmLead | null>(null);
+
+  const getSignalItems = (lead: CrmLead | null) => {
+    if (!lead) return [];
+    const rawSignals =
+      Array.isArray(lead.buyingSignals) && lead.buyingSignals.length > 0
+        ? lead.buyingSignals
+        : lead.notes
+        ? [lead.notes]
+        : ["Direct Commercial Lead Inbound"];
+
+    // Expand any string that contains multiple concatenated events
+    const signals: string[] = [];
+    for (const s of rawSignals) {
+      if (typeof s !== "string") continue;
+      const parts = s
+        .split(
+          /\r?\n|(?<=[.!?])\s+(?=(?:Call Log\s*\(|Lead auto-assigned|Email [bB]last|Inbound|Outbound|Direct Outreach|Converted to Deal|Promoted to Deal|Deal Won|Meeting Scheduled))/g
+        )
+        .map((p) => p.trim())
+        .filter(Boolean);
+      signals.push(...parts);
+    }
+
+    const baseCreatedAt = lead.createdAt ? new Date(lead.createdAt) : new Date();
+    const validBaseTime = isNaN(baseCreatedAt.getTime()) ? new Date() : baseCreatedAt;
+    const updatedAt = lead.updatedAt ? new Date(lead.updatedAt) : null;
+    const validUpdateTime = updatedAt && !isNaN(updatedAt.getTime()) ? updatedAt : null;
+
+    // Check if calls exist for this lead to match exact call timestamps
+    const matchingCall = calls.find(
+      (c) =>
+        (lead.id && c.leadId === lead.id) ||
+        (lead.companyName && c.company && c.company.toLowerCase() === lead.companyName.toLowerCase()) ||
+        (lead.contactPhone &&
+          c.phoneNumber &&
+          c.phoneNumber.replace(/[^0-9]/g, "").slice(-7) === lead.contactPhone.replace(/[^0-9]/g, "").slice(-7))
+    );
+
+    return signals.map((rawSignal, idx) => {
+      let text = String(rawSignal || "").trim();
+      let eventDate = "";
+      let eventTime = "";
+      let eventType: "CALL" | "CAMPAIGN" | "ASSIGNMENT" | "INBOUND" | "SIGNAL" = "SIGNAL";
+
+      if (text.toLowerCase().startsWith("call log") || text.includes("(CONNECTED_") || text.includes("Call Log")) {
+        eventType = "CALL";
+      } else if (text.toLowerCase().includes("email blast") || text.toLowerCase().includes("opened the email")) {
+        eventType = "CAMPAIGN";
+      } else if (text.toLowerCase().includes("auto-assigned")) {
+        eventType = "ASSIGNMENT";
+      } else if (text.toLowerCase().includes("inbound")) {
+        eventType = "INBOUND";
+      }
+
+      // 1. Check if raw signal already contains a timestamp prefix like [YYYY-MM-DD HH:MM:SS]
+      const match = text.match(
+        /^\[?(20\d{2}[-/.]\d{1,2}[-/.]\d{1,2}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?)\]?\s*[:-]?\s*(.*)$/
+      );
+      if (match) {
+        const parsed = new Date(match[1]);
+        if (!isNaN(parsed.getTime())) {
+          eventDate = parsed.toLocaleDateString(undefined, {
+            weekday: "short",
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          });
+          eventTime = parsed.toLocaleTimeString(undefined, {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          });
+          text = match[2].trim() || text;
+        }
+      }
+
+      // 2. If it's a Call Log event and we have matching call log, use the exact call timestamp
+      if (!eventDate && eventType === "CALL" && matchingCall?.callDate) {
+        const callD = new Date(matchingCall.callDate);
+        if (!isNaN(callD.getTime())) {
+          eventDate = callD.toLocaleDateString(undefined, {
+            weekday: "short",
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+          });
+          eventTime = callD.toLocaleTimeString(undefined, {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+          });
+        }
+      }
+
+      // 3. If it's a Call Log or subsequent event, use lead.updatedAt if available
+      if (!eventDate && eventType === "CALL" && validUpdateTime) {
+        eventDate = validUpdateTime.toLocaleDateString(undefined, {
+          weekday: "short",
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+        eventTime = validUpdateTime.toLocaleTimeString(undefined, {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+      }
+
+      // 4. Fallback to validBaseTime (lead.createdAt)
+      if (!eventDate) {
+        const itemDate = new Date(validBaseTime.getTime() - idx * 1000 * 60 * 15);
+        eventDate = itemDate.toLocaleDateString(undefined, {
+          weekday: "short",
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+        eventTime = itemDate.toLocaleTimeString(undefined, {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+      }
+
+      return {
+        id: idx,
+        text,
+        eventDate,
+        eventTime,
+        eventType,
+      };
+    });
+  };
+
   useEffect(() => {
     async function loadClosers() {
       try {
@@ -89,6 +233,14 @@ export default function CrmLeadsPage() {
       }
     }
     loadClosers();
+
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const qRep = params.get("rep") || params.get("assignedRep");
+      if (qRep) {
+        setRepFilter(qRep);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -99,7 +251,33 @@ export default function CrmLeadsPage() {
           crmFetch("/api/erp/crm/calls").then((r) => r.json()).catch(() => null),
         ]);
         const rawLeads = Array.isArray(leadsRes) ? leadsRes : Array.isArray(leadsRes?.leads) ? leadsRes.leads : [];
-        setLeads(rawLeads);
+        const normalizedLeads = rawLeads.map((l: any) => {
+          const rawSignals =
+            Array.isArray(l.buyingSignals) && l.buyingSignals.length > 0
+              ? l.buyingSignals
+              : l.notes
+              ? [l.notes]
+              : ["Direct Outreach"];
+
+          const splitSignals: string[] = [];
+          for (const s of rawSignals) {
+            if (typeof s !== "string") continue;
+            const parts = s
+              .split(
+                /\r?\n|(?<=[.!?])\s+(?=(?:Call Log\s*\(|Lead auto-assigned|Email [bB]last|Inbound|Outbound|Direct Outreach|Converted to Deal|Promoted to Deal|Deal Won|Meeting Scheduled))/g
+              )
+              .map((p) => p.trim())
+              .filter(Boolean);
+            splitSignals.push(...parts);
+          }
+
+          return {
+            ...l,
+            icpFitScore: l.icpFitScore ?? l.score ?? 75,
+            buyingSignals: splitSignals.length > 0 ? splitSignals : ["Direct Outreach"],
+          };
+        });
+        setLeads(normalizedLeads);
         const rawCalls = Array.isArray(callsRes?.calls) ? callsRes.calls : [];
         setCalls(rawCalls);
       } catch {
@@ -122,8 +300,9 @@ export default function CrmLeadsPage() {
       }
       if (c.phoneNumber) {
         const clean = c.phoneNumber.replace(/[^0-9]/g, "");
-        if (clean.length >= 7 && !map.has(`phone:${clean.slice(-10)}`)) {
-          map.set(`phone:${clean.slice(-10)}`, c);
+        if (clean.length >= 7) {
+          if (!map.has(`phone:${clean.slice(-10)}`)) map.set(`phone:${clean.slice(-10)}`, c);
+          if (!map.has(`phone:${clean.slice(-7)}`)) map.set(`phone:${clean.slice(-7)}`, c);
         }
       }
       if (c.contactName && c.company) {
@@ -131,6 +310,14 @@ export default function CrmLeadsPage() {
         if (!map.has(key)) {
           map.set(key, c);
         }
+      }
+      if (c.contactName) {
+        const key = `name:${c.contactName.trim().toLowerCase()}`;
+        if (!map.has(key)) map.set(key, c);
+      }
+      if (c.company) {
+        const key = `comp:${c.company.trim().toLowerCase()}`;
+        if (!map.has(key)) map.set(key, c);
       }
     }
     return map;
@@ -141,30 +328,46 @@ export default function CrmLeadsPage() {
     if (lead.id) {
       call = latestCallByLead.get(`id:${lead.id}`);
     }
-    if (!call && (lead.contactPhone || (lead as any).phone)) {
-      const clean = (lead.contactPhone || (lead as any).phone).replace(/[^0-9]/g, "");
+    const leadPhone = lead.contactPhone || (lead as any).phone;
+    if (!call && leadPhone) {
+      const clean = leadPhone.replace(/[^0-9]/g, "");
       if (clean.length >= 7) {
-        call = latestCallByLead.get(`phone:${clean.slice(-10)}`);
+        call =
+          latestCallByLead.get(`phone:${clean.slice(-10)}`) ||
+          latestCallByLead.get(`phone:${clean.slice(-7)}`);
       }
     }
     if (!call && lead.contactName && lead.companyName) {
       const key = `name_comp:${lead.contactName.trim().toLowerCase()}_${lead.companyName.trim().toLowerCase()}`;
       call = latestCallByLead.get(key);
     }
+    if (!call && lead.contactName) {
+      call = latestCallByLead.get(`name:${lead.contactName.trim().toLowerCase()}`);
+    }
+    if (!call && lead.companyName) {
+      call = latestCallByLead.get(`comp:${lead.companyName.trim().toLowerCase()}`);
+    }
     return call;
   };
 
-  const getCallIndicator = (call?: CrmCall) => {
-    if (!call || !call.outcome) {
-      return {
-        color: "blue" as const,
-        label: "Not on call logger",
-        tooltip: "Not on call logger - click to log call",
-        dotClass: "bg-blue-500",
-      };
-    }
+  const getCallIndicator = (call?: CrmCall, lead?: CrmLead) => {
+    let outcome = call?.outcome ? String(call.outcome).toUpperCase().trim() : "";
 
-    const outcome = String(call.outcome).toUpperCase().trim();
+    // If no outcome from call object, inspect lead notes / buying signals for embedded call logs
+    if (!outcome && lead) {
+      const notesText = [
+        lead.notes || "",
+        ...(Array.isArray(lead.buyingSignals) ? lead.buyingSignals : []),
+      ].join(" ");
+
+      const match =
+        notesText.match(/Call Log\s*\(([^)]+)\)/i) ||
+        notesText.match(/\b(CONNECTED_[A-Z_]+|NOT_INTERESTED|NO_ANSWER|WRONG_NUMBER|BUSY|VOICEMAIL)\b/i);
+
+      if (match) {
+        outcome = match[1].toUpperCase().trim();
+      }
+    }
 
     // GREEN: interested, proposal, deal won
     if (
@@ -231,6 +434,31 @@ export default function CrmLeadsPage() {
         tooltip: `Call Logger: ${outcomeLabel} (Click to log new call)`,
         dotClass: "bg-rose-500",
       };
+    }
+
+    // If still no specific call outcome, check if lead status confirms they have been contacted!
+    if (lead) {
+      if (
+        lead.status === "CONVERTED" ||
+        lead.status === "MEETING_BOOKED" ||
+        lead.status === "QUALIFIED" ||
+        lead.status === "PROPOSAL"
+      ) {
+        return {
+          color: "green" as const,
+          label: `Contacted & ${lead.status}`,
+          tooltip: `Contacted & Advanced (${lead.status}) - Click to log new call`,
+          dotClass: "bg-emerald-500",
+        };
+      }
+      if (lead.status === "CONTACTED") {
+        return {
+          color: "yellow" as const,
+          label: "Contacted",
+          tooltip: "Contacted - Click to record call details",
+          dotClass: "bg-amber-500",
+        };
+      }
     }
 
     // Fallback: Blue (not on call logger or unclassified)
@@ -342,13 +570,13 @@ export default function CrmLeadsPage() {
           contactName: lead.contactName,
           email: lead.contactEmail,
           phone: lead.contactPhone || "",
-          value: "₦7,500,000",
+          value: (lead as any).value || "TBD",
           stage: "QUALIFIED",
           owner: lead.assignedRep || "Senior Account Exec",
           probability: 50,
-          expectedClose: "Next Month",
+          expectedClose: "TBD",
           leadId: lead.id,
-          notes: `Promoted from lead ${lead.id}. Signals: ${lead.buyingSignals.join(", ")}`,
+          notes: `Promoted from lead ${lead.id}. Signals: ${(lead.buyingSignals || []).join(", ")}`,
         }),
       });
       const data = await res.json();
@@ -499,11 +727,41 @@ export default function CrmLeadsPage() {
     const counts: Record<string, number> = { ALL: leads.length, green: 0, yellow: 0, red: 0, blue: 0 };
     for (const l of leads) {
       const c = getLeadCallInfo(l);
-      const ind = getCallIndicator(c);
+      const ind = getCallIndicator(c, l);
       counts[ind.color] = (counts[ind.color] || 0) + 1;
     }
     return counts;
   }, [leads, latestCallByLead]);
+
+  const allRepOptions = useMemo(() => {
+    const set = new Set<string>();
+    availableClosers.forEach((c) => {
+      const name = c.name?.trim();
+      if (name && name !== "Unassigned" && !name.startsWith("Auto-Assign")) {
+        set.add(name);
+      }
+    });
+    leads.forEach((l) => {
+      const rep = (l.assignedRep || (l as any).owner || "").trim();
+      if (rep && rep !== "Unassigned" && !rep.startsWith("Auto-Assign")) {
+        set.add(rep);
+      }
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [availableClosers, leads]);
+
+  const repCounts = useMemo(() => {
+    const counts: Record<string, number> = { ALL: leads.length, UNASSIGNED: 0 };
+    for (const l of leads) {
+      const rep = (l.assignedRep || (l as any).owner || "").trim();
+      if (!rep || rep === "Unassigned" || rep.startsWith("Auto-Assign")) {
+        counts.UNASSIGNED = (counts.UNASSIGNED || 0) + 1;
+      } else {
+        counts[rep] = (counts[rep] || 0) + 1;
+      }
+    }
+    return counts;
+  }, [leads]);
 
   const filteredLeads = leads.filter((l) => {
     const q = searchQuery.toLowerCase();
@@ -525,17 +783,27 @@ export default function CrmLeadsPage() {
     let matchCallStatus = true;
     if (callStatusFilter !== "ALL") {
       const c = getLeadCallInfo(l);
-      const ind = getCallIndicator(c);
+      const ind = getCallIndicator(c, l);
       matchCallStatus = ind.color === callStatusFilter;
     }
 
-    return matchSearch && matchStatus && matchCallStatus;
+    let matchRep = true;
+    if (repFilter !== "ALL") {
+      const rep = (l.assignedRep || (l as any).owner || "").trim();
+      if (repFilter === "UNASSIGNED") {
+        matchRep = !rep || rep === "Unassigned" || rep.startsWith("Auto-Assign");
+      } else {
+        matchRep = rep.toLowerCase() === repFilter.toLowerCase();
+      }
+    }
+
+    return matchSearch && matchStatus && matchCallStatus && matchRep;
   });
 
-  // Reset page when search or status filter changes
+  // Reset page when search or filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter, callStatusFilter]);
+  }, [searchQuery, statusFilter, callStatusFilter, repFilter]);
 
   const totalItems = filteredLeads.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
@@ -595,10 +863,17 @@ export default function CrmLeadsPage() {
             },
             {
               label: "High ICP Fit (>90%)",
-              value: leads.filter((l) => l.icpFitScore >= 90).length.toString(),
+              value: leads.filter((l) => (l.icpFitScore ?? (l as any).score ?? 75) >= 90).length.toString(),
               change: "Prime buyer readiness",
               changeType: "success",
               icon: <Flame className="w-4 h-4 text-rose-500" />,
+            },
+            {
+              label: "Assigned to Closers",
+              value: `${leads.length - (repCounts.UNASSIGNED || 0)} / ${leads.length}`,
+              change: `${repCounts.UNASSIGNED || 0} unassigned`,
+              changeType: (repCounts.UNASSIGNED || 0) > 0 ? "warning" : "success",
+              icon: <UserCheck className="w-4 h-4 text-blue-500" />,
             },
             {
               label: "Meetings Booked",
@@ -611,7 +886,7 @@ export default function CrmLeadsPage() {
         />
 
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-          <div className="flex items-center gap-2 w-full md:w-auto flex-1 max-w-lg">
+          <div className="flex items-center gap-2 w-full md:w-auto flex-1 max-w-2xl flex-wrap sm:flex-nowrap">
             <div className="flex-1 min-w-[200px]">
               <NexaInput
                 placeholder="Search company, contact, or email..."
@@ -620,6 +895,25 @@ export default function CrmLeadsPage() {
                 leftIcon={<Search className="w-4 h-4" />}
               />
             </div>
+            {/* Rep Dropdown Filter */}
+            <div className="relative">
+              <select
+                value={repFilter}
+                onChange={(e) => setRepFilter(e.target.value)}
+                className="appearance-none pl-3 pr-8 py-2 rounded-xl text-xs font-semibold border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] hover:border-[#1A56DB]/50 transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#1A56DB] shrink-0"
+                title="Filter by Assigned Sales Closer / Rep"
+              >
+                <option value="ALL">All Reps ({repCounts.ALL || 0})</option>
+                <option value="UNASSIGNED">Unassigned ({repCounts.UNASSIGNED || 0})</option>
+                {allRepOptions.map((rep) => (
+                  <option key={rep} value={rep}>
+                    👤 {rep} ({repCounts[rep] || 0})
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-3.5 h-3.5 text-[var(--nexa-text-muted)] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+
             {/* Call Status Dropdown Filter */}
             <div className="relative">
               <select
@@ -639,7 +933,7 @@ export default function CrmLeadsPage() {
           </div>
 
           <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1">
-            {["ALL", "CURIOUS", "ENRICHED", "IDENTIFIED", "CONTACTED", "QUALIFIED", "MEETING_BOOKED", "CONVERTED"].map((st) => (
+            {["ALL", "CURIOUS", "IDENTIFIED", "CONTACTED", "QUALIFIED", "PROPOSAL", "MEETING_BOOKED", "CONVERTED"].map((st) => (
               <button
                 key={st}
                 onClick={() => setStatusFilter(st)}
@@ -657,6 +951,21 @@ export default function CrmLeadsPage() {
 
         {/* Call Logger Status Filter Chips */}
         <div className="flex items-center gap-2 text-xs text-[var(--nexa-text-muted)] flex-wrap px-1">
+          {repFilter !== "ALL" && (
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20">
+              <UserCheck className="w-3.5 h-3.5 text-[#1A56DB]" />
+              <span>Rep: {repFilter === "UNASSIGNED" ? "Unassigned" : repFilter}</span>
+              <button
+                type="button"
+                onClick={() => setRepFilter("ALL")}
+                className="hover:text-rose-600 ml-0.5 text-sm leading-none font-extrabold cursor-pointer"
+                title="Clear rep filter"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
           <span className="font-bold text-[var(--nexa-text-secondary)] flex items-center gap-1.5 mr-1">
             <PhoneCall className="w-3.5 h-3.5 text-[#1A56DB]" /> Call Status:
           </span>
@@ -734,13 +1043,18 @@ export default function CrmLeadsPage() {
             <span className="text-[10px] opacity-80 font-normal">({callCounts.blue})</span>
           </button>
 
-          {callStatusFilter !== "ALL" && (
+          {(callStatusFilter !== "ALL" || repFilter !== "ALL" || statusFilter !== "ALL" || searchQuery) && (
             <button
               type="button"
-              onClick={() => setCallStatusFilter("ALL")}
+              onClick={() => {
+                setCallStatusFilter("ALL");
+                setRepFilter("ALL");
+                setStatusFilter("ALL");
+                setSearchQuery("");
+              }}
               className="text-xs font-bold text-[#1A56DB] hover:underline cursor-pointer ml-1"
             >
-              Reset filter
+              Reset filters
             </button>
           )}
         </div>
@@ -754,7 +1068,16 @@ export default function CrmLeadsPage() {
                   <th className="py-3 px-4">Decision Maker Contact</th>
                   <th className="py-3 px-4">Buying Signals</th>
                   <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Assigned Rep</th>
+                  <th className="py-3 px-4">
+                    <div className="flex items-center gap-1.5">
+                      <span>Assigned Rep</span>
+                      {repFilter !== "ALL" && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-[#1A56DB] text-white">
+                          Filtered
+                        </span>
+                      )}
+                    </div>
+                  </th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -763,13 +1086,14 @@ export default function CrmLeadsPage() {
                   <tr>
                     <td colSpan={6} className="py-10 text-center text-xs text-[var(--nexa-text-muted)]">
                       <div>No leads found matching criteria.</div>
-                      {(statusFilter !== "ALL" || callStatusFilter !== "ALL" || searchQuery) && (
+                      {(statusFilter !== "ALL" || callStatusFilter !== "ALL" || repFilter !== "ALL" || searchQuery) && (
                         <div className="pt-2">
                           <button
                             type="button"
                             onClick={() => {
                               setStatusFilter("ALL");
                               setCallStatusFilter("ALL");
+                              setRepFilter("ALL");
                               setSearchQuery("");
                             }}
                             className="text-xs font-bold text-[#1A56DB] hover:underline cursor-pointer"
@@ -788,7 +1112,7 @@ export default function CrmLeadsPage() {
                         <span className="font-extrabold text-[var(--nexa-text-primary)]">{lead.companyName}</span>
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                           <Flame className="w-3 h-3 text-amber-500" />
-                          {lead.icpFitScore}% ICP
+                          {lead.icpFitScore ?? (lead as any).score ?? 75}% ICP
                         </span>
                       </div>
                       <div className="text-[11px] text-[var(--nexa-text-muted)] flex items-center gap-2">
@@ -826,17 +1150,28 @@ export default function CrmLeadsPage() {
                       </div>
                     </td>
 
-                    <td className="py-3.5 px-4 max-w-xs">
-                      <div className="flex flex-wrap gap-1">
-                        {lead.buyingSignals.map((sig, i) => (
-                          <span
-                            key={i}
-                            className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-muted)] border border-[var(--nexa-border)]"
+                    <td className="py-3.5 px-4">
+                      {(() => {
+                        const count = getSignalItems(lead).length;
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedSignalsLead(lead);
+                              setIsSignalsModalOpen(true);
+                            }}
+                            className="relative p-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] hover:border-[#1A56DB] text-[var(--nexa-text-secondary)] hover:text-[#1A56DB] hover:bg-[#1A56DB]/5 transition-all cursor-pointer shadow-2xs group inline-flex items-center justify-center"
+                            title={`Click to view ${count} buying signal event${count !== 1 ? "s" : ""} for ${lead.companyName}`}
                           >
-                            {sig}
-                          </span>
-                        ))}
-                      </div>
+                            <Eye className="w-4 h-4 text-purple-600 dark:text-purple-400 group-hover:text-[#1A56DB] transition-colors" />
+                            {count > 0 && (
+                              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-extrabold bg-purple-600 text-white flex items-center justify-center ring-2 ring-[var(--nexa-bg-base)] shadow-xs">
+                                {count}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })()}
                     </td>
 
                     <td className="py-3.5 px-4">
@@ -853,10 +1188,10 @@ export default function CrmLeadsPage() {
                           title="Click to change lead status"
                         >
                           <option value="CURIOUS">CURIOUS</option>
-                          <option value="ENRICHED">ENRICHED</option>
                           <option value="IDENTIFIED">IDENTIFIED</option>
                           <option value="CONTACTED">CONTACTED</option>
                           <option value="QUALIFIED">QUALIFIED</option>
+                          <option value="PROPOSAL">PROPOSAL</option>
                           <option value="MEETING_BOOKED">MEETING_BOOKED</option>
                           <option value="CONVERTED">CONVERTED</option>
                           <option value="ARCHIVED">ARCHIVED</option>
@@ -909,7 +1244,7 @@ export default function CrmLeadsPage() {
                         </button>
                         {(() => {
                           const call = getLeadCallInfo(lead);
-                          const ind = getCallIndicator(call);
+                          const ind = getCallIndicator(call, lead);
                           return (
                             <Link
                               href={`/erp/admin/crm/calls?leadId=${lead.id}&phone=${encodeURIComponent(lead.contactPhone || (lead as any).phone || "")}&name=${encodeURIComponent(lead.contactName || "")}&company=${encodeURIComponent(lead.companyName || "")}${lead.assignedRep ? `&rep=${encodeURIComponent(lead.assignedRep)}` : ""}`}
@@ -1166,10 +1501,10 @@ export default function CrmLeadsPage() {
                 className="w-full px-3 py-2 text-xs rounded-lg bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#1A56DB]"
               >
                 <option value="CURIOUS">CURIOUS</option>
-                <option value="ENRICHED">ENRICHED</option>
                 <option value="IDENTIFIED">IDENTIFIED</option>
                 <option value="CONTACTED">CONTACTED</option>
                 <option value="QUALIFIED">QUALIFIED</option>
+                <option value="PROPOSAL">PROPOSAL</option>
                 <option value="MEETING_BOOKED">MEETING_BOOKED</option>
                 <option value="CONVERTED">CONVERTED</option>
                 <option value="ARCHIVED">ARCHIVED</option>
@@ -1230,6 +1565,140 @@ export default function CrmLeadsPage() {
             </NexaButton>
           </div>
         </form>
+      </NexaModal>
+
+      {/* BUYING SIGNALS TIMELINE MODAL */}
+      <NexaModal
+        isOpen={isSignalsModalOpen}
+        onClose={() => {
+          setIsSignalsModalOpen(false);
+          setSelectedSignalsLead(null);
+        }}
+        title="Buying Signals & Intent Activity"
+        subtitle={
+          selectedSignalsLead
+            ? `${selectedSignalsLead.companyName} • ${selectedSignalsLead.contactName || "Prospect Contact"}`
+            : "Chronological intent triggers and buyer engagement signals."
+        }
+      >
+        {selectedSignalsLead && (
+          <div className="space-y-4">
+            {/* Prospect Snapshot Header */}
+            <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-xs shrink-0">
+                  <Activity className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                    {selectedSignalsLead.companyName}
+                  </div>
+                  <div className="text-[11px] text-[var(--nexa-text-muted)] flex items-center gap-1.5">
+                    <span>{selectedSignalsLead.contactName}</span>
+                    {selectedSignalsLead.industry && (
+                      <>
+                        <span>•</span>
+                        <span>{selectedSignalsLead.industry}</span>
+                      </>
+                    )}
+                    {selectedSignalsLead.location && (
+                      <>
+                        <span>•</span>
+                        <span>{selectedSignalsLead.location}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                  <Flame className="w-3.5 h-3.5 text-amber-500" />
+                  {selectedSignalsLead.icpFitScore ?? (selectedSignalsLead as any).score ?? 75}% ICP Fit
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/20">
+                  {selectedSignalsLead.status}
+                </span>
+              </div>
+            </div>
+
+            {/* List of Buying Signal Events */}
+            <div className="space-y-2.5 max-h-[420px] overflow-y-auto pr-1">
+              {getSignalItems(selectedSignalsLead).map((item, index) => {
+                const isCall = item.eventType === "CALL";
+                const isCampaign = item.eventType === "CAMPAIGN";
+                const isAssignment = item.eventType === "ASSIGNMENT";
+
+                const badgeStyle = isCall
+                  ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20"
+                  : isCampaign
+                  ? "bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-500/20"
+                  : isAssignment
+                  ? "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20"
+                  : "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20";
+
+                const badgeLabel = isCall
+                  ? "Call Logger Disposition"
+                  : isCampaign
+                  ? "Email Campaign Trigger"
+                  : isAssignment
+                  ? "Closer Auto-Assignment"
+                  : `Signal Event #${index + 1}`;
+
+                const IconComponent = isCall ? PhoneCall : isCampaign ? Mail : isAssignment ? UserCheck : Activity;
+
+                return (
+                  <div
+                    key={index}
+                    className="p-3.5 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] hover:border-[#1A56DB]/40 transition-all space-y-2 shadow-2xs"
+                  >
+                    {/* Event Time and Date Line */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-[11px]">
+                      <div className="flex items-center gap-2.5 text-[var(--nexa-text-muted)]">
+                        <span className="inline-flex items-center gap-1.5 font-semibold text-[var(--nexa-text-secondary)]">
+                          <Calendar className="w-3.5 h-3.5 text-[#1A56DB]" />
+                          {item.eventDate}
+                        </span>
+                        <span>•</span>
+                        <span className="inline-flex items-center gap-1.5 font-semibold text-[var(--nexa-text-secondary)]">
+                          <Clock className="w-3.5 h-3.5 text-[#1A56DB]" />
+                          {item.eventTime}
+                        </span>
+                      </div>
+
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[10px] font-bold border ${badgeStyle}`}>
+                        <IconComponent className="w-3 h-3" />
+                        {badgeLabel}
+                      </span>
+                    </div>
+
+                    {/* Signal Item Description (Separate Line) */}
+                    <div className="text-xs font-semibold text-[var(--nexa-text-primary)] leading-relaxed pl-0.5">
+                      {item.text}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-between items-center pt-3 border-t border-[var(--nexa-border)]">
+              <span className="text-[11px] text-[var(--nexa-text-muted)]">
+                {getSignalItems(selectedSignalsLead).length} detected signal event{getSignalItems(selectedSignalsLead).length !== 1 ? "s" : ""}
+              </span>
+              <NexaButton
+                variant="secondary"
+                type="button"
+                onClick={() => {
+                  setIsSignalsModalOpen(false);
+                  setSelectedSignalsLead(null);
+                }}
+              >
+                Close
+              </NexaButton>
+            </div>
+          </div>
+        )}
       </NexaModal>
     </ErpAdminShell>
   );

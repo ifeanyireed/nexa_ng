@@ -13,6 +13,8 @@ import {
   ChevronRight,
   Filter,
   MoreVertical,
+  Trash2,
+  RefreshCw,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -34,6 +36,7 @@ export default function DealsPipelinePage() {
   const [deals, setDeals] = useState<CrmDeal[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeletingDealId, setIsDeletingDealId] = useState<string | null>(null);
 
   // New Deal Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -127,6 +130,26 @@ export default function DealsPipelinePage() {
     }
   };
 
+  const handleDeleteDeal = async (dealId: string, dealTitle: string) => {
+    if (!confirm(`Are you sure you want to delete deal "${dealTitle}" from the pipeline?`)) return;
+    setIsDeletingDealId(dealId);
+    try {
+      const res = await crmFetch(`/api/erp/crm/deals?id=${encodeURIComponent(dealId)}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setDeals((prev) => prev.filter((d) => d.id !== dealId));
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data?.error || "Failed to delete deal");
+      }
+    } catch (err: any) {
+      alert("Error deleting deal: " + (err?.message || "Unknown error"));
+    } finally {
+      setIsDeletingDealId(null);
+    }
+  };
+
   const filteredDeals = deals.filter(
     (d) =>
       d.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -188,9 +211,25 @@ export default function DealsPipelinePage() {
                       className="p-4 hover:border-[#1A56DB] transition-all cursor-pointer group shadow-xs space-y-3"
                     >
                       <div className="flex items-start justify-between gap-2">
-                        <h5 className="text-xs font-bold text-[var(--nexa-text-primary)] line-clamp-2">
+                        <h5 className="text-xs font-bold text-[var(--nexa-text-primary)] line-clamp-2 flex-1">
                           {deal.title}
                         </h5>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteDeal(deal.id, deal.title);
+                          }}
+                          disabled={isDeletingDealId === deal.id}
+                          className="p-1 rounded-md text-[var(--nexa-text-muted)] hover:text-rose-600 hover:bg-rose-500/10 transition-colors opacity-70 group-hover:opacity-100 cursor-pointer disabled:opacity-50 shrink-0"
+                          title={`Delete deal ${deal.title}`}
+                        >
+                          {isDeletingDealId === deal.id ? (
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin text-rose-500" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
+                        </button>
                       </div>
 
                       <div className="space-y-1.5 text-[11px] text-[var(--nexa-text-muted)]">

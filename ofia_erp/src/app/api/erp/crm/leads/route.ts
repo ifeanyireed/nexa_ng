@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search")?.toLowerCase().trim() || "";
     const status = searchParams.get("status") || "";
+    const rep = searchParams.get("rep") || searchParams.get("assignedRep") || "";
 
     const rows = await sql`
       SELECT 
@@ -66,6 +67,7 @@ export async function GET(request: NextRequest) {
       FROM crm_leads
       WHERE LOWER(tenant_slug) = ${tenantSlug}
         ${status && status !== "ALL" ? sql`AND status = ${status}` : sql``}
+        ${rep && rep !== "ALL" ? (rep.toUpperCase() === "UNASSIGNED" ? sql`AND (COALESCE(assigned_rep, '') = '' OR assigned_rep = 'Unassigned')` : sql`AND (LOWER(assigned_rep) = ${rep.toLowerCase()} OR LOWER(owner) = ${rep.toLowerCase()})`) : sql``}
         ${search ? sql`AND (LOWER(name) LIKE ${'%' + search + '%'} OR LOWER(company) LIKE ${'%' + search + '%'} OR LOWER(phone) LIKE ${'%' + search + '%'})` : sql``}
       ORDER BY created_at DESC
       LIMIT 200;
@@ -84,6 +86,15 @@ export async function GET(request: NextRequest) {
       contactPhone: r.phone,
       source: r.source,
       score: Number(r.score) || 75,
+      icpFitScore: Number(r.score) || 75,
+      buyingSignals: r.notes
+        ? r.notes
+            .split(
+              /\r?\n|(?<=[.!?])\s+(?=(?:Call Log\s*\(|Lead auto-assigned|Email [bB]last|Inbound|Outbound|Direct Outreach|Converted to Deal|Promoted to Deal|Deal Won|Meeting Scheduled))/g
+            )
+            .map((s: string) => s.trim())
+            .filter(Boolean)
+        : ["Direct Outreach"],
       status: r.status,
       owner: r.owner || r.assigned_rep,
       assignedRep: r.assigned_rep || r.owner,

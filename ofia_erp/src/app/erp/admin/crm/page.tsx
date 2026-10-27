@@ -25,6 +25,8 @@ import {
   UserCheck,
   Users,
   Zap,
+  Trash2,
+  RefreshCw,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -49,6 +51,7 @@ export default function CrmDashboardPage() {
   const [lists, setLists] = useState<CrmEmailList[]>([]);
   const [activities, setActivities] = useState<CrmActivity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeletingDealId, setIsDeletingDealId] = useState<string | null>(null);
 
   // New Deal Modal
   const [isDealModalOpen, setIsDealModalOpen] = useState(false);
@@ -144,6 +147,26 @@ export default function CrmDashboardPage() {
     setNewDealContact("");
     setNewDealEmail("");
     setNewDealPhone("");
+  };
+
+  const handleDeleteDeal = async (dealId: string, dealTitle: string) => {
+    if (!confirm(`Are you sure you want to delete deal "${dealTitle}" from the pipeline?`)) return;
+    setIsDeletingDealId(dealId);
+    try {
+      const res = await crmFetch(`/api/erp/crm/deals?id=${encodeURIComponent(dealId)}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setDeals((prev) => prev.filter((d) => d.id !== dealId));
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data?.error || "Failed to delete deal");
+      }
+    } catch (err: any) {
+      alert("Error deleting deal: " + (err?.message || "Unknown error"));
+    } finally {
+      setIsDeletingDealId(null);
+    }
   };
 
   const wonDeals = deals.filter((d) => d.stage === "WON");
@@ -283,7 +306,7 @@ export default function CrmDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">High-Priority Deals Pipeline</h3>
-                <p className="text-xs text-[var(--nexa-text-muted)]">Commercial negotiations closing within the next 30 days.</p>
+                <p className="text-xs text-[var(--nexa-text-muted)]">Active opportunities and commercial negotiations.</p>
               </div>
               <Link href="/erp/admin/crm/pipeline" className="text-xs text-[#1A56DB] font-bold hover:underline flex items-center gap-1">
                 Full Kanban Pipeline <ArrowRight className="w-3 h-3" />
@@ -291,41 +314,60 @@ export default function CrmDashboardPage() {
             </div>
 
             <div className="space-y-3">
-              {deals.slice(0, 4).map((deal) => (
-                <NexaCard key={deal.id} className="p-4 hover:border-[#1A56DB]/40 transition-colors">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono text-[var(--nexa-text-muted)]">{deal.id}</span>
-                        <h4 className="text-sm font-extrabold text-[var(--nexa-text-primary)]">{deal.title}</h4>
+              {deals.length === 0 ? (
+                <div className="p-8 text-center text-xs text-[var(--nexa-text-muted)] border border-dashed border-[var(--nexa-border)] rounded-2xl">
+                  No active commercial deals in the pipeline.
+                </div>
+              ) : (
+                deals.slice(0, 4).map((deal) => (
+                  <NexaCard key={deal.id} className="p-4 hover:border-[#1A56DB]/40 transition-colors">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-[var(--nexa-text-muted)]">{deal.id}</span>
+                          <h4 className="text-sm font-extrabold text-[var(--nexa-text-primary)]">{deal.title}</h4>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-[var(--nexa-text-muted)]">
+                          <span className="flex items-center gap-1"><Building2 className="w-3 h-3" /> {deal.company}</span>
+                          <span>•</span>
+                          <span>{deal.contactName}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-[var(--nexa-text-muted)]">
-                        <span className="flex items-center gap-1"><Building2 className="w-3 h-3" /> {deal.company}</span>
-                        <span>•</span>
-                        <span>{deal.contactName}</span>
-                      </div>
-                    </div>
 
-                    <div className="flex items-center gap-3 self-end sm:self-center">
-                      <div className="text-right">
-                        <div className="text-sm font-extrabold text-[#1A56DB]">{deal.value}</div>
-                        <div className="text-[10px] text-[var(--nexa-text-muted)]">{deal.probability}% win probability</div>
+                      <div className="flex items-center gap-2 self-end sm:self-center">
+                        <div className="text-right">
+                          <div className="text-sm font-extrabold text-[#1A56DB]">{deal.value}</div>
+                          <div className="text-[10px] text-[var(--nexa-text-muted)]">{deal.probability}% win probability</div>
+                        </div>
+                        <NexaBadge
+                          variant={
+                            deal.stage === "WON"
+                              ? "success"
+                              : deal.stage === "NEGOTIATION"
+                              ? "warning"
+                              : "brand"
+                          }
+                        >
+                          {deal.stage}
+                        </NexaBadge>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteDeal(deal.id, deal.title)}
+                          disabled={isDeletingDealId === deal.id}
+                          className="p-1.5 rounded-lg border border-[var(--nexa-border)] hover:bg-rose-500/10 text-[var(--nexa-text-muted)] hover:text-rose-600 transition-colors cursor-pointer disabled:opacity-50 shrink-0"
+                          title={`Delete deal ${deal.title}`}
+                        >
+                          {isDeletingDealId === deal.id ? (
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin text-rose-500" />
+                          ) : (
+                            <Trash2 className="w-3.5 h-3.5" />
+                          )}
+                        </button>
                       </div>
-                      <NexaBadge
-                        variant={
-                          deal.stage === "WON"
-                            ? "success"
-                            : deal.stage === "NEGOTIATION"
-                            ? "warning"
-                            : "brand"
-                        }
-                      >
-                        {deal.stage}
-                      </NexaBadge>
                     </div>
-                  </div>
-                </NexaCard>
-              ))}
+                  </NexaCard>
+                ))
+              )}
             </div>
           </div>
 

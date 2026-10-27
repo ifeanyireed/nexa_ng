@@ -43,7 +43,7 @@ export interface CrmLead {
   contactPhone?: string;
   icpFitScore: number;
   buyingSignals: string[];
-  status: "CURIOUS" | "IDENTIFIED" | "ENRICHED" | "CONTACTED" | "QUALIFIED" | "MEETING_BOOKED" | "CONVERTED" | "ARCHIVED";
+  status: "CURIOUS" | "IDENTIFIED" | "ENRICHED" | "CONTACTED" | "QUALIFIED" | "PROPOSAL" | "MEETING_BOOKED" | "CONVERTED" | "ARCHIVED";
   assignedRep?: string;
   source?: string;
   audienceList?: string;

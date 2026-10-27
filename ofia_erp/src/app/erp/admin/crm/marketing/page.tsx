@@ -346,7 +346,7 @@ export default function EmailMarketingBlastsPage() {
       contactPhone: "",
       source: `Email Blast: ${selectedBlastForLogs?.title || "Campaign"}`,
       assignedRep: chosenCloser.startsWith("Auto-Assign") ? "Auto-Assign (Least-Loaded)" : chosenCloser,
-      status: isClicked ? "QUALIFIED" : (isOpened ? "CONTACTED" : "IDENTIFIED"),
+      status: "CURIOUS",
       icpFitScore: isClicked ? 92 : (isOpened ? 82 : 65),
       buyingSignals: [
         `Email Campaign: ${selectedBlastForLogs?.subject || "Update"}`,

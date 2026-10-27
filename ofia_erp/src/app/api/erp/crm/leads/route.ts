@@ -21,10 +21,14 @@ async function ensureCrmLeadsTable(sql: any) {
       assigned_rep VARCHAR(191) DEFAULT '',
       value VARCHAR(100) DEFAULT '',
       notes TEXT DEFAULT '',
+      converted_deal_id VARCHAR(191) DEFAULT '',
+      converted_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     );
   `;
+  await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS converted_deal_id VARCHAR(191) DEFAULT '';`;
+  await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS converted_at TIMESTAMPTZ;`;
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_leads_tenant ON crm_leads (LOWER(tenant_slug));`;
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_leads_created ON crm_leads (LOWER(tenant_slug), created_at DESC);`;
 }
@@ -41,6 +45,28 @@ export async function GET(request: NextRequest) {
 
     const sql = await getTenantSql(tenantSlug);
     await ensureCrmLeadsTable(sql);
+
+    // Business Rule Enforcement: Any contact without a call log in crm_calls should NEVER be set to QUALIFIED!
+    // Auto-revert any uncontacted leads that were mistakenly marked QUALIFIED back to CURIOUS
+    try {
+      await sql`
+        UPDATE crm_leads
+        SET status = 'CURIOUS', updated_at = NOW()
+        WHERE LOWER(tenant_slug) = ${tenantSlug}
+          AND status = 'QUALIFIED'
+          AND NOT EXISTS (
+            SELECT 1 FROM crm_calls
+            WHERE LOWER(crm_calls.tenant_slug) = ${tenantSlug}
+              AND (
+                crm_calls.lead_id = crm_leads.id
+                OR (crm_leads.phone != '' AND crm_calls.phone_number LIKE ('%' || RIGHT(REGEXP_REPLACE(crm_leads.phone, '[^0-9]', '', 'g'), 7)))
+                OR (LOWER(crm_calls.contact_name) = LOWER(crm_leads.name) AND LENGTH(crm_leads.name) > 0)
+              )
+          );
+      `;
+    } catch {
+      // In case crm_calls table has not yet been initialized
+    }
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search")?.toLowerCase().trim() || "";
@@ -137,11 +163,39 @@ export async function POST(request: NextRequest) {
     const phone = (body.phone || body.contactPhone || "").trim();
     const source = (body.source || "Voice Outreach").trim();
     const score = Number(body.score) || 80;
-    const status = (body.status || "CURIOUS").trim();
+    let status = (body.status || "CURIOUS").trim();
     const owner = (body.owner || body.assignedRep || "").trim();
     const assignedRep = (body.assignedRep || body.owner || "").trim();
     const value = (body.value || "").trim();
     const notes = (body.notes || "").trim();
+
+    // Business Rule Enforcement: Any contact without a call log in crm_calls should NEVER be set to QUALIFIED!
+    if (status === "QUALIFIED") {
+      const cleanDigits = phone.replace(/[^0-9]/g, "");
+      const lastDigits = cleanDigits.length >= 7 ? cleanDigits.slice(-7) : cleanDigits;
+      const leadName = name.trim().toLowerCase();
+
+      let hasCall = false;
+      try {
+        const [callRow] = await sql`
+          SELECT 1 FROM crm_calls
+          WHERE LOWER(tenant_slug) = ${tenantSlug}
+            AND (
+              lead_id = ${leadId}
+              ${lastDigits ? sql`OR phone_number LIKE ${'%' + lastDigits}` : sql``}
+              ${leadName ? sql`OR (LOWER(contact_name) = ${leadName} AND LENGTH(contact_name) > 0)` : sql``}
+            )
+          LIMIT 1;
+        `;
+        if (callRow) hasCall = true;
+      } catch {
+        hasCall = false;
+      }
+
+      if (!hasCall) {
+        status = "CURIOUS";
+      }
+    }
 
     const [saved] = await sql`
       INSERT INTO crm_leads (
@@ -182,6 +236,159 @@ export async function POST(request: NextRequest) {
     console.error("[CRM-Leads] POST error:", err);
     return NextResponse.json(
       { success: false, error: "Database error saving CRM lead: " + err.message },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const bodyText = await request.text();
+    const body = JSON.parse(bodyText || "{}");
+    const tenantSlug = getValidatedTenantSlug(request, body);
+
+    if (!tenantSlug) {
+      return NextResponse.json(
+        { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
+
+    const id = body.id;
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: "Lead ID is required for updating lead" },
+        { status: 400 }
+      );
+    }
+
+    const sql = await getTenantSql(tenantSlug);
+    await ensureCrmLeadsTable(sql);
+
+    // Fetch existing lead
+    const [existingLead] = await sql`
+      SELECT id, name, company, email, phone, status, owner, assigned_rep, notes
+      FROM crm_leads
+      WHERE id = ${id} AND LOWER(tenant_slug) = ${tenantSlug}
+      LIMIT 1;
+    `;
+
+    if (!existingLead) {
+      return NextResponse.json(
+        { success: false, error: `Lead with ID "${id}" not found` },
+        { status: 404 }
+      );
+    }
+
+    const targetStatus = body.status !== undefined ? String(body.status).trim() : existingLead.status;
+
+    // Strict validation: Any contact without a call log should never be set to QUALIFIED!
+    if (targetStatus === "QUALIFIED") {
+      const cleanDigits = (existingLead.phone || body.contactPhone || body.phone || "").replace(/[^0-9]/g, "");
+      const lastDigits = cleanDigits.length >= 7 ? cleanDigits.slice(-7) : cleanDigits;
+      const leadName = (existingLead.name || body.contactName || body.name || "").trim().toLowerCase();
+
+      let hasCall = false;
+      try {
+        const [callRow] = await sql`
+          SELECT 1 FROM crm_calls
+          WHERE LOWER(tenant_slug) = ${tenantSlug}
+            AND (
+              lead_id = ${id}
+              ${lastDigits ? sql`OR phone_number LIKE ${'%' + lastDigits}` : sql``}
+              ${leadName ? sql`OR (LOWER(contact_name) = ${leadName} AND LENGTH(contact_name) > 0)` : sql``}
+            )
+          LIMIT 1;
+        `;
+        if (callRow) hasCall = true;
+      } catch {
+        hasCall = false;
+      }
+
+      if (!hasCall) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Cannot set status to QUALIFIED: Contact has not been called yet. Any contact without a call log should never be set to QUALIFIED.",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    const name = body.contactName !== undefined || body.name !== undefined 
+      ? (body.contactName || body.name || "").trim() 
+      : existingLead.name;
+    const company = body.companyName !== undefined || body.company !== undefined
+      ? (body.companyName || body.company || "").trim()
+      : existingLead.company;
+    const email = body.contactEmail !== undefined || body.email !== undefined
+      ? (body.contactEmail || body.email || "").trim()
+      : existingLead.email;
+    const phone = body.contactPhone !== undefined || body.phone !== undefined
+      ? (body.contactPhone || body.phone || "").trim()
+      : existingLead.phone;
+    const assignedRep = body.assignedRep !== undefined 
+      ? String(body.assignedRep).trim() 
+      : existingLead.assigned_rep;
+    const owner = body.owner !== undefined 
+      ? String(body.owner).trim() 
+      : (assignedRep || existingLead.owner);
+    const notes = body.notes !== undefined 
+      ? String(body.notes) 
+      : existingLead.notes;
+    const score = body.score !== undefined || body.icpFitScore !== undefined
+      ? Number(body.score ?? body.icpFitScore)
+      : undefined;
+    const value = body.value !== undefined ? String(body.value).trim() : undefined;
+    const convertedDealId = body.convertedDealId !== undefined ? String(body.convertedDealId).trim() : undefined;
+
+    const [updated] = await sql`
+      UPDATE crm_leads SET
+        name = ${name},
+        company = ${company},
+        email = ${email},
+        phone = ${phone},
+        status = ${targetStatus},
+        assigned_rep = ${assignedRep},
+        owner = ${owner},
+        notes = ${notes},
+        ${score !== undefined ? sql`score = ${score},` : sql``}
+        ${value !== undefined ? sql`value = ${value},` : sql``}
+        ${convertedDealId !== undefined ? sql`converted_deal_id = ${convertedDealId}, converted_at = NOW(),` : sql``}
+        updated_at = NOW()
+      WHERE id = ${id} AND LOWER(tenant_slug) = ${tenantSlug}
+      RETURNING *;
+    `;
+
+    return NextResponse.json({
+      success: true,
+      lead: {
+        id: updated.id,
+        tenantSlug: updated.tenant_slug,
+        name: updated.name,
+        contactName: updated.name,
+        company: updated.company,
+        companyName: updated.company,
+        email: updated.email,
+        contactEmail: updated.email,
+        phone: updated.phone,
+        contactPhone: updated.phone,
+        status: updated.status,
+        assignedRep: updated.assigned_rep,
+        owner: updated.owner,
+        notes: updated.notes,
+        score: updated.score,
+        icpFitScore: updated.score,
+        value: updated.value,
+        convertedDealId: updated.converted_deal_id,
+        updatedAt: updated.updated_at,
+      },
+    });
+  } catch (err: any) {
+    console.error("[CRM-Leads] PATCH error:", err);
+    return NextResponse.json(
+      { success: false, error: "Database error updating CRM lead: " + err.message },
       { status: 500 }
     );
   }

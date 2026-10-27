@@ -361,7 +361,7 @@ export const DEFAULT_CRM_LEADS: Omit<CrmLead, "tenantSlug">[] = [
     contactPhone: "+234 802 998 8776",
     icpFitScore: 94,
     buyingSignals: ["Power audit tender published", "Upgrading security perimeters"],
-    status: "QUALIFIED",
+    status: "CURIOUS",
     assignedRep: "Emeka Okafor",
     source: "Direct B2B Outreach",
     notes: "Key decision maker for all access control systems.",

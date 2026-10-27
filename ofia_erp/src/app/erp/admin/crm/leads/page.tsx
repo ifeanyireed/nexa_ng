@@ -350,6 +350,19 @@ export default function CrmLeadsPage() {
     return call;
   };
 
+  const hasCallLogForLead = (lead: CrmLead) => {
+    const call = getLeadCallInfo(lead);
+    if (call) return true;
+    const notesText = [
+      lead.notes || "",
+      ...(Array.isArray(lead.buyingSignals) ? lead.buyingSignals : []),
+    ].join(" ");
+    return (
+      /Call Log\s*\(/i.test(notesText) ||
+      /\b(CONNECTED_[A-Z_]+|NOT_INTERESTED|NO_ANSWER|WRONG_NUMBER|BUSY|VOICEMAIL)\b/i.test(notesText)
+    );
+  };
+
   const getCallIndicator = (call?: CrmCall, lead?: CrmLead) => {
     let outcome = call?.outcome ? String(call.outcome).toUpperCase().trim() : "";
 
@@ -626,6 +639,14 @@ export default function CrmLeadsPage() {
     leadId: string,
     updates: { status?: string; assignedRep?: string; notes?: string }
   ) => {
+    const targetLead = leads.find((l) => l.id === leadId);
+
+    // Business Rule Enforcement: Any contact without a call log should never be set to QUALIFIED!
+    if (updates.status === "QUALIFIED" && targetLead && !hasCallLogForLead(targetLead)) {
+      alert("Gross error prevented: Any contact without a call log should never be set to QUALIFIED. Please log a sales call first.");
+      return;
+    }
+
     setUpdatingLeadId(leadId);
     // Optimistic update
     setLeads((prev) =>
@@ -643,18 +664,26 @@ export default function CrmLeadsPage() {
       });
       if (res.ok) {
         const data = await res.json().catch(() => null);
-        if (data?.lead?.assignedRep) {
+        if (data?.lead) {
           setLeads((prev) =>
             prev.map((l) =>
-              l.id === leadId ? { ...l, assignedRep: data.lead.assignedRep } : l
+              l.id === leadId ? { ...l, ...data.lead } : l
             )
           );
         }
       } else {
-        console.warn("Failed to update lead field");
+        const errData = await res.json().catch(() => ({}));
+        alert(errData?.error || "Failed to update lead");
+        if (targetLead) {
+          setLeads((prev) => prev.map((l) => (l.id === leadId ? targetLead : l)));
+        }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error updating lead field:", err);
+      alert("Error updating lead: " + (err?.message || "Network error"));
+      if (targetLead) {
+        setLeads((prev) => prev.map((l) => (l.id === leadId ? targetLead : l)));
+      }
     } finally {
       setUpdatingLeadId(null);
     }
@@ -675,6 +704,13 @@ export default function CrmLeadsPage() {
   const handleSaveEditLead = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingLead) return;
+
+    // Business Rule Enforcement: Any contact without a call log should never be set to QUALIFIED!
+    if (editStatus === "QUALIFIED" && !hasCallLogForLead(editingLead)) {
+      alert("Gross error prevented: Any contact without a call log should never be set to QUALIFIED. Please log a sales call first.");
+      return;
+    }
+
     setIsSavingEdit(true);
 
     const payload = {
@@ -694,6 +730,12 @@ export default function CrmLeadsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData?.error || `Failed to update lead (HTTP ${res.status})`);
+      }
+
       const data = await res.json().catch(() => null);
       const resolvedRep =
         data?.lead?.assignedRep || (editAssignedCloser === "Unassigned" ? "" : editAssignedCloser);
@@ -1175,29 +1217,40 @@ export default function CrmLeadsPage() {
                     </td>
 
                     <td className="py-3.5 px-4">
-                      <div className="relative inline-block">
-                        <select
-                          value={lead.status}
-                          onChange={(e) =>
-                            handleUpdateLeadField(lead.id, {
-                              status: e.target.value as any,
-                            })
-                          }
-                          disabled={updatingLeadId === lead.id}
-                          className="appearance-none pl-2.5 pr-6 py-1 rounded-lg text-xs font-semibold cursor-pointer border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] hover:border-[#1A56DB]/50 transition-all focus:outline-none focus:ring-1 focus:ring-[#1A56DB] disabled:opacity-50"
-                          title="Click to change lead status"
-                        >
-                          <option value="CURIOUS">CURIOUS</option>
-                          <option value="IDENTIFIED">IDENTIFIED</option>
-                          <option value="CONTACTED">CONTACTED</option>
-                          <option value="QUALIFIED">QUALIFIED</option>
-                          <option value="PROPOSAL">PROPOSAL</option>
-                          <option value="MEETING_BOOKED">MEETING_BOOKED</option>
-                          <option value="CONVERTED">CONVERTED</option>
-                          <option value="ARCHIVED">ARCHIVED</option>
-                        </select>
-                        <ChevronDown className="w-3 h-3 text-[var(--nexa-text-muted)] absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      </div>
+                      {(() => {
+                        const hasCall = hasCallLogForLead(lead);
+                        return (
+                          <div className="relative inline-block">
+                            <select
+                              value={lead.status}
+                              onChange={(e) =>
+                                handleUpdateLeadField(lead.id, {
+                                  status: e.target.value as any,
+                                })
+                              }
+                              disabled={updatingLeadId === lead.id}
+                              className="appearance-none pl-2.5 pr-6 py-1 rounded-lg text-xs font-semibold cursor-pointer border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[var(--nexa-text-primary)] hover:border-[#1A56DB]/50 transition-all focus:outline-none focus:ring-1 focus:ring-[#1A56DB] disabled:opacity-50"
+                              title="Click to change lead status"
+                            >
+                              <option value="CURIOUS">CURIOUS</option>
+                              <option value="IDENTIFIED">IDENTIFIED</option>
+                              <option value="CONTACTED">CONTACTED</option>
+                              <option
+                                value="QUALIFIED"
+                                disabled={!hasCall}
+                                title={!hasCall ? "Call log required to qualify lead" : undefined}
+                              >
+                                QUALIFIED {!hasCall ? "(Call Required)" : ""}
+                              </option>
+                              <option value="PROPOSAL">PROPOSAL</option>
+                              <option value="MEETING_BOOKED">MEETING_BOOKED</option>
+                              <option value="CONVERTED">CONVERTED</option>
+                              <option value="ARCHIVED">ARCHIVED</option>
+                            </select>
+                            <ChevronDown className="w-3 h-3 text-[var(--nexa-text-muted)] absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          </div>
+                        );
+                      })()}
                     </td>
 
                     <td className="py-3.5 px-4">
@@ -1495,20 +1548,31 @@ export default function CrmLeadsPage() {
               <label className="block text-xs font-semibold text-[var(--nexa-text-secondary)] mb-1.5">
                 Lead Status
               </label>
-              <select
-                value={editStatus}
-                onChange={(e) => setEditStatus(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-lg bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#1A56DB]"
-              >
-                <option value="CURIOUS">CURIOUS</option>
-                <option value="IDENTIFIED">IDENTIFIED</option>
-                <option value="CONTACTED">CONTACTED</option>
-                <option value="QUALIFIED">QUALIFIED</option>
-                <option value="PROPOSAL">PROPOSAL</option>
-                <option value="MEETING_BOOKED">MEETING_BOOKED</option>
-                <option value="CONVERTED">CONVERTED</option>
-                <option value="ARCHIVED">ARCHIVED</option>
-              </select>
+              {(() => {
+                const hasCallInModal = editingLead ? hasCallLogForLead(editingLead) : false;
+                return (
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-lg bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] focus:outline-none focus:ring-2 focus:ring-[#1A56DB]"
+                  >
+                    <option value="CURIOUS">CURIOUS</option>
+                    <option value="IDENTIFIED">IDENTIFIED</option>
+                    <option value="CONTACTED">CONTACTED</option>
+                    <option
+                      value="QUALIFIED"
+                      disabled={!hasCallInModal}
+                      title={!hasCallInModal ? "Call log required to qualify lead" : undefined}
+                    >
+                      QUALIFIED {!hasCallInModal ? "(Call Required)" : ""}
+                    </option>
+                    <option value="PROPOSAL">PROPOSAL</option>
+                    <option value="MEETING_BOOKED">MEETING_BOOKED</option>
+                    <option value="CONVERTED">CONVERTED</option>
+                    <option value="ARCHIVED">ARCHIVED</option>
+                  </select>
+                );
+              })()}
             </div>
           </div>
 

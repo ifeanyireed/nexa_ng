@@ -28,6 +28,7 @@ async function ensureCrmLeadsTable(sql: any) {
       updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     );
   `;
+  await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(191) DEFAULT '';`;
   await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS linkedin_url VARCHAR(255) DEFAULT '';`;
   await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS converted_deal_id VARCHAR(191) DEFAULT '';`;
   await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS converted_at TIMESTAMPTZ;`;

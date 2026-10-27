@@ -35,6 +35,22 @@ async function ensureCrmCallsTable(sql: any) {
       updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     );
   `;
+  await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(191) DEFAULT '';`;
+  await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS lead_id VARCHAR(191) DEFAULT '';`;
+  await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS deal_id VARCHAR(191) DEFAULT '';`;
+  await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS company VARCHAR(191) DEFAULT '';`;
+  await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS rep_email VARCHAR(191) DEFAULT '';`;
+  await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS direction VARCHAR(50) DEFAULT 'OUTBOUND';`;
+  await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS duration_seconds INT DEFAULT 0;`;
+  await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT '';`;
+  await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS followup_date VARCHAR(100) DEFAULT '';`;
+  await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS recording_url TEXT DEFAULT '';`;
+  await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS transcript TEXT DEFAULT '';`;
+  await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS ai_summary TEXT DEFAULT '';`;
+  await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS qualification_json TEXT DEFAULT '';`;
+  await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS is_ai BOOLEAN DEFAULT true;`;
+  await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS telephony_sid VARCHAR(191);`;
+  await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS call_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;`;
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_calls_tenant ON crm_calls (LOWER(tenant_slug));`;
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_calls_tenant_created ON crm_calls (LOWER(tenant_slug), created_at DESC);`;
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_calls_tenant_date ON crm_calls (LOWER(tenant_slug), call_date DESC);`;

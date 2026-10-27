@@ -26,6 +26,7 @@ async function ensureCrmCampaignsTable(sql: any) {
       updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     );
   `;
+  await sql`ALTER TABLE crm_campaigns ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(191) DEFAULT '';`;
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_campaigns_tenant ON crm_campaigns (LOWER(tenant_slug));`;
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_campaigns_created ON crm_campaigns (LOWER(tenant_slug), created_at DESC);`;
 }

@@ -40,6 +40,7 @@ async function ensureVoiceConfigTable(sql: any) {
       updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     );
   `;
+  await sql`ALTER TABLE crm_voice_config ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(191) DEFAULT '';`;
   await sql`ALTER TABLE crm_voice_config ADD COLUMN IF NOT EXISTS voicebip_workspace_id VARCHAR(191) DEFAULT '';`;
   await sql`ALTER TABLE crm_voice_config ADD COLUMN IF NOT EXISTS voicebip_agent_id VARCHAR(191) DEFAULT '';`;
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_voice_config_tenant ON crm_voice_config (LOWER(tenant_slug));`;

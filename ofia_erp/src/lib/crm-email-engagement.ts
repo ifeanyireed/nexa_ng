@@ -83,7 +83,8 @@ export async function processEmailEngagement(
         r.first_name, 
         r.last_name, 
         r.company, 
-        COALESCE(s.phone, '') AS sub_phone
+        COALESCE(s.phone, '') AS sub_phone,
+        COALESCE(s.linkedin_url, '') AS sub_linkedin
       FROM crm_email_blast_recipients r
       LEFT JOIN crm_email_subscribers s ON s.id = r.subscriber_id
       WHERE r.id = ${recipientId}
@@ -104,6 +105,7 @@ export async function processEmailEngagement(
 
     const companyName = (r?.company || "").trim() || "Enterprise Prospect";
     const phoneStr = (r?.sub_phone || "").trim();
+    const linkedinStr = (r?.sub_linkedin || "").trim();
 
     // 3. Blast title lookup for note attribution
     const blastRows = await sql`
@@ -150,6 +152,7 @@ export async function processEmailEngagement(
           icp_fit_score = ${newScore},
           phone = CASE WHEN (phone IS NULL OR phone = '') AND ${phoneStr !== ""} THEN ${phoneStr} ELSE phone END,
           contact_phone = CASE WHEN (contact_phone IS NULL OR contact_phone = '') AND ${phoneStr !== ""} THEN ${phoneStr} ELSE contact_phone END,
+          linkedin_url = CASE WHEN (linkedin_url IS NULL OR linkedin_url = '') AND ${linkedinStr !== ""} THEN ${linkedinStr} ELSE linkedin_url END,
           notes = CASE 
             WHEN notes IS NULL OR notes = '' THEN ${noteEntry}
             ELSE notes || E'\n' || ${noteEntry}
@@ -167,13 +170,13 @@ export async function processEmailEngagement(
           id, tenant_slug, tenant_id, name, company, email, phone,
           source, score, status, owner, assigned_rep, value, notes,
           company_name, contact_name, contact_email, contact_phone,
-          icp_fit_score, buying_signals, source_blast_id,
+          icp_fit_score, buying_signals, source_blast_id, linkedin_url,
           created_at, updated_at
         ) VALUES (
           ${newLeadId}, ${tenantSlug}, '', ${contactName}, ${companyName}, ${finalEmail}, ${phoneStr},
           ${`Email Blast: ${blastTitle}`}, ${score}, 'CURIOUS', '', '', '₦10,000,000', ${noteEntry},
           ${companyName}, ${contactName}, ${finalEmail}, ${phoneStr},
-          ${score}, ${buyingSignals}::jsonb, ${blastId},
+          ${score}, ${buyingSignals}::jsonb, ${blastId}, ${linkedinStr},
           NOW(), NOW()
         );
       `;

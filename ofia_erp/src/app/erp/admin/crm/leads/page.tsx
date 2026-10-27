@@ -1176,23 +1176,18 @@ export default function CrmLeadsPage() {
                             <span>No phone</span>
                           )}
 
-                          {/* LinkedIn Button directly after phone number */}
+                          {/* LinkedIn Button directly after phone number - strictly renders ONLY if an actual LinkedIn profile URL exists */}
                           {(() => {
-                            const rawLinkedin = lead.linkedinUrl || (lead as any).linkedin || "";
-                            const linkedinTarget = rawLinkedin.trim()
-                              ? (rawLinkedin.trim().startsWith("http") ? rawLinkedin.trim() : `https://${rawLinkedin.trim()}`)
-                              : `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(`${lead.contactName || ""} ${lead.companyName || ""}`.trim())}`;
+                            const raw = (lead.linkedinUrl || (lead as any).linkedin || "").trim();
+                            if (!raw || raw.includes("/search/results") || raw.includes("keywords=")) return null;
+                            const linkedinTarget = raw.startsWith("http") ? raw : `https://${raw}`;
                             return (
                               <a
                                 href={linkedinTarget}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold text-[#0A66C2] bg-[#0A66C2]/10 hover:bg-[#0A66C2]/20 border border-[#0A66C2]/25 hover:border-[#0A66C2]/50 transition-all cursor-pointer shadow-2xs group shrink-0 ml-0.5"
-                                title={
-                                  rawLinkedin.trim()
-                                    ? `Open LinkedIn Profile: ${rawLinkedin.trim()}`
-                                    : `Search "${lead.contactName || lead.companyName}" on LinkedIn`
-                                }
+                                title={`Open LinkedIn Profile: ${linkedinTarget}`}
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 <IconBrandLinkedin className="w-3 h-3 shrink-0 text-[#0A66C2]" />

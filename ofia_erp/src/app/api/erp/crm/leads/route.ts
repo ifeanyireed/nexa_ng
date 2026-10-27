@@ -70,6 +70,33 @@ export async function GET(request: NextRequest) {
       // In case crm_calls table has not yet been initialized
     }
 
+    // Audience List Check: Sync actual LinkedIn URLs from audience lists (crm_email_subscribers) into crm_leads
+    try {
+      await sql`
+        UPDATE crm_leads l
+        SET linkedin_url = TRIM(s.linkedin_url), updated_at = NOW()
+        FROM crm_email_subscribers s
+        WHERE LOWER(l.tenant_slug) = ${tenantSlug}
+          AND LOWER(s.tenant_slug) = ${tenantSlug}
+          AND (l.linkedin_url IS NULL OR l.linkedin_url = '')
+          AND s.linkedin_url IS NOT NULL
+          AND TRIM(s.linkedin_url) != ''
+          AND (
+            (l.email != '' AND LOWER(TRIM(s.email)) = LOWER(TRIM(l.email)))
+            OR (l.phone != '' AND s.phone != '' AND RIGHT(REGEXP_REPLACE(s.phone, '[^0-9]', '', 'g'), 7) = RIGHT(REGEXP_REPLACE(l.phone, '[^0-9]', '', 'g'), 7))
+            OR (
+              LENGTH(TRIM(l.name)) > 2 
+              AND (
+                LOWER(TRIM(COALESCE(s.first_name, '') || ' ' || COALESCE(s.last_name, ''))) = LOWER(TRIM(l.name))
+                OR (s.first_name != '' AND s.last_name != '' AND LOWER(l.name) LIKE ('%' || LOWER(s.first_name) || '%' || LOWER(s.last_name) || '%'))
+              )
+            )
+          );
+      `;
+    } catch {
+      // In case crm_email_subscribers table is not present
+    }
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search")?.toLowerCase().trim() || "";
     const status = searchParams.get("status") || "";
@@ -77,28 +104,49 @@ export async function GET(request: NextRequest) {
 
     const rows = await sql`
       SELECT 
-        id,
-        tenant_slug,
-        name,
-        COALESCE(company, '') AS company,
-        COALESCE(email, '') AS email,
-        COALESCE(phone, '') AS phone,
-        COALESCE(source, 'Direct Outreach') AS source,
-        COALESCE(score, 75) AS score,
-        COALESCE(status, 'CURIOUS') AS status,
-        COALESCE(owner, '') AS owner,
-        COALESCE(assigned_rep, '') AS assigned_rep,
-        COALESCE(value, '') AS value,
-        COALESCE(notes, '') AS notes,
-        COALESCE(linkedin_url, '') AS linkedin_url,
-        created_at,
-        updated_at
-      FROM crm_leads
-      WHERE LOWER(tenant_slug) = ${tenantSlug}
-        ${status && status !== "ALL" ? sql`AND status = ${status}` : sql``}
-        ${rep && rep !== "ALL" ? (rep.toUpperCase() === "UNASSIGNED" ? sql`AND (COALESCE(assigned_rep, '') = '' OR assigned_rep = 'Unassigned')` : sql`AND (LOWER(assigned_rep) = ${rep.toLowerCase()} OR LOWER(owner) = ${rep.toLowerCase()})`) : sql``}
-        ${search ? sql`AND (LOWER(name) LIKE ${'%' + search + '%'} OR LOWER(company) LIKE ${'%' + search + '%'} OR LOWER(phone) LIKE ${'%' + search + '%'})` : sql``}
-      ORDER BY created_at DESC
+        l.id,
+        l.tenant_slug,
+        l.name,
+        COALESCE(l.company, '') AS company,
+        COALESCE(l.email, '') AS email,
+        COALESCE(l.phone, '') AS phone,
+        COALESCE(l.source, 'Direct Outreach') AS source,
+        COALESCE(l.score, 75) AS score,
+        COALESCE(l.status, 'CURIOUS') AS status,
+        COALESCE(l.owner, '') AS owner,
+        COALESCE(l.assigned_rep, '') AS assigned_rep,
+        COALESCE(l.value, '') AS value,
+        COALESCE(l.notes, '') AS notes,
+        COALESCE(
+          NULLIF(TRIM(l.linkedin_url), ''),
+          (
+            SELECT TRIM(s.linkedin_url)
+            FROM crm_email_subscribers s
+            WHERE LOWER(s.tenant_slug) = ${tenantSlug}
+              AND s.linkedin_url IS NOT NULL
+              AND TRIM(s.linkedin_url) != ''
+              AND (
+                (l.email != '' AND LOWER(TRIM(s.email)) = LOWER(TRIM(l.email)))
+                OR (l.phone != '' AND s.phone != '' AND RIGHT(REGEXP_REPLACE(s.phone, '[^0-9]', '', 'g'), 7) = RIGHT(REGEXP_REPLACE(l.phone, '[^0-9]', '', 'g'), 7))
+                OR (
+                  LENGTH(TRIM(l.name)) > 2
+                  AND LOWER(TRIM(COALESCE(s.first_name, '') || ' ' || COALESCE(s.last_name, ''))) = LOWER(TRIM(l.name))
+                  AND (l.company != '' AND LOWER(TRIM(s.company)) = LOWER(TRIM(l.company)))
+                )
+              )
+            ORDER BY s.created_at DESC
+            LIMIT 1
+          ),
+          ''
+        ) AS linkedin_url,
+        l.created_at,
+        l.updated_at
+      FROM crm_leads l
+      WHERE LOWER(l.tenant_slug) = ${tenantSlug}
+        ${status && status !== "ALL" ? sql`AND l.status = ${status}` : sql``}
+        ${rep && rep !== "ALL" ? (rep.toUpperCase() === "UNASSIGNED" ? sql`AND (COALESCE(l.assigned_rep, '') = '' OR l.assigned_rep = 'Unassigned')` : sql`AND (LOWER(l.assigned_rep) = ${rep.toLowerCase()} OR LOWER(l.owner) = ${rep.toLowerCase()})`) : sql``}
+        ${search ? sql`AND (LOWER(l.name) LIKE ${'%' + search + '%'} OR LOWER(l.company) LIKE ${'%' + search + '%'} OR LOWER(l.phone) LIKE ${'%' + search + '%'})` : sql``}
+      ORDER BY l.created_at DESC
       LIMIT 200;
     `;
 

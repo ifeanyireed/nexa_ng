@@ -107,7 +107,13 @@ export async function GET(request: NextRequest) {
       const dur = Number(r.duration_seconds) || 0;
       totalDuration += dur;
       if (r.outcome?.startsWith("CONNECTED") || dur > 0) connectedCount++;
-      if (r.outcome === "CONNECTED_INTERESTED" || r.outcome === "QUALIFIED" || r.outcome === "CONNECTED_WON") positiveCount++;
+      if (
+        r.outcome === "CONNECTED_INTERESTED" ||
+        r.outcome === "CONNECTED_NEGOTIATING" ||
+        r.outcome === "QUALIFIED" ||
+        r.outcome === "CONNECTED_WON"
+      )
+        positiveCount++;
       if (r.outcome === "CONNECTED_WON") wonCount++;
       const callDateStr = (r.call_date ? new Date(r.call_date).toISOString() : "").slice(0, 10);
       if (callDateStr === todayStr) todayCount++;
@@ -151,15 +157,23 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    const totalCalls = calls.length;
+    const connectRate = totalCalls > 0 ? Math.round((connectedCount / totalCalls) * 100) : 0;
+    const avgDurationSec = connectedCount > 0 ? Math.round(totalDuration / connectedCount) : totalCalls > 0 ? Math.round(totalDuration / totalCalls) : 0;
+
     return NextResponse.json({
       success: true,
       calls,
       stats: {
-        totalCalls: calls.length,
-        totalDurationSeconds: totalDuration,
+        totalCalls,
+        connectedCalls: connectedCount,
         connectedCount,
+        connectRate,
         positiveCount,
         wonCount,
+        avgDurationSec,
+        totalDurationSeconds: totalDuration,
+        todayCalls: todayCount,
         todayCount,
       },
     });

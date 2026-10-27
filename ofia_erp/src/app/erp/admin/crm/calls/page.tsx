@@ -167,7 +167,26 @@ export default function CrmCallLoggerPage() {
 
       if (callsRes?.calls) {
         setCalls(callsRes.calls);
-        if (callsRes.stats) setStats(callsRes.stats);
+        if (callsRes.stats) {
+          const s = callsRes.stats;
+          const totalCalls = s.totalCalls ?? callsRes.calls.length ?? 0;
+          const connectedCalls = s.connectedCalls ?? s.connectedCount ?? 0;
+          const connectRate = s.connectRate ?? (totalCalls > 0 ? Math.round((connectedCalls / totalCalls) * 100) : 0);
+          const positiveCount = s.positiveCount ?? 0;
+          const wonCount = s.wonCount ?? 0;
+          const avgDurationSec = s.avgDurationSec ?? (connectedCalls > 0 ? Math.round((s.totalDurationSeconds || 0) / connectedCalls) : 0);
+          const todayCalls = s.todayCalls ?? s.todayCount ?? 0;
+
+          setStats({
+            totalCalls,
+            connectedCalls,
+            connectRate,
+            positiveCount,
+            wonCount,
+            avgDurationSec,
+            todayCalls,
+          });
+        }
       } else {
         setCalls([]);
       }
@@ -264,9 +283,10 @@ export default function CrmCallLoggerPage() {
     setTimerSeconds(0);
   };
 
-  const formatDurationDisplay = (totalSecs: number) => {
-    const mins = Math.floor(totalSecs / 60);
-    const secs = totalSecs % 60;
+  const formatDurationDisplay = (totalSecs: number | undefined | null) => {
+    const validSecs = Math.max(0, Math.floor(Number(totalSecs) || 0));
+    const mins = Math.floor(validSecs / 60);
+    const secs = validSecs % 60;
     if (mins === 0) return `${secs}s`;
     return `${mins}m ${secs.toString().padStart(2, "0")}s`;
   };
@@ -398,6 +418,71 @@ export default function CrmCallLoggerPage() {
     return filteredCalls.slice(start, start + pageSize);
   }, [filteredCalls, currentPage, pageSize]);
 
+  // Derived dynamic stats respecting filters or falling back to overall stats
+  const displayStats = useMemo(() => {
+    const isFiltered = filterRep !== "ALL" || filterOutcome !== "ALL" || filterDirection !== "ALL" || searchQuery.trim() !== "";
+    const activeCalls = isFiltered ? filteredCalls : calls;
+
+    if (activeCalls.length === 0) {
+      if (!isFiltered && stats.totalCalls > 0) {
+        return stats;
+      }
+      return {
+        totalCalls: 0,
+        connectedCalls: 0,
+        connectRate: 0,
+        positiveCount: 0,
+        wonCount: 0,
+        avgDurationSec: 0,
+        todayCalls: 0,
+      };
+    }
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+    let totalDur = 0;
+    let connected = 0;
+    let positive = 0;
+    let won = 0;
+    let today = 0;
+
+    for (const c of activeCalls) {
+      const dur = Number(c.durationSeconds) || 0;
+      totalDur += dur;
+      if (c.outcome?.startsWith("CONNECTED") || dur > 0) {
+        connected++;
+      }
+      if (
+        c.outcome === "CONNECTED_INTERESTED" ||
+        c.outcome === "CONNECTED_NEGOTIATING" ||
+        c.outcome === "CONNECTED_WON" ||
+        (c.outcome as string) === "QUALIFIED"
+      ) {
+        positive++;
+      }
+      if (c.outcome === "CONNECTED_WON") {
+        won++;
+      }
+      const callDateStr = (c.callDate ? new Date(c.callDate).toISOString() : "").slice(0, 10);
+      if (callDateStr === todayStr) {
+        today++;
+      }
+    }
+
+    const total = activeCalls.length;
+    const rate = total > 0 ? Math.round((connected / total) * 100) : 0;
+    const avgSec = connected > 0 ? Math.round(totalDur / connected) : (total > 0 ? Math.round(totalDur / total) : 0);
+
+    return {
+      totalCalls: total,
+      connectedCalls: connected,
+      connectRate: rate,
+      positiveCount: positive,
+      wonCount: won,
+      avgDurationSec: avgSec,
+      todayCalls: today,
+    };
+  }, [calls, filteredCalls, filterRep, filterOutcome, filterDirection, searchQuery, stats]);
+
   // Quick Tags
   const quickNotesTags = [
     "#InterestedInERP",
@@ -443,28 +528,28 @@ export default function CrmCallLoggerPage() {
           stats={[
             {
               label: "Total Calls Logged",
-              value: stats.totalCalls.toLocaleString(),
-              change: `${stats.todayCalls} calls today`,
+              value: displayStats.totalCalls.toLocaleString(),
+              change: `${displayStats.todayCalls} calls today`,
               changeType: "neutral",
               icon: <Phone className="w-4 h-4 text-[#1A56DB]" />,
             },
             {
               label: "Connection Rate",
-              value: `${stats.connectRate}%`,
-              change: `${stats.connectedCalls} answered calls`,
+              value: `${displayStats.connectRate}%`,
+              change: `${displayStats.connectedCalls} answered calls`,
               changeType: "success",
               icon: <PhoneIncoming className="w-4 h-4 text-emerald-600" />,
             },
             {
               label: "Qualified & Deals Won",
-              value: stats.positiveCount.toLocaleString(),
-              change: `${stats.wonCount} won directly on call`,
+              value: displayStats.positiveCount.toLocaleString(),
+              change: `${displayStats.wonCount} won directly on call`,
               changeType: "success",
               icon: <Award className="w-4 h-4 text-purple-600" />,
             },
             {
               label: "Avg. Call Duration",
-              value: formatDurationDisplay(stats.avgDurationSec),
+              value: formatDurationDisplay(displayStats.avgDurationSec),
               change: "Connected conversations",
               changeType: "neutral",
               icon: <Clock className="w-4 h-4 text-amber-500" />,

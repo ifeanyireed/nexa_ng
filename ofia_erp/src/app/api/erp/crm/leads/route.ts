@@ -21,12 +21,14 @@ async function ensureCrmLeadsTable(sql: any) {
       assigned_rep VARCHAR(191) DEFAULT '',
       value VARCHAR(100) DEFAULT '',
       notes TEXT DEFAULT '',
+      linkedin_url VARCHAR(255) DEFAULT '',
       converted_deal_id VARCHAR(191) DEFAULT '',
       converted_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     );
   `;
+  await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS linkedin_url VARCHAR(255) DEFAULT '';`;
   await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS converted_deal_id VARCHAR(191) DEFAULT '';`;
   await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS converted_at TIMESTAMPTZ;`;
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_leads_tenant ON crm_leads (LOWER(tenant_slug));`;
@@ -88,6 +90,7 @@ export async function GET(request: NextRequest) {
         COALESCE(assigned_rep, '') AS assigned_rep,
         COALESCE(value, '') AS value,
         COALESCE(notes, '') AS notes,
+        COALESCE(linkedin_url, '') AS linkedin_url,
         created_at,
         updated_at
       FROM crm_leads
@@ -126,6 +129,7 @@ export async function GET(request: NextRequest) {
       assignedRep: r.assigned_rep || r.owner,
       value: r.value,
       notes: r.notes,
+      linkedinUrl: r.linkedin_url || "",
       createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
       updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString(),
     }));
@@ -168,6 +172,7 @@ export async function POST(request: NextRequest) {
     const assignedRep = (body.assignedRep || body.owner || "").trim();
     const value = (body.value || "").trim();
     const notes = (body.notes || "").trim();
+    const linkedinUrl = (body.linkedinUrl || body.linkedin_url || "").trim();
 
     // Business Rule Enforcement: Any contact without a call log in crm_calls should NEVER be set to QUALIFIED!
     if (status === "QUALIFIED") {
@@ -200,10 +205,10 @@ export async function POST(request: NextRequest) {
     const [saved] = await sql`
       INSERT INTO crm_leads (
         id, tenant_slug, tenant_id, name, company, email, phone,
-        source, score, status, owner, assigned_rep, value, notes, created_at, updated_at
+        source, score, status, owner, assigned_rep, value, notes, linkedin_url, created_at, updated_at
       ) VALUES (
         ${leadId}, ${tenantSlug}, '', ${name}, ${company}, ${email}, ${phone},
-        ${source}, ${score}, ${status}, ${owner}, ${assignedRep}, ${value}, ${notes}, NOW(), NOW()
+        ${source}, ${score}, ${status}, ${owner}, ${assignedRep}, ${value}, ${notes}, ${linkedinUrl}, NOW(), NOW()
       )
       ON CONFLICT (id) DO UPDATE SET
         name = EXCLUDED.name,
@@ -216,6 +221,7 @@ export async function POST(request: NextRequest) {
         assigned_rep = EXCLUDED.assigned_rep,
         value = EXCLUDED.value,
         notes = EXCLUDED.notes,
+        linkedin_url = CASE WHEN EXCLUDED.linkedin_url != '' THEN EXCLUDED.linkedin_url ELSE crm_leads.linkedin_url END,
         updated_at = NOW()
       WHERE LOWER(crm_leads.tenant_slug) = ${tenantSlug}
       RETURNING *;
@@ -337,6 +343,9 @@ export async function PATCH(request: NextRequest) {
     const notes = body.notes !== undefined 
       ? String(body.notes) 
       : existingLead.notes;
+    const linkedinUrl = body.linkedinUrl !== undefined || body.linkedin_url !== undefined
+      ? String(body.linkedinUrl ?? body.linkedin_url).trim()
+      : (existingLead.linkedin_url || "");
     const score = body.score !== undefined || body.icpFitScore !== undefined
       ? Number(body.score ?? body.icpFitScore)
       : undefined;
@@ -353,6 +362,7 @@ export async function PATCH(request: NextRequest) {
         assigned_rep = ${assignedRep},
         owner = ${owner},
         notes = ${notes},
+        linkedin_url = ${linkedinUrl},
         ${score !== undefined ? sql`score = ${score},` : sql``}
         ${value !== undefined ? sql`value = ${value},` : sql``}
         ${convertedDealId !== undefined ? sql`converted_deal_id = ${convertedDealId}, converted_at = NOW(),` : sql``}
@@ -374,6 +384,7 @@ export async function PATCH(request: NextRequest) {
         contactEmail: updated.email,
         phone: updated.phone,
         contactPhone: updated.phone,
+        linkedinUrl: updated.linkedin_url || "",
         status: updated.status,
         assignedRep: updated.assigned_rep,
         owner: updated.owner,

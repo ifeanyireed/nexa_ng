@@ -41,6 +41,7 @@ export interface CrmLead {
   contactTitle?: string;
   contactEmail: string;
   contactPhone?: string;
+  linkedinUrl?: string;
   icpFitScore: number;
   buyingSignals: string[];
   status: "CURIOUS" | "IDENTIFIED" | "ENRICHED" | "CONTACTED" | "QUALIFIED" | "PROPOSAL" | "MEETING_BOOKED" | "CONVERTED" | "ARCHIVED";

@@ -27,6 +27,7 @@ import {
   Clock,
   Activity,
 } from "lucide-react";
+import { IconBrandLinkedin } from "@tabler/icons-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -80,6 +81,7 @@ export default function CrmLeadsPage() {
   const [editContact, setEditContact] = useState<string>("");
   const [editEmail, setEditEmail] = useState<string>("");
   const [editPhone, setEditPhone] = useState<string>("");
+  const [editLinkedinUrl, setEditLinkedinUrl] = useState<string>("");
   const [editNotes, setEditNotes] = useState<string>("");
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
@@ -697,6 +699,7 @@ export default function CrmLeadsPage() {
     setEditContact(lead.contactName || (lead as any).name || "");
     setEditEmail(lead.contactEmail || (lead as any).email || "");
     setEditPhone(lead.contactPhone || (lead as any).phone || "");
+    setEditLinkedinUrl(lead.linkedinUrl || (lead as any).linkedin || "");
     setEditNotes(lead.notes || "");
     setIsEditModalOpen(true);
   };
@@ -719,6 +722,7 @@ export default function CrmLeadsPage() {
       contactName: editContact.trim(),
       contactEmail: editEmail.trim(),
       contactPhone: editPhone.trim(),
+      linkedinUrl: editLinkedinUrl.trim(),
       status: editStatus,
       assignedRep: editAssignedCloser === "Unassigned" ? "" : editAssignedCloser,
       notes: editNotes.trim(),
@@ -749,6 +753,7 @@ export default function CrmLeadsPage() {
                 contactName: editContact.trim(),
                 contactEmail: editEmail.trim(),
                 contactPhone: editPhone.trim(),
+                linkedinUrl: editLinkedinUrl.trim(),
                 status: editStatus as any,
                 assignedRep: resolvedRep,
                 notes: editNotes.trim(),
@@ -1157,9 +1162,9 @@ export default function CrmLeadsPage() {
                           {lead.icpFitScore ?? (lead as any).score ?? 75}% ICP
                         </span>
                       </div>
-                      <div className="text-[11px] text-[var(--nexa-text-muted)] flex items-center gap-2">
-                        <span className="flex items-center gap-1">
-                          <Phone className="w-3 h-3 text-[var(--nexa-text-muted)]" />
+                      <div className="text-[11px] text-[var(--nexa-text-muted)] flex items-center gap-2 flex-wrap">
+                        <span className="flex items-center gap-1.5">
+                          <Phone className="w-3 h-3 text-[var(--nexa-text-muted)] shrink-0" />
                           {lead.contactPhone || (lead as any).phone ? (
                             <a
                               href={`tel:${lead.contactPhone || (lead as any).phone}`}
@@ -1170,6 +1175,31 @@ export default function CrmLeadsPage() {
                           ) : (
                             <span>No phone</span>
                           )}
+
+                          {/* LinkedIn Button directly after phone number */}
+                          {(() => {
+                            const rawLinkedin = lead.linkedinUrl || (lead as any).linkedin || "";
+                            const linkedinTarget = rawLinkedin.trim()
+                              ? (rawLinkedin.trim().startsWith("http") ? rawLinkedin.trim() : `https://${rawLinkedin.trim()}`)
+                              : `https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(`${lead.contactName || ""} ${lead.companyName || ""}`.trim())}`;
+                            return (
+                              <a
+                                href={linkedinTarget}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold text-[#0A66C2] bg-[#0A66C2]/10 hover:bg-[#0A66C2]/20 border border-[#0A66C2]/25 hover:border-[#0A66C2]/50 transition-all cursor-pointer shadow-2xs group shrink-0 ml-0.5"
+                                title={
+                                  rawLinkedin.trim()
+                                    ? `Open LinkedIn Profile: ${rawLinkedin.trim()}`
+                                    : `Search "${lead.contactName || lead.companyName}" on LinkedIn`
+                                }
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <IconBrandLinkedin className="w-3 h-3 shrink-0 text-[#0A66C2]" />
+                                <span>LinkedIn</span>
+                              </a>
+                            );
+                          })()}
                         </span>
                         <span>•</span>
                         <span>{lead.industry}</span>
@@ -1575,6 +1605,14 @@ export default function CrmLeadsPage() {
               })()}
             </div>
           </div>
+
+          <NexaInput
+            label="LinkedIn Profile URL"
+            value={editLinkedinUrl}
+            onChange={(e) => setEditLinkedinUrl(e.target.value)}
+            placeholder="https://www.linkedin.com/in/prospect-profile"
+            leftIcon={<IconBrandLinkedin className="w-4 h-4 text-[#0A66C2]" />}
+          />
 
           <div>
             <label className="block text-xs font-semibold text-[var(--nexa-text-secondary)] mb-1.5">

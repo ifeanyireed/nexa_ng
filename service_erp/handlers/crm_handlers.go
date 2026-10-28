@@ -3296,7 +3296,7 @@ func HandleCrmCalls(w http.ResponseWriter, r *http.Request) {
 			argIdx++
 		}
 
-		query += " ORDER BY call_date DESC LIMIT 200"
+		query += " ORDER BY call_date DESC LIMIT 1000"
 
 		rows, err := db.Query(query, args...)
 		if err != nil {

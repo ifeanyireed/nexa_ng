@@ -148,7 +148,7 @@ export async function GET(request: NextRequest) {
         ${rep && rep !== "ALL" ? (rep.toUpperCase() === "UNASSIGNED" ? sql`AND (COALESCE(l.assigned_rep, '') = '' OR l.assigned_rep = 'Unassigned')` : sql`AND (LOWER(l.assigned_rep) = ${rep.toLowerCase()} OR LOWER(l.owner) = ${rep.toLowerCase()})`) : sql``}
         ${search ? sql`AND (LOWER(l.name) LIKE ${'%' + search + '%'} OR LOWER(l.company) LIKE ${'%' + search + '%'} OR LOWER(l.phone) LIKE ${'%' + search + '%'})` : sql``}
       ORDER BY l.created_at DESC
-      LIMIT 200;
+      LIMIT 1000;
     `;
 
     const leads = rows.map((r: any) => ({

@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
         ${direction ? sql`AND direction = ${direction}` : sql``}
         ${isAi !== null && isAi !== undefined ? sql`AND is_ai = ${isAi === "true"}` : sql``}
       ORDER BY call_date DESC
-      LIMIT 200;
+      LIMIT 1000;
     `;
 
     let totalDuration = 0;

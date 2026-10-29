@@ -1,39 +1,49 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getTenantSql } from "@/lib/tenant-db-resolver";
 import { getValidatedTenantSlug } from "@/lib/crm-tenant";
+import { dispatchBlastEmails } from "@/lib/crm-blast-dispatcher";
 
 export const dynamic = "force-dynamic";
 
-const ERP_BASE =
-  process.env.ERP_SERVICE_URL ||
-  process.env.NEXT_PUBLIC_ERP_SERVICE_URL ||
-  "https://ofia-erp-service.onrender.com";
-
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const url = new URL(request.url);
-    const hasTenantParam =
-      url.searchParams.has("tenant") ||
-      url.searchParams.has("tenant_slug") ||
-      url.searchParams.has("slug") ||
-      request.headers.has("x-tenant-slug");
-    const tenantSlug = hasTenantParam ? getValidatedTenantSlug(request) : "all";
+    const tenantSlug = getValidatedTenantSlug(request);
+    if (!tenantSlug) {
+      return NextResponse.json(
+        { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
 
-    const res = await fetch(`${ERP_BASE}/crm/cron/blasts`, {
-      method: "POST",
-      cache: "no-store",
-      headers: {
-        "Content-Type": "application/json",
-        "x-tenant-slug": tenantSlug,
-      },
-      signal: AbortSignal.timeout(15000),
+    const sql = await getTenantSql(tenantSlug);
+
+    const dueBlasts = await sql`
+      SELECT id FROM crm_email_blasts
+      WHERE LOWER(tenant_slug) = ${tenantSlug}
+        AND status = 'SCHEDULED'
+        AND scheduled_at <= NOW();
+    `;
+
+    for (const b of dueBlasts) {
+      dispatchBlastEmails(tenantSlug, b.id).catch((err) =>
+        console.error(`[CRM Cron Blasts] Error dispatching scheduled blast ${b.id}:`, err)
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      dispatched: dueBlasts.length,
+      blastIds: dueBlasts.map((b: any) => b.id),
     });
-    const data = await res.json().catch(() => null);
-    return NextResponse.json(data || { success: true, dispatched: 0 });
   } catch (err: any) {
-    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
+    console.error("[CRM Cron Blasts POST] Error:", err);
+    return NextResponse.json(
+      { success: false, error: "Cron blast execution error: " + err.message },
+      { status: 500 }
+    );
   }
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   return POST(request);
 }

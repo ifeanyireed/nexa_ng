@@ -1,149 +1,121 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getTenantSql } from "@/lib/tenant-db-resolver";
+import { getValidatedTenantSlug } from "@/lib/crm-tenant";
+import { dispatchBlastEmails } from "@/lib/crm-blast-dispatcher";
 
 export const dynamic = "force-dynamic";
 
-const ERP_BASE =
-  process.env.ERP_SERVICE_URL ||
-  process.env.NEXT_PUBLIC_ERP_SERVICE_URL ||
-  "https://ofia-erp-service.onrender.com";
-
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { tenantSlug, recipients, subject, messageHtml, loginUrl } = body;
+    const body = await request.json().catch(() => ({}));
+    const tenantSlug = getValidatedTenantSlug(request, body);
 
     if (!tenantSlug) {
       return NextResponse.json(
-        { error: "Tenant identifier is required" },
+        { success: false, error: "Tenant identifier is required for multi-tenant isolation" },
         { status: 400 }
       );
     }
 
+    const { recipients, subject, messageHtml } = body;
+
     if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
       return NextResponse.json(
-        { error: "At least one recipient must be selected" },
+        { success: false, error: "At least one recipient must be selected" },
         { status: 400 }
       );
     }
 
     if (!subject || !subject.trim()) {
       return NextResponse.json(
-        { error: "Email subject line is required" },
+        { success: false, error: "Email subject line is required" },
         { status: 400 }
       );
     }
 
     if (!messageHtml || !messageHtml.trim()) {
       return NextResponse.json(
-        { error: "Email message body is required" },
+        { success: false, error: "Email message body is required" },
         { status: 400 }
       );
     }
 
-    const campaignId = `CAMP-${Date.now()}`;
+    const blastId = `BLAST-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    const sql = await getTenantSql(tenantSlug);
 
-    // Forward blast to ERP microservice
-    const blastRes = await fetch(`${ERP_BASE}/crm/blasts`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-tenant-slug": tenantSlug,
-      },
-      body: JSON.stringify({
-        id: campaignId,
-        title: subject.trim(),
-        subject: subject.trim(),
-        contentHtml: messageHtml,
-        status: "SENT",
-      }),
-      signal: AbortSignal.timeout(10000),
-    }).catch(() => null);
+    await sql`
+      INSERT INTO crm_email_blasts (
+        id, tenant_slug, tenant_id, title, subject, content_html, status, total_recipients, sent_count, failed_count, open_count, click_count, bounce_count, created_at, updated_at
+      ) VALUES (
+        ${blastId}, ${tenantSlug}, '', ${subject.trim()}, ${subject.trim()}, ${messageHtml}, 'SENDING', ${recipients.length}, 0, 0, 0, 0, 0, NOW(), NOW()
+      );
+    `;
 
-    // Also dispatch first recipient or bulk via ERP email proxy if available
-    const firstRecipient = recipients[0]?.email;
-    if (firstRecipient) {
-      fetch(`${ERP_BASE}/send-email`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: firstRecipient,
-          subject: subject.trim(),
-          html: messageHtml,
-          text: subject.trim(),
-        }),
-        signal: AbortSignal.timeout(5000),
-      }).catch(() => {});
+    for (const r of recipients) {
+      const email = typeof r === "string" ? r : (r.email || "");
+      const name = typeof r === "string" ? "" : (r.name || "");
+      if (email && email.includes("@")) {
+        const recId = `REC-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+        await sql`
+          INSERT INTO crm_email_blast_recipients (
+            id, blast_id, tenant_slug, tenant_id, email, name, status, created_at
+          ) VALUES (
+            ${recId}, ${blastId}, ${tenantSlug}, '', ${email.trim().toLowerCase()}, ${name.trim()}, 'PENDING', NOW()
+          );
+        `;
+      }
     }
+
+    dispatchBlastEmails(tenantSlug, blastId).catch((err) =>
+      console.error(`[Mass Email POST] Async delivery failed for ${blastId}:`, err)
+    );
 
     return NextResponse.json({
       success: true,
-      message: `Mass email campaign queued (${recipients.length} recipients). Delivery processed via ERP service.`,
-      campaignId,
-      total: recipients.length,
-      sent: recipients.length,
-      failed: 0,
-      pending: 0,
-      status: "completed",
+      message: `Mass communication successfully queued for ${recipients.length} recipients.`,
+      campaignId: blastId,
+      totalRecipients: recipients.length,
     });
   } catch (err: any) {
+    console.error("[Mass Email POST] Error:", err);
     return NextResponse.json(
-      { error: err.message || "Failed to dispatch mass email" },
+      { success: false, error: err.message || "Failed to process mass email request" },
       { status: 500 }
     );
   }
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const campaignId = searchParams.get("campaignId");
-    const tenantSlug = searchParams.get("tenantSlug") || searchParams.get("tenant") || "default";
-    const details = searchParams.get("details") === "true";
-
-    if (campaignId) {
-      return NextResponse.json({
-        success: true,
-        campaign: {
-          id: campaignId,
-          total: 1,
-          sent: 1,
-          failed: 0,
-          pending: 0,
-          status: "completed",
-          createdAt: new Date().toISOString(),
-          recipients: details ? [] : undefined,
-        },
-      });
+    const tenantSlug = getValidatedTenantSlug(request);
+    if (!tenantSlug) {
+      return NextResponse.json({ success: true, campaigns: [] });
     }
 
-    const res = await fetch(`${ERP_BASE}/crm/blasts?tenant=${encodeURIComponent(tenantSlug)}`, {
-      cache: "no-store",
-      headers: { "x-tenant-slug": tenantSlug },
-      signal: AbortSignal.timeout(10000),
-    });
+    const sql = await getTenantSql(tenantSlug);
+    const rows = await sql`
+      SELECT id, title, subject, total_recipients, sent_count, failed_count, open_count, click_count, status, created_at
+      FROM crm_email_blasts
+      WHERE LOWER(tenant_slug) = ${tenantSlug} AND status != 'DELETED'
+      ORDER BY created_at DESC;
+    `;
 
-    const data = await res.json().catch(() => null);
-    const blasts: any[] = data?.blasts || [];
-
-    const campaigns = blasts.map((b) => ({
-      id: b.id,
-      title: b.title || b.subject,
-      subject: b.subject,
-      total: b.totalRecipients || 1,
-      sent: b.sentCount || 1,
-      failed: b.failedCount || 0,
-      status: (b.status || "SENT").toLowerCase(),
-      createdAt: b.createdAt,
+    const campaigns = rows.map((r: any) => ({
+      id: r.id,
+      title: r.title,
+      subject: r.subject,
+      totalRecipients: Number(r.total_recipients || 0),
+      sentCount: Number(r.sent_count || 0),
+      failedCount: Number(r.failed_count || 0),
+      openCount: Number(r.open_count || 0),
+      clickCount: Number(r.click_count || 0),
+      status: r.status,
+      createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
     }));
 
-    return NextResponse.json({
-      success: true,
-      campaigns,
-    });
+    return NextResponse.json({ success: true, campaigns });
   } catch (err: any) {
-    return NextResponse.json(
-      { error: err.message || "Failed to retrieve campaign data" },
-      { status: 500 }
-    );
+    console.error("[Mass Email GET] Error:", err);
+    return NextResponse.json({ success: true, campaigns: [] });
   }
 }

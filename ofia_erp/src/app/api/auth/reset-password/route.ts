@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 const ERP_BASE =
   process.env.ERP_SERVICE_URL ||
   process.env.NEXT_PUBLIC_ERP_SERVICE_URL ||
-  "https://ofia-erp-service.onrender.com";
+  "";
 
 export async function GET(request: Request) {
   try {

@@ -33,6 +33,11 @@ CREATE TABLE IF NOT EXISTS "BlogPost" (
     "status" VARCHAR(50) NOT NULL DEFAULT 'DRAFT',
     "author_id" VARCHAR(191),
     "author_name" VARCHAR(191) DEFAULT 'Ofia Editorial Team',
+    "view_count" BIGINT DEFAULT 0 NOT NULL,
+    "meta_title" VARCHAR(255),
+    "meta_description" TEXT,
+    "canonical_url" VARCHAR(500),
+    "og_image" TEXT,
     "published_at" TIMESTAMPTZ,
     "created_at" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
@@ -41,6 +46,8 @@ CREATE TABLE IF NOT EXISTS "BlogPost" (
 CREATE INDEX IF NOT EXISTS idx_blog_post_slug ON "BlogPost"("slug");
 CREATE INDEX IF NOT EXISTS idx_blog_post_status ON "BlogPost"("status");
 CREATE INDEX IF NOT EXISTS idx_blog_post_category ON "BlogPost"("category_id");
+CREATE INDEX IF NOT EXISTS idx_blog_post_view_count ON "BlogPost"("view_count" DESC);
+CREATE INDEX IF NOT EXISTS idx_blog_post_published_views ON "BlogPost"("status", "view_count" DESC);
 
 -- 4. Blog Comments
 CREATE TABLE IF NOT EXISTS "BlogComment" (

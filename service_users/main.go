@@ -106,6 +106,8 @@ func main() {
 			r.Put("/posts", blogHandler.CreateOrUpdatePost)
 			r.Get("/posts/{id}", blogHandler.GetPost)
 			r.Put("/posts/{id}", blogHandler.CreateOrUpdatePost)
+			r.Post("/posts/{id}/view", blogHandler.IncrementPostView)
+			r.Post("/posts/view", blogHandler.IncrementPostView)
 			r.Delete("/posts", blogHandler.DeletePost)
 			r.Delete("/posts/{id}", blogHandler.DeletePost)
 

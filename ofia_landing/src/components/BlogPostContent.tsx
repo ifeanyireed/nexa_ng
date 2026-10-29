@@ -3,7 +3,7 @@ import React from "react";
 
 import ScrollReveal from './ScrollReveal';
 import Link from 'next/link';
-import { IconArrowLeft, IconMessageCircle, IconBrandTwitter, IconBrandFacebook, IconBrandLinkedin, IconMail } from '@tabler/icons-react';
+import { IconArrowLeft, IconMessageCircle, IconBrandTwitter, IconBrandFacebook, IconBrandLinkedin, IconBrandWhatsapp, IconMail, IconEye } from '@tabler/icons-react';
 
 interface Comment {
   id: string | number;
@@ -15,15 +15,25 @@ interface Comment {
 interface BlogPost {
   id: string | number;
   created_at: string;
+  updated_at?: string;
   title: string;
   slug: string;
   content: string;
+  excerpt?: string;
   author: any;
   user_name?: string;
   comments?: Comment[];
   cover_image?: string;
   published_at?: string;
   category?: string;
+  view_count?: number;
+  meta_title?: string;
+  meta_description?: string;
+  canonical_url?: string;
+  og_image?: string;
+  tags?: string;
+  reading_time?: number;
+  date?: string;
 }
 
 
@@ -38,7 +48,7 @@ const renderCommentContent = (text: string) => {
 };
 
 export default function BlogPostContent({ post }: { post: BlogPost }) {
-    const [commentFirstName, setCommentFirstName] = React.useState('');
+  const [commentFirstName, setCommentFirstName] = React.useState('');
   const [commentLastName, setCommentLastName] = React.useState('');
   const [commentEmail, setCommentEmail] = React.useState('');
   const [commentContent, setCommentContent] = React.useState('');
@@ -48,6 +58,30 @@ export default function BlogPostContent({ post }: { post: BlogPost }) {
 
   const [subEmail, setSubEmail] = React.useState('');
   const [subLoading, setSubLoading] = React.useState(false);
+
+  const [views, setViews] = React.useState<number>(Number(post.view_count) || 0);
+
+  // Increment view count once per browser session
+  React.useEffect(() => {
+    const sessionKey = `ofia_viewed_blog_${post.slug || post.id}`;
+    if (typeof window !== 'undefined' && !sessionStorage.getItem(sessionKey)) {
+      sessionStorage.setItem(sessionKey, '1');
+      fetch(`/api/blog/${encodeURIComponent(post.slug || String(post.id))}/view`, {
+        method: 'POST',
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data && typeof data.view_count === 'number') {
+            setViews(data.view_count);
+          } else {
+            setViews((prev) => prev + 1);
+          }
+        })
+        .catch(() => {
+          setViews((prev) => prev + 1);
+        });
+    }
+  }, [post.slug, post.id]);
 
   const handleCommentSubmit = async () => {
     if (!commentFirstName || !commentContent) {
@@ -80,12 +114,15 @@ export default function BlogPostContent({ post }: { post: BlogPost }) {
     }
   };
 
-  const handleShare = (platform: 'facebook' | 'twitter' | 'linkedin' | 'email') => {
-    const url = encodeURIComponent(window.location.href);
+  const handleShare = (platform: 'facebook' | 'twitter' | 'linkedin' | 'email' | 'whatsapp') => {
+    const url = encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '');
     const title = encodeURIComponent(post.title || "Check out this post from Ofia");
     let shareUrl = "";
 
-    if (platform === 'facebook') {
+    if (platform === 'whatsapp') {
+      window.open(`https://api.whatsapp.com/send?text=${title}%20${url}`, '_blank');
+      return;
+    } else if (platform === 'facebook') {
       shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
     } else if (platform === 'twitter') {
       shareUrl = `https://twitter.com/intent/tweet?text=${title}&url=${url}`;
@@ -169,22 +206,34 @@ export default function BlogPostContent({ post }: { post: BlogPost }) {
                 {post.category || 'Marketing'}
               </span>
               
-              <h1 className="text-3xl md:text-5xl fw-700 text-navy mb-10 leading-tight">
+              <h1 className="text-3xl md:text-5xl fw-700 text-navy mb-6 leading-tight">
                 {post.title}
               </h1>
+
+              {(post.meta_description || post.excerpt) && (
+                <p className="text-base sm:text-lg text-slate-600 mb-8 leading-relaxed border-l-4 border-[#1A56DB] pl-4 py-1 italic font-medium">
+                  {post.meta_description || post.excerpt}
+                </p>
+              )}
               
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100 pt-6">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden">
                     <img src="https://res.cloudinary.com/qsdwzejd/image/upload/v1789250545/landing_page/photo04.jpg" className="w-full h-full object-cover" alt={typeof post.author === "string" ? post.author : ((post.author as any)?.full_name || "Admin")} />
                   </div>
                   <div>
                     <p className="text-sm fw-600 text-navy mb-0.5">by: {typeof post.author === "string" ? post.author : ((post.author as any)?.full_name || "Admin")}</p>
-                    <p className="text-xs text-muted">on: {formattedDate}</p>
+                    <time dateTime={post.published_at || post.created_at} className="text-xs text-muted block">on: {formattedDate}</time>
                   </div>
                 </div>
-                <div className="text-xs text-muted fw-600">
-                  5 minutes Read
+                <div className="flex items-center gap-4 text-xs text-muted fw-600">
+                  <span className="flex items-center gap-1.5 text-slate-700 bg-slate-100 px-3 py-1 rounded-full font-semibold">
+                    <IconEye size={16} className="text-slate-500" />
+                    {views.toLocaleString()} {views === 1 ? 'view' : 'views'}
+                  </span>
+                  <span className="text-slate-500">
+                    ~{post.reading_time || Math.max(1, Math.ceil((post.content || '').replace(/<[^>]*>/g, ' ').trim().split(/\s+/).filter(Boolean).length / 200))} min read
+                  </span>
                 </div>
               </div>
             </div>
@@ -196,23 +245,42 @@ export default function BlogPostContent({ post }: { post: BlogPost }) {
               {/* Floating Share Side-Nav */}
               <div className="hidden lg:flex flex-col items-center gap-4 w-12 absolute top-8 -left-20">
                 <span className="text-xs text-muted fw-600 mb-2">share</span>
-                <button onClick={() => handleShare('facebook')} className="w-8 h-8 flex items-center justify-center rounded-full text-muted hover:text-navy hover:bg-gray-200 transition-colors">
-                  <IconBrandFacebook size={18} />
+                <button onClick={() => handleShare('whatsapp')} className="w-8 h-8 flex items-center justify-center rounded-full text-muted hover:text-emerald-600 hover:bg-emerald-50 transition-colors" title="Share via WhatsApp">
+                  <IconBrandWhatsapp size={18} />
                 </button>
-                <button onClick={() => handleShare('twitter')} className="w-8 h-8 flex items-center justify-center rounded-full text-muted hover:text-navy hover:bg-gray-200 transition-colors">
+                <button onClick={() => handleShare('twitter')} className="w-8 h-8 flex items-center justify-center rounded-full text-muted hover:text-navy hover:bg-gray-200 transition-colors" title="Share via Twitter / X">
                   <IconBrandTwitter size={18} />
                 </button>
-                <button onClick={() => handleShare('linkedin')} className="w-8 h-8 flex items-center justify-center rounded-full text-muted hover:text-navy hover:bg-gray-200 transition-colors">
+                <button onClick={() => handleShare('linkedin')} className="w-8 h-8 flex items-center justify-center rounded-full text-muted hover:text-navy hover:bg-gray-200 transition-colors" title="Share via LinkedIn">
                   <IconBrandLinkedin size={18} />
                 </button>
-                <button onClick={() => handleShare('email')} className="w-8 h-8 flex items-center justify-center rounded-full text-muted hover:text-navy hover:bg-gray-200 transition-colors">
+                <button onClick={() => handleShare('facebook')} className="w-8 h-8 flex items-center justify-center rounded-full text-muted hover:text-navy hover:bg-gray-200 transition-colors" title="Share via Facebook">
+                  <IconBrandFacebook size={18} />
+                </button>
+                <button onClick={() => handleShare('email')} className="w-8 h-8 flex items-center justify-center rounded-full text-muted hover:text-navy hover:bg-gray-200 transition-colors" title="Share via Email">
                   <IconMail size={18} />
                 </button>
               </div>
-              <div 
+              <article 
                 className="prose prose-lg prose-nets max-w-none"
                 dangerouslySetInnerHTML={{ __html: post.content }} 
               />
+
+              {/* Tag Pills */}
+              {post.tags && (
+                <div className="mt-8 pt-6 border-t border-slate-100 flex flex-wrap items-center gap-2">
+                  <span className="text-xs uppercase tracking-wider font-bold text-slate-400 mr-1">Tags:</span>
+                  {post.tags.split(',').map((t, idx) => {
+                    const tag = t.trim();
+                    if (!tag) return null;
+                    return (
+                      <span key={idx} className="text-xs font-semibold px-3 py-1 bg-slate-100 text-slate-700 rounded-full hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                        #{tag}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </ScrollReveal>
 
@@ -228,14 +296,17 @@ export default function BlogPostContent({ post }: { post: BlogPost }) {
                   Ofia's dedicated editorial and engineering team bridging the gap between frontier AI, enterprise commerce, and scalable African logistics.
                 </p>
                 <div className="flex items-center justify-center md:justify-start gap-4">
-                  <button className="w-8 h-8 flex items-center justify-center rounded-full bg-nets-light text-navy hover:bg-gray-200 transition-colors">
-                    <IconBrandFacebook size={16} />
+                  <button onClick={() => handleShare('whatsapp')} className="w-8 h-8 flex items-center justify-center rounded-full bg-nets-light text-navy hover:text-emerald-600 hover:bg-emerald-50 transition-colors" title="WhatsApp">
+                    <IconBrandWhatsapp size={16} />
                   </button>
-                  <button className="w-8 h-8 flex items-center justify-center rounded-full bg-nets-light text-navy hover:bg-gray-200 transition-colors">
+                  <button onClick={() => handleShare('twitter')} className="w-8 h-8 flex items-center justify-center rounded-full bg-nets-light text-navy hover:bg-gray-200 transition-colors" title="Twitter / X">
                     <IconBrandTwitter size={16} />
                   </button>
-                  <button className="w-8 h-8 flex items-center justify-center rounded-full bg-nets-light text-navy hover:bg-gray-200 transition-colors">
+                  <button onClick={() => handleShare('linkedin')} className="w-8 h-8 flex items-center justify-center rounded-full bg-nets-light text-navy hover:bg-gray-200 transition-colors" title="LinkedIn">
                     <IconBrandLinkedin size={16} />
+                  </button>
+                  <button onClick={() => handleShare('facebook')} className="w-8 h-8 flex items-center justify-center rounded-full bg-nets-light text-navy hover:bg-gray-200 transition-colors" title="Facebook">
+                    <IconBrandFacebook size={16} />
                   </button>
                 </div>
               </div>

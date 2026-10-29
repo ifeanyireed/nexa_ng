@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 
 import { RichTextEditor } from '@/components/RichTextEditor';
 import { TagsInput } from '@/components/TagsInput';
-import { ArrowLeft, Save, Send, Copy, Check, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Save, Send, Copy, Check, ExternalLink, Eye, Globe, Search, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -45,6 +45,11 @@ function CreateBlogPostContent() {
             setContent(post.content || '');
             setTags(post.tags || '');
             setSlug(post.slug || '');
+            setMetaTitle(post.meta_title || '');
+            setMetaDescription(post.meta_description || '');
+            setCanonicalUrl(post.canonical_url || '');
+            setOgImage(post.og_image || '');
+            setViewCount(post.view_count !== undefined && post.view_count !== null ? Number(post.view_count) : 0);
             let imgUrl = post.cover_image || '';
             if (imgUrl && imgUrl.startsWith('/')) imgUrl = 'https://resultspro.ng' + imgUrl;
             setCoverImage(imgUrl);
@@ -61,6 +66,11 @@ function CreateBlogPostContent() {
   const [tags, setTags] = useState('');
   const [content, setContent] = useState('');
   const [coverImage, setCoverImage] = useState('');
+  const [metaTitle, setMetaTitle] = useState('');
+  const [metaDescription, setMetaDescription] = useState('');
+  const [canonicalUrl, setCanonicalUrl] = useState('');
+  const [ogImage, setOgImage] = useState('');
+  const [viewCount, setViewCount] = useState<number | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
@@ -137,7 +147,11 @@ function CreateBlogPostContent() {
         category_id: category || null,
         tags,
         status,
-        author_id
+        author_id,
+        meta_title: metaTitle.trim() || null,
+        meta_description: metaDescription.trim() || null,
+        canonical_url: canonicalUrl.trim() || null,
+        og_image: ogImage.trim() || coverImage.trim() || null,
       };
 
       let url = '/api/v1/cms/blog/posts';
@@ -197,6 +211,12 @@ function CreateBlogPostContent() {
             <span className="sm:hidden">Back</span>
           </Link>
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+            {viewCount !== null && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-50 border border-purple-200 text-purple-700 text-xs font-semibold shadow-xs">
+                <Eye className="w-3.5 h-3.5 text-purple-600" />
+                <span>{viewCount.toLocaleString()} {viewCount === 1 ? 'View' : 'Views'}</span>
+              </div>
+            )}
             {(savedDraftSlug || slug || editId || title.trim().length > 0) && (
               <button 
                 type="button"
@@ -293,6 +313,122 @@ function CreateBlogPostContent() {
                 <RichTextEditor content={content} onChange={setContent} />
               </div>
             </div>
+
+            {/* SEO & Meta Optimization Card */}
+            <div className="bg-white p-3.5 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <Globe className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-800 text-sm sm:text-base">SEO &amp; Search Engine Optimization</h3>
+                    <p className="text-xs text-slate-500">Fine-tune how this article appears on Google, social media, and search indexes</p>
+                  </div>
+                </div>
+                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/60">
+                  <Sparkles className="w-3 h-3 text-emerald-600" />
+                  Schema.org Article Ready
+                </span>
+              </div>
+
+              {/* Live SERP Preview */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                  <Search className="w-3.5 h-3.5 text-slate-400" />
+                  Google Search Snippet Preview
+                </label>
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
+                  <div className="flex items-center gap-2 text-xs text-slate-500">
+                    <div className="w-4 h-4 rounded-full bg-blue-600 text-white flex items-center justify-center text-[9px] font-bold">O</div>
+                    <span className="truncate">https://ofia.ng &rsaquo; blog &rsaquo; {slug || slugify(title) || 'article-slug'}</span>
+                  </div>
+                  <h4 className="text-blue-700 text-base font-semibold hover:underline cursor-pointer leading-snug truncate">
+                    {metaTitle || title || 'Your Article Headline | Ofia Blog'}
+                  </h4>
+                  <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                    {metaDescription || excerpt || 'Add a compelling meta description below to optimize how this article is previewed by search engine users and social network cards.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Meta Title Input */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest">
+                    Meta Title
+                  </label>
+                  <span className={`text-[11px] font-mono ${metaTitle.length > 60 ? 'text-amber-600 font-bold' : 'text-slate-400'}`}>
+                    {metaTitle.length}/60 chars
+                  </span>
+                </div>
+                <input 
+                  type="text" 
+                  value={metaTitle}
+                  onChange={(e) => setMetaTitle(e.target.value)}
+                  placeholder={title || "e.g. 10 Essential Scaling Tips for Nigerian Merchants | Ofia"}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm text-slate-800"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">Recommended: 50–60 characters. Defaults to post title if left blank.</p>
+              </div>
+
+              {/* Meta Description Input */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest">
+                    Meta Description
+                  </label>
+                  <span className={`text-[11px] font-mono ${
+                    metaDescription.length >= 140 && metaDescription.length <= 160 
+                      ? 'text-emerald-600 font-bold' 
+                      : metaDescription.length > 160 
+                      ? 'text-amber-600 font-bold' 
+                      : 'text-slate-400'
+                  }`}>
+                    {metaDescription.length}/160 chars
+                  </span>
+                </div>
+                <textarea 
+                  value={metaDescription}
+                  onChange={(e) => setMetaDescription(e.target.value)}
+                  placeholder="Enter a concise, compelling summary for Google and social previews (recommended 140-160 characters)..."
+                  rows={3}
+                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm text-slate-800 resize-none"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">Recommended: 140–160 characters. Defaults to the excerpt if left blank.</p>
+              </div>
+
+              {/* Canonical URL & OG Image in a 2-column subgrid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">
+                    Canonical URL (Optional)
+                  </label>
+                  <input 
+                    type="url" 
+                    value={canonicalUrl}
+                    onChange={(e) => setCanonicalUrl(e.target.value)}
+                    placeholder="https://ofia.ng/blog/..."
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-xs text-slate-800 font-mono"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">Leave empty to use the standard Ofia blog URL canonical.</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">
+                    OG / Social Share Image URL (Optional)
+                  </label>
+                  <input 
+                    type="url" 
+                    value={ogImage}
+                    onChange={(e) => setOgImage(e.target.value)}
+                    placeholder="Defaults to cover image..."
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-xs text-slate-800 font-mono"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">Used for 1200x630 Facebook, Twitter &amp; LinkedIn rich cards.</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Sidebar Area */}
@@ -370,6 +506,60 @@ function CreateBlogPostContent() {
                     Remove Image
                   </button>
                 )}
+              </div>
+            </div>
+
+            {/* SEO Health & Article Analytics */}
+            <div className="bg-white p-3.5 sm:p-5 rounded-xl sm:rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <h3 className="font-bold text-slate-800 border-b border-slate-100 pb-2 text-sm flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-blue-600" />
+                SEO Health &amp; Analytics
+              </h3>
+
+              <div className="space-y-3 text-xs">
+                <div className="flex items-center justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500">Readership Views</span>
+                  <span className="font-semibold text-slate-800 flex items-center gap-1">
+                    <Eye className="w-3.5 h-3.5 text-purple-600" />
+                    {viewCount !== null ? viewCount.toLocaleString() : '0'}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500">Word Count</span>
+                  <span className="font-semibold text-slate-800">
+                    {content.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).filter(Boolean).length} words
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500">Reading Time</span>
+                  <span className="font-semibold text-slate-800">
+                    ~{Math.max(1, Math.ceil(content.replace(/<[^>]*>/g, ' ').trim().split(/\s+/).filter(Boolean).length / 200))} min read
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between py-1 border-b border-slate-100">
+                  <span className="text-slate-500">Meta Description</span>
+                  <span className={`font-semibold px-2 py-0.5 rounded ${
+                    metaDescription.trim().length >= 120 
+                      ? 'bg-emerald-50 text-emerald-700' 
+                      : metaDescription.trim().length > 0 
+                      ? 'bg-amber-50 text-amber-700' 
+                      : 'bg-slate-100 text-slate-500'
+                  }`}>
+                    {metaDescription.trim().length >= 120 ? 'Optimal' : metaDescription.trim().length > 0 ? 'Short' : 'Missing'}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between py-1">
+                  <span className="text-slate-500">Social Graph</span>
+                  <span className={`font-semibold px-2 py-0.5 rounded ${
+                    ogImage || coverImage ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                  }`}>
+                    {ogImage || coverImage ? 'Ready' : 'No Image'}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

@@ -1,11 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getTenantSql } from "@/lib/tenant-db-resolver";
 
 export const dynamic = "force-dynamic";
 
-const ERP_BASE = process.env.ERP_SERVICE_URL || process.env.NEXT_PUBLIC_ERP_SERVICE_URL || "https://ofia-erp-service.onrender.com";
-
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ orgId?: string }> | { orgId?: string } }
 ) {
   const resolvedParams = await params;
@@ -19,39 +18,39 @@ export async function GET(
   }
 
   try {
-    const res = await fetch(`${ERP_BASE}/departments?tenant=${encodeURIComponent(orgId)}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "x-tenant-slug": orgId,
-        ...(request.headers.get("authorization") ? { authorization: request.headers.get("authorization")! } : {}),
-      },
-      cache: "no-store",
-      signal: AbortSignal.timeout(10000),
-    });
+    const sql = await getTenantSql(orgId);
+    const rows = await sql`
+      SELECT 
+        code,
+        name,
+        COALESCE(head, '') AS head,
+        COALESCE("headCount", 0) AS "headCount",
+        COALESCE(budget, '') AS budget,
+        COALESCE("costCenter", '') AS "costCenter",
+        COALESCE("accessiblePages", '[]'::jsonb) AS "accessiblePages",
+        COALESCE("accessibleTabs", '{}'::jsonb) AS "accessibleTabs"
+      FROM "Department"
+      WHERE LOWER("tenantSlug") = ${orgId}
+         OR "tenantSlug" = ''
+         OR "tenantSlug" IS NULL
+      ORDER BY name ASC;
+    `;
 
-    const data = await res.json().catch(() => []);
-    if (!res.ok) {
-      return NextResponse.json(data, { status: res.status });
-    }
+    const mapped = rows.map((d: any) => ({
+      id: `dept_${d.code || d.name}`,
+      departmentCode: d.code,
+      departmentName: d.name,
+      accessiblePages: Array.isArray(d.accessiblePages) && d.accessiblePages.length > 0 ? d.accessiblePages : ["employee"],
+      accessibleTabs: d.accessibleTabs || {},
+      isEnabled: true,
+    }));
 
-    if (Array.isArray(data)) {
-      const mapped = data.map((d: any) => ({
-        id: `dept_${d.code || d.name}`,
-        departmentCode: d.code,
-        departmentName: d.name,
-        accessiblePages: ["employee"],
-        accessibleTabs: {},
-        isEnabled: true,
-      }));
-      return NextResponse.json(mapped);
-    }
-
-    return NextResponse.json(data);
+    return NextResponse.json(mapped);
   } catch (err: any) {
+    console.error("[Org Department Access GET] Error:", err);
     return NextResponse.json(
-      { error: "ERP service department connection error: " + err.message },
-      { status: 502 }
+      { success: false, error: "Failed to fetch departments: " + err.message },
+      { status: 500 }
     );
   }
 }

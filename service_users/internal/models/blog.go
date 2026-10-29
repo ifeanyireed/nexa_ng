@@ -15,9 +15,14 @@ type BlogPost struct {
 	CategoryID  *string    `gorm:"size:191;index" json:"category_id"`
 	Tags        string     `gorm:"size:255" json:"tags"`
 	Status      string     `gorm:"size:50;not null;default:'DRAFT'" json:"status"` // DRAFT, PUBLISHED, ARCHIVED
-	AuthorID    *string    `gorm:"size:191" json:"author_id"`
-	AuthorName  string     `gorm:"size:191;default:'Ofia Editorial Team'" json:"author_name"`
-	PublishedAt *time.Time `json:"published_at"`
+	AuthorID        *string    `gorm:"size:191" json:"author_id"`
+	AuthorName      string     `gorm:"size:191;default:'Ofia Editorial Team'" json:"author_name"`
+	ViewCount       int64      `gorm:"default:0;index:idx_blog_post_view_count,sort:desc" json:"view_count"`
+	MetaTitle       string     `gorm:"size:255" json:"meta_title"`
+	MetaDescription string     `gorm:"type:text" json:"meta_description"`
+	CanonicalURL    string     `gorm:"size:500" json:"canonical_url"`
+	OGImage         string     `gorm:"type:text" json:"og_image"`
+	PublishedAt     *time.Time `json:"published_at"`
 	CreatedAt   time.Time  `json:"created_at"`
 	UpdatedAt   time.Time  `json:"updated_at"`
 

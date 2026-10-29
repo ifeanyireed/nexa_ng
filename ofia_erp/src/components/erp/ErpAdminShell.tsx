@@ -139,16 +139,30 @@ export function ErpAdminShell({
 }: ErpAdminShellProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
 
+  // Restore cached sidebar collapsed state once on client mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("erp_sidebar_collapsed");
+      if (stored !== null) {
+        setIsSidebarOpen(stored !== "true");
+      }
+    } catch {}
+  }, []);
+
   const toggleSidebar = useCallback(() => {
     setIsSidebarOpen((prev) => {
       const next = !prev;
       if (typeof window !== "undefined") {
-        localStorage.setItem("erp_sidebar_collapsed", next ? "false" : "true");
-        window.dispatchEvent(
-          new CustomEvent("erp_sidebar_collapsed_change", {
-            detail: { isCollapsed: !next },
-          })
-        );
+        try {
+          localStorage.setItem("erp_sidebar_collapsed", next ? "false" : "true");
+        } catch {}
+        setTimeout(() => {
+          window.dispatchEvent(
+            new CustomEvent("erp_sidebar_collapsed_change", {
+              detail: { isCollapsed: !next, source: "ErpAdminShell" },
+            })
+          );
+        }, 0);
       }
       return next;
     });
@@ -157,12 +171,16 @@ export function ErpAdminShell({
   const expandSidebar = useCallback(() => {
     setIsSidebarOpen(true);
     if (typeof window !== "undefined") {
-      localStorage.setItem("erp_sidebar_collapsed", "false");
-      window.dispatchEvent(
-        new CustomEvent("erp_sidebar_collapsed_change", {
-          detail: { isCollapsed: false },
-        })
-      );
+      try {
+        localStorage.setItem("erp_sidebar_collapsed", "false");
+      } catch {}
+      setTimeout(() => {
+        window.dispatchEvent(
+          new CustomEvent("erp_sidebar_collapsed_change", {
+            detail: { isCollapsed: false, source: "ErpAdminShell" },
+          })
+        );
+      }, 0);
     }
   }, []);
 
@@ -269,14 +287,6 @@ export function ErpAdminShell({
   useEffect(() => {
     setIsMounted(true);
     let isCurrent = true;
-
-    // Restore cached sidebar collapsed state from localStorage upon client mount
-    try {
-      const stored = localStorage.getItem("erp_sidebar_collapsed");
-      if (stored !== null) {
-        setIsSidebarOpen(stored !== "true");
-      }
-    } catch {}
 
     // Restore cached tenant branding from localStorage upon client mount
     const slug = extractSubdomainOrParam();
@@ -800,6 +810,9 @@ export function ErpAdminShell({
 
     const handleSidebarSync = (e: Event) => {
       const customEvent = e as CustomEvent;
+      if (customEvent.detail?.source === "ErpAdminShell") {
+        return; // Ignore events dispatched by this component instance
+      }
       if (customEvent.detail && typeof customEvent.detail.isCollapsed === "boolean") {
         setIsSidebarOpen(!customEvent.detail.isCollapsed);
       }
@@ -1426,16 +1439,19 @@ export function ErpAdminShell({
       <aside
         suppressHydrationWarning
         className={cn(
-          "hidden md:flex bg-nexa-bg-surface border-r border-nexa-border transition-all duration-300 flex-col z-50 sticky top-0 h-screen",
+          "hidden md:flex relative bg-nexa-bg-surface border-r border-nexa-border transition-all duration-300 flex-col z-50 sticky top-0 h-screen shrink-0",
           isSidebarOpen ? "w-72" : "w-20"
         )}
       >
         {/* COLLAPSE TOGGLE BUTTON WITH PURE WHITE BACKGROUND */}
         <button
+          type="button"
           onClick={toggleSidebar}
-          className="absolute -right-3 top-24 w-6 h-6 !bg-white bg-white border border-slate-200 shadow-md rounded-full flex items-center justify-center text-slate-700 hover:text-[#1A56DB] hover:scale-110 transition-transform z-[60] cursor-pointer"
+          aria-label={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          title={isSidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          className="absolute -right-3 top-24 w-6 h-6 !bg-white bg-white border border-slate-200 shadow-md rounded-full flex items-center justify-center text-slate-700 hover:text-[#1A56DB] hover:scale-110 active:scale-95 transition-transform z-[60] cursor-pointer select-none"
         >
-          {isSidebarOpen ? <ChevronLeft className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
+          {isSidebarOpen ? <ChevronLeft className="w-3.5 h-3.5 shrink-0" /> : <ChevronRight className="w-3.5 h-3.5 shrink-0" />}
         </button>
 
         {/* LOGO AREA */}
@@ -1578,12 +1594,15 @@ export function ErpAdminShell({
                   )}
                   <Link href={item.href}>
                     <button
+                      type="button"
                       className={cn(
-                        "w-full flex items-center gap-3.5 p-3 rounded-full transition-all group mb-1 cursor-pointer",
+                        "w-full flex items-center p-3 rounded-full transition-all group mb-1 cursor-pointer",
+                        isSidebarOpen ? "gap-3.5 justify-start" : "justify-center",
                         isActive
                           ? "bg-nexa-brand text-white shadow-lg shadow-nexa-brand/20 font-bold"
                           : "text-nexa-text-secondary hover:bg-nexa-bg-base hover:text-nexa-text-primary font-semibold"
                       )}
+                      title={!isSidebarOpen ? item.label : undefined}
                     >
                       <div
                         className={cn(
@@ -1731,12 +1750,15 @@ export function ErpAdminShell({
           {currentRole === "admin" && (
             <Link href="/tenant/settings">
               <button
+                type="button"
                 className={cn(
-                  "w-full flex items-center gap-3.5 p-3 rounded-full transition-all group cursor-pointer",
+                  "w-full flex items-center p-3 rounded-full transition-all group cursor-pointer",
+                  isSidebarOpen ? "gap-3.5 justify-start" : "justify-center",
                   pathname === "/tenant/settings"
                     ? "bg-nexa-brand text-white shadow-md shadow-nexa-brand/20 font-bold"
                     : "text-nexa-text-secondary hover:bg-nexa-bg-base hover:text-nexa-text-primary font-semibold"
                 )}
+                title={!isSidebarOpen ? "Workspace Settings" : undefined}
               >
                 <div
                   className={cn(
@@ -1754,12 +1776,13 @@ export function ErpAdminShell({
           )}
           <div className="flex items-center gap-1.5 justify-between">
             <button
+              type="button"
               onClick={logout}
               className={cn(
-                "flex items-center gap-3.5 p-3 rounded-full text-red-500 hover:bg-red-500/10 transition-all text-left cursor-pointer",
-                isSidebarOpen ? "flex-1" : "w-full justify-center"
+                "flex items-center p-3 rounded-full text-red-500 hover:bg-red-500/10 transition-all cursor-pointer",
+                isSidebarOpen ? "gap-3.5 flex-1 justify-start text-left" : "w-full justify-center"
               )}
-              title="Logout"
+              title={!isSidebarOpen ? "Logout" : undefined}
             >
               <LogOut className="w-6 h-6 shrink-0" />
               {isSidebarOpen && <span className="font-bold text-xs">Logout</span>}

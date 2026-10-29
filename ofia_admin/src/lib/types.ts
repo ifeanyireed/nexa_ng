@@ -117,9 +117,17 @@ export interface BlogPost {
   author: { full_name?: string } | string;
   category: string;
   category_id?: string;
+  tags?: string;
+  cover_image?: string;
   status: 'DRAFT' | 'PUBLISHED';
+  view_count?: number;
+  meta_title?: string;
+  meta_description?: string;
+  canonical_url?: string;
+  og_image?: string;
   published_at?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface SuiteStats {

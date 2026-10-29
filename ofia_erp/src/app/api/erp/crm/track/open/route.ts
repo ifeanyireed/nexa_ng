@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 const ERP_BASE =
   process.env.ERP_SERVICE_URL ||
   process.env.NEXT_PUBLIC_ERP_SERVICE_URL ||
-  "https://ofia-erp-service.onrender.com";
+  "";
 
 const transparent1x1GIF = Buffer.from(
   "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",

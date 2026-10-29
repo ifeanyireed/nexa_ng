@@ -1,52 +1,53 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getTenantSql } from "@/lib/tenant-db-resolver";
+import { getValidatedTenantSlug } from "@/lib/crm-tenant";
 
 export const dynamic = "force-dynamic";
 
-const ERP_BASE = process.env.ERP_SERVICE_URL || process.env.NEXT_PUBLIC_ERP_SERVICE_URL || "https://ofia-erp-service.onrender.com";
+export async function GET(request: NextRequest) {
+  const tenantSlug = getValidatedTenantSlug(request);
 
-export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const tenantSlug =
-    request.headers.get("x-tenant-slug") ||
-    url.searchParams.get("tenant") ||
-    url.searchParams.get("tenant_slug") ||
-    url.searchParams.get("orgId") ||
-    "";
+  if (!tenantSlug) {
+    return NextResponse.json(
+      { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+      { status: 400 }
+    );
+  }
 
   try {
-    const res = await fetch(`${ERP_BASE}/departments?tenant=${encodeURIComponent(tenantSlug)}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "x-tenant-slug": tenantSlug,
-        ...(request.headers.get("authorization") ? { authorization: request.headers.get("authorization")! } : {}),
-      },
-      cache: "no-store",
-      signal: AbortSignal.timeout(10000),
-    });
+    const sql = await getTenantSql(tenantSlug);
+    const rows = await sql`
+      SELECT 
+        code,
+        name,
+        COALESCE(head, '') AS head,
+        COALESCE("headCount", 0) AS "headCount",
+        COALESCE(budget, '') AS budget,
+        COALESCE("costCenter", '') AS "costCenter",
+        COALESCE("accessiblePages", '[]'::jsonb) AS "accessiblePages",
+        COALESCE("accessibleTabs", '{}'::jsonb) AS "accessibleTabs"
+      FROM "Department"
+      WHERE LOWER("tenantSlug") = ${tenantSlug}
+         OR "tenantSlug" = ''
+         OR "tenantSlug" IS NULL
+      ORDER BY name ASC;
+    `;
 
-    const data = await res.json().catch(() => []);
-    if (!res.ok) {
-      return NextResponse.json(data, { status: res.status });
-    }
+    const mapped = rows.map((d: any) => ({
+      id: `dept_${d.code || d.name}`,
+      departmentCode: d.code,
+      departmentName: d.name,
+      accessiblePages: Array.isArray(d.accessiblePages) && d.accessiblePages.length > 0 ? d.accessiblePages : ["employee"],
+      accessibleTabs: d.accessibleTabs || {},
+      isEnabled: true,
+    }));
 
-    if (Array.isArray(data)) {
-      const mapped = data.map((d: any) => ({
-        id: `dept_${d.code || d.name}`,
-        departmentCode: d.code,
-        departmentName: d.name,
-        accessiblePages: ["employee"],
-        accessibleTabs: {},
-        isEnabled: true,
-      }));
-      return NextResponse.json(mapped);
-    }
-
-    return NextResponse.json(data);
+    return NextResponse.json({ success: true, departments: mapped });
   } catch (err: any) {
+    console.error("[Department Access GET] Error:", err);
     return NextResponse.json(
-      { error: "ERP service department connection error: " + err.message },
-      { status: 502 }
+      { success: false, error: "Failed to fetch departments: " + err.message, departments: [] },
+      { status: 500 }
     );
   }
 }

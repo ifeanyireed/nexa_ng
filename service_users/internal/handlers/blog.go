@@ -127,17 +127,21 @@ func (h *BlogHandler) CreateOrUpdatePost(w http.ResponseWriter, r *http.Request)
 	}
 
 	var payload struct {
-		ID         string  `json:"id"`
-		Title      string  `json:"title"`
-		Slug       string  `json:"slug"`
-		Excerpt    string  `json:"excerpt"`
-		Content    string  `json:"content"`
-		CoverImage string  `json:"cover_image"`
-		CategoryID *string `json:"category_id"`
-		Tags       string  `json:"tags"`
-		Status     string  `json:"status"`
-		AuthorID   *string `json:"author_id"`
-		AuthorName string  `json:"author_name"`
+		ID              string  `json:"id"`
+		Title           string  `json:"title"`
+		Slug            string  `json:"slug"`
+		Excerpt         string  `json:"excerpt"`
+		Content         string  `json:"content"`
+		CoverImage      string  `json:"cover_image"`
+		CategoryID      *string `json:"category_id"`
+		Tags            string  `json:"tags"`
+		Status          string  `json:"status"`
+		AuthorID        *string `json:"author_id"`
+		AuthorName      string  `json:"author_name"`
+		MetaTitle       string  `json:"meta_title"`
+		MetaDescription string  `json:"meta_description"`
+		CanonicalURL    string  `json:"canonical_url"`
+		OGImage         string  `json:"og_image"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -197,6 +201,10 @@ func (h *BlogHandler) CreateOrUpdatePost(w http.ResponseWriter, r *http.Request)
 				post.AuthorID = payload.AuthorID
 			}
 			post.AuthorName = authorName
+			post.MetaTitle = payload.MetaTitle
+			post.MetaDescription = payload.MetaDescription
+			post.CanonicalURL = payload.CanonicalURL
+			post.OGImage = payload.OGImage
 			post.UpdatedAt = now
 
 			if err := h.db.Save(&post).Error; err != nil {
@@ -210,20 +218,25 @@ func (h *BlogHandler) CreateOrUpdatePost(w http.ResponseWriter, r *http.Request)
 
 	// Create new
 	post = models.BlogPost{
-		ID:          "post_" + uuid.New().String()[:12],
-		Title:       payload.Title,
-		Slug:        slug,
-		Excerpt:     payload.Excerpt,
-		Content:     payload.Content,
-		CoverImage:  payload.CoverImage,
-		CategoryID:  payload.CategoryID,
-		Tags:        payload.Tags,
-		Status:      status,
-		AuthorID:    payload.AuthorID,
-		AuthorName:  authorName,
-		PublishedAt: publishedAt,
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		ID:              "post_" + uuid.New().String()[:12],
+		Title:           payload.Title,
+		Slug:            slug,
+		Excerpt:         payload.Excerpt,
+		Content:         payload.Content,
+		CoverImage:      payload.CoverImage,
+		CategoryID:      payload.CategoryID,
+		Tags:            payload.Tags,
+		Status:          status,
+		AuthorID:        payload.AuthorID,
+		AuthorName:      authorName,
+		MetaTitle:       payload.MetaTitle,
+		MetaDescription: payload.MetaDescription,
+		CanonicalURL:    payload.CanonicalURL,
+		OGImage:         payload.OGImage,
+		ViewCount:       0,
+		PublishedAt:     publishedAt,
+		CreatedAt:       now,
+		UpdatedAt:       now,
 	}
 
 	if err := h.db.Create(&post).Error; err != nil {
@@ -261,6 +274,54 @@ func (h *BlogHandler) DeletePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write([]byte(`{"success": true, "message": "Post deleted"}`))
+}
+
+func (h *BlogHandler) IncrementPostView(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if h.db == nil {
+		http.Error(w, `{"error": "Database unavailable"}`, http.StatusServiceUnavailable)
+		return
+	}
+
+	idOrSlug := chi.URLParam(r, "id")
+	if idOrSlug == "" {
+		idOrSlug = r.URL.Query().Get("slug")
+	}
+	if idOrSlug == "" {
+		idOrSlug = r.URL.Query().Get("id")
+	}
+	if idOrSlug == "" {
+		http.Error(w, `{"error": "Post ID or slug required"}`, http.StatusBadRequest)
+		return
+	}
+
+	// Atomically increment view_count
+	res := h.db.Model(&models.BlogPost{}).
+		Where("id = ? OR slug = ?", idOrSlug, idOrSlug).
+		UpdateColumn("view_count", gorm.Expr("COALESCE(view_count, 0) + 1"))
+
+	if res.Error != nil {
+		http.Error(w, `{"error": "Failed to increment view count"}`, http.StatusInternalServerError)
+		return
+	}
+
+	if res.RowsAffected == 0 {
+		http.Error(w, `{"error": "Post not found"}`, http.StatusNotFound)
+		return
+	}
+
+	var updated models.BlogPost
+	if err := h.db.Select("id, slug, view_count").Where("id = ? OR slug = ?", idOrSlug, idOrSlug).First(&updated).Error; err != nil {
+		json.NewEncoder(w).Encode(map[string]any{"success": true})
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]any{
+		"success":    true,
+		"id":         updated.ID,
+		"slug":       updated.Slug,
+		"view_count": updated.ViewCount,
+	})
 }
 
 // -----------------------------------------------------------------------------

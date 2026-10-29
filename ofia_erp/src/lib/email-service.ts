@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { getTenantSql } from "./tenant-db-resolver";
 // Database access is fully decoupled to service_erp backend microservice
 interface DbResult {
   rows: Record<string, any>[];
@@ -35,38 +36,34 @@ export async function getTenantSmtpSettings(tenantSlug: string): Promise<SmtpSet
   const normalizedSlug = tenantSlug.trim().toLowerCase();
 
   try {
-    const pool = getDbPool();
-    if (pool) {
-      await ensureTablesExist();
-      const res = await pool.query(
-        `SELECT tenant_slug, provider, host, port, encryption, from_email, from_name, username, password, rate_limited_until, rate_limit_reason
-         FROM tenant_smtp_settings
-         WHERE LOWER(tenant_slug) = $1
-         LIMIT 1`,
-        [normalizedSlug]
-      );
+    const sql = await getTenantSql(normalizedSlug);
+    const rows = await sql`
+      SELECT tenant_slug, provider, host, port, encryption, from_email, from_name, username, password, rate_limited_until, rate_limit_reason
+      FROM tenant_smtp_settings
+      WHERE LOWER(tenant_slug) = ${normalizedSlug}
+      LIMIT 1;
+    `;
 
-      if (res.rows.length > 0) {
-        const row = res.rows[0];
-        const isRateLimited = Boolean(
-          row.rate_limited_until && new Date(row.rate_limited_until).getTime() > Date.now()
-        );
-        return {
-          tenantSlug: row.tenant_slug,
-          provider: row.provider || "custom",
-          host: row.host || "",
-          port: Number(row.port) || 587,
-          encryption: (row.encryption as any) || "tls",
-          fromEmail: row.from_email || "",
-          fromName: row.from_name || "",
-          username: row.username || "",
-          password: row.password || "",
-          hasPassword: Boolean(row.password && row.password.length > 0),
-          rateLimitedUntil: row.rate_limited_until ? new Date(row.rate_limited_until).toISOString() : null,
-          rateLimitReason: row.rate_limit_reason || null,
-          isRateLimited,
-        };
-      }
+    if (rows && rows.length > 0) {
+      const row = rows[0];
+      const isRateLimited = Boolean(
+        row.rate_limited_until && new Date(row.rate_limited_until).getTime() > Date.now()
+      );
+      return {
+        tenantSlug: row.tenant_slug,
+        provider: row.provider || "custom",
+        host: row.host || "",
+        port: Number(row.port) || 587,
+        encryption: (row.encryption as any) || "tls",
+        fromEmail: row.from_email || "",
+        fromName: row.from_name || "",
+        username: row.username || "",
+        password: row.password || "",
+        hasPassword: Boolean(row.password && row.password.length > 0),
+        rateLimitedUntil: row.rate_limited_until ? new Date(row.rate_limited_until).toISOString() : null,
+        rateLimitReason: row.rate_limit_reason || null,
+        isRateLimited,
+      };
     }
   } catch (err) {
     console.warn("Error fetching SMTP settings from database:", err);
@@ -110,45 +107,30 @@ export async function saveTenantSmtpSettings(settings: SmtpSettings): Promise<bo
 
   // 2. Persist to Neon Postgres
   try {
-    const pool = getDbPool();
-    if (pool) {
-      await ensureTablesExist();
-      await pool.query(
-        `INSERT INTO tenant_smtp_settings (
-           tenant_slug, provider, host, port, encryption, from_email, from_name, username, password, updated_at
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP)
-         ON CONFLICT (tenant_slug)
-         DO UPDATE SET
-           provider = EXCLUDED.provider,
-           host = EXCLUDED.host,
-           port = EXCLUDED.port,
-           encryption = EXCLUDED.encryption,
-           from_email = EXCLUDED.from_email,
-           from_name = EXCLUDED.from_name,
-           username = EXCLUDED.username,
-           password = EXCLUDED.password,
-           updated_at = CURRENT_TIMESTAMP`,
-        [
-          normalizedSlug,
-          settings.provider || "custom",
-          settings.host,
-          settings.port || 587,
-          settings.encryption || "tls",
-          settings.fromEmail,
-          settings.fromName,
-          settings.username || "",
-          passwordToStore,
-        ]
-      );
-      return true;
-    }
+    const sql = await getTenantSql(normalizedSlug);
+    await sql`
+      INSERT INTO tenant_smtp_settings (
+        tenant_slug, tenant_id, provider, host, port, encryption, from_email, from_name, username, password, updated_at
+      ) VALUES (
+        ${normalizedSlug}, '', ${settings.provider || "custom"}, ${settings.host}, ${settings.port || 587}, ${settings.encryption || "tls"}, ${settings.fromEmail}, ${settings.fromName}, ${settings.username || ""}, ${passwordToStore}, NOW()
+      )
+      ON CONFLICT (tenant_slug)
+      DO UPDATE SET
+        provider = EXCLUDED.provider,
+        host = EXCLUDED.host,
+        port = EXCLUDED.port,
+        encryption = EXCLUDED.encryption,
+        from_email = EXCLUDED.from_email,
+        from_name = EXCLUDED.from_name,
+        username = EXCLUDED.username,
+        password = EXCLUDED.password,
+        updated_at = NOW();
+    `;
+    return true;
   } catch (err) {
     console.error("Failed to persist SMTP settings to PostgreSQL:", err);
-    // In-memory update succeeded
     return true;
   }
-
-  return true;
 }
 
 export function createNodemailerTransporter(settings: SmtpSettings) {
@@ -260,75 +242,16 @@ export async function getTenantSenderProfiles(tenantSlug: string): Promise<Tenan
   const normalizedSlug = tenantSlug.trim().toLowerCase();
 
   try {
-    const pool = getDbPool();
-    if (pool) {
-      await ensureTablesExist();
-      const res = await pool.query(
-        `SELECT id, tenant_slug, profile_name, provider, host, port, encryption, from_email, from_name, username, password, is_default, rate_limited_until, rate_limit_reason, created_at, updated_at
-         FROM tenant_sender_profiles
-         WHERE LOWER(tenant_slug) = $1
-         ORDER BY is_default DESC, created_at ASC`,
-        [normalizedSlug]
-      );
+    const sql = await getTenantSql(normalizedSlug);
+    const rows = await sql`
+      SELECT id, tenant_slug, profile_name, provider, host, port, encryption, from_email, from_name, username, password, is_default, rate_limited_until, rate_limit_reason, created_at, updated_at
+      FROM tenant_sender_profiles
+      WHERE LOWER(tenant_slug) = ${normalizedSlug}
+      ORDER BY is_default DESC, created_at ASC;
+    `;
 
-      if (res.rows.length > 0) {
-        return res.rows.map((row) => {
-          const isRateLimited = Boolean(
-            row.rate_limited_until && new Date(row.rate_limited_until).getTime() > Date.now()
-          );
-          return {
-            id: row.id,
-            tenantSlug: row.tenant_slug,
-            profileName: row.profile_name,
-            provider: row.provider || "custom",
-            host: row.host || "",
-            port: Number(row.port) || 587,
-            encryption: (row.encryption as any) || "tls",
-            fromEmail: row.from_email || "",
-            fromName: row.from_name || "",
-            username: row.username || "",
-            password: row.password || "",
-            hasPassword: Boolean(row.password && row.password.length > 0),
-            isDefault: Boolean(row.is_default),
-            rateLimitedUntil: row.rate_limited_until ? new Date(row.rate_limited_until).toISOString() : null,
-            rateLimitReason: row.rate_limit_reason || null,
-            isRateLimited,
-            createdAt: row.created_at ? new Date(row.created_at).toISOString() : undefined,
-            updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : undefined,
-          };
-        });
-      }
-    }
-  } catch (err) {
-    console.warn("Error fetching sender profiles from database:", err);
-  }
-
-  const cached = memorySenderProfilesStore.get(normalizedSlug) || [];
-  return cached.map((p) => ({
-    ...p,
-    password: p.password || "",
-    hasPassword: Boolean(p.password && p.password.length > 0),
-    isRateLimited: Boolean(p.rateLimitedUntil && new Date(p.rateLimitedUntil).getTime() > Date.now()),
-  }));
-}
-
-export async function getTenantSenderProfileById(tenantSlug: string, id: string): Promise<TenantSenderProfile | null> {
-  if (!tenantSlug || !id) return null;
-  const normalizedSlug = tenantSlug.trim().toLowerCase();
-
-  try {
-    const pool = getDbPool();
-    if (pool) {
-      await ensureTablesExist();
-      const res = await pool.query(
-        `SELECT id, tenant_slug, profile_name, provider, host, port, encryption, from_email, from_name, username, password, is_default, rate_limited_until, rate_limit_reason, created_at, updated_at
-         FROM tenant_sender_profiles
-         WHERE LOWER(tenant_slug) = $1 AND id = $2
-         LIMIT 1`,
-        [normalizedSlug, id]
-      );
-      if (res.rows.length > 0) {
-        const row = res.rows[0];
+    if (rows && rows.length > 0) {
+      return rows.map((row: any) => {
         const isRateLimited = Boolean(
           row.rate_limited_until && new Date(row.rate_limited_until).getTime() > Date.now()
         );
@@ -352,7 +275,58 @@ export async function getTenantSenderProfileById(tenantSlug: string, id: string)
           createdAt: row.created_at ? new Date(row.created_at).toISOString() : undefined,
           updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : undefined,
         };
-      }
+      });
+    }
+  } catch (err) {
+    console.warn("Error fetching sender profiles from database:", err);
+  }
+
+  const cached = memorySenderProfilesStore.get(normalizedSlug) || [];
+  return cached.map((p) => ({
+    ...p,
+    password: p.password || "",
+    hasPassword: Boolean(p.password && p.password.length > 0),
+    isRateLimited: Boolean(p.rateLimitedUntil && new Date(p.rateLimitedUntil).getTime() > Date.now()),
+  }));
+}
+
+export async function getTenantSenderProfileById(tenantSlug: string, id: string): Promise<TenantSenderProfile | null> {
+  if (!tenantSlug || !id) return null;
+  const normalizedSlug = tenantSlug.trim().toLowerCase();
+
+  try {
+    const sql = await getTenantSql(normalizedSlug);
+    const rows = await sql`
+      SELECT id, tenant_slug, profile_name, provider, host, port, encryption, from_email, from_name, username, password, is_default, rate_limited_until, rate_limit_reason, created_at, updated_at
+      FROM tenant_sender_profiles
+      WHERE LOWER(tenant_slug) = ${normalizedSlug} AND id = ${id}
+      LIMIT 1;
+    `;
+    if (rows && rows.length > 0) {
+      const row = rows[0];
+      const isRateLimited = Boolean(
+        row.rate_limited_until && new Date(row.rate_limited_until).getTime() > Date.now()
+      );
+      return {
+        id: row.id,
+        tenantSlug: row.tenant_slug,
+        profileName: row.profile_name,
+        provider: row.provider || "custom",
+        host: row.host || "",
+        port: Number(row.port) || 587,
+        encryption: (row.encryption as any) || "tls",
+        fromEmail: row.from_email || "",
+        fromName: row.from_name || "",
+        username: row.username || "",
+        password: row.password || "",
+        hasPassword: Boolean(row.password && row.password.length > 0),
+        isDefault: Boolean(row.is_default),
+        rateLimitedUntil: row.rate_limited_until ? new Date(row.rate_limited_until).toISOString() : null,
+        rateLimitReason: row.rate_limit_reason || null,
+        isRateLimited,
+        createdAt: row.created_at ? new Date(row.created_at).toISOString() : undefined,
+        updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : undefined,
+      };
     }
   } catch (err) {
     console.warn("Error fetching sender profile by id:", err);
@@ -411,60 +385,35 @@ export async function saveTenantSenderProfile(
 
   // 2. Persist to Neon Postgres
   try {
-    const pool = getDbPool();
-    if (pool) {
-      await ensureTablesExist();
-      await pool.query(
-        `INSERT INTO tenant_sender_profiles (
-           id, tenant_slug, profile_name, provider, host, port, encryption, from_email, from_name, username, password, is_default, updated_at
-         ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP)
-         ON CONFLICT (id)
-         DO UPDATE SET
-           profile_name = EXCLUDED.profile_name,
-           provider = EXCLUDED.provider,
-           host = EXCLUDED.host,
-           port = EXCLUDED.port,
-           encryption = EXCLUDED.encryption,
-           from_email = EXCLUDED.from_email,
-           from_name = EXCLUDED.from_name,
-           username = EXCLUDED.username,
-           password = EXCLUDED.password,
-           is_default = EXCLUDED.is_default,
-           updated_at = CURRENT_TIMESTAMP`,
-        [
-          fullProfile.id,
-          fullProfile.tenantSlug,
-          fullProfile.profileName,
-          fullProfile.provider,
-          fullProfile.host,
-          fullProfile.port,
-          fullProfile.encryption,
-          fullProfile.fromEmail,
-          fullProfile.fromName,
-          fullProfile.username,
-          fullProfile.password,
-          fullProfile.isDefault,
-        ]
-      );
-
-      if (fullProfile.isDefault) {
-        await pool.query(
-          `UPDATE tenant_sender_profiles SET is_default = false WHERE LOWER(tenant_slug) = $1 AND id != $2`,
-          [normalizedSlug, id]
-        );
-        await saveTenantSmtpSettings({
-          tenantSlug: normalizedSlug,
-          provider: fullProfile.provider,
-          host: fullProfile.host,
-          port: fullProfile.port,
-          encryption: fullProfile.encryption,
-          fromEmail: fullProfile.fromEmail,
-          fromName: fullProfile.fromName,
-          username: fullProfile.username,
-          password: fullProfile.password,
-        });
-      }
+    const sql = await getTenantSql(normalizedSlug);
+    if (fullProfile.isDefault) {
+      await sql`
+        UPDATE tenant_sender_profiles
+        SET is_default = false
+        WHERE LOWER(tenant_slug) = ${normalizedSlug};
+      `;
     }
+
+    await sql`
+      INSERT INTO tenant_sender_profiles (
+        id, tenant_slug, tenant_id, profile_name, provider, host, port, encryption, from_email, from_name, username, password, is_default, updated_at
+      ) VALUES (
+        ${fullProfile.id}, ${normalizedSlug}, '', ${fullProfile.profileName}, ${fullProfile.provider}, ${fullProfile.host}, ${fullProfile.port}, ${fullProfile.encryption}, ${fullProfile.fromEmail}, ${fullProfile.fromName}, ${fullProfile.username}, ${fullProfile.password}, ${fullProfile.isDefault}, NOW()
+      )
+      ON CONFLICT (id)
+      DO UPDATE SET
+        profile_name = EXCLUDED.profile_name,
+        provider = EXCLUDED.provider,
+        host = EXCLUDED.host,
+        port = EXCLUDED.port,
+        encryption = EXCLUDED.encryption,
+        from_email = EXCLUDED.from_email,
+        from_name = EXCLUDED.from_name,
+        username = EXCLUDED.username,
+        password = EXCLUDED.password,
+        is_default = EXCLUDED.is_default,
+        updated_at = NOW();
+    `;
   } catch (err) {
     console.error("Failed to persist sender profile to PostgreSQL:", err);
   }
@@ -480,14 +429,11 @@ export async function deleteTenantSenderProfile(tenantSlug: string, id: string):
   const normalizedSlug = tenantSlug.trim().toLowerCase();
 
   try {
-    const pool = getDbPool();
-    if (pool) {
-      await ensureTablesExist();
-      await pool.query(
-        `DELETE FROM tenant_sender_profiles WHERE LOWER(tenant_slug) = $1 AND id = $2`,
-        [normalizedSlug, id]
-      );
-    }
+    const sql = await getTenantSql(normalizedSlug);
+    await sql`
+      DELETE FROM tenant_sender_profiles
+      WHERE LOWER(tenant_slug) = ${normalizedSlug} AND id = ${id};
+    `;
   } catch (err) {
     console.warn("Failed to delete sender profile from DB:", err);
   }

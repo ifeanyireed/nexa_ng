@@ -3,17 +3,21 @@
 import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Eye, Clock } from "lucide-react";
 
 interface BlogPost {
   id: string | number;
   title: string;
   slug: string;
   excerpt: string;
+  content?: string;
   cover_image?: string;
   category?: string;
   published_at?: string;
   created_at?: string;
+  view_count?: number;
+  meta_description?: string;
+  tags?: string;
 }
 
 export default function BlogListClient({ posts }: { posts: BlogPost[] }) {
@@ -101,7 +105,10 @@ export default function BlogListClient({ posts }: { posts: BlogPost[] }) {
                       year: "numeric",
                     })}
                   </span>
-                  <span>Ofia Editorial</span>
+                  <span className="flex items-center gap-1 text-slate-500 font-semibold">
+                    <Eye className="w-3.5 h-3.5 text-slate-400" />
+                    {Number(post.view_count || 0).toLocaleString()} views
+                  </span>
                 </div>
 
                 <h2 className="text-xl font-bold mb-3 text-slate-900 leading-snug line-clamp-2 group-hover:text-nexa-brand transition-colors">
@@ -109,7 +116,7 @@ export default function BlogListClient({ posts }: { posts: BlogPost[] }) {
                 </h2>
 
                 <p className="text-sm text-nexa-text-secondary mb-6 flex-1 line-clamp-3 leading-relaxed">
-                  {post.excerpt}
+                  {post.meta_description || post.excerpt}
                 </p>
 
                 <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
@@ -119,6 +126,10 @@ export default function BlogListClient({ posts }: { posts: BlogPost[] }) {
                   >
                     Read Article <ArrowRight className="w-4 h-4" />
                   </Link>
+                  <span className="inline-flex items-center gap-1 text-xs text-slate-400 font-medium">
+                    <Clock className="w-3 h-3 text-slate-400" />
+                    ~{Math.max(1, Math.ceil(((post.content || post.excerpt || '').replace(/<[^>]*>/g, ' ').trim().split(/\s+/).filter(Boolean).length || 200) / 200))} min read
+                  </span>
                 </div>
               </div>
             </motion.article>

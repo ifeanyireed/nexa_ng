@@ -1,52 +1,57 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getTenantSql } from "@/lib/tenant-db-resolver";
 import { getValidatedTenantSlug } from "@/lib/crm-tenant";
-import {
-  saveTenantSenderProfile,
-  getTenantSenderProfiles,
-  deleteTenantSenderProfile,
-} from "@/lib/email-service";
 
 export const dynamic = "force-dynamic";
 
-const ERP_BASE =
-  process.env.ERP_SERVICE_URL ||
-  process.env.NEXT_PUBLIC_ERP_SERVICE_URL ||
-  "https://ofia-erp-service.onrender.com";
+async function ensureSenderProfilesTable(sql: any) {
+  await sql`
+    CREATE TABLE IF NOT EXISTS tenant_sender_profiles (
+      id VARCHAR(191) PRIMARY KEY,
+      tenant_slug VARCHAR(191) NOT NULL,
+      tenant_id VARCHAR(191) DEFAULT '',
+      profile_name VARCHAR(191) NOT NULL,
+      provider VARCHAR(50) DEFAULT 'custom',
+      host VARCHAR(191) NOT NULL,
+      port INT DEFAULT 587,
+      encryption VARCHAR(20) DEFAULT 'tls',
+      from_email VARCHAR(191) NOT NULL,
+      from_name VARCHAR(191) NOT NULL,
+      username VARCHAR(191) NOT NULL,
+      password TEXT DEFAULT '',
+      is_default BOOLEAN DEFAULT FALSE,
+      rate_limited_until TIMESTAMPTZ,
+      rate_limit_reason TEXT,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  await sql`ALTER TABLE tenant_sender_profiles ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(191) DEFAULT '';`;
+  await sql`ALTER TABLE tenant_sender_profiles ADD COLUMN IF NOT EXISTS is_default BOOLEAN DEFAULT FALSE;`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_tenant_sender_profiles_slug ON tenant_sender_profiles (LOWER(tenant_slug));`;
 
-const LOCAL_ERP_BASE = "http://127.0.0.1:8084";
-
-async function fetchFromErp(
-  path: string,
-  options: RequestInit,
-  timeoutMs: number = 10000
-): Promise<{ res: Response | null; ok: boolean; status: number }> {
-  // If in local development, attempt local ERP first if reachable
-  if (process.env.NODE_ENV === "development" && !ERP_BASE.includes("127.0.0.1") && !ERP_BASE.includes("localhost")) {
-    try {
-      const localRes = await fetch(`${LOCAL_ERP_BASE}${path}`, {
-        ...options,
-        signal: AbortSignal.timeout(1500),
-      });
-      if (localRes.ok || (localRes.status !== 404 && localRes.status !== 502)) {
-        return { res: localRes, ok: localRes.ok, status: localRes.status };
-      }
-    } catch {
-      // Local service not running, fallback to ERP_BASE
-    }
-  }
-
-  try {
-    const res = await fetch(`${ERP_BASE}${path}`, {
-      ...options,
-      signal: AbortSignal.timeout(timeoutMs),
-    });
-    return { res, ok: res.ok, status: res.status };
-  } catch (err: any) {
-    return { res: null, ok: false, status: 502 };
-  }
+  await sql`
+    CREATE TABLE IF NOT EXISTS tenant_smtp_settings (
+      tenant_slug VARCHAR(191) PRIMARY KEY,
+      tenant_id VARCHAR(191) DEFAULT '',
+      provider VARCHAR(50) DEFAULT 'custom',
+      host VARCHAR(191),
+      port INT DEFAULT 587,
+      encryption VARCHAR(20) DEFAULT 'tls',
+      from_email VARCHAR(191),
+      from_name VARCHAR(191),
+      username VARCHAR(191),
+      password TEXT,
+      rate_limited_until TIMESTAMPTZ,
+      rate_limit_reason TEXT,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  await sql`ALTER TABLE tenant_smtp_settings ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(191) DEFAULT '';`;
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   try {
     const tenantSlug = getValidatedTenantSlug(request);
     if (!tenantSlug) {
@@ -56,116 +61,85 @@ export async function GET(request: Request) {
       );
     }
 
-    // 1. Try to fetch from ERP microservice sender-profiles endpoint
-    const { res, ok } = await fetchFromErp(
-      `/crm/sender-profiles?tenant=${encodeURIComponent(tenantSlug)}`,
-      {
-        cache: "no-store",
-        headers: { "x-tenant-slug": tenantSlug },
-      },
-      15000
-    );
+    const sql = await getTenantSql(tenantSlug);
+    await ensureSenderProfilesTable(sql);
 
-    if (ok && res) {
-      const data = await res.json().catch(() => null);
-      if (data && data.success && Array.isArray(data.profiles) && data.profiles.length > 0) {
-        return NextResponse.json(data);
-      }
-    }
+    const [profRows, smtpRows] = await Promise.all([
+      sql`
+        SELECT id, tenant_slug, profile_name, provider, host, port, encryption, from_email, from_name, username, password, is_default, rate_limited_until, rate_limit_reason, created_at, updated_at
+        FROM tenant_sender_profiles
+        WHERE LOWER(tenant_slug) = ${tenantSlug}
+        ORDER BY is_default DESC, created_at ASC;
+      `,
+      sql`
+        SELECT tenant_slug, provider, host, port, encryption, from_email, from_name, username, password
+        FROM tenant_smtp_settings
+        WHERE LOWER(tenant_slug) = ${tenantSlug}
+        LIMIT 1;
+      `,
+    ]);
 
-    // 2. Fetch legacy smtp-settings as fallback
-    let defaultSettings: any = null;
-    try {
-      const fallback = await fetchFromErp(
-        `/crm/smtp-settings?tenant=${encodeURIComponent(tenantSlug)}`,
-        {
-          cache: "no-store",
-          headers: { "x-tenant-slug": tenantSlug },
-        },
-        10000
+    const profiles = profRows.map((row: any) => {
+      const isRateLimited = Boolean(
+        row.rate_limited_until && new Date(row.rate_limited_until).getTime() > Date.now()
       );
-      if (fallback.res) {
-        const fallbackData = await fallback.res.json().catch(() => null);
-        defaultSettings = fallbackData?.settings || null;
-      }
-    } catch (e) {
-      console.warn("Fallback smtp-settings lookup failed:", e);
-    }
+      return {
+        id: row.id,
+        tenantSlug: row.tenant_slug,
+        profileName: row.profile_name,
+        provider: row.provider || "custom",
+        host: row.host || "",
+        port: Number(row.port) || 587,
+        encryption: row.encryption || "tls",
+        fromEmail: row.from_email || "",
+        fromName: row.from_name || "",
+        username: row.username || "",
+        hasPassword: Boolean(row.password && row.password.length > 0),
+        isDefault: Boolean(row.is_default),
+        rateLimitedUntil: row.rate_limited_until ? new Date(row.rate_limited_until).toISOString() : null,
+        rateLimitReason: row.rate_limit_reason || null,
+        isRateLimited,
+        createdAt: row.created_at ? new Date(row.created_at).toISOString() : undefined,
+        updatedAt: row.updated_at ? new Date(row.updated_at).toISOString() : undefined,
+      };
+    });
 
-    // 3. Check in-memory / local sender profiles
-    const memProfiles = await getTenantSenderProfiles(tenantSlug).catch(() => []);
-
-    let profiles: any[] = [];
-    if (memProfiles && memProfiles.length > 0) {
-      profiles = memProfiles.map((p) => ({
-        id: p.id,
-        tenantSlug: p.tenantSlug,
-        profileName: p.profileName,
-        provider: p.provider,
-        host: p.host,
-        port: p.port,
-        encryption: p.encryption,
-        fromEmail: p.fromEmail,
-        fromName: p.fromName,
-        username: p.username,
-        hasPassword: Boolean(p.hasPassword),
-        password: p.password ? "••••••••" : "",
-        isDefault: Boolean(p.isDefault),
-        rateLimitedUntil: p.rateLimitedUntil || null,
-        rateLimitReason: p.rateLimitReason || null,
-        isRateLimited: Boolean(p.isRateLimited),
-      }));
-    } else if (defaultSettings?.host && defaultSettings?.fromEmail) {
-      profiles = [
-        {
-          id: `prof_init_${tenantSlug.replace(/[^a-zA-Z0-9]/g, "_")}`,
-          tenantSlug,
-          profileName: `${(defaultSettings.provider || "Primary").toUpperCase()} Relay`,
-          provider: defaultSettings.provider || "custom",
-          host: defaultSettings.host,
-          port: defaultSettings.port || 587,
-          encryption: defaultSettings.encryption || "tls",
-          fromEmail: defaultSettings.fromEmail,
-          fromName: defaultSettings.fromName || "Workspace Admin",
-          username: defaultSettings.username || defaultSettings.fromEmail,
-          hasPassword: Boolean(defaultSettings.hasPassword),
-          password: defaultSettings.password ? "••••••••" : "",
-          isDefault: true,
-        },
-      ];
+    let defaultSmtp: any = null;
+    if (smtpRows.length > 0) {
+      const s = smtpRows[0];
+      defaultSmtp = {
+        tenantSlug: s.tenant_slug,
+        provider: s.provider || "custom",
+        host: s.host || "",
+        port: Number(s.port) || 587,
+        encryption: s.encryption || "tls",
+        fromEmail: s.from_email || "",
+        fromName: s.from_name || "",
+        username: s.username || "",
+        hasPassword: Boolean(s.password && s.password.length > 0),
+      };
     }
 
     return NextResponse.json({
       success: true,
       profiles,
-      defaultSmtp: defaultSettings
-        ? {
-            tenantSlug: defaultSettings.tenantSlug,
-            provider: defaultSettings.provider,
-            host: defaultSettings.host,
-            port: defaultSettings.port,
-            encryption: defaultSettings.encryption,
-            fromEmail: defaultSettings.fromEmail,
-            fromName: defaultSettings.fromName,
-            username: defaultSettings.username,
-            hasPassword: Boolean(defaultSettings.hasPassword),
-            password: defaultSettings.password ? "••••••••" : "",
-            rateLimitedUntil: defaultSettings.rateLimitedUntil || null,
-            rateLimitReason: defaultSettings.rateLimitReason || null,
-            isRateLimited: Boolean(defaultSettings.isRateLimited),
-          }
-        : null,
+      defaultSmtp,
     });
   } catch (err: any) {
-    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
+    console.error("[Sender Profiles GET] Error:", err);
+    return NextResponse.json(
+      { success: false, error: "Failed to load sender profiles: " + err.message, profiles: [], defaultSmtp: null },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const bodyText = await request.text();
     const body = JSON.parse(bodyText || "{}");
     const tenantSlug = getValidatedTenantSlug(request, body);
+
     if (!tenantSlug) {
       return NextResponse.json(
         { success: false, error: "tenant parameter is required for multi-tenant isolation" },
@@ -173,168 +147,131 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!body.host?.trim() || !body.fromEmail?.trim()) {
+    const sql = await getTenantSql(tenantSlug);
+    await ensureSenderProfilesTable(sql);
+
+    const profileName = (body.profileName || body.fromName || "Commercial Relay").trim();
+    const provider = (body.provider || "custom").trim();
+    const host = (body.host || "").trim();
+    const port = Number(body.port) || 587;
+    const encryption = (body.encryption || "tls").trim();
+    const fromEmail = (body.fromEmail || "").trim().toLowerCase();
+    const fromName = (body.fromName || "").trim();
+    const username = (body.username || "").trim();
+    const password = body.password ? String(body.password) : "";
+    const isDefault = Boolean(body.isDefault);
+
+    if (!host || !fromEmail) {
       return NextResponse.json(
-        { error: "SMTP Host and From Email are required." },
+        { success: false, error: "Host and From Email are required" },
         { status: 400 }
       );
     }
 
-    const id = body.id && body.id !== "new"
-      ? body.id
+    const id = body.id && String(body.id).trim()
+      ? String(body.id).trim()
       : `prof_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
-    const payload = {
-      id,
-      tenantSlug,
-      profileName: body.profileName?.trim() || `${(body.provider || "Custom").toUpperCase()} Profile (${body.fromEmail.trim()})`,
-      provider: body.provider || "custom",
-      host: body.host.trim(),
-      port: Number(body.port) || 587,
-      encryption: body.encryption || "tls",
-      fromEmail: body.fromEmail.trim(),
-      fromName: body.fromName?.trim() || "Workspace Admin",
-      username: body.username?.trim() || body.fromEmail.trim(),
-      password: body.password || "",
-      isDefault: Boolean(body.isDefault),
-    };
-
-    // 1. Always persist to in-memory / local profile store
-    try {
-      await saveTenantSenderProfile(payload);
-    } catch (saveErr) {
-      console.warn("In-process sender profile cache save:", saveErr);
+    if (isDefault) {
+      await sql`
+        UPDATE tenant_sender_profiles
+        SET is_default = FALSE, updated_at = NOW()
+        WHERE LOWER(tenant_slug) = ${tenantSlug};
+      `;
     }
 
-    // 2. Try forward to microservice multi-profile endpoint
-    const { res, ok, status } = await fetchFromErp(
-      "/crm/sender-profiles",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-tenant-slug": tenantSlug,
-        },
-        body: JSON.stringify(payload),
-      },
-      15000
-    );
+    // Check if updating existing profile
+    const existing = await sql`
+      SELECT id, password FROM tenant_sender_profiles
+      WHERE id = ${id} AND LOWER(tenant_slug) = ${tenantSlug}
+      LIMIT 1;
+    `;
 
-    if (ok && res) {
-      const data = await res.json().catch(() => null);
-      return NextResponse.json(data || { success: true, profile: payload }, { status: 201 });
-    }
+    const effectivePassword = password && password !== "••••••••" ? password : (existing[0]?.password || "");
 
-    // 3. If multi-profile endpoint is not yet available (404) or unavailable, persist to /crm/smtp-settings
-    if (status === 404 || status === 502 || !ok) {
-      try {
-        const smtpRes = await fetchFromErp(
-          "/crm/smtp-settings",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-tenant-slug": tenantSlug,
-            },
-            body: JSON.stringify({
-              tenantSlug,
-              provider: payload.provider,
-              host: payload.host,
-              port: payload.port,
-              encryption: payload.encryption,
-              fromEmail: payload.fromEmail,
-              fromName: payload.fromName,
-              username: payload.username,
-              password: payload.password,
-            }),
-          },
-          10000
+    if (existing.length > 0) {
+      await sql`
+        UPDATE tenant_sender_profiles
+        SET profile_name = ${profileName},
+            provider = ${provider},
+            host = ${host},
+            port = ${port},
+            encryption = ${encryption},
+            from_email = ${fromEmail},
+            from_name = ${fromName},
+            username = ${username},
+            password = ${effectivePassword},
+            is_default = ${isDefault},
+            updated_at = NOW()
+        WHERE id = ${id} AND LOWER(tenant_slug) = ${tenantSlug};
+      `;
+    } else {
+      await sql`
+        INSERT INTO tenant_sender_profiles (
+          id, tenant_slug, tenant_id, profile_name, provider, host, port, encryption, from_email, from_name, username, password, is_default, created_at, updated_at
+        ) VALUES (
+          ${id}, ${tenantSlug}, '', ${profileName}, ${provider}, ${host}, ${port}, ${encryption}, ${fromEmail}, ${fromName}, ${username}, ${effectivePassword}, ${isDefault}, NOW(), NOW()
         );
-
-        if (smtpRes.ok || smtpRes.res) {
-          return NextResponse.json(
-            {
-              success: true,
-              profile: {
-                ...payload,
-                password: payload.password ? "••••••••" : "",
-                hasPassword: Boolean(payload.password),
-              },
-            },
-            { status: 201 }
-          );
-        }
-      } catch (smtpErr) {
-        console.warn("Fallback save to smtp-settings failed:", smtpErr);
-      }
-
-      // If microservice is completely unreachable, still return success because in-memory store saved it
-      return NextResponse.json(
-        {
-          success: true,
-          profile: {
-            ...payload,
-            password: payload.password ? "••••••••" : "",
-            hasPassword: Boolean(payload.password),
-          },
-          note: "Profile cached locally while ERP microservice syncs.",
-        },
-        { status: 201 }
-      );
+      `;
     }
 
-    return NextResponse.json({ error: "Failed to save profile" }, { status: status || 500 });
+    return NextResponse.json({
+      success: true,
+      profile: {
+        id,
+        tenantSlug,
+        profileName,
+        provider,
+        host,
+        port,
+        encryption,
+        fromEmail,
+        fromName,
+        username,
+        hasPassword: Boolean(effectivePassword && effectivePassword.length > 0),
+        isDefault,
+      },
+    });
   } catch (err: any) {
-    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
+    console.error("[Sender Profiles POST] Error:", err);
+    return NextResponse.json(
+      { success: false, error: "Failed to save sender profile: " + err.message },
+      { status: 500 }
+    );
   }
 }
 
-export async function DELETE(request: Request) {
+export async function DELETE(request: NextRequest) {
   try {
-    const url = new URL(request.url);
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
     const tenantSlug = getValidatedTenantSlug(request);
+
     if (!tenantSlug) {
       return NextResponse.json(
         { success: false, error: "tenant parameter is required for multi-tenant isolation" },
         { status: 400 }
       );
     }
-    let id = url.searchParams.get("id") || "";
 
     if (!id) {
-      const body = await request.json().catch(() => ({}));
-      id = body.id || "";
+      return NextResponse.json({ success: false, error: "Profile ID is required" }, { status: 400 });
     }
 
-    if (!id) {
-      return NextResponse.json({ error: "Profile ID is required" }, { status: 400 });
-    }
+    const sql = await getTenantSql(tenantSlug);
+    await ensureSenderProfilesTable(sql);
 
-    // 1. Remove from in-memory / local profile store
-    try {
-      await deleteTenantSenderProfile(tenantSlug, id);
-    } catch (delErr) {
-      console.warn("In-process sender profile delete:", delErr);
-    }
+    await sql`
+      DELETE FROM tenant_sender_profiles
+      WHERE id = ${id.trim()} AND LOWER(tenant_slug) = ${tenantSlug};
+    `;
 
-    // 2. Try forward to microservice multi-profile endpoint
-    const { res, ok, status } = await fetchFromErp(
-      `/crm/sender-profiles?tenant=${encodeURIComponent(tenantSlug)}&id=${encodeURIComponent(id)}`,
-      {
-        method: "DELETE",
-        headers: { "x-tenant-slug": tenantSlug },
-      },
-      15000
-    );
-
-    if (ok || status === 404) {
-      // 404 on backend means endpoint wasn't there or profile was deleted; treat as success
-      return NextResponse.json({ success: true });
-    }
-
-    const data = res ? await res.json().catch(() => null) : null;
-    return NextResponse.json(data || { success: true });
+    return NextResponse.json({ success: true, message: "Profile deleted successfully" });
   } catch (err: any) {
-    return NextResponse.json({ error: "ERP service connection error: " + err.message }, { status: 502 });
+    console.error("[Sender Profiles DELETE] Error:", err);
+    return NextResponse.json(
+      { success: false, error: "Failed to delete sender profile: " + err.message },
+      { status: 500 }
+    );
   }
 }

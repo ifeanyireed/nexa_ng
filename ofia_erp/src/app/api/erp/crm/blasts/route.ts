@@ -192,6 +192,57 @@ export async function GET(request: NextRequest) {
       ORDER BY created_at DESC;
     `;
 
+    // Reconcile and auto-heal active SENDING blasts
+    for (const r of rows) {
+      if (r.status === "SENDING") {
+        try {
+          const countRows = await sql`
+            SELECT 
+              COUNT(*) FILTER (WHERE status = 'SENT')::int AS sent_cnt,
+              COUNT(*) FILTER (WHERE status = 'FAILED')::int AS fail_cnt,
+              COUNT(*) FILTER (WHERE status = 'PENDING')::int AS pend_cnt
+            FROM crm_email_blast_recipients
+            WHERE blast_id = ${r.id} AND LOWER(tenant_slug) = ${tenantSlug};
+          `;
+          const counts = countRows[0];
+          if (counts) {
+            r.sent_count = counts.sent_cnt;
+            r.failed_count = counts.fail_cnt;
+
+            if (counts.pend_cnt === 0) {
+              const finalStatus = counts.sent_cnt > 0 ? "SENT" : (counts.fail_cnt > 0 ? "FAILED" : "DRAFT");
+              r.status = finalStatus;
+              await sql`
+                UPDATE crm_email_blasts
+                SET sent_count = ${counts.sent_cnt},
+                    failed_count = ${counts.fail_cnt},
+                    status = ${finalStatus},
+                    updated_at = NOW()
+                WHERE id = ${r.id} AND LOWER(tenant_slug) = ${tenantSlug};
+              `;
+            } else {
+              // If stalled (> 15 seconds since last update), update counts and resume dispatch
+              const lastUpdated = r.updated_at ? new Date(r.updated_at).getTime() : 0;
+              if (Date.now() - lastUpdated > 15000) {
+                await sql`
+                  UPDATE crm_email_blasts
+                  SET sent_count = ${counts.sent_cnt},
+                      failed_count = ${counts.fail_cnt},
+                      updated_at = NOW()
+                  WHERE id = ${r.id} AND LOWER(tenant_slug) = ${tenantSlug};
+                `;
+                dispatchBlastEmails(tenantSlug, r.id).catch((err) =>
+                  console.error(`[CRM Blasts GET Auto-Heal] Resume failed for ${r.id}:`, err)
+                );
+              }
+            }
+          }
+        } catch (e: any) {
+          console.warn(`[CRM Blasts GET] Reconcile error for blast ${r.id}:`, e.message);
+        }
+      }
+    }
+
     const blasts = rows.map(mapBlastRow);
     return NextResponse.json({ success: true, blasts });
   } catch (err: any) {
@@ -446,7 +497,40 @@ export async function PUT(request: NextRequest) {
       });
     }
 
-    // 4. Standard blast update
+    // 4. Force complete / mark as sent / cancel remaining action
+    if (action === "complete" || action === "mark_sent" || action === "cancel_remaining" || body.status === "COMPLETED") {
+      await sql`
+        UPDATE crm_email_blast_recipients
+        SET status = 'FAILED', error_message = 'Cancelled by administrator'
+        WHERE blast_id = ${effectiveId} AND LOWER(tenant_slug) = ${tenantSlug} AND status = 'PENDING';
+      `;
+
+      const countRows = await sql`
+        SELECT 
+          COUNT(*) FILTER (WHERE status = 'SENT')::int AS sent_cnt,
+          COUNT(*) FILTER (WHERE status = 'FAILED')::int AS fail_cnt
+        FROM crm_email_blast_recipients
+        WHERE blast_id = ${effectiveId} AND LOWER(tenant_slug) = ${tenantSlug};
+      `;
+      const counts = countRows[0] || { sent_cnt: 0, fail_cnt: 0 };
+
+      await sql`
+        UPDATE crm_email_blasts
+        SET status = 'SENT',
+            sent_count = ${counts.sent_cnt},
+            failed_count = ${counts.fail_cnt},
+            updated_at = NOW()
+        WHERE id = ${effectiveId} AND LOWER(tenant_slug) = ${tenantSlug};
+      `;
+
+      return NextResponse.json({
+        success: true,
+        message: "Campaign marked as complete. Remaining pending recipients cancelled.",
+        id: effectiveId,
+      });
+    }
+
+    // 5. Standard blast update
     const title = body.title !== undefined ? String(body.title).trim() : undefined;
     const subject = body.subject !== undefined ? String(body.subject).trim() : undefined;
     const contentHtml = body.contentHtml !== undefined ? String(body.contentHtml) : undefined;

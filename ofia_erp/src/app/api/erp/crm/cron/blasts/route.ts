@@ -30,10 +30,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Also resume any active SENDING blasts that stalled
+    const activeBlasts = await sql`
+      SELECT id FROM crm_email_blasts
+      WHERE LOWER(tenant_slug) = ${tenantSlug}
+        AND status = 'SENDING'
+        AND updated_at <= NOW() - INTERVAL '30 seconds';
+    `;
+
+    for (const b of activeBlasts) {
+      dispatchBlastEmails(tenantSlug, b.id).catch((err) =>
+        console.error(`[CRM Cron Blasts] Error resuming stalled blast ${b.id}:`, err)
+      );
+    }
+
     return NextResponse.json({
       success: true,
       dispatched: dueBlasts.length,
-      blastIds: dueBlasts.map((b: any) => b.id),
+      resumed: activeBlasts.length,
+      blastIds: [...dueBlasts.map((b: any) => b.id), ...activeBlasts.map((b: any) => b.id)],
     });
   } catch (err: any) {
     console.error("[CRM Cron Blasts POST] Error:", err);

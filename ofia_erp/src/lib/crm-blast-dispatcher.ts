@@ -184,7 +184,7 @@ export async function dispatchBlastEmails(tenantSlug: string, blastId: string): 
       WHERE id = ${blastId} AND LOWER(tenant_slug) = ${normSlug};
     `;
 
-    // 3. Fetch pending recipients
+    // 3. Fetch up to 40 pending recipients per batch (chunked delivery for serverless resilience)
     const recipients = await sql`
       SELECT r.id, r.subscriber_id, r.email,
              COALESCE(NULLIF(r.name, ''), s.name, '') AS name,
@@ -194,13 +194,28 @@ export async function dispatchBlastEmails(tenantSlug: string, blastId: string): 
       FROM crm_email_blast_recipients r
       LEFT JOIN crm_email_subscribers s ON s.id = r.subscriber_id OR (LOWER(s.email) = LOWER(r.email) AND LOWER(s.tenant_slug) = LOWER(r.tenant_slug))
       WHERE r.blast_id = ${blastId} AND LOWER(r.tenant_slug) = ${normSlug} AND r.status = 'PENDING'
-      ORDER BY r.created_at ASC;
+      ORDER BY r.created_at ASC
+      LIMIT 40;
     `;
 
     if (recipients.length === 0) {
+      const countRows = await sql`
+        SELECT 
+          COUNT(*) FILTER (WHERE status = 'SENT')::int AS sent_cnt,
+          COUNT(*) FILTER (WHERE status = 'FAILED')::int AS fail_cnt
+        FROM crm_email_blast_recipients
+        WHERE blast_id = ${blastId} AND LOWER(tenant_slug) = ${normSlug};
+      `;
+      const counts = countRows[0] || { sent_cnt: 0, fail_cnt: 0 };
+      const finalStatus = counts.sent_cnt > 0 ? "SENT" : (counts.fail_cnt > 0 ? "FAILED" : "DRAFT");
+
       await sql`
         UPDATE crm_email_blasts
-        SET status = 'SENT', sent_at = COALESCE(sent_at, NOW()), updated_at = NOW()
+        SET status = ${finalStatus},
+            sent_count = ${counts.sent_cnt},
+            failed_count = ${counts.fail_cnt},
+            sent_at = COALESCE(sent_at, NOW()),
+            updated_at = NOW()
         WHERE id = ${blastId} AND LOWER(tenant_slug) = ${normSlug};
       `;
       return;
@@ -313,6 +328,11 @@ export async function dispatchBlastEmails(tenantSlug: string, blastId: string): 
           SET status = 'SENT', sent_at = NOW(), error_message = NULL, attempts = attempts + 1
           WHERE id = ${rec.id} AND LOWER(tenant_slug) = ${normSlug};
         `;
+        await sql`
+          UPDATE crm_email_blasts
+          SET sent_count = sent_count + 1, updated_at = NOW()
+          WHERE id = ${blastId} AND LOWER(tenant_slug) = ${normSlug};
+        `;
       } catch (sendErr: any) {
         console.warn(`[Blast Dispatcher] Delivery error for ${recipientEmail}:`, sendErr.message);
         await sql`
@@ -320,6 +340,23 @@ export async function dispatchBlastEmails(tenantSlug: string, blastId: string): 
           SET status = 'FAILED', error_message = ${sendErr.message || "Delivery failed"}, attempts = attempts + 1
           WHERE id = ${rec.id} AND LOWER(tenant_slug) = ${normSlug};
         `;
+        await sql`
+          UPDATE crm_email_blasts
+          SET failed_count = failed_count + 1, updated_at = NOW()
+          WHERE id = ${blastId} AND LOWER(tenant_slug) = ${normSlug};
+        `;
+
+        const errMsg = String(sendErr?.message || "");
+        if (
+          errMsg.includes("Daily sending quota") ||
+          errMsg.includes("550") ||
+          errMsg.includes("Authentication failed") ||
+          errMsg.includes("535") ||
+          errMsg.includes("Too many connections")
+        ) {
+          console.warn(`[Blast Dispatcher] Halting blast ${blastId} due to provider quota/auth error:`, errMsg);
+          break;
+        }
       }
 
       // Small throttle between emails
@@ -348,6 +385,15 @@ export async function dispatchBlastEmails(tenantSlug: string, blastId: string): 
           updated_at = NOW()
       WHERE id = ${blastId} AND LOWER(tenant_slug) = ${normSlug};
     `;
+
+    // Chain next batch asynchronously if pending recipients remain
+    if (counts.pend_cnt > 0) {
+      setTimeout(() => {
+        dispatchBlastEmails(tenantSlug, blastId).catch((err) =>
+          console.error(`[Blast Dispatcher] Chained batch failed for ${blastId}:`, err)
+        );
+      }, 500);
+    }
   } catch (err: any) {
     console.error(`[Blast Dispatcher] Unexpected failure for blast '${blastId}':`, err);
   }

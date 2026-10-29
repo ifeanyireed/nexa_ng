@@ -860,6 +860,36 @@ export default function EmailMarketingBlastsPage() {
   const [isRetryingBlastId, setIsRetryingBlastId] = useState<string | null>(null);
   const [isRetryingRecipientId, setIsRetryingRecipientId] = useState<string | null>(null);
   const [retryProfileId, setRetryProfileId] = useState<string>("");
+  const [isCompletingBlastId, setIsCompletingBlastId] = useState<string | null>(null);
+
+  const handleCompleteBlast = async (blast: CrmEmailBlast) => {
+    if (
+      !confirm(
+        `Are you sure you want to stop sending "${blast.title}" and mark it as completed? Any remaining unsent recipients will be cancelled.`
+      )
+    ) {
+      return;
+    }
+    try {
+      setIsCompletingBlastId(blast.id);
+      const res = await crmFetch(`/api/erp/crm/blasts?id=${encodeURIComponent(blast.id)}&action=complete`, {
+        method: "PUT",
+        body: JSON.stringify({ id: blast.id, status: "COMPLETED" }),
+      });
+      if (!res.ok) throw new Error("Failed to finalize blast");
+      setBlasts((prev) =>
+        prev.map((b) => (b.id === blast.id ? { ...b, status: "SENT" } : b))
+      );
+      if (selectedBlastForLogs && selectedBlastForLogs.id === blast.id) {
+        setSelectedBlastForLogs((prev) => (prev ? { ...prev, status: "SENT" } : null));
+        refreshBlastLogs();
+      }
+    } catch (err: any) {
+      alert("Error finalizing blast: " + (err.message || "Unknown error"));
+    } finally {
+      setIsCompletingBlastId(null);
+    }
+  };
 
   const handleResumeBlast = async (blast: CrmEmailBlast) => {
     try {
@@ -1286,20 +1316,36 @@ export default function EmailMarketingBlastsPage() {
 
                             {/* Resume / Send Remaining for stalled SENDING blasts */}
                             {blast.status === "SENDING" && (
-                              <button
-                                type="button"
-                                onClick={() => handleResumeBlast(blast)}
-                                disabled={isResumingBlastId === blast.id}
-                                title="Resume sending remaining emails"
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-                              >
-                                {isResumingBlastId === blast.id ? (
-                                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                                ) : (
-                                  <Send className="w-3.5 h-3.5" />
-                                )}
-                                Resume
-                              </button>
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleResumeBlast(blast)}
+                                  disabled={isResumingBlastId === blast.id}
+                                  title="Resume sending remaining emails"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                                >
+                                  {isResumingBlastId === blast.id ? (
+                                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <Send className="w-3.5 h-3.5" />
+                                  )}
+                                  Resume
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCompleteBlast(blast)}
+                                  disabled={isCompletingBlastId === blast.id}
+                                  title="Stop delivery and mark campaign as completed"
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-rose-300 dark:border-rose-800 transition-colors cursor-pointer disabled:opacity-50"
+                                >
+                                  {isCompletingBlastId === blast.id ? (
+                                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                  )}
+                                  Complete
+                                </button>
+                              </>
                             )}
                             <button
                               type="button"
@@ -1992,19 +2038,34 @@ export default function EmailMarketingBlastsPage() {
 
               <div className="flex items-center gap-2">
                 {selectedBlastForLogs && (selectedBlastForLogs.status === "SENDING" || selectedBlastForLogs.status === "FAILED" || logStats.sent < logStats.total) && (
-                  <button
-                    type="button"
-                    onClick={() => handleResumeBlast(selectedBlastForLogs)}
-                    disabled={isResumingBlastId === selectedBlastForLogs.id}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
-                  >
-                    {isResumingBlastId === selectedBlastForLogs.id ? (
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <Send className="w-3.5 h-3.5" />
-                    )}
-                    Resume Delivery ({logStats.total - logStats.sent} remaining)
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => handleResumeBlast(selectedBlastForLogs)}
+                      disabled={isResumingBlastId === selectedBlastForLogs.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      {isResumingBlastId === selectedBlastForLogs.id ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Send className="w-3.5 h-3.5" />
+                      )}
+                      Resume Delivery ({logStats.total - logStats.sent} remaining)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleCompleteBlast(selectedBlastForLogs)}
+                      disabled={isCompletingBlastId === selectedBlastForLogs.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-rose-300 dark:border-rose-800 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-xs font-bold transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      {isCompletingBlastId === selectedBlastForLogs.id ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      )}
+                      Mark Complete
+                    </button>
+                  </>
                 )}
                 <button
                   type="button"

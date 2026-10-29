@@ -34,6 +34,18 @@ async function ensureCrmLeadsTable(sql: any) {
   await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS converted_at TIMESTAMPTZ;`;
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_leads_tenant ON crm_leads (LOWER(tenant_slug));`;
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_leads_created ON crm_leads (LOWER(tenant_slug), created_at DESC);`;
+  try {
+    await sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS uq_crm_leads_tenant_email 
+      ON crm_leads (LOWER(tenant_slug), LOWER(TRIM(email))) 
+      WHERE email IS NOT NULL AND TRIM(email) != '';
+    `;
+    await sql`
+      CREATE UNIQUE INDEX IF NOT EXISTS uq_crm_leads_tenant_phone 
+      ON crm_leads (LOWER(tenant_slug), RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 8)) 
+      WHERE phone IS NOT NULL AND LENGTH(REGEXP_REPLACE(phone, '[^0-9]', '', 'g')) >= 8;
+    `;
+  } catch {}
 }
 
 export async function GET(request: NextRequest) {
@@ -183,7 +195,33 @@ export async function GET(request: NextRequest) {
       updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString(),
     }));
 
-    return NextResponse.json({ success: true, leads });
+    // Deduplication filter: Guarantee only unique contacts are returned
+    const seenEmails = new Set<string>();
+    const seenPhones = new Set<string>();
+    const seenNameCompany = new Set<string>();
+    const uniqueLeads: typeof leads = [];
+
+    for (const l of leads) {
+      const cleanEmail = (l.email || "").toLowerCase().trim();
+      const cleanPhone = (l.phone || "").replace(/[^0-9]/g, "");
+      const phoneKey = cleanPhone.length >= 8 ? cleanPhone.slice(-8) : "";
+      const nameCompKey =
+        l.name && l.company ? `${l.name.toLowerCase().trim()}|${l.company.toLowerCase().trim()}` : "";
+
+      let isDup = false;
+      if (cleanEmail && seenEmails.has(cleanEmail)) isDup = true;
+      else if (phoneKey && seenPhones.has(phoneKey)) isDup = true;
+      else if (nameCompKey && seenNameCompany.has(nameCompKey)) isDup = true;
+
+      if (!isDup) {
+        if (cleanEmail) seenEmails.add(cleanEmail);
+        if (phoneKey) seenPhones.add(phoneKey);
+        if (nameCompKey) seenNameCompany.add(nameCompKey);
+        uniqueLeads.push(l);
+      }
+    }
+
+    return NextResponse.json({ success: true, leads: uniqueLeads });
   } catch (err: any) {
     console.error("[CRM-Leads] GET error:", err);
     return NextResponse.json(
@@ -251,6 +289,98 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Deduplication check: Does this contact already exist by email, phone, or name+company?
+    const cleanDigits = phone.replace(/[^0-9]/g, "");
+    const last8Digits = cleanDigits.length >= 8 ? cleanDigits.slice(-8) : "";
+    const cleanEmail = email.toLowerCase().trim();
+    const cleanName = name.toLowerCase().trim();
+    const cleanCompany = company.toLowerCase().trim();
+
+    let existingLead: any = null;
+    if (body.id) {
+      const [byId] = await sql`
+        SELECT * FROM crm_leads
+        WHERE id = ${body.id} AND LOWER(tenant_slug) = ${tenantSlug}
+        LIMIT 1;
+      `;
+      if (byId) existingLead = byId;
+    }
+
+    if (!existingLead && (cleanEmail || last8Digits || (cleanName && cleanCompany))) {
+      const [byMatch] = await sql`
+        SELECT * FROM crm_leads
+        WHERE LOWER(tenant_slug) = ${tenantSlug}
+          AND (
+            ${cleanEmail ? sql`LOWER(TRIM(email)) = ${cleanEmail}` : sql`1=0`}
+            ${last8Digits ? sql`OR (phone != '' AND RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 8) = ${last8Digits})` : sql``}
+            ${cleanName && cleanCompany ? sql`OR (LOWER(TRIM(name)) = ${cleanName} AND LOWER(TRIM(company)) = ${cleanCompany})` : sql``}
+          )
+        ORDER BY created_at ASC
+        LIMIT 1;
+      `;
+      if (byMatch) existingLead = byMatch;
+    }
+
+    if (existingLead) {
+      // Merge notes if new notes provided and not already present
+      let mergedNotes = existingLead.notes || "";
+      if (notes) {
+        const lines = notes.split("\n").map((l: string) => l.trim()).filter(Boolean);
+        for (const line of lines) {
+          if (!mergedNotes.includes(line)) {
+            mergedNotes = mergedNotes ? `${mergedNotes}\n${line}` : line;
+          }
+        }
+      }
+
+      const finalPhone = phone || existingLead.phone || "";
+      const finalEmail = email || existingLead.email || "";
+      const finalCompany = company || existingLead.company || "";
+      const finalLinkedin = linkedinUrl || existingLead.linkedin_url || "";
+      const finalRep = assignedRep || existingLead.assigned_rep || existingLead.owner || "";
+      const finalScore = Math.max(Number(existingLead.score) || 75, score);
+      const finalStatus = (status !== "CURIOUS" && status) ? status : (existingLead.status || "CURIOUS");
+
+      const [updated] = await sql`
+        UPDATE crm_leads SET
+          name = CASE WHEN ${name !== "Prospect" && name !== ""} THEN ${name} ELSE name END,
+          company = ${finalCompany},
+          email = ${finalEmail},
+          phone = ${finalPhone},
+          source = CASE WHEN source IS NULL OR source = '' THEN ${source} ELSE source END,
+          score = ${finalScore},
+          status = ${finalStatus},
+          owner = ${finalRep},
+          assigned_rep = ${finalRep},
+          value = CASE WHEN ${value !== ""} THEN ${value} ELSE value END,
+          notes = ${mergedNotes},
+          linkedin_url = ${finalLinkedin},
+          updated_at = NOW()
+        WHERE id = ${existingLead.id} AND LOWER(tenant_slug) = ${tenantSlug}
+        RETURNING *;
+      `;
+
+      return NextResponse.json({
+        success: true,
+        lead: {
+          id: updated.id,
+          name: updated.name,
+          contactName: updated.name,
+          company: updated.company,
+          companyName: updated.company,
+          email: updated.email,
+          contactEmail: updated.email,
+          phone: updated.phone,
+          contactPhone: updated.phone,
+          status: updated.status,
+          score: updated.score,
+          icpFitScore: Number(updated.score) || 75,
+          assignedRep: updated.assigned_rep,
+          notes: updated.notes,
+        },
+      });
+    }
+
     const [saved] = await sql`
       INSERT INTO crm_leads (
         id, tenant_slug, tenant_id, name, company, email, phone,
@@ -281,10 +411,18 @@ export async function POST(request: NextRequest) {
       lead: {
         id: saved.id,
         name: saved.name,
+        contactName: saved.name,
         company: saved.company,
+        companyName: saved.company,
         email: saved.email,
+        contactEmail: saved.email,
         phone: saved.phone,
+        contactPhone: saved.phone,
         status: saved.status,
+        score: saved.score,
+        icpFitScore: Number(saved.score) || 75,
+        assignedRep: saved.assigned_rep,
+        notes: saved.notes,
       },
     });
   } catch (err: any) {

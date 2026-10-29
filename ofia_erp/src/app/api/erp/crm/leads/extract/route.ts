@@ -35,6 +35,45 @@ export async function POST(request: NextRequest) {
 
     for (let i = 0; i < count; i++) {
       const sl = sampleLeads[i];
+      const cleanEmail = (sl.email || "").toLowerCase().trim();
+      const cleanDigits = (sl.phone || "").replace(/[^0-9]/g, "");
+      const last8Digits = cleanDigits.length >= 8 ? cleanDigits.slice(-8) : "";
+      const cleanName = (sl.contact || "").toLowerCase().trim();
+      const cleanComp = (sl.company || "").toLowerCase().trim();
+
+      // Check if lead already exists by email, phone, or name+company
+      const existingRows = await sql`
+        SELECT id, name, company, email, phone, status, score, source
+        FROM crm_leads
+        WHERE LOWER(tenant_slug) = ${tenantSlug}
+          AND (
+            ${cleanEmail ? sql`LOWER(TRIM(email)) = ${cleanEmail}` : sql`1=0`}
+            ${last8Digits ? sql`OR (phone != '' AND RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 8) = ${last8Digits})` : sql``}
+            ${cleanName && cleanComp ? sql`OR (LOWER(TRIM(name)) = ${cleanName} AND LOWER(TRIM(company)) = ${cleanComp})` : sql``}
+          )
+        ORDER BY created_at ASC
+        LIMIT 1;
+      `;
+
+      if (existingRows.length > 0) {
+        const existing = existingRows[0];
+        insertedLeads.push({
+          id: existing.id,
+          tenantSlug,
+          companyName: existing.company || sl.company,
+          contactName: existing.name || sl.contact,
+          contactTitle: sl.title,
+          contactEmail: existing.email || sl.email,
+          contactPhone: existing.phone || sl.phone,
+          industry: sl.industry,
+          location: sl.location,
+          icpFitScore: Number(existing.score) || 85,
+          status: existing.status || "CURIOUS",
+          source: existing.source || "AI Search Extraction",
+        });
+        continue;
+      }
+
       const leadId = `LEAD-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
       await sql`

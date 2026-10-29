@@ -253,7 +253,38 @@ export default function CrmLeadsPage() {
           crmFetch("/api/erp/crm/calls").then((r) => r.json()).catch(() => null),
         ]);
         const rawLeads = Array.isArray(leadsRes) ? leadsRes : Array.isArray(leadsRes?.leads) ? leadsRes.leads : [];
-        const normalizedLeads = rawLeads.map((l: any) => {
+        const seenIds = new Set<string>();
+        const seenEmails = new Set<string>();
+        const seenPhones = new Set<string>();
+        const seenNameComp = new Set<string>();
+        const uniqueRawLeads: any[] = [];
+
+        for (const l of rawLeads) {
+          if (!l || !l.id) continue;
+          if (seenIds.has(l.id)) continue;
+
+          const emailKey = (l.email || l.contactEmail || "").toLowerCase().trim();
+          const cleanPhone = (l.phone || l.contactPhone || "").replace(/[^0-9]/g, "");
+          const phoneKey = cleanPhone.length >= 8 ? cleanPhone.slice(-8) : "";
+          const nameStr = (l.name || l.contactName || "").toLowerCase().trim();
+          const compStr = (l.company || l.companyName || "").toLowerCase().trim();
+          const nameCompKey = nameStr && compStr ? `${nameStr}|${compStr}` : "";
+
+          let isDup = false;
+          if (emailKey && seenEmails.has(emailKey)) isDup = true;
+          else if (phoneKey && seenPhones.has(phoneKey)) isDup = true;
+          else if (nameCompKey && seenNameComp.has(nameCompKey)) isDup = true;
+
+          if (!isDup) {
+            seenIds.add(l.id);
+            if (emailKey) seenEmails.add(emailKey);
+            if (phoneKey) seenPhones.add(phoneKey);
+            if (nameCompKey) seenNameComp.add(nameCompKey);
+            uniqueRawLeads.push(l);
+          }
+        }
+
+        const normalizedLeads = uniqueRawLeads.map((l: any) => {
           const rawSignals =
             Array.isArray(l.buyingSignals) && l.buyingSignals.length > 0
               ? l.buyingSignals
@@ -499,7 +530,15 @@ export default function CrmLeadsPage() {
       });
       const data = await res.json();
       if (data.lead) {
-        setLeads((prev) => [data.lead, ...prev]);
+        setLeads((prev) => {
+          const leadEmail = (data.lead.contactEmail || data.lead.email || "").toLowerCase().trim();
+          const filtered = prev.filter(
+            (l) =>
+              l.id !== data.lead.id &&
+              !(leadEmail && l.contactEmail && l.contactEmail.toLowerCase().trim() === leadEmail)
+          );
+          return [data.lead, ...filtered];
+        });
       }
     } catch {
       // Local fallback
@@ -522,7 +561,13 @@ export default function CrmLeadsPage() {
         notes: "Enriched via automated AI crawler.",
         createdAt: new Date().toISOString(),
       };
-      setLeads((prev) => [fallbackExtracted, ...prev]);
+      setLeads((prev) => {
+        const fallbackEmail = fallbackExtracted.contactEmail.toLowerCase().trim();
+        const filtered = prev.filter(
+          (l) => l.contactEmail?.toLowerCase().trim() !== fallbackEmail
+        );
+        return [fallbackExtracted, ...filtered];
+      });
     } finally {
       setIsExtracting(false);
       setIsExtractModalOpen(false);
@@ -553,7 +598,17 @@ export default function CrmLeadsPage() {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (data.lead) setLeads((prev) => [data.lead, ...prev]);
+      if (data.lead) {
+        setLeads((prev) => {
+          const leadEmail = (data.lead.contactEmail || data.lead.email || "").toLowerCase().trim();
+          const filtered = prev.filter(
+            (l) =>
+              l.id !== data.lead.id &&
+              !(leadEmail && l.contactEmail && l.contactEmail.toLowerCase().trim() === leadEmail)
+          );
+          return [data.lead, ...filtered];
+        });
+      }
     } catch {
       const localLead: CrmLead = {
         id: `LEAD-${Date.now().toString().slice(-4)}`,
@@ -564,7 +619,18 @@ export default function CrmLeadsPage() {
           : assignedCloser,
         createdAt: new Date().toISOString(),
       };
-      setLeads((prev) => [localLead, ...prev]);
+      setLeads((prev) => {
+        const leadEmail = localLead.contactEmail?.toLowerCase().trim();
+        const filtered = prev.filter(
+          (l) =>
+            !(
+              leadEmail &&
+              l.contactEmail &&
+              l.contactEmail.toLowerCase().trim() === leadEmail
+            )
+        );
+        return [localLead, ...filtered];
+      });
     }
 
     setIsAddModalOpen(false);

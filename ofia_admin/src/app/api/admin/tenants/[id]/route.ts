@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { MASTER_CONNECTION_STRING, invalidateTenantDbCache } from "@/lib/tenant-db-resolver";
 import { alignTenantModules } from "@/lib/tenant-module-aligner";
 import { ensureDefaultTenantAdmin } from "@/lib/tenant-admin-provisioner";
+import { registerDomainOnEdge, isCustomDomain } from "@/lib/domain-edge-manager";
 import { neon } from "@neondatabase/serverless";
 
 export const dynamic = "force-dynamic";
@@ -132,6 +133,15 @@ export async function PUT(
       });
     } catch (adminErr: any) {
       console.warn(`[Tenant API] Admin user sync note for '${targetSlug}':`, adminErr.message);
+    }
+
+    // Automatically register/update custom domain on edge infrastructure (e.g. Vercel)
+    if (updated.domain && isCustomDomain(updated.domain)) {
+      try {
+        await registerDomainOnEdge(updated.domain);
+      } catch (domErr: any) {
+        console.warn(`[Tenant API] Custom domain edge registration warning for '${updated.domain}':`, domErr.message);
+      }
     }
 
     invalidateTenantDbCache(targetSlug);

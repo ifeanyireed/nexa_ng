@@ -102,11 +102,15 @@ export async function getTenantDatabaseConfig(tenantSlug: string): Promise<Tenan
   const registrySql = getRegistrySql();
 
   try {
+    const strippedDomain = cleanSlug.replace(/^www\./, "");
     const rows = await registrySql`
       SELECT slug, db_mode, database_url, is_custom_db
       FROM platform_tenants
       WHERE LOWER(slug) = ${cleanSlug}
          OR REPLACE(LOWER(slug), '-', '') = REPLACE(${cleanSlug}, '-', '')
+         OR LOWER(domain) = ${cleanSlug}
+         OR LOWER(domain) = ${strippedDomain}
+         OR REPLACE(REPLACE(LOWER(domain), 'https://', ''), 'http://', '') = ${strippedDomain}
       LIMIT 1;
     `;
 
@@ -121,7 +125,7 @@ export async function getTenantDatabaseConfig(tenantSlug: string): Promise<Tenan
       const dedicatedUrl = customUrl || MASTER_REGISTRY_URL;
 
       const config: TenantDbConfig = {
-        tenantSlug: cleanSlug,
+        tenantSlug: row.slug || cleanSlug,
         dbMode: "DEDICATED",
         connectionString: dedicatedUrl,
         isCustom: Boolean(customUrl),

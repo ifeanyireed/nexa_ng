@@ -94,8 +94,11 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
+  Globe,
+  Copy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isCustomDomain, getExpectedDnsRecord, type DomainVerificationResult } from "@/lib/domain-edge-manager";
 
 // Centralized Plan Tiers Catalog re-exported from subscription-data
 export { type SubscriptionTierItem, SUBSCRIPTION_TIERS_CATALOG } from "@/lib/subscription-data";
@@ -216,6 +219,9 @@ function TenantManagementContent() {
   // Dedicated Infrastructure (BYODB & BYOS) for New Tenant
   const [newDatabaseUrl, setNewDatabaseUrl] = useState("");
   const [newCloudinaryUrl, setNewCloudinaryUrl] = useState("");
+  const [isCheckingNewDomainDns, setIsCheckingNewDomainDns] = useState(false);
+  const [newDomainDnsResult, setNewDomainDnsResult] = useState<DomainVerificationResult | null>(null);
+  const [newDomainCopied, setNewDomainCopied] = useState<string | null>(null);
 
   // Quota Override Form state
   const [extraLeads, setExtraLeads] = useState("2000");
@@ -227,6 +233,9 @@ function TenantManagementContent() {
   const [editTenantName, setEditTenantName] = useState("");
   const [editTenantSlug, setEditTenantSlug] = useState("");
   const [editTenantDomain, setEditTenantDomain] = useState("");
+  const [isCheckingEditDomainDns, setIsCheckingEditDomainDns] = useState(false);
+  const [editDomainDnsResult, setEditDomainDnsResult] = useState<DomainVerificationResult | null>(null);
+  const [editDomainCopied, setEditDomainCopied] = useState<string | null>(null);
   const [editTenantOwnerName, setEditTenantOwnerName] = useState("");
   const [editTenantOwnerEmail, setEditTenantOwnerEmail] = useState("");
   const [editTenantPlanTier, setEditTenantPlanTier] = useState<TenantOrg["planTier"]>("GROWTH");
@@ -1523,6 +1532,55 @@ function TenantManagementContent() {
       alert("Failed to create tenant: " + (err.message || "Network error"));
     } finally {
       setIsSavingDb(false);
+    }
+  };
+
+  // Live DNS & Edge Verification for Custom Domains
+  const handleCheckDomainDns = async (domainToCheck: string, isEdit: boolean) => {
+    const clean = (domainToCheck || "").trim().toLowerCase();
+    if (!clean) return;
+
+    if (isEdit) {
+      setIsCheckingEditDomainDns(true);
+      setEditDomainDnsResult(null);
+    } else {
+      setIsCheckingNewDomainDns(true);
+      setNewDomainDnsResult(null);
+    }
+
+    try {
+      const res = await fetch(`/api/admin/domains?domain=${encodeURIComponent(clean)}`, {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      if (isEdit) {
+        setEditDomainDnsResult(data);
+      } else {
+        setNewDomainDnsResult(data);
+      }
+    } catch (err: any) {
+      const fallbackResult: DomainVerificationResult = {
+        success: false,
+        domain: clean,
+        status: "PENDING",
+        propagated: false,
+        vercelVerified: false,
+        vercelMisconfigured: null,
+        expected: getExpectedDnsRecord(clean),
+        detected: { cname: [], a: [] },
+        message: "DNS check error: " + err.message,
+      };
+      if (isEdit) {
+        setEditDomainDnsResult(fallbackResult);
+      } else {
+        setNewDomainDnsResult(fallbackResult);
+      }
+    } finally {
+      if (isEdit) {
+        setIsCheckingEditDomainDns(false);
+      } else {
+        setIsCheckingNewDomainDns(false);
+      }
     }
   };
 
@@ -3086,6 +3144,95 @@ function TenantManagementContent() {
                 })()}
               </div>
             )}
+
+            {/* Custom Domain DNS & Edge Routing Setup Guide */}
+            {isCustomDomain(newOrgDomain) && (() => {
+              const expectedDns = getExpectedDnsRecord(newOrgDomain);
+              return (
+                <div className="mt-2.5 p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/70 dark:border-blue-900/40 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-[#1A56DB]" />
+                      <span className="text-xs font-bold text-[var(--nexa-text-primary)]">Custom Domain DNS & Edge Setup</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCheckDomainDns(newOrgDomain, false)}
+                      disabled={isCheckingNewDomainDns}
+                      className="px-2 py-1 text-[11px] font-bold rounded-lg bg-[#1A56DB] text-white hover:bg-[#1545B0] cursor-pointer flex items-center gap-1.5 transition-all shadow-xs disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${isCheckingNewDomainDns ? "animate-spin" : ""}`} />
+                      <span>{isCheckingNewDomainDns ? "Checking..." : "Verify DNS"}</span>
+                    </button>
+                  </div>
+
+                  <p className="text-[11px] text-[var(--nexa-text-secondary)]">
+                    Add the following record at your DNS provider (Cloudflare, Namecheap, GoDaddy) to route to this tenant:
+                  </p>
+
+                  <div className="grid grid-cols-3 gap-2 p-2 rounded-lg bg-white/80 dark:bg-black/40 border border-blue-100 dark:border-blue-900/30 text-xs">
+                    <div>
+                      <span className="text-[9px] text-[var(--nexa-text-muted)] uppercase font-semibold block">Type</span>
+                      <span className="font-mono font-bold text-[#1A56DB]">{expectedDns.type}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-[var(--nexa-text-muted)] uppercase font-semibold block">Name / Host</span>
+                      <span className="font-mono font-bold text-[var(--nexa-text-primary)]">{expectedDns.host}</span>
+                    </div>
+                    <div>
+                      <span className="text-[9px] text-[var(--nexa-text-muted)] uppercase font-semibold block">Target</span>
+                      <div className="flex items-center gap-1">
+                        <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 truncate text-[11px]">{expectedDns.value}</span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(expectedDns.value);
+                            setNewDomainCopied(expectedDns.value);
+                            setTimeout(() => setNewDomainCopied(null), 2000);
+                          }}
+                          className="p-0.5 hover:bg-black/5 dark:hover:bg-white/10 rounded cursor-pointer text-[var(--nexa-text-muted)]"
+                          title="Copy target"
+                        >
+                          {newDomainCopied === expectedDns.value ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {newDomainDnsResult && (
+                    <div className={`p-2 rounded-lg border text-xs flex items-start gap-2 ${
+                      newDomainDnsResult.status === "PROPAGATED"
+                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
+                        : newDomainDnsResult.status === "MISCONFIGURED"
+                        ? "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300"
+                        : newDomainDnsResult.status === "INVALID_DOMAIN"
+                        ? "bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300"
+                        : "bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-300"
+                    }`}>
+                      {newDomainDnsResult.status === "PROPAGATED" ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-500 mt-0.5" />
+                      ) : newDomainDnsResult.status === "MISCONFIGURED" ? (
+                        <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-500 mt-0.5" />
+                      ) : (
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                      )}
+                      <div className="space-y-0.5">
+                        <span className="font-bold text-[11px]">
+                          {newDomainDnsResult.status === "PROPAGATED"
+                            ? "DNS Propagated & Active"
+                            : newDomainDnsResult.status === "MISCONFIGURED"
+                            ? "DNS Misconfigured"
+                            : newDomainDnsResult.status === "INVALID_DOMAIN"
+                            ? "Invalid Domain Format"
+                            : "DNS Propagation Pending"}
+                        </span>
+                        <p className="text-[10px] opacity-90">{newDomainDnsResult.message}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -3503,6 +3650,95 @@ function TenantManagementContent() {
               </select>
             </div>
           </div>
+
+          {/* Edit Tenant Custom Domain DNS & Edge Status Guide */}
+          {isCustomDomain(editTenantDomain) && (() => {
+            const expectedDns = getExpectedDnsRecord(editTenantDomain);
+            return (
+              <div className="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/70 dark:border-blue-900/40 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-[#1A56DB]" />
+                    <span className="text-xs font-bold text-[var(--nexa-text-primary)]">Custom Domain DNS & Edge Status</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleCheckDomainDns(editTenantDomain, true)}
+                    disabled={isCheckingEditDomainDns}
+                    className="px-2 py-1 text-[11px] font-bold rounded-lg bg-[#1A56DB] text-white hover:bg-[#1545B0] cursor-pointer flex items-center gap-1.5 transition-all shadow-xs disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${isCheckingEditDomainDns ? "animate-spin" : ""}`} />
+                    <span>{isCheckingEditDomainDns ? "Checking..." : "Verify DNS"}</span>
+                  </button>
+                </div>
+
+                <p className="text-[11px] text-[var(--nexa-text-secondary)]">
+                  Add the following record at your DNS provider (Cloudflare, Namecheap, GoDaddy) to route to this tenant:
+                </p>
+
+                <div className="grid grid-cols-3 gap-2 p-2 rounded-lg bg-white/80 dark:bg-black/40 border border-blue-100 dark:border-blue-900/30 text-xs">
+                  <div>
+                    <span className="text-[9px] text-[var(--nexa-text-muted)] uppercase font-semibold block">Type</span>
+                    <span className="font-mono font-bold text-[#1A56DB]">{expectedDns.type}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-[var(--nexa-text-muted)] uppercase font-semibold block">Name / Host</span>
+                    <span className="font-mono font-bold text-[var(--nexa-text-primary)]">{expectedDns.host}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-[var(--nexa-text-muted)] uppercase font-semibold block">Target</span>
+                    <div className="flex items-center gap-1">
+                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 truncate text-[11px]">{expectedDns.value}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(expectedDns.value);
+                          setEditDomainCopied(expectedDns.value);
+                          setTimeout(() => setEditDomainCopied(null), 2000);
+                        }}
+                        className="p-0.5 hover:bg-black/5 dark:hover:bg-white/10 rounded cursor-pointer text-[var(--nexa-text-muted)]"
+                        title="Copy target"
+                      >
+                        {editDomainCopied === expectedDns.value ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {editDomainDnsResult && (
+                  <div className={`p-2 rounded-lg border text-xs flex items-start gap-2 ${
+                    editDomainDnsResult.status === "PROPAGATED"
+                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300"
+                      : editDomainDnsResult.status === "MISCONFIGURED"
+                      ? "bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300"
+                      : editDomainDnsResult.status === "INVALID_DOMAIN"
+                      ? "bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300"
+                      : "bg-blue-500/10 border-blue-500/30 text-blue-700 dark:text-blue-300"
+                  }`}>
+                    {editDomainDnsResult.status === "PROPAGATED" ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0 text-emerald-500 mt-0.5" />
+                    ) : editDomainDnsResult.status === "MISCONFIGURED" ? (
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-500 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    )}
+                    <div className="space-y-0.5">
+                      <span className="font-bold text-[11px]">
+                        {editDomainDnsResult.status === "PROPAGATED"
+                          ? "DNS Propagated & Active"
+                          : editDomainDnsResult.status === "MISCONFIGURED"
+                          ? "DNS Misconfigured"
+                          : editDomainDnsResult.status === "INVALID_DOMAIN"
+                          ? "Invalid Domain Format"
+                          : "DNS Propagation Pending"}
+                      </span>
+                      <p className="text-[10px] opacity-90">{editDomainDnsResult.message}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">

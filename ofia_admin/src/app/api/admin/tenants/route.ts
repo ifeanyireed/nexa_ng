@@ -3,6 +3,7 @@ import { MASTER_CONNECTION_STRING, getTenantSql, invalidateTenantDbCache } from 
 import { INITIAL_TENANTS } from "@/lib/admin-data";
 import { alignTenantModules, getDefaultModulesForVertical } from "@/lib/tenant-module-aligner";
 import { ensureDefaultTenantAdmin } from "@/lib/tenant-admin-provisioner";
+import { registerDomainOnEdge, isCustomDomain } from "@/lib/domain-edge-manager";
 import { neon } from "@neondatabase/serverless";
 
 export const dynamic = "force-dynamic";
@@ -191,6 +192,15 @@ export async function POST(request: NextRequest) {
       console.warn(`[Tenant API] Default admin account creation warning for '${cleanSlug}':`, adminErr.message);
     }
 
+    // Automatically register custom domain on edge infrastructure (e.g. Vercel)
+    if (isCustomDomain(effectiveDomain)) {
+      try {
+        await registerDomainOnEdge(effectiveDomain);
+      } catch (domErr: any) {
+        console.warn(`[Tenant API] Automatic custom domain registration warning for '${effectiveDomain}':`, domErr.message);
+      }
+    }
+
     return NextResponse.json({ success: true, tenant });
   } catch (err: any) {
     return NextResponse.json(
@@ -291,6 +301,15 @@ export async function PUT(request: NextRequest) {
       });
     } catch (adminErr: any) {
       console.warn(`[Tenant API] Admin user sync note for '${targetSlug}':`, adminErr.message);
+    }
+
+    // Automatically sync custom domain with edge infrastructure (e.g. Vercel)
+    if (updated.domain && isCustomDomain(updated.domain)) {
+      try {
+        await registerDomainOnEdge(updated.domain);
+      } catch (domErr: any) {
+        console.warn(`[Tenant API] Custom domain edge registration warning for '${updated.domain}':`, domErr.message);
+      }
     }
 
     invalidateTenantDbCache(targetSlug);

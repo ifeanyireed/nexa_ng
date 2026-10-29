@@ -1935,19 +1935,46 @@ export default function TenantSettingsPage() {
               </div>
 
               {smtpProvider === "brevo" && (
-                <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-700 dark:text-blue-300 flex items-center justify-between">
-                  <div>
-                    <span className="font-bold">Brevo Relay:</span> Use your Brevo login email as SMTP Username, Port 587 (TLS), and your Brevo SMTP Master Key.
+                <div className="space-y-2">
+                  <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-xs text-blue-700 dark:text-blue-300 flex items-center justify-between">
+                    <div>
+                      <span className="font-bold">Brevo Relay:</span> Use your Brevo login email as SMTP Username, Port 587 (TLS), and your Brevo SMTP Master Key.
+                    </div>
+                    <a
+                      href="https://app.brevo.com/settings/keys/smtp"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-[#1A56DB] text-white hover:bg-[#1A56DB]/90 flex items-center gap-1 shrink-0 ml-3 transition-colors"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      Brevo Dashboard
+                    </a>
                   </div>
-                  <a
-                    href="https://app.brevo.com/settings/keys/smtp"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-[#1A56DB] text-white hover:bg-[#1A56DB]/90 flex items-center gap-1 shrink-0 ml-3 transition-colors"
-                  >
-                    <ExternalLink className="w-3 h-3" />
-                    Brevo Dashboard
-                  </a>
+                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-800 dark:text-emerald-300 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        Brevo Open &amp; Click Tracking Webhook:
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const hookUrl = `https://${slug || activeTenant?.slug || "your-workspace"}.ofia.ng/api/erp/crm/webhooks/brevo`;
+                          navigator.clipboard.writeText(hookUrl);
+                          alert("Webhook URL copied to clipboard: " + hookUrl);
+                        }}
+                        className="px-2 py-0.5 text-[10px] font-bold rounded bg-emerald-600 text-white hover:bg-emerald-700 transition-colors cursor-pointer"
+                      >
+                        Copy Webhook URL
+                      </button>
+                    </div>
+                    <div className="font-mono text-[11px] bg-white/70 dark:bg-black/30 px-2 py-1 rounded border border-emerald-500/20 truncate">
+                      https://{slug || activeTenant?.slug || "your-workspace"}.ofia.ng/api/erp/crm/webhooks/brevo
+                    </div>
+                    <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80">
+                      In Brevo &rarr; Settings &rarr; Webhooks: Add this URL and select <strong>Opens</strong>, <strong>Clicks</strong>, <strong>Bounces</strong>, and <strong>Unsubscribes</strong> to automatically sync live engagement to your CRM.
+                    </p>
+                  </div>
                 </div>
               )}
 

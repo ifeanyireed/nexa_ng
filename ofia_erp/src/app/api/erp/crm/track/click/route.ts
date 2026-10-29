@@ -15,10 +15,13 @@ export async function GET(request: Request) {
     const targetUrl = url.searchParams.get("url") || "https://ofia.ng";
 
     if (token) {
-      // Process click engagement directly on tenant DB with strict deduplication check
-      processEmailEngagement(token, "CLICK", targetUrl).catch((err) =>
-        console.warn("[CRM Track Click] Direct process error:", err)
-      );
+      // Process click engagement directly on tenant DB with strict deduplication check.
+      // Must be awaited before redirecting so the DB transaction completes.
+      try {
+        await processEmailEngagement(token, "CLICK", targetUrl);
+      } catch (err) {
+        console.warn("[CRM Track Click] Direct process error:", err);
+      }
 
       // Also forward click event to ERP backend
       if (ERP_BASE) {

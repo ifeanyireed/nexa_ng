@@ -19,10 +19,13 @@ export async function GET(request: Request) {
     const token = url.searchParams.get("token") || "";
 
     if (token) {
-      // Process open engagement directly on tenant DB with strict deduplication check
-      processEmailEngagement(token, "OPEN").catch((err) =>
-        console.warn("[CRM Track Open] Direct process error:", err)
-      );
+      // Process open engagement directly on tenant DB with strict deduplication check.
+      // Must be awaited so serverless runtimes don't freeze before Postgres commits the update.
+      try {
+        await processEmailEngagement(token, "OPEN");
+      } catch (err) {
+        console.warn("[CRM Track Open] Direct process error:", err);
+      }
 
       // Also forward telemetry asynchronously to ERP microservice if reachable
       if (ERP_BASE) {
@@ -49,4 +52,8 @@ export async function GET(request: Request) {
       },
     });
   }
+}
+
+export async function HEAD(request: Request) {
+  return GET(request);
 }

@@ -26,14 +26,27 @@ function createTrackingToken(payload: BlastTrackingPayload): string {
 }
 
 function resolveAppBaseUrl(tenantSlug: string): string {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL;
-  if (appUrl && appUrl.startsWith("http")) {
-    return appUrl.replace(/\/+$/, "");
+  // 1. Explicit tracking base override
+  const trackingOverride = process.env.CRM_TRACKING_BASE_URL;
+  if (trackingOverride && trackingOverride.startsWith("http")) {
+    return trackingOverride.replace(/\/+$/, "");
   }
+
+  // 2. Multi-tenant subdomain (enforces HTTPS so Gmail proxy and Apple Mail never drop tracking pixels)
   const clean = (tenantSlug || "").trim().toLowerCase();
-  if (clean && clean !== "default") {
+  if (clean && clean !== "default" && clean !== "platform") {
     return `https://${clean}.ofia.ng`;
   }
+
+  // 3. Fallback to app domain or env URL, enforcing HTTPS in non-local environments
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL;
+  if (appUrl && appUrl.startsWith("http")) {
+    if (appUrl.includes("localhost") || appUrl.includes("127.0.0.1")) {
+      return appUrl.replace(/\/+$/, "");
+    }
+    return appUrl.replace(/^http:\/\//i, "https://").replace(/\/+$/, "");
+  }
+
   return "https://app.ofia.ng";
 }
 
@@ -320,6 +333,13 @@ export async function dispatchBlastEmails(tenantSlug: string, blastId: string): 
             "List-Unsubscribe": `<${unsubscribeUrl}>`,
             "X-Entity-Ref-ID": blastId,
             "X-Tenant-Slug": normSlug,
+            "X-Mailin-Tag": `blast_${blastId}`,
+            "X-Mailin-custom": JSON.stringify({
+              tenantSlug: normSlug,
+              blastId: blastId,
+              recipientId: rec.id,
+              email: recipientEmail,
+            }),
           },
         });
 

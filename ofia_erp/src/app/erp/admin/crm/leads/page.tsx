@@ -26,6 +26,11 @@ import {
   Calendar,
   Clock,
   Activity,
+  Copy,
+  Check,
+  ExternalLink,
+  AlertCircle,
+  MapPin,
 } from "lucide-react";
 import { IconBrandLinkedin } from "@tabler/icons-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
@@ -39,6 +44,7 @@ import { Pagination } from "@/components/nexa/Pagination";
 import { CrmLead, CrmCall } from "@/lib/crm-service";
 import { crmFetch } from "@/lib/crm-client";
 import { filterSalesClosers } from "@/lib/access-control";
+import { PhoneCandidate, isPhoneMissingOrInvalid } from "@/lib/crm-phone-enricher";
 
 export default function CrmLeadsPage() {
   const [leads, setLeads] = useState<CrmLead[]>([]);
@@ -47,6 +53,7 @@ export default function CrmLeadsPage() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [callStatusFilter, setCallStatusFilter] = useState("ALL");
   const [repFilter, setRepFilter] = useState("ALL");
+  const [phoneFilter, setPhoneFilter] = useState<"ALL" | "MISSING">("ALL");
   const [isLoading, setIsLoading] = useState(true);
   const [isDeletingId, setIsDeletingId] = useState<string | null>(null);
 
@@ -88,6 +95,18 @@ export default function CrmLeadsPage() {
   // Buying Signals Modal
   const [isSignalsModalOpen, setIsSignalsModalOpen] = useState(false);
   const [selectedSignalsLead, setSelectedSignalsLead] = useState<CrmLead | null>(null);
+
+  // AI Phone Enrichment Modal State
+  const [isEnrichModalOpen, setIsEnrichModalOpen] = useState(false);
+  const [enrichingLead, setEnrichingLead] = useState<CrmLead | null>(null);
+  const [enrichStatus, setEnrichStatus] = useState<"idle" | "searching" | "success" | "empty" | "error">("idle");
+  const [enrichCandidates, setEnrichCandidates] = useState<PhoneCandidate[]>([]);
+  const [selectedPhone, setSelectedPhone] = useState<string>("");
+  const [customPhoneInput, setCustomPhoneInput] = useState<string>("");
+  const [enrichSearchQuery, setEnrichSearchQuery] = useState<string>("");
+  const [enrichErrorMessage, setEnrichErrorMessage] = useState<string>("");
+  const [isApplyingPhone, setIsApplyingPhone] = useState(false);
+  const [copiedPhone, setCopiedPhone] = useState<string | null>(null);
 
   const getSignalItems = (lead: CrmLead | null) => {
     if (!lead) return [];
@@ -836,6 +855,127 @@ export default function CrmLeadsPage() {
     }
   };
 
+  const missingPhoneCount = useMemo(() => {
+    return leads.filter((l) => isPhoneMissingOrInvalid(l.contactPhone || (l as any).phone)).length;
+  }, [leads]);
+
+  const handleStartPhoneEnrich = async (lead: CrmLead, customQuery?: string) => {
+    setEnrichingLead(lead);
+    setIsEnrichModalOpen(true);
+    setEnrichStatus("searching");
+    setEnrichCandidates([]);
+    setSelectedPhone("");
+    setCustomPhoneInput("");
+    setEnrichErrorMessage("");
+    const query = customQuery || lead.companyName || (lead as any).company || "";
+    setEnrichSearchQuery(query);
+
+    try {
+      const res = await crmFetch("/api/erp/crm/leads/enrich-phone", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadId: lead.id,
+          companyName: query,
+          location: lead.location,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        setEnrichStatus("error");
+        setEnrichErrorMessage(json.error || "Failed to search for phone numbers.");
+        return;
+      }
+
+      const candidates: PhoneCandidate[] = json.data?.candidates || [];
+      setEnrichCandidates(candidates);
+
+      if (candidates.length > 0) {
+        setEnrichStatus("success");
+        setSelectedPhone(candidates[0].formattedPhone || candidates[0].phone);
+      } else {
+        setEnrichStatus("empty");
+        setEnrichErrorMessage("No verified corporate phone numbers found for this company online.");
+      }
+    } catch (err: any) {
+      setEnrichStatus("error");
+      setEnrichErrorMessage(err.message || "Network error while searching for phone numbers.");
+    }
+  };
+
+  const handleApplyEnrichedPhone = async (callAfter = false) => {
+    if (!enrichingLead) return;
+    const finalPhone = (customPhoneInput.trim() || selectedPhone.trim());
+    if (!finalPhone) return;
+
+    setIsApplyingPhone(true);
+    setEnrichErrorMessage("");
+
+    try {
+      const chosenCand = enrichCandidates.find(
+        (c) => c.formattedPhone === selectedPhone || c.phone === selectedPhone
+      );
+      const sourceNote = chosenCand
+        ? `${chosenCand.sourceName} (${chosenCand.confidence}% confidence)`
+        : "Manual Verification via AI Phone Intelligence";
+
+      const res = await crmFetch("/api/erp/crm/leads/apply-phone", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leadId: enrichingLead.id,
+          phone: finalPhone,
+          sourceNote,
+          website: chosenCand?.website,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setEnrichErrorMessage(data.message || data.error || "Failed to apply phone number.");
+        setIsApplyingPhone(false);
+        return;
+      }
+
+      // Update leads state with updated contact
+      setLeads((prev) =>
+        prev.map((l) =>
+          l.id === enrichingLead.id
+            ? {
+                ...l,
+                contactPhone: data.lead?.contactPhone || finalPhone,
+                website: data.lead?.website || l.website,
+                notes: data.lead?.notes || l.notes,
+              }
+            : l
+        )
+      );
+
+      const targetLeadId = enrichingLead.id;
+      const targetCompany = enrichingLead.companyName;
+      const targetContact = enrichingLead.contactName;
+      const targetRep = enrichingLead.assignedRep;
+
+      setIsEnrichModalOpen(false);
+      setEnrichingLead(null);
+
+      if (callAfter) {
+        window.location.href = `/erp/admin/crm/calls?leadId=${targetLeadId}&phone=${encodeURIComponent(finalPhone)}&name=${encodeURIComponent(targetContact || "")}&company=${encodeURIComponent(targetCompany || "")}${targetRep ? `&rep=${encodeURIComponent(targetRep)}` : ""}`;
+      }
+    } catch (err: any) {
+      setEnrichErrorMessage(err.message || "Error updating lead in database.");
+    } finally {
+      setIsApplyingPhone(false);
+    }
+  };
+
+  const handleCopyPhone = (num: string) => {
+    navigator.clipboard?.writeText(num);
+    setCopiedPhone(num);
+    setTimeout(() => setCopiedPhone(null), 2000);
+  };
+
   const callCounts = useMemo(() => {
     const counts: Record<string, number> = { ALL: leads.length, green: 0, yellow: 0, red: 0, blue: 0 };
     for (const l of leads) {
@@ -910,13 +1050,18 @@ export default function CrmLeadsPage() {
       }
     }
 
-    return matchSearch && matchStatus && matchCallStatus && matchRep;
+    let matchPhone = true;
+    if (phoneFilter === "MISSING") {
+      matchPhone = isPhoneMissingOrInvalid(l.contactPhone || (l as any).phone);
+    }
+
+    return matchSearch && matchStatus && matchCallStatus && matchRep && matchPhone;
   });
 
   // Reset page when search or filter changes
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter, callStatusFilter, repFilter]);
+  }, [searchQuery, statusFilter, callStatusFilter, repFilter, phoneFilter]);
 
   const totalItems = filteredLeads.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
@@ -1046,6 +1191,19 @@ export default function CrmLeadsPage() {
           </div>
 
           <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-1">
+            <button
+              type="button"
+              onClick={() => setPhoneFilter((prev) => (prev === "MISSING" ? "ALL" : "MISSING"))}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold shrink-0 transition-all flex items-center gap-1.5 cursor-pointer ${
+                phoneFilter === "MISSING"
+                  ? "bg-amber-500 text-white shadow-xs"
+                  : "bg-[var(--nexa-bg-base)] text-amber-600 dark:text-amber-400 hover:text-amber-500 border border-amber-500/30"
+              }`}
+              title="Filter contacts missing phone numbers"
+            >
+              <Sparkles className={`w-3.5 h-3.5 ${phoneFilter === "MISSING" ? "text-white" : "text-amber-500"}`} />
+              <span>Needs Phone ({missingPhoneCount})</span>
+            </button>
             {["ALL", "CURIOUS", "IDENTIFIED", "CONTACTED", "QUALIFIED", "PROPOSAL", "MEETING_BOOKED", "CONVERTED"].map((st) => (
               <button
                 key={st}
@@ -1231,16 +1389,41 @@ export default function CrmLeadsPage() {
                       <div className="text-[11px] text-[var(--nexa-text-muted)] flex items-center gap-2 flex-wrap">
                         <span className="flex items-center gap-1.5">
                           <Phone className="w-3 h-3 text-[var(--nexa-text-muted)] shrink-0" />
-                          {lead.contactPhone || (lead as any).phone ? (
-                            <a
-                              href={`tel:${lead.contactPhone || (lead as any).phone}`}
-                              className="hover:underline hover:text-[#1A56DB]"
-                            >
-                              {lead.contactPhone || (lead as any).phone}
-                            </a>
-                          ) : (
-                            <span>No phone</span>
-                          )}
+                          {(() => {
+                            const p = lead.contactPhone || (lead as any).phone;
+                            const isMissing = isPhoneMissingOrInvalid(p);
+                            if (isMissing) {
+                              return (
+                                <button
+                                  type="button"
+                                  onClick={() => handleStartPhoneEnrich(lead)}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer group"
+                                  title="AI Search & Enrich missing phone number"
+                                >
+                                  <Sparkles className="w-2.5 h-2.5 text-amber-500 group-hover:rotate-12 transition-transform" />
+                                  <span>Find Phone</span>
+                                </button>
+                              );
+                            }
+                            return (
+                              <div className="inline-flex items-center gap-1">
+                                <a
+                                  href={`tel:${p}`}
+                                  className="hover:underline hover:text-[#1A56DB]"
+                                >
+                                  {p}
+                                </a>
+                                <button
+                                  type="button"
+                                  onClick={() => handleStartPhoneEnrich(lead)}
+                                  className="p-0.5 text-[var(--nexa-text-muted)] hover:text-amber-500 transition-colors cursor-pointer"
+                                  title="AI Search alternative/verified phone number"
+                                >
+                                  <Sparkles className="w-2.5 h-2.5" />
+                                </button>
+                              </div>
+                            );
+                          })()}
 
                           {/* LinkedIn Button directly after phone number - strictly renders ONLY if an actual LinkedIn profile URL exists */}
                           {(() => {
@@ -1378,6 +1561,14 @@ export default function CrmLeadsPage() {
 
                     <td className="py-3.5 px-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => handleStartPhoneEnrich(lead)}
+                          className="p-1.5 rounded-lg border border-[var(--nexa-border)] hover:bg-amber-500/10 text-[var(--nexa-text-secondary)] hover:text-amber-500 transition-colors cursor-pointer"
+                          title={`AI Phone Search for ${lead.companyName}`}
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleOpenEditModal(lead)}
@@ -1859,6 +2050,326 @@ export default function CrmLeadsPage() {
               >
                 Close
               </NexaButton>
+            </div>
+          </div>
+        )}
+      </NexaModal>
+
+      {/* Interactive AI Phone Intelligence Modal */}
+      <NexaModal
+        isOpen={isEnrichModalOpen}
+        onClose={() => {
+          if (!isApplyingPhone) {
+            setIsEnrichModalOpen(false);
+            setEnrichingLead(null);
+          }
+        }}
+        title="AI Phone Intelligence & Enrichment"
+      >
+        {enrichingLead && (
+          <div className="space-y-4">
+            {/* Lead Context Snapshot */}
+            <div className="p-3.5 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] flex items-center justify-between gap-3 flex-wrap">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-[#1A56DB]" />
+                  <span className="font-extrabold text-sm text-[var(--nexa-text-primary)]">
+                    {enrichingLead.companyName}
+                  </span>
+                </div>
+                <div className="text-xs text-[var(--nexa-text-muted)] flex items-center gap-2">
+                  <span>Contact: <strong className="text-[var(--nexa-text-primary)]">{enrichingLead.contactName || "Corporate Executive"}</strong></span>
+                  {enrichingLead.location && (
+                    <>
+                      <span>•</span>
+                      <span>{enrichingLead.location}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="text-right">
+                <span className="text-[11px] text-[var(--nexa-text-muted)] block">Current Phone:</span>
+                {isPhoneMissingOrInvalid(enrichingLead.contactPhone || (enrichingLead as any).phone) ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                    <Sparkles className="w-3 h-3 text-amber-500" /> Missing / Invalid
+                  </span>
+                ) : (
+                  <span className="text-xs font-mono text-[var(--nexa-text-secondary)] font-semibold">
+                    {enrichingLead.contactPhone || (enrichingLead as any).phone}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Error Banner */}
+            {enrichErrorMessage && (
+              <div className="p-3 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-400 text-xs flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <div className="flex-1 font-medium">{enrichErrorMessage}</div>
+              </div>
+            )}
+
+            {/* Searching State */}
+            {enrichStatus === "searching" && (
+              <div className="py-8 px-4 text-center space-y-4">
+                <div className="inline-flex p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 animate-pulse shadow-sm">
+                  <Sparkles className="w-8 h-8 animate-spin" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-bold text-sm text-[var(--nexa-text-primary)]">
+                    Scanning Internet Intelligence...
+                  </h4>
+                  <p className="text-xs text-[var(--nexa-text-muted)]">
+                    Querying Apify Google Places & Corporate Contact Directories for:
+                  </p>
+                  <p className="font-mono text-xs font-semibold text-[#1A56DB] bg-[#1A56DB]/5 py-1 px-3 rounded-lg inline-block border border-[#1A56DB]/20">
+                    &quot;{enrichSearchQuery}&quot;
+                  </p>
+                </div>
+
+                <div className="max-w-xs mx-auto space-y-1.5 text-left text-[11px] text-[var(--nexa-text-muted)] pt-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                    <span>Scraping official Google Maps business profiles</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                    <span>Inspecting corporate domain & leadership directories</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+                    <span>AI validating Nigerian E.164 phone switchboards</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Empty or Error with Query Override Box */}
+            {(enrichStatus === "empty" || enrichStatus === "error") && (
+              <div className="p-4 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]/40 space-y-3">
+                <div className="text-xs text-[var(--nexa-text-muted)]">
+                  Try refining the search query (e.g. adding head office location, removing abbreviations):
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <NexaInput
+                      placeholder="e.g. Prime Atlantic Cegelec Victoria Island Lagos"
+                      value={enrichSearchQuery}
+                      onChange={(e) => setEnrichSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <NexaButton
+                    type="button"
+                    onClick={() => handleStartPhoneEnrich(enrichingLead, enrichSearchQuery)}
+                  >
+                    Search Again
+                  </NexaButton>
+                </div>
+
+                <div className="pt-2 border-t border-[var(--nexa-border)] space-y-1.5">
+                  <label className="text-[11px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wide">
+                    Or Enter Phone Number Manually:
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <NexaInput
+                        placeholder="+234 802 000 0000"
+                        value={customPhoneInput}
+                        onChange={(e) => setCustomPhoneInput(e.target.value)}
+                      />
+                    </div>
+                    <NexaButton
+                      type="button"
+                      variant="primary"
+                      disabled={!customPhoneInput.trim() || isApplyingPhone}
+                      onClick={() => handleApplyEnrichedPhone(false)}
+                    >
+                      {isApplyingPhone ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : "Save Phone"}
+                    </NexaButton>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Candidates Selection List */}
+            {enrichStatus === "success" && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                    Discovered Verified Numbers ({enrichCandidates.length}):
+                  </span>
+                  <span className="text-[11px] text-[var(--nexa-text-muted)]">
+                    Select a number to update contact
+                  </span>
+                </div>
+
+                <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+                  {enrichCandidates.map((cand, idx) => {
+                    const isSelected =
+                      selectedPhone === cand.formattedPhone || selectedPhone === cand.phone;
+                    const isCopied = copiedPhone === cand.formattedPhone || copiedPhone === cand.phone;
+
+                    const typeBadge =
+                      cand.type === "HEAD_OFFICE_SWITCHBOARD"
+                        ? "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20"
+                        : cand.type === "DIRECT_MOBILE"
+                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                        : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
+
+                    const typeLabel =
+                      cand.type === "HEAD_OFFICE_SWITCHBOARD"
+                        ? "Corporate HQ Switchboard"
+                        : cand.type === "DIRECT_MOBILE"
+                        ? "Mobile / WhatsApp"
+                        : "Customer Support";
+
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          setSelectedPhone(cand.formattedPhone);
+                          setCustomPhoneInput("");
+                        }}
+                        className={`p-3.5 rounded-xl border transition-all cursor-pointer space-y-2 ${
+                          isSelected
+                            ? "border-[#1A56DB] bg-[#1A56DB]/5 ring-2 ring-[#1A56DB]/20"
+                            : "border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] hover:border-[#1A56DB]/40"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="selectedCandidatePhone"
+                              checked={isSelected}
+                              onChange={() => {
+                                setSelectedPhone(cand.formattedPhone);
+                                setCustomPhoneInput("");
+                              }}
+                              className="accent-[#1A56DB] w-4 h-4 cursor-pointer"
+                            />
+                            <span className="font-extrabold text-base font-mono text-[var(--nexa-text-primary)]">
+                              {cand.formattedPhone}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCopyPhone(cand.formattedPhone);
+                              }}
+                              className="p-1 rounded text-[var(--nexa-text-muted)] hover:text-[#1A56DB] transition-colors"
+                              title="Copy phone to clipboard"
+                            >
+                              {isCopied ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-500" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${typeBadge}`}>
+                              {typeLabel}
+                            </span>
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                              {cand.confidence}% Match
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Source & Address Snippet */}
+                        <div className="text-[11px] text-[var(--nexa-text-muted)] flex items-center justify-between gap-2 pt-1 border-t border-[var(--nexa-border)]/50">
+                          <div className="flex items-center gap-1 truncate max-w-[280px]">
+                            {cand.address ? (
+                              <>
+                                <MapPin className="w-3 h-3 shrink-0 text-[var(--nexa-text-muted)]" />
+                                <span className="truncate" title={cand.address}>{cand.address}</span>
+                              </>
+                            ) : (
+                              <span>Source: {cand.sourceName}</span>
+                            )}
+                          </div>
+
+                          {cand.sourceUrl && (
+                            <a
+                              href={cand.sourceUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 text-[#1A56DB] hover:underline font-semibold shrink-0"
+                            >
+                              <span>View Source</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Manual Override Input */}
+                <div className="pt-2 border-t border-[var(--nexa-border)] space-y-1">
+                  <label className="text-[11px] font-semibold text-[var(--nexa-text-muted)]">
+                    Or edit / override before applying:
+                  </label>
+                  <NexaInput
+                    placeholder="e.g. +234 802 112 2334"
+                    value={customPhoneInput}
+                    onChange={(e) => {
+                      setCustomPhoneInput(e.target.value);
+                      setSelectedPhone("");
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-between pt-3 border-t border-[var(--nexa-border)] gap-2">
+              <NexaButton
+                variant="secondary"
+                type="button"
+                disabled={isApplyingPhone}
+                onClick={() => {
+                  setIsEnrichModalOpen(false);
+                  setEnrichingLead(null);
+                }}
+              >
+                Cancel
+              </NexaButton>
+
+              {(enrichStatus === "success" || customPhoneInput.trim()) && (
+                <div className="flex items-center gap-2">
+                  <NexaButton
+                    type="button"
+                    variant="secondary"
+                    disabled={isApplyingPhone || (!selectedPhone && !customPhoneInput.trim())}
+                    onClick={() => handleApplyEnrichedPhone(true)}
+                    className="flex items-center gap-1.5"
+                  >
+                    <PhoneCall className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Apply & Call Now</span>
+                  </NexaButton>
+
+                  <NexaButton
+                    type="button"
+                    variant="primary"
+                    disabled={isApplyingPhone || (!selectedPhone && !customPhoneInput.trim())}
+                    onClick={() => handleApplyEnrichedPhone(false)}
+                    className="flex items-center gap-1.5"
+                  >
+                    {isApplyingPhone ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Check className="w-3.5 h-3.5" />
+                    )}
+                    <span>Apply to Contact</span>
+                  </NexaButton>
+                </div>
+              )}
             </div>
           </div>
         )}

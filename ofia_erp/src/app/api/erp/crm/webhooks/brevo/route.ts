@@ -45,10 +45,18 @@ export async function POST(request: Request) {
   // Optional webhook secret verification
   const webhookSecret = process.env.BREVO_WEBHOOK_SECRET;
   if (webhookSecret) {
+    const authHeader = request.headers.get("authorization") || "";
+    const bearerToken = authHeader.toLowerCase().startsWith("bearer ")
+      ? authHeader.slice(7).trim()
+      : authHeader.trim();
+
     const token =
       url.searchParams.get("secret") ||
       request.headers.get("x-webhook-secret") ||
-      request.headers.get("x-brevo-token");
+      request.headers.get("x-brevo-token") ||
+      request.headers.get("x-api-key") ||
+      bearerToken;
+
     if (token !== webhookSecret) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }

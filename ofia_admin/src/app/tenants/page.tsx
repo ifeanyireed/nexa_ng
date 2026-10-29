@@ -98,7 +98,7 @@ import {
   Copy,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { isCustomDomain, getExpectedDnsRecord, type DomainVerificationResult } from "@/lib/domain-edge-manager";
+import { isCustomDomain, getExpectedDnsRecord, type DomainVerificationResult } from "@/lib/domain-utils";
 
 // Centralized Plan Tiers Catalog re-exported from subscription-data
 export { type SubscriptionTierItem, SUBSCRIPTION_TIERS_CATALOG } from "@/lib/subscription-data";

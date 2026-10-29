@@ -1,66 +1,12 @@
-import { Resolver } from "dns/promises";
+import {
+  ExpectedDnsRecord,
+  DomainVerificationResult,
+  cleanDomainInput,
+  isCustomDomain,
+  getExpectedDnsRecord,
+} from "./domain-utils";
 
-export interface ExpectedDnsRecord {
-  type: "CNAME" | "A";
-  host: string;
-  value: string;
-}
-
-export interface DomainVerificationResult {
-  success: boolean;
-  domain: string;
-  status: "PROPAGATED" | "MISCONFIGURED" | "PENDING" | "INVALID_DOMAIN";
-  propagated: boolean;
-  vercelVerified: boolean;
-  vercelMisconfigured: boolean | null;
-  expected: ExpectedDnsRecord;
-  detected: {
-    cname: string[];
-    a: string[];
-  };
-  message: string;
-  suggestedDomain?: string;
-  data?: any;
-}
-
-export function cleanDomainInput(raw: string): string {
-  return raw
-    .trim()
-    .toLowerCase()
-    .replace(/^https?:\/\//i, "")
-    .replace(/\/.*$/, "")
-    .replace(/:\d+$/, "");
-}
-
-export function isCustomDomain(domain?: string | null): boolean {
-  if (!domain) return false;
-  const clean = cleanDomainInput(domain);
-  if (!clean) return false;
-  if (
-    clean.endsWith(".ofia.ng") ||
-    clean.endsWith(".ofia.shop") ||
-    clean === "ofia.ng" ||
-    clean === "ofia.shop" ||
-    clean === "localhost" ||
-    clean.endsWith(".localhost") ||
-    clean === "127.0.0.1"
-  ) {
-    return false;
-  }
-  return clean.includes(".");
-}
-
-export function getExpectedDnsRecord(domain: string): ExpectedDnsRecord {
-  const clean = cleanDomainInput(domain);
-  const parts = clean.split(".");
-  const isSubdomain = parts.length > 2;
-
-  return {
-    type: isSubdomain ? "CNAME" : "A",
-    host: isSubdomain ? parts.slice(0, -2).join(".") : "@",
-    value: isSubdomain ? "cname.vercel-dns.com" : "76.76.21.21",
-  };
-}
+export * from "./domain-utils";
 
 /**
  * Automatically provisions a custom domain on the Vercel edge infrastructure.
@@ -230,23 +176,29 @@ export async function verifyDomainDnsAndEdge(
   const expected = getExpectedDnsRecord(domain);
 
   // 1. Resolve DNS directly with public nameservers to avoid OS local caching
-  const resolver = new Resolver();
+  let cnameRecords: string[] = [];
+  let aRecords: string[] = [];
+
   try {
-    resolver.setServers(["8.8.8.8", "1.1.1.1"]);
-  } catch {
-    // Fallback to system resolver
+    const { Resolver } = await import("dns/promises");
+    const resolver = new Resolver();
+    try {
+      resolver.setServers(["8.8.8.8", "1.1.1.1"]);
+    } catch {}
+
+    const [cnameResult, aResult] = await Promise.allSettled([
+      resolver.resolveCname(domain),
+      resolver.resolve4(domain),
+    ]);
+
+    cnameRecords =
+      cnameResult.status === "fulfilled"
+        ? cnameResult.value.map((r) => r.toLowerCase().replace(/\.$/, ""))
+        : [];
+    aRecords = aResult.status === "fulfilled" ? aResult.value : [];
+  } catch (dnsErr) {
+    console.warn("DNS resolver execution warning:", dnsErr);
   }
-
-  const [cnameResult, aResult] = await Promise.allSettled([
-    resolver.resolveCname(domain),
-    resolver.resolve4(domain),
-  ]);
-
-  const cnameRecords =
-    cnameResult.status === "fulfilled"
-      ? cnameResult.value.map((r) => r.toLowerCase().replace(/\.$/, ""))
-      : [];
-  const aRecords = aResult.status === "fulfilled" ? aResult.value : [];
 
   const cnameMatched = cnameRecords.some(
     (r) =>

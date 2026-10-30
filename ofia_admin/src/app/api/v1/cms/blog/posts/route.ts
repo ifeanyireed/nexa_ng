@@ -10,7 +10,7 @@ const rawUserUrl =
   process.env.NEXT_PUBLIC_USERS_API ||
   "";
 const cleanUserUrl = rawUserUrl.replace(/\/+$/, "");
-const USER_BASE = cleanUserUrl.endsWith("/api/v1") ? cleanUserUrl : `${cleanUserUrl}/api/v1`;
+const USER_BASE = cleanUserUrl ? (cleanUserUrl.endsWith("/api/v1") ? cleanUserUrl : `${cleanUserUrl}/api/v1`) : "";
 
 const USERS_DB_URL =
   process.env.USERS_DATABASE_URL ||
@@ -52,131 +52,65 @@ async function ensureBlogPostSchema(sql: any) {
 
 export async function GET(request: Request) {
   try {
-    const { searchParams, search } = new URL(request.url);
+    const { searchParams } = new URL(request.url);
     const targetId = searchParams.get("id");
     const targetSlug = searchParams.get("slug");
     const sql = getUsersSql();
 
-    if (sql) {
-      await ensureBlogPostSchema(sql);
-    }
-
-    // 1. Fetch from microservice first
-    let microserviceData: any = null;
-    if (USER_BASE) {
-      try {
-        const res = await fetch(`${USER_BASE}/cms/blog/posts${search}`, {
-          cache: "no-store",
-          signal: AbortSignal.timeout(8000),
-        });
-        if (res.ok) {
-          microserviceData = await res.json().catch(() => null);
-        }
-      } catch (microErr) {
-        console.warn("[Blog Posts API] Microservice fetch note:", microErr);
-      }
-    }
-
-    // 2. Query Central Users DB directly to enrich with persistent SEO fields
+    // 1. Direct Lakebase Neon database query (highest priority & reliability)
     if (sql) {
       try {
         if (targetId || targetSlug) {
+          const cleanTarget = (targetId || targetSlug || "").trim();
           const rows = await sql`
-            SELECT id, title, slug, excerpt, content, cover_image, category_id, tags, status,
-                   author_id, author_name, published_at, created_at, updated_at,
-                   meta_title, meta_description, canonical_url, og_image, view_count
-            FROM "BlogPost"
-            WHERE id = ${targetId || ""} OR slug = ${targetSlug || targetId || ""}
+            SELECT p.id, p.title, p.slug, p.excerpt, p.content, p.cover_image, p.category_id, p.tags, p.status,
+                   p.author_id, p.author_name, p.published_at, p.created_at, p.updated_at,
+                   p.meta_title, p.meta_description, p.canonical_url, p.og_image, p.view_count,
+                   c.name as category
+            FROM "BlogPost" p
+            LEFT JOIN "BlogCategory" c ON p.category_id = c.id
+            WHERE p.id = ${cleanTarget} 
+               OR p.slug = ${cleanTarget}
+               OR LOWER(p.slug) = LOWER(${cleanTarget})
+               OR LOWER(p.id) = LOWER(${cleanTarget})
             LIMIT 1;
           `;
 
           if (rows && rows.length > 0) {
             const dbPost = rows[0];
-            const baseObj =
-              microserviceData && !Array.isArray(microserviceData) && (microserviceData.id || microserviceData.title)
-                ? microserviceData
-                : {};
-
-            const enrichedPost = {
-              ...baseObj,
-              id: dbPost.id,
-              title: dbPost.title || baseObj.title || "",
-              slug: dbPost.slug || baseObj.slug || "",
-              excerpt: dbPost.excerpt || baseObj.excerpt || "",
-              content: dbPost.content || baseObj.content || "",
-              cover_image: dbPost.cover_image || baseObj.cover_image || "",
-              category_id: dbPost.category_id || baseObj.category_id || "",
-              tags: dbPost.tags || baseObj.tags || "",
-              status: dbPost.status || baseObj.status || "DRAFT",
-              author_id: dbPost.author_id || baseObj.author_id || "",
-              author: baseObj.author || { full_name: dbPost.author_name || "Admin" },
-              meta_title: dbPost.meta_title ?? baseObj.meta_title ?? "",
-              meta_description: dbPost.meta_description ?? baseObj.meta_description ?? "",
-              canonical_url: dbPost.canonical_url ?? baseObj.canonical_url ?? "",
-              og_image: dbPost.og_image ?? baseObj.og_image ?? "",
-              view_count: Number(dbPost.view_count || baseObj.view_count || 0),
-              published_at: dbPost.published_at || baseObj.published_at,
-              created_at: dbPost.created_at || baseObj.created_at,
-              updated_at: dbPost.updated_at || baseObj.updated_at,
-            };
-
-            return NextResponse.json(enrichedPost);
+            return NextResponse.json({
+              ...dbPost,
+              category: dbPost.category || "Commerce & AI",
+              author: { full_name: dbPost.author_name || "Admin" },
+              meta_title: dbPost.meta_title || "",
+              meta_description: dbPost.meta_description || "",
+              canonical_url: dbPost.canonical_url || "",
+              og_image: dbPost.og_image || "",
+              view_count: Number(dbPost.view_count || 0),
+            });
           }
         } else {
           // List query
           const dbRows = await sql`
-            SELECT id, title, slug, excerpt, content, cover_image, category_id, tags, status,
-                   author_id, author_name, published_at, created_at, updated_at,
-                   meta_title, meta_description, canonical_url, og_image, view_count
-            FROM "BlogPost"
-            ORDER BY created_at DESC;
+            SELECT p.id, p.title, p.slug, p.excerpt, p.content, p.cover_image, p.category_id, p.tags, p.status,
+                   p.author_id, p.author_name, p.published_at, p.created_at, p.updated_at,
+                   p.meta_title, p.meta_description, p.canonical_url, p.og_image, p.view_count,
+                   c.name as category
+            FROM "BlogPost" p
+            LEFT JOIN "BlogCategory" c ON p.category_id = c.id
+            ORDER BY COALESCE(p.published_at, p.created_at) DESC;
           `;
 
-          const dbMap = new Map<string, any>();
-          if (Array.isArray(dbRows)) {
-            for (const r of dbRows) {
-              if (r.id) dbMap.set(r.id, r);
-              if (r.slug) dbMap.set(r.slug, r);
-            }
-          }
-
-          if (Array.isArray(microserviceData) && microserviceData.length > 0) {
-            const merged = microserviceData.map((p: any) => {
-              const matched = dbMap.get(p.id) || (p.slug ? dbMap.get(p.slug) : null);
-              if (matched) {
-                return {
-                  ...p,
-                  meta_title: matched.meta_title ?? p.meta_title ?? "",
-                  meta_description: matched.meta_description ?? p.meta_description ?? "",
-                  canonical_url: matched.canonical_url ?? p.canonical_url ?? "",
-                  og_image: matched.og_image ?? p.og_image ?? "",
-                  view_count: Number(matched.view_count || p.view_count || 0),
-                };
-              }
-              return p;
-            });
-            return NextResponse.json(merged);
-          } else if (dbRows && dbRows.length > 0) {
+          if (dbRows && dbRows.length > 0) {
             const formatted = dbRows.map((r: any) => ({
-              id: r.id,
-              title: r.title,
-              slug: r.slug,
-              excerpt: r.excerpt,
-              content: r.content,
-              cover_image: r.cover_image,
-              category_id: r.category_id,
-              tags: r.tags,
-              status: r.status,
-              author_id: r.author_id,
+              ...r,
+              category: r.category || "Commerce & AI",
               author: { full_name: r.author_name || "Admin" },
               meta_title: r.meta_title || "",
               meta_description: r.meta_description || "",
               canonical_url: r.canonical_url || "",
               og_image: r.og_image || "",
               view_count: Number(r.view_count || 0),
-              published_at: r.published_at,
-              created_at: r.created_at,
-              updated_at: r.updated_at,
             }));
             return NextResponse.json(formatted);
           }
@@ -186,11 +120,31 @@ export async function GET(request: Request) {
       }
     }
 
+    // 2. Microservice fallback if database has no rows or is unavailable
+    let microserviceData: any = null;
+    if (USER_BASE) {
+      try {
+        const { search } = new URL(request.url);
+        const res = await fetch(`${USER_BASE}/cms/blog/posts${search}`, {
+          cache: "no-store",
+          signal: AbortSignal.timeout(3000),
+        });
+        if (res.ok) {
+          microserviceData = await res.json().catch(() => null);
+        }
+      } catch (microErr) {
+        // Expected when microservice is cold or spun down
+      }
+    }
+
     if (microserviceData) {
       return NextResponse.json(microserviceData);
     }
 
-    return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    if (targetId || targetSlug) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
+    return NextResponse.json([]);
   } catch (err: any) {
     return NextResponse.json(
       { error: "Error fetching blog posts: " + err.message },
@@ -212,7 +166,7 @@ export async function POST(request: Request) {
       await ensureBlogPostSchema(sql);
     }
 
-    // 1. Forward to microservice
+    // 1. Forward to microservice (non-blocking)
     let createdPost: any = null;
     if (USER_BASE) {
       try {
@@ -220,36 +174,81 @@ export async function POST(request: Request) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: rawBody,
-          signal: AbortSignal.timeout(8000),
+          signal: AbortSignal.timeout(4000),
         });
-        createdPost = await res.json().catch(() => null);
+        if (res.ok) {
+          createdPost = await res.json().catch(() => null);
+        }
       } catch (microErr) {
         console.warn("[Blog Posts API] Microservice POST note:", microErr);
       }
     }
 
     const postId = createdPost?.id || body.id || `post_${Date.now()}`;
-    const cleanSlug = createdPost?.slug || body.slug || "";
+    const cleanTitle = (body.title || "").trim();
+    const cleanSlug = (createdPost?.slug || body.slug || "").trim() || `post-${Date.now()}`;
+    const cleanExcerpt = (body.excerpt || "").trim();
+    const cleanContent = body.content || "";
+    const cleanCoverImage = (body.cover_image || "").trim();
+    const cleanCategoryId = body.category_id || null;
+    const cleanTags = body.tags || "";
+    const cleanStatus = body.status || "DRAFT";
+    const cleanAuthorId = body.author_id || "admin";
+    const cleanAuthorName = body.author_name || "Ofia Editorial Team";
     const cleanMetaTitle = (body.meta_title !== undefined ? String(body.meta_title) : "").trim();
     const cleanMetaDesc = (body.meta_description !== undefined ? String(body.meta_description) : "").trim();
     const cleanCanonical = (body.canonical_url !== undefined && body.canonical_url !== null ? String(body.canonical_url) : "").trim();
     const cleanOgImg = (body.og_image !== undefined && body.og_image !== null ? String(body.og_image) : "").trim();
+    const publishedAt = cleanStatus === "PUBLISHED" ? (body.published_at || new Date().toISOString()) : null;
 
-    // 2. Ensure persistent SEO fields are saved to database
-    if (sql && postId) {
+    // 2. Direct persistence into Central Users DB (UPSERT so it never fails even if microservice was asleep)
+    if (sql) {
       try {
         await sql`
-          UPDATE "BlogPost"
-          SET
-            meta_title = ${cleanMetaTitle},
-            meta_description = ${cleanMetaDesc},
-            canonical_url = ${cleanCanonical},
-            og_image = ${cleanOgImg},
-            updated_at = NOW()
-          WHERE id = ${postId};
+          INSERT INTO "BlogPost" (
+            id, title, slug, excerpt, content, cover_image, category_id, tags, status,
+            author_id, author_name, published_at, created_at, updated_at,
+            meta_title, meta_description, canonical_url, og_image, view_count
+          )
+          VALUES (
+            ${postId},
+            ${cleanTitle},
+            ${cleanSlug},
+            ${cleanExcerpt},
+            ${cleanContent},
+            ${cleanCoverImage || null},
+            ${cleanCategoryId},
+            ${cleanTags},
+            ${cleanStatus},
+            ${cleanAuthorId},
+            ${cleanAuthorName},
+            ${publishedAt},
+            NOW(),
+            NOW(),
+            ${cleanMetaTitle},
+            ${cleanMetaDesc},
+            ${cleanCanonical},
+            ${cleanOgImg},
+            0
+          )
+          ON CONFLICT (id) DO UPDATE SET
+            title = EXCLUDED.title,
+            slug = EXCLUDED.slug,
+            excerpt = EXCLUDED.excerpt,
+            content = EXCLUDED.content,
+            cover_image = EXCLUDED.cover_image,
+            category_id = EXCLUDED.category_id,
+            tags = EXCLUDED.tags,
+            status = EXCLUDED.status,
+            meta_title = EXCLUDED.meta_title,
+            meta_description = EXCLUDED.meta_description,
+            canonical_url = EXCLUDED.canonical_url,
+            og_image = EXCLUDED.og_image,
+            published_at = COALESCE("BlogPost".published_at, EXCLUDED.published_at),
+            updated_at = NOW();
         `;
       } catch (dbErr) {
-        console.error("[Blog Posts API] Database post-create update error:", dbErr);
+        console.error("[Blog Posts API] Database post insert/update error:", dbErr);
       }
     }
 
@@ -257,10 +256,13 @@ export async function POST(request: Request) {
       ...(createdPost || body),
       id: postId,
       slug: cleanSlug,
+      title: cleanTitle,
+      status: cleanStatus,
       meta_title: cleanMetaTitle,
       meta_description: cleanMetaDesc,
       canonical_url: cleanCanonical,
       og_image: cleanOgImg,
+      published_at: publishedAt,
     };
 
     return NextResponse.json(merged);

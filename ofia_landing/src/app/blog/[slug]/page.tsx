@@ -1,6 +1,7 @@
 import BlogPostContent from '@/components/BlogPostContent';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { neon } from '@neondatabase/serverless';
 
 export const revalidate = 60;
 export const dynamicParams = true;
@@ -57,29 +58,59 @@ const SEED_FALLBACK_POSTS = [
 ];
 
 async function getBlogPosts() {
+  // 1. Direct Lakebase Neon database query
+  const dbUrl = process.env.USERS_DATABASE_URL || process.env.DATABASE_URL || '';
+  if (dbUrl) {
+    try {
+      const sql = neon(dbUrl);
+      const rows = await sql`
+        SELECT p.id, p.title, p.slug, p.excerpt, p.content, p.cover_image, p.category_id, p.tags, p.status,
+               p.author_id, p.author_name, p.published_at, p.created_at, p.updated_at,
+               p.meta_title, p.meta_description, p.canonical_url, p.og_image, p.view_count,
+               c.name as category
+        FROM "BlogPost" p
+        LEFT JOIN "BlogCategory" c ON p.category_id = c.id
+        WHERE p.status = 'PUBLISHED'
+        ORDER BY COALESCE(p.published_at, p.created_at) DESC;
+      `;
+      if (rows && rows.length > 0) {
+        return rows.map((r: any) => ({
+          ...r,
+          category: r.category || 'Commerce & AI',
+          view_count: Number(r.view_count || 0),
+        }));
+      }
+    } catch (dbErr) {
+      console.warn('[Landing Blog Slug] DB query note:', dbErr);
+    }
+  }
+
   try {
-    const rawApi = process.env.USERS_API_URL || process.env.NEXT_PUBLIC_USERS_API || '';
-    const USERS_API = rawApi.trim().replace(/^["']|["']$/g, '').replace(/\/+$/, '');
-    if (USERS_API && USERS_API.startsWith('http')) {
+    // 2. Try Admin API proxy
+    const adminRaw = process.env.NEXT_PUBLIC_ADMIN_API || '';
+    const ADMIN_API = adminRaw.trim().replace(/^["']|["']$/g, '').replace(/\/+$/, '');
+    if (ADMIN_API && ADMIN_API.startsWith('http')) {
       try {
-        const res = await fetch(`${USERS_API}/api/v1/cms/blog/posts`, {
+        const adminRes = await fetch(`${ADMIN_API}/api/v1/cms/blog/posts`, {
           next: { revalidate: 60 },
-          signal: AbortSignal.timeout(3000),
+          signal: AbortSignal.timeout(5000),
         });
-        if (res.ok) {
-          const posts = await res.json();
+        if (adminRes.ok) {
+          const posts = await adminRes.json();
           if (Array.isArray(posts) && posts.length > 0) {
-            return posts.filter((p: any) => p.status === 'PUBLISHED');
+            const published = posts.filter((p: any) => p.status === 'PUBLISHED');
+            if (published.length > 0) return published;
           }
         }
       } catch {}
     }
 
-    const adminRaw = process.env.NEXT_PUBLIC_ADMIN_API || '';
-    const ADMIN_API = adminRaw.trim().replace(/^["']|["']$/g, '').replace(/\/+$/, '');
-    if (ADMIN_API && ADMIN_API.startsWith('http')) {
+    // 3. Try USERS_API
+    const rawApi = process.env.USERS_API_URL || process.env.NEXT_PUBLIC_USERS_API || '';
+    const USERS_API = rawApi.trim().replace(/^["']|["']$/g, '').replace(/\/+$/, '');
+    if (USERS_API && USERS_API.startsWith('http')) {
       try {
-        const res = await fetch(`${ADMIN_API}/api/v1/cms/blog/posts`, {
+        const res = await fetch(`${USERS_API}/api/v1/cms/blog/posts`, {
           next: { revalidate: 60 },
           signal: AbortSignal.timeout(3000),
         });
@@ -98,15 +129,84 @@ async function getBlogPosts() {
 }
 
 async function getPostBySlug(slug: string) {
-  const posts = await getBlogPosts();
-  let post = posts.find((p: any) => p.slug === slug);
+  const clean = decodeURIComponent(slug || '').trim();
+  if (!clean) return null;
 
+  // 1. Direct Lakebase Neon database query by slug OR id (allows previewing drafts)
+  const dbUrl = process.env.USERS_DATABASE_URL || process.env.DATABASE_URL || '';
+  if (dbUrl) {
+    try {
+      const sql = neon(dbUrl);
+      const rows = await sql`
+        SELECT p.id, p.title, p.slug, p.excerpt, p.content, p.cover_image, p.category_id, p.tags, p.status,
+               p.author_id, p.author_name, p.published_at, p.created_at, p.updated_at,
+               p.meta_title, p.meta_description, p.canonical_url, p.og_image, p.view_count,
+               c.name as category
+        FROM "BlogPost" p
+        LEFT JOIN "BlogCategory" c ON p.category_id = c.id
+        WHERE p.slug = ${clean}
+           OR LOWER(p.slug) = LOWER(${clean})
+           OR p.id = ${clean}
+           OR LOWER(p.id) = LOWER(${clean})
+        LIMIT 1;
+      `;
+      if (rows && rows.length > 0) {
+        return {
+          ...rows[0],
+          category: rows[0].category || 'Commerce & AI',
+          view_count: Number(rows[0].view_count || 0),
+        };
+      }
+    } catch (dbErr) {
+      console.warn('[Landing Blog Slug] DB single post query note:', dbErr);
+    }
+  }
+
+  // 2. Search in preloaded posts (fallback)
+  const posts = await getBlogPosts();
+  let post = posts.find((p: any) => 
+    p.slug === clean || 
+    p.slug?.toLowerCase() === clean.toLowerCase() ||
+    p.id === clean ||
+    String(p.id)?.toLowerCase() === clean.toLowerCase()
+  );
+
+  // 3. Try Admin API proxy by query param or slug route
+  if (!post) {
+    try {
+      const adminRaw = process.env.NEXT_PUBLIC_ADMIN_API || '';
+      const ADMIN_API = adminRaw.trim().replace(/^["']|["']$/g, '').replace(/\/+$/, '');
+      if (ADMIN_API && ADMIN_API.startsWith('http')) {
+        const [resQuery, resPath] = await Promise.all([
+          fetch(`${ADMIN_API}/api/v1/cms/blog/posts?id=${encodeURIComponent(clean)}`, {
+            next: { revalidate: 60 },
+            signal: AbortSignal.timeout(4000),
+          }).catch(() => null),
+          fetch(`${ADMIN_API}/api/v1/cms/blog/posts/${encodeURIComponent(clean)}`, {
+            next: { revalidate: 60 },
+            signal: AbortSignal.timeout(4000),
+          }).catch(() => null),
+        ]);
+
+        if (resQuery && resQuery.ok) {
+          const data = await resQuery.json().catch(() => null);
+          if (data && (data.id || data.title)) post = data;
+        }
+        if (!post && resPath && resPath.ok) {
+          const data = await resPath.json().catch(() => null);
+          if (data && (data.id || data.title)) post = data;
+        }
+      }
+    } catch {}
+  }
+
+  // 4. Try USERS_API
   if (!post) {
     try {
       const rawApi = process.env.USERS_API_URL || process.env.NEXT_PUBLIC_USERS_API || '';
       const USERS_API = rawApi.trim().replace(/^["']|["']$/g, '').replace(/\/+$/, '');
       if (USERS_API && USERS_API.startsWith('http')) {
-        const res = await fetch(`${USERS_API}/api/v1/cms/blog/posts/${encodeURIComponent(slug)}`, {
+        const res = await fetch(`${USERS_API}/api/v1/cms/blog/posts/${encodeURIComponent(clean)}`, {
           next: { revalidate: 60 },
           signal: AbortSignal.timeout(3000),
         });
@@ -117,20 +217,13 @@ async function getPostBySlug(slug: string) {
     } catch {}
   }
 
+  // 5. Check SEED_FALLBACK_POSTS
   if (!post) {
-    try {
-      const adminRaw = process.env.NEXT_PUBLIC_ADMIN_API || '';
-      const ADMIN_API = adminRaw.trim().replace(/^["']|["']$/g, '').replace(/\/+$/, '');
-      if (ADMIN_API && ADMIN_API.startsWith('http')) {
-        const res = await fetch(`${ADMIN_API}/api/v1/cms/blog/posts/${encodeURIComponent(slug)}`, {
-          next: { revalidate: 60 },
-          signal: AbortSignal.timeout(3000),
-        });
-        if (res.ok) {
-          post = await res.json();
-        }
-      }
-    } catch {}
+    post = SEED_FALLBACK_POSTS.find((p: any) => 
+      p.slug === clean || 
+      p.slug?.toLowerCase() === clean.toLowerCase() ||
+      p.id === clean
+    );
   }
 
   return post || null;
@@ -340,6 +433,11 @@ export default async function BlogPostPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdBreadcrumb) }}
       />
+      {post.status === 'DRAFT' && (
+        <div className="bg-amber-400 text-slate-900 font-bold text-xs py-2 px-4 text-center sticky top-0 z-50 shadow-sm flex items-center justify-center gap-2">
+          <span>⚠️ EDITORIAL PREVIEW MODE — This article is currently saved as Draft in Ofia CMS and not listed on the public journal.</span>
+        </div>
+      )}
       <BlogPostContent post={formattedPost} />
     </>
   );

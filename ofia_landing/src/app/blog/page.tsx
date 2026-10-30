@@ -1,5 +1,6 @@
 import BlogListClient from '@/components/BlogListClient';
 import type { Metadata } from 'next';
+import { neon } from '@neondatabase/serverless';
 
 export const revalidate = 60;
 
@@ -76,11 +77,57 @@ const SEED_FALLBACK_POSTS = [
 ];
 
 async function getBlogPosts() {
+  // 1. Direct Lakebase Neon database query (highest priority & reliability)
+  const dbUrl = process.env.USERS_DATABASE_URL || process.env.DATABASE_URL || '';
+  if (dbUrl) {
+    try {
+      const sql = neon(dbUrl);
+      const rows = await sql`
+        SELECT p.id, p.title, p.slug, p.excerpt, p.content, p.cover_image, p.category_id, p.tags, p.status,
+               p.author_id, p.author_name, p.published_at, p.created_at, p.updated_at,
+               p.meta_title, p.meta_description, p.canonical_url, p.og_image, p.view_count,
+               c.name as category
+        FROM "BlogPost" p
+        LEFT JOIN "BlogCategory" c ON p.category_id = c.id
+        WHERE p.status = 'PUBLISHED'
+        ORDER BY COALESCE(p.published_at, p.created_at) DESC;
+      `;
+
+      if (rows && rows.length > 0) {
+        return rows.map((r: any) => ({
+          ...r,
+          category: r.category || 'Commerce & AI',
+          view_count: Number(r.view_count || 0),
+        }));
+      }
+    } catch (dbErr) {
+      console.warn('[Landing Blog] Neon DB query note:', dbErr);
+    }
+  }
+
   try {
+    // 2. Try Admin API proxy (direct link to local or production admin)
+    const adminRaw = process.env.NEXT_PUBLIC_ADMIN_API || '';
+    const ADMIN_API = adminRaw.trim().replace(/^["']|["']$/g, '').replace(/\/+$/, '');
+    if (ADMIN_API && ADMIN_API.startsWith('http')) {
+      try {
+        const adminRes = await fetch(`${ADMIN_API}/api/v1/cms/blog/posts`, {
+          next: { revalidate: 60 },
+          signal: AbortSignal.timeout(5000),
+        });
+        if (adminRes.ok) {
+          const posts = await adminRes.json();
+          if (Array.isArray(posts) && posts.length > 0) {
+            const published = posts.filter((p: any) => p.status === 'PUBLISHED');
+            if (published.length > 0) return published;
+          }
+        }
+      } catch {}
+    }
+
+    // 3. Try USERS_API (microservice fallback)
     const rawApi = process.env.USERS_API_URL || process.env.NEXT_PUBLIC_USERS_API || '';
     const USERS_API = rawApi.trim().replace(/^["']|["']$/g, '').replace(/\/+$/, '');
-    
-    // 1. Try USERS_API (microservice)
     if (USERS_API && USERS_API.startsWith('http')) {
       try {
         const [postsRes, catRes] = await Promise.all([
@@ -93,28 +140,12 @@ async function getBlogPosts() {
           if (Array.isArray(posts) && posts.length > 0) {
             const published = posts.filter((p: any) => p.status === 'PUBLISHED');
             if (catRes.ok) {
-              const categories = await catRes.json();
+              const categories = await catRes.json().catch(() => []);
               published.forEach((p: any) => {
-                const cat = categories.find((c: any) => c.id === p.category_id);
+                const cat = Array.isArray(categories) ? categories.find((c: any) => c.id === p.category_id) : null;
                 if (cat) p.category = cat.name;
               });
             }
-            if (published.length > 0) return published;
-          }
-        }
-      } catch {}
-    }
-
-    // 2. Try Admin API proxy
-    const adminRaw = process.env.NEXT_PUBLIC_ADMIN_API || '';
-    const ADMIN_API = adminRaw.trim().replace(/^["']|["']$/g, '').replace(/\/+$/, '');
-    if (ADMIN_API && ADMIN_API.startsWith('http')) {
-      try {
-        const adminRes = await fetch(`${ADMIN_API}/api/v1/cms/blog/posts`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(3000) });
-        if (adminRes.ok) {
-          const posts = await adminRes.json();
-          if (Array.isArray(posts) && posts.length > 0) {
-            const published = posts.filter((p: any) => p.status === 'PUBLISHED');
             if (published.length > 0) return published;
           }
         }

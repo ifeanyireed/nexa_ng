@@ -18,7 +18,18 @@ export function slugify(text: string): string {
  * Supports production (https://ofia.ng/blog/<slug>) and local development (http://localhost:3000/blog/<slug>).
  */
 export function getPublicBlogUrl(slugOrId: string): string {
-  const cleanSlug = (slugOrId || '').trim();
+  let cleanSlug = (slugOrId || '').trim().replace(/^\/+/, '');
+  if (cleanSlug.startsWith('blog/')) {
+    cleanSlug = cleanSlug.replace(/^blog\//, '');
+  }
+
+  // 1. Explicit environment variable takes top precedence
+  const envBase = process.env.NEXT_PUBLIC_LANDING_URL || process.env.NEXT_PUBLIC_SITE_URL;
+  if (envBase) {
+    return `${envBase.replace(/\/+$/, '')}/blog/${cleanSlug}`;
+  }
+
+  // 2. Client-side browser runtime check for local development
   if (typeof window !== 'undefined') {
     const host = window.location.host;
     const isLocal =
@@ -30,12 +41,8 @@ export function getPublicBlogUrl(slugOrId: string): string {
     }
   }
 
-  const base =
-    process.env.NEXT_PUBLIC_LANDING_URL ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    'https://ofia.ng';
-
-  return `${base.replace(/\/+$/, '')}/blog/${cleanSlug}`;
+  // 3. Platform default production URL
+  return `https://ofia.ng/blog/${cleanSlug}`;
 }
 
 /**

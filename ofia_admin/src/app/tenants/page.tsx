@@ -222,6 +222,7 @@ function TenantManagementContent() {
   const [isCheckingNewDomainDns, setIsCheckingNewDomainDns] = useState(false);
   const [newDomainDnsResult, setNewDomainDnsResult] = useState<DomainVerificationResult | null>(null);
   const [newDomainCopied, setNewDomainCopied] = useState<string | null>(null);
+  const [showNewDnsRecordsGuide, setShowNewDnsRecordsGuide] = useState(false);
 
   // Quota Override Form state
   const [extraLeads, setExtraLeads] = useState("2000");
@@ -236,6 +237,13 @@ function TenantManagementContent() {
   const [isCheckingEditDomainDns, setIsCheckingEditDomainDns] = useState(false);
   const [editDomainDnsResult, setEditDomainDnsResult] = useState<DomainVerificationResult | null>(null);
   const [editDomainCopied, setEditDomainCopied] = useState<string | null>(null);
+  const [showEditDnsRecordsGuide, setShowEditDnsRecordsGuide] = useState(false);
+
+  // Focused Tenant Domain DNS state
+  const [isCheckingFocusedDomainDns, setIsCheckingFocusedDomainDns] = useState(false);
+  const [focusedDomainDnsResult, setFocusedDomainDnsResult] = useState<DomainVerificationResult | null>(null);
+  const [focusedDomainCopied, setFocusedDomainCopied] = useState<string | null>(null);
+  const [showFocusedDnsRecordsGuide, setShowFocusedDnsRecordsGuide] = useState(false);
   const [editTenantOwnerName, setEditTenantOwnerName] = useState("");
   const [editTenantOwnerEmail, setEditTenantOwnerEmail] = useState("");
   const [editTenantPlanTier, setEditTenantPlanTier] = useState<TenantOrg["planTier"]>("GROWTH");
@@ -1536,11 +1544,19 @@ function TenantManagementContent() {
   };
 
   // Live DNS & Edge Verification for Custom Domains
-  const handleCheckDomainDns = async (domainToCheck: string, isEdit: boolean) => {
+  const handleCheckDomainDns = async (
+    domainToCheck: string,
+    target: "focused" | "edit" | "new" | boolean
+  ) => {
     const clean = (domainToCheck || "").trim().toLowerCase();
     if (!clean) return;
 
-    if (isEdit) {
+    const mode = typeof target === "boolean" ? (target ? "edit" : "new") : target;
+
+    if (mode === "focused") {
+      setIsCheckingFocusedDomainDns(true);
+      setFocusedDomainDnsResult(null);
+    } else if (mode === "edit") {
       setIsCheckingEditDomainDns(true);
       setEditDomainDnsResult(null);
     } else {
@@ -1553,7 +1569,9 @@ function TenantManagementContent() {
         cache: "no-store",
       });
       const data = await res.json();
-      if (isEdit) {
+      if (mode === "focused") {
+        setFocusedDomainDnsResult(data);
+      } else if (mode === "edit") {
         setEditDomainDnsResult(data);
       } else {
         setNewDomainDnsResult(data);
@@ -1570,13 +1588,17 @@ function TenantManagementContent() {
         detected: { cname: [], a: [] },
         message: "DNS check error: " + err.message,
       };
-      if (isEdit) {
+      if (mode === "focused") {
+        setFocusedDomainDnsResult(fallbackResult);
+      } else if (mode === "edit") {
         setEditDomainDnsResult(fallbackResult);
       } else {
         setNewDomainDnsResult(fallbackResult);
       }
     } finally {
-      if (isEdit) {
+      if (mode === "focused") {
+        setIsCheckingFocusedDomainDns(false);
+      } else if (mode === "edit") {
         setIsCheckingEditDomainDns(false);
       } else {
         setIsCheckingNewDomainDns(false);
@@ -2011,6 +2033,357 @@ function TenantManagementContent() {
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  {/* CUSTOM DOMAIN & DNS ROUTING INFRASTRUCTURE */}
+                  <div className="p-4 sm:p-5 rounded-2xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--nexa-border)] pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-[#1A56DB]/10 text-[#1A56DB] flex items-center justify-center shrink-0">
+                          <Globe className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h4 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">
+                              Custom Domain &amp; DNS Routing Infrastructure
+                            </h4>
+                            {isCustomDomain(focusedTenant.domain) ? (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20">
+                                Custom Edge Domain
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                                Platform Subdomain (*.ofia.ng)
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-[var(--nexa-text-muted)] mt-0.5">
+                            Public hostname routing, edge SSL certification, and authoritative DNS records for this tenant.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {isCustomDomain(focusedTenant.domain) && (
+                          <button
+                            type="button"
+                            onClick={() => handleCheckDomainDns(focusedTenant.domain, "focused")}
+                            disabled={isCheckingFocusedDomainDns}
+                            className="px-3 py-1.5 rounded-xl bg-[#1A56DB] text-white text-xs font-bold hover:bg-[#1545B0] transition-colors cursor-pointer flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                          >
+                            <RefreshCw className={`w-3.5 h-3.5 ${isCheckingFocusedDomainDns ? "animate-spin" : ""}`} />
+                            <span>{isCheckingFocusedDomainDns ? "Verifying DNS..." : "Verify Live DNS"}</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditTenant(focusedTenant)}
+                          className="px-3 py-1.5 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] hover:bg-[var(--nexa-border)] text-xs font-bold text-[var(--nexa-text-primary)] transition-colors cursor-pointer flex items-center gap-1.5"
+                        >
+                          <Edit3 className="w-3.5 h-3.5 text-[#1A56DB]" />
+                          <span>{isCustomDomain(focusedTenant.domain) ? "Change Custom Domain" : "Connect Custom Domain"}</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* CURRENT ROUTING PREVIEW */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                      <div className="p-3 rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-1">
+                        <span className="text-[10px] uppercase font-bold text-[var(--nexa-text-muted)] block">Primary Workspace Portal</span>
+                        <div className="flex items-center justify-between gap-2">
+                          <a
+                            href={`https://${focusedTenant.domain}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-mono text-[#1A56DB] font-bold truncate hover:underline flex items-center gap-1"
+                          >
+                            <span>https://{focusedTenant.domain}</span>
+                            <ExternalLink className="w-3 h-3 shrink-0" />
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`https://${focusedTenant.domain}`);
+                              setFocusedDomainCopied(`url_${focusedTenant.domain}`);
+                              setTimeout(() => setFocusedDomainCopied(null), 2000);
+                            }}
+                            className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded cursor-pointer text-[var(--nexa-text-muted)]"
+                            title="Copy URL"
+                          >
+                            {focusedDomainCopied === `url_${focusedTenant.domain}` ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-500" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-1">
+                        <span className="text-[10px] uppercase font-bold text-[var(--nexa-text-muted)] block">Digital Storefront Domain</span>
+                        <div className="flex items-center justify-between gap-2">
+                          <a
+                            href={`https://${focusedTenant.slug}.ofia.shop`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-mono text-emerald-600 dark:text-emerald-400 font-bold truncate hover:underline flex items-center gap-1"
+                          >
+                            <span>https://{focusedTenant.slug}.ofia.shop</span>
+                            <ExternalLink className="w-3 h-3 shrink-0" />
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`https://${focusedTenant.slug}.ofia.shop`);
+                              setFocusedDomainCopied(`shop_${focusedTenant.slug}`);
+                              setTimeout(() => setFocusedDomainCopied(null), 2000);
+                            }}
+                            className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded cursor-pointer text-[var(--nexa-text-muted)]"
+                            title="Copy URL"
+                          >
+                            {focusedDomainCopied === `shop_${focusedTenant.slug}` ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-500" />
+                            ) : (
+                              <Copy className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* IF CUSTOM DOMAIN IS CONFIGURED: SHOW EXACT DNS RECORD TABLE */}
+                    {isCustomDomain(focusedTenant.domain) && (() => {
+                      const expectedDns = getExpectedDnsRecord(focusedTenant.domain);
+                      return (
+                        <div className="space-y-3 pt-1">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="font-bold text-[var(--nexa-text-primary)]">
+                              DNS Records to configure at your Domain Registrar (Cloudflare, Namecheap, GoDaddy):
+                            </span>
+                            <span className="text-[11px] text-[var(--nexa-text-muted)] font-mono">
+                              Domain: {focusedTenant.domain}
+                            </span>
+                          </div>
+
+                          <div className="overflow-x-auto rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]">
+                            <table className="w-full text-left text-xs">
+                              <thead className="bg-[var(--nexa-bg-base)] border-b border-[var(--nexa-border)] text-[10px] uppercase font-extrabold text-[var(--nexa-text-muted)]">
+                                <tr>
+                                  <th className="py-2 px-3">Type</th>
+                                  <th className="py-2 px-3">Host / Name</th>
+                                  <th className="py-2 px-3">Target / Value</th>
+                                  <th className="py-2 px-3">TTL</th>
+                                  <th className="py-2 px-3 text-right">Action</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-[var(--nexa-border)] font-mono">
+                                <tr>
+                                  <td className="py-2.5 px-3">
+                                    <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-[#1A56DB] font-bold text-[11px]">
+                                      {expectedDns.type}
+                                    </span>
+                                  </td>
+                                  <td className="py-2.5 px-3 font-bold text-[var(--nexa-text-primary)]">
+                                    {expectedDns.host}
+                                  </td>
+                                  <td className="py-2.5 px-3 font-bold text-emerald-600 dark:text-emerald-400">
+                                    {expectedDns.value}
+                                  </td>
+                                  <td className="py-2.5 px-3 text-[var(--nexa-text-muted)]">
+                                    Automatic / 300
+                                  </td>
+                                  <td className="py-2.5 px-3 text-right">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(expectedDns.value);
+                                        setFocusedDomainCopied("val_" + expectedDns.value);
+                                        setTimeout(() => setFocusedDomainCopied(null), 2000);
+                                      }}
+                                      className="px-2 py-1 rounded bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:bg-[#1A56DB] hover:text-white text-[10px] font-bold cursor-pointer transition-colors"
+                                    >
+                                      {focusedDomainCopied === "val_" + expectedDns.value ? "Copied!" : "Copy Value"}
+                                    </button>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    {/* IF ON DEFAULT PLATFORM SUBDOMAIN: SHOW HELPFUL BANNER & EXPANDABLE GUIDE */}
+                    {!isCustomDomain(focusedTenant.domain) && (
+                      <div className="space-y-3 pt-1">
+                        <div className="p-3.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-900/40 text-xs space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-[var(--nexa-text-primary)]">
+                              Platform Wildcard Active: No Manual DNS Setup Needed
+                            </span>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-500/10 text-blue-600 font-bold">
+                              Managed by Ofia
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-[var(--nexa-text-secondary)]">
+                            This workspace uses the default Ofia routing cluster (<code className="font-mono text-[#1A56DB]">{focusedTenant.domain}</code>). Staff and users can log in immediately. If the customer owns their own domain (e.g. <code className="font-mono text-[#1A56DB]">portal.clientname.com</code> or <code className="font-mono text-[#1A56DB]">clientname.com</code>), configure the DNS records below at their registrar.
+                          </p>
+
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => setShowFocusedDnsRecordsGuide(!showFocusedDnsRecordsGuide)}
+                              className="text-xs font-bold text-[#1A56DB] hover:underline flex items-center gap-1 cursor-pointer pt-1"
+                            >
+                              <span>{showFocusedDnsRecordsGuide ? "Hide Custom Domain DNS Records Guide" : "Show Required DNS Records to Connect a Custom Domain"}</span>
+                              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showFocusedDnsRecordsGuide ? "rotate-180" : ""}`} />
+                            </button>
+                          </div>
+                        </div>
+
+                        {showFocusedDnsRecordsGuide && (
+                          <div className="p-4 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] space-y-3 animate-in fade-in">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="font-extrabold text-[var(--nexa-text-primary)]">
+                                Authoritative DNS Records for Custom Domains:
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditTenant(focusedTenant)}
+                                className="text-[11px] font-bold text-[#1A56DB] hover:underline flex items-center gap-1 cursor-pointer"
+                              >
+                                <span>Attach Domain in Tenant Settings</span>
+                                <ArrowRight className="w-3 h-3" />
+                              </button>
+                            </div>
+
+                            <div className="overflow-x-auto rounded-xl border border-[var(--nexa-border)]">
+                              <table className="w-full text-left text-xs">
+                                <thead className="bg-[var(--nexa-bg-base)] border-b border-[var(--nexa-border)] text-[10px] uppercase font-extrabold text-[var(--nexa-text-muted)]">
+                                  <tr>
+                                    <th className="py-2 px-3">Setup Scenario</th>
+                                    <th className="py-2 px-3">Type</th>
+                                    <th className="py-2 px-3">Host / Name</th>
+                                    <th className="py-2 px-3">Target / Value</th>
+                                    <th className="py-2 px-3">TTL</th>
+                                    <th className="py-2 px-3 text-right">Copy</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-[var(--nexa-border)] font-mono text-[11px]">
+                                  <tr>
+                                    <td className="py-2.5 px-3 font-sans font-semibold text-[var(--nexa-text-primary)]">
+                                      Custom Subdomain (Recommended)<br/>
+                                      <span className="text-[10px] text-[var(--nexa-text-muted)] font-normal">e.g. portal.yourbrand.com</span>
+                                    </td>
+                                    <td className="py-2.5 px-3">
+                                      <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-[#1A56DB] font-bold">CNAME</span>
+                                    </td>
+                                    <td className="py-2.5 px-3 font-bold text-[var(--nexa-text-primary)]">
+                                      portal <span className="text-[10px] text-[var(--nexa-text-muted)] font-normal">(or your prefix)</span>
+                                    </td>
+                                    <td className="py-2.5 px-3 font-bold text-emerald-600 dark:text-emerald-400">
+                                      cname.vercel-dns.com
+                                    </td>
+                                    <td className="py-2.5 px-3 text-[var(--nexa-text-muted)] font-sans text-[10px]">
+                                      Automatic / 300
+                                    </td>
+                                    <td className="py-2.5 px-3 text-right font-sans">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          navigator.clipboard.writeText("cname.vercel-dns.com");
+                                          setFocusedDomainCopied("cname_cname.vercel-dns.com");
+                                          setTimeout(() => setFocusedDomainCopied(null), 2000);
+                                        }}
+                                        className="px-2 py-1 rounded bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:bg-[#1A56DB] hover:text-white text-[10px] font-bold cursor-pointer transition-colors"
+                                      >
+                                        {focusedDomainCopied === "cname_cname.vercel-dns.com" ? "Copied!" : "Copy Target"}
+                                      </button>
+                                    </td>
+                                  </tr>
+                                  <tr>
+                                    <td className="py-2.5 px-3 font-sans font-semibold text-[var(--nexa-text-primary)]">
+                                      Apex / Root Domain<br/>
+                                      <span className="text-[10px] text-[var(--nexa-text-muted)] font-normal">e.g. yourbrand.com</span>
+                                    </td>
+                                    <td className="py-2.5 px-3">
+                                      <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-bold">A</span>
+                                    </td>
+                                    <td className="py-2.5 px-3 font-bold text-[var(--nexa-text-primary)]">
+                                      @ <span className="text-[10px] text-[var(--nexa-text-muted)] font-normal">(or root / blank)</span>
+                                    </td>
+                                    <td className="py-2.5 px-3 font-bold text-emerald-600 dark:text-emerald-400">
+                                      76.76.21.21
+                                    </td>
+                                    <td className="py-2.5 px-3 text-[var(--nexa-text-muted)] font-sans text-[10px]">
+                                      Automatic / 300
+                                    </td>
+                                    <td className="py-2.5 px-3 text-right font-sans">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          navigator.clipboard.writeText("76.76.21.21");
+                                          setFocusedDomainCopied("a_76.76.21.21");
+                                          setTimeout(() => setFocusedDomainCopied(null), 2000);
+                                        }}
+                                        className="px-2 py-1 rounded bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:bg-[#1A56DB] hover:text-white text-[10px] font-bold cursor-pointer transition-colors"
+                                      >
+                                        {focusedDomainCopied === "a_76.76.21.21" ? "Copied!" : "Copy Target"}
+                                      </button>
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* LIVE VERIFICATION RESULT BANNER (FOCUSED VIEW) */}
+                    {focusedDomainDnsResult && (
+                      <div
+                        className={`p-3 rounded-xl border text-xs flex items-start gap-2.5 ${
+                          focusedDomainDnsResult.status === "PROPAGATED"
+                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-200"
+                            : focusedDomainDnsResult.status === "MISCONFIGURED"
+                            ? "bg-amber-500/10 border-amber-500/30 text-amber-800 dark:text-amber-200"
+                            : focusedDomainDnsResult.status === "INVALID_DOMAIN"
+                            ? "bg-rose-500/10 border-rose-500/30 text-rose-800 dark:text-rose-200"
+                            : "bg-blue-500/10 border-blue-500/30 text-blue-800 dark:text-blue-200"
+                        }`}
+                      >
+                        {focusedDomainDnsResult.status === "PROPAGATED" ? (
+                          <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500 mt-0.5" />
+                        ) : focusedDomainDnsResult.status === "MISCONFIGURED" ? (
+                          <AlertTriangle className="w-4 h-4 shrink-0 text-amber-500 mt-0.5" />
+                        ) : (
+                          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                        )}
+                        <div className="space-y-1 flex-1">
+                          <div className="flex items-center justify-between flex-wrap gap-2">
+                            <span className="font-extrabold text-[12px]">
+                              {focusedDomainDnsResult.status === "PROPAGATED"
+                                ? "DNS Propagated & Edge SSL Active"
+                                : focusedDomainDnsResult.status === "MISCONFIGURED"
+                                ? "DNS Record Misconfigured"
+                                : focusedDomainDnsResult.status === "INVALID_DOMAIN"
+                                ? "Invalid Domain Format"
+                                : "DNS Propagation Pending"}
+                            </span>
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-black/10 dark:bg-white/10">
+                              Checked via Google &amp; Cloudflare DNS
+                            </span>
+                          </div>
+                          <p className="text-[11px] opacity-90">{focusedDomainDnsResult.message}</p>
+                          <div className="font-mono text-[10px] pt-1 flex items-center gap-3 text-[var(--nexa-text-muted)] flex-wrap">
+                            <span>Detected CNAME: <strong>{focusedDomainDnsResult.detected.cname.join(", ") || "None"}</strong></span>
+                            <span>Detected A: <strong>{focusedDomainDnsResult.detected.a.join(", ") || "None"}</strong></span>
+                            <span>Edge Verified: <strong>{focusedDomainDnsResult.vercelVerified ? "Yes" : "Pending"}</strong></span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* ERP MODULES TOGGLE SWITCHBOARD */}
@@ -3233,6 +3606,55 @@ function TenantManagementContent() {
                 </div>
               );
             })()}
+
+            {/* Default Platform Subdomain Guide for New Tenant */}
+            {!isCustomDomain(newOrgDomain) && (
+              <div className="mt-2.5 p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/70 dark:border-blue-900/40 space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-[#1A56DB]" />
+                    <span className="font-bold text-[var(--nexa-text-primary)]">Platform Wildcard Routing Active</span>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-bold border border-emerald-500/20">
+                    No DNS Setup Needed
+                  </span>
+                </div>
+                <p className="text-[11px] text-[var(--nexa-text-secondary)]">
+                  Provisioning will automatically route via Ofia wildcard at <code className="font-mono text-[#1A56DB]">{newOrgDomain || `${newOrgSlug || "workspace"}.ofia.ng`}</code>.
+                </p>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewDnsRecordsGuide(!showNewDnsRecordsGuide)}
+                    className="text-[11px] font-bold text-[#1A56DB] hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>{showNewDnsRecordsGuide ? "Hide DNS records preview" : "Want to attach a custom domain? Preview required DNS records"}</span>
+                    <ChevronDown className={`w-3 h-3 transition-transform ${showNewDnsRecordsGuide ? "rotate-180" : ""}`} />
+                  </button>
+                  {showNewDnsRecordsGuide && (
+                    <div className="mt-2 p-2.5 rounded-lg bg-white/80 dark:bg-black/40 border border-blue-100 dark:border-blue-900/30 space-y-2">
+                      <p className="text-[10px] text-[var(--nexa-text-secondary)]">
+                        To point a custom domain, type it in the Domain field above and configure these records at your DNS host:
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px] font-mono">
+                        <div className="p-2 rounded bg-blue-500/5 border border-blue-500/10">
+                          <span className="font-sans font-bold text-[#1A56DB] block uppercase text-[9px]">Subdomain (Recommended)</span>
+                          <div>Type: <strong>CNAME</strong></div>
+                          <div>Host: <strong>portal</strong> (or chosen prefix)</div>
+                          <div>Target: <strong>cname.vercel-dns.com</strong></div>
+                        </div>
+                        <div className="p-2 rounded bg-blue-500/5 border border-blue-500/10">
+                          <span className="font-sans font-bold text-[#1A56DB] block uppercase text-[9px]">Apex / Root Domain</span>
+                          <div>Type: <strong>A</strong></div>
+                          <div>Host: <strong>@</strong> (or root)</div>
+                          <div>Target: <strong>76.76.21.21</strong></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -3739,6 +4161,55 @@ function TenantManagementContent() {
               </div>
             );
           })()}
+
+          {/* Default Platform Subdomain Guide */}
+          {!isCustomDomain(editTenantDomain) && (
+            <div className="p-3 rounded-xl bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200/70 dark:border-blue-900/40 space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-[#1A56DB]" />
+                  <span className="font-bold text-[var(--nexa-text-primary)]">Platform Subdomain (*.ofia.ng)</span>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-bold border border-emerald-500/20">
+                  No DNS Records Required
+                </span>
+              </div>
+              <p className="text-[11px] text-[var(--nexa-text-secondary)]">
+                This tenant routes automatically via Ofia wildcard edge mesh at <code className="font-mono text-[#1A56DB]">{editTenantDomain || `${editTenantSlug}.ofia.ng`}</code>.
+              </p>
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setShowEditDnsRecordsGuide(!showEditDnsRecordsGuide)}
+                  className="text-[11px] font-bold text-[#1A56DB] hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <span>{showEditDnsRecordsGuide ? "Hide DNS records preview" : "Want to use your own domain (e.g. portal.yourbrand.com)? Preview required DNS records"}</span>
+                  <ChevronDown className={`w-3 h-3 transition-transform ${showEditDnsRecordsGuide ? "rotate-180" : ""}`} />
+                </button>
+                {showEditDnsRecordsGuide && (
+                  <div className="mt-2 p-2.5 rounded-lg bg-white/80 dark:bg-black/40 border border-blue-100 dark:border-blue-900/30 space-y-2">
+                    <p className="text-[10px] text-[var(--nexa-text-secondary)]">
+                      To connect your own domain, replace <code className="font-mono text-[#1A56DB]">{editTenantDomain || "domain"}</code> above with your domain and add these records at your DNS host:
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px] font-mono">
+                      <div className="p-2 rounded bg-blue-500/5 border border-blue-500/10">
+                        <span className="font-sans font-bold text-[#1A56DB] block uppercase text-[9px]">Subdomain (Recommended)</span>
+                        <div>Type: <strong>CNAME</strong></div>
+                        <div>Host: <strong>portal</strong> (or your prefix)</div>
+                        <div>Target: <strong>cname.vercel-dns.com</strong></div>
+                      </div>
+                      <div className="p-2 rounded bg-blue-500/5 border border-blue-500/10">
+                        <span className="font-sans font-bold text-[#1A56DB] block uppercase text-[9px]">Apex / Root Domain</span>
+                        <div>Type: <strong>A</strong></div>
+                        <div>Host: <strong>@</strong> (or root)</div>
+                        <div>Target: <strong>76.76.21.21</strong></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">

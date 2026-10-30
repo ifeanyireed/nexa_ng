@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 import { RichTextEditor } from '@/components/RichTextEditor';
 import { TagsInput } from '@/components/TagsInput';
-import { ArrowLeft, Save, Send, Copy, Check, ExternalLink, Eye, Globe, Search, Sparkles } from 'lucide-react';
+import { ArrowLeft, Save, Send, Copy, Check, ExternalLink, Eye, Globe, Search, Sparkles, Upload, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -38,10 +38,14 @@ function CreateBlogPostContent() {
   const [ogImage, setOgImage] = useState('');
   const [viewCount, setViewCount] = useState<number | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
   const [savedDraftSlug, setSavedDraftSlug] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const altFileInputRef = useRef<HTMLInputElement>(null);
 
   const isEditing = Boolean(currentEditId || urlEditId);
 
@@ -52,7 +56,13 @@ function CreateBlogPostContent() {
   }, [urlEditId]);
 
   useEffect(() => {
-    fetch('/api/v1/cms/blog/categories')
+    const token = typeof window !== 'undefined'
+      ? localStorage.getItem('nexa_auth_token') || localStorage.getItem('resultspro_admin_token')
+      : null;
+
+    fetch('/api/v1/cms/blog/categories', {
+      headers: token ? { Authorization: `Bearer ${token}` } : {}
+    })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setCategories(data);
@@ -61,7 +71,9 @@ function CreateBlogPostContent() {
 
     const activeId = urlEditId || currentEditId;
     if (activeId) {
-      fetch(`/api/v1/cms/blog/posts?id=${encodeURIComponent(activeId)}`)
+      fetch(`/api/v1/cms/blog/posts?id=${encodeURIComponent(activeId)}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      })
         .then(res => res.json())
         .then(data => {
           let post: any = null;
@@ -92,34 +104,83 @@ function CreateBlogPostContent() {
     }
   }, [urlEditId, currentEditId]);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleUploadFile = async (file: File) => {
     if (!file) return;
 
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image size exceeds 10MB limit. Please choose a smaller file.');
+      return;
+    }
+
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('target_path', 'blog/covers');
+    const loadingToast = toast.loading('Uploading cover image to Cloudinary...');
 
     try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('target_path', 'blog/covers');
+
+      const token = typeof window !== 'undefined'
+        ? localStorage.getItem('nexa_auth_token') || localStorage.getItem('resultspro_admin_token')
+        : null;
+
       const res = await fetch('/api/upload', {
         method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData
       });
-      const data = await res.json();
-      if (res.ok && data.url) {
-        setCoverImage(data.url);
-        toast.success('Cover image uploaded!');
-      } else {
-        toast.error(data.error || 'Upload failed');
+
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {
+        const errText = await res.text().catch(() => '');
+        data = { error: errText || `Upload failed with HTTP ${res.status}` };
       }
-    } catch (err) {
-      toast.error('Something went wrong');
+
+      if (res.ok && data?.url) {
+        setCoverImage(data.url);
+        if (!ogImage) {
+          setOgImage(data.url);
+        }
+        toast.success('Cover image uploaded to Cloudinary!', { id: loadingToast });
+      } else {
+        toast.error(data?.error || 'Cloudinary upload failed', { id: loadingToast });
+      }
+    } catch (err: any) {
+      toast.error('Upload error: ' + (err?.message || 'Network error'), { id: loadingToast });
     } finally {
       setIsUploading(false);
       try {
-        if (e.target) e.target.value = '';
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        if (altFileInputRef.current) altFileInputRef.current.value = '';
       } catch {}
+    }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleUploadFile(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleUploadFile(e.dataTransfer.files[0]);
     }
   };
 
@@ -187,9 +248,16 @@ function CreateBlogPostContent() {
         payload.id = targetId;
       }
 
+      const token = typeof window !== 'undefined'
+        ? localStorage.getItem('nexa_auth_token') || localStorage.getItem('resultspro_admin_token')
+        : null;
+
       const res = await fetch('/api/v1/cms/blog/posts', {
         method: targetId ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
         body: JSON.stringify(payload)
       });
       
@@ -522,32 +590,69 @@ function CreateBlogPostContent() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-2">Cover Image</label>
-                <div className="relative w-full h-40 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 flex flex-col items-center justify-center text-slate-500 hover:bg-slate-100 hover:border-blue-400 transition-colors cursor-pointer overflow-hidden">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-2 flex items-center justify-between">
+                  <span>Cover Image</span>
+                  <span className="text-[10px] text-slate-400 font-normal">PNG, JPG, WebP, SVG up to 10MB</span>
+                </label>
+                <div 
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  className={`group relative w-full h-44 rounded-xl border-2 border-dashed transition-all flex flex-col items-center justify-center text-slate-500 overflow-hidden ${
+                    isDragging 
+                      ? 'border-blue-500 bg-blue-50/70 ring-4 ring-blue-500/10' 
+                      : 'border-slate-300 bg-slate-50 hover:bg-slate-100/80 hover:border-blue-400'
+                  }`}
+                >
                   {coverImage ? (
-                    <img src={coverImage} alt="Cover" className="w-full h-full object-cover" />
+                    <>
+                      <img src={coverImage} alt="Cover preview" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white z-10 pointer-events-none gap-1">
+                        <Upload className="w-6 h-6 mb-0.5 text-white drop-shadow" />
+                        <span className="text-xs font-semibold drop-shadow">Click or drag image to replace</span>
+                        <span className="text-[10px] text-white/80 drop-shadow">Uploads directly to Cloudinary CDN</span>
+                      </div>
+                    </>
                   ) : (
-                    <span className="text-sm font-medium">{isUploading ? 'Uploading to Cloudinary...' : 'Click to upload image file'}</span>
+                    <div className="flex flex-col items-center justify-center p-4 text-center pointer-events-none">
+                      <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 mb-2">
+                        <Upload className="w-5 h-5" />
+                      </div>
+                      <span className="text-sm font-semibold text-slate-700">Click or drag file to upload cover image</span>
+                      <span className="text-xs text-slate-400 mt-0.5">High quality 16:9 banner recommended (1200x675)</span>
+                    </div>
                   )}
+
+                  {isUploading && (
+                    <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-xs flex flex-col items-center justify-center text-white z-20 gap-2">
+                      <div className="w-7 h-7 border-3 border-white/20 border-t-white rounded-full animate-spin" />
+                      <span className="text-xs font-semibold">Uploading to Cloudinary CDN...</span>
+                    </div>
+                  )}
+
                   <input 
+                    ref={fileInputRef}
                     type="file" 
                     accept="image/*"
                     onChange={handleImageUpload}
                     disabled={isUploading}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" 
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" 
                   />
                 </div>
-                <div className="mt-2 flex gap-2">
+
+                <div className="mt-2.5 flex items-center gap-2">
                   <input
                     type="url"
                     placeholder="https://... or paste direct CDN image URL"
                     value={coverImage}
                     onChange={(e) => setCoverImage(e.target.value)}
-                    className="flex-1 px-3 py-1.5 text-xs font-mono rounded-lg border border-slate-200 outline-none focus:border-blue-500 text-slate-800"
+                    className="flex-1 px-3 py-1.5 text-xs font-mono rounded-lg border border-slate-200 outline-none focus:border-blue-500 text-slate-800 bg-white"
                   />
-                  <label className="px-3 py-1.5 text-xs font-bold rounded-lg bg-[#1A56DB] hover:bg-blue-700 text-white cursor-pointer shrink-0 flex items-center gap-1 shadow-xs">
-                    <span>{isUploading ? 'Uploading...' : 'Upload Image'}</span>
+                  <label className="px-3.5 py-1.5 text-xs font-bold rounded-lg bg-[#1A56DB] hover:bg-blue-700 text-white cursor-pointer shrink-0 flex items-center gap-1.5 shadow-xs transition-colors">
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>{isUploading ? 'Uploading...' : 'Choose File'}</span>
                     <input
+                      ref={altFileInputRef}
                       type="file"
                       accept="image/*"
                       onChange={handleImageUpload}
@@ -555,12 +660,16 @@ function CreateBlogPostContent() {
                       className="hidden"
                     />
                   </label>
+                  {coverImage && (
+                    <button 
+                      type="button" 
+                      onClick={() => setCoverImage('')} 
+                      className="px-2.5 py-1.5 text-xs font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors border border-rose-200"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </div>
-                {coverImage && (
-                  <button type="button" onClick={() => setCoverImage('')} className="text-xs text-rose-500 font-medium mt-2 hover:underline">
-                    Remove Image
-                  </button>
-                )}
               </div>
             </div>
 

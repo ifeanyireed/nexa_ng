@@ -65,6 +65,10 @@ function LoginContent() {
       // Store in memory / session storage for UI convenience
       if (typeof window !== "undefined") {
         sessionStorage.setItem("ofia_superadmin_user", JSON.stringify(data.user));
+        if (data.token) {
+          localStorage.setItem("nexa_auth_token", data.token);
+          localStorage.setItem("resultspro_admin_token", data.token);
+        }
         let target = decodeURIComponent(returnUrl);
         if (data.user?.role === "EDITOR_SUPPORT" && (target === "/" || !target)) {
           target = "/support";

@@ -181,20 +181,31 @@ const MenuBar = ({
       formData.append('target_path', 'blog/content');
 
       try {
+        const token = typeof window !== 'undefined'
+          ? localStorage.getItem('nexa_auth_token') || localStorage.getItem('resultspro_admin_token')
+          : null;
+
         const res = await fetch('/api/upload', {
           method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
           body: formData
         });
-        const data = await res.json();
+        let data: any = null;
+        try {
+          data = await res.json();
+        } catch {
+          const errText = await res.text().catch(() => '');
+          data = { error: errText || `Upload failed with HTTP ${res.status}` };
+        }
         
-        if (res.ok && data.url) {
+        if (res.ok && data?.url) {
           editor.chain().focus().setImage({ src: data.url }).run();
           toast.success('Image added', { id: loadingToast });
         } else {
-          toast.error(data.error || 'Upload failed', { id: loadingToast });
+          toast.error(data?.error || 'Upload failed', { id: loadingToast });
         }
-      } catch {
-        toast.error('Something went wrong', { id: loadingToast });
+      } catch (err: any) {
+        toast.error('Something went wrong: ' + (err?.message || 'Network error'), { id: loadingToast });
       }
     };
     
@@ -863,21 +874,32 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
       formData.append('target_path', 'blog/content');
 
       try {
+        const token = typeof window !== 'undefined'
+          ? localStorage.getItem('nexa_auth_token') || localStorage.getItem('resultspro_admin_token')
+          : null;
+
         const res = await fetch('/api/upload', {
           method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
           body: formData
         });
-        const data = await res.json();
+        let data: any = null;
+        try {
+          data = await res.json();
+        } catch {
+          const errText = await res.text().catch(() => '');
+          data = { error: errText || `Upload failed with HTTP ${res.status}` };
+        }
         
-        if (res.ok && data.url) {
+        if (res.ok && data?.url) {
           const imgMarkdown = `\n![${file.name.replace(/\.[^/.]+$/, "")}](${data.url})\n`;
           insertMarkdownSnippet(imgMarkdown, '', '');
           toast.success('Image inserted into Markdown', { id: loadingToast });
         } else {
-          toast.error(data.error || 'Upload failed', { id: loadingToast });
+          toast.error(data?.error || 'Upload failed', { id: loadingToast });
         }
-      } catch {
-        toast.error('Something went wrong with upload', { id: loadingToast });
+      } catch (err: any) {
+        toast.error('Something went wrong: ' + (err?.message || 'Network error'), { id: loadingToast });
       }
     };
     

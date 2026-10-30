@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 import { NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 import { MASTER_CONNECTION_STRING } from "@/lib/tenant-db-resolver";
@@ -58,7 +61,71 @@ async function getCloudinaryCredentialsForTenant(tenantId?: string | null): Prom
   }
 
   const envUrl = process.env.CLOUDINARY_URL || process.env.PLATFORM_CLOUDINARY_URL || "";
-  return parseCloudinaryUrl(envUrl);
+  const envCreds = parseCloudinaryUrl(envUrl);
+  if (envCreds) return envCreds;
+
+  // Fallback to active tenant storage config registered in the master platform database
+  if (MASTER_CONNECTION_STRING) {
+    try {
+      const sql = neon(MASTER_CONNECTION_STRING);
+      const rows = await sql`
+        SELECT cloudinary_url FROM platform_tenants
+        WHERE cloudinary_url IS NOT NULL AND cloudinary_url != ''
+        LIMIT 1;
+      `;
+      if (rows && rows.length > 0 && rows[0].cloudinary_url) {
+        const creds = parseCloudinaryUrl(rows[0].cloudinary_url);
+        if (creds) return creds;
+      }
+    } catch (err) {
+      console.warn("[Admin Upload Route] Fallback to platform tenant cloudinary failed:", err);
+    }
+  }
+
+  return null;
+}
+
+function uploadBufferToCloudinary(
+  buffer: Buffer,
+  folder: string,
+  creds: CloudinaryCredentials
+): Promise<{ secure_url: string; public_id: string }> {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        resource_type: "auto",
+        cloud_name: creds.cloudName,
+        api_key: creds.apiKey,
+        api_secret: creds.apiSecret,
+        secure: true,
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        if (!result) return reject(new Error("Empty response from Cloudinary"));
+        resolve({
+          secure_url: result.secure_url,
+          public_id: result.public_id,
+        });
+      }
+    );
+    uploadStream.end(buffer);
+  });
+}
+
+function uploadBase64ToCloudinary(
+  imagePayload: string,
+  folder: string,
+  creds: CloudinaryCredentials
+): Promise<{ secure_url: string; public_id: string }> {
+  return cloudinary.uploader.upload(imagePayload, {
+    folder,
+    resource_type: "auto",
+    cloud_name: creds.cloudName,
+    api_key: creds.apiKey,
+    api_secret: creds.apiSecret,
+    secure: true,
+  });
 }
 
 export async function POST(request: Request) {
@@ -66,7 +133,8 @@ export async function POST(request: Request) {
     const url = new URL(request.url);
     const contentType = request.headers.get("content-type") || "";
 
-    let imagePayload: string | null = null;
+    let fileBuffer: Buffer | null = null;
+    let base64Payload: string | null = null;
     let tenantId: string | null =
       url.searchParams.get("tenant") ||
       request.headers.get("x-tenant-slug") ||
@@ -85,12 +153,10 @@ export async function POST(request: Request) {
       }
 
       const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const mime = file.type || "image/jpeg";
-      imagePayload = `data:${mime};base64,${buffer.toString("base64")}`;
+      fileBuffer = Buffer.from(bytes);
     } else {
       const body = await request.json();
-      imagePayload = body.image;
+      base64Payload = body.image;
       if (body.tenantId || body.tenantSlug || body.tenant) {
         tenantId = body.tenantId || body.tenantSlug || body.tenant;
       }
@@ -99,8 +165,8 @@ export async function POST(request: Request) {
       }
     }
 
-    if (!imagePayload) {
-      return NextResponse.json({ error: "No image payload provided" }, { status: 400 });
+    if (!fileBuffer && !base64Payload) {
+      return NextResponse.json({ error: "No image payload or file provided" }, { status: 400 });
     }
 
     const cleanTenant = (tenantId || "").toLowerCase().trim();
@@ -113,12 +179,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const folder = targetFolder
-      ? `ofia_ng_assets/${targetFolder}`
-      : cleanTenant
-      ? `ofia_ng_assets/${cleanTenant}`
-      : "ofia_ng_assets/logos";
-
     cloudinary.config({
       cloud_name: creds.cloudName,
       api_key: creds.apiKey,
@@ -126,19 +186,27 @@ export async function POST(request: Request) {
       secure: true,
     });
 
-    const uploadResponse = await cloudinary.uploader.upload(imagePayload, {
-      folder,
-      resource_type: "image",
-      cloud_name: creds.cloudName,
-      api_key: creds.apiKey,
-      api_secret: creds.apiSecret,
-      secure: true,
-    });
+    const cleanTarget = (targetFolder || "").replace(/^\/+/, "").replace(/\/+$/, "");
+    const folder = cleanTarget
+      ? cleanTarget.startsWith("ofia_ng_assets/")
+        ? cleanTarget
+        : `ofia_ng_assets/${cleanTarget}`
+      : cleanTenant
+      ? `ofia_ng_assets/${cleanTenant}`
+      : "ofia_ng_assets/blog/covers";
+
+    let uploadResult: { secure_url: string; public_id: string };
+
+    if (fileBuffer) {
+      uploadResult = await uploadBufferToCloudinary(fileBuffer, folder, creds);
+    } else {
+      uploadResult = await uploadBase64ToCloudinary(base64Payload!, folder, creds);
+    }
 
     return NextResponse.json({
       success: true,
-      url: uploadResponse.secure_url,
-      public_id: uploadResponse.public_id,
+      url: uploadResult.secure_url,
+      public_id: uploadResult.public_id,
       cloudName: creds.cloudName,
       tenant: cleanTenant,
     });

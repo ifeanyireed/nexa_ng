@@ -5,7 +5,9 @@ export const dynamic = "force-dynamic";
 const rawUserUrl =
   process.env.USER_SERVICE_URL ||
   process.env.NEXT_PUBLIC_USER_SERVICE_URL ||
-  "https://ofia-user-service.onrender.com";
+  process.env.USERS_API_URL ||
+  process.env.NEXT_PUBLIC_USERS_API ||
+  "";
 const cleanUserUrl = rawUserUrl.replace(/\/+$/, "");
 const USER_BASE = cleanUserUrl.endsWith("/api/v1") ? cleanUserUrl : `${cleanUserUrl}/api/v1`;
 

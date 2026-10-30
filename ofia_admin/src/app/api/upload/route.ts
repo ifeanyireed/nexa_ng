@@ -12,18 +12,29 @@ interface CloudinaryCredentials {
 function parseCloudinaryUrl(rawUrl: string): CloudinaryCredentials | null {
   if (!rawUrl) return null;
   const cleaned = rawUrl.replace(/^CLOUDINARY_URL=/, "").trim();
-  try {
-    const parsed = new URL(cleaned);
-    if (!parsed.hostname || !parsed.username || !parsed.password) return null;
+  // Standard format: cloudinary://<api_key>:<api_secret>@<cloud_name>
+  const match = cleaned.match(/^cloudinary:\/\/([^:]+):([^@]+)@([^/?#]+)/i);
+  if (match) {
     return {
-      cloudName: parsed.hostname,
-      apiKey: parsed.username,
-      apiSecret: parsed.password,
+      apiKey: match[1],
+      apiSecret: match[2],
+      cloudName: match[3],
     };
+  }
+  try {
+    const httpEquiv = cleaned.replace(/^cloudinary:\/\//i, "http://");
+    const parsed = new URL(httpEquiv);
+    if (parsed.hostname && parsed.username && parsed.password) {
+      return {
+        cloudName: parsed.hostname,
+        apiKey: parsed.username,
+        apiSecret: parsed.password,
+      };
+    }
   } catch (err) {
     console.warn("[Admin Upload Route] Failed to parse Cloudinary URL:", err);
-    return null;
   }
+  return null;
 }
 
 async function getCloudinaryCredentialsForTenant(tenantId?: string | null): Promise<CloudinaryCredentials | null> {
@@ -107,6 +118,13 @@ export async function POST(request: Request) {
       : cleanTenant
       ? `ofia_ng_assets/${cleanTenant}`
       : "ofia_ng_assets/logos";
+
+    cloudinary.config({
+      cloud_name: creds.cloudName,
+      api_key: creds.apiKey,
+      api_secret: creds.apiSecret,
+      secure: true,
+    });
 
     const uploadResponse = await cloudinary.uploader.upload(imagePayload, {
       folder,

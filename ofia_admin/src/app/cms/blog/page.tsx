@@ -1,17 +1,18 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 
 import { NexaBadge as Badge } from '@/components/nexa/NexaBadge';
 import { AdminStatCard as StatCard } from '@/components/admin/AdminStatCard';
-import { FileText, CheckCircle2, File, Plus, Tag, MessageSquare, Folder, Users, Copy, Check, ExternalLink, X, Eye, Globe } from 'lucide-react';
+import { FileText, CheckCircle2, File, Plus, Tag, MessageSquare, Folder, Users, Copy, Check, ExternalLink, X, Eye, Globe, Search, Filter } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { fetchBlogPosts } from '@/lib/api';
 import { BlogPost } from '@/lib/types';
 import toast from 'react-hot-toast';
 import { SuperAdminShell } from '@/components/admin/SuperAdminShell';
 import { getPublicBlogUrl, copyBlogUrlToClipboard } from '@/lib/blog-utils';
+import { Pagination } from '@/components/nexa/Pagination';
 
 const TABS = [
   { id: 'posts', name: 'Posts', icon: FileText },
@@ -40,6 +41,100 @@ function BlogCMSContent() {
   const [loading, setLoading] = useState(true);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [savedDraftInfo, setSavedDraftInfo] = useState<{ slug: string; title?: string } | null>(null);
+
+  // Posts Filtering & Pagination state
+  const [postsSearch, setPostsSearch] = useState('');
+  const [postsStatusFilter, setPostsStatusFilter] = useState('ALL');
+  const [postsCategoryFilter, setPostsCategoryFilter] = useState('ALL');
+  const [postsPage, setPostsPage] = useState(1);
+  const [postsPerPage, setPostsPerPage] = useState(10);
+
+  // Categories Search & Pagination state
+  const [categorySearch, setCategorySearch] = useState('');
+  const [categoryPage, setCategoryPage] = useState(1);
+  const [categoryPerPage, setCategoryPerPage] = useState(10);
+
+  // Tags Search & Pagination state
+  const [tagSearch, setTagSearch] = useState('');
+  const [tagPage, setTagPage] = useState(1);
+  const [tagPerPage, setTagPerPage] = useState(15);
+
+  // Comments Pagination state
+  const [commentPage, setCommentPage] = useState(1);
+  const [commentPerPage, setCommentPerPage] = useState(10);
+
+  // Subscribers Pagination state
+  const [subscriberPage, setSubscriberPage] = useState(1);
+  const [subscriberPerPage, setSubscriberPerPage] = useState(10);
+
+  // Filtered & Paginated Posts
+  const filteredPosts = useMemo(() => {
+    return posts.filter((post) => {
+      if (postsStatusFilter !== 'ALL' && post.status !== postsStatusFilter) return false;
+      if (postsCategoryFilter !== 'ALL' && post.category_id !== postsCategoryFilter) return false;
+      if (postsSearch.trim()) {
+        const q = postsSearch.toLowerCase().trim();
+        const titleMatch = (post.title || '').toLowerCase().includes(q);
+        const excerptMatch = (post.excerpt || '').toLowerCase().includes(q);
+        const authorMatch = typeof post.author === 'string'
+          ? post.author.toLowerCase().includes(q)
+          : (post.author?.full_name || '').toLowerCase().includes(q);
+        const tagMatch = (post.tags || '').toLowerCase().includes(q);
+        if (!titleMatch && !excerptMatch && !authorMatch && !tagMatch) return false;
+      }
+      return true;
+    });
+  }, [posts, postsSearch, postsStatusFilter, postsCategoryFilter]);
+
+  const totalPostsPages = Math.max(1, Math.ceil(filteredPosts.length / postsPerPage));
+  const paginatedPosts = useMemo(() => {
+    const start = (postsPage - 1) * postsPerPage;
+    return filteredPosts.slice(start, start + postsPerPage);
+  }, [filteredPosts, postsPage, postsPerPage]);
+
+  // Filtered & Paginated Categories
+  const filteredCategories = useMemo(() => {
+    if (!categorySearch.trim()) return categories;
+    const q = categorySearch.toLowerCase().trim();
+    return categories.filter((c: any) =>
+      (c.name || '').toLowerCase().includes(q) || (c.slug || '').toLowerCase().includes(q)
+    );
+  }, [categories, categorySearch]);
+
+  const totalCategoryPages = Math.max(1, Math.ceil(filteredCategories.length / categoryPerPage));
+  const paginatedCategories = useMemo(() => {
+    const start = (categoryPage - 1) * categoryPerPage;
+    return filteredCategories.slice(start, start + categoryPerPage);
+  }, [filteredCategories, categoryPage, categoryPerPage]);
+
+  // Filtered & Paginated Tags
+  const filteredTags = useMemo(() => {
+    if (!tagSearch.trim()) return tagsList;
+    const q = tagSearch.toLowerCase().trim();
+    return tagsList.filter((t: any) =>
+      (t.name || '').toLowerCase().includes(q) || (t.slug || '').toLowerCase().includes(q)
+    );
+  }, [tagsList, tagSearch]);
+
+  const totalTagPages = Math.max(1, Math.ceil(filteredTags.length / tagPerPage));
+  const paginatedTags = useMemo(() => {
+    const start = (tagPage - 1) * tagPerPage;
+    return filteredTags.slice(start, start + tagPerPage);
+  }, [filteredTags, tagPage, tagPerPage]);
+
+  // Paginated Comments
+  const totalCommentPages = Math.max(1, Math.ceil(comments.length / commentPerPage));
+  const paginatedComments = useMemo(() => {
+    const start = (commentPage - 1) * commentPerPage;
+    return comments.slice(start, start + commentPerPage);
+  }, [comments, commentPage, commentPerPage]);
+
+  // Paginated Subscribers
+  const totalSubscriberPages = Math.max(1, Math.ceil(subscribers.length / subscriberPerPage));
+  const paginatedSubscribers = useMemo(() => {
+    const start = (subscriberPage - 1) * subscriberPerPage;
+    return subscribers.slice(start, start + subscriberPerPage);
+  }, [subscribers, subscriberPage, subscriberPerPage]);
 
   useEffect(() => {
     const draftSlug = searchParams.get('savedDraft');
@@ -349,13 +444,75 @@ function BlogCMSContent() {
             </div>
 
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="p-3 sm:p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-                <h3 className="font-semibold text-slate-800 text-sm sm:text-base">All Posts</h3>
-                <input 
-                  type="text" 
-                  placeholder="Search posts..." 
-                  className="px-2.5 sm:px-3 py-1 sm:py-1.5 border border-slate-300 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                />
+              <div className="p-3 sm:p-4 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3 bg-slate-50">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-slate-800 text-sm sm:text-base">All Posts</h3>
+                  <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-blue-100 text-blue-700">
+                    {filteredPosts.length} {filteredPosts.length === 1 ? 'post' : 'posts'}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Status Filter */}
+                  <select
+                    value={postsStatusFilter}
+                    onChange={(e) => {
+                      setPostsStatusFilter(e.target.value);
+                      setPostsPage(1);
+                    }}
+                    className="px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                  >
+                    <option value="ALL">All Statuses</option>
+                    <option value="PUBLISHED">Published</option>
+                    <option value="DRAFT">Draft</option>
+                  </select>
+
+                  {/* Category Filter */}
+                  {categories.length > 0 && (
+                    <select
+                      value={postsCategoryFilter}
+                      onChange={(e) => {
+                        setPostsCategoryFilter(e.target.value);
+                        setPostsPage(1);
+                      }}
+                      className="px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white text-slate-700 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer max-w-[140px] truncate"
+                    >
+                      <option value="ALL">All Categories</option>
+                      {categories.map((c: any) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+
+                  {/* Search Input */}
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      value={postsSearch}
+                      onChange={(e) => {
+                        setPostsSearch(e.target.value);
+                        setPostsPage(1);
+                      }}
+                      placeholder="Search posts..." 
+                      className="pl-7 pr-7 py-1.5 border border-slate-300 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-44 sm:w-56" 
+                    />
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    {postsSearch && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPostsSearch('');
+                          setPostsPage(1);
+                        }}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
               
               <div className="overflow-x-auto">
@@ -376,12 +533,14 @@ function BlogCMSContent() {
                       <tr>
                         <td colSpan={7} className="px-3 sm:px-6 py-6 sm:py-8 text-center text-slate-500">Loading posts...</td>
                       </tr>
-                    ) : posts.length === 0 ? (
+                    ) : filteredPosts.length === 0 ? (
                       <tr>
-                        <td colSpan={7} className="px-3 sm:px-6 py-6 sm:py-8 text-center text-slate-500">No blog posts found. Create one to get started.</td>
+                        <td colSpan={7} className="px-3 sm:px-6 py-6 sm:py-8 text-center text-slate-500">
+                          {posts.length === 0 ? "No blog posts found. Create one to get started." : "No posts match your search or filter criteria."}
+                        </td>
                       </tr>
                     ) : (
-                      posts.map((post) => (
+                      paginatedPosts.map((post) => (
                         <tr key={post.id} className="hover:bg-slate-50 transition-colors">
                           <td className="px-3 sm:px-6 py-3 sm:py-4">
                             <p className="font-medium text-slate-900">{post.title}</p>
@@ -465,15 +624,73 @@ function BlogCMSContent() {
                   </tbody>
                 </table>
               </div>
+
+              {/* POSTS PAGINATION CONTROLLER */}
+              <div className="p-3 sm:p-4 border-t border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <span>Show</span>
+                  <select
+                    value={postsPerPage}
+                    onChange={(e) => {
+                      setPostsPerPage(Number(e.target.value));
+                      setPostsPage(1);
+                    }}
+                    className="px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                  >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
+                  <span>posts per page</span>
+                </div>
+
+                <Pagination
+                  currentPage={postsPage}
+                  totalPages={totalPostsPages}
+                  totalItems={filteredPosts.length}
+                  itemsPerPage={postsPerPage}
+                  onPageChange={setPostsPage}
+                  className="pt-0 border-t-0"
+                />
+              </div>
             </div>
           </div>
         )}
 
         {activeTab === 'categories' && (
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in duration-300">
-            <div className="p-3 sm:p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h3 className="font-semibold text-slate-800 text-sm sm:text-base">Categories</h3>
-              <input type="text" placeholder="Search categories..." className="px-2.5 sm:px-3 py-1 sm:py-1.5 border border-slate-300 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <div className="p-3 sm:p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-slate-800 text-sm sm:text-base">Categories</h3>
+                <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-blue-100 text-blue-700">
+                  {filteredCategories.length}
+                </span>
+              </div>
+              <div className="relative">
+                <input 
+                  type="text" 
+                  value={categorySearch}
+                  onChange={(e) => {
+                    setCategorySearch(e.target.value);
+                    setCategoryPage(1);
+                  }}
+                  placeholder="Search categories..." 
+                  className="pl-7 pr-7 py-1.5 border border-slate-300 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-56" 
+                />
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                {categorySearch && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCategorySearch('');
+                      setCategoryPage(1);
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs sm:text-sm text-slate-600">
@@ -486,10 +703,10 @@ function BlogCMSContent() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {categories.length === 0 ? (
-                    <tr><td colSpan={4} className="px-3 sm:px-6 py-6 sm:py-8 text-center text-slate-500">No categories found. Add one to get started.</td></tr>
+                  {filteredCategories.length === 0 ? (
+                    <tr><td colSpan={4} className="px-3 sm:px-6 py-6 sm:py-8 text-center text-slate-500">No categories found.</td></tr>
                   ) : (
-                    categories.map((cat: any) => (
+                    paginatedCategories.map((cat: any) => (
                       <tr key={cat.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-3 sm:px-6 py-3 sm:py-4 font-medium text-slate-900">{cat.name}</td>
                         <td className="px-3 sm:px-6 py-3 sm:py-4 text-slate-500">{cat.slug}</td>
@@ -503,14 +720,72 @@ function BlogCMSContent() {
                 </tbody>
               </table>
             </div>
+
+            {/* CATEGORIES PAGINATION */}
+            <div className="p-3 sm:p-4 border-t border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <span>Show</span>
+                <select
+                  value={categoryPerPage}
+                  onChange={(e) => {
+                    setCategoryPerPage(Number(e.target.value));
+                    setCategoryPage(1);
+                  }}
+                  className="px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+                <span>categories per page</span>
+              </div>
+
+              <Pagination
+                currentPage={categoryPage}
+                totalPages={totalCategoryPages}
+                totalItems={filteredCategories.length}
+                itemsPerPage={categoryPerPage}
+                onPageChange={setCategoryPage}
+                className="pt-0 border-t-0"
+              />
+            </div>
           </div>
         )}
 
         {activeTab === 'tags' && (
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in duration-300">
-            <div className="p-3 sm:p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h3 className="font-semibold text-slate-800 text-sm sm:text-base">Tags</h3>
-              <input type="text" placeholder="Search tags..." className="px-2.5 sm:px-3 py-1 sm:py-1.5 border border-slate-300 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <div className="p-3 sm:p-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-slate-800 text-sm sm:text-base">Tags</h3>
+                <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-blue-100 text-blue-700">
+                  {filteredTags.length}
+                </span>
+              </div>
+              <div className="relative">
+                <input 
+                  type="text" 
+                  value={tagSearch}
+                  onChange={(e) => {
+                    setTagSearch(e.target.value);
+                    setTagPage(1);
+                  }}
+                  placeholder="Search tags..." 
+                  className="pl-7 pr-7 py-1.5 border border-slate-300 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-56" 
+                />
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                {tagSearch && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTagSearch('');
+                      setTagPage(1);
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs sm:text-sm text-slate-600">
@@ -523,10 +798,10 @@ function BlogCMSContent() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {tagsList.length === 0 ? (
-                    <tr><td colSpan={4} className="px-3 sm:px-6 py-6 sm:py-8 text-center text-slate-500">No tags found. Add one to get started.</td></tr>
+                  {filteredTags.length === 0 ? (
+                    <tr><td colSpan={4} className="px-3 sm:px-6 py-6 sm:py-8 text-center text-slate-500">No tags found.</td></tr>
                   ) : (
-                    tagsList.map((tag: any) => (
+                    paginatedTags.map((tag: any) => (
                       <tr key={tag.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-3 sm:px-6 py-3 sm:py-4 font-medium text-slate-900">{tag.name}</td>
                         <td className="px-3 sm:px-6 py-3 sm:py-4 text-slate-500">{tag.slug}</td>
@@ -542,13 +817,47 @@ function BlogCMSContent() {
                 </tbody>
               </table>
             </div>
+
+            {/* TAGS PAGINATION */}
+            <div className="p-3 sm:p-4 border-t border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <span>Show</span>
+                <select
+                  value={tagPerPage}
+                  onChange={(e) => {
+                    setTagPerPage(Number(e.target.value));
+                    setTagPage(1);
+                  }}
+                  className="px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                >
+                  <option value={15}>15</option>
+                  <option value={30}>30</option>
+                  <option value={60}>60</option>
+                </select>
+                <span>tags per page</span>
+              </div>
+
+              <Pagination
+                currentPage={tagPage}
+                totalPages={totalTagPages}
+                totalItems={filteredTags.length}
+                itemsPerPage={tagPerPage}
+                onPageChange={setTagPage}
+                className="pt-0 border-t-0"
+              />
+            </div>
           </div>
         )}
 
         {activeTab === 'comments' && (
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in duration-300">
             <div className="p-3 sm:p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h3 className="font-semibold text-slate-800 text-sm sm:text-base">Blog Comments</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-slate-800 text-sm sm:text-base">Blog Comments</h3>
+                <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-blue-100 text-blue-700">
+                  {comments.length}
+                </span>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs sm:text-sm text-slate-600">
@@ -565,7 +874,7 @@ function BlogCMSContent() {
                   {comments.length === 0 ? (
                     <tr><td colSpan={5} className="px-3 sm:px-6 py-6 sm:py-8 text-center text-slate-500">No comments found.</td></tr>
                   ) : (
-                    comments.map((comment: any) => (
+                    paginatedComments.map((comment: any) => (
                       <tr key={comment.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-3 sm:px-6 py-3 sm:py-4 font-medium text-slate-900">{comment.user_name || "Guest"}</td>
                         <td className="px-3 sm:px-6 py-3 sm:py-4 text-slate-600 truncate max-w-xs">{comment.content}</td>
@@ -590,13 +899,47 @@ function BlogCMSContent() {
                 </tbody>
               </table>
             </div>
+
+            {/* COMMENTS PAGINATION */}
+            <div className="p-3 sm:p-4 border-t border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <span>Show</span>
+                <select
+                  value={commentPerPage}
+                  onChange={(e) => {
+                    setCommentPerPage(Number(e.target.value));
+                    setCommentPage(1);
+                  }}
+                  className="px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+                <span>comments per page</span>
+              </div>
+
+              <Pagination
+                currentPage={commentPage}
+                totalPages={totalCommentPages}
+                totalItems={comments.length}
+                itemsPerPage={commentPerPage}
+                onPageChange={setCommentPage}
+                className="pt-0 border-t-0"
+              />
+            </div>
           </div>
         )}
         
         {activeTab === 'subscribers' && (
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden animate-in fade-in duration-300">
             <div className="p-3 sm:p-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
-              <h3 className="font-semibold text-slate-800 text-sm sm:text-base">Newsletter Subscribers</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-slate-800 text-sm sm:text-base">Newsletter Subscribers</h3>
+                <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-blue-100 text-blue-700">
+                  {subscribers.length}
+                </span>
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs sm:text-sm text-slate-600">
@@ -612,7 +955,7 @@ function BlogCMSContent() {
                   {subscribers.length === 0 ? (
                     <tr><td colSpan={4} className="px-3 sm:px-6 py-6 sm:py-8 text-center text-slate-500">No subscribers found.</td></tr>
                   ) : (
-                    subscribers.map((sub: any) => (
+                    paginatedSubscribers.map((sub: any) => (
                       <tr key={sub.id} className="hover:bg-slate-50 transition-colors">
                         <td className="px-3 sm:px-6 py-3 sm:py-4 font-medium text-slate-900">{sub.email}</td>
                         <td className="px-3 sm:px-6 py-3 sm:py-4">
@@ -629,6 +972,35 @@ function BlogCMSContent() {
                   )}
                 </tbody>
               </table>
+            </div>
+
+            {/* SUBSCRIBERS PAGINATION */}
+            <div className="p-3 sm:p-4 border-t border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <span>Show</span>
+                <select
+                  value={subscriberPerPage}
+                  onChange={(e) => {
+                    setSubscriberPerPage(Number(e.target.value));
+                    setSubscriberPage(1);
+                  }}
+                  className="px-2 py-1 bg-white border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                </select>
+                <span>subscribers per page</span>
+              </div>
+
+              <Pagination
+                currentPage={subscriberPage}
+                totalPages={totalSubscriberPages}
+                totalItems={subscribers.length}
+                itemsPerPage={subscriberPerPage}
+                onPageChange={setSubscriberPage}
+                className="pt-0 border-t-0"
+              />
             </div>
           </div>
         )}

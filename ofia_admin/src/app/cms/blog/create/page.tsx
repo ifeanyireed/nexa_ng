@@ -20,9 +20,36 @@ export default function CreateBlogPost() {
 }
 
 function CreateBlogPostContent() {
-    const router = useRouter();
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const editId = searchParams.get('edit');
+  const urlEditId = searchParams.get('edit');
+  const [currentEditId, setCurrentEditId] = useState<string | null>(urlEditId);
+
+  const [title, setTitle] = useState('');
+  const [slug, setSlug] = useState('');
+  const [excerpt, setExcerpt] = useState('');
+  const [category, setCategory] = useState('');
+  const [tags, setTags] = useState('');
+  const [content, setContent] = useState('');
+  const [coverImage, setCoverImage] = useState('');
+  const [metaTitle, setMetaTitle] = useState('');
+  const [metaDescription, setMetaDescription] = useState('');
+  const [canonicalUrl, setCanonicalUrl] = useState('');
+  const [ogImage, setOgImage] = useState('');
+  const [viewCount, setViewCount] = useState<number | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [savedDraftSlug, setSavedDraftSlug] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const isEditing = Boolean(currentEditId || urlEditId);
+
+  useEffect(() => {
+    if (urlEditId) {
+      setCurrentEditId(urlEditId);
+    }
+  }, [urlEditId]);
 
   useEffect(() => {
     fetch('/api/v1/cms/blog/categories')
@@ -32,12 +59,18 @@ function CreateBlogPostContent() {
       })
       .catch(() => {});
 
-    if (editId) {
-      fetch('/api/v1/cms/blog/posts')
+    const activeId = urlEditId || currentEditId;
+    if (activeId) {
+      fetch(`/api/v1/cms/blog/posts?id=${encodeURIComponent(activeId)}`)
         .then(res => res.json())
         .then(data => {
-          const posts = Array.isArray(data) ? data : (data.posts || []);
-          const post = posts.find((p: any) => p.id === editId);
+          let post: any = null;
+          if (data && !Array.isArray(data) && (data.id === activeId || data.id)) {
+            post = data;
+          } else {
+            const posts = Array.isArray(data) ? data : (data?.posts || []);
+            post = posts.find((p: any) => p.id === activeId);
+          }
           if (post) {
             setTitle(post.title || '');
             setExcerpt(post.excerpt || '');
@@ -57,25 +90,7 @@ function CreateBlogPostContent() {
         })
         .catch(() => {});
     }
-  }, [editId]);
-
-  const [title, setTitle] = useState('');
-  const [slug, setSlug] = useState('');
-  const [excerpt, setExcerpt] = useState('');
-  const [category, setCategory] = useState('');
-  const [tags, setTags] = useState('');
-  const [content, setContent] = useState('');
-  const [coverImage, setCoverImage] = useState('');
-  const [metaTitle, setMetaTitle] = useState('');
-  const [metaDescription, setMetaDescription] = useState('');
-  const [canonicalUrl, setCanonicalUrl] = useState('');
-  const [ogImage, setOgImage] = useState('');
-  const [viewCount, setViewCount] = useState<number | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [savedDraftSlug, setSavedDraftSlug] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  }, [urlEditId, currentEditId]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -102,6 +117,9 @@ function CreateBlogPostContent() {
       toast.error('Something went wrong');
     } finally {
       setIsUploading(false);
+      try {
+        if (e.target) e.target.value = '';
+      } catch {}
     }
   };
 
@@ -122,14 +140,15 @@ function CreateBlogPostContent() {
   };
 
   const handleSave = async (status: 'DRAFT' | 'PUBLISHED') => {
-    setIsSaving(true);
-    if (!title) {
+    const cleanTitle = title.trim();
+    if (!cleanTitle) {
       toast.error('Title is required');
       return;
     }
+
+    setIsSaving(true);
     
     try {
-      const USERS_API = process.env.NEXT_PUBLIC_USERS_API || '';
       let author_id = "0eef95ef-57e0-4a7d-ae31-c8376fe28fd0";
       try {
         const userStr = localStorage.getItem('user');
@@ -139,50 +158,67 @@ function CreateBlogPostContent() {
         }
       } catch(e) {}
 
+      const targetId = currentEditId || urlEditId;
+      const cleanExcerpt = excerpt.trim();
+      const cleanMetaTitle = metaTitle.trim();
+      const cleanMetaDescription = metaDescription.trim();
+      const cleanCoverImage = (coverImage || '').trim();
+      const cleanCanonicalUrl = (canonicalUrl || '').trim();
+      const cleanOgImage = (ogImage || '').trim();
+      const cleanSlug = slug.trim() || slugify(cleanTitle);
+
       const payload: any = {
-        title,
-        excerpt,
+        title: cleanTitle,
+        slug: cleanSlug,
+        excerpt: cleanExcerpt,
         content,
-        cover_image: coverImage,
+        cover_image: cleanCoverImage || null,
         category_id: category || null,
         tags,
         status,
         author_id,
-        meta_title: metaTitle.trim() || null,
-        meta_description: metaDescription.trim() || null,
-        canonical_url: canonicalUrl.trim() || null,
-        og_image: ogImage.trim() || coverImage.trim() || null,
+        meta_title: cleanMetaTitle,
+        meta_description: cleanMetaDescription,
+        canonical_url: cleanCanonicalUrl || null,
+        og_image: cleanOgImage || null,
       };
 
-      let url = '/api/v1/cms/blog/posts';
-
-      if (editId) {
-        payload['id'] = editId;
+      if (targetId) {
+        payload.id = targetId;
       }
 
-      const res = await fetch(url, {
-        method: editId ? 'PUT' : 'POST',
+      const res = await fetch('/api/v1/cms/blog/posts', {
+        method: targetId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
       
       if (res.ok) {
         const savedData = await res.json().catch(() => ({}));
-        const finalSlug = savedData?.slug || slug || slugify(title);
+        const newPostId = savedData?.id || targetId;
+        const finalSlug = savedData?.slug || cleanSlug;
         setSlug(finalSlug);
+
+        if (savedData?.meta_title !== undefined) setMetaTitle(savedData.meta_title || '');
+        if (savedData?.meta_description !== undefined) setMetaDescription(savedData.meta_description || '');
+        if (savedData?.canonical_url !== undefined) setCanonicalUrl(savedData.canonical_url || '');
+        if (savedData?.og_image !== undefined) setOgImage(savedData.og_image || '');
+
+        if (newPostId && !targetId) {
+          setCurrentEditId(newPostId);
+          window.history.replaceState(null, '', `/cms/blog/create?edit=${newPostId}`);
+        }
 
         if (status === 'DRAFT') {
           setSavedDraftSlug(finalSlug);
-          if (!editId && savedData?.id) {
-            window.history.replaceState(null, '', `/cms/blog/create?edit=${savedData.id}`);
-          }
-          toast.success('Post saved as draft! Blog URL is ready to copy.');
+          toast.success('Post saved as draft! All SEO fields and blog URL are persistent.');
         } else {
-          toast.success('Post published successfully!');
+          toast.success(targetId ? 'Post updated successfully!' : 'Post published successfully!');
           router.push('/cms/blog');
         }
       } else {
-        toast.error('Failed to save post');
+        const errData = await res.json().catch(() => null);
+        toast.error(errData?.error || 'Failed to save post');
       }
     } catch (e) {
       toast.error('Network error');
@@ -192,12 +228,12 @@ function CreateBlogPostContent() {
   };
 
   return (
-    <SuperAdminShell title={editId ? "Edit Blog Post" : "Create Blog Post"} subtitle="Write and publish an article to the Ofia blog">
+    <SuperAdminShell title={isEditing ? "Edit Blog Post" : "Create Blog Post"} subtitle="Write and publish an article to the Ofia blog">
       <div className="w-full">
         <div className="px-1 py-3 sm:px-4 md:p-6 pb-0 border-b border-nexa-border/30">
           <div className="flex items-center gap-3 sm:gap-4 mb-2">
             <Link href="/cms/blog" className="p-2 hover:bg-slate-100 rounded-full transition-colors"><ArrowLeft size={20} /></Link>
-            <h1 className="text-xl sm:text-2xl font-bold text-nexa-text-primary">{editId ? "Edit Blog Post" : "Create Blog Post"}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-nexa-text-primary">{isEditing ? "Edit Blog Post" : "Create Blog Post"}</h1>
           </div>
           <p className="text-xs sm:text-sm text-nexa-text-secondary mb-4 ml-0 sm:ml-12">Write and publish an article to the Ofia platform blog</p>
         </div>
@@ -217,7 +253,7 @@ function CreateBlogPostContent() {
                 <span>{viewCount.toLocaleString()} {viewCount === 1 ? 'View' : 'Views'}</span>
               </div>
             )}
-            {(savedDraftSlug || slug || editId || title.trim().length > 0) && (
+            {(savedDraftSlug || slug || isEditing || title.trim().length > 0) && (
               <button 
                 type="button"
                 onClick={() => handleCopyUrl(savedDraftSlug || slug)}
@@ -246,7 +282,7 @@ function CreateBlogPostContent() {
               className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-blue-600 text-white font-semibold text-xs sm:text-sm transition-colors shadow-sm ${isSaving ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'}`}
             >
               <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span>{isSaving ? 'Publishing...' : (editId ? 'Update' : 'Publish')}</span>
+              <span>{isSaving ? 'Publishing...' : (isEditing ? 'Update' : 'Publish')}</span>
             </button>
           </div>
         </div>
@@ -398,34 +434,53 @@ function CreateBlogPostContent() {
                 <p className="text-[11px] text-slate-400 mt-1">Recommended: 140–160 characters. Defaults to the excerpt if left blank.</p>
               </div>
 
-              {/* Canonical URL & OG Image in a 2-column subgrid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+              {/* Custom Slug & Canonical URL & OG Image in a responsive subgrid */}
+              <div className="pt-2 border-t border-slate-100 space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">
-                    Canonical URL (Optional)
+                    Custom URL Slug (Permanent Link)
                   </label>
-                  <input 
-                    type="url" 
-                    value={canonicalUrl}
-                    onChange={(e) => setCanonicalUrl(e.target.value)}
-                    placeholder="https://ofia.ng/blog/..."
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-xs text-slate-800 font-mono"
-                  />
-                  <p className="text-[10px] text-slate-400 mt-1">Leave empty to use the standard Ofia blog URL canonical.</p>
+                  <div className="flex items-center rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-500 transition-all">
+                    <span className="text-xs text-slate-400 font-mono select-none">/blog/</span>
+                    <input 
+                      type="text" 
+                      value={slug}
+                      onChange={(e) => setSlug(slugify(e.target.value))}
+                      placeholder={slugify(title) || "article-slug"}
+                      className="w-full bg-transparent text-xs text-slate-800 font-mono outline-none pl-1"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-400 mt-1">Controls the URL address for this post. Defaults to a slugified version of the post title.</p>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">
-                    OG / Social Share Image URL (Optional)
-                  </label>
-                  <input 
-                    type="url" 
-                    value={ogImage}
-                    onChange={(e) => setOgImage(e.target.value)}
-                    placeholder="Defaults to cover image..."
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-xs text-slate-800 font-mono"
-                  />
-                  <p className="text-[10px] text-slate-400 mt-1">Used for 1200x630 Facebook, Twitter &amp; LinkedIn rich cards.</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">
+                      Canonical URL (Optional)
+                    </label>
+                    <input 
+                      type="url" 
+                      value={canonicalUrl}
+                      onChange={(e) => setCanonicalUrl(e.target.value)}
+                      placeholder="https://ofia.ng/blog/..."
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-xs text-slate-800 font-mono"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">Leave empty to use the standard Ofia blog URL canonical.</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest mb-1.5">
+                      OG / Social Share Image URL (Optional)
+                    </label>
+                    <input 
+                      type="url" 
+                      value={ogImage}
+                      onChange={(e) => setOgImage(e.target.value)}
+                      placeholder="Defaults to cover image..."
+                      className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-xs text-slate-800 font-mono"
+                    />
+                    <p className="text-[10px] text-slate-400 mt-1">Used for 1200x630 Facebook, Twitter &amp; LinkedIn rich cards.</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -502,7 +557,7 @@ function CreateBlogPostContent() {
                   </label>
                 </div>
                 {coverImage && (
-                  <button onClick={() => setCoverImage('')} className="text-xs text-rose-500 font-medium mt-2 hover:underline">
+                  <button type="button" onClick={() => setCoverImage('')} className="text-xs text-rose-500 font-medium mt-2 hover:underline">
                     Remove Image
                   </button>
                 )}

@@ -10,6 +10,7 @@ import Image from '@tiptap/extension-image';
 import toast from 'react-hot-toast';
 import { marked } from 'marked';
 import TurndownService from 'turndown';
+import { loadKaTeX, renderLatexInHtml } from '@/lib/math-renderer';
 import { 
   Bold, 
   Italic, 
@@ -35,6 +36,22 @@ import {
   Columns,
   Edit3
 } from 'lucide-react';
+
+const SigmaIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg 
+    viewBox="0 0 24 24" 
+    width="16" 
+    height="16" 
+    stroke="currentColor" 
+    strokeWidth="2.2" 
+    fill="none" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <path d="M18 7V4H6l6 8-6 8h12v-3" />
+  </svg>
+);
 
 // Configure marked with standard GFM rules
 marked.setOptions({
@@ -87,7 +104,15 @@ interface RichTextEditorProps {
 }
 
 // WYSIWYG Toolbar
-const MenuBar = ({ editor }: { editor: any }) => {
+const MenuBar = ({ 
+  editor,
+  wysiwygView,
+  setWysiwygView 
+}: { 
+  editor: any;
+  wysiwygView: 'edit' | 'preview';
+  setWysiwygView: (v: 'edit' | 'preview') => void;
+}) => {
   const [, setTick] = useState(0);
 
   useEffect(() => {
@@ -119,6 +144,25 @@ const MenuBar = ({ editor }: { editor: any }) => {
     }
     
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  };
+
+  const addMath = () => {
+    const formula = window.prompt(
+      'Enter LaTeX math formula (e.g. E = mc^2, \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}, \\int_0^1 x^2 dx):',
+      'E = mc^2'
+    );
+    if (!formula || !formula.trim()) return;
+
+    const isBlock = window.confirm(
+      'Insert as Display / Block formula ($$)?\n\nClick OK for centered Block ($$...$$)\nClick Cancel for Inline formula ($...$)'
+    );
+
+    const clean = formula.trim();
+    if (isBlock) {
+      editor.chain().focus().insertContent(`<p>$$${clean}$$</p>`).run();
+    } else {
+      editor.chain().focus().insertContent(` $${clean}$ `).run();
+    }
   };
 
   const addImage = () => {
@@ -395,6 +439,19 @@ const MenuBar = ({ editor }: { editor: any }) => {
         >
           <ImageIcon className="w-4 h-4" />
         </button>
+
+        <button
+          type="button"
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={(e) => {
+            e.preventDefault();
+            addMath();
+          }}
+          className={buttonClass(false)}
+          title="Insert LaTeX Math Formula ($$...$$)"
+        >
+          <SigmaIcon className="w-4 h-4 text-blue-600" />
+        </button>
       </div>
 
       <div className="w-[1px] h-5 bg-slate-200 mx-1 self-center" />
@@ -427,6 +484,34 @@ const MenuBar = ({ editor }: { editor: any }) => {
           title="Redo (Ctrl+Y)"
         >
           <Redo className="w-4 h-4" />
+        </button>
+      </div>
+
+      <div className="w-[1px] h-5 bg-slate-200 mx-1 self-center" />
+
+      {/* WYSIWYG View Switcher (Edit vs Preview) */}
+      <div className="flex items-center bg-slate-200/70 p-0.5 rounded-lg text-xs ml-auto">
+        <button
+          type="button"
+          onClick={() => setWysiwygView('edit')}
+          className={`flex items-center gap-1 px-2 py-1 rounded-md font-semibold transition-all ${
+            wysiwygView === 'edit' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+          }`}
+          title="Visual WYSIWYG Editor"
+        >
+          <Edit3 className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Edit</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setWysiwygView('preview')}
+          className={`flex items-center gap-1 px-2 py-1 rounded-md font-semibold transition-all ${
+            wysiwygView === 'preview' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+          }`}
+          title="Live LaTeX Math Preview"
+        >
+          <Eye className="w-3.5 h-3.5" />
+          <span className="hidden sm:inline">Preview</span>
         </button>
       </div>
     </div>
@@ -578,6 +663,29 @@ const MarkdownToolbar = ({
         >
           <ImageIcon className="w-4 h-4" />
         </button>
+        <button
+          type="button"
+          onClick={() => {
+            const formula = window.prompt(
+              'Enter LaTeX math formula (e.g. E = mc^2, \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}, \\int_0^1 x^2 dx):',
+              'E = mc^2'
+            );
+            if (!formula || !formula.trim()) return;
+            const isBlock = window.confirm(
+              'Insert as Display / Block formula ($$)?\n\nClick OK for centered Block ($$...$$)\nClick Cancel for Inline formula ($...$)'
+            );
+            const clean = formula.trim();
+            if (isBlock) {
+              onInsert('\n$$\n', '\n$$\n', clean);
+            } else {
+              onInsert('$', '$', clean);
+            }
+          }}
+          className={toolBtnClass}
+          title="Insert LaTeX Math Formula ($$...$$)"
+        >
+          <SigmaIcon className="w-4 h-4 text-blue-600" />
+        </button>
       </div>
 
       <div className="w-[1px] h-5 bg-slate-200 mx-1 self-center" />
@@ -626,7 +734,15 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
   const [editorMode, setEditorMode] = useState<'wysiwyg' | 'markdown'>('wysiwyg');
   const [markdownContent, setMarkdownContent] = useState('');
   const [markdownView, setMarkdownView] = useState<'write' | 'preview' | 'split'>('write');
+  const [wysiwygView, setWysiwygView] = useState<'edit' | 'preview'>('edit');
+  const [, setMathRenderTick] = useState(0);
   const markdownTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    loadKaTeX().then(() => {
+      setMathRenderTick((t) => t + 1);
+    });
+  }, []);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -774,6 +890,8 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
     : markdownContent;
   const wordCount = currentText.trim() ? currentText.trim().split(/\s+/).length : 0;
   const charCount = currentText.length;
+  const latexMatches = (currentText || '').match(/\$\$[\s\S]+?\$\$|\$[^\$\s](?:[^\$]*?[^\$\s])?\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)/g);
+  const latexCount = latexMatches ? latexMatches.length : 0;
 
   return (
     <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-xs focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
@@ -782,7 +900,11 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
         {/* Left Formatting Tools */}
         <div className="flex-1 min-w-[280px]">
           {editorMode === 'wysiwyg' ? (
-            <MenuBar editor={editor} />
+            <MenuBar 
+              editor={editor} 
+              wysiwygView={wysiwygView} 
+              setWysiwygView={setWysiwygView} 
+            />
           ) : (
             <MarkdownToolbar 
               onInsert={insertMarkdownSnippet}
@@ -827,9 +949,27 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
 
       {/* Editor Content Area */}
       {editorMode === 'wysiwyg' ? (
-        <div className="rich-editor-wrapper bg-white">
-          <EditorContent editor={editor} />
-        </div>
+        wysiwygView === 'edit' ? (
+          <div className="rich-editor-wrapper bg-white">
+            <EditorContent editor={editor} />
+          </div>
+        ) : (
+          <div className="rich-editor-wrapper p-6 min-h-[440px] bg-white overflow-y-auto">
+            {(editor ? editor.getHTML() : content)?.trim() ? (
+              <div 
+                dangerouslySetInnerHTML={{ 
+                  __html: renderLatexInHtml(editor ? editor.getHTML() : content) 
+                }} 
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center min-h-[300px] text-slate-400">
+                <FileCode className="w-10 h-10 mb-2 opacity-40 text-slate-400" />
+                <p className="text-sm font-semibold text-slate-500">Nothing to preview yet</p>
+                <p className="text-xs text-slate-400 mt-1">Switch to Edit mode to type some content</p>
+              </div>
+            )}
+          </div>
+        )
       ) : (
         <div className="bg-white">
           {/* Write Mode */}
@@ -864,7 +1004,7 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
               {markdownContent.trim() ? (
                 <div 
                   dangerouslySetInnerHTML={{ 
-                    __html: (marked.parse(markdownContent, { async: false }) as string) || '' 
+                    __html: renderLatexInHtml((marked.parse(markdownContent, { async: false }) as string) || '') 
                   }} 
                 />
               ) : (
@@ -906,7 +1046,7 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
                 {markdownContent.trim() ? (
                   <div 
                     dangerouslySetInnerHTML={{ 
-                      __html: (marked.parse(markdownContent, { async: false }) as string) || '' 
+                      __html: renderLatexInHtml((marked.parse(markdownContent, { async: false }) as string) || '') 
                     }} 
                   />
                 ) : (
@@ -926,6 +1066,15 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
           <span>{wordCount} words</span>
           <span className="text-slate-300">•</span>
           <span>{charCount} characters</span>
+          {latexCount > 0 && (
+            <>
+              <span className="text-slate-300">•</span>
+              <span className="inline-flex items-center gap-1 text-blue-700 font-semibold bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200 text-[11px]">
+                <SigmaIcon className="w-3 h-3" />
+                {latexCount} {latexCount === 1 ? 'math formula' : 'math formulas'}
+              </span>
+            </>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <span className={`inline-block w-2 h-2 rounded-full ${editorMode === 'wysiwyg' ? 'bg-blue-500' : 'bg-emerald-500'}`} />
@@ -1065,6 +1214,36 @@ export function RichTextEditor({ content, onChange }: RichTextEditorProps) {
           max-width: 100% !important;
           margin-top: 1rem !important;
           margin-bottom: 1rem !important;
+        }
+
+        .rich-editor-wrapper .katex-math-display {
+          display: flex !important;
+          justify-content: center !important;
+          align-items: center !important;
+          margin: 1.5rem 0 !important;
+          padding: 1.25rem 1rem !important;
+          background-color: #f8fafc !important;
+          border: 1px solid #e2e8f0 !important;
+          border-radius: 0.75rem !important;
+          overflow-x: auto !important;
+        }
+
+        .rich-editor-wrapper .katex-math-inline {
+          display: inline-flex !important;
+          align-items: center !important;
+          vertical-align: middle !important;
+          padding: 0 0.2rem !important;
+        }
+
+        .rich-editor-wrapper .katex {
+          font-size: 1.15em !important;
+          text-rendering: auto !important;
+        }
+
+        .rich-editor-wrapper .katex-display > .katex {
+          display: inline-block !important;
+          white-space: nowrap !important;
+          text-align: initial !important;
         }
       `}</style>
     </div>

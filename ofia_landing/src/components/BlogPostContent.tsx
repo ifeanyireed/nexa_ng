@@ -4,6 +4,8 @@ import React from "react";
 import ScrollReveal from './ScrollReveal';
 import Link from 'next/link';
 import { IconArrowLeft, IconMessageCircle, IconBrandTwitter, IconBrandFacebook, IconBrandLinkedin, IconBrandWhatsapp, IconMail, IconEye } from '@tabler/icons-react';
+import { renderMarkdownAndMath } from '@/lib/markdown';
+import { loadKaTeX } from '@/lib/math-renderer';
 
 interface Comment {
   id: string | number;
@@ -60,6 +62,20 @@ export default function BlogPostContent({ post }: { post: BlogPost }) {
   const [subLoading, setSubLoading] = React.useState(false);
 
   const [views, setViews] = React.useState<number>(Number(post.view_count) || 0);
+  const [renderedHtml, setRenderedHtml] = React.useState<string>(() => renderMarkdownAndMath(post.content || ''));
+
+  // Process Markdown and render LaTeX math formulas with KaTeX
+  React.useEffect(() => {
+    // 1. Initial Markdown and math parsing pass
+    setRenderedHtml(renderMarkdownAndMath(post.content || ''));
+
+    // 2. Load KaTeX CDN runtime asynchronously and upgrade formulas to full vector math
+    loadKaTeX().then((katex) => {
+      if (katex) {
+        setRenderedHtml(renderMarkdownAndMath(post.content || ''));
+      }
+    });
+  }, [post.content]);
 
   // Increment view count once per browser session
   React.useEffect(() => {
@@ -263,7 +279,7 @@ export default function BlogPostContent({ post }: { post: BlogPost }) {
               </div>
               <article 
                 className="prose prose-lg prose-nets max-w-none"
-                dangerouslySetInnerHTML={{ __html: post.content }} 
+                dangerouslySetInnerHTML={{ __html: renderedHtml }} 
               />
 
               {/* Tag Pills */}

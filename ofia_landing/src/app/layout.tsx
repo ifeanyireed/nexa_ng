@@ -32,6 +32,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body
         className={`${dropa.variable} font-sans antialiased bg-[var(--nexa-bg-base)] text-[var(--nexa-text-primary)] selection:bg-[#1A56DB]/20 selection:text-[#1A56DB] flex flex-col min-h-screen`}
         suppressHydrationWarning

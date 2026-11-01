@@ -264,3 +264,258 @@ body {
     transparent
   );
 }
+
+/* ==========================================================================
+   BLOG EDITORIAL PROSE & MATH STYLING
+   ========================================================================== */
+.prose-nets,
+.prose {
+  color: #334155;
+  font-size: 1.125rem;
+  line-height: 1.8;
+  max-width: 100%;
+}
+
+.prose-nets p,
+.prose p {
+  margin-top: 1.25em;
+  margin-bottom: 1.25em;
+  color: #334155;
+  line-height: 1.8;
+}
+
+.prose-nets h1,
+.prose h1 {
+  color: #0f172a;
+  font-weight: 800;
+  font-size: 2.25rem;
+  margin-top: 2em;
+  margin-bottom: 0.75em;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+
+.prose-nets h2,
+.prose h2 {
+  color: #0f172a;
+  font-weight: 700;
+  font-size: 1.75rem;
+  margin-top: 1.8em;
+  margin-bottom: 0.65em;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 0.4em;
+}
+
+.prose-nets h3,
+.prose h3 {
+  color: #1e293b;
+  font-weight: 700;
+  font-size: 1.35rem;
+  margin-top: 1.6em;
+  margin-bottom: 0.5em;
+  line-height: 1.4;
+  letter-spacing: -0.015em;
+}
+
+.prose-nets h4,
+.prose h4 {
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 1.15rem;
+  margin-top: 1.4em;
+  margin-bottom: 0.5em;
+}
+
+.prose-nets strong,
+.prose strong {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.prose-nets em,
+.prose em {
+  font-style: italic;
+  color: inherit;
+}
+
+.prose-nets a,
+.prose a {
+  color: #0069ff;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  transition: color 150ms ease;
+}
+
+.prose-nets a:hover,
+.prose a:hover {
+  color: #0050cc;
+}
+
+.prose-nets ul,
+.prose ul {
+  list-style-type: disc;
+  margin-top: 1.2em;
+  margin-bottom: 1.2em;
+  padding-left: 1.6em;
+}
+
+.prose-nets ol,
+.prose ol {
+  list-style-type: decimal;
+  margin-top: 1.2em;
+  margin-bottom: 1.2em;
+  padding-left: 1.6em;
+}
+
+.prose-nets li,
+.prose li {
+  margin-top: 0.45em;
+  margin-bottom: 0.45em;
+  padding-left: 0.35em;
+  line-height: 1.75;
+}
+
+.prose-nets blockquote,
+.prose blockquote {
+  font-style: italic;
+  color: #475569;
+  border-left: 4px solid #0069ff;
+  background-color: #f8faff;
+  margin-top: 1.6em;
+  margin-bottom: 1.6em;
+  padding: 0.85em 1.25em;
+  border-radius: 0 0.75rem 0.75rem 0;
+}
+
+.prose-nets blockquote p,
+.prose blockquote p {
+  margin: 0;
+}
+
+.prose-nets pre,
+.prose pre {
+  background-color: #0f172a;
+  color: #f8fafc;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  padding: 1.25em 1.5em;
+  border-radius: 1rem;
+  overflow-x: auto;
+  margin-top: 1.6em;
+  margin-bottom: 1.6em;
+  border: 1px solid #1e293b;
+}
+
+.prose-nets code,
+.prose code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: #0069ff;
+  background-color: #f1f5f9;
+  font-size: 0.875em;
+  font-weight: 600;
+  padding: 0.2em 0.4em;
+  border-radius: 0.375rem;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.prose-nets pre code,
+.prose pre code {
+  color: inherit;
+  background-color: transparent;
+  padding: 0;
+  border: 0;
+  font-size: inherit;
+}
+
+.prose-nets hr,
+.prose hr {
+  border: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, #e2e8f0, transparent);
+  margin-top: 2.5em;
+  margin-bottom: 2.5em;
+}
+
+.prose-nets table,
+.prose table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 2em;
+  margin-bottom: 2em;
+  font-size: 0.95rem;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.prose-nets thead,
+.prose thead {
+  background-color: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.prose-nets th,
+.prose th {
+  padding: 0.85em 1.1em;
+  font-weight: 700;
+  color: #0f172a;
+  text-align: left;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.prose-nets td,
+.prose td {
+  padding: 0.85em 1.1em;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  vertical-align: top;
+}
+
+.prose-nets tbody tr:hover,
+.prose tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.prose-nets img,
+.prose img {
+  border-radius: 1rem;
+  max-width: 100%;
+  height: auto;
+  margin-top: 2em;
+  margin-bottom: 2em;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+  display: block;
+}
+
+/* KATEX MATH FORMULA STYLING */
+.katex-math-display {
+  display: block;
+  margin: 1.75em 0;
+  padding: 1.25em 1.5em;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  text-align: center;
+  overflow-x: auto;
+  color: #0f172a;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.katex-math-display .katex-display {
+  margin: 0.5em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.25em 0;
+}
+
+.katex-math-inline {
+  display: inline-block;
+  padding: 0 0.2em;
+}

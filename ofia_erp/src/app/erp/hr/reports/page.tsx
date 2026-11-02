@@ -27,16 +27,6 @@ export default function HRReportsPage() {
       try {
         setCurrentUser(JSON.parse(stored));
       } catch {}
-    } else {
-      const defaultHr = {
-        id: "260326",
-        name: "HR Administrator",
-        email: "hr@ofia.ng",
-        role: "hr" as const,
-        department: "Human Resources",
-      };
-      setCurrentUser(defaultHr as any);
-      localStorage.setItem("erp_current_user", JSON.stringify(defaultHr));
     }
   }, []);
 

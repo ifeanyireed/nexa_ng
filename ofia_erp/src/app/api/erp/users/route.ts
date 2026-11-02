@@ -56,6 +56,11 @@ export async function GET(request: NextRequest) {
       assignedPages: u.assignedPages,
     }));
 
+    if (emailFilter && users.length > 0) {
+      const user = users[0];
+      return NextResponse.json({ success: true, user, users, ...user });
+    }
+
     return NextResponse.json({ success: true, users });
   } catch (err: any) {
     console.error("[Users GET] Error:", err);

@@ -358,12 +358,30 @@ export default function AdminCommandCenterPage() {
       if (!currentRole) {
         currentRole = localStorage.getItem("nexa_user_role") || "";
       }
+
+      const token =
+        localStorage.getItem("nexa_auth_token") ||
+        localStorage.getItem("nexa_token") ||
+        (typeof document !== "undefined"
+          ? document.cookie.match(/(?:^|;\s*)nexa_auth_token=([^;]*)/)?.[1]
+          : null);
+
+      if (!stored && !token) {
+        router.replace("/login?returnUrl=/erp/admin");
+        return;
+      }
+
       if (currentRole && currentRole !== "admin") {
         if (currentRole === "employee") router.replace("/erp/employee");
         else if (currentRole === "md") router.replace("/erp/md");
         else if (currentRole === "hr") router.replace("/erp/hr");
         else if (currentRole === "accountant") router.replace("/erp/accountant");
         else if (currentRole === "manager") router.replace("/erp/manager");
+        else if (currentRole === "marketer") router.replace("/erp/marketer");
+        else if (currentRole === "sales_closer") router.replace("/erp/ops/crm");
+        else if (currentRole === "dispatcher") router.replace("/erp/admin/dispatch");
+        else if (currentRole === "cashier") router.replace("/erp/admin/shop/pos");
+        else if (currentRole === "inventory_officer") router.replace("/erp/admin/shop/inventory");
       }
     }
   }, [router]);

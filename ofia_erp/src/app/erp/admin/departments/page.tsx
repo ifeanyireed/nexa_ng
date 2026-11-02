@@ -161,6 +161,8 @@ function ERPDepartmentsContent() {
           const uData = await uRes.json();
           if (Array.isArray(uData) && uData.length > 0) {
             rawUsers = uData;
+          } else if (Array.isArray(uData?.users) && uData.users.length > 0) {
+            rawUsers = uData.users;
           }
         }
         if (rawUsers.length === 0 && INITIAL_USERS && INITIAL_USERS.length > 0) {

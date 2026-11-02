@@ -337,6 +337,8 @@ function UserManagementContent() {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           rawList = data;
+        } else if (Array.isArray(data?.users) && data.users.length > 0) {
+          rawList = data.users;
         }
       }
 

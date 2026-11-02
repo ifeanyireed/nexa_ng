@@ -29,6 +29,7 @@ import {
 export default function HRDashboard() {
   const router = useRouter();
   const { reviews, users, cycles, isLoading } = useERPStore();
+
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedCycleId, setSelectedCycleId] = useState<string>("ACTIVE");
   const [submissionsPage, setSubmissionsPage] = useState(1);
@@ -44,17 +45,6 @@ export default function HRDashboard() {
         try {
           setCurrentUser(JSON.parse(stored));
         } catch {}
-      } else {
-        // Fallback default HR user so page never goes blank
-        const defaultHr = {
-          id: "260326",
-          name: "HR Administrator",
-          email: "hr@ofia.ng",
-          role: "hr" as const,
-          department: "Human Resources",
-        };
-        setCurrentUser(defaultHr as any);
-        localStorage.setItem("erp_current_user", JSON.stringify(defaultHr));
       }
     }
   }, []);

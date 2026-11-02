@@ -175,10 +175,6 @@ export default function ERPLayout({ children }: { children: React.ReactNode }) {
             setCurrentUser(parsed);
           }
         } catch {}
-      } else if (users.length > 0) {
-        const found = users.find(u => u.id === "EMP001") || users[0];
-        setCurrentUser(found);
-        localStorage.setItem("erp_current_user", JSON.stringify(found));
       }
 
       const tenantSlug = localStorage.getItem("nexa_tenant_slug") || "neweratransports";

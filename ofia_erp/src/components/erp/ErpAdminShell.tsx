@@ -465,6 +465,22 @@ export function ErpAdminShell({
         } catch {}
       }
 
+      // Authentication Guard: Redirect unauthenticated requests to login immediately
+      const storedErpUser = localStorage.getItem("erp_current_user");
+      const storedToken =
+        localStorage.getItem("nexa_auth_token") ||
+        localStorage.getItem("nexa_token") ||
+        (typeof document !== "undefined"
+          ? document.cookie.match(/(?:^|;\s*)nexa_auth_token=([^;]*)/)?.[1]
+          : null);
+
+      if (!storedErpUser && !storedToken && !user) {
+        if (typeof window !== "undefined") {
+          window.location.href = `/login?returnUrl=${encodeURIComponent(pathname)}`;
+        }
+        return;
+      }
+
       // Resolve user active session role, name, and email
       let resolvedRole: RoleKey = "employee";
       let resolvedName = user?.name || (activeName ? `${activeName} Staff` : "Staff");
@@ -473,7 +489,6 @@ export function ErpAdminShell({
 
       let resolvedLineManager = false;
       let parsedUser: any = null;
-      const storedErpUser = localStorage.getItem("erp_current_user");
       if (storedErpUser) {
         try {
           const parsed = JSON.parse(storedErpUser);

@@ -111,12 +111,28 @@ export function RoleGuard({
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // 1. Resolve active user and role
+    // 1. Authentication Guard: verify active session exists
+    const stored = localStorage.getItem("erp_current_user");
+    const authToken =
+      localStorage.getItem("nexa_auth_token") ||
+      localStorage.getItem("nexa_token") ||
+      (typeof document !== "undefined"
+        ? document.cookie.match(/(?:^|;\s*)nexa_auth_token=([^;]*)/)?.[1]
+        : null);
+
+    // If completely unauthenticated, immediately reject access and redirect to login
+    if (!stored && !authToken && !user) {
+      setIsAuthorized(false);
+      const returnUrl = encodeURIComponent(pathname);
+      router.replace(`/login?returnUrl=${returnUrl}`);
+      return;
+    }
+
+    // 2. Resolve active user and role
     let role: RoleKey = "employee";
     let userDept = (user as any)?.department || "";
     let assignedPages: string[] = [];
 
-    const stored = localStorage.getItem("erp_current_user");
     if (stored) {
       try {
         const u = JSON.parse(stored);

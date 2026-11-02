@@ -276,18 +276,19 @@ export function getActiveTenantSlug(): string {
 
 export function getSignedInERPUser(users: User[]): User {
   const tenantSlug = typeof window !== "undefined" ? getActiveTenantSlug() : "";
-  const fallbackUser: User = {
-    id: "USR-EMP-01",
-    name: "Staff Member",
-    email: tenantSlug ? `employee@${tenantSlug}.ng` : "employee@workspace.ng",
+  const emptyGuestUser: User = {
+    id: "",
+    name: "",
+    email: "",
     role: "employee",
     department: "Operations",
-    avatar: resolveAvatarUrl(null, "Staff Member"),
+    avatar: resolveAvatarUrl(null, "user"),
     company: tenantSlug ? tenantSlug.toUpperCase() : "Organization",
+    assignedPages: [],
   };
 
   if (typeof window === "undefined") {
-    return users.length > 0 ? users[0] : fallbackUser;
+    return users.length > 0 ? users[0] : emptyGuestUser;
   }
 
   try {
@@ -311,9 +312,21 @@ export function getSignedInERPUser(users: User[]): User {
     }
 
     const effectiveEmail =
-      storedEmail ||
       parsed?.email ||
+      storedEmail ||
       "";
+
+    const authToken =
+      localStorage.getItem("nexa_auth_token") ||
+      localStorage.getItem("nexa_token") ||
+      (typeof document !== "undefined"
+        ? document.cookie.match(/(?:^|;\s*)nexa_auth_token=([^;]*)/)?.[1]
+        : null);
+
+    // If completely unauthenticated, return empty guest profile (never spoof Staff Member)
+    if (!parsed && !effectiveEmail && !authToken && !storedName) {
+      return emptyGuestUser;
+    }
 
     // 1. If live database users list has a match by ID, Email, or Name
     if (users && users.length > 0) {
@@ -374,9 +387,9 @@ export function getSignedInERPUser(users: User[]): User {
     let effectiveName =
       parsed?.name ||
       storedName ||
-      (effectiveRole === "admin" && tenantAdminName ? tenantAdminName : "Staff Member");
+      (effectiveRole === "admin" && tenantAdminName ? tenantAdminName : "");
 
-    let finalEmail = effectiveEmail || (effectiveRole === "admin" ? "admin@ofia.ng" : "employee@ofia.ng");
+    let finalEmail = effectiveEmail || (effectiveRole === "admin" ? (tenantAdminEmail || "admin@ofia.ng") : "");
 
     if (
       effectiveName.toLowerCase().includes("adeyemi") ||
@@ -390,8 +403,8 @@ export function getSignedInERPUser(users: User[]): User {
     // 2. If the user is logged in with custom details or as Admin/Manager/Employee
     if (effectiveName || finalEmail) {
       return {
-        id: parsed?.id || (effectiveRole === "admin" ? "USR-ADMIN-01" : "EMP001"),
-        name: effectiveName,
+        id: parsed?.id || (effectiveRole === "admin" ? "USR-ADMIN-01" : `USR-${Date.now()}`),
+        name: effectiveName || "Staff User",
         email: finalEmail,
         role: effectiveRole,
         department: parsed?.department || "Operations",
@@ -401,9 +414,9 @@ export function getSignedInERPUser(users: User[]): User {
             ? "Executive Director & Workspace Admin"
             : effectiveRole === "manager"
             ? "Operations & Line Manager"
-            : "Staff Member"),
+            : "Staff"),
         avatar: resolveAvatarUrl(parsed?.avatar, effectiveName || effectiveEmail || "user"),
-        company: parsed?.company || "Organization",
+        company: parsed?.company || (tenantSlug ? tenantSlug.toUpperCase() : "Organization"),
         managerName: parsed?.managerName,
         managerId: parsed?.managerId,
         assignedPages: Array.isArray(parsed?.assignedPages) ? parsed.assignedPages : [],
@@ -413,7 +426,7 @@ export function getSignedInERPUser(users: User[]): User {
     console.warn("Failed to parse signed-in ERP user session:", e);
   }
 
-  return fallbackUser;
+  return emptyGuestUser;
 }
 
 async function fetchFromApi<T>(endpoint: string, fallbackData: T, tenantSlug?: string): Promise<T> {
@@ -440,6 +453,20 @@ async function fetchFromApi<T>(endpoint: string, fallbackData: T, tenantSlug?: s
     }
     const data = await res.json().catch(() => null);
     if (data === null || data === undefined) return fallbackData;
+
+    // Normalize wrapped API responses (e.g. { success: true, users: [...] }, { data: [...] }, etc.)
+    if (Array.isArray(fallbackData)) {
+      if (Array.isArray(data)) return data as T;
+      if (Array.isArray((data as any)?.users)) return (data as any).users as T;
+      if (Array.isArray((data as any)?.cycles)) return (data as any).cycles as T;
+      if (Array.isArray((data as any)?.reviews)) return (data as any).reviews as T;
+      if (Array.isArray((data as any)?.objectives)) return (data as any).objectives as T;
+      if (Array.isArray((data as any)?.departments)) return (data as any).departments as T;
+      if (Array.isArray((data as any)?.data)) return (data as any).data as T;
+      if (Array.isArray((data as any)?.items)) return (data as any).items as T;
+      return fallbackData;
+    }
+
     return data as T;
   } catch (err) {
     return fallbackData;
@@ -514,26 +541,40 @@ export function useERPStore(explicitTenantSlug?: string) {
     setIsLoading(true);
     try {
       const usersData = await fetchFromApi<User[]>("/users", [], activeTenantSlug);
-      setUsers(usersData || []);
+      const safeUsers = Array.isArray(usersData)
+        ? usersData
+        : (Array.isArray((usersData as any)?.users) ? (usersData as any).users : []);
+      setUsers(safeUsers);
 
       const cyclesData = await fetchFromApi<ReviewCycle[]>("/cycles", [], activeTenantSlug);
-      setCycles(cyclesData || []);
+      const safeCycles = Array.isArray(cyclesData)
+        ? cyclesData
+        : (Array.isArray((cyclesData as any)?.cycles) ? (cyclesData as any).cycles : []);
+      setCycles(safeCycles);
 
       const reviewsData = await fetchFromApi<PerformanceReview[]>("/reviews", [], activeTenantSlug);
-      setReviews(reviewsData || []);
+      const safeReviews = Array.isArray(reviewsData)
+        ? reviewsData
+        : (Array.isArray((reviewsData as any)?.reviews) ? (reviewsData as any).reviews : []);
+      setReviews(safeReviews);
 
       const objectivesData = await fetchFromApi<Objective[]>("/objectives", [], activeTenantSlug);
-      setObjectives(objectivesData || []);
+      const safeObjectives = Array.isArray(objectivesData)
+        ? objectivesData
+        : (Array.isArray((objectivesData as any)?.objectives) ? (objectivesData as any).objectives : []);
+      setObjectives(safeObjectives);
 
       const deptsData = await fetchFromApi<any[]>("/departments", [], activeTenantSlug);
-      if (deptsData && deptsData.length > 0) {
-        setDepartments(deptsData.map((d: any) => d.name || d.code));
+      if (Array.isArray(deptsData) && deptsData.length > 0) {
+        setDepartments(deptsData.map((d: any) => d.name || d.code || String(d)));
+      } else if (Array.isArray((deptsData as any)?.departments) && (deptsData as any).departments.length > 0) {
+        setDepartments((deptsData as any).departments.map((d: any) => d.name || d.code || String(d)));
       }
 
       // Auto-initialize reviews for the active cycle if any
       try {
-        await ensureReviewsForActiveCycles(usersData || [], cyclesData || [], reviewsData || [], objectivesData || [], activeTenantSlug, (updated) => {
-          setReviews(updated);
+        await ensureReviewsForActiveCycles(safeUsers, safeCycles, safeReviews, safeObjectives, activeTenantSlug, (updated) => {
+          setReviews(Array.isArray(updated) ? updated : []);
         });
       } catch (initErr) {
         console.warn("Failed to auto-initialize reviews:", initErr);

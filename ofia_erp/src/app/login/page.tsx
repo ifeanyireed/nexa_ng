@@ -354,6 +354,14 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
       }
     }
 
+    const rawReturnUrl = typeof unwrappedParams.returnUrl === "string" ? unwrappedParams.returnUrl : "";
+    let destination = route;
+    if (rawReturnUrl && rawReturnUrl.startsWith("/") && !rawReturnUrl.startsWith("//") && !rawReturnUrl.startsWith("/login")) {
+      if (activeRole === "admin" || rawReturnUrl.startsWith("/erp/employee")) {
+        destination = rawReturnUrl;
+      }
+    }
+
     // 1. Identify tenant slug from user email if on general erp.domain.ng
     let targetTenantSlug = tenantSlug;
     if (!targetTenantSlug && userEmail.includes("@")) {
@@ -377,12 +385,12 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
       const cleanHost = host.replace(/^erp\./i, "").replace(/^www\./i, "");
 
       if (cleanHost && !cleanHost.startsWith(targetTenantSlug)) {
-        window.location.href = `${protocol}//${targetTenantSlug}.${cleanHost}${route}`;
+        window.location.href = `${protocol}//${targetTenantSlug}.${cleanHost}${destination}`;
         return;
       }
     }
 
-    router.push(route);
+    router.push(destination);
   };
 
   const heroTitle =

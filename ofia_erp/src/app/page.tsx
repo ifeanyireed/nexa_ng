@@ -349,6 +349,52 @@ export default function RootPage() {
     const slug = extractSubdomainOrParam();
     setTenantSlug(slug);
     setIsReady(true);
+
+    if (slug && typeof window !== "undefined") {
+      const stored = localStorage.getItem("erp_current_user");
+      const token =
+        localStorage.getItem("nexa_auth_token") ||
+        localStorage.getItem("nexa_token") ||
+        (typeof document !== "undefined"
+          ? document.cookie.match(/(?:^|;\s*)nexa_auth_token=([^;]*)/)?.[1]
+          : null);
+
+      if (stored || token) {
+        let role = "employee";
+        if (stored) {
+          try {
+            const u = JSON.parse(stored);
+            if (u?.role) role = u.role;
+          } catch {}
+        }
+        if (!role || role === "employee") {
+          role = localStorage.getItem("nexa_user_role") || "employee";
+        }
+        const target =
+          role === "admin"
+            ? "/erp/admin"
+            : role === "accountant"
+            ? "/erp/accountant"
+            : role === "hr"
+            ? "/erp/hr"
+            : role === "md"
+            ? "/erp/md"
+            : role === "manager"
+            ? "/erp/manager"
+            : role === "marketer"
+            ? "/erp/marketer"
+            : role === "sales_closer"
+            ? "/erp/ops/crm"
+            : role === "cashier"
+            ? "/erp/admin/shop/pos"
+            : role === "inventory_officer"
+            ? "/erp/admin/shop/inventory"
+            : role === "dispatcher"
+            ? "/erp/admin/dispatch"
+            : "/erp/employee";
+        window.location.href = target;
+      }
+    }
   }, []);
 
   if (!isReady) {

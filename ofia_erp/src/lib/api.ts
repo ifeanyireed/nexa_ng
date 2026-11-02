@@ -16,6 +16,31 @@ export const setAuthToken = (token: string) => {
 export const clearAuthToken = () => {
   if (typeof window !== "undefined") {
     localStorage.removeItem("nexa_token");
+    localStorage.removeItem("nexa_auth_token");
+    localStorage.removeItem("erp_current_user");
+    localStorage.removeItem("nexa_user_role");
+    localStorage.removeItem("nexa_user_email");
+    localStorage.removeItem("nexa_user_name");
+    localStorage.removeItem("nexa_org_id");
+    localStorage.removeItem("nexa_user_department");
+    localStorage.removeItem("erp_user_department");
+    sessionStorage.clear();
+
+    // Expire authentication cookies across host domain and wildcard ofia.ng
+    const isOfiaDomain = window.location.hostname.endsWith("ofia.ng");
+    const domainAttr = isOfiaDomain ? "; domain=.ofia.ng" : "";
+    const cookieClear = "=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+
+    document.cookie = `nexa_auth_token${cookieClear}${domainAttr}`;
+    document.cookie = `nexa_auth_token${cookieClear}`;
+    document.cookie = `nexa_user_role${cookieClear}${domainAttr}`;
+    document.cookie = `nexa_user_role${cookieClear}`;
+    document.cookie = `nexa_user_email${cookieClear}${domainAttr}`;
+    document.cookie = `nexa_user_email${cookieClear}`;
+    document.cookie = `nexa_user_name${cookieClear}${domainAttr}`;
+    document.cookie = `nexa_user_name${cookieClear}`;
+    document.cookie = `ofia_superadmin_jwt${cookieClear}${domainAttr}`;
+    document.cookie = `ofia_superadmin_jwt${cookieClear}`;
   }
 };
 

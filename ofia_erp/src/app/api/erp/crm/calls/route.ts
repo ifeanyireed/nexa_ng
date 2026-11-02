@@ -301,6 +301,66 @@ export async function POST(request: NextRequest) {
         COALESCE(qualification_json::text, '') AS qualification_json;
     `;
 
+    // Business Rule & Timeline Sync: If call is linked to a lead, sync disposition log, status, and score to crm_leads
+    const effectiveLeadId = leadId || saved.lead_id;
+    if (effectiveLeadId) {
+      try {
+        const durText = durationSeconds > 0 ? ` [${Math.floor(durationSeconds / 60)}m ${durationSeconds % 60}s]` : "";
+        const leadLog = `Call Log (${outcome}) by ${repName}${durText}: ${notes || outcome}${followupDate ? ` (Followup: ${followupDate})` : ""}`;
+
+        let newStatus = "CONTACTED";
+        let newScore = 80;
+        if (outcome === "CONNECTED_WON") {
+          newScore = 100;
+          newStatus = "WON";
+        } else if (outcome === "CONNECTED_INTERESTED" || outcome === "QUALIFIED") {
+          newScore = 95;
+          newStatus = "QUALIFIED";
+        } else if (outcome === "CONNECTED_NEGOTIATING") {
+          newScore = 90;
+          newStatus = "NEGOTIATION";
+        } else if (outcome === "NOT_INTERESTED") {
+          newStatus = "UNQUALIFIED";
+        }
+
+        await sql`
+          UPDATE crm_leads SET
+            notes = CASE
+              WHEN notes IS NULL OR TRIM(notes) = '' THEN ${leadLog}
+              ELSE notes || E'\n' || ${leadLog}
+            END,
+            status = CASE
+              WHEN status IN ('WON', 'CONVERTED') THEN status
+              ELSE ${newStatus}
+            END,
+            score = GREATEST(score, ${newScore}),
+            assigned_rep = CASE
+              WHEN assigned_rep IS NULL OR assigned_rep = '' OR assigned_rep LIKE 'Auto-Assign%' OR assigned_rep = 'Unassigned' THEN ${repName}
+              ELSE assigned_rep
+            END,
+            owner = CASE
+              WHEN owner IS NULL OR owner = '' OR owner LIKE 'Auto-Assign%' OR owner = 'Unassigned' THEN ${repName}
+              ELSE owner
+            END,
+            updated_at = NOW()
+          WHERE id = ${effectiveLeadId} AND LOWER(tenant_slug) = ${tenantSlug};
+        `;
+      } catch (leadErr) {
+        console.warn("[CRM-Calls] Warning syncing call log to lead notes:", leadErr);
+      }
+    }
+
+    // Record activity in crm_activities timeline for unified CRM audit
+    try {
+      const actId = `ACT-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+      const actTitle = `${direction} Call: ${contactName} (${outcome})`;
+      const actNotes = `Call with ${contactName} (${phoneNumber}). Duration: ${durationSeconds}s. Outcome: ${outcome}.\n${notes || aiSummary}`;
+      await sql`
+        INSERT INTO crm_activities (id, tenant_slug, type, title, company, rep, date_time, status, notes, deal_id, lead_id, created_at)
+        VALUES (${actId}, ${tenantSlug}, 'CALL', ${actTitle}, ${company}, ${repName}, 'Today, Just now', 'COMPLETED', ${actNotes}, ${dealId}, ${effectiveLeadId}, NOW());
+      `;
+    } catch {}
+
     return NextResponse.json({
       success: true,
       call: {

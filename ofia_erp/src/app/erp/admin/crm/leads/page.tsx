@@ -108,17 +108,165 @@ export default function CrmLeadsPage() {
   const [isApplyingPhone, setIsApplyingPhone] = useState(false);
   const [copiedPhone, setCopiedPhone] = useState<string | null>(null);
 
+  const getLeadCalls = (lead: CrmLead | null): CrmCall[] => {
+    if (!lead || !Array.isArray(calls) || calls.length === 0) return [];
+    const leadId = lead.id;
+    const leadPhone = (lead.contactPhone || (lead as any).phone || "").replace(/[^0-9]/g, "");
+    const leadLast10 = leadPhone.length >= 10 ? leadPhone.slice(-10) : "";
+    const leadLast7 = leadPhone.length >= 7 ? leadPhone.slice(-7) : "";
+    const leadName = (lead.contactName || (lead as any).name || "").trim().toLowerCase();
+    const leadComp = (lead.companyName || (lead as any).company || "").trim().toLowerCase();
+
+    const matched: CrmCall[] = [];
+    const seenCallIds = new Set<string>();
+
+    for (const c of calls) {
+      if (!c) continue;
+      const callId = c.id || `${c.callDate}-${c.phoneNumber}-${c.outcome}`;
+      if (seenCallIds.has(callId)) continue;
+
+      let isMatch = false;
+      const cLeadId = c.leadId || (c as any).lead_id;
+      if (leadId && cLeadId && cLeadId === leadId) {
+        isMatch = true;
+      }
+
+      if (!isMatch && leadPhone && c.phoneNumber) {
+        const cPhone = c.phoneNumber.replace(/[^0-9]/g, "");
+        if (cPhone.length >= 7) {
+          if (leadLast10 && cPhone.includes(leadLast10)) isMatch = true;
+          else if (leadLast7 && cPhone.endsWith(leadLast7)) isMatch = true;
+          else if (cPhone.length >= 7 && leadPhone.endsWith(cPhone.slice(-7))) isMatch = true;
+        }
+      }
+
+      if (!isMatch && leadName && leadComp && c.contactName && c.company) {
+        if (
+          c.contactName.trim().toLowerCase() === leadName &&
+          c.company.trim().toLowerCase() === leadComp
+        ) {
+          isMatch = true;
+        }
+      }
+
+      if (!isMatch && leadName && leadName.length > 3 && c.contactName) {
+        if (c.contactName.trim().toLowerCase() === leadName) {
+          isMatch = true;
+        }
+      }
+
+      if (!isMatch && leadComp && leadComp.length > 3 && c.company) {
+        if (c.company.trim().toLowerCase() === leadComp) {
+          isMatch = true;
+        }
+      }
+
+      if (isMatch) {
+        seenCallIds.add(callId);
+        matched.push(c);
+      }
+    }
+
+    matched.sort((a, b) => {
+      const tA = new Date(a.callDate || a.createdAt || 0).getTime();
+      const tB = new Date(b.callDate || b.createdAt || 0).getTime();
+      return tB - tA;
+    });
+
+    return matched;
+  };
+
   const getSignalItems = (lead: CrmLead | null) => {
     if (!lead) return [];
-    const rawSignals =
-      Array.isArray(lead.buyingSignals) && lead.buyingSignals.length > 0
-        ? lead.buyingSignals
-        : lead.notes
-        ? [lead.notes]
-        : ["Direct Commercial Lead Inbound"];
 
-    // Expand any string that contains multiple concatenated events
-    const signals: string[] = [];
+    const baseCreatedAt = lead.createdAt ? new Date(lead.createdAt) : new Date();
+    const validBaseTime = isNaN(baseCreatedAt.getTime()) ? new Date() : baseCreatedAt;
+    const updatedAt = lead.updatedAt ? new Date(lead.updatedAt) : null;
+    const validUpdateTime = updatedAt && !isNaN(updatedAt.getTime()) ? updatedAt : null;
+
+    const matchedCalls = getLeadCalls(lead);
+    const items: {
+      id: string | number;
+      text: string;
+      eventDate: string;
+      eventTime: string;
+      eventType: "CALL" | "CAMPAIGN" | "ASSIGNMENT" | "INBOUND" | "SIGNAL";
+      timestamp: number;
+      callDetails?: {
+        repName?: string;
+        outcome?: string;
+        direction?: string;
+        durationSeconds?: number;
+        recordingUrl?: string;
+        followupDate?: string;
+      };
+    }[] = [];
+
+    // 1. Process actual logged calls from CRM
+    for (const c of matchedCalls) {
+      const callDateObj = new Date(
+        c.callDate || (c as any).call_date || c.createdAt || (c as any).created_at || validBaseTime
+      );
+      const validCallDate = !isNaN(callDateObj.getTime()) ? callDateObj : validBaseTime;
+
+      const eventDate = validCallDate.toLocaleDateString(undefined, {
+        weekday: "short",
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+      const eventTime = validCallDate.toLocaleTimeString(undefined, {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
+
+      const durSec = Number(c.durationSeconds ?? (c as any).duration_seconds ?? 0);
+      const durStr = durSec > 0 ? ` [${Math.floor(durSec / 60)}m ${durSec % 60}s]` : "";
+      const rep = c.repName || (c as any).rep_name || (c.isAi ? "Ofia Voice Agent" : "Sales Closer");
+      const outcome = c.outcome || "COMPLETED";
+      const notesText =
+        c.notes?.trim() ||
+        c.aiSummary?.trim() ||
+        (c as any).ai_summary?.trim() ||
+        "Logged phone conversation disposition.";
+      const follow = c.followupDate || (c as any).followup_date || "";
+      const followStr = follow.trim() ? ` • Followup: ${follow.trim()}` : "";
+
+      const text = `Call Log (${outcome}) by ${rep}${durStr}: ${notesText}${followStr}`;
+
+      items.push({
+        id: `call-${c.id || Math.random()}`,
+        text,
+        eventDate,
+        eventTime,
+        eventType: "CALL",
+        timestamp: validCallDate.getTime(),
+        callDetails: {
+          repName: rep,
+          outcome,
+          direction: c.direction || "OUTBOUND",
+          durationSeconds: durSec,
+          recordingUrl: c.recordingUrl || (c as any).recording_url || "",
+          followupDate: follow,
+        },
+      });
+    }
+
+    // 2. Process buyingSignals and lead notes
+    const rawSignals: string[] = [];
+    if (Array.isArray(lead.buyingSignals)) {
+      for (const s of lead.buyingSignals) {
+        if (typeof s === "string" && s.trim()) rawSignals.push(s.trim());
+      }
+    }
+    if (lead.notes && typeof lead.notes === "string" && lead.notes.trim()) {
+      if (!rawSignals.includes(lead.notes.trim())) {
+        rawSignals.push(lead.notes.trim());
+      }
+    }
+
+    const splitSignals: string[] = [];
     for (const s of rawSignals) {
       if (typeof s !== "string") continue;
       const parts = s
@@ -127,30 +275,15 @@ export default function CrmLeadsPage() {
         )
         .map((p) => p.trim())
         .filter(Boolean);
-      signals.push(...parts);
+      splitSignals.push(...parts);
     }
 
-    const baseCreatedAt = lead.createdAt ? new Date(lead.createdAt) : new Date();
-    const validBaseTime = isNaN(baseCreatedAt.getTime()) ? new Date() : baseCreatedAt;
-    const updatedAt = lead.updatedAt ? new Date(lead.updatedAt) : null;
-    const validUpdateTime = updatedAt && !isNaN(updatedAt.getTime()) ? updatedAt : null;
+    // De-duplicate signals that describe calls already captured in matchedCalls
+    for (let idx = 0; idx < splitSignals.length; idx++) {
+      let text = splitSignals[idx].trim();
+      if (!text) continue;
 
-    // Check if calls exist for this lead to match exact call timestamps
-    const matchingCall = calls.find(
-      (c) =>
-        (lead.id && c.leadId === lead.id) ||
-        (lead.companyName && c.company && c.company.toLowerCase() === lead.companyName.toLowerCase()) ||
-        (lead.contactPhone &&
-          c.phoneNumber &&
-          c.phoneNumber.replace(/[^0-9]/g, "").slice(-7) === lead.contactPhone.replace(/[^0-9]/g, "").slice(-7))
-    );
-
-    return signals.map((rawSignal, idx) => {
-      let text = String(rawSignal || "").trim();
-      let eventDate = "";
-      let eventTime = "";
       let eventType: "CALL" | "CAMPAIGN" | "ASSIGNMENT" | "INBOUND" | "SIGNAL" = "SIGNAL";
-
       if (text.toLowerCase().startsWith("call log") || text.includes("(CONNECTED_") || text.includes("Call Log")) {
         eventType = "CALL";
       } else if (text.toLowerCase().includes("email blast") || text.toLowerCase().includes("opened the email")) {
@@ -161,7 +294,28 @@ export default function CrmLeadsPage() {
         eventType = "INBOUND";
       }
 
-      // 1. Check if raw signal already contains a timestamp prefix like [YYYY-MM-DD HH:MM:SS]
+      // If this is a call signal, check if it's already represented in items
+      if (eventType === "CALL" && matchedCalls.length > 0) {
+        const isAlreadyAdded = items.some((it) => {
+          if (it.eventType !== "CALL") return false;
+          const outcomeMatch = text.match(/Call Log\s*\(([^)]+)\)/i);
+          if (
+            outcomeMatch &&
+            it.callDetails?.outcome &&
+            outcomeMatch[1].toUpperCase() === it.callDetails.outcome.toUpperCase()
+          ) {
+            return true;
+          }
+          return false;
+        });
+        if (isAlreadyAdded) continue;
+      }
+
+      let eventDate = "";
+      let eventTime = "";
+      let timestamp = validBaseTime.getTime() - (idx + 1) * 1000 * 60 * 15;
+
+      // Check if text has timestamp prefix like [YYYY-MM-DD HH:MM:SS]
       const match = text.match(
         /^\[?(20\d{2}[-/.]\d{1,2}[-/.]\d{1,2}(?:[ T]\d{1,2}:\d{2}(?::\d{2})?)?)\]?\s*[:-]?\s*(.*)$/
       );
@@ -180,28 +334,10 @@ export default function CrmLeadsPage() {
             second: "2-digit",
           });
           text = match[2].trim() || text;
+          timestamp = parsed.getTime();
         }
       }
 
-      // 2. If it's a Call Log event and we have matching call log, use the exact call timestamp
-      if (!eventDate && eventType === "CALL" && matchingCall?.callDate) {
-        const callD = new Date(matchingCall.callDate);
-        if (!isNaN(callD.getTime())) {
-          eventDate = callD.toLocaleDateString(undefined, {
-            weekday: "short",
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-          });
-          eventTime = callD.toLocaleTimeString(undefined, {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-          });
-        }
-      }
-
-      // 3. If it's a Call Log or subsequent event, use lead.updatedAt if available
       if (!eventDate && eventType === "CALL" && validUpdateTime) {
         eventDate = validUpdateTime.toLocaleDateString(undefined, {
           weekday: "short",
@@ -214,11 +350,11 @@ export default function CrmLeadsPage() {
           minute: "2-digit",
           second: "2-digit",
         });
+        timestamp = validUpdateTime.getTime();
       }
 
-      // 4. Fallback to validBaseTime (lead.createdAt)
       if (!eventDate) {
-        const itemDate = new Date(validBaseTime.getTime() - idx * 1000 * 60 * 15);
+        const itemDate = new Date(timestamp);
         eventDate = itemDate.toLocaleDateString(undefined, {
           weekday: "short",
           year: "numeric",
@@ -232,14 +368,41 @@ export default function CrmLeadsPage() {
         });
       }
 
-      return {
-        id: idx,
+      items.push({
+        id: `sig-${idx}`,
         text,
         eventDate,
         eventTime,
         eventType,
-      };
-    });
+        timestamp,
+      });
+    }
+
+    // Fallback if completely empty
+    if (items.length === 0) {
+      items.push({
+        id: "default-inbound",
+        text: "Direct Commercial Lead Inbound",
+        eventDate: validBaseTime.toLocaleDateString(undefined, {
+          weekday: "short",
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        }),
+        eventTime: validBaseTime.toLocaleTimeString(undefined, {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        }),
+        eventType: "INBOUND",
+        timestamp: validBaseTime.getTime(),
+      });
+    }
+
+    // Sort items chronologically descending (newest event first)
+    items.sort((a, b) => b.timestamp - a.timestamp);
+
+    return items;
   };
 
   useEffect(() => {
@@ -304,12 +467,20 @@ export default function CrmLeadsPage() {
         }
 
         const normalizedLeads = uniqueRawLeads.map((l: any) => {
-          const rawSignals =
-            Array.isArray(l.buyingSignals) && l.buyingSignals.length > 0
-              ? l.buyingSignals
-              : l.notes
-              ? [l.notes]
-              : ["Direct Outreach"];
+          const rawSignals: string[] = [];
+          if (Array.isArray(l.buyingSignals)) {
+            for (const s of l.buyingSignals) {
+              if (typeof s === "string" && s.trim()) rawSignals.push(s.trim());
+            }
+          }
+          if (l.notes && typeof l.notes === "string" && l.notes.trim()) {
+            if (!rawSignals.includes(l.notes.trim())) {
+              rawSignals.push(l.notes.trim());
+            }
+          }
+          if (rawSignals.length === 0) {
+            rawSignals.push("Direct Outreach");
+          }
 
           const splitSignals: string[] = [];
           for (const s of rawSignals) {
@@ -330,7 +501,11 @@ export default function CrmLeadsPage() {
           };
         });
         setLeads(normalizedLeads);
-        const rawCalls = Array.isArray(callsRes?.calls) ? callsRes.calls : [];
+        const rawCalls = Array.isArray(callsRes?.calls)
+          ? callsRes.calls
+          : Array.isArray(callsRes)
+          ? callsRes
+          : [];
         setCalls(rawCalls);
       } catch {
         setLeads([]);
@@ -398,6 +573,10 @@ export default function CrmLeadsPage() {
     }
     if (!call && lead.companyName) {
       call = latestCallByLead.get(`comp:${lead.companyName.trim().toLowerCase()}`);
+    }
+    if (!call) {
+      const callsForLead = getLeadCalls(lead);
+      if (callsForLead.length > 0) call = callsForLead[0];
     }
     return call;
   };
@@ -2030,6 +2209,49 @@ export default function CrmLeadsPage() {
                     <div className="text-xs font-semibold text-[var(--nexa-text-primary)] leading-relaxed pl-0.5">
                       {item.text}
                     </div>
+
+                    {/* Rich Call Metadata details if available */}
+                    {item.callDetails && (
+                      <div className="flex flex-wrap items-center gap-2 pt-1.5 border-t border-[var(--nexa-border)] text-[11px] text-[var(--nexa-text-muted)]">
+                        {item.callDetails.repName && (
+                          <span>
+                            Closer: <strong className="text-[var(--nexa-text-secondary)]">{item.callDetails.repName}</strong>
+                          </span>
+                        )}
+                        {item.callDetails.durationSeconds !== undefined && item.callDetails.durationSeconds > 0 && (
+                          <>
+                            <span>•</span>
+                            <span>
+                              Duration: <strong className="text-[var(--nexa-text-secondary)]">
+                                {Math.floor(item.callDetails.durationSeconds / 60)}m {item.callDetails.durationSeconds % 60}s
+                              </strong>
+                            </span>
+                          </>
+                        )}
+                        {item.callDetails.direction && (
+                          <>
+                            <span>•</span>
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-secondary)]">
+                              {item.callDetails.direction}
+                            </span>
+                          </>
+                        )}
+                        {item.callDetails.recordingUrl && (
+                          <>
+                            <span>•</span>
+                            <a
+                              href={item.callDetails.recordingUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[#1A56DB] hover:underline font-semibold inline-flex items-center gap-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Play Recording
+                            </a>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}

@@ -164,6 +164,10 @@ export interface CrmCall {
   durationSeconds: number;
   notes?: string;
   followupDate?: string;
+  recordingUrl?: string;
+  transcript?: string;
+  aiSummary?: string;
+  isAi?: boolean;
   callDate: string;
   createdAt: string;
 }

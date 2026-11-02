@@ -26,8 +26,8 @@ import { crmFetch } from "@/lib/crm-client";
 
 const STAGES: { key: CrmDeal["stage"]; label: string; color: string }[] = [
   { key: "LEAD", label: "Lead Discovery", color: "border-slate-500/40 text-slate-500" },
-  { key: "QUALIFIED", label: "Qualified", color: "border-blue-500/40 text-blue-500" },
   { key: "PROPOSAL", label: "Proposal / SLA", color: "border-purple-500/40 text-purple-500" },
+  { key: "QUALIFIED", label: "Qualified", color: "border-blue-500/40 text-blue-500" },
   { key: "NEGOTIATION", label: "Negotiation", color: "border-amber-500/40 text-amber-500" },
   { key: "WON", label: "Contract Won", color: "border-emerald-500/40 text-emerald-500" },
 ];
@@ -248,8 +248,8 @@ export default function DealsPipelinePage() {
                           className="text-[10px] bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-md px-2 py-1 font-bold cursor-pointer"
                         >
                           <option value="LEAD">LEAD</option>
-                          <option value="QUALIFIED">QUALIFIED</option>
                           <option value="PROPOSAL">PROPOSAL</option>
+                          <option value="QUALIFIED">QUALIFIED</option>
                           <option value="NEGOTIATION">NEGOTIATION</option>
                           <option value="WON">WON</option>
                         </select>
@@ -326,8 +326,8 @@ export default function DealsPipelinePage() {
               className="w-full px-3 py-2 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs font-medium"
             >
               <option value="LEAD">LEAD</option>
-              <option value="QUALIFIED">QUALIFIED</option>
               <option value="PROPOSAL">PROPOSAL</option>
+              <option value="QUALIFIED">QUALIFIED</option>
               <option value="NEGOTIATION">NEGOTIATION</option>
               <option value="WON">WON</option>
             </select>

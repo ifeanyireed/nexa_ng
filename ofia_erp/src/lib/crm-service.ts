@@ -51,6 +51,7 @@ export interface CrmLead {
   listName?: string;
   notes?: string;
   convertedDealId?: string;
+  dealStage?: CrmDeal["stage"];
   convertedAt?: string;
   createdAt: string;
   updatedAt?: string;

@@ -1198,7 +1198,16 @@ export default function EmailMarketingBlastsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--nexa-border)]">
-                {paginatedBlasts.length === 0 ? (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={8} className="py-16 text-center text-xs text-[var(--nexa-text-muted)]">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <RefreshCw className="w-5 h-5 animate-spin text-[#1A56DB]" />
+                        <span>Loading sales call logs...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : paginatedBlasts.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-[var(--nexa-text-muted)]">
                       <div className="flex flex-col items-center justify-center gap-2">

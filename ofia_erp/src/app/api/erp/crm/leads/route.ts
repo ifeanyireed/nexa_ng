@@ -130,6 +130,23 @@ export async function GET(request: NextRequest) {
         COALESCE(l.assigned_rep, '') AS assigned_rep,
         COALESCE(l.value, '') AS value,
         COALESCE(l.notes, '') AS notes,
+        COALESCE(l.converted_deal_id, '') AS converted_deal_id,
+        (
+          SELECT d.stage
+          FROM crm_deals d
+          WHERE (d.id = l.converted_deal_id OR d.lead_id = l.id)
+            AND (LOWER(d.tenant_slug) = ${tenantSlug} OR LOWER(d.tenant_slug) = 'default')
+          ORDER BY d.created_at DESC
+          LIMIT 1
+        ) AS deal_stage,
+        (
+          SELECT d.id
+          FROM crm_deals d
+          WHERE (d.id = l.converted_deal_id OR d.lead_id = l.id)
+            AND (LOWER(d.tenant_slug) = ${tenantSlug} OR LOWER(d.tenant_slug) = 'default')
+          ORDER BY d.created_at DESC
+          LIMIT 1
+        ) AS deal_id,
         COALESCE(
           NULLIF(TRIM(l.linkedin_url), ''),
           (
@@ -191,6 +208,8 @@ export async function GET(request: NextRequest) {
       value: r.value,
       notes: r.notes,
       linkedinUrl: r.linkedin_url || "",
+      convertedDealId: r.deal_id || r.converted_deal_id || "",
+      dealStage: r.deal_stage || (r.status === "CONVERTED" ? "LEAD" : undefined),
       createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
       updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString(),
     }));

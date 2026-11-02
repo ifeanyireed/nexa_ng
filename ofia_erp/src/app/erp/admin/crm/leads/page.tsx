@@ -41,7 +41,7 @@ import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaModal } from "@/components/nexa/NexaModal";
 import { Pagination } from "@/components/nexa/Pagination";
-import { CrmLead, CrmCall } from "@/lib/crm-service";
+import { CrmLead, CrmCall, CrmDeal } from "@/lib/crm-service";
 import { crmFetch } from "@/lib/crm-client";
 import { filterSalesClosers } from "@/lib/access-control";
 import { PhoneCandidate, isPhoneMissingOrInvalid } from "@/lib/crm-phone-enricher";
@@ -49,6 +49,9 @@ import { PhoneCandidate, isPhoneMissingOrInvalid } from "@/lib/crm-phone-enriche
 export default function CrmLeadsPage() {
   const [leads, setLeads] = useState<CrmLead[]>([]);
   const [calls, setCalls] = useState<CrmCall[]>([]);
+  const [deals, setDeals] = useState<CrmDeal[]>([]);
+  const [updatingDealStageId, setUpdatingDealStageId] = useState<string | null>(null);
+  const [isPromotingId, setIsPromotingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [callStatusFilter, setCallStatusFilter] = useState("ALL");
@@ -430,9 +433,10 @@ export default function CrmLeadsPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [leadsRes, callsRes] = await Promise.all([
+        const [leadsRes, callsRes, dealsRes] = await Promise.all([
           crmFetch("/api/erp/crm/leads").then((r) => r.json()).catch(() => null),
           crmFetch("/api/erp/crm/calls").then((r) => r.json()).catch(() => null),
+          crmFetch("/api/erp/crm/deals").then((r) => r.json()).catch(() => null),
         ]);
         const rawLeads = Array.isArray(leadsRes) ? leadsRes : Array.isArray(leadsRes?.leads) ? leadsRes.leads : [];
         const seenIds = new Set<string>();
@@ -507,9 +511,16 @@ export default function CrmLeadsPage() {
           ? callsRes
           : [];
         setCalls(rawCalls);
+        const rawDeals = Array.isArray(dealsRes?.deals)
+          ? dealsRes.deals
+          : Array.isArray(dealsRes)
+          ? dealsRes
+          : [];
+        setDeals(rawDeals);
       } catch {
         setLeads([]);
         setCalls([]);
+        setDeals([]);
       } finally {
         setIsLoading(false);
       }
@@ -839,7 +850,105 @@ export default function CrmLeadsPage() {
     setAssignedCloser("Auto-Assign (Least-Loaded)");
   };
 
+  const getDealForLead = (lead: CrmLead): CrmDeal | undefined => {
+    if (!lead) return undefined;
+    if (lead.convertedDealId) {
+      const match = deals.find((d) => d.id === lead.convertedDealId);
+      if (match) return match;
+    }
+    if (lead.id) {
+      const match = deals.find((d) => d.leadId === lead.id || (d as any).lead_id === lead.id);
+      if (match) return match;
+    }
+    const cleanPhone = (lead.contactPhone || (lead as any).phone || "").replace(/[^0-9]/g, "");
+    if (cleanPhone.length >= 7) {
+      const match = deals.find(
+        (d) => d.phone && d.phone.replace(/[^0-9]/g, "").endsWith(cleanPhone.slice(-7))
+      );
+      if (match) return match;
+    }
+    if (lead.companyName) {
+      const match = deals.find(
+        (d) => d.company && d.company.toLowerCase().trim() === lead.companyName.toLowerCase().trim()
+      );
+      if (match) return match;
+    }
+    return undefined;
+  };
+
+  const handleUpdateDealStage = async (dealId: string, lead: CrmLead, newStage: CrmDeal["stage"]) => {
+    const newProb =
+      newStage === "WON"
+        ? 100
+        : newStage === "NEGOTIATION"
+        ? 85
+        : newStage === "QUALIFIED"
+        ? 50
+        : newStage === "PROPOSAL"
+        ? 40
+        : 20;
+
+    const targetKey = dealId || lead.id;
+    setUpdatingDealStageId(targetKey);
+
+    // Optimistic UI updates
+    if (dealId) {
+      setDeals((prev) =>
+        prev.map((d) => (d.id === dealId ? { ...d, stage: newStage, probability: newProb } : d))
+      );
+    }
+    setLeads((prev) =>
+      prev.map((l) => (l.id === lead.id ? { ...l, dealStage: newStage } : l))
+    );
+
+    try {
+      if (dealId) {
+        await crmFetch("/api/erp/crm/deals", {
+          method: "PATCH",
+          body: JSON.stringify({
+            id: dealId,
+            stage: newStage,
+            probability: newProb,
+          }),
+        });
+      } else {
+        const res = await crmFetch("/api/erp/crm/deals", {
+          method: "POST",
+          body: JSON.stringify({
+            title: `${lead.companyName} Commercial Contract`,
+            company: lead.companyName,
+            contactName: lead.contactName,
+            email: lead.contactEmail,
+            phone: lead.contactPhone || "",
+            value: "₦0",
+            stage: newStage,
+            owner: lead.assignedRep || "Senior Account Exec",
+            probability: newProb,
+            leadId: lead.id,
+          }),
+        });
+        const data = await res.json();
+        if (data?.deal) {
+          setDeals((prev) => [data.deal, ...prev]);
+          await crmFetch("/api/erp/crm/leads", {
+            method: "PATCH",
+            body: JSON.stringify({
+              id: lead.id,
+              status: "CONVERTED",
+              convertedDealId: data.deal.id,
+            }),
+          });
+        }
+      }
+    } catch (err: any) {
+      console.warn("Error updating deal stage:", err);
+    } finally {
+      setUpdatingDealStageId(null);
+    }
+  };
+
   const handlePromoteToDeal = async (lead: CrmLead) => {
+    setIsPromotingId(lead.id);
     try {
       const res = await crmFetch("/api/erp/crm/deals", {
         method: "POST",
@@ -849,17 +958,22 @@ export default function CrmLeadsPage() {
           contactName: lead.contactName,
           email: lead.contactEmail,
           phone: lead.contactPhone || "",
-          value: (lead as any).value || "TBD",
-          stage: "QUALIFIED",
+          value: "₦0",
+          stage: "LEAD",
           owner: lead.assignedRep || "Senior Account Exec",
-          probability: 50,
+          probability: 20,
           expectedClose: "TBD",
           leadId: lead.id,
           notes: `Promoted from lead ${lead.id}. Signals: ${(lead.buyingSignals || []).join(", ")}`,
         }),
       });
       const data = await res.json();
-      const dealId = data?.deal?.id;
+      const newDeal = data?.deal;
+      const dealId = newDeal?.id;
+
+      if (newDeal) {
+        setDeals((prev) => [newDeal, ...prev]);
+      }
 
       // Persist status change in DB
       await crmFetch("/api/erp/crm/leads", {
@@ -873,11 +987,16 @@ export default function CrmLeadsPage() {
 
       // Update local lead status
       setLeads((prev) =>
-        prev.map((l) => (l.id === lead.id ? { ...l, status: "CONVERTED", convertedDealId: dealId } : l))
+        prev.map((l) =>
+          l.id === lead.id
+            ? { ...l, status: "CONVERTED", convertedDealId: dealId, dealStage: "LEAD" }
+            : l
+        )
       );
-      alert(`Success! Lead "${lead.companyName}" promoted to active CRM Deal.`);
     } catch {
       alert("Promoted to CRM Deal (local pipeline updated).");
+    } finally {
+      setIsPromotingId(null);
     }
   };
 
@@ -1532,7 +1651,16 @@ export default function CrmLeadsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--nexa-border)]">
-                {paginatedLeads.length === 0 ? (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={6} className="py-16 text-center text-xs text-[var(--nexa-text-muted)]">
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <RefreshCw className="w-5 h-5 animate-spin text-[#1A56DB]" />
+                        <span>Loading sales call logs...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : paginatedLeads.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-10 text-center text-xs text-[var(--nexa-text-muted)]">
                       <div>No leads found matching criteria.</div>
@@ -1772,18 +1900,67 @@ export default function CrmLeadsPage() {
                             </Link>
                           );
                         })()}
-                        {lead.status !== "CONVERTED" ? (
-                          <button
-                            onClick={() => handlePromoteToDeal(lead)}
-                            className="px-2.5 py-1 rounded-lg bg-[#1A56DB]/10 text-[#1A56DB] hover:bg-[#1A56DB] hover:text-white font-bold text-[11px] transition-colors cursor-pointer"
-                          >
-                            Promote to Deal
-                          </button>
-                        ) : (
-                          <span className="text-[11px] text-emerald-600 font-bold flex items-center justify-end gap-1">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> Converted
-                          </span>
-                        )}
+                        {(() => {
+                          const isConverted =
+                            lead.status === "CONVERTED" || Boolean(lead.convertedDealId);
+                          const deal = getDealForLead(lead);
+                          const currentStage: CrmDeal["stage"] =
+                            deal?.stage || (lead as any).dealStage || "LEAD";
+                          const targetDealId = deal?.id || lead.convertedDealId || "";
+
+                          if (!isConverted) {
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => handlePromoteToDeal(lead)}
+                                disabled={isPromotingId === lead.id}
+                                className="px-2.5 py-1 rounded-lg bg-[#1A56DB]/10 text-[#1A56DB] hover:bg-[#1A56DB] hover:text-white font-bold text-[11px] transition-colors cursor-pointer disabled:opacity-50"
+                                title="Promote lead to pipeline deal with ₦0 value in Lead Discovery"
+                              >
+                                {isPromotingId === lead.id ? "Promoting..." : "Promote to Deal"}
+                              </button>
+                            );
+                          }
+
+                          const stageColorMap: Record<string, string> = {
+                            LEAD: "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30",
+                            PROPOSAL: "bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-500/30",
+                            QUALIFIED: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30",
+                            NEGOTIATION: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30",
+                            WON: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
+                            LOST: "bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/30",
+                          };
+
+                          const currentBadgeStyle =
+                            stageColorMap[currentStage] ||
+                            "bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30";
+
+                          return (
+                            <div className="relative inline-flex items-center">
+                              <select
+                                value={currentStage}
+                                onChange={(e) =>
+                                  handleUpdateDealStage(
+                                    targetDealId,
+                                    lead,
+                                    e.target.value as CrmDeal["stage"]
+                                  )
+                                }
+                                disabled={updatingDealStageId === (targetDealId || lead.id)}
+                                className={`appearance-none text-[11px] font-bold pl-2.5 pr-6 py-1 rounded-lg border transition-all cursor-pointer outline-none ${currentBadgeStyle} hover:opacity-90 disabled:opacity-50`}
+                                title="Deal Pipeline Stage: Click to update deal status"
+                              >
+                                <option value="LEAD">Lead Discovery</option>
+                                <option value="PROPOSAL">Proposal / SLA</option>
+                                <option value="QUALIFIED">Qualified</option>
+                                <option value="NEGOTIATION">Negotiation</option>
+                                <option value="WON">Contract Won</option>
+                                <option value="LOST">Deal Lost</option>
+                              </select>
+                              <ChevronDown className="w-3 h-3 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-70" />
+                            </div>
+                          );
+                        })()}
                         <button
                           type="button"
                           onClick={() => handleDeleteLead(lead.id, lead.companyName)}

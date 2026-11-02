@@ -21,6 +21,11 @@ import {
   ExternalLink,
   Globe,
   Filter,
+  Sparkles,
+  RefreshCw,
+  AlertCircle,
+  Copy,
+  Check,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -31,6 +36,7 @@ import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaModal } from "@/components/nexa/NexaModal";
 import { CrmEmailList, CrmEmailSubscriber } from "@/lib/crm-service";
 import { crmFetch } from "@/lib/crm-client";
+import { EmailCandidate } from "@/lib/crm-email-enricher";
 
 interface ParsedContact {
   email: string;
@@ -210,9 +216,21 @@ export default function AudienceListsPage() {
   const [isRosterLoading, setIsRosterLoading] = useState(false);
   const [rosterSearch, setRosterSearch] = useState("");
   const [rosterFilter, setRosterFilter] = useState<
-    "ALL" | "HAS_EMAIL" | "HAS_PHONE" | "HAS_NAME" | "MISSING_NAME" | "HAS_COMPANY" | "HAS_LINKEDIN"
+    "ALL" | "HAS_EMAIL" | "MISSING_EMAIL" | "HAS_PHONE" | "HAS_NAME" | "MISSING_NAME" | "HAS_COMPANY" | "HAS_LINKEDIN"
   >("ALL");
   const [deletingSubId, setDeletingSubId] = useState<string | null>(null);
+
+  // AI Email Enrichment State
+  const [isEnrichEmailModalOpen, setIsEnrichEmailModalOpen] = useState(false);
+  const [enrichingSubscriber, setEnrichingSubscriber] = useState<CrmEmailSubscriber | null>(null);
+  const [enrichEmailStatus, setEnrichEmailStatus] = useState<"idle" | "searching" | "success" | "empty" | "error">("idle");
+  const [enrichEmailCandidates, setEnrichEmailCandidates] = useState<EmailCandidate[]>([]);
+  const [selectedEmail, setSelectedEmail] = useState<string>("");
+  const [customEmailInput, setCustomEmailInput] = useState<string>("");
+  const [enrichEmailSearchQuery, setEnrichEmailSearchQuery] = useState<string>("");
+  const [enrichEmailErrorMessage, setEnrichEmailErrorMessage] = useState<string>("");
+  const [isApplyingEmail, setIsApplyingEmail] = useState(false);
+  const [copiedEmail, setCopiedEmail] = useState<string>("");
 
   // Edit Subscriber Modal State
   const [isEditContactModalOpen, setIsEditContactModalOpen] = useState(false);
@@ -481,6 +499,129 @@ export default function AudienceListsPage() {
     }
   };
 
+  const handleStartEmailEnrich = async (sub?: CrmEmailSubscriber | null, customQuery?: string) => {
+    let targetSub = sub;
+    if (!targetSub) {
+      targetSub = rosterSubscribers.find((s) => !s.email || !s.email.includes("@")) || null;
+    }
+
+    if (!targetSub) {
+      alert("All contacts in this roster already have email addresses.");
+      return;
+    }
+
+    setEnrichingSubscriber(targetSub);
+    setIsEnrichEmailModalOpen(true);
+    setEnrichEmailStatus("searching");
+    setEnrichEmailCandidates([]);
+    setSelectedEmail("");
+    setCustomEmailInput("");
+    setEnrichEmailErrorMessage("");
+
+    const targetFullName = `${targetSub.firstName || ""} ${targetSub.lastName || ""}`.trim() || targetSub.name || "";
+    const defaultQuery = targetSub.company
+      ? `${targetSub.company} ${targetFullName}`.trim()
+      : targetFullName;
+    const query = customQuery || defaultQuery;
+    setEnrichEmailSearchQuery(query);
+
+    try {
+      const res = await crmFetch("/api/erp/crm/lists/enrich-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subscriberId: targetSub.id,
+          companyName: targetSub.company || "",
+          contactName: targetFullName,
+          phone: targetSub.phone || "",
+          linkedinUrl: targetSub.linkedinUrl || "",
+          customQuery: query,
+        }),
+      });
+
+      const json = await res.json();
+      if (json.success && json.data?.candidates?.length > 0) {
+        setEnrichEmailCandidates(json.data.candidates);
+        setEnrichEmailStatus("success");
+        setSelectedEmail(json.data.candidates[0].email);
+      } else {
+        setEnrichEmailStatus("empty");
+        setEnrichEmailErrorMessage(
+          json.error || "No verified corporate email addresses found online for this company. You can refine your search query or enter one manually below."
+        );
+      }
+    } catch (err: any) {
+      setEnrichEmailStatus("error");
+      setEnrichEmailErrorMessage(err?.message || "Failed to search for email addresses.");
+    }
+  };
+
+  const handleApplyEnrichedEmail = async (useSelectedCandidate: boolean = true) => {
+    if (!enrichingSubscriber) return;
+    const emailToApply = (
+      useSelectedCandidate ? selectedEmail : customEmailInput
+    ).trim().toLowerCase();
+
+    if (!emailToApply || !emailToApply.includes("@")) {
+      alert("Please provide a valid email address.");
+      return;
+    }
+
+    setIsApplyingEmail(true);
+    try {
+      const chosenCandidate = enrichEmailCandidates.find((c) => c.email.toLowerCase() === emailToApply);
+      const sourceNote = chosenCandidate
+        ? `${chosenCandidate.sourceName} (${chosenCandidate.confidence}% Confidence)`
+        : "Manual Input";
+
+      const res = await crmFetch("/api/erp/crm/lists/apply-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subscriberId: enrichingSubscriber.id,
+          email: emailToApply,
+          sourceNote,
+          domain: chosenCandidate?.domain,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        alert(data.message || data.error || "Failed to apply email address.");
+        return;
+      }
+
+      // Update in local state
+      setRosterSubscribers((prev) =>
+        prev.map((s) => (s.id === enrichingSubscriber.id ? { ...s, email: emailToApply } : s))
+      );
+
+      // Refresh list subscriber count if needed
+      if (rosterList) {
+        setLists((prev) =>
+          prev.map((l) =>
+            l.id === rosterList.id
+              ? { ...l, subscriberCount: Math.max(l.subscriberCount, rosterSubscribers.filter((s) => s.email || s.id === enrichingSubscriber.id).length) }
+              : l
+          )
+        );
+      }
+
+      setIsEnrichEmailModalOpen(false);
+      setEnrichingSubscriber(null);
+    } catch (err: any) {
+      alert(err.message || "Failed to apply email address.");
+    } finally {
+      setIsApplyingEmail(false);
+    }
+  };
+
+  const handleCopyEmail = (email: string) => {
+    navigator.clipboard.writeText(email);
+    setCopiedEmail(email);
+    setTimeout(() => setCopiedEmail(""), 2000);
+  };
+
   const filteredRoster = rosterSubscribers.filter((s) => {
     const q = rosterSearch.toLowerCase();
     const fullName = `${s.firstName || ""} ${s.lastName || ""}`.trim().toLowerCase();
@@ -495,6 +636,7 @@ export default function AudienceListsPage() {
     if (!matchesSearch) return false;
 
     if (rosterFilter === "HAS_EMAIL") return Boolean(s.email && s.email.includes("@"));
+    if (rosterFilter === "MISSING_EMAIL") return !Boolean(s.email && s.email.includes("@"));
     if (rosterFilter === "HAS_PHONE") return Boolean(s.phone && s.phone.trim());
     if (rosterFilter === "HAS_NAME") return Boolean((s.firstName && s.firstName.trim()) || (s.lastName && s.lastName.trim()));
     if (rosterFilter === "MISSING_NAME") return !Boolean((s.firstName && s.firstName.trim()) || (s.lastName && s.lastName.trim()));
@@ -932,7 +1074,22 @@ export default function AudienceListsPage() {
                 leftIcon={<Search className="w-4 h-4 text-[var(--nexa-text-muted)]" />}
               />
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              <NexaButton
+                variant="secondary"
+                className="text-xs gap-1.5 text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10 cursor-pointer"
+                disabled={!rosterList || isRosterLoading}
+                onClick={() => handleStartEmailEnrich(null)}
+                title="AI search and look up verified email addresses for contacts missing emails"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>
+                  Enrich Emails
+                  {rosterSubscribers.filter((s) => !s.email || !s.email.includes("@")).length > 0
+                    ? ` (${rosterSubscribers.filter((s) => !s.email || !s.email.includes("@")).length} missing)`
+                    : ""}
+                </span>
+              </NexaButton>
               <NexaButton
                 variant="secondary"
                 className="text-xs gap-1.5"
@@ -978,6 +1135,7 @@ export default function AudienceListsPage() {
             {[
               { id: "ALL", label: `All (${rosterSubscribers.length})` },
               { id: "HAS_EMAIL", label: `Has Email (${rosterSubscribers.filter((s) => s.email).length})` },
+              { id: "MISSING_EMAIL", label: `Missing Email (${rosterSubscribers.filter((s) => !s.email || !s.email.includes("@")).length})` },
               { id: "HAS_PHONE", label: `Has Phone (${rosterSubscribers.filter((s) => s.phone).length})` },
               { id: "HAS_NAME", label: `Has Name (${rosterSubscribers.filter((s) => s.firstName || s.lastName).length})` },
               { id: "MISSING_NAME", label: `Missing Name (${rosterSubscribers.filter((s) => !s.firstName && !s.lastName).length})` },
@@ -1029,6 +1187,17 @@ export default function AudienceListsPage() {
                         <span className="font-bold text-xs text-[var(--nexa-text-primary)] font-mono truncate">
                           {sub.email || sub.phone || "No contact identifier"}
                         </span>
+                        {!sub.email || !sub.email.includes("@") ? (
+                          <button
+                            type="button"
+                            onClick={() => handleStartEmailEnrich(sub)}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 border border-amber-500/30 transition-all cursor-pointer group"
+                            title="AI Search & Look up missing email address"
+                          >
+                            <Sparkles className="w-2.5 h-2.5 text-amber-500 group-hover:rotate-12 transition-transform" />
+                            <span>Find Email</span>
+                          </button>
+                        ) : null}
                         {!sub.email && sub.phone && (
                           <span className="text-[10px] font-semibold text-amber-600 bg-amber-500/10 px-1.5 py-0.5 rounded flex items-center gap-1">
                             <Phone className="w-2.5 h-2.5" /> Phone Only
@@ -1080,6 +1249,14 @@ export default function AudienceListsPage() {
                     </div>
 
                     <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleStartEmailEnrich(sub)}
+                        className="p-1.5 rounded-lg border border-[var(--nexa-border)] hover:bg-amber-500/10 text-[var(--nexa-text-secondary)] hover:text-amber-500 transition-colors cursor-pointer"
+                        title={`AI Email Search for ${fullName || sub.company || "contact"}`}
+                      >
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                      </button>
                       <button
                         type="button"
                         onClick={() => handleOpenEditContactModal(sub)}
@@ -1282,6 +1459,331 @@ export default function AudienceListsPage() {
             </NexaButton>
           </div>
         </form>
+      </NexaModal>
+
+      {/* AI EMAIL INTELLIGENCE & ENRICHMENT MODAL */}
+      <NexaModal
+        isOpen={isEnrichEmailModalOpen}
+        onClose={() => {
+          setIsEnrichEmailModalOpen(false);
+          setEnrichingSubscriber(null);
+        }}
+        title="AI Email Intelligence & Enrichment"
+        subtitle="Look up and verify corporate email addresses for audience roster contacts."
+      >
+        {enrichingSubscriber && (
+          <div className="space-y-4">
+            {/* Contact Context Snapshot */}
+            <div className="p-3.5 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] flex items-center justify-between gap-3 flex-wrap">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-[#1A56DB]" />
+                  <span className="font-extrabold text-sm text-[var(--nexa-text-primary)]">
+                    {enrichingSubscriber.company || "Corporate Account"}
+                  </span>
+                </div>
+                <div className="text-xs text-[var(--nexa-text-muted)] flex items-center gap-2 flex-wrap">
+                  <span>
+                    Contact: <strong className="text-[var(--nexa-text-primary)]">{`${enrichingSubscriber.firstName || ""} ${enrichingSubscriber.lastName || ""}`.trim() || enrichingSubscriber.name || "Executive"}</strong>
+                  </span>
+                  {enrichingSubscriber.phone && (
+                    <>
+                      <span>•</span>
+                      <span className="flex items-center gap-1 font-mono">
+                        <Phone className="w-3 h-3 text-emerald-500" />
+                        {enrichingSubscriber.phone}
+                      </span>
+                    </>
+                  )}
+                  {enrichingSubscriber.linkedinUrl && (
+                    <>
+                      <span>•</span>
+                      <a
+                        href={enrichingSubscriber.linkedinUrl.startsWith("http") ? enrichingSubscriber.linkedinUrl : `https://${enrichingSubscriber.linkedinUrl}`}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="text-[#0A66C2] hover:underline font-semibold inline-flex items-center gap-0.5"
+                      >
+                        LinkedIn <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="text-right">
+                <span className="text-[11px] text-[var(--nexa-text-muted)] block">Current Email:</span>
+                {!enrichingSubscriber.email || !enrichingSubscriber.email.includes("@") ? (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                    <Sparkles className="w-3 h-3 text-amber-500" /> Missing / Unset
+                  </span>
+                ) : (
+                  <span className="text-xs font-mono text-[var(--nexa-text-secondary)] font-semibold">
+                    {enrichingSubscriber.email}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Error Banner */}
+            {enrichEmailErrorMessage && (
+              <div className="p-3 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-400 text-xs flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <div className="flex-1 font-medium">{enrichEmailErrorMessage}</div>
+              </div>
+            )}
+
+            {/* Searching State */}
+            {enrichEmailStatus === "searching" && (
+              <div className="py-8 px-4 text-center space-y-4">
+                <div className="inline-flex p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 animate-pulse shadow-xs">
+                  <Sparkles className="w-8 h-8 animate-spin" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-bold text-sm text-[var(--nexa-text-primary)]">
+                    Scanning Internet Intelligence & Domains...
+                  </h4>
+                  <p className="text-xs text-[var(--nexa-text-muted)]">
+                    Querying company web records, Google Places & corporate directories for:
+                  </p>
+                  <p className="font-mono text-xs font-semibold text-[#1A56DB] bg-[#1A56DB]/5 py-1 px-3 rounded-lg inline-block border border-[#1A56DB]/20">
+                    &quot;{enrichEmailSearchQuery}&quot;
+                  </p>
+                </div>
+
+                <div className="max-w-xs mx-auto space-y-1.5 text-left text-[11px] text-[var(--nexa-text-muted)] pt-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                    <span>Cross-referencing verified CRM lead archives</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                    <span>Crawling corporate contact & about-us pages</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
+                    <span>Synthesizing decision-maker corporate email syntax</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Empty or Error with Query Override Box */}
+            {(enrichEmailStatus === "empty" || enrichEmailStatus === "error") && (
+              <div className="p-4 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]/40 space-y-3">
+                <div className="text-xs text-[var(--nexa-text-muted)]">
+                  Try refining the search query (e.g. adding website domain or location):
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <NexaInput
+                      placeholder="e.g. Chevron Nigeria Limited Lagos"
+                      value={enrichEmailSearchQuery}
+                      onChange={(e) => setEnrichEmailSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <NexaButton
+                    type="button"
+                    onClick={() => handleStartEmailEnrich(enrichingSubscriber, enrichEmailSearchQuery)}
+                  >
+                    Search Again
+                  </NexaButton>
+                </div>
+
+                <div className="pt-2 border-t border-[var(--nexa-border)] space-y-1.5">
+                  <label className="text-[11px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wide">
+                    Or Enter Email Address Manually:
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <NexaInput
+                        type="email"
+                        placeholder="contact@company.ng"
+                        value={customEmailInput}
+                        onChange={(e) => setCustomEmailInput(e.target.value)}
+                      />
+                    </div>
+                    <NexaButton
+                      type="button"
+                      variant="primary"
+                      disabled={!customEmailInput.trim() || !customEmailInput.includes("@") || isApplyingEmail}
+                      onClick={() => handleApplyEnrichedEmail(false)}
+                    >
+                      {isApplyingEmail ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : "Save Email"}
+                    </NexaButton>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Candidates Selection List */}
+            {enrichEmailStatus === "success" && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                    Discovered Verified Email Addresses ({enrichEmailCandidates.length}):
+                  </span>
+                  <span className="text-[11px] text-[var(--nexa-text-muted)]">
+                    Select an address to update contact
+                  </span>
+                </div>
+
+                <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+                  {enrichEmailCandidates.map((cand, idx) => {
+                    const isSelected = selectedEmail === cand.email;
+                    const isCopied = copiedEmail === cand.email;
+
+                    const typeBadge =
+                      cand.type === "DIRECT_DECISION_MAKER"
+                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                        : cand.type === "EXECUTIVE_OFFICE"
+                        ? "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20"
+                        : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
+
+                    const typeLabel =
+                      cand.type === "DIRECT_DECISION_MAKER"
+                        ? "Direct Corporate Email"
+                        : cand.type === "EXECUTIVE_OFFICE"
+                        ? "Executive Office"
+                        : "Corporate HQ Switchboard";
+
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          setSelectedEmail(cand.email);
+                          setCustomEmailInput("");
+                        }}
+                        className={`p-3.5 rounded-xl border transition-all cursor-pointer space-y-2 ${
+                          isSelected
+                            ? "border-[#1A56DB] bg-[#1A56DB]/5 ring-2 ring-[#1A56DB]/20"
+                            : "border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] hover:border-[#1A56DB]/40"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <input
+                              type="radio"
+                              name="selectedCandidateEmail"
+                              checked={isSelected}
+                              onChange={() => {
+                                setSelectedEmail(cand.email);
+                                setCustomEmailInput("");
+                              }}
+                              className="accent-[#1A56DB] w-4 h-4 cursor-pointer shrink-0"
+                            />
+                            <span className="font-extrabold text-sm font-mono text-[var(--nexa-text-primary)] truncate">
+                              {cand.email}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCopyEmail(cand.email);
+                              }}
+                              className="p-1 rounded text-[var(--nexa-text-muted)] hover:text-[#1A56DB] transition-colors shrink-0 cursor-pointer"
+                              title="Copy email to clipboard"
+                            >
+                              {isCopied ? (
+                                <Check className="w-3.5 h-3.5 text-emerald-500" />
+                              ) : (
+                                <Copy className="w-3.5 h-3.5" />
+                              )}
+                            </button>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${typeBadge}`}>
+                              {typeLabel}
+                            </span>
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                              {cand.confidence}% Match
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Source details */}
+                        <div className="text-[11px] text-[var(--nexa-text-muted)] flex items-center justify-between gap-2 pt-1 border-t border-[var(--nexa-border)]/50">
+                          <div className="flex items-center gap-1 truncate max-w-[280px]">
+                            <Globe className="w-3 h-3 shrink-0 text-[var(--nexa-text-muted)]" />
+                            <span className="truncate">Source: {cand.sourceName}</span>
+                          </div>
+
+                          {cand.sourceUrl && (
+                            <a
+                              href={cand.sourceUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 text-[#1A56DB] hover:underline font-semibold shrink-0"
+                            >
+                              <span>View Source</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Refine or Manual Entry Section */}
+                <div className="p-3 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]/30 space-y-2 pt-2.5">
+                  <div className="flex items-center justify-between text-[11px] text-[var(--nexa-text-muted)] font-bold">
+                    <span>Or Type Custom Email:</span>
+                    <span>Refine search if needed</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <NexaInput
+                        type="email"
+                        placeholder="alternate@company.ng"
+                        value={customEmailInput}
+                        onChange={(e) => {
+                          setCustomEmailInput(e.target.value);
+                          if (e.target.value) setSelectedEmail("");
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-between pt-3 border-t border-[var(--nexa-border)]">
+              <NexaButton
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setIsEnrichEmailModalOpen(false);
+                  setEnrichingSubscriber(null);
+                }}
+              >
+                Cancel
+              </NexaButton>
+
+              <NexaButton
+                type="button"
+                variant="primary"
+                disabled={
+                  isApplyingEmail ||
+                  enrichEmailStatus === "searching" ||
+                  (!selectedEmail && !customEmailInput.trim())
+                }
+                onClick={() => handleApplyEnrichedEmail(Boolean(selectedEmail))}
+                className="flex items-center gap-1.5"
+              >
+                {isApplyingEmail ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Check className="w-3.5 h-3.5" />
+                )}
+                <span>Apply Email to Contact</span>
+              </NexaButton>
+            </div>
+          </div>
+        )}
       </NexaModal>
     </ErpAdminShell>
   );

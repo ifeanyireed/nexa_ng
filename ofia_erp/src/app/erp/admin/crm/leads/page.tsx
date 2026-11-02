@@ -31,6 +31,7 @@ import {
   ExternalLink,
   AlertCircle,
   MapPin,
+  Download,
 } from "lucide-react";
 import { IconBrandLinkedin } from "@tabler/icons-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
@@ -851,7 +852,7 @@ export default function CrmLeadsPage() {
   };
 
   const getDealForLead = (lead: CrmLead): CrmDeal | undefined => {
-    if (!lead) return undefined;
+    if (!lead || !Array.isArray(deals)) return undefined;
     if (lead.convertedDealId) {
       const match = deals.find((d) => d.id === lead.convertedDealId);
       if (match) return match;
@@ -860,16 +861,17 @@ export default function CrmLeadsPage() {
       const match = deals.find((d) => d.leadId === lead.id || (d as any).lead_id === lead.id);
       if (match) return match;
     }
-    const cleanPhone = (lead.contactPhone || (lead as any).phone || "").replace(/[^0-9]/g, "");
-    if (cleanPhone.length >= 7) {
+    const cleanLeadEmail = (lead.contactEmail || (lead as any).email || "").toLowerCase().trim();
+    if (cleanLeadEmail) {
       const match = deals.find(
-        (d) => d.phone && d.phone.replace(/[^0-9]/g, "").endsWith(cleanPhone.slice(-7))
+        (d) => d.email && d.email.toLowerCase().trim() === cleanLeadEmail
       );
       if (match) return match;
     }
-    if (lead.companyName) {
+    const cleanPhone = (lead.contactPhone || (lead as any).phone || "").replace(/[^0-9]/g, "");
+    if (cleanPhone.length >= 8) {
       const match = deals.find(
-        (d) => d.company && d.company.toLowerCase().trim() === lead.companyName.toLowerCase().trim()
+        (d) => d.phone && d.phone.replace(/[^0-9]/g, "").endsWith(cleanPhone.slice(-8))
       );
       if (match) return match;
     }
@@ -998,6 +1000,78 @@ export default function CrmLeadsPage() {
     } finally {
       setIsPromotingId(null);
     }
+  };
+
+  const exportLeadsToCSV = () => {
+    const targetLeads = filteredLeads.length > 0 ? filteredLeads : leads;
+    if (!targetLeads.length) {
+      alert("No leads available to export.");
+      return;
+    }
+
+    const headers = [
+      "Company Name",
+      "Decision Maker Contact",
+      "Contact Email",
+      "Contact Phone",
+      "LinkedIn Profile",
+      "Lead Status",
+      "Deal Stage",
+      "Sales Closer / Rep",
+      "ICP Fit Score",
+      "Lead Source",
+      "Call Logger Status",
+      "Buying Signals & Notes",
+      "Created Date",
+    ];
+
+    const escapeCsv = (val: any) => `"${String(val ?? "").replace(/"/g, '""')}"`;
+
+    const rows = targetLeads.map((lead) => {
+      const deal = getDealForLead(lead);
+      const isDealConverted = Boolean(deal || (lead.convertedDealId && lead.dealStage));
+      const dealStage = isDealConverted
+        ? (deal?.stage || lead.dealStage || "LEAD")
+        : "Not Promoted";
+
+      const call = getLeadCallInfo(lead);
+      const callInd = getCallIndicator(call, lead);
+      let callStatusText = "Not Logged";
+      if (callInd.color === "green") callStatusText = `Interested (${callInd.label})`;
+      else if (callInd.color === "yellow") callStatusText = `Follow-Up (${callInd.label})`;
+      else if (callInd.color === "red") callStatusText = `Unqualified (${callInd.label})`;
+
+      const signals = (lead.buyingSignals && lead.buyingSignals.length > 0)
+        ? lead.buyingSignals.join(" | ")
+        : (lead.notes || "");
+
+      return [
+        escapeCsv(lead.companyName),
+        escapeCsv(lead.contactName),
+        escapeCsv(lead.contactEmail),
+        escapeCsv(lead.contactPhone || (lead as any).phone || ""),
+        escapeCsv(lead.linkedinUrl || ""),
+        escapeCsv(lead.status),
+        escapeCsv(dealStage),
+        escapeCsv(lead.assignedRep || (lead as any).owner || "Unassigned"),
+        lead.icpFitScore ?? (lead as any).score ?? 75,
+        escapeCsv(lead.source || "Direct Outreach"),
+        escapeCsv(callStatusText),
+        escapeCsv(signals),
+        escapeCsv(lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : ""),
+      ].join(",");
+    });
+
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `crm-leads-export-${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleDeleteLead = async (id: string, company: string) => {
@@ -1381,13 +1455,29 @@ export default function CrmLeadsPage() {
       subtitle="Discover and score high-ACV commercial accounts, track buying signals, and 1-click convert into deals."
       activeModule="crm"
       action={
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Link href="/erp/admin/crm/calls">
             <NexaButton variant="secondary" className="gap-2 text-xs">
               <PhoneCall className="w-3.5 h-3.5 text-blue-600" />
               Call Logger
             </NexaButton>
           </Link>
+          <NexaButton
+            variant="secondary"
+            className="gap-2 text-xs"
+            onClick={exportLeadsToCSV}
+            disabled={isLoading || leads.length === 0}
+            title={
+              filteredLeads.length !== leads.length
+                ? `Export ${filteredLeads.length} filtered leads to CSV`
+                : "Export all leads to CSV"
+            }
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-600" />
+            <span>
+              Export CSV{filteredLeads.length !== leads.length ? ` (${filteredLeads.length})` : ""}
+            </span>
+          </NexaButton>
           <NexaButton
             variant="secondary"
             className="gap-2 text-xs"
@@ -1901,11 +1991,10 @@ export default function CrmLeadsPage() {
                           );
                         })()}
                         {(() => {
-                          const isConverted =
-                            lead.status === "CONVERTED" || Boolean(lead.convertedDealId);
                           const deal = getDealForLead(lead);
+                          const isConverted = Boolean(deal || (lead.convertedDealId && lead.dealStage));
                           const currentStage: CrmDeal["stage"] =
-                            deal?.stage || (lead as any).dealStage || "LEAD";
+                            deal?.stage || lead.dealStage || "LEAD";
                           const targetDealId = deal?.id || lead.convertedDealId || "";
 
                           if (!isConverted) {

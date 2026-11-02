@@ -263,6 +263,18 @@ export async function DELETE(request: NextRequest) {
       WHERE id = ${cleanId} AND (LOWER(tenant_slug) = ${tenantSlug} OR LOWER(tenant_slug) = 'default');
     `;
 
+    // Clear lead conversion reference so lead returns to unpromoted state
+    try {
+      await sql`
+        UPDATE crm_leads
+        SET converted_deal_id = '',
+            status = CASE WHEN status = 'CONVERTED' THEN 'CURIOUS' ELSE status END,
+            updated_at = NOW()
+        WHERE (converted_deal_id = ${cleanId} OR id = ${cleanId})
+          AND LOWER(tenant_slug) = ${tenantSlug};
+      `;
+    } catch {}
+
     return NextResponse.json({ success: true, message: "Deal deleted successfully" });
   } catch (err: any) {
     console.error("[CRM Deals DELETE] Error:", err);

@@ -110,6 +110,26 @@ export async function GET(request: NextRequest) {
       // In case crm_email_subscribers table is not present
     }
 
+    // Auto-heal orphaned converted_deal_id references if the deal was deleted from crm_deals
+    try {
+      await sql`
+        UPDATE crm_leads l
+        SET converted_deal_id = '',
+            status = CASE WHEN l.status = 'CONVERTED' THEN 'CURIOUS' ELSE l.status END,
+            updated_at = NOW()
+        WHERE LOWER(l.tenant_slug) = ${tenantSlug}
+          AND l.converted_deal_id != ''
+          AND l.converted_deal_id IS NOT NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM crm_deals d
+            WHERE (d.id = l.converted_deal_id OR d.lead_id = l.id)
+              AND (LOWER(d.tenant_slug) = ${tenantSlug} OR LOWER(d.tenant_slug) = 'default')
+          );
+      `;
+    } catch {
+      // In case crm_deals table is not present
+    }
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search")?.toLowerCase().trim() || "";
     const status = searchParams.get("status") || "";
@@ -208,8 +228,8 @@ export async function GET(request: NextRequest) {
       value: r.value,
       notes: r.notes,
       linkedinUrl: r.linkedin_url || "",
-      convertedDealId: r.deal_id || r.converted_deal_id || "",
-      dealStage: r.deal_stage || (r.status === "CONVERTED" ? "LEAD" : undefined),
+      convertedDealId: r.deal_id || "",
+      dealStage: r.deal_stage || undefined,
       createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
       updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString(),
     }));

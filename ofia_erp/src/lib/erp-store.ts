@@ -373,6 +373,9 @@ export function getSignedInERPUser(users: User[]): User {
         try {
           const updatedSession = { ...(parsed || {}), ...syncedUser };
           localStorage.setItem("erp_current_user", JSON.stringify(updatedSession));
+          if (Array.isArray(userPages) && userPages.length > 0) {
+            document.cookie = `nexa_assigned_pages=${encodeURIComponent(JSON.stringify(userPages))}; path=/; max-age=2592000; SameSite=Lax`;
+          }
           window.dispatchEvent(new CustomEvent("erp_current_user_updated", { detail: updatedSession }));
         } catch {}
         return syncedUser;

@@ -24,6 +24,7 @@ import {
 
 import { AUTH_API } from "@/lib/api-client";
 import { resolveAvatarUrl } from "@/lib/avatar";
+import { isRouteOrModuleAssignedToUser } from "@/lib/access-control";
 import {
   useActiveTenant,
   slugToTenantName,
@@ -305,6 +306,7 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
         document.cookie = `nexa_auth_token=${encodeURIComponent(res.token)}; path=/; max-age=2592000; SameSite=Lax${domainAttr}`;
         document.cookie = `nexa_user_role=${resolvedRole}; path=/; max-age=2592000; SameSite=Lax${domainAttr}`;
         document.cookie = `nexa_user_email=${encodeURIComponent(normalizedEmail)}; path=/; max-age=2592000; SameSite=Lax${domainAttr}`;
+        document.cookie = `nexa_assigned_pages=${encodeURIComponent(JSON.stringify(resolvedAssignedPages))}; path=/; max-age=2592000; SameSite=Lax${domainAttr}`;
       }
       navigateUser(normalizedEmail, resolvedRole, resolvedAssignedPages);
     } catch (err: any) {
@@ -351,13 +353,25 @@ export default function LoginPage({ initialTenantSlug, searchParams }: LoginPage
         route = "/erp/ops/crm";
       } else if (assignedPages.includes("crm")) {
         route = "/erp/admin/crm";
+      } else if (assignedPages.includes("shop")) {
+        route = "/erp/admin/shop";
+      } else if (assignedPages.includes("dispatch") || assignedPages.includes("dispatch_ops") || assignedPages.includes("dispatcher")) {
+        route = "/erp/admin/dispatch";
+      } else if (assignedPages.includes("accounting") || assignedPages.includes("finance")) {
+        route = "/erp/accountant";
+      } else if (assignedPages.includes("hr")) {
+        route = "/erp/hr";
+      } else if (assignedPages.includes("users")) {
+        route = "/erp/admin/users";
+      } else if (assignedPages.includes("overview")) {
+        route = "/erp/admin";
       }
     }
 
     const rawReturnUrl = typeof unwrappedParams.returnUrl === "string" ? unwrappedParams.returnUrl : "";
     let destination = route;
     if (rawReturnUrl && rawReturnUrl.startsWith("/") && !rawReturnUrl.startsWith("//") && !rawReturnUrl.startsWith("/login")) {
-      if (activeRole === "admin" || rawReturnUrl.startsWith("/erp/employee")) {
+      if (activeRole === "admin" || rawReturnUrl.startsWith("/erp/employee") || isRouteOrModuleAssignedToUser(assignedPages, rawReturnUrl)) {
         destination = rawReturnUrl;
       }
     }

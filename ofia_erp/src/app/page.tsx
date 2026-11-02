@@ -361,16 +361,18 @@ export default function RootPage() {
 
       if (stored || token) {
         let role = "employee";
+        let assignedPages: string[] = [];
         if (stored) {
           try {
             const u = JSON.parse(stored);
             if (u?.role) role = u.role;
+            if (Array.isArray(u?.assignedPages)) assignedPages = u.assignedPages;
           } catch {}
         }
         if (!role || role === "employee") {
           role = localStorage.getItem("nexa_user_role") || "employee";
         }
-        const target =
+        let target =
           role === "admin"
             ? "/erp/admin"
             : role === "accountant"
@@ -392,6 +394,17 @@ export default function RootPage() {
             : role === "dispatcher"
             ? "/erp/admin/dispatch"
             : "/erp/employee";
+
+        if (assignedPages.length > 0 && !assignedPages.includes("employee")) {
+          if (assignedPages.includes("sales_closer")) target = "/erp/ops/crm";
+          else if (assignedPages.includes("crm")) target = "/erp/admin/crm";
+          else if (assignedPages.includes("shop")) target = "/erp/admin/shop";
+          else if (assignedPages.includes("dispatch") || assignedPages.includes("dispatch_ops")) target = "/erp/admin/dispatch";
+          else if (assignedPages.includes("accounting") || assignedPages.includes("finance")) target = "/erp/accountant";
+          else if (assignedPages.includes("hr")) target = "/erp/hr";
+          else if (assignedPages.includes("users")) target = "/erp/admin/users";
+        }
+
         window.location.href = target;
       }
     }

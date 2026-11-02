@@ -572,6 +572,7 @@ function UserManagementContent() {
               const updatedSession = { ...u, role: payload.role, assignedPages: payload.assignedPages };
               localStorage.setItem("erp_current_user", JSON.stringify(updatedSession));
               localStorage.setItem("nexa_user_role", payload.role);
+              document.cookie = `nexa_assigned_pages=${encodeURIComponent(JSON.stringify(payload.assignedPages))}; path=/; max-age=2592000; SameSite=Lax`;
               window.dispatchEvent(new CustomEvent("erp_current_user_updated", { detail: updatedSession }));
             }
           } catch {}

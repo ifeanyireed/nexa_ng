@@ -399,6 +399,129 @@ export function getDefaultPagesForRole(role: RoleKey | string, designation?: str
 }
 
 /**
+ * Canonical check: Determines whether a path or activeModule is permitted under a user's assignedPages.
+ * If a page is assigned, the user automatically has the right to navigate to it regardless of base role.
+ */
+export function isRouteOrModuleAssignedToUser(
+  assignedPages: string[] | null | undefined,
+  pathname: string,
+  requiredModule?: string
+): boolean {
+  if (!assignedPages || !Array.isArray(assignedPages) || assignedPages.length === 0) return false;
+
+  const normalizedAssigned = assignedPages.map((p) => String(p || "").toLowerCase().trim()).filter(Boolean);
+  const reqMod = (requiredModule || "").toLowerCase().trim();
+  const cleanPath = (pathname || "").toLowerCase().trim();
+
+  for (const p of normalizedAssigned) {
+    // Direct match with module key
+    if (reqMod && p === reqMod) return true;
+
+    // Overview / Admin Command Center
+    if ((p === "overview" || p === "admin") && (
+      cleanPath === "/erp/admin" || cleanPath === "/erp/admin/" ||
+      reqMod === "overview" || reqMod === "mission" || reqMod === "admin"
+    )) return true;
+
+    // Ofia Shop & Retail (POS, Inventory, Catalog, Referrals)
+    if (p === "shop" && (
+      cleanPath.startsWith("/erp/admin/shop") ||
+      ["shop", "inventory", "pos", "referrals", "store"].includes(reqMod)
+    )) return true;
+
+    // CRM & Sales Pipelines
+    if (p === "crm" && (
+      cleanPath.startsWith("/erp/admin/crm") ||
+      cleanPath.startsWith("/erp/marketer") ||
+      cleanPath.startsWith("/erp/ops/crm") ||
+      cleanPath.startsWith("/erp/ops/calls") ||
+      cleanPath.startsWith("/ops/crm") ||
+      cleanPath.startsWith("/ops/calls") ||
+      ["crm", "marketer", "calls", "leads", "sales_closer"].includes(reqMod)
+    )) return true;
+
+    // Sales Closer Portal
+    if (p === "sales_closer" && (
+      cleanPath.startsWith("/erp/ops/crm") ||
+      cleanPath.startsWith("/erp/ops/calls") ||
+      cleanPath.startsWith("/ops/crm") ||
+      cleanPath.startsWith("/ops/calls") ||
+      cleanPath.startsWith("/erp/admin/crm") ||
+      ["sales_closer", "crm", "calls"].includes(reqMod)
+    )) return true;
+
+    // Dispatch & Fleet Logistics
+    if ((p === "dispatch" || p === "dispatch_ops" || p === "dispatcher") && (
+      cleanPath.startsWith("/erp/admin/dispatch") ||
+      cleanPath.startsWith("/erp/ops/dispatch") ||
+      ["dispatch", "dispatch_ops", "dispatcher"].includes(reqMod)
+    )) return true;
+
+    // Mobility
+    if (p === "mobility" && (
+      cleanPath.startsWith("/erp/admin/mobility") ||
+      reqMod === "mobility"
+    )) return true;
+
+    // Marketplace
+    if (p === "marketplace" && (
+      cleanPath.startsWith("/erp/admin/marketplace") ||
+      reqMod === "marketplace"
+    )) return true;
+
+    // AI Swarm
+    if (p === "ai" && (
+      cleanPath.startsWith("/erp/admin/ai") ||
+      reqMod === "ai"
+    )) return true;
+
+    // Accounting & Ledgers
+    if ((p === "accounting" || p === "finance") && (
+      cleanPath.startsWith("/erp/accountant") ||
+      cleanPath.startsWith("/accountant") ||
+      ["accounting", "finance"].includes(reqMod)
+    )) return true;
+
+    // HR & Appraisals
+    if (p === "hr" && (
+      cleanPath.startsWith("/erp/hr") ||
+      cleanPath.startsWith("/hr") ||
+      reqMod === "hr"
+    )) return true;
+
+    // Users & Departments
+    if ((p === "users" || p === "departments") && (
+      cleanPath.startsWith("/erp/admin/users") ||
+      cleanPath.startsWith("/erp/admin/departments") ||
+      ["users", "departments"].includes(reqMod)
+    )) return true;
+
+    // Manager Portal
+    if (p === "manager" && (
+      cleanPath.startsWith("/erp/manager") ||
+      cleanPath.startsWith("/manager") ||
+      reqMod === "manager"
+    )) return true;
+
+    // MD Executive Portal
+    if (p === "md" && (
+      cleanPath.startsWith("/erp/md") ||
+      cleanPath.startsWith("/md") ||
+      reqMod === "md"
+    )) return true;
+
+    // Employee Portal
+    if (p === "employee" && (
+      cleanPath.startsWith("/erp/employee") ||
+      cleanPath.startsWith("/employee") ||
+      ["employee", "quests"].includes(reqMod)
+    )) return true;
+  }
+
+  return false;
+}
+
+/**
  * Determines whether a user or employee has been granted access to the Sales Closer Portal.
  * An employee has access if:
  * 1. Their assignedPages includes "sales_closer" (or "closer")

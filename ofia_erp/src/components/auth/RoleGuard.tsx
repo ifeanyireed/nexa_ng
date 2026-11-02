@@ -9,6 +9,7 @@ import {
   fetchTenantPermissionMatrix,
   getTenantPermissionMatrix,
   PermissionMatrix,
+  isRouteOrModuleAssignedToUser,
 } from "@/lib/access-control";
 import { extractSubdomainOrParam } from "@/lib/tenant-context";
 import {
@@ -64,6 +65,8 @@ export function RoleGuard({
     return slug ? getTenantPermissionMatrix(slug) : null;
   });
 
+  const [sessionVersion, setSessionVersion] = useState(0);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -99,12 +102,17 @@ export function RoleGuard({
         setMatrix(customEvent.detail.matrix);
       }
     };
+    const handleUserUpdate = () => {
+      setSessionVersion((v) => v + 1);
+    };
 
     window.addEventListener("ofia_dept_access_updated", handleDeptUpdate);
     window.addEventListener("ofia_rbac_updated", handleRbacUpdate);
+    window.addEventListener("erp_current_user_updated", handleUserUpdate);
     return () => {
       window.removeEventListener("ofia_dept_access_updated", handleDeptUpdate);
       window.removeEventListener("ofia_rbac_updated", handleRbacUpdate);
+      window.removeEventListener("erp_current_user_updated", handleUserUpdate);
     };
   }, []);
 
@@ -219,16 +227,20 @@ export function RoleGuard({
     }
 
     // DIRECT USER ASSIGNED PAGES CHECK:
-    // If the user has specific assigned pages (e.g. Sales Closer with Employee Portal + Sales Closer Portal):
-    if (assignedPages && assignedPages.length > 0 && targetPageKey) {
-      const isAllowedByAssigned =
-        assignedPages.includes(targetPageKey) ||
-        (targetPageKey === "dispatch" && assignedPages.includes("dispatch_ops")) ||
-        (targetPageKey === "dispatch_ops" && assignedPages.includes("dispatch"));
+    // If a page is assigned to the user, they automatically have the right to navigate!
+    if (assignedPages && assignedPages.length > 0) {
+      if (isRouteOrModuleAssignedToUser(assignedPages, pathname, requiredModule)) {
+        // Enforce CRM module provisioning if accessing sales_closer or CRM
+        const isCrmRoute =
+          pathname.startsWith("/erp/admin/crm") ||
+          pathname.startsWith("/erp/ops/crm") ||
+          pathname.startsWith("/erp/ops/calls") ||
+          pathname.startsWith("/ops/calls") ||
+          pathname.startsWith("/ops/crm") ||
+          requiredModule === "crm" ||
+          requiredModule === "sales_closer";
 
-      if (isAllowedByAssigned) {
-        // Enforce CRM module provisioning: if accessing sales_closer or CRM, tenant MUST have CRM module
-        if (targetPageKey === "sales_closer" || targetPageKey === "crm") {
+        if (isCrmRoute) {
           const tenantSlug = extractSubdomainOrParam() || localStorage.getItem("nexa_tenant_slug") || "";
           const isCrmProvisioned = isModuleEnabledForRole(tenantSlug, "admin", "crm");
           if (!isCrmProvisioned) {
@@ -242,15 +254,50 @@ export function RoleGuard({
         }
         setIsAuthorized(true);
         return;
-      } else if (role !== "admin") {
-        // User attempted to navigate to an unassigned page
-        setIsAuthorized(false);
-        const fallback = assignedPages.includes("sales_closer")
-          ? "/erp/ops/crm"
-          : (assignedPages.includes("crm") ? "/erp/admin/crm" : (assignedPages.includes("employee") ? "/erp/employee" : home));
-        if (pathname !== fallback) {
-          router.replace(fallback);
-        }
+      }
+    }
+
+    // If assignedPages is empty in session cache and user is employee on non-employee route,
+    // verify against live database before rejecting (prevents race condition with stale storage)
+    if (
+      (!assignedPages || assignedPages.length === 0) &&
+      role === "employee" &&
+      !pathname.startsWith("/erp/employee") &&
+      !isDepartmentAllowed
+    ) {
+      const email = (user?.email || localStorage.getItem("nexa_user_email") || "").toLowerCase().trim();
+      const tenantSlug = extractSubdomainOrParam() || localStorage.getItem("nexa_tenant_slug") || "";
+      if (email) {
+        fetch(`/api/erp/users?email=${encodeURIComponent(email)}${tenantSlug ? `&tenant=${encodeURIComponent(tenantSlug)}` : ""}`, {
+          headers: tenantSlug ? { "x-tenant-slug": tenantSlug } : {},
+          cache: "no-store",
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((dbUser) => {
+            if (dbUser) {
+              let livePages: string[] = [];
+              if (Array.isArray(dbUser.assignedPages)) livePages = dbUser.assignedPages;
+              else if (typeof dbUser.assignedPages === "string") {
+                try { livePages = JSON.parse(dbUser.assignedPages); } catch {}
+              }
+              if (livePages.length > 0 && isRouteOrModuleAssignedToUser(livePages, pathname, requiredModule)) {
+                try {
+                  const existing = localStorage.getItem("erp_current_user");
+                  const parsed = existing ? JSON.parse(existing) : {};
+                  localStorage.setItem("erp_current_user", JSON.stringify({ ...parsed, ...dbUser, assignedPages: livePages }));
+                  document.cookie = `nexa_assigned_pages=${encodeURIComponent(JSON.stringify(livePages))}; path=/; max-age=2592000; SameSite=Lax`;
+                } catch {}
+                setIsAuthorized(true);
+                return;
+              }
+            }
+            setIsAuthorized(false);
+            router.replace("/erp/employee");
+          })
+          .catch(() => {
+            setIsAuthorized(false);
+            router.replace("/erp/employee");
+          });
         return;
       }
     }
@@ -451,7 +498,7 @@ export function RoleGuard({
     } else {
       setIsAuthorized(true);
     }
-  }, [pathname, user, allowedRoles, requiredModule, fallbackRoute, router, departmentConfigs, matrix]);
+  }, [pathname, user, allowedRoles, requiredModule, fallbackRoute, router, departmentConfigs, matrix, sessionVersion]);
 
   if (isAuthorized === null) {
     return (

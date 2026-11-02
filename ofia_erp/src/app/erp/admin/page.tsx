@@ -371,7 +371,19 @@ export default function AdminCommandCenterPage() {
         return;
       }
 
-      if (currentRole && currentRole !== "admin") {
+      let assignedPages: string[] = [];
+      if (stored) {
+        try {
+          const u = JSON.parse(stored);
+          if (Array.isArray(u?.assignedPages)) assignedPages = u.assignedPages;
+          else if (typeof u?.assignedPages === "string") {
+            try { assignedPages = JSON.parse(u.assignedPages); } catch {}
+          }
+        } catch {}
+      }
+      const isOverviewAssigned = assignedPages.includes("overview") || assignedPages.includes("admin");
+
+      if (currentRole && currentRole !== "admin" && !isOverviewAssigned) {
         if (currentRole === "employee") router.replace("/erp/employee");
         else if (currentRole === "md") router.replace("/erp/md");
         else if (currentRole === "hr") router.replace("/erp/hr");

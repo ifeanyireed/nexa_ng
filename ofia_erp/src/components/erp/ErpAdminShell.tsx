@@ -83,6 +83,7 @@ import {
   RoleKey,
   isNavItemVisibleForRole,
   isUserLineManager,
+  isRouteOrModuleAssignedToUser,
 } from "@/lib/access-control";
 import {
   DepartmentAccessItem,
@@ -632,6 +633,9 @@ export function ErpAdminShell({
               }
               if (updatedPages && updatedPages.length > 0) {
                 setUserAssignedPages(updatedPages);
+                try {
+                  document.cookie = `nexa_assigned_pages=${encodeURIComponent(JSON.stringify(updatedPages))}; path=/; max-age=2592000; SameSite=Lax`;
+                } catch {}
               }
               if (dbUser.role && dbUser.role !== resolvedRole) {
                 setCurrentRole(dbUser.role);
@@ -646,37 +650,31 @@ export function ErpAdminShell({
                 };
                 localStorage.setItem("erp_current_user", JSON.stringify(merged));
               } catch {}
+
+              // If initial resolvedAssignedPages was empty and user is on an assigned route:
+              if (
+                (!resolvedAssignedPages || resolvedAssignedPages.length === 0) &&
+                resolvedRole === "employee" &&
+                !pathname.startsWith("/erp/employee")
+              ) {
+                const isNowGranted = isRouteOrModuleAssignedToUser(updatedPages, pathname, activeModule);
+                if (!isNowGranted && !isDepartmentGrantedCurrentPath) {
+                  window.location.href = "/erp/employee";
+                  return;
+                }
+              }
             }
           })
           .catch(() => {});
       }
 
       // Direct User Assigned Pages Check for Current Route:
-      let isAssignedGrantedCurrentPath = false;
-      if (resolvedAssignedPages && resolvedAssignedPages.length > 0) {
-        for (const allowedPage of resolvedAssignedPages) {
-          if (
-            (allowedPage === "accounting" && pathname.startsWith("/erp/accountant")) ||
-            (allowedPage === "hr" && pathname.startsWith("/erp/hr")) ||
-            (allowedPage === "sales_closer" && (pathname.startsWith("/erp/ops/crm") || pathname.startsWith("/erp/ops/calls") || pathname.startsWith("/ops/calls") || pathname.startsWith("/ops/crm"))) ||
-            (allowedPage === "crm" && (pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer"))) ||
-            (allowedPage === "shop" && pathname.startsWith("/erp/admin/shop")) ||
-            (allowedPage === "mobility" && pathname.startsWith("/erp/admin/mobility")) ||
-            (allowedPage === "dispatch" && pathname.startsWith("/erp/admin/dispatch")) ||
-            (allowedPage === "dispatch_ops" && (pathname.startsWith("/erp/ops/dispatch") || pathname.startsWith("/erp/admin/dispatch"))) ||
-            (allowedPage === "marketplace" && pathname.startsWith("/erp/admin/marketplace")) ||
-            (allowedPage === "ai" && pathname.startsWith("/erp/admin/ai")) ||
-            (allowedPage === "users" && (pathname.startsWith("/erp/admin/users") || pathname.startsWith("/erp/admin/departments"))) ||
-            (allowedPage === "employee" && pathname.startsWith("/erp/employee")) ||
-            (allowedPage === "manager" && pathname.startsWith("/erp/manager")) ||
-            (allowedPage === "md" && pathname.startsWith("/erp/md")) ||
-            (allowedPage === "overview" && pathname === "/erp/admin")
-          ) {
-            isAssignedGrantedCurrentPath = true;
-            break;
-          }
-        }
-      }
+      // If a page is assigned, the user automatically has the right to navigate!
+      const isAssignedGrantedCurrentPath = isRouteOrModuleAssignedToUser(
+        resolvedAssignedPages,
+        pathname,
+        activeModule
+      );
 
       // CRM & Marketing Module Tenant Provisioning Check:
       // If the tenant does not have the CRM module, the Sales Closer Portal is inaccessible for ALL users
@@ -736,16 +734,27 @@ export function ErpAdminShell({
         }
       }
 
-      // Strict Role & Assigned Pages Route Protection:
-      if (resolvedAssignedPages.length > 0 && resolvedRole !== "admin") {
-        if (!isAssignedGrantedCurrentPath && !isDepartmentGrantedCurrentPath) {
-          const fallback = (resolvedAssignedPages.includes("sales_closer") && isCrmProvisioned)
-            ? "/erp/ops/crm"
-            : (resolvedAssignedPages.includes("employee") ? "/erp/employee" : ((resolvedAssignedPages.includes("crm") && isCrmProvisioned) ? "/erp/admin/crm" : "/erp/employee"));
-          if (pathname !== fallback) {
-            window.location.href = fallback;
-            return;
-          }
+      // Direct Assigned Pages & Role Route Authorization:
+      // If a page is assigned, the user automatically has the right to navigate!
+      if (isAssignedGrantedCurrentPath || isDepartmentGrantedCurrentPath || resolvedRole === "admin") {
+        // Access granted!
+      } else if (resolvedAssignedPages.length > 0) {
+        const fallback = (resolvedAssignedPages.includes("sales_closer") && isCrmProvisioned)
+          ? "/erp/ops/crm"
+          : (resolvedAssignedPages.includes("crm") && isCrmProvisioned)
+          ? "/erp/admin/crm"
+          : (resolvedAssignedPages.includes("shop"))
+          ? "/erp/admin/shop"
+          : (resolvedAssignedPages.includes("dispatch") || resolvedAssignedPages.includes("dispatch_ops"))
+          ? "/erp/admin/dispatch"
+          : (resolvedAssignedPages.includes("accounting") || resolvedAssignedPages.includes("finance"))
+          ? "/erp/accountant"
+          : (resolvedAssignedPages.includes("hr"))
+          ? "/erp/hr"
+          : (resolvedAssignedPages.includes("employee") ? "/erp/employee" : "/erp/employee");
+        if (pathname !== fallback) {
+          window.location.href = fallback;
+          return;
         }
       } else if (!isDepartmentGrantedCurrentPath) {
         if (resolvedRole === "sales_closer") {
@@ -766,16 +775,16 @@ export function ErpAdminShell({
             return;
           }
         } else if (resolvedRole === "employee") {
+          // If initial resolvedAssignedPages is empty, allow async dbUser check above to verify before redirecting
           if (!pathname.startsWith("/erp/employee")) {
-            window.location.href = "/erp/employee";
-            return;
+            // Checked in dbUser callback
           }
         } else if (resolvedRole === "manager") {
           if (!pathname.startsWith("/erp/manager") && !pathname.startsWith("/erp/employee")) {
             window.location.href = "/erp/manager";
             return;
           }
-        } else if (resolvedRole !== "admin" && pathname === "/erp/admin") {
+        } else if (pathname === "/erp/admin") {
           if (resolvedRole === "md") {
             window.location.href = "/erp/md";
             return;
@@ -789,7 +798,7 @@ export function ErpAdminShell({
             window.location.href = "/erp/marketer";
             return;
           } else if (resolvedRole === "dispatcher") {
-            window.location.href = "/erp/employee";
+            window.location.href = "/erp/admin/dispatch";
             return;
           } else if (resolvedRole === "cashier") {
             window.location.href = "/erp/admin/shop/pos";
@@ -1241,9 +1250,17 @@ export function ErpAdminShell({
     if (userAssignedPages && userAssignedPages.length > 0) {
       if (
         userAssignedPages.includes(activeModKey) ||
-        (activeModKey === "crm" && (userAssignedPages.includes("crm") || userAssignedPages.includes("marketing"))) ||
+        (activeModKey === "crm" && (userAssignedPages.includes("crm") || userAssignedPages.includes("marketing") || userAssignedPages.includes("sales_closer"))) ||
         (activeModKey === "sales_closer" && (userAssignedPages.includes("sales_closer") || userAssignedPages.includes("crm"))) ||
-        (activeModKey === "dispatch" && (userAssignedPages.includes("dispatch") || userAssignedPages.includes("dispatcher") || userAssignedPages.includes("dispatch_ops")))
+        (activeModKey === "dispatch" && (userAssignedPages.includes("dispatch") || userAssignedPages.includes("dispatcher") || userAssignedPages.includes("dispatch_ops"))) ||
+        (activeModKey === "accounting" && (userAssignedPages.includes("accounting") || userAssignedPages.includes("finance"))) ||
+        (activeModKey === "users" && (userAssignedPages.includes("users") || userAssignedPages.includes("departments"))) ||
+        (activeModKey === "shop" && userAssignedPages.includes("shop")) ||
+        (activeModKey === "mobility" && userAssignedPages.includes("mobility")) ||
+        (activeModKey === "marketplace" && userAssignedPages.includes("marketplace")) ||
+        (activeModKey === "ai" && userAssignedPages.includes("ai")) ||
+        (activeModKey === "hr" && userAssignedPages.includes("hr")) ||
+        (activeModKey === "overview" && (userAssignedPages.includes("overview") || userAssignedPages.includes("admin")))
       ) {
         return rawSubTabs;
       }
@@ -1310,12 +1327,13 @@ export function ErpAdminShell({
     if (currentRole === "admin") return true;
 
     // 2. Direct Assigned Pages Check (Configured in User Management):
+    // If a page is assigned, the user automatically has the right to navigate!
     if (userAssignedPages && userAssignedPages.length > 0) {
       if (item.key === "sales_closer") {
-        return isProvisioned("sales_closer") && userAssignedPages.includes("sales_closer");
+        return isProvisioned("sales_closer") && (userAssignedPages.includes("sales_closer") || userAssignedPages.includes("crm"));
       }
       if (item.key === "crm") {
-        return isProvisioned("crm") && userAssignedPages.includes("crm");
+        return isProvisioned("crm") && (userAssignedPages.includes("crm") || userAssignedPages.includes("sales_closer"));
       }
       if (item.key === "dispatch") {
         return isProvisioned("dispatch") && (
@@ -1323,6 +1341,15 @@ export function ErpAdminShell({
           userAssignedPages.includes("dispatch_ops") ||
           userAssignedPages.includes("dispatcher")
         );
+      }
+      if (item.key === "accounting") {
+        return isProvisioned("accounting") && (userAssignedPages.includes("accounting") || userAssignedPages.includes("finance"));
+      }
+      if (item.key === "users" || item.key === "departments") {
+        return isProvisioned("users") && (userAssignedPages.includes("users") || userAssignedPages.includes("departments"));
+      }
+      if (item.key === "overview") {
+        return userAssignedPages.includes("overview") || userAssignedPages.includes("admin");
       }
       return userAssignedPages.includes(item.key);
     }

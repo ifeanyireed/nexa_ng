@@ -38,6 +38,7 @@ function getPageKeyFromPath(path: string): string | null {
   if (path.startsWith("/erp/ops/dispatch")) return "dispatch_ops";
   if (path.startsWith("/erp/admin/marketplace")) return "marketplace";
   if (path.startsWith("/erp/admin/ai")) return "ai";
+  if (path.startsWith("/erp/admin/workforce")) return "workforce";
   if (path.startsWith("/erp/admin/users") || path.startsWith("/erp/admin/departments")) return "users";
   if (path.startsWith("/erp/employee") || path.startsWith("/employee")) return "employee";
   if (path.startsWith("/erp/manager") || path.startsWith("/manager")) return "manager";

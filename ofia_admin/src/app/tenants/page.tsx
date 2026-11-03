@@ -96,6 +96,7 @@ import {
   AlertCircle,
   Globe,
   Copy,
+  Network,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { isCustomDomain, getExpectedDnsRecord, type DomainVerificationResult } from "@/lib/domain-utils";
@@ -130,6 +131,8 @@ const getModuleIcon = (iconName: string) => {
       return <Trophy className="w-4 h-4" />;
     case "Users":
       return <Users className="w-4 h-4" />;
+    case "Network":
+      return <Network className="w-4 h-4" />;
     case "ShieldCheck":
       return <ShieldCheck className="w-4 h-4" />;
     case "Building2":

@@ -204,6 +204,28 @@ export const ERP_PAGE_CATALOG: ErpPageDef[] = [
     ],
   },
   {
+    key: "workforce",
+    label: "Ofia Workforce Manager",
+    category: "Enterprise Suite",
+    description: "Recruitment pipelines, academy training, work tasks, attendance, competency matrices, client deployment, and service delivery.",
+    href: "/erp/admin/workforce",
+    iconName: "Network",
+    badge: "OS",
+    tabs: [
+      { id: "command", label: "Command Center", path: "/erp/admin/workforce" },
+      { id: "recruitment", label: "Recruitment & Talent", path: "/erp/admin/workforce/recruitment" },
+      { id: "people", label: "People & Directory", path: "/erp/admin/workforce/people" },
+      { id: "academy", label: "Talent Academy / LMS", path: "/erp/admin/workforce/academy" },
+      { id: "tasks", label: "Work & Tasks", path: "/erp/admin/workforce/tasks" },
+      { id: "attendance", label: "Time & Attendance", path: "/erp/admin/workforce/attendance" },
+      { id: "performance", label: "Performance & Competency", path: "/erp/admin/workforce/performance" },
+      { id: "deployment", label: "Workforce Deployment", path: "/erp/admin/workforce/deployment" },
+      { id: "service-delivery", label: "Service Delivery", path: "/erp/admin/workforce/service-delivery" },
+      { id: "compensation", label: "Compensation & Costing", path: "/erp/admin/workforce/compensation" },
+      { id: "reports", label: "Reports & Analytics", path: "/erp/admin/workforce/reports" },
+    ],
+  },
+  {
     key: "users",
     label: "User & Staff Governance",
     category: "Enterprise Suite",
@@ -287,7 +309,7 @@ export const DEFAULT_DEPARTMENT_ACCESS: DepartmentAccessItem[] = [
     departmentName: "Systems & IT / ERP",
     accessiblePages: [
       "overview", "ai", "marketplace", "shop", "mobility",
-      "dispatch", "crm", "accounting", "hr", "users",
+      "dispatch", "crm", "accounting", "hr", "workforce", "users",
       "employee", "manager", "md"
     ],
     accessibleTabs: {},
@@ -296,9 +318,10 @@ export const DEFAULT_DEPARTMENT_ACCESS: DepartmentAccessItem[] = [
   {
     departmentCode: "DEPT-HR",
     departmentName: "Human Resources & Talent",
-    accessiblePages: ["hr", "users", "manager", "employee"],
+    accessiblePages: ["hr", "workforce", "users", "manager", "employee"],
     accessibleTabs: {
       hr: ["overview", "users", "objectives", "cycle", "reports", "quests"],
+      workforce: ["command", "recruitment", "people", "academy", "tasks", "attendance", "performance", "deployment", "service-delivery", "compensation", "reports"],
       users: ["users", "departments", "mass-messaging"],
       manager: ["overview", "reviews"],
       employee: ["overview", "reviews", "quests", "profile"],
@@ -321,12 +344,13 @@ export const DEFAULT_DEPARTMENT_ACCESS: DepartmentAccessItem[] = [
   {
     departmentCode: "DEPT-EXE",
     departmentName: "Executive Directorate",
-    accessiblePages: ["overview", "md", "accounting", "hr", "mobility", "crm", "shop", "manager", "employee"],
+    accessiblePages: ["overview", "md", "accounting", "hr", "workforce", "mobility", "crm", "shop", "manager", "employee"],
     accessibleTabs: {
       overview: ["dashboard"],
       md: ["cockpit", "department"],
       accounting: ["overview", "trial-balance", "income-statement", "financial-position"],
       hr: ["overview", "reports"],
+      workforce: ["command", "recruitment", "people", "academy", "tasks", "attendance", "performance", "deployment", "service-delivery", "compensation", "reports"],
       mobility: ["command", "pricing"],
       crm: ["command", "pipeline"],
       shop: ["overview"],

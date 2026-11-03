@@ -628,11 +628,332 @@ export async function bootstrapDedicatedTenantSchema(connectionString: string): 
       );
 
       CREATE INDEX IF NOT EXISTS idx_dispatch_waypoints_tenant_shipment ON dispatch_waypoints(LOWER(tenant_slug), shipment_id, timestamp DESC);
+
+      -- 9. WorkforceOS Enterprise Suite Schema (Multi-Tenant Defense-in-Depth)
+      CREATE TABLE IF NOT EXISTS workforce_job_openings (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        title VARCHAR(255) NOT NULL,
+        department VARCHAR(100) NOT NULL,
+        openings INT NOT NULL DEFAULT 1,
+        filled INT NOT NULL DEFAULT 0,
+        location VARCHAR(191) NOT NULL,
+        type VARCHAR(50) NOT NULL,
+        closing_date VARCHAR(50) NOT NULL,
+        status VARCHAR(50) NOT NULL DEFAULT 'open',
+        required_skills JSONB DEFAULT '[]'::jsonb,
+        stipend_or_salary VARCHAR(100) NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_wf_jobs_tenant_created ON workforce_job_openings(LOWER(tenant_slug), created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_wf_jobs_tenant_status ON workforce_job_openings(LOWER(tenant_slug), status);
+
+      CREATE TABLE IF NOT EXISTS workforce_candidates (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        phone VARCHAR(50) NOT NULL,
+        applied_role VARCHAR(255) NOT NULL,
+        department VARCHAR(100) NOT NULL,
+        stage VARCHAR(50) NOT NULL DEFAULT 'received',
+        applied_date VARCHAR(50) NOT NULL,
+        score INT NOT NULL DEFAULT 0,
+        experience_years INT NOT NULL DEFAULT 0,
+        education VARCHAR(255) NOT NULL DEFAULT '',
+        skills JSONB DEFAULT '[]'::jsonb,
+        resume_url TEXT DEFAULT '',
+        interview_notes TEXT DEFAULT '',
+        interviewer VARCHAR(255) DEFAULT '',
+        offer_amount NUMERIC(15,2) DEFAULT NULL,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_wf_cands_tenant_created ON workforce_candidates(LOWER(tenant_slug), created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_wf_cands_tenant_stage ON workforce_candidates(LOWER(tenant_slug), stage);
+
+      CREATE TABLE IF NOT EXISTS workforce_people (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        phone VARCHAR(50) NOT NULL,
+        role VARCHAR(50) NOT NULL DEFAULT 'intern',
+        designation VARCHAR(255) NOT NULL,
+        department VARCHAR(100) NOT NULL,
+        cohort VARCHAR(100) DEFAULT '',
+        status VARCHAR(50) NOT NULL DEFAULT 'active',
+        location VARCHAR(191) NOT NULL,
+        join_date VARCHAR(50) NOT NULL,
+        current_client VARCHAR(255) DEFAULT '',
+        manager_name VARCHAR(255) NOT NULL DEFAULT '',
+        competency_score INT NOT NULL DEFAULT 0,
+        skills JSONB DEFAULT '[]'::jsonb,
+        active_tasks_count INT NOT NULL DEFAULT 0,
+        attendance_rate INT NOT NULL DEFAULT 100,
+        avatar TEXT DEFAULT '',
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_wf_people_tenant_created ON workforce_people(LOWER(tenant_slug), created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_wf_people_tenant_status ON workforce_people(LOWER(tenant_slug), status);
+      CREATE INDEX IF NOT EXISTS idx_wf_people_tenant_dept ON workforce_people(LOWER(tenant_slug), department);
+
+      CREATE TABLE IF NOT EXISTS workforce_courses (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        title VARCHAR(255) NOT NULL,
+        track VARCHAR(100) NOT NULL,
+        code VARCHAR(50) NOT NULL,
+        modules_count INT NOT NULL DEFAULT 1,
+        duration_weeks INT NOT NULL DEFAULT 1,
+        enrolled_learners INT NOT NULL DEFAULT 0,
+        completion_rate INT NOT NULL DEFAULT 0,
+        instructor VARCHAR(255) NOT NULL,
+        status VARCHAR(50) NOT NULL DEFAULT 'active',
+        competencies_granted JSONB DEFAULT '[]'::jsonb,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_wf_courses_tenant_created ON workforce_courses(LOWER(tenant_slug), created_at DESC);
+
+      CREATE TABLE IF NOT EXISTS workforce_assignments (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        title VARCHAR(255) NOT NULL,
+        course_title VARCHAR(255) NOT NULL,
+        track VARCHAR(100) NOT NULL,
+        assignee_name VARCHAR(255) NOT NULL,
+        deadline VARCHAR(50) NOT NULL,
+        status VARCHAR(50) NOT NULL DEFAULT 'pending',
+        score INT DEFAULT NULL,
+        feedback TEXT DEFAULT '',
+        submission_date VARCHAR(50) DEFAULT NULL,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_wf_assigns_tenant_created ON workforce_assignments(LOWER(tenant_slug), created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_wf_assigns_tenant_status ON workforce_assignments(LOWER(tenant_slug), status);
+
+      CREATE TABLE IF NOT EXISTS workforce_tasks (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        title VARCHAR(255) NOT NULL,
+        project VARCHAR(255) NOT NULL,
+        department VARCHAR(100) NOT NULL,
+        assigned_to VARCHAR(255) NOT NULL,
+        supervisor VARCHAR(255) NOT NULL,
+        priority VARCHAR(50) NOT NULL DEFAULT 'medium',
+        status VARCHAR(50) NOT NULL DEFAULT 'backlog',
+        deadline VARCHAR(50) NOT NULL,
+        score INT DEFAULT NULL,
+        feedback TEXT DEFAULT '',
+        deliverable_summary TEXT DEFAULT '',
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_wf_tasks_tenant_created ON workforce_tasks(LOWER(tenant_slug), created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_wf_tasks_tenant_status ON workforce_tasks(LOWER(tenant_slug), status);
+
+      CREATE TABLE IF NOT EXISTS workforce_attendance (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        person_name VARCHAR(255) NOT NULL,
+        role VARCHAR(50) NOT NULL,
+        date VARCHAR(50) NOT NULL,
+        clock_in VARCHAR(50) NOT NULL,
+        clock_out VARCHAR(50) DEFAULT NULL,
+        status VARCHAR(50) NOT NULL DEFAULT 'present',
+        location VARCHAR(255) NOT NULL,
+        verified_gps BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_wf_att_tenant_created ON workforce_attendance(LOWER(tenant_slug), created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_wf_att_tenant_date ON workforce_attendance(LOWER(tenant_slug), date);
+
+      CREATE TABLE IF NOT EXISTS workforce_leave_requests (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        person_name VARCHAR(255) NOT NULL,
+        department VARCHAR(100) NOT NULL,
+        leave_type VARCHAR(50) NOT NULL,
+        start_date VARCHAR(50) NOT NULL,
+        end_date VARCHAR(50) NOT NULL,
+        days_count INT NOT NULL DEFAULT 1,
+        reason TEXT NOT NULL,
+        status VARCHAR(50) NOT NULL DEFAULT 'pending',
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_wf_leave_tenant_created ON workforce_leave_requests(LOWER(tenant_slug), created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_wf_leave_tenant_status ON workforce_leave_requests(LOWER(tenant_slug), status);
+
+      CREATE TABLE IF NOT EXISTS workforce_competencies (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        competency VARCHAR(255) NOT NULL,
+        category VARCHAR(100) NOT NULL,
+        required_level VARCHAR(50) NOT NULL,
+        total_certified_people INT NOT NULL DEFAULT 0,
+        in_training_people INT NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_wf_comp_tenant_created ON workforce_competencies(LOWER(tenant_slug), created_at DESC);
+
+      CREATE TABLE IF NOT EXISTS workforce_promotions (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        person_name VARCHAR(255) NOT NULL,
+        current_designation VARCHAR(255) NOT NULL,
+        proposed_designation VARCHAR(255) NOT NULL,
+        department VARCHAR(100) NOT NULL,
+        nominated_by VARCHAR(255) NOT NULL,
+        tenure_months INT NOT NULL DEFAULT 0,
+        competency_rating INT NOT NULL DEFAULT 0,
+        status VARCHAR(50) NOT NULL DEFAULT 'under_review',
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_wf_promo_tenant_created ON workforce_promotions(LOWER(tenant_slug), created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_wf_promo_tenant_status ON workforce_promotions(LOWER(tenant_slug), status);
+
+      CREATE TABLE IF NOT EXISTS workforce_requests (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        client_name VARCHAR(255) NOT NULL,
+        contract_title VARCHAR(255) NOT NULL,
+        required_headcount INT NOT NULL DEFAULT 1,
+        fulfilled_headcount INT NOT NULL DEFAULT 0,
+        required_skills JSONB DEFAULT '[]'::jsonb,
+        duration_months INT NOT NULL DEFAULT 1,
+        location VARCHAR(255) NOT NULL,
+        start_date VARCHAR(50) NOT NULL,
+        status VARCHAR(50) NOT NULL DEFAULT 'open',
+        supervisor VARCHAR(255) NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_wf_req_tenant_created ON workforce_requests(LOWER(tenant_slug), created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_wf_req_tenant_status ON workforce_requests(LOWER(tenant_slug), status);
+
+      CREATE TABLE IF NOT EXISTS workforce_deployments (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        person_id VARCHAR(64) NOT NULL,
+        person_name VARCHAR(255) NOT NULL,
+        role VARCHAR(255) NOT NULL,
+        client_name VARCHAR(255) NOT NULL,
+        contract_title VARCHAR(255) NOT NULL,
+        start_date VARCHAR(50) NOT NULL,
+        end_date VARCHAR(50) NOT NULL,
+        allocation_percent INT NOT NULL DEFAULT 100,
+        status VARCHAR(50) NOT NULL DEFAULT 'active',
+        billing_rate_monthly NUMERIC(15,2) NOT NULL DEFAULT 0,
+        cost_rate_monthly NUMERIC(15,2) NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_wf_dep_tenant_created ON workforce_deployments(LOWER(tenant_slug), created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_wf_dep_tenant_status ON workforce_deployments(LOWER(tenant_slug), status);
+
+      CREATE TABLE IF NOT EXISTS workforce_clients (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        client_name VARCHAR(255) NOT NULL,
+        industry VARCHAR(100) NOT NULL,
+        active_contracts_count INT NOT NULL DEFAULT 1,
+        deployed_staff_count INT NOT NULL DEFAULT 1,
+        monthly_contract_value NUMERIC(15,2) NOT NULL DEFAULT 0,
+        sla_target_hours INT NOT NULL DEFAULT 4,
+        sla_compliance_percent INT NOT NULL DEFAULT 100,
+        account_manager VARCHAR(255) NOT NULL,
+        health VARCHAR(50) NOT NULL DEFAULT 'healthy',
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_wf_cli_tenant_created ON workforce_clients(LOWER(tenant_slug), created_at DESC);
+
+      CREATE TABLE IF NOT EXISTS workforce_tickets (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        ticket_number VARCHAR(100) NOT NULL,
+        client_name VARCHAR(255) NOT NULL,
+        subject VARCHAR(255) NOT NULL,
+        priority VARCHAR(50) NOT NULL DEFAULT 'P2',
+        assigned_specialist VARCHAR(255) NOT NULL,
+        status VARCHAR(50) NOT NULL DEFAULT 'open',
+        sla_minutes_remaining INT NOT NULL DEFAULT 120,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_wf_tick_tenant_created ON workforce_tickets(LOWER(tenant_slug), created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_wf_tick_tenant_status ON workforce_tickets(LOWER(tenant_slug), status);
+
+      CREATE TABLE IF NOT EXISTS workforce_work_logs (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        person_name VARCHAR(255) NOT NULL,
+        client_name VARCHAR(255) NOT NULL,
+        date VARCHAR(50) NOT NULL,
+        hours_worked NUMERIC(6,2) NOT NULL DEFAULT 8,
+        summary TEXT NOT NULL,
+        supervisor_signed_off BOOLEAN DEFAULT FALSE,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_wf_logs_tenant_created ON workforce_work_logs(LOWER(tenant_slug), created_at DESC);
+
+      CREATE TABLE IF NOT EXISTS workforce_compensation_scales (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        tier VARCHAR(100) NOT NULL,
+        category VARCHAR(50) NOT NULL,
+        monthly_amount NUMERIC(15,2) NOT NULL DEFAULT 0,
+        allowance NUMERIC(15,2) NOT NULL DEFAULT 0,
+        total_monthly NUMERIC(15,2) NOT NULL DEFAULT 0,
+        active_recipients INT NOT NULL DEFAULT 0,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_wf_comp_scale_tenant_created ON workforce_compensation_scales(LOWER(tenant_slug), created_at DESC);
     `;
 
     return {
       success: true,
-      message: "Dedicated database successfully provisioned with all commerce, inventory, bookings, fleet mobility & dispatch schemas.",
+      message: "Dedicated database successfully provisioned with all commerce, inventory, bookings, fleet mobility, dispatch & workforce schemas.",
     };
   } catch (err: any) {
     return {

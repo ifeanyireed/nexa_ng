@@ -66,6 +66,12 @@ import {
   AlertTriangle,
   PhoneCall,
   Phone,
+  Network,
+  GraduationCap,
+  Briefcase,
+  Award,
+  CheckSquare,
+  Headphones,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NexaCard } from "@/components/nexa/NexaCard";
@@ -115,7 +121,7 @@ export interface ErpAdminShellProps {
   title?: string;
   subtitle?: string;
   action?: React.ReactNode;
-  activeModule?: "mission" | "ai" | "crm" | "marketplace" | "shop" | "inventory" | "pos" | "referrals" | "quests" | "finance" | "hr" | "md" | "employee" | "users" | "departments" | "mobility" | "dispatch";
+  activeModule?: "mission" | "ai" | "crm" | "marketplace" | "shop" | "inventory" | "pos" | "referrals" | "quests" | "finance" | "hr" | "md" | "employee" | "users" | "departments" | "mobility" | "dispatch" | "workforce";
   subTabs?: SubNavItem[];
   isLoading?: boolean;
 }
@@ -955,6 +961,7 @@ export function ErpAdminShell({
     { label: "CRM & Marketing", icon: <BarChart3 className="w-6 h-6" />, href: "/erp/admin/crm", badge: "CRM", key: "crm", section: "Ofia Enterprise Suite" },
     { label: "Accounting & Ledgers", icon: <Layers className="w-6 h-6" />, href: "/erp/accountant", badge: "GL", key: "accounting", section: "Ofia Enterprise Suite" },
     { label: "HR & Appraisals", icon: <Users className="w-6 h-6" />, href: "/erp/hr", key: "hr", section: "Ofia Enterprise Suite" },
+    { label: "Ofia Workforce Manager", icon: <Network className="w-6 h-6" />, href: "/erp/admin/workforce", badge: "OS", key: "workforce", section: "Ofia Enterprise Suite" },
     { label: "User Management", icon: <UserCheck className="w-6 h-6" />, href: "/erp/admin/users", badge: "Staff", key: "users", section: "Ofia Enterprise Suite" },
 
     // 3. PORTALS & WORKSPACES
@@ -1039,6 +1046,22 @@ export function ErpAdminShell({
       ];
     }
 
+
+    if (pathname.startsWith("/erp/admin/workforce")) {
+      return [
+        { label: "Command Center", href: "/erp/admin/workforce", icon: <LayoutDashboard className="w-3.5 h-3.5" /> },
+        { label: "Recruitment", href: "/erp/admin/workforce/recruitment", icon: <Briefcase className="w-3.5 h-3.5" />, badge: "Hire" },
+        { label: "People & Directory", href: "/erp/admin/workforce/people", icon: <Users className="w-3.5 h-3.5" />, badge: "Profiles" },
+        { label: "Talent Academy", href: "/erp/admin/workforce/academy", icon: <GraduationCap className="w-3.5 h-3.5" />, badge: "LMS" },
+        { label: "Work & Tasks", href: "/erp/admin/workforce/tasks", icon: <CheckSquare className="w-3.5 h-3.5" /> },
+        { label: "Time & Attendance", href: "/erp/admin/workforce/attendance", icon: <Clock className="w-3.5 h-3.5" /> },
+        { label: "Performance", href: "/erp/admin/workforce/performance", icon: <Award className="w-3.5 h-3.5" />, badge: "KPI" },
+        { label: "Deployment", href: "/erp/admin/workforce/deployment", icon: <Network className="w-3.5 h-3.5" />, badge: "Deploy" },
+        { label: "Service Delivery", href: "/erp/admin/workforce/service-delivery", icon: <Headphones className="w-3.5 h-3.5" />, badge: "SLA" },
+        { label: "Compensation", href: "/erp/admin/workforce/compensation", icon: <DollarSign className="w-3.5 h-3.5" />, badge: "Cost" },
+        { label: "Reports & BI", href: "/erp/admin/workforce/reports", icon: <BarChart3 className="w-3.5 h-3.5" /> },
+      ];
+    }
 
     if (pathname.startsWith("/erp/admin/users") || pathname.startsWith("/erp/admin/departments")) {
       return [
@@ -1306,6 +1329,14 @@ export function ErpAdminShell({
         const isTpAllowed = (permissionMatrix as any).tenant_provision?.dispatch === true;
         return isAdminAllowed || isTpAllowed;
       }
+      if (key === "workforce") {
+        const isAdminDisabled = permissionMatrix.admin?.workforce === false;
+        const isTpDisabled = (permissionMatrix as any).tenant_provision?.workforce === false;
+        if (isAdminDisabled || isTpDisabled) return false;
+        const isAdminAllowed = permissionMatrix.admin?.workforce === true;
+        const isTpAllowed = (permissionMatrix as any).tenant_provision?.workforce === true;
+        return isAdminAllowed || isTpAllowed || permissionMatrix.admin?.workforce !== false;
+      }
       if (key === "sales_closer") {
         const isCrmDisabled = permissionMatrix.admin?.crm === false || (permissionMatrix as any).tenant_provision?.crm === false;
         if (isCrmDisabled) return false;
@@ -1344,6 +1375,9 @@ export function ErpAdminShell({
       }
       if (item.key === "accounting") {
         return isProvisioned("accounting") && (userAssignedPages.includes("accounting") || userAssignedPages.includes("finance"));
+      }
+      if (item.key === "workforce") {
+        return isProvisioned("workforce") && (userAssignedPages.includes("workforce") || userAssignedPages.includes("hr"));
       }
       if (item.key === "users" || item.key === "departments") {
         return isProvisioned("users") && (userAssignedPages.includes("users") || userAssignedPages.includes("departments"));

@@ -201,6 +201,14 @@ export const ERP_MODULES: ErpModuleDef[] = [
     href: "/erp/hr",
   },
   {
+    key: "workforce",
+    label: "Ofia Workforce Manager",
+    category: "Ofia Enterprise Suite",
+    description: "Talent acquisition, academy LMS, task rosters, attendance, competency matrices, and client deployment.",
+    href: "/erp/admin/workforce",
+    badge: "OS",
+  },
+  {
     key: "users",
     label: "User Management",
     category: "Ofia Enterprise Suite",
@@ -1055,7 +1063,7 @@ export const ROLE_CAPABILITIES: Record<RoleKey, RoleCapability> = {
   admin: {
     key: "admin",
     label: "Tenant Administrator",
-    controlPanels: ["overview", "ai", "crm", "marketplace", "shop", "mobility", "dispatch", "dispatch_ops", "accounting", "hr", "users", "departments"],
+    controlPanels: ["overview", "ai", "crm", "marketplace", "shop", "mobility", "dispatch", "dispatch_ops", "accounting", "hr", "workforce", "users", "departments"],
     portals: ["employee", "manager", "md"],
     homeRoute: "/erp/admin",
   },
@@ -1083,7 +1091,7 @@ export const ROLE_CAPABILITIES: Record<RoleKey, RoleCapability> = {
   hr: {
     key: "hr",
     label: "HR Lead",
-    controlPanels: ["hr", "users", "departments"],
+    controlPanels: ["hr", "workforce", "users", "departments"],
     portals: ["manager", "employee"],
     homeRoute: "/erp/hr",
   },
@@ -1209,13 +1217,13 @@ export function isNavItemVisibleForRole(
     const hasUsers = isModuleProvisioned("users");
     if (!hasUsers) {
       // MD cannot see employee/manager/md portals without users module
-      const mdExecutivePanels = ["accounting", "hr", "crm", "shop", "mobility"];
+      const mdExecutivePanels = ["accounting", "hr", "crm", "shop", "mobility", "workforce"];
       return mdExecutivePanels.includes(itemKey);
     }
     if (itemKey === "md" || itemKey === "employee") return true;
     if (itemKey === "manager") return isLineManager;
     // MD also has executive control panel visibility into provisioned modules
-    const mdExecutivePanels = ["accounting", "hr", "crm", "shop", "mobility"];
+    const mdExecutivePanels = ["accounting", "hr", "crm", "shop", "mobility", "workforce"];
     return mdExecutivePanels.includes(itemKey);
   }
 

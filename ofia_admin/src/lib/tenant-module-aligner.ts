@@ -20,6 +20,7 @@ export const SUPER_ADMIN_MODULE_KEYS = [
   "shop",
   "accounting",
   "hr",
+  "workforce",
   "mobility",
   "dispatch",
   "users",
@@ -90,6 +91,7 @@ export function getDefaultModulesForVertical(vertical: string = "retail"): Tenan
         shop: true,
         accounting: true,
         hr: true,
+        workforce: true,
         users: true,
         mobility: false,
         dispatch: false,
@@ -132,6 +134,7 @@ export function getDefaultModulesForVertical(vertical: string = "retail"): Tenan
         shop: false,
         accounting: true,
         hr: true,
+        workforce: true,
         users: true,
         mobility: true,
         dispatch: true,
@@ -173,6 +176,7 @@ export function getDefaultModulesForVertical(vertical: string = "retail"): Tenan
       shop: true,
       accounting: true,
       hr: true,
+      workforce: true,
       users: true,
       mobility: false,
       dispatch: false,
@@ -245,6 +249,7 @@ function buildRoleMatrix(
   const isCrmActive = Boolean(erpModules.crm);
   const isAccountingActive = Boolean(erpModules.accounting);
   const isHrActive = Boolean(erpModules.hr);
+  const isWorkforceActive = Boolean(erpModules.workforce);
   const isAiActive = Boolean(erpModules.ai);
   const isMarketplaceActive = Boolean(erpModules.marketplace);
   const isUsersActive = Boolean(erpModules.users);
@@ -282,6 +287,8 @@ function buildRoleMatrix(
           isEnabled = isAccountingActive;
         } else if (key === "hr") {
           isEnabled = isHrActive;
+        } else if (key === "workforce") {
+          isEnabled = isWorkforceActive;
         } else if (key === "ai") {
           isEnabled = isAiActive;
         } else if (key === "marketplace") {
@@ -311,6 +318,8 @@ function buildRoleMatrix(
           isEnabled = isAccountingActive;
         } else if (key === "hr") {
           isEnabled = isHrActive;
+        } else if (key === "workforce") {
+          isEnabled = isWorkforceActive;
         } else if (key === "crm") {
           isEnabled = isCrmActive;
         } else if (key === "shop") {
@@ -326,6 +335,8 @@ function buildRoleMatrix(
           isEnabled = isUsersActive;
         } else if (key === "hr") {
           isEnabled = isHrActive;
+        } else if (key === "workforce") {
+          isEnabled = isWorkforceActive;
         }
       } else if (role === "accountant") {
         // Chief Accountant
@@ -342,6 +353,8 @@ function buildRoleMatrix(
         // HR Director
         if (key === "mission" || key === "hr") {
           isEnabled = true;
+        } else if (key === "workforce") {
+          isEnabled = isWorkforceActive;
         } else if (key === "users" || key === "employee") {
           isEnabled = isUsersActive;
         }

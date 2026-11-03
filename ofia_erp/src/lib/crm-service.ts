@@ -141,6 +141,48 @@ export interface CrmActivity {
   createdAt: string;
 }
 
+export type QuotationStatus = "DRAFT" | "SENT" | "NEGOTIATING" | "ACCEPTED" | "REJECTED" | "EXPIRED";
+
+export interface QuotationLineItem {
+  id: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  discountPercent?: number;
+  taxPercent?: number;
+  amount: number;
+}
+
+export interface CrmQuotation {
+  id: string;
+  tenantSlug: string;
+  quotationNumber: string;
+  title: string;
+  dealId?: string;
+  leadId?: string;
+  clientName: string;
+  companyName: string;
+  clientEmail: string;
+  clientPhone: string;
+  status: QuotationStatus;
+  issueDate: string;
+  expiryDate: string;
+  currency: string;
+  vatRate: number;
+  lineItems: QuotationLineItem[];
+  subtotal: number;
+  discountTotal: number;
+  taxTotal: number;
+  totalAmount: number;
+  paymentTerms: string;
+  notes?: string;
+  createdBy: string;
+  sentAt?: string;
+  acceptedAt?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface CrmCall {
   id: string;
   tenantSlug: string;
@@ -181,6 +223,7 @@ const memoryLists = new Map<string, CrmEmailList[]>();
 const memorySubscribers = new Map<string, CrmEmailSubscriber[]>();
 const memoryBlasts = new Map<string, CrmEmailBlast[]>();
 const memoryActivities = new Map<string, CrmActivity[]>();
+const memoryQuotations = new Map<string, CrmQuotation[]>();
 
 // Default seed data
 export const DEFAULT_CRM_DEALS: Omit<CrmDeal, "tenantSlug">[] = [
@@ -570,6 +613,147 @@ export const DEFAULT_CRM_ACTIVITIES: Omit<CrmActivity, "tenantSlug">[] = [
     dateTime: "Yesterday, 04:30 PM",
     status: "COMPLETED",
     notes: "Sent via automated email blast engine with trackable links.",
+    createdAt: new Date().toISOString(),
+  },
+];
+
+export const DEFAULT_CRM_QUOTATIONS: Omit<CrmQuotation, "tenantSlug">[] = [
+  {
+    id: "QUOTE-2027-001",
+    quotationNumber: "QT-2027-1041",
+    title: "Annual ERP & POS Multi-Branch Deployment Proposal",
+    dealId: "DEAL-503",
+    companyName: "Hubmart Supermarkets Nigeria",
+    clientName: "Folake Williams",
+    clientEmail: "folake.williams@hubmart.com",
+    clientPhone: "+2348057788990",
+    status: "NEGOTIATING",
+    issueDate: "2027-04-10",
+    expiryDate: "2027-05-10",
+    currency: "NGN",
+    vatRate: 7.5,
+    lineItems: [
+      {
+        id: "item-1",
+        description: "Ofia ERP Enterprise Multi-Store POS License (12 Branches)",
+        quantity: 12,
+        unitPrice: 350000,
+        discountPercent: 5,
+        taxPercent: 7.5,
+        amount: 3990000,
+      },
+      {
+        id: "item-2",
+        description: "Automated Centralized Inventory & Warehousing Sync Module",
+        quantity: 1,
+        unitPrice: 850000,
+        discountPercent: 0,
+        taxPercent: 7.5,
+        amount: 850000,
+      },
+      {
+        id: "item-3",
+        description: "On-site Hardware Setup, Cashier Training & Migration",
+        quantity: 12,
+        unitPrice: 120000,
+        discountPercent: 0,
+        taxPercent: 7.5,
+        amount: 1440000,
+      },
+    ],
+    subtotal: 6280000,
+    discountTotal: 210000,
+    taxTotal: 455250,
+    totalAmount: 6525250,
+    paymentTerms: "60% Mobilization Deposit, 40% Upon Multi-Store UAT Signoff",
+    notes: "Quotation valid for 30 calendar days. Includes 1-year priority SLA support.",
+    createdBy: "Chioma Okon",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "QUOTE-2027-002",
+    quotationNumber: "QT-2027-1042",
+    title: "Lekki Distribution Center Automated Dispatch Fleet Setup",
+    dealId: "DEAL-505",
+    companyName: "GIG Logistics National Hub",
+    clientName: "Tunde Balogun",
+    clientEmail: "tunde.b@giglogistics.ng",
+    clientPhone: "+2348021144778",
+    status: "SENT",
+    issueDate: "2027-04-14",
+    expiryDate: "2027-04-28",
+    currency: "NGN",
+    vatRate: 7.5,
+    lineItems: [
+      {
+        id: "item-1",
+        description: "Fleet Dispatch Manager Integration & Courier Waypoint Tracking",
+        quantity: 50,
+        unitPrice: 150000,
+        discountPercent: 10,
+        taxPercent: 7.5,
+        amount: 6750000,
+      },
+      {
+        id: "item-2",
+        description: "Hardware Fuel Sensors & LASDRI Compliance Calibration",
+        quantity: 50,
+        unitPrice: 95000,
+        discountPercent: 5,
+        taxPercent: 7.5,
+        amount: 4512500,
+      },
+    ],
+    subtotal: 11262500,
+    discountTotal: 987500,
+    taxTotal: 844687.5,
+    totalAmount: 12107187.5,
+    paymentTerms: "70% Advance, 30% Upon Live Fleet Dispatch Commissioning",
+    notes: "Installation window: 5 business days per batch of 10 vans.",
+    createdBy: "Ibrahim Musa",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "QUOTE-2027-003",
+    quotationNumber: "QT-2027-1043",
+    title: "Apex Academy 100-Seat CBT Exam Center Infrastructure",
+    companyName: "Apex Academy Lagos",
+    clientName: "Dr. Aliu Olawale",
+    clientEmail: "a.olawale@apexacademy.edu.ng",
+    clientPhone: "+2348092233445",
+    status: "ACCEPTED",
+    issueDate: "2027-03-20",
+    expiryDate: "2027-04-20",
+    currency: "NGN",
+    vatRate: 0,
+    lineItems: [
+      {
+        id: "item-1",
+        description: "ResultsPro Local CBT Server (Dual Failover Offline Sync)",
+        quantity: 2,
+        unitPrice: 950000,
+        discountPercent: 0,
+        taxPercent: 0,
+        amount: 1900000,
+      },
+      {
+        id: "item-2",
+        description: "Biometric Verification Terminals & Barcode Scanners",
+        quantity: 10,
+        unitPrice: 85000,
+        discountPercent: 0,
+        taxPercent: 0,
+        amount: 850000,
+      },
+    ],
+    subtotal: 2750000,
+    discountTotal: 0,
+    taxTotal: 0,
+    totalAmount: 2750000,
+    paymentTerms: "100% Upfront Educational Grant Remittance",
+    notes: "Educational tax-exempt rate applied. Delivered and certified.",
+    createdBy: "Chioma Okon",
+    acceptedAt: "2027-04-02",
     createdAt: new Date().toISOString(),
   },
 ];
@@ -1757,6 +1941,100 @@ export async function deleteCrmActivity(tenantSlug: string, id: string): Promise
   }
   const list = memoryActivities.get(slug) || [];
   memoryActivities.set(slug, list.filter((a) => a.id !== id));
+  return true;
+}
+
+// 5B. COMMERCIAL QUOTATIONS & PROPOSALS
+export async function getCrmQuotations(tenantSlug: string): Promise<CrmQuotation[]> {
+  const slug = cleanSlug(tenantSlug);
+  const cached = memoryQuotations.get(slug);
+  if (cached) return cached;
+
+  if (slug === "default") {
+    const seeded = DEFAULT_CRM_QUOTATIONS.map((q) => ({ ...q, tenantSlug: slug }));
+    memoryQuotations.set(slug, seeded);
+    return seeded;
+  }
+  return [];
+}
+
+export async function createCrmQuotation(
+  tenantSlug: string,
+  quote: Partial<CrmQuotation>
+): Promise<CrmQuotation> {
+  const slug = cleanSlug(tenantSlug);
+  const id = quote.id || generateCrmId("QUOTE");
+  const year = new Date().getFullYear();
+  const randNum = Math.floor(1000 + Math.random() * 9000);
+  const quotationNumber = quote.quotationNumber || `QT-${year}-${randNum}`;
+
+  const newQuote: CrmQuotation = {
+    id,
+    tenantSlug: slug,
+    quotationNumber,
+    title: quote.title || "Commercial Proposal",
+    dealId: quote.dealId,
+    leadId: quote.leadId,
+    clientName: quote.clientName || "",
+    companyName: quote.companyName || "",
+    clientEmail: quote.clientEmail || "",
+    clientPhone: quote.clientPhone || "",
+    status: quote.status || "DRAFT",
+    issueDate: quote.issueDate || new Date().toISOString().split("T")[0],
+    expiryDate: quote.expiryDate || new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
+    currency: quote.currency || "NGN",
+    vatRate: quote.vatRate !== undefined ? Number(quote.vatRate) : 7.5,
+    lineItems: quote.lineItems || [],
+    subtotal: quote.subtotal || 0,
+    discountTotal: quote.discountTotal || 0,
+    taxTotal: quote.taxTotal || 0,
+    totalAmount: quote.totalAmount || 0,
+    paymentTerms: quote.paymentTerms || "70% Mobilization Deposit, 30% upon Signoff",
+    notes: quote.notes || "",
+    createdBy: quote.createdBy || "Sales Team",
+    sentAt: quote.sentAt,
+    acceptedAt: quote.acceptedAt,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  const list =
+    memoryQuotations.get(slug) ||
+    (slug === "default"
+      ? DEFAULT_CRM_QUOTATIONS.map((q) => ({ ...q, tenantSlug: slug }))
+      : []);
+  list.unshift(newQuote);
+  memoryQuotations.set(slug, list);
+  return newQuote;
+}
+
+export async function updateCrmQuotationStatus(
+  tenantSlug: string,
+  id: string,
+  status: QuotationStatus
+): Promise<CrmQuotation | null> {
+  const slug = cleanSlug(tenantSlug);
+  const list = memoryQuotations.get(slug) || [];
+  const idx = list.findIndex((q) => q.id === id);
+  if (idx === -1) return null;
+
+  const quote = list[idx];
+  const updated: CrmQuotation = {
+    ...quote,
+    status,
+    acceptedAt: status === "ACCEPTED" ? new Date().toISOString() : quote.acceptedAt,
+    sentAt: status === "SENT" ? (quote.sentAt || new Date().toISOString()) : quote.sentAt,
+    updatedAt: new Date().toISOString(),
+  };
+  list[idx] = updated;
+  memoryQuotations.set(slug, list);
+  return updated;
+}
+
+export async function deleteCrmQuotation(tenantSlug: string, id: string): Promise<boolean> {
+  const slug = cleanSlug(tenantSlug);
+  const list = memoryQuotations.get(slug) || [];
+  memoryQuotations.set(slug, list.filter((q) => q.id !== id));
   return true;
 }
 

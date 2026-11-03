@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Clock,
   DollarSign,
+  FileText,
   Filter,
   Flame,
   Mail,
@@ -40,7 +41,7 @@ import {
   CrmLead,
   CrmEmailBlast,
   CrmEmailList,
-  CrmActivity,
+  CrmQuotation,
 } from "@/lib/crm-service";
 import { crmFetch } from "@/lib/crm-client";
 
@@ -49,7 +50,7 @@ export default function CrmDashboardPage() {
   const [leads, setLeads] = useState<CrmLead[]>([]);
   const [blasts, setBlasts] = useState<CrmEmailBlast[]>([]);
   const [lists, setLists] = useState<CrmEmailList[]>([]);
-  const [activities, setActivities] = useState<CrmActivity[]>([]);
+  const [quotations, setQuotations] = useState<CrmQuotation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeletingDealId, setIsDeletingDealId] = useState<string | null>(null);
 
@@ -66,12 +67,12 @@ export default function CrmDashboardPage() {
   useEffect(() => {
     async function loadCrmData() {
       try {
-        const [dealsRes, leadsRes, blastsRes, listsRes, activitiesRes] = await Promise.all([
+        const [dealsRes, leadsRes, blastsRes, listsRes, quotesRes] = await Promise.all([
           crmFetch("/api/erp/crm/deals").then((r) => r.json()).catch(() => null),
           crmFetch("/api/erp/crm/leads").then((r) => r.json()).catch(() => null),
           crmFetch("/api/erp/crm/blasts").then((r) => r.json()).catch(() => null),
           crmFetch("/api/erp/crm/lists").then((r) => r.json()).catch(() => null),
-          crmFetch("/api/erp/crm/activities").then((r) => r.json()).catch(() => null),
+          crmFetch("/api/erp/crm/quotations").then((r) => r.json()).catch(() => null),
         ]);
 
         if (dealsRes?.deals) setDeals(dealsRes.deals);
@@ -86,8 +87,8 @@ export default function CrmDashboardPage() {
         if (listsRes?.lists) setLists(listsRes.lists);
         else setLists([]);
 
-        if (activitiesRes?.activities) setActivities(activitiesRes.activities);
-        else setActivities([]);
+        if (quotesRes?.quotations) setQuotations(quotesRes.quotations);
+        else setQuotations([]);
       } catch (err) {
         console.warn("Using offline CRM state:", err);
       } finally {
@@ -419,20 +420,49 @@ export default function CrmDashboardPage() {
               ))}
             </div>
 
-            {/* UPCOMING ACTIVITIES */}
+            {/* ACTIVE COMMERCIAL QUOTATIONS */}
             <div className="pt-4 space-y-3">
-              <h3 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">Upcoming Sales Calls & Demos</h3>
-              {activities.slice(0, 2).map((act) => (
-                <div key={act.id} className="p-3 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] flex items-center justify-between text-xs">
-                  <div>
-                    <p className="font-bold text-[var(--nexa-text-primary)]">{act.title}</p>
-                    <p className="text-[10px] text-[var(--nexa-text-muted)]">{act.company} • {act.rep}</p>
-                  </div>
-                  <span className="text-[10px] font-bold text-[#1A56DB] bg-[#1A56DB]/10 px-2 py-0.5 rounded-full">
-                    {act.dateTime}
-                  </span>
+              <div className="flex items-center justify-between">
+                <h3 className="font-extrabold text-sm text-[var(--nexa-text-primary)]">Commercial Quotations</h3>
+                <Link
+                  href="/erp/admin/crm/quotations"
+                  className="text-[11px] font-bold text-[#1A56DB] hover:underline flex items-center gap-0.5"
+                >
+                  View All <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
+              {quotations.length === 0 ? (
+                <div className="p-3 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-xs text-[var(--nexa-text-muted)] text-center">
+                  No active quotations issued yet.
                 </div>
-              ))}
+              ) : (
+                quotations.slice(0, 3).map((q) => (
+                  <Link
+                    key={q.id}
+                    href="/erp/admin/crm/quotations"
+                    className="p-3 rounded-xl border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] flex items-center justify-between text-xs hover:border-[#1A56DB]/50 transition-colors block"
+                  >
+                    <div>
+                      <p className="font-bold text-[var(--nexa-text-primary)]">{q.quotationNumber}: {q.companyName}</p>
+                      <p className="text-[10px] text-[var(--nexa-text-muted)]">{q.title}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-mono font-bold text-slate-800">₦{q.totalAmount.toLocaleString()}</p>
+                      <span
+                        className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full ${
+                          q.status === "ACCEPTED"
+                            ? "bg-emerald-500/10 text-emerald-600"
+                            : q.status === "NEGOTIATING"
+                            ? "bg-amber-500/10 text-amber-600"
+                            : "bg-blue-500/10 text-blue-600"
+                        }`}
+                      >
+                        {q.status}
+                      </span>
+                    </div>
+                  </Link>
+                ))
+              )}
             </div>
           </div>
         </div>

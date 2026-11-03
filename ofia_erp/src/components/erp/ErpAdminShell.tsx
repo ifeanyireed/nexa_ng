@@ -1091,7 +1091,7 @@ export function ErpAdminShell({
         { label: "Email Blasts", href: "/erp/admin/crm/marketing", icon: <Send className="w-3.5 h-3.5" />, badge: "Email" },
         { label: "Call Logger", href: "/erp/admin/crm/calls", icon: <PhoneCall className="w-3.5 h-3.5" />, badge: "Calls" },
         { label: "Leads Directory", href: "/erp/admin/crm/leads", icon: <Target className="w-3.5 h-3.5" /> },
-        { label: "Sales Activities", href: "/erp/admin/crm/activities", icon: <Calendar className="w-3.5 h-3.5" /> },
+        { label: "Quotations", href: "/erp/admin/crm/quotations", icon: <FileText className="w-3.5 h-3.5" />, badge: "Quotes" },
         { label: "Deals Pipeline", href: "/erp/admin/crm/pipeline", icon: <TrendingUp className="w-3.5 h-3.5" /> },
         { label: "Contacts & Accounts", href: "/erp/admin/crm/contacts", icon: <Building2 className="w-3.5 h-3.5" /> },
       ];

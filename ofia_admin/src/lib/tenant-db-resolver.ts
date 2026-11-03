@@ -949,11 +949,47 @@ export async function bootstrapDedicatedTenantSchema(connectionString: string): 
       );
 
       CREATE INDEX IF NOT EXISTS idx_wf_comp_scale_tenant_created ON workforce_compensation_scales(LOWER(tenant_slug), created_at DESC);
+
+      -- 10. CRM Commercial Quotations Schema (Multi-Tenant Defense-in-Depth)
+      CREATE TABLE IF NOT EXISTS crm_quotations (
+        id VARCHAR(64) PRIMARY KEY,
+        tenant_slug VARCHAR(191) NOT NULL,
+        tenant_id VARCHAR(191) DEFAULT '',
+        quotation_number VARCHAR(64) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        deal_id VARCHAR(191) DEFAULT NULL,
+        lead_id VARCHAR(191) DEFAULT NULL,
+        client_name VARCHAR(191) NOT NULL,
+        company_name VARCHAR(191) NOT NULL,
+        client_email VARCHAR(191) NOT NULL,
+        client_phone VARCHAR(64) DEFAULT '',
+        status VARCHAR(32) NOT NULL DEFAULT 'DRAFT',
+        issue_date DATE NOT NULL DEFAULT CURRENT_DATE,
+        expiry_date DATE NOT NULL,
+        currency VARCHAR(8) NOT NULL DEFAULT 'NGN',
+        vat_rate NUMERIC(5,2) NOT NULL DEFAULT 7.5,
+        line_items JSONB NOT NULL DEFAULT '[]'::jsonb,
+        subtotal NUMERIC(15,2) NOT NULL DEFAULT 0,
+        discount_total NUMERIC(15,2) NOT NULL DEFAULT 0,
+        tax_total NUMERIC(15,2) NOT NULL DEFAULT 0,
+        total_amount NUMERIC(15,2) NOT NULL DEFAULT 0,
+        payment_terms TEXT DEFAULT '',
+        notes TEXT DEFAULT '',
+        created_by VARCHAR(191) DEFAULT '',
+        sent_at TIMESTAMPTZ DEFAULT NULL,
+        accepted_at TIMESTAMPTZ DEFAULT NULL,
+        created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_crm_quotes_tenant_created ON crm_quotations(LOWER(tenant_slug), created_at DESC);
+      CREATE INDEX IF NOT EXISTS idx_crm_quotes_tenant_status ON crm_quotations(LOWER(tenant_slug), status);
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_quotes_tenant_number ON crm_quotations(LOWER(tenant_slug), quotation_number);
     `;
 
     return {
       success: true,
-      message: "Dedicated database successfully provisioned with all commerce, inventory, bookings, fleet mobility, dispatch & workforce schemas.",
+      message: "Dedicated database successfully provisioned with all commerce, inventory, bookings, fleet mobility, dispatch, workforce & CRM quotations schemas.",
     };
   } catch (err: any) {
     return {

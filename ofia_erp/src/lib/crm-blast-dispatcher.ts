@@ -366,13 +366,32 @@ export async function dispatchBlastEmails(tenantSlug: string, blastId: string): 
           WHERE id = ${blastId} AND LOWER(tenant_slug) = ${normSlug};
         `;
 
-        const errMsg = String(sendErr?.message || "");
+        const errMsg = String(sendErr?.message || "").toLowerCase();
+        // Flag subscriber as BOUNCED if remote host reported invalid/non-existent mailbox
         if (
-          errMsg.includes("Daily sending quota") ||
           errMsg.includes("550") ||
-          errMsg.includes("Authentication failed") ||
+          errMsg.includes("551") ||
+          errMsg.includes("553") ||
+          errMsg.includes("user unknown") ||
+          errMsg.includes("mailbox not found") ||
+          errMsg.includes("mailbox unavailable") ||
+          errMsg.includes("address rejected") ||
+          errMsg.includes("invalid recipient")
+        ) {
+          try {
+            await sql`
+              UPDATE crm_email_subscribers
+              SET status = 'BOUNCED', updated_at = NOW()
+              WHERE LOWER(email) = ${recipientEmail} AND LOWER(tenant_slug) = ${normSlug};
+            `;
+          } catch {}
+        }
+
+        if (
+          errMsg.includes("daily sending quota") ||
+          errMsg.includes("authentication failed") ||
           errMsg.includes("535") ||
-          errMsg.includes("Too many connections")
+          errMsg.includes("too many connections")
         ) {
           console.warn(`[Blast Dispatcher] Halting blast ${blastId} due to provider quota/auth error:`, errMsg);
           break;

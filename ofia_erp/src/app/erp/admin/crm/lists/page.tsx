@@ -24,6 +24,7 @@ import {
   Sparkles,
   RefreshCw,
   AlertCircle,
+  AlertTriangle,
   Copy,
   Check,
 } from "lucide-react";
@@ -216,7 +217,7 @@ export default function AudienceListsPage() {
   const [isRosterLoading, setIsRosterLoading] = useState(false);
   const [rosterSearch, setRosterSearch] = useState("");
   const [rosterFilter, setRosterFilter] = useState<
-    "ALL" | "HAS_EMAIL" | "MISSING_EMAIL" | "HAS_PHONE" | "HAS_NAME" | "MISSING_NAME" | "HAS_COMPANY" | "HAS_LINKEDIN"
+    "ALL" | "HAS_EMAIL" | "MISSING_EMAIL" | "BOUNCED" | "HAS_PHONE" | "HAS_NAME" | "MISSING_NAME" | "HAS_COMPANY" | "HAS_LINKEDIN"
   >("ALL");
   const [deletingSubId, setDeletingSubId] = useState<string | null>(null);
 
@@ -637,6 +638,7 @@ export default function AudienceListsPage() {
 
     if (rosterFilter === "HAS_EMAIL") return Boolean(s.email && s.email.includes("@"));
     if (rosterFilter === "MISSING_EMAIL") return !Boolean(s.email && s.email.includes("@"));
+    if (rosterFilter === "BOUNCED") return s.status === "BOUNCED";
     if (rosterFilter === "HAS_PHONE") return Boolean(s.phone && s.phone.trim());
     if (rosterFilter === "HAS_NAME") return Boolean((s.firstName && s.firstName.trim()) || (s.lastName && s.lastName.trim()));
     if (rosterFilter === "MISSING_NAME") return !Boolean((s.firstName && s.firstName.trim()) || (s.lastName && s.lastName.trim()));
@@ -1136,6 +1138,12 @@ export default function AudienceListsPage() {
               { id: "ALL", label: `All (${rosterSubscribers.length})` },
               { id: "HAS_EMAIL", label: `Has Email (${rosterSubscribers.filter((s) => s.email).length})` },
               { id: "MISSING_EMAIL", label: `Missing Email (${rosterSubscribers.filter((s) => !s.email || !s.email.includes("@")).length})` },
+              {
+                id: "BOUNCED",
+                label: `Bounced (${rosterSubscribers.filter((s) => s.status === "BOUNCED").length})`,
+                isBounced: true,
+                count: rosterSubscribers.filter((s) => s.status === "BOUNCED").length,
+              },
               { id: "HAS_PHONE", label: `Has Phone (${rosterSubscribers.filter((s) => s.phone).length})` },
               { id: "HAS_NAME", label: `Has Name (${rosterSubscribers.filter((s) => s.firstName || s.lastName).length})` },
               { id: "MISSING_NAME", label: `Missing Name (${rosterSubscribers.filter((s) => !s.firstName && !s.lastName).length})` },
@@ -1146,12 +1154,17 @@ export default function AudienceListsPage() {
                 key={f.id}
                 type="button"
                 onClick={() => setRosterFilter(f.id as any)}
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-colors cursor-pointer ${
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-colors cursor-pointer flex items-center gap-1 ${
                   rosterFilter === f.id
-                    ? "bg-[#1A56DB] text-white border-[#1A56DB]"
+                    ? f.id === "BOUNCED"
+                      ? "bg-rose-600 text-white border-rose-600 shadow-xs"
+                      : "bg-[#1A56DB] text-white border-[#1A56DB]"
+                    : f.id === "BOUNCED" && (f.count ?? 0) > 0
+                    ? "bg-rose-500/10 text-rose-600 border-rose-500/30 hover:bg-rose-500/20"
                     : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-muted)] border-[var(--nexa-border)] hover:text-[var(--nexa-text-primary)]"
                 }`}
               >
+                {f.id === "BOUNCED" && <AlertTriangle className="w-2.5 h-2.5" />}
                 {f.label}
               </button>
             ))}
@@ -1187,7 +1200,22 @@ export default function AudienceListsPage() {
                         <span className="font-bold text-xs text-[var(--nexa-text-primary)] font-mono truncate">
                           {sub.email || sub.phone || "No contact identifier"}
                         </span>
-                        {!sub.email || !sub.email.includes("@") ? (
+                        {sub.status === "BOUNCED" ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-600 bg-rose-500/15 border border-rose-500/30 px-2 py-0.5 rounded-full shadow-xs">
+                              <AlertTriangle className="w-2.5 h-2.5" /> Bounced / Returned
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleStartEmailEnrich(sub)}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 border border-rose-500/30 transition-all cursor-pointer group shadow-xs"
+                              title="Undelivered mail returned. Search web for a verified replacement email"
+                            >
+                              <Sparkles className="w-2.5 h-2.5 text-rose-500 group-hover:rotate-12 transition-transform" />
+                              <span>Replace Email</span>
+                            </button>
+                          </div>
+                        ) : !sub.email || !sub.email.includes("@") ? (
                           <button
                             type="button"
                             onClick={() => handleStartEmailEnrich(sub)}
@@ -1224,7 +1252,7 @@ export default function AudienceListsPage() {
                             <ExternalLink className="w-2.5 h-2.5" /> LinkedIn
                           </a>
                         )}
-                        {sub.status && sub.status !== "SUBSCRIBED" && (
+                        {sub.status && sub.status !== "SUBSCRIBED" && sub.status !== "BOUNCED" && (
                           <span className="text-[10px] font-bold text-rose-500 bg-rose-500/10 px-1.5 py-0.5 rounded">
                             {sub.status}
                           </span>
@@ -1252,10 +1280,18 @@ export default function AudienceListsPage() {
                       <button
                         type="button"
                         onClick={() => handleStartEmailEnrich(sub)}
-                        className="p-1.5 rounded-lg border border-[var(--nexa-border)] hover:bg-amber-500/10 text-[var(--nexa-text-secondary)] hover:text-amber-500 transition-colors cursor-pointer"
-                        title={`AI Email Search for ${fullName || sub.company || "contact"}`}
+                        className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+                          sub.status === "BOUNCED"
+                            ? "border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600"
+                            : "border-[var(--nexa-border)] hover:bg-amber-500/10 text-[var(--nexa-text-secondary)] hover:text-amber-500"
+                        }`}
+                        title={
+                          sub.status === "BOUNCED"
+                            ? `Replace Bounced Email with AI for ${fullName || sub.company || "contact"}`
+                            : `AI Email Search for ${fullName || sub.company || "contact"}`
+                        }
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                        <Sparkles className={`w-3.5 h-3.5 ${sub.status === "BOUNCED" ? "text-rose-500" : "text-amber-500"}`} />
                       </button>
                       <button
                         type="button"
@@ -1517,6 +1553,15 @@ export default function AudienceListsPage() {
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30">
                     <Sparkles className="w-3 h-3 text-amber-500" /> Missing / Unset
                   </span>
+                ) : enrichingSubscriber.status === "BOUNCED" ? (
+                  <div className="space-y-0.5 text-right">
+                    <span className="text-xs font-mono text-rose-500 font-semibold line-through block">
+                      {enrichingSubscriber.email}
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/15 text-rose-600 border border-rose-500/30">
+                      <AlertTriangle className="w-2.5 h-2.5" /> Bounced / Returned
+                    </span>
+                  </div>
                 ) : (
                   <span className="text-xs font-mono text-[var(--nexa-text-secondary)] font-semibold">
                     {enrichingSubscriber.email}
@@ -1524,6 +1569,18 @@ export default function AudienceListsPage() {
                 )}
               </div>
             </div>
+
+            {/* Bounced Notice Banner */}
+            {enrichingSubscriber.status === "BOUNCED" && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-700 dark:text-rose-400 text-xs flex items-center gap-2.5">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
+                <div>
+                  <span className="font-bold">Replacing Undelivered Email:</span> Previous emails sent to{" "}
+                  <span className="font-mono underline">{enrichingSubscriber.email}</span> bounced or returned to sender.
+                  Selecting a replacement will automatically restore this subscriber to active status.
+                </div>
+              </div>
+            )}
 
             {/* Error Banner */}
             {enrichEmailErrorMessage && (
@@ -1561,8 +1618,8 @@ export default function AudienceListsPage() {
                     <span>Crawling corporate contact & about-us pages</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
-                    <span>Synthesizing decision-maker corporate email syntax</span>
+                    <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                    <span>Extracting verified emails from public web sources</span>
                   </div>
                 </div>
               </div>
@@ -1776,10 +1833,16 @@ export default function AudienceListsPage() {
               >
                 {isApplyingEmail ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : enrichingSubscriber?.status === "BOUNCED" ? (
+                  <CheckCircle2 className="w-3.5 h-3.5" />
                 ) : (
                   <Check className="w-3.5 h-3.5" />
                 )}
-                <span>Apply Email to Contact</span>
+                <span>
+                  {enrichingSubscriber?.status === "BOUNCED"
+                    ? "Replace & Restore Contact"
+                    : "Apply Email to Contact"}
+                </span>
               </NexaButton>
             </div>
           </div>

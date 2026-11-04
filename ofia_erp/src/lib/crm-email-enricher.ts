@@ -2,10 +2,13 @@
  * AI & Web Intelligence Email Enricher for CRM Audience Lists & Contacts
  * 
  * Powered by:
- * 1. Internal CRM Cross-Reference (matches from crm_leads, verified subscribers & call logs)
- * 2. Apify Google Places & Business Scraper (extracts verified corporate website & email)
- * 3. Direct Corporate Website & Domain Crawler (/contact, /about, /team)
- * 4. Decision Maker Email Syntax & Permutation Engine (first.last@, f.last@, info@)
+ * 1. Internal CRM Cross-Reference (matches from verified crm_leads records)
+ * 2. Google Places & Business Profile Search (live official website & Google listing email)
+ * 3. Apify Google Places & Business Scraper (extracts verified corporate website & email)
+ * 4. Direct Corporate Website & Domain Crawler (/contact, /contact-us, /about, /team, /)
+ * 
+ * Note: Purely extracts real, publicly available or verified emails.
+ * Synthetic email permutations/patterns are not generated.
  */
 
 export interface EmailCandidate {
@@ -48,8 +51,36 @@ const COMMON_FREE_EMAIL_DOMAINS = new Set([
   "example.com.ng",
 ]);
 
+const DUMMY_SUBSTRINGS = [
+  "sentry",
+  "wixpress",
+  "example.com",
+  "example.ng",
+  "example.com.ng",
+  "doe.com",
+  "test.com",
+  "schema.org",
+  "domain.com",
+  "sample.com",
+  "placeholder",
+  "yourcompany.com",
+  "yoursite.com",
+];
+
+const DUMMY_PREFIXES = [
+  "john.doe@",
+  "johndoe@",
+  "john@",
+  "jane.doe@",
+  "user@",
+  "email@",
+  "yourname@",
+  "test@",
+  "name@",
+];
+
 /**
- * Validates whether an email string is well-formed
+ * Validates whether an email string is well-formed and not a dummy template placeholder
  */
 export function isValidEmail(email?: string | null): boolean {
   if (!email) return false;
@@ -57,23 +88,35 @@ export function isValidEmail(email?: string | null): boolean {
   const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   if (!emailRegex.test(trimmed)) return false;
 
-  // Filter out image assets or dummy strings
+  // Filter out image assets, fonts, or dummy strings
   if (
     trimmed.endsWith(".png") ||
     trimmed.endsWith(".jpg") ||
+    trimmed.endsWith(".jpeg") ||
     trimmed.endsWith(".webp") ||
     trimmed.endsWith(".svg") ||
-    trimmed.includes("sentry") ||
-    trimmed.includes("wixpress")
+    trimmed.endsWith(".gif") ||
+    trimmed.endsWith(".css") ||
+    trimmed.endsWith(".js")
   ) {
     return false;
+  }
+
+  // Filter out placeholder domains and dummy examples
+  for (const dummy of DUMMY_SUBSTRINGS) {
+    if (trimmed.includes(dummy)) return false;
+  }
+
+  // Filter out template placeholder prefixes (e.g. john@doe.com)
+  for (const pref of DUMMY_PREFIXES) {
+    if (trimmed.startsWith(pref)) return false;
   }
 
   return true;
 }
 
 /**
- * Derives a clean company domain guess from company name
+ * Derives a clean company domain guess from company name for crawl fallback
  * e.g. "Chevron Nigeria Limited" -> "chevron.com"
  * e.g. "Erisco Foods Limited" -> "eriscofoods.com"
  */
@@ -91,97 +134,68 @@ export function deriveCompanyDomains(companyName: string): string[] {
 
   return [
     `${clean}.com`,
-    `${clean}.ng`,
     `${clean}.com.ng`,
+    `${clean}.ng`,
   ];
 }
 
 /**
- * Generates decision-maker email permutations from contact name and domain
+ * Direct Google Places API search for verified company website and listing details
  */
-export function generateEmailPermutations(
-  firstName: string,
-  lastName: string,
-  domain: string,
-  companyName: string
-): EmailCandidate[] {
-  if (!domain || COMMON_FREE_EMAIL_DOMAINS.has(domain)) return [];
+async function searchGooglePlacesForWebsite(
+  companyName: string,
+  location: string = "Nigeria"
+): Promise<{ website?: string; domain?: string; sourceUrl?: string; companyMatched?: string }> {
+  const apiKey =
+    process.env.GOOGLE_MAPS_API_KEY ||
+    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ||
+    "AIzaSyCPSko-yh7VsQtpPyKzRmbXJWQOdcCJ8BE";
 
-  const fn = firstName.toLowerCase().replace(/[^a-z0-9]/g, "").trim();
-  const ln = lastName.toLowerCase().replace(/[^a-z0-9]/g, "").trim();
-  const candidates: EmailCandidate[] = [];
+  if (!apiKey || !companyName) return {};
 
-  if (fn && ln) {
-    // 1. first.last@domain (Standard corporate format - 92% confidence)
-    candidates.push({
-      email: `${fn}.${ln}@${domain}`,
-      type: "DIRECT_DECISION_MAKER",
-      confidence: 92,
-      sourceName: `Corporate Domain Pattern (${domain})`,
-      domain,
-      companyMatched: companyName,
-    });
+  try {
+    const cleanLocation = location ? location.replace(/&/g, " ").trim() : "Nigeria";
+    const query = `${companyName} ${cleanLocation}`.trim();
+    const searchUrl = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(
+      query
+    )}&key=${apiKey}`;
 
-    // 2. f.last@domain (High prevalence - 88% confidence)
-    candidates.push({
-      email: `${fn[0]}.${ln}@${domain}`,
-      type: "DIRECT_DECISION_MAKER",
-      confidence: 88,
-      sourceName: `Corporate Domain Pattern (${domain})`,
-      domain,
-      companyMatched: companyName,
-    });
+    const searchRes = await fetch(searchUrl, { signal: AbortSignal.timeout(6000) });
+    if (!searchRes.ok) return {};
 
-    // 3. flast@domain (85% confidence)
-    candidates.push({
-      email: `${fn[0]}${ln}@${domain}`,
-      type: "DIRECT_DECISION_MAKER",
-      confidence: 85,
-      sourceName: `Corporate Domain Pattern (${domain})`,
-      domain,
-      companyMatched: companyName,
-    });
+    const searchData = await searchRes.json();
+    const firstResult = searchData.results?.[0];
+    if (!firstResult || !firstResult.place_id) return {};
 
-    // 4. first@domain (82% confidence)
-    candidates.push({
-      email: `${fn}@${domain}`,
-      type: "DIRECT_DECISION_MAKER",
-      confidence: 82,
-      sourceName: `Corporate Domain Pattern (${domain})`,
-      domain,
-      companyMatched: companyName,
-    });
-  } else if (fn) {
-    candidates.push({
-      email: `${fn}@${domain}`,
-      type: "DIRECT_DECISION_MAKER",
-      confidence: 80,
-      sourceName: `Corporate Domain Pattern (${domain})`,
-      domain,
-      companyMatched: companyName,
-    });
+    const placeId = firstResult.place_id;
+    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,website,formatted_phone_number,url&key=${apiKey}`;
+    const detailsRes = await fetch(detailsUrl, { signal: AbortSignal.timeout(6000) });
+    if (!detailsRes.ok) return {};
+
+    const detailsData = await detailsRes.json();
+    const place = detailsData.result;
+    if (!place) return {};
+
+    let detectedWebsite = place.website;
+    let detectedDomain = "";
+    if (detectedWebsite) {
+      detectedDomain = detectedWebsite
+        .replace(/^https?:\/\//i, "")
+        .replace(/^www\./i, "")
+        .split("/")[0]
+        .toLowerCase();
+    }
+
+    return {
+      website: detectedWebsite || undefined,
+      domain: detectedDomain || undefined,
+      sourceUrl: place.url || undefined,
+      companyMatched: place.name || companyName,
+    };
+  } catch (err: any) {
+    console.warn("[CRM-EmailEnricher] Google Places search warning:", err.message);
+    return {};
   }
-
-  // General corporate inboxes (always reliable fallbacks)
-  candidates.push({
-    email: `info@${domain}`,
-    type: "CORPORATE_HQ",
-    confidence: 78,
-    sourceName: `Corporate HQ Switchboard (${domain})`,
-    domain,
-    companyMatched: companyName,
-  });
-
-  candidates.push({
-    email: `contact@${domain}`,
-    type: "CORPORATE_HQ",
-    confidence: 75,
-    sourceName: `Corporate Inquiries (${domain})`,
-    domain,
-    companyMatched: companyName,
-  });
-
-  return candidates;
 }
 
 /**
@@ -260,7 +274,7 @@ async function searchApifyPlacesForEmail(
 }
 
 /**
- * Crawls a website domain's /contact, /about, and homepage to extract emails
+ * Crawls a website domain's /contact, /about, /team, and homepage to extract published emails
  */
 async function crawlDomainForEmails(
   domainOrUrl: string,
@@ -280,6 +294,8 @@ async function crawlDomainForEmails(
     `https://${domain}/contact`,
     `https://${domain}/contact-us`,
     `https://${domain}/about`,
+    `https://${domain}/about-us`,
+    `https://${domain}/team`,
     `https://${domain}/`,
   ];
 
@@ -293,13 +309,35 @@ async function crawlDomainForEmails(
           "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OfiaBot/1.0",
           Accept: "text/html,application/xhtml+xml",
         },
-        signal: AbortSignal.timeout(4000),
+        signal: AbortSignal.timeout(4500),
       });
 
       if (!res.ok) continue;
       const html = await res.text();
 
-      // Email regex
+      // 1. Extract mailto: links directly
+      const mailtoRegex = /href=["']mailto:([^"'>\?]+)/gi;
+      let mailtoMatch: RegExpExecArray | null;
+      while ((mailtoMatch = mailtoRegex.exec(html)) !== null) {
+        const mail = mailtoMatch[1]?.trim().toLowerCase();
+        if (isValidEmail(mail) && !seenEmails.has(mail)) {
+          seenEmails.add(mail);
+          const emailDomain = mail.split("@")[1];
+          const isMatchingDomain = emailDomain === domain || emailDomain.endsWith(`.${domain}`);
+          results.push({
+            email: mail,
+            type: mail.startsWith("info@") || mail.startsWith("contact@") ? "CORPORATE_HQ" : "DIRECT_DECISION_MAKER",
+            confidence: isMatchingDomain ? 95 : 88,
+            sourceName: `Corporate Website (${domain})`,
+            sourceUrl: url,
+            website: `https://${domain}`,
+            domain,
+            companyMatched: companyName,
+          });
+        }
+      }
+
+      // 2. Extract general email patterns from body text
       const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
       const matches = html.match(emailRegex);
 
@@ -308,12 +346,15 @@ async function crawlDomainForEmails(
           const cleanEmail = raw.toLowerCase().trim();
           if (!isValidEmail(cleanEmail) || seenEmails.has(cleanEmail)) continue;
 
-          // Prefer emails matching the company domain
           const emailDomain = cleanEmail.split("@")[1];
           const isMatchingDomain = emailDomain === domain || emailDomain.endsWith(`.${domain}`);
           const confidence = isMatchingDomain ? 94 : 85;
 
-          const isDirect = !cleanEmail.startsWith("info@") && !cleanEmail.startsWith("contact@") && !cleanEmail.startsWith("support@") && !cleanEmail.startsWith("sales@");
+          const isDirect =
+            !cleanEmail.startsWith("info@") &&
+            !cleanEmail.startsWith("contact@") &&
+            !cleanEmail.startsWith("support@") &&
+            !cleanEmail.startsWith("sales@");
 
           seenEmails.add(cleanEmail);
           results.push({
@@ -327,7 +368,7 @@ async function crawlDomainForEmails(
             companyMatched: companyName,
           });
         }
-        if (results.length >= 3) break;
+        if (results.length >= 5) break;
       }
     } catch {
       // Continue next URL
@@ -338,7 +379,7 @@ async function crawlDomainForEmails(
 }
 
 /**
- * Main coordinator for finding verified and probable email addresses
+ * Main coordinator for finding verified, real-time public email addresses
  */
 export async function enrichSubscriberEmail(params: {
   subscriberId: string;
@@ -353,10 +394,6 @@ export async function enrichSubscriberEmail(params: {
 
   const allCandidates: EmailCandidate[] = [];
   const seenEmails = new Set<string>();
-
-  const nameParts = contactName.trim().split(/\s+/);
-  const firstName = nameParts[0] || "";
-  const lastName = nameParts.slice(1).join(" ") || "";
 
   // Strategy 1: Check Internal CRM Database (crm_leads) for exact matches
   try {
@@ -397,11 +434,19 @@ export async function enrichSubscriberEmail(params: {
     console.warn("[CRM-EmailEnricher] DB cross-ref error:", err.message);
   }
 
-  // Strategy 2: Google Places & Apify Intelligence
+  // Strategy 2: Google Places Direct API Search for Company Website
   let targetDomain = "";
   if (companyName) {
+    const placesRes = await searchGooglePlacesForWebsite(companyName, "Nigeria");
+    if (placesRes.domain) {
+      targetDomain = placesRes.domain;
+    }
+  }
+
+  // Strategy 3: Apify Google Places & Business Scraper (if token configured)
+  if (companyName) {
     const apifyRes = await searchApifyPlacesForEmail(companyName, "Nigeria");
-    if (apifyRes.domain) {
+    if (apifyRes.domain && !targetDomain) {
       targetDomain = apifyRes.domain;
     }
     for (const c of apifyRes.emails) {
@@ -412,13 +457,12 @@ export async function enrichSubscriberEmail(params: {
     }
   }
 
-  // Strategy 3: Domain Guessing & Direct Website Crawl
+  // Strategy 4: Real Corporate Website Crawl for Published Emails
   const candidateDomains = targetDomain
     ? [targetDomain]
     : deriveCompanyDomains(companyName);
 
   for (const d of candidateDomains) {
-    if (!targetDomain) targetDomain = d;
     const crawled = await crawlDomainForEmails(d, companyName);
     for (const c of crawled) {
       if (!seenEmails.has(c.email)) {
@@ -427,23 +471,11 @@ export async function enrichSubscriberEmail(params: {
       }
     }
     if (crawled.length > 0) {
-      targetDomain = d;
       break;
     }
   }
 
-  // Strategy 4: Corporate Decision Maker Email Permutations (if target domain resolved)
-  if (targetDomain) {
-    const perms = generateEmailPermutations(firstName, lastName, targetDomain, companyName);
-    for (const p of perms) {
-      if (!seenEmails.has(p.email)) {
-        seenEmails.add(p.email);
-        allCandidates.push(p);
-      }
-    }
-  }
-
-  // Sort candidates by confidence descending
+  // Sort candidates strictly by confidence descending
   allCandidates.sort((a, b) => b.confidence - a.confidence);
 
   return {

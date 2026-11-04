@@ -53,10 +53,12 @@ export async function POST(request: NextRequest) {
 
     const sub = rows[0];
 
-    // Update subscriber email
+    // Update subscriber email (auto-restores BOUNCED contacts to SUBSCRIBED on replacement)
     const [updated] = await sql`
       UPDATE crm_email_subscribers
-      SET email = ${cleanEmail}
+      SET email = ${cleanEmail},
+          status = CASE WHEN status = 'BOUNCED' THEN 'SUBSCRIBED' ELSE status END,
+          updated_at = NOW()
       WHERE id = ${subscriberId} AND LOWER(tenant_slug) = ${tenantSlug}
       RETURNING *;
     `;

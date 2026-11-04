@@ -146,6 +146,7 @@ export type QuotationStatus = "DRAFT" | "SENT" | "NEGOTIATING" | "ACCEPTED" | "R
 export interface QuotationLineItem {
   id: string;
   description: string;
+  detail?: string;
   quantity: number;
   unitPrice: number;
   discountPercent?: number;
@@ -155,6 +156,7 @@ export interface QuotationLineItem {
 
 export interface QuotationColumnTitles {
   description?: string;
+  secondary?: string;
   quantity?: string;
   unitPrice?: string;
   amount?: string;

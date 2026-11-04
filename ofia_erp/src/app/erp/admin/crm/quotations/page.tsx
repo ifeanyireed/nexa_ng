@@ -62,6 +62,7 @@ export default function QuotationsPage() {
   // Configurable Column Titles in Proposal Builder
   const [columnTitles, setColumnTitles] = useState<QuotationColumnTitles>({
     description: "Item Description",
+    secondary: "",
     quantity: "Qty",
     unitPrice: "Unit Price",
     amount: "Total (NGN)",
@@ -72,27 +73,32 @@ export default function QuotationsPage() {
     {
       label: "Standard Items",
       icon: "📦",
-      titles: { description: "Item Description", quantity: "Qty", unitPrice: "Unit Price", amount: "Total (NGN)" },
+      titles: { description: "Item Description", secondary: "", quantity: "Qty", unitPrice: "Unit Price", amount: "Total (NGN)" },
+    },
+    {
+      label: "Transportation",
+      icon: "🚚",
+      titles: { description: "Routes", secondary: "Distance", quantity: "Trips", unitPrice: "Rate", amount: "Total" },
     },
     {
       label: "Services & Hours",
       icon: "⏱️",
-      titles: { description: "Scope of Work / Deliverable", quantity: "Hours", unitPrice: "Hourly Rate", amount: "Total (NGN)" },
+      titles: { description: "Scope of Work / Deliverable", secondary: "", quantity: "Hours", unitPrice: "Hourly Rate", amount: "Total (NGN)" },
     },
     {
       label: "Consulting & Days",
       icon: "📅",
-      titles: { description: "Milestone / Deliverable", quantity: "Days", unitPrice: "Daily Rate", amount: "Total (NGN)" },
+      titles: { description: "Milestone / Deliverable", secondary: "", quantity: "Days", unitPrice: "Daily Rate", amount: "Total (NGN)" },
     },
     {
       label: "Training & Academy",
       icon: "🎓",
-      titles: { description: "Course / Training Module", quantity: "Participants / Seats", unitPrice: "Tuition per Seat", amount: "Total (NGN)" },
+      titles: { description: "Course / Training Module", secondary: "", quantity: "Participants / Seats", unitPrice: "Tuition per Seat", amount: "Total (NGN)" },
     },
     {
       label: "Retainer & Coverage",
       icon: "🔄",
-      titles: { description: "Service Plan / Coverage", quantity: "Duration (Months)", unitPrice: "Monthly Fee", amount: "Total (NGN)" },
+      titles: { description: "Service Plan / Coverage", secondary: "", quantity: "Duration (Months)", unitPrice: "Monthly Fee", amount: "Total (NGN)" },
     },
   ];
 
@@ -253,7 +259,8 @@ export default function QuotationsPage() {
       lineItems: lineItems.length > 0 ? lineItems : [
         {
           id: "item-preview-1",
-          description: "Quotation Line Item",
+          description: columnTitles.secondary ? "Sample Logistics Route" : "Quotation Line Item",
+          detail: columnTitles.secondary ? "500 km" : undefined,
           quantity: 1,
           unitPrice: 0,
           discountPercent: 0,
@@ -828,229 +835,311 @@ export default function QuotationsPage() {
             </div>
 
             {/* LINE ITEMS BUILDER */}
-            <div className="border border-[var(--nexa-border)] rounded-xl p-3 bg-[var(--nexa-bg-base)] space-y-3">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-black uppercase text-[var(--nexa-text-primary)]">
-                    Itemized Quotation Lines
-                  </span>
-                  <span className="text-[10px] text-[var(--nexa-text-muted)] bg-[var(--nexa-bg-surface)] px-2 py-0.5 rounded-full border border-[var(--nexa-border)] font-mono">
-                    {lineItems.length} {lineItems.length === 1 ? "line" : "lines"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handlePreviewCurrentDraft}
-                    className="text-xs font-bold flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] hover:text-[#1A56DB] hover:border-[#1A56DB]/40 transition-colors cursor-pointer"
-                    title="Live preview of this proposal with current items and columns"
-                  >
-                    <Eye className="w-3.5 h-3.5 text-[#1A56DB]" />
-                    <span>Preview Proposal</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsConfiguringColumns(!isConfiguringColumns)}
-                    className={`text-xs font-bold flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
-                      isConfiguringColumns
-                        ? "bg-[#1A56DB] text-white border-[#1A56DB] shadow-xs"
-                        : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)] hover:text-[#1A56DB] hover:border-[#1A56DB]/40"
-                    }`}
-                    title="Customize the table column titles for this proposal"
-                  >
-                    <SlidersHorizontal className="w-3.5 h-3.5" />
-                    <span>{isConfiguringColumns ? "Hide Column Settings" : "Configure Column Titles"}</span>
-                  </button>
-                  <NexaButton type="button" variant="secondary" size="sm" onClick={handleAddLineItem}>
-                    <Plus className="w-3 h-3 mr-1" /> Add Line
-                  </NexaButton>
-                </div>
-              </div>
-
-              {/* CONFIGURABLE COLUMN TITLES PANEL */}
-              {isConfiguringColumns && (
-                <div className="p-3 rounded-xl border border-[#1A56DB]/30 bg-[#1A56DB]/5 space-y-2.5 animate-in fade-in duration-200">
+            {(() => {
+              const hasSecondaryCol = Boolean(columnTitles.secondary && columnTitles.secondary.trim().length > 0);
+              return (
+                <div className="border border-[var(--nexa-border)] rounded-xl p-3 bg-[var(--nexa-bg-base)] space-y-3">
                   <div className="flex items-center justify-between flex-wrap gap-2">
-                    <span className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
-                      <SlidersHorizontal className="w-3.5 h-3.5 text-[#1A56DB]" />
-                      Customize Table Column Titles:
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setColumnTitles({
-                          description: "Item Description",
-                          quantity: "Qty",
-                          unitPrice: "Unit Price",
-                          amount: "Total (NGN)",
-                        })
-                      }
-                      className="text-[11px] font-medium text-slate-500 hover:text-rose-500 underline cursor-pointer"
-                    >
-                      Reset to Defaults
-                    </button>
-                  </div>
-
-                  {/* Industry Presets */}
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider mr-1">
-                      Quick Presets:
-                    </span>
-                    {COLUMN_PRESETS.map((p) => {
-                      const isActive =
-                        columnTitles.description === p.titles.description &&
-                        columnTitles.quantity === p.titles.quantity &&
-                        columnTitles.unitPrice === p.titles.unitPrice;
-                      return (
-                        <button
-                          key={p.label}
-                          type="button"
-                          onClick={() => setColumnTitles({ ...p.titles })}
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-colors cursor-pointer flex items-center gap-1 ${
-                            isActive
-                              ? "bg-[#1A56DB] text-white border-[#1A56DB]"
-                              : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)] hover:border-[#1A56DB]/50 hover:text-[var(--nexa-text-primary)]"
-                          }`}
-                        >
-                          <span>{p.icon}</span>
-                          <span>{p.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* 4 Editable Column Inputs */}
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 pt-1">
-                    <div>
-                      <label className="block text-[10px] font-black uppercase text-[var(--nexa-text-muted)] mb-1">
-                        Column 1 (Description)
-                      </label>
-                      <input
-                        type="text"
-                        value={columnTitles.description}
-                        onChange={(e) => setColumnTitles((prev) => ({ ...prev, description: e.target.value }))}
-                        className="w-full px-2.5 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-[var(--nexa-text-primary)] focus:outline-none focus:ring-1 focus:ring-[#1A56DB]"
-                        placeholder="Item Description"
-                      />
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black uppercase text-[var(--nexa-text-primary)]">
+                        Itemized Quotation Lines
+                      </span>
+                      <span className="text-[10px] text-[var(--nexa-text-muted)] bg-[var(--nexa-bg-surface)] px-2 py-0.5 rounded-full border border-[var(--nexa-border)] font-mono">
+                        {lineItems.length} {lineItems.length === 1 ? "line" : "lines"}
+                      </span>
                     </div>
-                    <div>
-                      <label className="block text-[10px] font-black uppercase text-[var(--nexa-text-muted)] mb-1">
-                        Column 2 (Quantity)
-                      </label>
-                      <input
-                        type="text"
-                        value={columnTitles.quantity}
-                        onChange={(e) => setColumnTitles((prev) => ({ ...prev, quantity: e.target.value }))}
-                        className="w-full px-2.5 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-[var(--nexa-text-primary)] focus:outline-none focus:ring-1 focus:ring-[#1A56DB]"
-                        placeholder="Qty"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black uppercase text-[var(--nexa-text-muted)] mb-1">
-                        Column 3 (Rate/Price)
-                      </label>
-                      <input
-                        type="text"
-                        value={columnTitles.unitPrice}
-                        onChange={(e) => setColumnTitles((prev) => ({ ...prev, unitPrice: e.target.value }))}
-                        className="w-full px-2.5 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-[var(--nexa-text-primary)] focus:outline-none focus:ring-1 focus:ring-[#1A56DB]"
-                        placeholder="Unit Price"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black uppercase text-[var(--nexa-text-muted)] mb-1">
-                        Column 4 (Total)
-                      </label>
-                      <input
-                        type="text"
-                        value={columnTitles.amount}
-                        onChange={(e) => setColumnTitles((prev) => ({ ...prev, amount: e.target.value }))}
-                        className="w-full px-2.5 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-[var(--nexa-text-primary)] focus:outline-none focus:ring-1 focus:ring-[#1A56DB]"
-                        placeholder="Total (NGN)"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* TABLE COLUMN HEADER ROW */}
-              <div className="grid grid-cols-12 gap-2 items-center px-2 py-1 bg-[var(--nexa-bg-surface)] rounded-lg text-[10px] font-black uppercase text-[var(--nexa-text-muted)] tracking-wider">
-                <div className="col-span-5">{columnTitles.description || "Item Description"}</div>
-                <div className="col-span-2 text-center">{columnTitles.quantity || "Qty"}</div>
-                <div className="col-span-2 text-center">{columnTitles.unitPrice || "Unit Price"}</div>
-                <div className="col-span-2 text-right">{columnTitles.amount || "Total (NGN)"}</div>
-                <div className="col-span-1" />
-              </div>
-
-              <div className="space-y-2">
-                {lineItems.map((item, index) => (
-                  <div key={item.id} className="grid grid-cols-12 gap-2 items-center bg-[var(--nexa-bg-card)] p-2 rounded-lg border border-[var(--nexa-border)] text-xs">
-                    <div className="col-span-5">
-                      <input
-                        type="text"
-                        placeholder={columnTitles.description || "Product / Service Description"}
-                        value={item.description}
-                        onChange={(e) => handleUpdateLineItem(item.id, "description", e.target.value)}
-                        className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs"
-                        required
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <input
-                        type="number"
-                        min="1"
-                        placeholder={columnTitles.quantity || "Qty"}
-                        value={item.quantity}
-                        onChange={(e) => handleUpdateLineItem(item.id, "quantity", Number(e.target.value))}
-                        className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-center"
-                        required
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <input
-                        type="number"
-                        min="0"
-                        placeholder={`${columnTitles.unitPrice || "Unit Price"} ₦`}
-                        value={item.unitPrice}
-                        onChange={(e) => handleUpdateLineItem(item.id, "unitPrice", Number(e.target.value))}
-                        className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-right"
-                        required
-                      />
-                    </div>
-                    <div className="col-span-2 font-mono font-bold text-right text-xs">
-                      ₦{item.amount.toLocaleString()}
-                    </div>
-                    <div className="col-span-1 text-center">
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => handleRemoveLineItem(item.id)}
-                        disabled={lineItems.length === 1}
-                        className="text-slate-400 hover:text-rose-500 disabled:opacity-30 cursor-pointer"
-                        title="Remove line"
+                        onClick={handlePreviewCurrentDraft}
+                        className="text-xs font-bold flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] hover:text-[#1A56DB] hover:border-[#1A56DB]/40 transition-colors cursor-pointer"
+                        title="Live preview of this proposal with current items and columns"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Eye className="w-3.5 h-3.5 text-[#1A56DB]" />
+                        <span>Preview Proposal</span>
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsConfiguringColumns(!isConfiguringColumns)}
+                        className={`text-xs font-bold flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
+                          isConfiguringColumns
+                            ? "bg-[#1A56DB] text-white border-[#1A56DB] shadow-xs"
+                            : "bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)] hover:text-[#1A56DB] hover:border-[#1A56DB]/40"
+                        }`}
+                        title="Customize the table column titles for this proposal"
+                      >
+                        <SlidersHorizontal className="w-3.5 h-3.5" />
+                        <span>{isConfiguringColumns ? "Hide Column Settings" : "Configure Column Titles"}</span>
+                      </button>
+                      <NexaButton type="button" variant="secondary" size="sm" onClick={handleAddLineItem}>
+                        <Plus className="w-3 h-3 mr-1" /> Add Line
+                      </NexaButton>
                     </div>
                   </div>
-                ))}
-              </div>
 
-              {/* LIVE TOTALS COMPUTATION */}
-              <div className="pt-2 border-t border-[var(--nexa-border)] flex flex-col items-end space-y-1 text-xs font-semibold">
-                <div className="flex justify-between w-64 text-[var(--nexa-text-muted)]">
-                  <span>Subtotal:</span>
-                  <span>₦{calculatedSubtotal.toLocaleString()}</span>
+                  {/* CONFIGURABLE COLUMN TITLES PANEL */}
+                  {isConfiguringColumns && (
+                    <div className="p-3 rounded-xl border border-[#1A56DB]/30 bg-[#1A56DB]/5 space-y-2.5 animate-in fade-in duration-200">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <span className="text-xs font-bold text-[var(--nexa-text-primary)] flex items-center gap-1.5">
+                          <SlidersHorizontal className="w-3.5 h-3.5 text-[#1A56DB]" />
+                          Customize Table Column Titles:
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setColumnTitles({
+                              description: "Item Description",
+                              secondary: "",
+                              quantity: "Qty",
+                              unitPrice: "Unit Price",
+                              amount: "Total (NGN)",
+                            })
+                          }
+                          className="text-[11px] font-medium text-slate-500 hover:text-rose-500 underline cursor-pointer"
+                        >
+                          Reset to Defaults
+                        </button>
+                      </div>
+
+                      {/* Industry Presets */}
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-[10px] font-bold text-[var(--nexa-text-muted)] uppercase tracking-wider mr-1">
+                          Quick Presets:
+                        </span>
+                        {COLUMN_PRESETS.map((p) => {
+                          const isActive =
+                            columnTitles.description === p.titles.description &&
+                            (columnTitles.secondary || "") === (p.titles.secondary || "") &&
+                            columnTitles.quantity === p.titles.quantity &&
+                            columnTitles.unitPrice === p.titles.unitPrice &&
+                            columnTitles.amount === p.titles.amount;
+                          return (
+                            <button
+                              key={p.label}
+                              type="button"
+                              onClick={() => setColumnTitles({ ...p.titles })}
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-colors cursor-pointer flex items-center gap-1 ${
+                                isActive
+                                  ? "bg-[#1A56DB] text-white border-[#1A56DB]"
+                                  : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)] hover:border-[#1A56DB]/50 hover:text-[var(--nexa-text-primary)]"
+                              }`}
+                            >
+                              <span>{p.icon}</span>
+                              <span>{p.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* 5 Editable Column Inputs */}
+                      <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 pt-1">
+                        <div>
+                          <label className="block text-[10px] font-black uppercase text-[var(--nexa-text-muted)] mb-1">
+                            Column 1 (Description / Route)
+                          </label>
+                          <input
+                            type="text"
+                            value={columnTitles.description}
+                            onChange={(e) => setColumnTitles((prev) => ({ ...prev, description: e.target.value }))}
+                            className="w-full px-2.5 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-[var(--nexa-text-primary)] focus:outline-none focus:ring-1 focus:ring-[#1A56DB]"
+                            placeholder="Routes / Description"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black uppercase text-[var(--nexa-text-muted)] mb-1">
+                            Column 2 (Distance / Spec)
+                          </label>
+                          <input
+                            type="text"
+                            value={columnTitles.secondary || ""}
+                            onChange={(e) => setColumnTitles((prev) => ({ ...prev, secondary: e.target.value }))}
+                            className="w-full px-2.5 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-[var(--nexa-text-primary)] focus:outline-none focus:ring-1 focus:ring-[#1A56DB]"
+                            placeholder="Distance (Optional)"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black uppercase text-[var(--nexa-text-muted)] mb-1">
+                            Column 3 (Trips / Quantity)
+                          </label>
+                          <input
+                            type="text"
+                            value={columnTitles.quantity}
+                            onChange={(e) => setColumnTitles((prev) => ({ ...prev, quantity: e.target.value }))}
+                            className="w-full px-2.5 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-[var(--nexa-text-primary)] focus:outline-none focus:ring-1 focus:ring-[#1A56DB]"
+                            placeholder="Trips / Qty"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black uppercase text-[var(--nexa-text-muted)] mb-1">
+                            Column 4 (Rate / Price)
+                          </label>
+                          <input
+                            type="text"
+                            value={columnTitles.unitPrice}
+                            onChange={(e) => setColumnTitles((prev) => ({ ...prev, unitPrice: e.target.value }))}
+                            className="w-full px-2.5 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-[var(--nexa-text-primary)] focus:outline-none focus:ring-1 focus:ring-[#1A56DB]"
+                            placeholder="Rate / Price"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black uppercase text-[var(--nexa-text-muted)] mb-1">
+                            Column 5 (Total)
+                          </label>
+                          <input
+                            type="text"
+                            value={columnTitles.amount}
+                            onChange={(e) => setColumnTitles((prev) => ({ ...prev, amount: e.target.value }))}
+                            className="w-full px-2.5 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-[var(--nexa-text-primary)] focus:outline-none focus:ring-1 focus:ring-[#1A56DB]"
+                            placeholder="Total"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TABLE COLUMN HEADER ROW */}
+                  {hasSecondaryCol ? (
+                    <div className="grid grid-cols-12 gap-2 items-center px-2 py-1 bg-[var(--nexa-bg-surface)] rounded-lg text-[10px] font-black uppercase text-[var(--nexa-text-muted)] tracking-wider">
+                      <div className="col-span-3">{columnTitles.description || "Routes"}</div>
+                      <div className="col-span-2">{columnTitles.secondary || "Distance"}</div>
+                      <div className="col-span-2 text-center">{columnTitles.quantity || "Trips"}</div>
+                      <div className="col-span-2 text-center">{columnTitles.unitPrice || "Rate"}</div>
+                      <div className="col-span-2 text-right">{columnTitles.amount || "Total"}</div>
+                      <div className="col-span-1" />
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-12 gap-2 items-center px-2 py-1 bg-[var(--nexa-bg-surface)] rounded-lg text-[10px] font-black uppercase text-[var(--nexa-text-muted)] tracking-wider">
+                      <div className="col-span-5">{columnTitles.description || "Item Description"}</div>
+                      <div className="col-span-2 text-center">{columnTitles.quantity || "Qty"}</div>
+                      <div className="col-span-2 text-center">{columnTitles.unitPrice || "Unit Price"}</div>
+                      <div className="col-span-2 text-right">{columnTitles.amount || "Total (NGN)"}</div>
+                      <div className="col-span-1" />
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    {lineItems.map((item, index) => (
+                      <div key={item.id} className="grid grid-cols-12 gap-2 items-center bg-[var(--nexa-bg-card)] p-2 rounded-lg border border-[var(--nexa-border)] text-xs">
+                        {hasSecondaryCol ? (
+                          <>
+                            <div className="col-span-3">
+                              <input
+                                type="text"
+                                placeholder={columnTitles.description || "Route (e.g. Lagos - Abuja)"}
+                                value={item.description}
+                                onChange={(e) => handleUpdateLineItem(item.id, "description", e.target.value)}
+                                className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs"
+                                required
+                              />
+                            </div>
+                            <div className="col-span-2">
+                              <input
+                                type="text"
+                                placeholder={columnTitles.secondary || "e.g. 750 km"}
+                                value={item.detail || ""}
+                                onChange={(e) => handleUpdateLineItem(item.id, "detail", e.target.value)}
+                                className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs"
+                              />
+                            </div>
+                            <div className="col-span-2">
+                              <input
+                                type="number"
+                                min="1"
+                                placeholder={columnTitles.quantity || "Trips"}
+                                value={item.quantity}
+                                onChange={(e) => handleUpdateLineItem(item.id, "quantity", Number(e.target.value))}
+                                className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-center"
+                                required
+                              />
+                            </div>
+                            <div className="col-span-2">
+                              <input
+                                type="number"
+                                min="0"
+                                placeholder={`${columnTitles.unitPrice || "Rate"} ₦`}
+                                value={item.unitPrice}
+                                onChange={(e) => handleUpdateLineItem(item.id, "unitPrice", Number(e.target.value))}
+                                className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-right"
+                                required
+                              />
+                            </div>
+                            <div className="col-span-2 font-mono font-bold text-right text-xs">
+                              ₦{item.amount.toLocaleString()}
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="col-span-5">
+                              <input
+                                type="text"
+                                placeholder={columnTitles.description || "Product / Service Description"}
+                                value={item.description}
+                                onChange={(e) => handleUpdateLineItem(item.id, "description", e.target.value)}
+                                className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs"
+                                required
+                              />
+                            </div>
+                            <div className="col-span-2">
+                              <input
+                                type="number"
+                                min="1"
+                                placeholder={columnTitles.quantity || "Qty"}
+                                value={item.quantity}
+                                onChange={(e) => handleUpdateLineItem(item.id, "quantity", Number(e.target.value))}
+                                className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-center"
+                                required
+                              />
+                            </div>
+                            <div className="col-span-2">
+                              <input
+                                type="number"
+                                min="0"
+                                placeholder={`${columnTitles.unitPrice || "Unit Price"} ₦`}
+                                value={item.unitPrice}
+                                onChange={(e) => handleUpdateLineItem(item.id, "unitPrice", Number(e.target.value))}
+                                className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-right"
+                                required
+                              />
+                            </div>
+                            <div className="col-span-2 font-mono font-bold text-right text-xs">
+                              ₦{item.amount.toLocaleString()}
+                            </div>
+                          </>
+                        )}
+                        <div className="col-span-1 text-center">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveLineItem(item.id)}
+                            disabled={lineItems.length === 1}
+                            className="text-slate-400 hover:text-rose-500 disabled:opacity-30 cursor-pointer"
+                            title="Remove line"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* LIVE TOTALS COMPUTATION */}
+                  <div className="pt-2 border-t border-[var(--nexa-border)] flex flex-col items-end space-y-1 text-xs font-semibold">
+                    <div className="flex justify-between w-64 text-[var(--nexa-text-muted)]">
+                      <span>Subtotal:</span>
+                      <span>₦{calculatedSubtotal.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between w-64 text-amber-500">
+                      <span>VAT ({vatRate}%):</span>
+                      <span>₦{calculatedTaxTotal.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between w-64 text-base font-black text-[#1A56DB] pt-1 border-t border-[var(--nexa-border)]">
+                      <span>Grand Total:</span>
+                      <span>₦{calculatedGrandTotal.toLocaleString()}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between w-64 text-amber-500">
-                  <span>VAT ({vatRate}%):</span>
-                  <span>₦{calculatedTaxTotal.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between w-64 text-base font-black text-[#1A56DB] pt-1 border-t border-[var(--nexa-border)]">
-                  <span>Grand Total:</span>
-                  <span>₦{calculatedGrandTotal.toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* PAYMENT TERMS & NOTES */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1176,6 +1265,9 @@ export default function QuotationsPage() {
                     <tr>
                       <th className="py-2.5 px-3">#</th>
                       <th className="py-2.5 px-3">{previewQuote.columnTitles?.description || "Item Description"}</th>
+                      {previewQuote.columnTitles?.secondary && (
+                        <th className="py-2.5 px-3">{previewQuote.columnTitles.secondary}</th>
+                      )}
                       <th className="py-2.5 px-3 text-center">{previewQuote.columnTitles?.quantity || "Qty"}</th>
                       <th className="py-2.5 px-3 text-right">{previewQuote.columnTitles?.unitPrice || "Unit Price"}</th>
                       <th className="py-2.5 px-3 text-right">{previewQuote.columnTitles?.amount || "Total (NGN)"}</th>
@@ -1186,6 +1278,9 @@ export default function QuotationsPage() {
                       <tr key={item.id}>
                         <td className="py-2.5 px-3 text-slate-400 font-mono">{idx + 1}</td>
                         <td className="py-2.5 px-3 font-medium text-slate-800">{item.description}</td>
+                        {previewQuote.columnTitles?.secondary && (
+                          <td className="py-2.5 px-3 font-mono text-slate-600">{item.detail || "—"}</td>
+                        )}
                         <td className="py-2.5 px-3 text-center font-bold text-slate-700">{item.quantity}</td>
                         <td className="py-2.5 px-3 text-right font-mono text-slate-700">₦{item.unitPrice.toLocaleString()}</td>
                         <td className="py-2.5 px-3 text-right font-mono font-bold text-slate-900">₦{item.amount.toLocaleString()}</td>

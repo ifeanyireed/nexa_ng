@@ -67,6 +67,46 @@ export default function VerticalPOSPage() {
   const [products, setProducts] = useState<PosProductItem[]>(() =>
     getDefaultPosProductsForVertical(verticalKey)
   );
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
+
+  const fetchLiveProducts = React.useCallback(async () => {
+    const slug = activeTenant?.slug || (verticalKey === "fashion" ? "funmyclothing" : verticalKey === "cars" ? "neweratransports" : "reedbreed");
+    setIsLoadingProducts(true);
+    try {
+      const res = await fetch(`/api/erp/shop/products?tenant=${encodeURIComponent(slug)}&vertical=${encodeURIComponent(verticalKey)}`, {
+        cache: "no-store",
+      });
+      const data = await res.json().catch(() => null);
+      if (data && Array.isArray(data.products) && data.products.length > 0) {
+        const liveItems: PosProductItem[] = data.products.map((p: any) => ({
+          id: p.id,
+          name: p.name || p.title,
+          price: Number(p.price) || 0,
+          formattedPrice: p.formattedPrice || `₦${(Number(p.price) || 0).toLocaleString()}`,
+          category: p.category || "General",
+          stock: typeof p.stock === "number" ? p.stock : 10,
+          sku: p.sku || `SKU-${p.id}`,
+        }));
+
+        const defaults = getDefaultPosProductsForVertical(verticalKey);
+        const combined = [...liveItems];
+        defaults.forEach((d) => {
+          if (!combined.some((c) => c.sku === d.sku || c.name.toLowerCase() === d.name.toLowerCase())) {
+            combined.push(d);
+          }
+        });
+        setProducts(combined);
+      }
+    } catch {
+      // Retain existing products
+    } finally {
+      setIsLoadingProducts(false);
+    }
+  }, [activeTenant?.slug, verticalKey]);
+
+  React.useEffect(() => {
+    fetchLiveProducts();
+  }, [fetchLiveProducts]);
 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [search, setSearch] = useState("");
@@ -154,7 +194,7 @@ export default function VerticalPOSPage() {
     if (cart.length === 0) return;
     setIsProcessing(true);
 
-    const slug = activeTenant?.slug || "neweratransports";
+    const slug = activeTenant?.slug || (verticalKey === "fashion" ? "funmyclothing" : verticalKey === "cars" ? "neweratransports" : "reedbreed");
     const orderNumber = `POS-${verticalKey.toUpperCase().slice(0, 3)}-${Date.now().toString().slice(-6)}`;
     const itemsSummary = cart.map((i) => `${i.qty}x ${i.name}`).join(", ");
 
@@ -176,6 +216,7 @@ export default function VerticalPOSPage() {
       items: cart.map((i) => ({
         id: i.id,
         productId: i.id,
+        sku: products.find((p) => p.id === i.id)?.sku || i.id,
         title: i.name,
         price: i.price,
         quantity: i.qty,
@@ -193,12 +234,22 @@ export default function VerticalPOSPage() {
         setCompletedOrder({
           orderNumber,
           customerName,
+          customerPhone,
           items: cart,
+          subtotal,
+          discountAmount,
           total,
           paymentMethod,
-          date: new Date().toLocaleTimeString(),
+          date: new Date().toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
         });
         clearCart();
+        setDiscountPercent(0);
         setIsCheckoutOpen(false);
       }
     } catch (err) {
@@ -218,6 +269,17 @@ export default function VerticalPOSPage() {
           <NexaBadge variant="brand" size="sm" className="rounded-full">
             {currentVerticalDef.name}
           </NexaBadge>
+
+          <NexaButton
+            size="sm"
+            variant="outline"
+            onClick={fetchLiveProducts}
+            disabled={isLoadingProducts}
+            leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${isLoadingProducts ? "animate-spin text-blue-600" : ""}`} />}
+            className="rounded-full"
+          >
+            {isLoadingProducts ? "Syncing..." : "Sync Products"}
+          </NexaButton>
 
           <Link href={`/erp/admin/shop/${verticalKey}/orders`}>
             <NexaButton size="sm" variant="outline" leftIcon={<History className="w-3.5 h-3.5" />} className="rounded-full">
@@ -377,6 +439,32 @@ export default function VerticalPOSPage() {
               )}
             </div>
 
+            {/* QUICK DISCOUNT SELECTOR */}
+            <div className="pt-2 border-t border-[var(--nexa-border)]">
+              <div className="flex items-center justify-between text-[11px] font-bold text-[var(--nexa-text-muted)] mb-1.5">
+                <span className="flex items-center gap-1">
+                  <Percent className="w-3 h-3 text-emerald-500" /> Apply Discount
+                </span>
+                <span className="text-emerald-600 font-mono">{discountPercent}% Applied</span>
+              </div>
+              <div className="grid grid-cols-5 gap-1">
+                {[0, 5, 10, 15, 20].map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setDiscountPercent(d)}
+                    className={`py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
+                      discountPercent === d
+                        ? "bg-emerald-600 text-white border-emerald-600"
+                        : "bg-[var(--nexa-bg-base)] border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] hover:border-gray-400"
+                    }`}
+                  >
+                    {d === 0 ? "None" : `${d}%`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* TOTALS & SUMMARY */}
             <div className="pt-3 border-t border-[var(--nexa-border)] space-y-2 text-xs">
               <div className="flex items-center justify-between text-[var(--nexa-text-secondary)]">
@@ -490,6 +578,12 @@ export default function VerticalPOSPage() {
               <span className="text-[var(--nexa-text-muted)]">Receipt Ref:</span>
               <span className="font-mono font-bold">{completedOrder?.orderNumber}</span>
             </div>
+            {completedOrder?.date && (
+              <div className="flex justify-between">
+                <span className="text-[var(--nexa-text-muted)]">Date & Time:</span>
+                <span className="text-[var(--nexa-text-secondary)] font-mono">{completedOrder?.date}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-[var(--nexa-text-muted)]">Customer:</span>
               <span className="font-bold">{completedOrder?.customerName}</span>
@@ -498,9 +592,31 @@ export default function VerticalPOSPage() {
               <span className="text-[var(--nexa-text-muted)]">Tender:</span>
               <span className="font-bold">{completedOrder?.paymentMethod}</span>
             </div>
+
+            {completedOrder?.items && completedOrder.items.length > 0 && (
+              <div className="pt-2 border-t border-[var(--nexa-border)] space-y-1">
+                <span className="text-[10px] uppercase font-bold text-[var(--nexa-text-muted)] block mb-1">
+                  Items Purchased
+                </span>
+                {completedOrder.items.map((itm: any) => (
+                  <div key={itm.id} className="flex justify-between text-[11px]">
+                    <span className="truncate max-w-[170px]">{itm.qty}x {itm.name}</span>
+                    <span className="font-mono text-[var(--nexa-text-secondary)]">₦{(itm.price * itm.qty).toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {completedOrder?.discountAmount > 0 && (
+              <div className="flex justify-between text-emerald-600 font-semibold pt-1">
+                <span>Discount Applied:</span>
+                <span className="font-mono">-₦{completedOrder.discountAmount.toLocaleString()}</span>
+              </div>
+            )}
+
             <div className="flex justify-between pt-2 border-t border-[var(--nexa-border)] font-bold text-sm">
               <span>Total Paid:</span>
-              <span className="text-[#1A56DB]">₦{completedOrder?.total.toLocaleString()}</span>
+              <span className="text-[#1A56DB] font-mono">₦{completedOrder?.total.toLocaleString()}</span>
             </div>
           </div>
 

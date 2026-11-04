@@ -64,32 +64,65 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const rawTenant = searchParams.get("tenant") || searchParams.get("slug") || request.headers.get("x-tenant-slug");
-
-  if (!rawTenant) {
-    return NextResponse.json(
-      { success: false, error: "tenant parameter is required for multi-tenant isolation" },
-      { status: 400 }
-    );
-  }
-
-  const tenantSlug = rawTenant.toLowerCase().trim();
-
   try {
-    const payload = await request.json();
+    const { searchParams } = new URL(request.url);
+    const payload = await request.json().catch(() => ({}));
+    const rawTenant =
+      searchParams.get("tenant") ||
+      searchParams.get("slug") ||
+      request.headers.get("x-tenant-slug") ||
+      payload.tenantSlug ||
+      payload.slug;
+
+    if (!rawTenant) {
+      return NextResponse.json(
+        { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
+
+    const tenantSlug = rawTenant.toLowerCase().trim();
     const sql = neon(MASTER_REGISTRY_URL);
+
+    // Merge incoming payload into existing storefront_config to avoid wiping unedited sections
+    const existingRows = await sql`
+      SELECT storefront_config FROM platform_tenants
+      WHERE LOWER(slug) = ${tenantSlug}
+         OR REPLACE(LOWER(slug), '-', '') = REPLACE(${tenantSlug}, '-', '')
+      LIMIT 1;
+    `;
+    const existingConfig = (existingRows && existingRows[0]?.storefront_config) || {};
+    const mergedConfig = {
+      ...existingConfig,
+      ...payload,
+      contact: {
+        ...(existingConfig.contact || {}),
+        ...(payload.contact || {}),
+      },
+      footer: {
+        ...(existingConfig.footer || {}),
+        ...(payload.footer || {}),
+        socials: {
+          ...(existingConfig.footer?.socials || {}),
+          ...(payload.footer?.socials || {}),
+        },
+      },
+      hero: {
+        ...(existingConfig.hero || {}),
+        ...(payload.hero || {}),
+      },
+    };
 
     // Extract core fields to also synchronize into platform_tenants root columns
     const storeName = (payload.storeName || "").trim();
     const logoUrl = (payload.logoUrl || "").trim();
     const bannerUrl = (payload.hero?.image || payload.bannerUrl || "").trim();
-    const heroTitle = (payload.hero?.headline || payload.storeHeadline || "").trim();
-    const heroSubtitle = (payload.hero?.description || "").trim();
+    const heroTitle = (payload.hero?.headline || payload.heroHeading || payload.storeHeadline || "").trim();
+    const heroSubtitle = (payload.hero?.description || payload.heroSubheading || "").trim();
 
     await sql`
       UPDATE platform_tenants
-      SET storefront_config = ${JSON.stringify(payload)}::jsonb,
+      SET storefront_config = ${JSON.stringify(mergedConfig)}::jsonb,
           name = COALESCE(NULLIF(${storeName}, ''), name),
           logo = COALESCE(NULLIF(${logoUrl}, ''), logo),
           login_image = COALESCE(NULLIF(${bannerUrl}, ''), login_image),
@@ -106,12 +139,15 @@ export async function PUT(request: NextRequest) {
       success: true,
       message: "Storefront customization saved and published live!",
       tenantSlug,
+      config: mergedConfig,
     });
   } catch (err: any) {
-    console.error(`[ERP Store Settings API] PUT error for '${tenantSlug}':`, err);
+    console.error(`[ERP Store Settings API] PUT error:`, err);
     return NextResponse.json(
       { success: false, error: "Failed to persist storefront settings: " + err.message },
       { status: 500 }
     );
   }
 }
+
+export const POST = PUT;

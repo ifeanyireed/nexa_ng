@@ -281,7 +281,7 @@ export async function saveErpOrder(order: Partial<CommerceOrderItem>): Promise<C
 
       // Trigger automatic inventory decrement for purchased items
       if (newOrder.items && newOrder.items.length > 0) {
-        decrementInventoryForOrder({ tenantSlug: slug, items: newOrder.items }).catch(() => null);
+        await decrementInventoryForOrder({ tenantSlug: slug, items: newOrder.items }).catch(() => null);
       }
     } catch (err) {
       console.warn("[Commerce Store] Neon saveOrder failed:", err);

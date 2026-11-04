@@ -198,6 +198,23 @@ export async function decrementInventoryForOrder(order: {
             if (item.currentStock <= item.minStock) {
               triggeredLowStock.push(item);
             }
+            try {
+              if (fs.existsSync(INVENTORY_FILE)) {
+                const raw = fs.readFileSync(INVENTORY_FILE, "utf8");
+                const data = JSON.parse(raw);
+                if (Array.isArray(data)) {
+                  const idx = data.findIndex(
+                    (i: any) =>
+                      (i.sku === item.sku || i.id === item.id || i.productId === item.productId) &&
+                      i.tenantSlug?.toLowerCase() === clean
+                  );
+                  if (idx >= 0) {
+                    data[idx] = item;
+                  }
+                  fs.writeFileSync(INVENTORY_FILE, JSON.stringify(data, null, 2), "utf8");
+                }
+              }
+            } catch {}
           }
         }
       }

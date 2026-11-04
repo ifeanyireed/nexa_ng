@@ -16,7 +16,7 @@ async function ensureCrmLeadsTable(sql: any) {
       phone VARCHAR(100) DEFAULT '',
       industry VARCHAR(191) DEFAULT '',
       location VARCHAR(191) DEFAULT '',
-      buying_signals JSONB DEFAULT '[]'::jsonb,
+      buying_signals TEXT DEFAULT '[]',
       source VARCHAR(100) DEFAULT 'Direct Outreach',
       score INT DEFAULT 80,
       status VARCHAR(50) DEFAULT 'CURIOUS',
@@ -33,11 +33,27 @@ async function ensureCrmLeadsTable(sql: any) {
   `;
   await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS industry VARCHAR(191) DEFAULT '';`;
   await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS location VARCHAR(191) DEFAULT '';`;
-  await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS buying_signals JSONB DEFAULT '[]'::jsonb;`;
+  await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS buying_signals TEXT DEFAULT '[]';`;
+  await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS company VARCHAR(191) DEFAULT '';`;
+  await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS name VARCHAR(191) DEFAULT '';`;
+  await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS company_name VARCHAR(191) DEFAULT '';`;
+  await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS contact_name VARCHAR(191) DEFAULT '';`;
+  await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS contact_email VARCHAR(191) DEFAULT '';`;
+  await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS contact_phone VARCHAR(100) DEFAULT '';`;
+  await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS icp_fit_score INT DEFAULT 80;`;
   await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(191) DEFAULT '';`;
   await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS linkedin_url VARCHAR(255) DEFAULT '';`;
   await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS converted_deal_id VARCHAR(191) DEFAULT '';`;
   await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS converted_at TIMESTAMPTZ;`;
+  try {
+    await sql`ALTER TABLE crm_leads ALTER COLUMN company_name DROP NOT NULL;`;
+  } catch {}
+  try {
+    await sql`ALTER TABLE crm_leads ALTER COLUMN contact_name DROP NOT NULL;`;
+  } catch {}
+  try {
+    await sql`ALTER TABLE crm_leads ALTER COLUMN name DROP NOT NULL;`;
+  } catch {}
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_leads_tenant ON crm_leads (LOWER(tenant_slug));`;
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_leads_created ON crm_leads (LOWER(tenant_slug), created_at DESC);`;
 
@@ -217,18 +233,18 @@ export async function GET(request: NextRequest) {
       SELECT 
         l.id,
         l.tenant_slug,
-        l.name,
-        COALESCE(l.company, '') AS company,
-        COALESCE(l.email, '') AS email,
-        COALESCE(l.phone, '') AS phone,
-        COALESCE(l.source, 'Direct Outreach') AS source,
-        COALESCE(l.score, 75) AS score,
+        COALESCE(NULLIF(l.name, ''), NULLIF(l.contact_name, ''), '') AS name,
+        COALESCE(NULLIF(l.company, ''), NULLIF(l.company_name, ''), '') AS company,
+        COALESCE(NULLIF(l.email, ''), NULLIF(l.contact_email, ''), '') AS email,
+        COALESCE(NULLIF(l.phone, ''), NULLIF(l.contact_phone, ''), '') AS phone,
+        COALESCE(NULLIF(l.source, ''), 'Direct Outreach') AS source,
+        COALESCE(NULLIF(l.score, 0), NULLIF(l.icp_fit_score, 0), 75) AS score,
         COALESCE(l.status, 'CURIOUS') AS status,
         COALESCE(l.owner, '') AS owner,
         COALESCE(l.assigned_rep, '') AS assigned_rep,
         COALESCE(l.industry, '') AS industry,
         COALESCE(l.location, '') AS location,
-        COALESCE(l.buying_signals, '[]'::jsonb) AS buying_signals,
+        COALESCE(l.buying_signals::text, '[]') AS buying_signals,
         COALESCE(l.value, '') AS value,
         COALESCE(l.notes, '') AS notes,
         COALESCE(l.converted_deal_id, '') AS converted_deal_id,
@@ -297,16 +313,24 @@ export async function GET(request: NextRequest) {
       source: r.source,
       score: Number(r.score) || 75,
       icpFitScore: Number(r.score) || 75,
-      buyingSignals: Array.isArray(r.buying_signals) && r.buying_signals.length > 0
-        ? r.buying_signals
-        : (r.notes
-            ? r.notes
-                .split(
-                  /\r?\n|(?<=[.!?])\s+(?=(?:Call Log\s*\(|Lead auto-assigned|Email [bB]last|Inbound|Outbound|Direct Outreach|Converted to Deal|Promoted to Deal|Deal Won|Meeting Scheduled))/g
-                )
-                .map((s: string) => s.trim())
-                .filter(Boolean)
-            : ["Direct Outreach"]),
+      buyingSignals: (() => {
+        if (Array.isArray(r.buying_signals) && r.buying_signals.length > 0) return r.buying_signals;
+        if (typeof r.buying_signals === "string" && r.buying_signals.trim()) {
+          try {
+            const parsed = JSON.parse(r.buying_signals);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          } catch {}
+        }
+        if (r.notes) {
+          return r.notes
+            .split(
+              /\r?\n|(?<=[.!?])\s+(?=(?:Call Log\s*\(|Lead auto-assigned|Email [bB]last|Inbound|Outbound|Direct Outreach|Converted to Deal|Promoted to Deal|Deal Won|Meeting Scheduled))/g
+            )
+            .map((s: string) => s.trim())
+            .filter(Boolean);
+        }
+        return ["Direct Outreach"];
+      })(),
       status: r.status,
       owner: r.owner || r.assigned_rep,
       assignedRep: r.assigned_rep || r.owner,
@@ -479,15 +503,20 @@ export async function POST(request: NextRequest) {
 
       const [updated] = await sql`
         UPDATE crm_leads SET
-          name = CASE WHEN ${name !== "Prospect" && name !== ""} THEN ${name} ELSE name END,
+          name = CASE WHEN ${name !== "Prospect" && name !== ""} THEN ${name} ELSE COALESCE(name, contact_name, '') END,
+          contact_name = CASE WHEN ${name !== "Prospect" && name !== ""} THEN ${name} ELSE COALESCE(contact_name, name, '') END,
           company = ${finalCompany},
+          company_name = ${finalCompany},
           email = ${finalEmail},
+          contact_email = ${finalEmail},
           phone = ${finalPhone},
+          contact_phone = ${finalPhone},
           industry = ${finalIndustry},
           location = ${finalLocation},
-          buying_signals = ${JSON.stringify(finalSignals)}::jsonb,
+          buying_signals = ${JSON.stringify(finalSignals)},
           source = CASE WHEN source IS NULL OR source = '' THEN ${source} ELSE source END,
           score = ${finalScore},
+          icp_fit_score = ${finalScore},
           status = ${finalStatus},
           owner = ${finalRep},
           assigned_rep = ${finalRep},
@@ -502,24 +531,29 @@ export async function POST(request: NextRequest) {
     } else {
       const [saved] = await sql`
         INSERT INTO crm_leads (
-          id, tenant_slug, tenant_id, name, company, email, phone,
+          id, tenant_slug, tenant_id, name, contact_name, company, company_name, email, contact_email, phone, contact_phone,
           industry, location, buying_signals,
-          source, score, status, owner, assigned_rep, value, notes, linkedin_url, created_at, updated_at
+          source, score, icp_fit_score, status, owner, assigned_rep, value, notes, linkedin_url, created_at, updated_at
         ) VALUES (
-          ${leadId}, ${tenantSlug}, '', ${name}, ${company}, ${email}, ${phone},
-          ${industry}, ${location}, ${JSON.stringify(buyingSignals)}::jsonb,
-          ${source}, ${score}, ${status}, ${owner}, ${assignedRep}, ${value}, ${notes}, ${linkedinUrl}, NOW(), NOW()
+          ${leadId}, ${tenantSlug}, '', ${name}, ${name}, ${company}, ${company}, ${email}, ${email}, ${phone}, ${phone},
+          ${industry}, ${location}, ${JSON.stringify(buyingSignals)},
+          ${source}, ${score}, ${score}, ${status}, ${owner}, ${assignedRep}, ${value}, ${notes}, ${linkedinUrl}, NOW(), NOW()
         )
         ON CONFLICT (id) DO UPDATE SET
           name = EXCLUDED.name,
+          contact_name = EXCLUDED.contact_name,
           company = EXCLUDED.company,
+          company_name = EXCLUDED.company_name,
           email = EXCLUDED.email,
+          contact_email = EXCLUDED.contact_email,
           phone = EXCLUDED.phone,
+          contact_phone = EXCLUDED.contact_phone,
           industry = EXCLUDED.industry,
           location = EXCLUDED.location,
           buying_signals = EXCLUDED.buying_signals,
           status = EXCLUDED.status,
           score = EXCLUDED.score,
+          icp_fit_score = EXCLUDED.icp_fit_score,
           owner = EXCLUDED.owner,
           assigned_rep = EXCLUDED.assigned_rep,
           value = EXCLUDED.value,
@@ -537,22 +571,29 @@ export async function POST(request: NextRequest) {
       lead: {
         id: targetLead.id,
         tenantSlug: targetLead.tenant_slug || tenantSlug,
-        name: targetLead.name,
-        contactName: targetLead.name,
-        company: targetLead.company,
-        companyName: targetLead.company,
-        email: targetLead.email || "",
-        contactEmail: targetLead.email || "",
-        phone: targetLead.phone || "",
-        contactPhone: targetLead.phone || "",
+        name: targetLead.name || targetLead.contact_name || name,
+        contactName: targetLead.contact_name || targetLead.name || name,
+        company: targetLead.company || targetLead.company_name || company,
+        companyName: targetLead.company_name || targetLead.company || company,
+        email: targetLead.email || targetLead.contact_email || "",
+        contactEmail: targetLead.contact_email || targetLead.email || "",
+        phone: targetLead.phone || targetLead.contact_phone || "",
+        contactPhone: targetLead.contact_phone || targetLead.phone || "",
         industry: targetLead.industry || industry,
         location: targetLead.location || location,
-        buyingSignals: Array.isArray(targetLead.buying_signals) && targetLead.buying_signals.length > 0
-          ? targetLead.buying_signals
-          : (buyingSignals.length > 0 ? buyingSignals : ["Direct Manual Inbound"]),
+        buyingSignals: (() => {
+          if (Array.isArray(targetLead.buying_signals) && targetLead.buying_signals.length > 0) return targetLead.buying_signals;
+          if (typeof targetLead.buying_signals === "string" && targetLead.buying_signals.trim()) {
+            try {
+              const parsed = JSON.parse(targetLead.buying_signals);
+              if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+            } catch {}
+          }
+          return buyingSignals.length > 0 ? buyingSignals : ["Direct Manual Inbound"];
+        })(),
         status: targetLead.status,
-        score: Number(targetLead.score) || score,
-        icpFitScore: Number(targetLead.score) || score,
+        score: Number(targetLead.score || targetLead.icp_fit_score) || score,
+        icpFitScore: Number(targetLead.icp_fit_score || targetLead.score) || score,
         assignedRep: targetLead.assigned_rep || targetLead.owner || assignedRep,
         owner: targetLead.owner || targetLead.assigned_rep || owner,
         source: targetLead.source || source,
@@ -599,7 +640,12 @@ export async function PATCH(request: NextRequest) {
 
     // Fetch existing lead
     const [existingLead] = await sql`
-      SELECT id, name, company, email, phone, status, owner, assigned_rep, notes
+      SELECT id, 
+             COALESCE(NULLIF(name, ''), NULLIF(contact_name, ''), '') AS name, 
+             COALESCE(NULLIF(company, ''), NULLIF(company_name, ''), '') AS company, 
+             COALESCE(NULLIF(email, ''), NULLIF(contact_email, ''), '') AS email, 
+             COALESCE(NULLIF(phone, ''), NULLIF(contact_phone, ''), '') AS phone, 
+             status, owner, assigned_rep, notes
       FROM crm_leads
       WHERE id = ${id} AND LOWER(tenant_slug) = ${tenantSlug}
       LIMIT 1;
@@ -681,15 +727,19 @@ export async function PATCH(request: NextRequest) {
     const [updated] = await sql`
       UPDATE crm_leads SET
         name = ${name},
+        contact_name = ${name},
         company = ${company},
+        company_name = ${company},
         email = ${email},
+        contact_email = ${email},
         phone = ${phone},
+        contact_phone = ${phone},
         status = ${targetStatus},
         assigned_rep = ${assignedRep},
         owner = ${owner},
         notes = ${notes},
         linkedin_url = ${linkedinUrl},
-        ${score !== undefined ? sql`score = ${score},` : sql``}
+        ${score !== undefined ? sql`score = ${score}, icp_fit_score = ${score},` : sql``}
         ${value !== undefined ? sql`value = ${value},` : sql``}
         ${convertedDealId !== undefined ? sql`converted_deal_id = ${convertedDealId}, converted_at = NOW(),` : sql``}
         updated_at = NOW()
@@ -702,21 +752,21 @@ export async function PATCH(request: NextRequest) {
       lead: {
         id: updated.id,
         tenantSlug: updated.tenant_slug,
-        name: updated.name,
-        contactName: updated.name,
-        company: updated.company,
-        companyName: updated.company,
-        email: updated.email,
-        contactEmail: updated.email,
-        phone: updated.phone,
-        contactPhone: updated.phone,
+        name: updated.name || updated.contact_name || name,
+        contactName: updated.contact_name || updated.name || name,
+        company: updated.company || updated.company_name || company,
+        companyName: updated.company_name || updated.company || company,
+        email: updated.email || updated.contact_email || "",
+        contactEmail: updated.contact_email || updated.email || "",
+        phone: updated.phone || updated.contact_phone || "",
+        contactPhone: updated.contact_phone || updated.phone || "",
         linkedinUrl: updated.linkedin_url || "",
         status: updated.status,
         assignedRep: updated.assigned_rep,
         owner: updated.owner,
         notes: updated.notes,
-        score: updated.score,
-        icpFitScore: updated.score,
+        score: Number(updated.score || updated.icp_fit_score) || 75,
+        icpFitScore: Number(updated.icp_fit_score || updated.score) || 75,
         value: updated.value,
         convertedDealId: updated.converted_deal_id,
         updatedAt: updated.updated_at,

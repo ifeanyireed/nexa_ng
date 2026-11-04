@@ -35,6 +35,7 @@ function getSyncDir() {
 
 const SYNC_DIR = getSyncDir();
 const INVENTORY_FILE = path.join(SYNC_DIR, "inventory.json");
+const PRODUCTS_FILE = path.join(SYNC_DIR, "products.json");
 
 let memoryInventory: ShopInventoryItem[] = [];
 
@@ -100,8 +101,38 @@ export async function getTenantInventory(tenantSlug: string): Promise<ShopInvent
   try {
     if (fs.existsSync(INVENTORY_FILE)) {
       const data = JSON.parse(fs.readFileSync(INVENTORY_FILE, "utf8"));
-      if (Array.isArray(data)) {
-        return data.filter((i) => i.tenantSlug?.toLowerCase() === clean);
+      if (Array.isArray(data) && data.length > 0) {
+        const tenantItems = data.filter((i) => i.tenantSlug?.toLowerCase() === clean);
+        if (tenantItems.length > 0) return tenantItems;
+      }
+    }
+    if (fs.existsSync(PRODUCTS_FILE)) {
+      const pRaw = fs.readFileSync(PRODUCTS_FILE, "utf8");
+      const pData = JSON.parse(pRaw);
+      if (Array.isArray(pData) && pData.length > 0) {
+        const tenantProducts = pData.filter(
+          (p) => (p.tenantSlug || p.storeSlug || "").toLowerCase().trim() === clean
+        );
+        if (tenantProducts.length > 0) {
+          const depots = ["Ikeja Central Depot", "Lekki Distribution Hub", "Abuja Regional Hub"];
+          return tenantProducts.map((p, idx) => ({
+            id: p.id,
+            tenantSlug: clean,
+            tenantId: `org-${clean}`,
+            productId: p.id,
+            sku: p.sku || `SKU-${clean.slice(0, 3).toUpperCase()}-${idx + 100}`,
+            productName: p.title || p.name || "Apparel Item",
+            category: p.category || "General",
+            warehouse: depots[idx % depots.length],
+            currentStock: typeof p.stock === "number" ? p.stock : (p.inStock ? 12 : 0),
+            minStock: 3,
+            unitCost: Math.round((Number(p.price) || 0) * 0.65),
+            unitPrice: Number(p.price) || 0,
+            status: (p.stock || 0) === 0 ? "OUT_OF_STOCK" : (p.stock || 0) <= 3 ? "LOW_STOCK" : "IN_STOCK",
+            supplier: "Direct Supplier",
+            updatedAt: p.updatedAt || new Date().toISOString(),
+          }));
+        }
       }
     }
   } catch {}
@@ -193,9 +224,10 @@ export async function restockInventoryItem(
     try {
       const rows = await sql`
         UPDATE shop_inventory
-        SET current_stock = current_stock + ${restockQty},
+        SET current_stock = GREATEST(0, current_stock + ${restockQty}),
             status = CASE
-              WHEN (current_stock + ${restockQty}) <= min_stock THEN 'LOW_STOCK'
+              WHEN GREATEST(0, current_stock + ${restockQty}) = 0 THEN 'OUT_OF_STOCK'
+              WHEN GREATEST(0, current_stock + ${restockQty}) <= min_stock THEN 'LOW_STOCK'
               ELSE 'IN_STOCK'
             END,
             updated_at = NOW()

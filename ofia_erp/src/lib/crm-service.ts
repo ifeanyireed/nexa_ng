@@ -153,6 +153,13 @@ export interface QuotationLineItem {
   amount: number;
 }
 
+export interface QuotationColumnTitles {
+  description?: string;
+  quantity?: string;
+  unitPrice?: string;
+  amount?: string;
+}
+
 export interface CrmQuotation {
   id: string;
   tenantSlug: string;
@@ -170,6 +177,7 @@ export interface CrmQuotation {
   currency: string;
   vatRate: number;
   lineItems: QuotationLineItem[];
+  columnTitles?: QuotationColumnTitles;
   subtotal: number;
   discountTotal: number;
   taxTotal: number;

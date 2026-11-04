@@ -39,6 +39,7 @@ async function ensureCrmQuotationsTable(sql: any, tenantSlug: string) {
           currency VARCHAR(8) NOT NULL DEFAULT 'NGN',
           vat_rate NUMERIC(5,2) NOT NULL DEFAULT 7.5,
           line_items JSONB NOT NULL DEFAULT '[]'::jsonb,
+          column_titles JSONB DEFAULT '{}'::jsonb,
           subtotal NUMERIC(15,2) NOT NULL DEFAULT 0,
           discount_total NUMERIC(15,2) NOT NULL DEFAULT 0,
           tax_total NUMERIC(15,2) NOT NULL DEFAULT 0,
@@ -51,16 +52,19 @@ async function ensureCrmQuotationsTable(sql: any, tenantSlug: string) {
           created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
         );
-
-        CREATE INDEX IF NOT EXISTS idx_crm_quotes_tenant_created 
-          ON crm_quotations(LOWER(tenant_slug), created_at DESC);
-
-        CREATE INDEX IF NOT EXISTS idx_crm_quotes_tenant_status 
-          ON crm_quotations(LOWER(tenant_slug), status);
-
-        CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_quotes_tenant_number 
-          ON crm_quotations(LOWER(tenant_slug), quotation_number);
       `;
+      try {
+        await sql`ALTER TABLE crm_quotations ADD COLUMN IF NOT EXISTS column_titles JSONB DEFAULT '{}'::jsonb;`;
+      } catch {}
+      try {
+        await sql`CREATE INDEX IF NOT EXISTS idx_crm_quotes_tenant_created ON crm_quotations(LOWER(tenant_slug), created_at DESC);`;
+      } catch {}
+      try {
+        await sql`CREATE INDEX IF NOT EXISTS idx_crm_quotes_tenant_status ON crm_quotations(LOWER(tenant_slug), status);`;
+      } catch {}
+      try {
+        await sql`CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_quotes_tenant_number ON crm_quotations(LOWER(tenant_slug), quotation_number);`;
+      } catch {}
       tablesEnsured = true;
     } catch (e: any) {
       console.warn("[CRM Quotations DB] ensureCrmQuotationsTable warning:", e.message);
@@ -133,6 +137,7 @@ export async function GET(request: NextRequest) {
           currency,
           vat_rate,
           line_items,
+          COALESCE(column_titles, '{}'::jsonb) AS column_titles,
           subtotal,
           discount_total,
           tax_total,
@@ -165,6 +170,7 @@ export async function GET(request: NextRequest) {
         currency: r.currency || "NGN",
         vatRate: Number(r.vat_rate || 7.5),
         lineItems: Array.isArray(r.line_items) ? r.line_items : [],
+        columnTitles: r.column_titles && typeof r.column_titles === "object" && Object.keys(r.column_titles).length > 0 ? r.column_titles : undefined,
         subtotal: Number(r.subtotal || 0),
         discountTotal: Number(r.discount_total || 0),
         taxTotal: Number(r.tax_total || 0),
@@ -344,6 +350,7 @@ export async function POST(request: NextRequest) {
     // Configurable VAT% (Decision 2: default 7.5%, editable per quote)
     const vatRate = body.vatRate !== undefined ? Number(body.vatRate) : 7.5;
     const lineItems = Array.isArray(body.lineItems) ? body.lineItems : [];
+    const columnTitles = body.columnTitles && typeof body.columnTitles === "object" ? body.columnTitles : {};
     const subtotal = Number(body.subtotal || 0);
     const discountTotal = Number(body.discountTotal || 0);
     const taxTotal = Number(body.taxTotal || 0);
@@ -356,13 +363,13 @@ export async function POST(request: NextRequest) {
       INSERT INTO crm_quotations (
         id, tenant_slug, tenant_id, quotation_number, title, deal_id, lead_id,
         client_name, company_name, client_email, client_phone, status, issue_date,
-        expiry_date, currency, vat_rate, line_items, subtotal, discount_total,
+        expiry_date, currency, vat_rate, line_items, column_titles, subtotal, discount_total,
         tax_total, total_amount, payment_terms, notes, created_by
       ) VALUES (
         ${id}, ${cleanSlug}, ${cleanSlug}, ${quotationNumber}, ${title},
         ${dealId}, ${leadId}, ${clientName}, ${companyName}, ${clientEmail},
         ${clientPhone}, ${status}, ${issueDate}, ${expiryDate}, ${currency},
-        ${vatRate}, ${JSON.stringify(lineItems)}, ${subtotal}, ${discountTotal},
+        ${vatRate}, ${JSON.stringify(lineItems)}, ${JSON.stringify(columnTitles)}::jsonb, ${subtotal}, ${discountTotal},
         ${taxTotal}, ${totalAmount}, ${paymentTerms}, ${notes}, ${createdBy}
       );
     `;
@@ -398,6 +405,7 @@ export async function POST(request: NextRequest) {
       currency,
       vatRate,
       lineItems,
+      columnTitles: Object.keys(columnTitles).length > 0 ? columnTitles : undefined,
       subtotal,
       discountTotal,
       taxTotal,

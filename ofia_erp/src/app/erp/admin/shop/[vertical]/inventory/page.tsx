@@ -91,6 +91,47 @@ export default function VerticalInventoryPage() {
   const [adjustingItem, setAdjustingItem] = useState<InventoryRow | null>(null);
   const [adjustmentDelta, setAdjustmentDelta] = useState("5");
   const [adjustmentType, setAdjustmentType] = useState<"ADD" | "REMOVE">("ADD");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isAdjusting, setIsAdjusting] = useState(false);
+
+  const fetchInventory = React.useCallback(async () => {
+    const slug = activeTenant?.slug || "neweratransports";
+    setIsRefreshing(true);
+    try {
+      const res = await fetch(`/api/erp/shop/inventory?tenant=${encodeURIComponent(slug)}`, {
+        cache: "no-store",
+      });
+      const data = await res.json().catch(() => null);
+      if (data && Array.isArray(data.inventory) && data.inventory.length > 0) {
+        const mapped: InventoryRow[] = data.inventory.map((i: any) => ({
+          id: i.id || i.productId,
+          sku: i.sku,
+          name: i.productName,
+          category: i.category || "General",
+          warehouse: i.warehouse || "Ikeja Central Hub",
+          currentStock: Number(i.currentStock) || 0,
+          minStock: Number(i.minStock) || 5,
+          unitCost: Number(i.unitCost) || Math.round((Number(i.unitPrice) || 0) * 0.65),
+          unitPrice: Number(i.unitPrice) || 0,
+          status:
+            Number(i.currentStock) === 0
+              ? "DEPLETED"
+              : Number(i.currentStock) <= (Number(i.minStock) || 5)
+              ? "LOW"
+              : "OPTIMAL",
+        }));
+        setRows(mapped);
+      }
+    } catch {
+      // Keep existing rows
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [activeTenant?.slug]);
+
+  React.useEffect(() => {
+    fetchInventory();
+  }, [fetchInventory]);
 
   const warehouses = useMemo(() => {
     const set = new Set<string>();
@@ -116,11 +157,13 @@ export default function VerticalInventoryPage() {
     return rows.filter((r) => r.status === "LOW" || r.status === "DEPLETED").length;
   }, [rows]);
 
-  const handleApplyAdjustment = () => {
+  const handleApplyAdjustment = async () => {
     if (!adjustingItem) return;
     const delta = parseInt(adjustmentDelta) || 0;
     const modifier = adjustmentType === "ADD" ? delta : -delta;
+    const slug = activeTenant?.slug || "neweratransports";
 
+    // Optimistic UI update
     setRows((prev) =>
       prev.map((r) => {
         if (r.id === adjustingItem.id) {
@@ -136,7 +179,25 @@ export default function VerticalInventoryPage() {
         return r;
       })
     );
-    setAdjustingItem(null);
+
+    setIsAdjusting(true);
+    try {
+      await fetch("/api/erp/shop/inventory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tenantSlug: slug,
+          sku: adjustingItem.sku,
+          quantity: modifier,
+        }),
+      });
+      fetchInventory();
+    } catch (err) {
+      console.warn("Inventory adjustment sync warning:", err);
+    } finally {
+      setIsAdjusting(false);
+      setAdjustingItem(null);
+    }
   };
 
   return (
@@ -149,6 +210,17 @@ export default function VerticalInventoryPage() {
           <NexaBadge variant="brand" size="sm" className="rounded-full">
             {currentVerticalDef.name}
           </NexaBadge>
+
+          <NexaButton
+            size="sm"
+            variant="outline"
+            onClick={fetchInventory}
+            disabled={isRefreshing}
+            leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-blue-600" : ""}`} />}
+            className="rounded-full"
+          >
+            {isRefreshing ? "Syncing..." : "Sync Stock"}
+          </NexaButton>
 
           <Link href={`/erp/admin/shop/${verticalKey}/catalog`}>
             <NexaButton size="sm" variant="outline" className="rounded-full">
@@ -353,9 +425,10 @@ export default function VerticalInventoryPage() {
               variant="primary"
               size="sm"
               onClick={handleApplyAdjustment}
+              disabled={isAdjusting}
               className="rounded-full bg-[#1A56DB] text-white font-bold"
             >
-              Apply Adjustment
+              {isAdjusting ? "Applying..." : "Apply Adjustment"}
             </NexaButton>
           </div>
         </div>

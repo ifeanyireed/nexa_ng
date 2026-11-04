@@ -183,89 +183,121 @@ export default function DealsPipelinePage() {
               leftIcon={<Search className="w-4 h-4" />}
             />
           </div>
+          <div className="flex items-center gap-3 text-xs text-[var(--nexa-text-muted)]">
+            <span className="font-semibold text-[var(--nexa-text-primary)]">
+              {filteredDeals.length} Opportunities
+            </span>
+            <span>•</span>
+            <span className="text-emerald-500 font-semibold">
+              {filteredDeals.filter((d) => d.stage === "WON").length} Won
+            </span>
+            <span>•</span>
+            <span className="text-amber-500 font-semibold">
+              {filteredDeals.filter((d) => d.stage === "NEGOTIATION").length} In Negotiation
+            </span>
+          </div>
         </div>
 
         {/* KANBAN BOARD COLUMNS */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-5 overflow-x-auto pb-6">
-          {STAGES.map((st) => {
-            const stageDeals = filteredDeals.filter((d) => d.stage === st.key);
-            return (
-              <div
-                key={st.key}
-                className="bg-[var(--nexa-bg-surface)]/60 rounded-2xl p-4 border border-[var(--nexa-border)] flex flex-col min-w-[260px]"
-              >
-                <div className="flex items-center justify-between pb-3 border-b border-[var(--nexa-border)] mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2.5 h-2.5 rounded-full ${st.color.split(" ")[1].replace("text-", "bg-")}`} />
-                    <h4 className="text-xs font-extrabold text-[var(--nexa-text-primary)]">{st.label}</h4>
-                  </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--nexa-bg-base)] text-[var(--nexa-text-muted)] border border-[var(--nexa-border)]">
-                    {stageDeals.length}
-                  </span>
-                </div>
-
-                <div className="flex flex-col gap-3.5 flex-1 overflow-y-auto max-h-[calc(100vh-320px)]">
-                  {stageDeals.map((deal) => (
-                    <NexaCard
-                      key={deal.id}
-                      className="p-4 hover:border-[#1A56DB] transition-all cursor-pointer group shadow-xs space-y-3"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <h5 className="text-xs font-bold text-[var(--nexa-text-primary)] line-clamp-2 flex-1">
-                          {deal.title}
-                        </h5>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteDeal(deal.id, deal.title);
-                          }}
-                          disabled={isDeletingDealId === deal.id}
-                          className="p-1 rounded-md text-[var(--nexa-text-muted)] hover:text-rose-600 hover:bg-rose-500/10 transition-colors opacity-70 group-hover:opacity-100 cursor-pointer disabled:opacity-50 shrink-0"
-                          title={`Delete deal ${deal.title}`}
-                        >
-                          {isDeletingDealId === deal.id ? (
-                            <RefreshCw className="w-3.5 h-3.5 animate-spin text-rose-500" />
-                          ) : (
-                            <Trash2 className="w-3.5 h-3.5" />
-                          )}
-                        </button>
-                      </div>
-
-                      <div className="space-y-1.5 text-[11px] text-[var(--nexa-text-muted)]">
-                        <div className="flex items-center gap-1.5 font-medium truncate">
-                          <Building2 className="w-3.5 h-3.5 text-[#1A56DB]" />
-                          {deal.company}
-                        </div>
-                        <div className="text-[10px] truncate">{deal.contactName}</div>
-                      </div>
-
-                      <div className="pt-2.5 border-t border-[var(--nexa-border)] flex items-center justify-between">
-                        <span className="text-xs font-extrabold text-[#1A56DB]">{deal.value}</span>
-                        <select
-                          value={deal.stage}
-                          onChange={(e) => handleStageChange(deal.id, e.target.value as any)}
-                          className="text-[10px] bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-md px-2 py-1 font-bold cursor-pointer"
-                        >
-                          <option value="LEAD">LEAD</option>
-                          <option value="PROPOSAL">PROPOSAL</option>
-                          <option value="QUALIFIED">QUALIFIED</option>
-                          <option value="NEGOTIATION">NEGOTIATION</option>
-                          <option value="WON">WON</option>
-                        </select>
-                      </div>
-                    </NexaCard>
-                  ))}
-
-                  {stageDeals.length === 0 && (
-                    <div className="h-24 rounded-xl border border-dashed border-[var(--nexa-border)] flex items-center justify-center text-[11px] text-[var(--nexa-text-muted)]">
-                      No deals in {st.label}
+        <div className="overflow-x-auto pb-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-5 min-w-[1300px]">
+            {STAGES.map((st) => {
+              const stageDeals = filteredDeals.filter((d) => d.stage === st.key);
+              return (
+                <div
+                  key={st.key}
+                  className="bg-[var(--nexa-bg-surface)]/60 rounded-2xl p-4 border border-[var(--nexa-border)] flex flex-col min-w-[260px] min-h-[620px]"
+                >
+                  <div className="flex items-center justify-between pb-3 border-b border-[var(--nexa-border)] mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2.5 h-2.5 rounded-full ${st.color.split(" ")[1].replace("text-", "bg-")}`} />
+                      <h4 className="text-xs font-extrabold text-[var(--nexa-text-primary)]">{st.label}</h4>
                     </div>
-                  )}
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--nexa-bg-base)] text-[var(--nexa-text-muted)] border border-[var(--nexa-border)]">
+                      {stageDeals.length}
+                    </span>
+                  </div>
+
+                  {/* Scrollable Column Container with minimum height */}
+                  <div className="flex flex-col gap-3.5 flex-1 overflow-y-auto min-h-[480px] max-h-[calc(100vh-280px)] pr-1">
+                    {stageDeals.map((deal) => (
+                      <NexaCard
+                        key={deal.id}
+                        className="p-4 hover:border-[#1A56DB] transition-all group shadow-xs space-y-3"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <h5 className="text-xs font-bold text-[var(--nexa-text-primary)] leading-snug flex-1">
+                            {deal.title}
+                          </h5>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteDeal(deal.id, deal.title);
+                            }}
+                            disabled={isDeletingDealId === deal.id}
+                            className="p-1 rounded-md text-[var(--nexa-text-muted)] hover:text-rose-600 hover:bg-rose-500/10 transition-colors opacity-70 group-hover:opacity-100 cursor-pointer disabled:opacity-50 shrink-0"
+                            title={`Delete deal ${deal.title}`}
+                          >
+                            {isDeletingDealId === deal.id ? (
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin text-rose-500" />
+                            ) : (
+                              <Trash2 className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
+
+                        {/* Full details - Non-collapsible */}
+                        <div className="space-y-1.5 text-[11px] text-[var(--nexa-text-muted)]">
+                          <div className="flex items-center gap-1.5 font-semibold text-[var(--nexa-text-primary)]">
+                            <Building2 className="w-3.5 h-3.5 text-[#1A56DB] shrink-0" />
+                            <span>{deal.company}</span>
+                          </div>
+                          {deal.contactName && (
+                            <div className="text-[10px] text-[var(--nexa-text-secondary)] pl-5 font-medium">
+                              {deal.contactName}
+                            </div>
+                          )}
+                          {deal.email && (
+                            <div className="text-[10px] text-slate-400 pl-5">
+                              {deal.email}
+                            </div>
+                          )}
+                          {deal.notes && (
+                            <div className="text-[10px] text-slate-500 bg-[var(--nexa-bg-base)] p-1.5 rounded-lg border border-[var(--nexa-border)] mt-1.5 leading-relaxed">
+                              {deal.notes}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="pt-2.5 border-t border-[var(--nexa-border)] flex items-center justify-between">
+                          <span className="text-xs font-extrabold text-[#1A56DB]">{deal.value}</span>
+                          <select
+                            value={deal.stage}
+                            onChange={(e) => handleStageChange(deal.id, e.target.value as any)}
+                            className="text-[10px] bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-md px-2 py-1 font-bold cursor-pointer hover:border-[#1A56DB] transition-colors"
+                          >
+                            <option value="LEAD">LEAD</option>
+                            <option value="PROPOSAL">PROPOSAL</option>
+                            <option value="QUALIFIED">QUALIFIED</option>
+                            <option value="NEGOTIATION">NEGOTIATION</option>
+                            <option value="WON">WON</option>
+                          </select>
+                        </div>
+                      </NexaCard>
+                    ))}
+
+                    {stageDeals.length === 0 && (
+                      <div className="flex-1 min-h-[220px] rounded-xl border border-dashed border-[var(--nexa-border)] flex flex-col items-center justify-center p-4 text-center text-xs text-[var(--nexa-text-muted)]">
+                        <Building2 className="w-5 h-5 text-slate-400 mb-1.5 opacity-40" />
+                        <span>No deals in {st.label}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
 

@@ -21,6 +21,11 @@ import {
   FileCheck,
   Percent,
   SlidersHorizontal,
+  Package,
+  Truck,
+  Calendar,
+  GraduationCap,
+  Repeat,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -69,35 +74,35 @@ export default function QuotationsPage() {
   });
   const [isConfiguringColumns, setIsConfiguringColumns] = useState(false);
 
-  const COLUMN_PRESETS: { label: string; icon: string; titles: QuotationColumnTitles }[] = [
+  const COLUMN_PRESETS: { label: string; icon: React.ReactNode; titles: QuotationColumnTitles }[] = [
     {
       label: "Standard Items",
-      icon: "📦",
+      icon: <Package className="w-3.5 h-3.5" />,
       titles: { description: "Item Description", secondary: "", quantity: "Qty", unitPrice: "Unit Price", amount: "Total (NGN)" },
     },
     {
       label: "Transportation",
-      icon: "🚚",
+      icon: <Truck className="w-3.5 h-3.5" />,
       titles: { description: "Routes", secondary: "Distance", quantity: "Trips", unitPrice: "Rate", amount: "Total" },
     },
     {
       label: "Services & Hours",
-      icon: "⏱️",
+      icon: <Clock className="w-3.5 h-3.5" />,
       titles: { description: "Scope of Work / Deliverable", secondary: "", quantity: "Hours", unitPrice: "Hourly Rate", amount: "Total (NGN)" },
     },
     {
       label: "Consulting & Days",
-      icon: "📅",
+      icon: <Calendar className="w-3.5 h-3.5" />,
       titles: { description: "Milestone / Deliverable", secondary: "", quantity: "Days", unitPrice: "Daily Rate", amount: "Total (NGN)" },
     },
     {
       label: "Training & Academy",
-      icon: "🎓",
+      icon: <GraduationCap className="w-3.5 h-3.5" />,
       titles: { description: "Course / Training Module", secondary: "", quantity: "Participants / Seats", unitPrice: "Tuition per Seat", amount: "Total (NGN)" },
     },
     {
       label: "Retainer & Coverage",
-      icon: "🔄",
+      icon: <Repeat className="w-3.5 h-3.5" />,
       titles: { description: "Service Plan / Coverage", secondary: "", quantity: "Duration (Months)", unitPrice: "Monthly Fee", amount: "Total (NGN)" },
     },
   ];

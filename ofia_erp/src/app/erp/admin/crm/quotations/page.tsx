@@ -111,6 +111,7 @@ export default function QuotationsPage() {
 
   // Modal 2: Preview Document
   const [previewQuote, setPreviewQuote] = useState<CrmQuotation | null>(null);
+  const [isPreviewingDraft, setIsPreviewingDraft] = useState(false);
 
   // Status Action Loader
   const [actionInProgressId, setActionInProgressId] = useState<string | null>(null);
@@ -228,6 +229,59 @@ export default function QuotationsPage() {
   const calculatedGrandTotal = useMemo(() => {
     return calculatedSubtotal - calculatedDiscountTotal + calculatedTaxTotal;
   }, [calculatedSubtotal, calculatedDiscountTotal, calculatedTaxTotal]);
+
+  // Handle live proposal preview from modal draft
+  const handlePreviewCurrentDraft = () => {
+    const issueDate = new Date().toISOString().split("T")[0];
+    const expiryDate = new Date(Date.now() + (Number(validityDays) || 30) * 86400000).toISOString().split("T")[0];
+
+    const draftQuote: CrmQuotation = {
+      id: "DRAFT-PREVIEW",
+      tenantSlug: "default",
+      currency: "NGN",
+      quotationNumber: `QT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)} (DRAFT)`,
+      title: title.trim() || "Commercial Quotation Proposal",
+      dealId: selectedDealId || undefined,
+      leadId: selectedLeadId || undefined,
+      companyName: companyName.trim() || "Prospective Client / Enterprise",
+      clientName: clientName.trim() || "Designated Contact",
+      clientEmail: clientEmail.trim() || "contact@clientcompany.com",
+      clientPhone: clientPhone.trim() || "+234 800 000 0000",
+      status: "DRAFT" as QuotationStatus,
+      issueDate,
+      expiryDate,
+      lineItems: lineItems.length > 0 ? lineItems : [
+        {
+          id: "item-preview-1",
+          description: "Quotation Line Item",
+          quantity: 1,
+          unitPrice: 0,
+          discountPercent: 0,
+          taxPercent: vatRate,
+          amount: 0,
+        },
+      ],
+      subtotal: calculatedSubtotal,
+      discountTotal: calculatedDiscountTotal,
+      taxTotal: calculatedTaxTotal,
+      vatRate: vatRate,
+      totalAmount: calculatedGrandTotal,
+      paymentTerms: paymentTerms || "Standard B2B Terms",
+      notes: notes || "Quotation valid per stated clauses.",
+      columnTitles: columnTitles,
+      createdBy: "Current Sales Representative",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    setIsPreviewingDraft(true);
+    setPreviewQuote(draftQuote);
+  };
+
+  const handleClosePreview = () => {
+    setPreviewQuote(null);
+    setIsPreviewingDraft(false);
+  };
 
   // Handle creating quote
   const handleCreateQuotation = async (e: React.FormEvent) => {
@@ -560,11 +614,15 @@ export default function QuotationsPage() {
                         <div className="flex items-center justify-end gap-1.5">
                           {/* PREVIEW DOCUMENT */}
                           <button
-                            onClick={() => setPreviewQuote(q)}
+                            onClick={() => {
+                              setIsPreviewingDraft(false);
+                              setPreviewQuote(q);
+                            }}
                             title="Preview / Print Official Quotation"
-                            className="p-1.5 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-muted)] hover:text-[var(--nexa-text-primary)] hover:border-slate-400 transition-colors"
+                            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[#1A56DB] hover:border-[#1A56DB]/40 transition-colors cursor-pointer"
                           >
-                            <Eye className="w-3.5 h-3.5" />
+                            <Eye className="w-3.5 h-3.5 text-[#1A56DB]" />
+                            <span>Preview</span>
                           </button>
 
                           {/* SEND QUOTE */}
@@ -779,6 +837,15 @@ export default function QuotationsPage() {
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handlePreviewCurrentDraft}
+                    className="text-xs font-bold flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] hover:text-[#1A56DB] hover:border-[#1A56DB]/40 transition-colors cursor-pointer"
+                    title="Live preview of this proposal with current items and columns"
+                  >
+                    <Eye className="w-3.5 h-3.5 text-[#1A56DB]" />
+                    <span>Preview Proposal</span>
+                  </button>
                   <button
                     type="button"
                     onClick={() => setIsConfiguringColumns(!isConfiguringColumns)}
@@ -999,13 +1066,24 @@ export default function QuotationsPage() {
               />
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
-              <NexaButton type="button" variant="secondary" onClick={() => setIsCreateModalOpen(false)}>
-                Cancel
+            <div className="flex items-center justify-between pt-3 border-t border-[var(--nexa-border)]">
+              <NexaButton
+                type="button"
+                variant="outline"
+                onClick={handlePreviewCurrentDraft}
+                className="flex items-center gap-1.5 border-[var(--nexa-border)] hover:border-[#1A56DB] hover:text-[#1A56DB]"
+              >
+                <Eye className="w-3.5 h-3.5 text-[#1A56DB]" />
+                <span>Preview Quotation</span>
               </NexaButton>
-              <NexaButton type="submit" variant="primary">
-                Save & Issue Proposal
-              </NexaButton>
+              <div className="flex items-center gap-2">
+                <NexaButton type="button" variant="secondary" onClick={() => setIsCreateModalOpen(false)}>
+                  Cancel
+                </NexaButton>
+                <NexaButton type="submit" variant="primary">
+                  Save & Issue Proposal
+                </NexaButton>
+              </div>
             </div>
           </form>
         </NexaModal>
@@ -1014,11 +1092,46 @@ export default function QuotationsPage() {
         {previewQuote && (
           <NexaModal
             isOpen={Boolean(previewQuote)}
-            onClose={() => setPreviewQuote(null)}
-            title={`Formal Quotation: ${previewQuote.quotationNumber}`}
-            subtitle="Official branded proposal document ready for client dispatch or print export."
+            onClose={handleClosePreview}
+            maxWidth="3xl"
+            title={
+              isPreviewingDraft ? (
+                <div className="flex items-center gap-2">
+                  <span>Proposal Live Preview</span>
+                  <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                    Draft
+                  </span>
+                </div>
+              ) : (
+                `Formal Quotation: ${previewQuote.quotationNumber}`
+              )
+            }
+            subtitle={
+              isPreviewingDraft
+                ? "Live interactive preview with your current line items, custom column headers, and calculations."
+                : "Official branded proposal document ready for client dispatch or print export."
+            }
           >
             <div className="space-y-6 text-xs max-h-[80vh] overflow-y-auto pr-1 p-2">
+              {/* DRAFT PREVIEW ALERT BANNER */}
+              {isPreviewingDraft && (
+                <div className="flex items-center justify-between p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300">
+                  <div className="flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span className="text-xs font-semibold">
+                      Live Draft Preview: Reviewing proposal layout and column titles before saving.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleClosePreview}
+                    className="text-xs font-bold underline hover:no-underline text-amber-700 dark:text-amber-200 cursor-pointer"
+                  >
+                    Return to Editor
+                  </button>
+                </div>
+              )}
+
               {/* PRINTABLE LETTERHEAD */}
               <div className="border border-[var(--nexa-border)] p-6 rounded-2xl bg-white text-slate-900 space-y-6 shadow-sm">
                 {/* HEADER */}
@@ -1132,6 +1245,11 @@ export default function QuotationsPage() {
               <div className="flex justify-between items-center pt-2">
                 <div className="text-xs text-[var(--nexa-text-muted)]">
                   Status: <strong className="text-[var(--nexa-text-primary)]">{previewQuote.status}</strong>
+                  {isPreviewingDraft && (
+                    <span className="ml-2 text-[10px] text-amber-600 font-bold bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                      Unsaved Draft
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <NexaButton
@@ -1143,8 +1261,8 @@ export default function QuotationsPage() {
                     <Printer className="w-3.5 h-3.5 mr-1.5" />
                     Print / Export PDF
                   </NexaButton>
-                  <NexaButton variant="primary" onClick={() => setPreviewQuote(null)}>
-                    Done
+                  <NexaButton variant="primary" onClick={handleClosePreview}>
+                    {isPreviewingDraft ? "Back to Editor" : "Done"}
                   </NexaButton>
                 </div>
               </div>

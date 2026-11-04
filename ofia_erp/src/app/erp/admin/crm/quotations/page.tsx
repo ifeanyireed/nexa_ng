@@ -37,8 +37,25 @@ import { NexaModal } from "@/components/nexa/NexaModal";
 import { Pagination } from "@/components/nexa/Pagination";
 import { CrmQuotation, QuotationLineItem, QuotationColumnTitles, QuotationStatus, CrmDeal, CrmLead } from "@/lib/crm-service";
 import { crmFetch } from "@/lib/crm-client";
+import { useActiveTenant } from "@/lib/tenant-context";
 
 export default function QuotationsPage() {
+  const { activeTenant } = useActiveTenant();
+
+  const tenantDisplayName =
+    activeTenant?.name ||
+    (typeof window !== "undefined"
+      ? localStorage.getItem("nexa_tenant_name") || localStorage.getItem("tenant_name")
+      : "") ||
+    "Ofia Enterprise";
+
+  const tenantDisplayLogo =
+    activeTenant?.logo ||
+    (typeof window !== "undefined"
+      ? localStorage.getItem("nexa_tenant_logo") || localStorage.getItem("tenant_logo")
+      : "") ||
+    "/icon.png";
+
   const [quotations, setQuotations] = useState<CrmQuotation[]>([]);
   const [deals, setDeals] = useState<CrmDeal[]>([]);
   const [leads, setLeads] = useState<CrmLead[]>([]);
@@ -248,10 +265,10 @@ export default function QuotationsPage() {
 
     const draftQuote: CrmQuotation = {
       id: "DRAFT-PREVIEW",
-      tenantSlug: "default",
+      tenantSlug: activeTenant?.slug || "default",
       currency: "NGN",
       quotationNumber: `QT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)} (DRAFT)`,
-      title: title.trim() || "Commercial Quotation Proposal",
+      title: title.trim() || (columnTitles.secondary ? "Commercial Transportation & Logistics Proposal" : "Commercial Quotation Proposal"),
       dealId: selectedDealId || undefined,
       leadId: selectedLeadId || undefined,
       companyName: companyName.trim() || "Prospective Client / Enterprise",
@@ -281,7 +298,7 @@ export default function QuotationsPage() {
       paymentTerms: paymentTerms || "Standard B2B Terms",
       notes: notes || "Quotation valid per stated clauses.",
       columnTitles: columnTitles,
-      createdBy: "Current Sales Representative",
+      createdBy: activeTenant?.ownerName || "Current Sales Representative",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -325,7 +342,7 @@ export default function QuotationsPage() {
       totalAmount: calculatedGrandTotal,
       paymentTerms,
       notes,
-      createdBy: "Commercial Sales Closer",
+      createdBy: activeTenant?.ownerName || "Commercial Sales Closer",
     };
 
     try {
@@ -856,15 +873,6 @@ export default function QuotationsPage() {
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={handlePreviewCurrentDraft}
-                        className="text-xs font-bold flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)] text-[var(--nexa-text-secondary)] hover:text-[#1A56DB] hover:border-[#1A56DB]/40 transition-colors cursor-pointer"
-                        title="Live preview of this proposal with current items and columns"
-                      >
-                        <Eye className="w-3.5 h-3.5 text-[#1A56DB]" />
-                        <span>Preview Proposal</span>
-                      </button>
-                      <button
-                        type="button"
                         onClick={() => setIsConfiguringColumns(!isConfiguringColumns)}
                         className={`text-xs font-bold flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
                           isConfiguringColumns
@@ -1232,10 +1240,28 @@ export default function QuotationsPage() {
               <div className="border border-[var(--nexa-border)] p-6 rounded-2xl bg-white text-slate-900 space-y-6 shadow-sm">
                 {/* HEADER */}
                 <div className="flex justify-between items-start border-b border-slate-200 pb-4">
-                  <div>
-                    <div className="text-xl font-black text-[#1A56DB] tracking-tight">OFIA ENTERPRISE</div>
-                    <div className="text-[11px] text-slate-500 font-medium">B2B Commerce & Cloud Operations Suite</div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">Victoria Island / Ikeja Central Depot, Lagos, Nigeria</div>
+                  <div className="flex items-center gap-3">
+                    {tenantDisplayLogo ? (
+                      <img
+                        src={tenantDisplayLogo}
+                        alt={tenantDisplayName}
+                        className="w-12 h-12 object-contain rounded-xl p-1 bg-white border border-slate-200 shrink-0 shadow-xs"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = "none";
+                        }}
+                      />
+                    ) : null}
+                    <div>
+                      <div className="text-xl font-black text-[#1A56DB] tracking-tight uppercase">
+                        {tenantDisplayName}
+                      </div>
+                      <div className="text-[11px] text-slate-500 font-medium">
+                        {activeTenant?.domain || "Official Commercial & Operations Suite"}
+                      </div>
+                      <div className="text-[10px] text-slate-400 mt-0.5">
+                        {activeTenant?.ownerEmail ? `Contact: ${activeTenant.ownerEmail}` : "Victoria Island / Ikeja Central Depot, Lagos, Nigeria"}
+                      </div>
+                    </div>
                   </div>
                   <div className="text-right">
                     <span className="inline-block px-3 py-1 bg-slate-900 text-white rounded-lg font-black text-xs uppercase tracking-wider">
@@ -1333,7 +1359,7 @@ export default function QuotationsPage() {
                   <div>
                     <div className="border-b border-slate-400 w-48 mb-1.5 h-6"></div>
                     <p className="font-bold text-slate-700">Authorized Commercial Officer</p>
-                    <p>Ofia Enterprise Suite Operations</p>
+                    <p>{tenantDisplayName} Operations</p>
                   </div>
                   <div className="text-right">
                     <div className="border-b border-slate-400 w-48 mb-1.5 h-6 ml-auto"></div>

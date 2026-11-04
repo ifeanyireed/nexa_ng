@@ -1135,29 +1135,38 @@ export function ErpAdminShell({
         return true;
       };
 
+      const matchVert = pathname.match(/^\/erp\/admin\/shop\/([a-zA-Z0-9_-]+)/);
+      const nonVerticalSlugs = ["catalog", "services", "orders", "inventory", "pos", "store", "referrals"];
+      const isVerticalRoute = matchVert && !nonVerticalSlugs.includes(matchVert[1]);
+      const currentVertical = isVerticalRoute ? matchVert[1] : (((currentTenant as any)?.vertical as string) || "");
+
+      const baseShopUrl = isVerticalRoute
+        ? `/erp/admin/shop/${currentVertical}`
+        : (currentVertical ? `/erp/admin/shop/${currentVertical}` : "/erp/admin/shop");
+
       const shopTabs: SubNavItem[] = [
-        { label: "Shop Overview", href: "/erp/admin/shop", icon: <Store className="w-3.5 h-3.5" /> },
+        { label: "Shop Overview", href: baseShopUrl, icon: <Store className="w-3.5 h-3.5" /> },
       ];
       if (isSubAllowed("catalog")) {
-        shopTabs.push({ label: "Catalog & Listings", href: "/erp/admin/shop/catalog", icon: <Package className="w-3.5 h-3.5" />, badge: "Items" });
+        shopTabs.push({ label: "Catalog & Listings", href: `${baseShopUrl}/catalog`, icon: <Package className="w-3.5 h-3.5" />, badge: "Items" });
       }
       if (isSubAllowed("services")) {
-        shopTabs.push({ label: "Services & Bookings", href: "/erp/admin/shop/services", icon: <Calendar className="w-3.5 h-3.5" />, badge: "Bookings" });
+        shopTabs.push({ label: "Services & Bookings", href: `${baseShopUrl}/services`, icon: <Calendar className="w-3.5 h-3.5" />, badge: "Bookings" });
       }
       if (isSubAllowed("orders")) {
-        shopTabs.push({ label: "Orders & Requests", href: "/erp/admin/shop/orders", icon: <ClipboardList className="w-3.5 h-3.5" />, badge: "Orders" });
+        shopTabs.push({ label: "Orders & Requests", href: `${baseShopUrl}/orders`, icon: <ClipboardList className="w-3.5 h-3.5" />, badge: "Orders" });
       }
       if (isSubAllowed("inventory")) {
-        shopTabs.push({ label: "Inventory (IMS)", href: "/erp/admin/shop/inventory", icon: <Boxes className="w-3.5 h-3.5" />, badge: "IMS" });
+        shopTabs.push({ label: "Inventory (IMS)", href: `${baseShopUrl}/inventory`, icon: <Boxes className="w-3.5 h-3.5" />, badge: "IMS" });
       }
       if (isSubAllowed("pos")) {
-        shopTabs.push({ label: "Point of Sale (POS)", href: "/erp/admin/shop/pos", icon: <ShoppingCart className="w-3.5 h-3.5" />, badge: "POS" });
+        shopTabs.push({ label: "Point of Sale (POS)", href: `${baseShopUrl}/pos`, icon: <ShoppingCart className="w-3.5 h-3.5" />, badge: "POS" });
       }
       if (isSubAllowed("store")) {
-        shopTabs.push({ label: "My Store Studio", href: "/erp/admin/shop/store", icon: <Palette className="w-3.5 h-3.5" />, badge: "Studio" });
+        shopTabs.push({ label: "My Store Studio", href: `${baseShopUrl}/store`, icon: <Palette className="w-3.5 h-3.5" />, badge: "Studio" });
       }
       if (isSubAllowed("referrals")) {
-        shopTabs.push({ label: "Viral Referrals", href: "/erp/admin/shop/referrals", icon: <Gift className="w-3.5 h-3.5" />, badge: "Growth" });
+        shopTabs.push({ label: "Viral Referrals", href: `${baseShopUrl}/referrals`, icon: <Gift className="w-3.5 h-3.5" />, badge: "Growth" });
       }
 
       return shopTabs;
@@ -1938,14 +1947,16 @@ export function ErpAdminShell({
                       return pathname === "/erp/ops/crm" || pathname === "/ops/crm";
                     }
                     if (tab.href === "/erp/ops/calls") return pathname.startsWith("/erp/ops/calls") || pathname.startsWith("/ops/calls");
-                    if (tab.href === "/erp/admin/shop") return pathname === "/erp/admin/shop";
-                    if (tab.href === "/erp/admin/shop/catalog") return pathname.startsWith("/erp/admin/shop/catalog");
-                    if (tab.href === "/erp/admin/shop/services") return pathname.startsWith("/erp/admin/shop/services");
-                    if (tab.href === "/erp/admin/shop/orders") return pathname.startsWith("/erp/admin/shop/orders");
-                    if (tab.href === "/erp/admin/shop/inventory") return pathname.startsWith("/erp/admin/shop/inventory");
-                    if (tab.href === "/erp/admin/shop/pos") return pathname.startsWith("/erp/admin/shop/pos");
-                    if (tab.href === "/erp/admin/shop/store") return pathname.startsWith("/erp/admin/shop/store");
-                    if (tab.href === "/erp/admin/shop/referrals") return pathname.startsWith("/erp/admin/shop/referrals");
+                    if (tab.href.endsWith("/catalog")) return pathname.includes("/catalog");
+                    if (tab.href.endsWith("/services")) return pathname.includes("/services");
+                    if (tab.href.endsWith("/orders")) return pathname.includes("/orders");
+                    if (tab.href.endsWith("/inventory")) return pathname.includes("/inventory");
+                    if (tab.href.endsWith("/pos")) return pathname.includes("/pos");
+                    if (tab.href.endsWith("/store")) return pathname.includes("/store");
+                    if (tab.href.endsWith("/referrals")) return pathname.includes("/referrals");
+                    if (tab.href === "/erp/admin/shop" || tab.href.match(/^\/erp\/admin\/shop\/[a-zA-Z0-9_-]+$/)) {
+                      return pathname === tab.href || pathname === "/erp/admin/shop";
+                    }
                     if (tab.href === "/erp/admin/users") return pathname === "/erp/admin/users";
                     if (tab.href === "/erp/admin/departments") return pathname.startsWith("/erp/admin/departments");
                     if (tab.href === "/erp/admin/mobility") return pathname === "/erp/admin/mobility";

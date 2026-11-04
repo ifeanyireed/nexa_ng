@@ -416,6 +416,16 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
+    // Auto-redirect general non-vertical shop routes to vertical-specific routes
+    const shopGeneralMatch = pathname.match(/^\/erp\/admin\/shop(?:\/(catalog|services|orders|inventory|pos|store|referrals))?$/);
+    if (shopGeneralMatch) {
+      const subPage = shopGeneralMatch[1] ? `/${shopGeneralMatch[1]}` : "";
+      const cookieVert = request.cookies.get("nexa_tenant_vertical")?.value;
+      if (cookieVert) {
+        return NextResponse.redirect(new URL(`/erp/admin/shop/${cookieVert}${subPage}${search}`, request.url));
+      }
+    }
+
     // DIRECT PAGE ASSIGNMENT: If a page is assigned, they automatically have the right to navigate!
     if (userAssignedPages.length > 0 && isRouteAllowedByAssignedPages(userAssignedPages, pathname)) {
       return NextResponse.next({

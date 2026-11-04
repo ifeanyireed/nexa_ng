@@ -1,355 +1,42 @@
 "use client";
 
-import React, { useState } from "react";
-import Link from "next/link";
-import {
-  Boxes,
-  Building2,
-  CheckCircle2,
-  Clock,
-  DollarSign,
-  Gift,
-  Package,
-  Plus,
-  Printer,
-  Receipt,
-  RotateCcw,
-  Share2,
-  ShoppingCart,
-  Sliders,
-  Store,
-  Tag,
-  TrendingUp,
-  Truck,
-  Users,
-  Warehouse,
-  Zap,
-  Calendar,
-  ClipboardList,
-  Palette,
-  ExternalLink,
-  Eye,
-} from "lucide-react";
-import { BusinessShell } from "@/components/business/BusinessShell";
-import { ErpStatGrid } from "@/components/erp/ErpStatCard";
-import { NexaCard } from "@/components/nexa/NexaCard";
-import { NexaBadge } from "@/components/nexa/NexaBadge";
-import { NexaButton } from "@/components/nexa/NexaButton";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/nexa/AuthContext";
 import { useActiveTenant } from "@/lib/tenant-context";
-import { useTenantProvisioning } from "@/lib/access-control";
-import {
-  VERTICAL_DEFINITIONS,
-  detectTenantVertical,
-  VerticalKey,
-} from "@/lib/verticals";
+import { detectTenantVertical, VERTICAL_DEFINITIONS, VerticalKey } from "@/lib/verticals";
+import { Loader2 } from "lucide-react";
 
-export default function ShopManagerDashboardPage() {
+export default function ShopRootRedirectPage() {
+  const router = useRouter();
   const { user } = useAuth();
-  const { activeTenant } = useActiveTenant(user?.email);
-  const { isModuleProvisioned, isShopSubModuleProvisioned, isLoading } = useTenantProvisioning();
+  const { activeTenant, isLoading } = useActiveTenant(user?.email);
 
-  const detectedVertical = (activeTenant?.vertical as VerticalKey) || detectTenantVertical(activeTenant?.slug, activeTenant?.name);
-  const verticalDef = VERTICAL_DEFINITIONS[detectedVertical] || VERTICAL_DEFINITIONS.retail;
+  useEffect(() => {
+    if (isLoading) return;
+    const rawVertical =
+      (activeTenant?.vertical as string) ||
+      detectTenantVertical(activeTenant?.slug, activeTenant?.name) ||
+      "fashion";
+    const verticalKey: VerticalKey =
+      rawVertical in VERTICAL_DEFINITIONS ? (rawVertical as VerticalKey) : "fashion";
 
-  // Sub-module provisioning flags
-  const hasCatalog = isShopSubModuleProvisioned("catalog");
-  const hasServices = isShopSubModuleProvisioned("services");
-  const hasOrders = isShopSubModuleProvisioned("orders");
-  const hasPos = isShopSubModuleProvisioned("pos");
-  const hasInventory = isShopSubModuleProvisioned("inventory");
-  const hasStore = isShopSubModuleProvisioned("store");
-  const hasShopModule = isModuleProvisioned("shop");
+    if (typeof document !== "undefined") {
+      document.cookie = `nexa_tenant_vertical=${verticalKey}; path=/; max-age=2592000; SameSite=Lax`;
+    }
 
-  if (!isLoading && !hasShopModule) {
-    return (
-      <BusinessShell
-        title="Ofia Shop Manager & Commerce Workspace"
-        subtitle="Enterprise omnichannel commerce, POS registers, multi-warehouse inventory, and storefront studio."
-        activeModule="shop"
-      >
-        <NexaCard variant="glass" padding="lg" className="text-center py-16 space-y-4 max-w-xl mx-auto border border-dashed border-[var(--nexa-border)] rounded-3xl mt-8">
-          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto">
-            <Store className="w-8 h-8" />
-          </div>
-          <h3 className="text-lg font-bold text-[var(--nexa-text-primary)]">Shop Manager Not Provisioned</h3>
-          <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-            The Ofia Shop Manager module is not currently provisioned for <strong>{activeTenant?.name || "your workspace"}</strong>. Contact your system administrator to enable the Shop Manager in the platform governance desk.
-          </p>
-          <div className="pt-2">
-            <Link href="/erp/admin">
-              <NexaButton size="sm" variant="outline" className="rounded-full font-bold">
-                Return to Enterprise Overview
-              </NexaButton>
-            </Link>
-          </div>
-        </NexaCard>
-      </BusinessShell>
-    );
-  }
-
-  const lowStockAlerts = [
-    { id: "sku-101", name: "Hybrid Solar Inverter 5kVA", category: "Solar Power", currentStock: 2, minStock: 5, warehouse: "Ikeja Central Depot", unitCost: "₦420,000" },
-    { id: "sku-104", name: "4K IP Bullet Camera 8CH", category: "Security", currentStock: 1, minStock: 10, warehouse: "Lekki Distribution Hub", unitCost: "₦38,000" },
-  ];
-
-  const recentSessions = [
-    { id: "POS-SES-89", cashier: "Fatima Aliyu", register: "Register 01 (Lekki Flagship)", salesCount: 38, totalAmount: "₦1,845,000", status: "OPEN" },
-  ];
+    router.replace(`/erp/admin/shop/${verticalKey}`);
+  }, [activeTenant, isLoading, router]);
 
   return (
-    <BusinessShell
-      title="Ofia Shop Manager & Commerce Workspace"
-      subtitle={`Unified operating desk for ${verticalDef.name}: Omnichannel catalog, service bookings, POS counter, multi-warehouse inventory, and storefront studio.`}
-      activeModule="shop"
-      action={
-        <div className="flex items-center gap-2">
-          {hasStore && (
-            <Link href="/erp/admin/shop/store">
-              <NexaButton size="sm" variant="outline" leftIcon={<Palette className="w-3.5 h-3.5" />} className="rounded-full">
-                My Store Studio
-              </NexaButton>
-            </Link>
-          )}
-
-          {hasPos && (
-            <Link href="/erp/admin/shop/pos">
-              <NexaButton size="sm" variant="primary" leftIcon={<ShoppingCart className="w-3.5 h-3.5" />} className="bg-[#1A56DB] text-white rounded-full font-bold shadow-xs">
-                Open POS Register
-              </NexaButton>
-            </Link>
-          )}
-        </div>
-      }
-    >
-      <div className="space-y-8">
-        {/* KPI CARDS */}
-        <ErpStatGrid
-          stats={[
-            {
-              label: "Today's Omnichannel Gross Sales",
-              value: "₦4,610,000",
-              change: "+24.5% vs yesterday",
-              trend: "up",
-              icon: <DollarSign className="w-5 h-5 text-emerald-500" />,
-              sub: "Online Storefront + In-Store POS",
-            },
-            {
-              label: "Active Catalog Listings",
-              value: `34 ${verticalDef.productTermPlural}`,
-              change: verticalDef.badge,
-              trend: "up",
-              icon: <Package className="w-5 h-5 text-blue-500" />,
-              sub: "Synced to web and mobile",
-            },
-            {
-              label: "Pending Fulfillment & Bookings",
-              value: "8 Requests",
-              change: "Needs Staff Action",
-              trend: "neutral",
-              icon: <Clock className="w-5 h-5 text-amber-500" />,
-              sub: "3 in prep, 5 appointments",
-            },
-            {
-              label: "Multi-Warehouse Inventory",
-              value: "₦48,250,000",
-              change: "6 Regional Depots",
-              trend: "up",
-              icon: <Boxes className="w-5 h-5 text-purple-500" />,
-              sub: "1,420 total units in stock",
-            },
-          ]}
-        />
-
-        {/* 6 CORE COMMERCE PILLARS GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* PILLAR 1: VERTICAL CATALOG & LISTINGS */}
-          <NexaCard variant="glass" padding="lg" className={`border border-[var(--nexa-border)] flex flex-col justify-between space-y-5 rounded-3xl ${!hasCatalog ? "opacity-60 bg-[var(--nexa-bg-base)]/40" : ""}`}>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center">
-                  <Package className="w-5 h-5" />
-                </div>
-                {hasCatalog ? (
-                  <NexaBadge variant="brand" size="sm" className="rounded-full">{verticalDef.badge}</NexaBadge>
-                ) : (
-                  <NexaBadge variant="neutral" size="sm" className="rounded-full">Not Provisioned</NexaBadge>
-                )}
-              </div>
-              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">Catalog & Listings</h3>
-              <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-                Vertical-native product management with custom attribute schemas ({verticalDef.attributeFields.map(f => f.label).slice(0, 2).join(", ")}).
-              </p>
-            </div>
-            {hasCatalog ? (
-              <Link href="/erp/admin/shop/catalog" className="w-full">
-                <NexaButton size="sm" variant="outline" className="w-full rounded-full font-bold">
-                  Manage {verticalDef.productTermPlural} →
-                </NexaButton>
-              </Link>
-            ) : (
-              <NexaButton size="sm" variant="outline" disabled className="w-full rounded-full font-bold opacity-50 cursor-not-allowed">
-                Sub-Module Locked
-              </NexaButton>
-            )}
-          </NexaCard>
-
-          {/* PILLAR 2: SERVICES & APPOINTMENTS */}
-          <NexaCard variant="glass" padding="lg" className={`border border-[var(--nexa-border)] flex flex-col justify-between space-y-5 rounded-3xl ${!hasServices ? "opacity-60 bg-[var(--nexa-bg-base)]/40" : ""}`}>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center">
-                  <Calendar className="w-5 h-5" />
-                </div>
-                {hasServices ? (
-                  <NexaBadge variant="purple" size="sm" className="rounded-full">Bookings</NexaBadge>
-                ) : (
-                  <NexaBadge variant="neutral" size="sm" className="rounded-full">Not Provisioned</NexaBadge>
-                )}
-              </div>
-              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">Services & Bookings</h3>
-              <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-                Schedule {verticalDef.serviceTerm.toLowerCase()}, appoint staff providers, and handle client inquiries.
-              </p>
-            </div>
-            {hasServices ? (
-              <Link href="/erp/admin/shop/services" className="w-full">
-                <NexaButton size="sm" variant="outline" className="w-full rounded-full font-bold">
-                  Manage Service Schedule →
-                </NexaButton>
-              </Link>
-            ) : (
-              <NexaButton size="sm" variant="outline" disabled className="w-full rounded-full font-bold opacity-50 cursor-not-allowed">
-                Sub-Module Locked
-              </NexaButton>
-            )}
-          </NexaCard>
-
-          {/* PILLAR 3: OMNICHANNEL ORDERS */}
-          <NexaCard variant="glass" padding="lg" className={`border border-[var(--nexa-border)] flex flex-col justify-between space-y-5 rounded-3xl ${!hasOrders ? "opacity-60 bg-[var(--nexa-bg-base)]/40" : ""}`}>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
-                  <ClipboardList className="w-5 h-5" />
-                </div>
-                {hasOrders ? (
-                  <NexaBadge variant="green" size="sm" className="rounded-full">Live Feed</NexaBadge>
-                ) : (
-                  <NexaBadge variant="neutral" size="sm" className="rounded-full">Not Provisioned</NexaBadge>
-                )}
-              </div>
-              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">Orders & Fulfillment</h3>
-              <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-                Stream orders from online storefront and walk-in counter, assign dispatch riders, and track delivery waybills.
-              </p>
-            </div>
-            {hasOrders ? (
-              <Link href="/erp/admin/shop/orders" className="w-full">
-                <NexaButton size="sm" variant="outline" className="w-full rounded-full font-bold">
-                  View Orders Stream →
-                </NexaButton>
-              </Link>
-            ) : (
-              <NexaButton size="sm" variant="outline" disabled className="w-full rounded-full font-bold opacity-50 cursor-not-allowed">
-                Sub-Module Locked
-              </NexaButton>
-            )}
-          </NexaCard>
-
-          {/* PILLAR 4: POINT OF SALE (POS) */}
-          <NexaCard variant="glass" padding="lg" className={`border border-[var(--nexa-border)] flex flex-col justify-between space-y-5 rounded-3xl ${!hasPos ? "opacity-60 bg-[var(--nexa-bg-base)]/40" : ""}`}>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center">
-                  <ShoppingCart className="w-5 h-5" />
-                </div>
-                {hasPos ? (
-                  <NexaBadge variant="brand" size="sm" className="rounded-full">Cashier Desk</NexaBadge>
-                ) : (
-                  <NexaBadge variant="neutral" size="sm" className="rounded-full">Not Provisioned</NexaBadge>
-                )}
-              </div>
-              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">Point of Sale (POS)</h3>
-              <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-                High-speed cashier counter, touchscreen checkout, cash/card/split payments, and thermal receipt printing.
-              </p>
-            </div>
-            {hasPos ? (
-              <Link href="/erp/admin/shop/pos" className="w-full">
-                <NexaButton size="sm" variant="primary" className="w-full bg-[#1A56DB] text-white rounded-full font-bold">
-                  Launch POS Terminal →
-                </NexaButton>
-              </Link>
-            ) : (
-              <NexaButton size="sm" variant="outline" disabled className="w-full rounded-full font-bold opacity-50 cursor-not-allowed">
-                Sub-Module Locked
-              </NexaButton>
-            )}
-          </NexaCard>
-
-          {/* PILLAR 5: INVENTORY MANAGEMENT (IMS) */}
-          <NexaCard variant="glass" padding="lg" className={`border border-[var(--nexa-border)] flex flex-col justify-between space-y-5 rounded-3xl ${!hasInventory ? "opacity-60 bg-[var(--nexa-bg-base)]/40" : ""}`}>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
-                  <Boxes className="w-5 h-5" />
-                </div>
-                {hasInventory ? (
-                  <NexaBadge variant="amber" size="sm" className="rounded-full">Multi-Depot</NexaBadge>
-                ) : (
-                  <NexaBadge variant="neutral" size="sm" className="rounded-full">Not Provisioned</NexaBadge>
-                )}
-              </div>
-              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">Inventory (IMS)</h3>
-              <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-                Multi-depot stock tracking, inter-branch warehouse transfers, shrinkage adjustments, and reorder alerts.
-              </p>
-            </div>
-            {hasInventory ? (
-              <Link href="/erp/admin/shop/inventory" className="w-full">
-                <NexaButton size="sm" variant="outline" className="w-full rounded-full font-bold">
-                  Warehouse Stock →
-                </NexaButton>
-              </Link>
-            ) : (
-              <NexaButton size="sm" variant="outline" disabled className="w-full rounded-full font-bold opacity-50 cursor-not-allowed">
-                Sub-Module Locked
-              </NexaButton>
-            )}
-          </NexaCard>
-
-          {/* PILLAR 6: MY STORE STUDIO */}
-          <NexaCard variant="glass" padding="lg" className={`border border-[var(--nexa-border)] flex flex-col justify-between space-y-5 rounded-3xl ${!hasStore ? "opacity-60 bg-[var(--nexa-bg-base)]/40" : ""}`}>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center">
-                  <Palette className="w-5 h-5" />
-                </div>
-                {hasStore ? (
-                  <NexaBadge variant="purple" size="sm" className="rounded-full">Storefront Studio</NexaBadge>
-                ) : (
-                  <NexaBadge variant="neutral" size="sm" className="rounded-full">Not Provisioned</NexaBadge>
-                )}
-              </div>
-              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">My Store Studio</h3>
-              <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
-                Switch between the 10 Blueprint vertical templates, upload brand identity, and customize homepage sections.
-              </p>
-            </div>
-            {hasStore ? (
-              <Link href="/erp/admin/shop/store" className="w-full">
-                <NexaButton size="sm" variant="outline" className="w-full rounded-full font-bold">
-                  Customize Storefront →
-                </NexaButton>
-              </Link>
-            ) : (
-              <NexaButton size="sm" variant="outline" disabled className="w-full rounded-full font-bold opacity-50 cursor-not-allowed">
-                Sub-Module Locked
-              </NexaButton>
-            )}
-          </NexaCard>
-        </div>
-      </div>
-    </BusinessShell>
+    <div className="min-h-screen bg-[var(--nexa-bg-base)] flex flex-col items-center justify-center p-6 text-center">
+      <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-3" />
+      <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">
+        Navigating to your vertical shop manager...
+      </h3>
+      <p className="text-xs text-[var(--nexa-text-muted)] mt-1">
+        General non-vertical shop pages are restricted. Redirecting to your assigned workspace.
+      </p>
+    </div>
   );
 }

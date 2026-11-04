@@ -304,6 +304,8 @@ export interface CommerceServiceItem {
   vertical: VerticalKey;
   status: "ACTIVE" | "PAUSED";
   description: string;
+  category?: string;
+  specialistRole?: string;
 }
 
 export interface CommerceBookingItem {
@@ -338,12 +340,12 @@ export interface CommerceOrderItem {
   customerName: string;
   customerEmail: string;
   customerPhone?: string;
-  channel: "STOREFRONT" | "POS_COUNTER" | "INQUIRY";
+  channel: "STOREFRONT" | "POS_COUNTER" | "INQUIRY" | "WHATSAPP";
   itemsSummary: string;
   itemCount: number;
   totalAmount: string;
   rawAmount: number;
-  status: "PENDING" | "CONFIRMED" | "IN_PREPARATION" | "READY_DISPATCH" | "DELIVERED";
+  status: "PENDING" | "CONFIRMED" | "IN_PREPARATION" | "READY_DISPATCH" | "DELIVERED" | "CANCELLED";
   paymentStatus: "PAID" | "PENDING" | "REFUNDED";
   createdAt: string;
   deliveryMethod: "DISPATCH" | "STORE_PICKUP";
@@ -356,6 +358,7 @@ export interface CommerceOrderItem {
   merchantAmount?: number;
   platformFee?: number;
   notes?: string;
+  vertical?: VerticalKey;
   items?: any[];
 }
 
@@ -413,6 +416,7 @@ export interface PosProductItem {
   id: string;
   name: string;
   price: number;
+  formattedPrice?: string;
   category: string;
   stock: number;
   sku: string;
@@ -1019,6 +1023,108 @@ export function getDefaultPosProductsForVertical(v: VerticalKey): PosProductItem
         { id: "POS-RET-2", name: "Microfiber Lens & Screen Polishing Cloth", price: 1500, category: "Accessories", stock: 150, sku: "POS-MIC-CLT" },
         { id: "POS-RET-3", name: "Heavyweight Kraft Paper Gift Bag with Ribbon", price: 2000, category: "Packaging", stock: 120, sku: "POS-BAG-KRF" },
         { id: "POS-RET-4", name: "Universal Worldwide Travel Adapter (All-in-One)", price: 8500, category: "Travel", stock: 40, sku: "POS-TRV-ADP" },
+      ];
+  }
+}
+
+export function getDefaultOrdersForVertical(v: VerticalKey): CommerceOrderItem[] {
+  switch (v) {
+    case "fashion":
+      return [
+        {
+          id: "ORD-FASH-01",
+          orderNumber: "OFIA-FASH-8921",
+          customerName: "Adeola Williams",
+          customerEmail: "adeola.w@vogue.ng",
+          customerPhone: "+234 802 334 5567",
+          channel: "STOREFRONT",
+          itemsSummary: "Hand-Embroidered Raw Silk Agbada Set (L) × 1, Pure Silk Pocket Square × 2",
+          itemCount: 3,
+          totalAmount: "₦174,000",
+          rawAmount: 174000,
+          status: "IN_PREPARATION",
+          paymentStatus: "PAID",
+          deliveryMethod: "DISPATCH",
+          shippingAddress: "Plot 14 Victoria Island, Lagos",
+          city: "Lagos",
+          paymentMethod: "Online Card / Paystack",
+          createdAt: "Today, 10:15 AM",
+          vertical: "fashion",
+          items: [
+            { id: "PROD-FASH-01", name: "Hand-Embroidered Raw Silk Agbada Set", price: 145000, quantity: 1, sku: "FASH-AGB-01" },
+            { id: "POS-FASH-1", name: "Pure Silk Pocket Square & Cufflink Pair", price: 14500, quantity: 2, sku: "POS-ACC-CUF" },
+          ],
+        },
+        {
+          id: "ORD-FASH-02",
+          orderNumber: "OFIA-FASH-8918",
+          customerName: "Ibrahim Danjuma",
+          customerEmail: "i.danjuma@apex.ng",
+          customerPhone: "+234 803 987 1122",
+          channel: "STOREFRONT",
+          itemsSummary: "Structured Double-Breasted Wool Blazer (42R) × 1",
+          itemCount: 1,
+          totalAmount: "₦85,000",
+          rawAmount: 85000,
+          status: "READY_DISPATCH",
+          paymentStatus: "PAID",
+          deliveryMethod: "DISPATCH",
+          shippingAddress: "12 Maitama Boulevard, Abuja",
+          city: "Abuja",
+          paymentMethod: "Bank Transfer",
+          createdAt: "Today, 09:30 AM",
+          vertical: "fashion",
+          items: [
+            { id: "PROD-FASH-02", name: "Structured Double-Breasted Wool Blazer", price: 85000, quantity: 1, sku: "FASH-BLZ-02" },
+          ],
+        },
+        {
+          id: "ORD-FASH-03",
+          orderNumber: "OFIA-FASH-8902",
+          customerName: "Zainab Balogun",
+          customerEmail: "zainab@studio.ng",
+          customerPhone: "+234 811 556 7788",
+          channel: "POS_COUNTER",
+          itemsSummary: "Italian Leather Reversible Belt × 1, Cotton Dress Socks × 2",
+          itemCount: 3,
+          totalAmount: "₦43,000",
+          rawAmount: 43000,
+          status: "DELIVERED",
+          paymentStatus: "PAID",
+          deliveryMethod: "STORE_PICKUP",
+          shippingAddress: "In-Store Counter Pickup",
+          city: "Lagos",
+          paymentMethod: "POS Card Terminal",
+          createdAt: "Yesterday, 04:45 PM",
+          vertical: "fashion",
+          items: [
+            { id: "POS-FASH-2", name: "Italian Top-Grain Leather Reversible Belt", price: 28000, quantity: 1, sku: "POS-BELT-IT" },
+            { id: "POS-FASH-5", name: "Mercerized Cotton Dress Socks (3-Pack)", price: 7500, quantity: 2, sku: "POS-SCK-MRC" },
+          ],
+        },
+      ];
+    default:
+      return [
+        {
+          id: `ORD-${v.toUpperCase().slice(0, 4)}-01`,
+          orderNumber: `OFIA-${v.toUpperCase().slice(0, 4)}-7721`,
+          customerName: "Platform Customer",
+          customerEmail: "customer@ofia.ng",
+          customerPhone: "+234 800 000 0000",
+          channel: "STOREFRONT",
+          itemsSummary: `Standard ${v} fulfillment order`,
+          itemCount: 1,
+          totalAmount: "₦25,000",
+          rawAmount: 25000,
+          status: "IN_PREPARATION",
+          paymentStatus: "PAID",
+          deliveryMethod: "DISPATCH",
+          shippingAddress: "Lagos, Nigeria",
+          city: "Lagos",
+          paymentMethod: "Card",
+          createdAt: "Today",
+          vertical: v,
+        },
       ];
   }
 }

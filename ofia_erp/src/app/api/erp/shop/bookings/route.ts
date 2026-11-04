@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getErpBookings, saveErpBooking, updateErpBookingStatus } from "@/lib/commerce-orders-store";
+import { VerticalKey } from "@/lib/verticals";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const rawTenant = searchParams.get("tenant") || searchParams.get("slug") || request.headers.get("x-tenant-slug");
+  const vertical = searchParams.get("vertical") as VerticalKey | null;
 
   if (!rawTenant) {
     return NextResponse.json(
@@ -17,8 +19,8 @@ export async function GET(request: NextRequest) {
   const tenantSlug = rawTenant.toLowerCase().trim();
 
   try {
-    const bookings = await getErpBookings(tenantSlug);
-    return NextResponse.json({ success: true, tenantSlug, count: bookings.length, bookings });
+    const bookings = await getErpBookings(tenantSlug, vertical || undefined);
+    return NextResponse.json({ success: true, tenantSlug, vertical: vertical || null, count: bookings.length, bookings });
   } catch (err: any) {
     return NextResponse.json(
       { success: false, error: "Failed to fetch ERP shop bookings: " + err.message },

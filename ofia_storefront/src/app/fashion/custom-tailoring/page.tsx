@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useStorefrontTenant } from "@/context/StorefrontTenantContext";
 import { MOCK_STORES } from "@/data/mockStores";
@@ -22,6 +22,15 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
+interface TailoringServiceItem {
+  id: string;
+  title: string;
+  desc: string;
+  priceFormatted?: string;
+  duration?: number;
+  provider?: string;
+}
+
 export default function CustomTailoringPage() {
   const { store: dynamicStore, tenantSlug, isFeatureEnabled } = useStorefrontTenant();
   const store = dynamicStore || MOCK_STORES.fashion;
@@ -29,14 +38,56 @@ export default function CustomTailoringPage() {
   const canUseServices = isFeatureEnabled("services");
   const tenantQuery = tenantSlug ? `?tenant=${encodeURIComponent(tenantSlug)}` : "";
 
-  const [serviceType, setServiceType] = useState<
-    "Bespoke Tailoring" | "Garment Alteration" | "Styling & Fitting Session"
-  >("Bespoke Tailoring");
+  const [serviceType, setServiceType] = useState<string>("Bespoke Measurement & Master Tailoring Consultation");
   const [sessionLocation, setSessionLocation] = useState<"Atelier Showroom" | "At-Home Private Fitting">(
     "Atelier Showroom"
   );
   const [selectedDate, setSelectedDate] = useState("2026-10-09");
   const [selectedSlot, setSelectedSlot] = useState("02:00 PM - 03:30 PM");
+
+  const [availableServices, setAvailableServices] = useState<TailoringServiceItem[]>([
+    {
+      id: "SRV-FASH-01",
+      title: "Bespoke Measurement & Master Tailoring Consultation",
+      desc: "Precise anatomic measurements, fabric selection, and bespoke pattern drafting.",
+      priceFormatted: "₦15,000",
+      provider: "Master Couturier",
+    },
+    {
+      id: "SRV-FASH-02",
+      title: "Express Garment Alterations & Rapid Hemming",
+      desc: "Same-day hem adjustments, waist tapering, and buttonhole reinforcement.",
+      priceFormatted: "₦8,500",
+      provider: "Atelier Tailoring Team",
+    },
+  ]);
+
+  useEffect(() => {
+    async function loadLiveServices() {
+      try {
+        const slug = tenantSlug || "neweratransports";
+        const res = await fetch(`/api/storefront/services?tenant=${encodeURIComponent(slug)}&vertical=fashion`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.services) && data.services.length > 0) {
+            const mapped = data.services.map((s: any) => ({
+              id: s.id,
+              title: s.title,
+              desc: s.description || `${s.durationMinutes || 45} mins artisan fitting session.`,
+              priceFormatted: s.formattedPrice,
+              duration: s.durationMinutes,
+              provider: s.providerName,
+            }));
+            setAvailableServices(mapped);
+            setServiceType((prev) => (mapped.some((m: any) => m.title === prev) ? prev : mapped[0].title));
+          }
+        }
+      } catch (err) {
+        console.warn("[CustomTailoring] Failed to load live services, using presets:", err);
+      }
+    }
+    loadLiveServices();
+  }, [tenantSlug]);
 
   // Measurements
   const [chestBust, setChestBust] = useState("");
@@ -186,44 +237,40 @@ export default function CustomTailoringPage() {
                 <span>1. Select Service Type</span>
               </h2>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {[
-                  {
-                    title: "Bespoke Tailoring",
-                    desc: "Handcrafted 2-piece / 3-piece from raw textile cuts",
-                    icon: Scissors,
-                  },
-                  {
-                    title: "Garment Alteration",
-                    desc: "Precision taper, hem adjustment, or waist resizing",
-                    icon: Ruler,
-                  },
-                  {
-                    title: "Styling & Fitting Session",
-                    desc: "1-on-1 wardrobe curation and drape consultation",
-                    icon: Shirt,
-                  },
-                ].map((s) => {
-                  const Icon = s.icon;
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {availableServices.map((s) => {
                   const isSelected = serviceType === s.title;
                   return (
                     <button
-                      key={s.title}
+                      key={s.id || s.title}
                       type="button"
-                      onClick={() => setServiceType(s.title as any)}
-                      className={`p-4 rounded-2xl border text-left transition-all ${
+                      onClick={() => setServiceType(s.title)}
+                      className={`p-4 rounded-2xl border text-left transition-all relative flex flex-col justify-between ${
                         isSelected
                           ? "border-amber-800 bg-amber-50/60 ring-2 ring-amber-800/20"
                           : "border-stone-200 hover:border-stone-300 bg-stone-50/50"
                       }`}
                     >
-                      <Icon
-                        className={`w-5 h-5 mb-2 ${
-                          isSelected ? "text-amber-800" : "text-stone-500"
-                        }`}
-                      />
-                      <div className="font-bold text-sm text-zinc-900">{s.title}</div>
-                      <div className="text-xs text-stone-500 mt-1 leading-snug">{s.desc}</div>
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center">
+                            <Scissors className="w-4 h-4" />
+                          </div>
+                          {s.priceFormatted && (
+                            <span className="text-xs font-bold text-amber-900 font-mono">
+                              {s.priceFormatted}
+                            </span>
+                          )}
+                        </div>
+                        <div className="font-bold text-sm text-zinc-900">{s.title}</div>
+                        <div className="text-xs text-stone-500 mt-1 leading-snug">{s.desc}</div>
+                      </div>
+                      {s.provider && (
+                        <div className="mt-3 pt-2 border-t border-stone-200/60 text-[11px] text-stone-500 flex items-center gap-1">
+                          <User className="w-3 h-3 text-amber-800 shrink-0" />
+                          <span>Specialist: <strong>{s.provider}</strong></span>
+                        </div>
+                      )}
                     </button>
                   );
                 })}

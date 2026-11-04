@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { CommerceOrderItem, CommerceBookingItem } from "./verticals";
+import { CommerceOrderItem, CommerceBookingItem, VerticalKey } from "./verticals";
 import { decrementInventoryForOrder } from "./commerce-inventory-store";
 import { sendOrderStatusNotification } from "./commerce-notifications";
 import { publishCommerceEvent } from "./commerce-event-hub";
@@ -44,7 +44,7 @@ function ensureStorageReady() {
   } catch {}
 }
 
-export async function getErpOrders(tenantSlug?: string): Promise<CommerceOrderItem[]> {
+export async function getErpOrders(tenantSlug?: string, vertical?: VerticalKey): Promise<CommerceOrderItem[]> {
   if (!tenantSlug) return [];
   ensureStorageReady();
   const clean = tenantSlug.toLowerCase().trim();
@@ -78,7 +78,7 @@ export async function getErpOrders(tenantSlug?: string): Promise<CommerceOrderIt
       `;
 
       if (rows && rows.length > 0) {
-        const pgOrders: CommerceOrderItem[] = rows.map((r: any) => ({
+        let pgOrders: CommerceOrderItem[] = rows.map((r: any) => ({
           id: r.id,
           orderNumber: r.order_number,
           tenantSlug: r.tenant_slug,
@@ -103,6 +103,10 @@ export async function getErpOrders(tenantSlug?: string): Promise<CommerceOrderIt
           createdAt: r.created_at ? new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "Recently",
           notes: r.notes,
         }));
+
+        if (vertical) {
+          pgOrders = pgOrders.filter((o) => !o.vertical || o.vertical === vertical);
+        }
 
         // Mirror to local cache
         try {
@@ -130,9 +134,15 @@ export async function getErpOrders(tenantSlug?: string): Promise<CommerceOrderIt
     allOrders = memoryOrders.length > 0 ? memoryOrders : [];
   }
 
-  return allOrders.filter(
+  let filtered = allOrders.filter(
     (o) => (o.tenantSlug || "").toLowerCase().trim() === clean
   );
+
+  if (vertical) {
+    filtered = filtered.filter((o) => !o.vertical || o.vertical === vertical);
+  }
+
+  return filtered;
 }
 
 export async function saveErpOrder(order: Partial<CommerceOrderItem>): Promise<CommerceOrderItem> {
@@ -402,7 +412,7 @@ export async function updateErpOrderStatus(
   return found;
 }
 
-export async function getErpBookings(tenantSlug?: string): Promise<CommerceBookingItem[]> {
+export async function getErpBookings(tenantSlug?: string, vertical?: VerticalKey): Promise<CommerceBookingItem[]> {
   if (!tenantSlug) return [];
   ensureStorageReady();
   const clean = tenantSlug.toLowerCase().trim();
@@ -430,7 +440,7 @@ export async function getErpBookings(tenantSlug?: string): Promise<CommerceBooki
       `;
 
       if (rows && rows.length > 0) {
-        const pgBookings: CommerceBookingItem[] = rows.map((r: any) => ({
+        let pgBookings: CommerceBookingItem[] = rows.map((r: any) => ({
           id: r.id,
           bookingNumber: r.booking_number,
           tenantSlug: r.tenant_slug,
@@ -448,6 +458,10 @@ export async function getErpBookings(tenantSlug?: string): Promise<CommerceBooki
           technicianName: r.technician_name || undefined,
           createdAt: r.created_at ? new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "Recently",
         }));
+
+        if (vertical) {
+          pgBookings = pgBookings.filter((b) => !b.vertical || b.vertical === vertical);
+        }
 
         try {
           fs.writeFileSync(BOOKINGS_FILE, JSON.stringify(pgBookings, null, 2), "utf8");
@@ -474,9 +488,15 @@ export async function getErpBookings(tenantSlug?: string): Promise<CommerceBooki
     allBookings = memoryBookings.length > 0 ? memoryBookings : [];
   }
 
-  return allBookings.filter(
+  let filtered = allBookings.filter(
     (b) => (b.tenantSlug || "").toLowerCase().trim() === clean
   );
+
+  if (vertical) {
+    filtered = filtered.filter((b) => !b.vertical || b.vertical === vertical);
+  }
+
+  return filtered;
 }
 
 export async function saveErpBooking(booking: Partial<CommerceBookingItem>): Promise<CommerceBookingItem> {

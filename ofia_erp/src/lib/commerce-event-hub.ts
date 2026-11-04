@@ -14,7 +14,7 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 export interface CommerceStreamEvent {
-  type: "ORDER_CREATED" | "ORDER_STATUS_CHANGED" | "INVENTORY_LOW_STOCK" | "HEARTBEAT";
+  type: "ORDER_CREATED" | "ORDER_STATUS_CHANGED" | "INVENTORY_LOW_STOCK" | "HEARTBEAT" | "SERVICE_CATALOG_UPDATED";
   tenantSlug: string;
   timestamp: string;
   data: any;

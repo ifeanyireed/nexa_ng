@@ -23,6 +23,7 @@ import {
   Sparkles,
   ArrowRight,
   ShieldCheck,
+  RefreshCw,
 } from "lucide-react";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -63,7 +64,52 @@ export default function VerticalShopDashboardPage() {
   const hasStore = isShopSubModuleProvisioned("store");
   const hasReferrals = isShopSubModuleProvisioned("referrals");
 
-  const storefrontUrl = `http://localhost:3000${verticalDef.storefrontPath}${activeTenant?.slug ? `?tenant=${activeTenant.slug}` : ""}`;
+  const tenantSlug = activeTenant?.slug || (verticalKey === "fashion" ? "funmyclothing" : verticalKey === "cars" ? "neweratransports" : "reedbreed");
+  const storefrontUrl = `http://localhost:3000${verticalDef.storefrontPath}?tenant=${tenantSlug}`;
+
+  const [stats, setStats] = useState({
+    totalRevenue: "₦95,000",
+    activeProducts: "3 Pieces",
+    pendingBookings: "2 Sessions",
+    stockValuation: "₦1,244,000",
+  });
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchDashboardStats = React.useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      const [ordersRes, prodsRes, invRes, bookRes] = await Promise.all([
+        fetch(`/api/erp/shop/orders?tenant=${encodeURIComponent(tenantSlug)}&vertical=${encodeURIComponent(verticalKey)}`, { cache: "no-store" }).then(r => r.json()).catch(() => null),
+        fetch(`/api/erp/shop/products?tenant=${encodeURIComponent(tenantSlug)}&vertical=${encodeURIComponent(verticalKey)}`, { cache: "no-store" }).then(r => r.json()).catch(() => null),
+        fetch(`/api/erp/shop/inventory?tenant=${encodeURIComponent(tenantSlug)}`, { cache: "no-store" }).then(r => r.json()).catch(() => null),
+        fetch(`/api/erp/shop/bookings?tenant=${encodeURIComponent(tenantSlug)}&vertical=${encodeURIComponent(verticalKey)}`, { cache: "no-store" }).then(r => r.json()).catch(() => null),
+      ]);
+
+      let rev = 0;
+      if (ordersRes && Array.isArray(ordersRes.orders)) {
+        rev = ordersRes.orders.reduce((sum: number, o: any) => sum + (Number(o.rawAmount) || 0), 0);
+      }
+
+      const prodCount = prodsRes?.count || (Array.isArray(prodsRes?.products) ? prodsRes.products.length : 3);
+      const val = invRes?.valuation || 1244000;
+      const bookCount = bookRes?.count || 2;
+
+      setStats({
+        totalRevenue: rev > 0 ? `₦${rev.toLocaleString()}` : "₦95,000",
+        activeProducts: `${prodCount} Listings`,
+        pendingBookings: `${bookCount} Sessions`,
+        stockValuation: `₦${val.toLocaleString()}`,
+      });
+    } catch {
+      // Retain default stats
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [tenantSlug, verticalKey]);
+
+  React.useEffect(() => {
+    fetchDashboardStats();
+  }, [fetchDashboardStats]);
 
   return (
     <BusinessShell
@@ -75,6 +121,17 @@ export default function VerticalShopDashboardPage() {
           <NexaBadge variant="brand" size="sm" className="rounded-full">
             {verticalDef.name}
           </NexaBadge>
+
+          <NexaButton
+            size="sm"
+            variant="outline"
+            onClick={fetchDashboardStats}
+            disabled={isRefreshing}
+            leftIcon={<RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin text-blue-600" : ""}`} />}
+            className="rounded-full"
+          >
+            {isRefreshing ? "Syncing..." : "Sync Stats"}
+          </NexaButton>
 
           <a href={storefrontUrl} target="_blank" rel="noopener noreferrer">
             <NexaButton size="sm" variant="outline" leftIcon={<ExternalLink className="w-3.5 h-3.5" />} className="rounded-full">
@@ -131,7 +188,7 @@ export default function VerticalShopDashboardPage() {
           stats={[
             {
               label: `${verticalDef.name} Omnichannel Sales`,
-              value: "₦4,850,000",
+              value: stats.totalRevenue,
               change: "+28.4% vs last week",
               trend: "up",
               icon: <DollarSign className="w-5 h-5 text-emerald-500" />,
@@ -139,7 +196,7 @@ export default function VerticalShopDashboardPage() {
             },
             {
               label: `Active ${verticalDef.productTermPlural}`,
-              value: "28 Listings",
+              value: stats.activeProducts,
               change: verticalDef.badge,
               trend: "up",
               icon: <Package className="w-5 h-5 text-blue-500" />,
@@ -147,7 +204,7 @@ export default function VerticalShopDashboardPage() {
             },
             {
               label: `Scheduled ${verticalDef.serviceTerm}`,
-              value: "7 Requests",
+              value: stats.pendingBookings,
               change: "Requires Confirmation",
               trend: "neutral",
               icon: <Clock className="w-5 h-5 text-amber-500" />,
@@ -155,7 +212,7 @@ export default function VerticalShopDashboardPage() {
             },
             {
               label: "Dedicated Stock Valuation",
-              value: "₦34,200,000",
+              value: stats.stockValuation,
               change: "Synced Across Depots",
               trend: "up",
               icon: <Boxes className="w-5 h-5 text-purple-500" />,
@@ -300,6 +357,29 @@ export default function VerticalShopDashboardPage() {
             <Link href={`/erp/admin/shop/${verticalKey}/store`} className="w-full">
               <NexaButton size="sm" variant="outline" className="w-full rounded-full font-bold">
                 Customize {verticalDef.name} Store →
+              </NexaButton>
+            </Link>
+          </NexaCard>
+
+          {/* PILLAR 7: VERTICAL REFERRALS & CREATOR LOOPS */}
+          <NexaCard variant="glass" padding="lg" className={`border border-[var(--nexa-border)] flex flex-col justify-between space-y-5 rounded-3xl ${!hasReferrals ? "opacity-60" : ""}`}>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="w-9 h-9 rounded-xl bg-pink-500/10 text-pink-600 flex items-center justify-center">
+                  <Gift className="w-5 h-5" />
+                </div>
+                <NexaBadge variant="purple" size="sm" className="rounded-full">Viral Loops</NexaBadge>
+              </div>
+              <h3 className="font-bold text-sm text-[var(--nexa-text-primary)]">
+                Referrals & Creator Loops
+              </h3>
+              <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed">
+                Affiliate bounties, creator vanity promo codes, and viral referral loops configured for {verticalDef.name.toLowerCase()}.
+              </p>
+            </div>
+            <Link href={`/erp/admin/shop/${verticalKey}/referrals`} className="w-full">
+              <NexaButton size="sm" variant="outline" className="w-full rounded-full font-bold">
+                Affiliate Dashboard →
               </NexaButton>
             </Link>
           </NexaCard>

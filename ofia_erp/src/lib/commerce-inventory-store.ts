@@ -238,11 +238,97 @@ export async function restockInventoryItem(
       `;
 
       if (rows && rows.length > 0) {
-        return mapRowToInventory(rows[0]);
+        const item = mapRowToInventory(rows[0]);
+        try {
+          if (fs.existsSync(INVENTORY_FILE)) {
+            const raw = fs.readFileSync(INVENTORY_FILE, "utf8");
+            const data = JSON.parse(raw);
+            if (Array.isArray(data)) {
+              const idx = data.findIndex(
+                (i: any) =>
+                  (i.sku === cleanKey || i.id === cleanKey || i.productId === cleanKey) &&
+                  i.tenantSlug?.toLowerCase() === clean
+              );
+              if (idx >= 0) {
+                data[idx] = item;
+              } else {
+                data.push(item);
+              }
+              fs.writeFileSync(INVENTORY_FILE, JSON.stringify(data, null, 2), "utf8");
+            }
+          }
+        } catch {}
+        return item;
       }
     } catch (err) {
       console.warn("[Inventory Store] Neon restock item warning:", err);
     }
+  }
+
+  // Fallback to local files (inventory.json and products.json)
+  try {
+    if (fs.existsSync(INVENTORY_FILE)) {
+      const raw = fs.readFileSync(INVENTORY_FILE, "utf8");
+      const data = JSON.parse(raw);
+      if (Array.isArray(data)) {
+        const target = data.find(
+          (i: any) =>
+            (i.sku === cleanKey || i.id === cleanKey || i.productId === cleanKey) &&
+            i.tenantSlug?.toLowerCase() === clean
+        );
+        if (target) {
+          target.currentStock = Math.max(0, (target.currentStock || 0) + restockQty);
+          target.status =
+            target.currentStock === 0
+              ? "OUT_OF_STOCK"
+              : target.currentStock <= (target.minStock || 3)
+              ? "LOW_STOCK"
+              : "IN_STOCK";
+          target.updatedAt = new Date().toISOString();
+          fs.writeFileSync(INVENTORY_FILE, JSON.stringify(data, null, 2), "utf8");
+          return target;
+        }
+      }
+    }
+
+    if (fs.existsSync(PRODUCTS_FILE)) {
+      const pRaw = fs.readFileSync(PRODUCTS_FILE, "utf8");
+      const pData = JSON.parse(pRaw);
+      if (Array.isArray(pData)) {
+        const pTarget = pData.find(
+          (p: any) =>
+            (p.sku === cleanKey || p.id === cleanKey) &&
+            (p.tenantSlug || p.storeSlug || "").toLowerCase().trim() === clean
+        );
+        if (pTarget) {
+          pTarget.stock = Math.max(0, (Number(pTarget.stock) || 0) + restockQty);
+          pTarget.inStock = pTarget.stock > 0;
+          pTarget.updatedAt = new Date().toISOString();
+          fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(pData, null, 2), "utf8");
+
+          const fallbackItem: ShopInventoryItem = {
+            id: pTarget.id,
+            tenantSlug: clean,
+            tenantId: `org-${clean}`,
+            productId: pTarget.id,
+            sku: pTarget.sku || cleanKey,
+            productName: pTarget.title || pTarget.name || "Item",
+            category: pTarget.category || "General",
+            warehouse: "Ikeja Central Depot",
+            currentStock: pTarget.stock,
+            minStock: 3,
+            unitCost: Math.round((Number(pTarget.price) || 0) * 0.65),
+            unitPrice: Number(pTarget.price) || 0,
+            status: pTarget.stock === 0 ? "OUT_OF_STOCK" : pTarget.stock <= 3 ? "LOW_STOCK" : "IN_STOCK",
+            supplier: "Direct Supplier",
+            updatedAt: pTarget.updatedAt,
+          };
+          return fallbackItem;
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("[Inventory Store] Fallback restock warning:", err);
   }
 
   return null;

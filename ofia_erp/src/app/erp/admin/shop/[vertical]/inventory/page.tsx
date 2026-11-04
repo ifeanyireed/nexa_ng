@@ -95,7 +95,7 @@ export default function VerticalInventoryPage() {
   const [isAdjusting, setIsAdjusting] = useState(false);
 
   const fetchInventory = React.useCallback(async () => {
-    const slug = activeTenant?.slug || "neweratransports";
+    const slug = activeTenant?.slug || (verticalKey === "fashion" ? "funmyclothing" : verticalKey === "cars" ? "neweratransports" : "reedbreed");
     setIsRefreshing(true);
     try {
       const res = await fetch(`/api/erp/shop/inventory?tenant=${encodeURIComponent(slug)}`, {
@@ -127,7 +127,7 @@ export default function VerticalInventoryPage() {
     } finally {
       setIsRefreshing(false);
     }
-  }, [activeTenant?.slug]);
+  }, [activeTenant?.slug, verticalKey]);
 
   React.useEffect(() => {
     fetchInventory();
@@ -161,7 +161,7 @@ export default function VerticalInventoryPage() {
     if (!adjustingItem) return;
     const delta = parseInt(adjustmentDelta) || 0;
     const modifier = adjustmentType === "ADD" ? delta : -delta;
-    const slug = activeTenant?.slug || "neweratransports";
+    const slug = activeTenant?.slug || (verticalKey === "fashion" ? "funmyclothing" : verticalKey === "cars" ? "neweratransports" : "reedbreed");
 
     // Optimistic UI update
     setRows((prev) =>

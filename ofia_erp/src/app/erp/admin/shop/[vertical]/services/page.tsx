@@ -117,7 +117,7 @@ export default function VerticalServicesPage() {
     const slug = activeTenant?.slug || "neweratransports";
     setIsRefreshing(true);
     try {
-      const res = await fetch(`/api/erp/shop/bookings?tenant=${encodeURIComponent(slug)}`, {
+      const res = await fetch(`/api/erp/shop/bookings?tenant=${encodeURIComponent(slug)}&vertical=${encodeURIComponent(verticalKey)}`, {
         cache: "no-store",
       });
       const data = await res.json().catch(() => null);

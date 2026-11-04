@@ -53,6 +53,10 @@ export async function getErpOrders(tenantSlug?: string, vertical?: VerticalKey):
   // 1. Query Neon PostgreSQL database
   if (sql) {
     try {
+      try {
+        await sql`ALTER TABLE shop_orders ADD COLUMN IF NOT EXISTS vertical VARCHAR(50) DEFAULT 'retail';`;
+      } catch {}
+
       const rows = await sql`
         SELECT id, order_number, tenant_slug, COALESCE(tenant_id, '') as tenant_id,
                customer_name, COALESCE(customer_email, '') as customer_email,
@@ -70,6 +74,7 @@ export async function getErpOrders(tenantSlug?: string, vertical?: VerticalKey):
                COALESCE(settlement_status, 'AVAILABLE') as settlement_status,
                COALESCE(merchant_amount, 0) as merchant_amount,
                COALESCE(platform_fee, 0) as platform_fee,
+               COALESCE(vertical, 'retail') as vertical,
                created_at, updated_at
         FROM shop_orders
         WHERE LOWER(tenant_slug) = ${clean}
@@ -102,10 +107,11 @@ export async function getErpOrders(tenantSlug?: string, vertical?: VerticalKey):
           platformFee: Number(r.platform_fee) || 0,
           createdAt: r.created_at ? new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "Recently",
           notes: r.notes,
+          vertical: (r.vertical as VerticalKey) || "retail",
         }));
 
         if (vertical) {
-          pgOrders = pgOrders.filter((o) => !o.vertical || o.vertical === vertical);
+          pgOrders = pgOrders.filter((o) => o.vertical === vertical);
         }
 
         // Mirror to local cache
@@ -139,7 +145,7 @@ export async function getErpOrders(tenantSlug?: string, vertical?: VerticalKey):
   );
 
   if (vertical) {
-    filtered = filtered.filter((o) => !o.vertical || o.vertical === vertical);
+    filtered = filtered.filter((o) => (o.vertical || "retail") === vertical);
   }
 
   return filtered;
@@ -189,18 +195,23 @@ export async function saveErpOrder(order: Partial<CommerceOrderItem>): Promise<C
     createdAt: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }),
     notes: order.notes || "",
     items: order.items || [],
+    vertical: order.vertical || "retail",
   };
 
   // 1. Save to Neon PostgreSQL
   if (sql) {
     try {
+      try {
+        await sql`ALTER TABLE shop_orders ADD COLUMN IF NOT EXISTS vertical VARCHAR(50) DEFAULT 'retail';`;
+      } catch {}
+
       await sql`
         INSERT INTO shop_orders (
           id, order_number, tenant_slug, tenant_id, customer_name, customer_email,
           customer_phone, channel, status, payment_status, delivery_method,
           shipping_address, city, payment_method, items_summary, item_count,
           total_amount, raw_amount, is_escrow, escrow_status, settlement_status,
-          merchant_amount, platform_fee, notes, items, created_at, updated_at
+          merchant_amount, platform_fee, notes, items, vertical, created_at, updated_at
         ) VALUES (
           ${newOrder.id}, ${newOrder.orderNumber}, ${newOrder.tenantSlug}, ${newOrder.tenantId},
           ${newOrder.customerName}, ${newOrder.customerEmail}, ${newOrder.customerPhone},
@@ -208,10 +219,11 @@ export async function saveErpOrder(order: Partial<CommerceOrderItem>): Promise<C
           ${newOrder.shippingAddress}, ${newOrder.city || "Lagos"}, ${newOrder.paymentMethod || "card"},
           ${newOrder.itemsSummary}, ${newOrder.itemCount}, ${newOrder.totalAmount}, ${rawAmount},
           ${isEscrow}, ${escrowStatus}, ${settlementStatus}, ${merchantAmount}, ${platformFee},
-          ${newOrder.notes}, ${JSON.stringify(newOrder.items || [])}::jsonb, NOW(), NOW()
+          ${newOrder.notes}, ${JSON.stringify(newOrder.items || [])}::jsonb, ${newOrder.vertical}, NOW(), NOW()
         )
         ON CONFLICT (tenant_slug, order_number) DO UPDATE SET
           status = EXCLUDED.status,
+          vertical = EXCLUDED.vertical,
           updated_at = NOW()
       `;
 

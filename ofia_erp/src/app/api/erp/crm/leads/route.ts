@@ -14,6 +14,9 @@ async function ensureCrmLeadsTable(sql: any) {
       company VARCHAR(191) DEFAULT '',
       email VARCHAR(191) DEFAULT '',
       phone VARCHAR(100) DEFAULT '',
+      industry VARCHAR(191) DEFAULT '',
+      location VARCHAR(191) DEFAULT '',
+      buying_signals JSONB DEFAULT '[]'::jsonb,
       source VARCHAR(100) DEFAULT 'Direct Outreach',
       score INT DEFAULT 80,
       status VARCHAR(50) DEFAULT 'CURIOUS',
@@ -28,17 +31,92 @@ async function ensureCrmLeadsTable(sql: any) {
       updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
     );
   `;
+  await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS industry VARCHAR(191) DEFAULT '';`;
+  await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS location VARCHAR(191) DEFAULT '';`;
+  await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS buying_signals JSONB DEFAULT '[]'::jsonb;`;
   await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(191) DEFAULT '';`;
   await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS linkedin_url VARCHAR(255) DEFAULT '';`;
   await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS converted_deal_id VARCHAR(191) DEFAULT '';`;
   await sql`ALTER TABLE crm_leads ADD COLUMN IF NOT EXISTS converted_at TIMESTAMPTZ;`;
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_leads_tenant ON crm_leads (LOWER(tenant_slug));`;
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_leads_created ON crm_leads (LOWER(tenant_slug), created_at DESC);`;
+
+  // Ensure helper tables exist to prevent join query crashes
+  await sql`
+    CREATE TABLE IF NOT EXISTS crm_deals (
+      id VARCHAR(191) PRIMARY KEY,
+      tenant_slug VARCHAR(191) NOT NULL,
+      tenant_id VARCHAR(191) DEFAULT '',
+      title VARCHAR(191) NOT NULL,
+      company VARCHAR(191) DEFAULT '',
+      contact_name VARCHAR(191) DEFAULT '',
+      email VARCHAR(191) DEFAULT '',
+      phone VARCHAR(100) DEFAULT '',
+      value VARCHAR(100) DEFAULT '₦0',
+      stage VARCHAR(50) DEFAULT 'LEAD',
+      owner VARCHAR(191) DEFAULT '',
+      probability INT DEFAULT 20,
+      expected_close VARCHAR(100) DEFAULT '',
+      notes TEXT DEFAULT '',
+      account_id VARCHAR(191),
+      lead_id VARCHAR(191),
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS crm_calls (
+      id VARCHAR(191) PRIMARY KEY,
+      tenant_slug VARCHAR(191) NOT NULL,
+      tenant_id VARCHAR(191) DEFAULT '',
+      lead_id VARCHAR(191) DEFAULT '',
+      deal_id VARCHAR(191) DEFAULT '',
+      contact_name VARCHAR(191) NOT NULL,
+      company VARCHAR(191) DEFAULT '',
+      phone_number VARCHAR(100) NOT NULL,
+      rep_name VARCHAR(191) NOT NULL,
+      rep_email VARCHAR(191) DEFAULT '',
+      direction VARCHAR(50) DEFAULT 'OUTBOUND',
+      outcome VARCHAR(100) NOT NULL,
+      duration_seconds INT DEFAULT 0,
+      notes TEXT DEFAULT '',
+      followup_date VARCHAR(100) DEFAULT '',
+      recording_url TEXT DEFAULT '',
+      transcript TEXT DEFAULT '',
+      ai_summary TEXT DEFAULT '',
+      qualification_json TEXT DEFAULT '',
+      is_ai BOOLEAN DEFAULT true,
+      call_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS crm_email_subscribers (
+      id VARCHAR(191) PRIMARY KEY,
+      tenant_slug VARCHAR(191) NOT NULL,
+      tenant_id VARCHAR(191) DEFAULT '',
+      list_id VARCHAR(191) NOT NULL DEFAULT '',
+      email VARCHAR(191) NOT NULL,
+      name VARCHAR(191) DEFAULT '',
+      first_name VARCHAR(100) DEFAULT '',
+      last_name VARCHAR(100) DEFAULT '',
+      company VARCHAR(191) DEFAULT '',
+      phone VARCHAR(50) DEFAULT '',
+      linkedin_url VARCHAR(255) DEFAULT '',
+      role VARCHAR(100) DEFAULT 'Subscriber',
+      department VARCHAR(100) DEFAULT '',
+      status VARCHAR(50) DEFAULT 'SUBSCRIBED',
+      unsubscribed_at TIMESTAMPTZ,
+      unsubscribe_reason TEXT,
+      created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+    );
+  `;
   try {
     await sql`
       CREATE UNIQUE INDEX IF NOT EXISTS uq_crm_leads_tenant_email 
       ON crm_leads (LOWER(tenant_slug), LOWER(TRIM(email))) 
-      WHERE email IS NOT NULL AND TRIM(email) != '';
+      WHERE email IS NOT NULL AND TRIM(email) != '' AND LOWER(TRIM(email)) NOT LIKE '%@example.%';
     `;
     await sql`
       CREATE UNIQUE INDEX IF NOT EXISTS uq_crm_leads_tenant_phone 
@@ -148,6 +226,9 @@ export async function GET(request: NextRequest) {
         COALESCE(l.status, 'CURIOUS') AS status,
         COALESCE(l.owner, '') AS owner,
         COALESCE(l.assigned_rep, '') AS assigned_rep,
+        COALESCE(l.industry, '') AS industry,
+        COALESCE(l.location, '') AS location,
+        COALESCE(l.buying_signals, '[]'::jsonb) AS buying_signals,
         COALESCE(l.value, '') AS value,
         COALESCE(l.notes, '') AS notes,
         COALESCE(l.converted_deal_id, '') AS converted_deal_id,
@@ -211,17 +292,21 @@ export async function GET(request: NextRequest) {
       contactEmail: r.email,
       phone: r.phone,
       contactPhone: r.phone,
+      industry: r.industry || "",
+      location: r.location || "",
       source: r.source,
       score: Number(r.score) || 75,
       icpFitScore: Number(r.score) || 75,
-      buyingSignals: r.notes
-        ? r.notes
-            .split(
-              /\r?\n|(?<=[.!?])\s+(?=(?:Call Log\s*\(|Lead auto-assigned|Email [bB]last|Inbound|Outbound|Direct Outreach|Converted to Deal|Promoted to Deal|Deal Won|Meeting Scheduled))/g
-            )
-            .map((s: string) => s.trim())
-            .filter(Boolean)
-        : ["Direct Outreach"],
+      buyingSignals: Array.isArray(r.buying_signals) && r.buying_signals.length > 0
+        ? r.buying_signals
+        : (r.notes
+            ? r.notes
+                .split(
+                  /\r?\n|(?<=[.!?])\s+(?=(?:Call Log\s*\(|Lead auto-assigned|Email [bB]last|Inbound|Outbound|Direct Outreach|Converted to Deal|Promoted to Deal|Deal Won|Meeting Scheduled))/g
+                )
+                .map((s: string) => s.trim())
+                .filter(Boolean)
+            : ["Direct Outreach"]),
       status: r.status,
       owner: r.owner || r.assigned_rep,
       assignedRep: r.assigned_rep || r.owner,
@@ -242,18 +327,19 @@ export async function GET(request: NextRequest) {
 
     for (const l of leads) {
       const cleanEmail = (l.email || "").toLowerCase().trim();
+      const isPlaceholderEmail = !cleanEmail || cleanEmail.includes("@example.");
       const cleanPhone = (l.phone || "").replace(/[^0-9]/g, "");
       const phoneKey = cleanPhone.length >= 8 ? cleanPhone.slice(-8) : "";
       const nameCompKey =
         l.name && l.company ? `${l.name.toLowerCase().trim()}|${l.company.toLowerCase().trim()}` : "";
 
       let isDup = false;
-      if (cleanEmail && seenEmails.has(cleanEmail)) isDup = true;
+      if (!isPlaceholderEmail && seenEmails.has(cleanEmail)) isDup = true;
       else if (phoneKey && seenPhones.has(phoneKey)) isDup = true;
       else if (nameCompKey && seenNameCompany.has(nameCompKey)) isDup = true;
 
       if (!isDup) {
-        if (cleanEmail) seenEmails.add(cleanEmail);
+        if (!isPlaceholderEmail) seenEmails.add(cleanEmail);
         if (phoneKey) seenPhones.add(phoneKey);
         if (nameCompKey) seenNameCompany.add(nameCompKey);
         uniqueLeads.push(l);
@@ -289,10 +375,18 @@ export async function POST(request: NextRequest) {
     const leadId = body.id || `LED-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const name = (body.name || body.contactName || "Prospect").trim();
     const company = (body.company || body.companyName || "").trim();
-    const email = (body.email || body.contactEmail || "").trim();
+    let email = (body.email || body.contactEmail || "").trim();
+    if (email.toLowerCase().includes("@example.")) {
+      email = "";
+    }
     const phone = (body.phone || body.contactPhone || "").trim();
-    const source = (body.source || "Voice Outreach").trim();
-    const score = Number(body.score) || 80;
+    const industry = (body.industry || "").trim();
+    const location = (body.location || "").trim();
+    const buyingSignals = Array.isArray(body.buyingSignals)
+      ? body.buyingSignals
+      : (body.buyingSignals ? [String(body.buyingSignals)] : ["Direct Manual Inbound"]);
+    const source = (body.source || "Direct Manual Inbound").trim();
+    const score = Number(body.score || body.icpFitScore) || 80;
     let status = (body.status || "CURIOUS").trim();
     const owner = (body.owner || body.assignedRep || "").trim();
     const assignedRep = (body.assignedRep || body.owner || "").trim();
@@ -328,12 +422,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Deduplication check: Does this contact already exist by email, phone, or name+company?
+    // Deduplication check: Does this contact already exist by email or phone?
     const cleanDigits = phone.replace(/[^0-9]/g, "");
     const last8Digits = cleanDigits.length >= 8 ? cleanDigits.slice(-8) : "";
     const cleanEmail = email.toLowerCase().trim();
-    const cleanName = name.toLowerCase().trim();
-    const cleanCompany = company.toLowerCase().trim();
+    const isDummyEmail = !cleanEmail || cleanEmail.includes("@example.");
 
     let existingLead: any = null;
     if (body.id) {
@@ -345,20 +438,21 @@ export async function POST(request: NextRequest) {
       if (byId) existingLead = byId;
     }
 
-    if (!existingLead && (cleanEmail || last8Digits || (cleanName && cleanCompany))) {
+    if (!existingLead && (!isDummyEmail || last8Digits)) {
       const [byMatch] = await sql`
         SELECT * FROM crm_leads
         WHERE LOWER(tenant_slug) = ${tenantSlug}
           AND (
-            ${cleanEmail ? sql`LOWER(TRIM(email)) = ${cleanEmail}` : sql`1=0`}
+            ${!isDummyEmail ? sql`LOWER(TRIM(email)) = ${cleanEmail}` : sql`1=0`}
             ${last8Digits ? sql`OR (phone != '' AND RIGHT(REGEXP_REPLACE(phone, '[^0-9]', '', 'g'), 8) = ${last8Digits})` : sql``}
-            ${cleanName && cleanCompany ? sql`OR (LOWER(TRIM(name)) = ${cleanName} AND LOWER(TRIM(company)) = ${cleanCompany})` : sql``}
           )
         ORDER BY created_at ASC
         LIMIT 1;
       `;
       if (byMatch) existingLead = byMatch;
     }
+
+    let targetLead: any = null;
 
     if (existingLead) {
       // Merge notes if new notes provided and not already present
@@ -379,6 +473,9 @@ export async function POST(request: NextRequest) {
       const finalRep = assignedRep || existingLead.assigned_rep || existingLead.owner || "";
       const finalScore = Math.max(Number(existingLead.score) || 75, score);
       const finalStatus = (status !== "CURIOUS" && status) ? status : (existingLead.status || "CURIOUS");
+      const finalIndustry = industry || existingLead.industry || "";
+      const finalLocation = location || existingLead.location || "";
+      const finalSignals = buyingSignals.length > 0 ? buyingSignals : (existingLead.buying_signals || []);
 
       const [updated] = await sql`
         UPDATE crm_leads SET
@@ -386,6 +483,9 @@ export async function POST(request: NextRequest) {
           company = ${finalCompany},
           email = ${finalEmail},
           phone = ${finalPhone},
+          industry = ${finalIndustry},
+          location = ${finalLocation},
+          buying_signals = ${JSON.stringify(finalSignals)}::jsonb,
           source = CASE WHEN source IS NULL OR source = '' THEN ${source} ELSE source END,
           score = ${finalScore},
           status = ${finalStatus},
@@ -398,70 +498,70 @@ export async function POST(request: NextRequest) {
         WHERE id = ${existingLead.id} AND LOWER(tenant_slug) = ${tenantSlug}
         RETURNING *;
       `;
-
-      return NextResponse.json({
-        success: true,
-        lead: {
-          id: updated.id,
-          name: updated.name,
-          contactName: updated.name,
-          company: updated.company,
-          companyName: updated.company,
-          email: updated.email,
-          contactEmail: updated.email,
-          phone: updated.phone,
-          contactPhone: updated.phone,
-          status: updated.status,
-          score: updated.score,
-          icpFitScore: Number(updated.score) || 75,
-          assignedRep: updated.assigned_rep,
-          notes: updated.notes,
-        },
-      });
+      targetLead = updated;
+    } else {
+      const [saved] = await sql`
+        INSERT INTO crm_leads (
+          id, tenant_slug, tenant_id, name, company, email, phone,
+          industry, location, buying_signals,
+          source, score, status, owner, assigned_rep, value, notes, linkedin_url, created_at, updated_at
+        ) VALUES (
+          ${leadId}, ${tenantSlug}, '', ${name}, ${company}, ${email}, ${phone},
+          ${industry}, ${location}, ${JSON.stringify(buyingSignals)}::jsonb,
+          ${source}, ${score}, ${status}, ${owner}, ${assignedRep}, ${value}, ${notes}, ${linkedinUrl}, NOW(), NOW()
+        )
+        ON CONFLICT (id) DO UPDATE SET
+          name = EXCLUDED.name,
+          company = EXCLUDED.company,
+          email = EXCLUDED.email,
+          phone = EXCLUDED.phone,
+          industry = EXCLUDED.industry,
+          location = EXCLUDED.location,
+          buying_signals = EXCLUDED.buying_signals,
+          status = EXCLUDED.status,
+          score = EXCLUDED.score,
+          owner = EXCLUDED.owner,
+          assigned_rep = EXCLUDED.assigned_rep,
+          value = EXCLUDED.value,
+          notes = EXCLUDED.notes,
+          linkedin_url = CASE WHEN EXCLUDED.linkedin_url != '' THEN EXCLUDED.linkedin_url ELSE crm_leads.linkedin_url END,
+          updated_at = NOW()
+        WHERE LOWER(crm_leads.tenant_slug) = ${tenantSlug}
+        RETURNING *;
+      `;
+      targetLead = saved;
     }
-
-    const [saved] = await sql`
-      INSERT INTO crm_leads (
-        id, tenant_slug, tenant_id, name, company, email, phone,
-        source, score, status, owner, assigned_rep, value, notes, linkedin_url, created_at, updated_at
-      ) VALUES (
-        ${leadId}, ${tenantSlug}, '', ${name}, ${company}, ${email}, ${phone},
-        ${source}, ${score}, ${status}, ${owner}, ${assignedRep}, ${value}, ${notes}, ${linkedinUrl}, NOW(), NOW()
-      )
-      ON CONFLICT (id) DO UPDATE SET
-        name = EXCLUDED.name,
-        company = EXCLUDED.company,
-        email = EXCLUDED.email,
-        phone = EXCLUDED.phone,
-        status = EXCLUDED.status,
-        score = EXCLUDED.score,
-        owner = EXCLUDED.owner,
-        assigned_rep = EXCLUDED.assigned_rep,
-        value = EXCLUDED.value,
-        notes = EXCLUDED.notes,
-        linkedin_url = CASE WHEN EXCLUDED.linkedin_url != '' THEN EXCLUDED.linkedin_url ELSE crm_leads.linkedin_url END,
-        updated_at = NOW()
-      WHERE LOWER(crm_leads.tenant_slug) = ${tenantSlug}
-      RETURNING *;
-    `;
 
     return NextResponse.json({
       success: true,
       lead: {
-        id: saved.id,
-        name: saved.name,
-        contactName: saved.name,
-        company: saved.company,
-        companyName: saved.company,
-        email: saved.email,
-        contactEmail: saved.email,
-        phone: saved.phone,
-        contactPhone: saved.phone,
-        status: saved.status,
-        score: saved.score,
-        icpFitScore: Number(saved.score) || 75,
-        assignedRep: saved.assigned_rep,
-        notes: saved.notes,
+        id: targetLead.id,
+        tenantSlug: targetLead.tenant_slug || tenantSlug,
+        name: targetLead.name,
+        contactName: targetLead.name,
+        company: targetLead.company,
+        companyName: targetLead.company,
+        email: targetLead.email || "",
+        contactEmail: targetLead.email || "",
+        phone: targetLead.phone || "",
+        contactPhone: targetLead.phone || "",
+        industry: targetLead.industry || industry,
+        location: targetLead.location || location,
+        buyingSignals: Array.isArray(targetLead.buying_signals) && targetLead.buying_signals.length > 0
+          ? targetLead.buying_signals
+          : (buyingSignals.length > 0 ? buyingSignals : ["Direct Manual Inbound"]),
+        status: targetLead.status,
+        score: Number(targetLead.score) || score,
+        icpFitScore: Number(targetLead.score) || score,
+        assignedRep: targetLead.assigned_rep || targetLead.owner || assignedRep,
+        owner: targetLead.owner || targetLead.assigned_rep || owner,
+        source: targetLead.source || source,
+        value: targetLead.value || "",
+        notes: targetLead.notes || "",
+        linkedinUrl: targetLead.linkedin_url || "",
+        convertedDealId: targetLead.converted_deal_id || "",
+        createdAt: targetLead.created_at ? new Date(targetLead.created_at).toISOString() : new Date().toISOString(),
+        updatedAt: targetLead.updated_at ? new Date(targetLead.updated_at).toISOString() : new Date().toISOString(),
       },
     });
   } catch (err: any) {

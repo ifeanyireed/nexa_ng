@@ -44,10 +44,12 @@ import { NexaModal } from "@/components/nexa/NexaModal";
 import { Pagination } from "@/components/nexa/Pagination";
 import { CrmLead, CrmCall, CrmDeal } from "@/lib/crm-service";
 import { crmFetch } from "@/lib/crm-client";
+import { useActiveTenant } from "@/lib/tenant-context";
 import { filterSalesClosers } from "@/lib/access-control";
 import { PhoneCandidate, isPhoneMissingOrInvalid } from "@/lib/crm-phone-enricher";
 
 export default function CrmLeadsPage() {
+  const { activeTenant } = useActiveTenant();
   const [leads, setLeads] = useState<CrmLead[]>([]);
   const [calls, setCalls] = useState<CrmCall[]>([]);
   const [deals, setDeals] = useState<CrmDeal[]>([]);
@@ -82,6 +84,7 @@ export default function CrmLeadsPage() {
   const [assignedCloser, setAssignedCloser] = useState("Auto-Assign (Least-Loaded)");
   const [availableClosers, setAvailableClosers] = useState<{ id?: string; name: string; email: string }[]>([]);
   const [updatingLeadId, setUpdatingLeadId] = useState<string | null>(null);
+  const [isSavingLead, setIsSavingLead] = useState(false);
 
   // Edit Lead Modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -451,6 +454,7 @@ export default function CrmLeadsPage() {
           if (seenIds.has(l.id)) continue;
 
           const emailKey = (l.email || l.contactEmail || "").toLowerCase().trim();
+          const isDummyEmail = !emailKey || emailKey.includes("@example.");
           const cleanPhone = (l.phone || l.contactPhone || "").replace(/[^0-9]/g, "");
           const phoneKey = cleanPhone.length >= 8 ? cleanPhone.slice(-8) : "";
           const nameStr = (l.name || l.contactName || "").toLowerCase().trim();
@@ -458,13 +462,13 @@ export default function CrmLeadsPage() {
           const nameCompKey = nameStr && compStr ? `${nameStr}|${compStr}` : "";
 
           let isDup = false;
-          if (emailKey && seenEmails.has(emailKey)) isDup = true;
+          if (!isDummyEmail && seenEmails.has(emailKey)) isDup = true;
           else if (phoneKey && seenPhones.has(phoneKey)) isDup = true;
           else if (nameCompKey && seenNameComp.has(nameCompKey)) isDup = true;
 
           if (!isDup) {
             seenIds.add(l.id);
-            if (emailKey) seenEmails.add(emailKey);
+            if (!isDummyEmail) seenEmails.add(emailKey);
             if (phoneKey) seenPhones.add(phoneKey);
             if (nameCompKey) seenNameComp.add(nameCompKey);
             uniqueRawLeads.push(l);
@@ -788,10 +792,15 @@ export default function CrmLeadsPage() {
     e.preventDefault();
     if (!newCompany.trim() || !newContact.trim()) return;
 
+    setIsSavingLead(true);
+    const tenantSlug = activeTenant?.slug || "default";
+    const cleanedEmail = newEmail.trim();
+
     const payload = {
+      tenantSlug,
       companyName: newCompany.trim(),
       contactName: newContact.trim(),
-      contactEmail: newEmail.trim() || "contact@example.ng",
+      contactEmail: cleanedEmail,
       contactPhone: newPhone.trim(),
       industry: newIndustry.trim(),
       location: newLocation.trim(),
@@ -808,47 +817,65 @@ export default function CrmLeadsPage() {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (data.lead) {
-        setLeads((prev) => {
-          const leadEmail = (data.lead.contactEmail || data.lead.email || "").toLowerCase().trim();
-          const filtered = prev.filter(
-            (l) =>
-              l.id !== data.lead.id &&
-              !(leadEmail && l.contactEmail && l.contactEmail.toLowerCase().trim() === leadEmail)
-          );
-          return [data.lead, ...filtered];
-        });
+      if (!res.ok || !data.success || !data.lead) {
+        throw new Error(data?.error || `Server responded with status ${res.status}`);
       }
-    } catch {
+
+      const createdLead: CrmLead = {
+        ...data.lead,
+        tenantSlug: data.lead.tenantSlug || tenantSlug,
+        companyName: data.lead.companyName || data.lead.company || payload.companyName,
+        contactName: data.lead.contactName || data.lead.name || payload.contactName,
+        contactEmail: data.lead.contactEmail || data.lead.email || payload.contactEmail,
+        contactPhone: data.lead.contactPhone || data.lead.phone || payload.contactPhone,
+        industry: data.lead.industry || payload.industry,
+        location: data.lead.location || payload.location,
+        assignedRep: data.lead.assignedRep || data.lead.owner || (assignedCloser.startsWith("Auto-Assign") ? availableClosers[0]?.name || "Senior Sales Specialist" : assignedCloser),
+        icpFitScore: Number(data.lead.icpFitScore || data.lead.score) || 88,
+        buyingSignals: Array.isArray(data.lead.buyingSignals) && data.lead.buyingSignals.length > 0
+          ? data.lead.buyingSignals
+          : payload.buyingSignals,
+        status: data.lead.status || payload.status,
+        source: data.lead.source || payload.source,
+        createdAt: data.lead.createdAt || new Date().toISOString(),
+      };
+
+      setLeads((prev) => {
+        const filtered = prev.filter((l) => l.id !== createdLead.id);
+        return [createdLead, ...filtered];
+      });
+
+      setIsAddModalOpen(false);
+      setNewCompany("");
+      setNewContact("");
+      setNewEmail("");
+      setNewPhone("");
+      setNewIndustry("Corporate");
+      setNewLocation("Lagos");
+      setAssignedCloser("Auto-Assign (Least-Loaded)");
+    } catch (err: any) {
+      console.error("[Leads] Server save failed, preserving optimistic lead locally:", err);
       const localLead: CrmLead = {
-        id: `LEAD-${Date.now().toString().slice(-4)}`,
-        tenantSlug: "default",
+        id: `LED-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         ...payload,
         assignedRep: assignedCloser.startsWith("Auto-Assign")
           ? availableClosers[0]?.name || "Senior Sales Specialist"
           : assignedCloser,
         createdAt: new Date().toISOString(),
       };
-      setLeads((prev) => {
-        const leadEmail = localLead.contactEmail?.toLowerCase().trim();
-        const filtered = prev.filter(
-          (l) =>
-            !(
-              leadEmail &&
-              l.contactEmail &&
-              l.contactEmail.toLowerCase().trim() === leadEmail
-            )
-        );
-        return [localLead, ...filtered];
-      });
-    }
+      setLeads((prev) => [localLead, ...prev]);
 
-    setIsAddModalOpen(false);
-    setNewCompany("");
-    setNewContact("");
-    setNewEmail("");
-    setNewPhone("");
-    setAssignedCloser("Auto-Assign (Least-Loaded)");
+      setIsAddModalOpen(false);
+      setNewCompany("");
+      setNewContact("");
+      setNewEmail("");
+      setNewPhone("");
+      setNewIndustry("Corporate");
+      setNewLocation("Lagos");
+      setAssignedCloser("Auto-Assign (Least-Loaded)");
+    } finally {
+      setIsSavingLead(false);
+    }
   };
 
   const getDealForLead = (lead: CrmLead): CrmDeal | undefined => {
@@ -2221,8 +2248,8 @@ export default function CrmLeadsPage() {
             <NexaButton variant="secondary" type="button" onClick={() => setIsAddModalOpen(false)}>
               Cancel
             </NexaButton>
-            <NexaButton variant="primary" type="submit">
-              Save Lead
+            <NexaButton variant="primary" type="submit" disabled={isSavingLead}>
+              {isSavingLead ? "Saving Lead..." : "Save Lead"}
             </NexaButton>
           </div>
         </form>

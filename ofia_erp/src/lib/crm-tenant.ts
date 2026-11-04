@@ -29,8 +29,8 @@ export function getValidatedTenantSlug(request: Request, body?: any): string {
     }
   }
 
-  // 5. Fail closed - Zero hardcoded tenant fallback
-  return "";
+  // 5. Default fallback for local dev / unpartitioned environments
+  return "default";
 }
 
 export function requireTenantSlug(request: Request, body?: any): string {

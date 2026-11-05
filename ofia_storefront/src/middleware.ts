@@ -64,6 +64,29 @@ export async function middleware(request: NextRequest) {
     });
   }
 
+  // 6.5. Always enforce merchant subdomain redirection for page navigations when accessed via query parameter
+  // Redirects bare localhost:3005?tenant=<slug> -> <slug>.localhost:3005
+  // or ofia.ng?tenant=<slug> -> <slug>.ofia.ng
+  if (source === "query" && tenantSlug) {
+    const cleanHost = host.split(":")[0].toLowerCase().trim();
+    const port = host.includes(":") ? `:${host.split(":")[1]}` : "";
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.searchParams.delete("tenant");
+    redirectUrl.searchParams.delete("store");
+    redirectUrl.searchParams.delete("slug");
+
+    if (cleanHost === "localhost" || cleanHost === "127.0.0.1") {
+      redirectUrl.protocol = "http:";
+      redirectUrl.host = `${tenantSlug}.localhost${port || ":3005"}`;
+      return NextResponse.redirect(redirectUrl, { status: 307 });
+    } else {
+      const baseRoot = cleanHost.replace(/^www\./, "").replace(/^[a-z0-9_-]+\./, "");
+      redirectUrl.protocol = "https:";
+      redirectUrl.host = `${tenantSlug}.${baseRoot || "ofia.ng"}`;
+      return NextResponse.redirect(redirectUrl, { status: 307 });
+    }
+  }
+
   // 7. Prepare rewritten URL preserving path and tenant identity
   const rewriteUrl = request.nextUrl.clone();
   rewriteUrl.searchParams.delete("tenant");

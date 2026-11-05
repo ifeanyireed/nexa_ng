@@ -1131,8 +1131,9 @@ export function getDefaultOrdersForVertical(v: VerticalKey): CommerceOrderItem[]
 
 /**
  * Resolves the storefront URL for a merchant's active vertical and tenant.
- * Uses NEXT_PUBLIC_STOREFRONT_URL if configured, otherwise falls back to port 3005 in local development,
- * or https://<tenantSlug>.ofia.ng in production.
+ * ALWAYS directs to the merchant's dedicated subdomain:
+ *   - Localhost: http://<tenantSlug>.localhost:3005/<path>
+ *   - Production: https://<tenantSlug>.<rootDomain>/<path> (or https://<tenant.domain>/<path>)
  */
 export function getStorefrontUrl(
   verticalKey: string,
@@ -1152,36 +1153,36 @@ export function getStorefrontUrl(
       : vKey === "cars"
       ? "neweratransports"
       : "reedbreed";
-  const slug = tenant?.slug || defaultSlug;
+  const slug = (tenant?.slug || defaultSlug).toLowerCase().trim();
 
-  // 1. Explicit environment variable override
-  if (process.env.NEXT_PUBLIC_STOREFRONT_URL) {
-    const base = process.env.NEXT_PUBLIC_STOREFRONT_URL.replace(/\/$/, "");
-    return `${base}${resolvedPath}?tenant=${encodeURIComponent(slug)}`;
-  }
+  // Root platform domain fallback (e.g. ofia.ng)
+  const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || "ofia.ng")
+    .replace(/^https?:\/\//, "")
+    .replace(/\/$/, "");
 
-  // 2. Custom domain if configured and not on localhost
-  if (tenant?.domain && !tenant.domain.includes("localhost")) {
-    return `https://${tenant.domain}${resolvedPath}`;
-  }
-
-  // 3. In client browser context, check if on localhost
+  // 1. Client-side browser context: if viewing locally, link to local tenant subdomain
   if (typeof window !== "undefined") {
     const isLocalhost =
       window.location.hostname === "localhost" ||
       window.location.hostname === "127.0.0.1" ||
       window.location.hostname.endsWith(".localhost");
     if (isLocalhost) {
-      return `http://localhost:3005${resolvedPath}?tenant=${encodeURIComponent(slug)}`;
+      return `http://${slug}.localhost:3005${resolvedPath}`;
     }
-    return `https://${slug}.ofia.ng${resolvedPath}`;
   }
 
-  // 4. Default for development
+  // 2. Server-side development check
   if (process.env.NODE_ENV !== "production") {
-    return `http://localhost:3005${resolvedPath}?tenant=${encodeURIComponent(slug)}`;
+    return `http://${slug}.localhost:3005${resolvedPath}`;
   }
 
-  return `https://${slug}.ofia.ng${resolvedPath}`;
+  // 3. Production: if tenant has dedicated/custom domain (e.g. funmyclothing.ofia.ng or reedbreed.cc)
+  if (tenant?.domain && !tenant.domain.includes("localhost")) {
+    const cleanDomain = tenant.domain.replace(/^https?:\/\//, "").replace(/\/$/, "");
+    return `https://${cleanDomain}${resolvedPath}`;
+  }
+
+  // 4. Production fallback: tenantslug.rootDomain (e.g. funmyclothing.ofia.ng)
+  return `https://${slug}.${rootDomain}${resolvedPath}`;
 }
 

@@ -172,7 +172,12 @@ export async function getStorefrontProducts(
             ],
           ];
 
-          const liveProducts: Product[] = rows.map((r: any, idx: number) => {
+          const masterRows = rows.filter((r: any) => {
+            const meta = (typeof r.metadata === "string" ? JSON.parse(r.metadata || "{}") : r.metadata) || {};
+            return !meta.parentId;
+          });
+
+          const liveProducts: Product[] = masterRows.map((r: any, idx: number) => {
             const meta = (typeof r.metadata === "string" ? JSON.parse(r.metadata || "{}") : r.metadata) || {};
             const metaImages: string[] = Array.isArray(meta.images) && meta.images.length > 0
               ? meta.images
@@ -205,10 +210,11 @@ export async function getStorefrontProducts(
               description: `${r.product_name} · Sourced directly from merchant live inventory.`,
               fashionMeta: isFashion
                 ? {
-                    sizes: (meta.sizes as string[]) || ["XS", "S", "M", "L", "XL", "Bespoke Fit"],
-                    colors: FASHION_PALETTES[idx % FASHION_PALETTES.length],
-                    materials: ["100% Normandy Flax Linen", "Handwoven Aso-Oke"],
-                    fit: "Relaxed tailored silhouette with comfortable drape",
+                    sizes: (meta.fashionMeta?.sizes || (typeof meta.sizes === "string" ? meta.sizes.split(",").map((s: string) => s.trim()) : meta.sizes) || ["XS", "S", "M", "L", "XL", "Bespoke Cut"]),
+                    colors: (meta.fashionMeta?.colors || (typeof meta.colors === "string" ? meta.colors.split(",").map((c: string) => ({ name: c.trim(), hex: "#111111" })) : meta.colors) || FASHION_PALETTES[idx % FASHION_PALETTES.length]),
+                    prints: (meta.fashionMeta?.prints || (typeof meta.prints === "string" ? meta.prints.split(",").map((p: string) => p.trim()) : meta.prints) || []),
+                    materials: meta.material ? [meta.material] : ["100% Normandy Flax Linen", "Handwoven Aso-Oke"],
+                    fit: meta.fit || "Relaxed tailored silhouette with comfortable drape",
                     careInstructions: "Specialist dry clean or delicate cold hand wash.",
                     sizeGuide: [
                       { size: "S", chest: "36 - 38 in", waist: "30 - 32 in", hips: "36 - 38 in" },
@@ -218,7 +224,7 @@ export async function getStorefrontProducts(
                     ],
                   }
                 : undefined,
-              variants: [],
+              variants: Array.isArray(meta.variants) ? meta.variants : [],
               tags: [r.category || (isFashion ? "Fashion" : "General"), "Bespoke"],
             };
           });

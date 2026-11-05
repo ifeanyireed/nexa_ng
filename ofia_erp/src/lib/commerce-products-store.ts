@@ -105,17 +105,29 @@ function mapAttributesToVerticalMeta(vertical: VerticalKey, attrs: Record<string
         inspectionHighlights: ["Engine diagnostic passed", "Original paintwork"],
       };
     case "fashion":
+      const sizes = typeof attrs.sizes === "string"
+        ? attrs.sizes.split(",").map((s) => s.trim()).filter(Boolean)
+        : Array.isArray(attrs.sizes) ? attrs.sizes : ["S", "M", "L", "XL"];
+      const colors = typeof attrs.colors === "string"
+        ? attrs.colors.split(",").map((c) => ({ name: c.trim(), hex: "#111111" })).filter((c) => c.name)
+        : Array.isArray(attrs.colors) ? attrs.colors : [{ name: "Default", hex: "#111111" }];
+      const prints = typeof attrs.prints === "string"
+        ? attrs.prints.split(",").map((p) => p.trim()).filter(Boolean)
+        : Array.isArray(attrs.prints) ? attrs.prints : [];
+
       return {
-        sizes: typeof attrs.sizes === "string" ? attrs.sizes.split(",").map((s) => s.trim()) : attrs.sizes || ["S", "M", "L", "XL"],
-        colors: typeof attrs.colors === "string" ? attrs.colors.split(",").map((c) => ({ name: c.trim(), hex: "#111111" })) : [{ name: "Default", hex: "#111111" }],
-        materials: typeof attrs.material === "string" ? [attrs.material] : ["Sustainable Fabric"],
+        sizes,
+        colors,
+        prints,
+        materials: typeof attrs.material === "string" ? [attrs.material] : ["Sustainable African Heritage Fabric"],
         fit: attrs.fit || "Tailored Contemporary Fit",
-        careInstructions: "Specialist dry clean recommended.",
+        careInstructions: "Specialist dry clean or gentle hand wash recommended.",
         sizeGuide: [
           { size: "S", chest: "36 in", waist: "30 in", hips: "38 in" },
           { size: "M", chest: "38 in", waist: "32 in", hips: "40 in" },
           { size: "L", chest: "40 in", waist: "34 in", hips: "42 in" },
           { size: "XL", chest: "44 in", waist: "36 in", hips: "44 in" },
+          { size: "2XL", chest: "48 in", waist: "40 in", hips: "48 in" },
         ],
       };
     case "food":
@@ -261,7 +273,12 @@ export async function getErpProducts(tenantSlug?: string, vertical?: VerticalKey
           const effectiveVertical: VerticalKey = (vertical || tenantVertical || "retail") as VerticalKey;
           const verticalFallbacks = VERTICAL_EDITORIAL_FALLBACK_IMAGES[effectiveVertical] || VERTICAL_EDITORIAL_FALLBACK_IMAGES.retail;
 
-          return rows.map((r: any, idx: number) => {
+          const masterRows = rows.filter((r: any) => {
+            const meta = (typeof r.metadata === "string" ? JSON.parse(r.metadata || "{}") : r.metadata) || {};
+            return !meta.parentId;
+          });
+
+          return masterRows.map((r: any, idx: number) => {
             const meta = (typeof r.metadata === "string" ? JSON.parse(r.metadata || "{}") : r.metadata) || {};
             const imgs: string[] = Array.isArray(meta.images) && meta.images.length > 0
               ? meta.images.filter(Boolean)
@@ -282,6 +299,7 @@ export async function getErpProducts(tenantSlug?: string, vertical?: VerticalKey
               sku: r.sku,
               status: r.status === "OUT_OF_STOCK" ? "OUT_OF_STOCK" : "ACTIVE",
               attributes: meta.attributes || (meta.image ? meta : {}),
+              variants: Array.isArray(meta.variants) ? meta.variants : [],
             };
           });
         }
@@ -346,7 +364,10 @@ export async function saveErpProduct(item: Partial<CommerceProductItem> & { tena
   const id = item.id || `PROD-${Date.now().toString().slice(-6)}`;
   const title = item.name || "Untitled Item";
   const numPrice = Number(item.price) || 0;
-  const stock = Number(item.stock) || 5;
+  const hasVariants = Array.isArray(item.variants) && item.variants.length > 0;
+  const stock = hasVariants
+    ? item.variants!.reduce((sum, v) => sum + (Number(v.stock) || 0), 0)
+    : Number(item.stock) || 5;
   const sku = item.sku || `SKU-${cleanSlug.toUpperCase().slice(0, 4)}-${Date.now().toString().slice(-4)}`;
   const attrs = item.attributes || {};
   const verticalMetaKey = `${item.vertical === "home-living" ? "homeLiving" : item.vertical}Meta`;
@@ -370,8 +391,11 @@ export async function saveErpProduct(item: Partial<CommerceProductItem> & { tena
         ...attrs,
         image: primaryImage,
         images: finalImagesList,
+        variants: item.variants || [],
+        fashionMeta: item.vertical === "fashion" ? mapAttributesToVerticalMeta("fashion", attrs) : undefined,
       };
 
+      // 1a. Upsert parent master product record
       await sql`
         INSERT INTO shop_inventory (
           id, tenant_slug, tenant_id, product_id, sku, product_name, category,
@@ -393,6 +417,43 @@ export async function saveErpProduct(item: Partial<CommerceProductItem> & { tena
           metadata = EXCLUDED.metadata,
           updated_at = NOW();
       `;
+
+      // 1b. Upsert discrete SKU matrix variant inventory records for checkout synchronization
+      if (hasVariants) {
+        for (const v of item.variants!) {
+          const varSku = v.sku || `${sku}-${(v.size || "STD").toUpperCase()}`;
+          const varPrice = Number(v.price) || numPrice;
+          const varStock = Number(v.stock) || 0;
+          const varTitle = `${title} (${[v.print, v.color, v.size].filter(Boolean).join(" · ")})`;
+          const varMeta = {
+            ...v,
+            parentId: id,
+            parentSku: sku,
+            image: v.image || primaryImage,
+          };
+
+          await sql`
+            INSERT INTO shop_inventory (
+              id, tenant_slug, tenant_id, product_id, sku, product_name, category,
+              warehouse, current_stock, min_stock, unit_cost, unit_price, status, supplier,
+              image_url, metadata, created_at, updated_at
+            ) VALUES (
+              ${v.id || `${id}-${varSku}`}, ${cleanSlug}, ${`org-${cleanSlug}`}, ${id}, ${varSku},
+              ${varTitle}, ${item.category || "General"}, 'Main Warehouse', ${varStock}, 1,
+              ${Math.round(varPrice * 0.7)}, ${varPrice}, ${varStock > 0 ? "IN_STOCK" : "OUT_OF_STOCK"}, 'Direct Supplier',
+              ${v.image || primaryImage}, ${JSON.stringify(varMeta)}::jsonb, NOW(), NOW()
+            )
+            ON CONFLICT (tenant_slug, sku) DO UPDATE SET
+              product_name = EXCLUDED.product_name,
+              current_stock = EXCLUDED.current_stock,
+              unit_price = EXCLUDED.unit_price,
+              status = EXCLUDED.status,
+              image_url = EXCLUDED.image_url,
+              metadata = EXCLUDED.metadata,
+              updated_at = NOW();
+          `;
+        }
+      }
     }
   } catch (err: any) {
     console.warn("[ERPCommerceProductsStore] Neon saveProduct warning:", err.message);
@@ -422,6 +483,7 @@ export async function saveErpProduct(item: Partial<CommerceProductItem> & { tena
     sku: sku,
     status: item.status || (stock > 0 ? "ACTIVE" : "OUT_OF_STOCK"),
     attributes: attrs,
+    variants: item.variants || [],
     [verticalMetaKey]: mapAttributesToVerticalMeta(item.vertical, attrs),
     updatedAt: new Date().toISOString(),
   };

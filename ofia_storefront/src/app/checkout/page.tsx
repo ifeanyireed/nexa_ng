@@ -75,13 +75,22 @@ export default function CheckoutPage() {
       items: items.map((i) => ({
         id: i.id,
         productId: i.productId,
+        sku: i.sku,
         title: i.title,
         price: i.price,
         quantity: i.quantity,
         image: i.image,
         selectedVariant: i.selectedVariant,
+        selectedPrint: i.selectedPrint,
+        selectedColor: i.selectedColor,
+        selectedSize: i.selectedSize,
       })),
-      itemsSummary: items.map((i) => `${i.title} (x${i.quantity})`).join(", "),
+      itemsSummary: items
+        .map((i) => {
+          const variantTags = [i.selectedPrint, i.selectedColor, i.selectedSize].filter(Boolean).join(" · ");
+          return `${i.title}${variantTags ? ` (${variantTags})` : ""} (x${i.quantity})`;
+        })
+        .join(", "),
       itemCount: items.reduce((acc, i) => acc + i.quantity, 0),
       totalAmount: `₦${grandTotal.toLocaleString()}`,
       rawAmount: grandTotal,

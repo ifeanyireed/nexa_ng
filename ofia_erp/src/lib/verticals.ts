@@ -43,10 +43,11 @@ export const VERTICAL_DEFINITIONS: Record<VerticalKey, VerticalDefinition> = {
     serviceTerm: "Tailoring & Alterations",
     storefrontPath: "/fashion",
     attributeFields: [
-      { key: "sizes", label: "Available Sizes", type: "tags", placeholder: "e.g. XS, S, M, L, XL, XXL" },
+      { key: "prints", label: "African Fabric Prints", type: "tags", placeholder: "e.g. Ankara Wax, Aso-Oke, Adire Tie-Dye, Kente" },
       { key: "colors", label: "Color Palette", type: "tags", placeholder: "e.g. Midnight Black, Emerald Green, Ivory" },
-      { key: "material", label: "Fabric & Material", type: "text", placeholder: "e.g. 100% Egyptian Cotton, Raw Silk" },
-      { key: "season", label: "Collection / Season", type: "select", options: ["Spring/Summer 2026", "Fall/Winter 2026", "All-Season Core", "Bridal & Ceremonial"] },
+      { key: "sizes", label: "Available Sizes", type: "tags", placeholder: "e.g. XS, S, M, L, XL, XXL" },
+      { key: "material", label: "Fabric & Material", type: "text", placeholder: "e.g. 100% Egyptian Cotton, Raw Silk, Guinea Brocade" },
+      { key: "season", label: "Collection / Season", type: "select", options: ["Spring/Summer 2026", "Fall/Winter 2026", "All-Season Core", "Bridal & Ceremonial", "Harmattan Capsule"] },
     ],
   },
   cars: {
@@ -279,6 +280,20 @@ export function detectTenantVertical(
   return "retail";
 }
 
+export interface ProductVariant {
+  id: string;
+  sku: string;
+  name: string;
+  size?: string;
+  color?: string;
+  colorHex?: string;
+  print?: string;
+  price?: number;
+  stock: number;
+  inStock?: boolean;
+  image?: string;
+}
+
 export interface CommerceProductItem {
   id: string;
   name: string;
@@ -292,6 +307,7 @@ export interface CommerceProductItem {
   sku: string;
   status: "ACTIVE" | "LOW_STOCK" | "OUT_OF_STOCK" | "DRAFT";
   attributes: Record<string, any>;
+  variants?: ProductVariant[];
 }
 
 export interface CommerceServiceItem {

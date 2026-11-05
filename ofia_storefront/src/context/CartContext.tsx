@@ -47,8 +47,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const existingIndex = prev.findIndex(
         (i) =>
           i.productId === newItem.productId &&
+          (newItem.sku ? i.sku === newItem.sku : true) &&
           i.selectedColor === newItem.selectedColor &&
           i.selectedSize === newItem.selectedSize &&
+          i.selectedPrint === newItem.selectedPrint &&
           i.selectedPortion === newItem.selectedPortion
       );
 

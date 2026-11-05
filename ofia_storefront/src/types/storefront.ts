@@ -40,15 +40,19 @@ export interface ProductVariant {
   sku?: string;
   price?: number;
   inStock: boolean;
+  color?: string;
   colorHex?: string;
   size?: string;
   storage?: string;
   material?: string;
   portion?: string;
+  print?: string;
+  stock?: number;
 }
 
 export interface Product {
   id: string;
+  sku?: string;
   storeSlug: string;
   vertical: VerticalType;
   title: string;
@@ -72,6 +76,7 @@ export interface Product {
   fashionMeta?: {
     sizes: string[];
     colors: Array<{ name: string; hex: string }>;
+    prints?: string[];
     materials: string[];
     fit: string;
     careInstructions: string;
@@ -217,6 +222,7 @@ export interface StoreService {
 export interface CartItem {
   id: string;
   productId: string;
+  sku?: string;
   title: string;
   price: number;
   image: string;
@@ -225,6 +231,7 @@ export interface CartItem {
   selectedVariant?: string;
   selectedColor?: string;
   selectedSize?: string;
+  selectedPrint?: string;
   selectedPortion?: string;
   selectedAddOns?: string[];
   specialInstructions?: string;

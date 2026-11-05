@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
@@ -42,6 +42,9 @@ export default function FashionProductDetailPage() {
     MOCK_PRODUCTS[0];
 
   const [selectedImage, setSelectedImage] = useState(0);
+  const [selectedPrint, setSelectedPrint] = useState(
+    product.fashionMeta?.prints?.[0] || ""
+  );
   const [selectedColor, setSelectedColor] = useState(
     product.fashionMeta?.colors[0]?.name || "Raw Sandstone"
   );
@@ -51,16 +54,34 @@ export default function FashionProductDetailPage() {
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [addedSuccess, setAddedSuccess] = useState(false);
 
+  // Find exact SKU matrix variant match (Print + Color + Size)
+  const matchingVariant = useMemo(() => {
+    if (!product.variants || product.variants.length === 0) return null;
+    return product.variants.find((v) => {
+      const matchSize = !v.size || v.size === selectedSize;
+      const matchColor = !v.color || v.color === selectedColor;
+      const matchPrint = !v.print || v.print === selectedPrint;
+      return matchSize && matchColor && matchPrint;
+    });
+  }, [product.variants, selectedSize, selectedColor, selectedPrint]);
+
+  const effectivePrice = matchingVariant?.price || product.price;
+  const isVariantOutOfStock = matchingVariant
+    ? (matchingVariant.stock !== undefined && matchingVariant.stock <= 0)
+    : !product.inStock;
+
   const handleAddToCart = () => {
     addToCart({
       productId: product.id,
+      sku: matchingVariant?.sku || product.sku,
       title: product.title,
-      price: product.price,
+      price: effectivePrice,
       image: product.images[selectedImage] || product.images[0],
       quantity: 1,
       vertical: "fashion",
       selectedColor,
       selectedSize,
+      selectedPrint: selectedPrint || undefined,
     });
 
     setAddedSuccess(true);
@@ -135,18 +156,49 @@ export default function FashionProductDetailPage() {
 
               <div className="flex items-baseline gap-3 mt-4">
                 <span className="text-2xl font-bold text-zinc-900">
-                  ₦{product.price.toLocaleString()}
+                  ₦{effectivePrice.toLocaleString()}
                 </span>
                 {product.originalPrice && (
                   <span className="text-sm text-stone-400 line-through">
                     ₦{product.originalPrice.toLocaleString()}
                   </span>
                 )}
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  In Stock & Ready
-                </span>
+                {isVariantOutOfStock ? (
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                    Sold Out for this Variant
+                  </span>
+                ) : (
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    In Stock & Ready
+                  </span>
+                )}
               </div>
             </div>
+
+            {/* AFRICAN FABRIC PRINT SELECTION */}
+            {product.fashionMeta?.prints && product.fashionMeta.prints.length > 0 && (
+              <div className="space-y-2 pt-4 border-t border-stone-100">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-zinc-900">African Fabric Print:</span>
+                  <span className="font-semibold text-amber-700">{selectedPrint || "Select Print"}</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {product.fashionMeta.prints.map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setSelectedPrint(p)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                        selectedPrint === p
+                          ? "bg-amber-700 text-white border-amber-700 shadow-sm"
+                          : "bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100"
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* COLOR SELECTION */}
             {product.fashionMeta?.colors && (
@@ -222,10 +274,19 @@ export default function FashionProductDetailPage() {
             <div className="space-y-3 pt-4 border-t border-stone-100">
               <button
                 onClick={handleAddToCart}
-                className="w-full py-4 rounded-full bg-amber-700 hover:bg-amber-800 text-white font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                disabled={isVariantOutOfStock}
+                className={`w-full py-4 rounded-full font-bold text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  isVariantOutOfStock
+                    ? "bg-stone-300 text-stone-500 cursor-not-allowed"
+                    : "bg-amber-700 hover:bg-amber-800 text-white active:scale-98"
+                }`}
               >
                 <ShoppingBag className="w-4 h-4" />
-                <span>Add to Bag ({selectedSize} · {selectedColor})</span>
+                <span>
+                  {isVariantOutOfStock
+                    ? `Sold Out (${[selectedPrint, selectedColor, selectedSize].filter(Boolean).join(" · ")})`
+                    : `Add to Bag (${[selectedPrint, selectedColor, selectedSize].filter(Boolean).join(" · ")})`}
+                </span>
               </button>
 
               {addedSuccess && (

@@ -873,8 +873,8 @@ export default function QuotationsPage() {
           onClose={() => setIsCreateModalOpen(false)}
           title="Create New Commercial Quotation Proposal"
           subtitle="Generate itemized quotations for leads and negotiations with automatic deal synchronization."
-          maxWidth="614px"
-          className="max-w-[614px]"
+          maxWidth="800px"
+          className="max-w-[800px] !max-w-[800px] w-full"
         >
           <form onSubmit={handleCreateQuotation} className="space-y-4 max-h-[80vh] overflow-y-auto pr-1">
             {/* LINK DEAL OR LEAD */}

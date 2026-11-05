@@ -148,6 +148,7 @@ export interface QuotationLineItem {
   description: string;
   detail?: string;
   distance?: number;
+  additionalText?: string;
   quantity: number;
   unitPrice: number;
   discountPercent?: number;
@@ -158,6 +159,7 @@ export interface QuotationLineItem {
 export interface QuotationColumnTitles {
   description?: string;
   secondary?: string;
+  additionalText?: string;
   quantity?: string;
   unitPrice?: string;
   amount?: string;

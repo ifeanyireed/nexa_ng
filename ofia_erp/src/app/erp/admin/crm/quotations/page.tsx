@@ -89,45 +89,47 @@ export default function QuotationsPage() {
   const [columnTitles, setColumnTitles] = useState<QuotationColumnTitles>({
     description: "Item Description",
     secondary: "",
+    additionalText: "",
     quantity: "Qty",
     unitPrice: "Unit Price",
     amount: "Total (NGN)",
   });
   const [isConfiguringColumns, setIsConfiguringColumns] = useState(false);
 
-  // Column 2 (secondary multiplier, e.g. Distance (KM)) active check
+  // Column active checks
   const hasSecondaryCol = Boolean(columnTitles.secondary && columnTitles.secondary.trim().length > 0);
+  const hasAdditionalTextCol = Boolean(columnTitles.additionalText && columnTitles.additionalText.trim().length > 0);
 
   const COLUMN_PRESETS: { label: string; icon: React.ReactNode; titles: QuotationColumnTitles }[] = [
     {
       label: "Standard Items",
       icon: <Package className="w-3.5 h-3.5" />,
-      titles: { description: "Item Description", secondary: "", quantity: "Qty", unitPrice: "Unit Price", amount: "Total (NGN)" },
+      titles: { description: "Item Description", secondary: "", additionalText: "", quantity: "Qty", unitPrice: "Unit Price", amount: "Total (NGN)" },
     },
     {
       label: "Transportation",
       icon: <Truck className="w-3.5 h-3.5" />,
-      titles: { description: "Routes", secondary: "Distance (KM)", quantity: "Trips", unitPrice: "Rate", amount: "Total" },
+      titles: { description: "Routes", secondary: "Distance (KM)", additionalText: "Vehicle / Cargo Details", quantity: "Trips", unitPrice: "Rate", amount: "Total" },
     },
     {
       label: "Services & Hours",
       icon: <Clock className="w-3.5 h-3.5" />,
-      titles: { description: "Scope of Work / Deliverable", secondary: "", quantity: "Hours", unitPrice: "Hourly Rate", amount: "Total (NGN)" },
+      titles: { description: "Scope of Work / Deliverable", secondary: "", additionalText: "Specifications / Milestones", quantity: "Hours", unitPrice: "Hourly Rate", amount: "Total (NGN)" },
     },
     {
       label: "Consulting & Days",
       icon: <Calendar className="w-3.5 h-3.5" />,
-      titles: { description: "Milestone / Deliverable", secondary: "", quantity: "Days", unitPrice: "Daily Rate", amount: "Total (NGN)" },
+      titles: { description: "Milestone / Deliverable", secondary: "", additionalText: "Lead Consultant / Role", quantity: "Days", unitPrice: "Daily Rate", amount: "Total (NGN)" },
     },
     {
       label: "Training & Academy",
       icon: <GraduationCap className="w-3.5 h-3.5" />,
-      titles: { description: "Course / Training Module", secondary: "", quantity: "Participants / Seats", unitPrice: "Tuition per Seat", amount: "Total (NGN)" },
+      titles: { description: "Course / Training Module", secondary: "", additionalText: "Target Audience / Level", quantity: "Participants / Seats", unitPrice: "Tuition per Seat", amount: "Total (NGN)" },
     },
     {
       label: "Retainer & Coverage",
       icon: <Repeat className="w-3.5 h-3.5" />,
-      titles: { description: "Service Plan / Coverage", secondary: "", quantity: "Duration (Months)", unitPrice: "Monthly Fee", amount: "Total (NGN)" },
+      titles: { description: "Service Plan / Coverage", secondary: "", additionalText: "SLA / Support Window", quantity: "Duration (Months)", unitPrice: "Monthly Fee", amount: "Total (NGN)" },
     },
   ];
 
@@ -228,6 +230,7 @@ export default function QuotationsPage() {
       {
         id: `item-${Date.now()}`,
         description: "",
+        additionalText: "",
         distance: hasSecondaryCol ? 1 : undefined,
         detail: hasSecondaryCol ? "1" : "",
         quantity: 1,
@@ -368,6 +371,7 @@ export default function QuotationsPage() {
         {
           id: "item-preview-1",
           description: columnTitles.secondary ? "Sample Logistics Route (Lagos - Abuja)" : "Quotation Line Item",
+          additionalText: columnTitles.additionalText ? "30-Ton Flatbed Truck" : undefined,
           distance: columnTitles.secondary ? 750 : undefined,
           detail: columnTitles.secondary ? "750" : undefined,
           quantity: 1,
@@ -772,6 +776,23 @@ export default function QuotationsPage() {
                             <span>PDF</span>
                           </button>
 
+                          {/* PRINT QUOTATION */}
+                          <button
+                            onClick={() =>
+                              downloadQuotationPdf(q, {
+                                displayName: tenantDisplayName,
+                                domain: q.senderUrl || q.columnTitles?.senderUrl || activeTenant?.domain,
+                                ownerEmail: q.senderEmail || q.columnTitles?.senderEmail || activeTenant?.ownerEmail,
+                                logo: tenantDisplayLogo,
+                              })
+                            }
+                            title="Print Official Quotation"
+                            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-slate-800 hover:border-slate-400/40 transition-colors cursor-pointer"
+                          >
+                            <Printer className="w-3.5 h-3.5 text-slate-600" />
+                            <span>Print</span>
+                          </button>
+
                           {/* SEND QUOTE */}
                           {q.status === "DRAFT" && (
                             <button
@@ -1059,6 +1080,7 @@ export default function QuotationsPage() {
                           const isActive =
                             columnTitles.description === p.titles.description &&
                             (columnTitles.secondary || "") === (p.titles.secondary || "") &&
+                            (columnTitles.additionalText || "") === (p.titles.additionalText || "") &&
                             columnTitles.quantity === p.titles.quantity &&
                             columnTitles.unitPrice === p.titles.unitPrice &&
                             columnTitles.amount === p.titles.amount;
@@ -1078,6 +1100,7 @@ export default function QuotationsPage() {
                                       return {
                                         ...item,
                                         description: isGenericDefault ? "Lagos (Apapa) – Abuja Industrial Hub" : item.description,
+                                        additionalText: item.additionalText || "30-Ton Flatbed Truck",
                                         distance: dist,
                                         detail: String(dist),
                                         quantity: trips,
@@ -1101,11 +1124,11 @@ export default function QuotationsPage() {
                         })}
                       </div>
 
-                      {/* 5 Editable Column Inputs */}
-                      <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 pt-1">
+                      {/* 6 Editable Column Inputs */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 pt-1">
                         <div>
                           <label className="block text-[10px] font-black uppercase text-[var(--nexa-text-muted)] mb-1">
-                            Column 1 (Description / Route)
+                            Col 1 (Description)
                           </label>
                           <input
                             type="text"
@@ -1116,8 +1139,20 @@ export default function QuotationsPage() {
                           />
                         </div>
                         <div>
+                          <label className="block text-[10px] font-black uppercase text-[#1A56DB] mb-1">
+                            Col 2 (Additional Text)
+                          </label>
+                          <input
+                            type="text"
+                            value={columnTitles.additionalText || ""}
+                            onChange={(e) => setColumnTitles((prev) => ({ ...prev, additionalText: e.target.value }))}
+                            className="w-full px-2.5 py-1.5 bg-[var(--nexa-bg-base)] border border-[#1A56DB]/40 rounded-lg text-xs font-semibold text-[var(--nexa-text-primary)] focus:outline-none focus:ring-1 focus:ring-[#1A56DB]"
+                            placeholder="Vehicle / Notes (Optional)"
+                          />
+                        </div>
+                        <div>
                           <label className="block text-[10px] font-black uppercase text-[var(--nexa-text-muted)] mb-1">
-                            Column 2 (Distance (KM) / Spec)
+                            Col 3 (Distance / Multiplier)
                           </label>
                           <input
                             type="text"
@@ -1129,7 +1164,7 @@ export default function QuotationsPage() {
                         </div>
                         <div>
                           <label className="block text-[10px] font-black uppercase text-[var(--nexa-text-muted)] mb-1">
-                            Column 3 (Trips / Multiplier)
+                            Col 4 (Trips / Qty)
                           </label>
                           <input
                             type="text"
@@ -1141,7 +1176,7 @@ export default function QuotationsPage() {
                         </div>
                         <div>
                           <label className="block text-[10px] font-black uppercase text-[var(--nexa-text-muted)] mb-1">
-                            Column 4 (Rate / Price)
+                            Col 5 (Rate / Price)
                           </label>
                           <input
                             type="text"
@@ -1153,7 +1188,7 @@ export default function QuotationsPage() {
                         </div>
                         <div>
                           <label className="block text-[10px] font-black uppercase text-[var(--nexa-text-muted)] mb-1">
-                            Column 5 (Total)
+                            Col 6 (Total)
                           </label>
                           <input
                             type="text"
@@ -1168,13 +1203,32 @@ export default function QuotationsPage() {
                   )}
 
                   {/* TABLE COLUMN HEADER ROW */}
-                  {hasSecondaryCol ? (
+                  {hasSecondaryCol && hasAdditionalTextCol ? (
+                    <div className="grid grid-cols-12 gap-2 items-center px-2 py-1 bg-[var(--nexa-bg-surface)] rounded-lg text-[10px] font-black uppercase text-[var(--nexa-text-muted)] tracking-wider">
+                      <div className="col-span-3">{columnTitles.description || "Routes"}</div>
+                      <div className="col-span-2">{columnTitles.additionalText || "Vehicle / Spec"}</div>
+                      <div className="col-span-2 text-center">{columnTitles.secondary || "Distance (KM)"}</div>
+                      <div className="col-span-1 text-center">{columnTitles.quantity || "Trips"}</div>
+                      <div className="col-span-2 text-right">{columnTitles.unitPrice || "Rate"}</div>
+                      <div className="col-span-1 text-right">{columnTitles.amount || "Total"}</div>
+                      <div className="col-span-1" />
+                    </div>
+                  ) : hasSecondaryCol ? (
                     <div className="grid grid-cols-12 gap-2 items-center px-2 py-1 bg-[var(--nexa-bg-surface)] rounded-lg text-[10px] font-black uppercase text-[var(--nexa-text-muted)] tracking-wider">
                       <div className="col-span-3">{columnTitles.description || "Routes"}</div>
                       <div className="col-span-2 text-center">{columnTitles.secondary || "Distance (KM)"}</div>
                       <div className="col-span-2 text-center">{columnTitles.quantity || "Trips"}</div>
                       <div className="col-span-2 text-center">{columnTitles.unitPrice || "Rate"}</div>
                       <div className="col-span-2 text-right">{columnTitles.amount || "Total"}</div>
+                      <div className="col-span-1" />
+                    </div>
+                  ) : hasAdditionalTextCol ? (
+                    <div className="grid grid-cols-12 gap-2 items-center px-2 py-1 bg-[var(--nexa-bg-surface)] rounded-lg text-[10px] font-black uppercase text-[var(--nexa-text-muted)] tracking-wider">
+                      <div className="col-span-4">{columnTitles.description || "Item Description"}</div>
+                      <div className="col-span-3">{columnTitles.additionalText || "Notes / Specification"}</div>
+                      <div className="col-span-1 text-center">{columnTitles.quantity || "Qty"}</div>
+                      <div className="col-span-2 text-right">{columnTitles.unitPrice || "Unit Price"}</div>
+                      <div className="col-span-1 text-right">{columnTitles.amount || "Total"}</div>
                       <div className="col-span-1" />
                     </div>
                   ) : (
@@ -1190,7 +1244,79 @@ export default function QuotationsPage() {
                   <div className="space-y-2">
                     {lineItems.map((item, index) => (
                       <div key={item.id} className="grid grid-cols-12 gap-2 items-center bg-[var(--nexa-bg-card)] p-2 rounded-lg border border-[var(--nexa-border)] text-xs">
-                        {hasSecondaryCol ? (
+                        {hasSecondaryCol && hasAdditionalTextCol ? (
+                          <>
+                            <div className="col-span-3">
+                              <input
+                                type="text"
+                                placeholder={columnTitles.description || "Route (e.g. Lagos - Abuja)"}
+                                value={item.description}
+                                onChange={(e) => handleUpdateLineItem(item.id, "description", e.target.value)}
+                                className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs"
+                                required
+                              />
+                            </div>
+                            <div className="col-span-2">
+                              <input
+                                type="text"
+                                placeholder={columnTitles.additionalText || "Vehicle / Cargo Details"}
+                                value={item.additionalText || ""}
+                                onChange={(e) => handleUpdateLineItem(item.id, "additionalText", e.target.value)}
+                                className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs"
+                              />
+                            </div>
+                            <div className="col-span-2">
+                              <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                placeholder={columnTitles.secondary || "Distance (KM)"}
+                                value={item.distance !== undefined && item.distance !== null ? (item.distance === 0 ? "" : item.distance) : (item.detail || "")}
+                                onChange={(e) => {
+                                  const raw = e.target.value;
+                                  const parsed = raw === "" ? 0 : parseInt(raw, 10);
+                                  handleUpdateLineItem(item.id, "distance", isNaN(parsed) ? 0 : parsed);
+                                }}
+                                className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-center"
+                                required
+                              />
+                            </div>
+                            <div className="col-span-1">
+                              <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                placeholder={columnTitles.quantity || "Trips"}
+                                value={item.quantity !== undefined && item.quantity !== null ? (item.quantity === 0 ? "" : item.quantity) : 1}
+                                onChange={(e) => {
+                                  const raw = e.target.value;
+                                  const parsed = raw === "" ? 0 : parseInt(raw, 10);
+                                  handleUpdateLineItem(item.id, "quantity", isNaN(parsed) || parsed < 1 ? 1 : parsed);
+                                }}
+                                className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-center"
+                                required
+                              />
+                            </div>
+                            <div className="col-span-2">
+                              <input
+                                type="number"
+                                min="0"
+                                placeholder={`${columnTitles.unitPrice || "Rate"} ₦`}
+                                value={item.unitPrice !== undefined && item.unitPrice !== null ? (item.unitPrice === 0 ? "" : item.unitPrice) : ""}
+                                onChange={(e) => {
+                                  const raw = e.target.value;
+                                  const parsed = raw === "" ? 0 : Number(raw);
+                                  handleUpdateLineItem(item.id, "unitPrice", isNaN(parsed) ? 0 : parsed);
+                                }}
+                                className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-right"
+                                required
+                              />
+                            </div>
+                            <div className="col-span-1 font-mono font-bold text-right text-xs truncate">
+                              ₦{item.amount.toLocaleString()}
+                            </div>
+                          </>
+                        ) : hasSecondaryCol ? (
                           <>
                             <div className="col-span-3">
                               <input
@@ -1250,6 +1376,57 @@ export default function QuotationsPage() {
                               />
                             </div>
                             <div className="col-span-2 font-mono font-bold text-right text-xs">
+                              ₦{item.amount.toLocaleString()}
+                            </div>
+                          </>
+                        ) : hasAdditionalTextCol ? (
+                          <>
+                            <div className="col-span-4">
+                              <input
+                                type="text"
+                                placeholder={columnTitles.description || "Product / Service Description"}
+                                value={item.description}
+                                onChange={(e) => handleUpdateLineItem(item.id, "description", e.target.value)}
+                                className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs"
+                                required
+                              />
+                            </div>
+                            <div className="col-span-3">
+                              <input
+                                type="text"
+                                placeholder={columnTitles.additionalText || "Specification / Deliverable Details"}
+                                value={item.additionalText || ""}
+                                onChange={(e) => handleUpdateLineItem(item.id, "additionalText", e.target.value)}
+                                className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs"
+                              />
+                            </div>
+                            <div className="col-span-1">
+                              <input
+                                type="number"
+                                min="1"
+                                step="1"
+                                placeholder={columnTitles.quantity || "Qty"}
+                                value={item.quantity}
+                                onChange={(e) => {
+                                  const parsed = parseInt(e.target.value, 10);
+                                  handleUpdateLineItem(item.id, "quantity", isNaN(parsed) || parsed < 1 ? 1 : parsed);
+                                }}
+                                className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-center"
+                                required
+                              />
+                            </div>
+                            <div className="col-span-2">
+                              <input
+                                type="number"
+                                min="0"
+                                placeholder={`${columnTitles.unitPrice || "Unit Price"} ₦`}
+                                value={item.unitPrice}
+                                onChange={(e) => handleUpdateLineItem(item.id, "unitPrice", Number(e.target.value))}
+                                className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-right"
+                                required
+                              />
+                            </div>
+                            <div className="col-span-1 font-mono font-bold text-right text-xs truncate">
                               ₦{item.amount.toLocaleString()}
                             </div>
                           </>
@@ -1413,7 +1590,7 @@ export default function QuotationsPage() {
               )}
 
               {/* PRINTABLE LETTERHEAD */}
-              <div className="border border-[var(--nexa-border)] p-6 rounded-2xl bg-white text-slate-900 space-y-6 shadow-sm">
+              <div id="quotation-paper-area" className="border border-[var(--nexa-border)] p-6 rounded-2xl bg-white text-slate-900 space-y-6 shadow-sm">
                 {/* HEADER */}
                 <div className="flex justify-between items-start border-b border-slate-200 pb-4">
                   <div className="flex items-center gap-3">
@@ -1476,6 +1653,9 @@ export default function QuotationsPage() {
                     <tr>
                       <th className="py-2.5 px-3">#</th>
                       <th className="py-2.5 px-3">{previewQuote.columnTitles?.description || "Item Description"}</th>
+                      {previewQuote.columnTitles?.additionalText && (
+                        <th className="py-2.5 px-3">{previewQuote.columnTitles.additionalText}</th>
+                      )}
                       {previewQuote.columnTitles?.secondary && (
                         <th className="py-2.5 px-3 text-center">{previewQuote.columnTitles.secondary}</th>
                       )}
@@ -1489,6 +1669,9 @@ export default function QuotationsPage() {
                       <tr key={item.id}>
                         <td className="py-2.5 px-3 text-slate-400 font-mono">{idx + 1}</td>
                         <td className="py-2.5 px-3 font-medium text-slate-800">{item.description}</td>
+                        {previewQuote.columnTitles?.additionalText && (
+                          <td className="py-2.5 px-3 text-slate-600 font-normal">{item.additionalText || "—"}</td>
+                        )}
                         {previewQuote.columnTitles?.secondary && (
                           <td className="py-2.5 px-3 font-mono font-bold text-center text-slate-700">
                             {item.distance !== undefined && item.distance !== null
@@ -1565,6 +1748,22 @@ export default function QuotationsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <NexaButton
+                    variant="secondary"
+                    onClick={() => {
+                      if (previewQuote) {
+                        downloadQuotationPdf(previewQuote, {
+                          displayName: tenantDisplayName,
+                          domain: previewQuote.senderUrl || previewQuote.columnTitles?.senderUrl || senderUrl || activeTenant?.domain,
+                          ownerEmail: previewQuote.senderEmail || previewQuote.columnTitles?.senderEmail || senderEmail || activeTenant?.ownerEmail,
+                          logo: tenantDisplayLogo,
+                        });
+                      }
+                    }}
+                  >
+                    <Printer className="w-3.5 h-3.5 mr-1.5" />
+                    Print Quotation
+                  </NexaButton>
+                  <NexaButton
                     variant="primary"
                     onClick={() => {
                       if (previewQuote) {
@@ -1588,6 +1787,38 @@ export default function QuotationsPage() {
             </div>
           </NexaModal>
         )}
+
+        <style jsx global>{`
+          @media print {
+            body * {
+              visibility: hidden !important;
+            }
+            #quotation-paper-area,
+            #quotation-paper-area * {
+              visibility: visible !important;
+            }
+            #quotation-paper-area {
+              position: fixed !important;
+              left: 0 !important;
+              top: 0 !important;
+              width: 100% !important;
+              height: auto !important;
+              margin: 0 !important;
+              padding: 12mm 15mm !important;
+              border: none !important;
+              box-shadow: none !important;
+              background: #ffffff !important;
+              color: #0f172a !important;
+              z-index: 999999 !important;
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+            }
+            @page {
+              size: A4 portrait;
+              margin: 10mm;
+            }
+          }
+        `}</style>
       </div>
     </ErpAdminShell>
   );

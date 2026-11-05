@@ -39,6 +39,7 @@ import {
   CommerceServiceItem,
   CommerceBookingItem,
   VerticalKey,
+  getStorefrontUrl,
 } from "@/lib/verticals";
 import { VERTICAL_SPECIALISTS, SpecialistStaff } from "@/lib/vertical-specialists";
 
@@ -303,9 +304,7 @@ export default function VerticalServicesPage() {
     }
   };
 
-  const storefrontServiceUrl = `http://localhost:3000${currentVerticalDef.storefrontPath}${
-    activeTenant?.slug ? `?tenant=${activeTenant.slug}` : ""
-  }`;
+  const storefrontServiceUrl = getStorefrontUrl(verticalKey, activeTenant);
 
   return (
     <BusinessShell

@@ -25,11 +25,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Resolve tenant identity STRICTLY from host subdomain (*.ofia.ng / *.localhost:3005) or custom domain
-  // Query parameters (?tenant= / ?store= / ?slug=) are explicitly disabled for tenant routing
+  // 2. Resolve tenant identity from host subdomain, custom domain, or query parameter (?tenant= / ?store= / ?slug=)
+  const queryTenant =
+    request.nextUrl.searchParams.get("tenant") ||
+    request.nextUrl.searchParams.get("store") ||
+    request.nextUrl.searchParams.get("slug");
+  const cookieTenant = request.cookies.get("ofia_tenant_slug")?.value;
   const cookieVertical = request.cookies.get("ofia_tenant_vertical")?.value;
 
-  const { tenantSlug, source, domain, subdomain } = resolveTenantFromHostAndQuery(host);
+  const { tenantSlug, source, domain, subdomain } = resolveTenantFromHostAndQuery(
+    host,
+    queryTenant,
+    cookieTenant
+  );
 
   // 3. If no tenant is resolved from host (e.g. bare localhost:3005 or ofia.shop), serve platform landing page
   if (!tenantSlug) {

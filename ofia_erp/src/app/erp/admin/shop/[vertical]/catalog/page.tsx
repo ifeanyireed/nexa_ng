@@ -40,6 +40,7 @@ import {
   getDefaultProductsForVertical,
   CommerceProductItem,
   VerticalKey,
+  getStorefrontUrl,
 } from "@/lib/verticals";
 
 export default function VerticalCatalogPage() {
@@ -214,9 +215,7 @@ export default function VerticalCatalogPage() {
     return Array.from(set);
   }, [products]);
 
-  const storefrontCatalogUrl = `http://localhost:3000${currentVerticalDef.storefrontPath}${
-    activeTenant?.slug ? `?tenant=${activeTenant.slug}` : ""
-  }`;
+  const storefrontCatalogUrl = getStorefrontUrl(verticalKey, activeTenant);
 
   return (
     <BusinessShell

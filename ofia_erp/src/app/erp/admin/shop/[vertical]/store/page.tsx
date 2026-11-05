@@ -36,6 +36,7 @@ import { useActiveTenant } from "@/lib/tenant-context";
 import {
   VERTICAL_DEFINITIONS,
   VerticalKey,
+  getStorefrontUrl,
 } from "@/lib/verticals";
 
 type StudioTab = "branding" | "hero" | "badges" | "footer" | "policies";
@@ -225,9 +226,7 @@ export default function VerticalStoreStudioPage() {
     }
   };
 
-  const storefrontLiveUrl = `http://localhost:3000${currentVerticalDef.storefrontPath}${
-    activeTenant?.slug ? `?tenant=${activeTenant.slug}` : ""
-  }`;
+  const storefrontLiveUrl = getStorefrontUrl(verticalKey, activeTenant);
 
   return (
     <BusinessShell

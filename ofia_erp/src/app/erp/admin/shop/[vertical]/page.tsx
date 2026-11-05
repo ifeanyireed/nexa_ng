@@ -36,6 +36,7 @@ import { useTenantProvisioning } from "@/lib/access-control";
 import {
   VERTICAL_DEFINITIONS,
   VerticalKey,
+  getStorefrontUrl,
 } from "@/lib/verticals";
 
 export default function VerticalShopDashboardPage() {
@@ -65,7 +66,7 @@ export default function VerticalShopDashboardPage() {
   const hasReferrals = isShopSubModuleProvisioned("referrals");
 
   const tenantSlug = activeTenant?.slug || (verticalKey === "fashion" ? "funmyclothing" : verticalKey === "cars" ? "neweratransports" : "reedbreed");
-  const storefrontUrl = `http://localhost:3000${verticalDef.storefrontPath}?tenant=${tenantSlug}`;
+  const storefrontUrl = getStorefrontUrl(verticalKey, activeTenant);
 
   const [stats, setStats] = useState({
     totalRevenue: "₦95,000",

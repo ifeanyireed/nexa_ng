@@ -54,9 +54,10 @@ export function StorefrontTenantProvider({
   const [handshake, setHandshake] = useState<TenantStorefrontHandshake | null>(() => {
     // If local studio cache exists on client, load for immediate reactivity
     if (typeof window !== "undefined") {
+      const queryTenant = new URLSearchParams(window.location.search).get("tenant") || new URLSearchParams(window.location.search).get("slug");
       const slug =
         initialTenantSlug ||
-        resolveTenantFromHostAndQuery(window.location.host).tenantSlug;
+        resolveTenantFromHostAndQuery(window.location.host, queryTenant).tenantSlug;
       if (slug) {
         try {
           const raw = localStorage.getItem(`tenant_storefront_config_${slug}`);
@@ -132,10 +133,11 @@ export function StorefrontTenantProvider({
   });
 
   const [isLoading, setIsLoading] = useState<boolean>(() => {
+    const queryTenant = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("tenant") || new URLSearchParams(window.location.search).get("slug") : null;
     const slug =
       initialTenantSlug ||
       (typeof window !== "undefined"
-        ? resolveTenantFromHostAndQuery(window.location.host).tenantSlug
+        ? resolveTenantFromHostAndQuery(window.location.host, queryTenant).tenantSlug
         : null);
     return Boolean(slug);
   });
@@ -148,7 +150,8 @@ export function StorefrontTenantProvider({
     let resolvedSlug: string | null = initialTenantSlug;
 
     if (!resolvedSlug && typeof window !== "undefined") {
-      const resolution = resolveTenantFromHostAndQuery(window.location.host);
+      const queryTenant = new URLSearchParams(window.location.search).get("tenant") || new URLSearchParams(window.location.search).get("slug");
+      const resolution = resolveTenantFromHostAndQuery(window.location.host, queryTenant);
       resolvedSlug = resolution.tenantSlug;
     }
 

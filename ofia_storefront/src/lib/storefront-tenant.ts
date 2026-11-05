@@ -85,7 +85,7 @@ export interface ResolvedTenantResolution {
  */
 export function resolveTenantFromHostAndQuery(
   host?: string | null,
-  _searchParamsTenant?: string | null, // Query parameter tenant routing removed per strict architecture
+  searchParamsTenant?: string | null,
   cookieTenant?: string | null
 ): ResolvedTenantResolution {
   if (host) {
@@ -113,6 +113,28 @@ export function resolveTenantFromHostAndQuery(
         };
       }
     }
+  }
+
+  // 3. Query param fallback (?tenant= / ?store= / ?slug=) for direct previews and development
+  const cleanQuery = (searchParamsTenant || "").toLowerCase().trim();
+  if (cleanQuery && !SYSTEM_RESERVED_SUBDOMAINS.has(cleanQuery)) {
+    return {
+      tenantSlug: cleanQuery,
+      source: "query",
+      subdomain: null,
+      domain: host ? host.split(":")[0].toLowerCase().trim() : null,
+    };
+  }
+
+  // 4. Cookie fallback
+  const cleanCookie = (cookieTenant || "").toLowerCase().trim();
+  if (cleanCookie && !SYSTEM_RESERVED_SUBDOMAINS.has(cleanCookie)) {
+    return {
+      tenantSlug: cleanCookie,
+      source: "cookie",
+      subdomain: null,
+      domain: host ? host.split(":")[0].toLowerCase().trim() : null,
+    };
   }
 
   return {

@@ -34,6 +34,9 @@ async function ensureCrmSubscribersTable(sql: any) {
   await sql`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS last_name VARCHAR(100) DEFAULT '';`;
   await sql`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS company VARCHAR(191) DEFAULT '';`;
   await sql`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS role VARCHAR(100) DEFAULT 'Subscriber';`;
+  await sql`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;`;
+  await sql`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS bounced_at TIMESTAMPTZ;`;
+  await sql`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS bounce_reason TEXT;`;
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_subscribers_tenant ON crm_email_subscribers (LOWER(tenant_slug));`;
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_subscribers_list ON crm_email_subscribers (list_id);`;
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_subscribers_email ON crm_email_subscribers (LOWER(email));`;
@@ -58,6 +61,42 @@ export async function GET(request: NextRequest) {
     const sql = await getTenantSql(tenantSlug);
     await ensureCrmSubscribersTable(sql);
 
+    // Auto-reconcile any delivery bounces recorded in blast recipients into subscriber status
+    try {
+      await sql`
+        UPDATE crm_email_subscribers s
+        SET status = 'BOUNCED',
+            bounced_at = COALESCE(s.bounced_at, NOW()),
+            bounce_reason = COALESCE(s.bounce_reason, r.error_message),
+            updated_at = NOW()
+        FROM crm_email_blast_recipients r
+        WHERE LOWER(s.tenant_slug) = ${tenantSlug}
+          AND s.status = 'SUBSCRIBED'
+          AND (s.id = r.subscriber_id OR LOWER(TRIM(s.email)) = LOWER(TRIM(r.email)))
+          AND r.status = 'FAILED'
+          AND (
+            r.error_message ILIKE '%rejected%' OR
+            r.error_message ILIKE '%lookup failure%' OR
+            r.error_message ILIKE '%user unknown%' OR
+            r.error_message ILIKE '%mailbox%' OR
+            r.error_message ILIKE '%bounce%' OR
+            r.error_message ILIKE '%undeliverable%' OR
+            r.error_message ILIKE '%550%' OR
+            r.error_message ILIKE '%551%' OR
+            r.error_message ILIKE '%552%' OR
+            r.error_message ILIKE '%553%' OR
+            r.error_message ILIKE '%554%' OR
+            r.error_message ILIKE '%450%' OR
+            r.error_message ILIKE '%451%' OR
+            r.error_message ILIKE '%452%' OR
+            r.error_message ILIKE '%enotfound%' OR
+            r.error_message ILIKE '%eai_again%'
+          );
+      `;
+    } catch (reconcileErr: any) {
+      console.warn("[CRM Subscribers GET] Auto-reconcile bounces warning:", reconcileErr.message);
+    }
+
     const rows = await sql`
       SELECT 
         id,
@@ -71,6 +110,8 @@ export async function GET(request: NextRequest) {
         COALESCE(phone, '') AS phone,
         COALESCE(linkedin_url, '') AS linkedin_url,
         COALESCE(status, 'SUBSCRIBED') AS status,
+        bounced_at,
+        bounce_reason,
         created_at
       FROM crm_email_subscribers
       WHERE list_id = ${listId.trim()} AND LOWER(tenant_slug) = ${tenantSlug}
@@ -89,6 +130,8 @@ export async function GET(request: NextRequest) {
       phone: r.phone || "",
       linkedinUrl: r.linkedin_url || "",
       status: r.status,
+      bouncedAt: r.bounced_at ? new Date(r.bounced_at).toISOString() : undefined,
+      bounceReason: r.bounce_reason || undefined,
       createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
     }));
 

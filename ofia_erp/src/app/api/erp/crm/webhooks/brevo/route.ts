@@ -98,20 +98,7 @@ export async function POST(request: Request) {
         customData = rawCustom;
       }
 
-      // 2. Resolve tenant slug
-      const tenantSlug = (
-        customData.tenantSlug ||
-        customData.tenant ||
-        fallbackTenant ||
-        ""
-      ).toLowerCase().trim();
-
-      if (!tenantSlug) {
-        console.warn("[Brevo Webhook] Skipped event without tenant context:", event.event, event.email);
-        continue;
-      }
-
-      // 3. Resolve blast ID from custom metadata, tags, or query param
+      // 2. Resolve blast ID from custom metadata, tags, or query param
       let blastId = (customData.blastId || "").trim();
       if (!blastId) {
         const rawTag = event.tag || (Array.isArray(event.tags) ? event.tags[0] : "");
@@ -120,7 +107,31 @@ export async function POST(request: Request) {
         }
       }
       if (!blastId) {
-        blastId = (url.searchParams.get("blastId") || "").trim();
+        blastId = (url.searchParams.get("blastId") || url.searchParams.get("blast_id") || "").trim();
+      }
+
+      // 3. Resolve tenant slug
+      let tenantSlug = (
+        customData.tenantSlug ||
+        customData.tenant ||
+        url.searchParams.get("tenant") ||
+        url.searchParams.get("tenant_slug") ||
+        fallbackTenant ||
+        ""
+      ).toLowerCase().trim();
+
+      // If tenant context fell back to "default", try resolving by subdomain
+      if ((!tenantSlug || tenantSlug === "default") && request.headers.get("host")) {
+        const hostParts = (request.headers.get("x-forwarded-host") || request.headers.get("host") || "").split(":")[0].split(".");
+        const sub = hostParts[0]?.toLowerCase().trim();
+        if (sub && !["www", "admin", "app", "api", "localhost", "ofia", "vercel"].includes(sub)) {
+          tenantSlug = sub;
+        }
+      }
+
+      if (!tenantSlug) {
+        console.warn("[Brevo Webhook] Skipped event without tenant context:", event.event, event.email);
+        continue;
       }
 
       const recipientId = (customData.recipientId || "").trim();

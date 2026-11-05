@@ -53,6 +53,48 @@ export async function GET(request: NextRequest) {
     const sql = await getTenantSql(tenantSlug);
     await ensureCrmListsTable(sql);
 
+    try {
+      await sql`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;`;
+      await sql`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS bounced_at TIMESTAMPTZ;`;
+      await sql`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS bounce_reason TEXT;`;
+    } catch {}
+
+    // Auto-reconcile any delivery bounces recorded in blast recipients into subscriber status
+    try {
+      await sql`
+        UPDATE crm_email_subscribers s
+        SET status = 'BOUNCED',
+            bounced_at = COALESCE(s.bounced_at, NOW()),
+            bounce_reason = COALESCE(s.bounce_reason, r.error_message),
+            updated_at = NOW()
+        FROM crm_email_blast_recipients r
+        WHERE LOWER(s.tenant_slug) = ${tenantSlug}
+          AND s.status = 'SUBSCRIBED'
+          AND (s.id = r.subscriber_id OR LOWER(TRIM(s.email)) = LOWER(TRIM(r.email)))
+          AND r.status = 'FAILED'
+          AND (
+            r.error_message ILIKE '%rejected%' OR
+            r.error_message ILIKE '%lookup failure%' OR
+            r.error_message ILIKE '%user unknown%' OR
+            r.error_message ILIKE '%mailbox%' OR
+            r.error_message ILIKE '%bounce%' OR
+            r.error_message ILIKE '%undeliverable%' OR
+            r.error_message ILIKE '%550%' OR
+            r.error_message ILIKE '%551%' OR
+            r.error_message ILIKE '%552%' OR
+            r.error_message ILIKE '%553%' OR
+            r.error_message ILIKE '%554%' OR
+            r.error_message ILIKE '%450%' OR
+            r.error_message ILIKE '%451%' OR
+            r.error_message ILIKE '%452%' OR
+            r.error_message ILIKE '%enotfound%' OR
+            r.error_message ILIKE '%eai_again%'
+          );
+      `;
+    } catch (reconcileErr: any) {
+      console.warn("[CRM Lists GET] Auto-reconcile bounces warning:", reconcileErr.message);
+    }
+
     const rows = await sql`
       SELECT 
         l.id,
@@ -68,7 +110,14 @@ export async function GET(request: NextRequest) {
           WHERE s.list_id = l.id 
             AND LOWER(s.tenant_slug) = ${tenantSlug} 
             AND s.status = 'SUBSCRIBED'
-        ) AS subscriber_count
+        ) AS subscriber_count,
+        (
+          SELECT COUNT(*)::int 
+          FROM crm_email_subscribers s 
+          WHERE s.list_id = l.id 
+            AND LOWER(s.tenant_slug) = ${tenantSlug} 
+            AND s.status = 'BOUNCED'
+        ) AS bounced_count
       FROM crm_email_lists l
       WHERE LOWER(l.tenant_slug) = ${tenantSlug}
       ORDER BY l.created_at DESC;
@@ -81,6 +130,7 @@ export async function GET(request: NextRequest) {
       description: r.description,
       tags: parseTags(r.tags),
       subscriberCount: Number(r.subscriber_count || 0),
+      bouncedCount: Number(r.bounced_count || 0),
       createdAt: r.created_at ? new Date(r.created_at).toISOString() : new Date().toISOString(),
       updatedAt: r.updated_at ? new Date(r.updated_at).toISOString() : new Date().toISOString(),
     }));

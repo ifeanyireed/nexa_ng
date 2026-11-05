@@ -185,6 +185,39 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: true, blast });
     }
 
+    // Auto-reconcile bounce_count for blasts
+    try {
+      await sql`
+        UPDATE crm_email_blasts b
+        SET bounce_count = (
+          SELECT COUNT(*)::int
+          FROM crm_email_blast_recipients r
+          WHERE r.blast_id = b.id
+            AND r.status = 'FAILED'
+            AND (
+              r.error_message ILIKE '%rejected%' OR
+              r.error_message ILIKE '%lookup failure%' OR
+              r.error_message ILIKE '%user unknown%' OR
+              r.error_message ILIKE '%mailbox%' OR
+              r.error_message ILIKE '%bounce%' OR
+              r.error_message ILIKE '%undeliverable%' OR
+              r.error_message ILIKE '%550%' OR
+              r.error_message ILIKE '%551%' OR
+              r.error_message ILIKE '%552%' OR
+              r.error_message ILIKE '%553%' OR
+              r.error_message ILIKE '%554%' OR
+              r.error_message ILIKE '%450%' OR
+              r.error_message ILIKE '%451%' OR
+              r.error_message ILIKE '%452%' OR
+              r.error_message ILIKE '%enotfound%' OR
+              r.error_message ILIKE '%eai_again%'
+            )
+        )
+        WHERE LOWER(tenant_slug) = ${tenantSlug}
+          AND (bounce_count = 0 OR bounce_count IS NULL);
+      `;
+    } catch {}
+
     // 2. Fetch list of all active blasts for tenant
     const rows = await sql`
       SELECT * FROM crm_email_blasts
@@ -200,7 +233,25 @@ export async function GET(request: NextRequest) {
             SELECT 
               COUNT(*) FILTER (WHERE status = 'SENT')::int AS sent_cnt,
               COUNT(*) FILTER (WHERE status = 'FAILED')::int AS fail_cnt,
-              COUNT(*) FILTER (WHERE status = 'PENDING')::int AS pend_cnt
+              COUNT(*) FILTER (WHERE status = 'PENDING')::int AS pend_cnt,
+              COUNT(*) FILTER (WHERE status = 'FAILED' AND (
+                error_message ILIKE '%rejected%' OR
+                error_message ILIKE '%lookup failure%' OR
+                error_message ILIKE '%user unknown%' OR
+                error_message ILIKE '%mailbox%' OR
+                error_message ILIKE '%bounce%' OR
+                error_message ILIKE '%undeliverable%' OR
+                error_message ILIKE '%550%' OR
+                error_message ILIKE '%551%' OR
+                error_message ILIKE '%552%' OR
+                error_message ILIKE '%553%' OR
+                error_message ILIKE '%554%' OR
+                error_message ILIKE '%450%' OR
+                error_message ILIKE '%451%' OR
+                error_message ILIKE '%452%' OR
+                error_message ILIKE '%enotfound%' OR
+                error_message ILIKE '%eai_again%'
+              ))::int AS bounce_cnt
             FROM crm_email_blast_recipients
             WHERE blast_id = ${r.id} AND LOWER(tenant_slug) = ${tenantSlug};
           `;
@@ -208,6 +259,7 @@ export async function GET(request: NextRequest) {
           if (counts) {
             r.sent_count = counts.sent_cnt;
             r.failed_count = counts.fail_cnt;
+            r.bounce_count = counts.bounce_cnt || 0;
 
             if (counts.pend_cnt === 0) {
               const finalStatus = counts.sent_cnt > 0 ? "SENT" : (counts.fail_cnt > 0 ? "FAILED" : "DRAFT");
@@ -216,6 +268,7 @@ export async function GET(request: NextRequest) {
                 UPDATE crm_email_blasts
                 SET sent_count = ${counts.sent_cnt},
                     failed_count = ${counts.fail_cnt},
+                    bounce_count = ${counts.bounce_cnt || 0},
                     status = ${finalStatus},
                     updated_at = NOW()
                 WHERE id = ${r.id} AND LOWER(tenant_slug) = ${tenantSlug};
@@ -228,6 +281,7 @@ export async function GET(request: NextRequest) {
                   UPDATE crm_email_blasts
                   SET sent_count = ${counts.sent_cnt},
                       failed_count = ${counts.fail_cnt},
+                      bounce_count = ${counts.bounce_cnt || 0},
                       updated_at = NOW()
                   WHERE id = ${r.id} AND LOWER(tenant_slug) = ${tenantSlug};
                 `;

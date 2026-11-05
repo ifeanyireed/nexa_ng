@@ -47,6 +47,13 @@ export async function processDirectEngagement(params: DirectEngagementParams): P
   try {
     const sql = await getTenantSql(tenantSlug);
 
+    try {
+      await sql`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;`;
+      await sql`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS bounced_at TIMESTAMPTZ;`;
+      await sql`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS bounce_reason TEXT;`;
+      await sql`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS bounce_count INT DEFAULT 0;`;
+    } catch {}
+
     // If recipientId is missing, resolve by blastId + email or latest email record
     if (!recipientId && cleanEmail) {
       let matchQuery;
@@ -107,10 +114,28 @@ export async function processDirectEngagement(params: DirectEngagementParams): P
       }
 
       if (cleanEmail) {
+        if (recipientId) {
+          try {
+            await sql`
+              UPDATE crm_email_subscribers s
+              SET status = 'BOUNCED',
+                  bounced_at = NOW(),
+                  bounce_reason = ${bounceReason || 'Delivery bounced (Brevo relay)'},
+                  updated_at = NOW()
+              FROM crm_email_blast_recipients r
+              WHERE r.id = ${recipientId}
+                AND s.id = r.subscriber_id
+                AND LOWER(s.tenant_slug) = ${tenantSlug};
+            `;
+          } catch {}
+        }
         await sql`
           UPDATE crm_email_subscribers
-          SET status = 'BOUNCED', updated_at = NOW()
-          WHERE LOWER(email) = ${cleanEmail} AND LOWER(tenant_slug) = ${tenantSlug};
+          SET status = 'BOUNCED',
+              bounced_at = NOW(),
+              bounce_reason = ${bounceReason || 'Delivery bounced (Brevo relay)'},
+              updated_at = NOW()
+          WHERE LOWER(TRIM(email)) = ${cleanEmail} AND LOWER(tenant_slug) = ${tenantSlug};
         `;
       }
       return true;

@@ -1959,7 +1959,8 @@ export default function TenantSettingsPage() {
                       <button
                         type="button"
                         onClick={() => {
-                          const hookUrl = `https://${slug || activeTenant?.slug || "your-workspace"}.ofia.ng/api/erp/crm/webhooks/brevo`;
+                          const targetSlug = slug || activeTenant?.slug || "your-workspace";
+                          const hookUrl = `https://${targetSlug}.ofia.ng/api/erp/crm/webhooks/brevo?tenant=${targetSlug}`;
                           navigator.clipboard.writeText(hookUrl);
                           alert("Webhook URL copied to clipboard: " + hookUrl);
                         }}
@@ -1969,7 +1970,7 @@ export default function TenantSettingsPage() {
                       </button>
                     </div>
                     <div className="font-mono text-[11px] bg-white/70 dark:bg-black/30 px-2 py-1 rounded border border-emerald-500/20 truncate">
-                      https://{slug || activeTenant?.slug || "your-workspace"}.ofia.ng/api/erp/crm/webhooks/brevo
+                      https://{slug || activeTenant?.slug || "your-workspace"}.ofia.ng/api/erp/crm/webhooks/brevo?tenant={slug || activeTenant?.slug || "your-workspace"}
                     </div>
                     <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80">
                       In Brevo &rarr; Settings &rarr; Webhooks: Add this URL and select <strong>Opens</strong>, <strong>Clicks</strong>, <strong>Bounces</strong>, and <strong>Unsubscribes</strong> to automatically sync live engagement to your CRM.

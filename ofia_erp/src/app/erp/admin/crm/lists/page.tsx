@@ -716,6 +716,7 @@ export default function AudienceListsPage() {
   );
 
   const totalContacts = lists.reduce((acc, l) => acc + l.subscriberCount, 0);
+  const totalBounces = lists.reduce((acc, l) => acc + (l.bouncedCount || 0), 0);
 
   return (
     <ErpAdminShell
@@ -752,11 +753,18 @@ export default function AudienceListsPage() {
               icon: <Users className="w-4 h-4 text-purple-500" />,
             },
             {
-              label: "Total Registered Contacts",
+              label: "Total Active Subscribers",
               value: totalContacts.toString(),
-              change: "Emails & phone contacts",
+              change: "Verified deliverable",
               changeType: "success",
               icon: <Mail className="w-4 h-4 text-emerald-500" />,
+            },
+            {
+              label: "Bounced / Returned",
+              value: totalBounces.toString(),
+              change: totalBounces > 0 ? "Emails needing replacement" : "100% clean inbox delivery",
+              changeType: totalBounces > 0 ? "danger" : "success",
+              icon: <AlertTriangle className="w-4 h-4 text-rose-500" />,
             },
             {
               label: "Average Segment Size",
@@ -785,10 +793,25 @@ export default function AudienceListsPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-mono text-[var(--nexa-text-muted)]">{list.id}</span>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <NexaBadge variant="brand">
                       {list.subscriberCount} Subscribers
                     </NexaBadge>
+                    {(list.bouncedCount || 0) > 0 && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openRosterModal(list);
+                          setRosterFilter("BOUNCED");
+                        }}
+                        className="inline-flex items-center gap-1 text-[10px] font-bold text-rose-600 bg-rose-500/10 border border-rose-500/30 px-2 py-0.5 rounded-full hover:bg-rose-500/20 transition-colors cursor-pointer shadow-xs"
+                        title={`${list.bouncedCount} bounced contacts in this list. Click to inspect & replace.`}
+                      >
+                        <AlertTriangle className="w-2.5 h-2.5" />
+                        {list.bouncedCount} Bounced
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => handleOpenEditModal(list)}

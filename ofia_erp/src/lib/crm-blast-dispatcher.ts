@@ -149,10 +149,128 @@ async function resolveSmtpConfig(
   return null;
 }
 
+export function isDeliveryBounceError(sendErr: any): boolean {
+  if (!sendErr) return false;
+
+  const errMsg = String(sendErr.message || "").toLowerCase();
+  const resp = String(sendErr.response || "").toLowerCase();
+  const code = String(sendErr.code || "").toUpperCase();
+  const respCode = Number(sendErr.responseCode || 0);
+  const command = String(sendErr.command || "").toUpperCase();
+
+  // 1. Quota or Auth errors on your OWN SMTP sender account are NOT recipient bounces
+  if (
+    errMsg.includes("daily sending quota") ||
+    errMsg.includes("quota exceeded") ||
+    errMsg.includes("rate limit exceeded") ||
+    errMsg.includes("authentication failed") ||
+    errMsg.includes("invalid credentials") ||
+    errMsg.includes("535") ||
+    errMsg.includes("too many connections") ||
+    code === "EAUTH"
+  ) {
+    return false;
+  }
+
+  // 2. Local network / connection errors connecting to your own SMTP server
+  if (
+    code === "ECONNREFUSED" ||
+    code === "ETIMEDOUT" ||
+    code === "ESOCKET" ||
+    errMsg.includes("connect econnrefused") ||
+    errMsg.includes("connection closed")
+  ) {
+    return false;
+  }
+
+  // 3. Command rejection during recipient handshake (RCPT TO)
+  if (command === "RCPT TO" || command === "RCPT") {
+    return true;
+  }
+
+  // 4. Nodemailer explicit rejected recipient array
+  if (Array.isArray(sendErr.rejected) && sendErr.rejected.length > 0) {
+    return true;
+  }
+
+  // 5. Standard SMTP bounce / recipient rejection error codes
+  if (
+    (respCode >= 550 && respCode <= 559) ||
+    respCode === 450 || respCode === 451 || respCode === 452 ||
+    respCode === 501 || respCode === 503 || respCode === 504 ||
+    respCode === 510 || respCode === 511 || respCode === 512 ||
+    respCode === 541
+  ) {
+    return true;
+  }
+
+  // 6. Keywords in error message or SMTP server response
+  const combined = `${errMsg} ${resp}`;
+  const bounceKeywords = [
+    "rejected",
+    "recipients were rejected",
+    "recipient was rejected",
+    "address rejected",
+    "invalid recipient",
+    "user unknown",
+    "no such user",
+    "unknown user",
+    "mailbox not found",
+    "mailbox unavailable",
+    "does not exist",
+    "not found",
+    "lookup failure",
+    "temporary lookup failure",
+    "host not found",
+    "enotfound",
+    "eai_again",
+    "no mx record",
+    "unrouteable",
+    "unroutable",
+    "domain not found",
+    "dns lookup",
+    "syntax error",
+    "invalid email",
+    "invalid address",
+    "mailbox full",
+    "account disabled",
+    "account inactive",
+    "relaying denied",
+    "relay access denied",
+    "550",
+    "551",
+    "552",
+    "553",
+    "554",
+    "451",
+    "450",
+    "452",
+    "5.1.1",
+    "5.1.0",
+    "5.1.2",
+    "5.2.1",
+    "5.4.1",
+    "5.7.1",
+    "bounce",
+    "bounced",
+    "undeliverable",
+    "returned to sender"
+  ];
+
+  return bounceKeywords.some((kw) => combined.includes(kw));
+}
+
 export async function dispatchBlastEmails(tenantSlug: string, blastId: string): Promise<void> {
   const normSlug = tenantSlug.toLowerCase().trim();
   try {
     const sql = await getTenantSql(normSlug);
+
+    try {
+      await sql`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;`;
+      await sql`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS bounced_at TIMESTAMPTZ;`;
+      await sql`ALTER TABLE crm_email_subscribers ADD COLUMN IF NOT EXISTS bounce_reason TEXT;`;
+      await sql`ALTER TABLE crm_email_blasts ADD COLUMN IF NOT EXISTS bounce_count INT DEFAULT 0;`;
+    } catch {}
 
     // 1. Fetch Blast details
     const blastRows = await sql`
@@ -355,6 +473,8 @@ export async function dispatchBlastEmails(tenantSlug: string, blastId: string): 
         `;
       } catch (sendErr: any) {
         console.warn(`[Blast Dispatcher] Delivery error for ${recipientEmail}:`, sendErr.message);
+        const isBounce = isDeliveryBounceError(sendErr);
+
         await sql`
           UPDATE crm_email_blast_recipients
           SET status = 'FAILED', error_message = ${sendErr.message || "Delivery failed"}, attempts = attempts + 1
@@ -362,31 +482,38 @@ export async function dispatchBlastEmails(tenantSlug: string, blastId: string): 
         `;
         await sql`
           UPDATE crm_email_blasts
-          SET failed_count = failed_count + 1, updated_at = NOW()
+          SET failed_count = failed_count + 1,
+              bounce_count = bounce_count + ${isBounce ? 1 : 0},
+              updated_at = NOW()
           WHERE id = ${blastId} AND LOWER(tenant_slug) = ${normSlug};
         `;
 
-        const errMsg = String(sendErr?.message || "").toLowerCase();
-        // Flag subscriber as BOUNCED if remote host reported invalid/non-existent mailbox
-        if (
-          errMsg.includes("550") ||
-          errMsg.includes("551") ||
-          errMsg.includes("553") ||
-          errMsg.includes("user unknown") ||
-          errMsg.includes("mailbox not found") ||
-          errMsg.includes("mailbox unavailable") ||
-          errMsg.includes("address rejected") ||
-          errMsg.includes("invalid recipient")
-        ) {
+        if (isBounce) {
           try {
+            if (rec.subscriber_id) {
+              await sql`
+                UPDATE crm_email_subscribers
+                SET status = 'BOUNCED',
+                    bounced_at = NOW(),
+                    bounce_reason = ${sendErr.message || "Delivery rejected/bounced"},
+                    updated_at = NOW()
+                WHERE id = ${rec.subscriber_id} AND LOWER(tenant_slug) = ${normSlug};
+              `;
+            }
             await sql`
               UPDATE crm_email_subscribers
-              SET status = 'BOUNCED', updated_at = NOW()
-              WHERE LOWER(email) = ${recipientEmail} AND LOWER(tenant_slug) = ${normSlug};
+              SET status = 'BOUNCED',
+                  bounced_at = NOW(),
+                  bounce_reason = ${sendErr.message || "Delivery rejected/bounced"},
+                  updated_at = NOW()
+              WHERE LOWER(TRIM(email)) = ${recipientEmail} AND LOWER(tenant_slug) = ${normSlug};
             `;
-          } catch {}
+          } catch (e: any) {
+            console.warn(`[Blast Dispatcher] Failed to mark subscriber as BOUNCED:`, e.message);
+          }
         }
 
+        const errMsg = String(sendErr?.message || "").toLowerCase();
         if (
           errMsg.includes("daily sending quota") ||
           errMsg.includes("authentication failed") ||
@@ -407,18 +534,37 @@ export async function dispatchBlastEmails(tenantSlug: string, blastId: string): 
       SELECT 
         COUNT(*) FILTER (WHERE status = 'SENT')::int AS sent_cnt,
         COUNT(*) FILTER (WHERE status = 'FAILED')::int AS fail_cnt,
-        COUNT(*) FILTER (WHERE status = 'PENDING')::int AS pend_cnt
+        COUNT(*) FILTER (WHERE status = 'PENDING')::int AS pend_cnt,
+        COUNT(*) FILTER (WHERE status = 'FAILED' AND (
+          error_message ILIKE '%rejected%' OR
+          error_message ILIKE '%lookup failure%' OR
+          error_message ILIKE '%user unknown%' OR
+          error_message ILIKE '%mailbox%' OR
+          error_message ILIKE '%bounce%' OR
+          error_message ILIKE '%undeliverable%' OR
+          error_message ILIKE '%550%' OR
+          error_message ILIKE '%551%' OR
+          error_message ILIKE '%552%' OR
+          error_message ILIKE '%553%' OR
+          error_message ILIKE '%554%' OR
+          error_message ILIKE '%450%' OR
+          error_message ILIKE '%451%' OR
+          error_message ILIKE '%452%' OR
+          error_message ILIKE '%enotfound%' OR
+          error_message ILIKE '%eai_again%'
+        ))::int AS bounce_cnt
       FROM crm_email_blast_recipients
       WHERE blast_id = ${blastId} AND LOWER(tenant_slug) = ${normSlug};
     `;
 
-    const counts = countRows[0] || { sent_cnt: 0, fail_cnt: 0, pend_cnt: 0 };
+    const counts = countRows[0] || { sent_cnt: 0, fail_cnt: 0, pend_cnt: 0, bounce_cnt: 0 };
     const finalStatus = counts.pend_cnt > 0 ? "SENDING" : (counts.sent_cnt > 0 ? "SENT" : "FAILED");
 
     await sql`
       UPDATE crm_email_blasts
       SET sent_count = ${counts.sent_cnt},
           failed_count = ${counts.fail_cnt},
+          bounce_count = ${counts.bounce_cnt || 0},
           status = ${finalStatus},
           sent_at = COALESCE(sent_at, NOW()),
           updated_at = NOW()

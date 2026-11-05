@@ -78,6 +78,7 @@ export interface CrmEmailList {
   description: string;
   tags: string[];
   subscriberCount: number;
+  bouncedCount?: number;
   createdAt: string;
 }
 
@@ -93,6 +94,8 @@ export interface CrmEmailSubscriber {
   phone?: string;
   linkedinUrl?: string;
   status: "SUBSCRIBED" | "UNSUBSCRIBED" | "BOUNCED";
+  bouncedAt?: string;
+  bounceReason?: string;
   createdAt: string;
 }
 

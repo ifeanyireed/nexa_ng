@@ -480,9 +480,9 @@ export default function EmailMarketingBlastsPage() {
         if (isMounted) {
           if (Array.isArray(res?.subscribers)) {
             setListSubscribers(res.subscribers);
-            // Default: pre-select all subscribers that have an email address
+            // Default: pre-select active subscribers (exclude bounced or unsubscribed)
             const validIds = res.subscribers
-              .filter((s: CrmEmailSubscriber) => s.email && s.email.includes("@"))
+              .filter((s: CrmEmailSubscriber) => s.email && s.email.includes("@") && s.status !== "BOUNCED" && s.status !== "UNSUBSCRIBED")
               .map((s: CrmEmailSubscriber) => s.id);
             setSelectedSubscriberIds(validIds);
           } else {
@@ -671,7 +671,7 @@ export default function EmailMarketingBlastsPage() {
       senderOverride,
       recipientIds: chosenRecipientIds,
       recipients: (chosenRecipientIds ? chosenSubs : listSubscribers)
-        .filter((s) => s.email && s.email.includes("@"))
+        .filter((s) => s.email && s.email.includes("@") && s.status !== "BOUNCED" && s.status !== "UNSUBSCRIBED")
         .map((s) => {
           const derivedName = `${s.firstName || ""} ${s.lastName || ""}`.trim() || s.name || s.email;
           let derivedFn = (s.firstName || "").trim();

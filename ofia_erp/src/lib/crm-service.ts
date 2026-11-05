@@ -147,6 +147,7 @@ export interface QuotationLineItem {
   id: string;
   description: string;
   detail?: string;
+  distance?: number;
   quantity: number;
   unitPrice: number;
   discountPercent?: number;
@@ -160,6 +161,8 @@ export interface QuotationColumnTitles {
   quantity?: string;
   unitPrice?: string;
   amount?: string;
+  senderUrl?: string;
+  senderEmail?: string;
 }
 
 export interface CrmQuotation {
@@ -173,6 +176,8 @@ export interface CrmQuotation {
   companyName: string;
   clientEmail: string;
   clientPhone: string;
+  senderUrl?: string;
+  senderEmail?: string;
   status: QuotationStatus;
   issueDate: string;
   expiryDate: string;
@@ -764,6 +769,59 @@ export const DEFAULT_CRM_QUOTATIONS: Omit<CrmQuotation, "tenantSlug">[] = [
     notes: "Educational tax-exempt rate applied. Delivered and certified.",
     createdBy: "Chioma Okon",
     acceptedAt: "2027-04-02",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "QUOTE-2027-004",
+    quotationNumber: "QT-2027-1044",
+    title: "Interstate Haulage & Heavy Fleet Freight Proposal",
+    companyName: "Dangote Cement & Logistics Depot",
+    clientName: "Alhaji Garba Shehu",
+    clientEmail: "g.shehu@dangotegroup.com",
+    clientPhone: "+2348033322110",
+    status: "NEGOTIATING",
+    issueDate: "2027-04-18",
+    expiryDate: "2027-05-18",
+    currency: "NGN",
+    vatRate: 7.5,
+    columnTitles: {
+      description: "Routes",
+      secondary: "Distance (KM)",
+      quantity: "Trips",
+      unitPrice: "Rate",
+      amount: "Total",
+    },
+    lineItems: [
+      {
+        id: "item-t1",
+        description: "Lagos (Apapa Port) to Abuja Central Distribution Depot",
+        distance: 750,
+        detail: "750",
+        quantity: 4,
+        unitPrice: 650,
+        discountPercent: 0,
+        taxPercent: 7.5,
+        amount: 1950000,
+      },
+      {
+        id: "item-t2",
+        description: "Ibadan Regional Hub to Onitsha Commercial Hub",
+        distance: 360,
+        detail: "360",
+        quantity: 6,
+        unitPrice: 500,
+        discountPercent: 5,
+        taxPercent: 7.5,
+        amount: 1026000,
+      },
+    ],
+    subtotal: 3030000,
+    discountTotal: 54000,
+    taxTotal: 223200,
+    totalAmount: 3199200,
+    paymentTerms: "50% Upon Loading Dispatch, 50% Waybill Acknowledgment",
+    notes: "Rates inclusive of transit insurance, tollway tariffs, and real-time GPS tracking.",
+    createdBy: "Ibrahim Musa",
     createdAt: new Date().toISOString(),
   },
 ];
@@ -1989,12 +2047,15 @@ export async function createCrmQuotation(
     companyName: quote.companyName || "",
     clientEmail: quote.clientEmail || "",
     clientPhone: quote.clientPhone || "",
+    senderUrl: quote.senderUrl || quote.columnTitles?.senderUrl,
+    senderEmail: quote.senderEmail || quote.columnTitles?.senderEmail,
     status: quote.status || "DRAFT",
     issueDate: quote.issueDate || new Date().toISOString().split("T")[0],
     expiryDate: quote.expiryDate || new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
     currency: quote.currency || "NGN",
     vatRate: quote.vatRate !== undefined ? Number(quote.vatRate) : 7.5,
     lineItems: quote.lineItems || [],
+    columnTitles: quote.columnTitles || undefined,
     subtotal: quote.subtotal || 0,
     discountTotal: quote.discountTotal || 0,
     taxTotal: quote.taxTotal || 0,

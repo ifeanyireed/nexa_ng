@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Clock,
   Send,
+  Download,
   Printer,
   TrendingUp,
   Building2,
@@ -38,6 +39,7 @@ import { Pagination } from "@/components/nexa/Pagination";
 import { CrmQuotation, QuotationLineItem, QuotationColumnTitles, QuotationStatus, CrmDeal, CrmLead } from "@/lib/crm-service";
 import { crmFetch } from "@/lib/crm-client";
 import { useActiveTenant } from "@/lib/tenant-context";
+import { downloadQuotationPdf } from "@/lib/quotation-pdf";
 
 export default function QuotationsPage() {
   const { activeTenant } = useActiveTenant();
@@ -72,6 +74,8 @@ export default function QuotationsPage() {
   const [selectedDealId, setSelectedDealId] = useState("");
   const [selectedLeadId, setSelectedLeadId] = useState("");
   const [title, setTitle] = useState("");
+  const [senderUrl, setSenderUrl] = useState<string>("");
+  const [senderEmail, setSenderEmail] = useState<string>("");
   const [companyName, setCompanyName] = useState("");
   const [clientName, setClientName] = useState("");
   const [clientEmail, setClientEmail] = useState("");
@@ -91,6 +95,9 @@ export default function QuotationsPage() {
   });
   const [isConfiguringColumns, setIsConfiguringColumns] = useState(false);
 
+  // Column 2 (secondary multiplier, e.g. Distance (KM)) active check
+  const hasSecondaryCol = Boolean(columnTitles.secondary && columnTitles.secondary.trim().length > 0);
+
   const COLUMN_PRESETS: { label: string; icon: React.ReactNode; titles: QuotationColumnTitles }[] = [
     {
       label: "Standard Items",
@@ -100,7 +107,7 @@ export default function QuotationsPage() {
     {
       label: "Transportation",
       icon: <Truck className="w-3.5 h-3.5" />,
-      titles: { description: "Routes", secondary: "Distance", quantity: "Trips", unitPrice: "Rate", amount: "Total" },
+      titles: { description: "Routes", secondary: "Distance (KM)", quantity: "Trips", unitPrice: "Rate", amount: "Total" },
     },
     {
       label: "Services & Hours",
@@ -172,6 +179,20 @@ export default function QuotationsPage() {
     loadData();
   }, []);
 
+  // Sync letterhead URL and contact email with active tenant defaults
+  useEffect(() => {
+    if (!senderUrl && activeTenant?.domain) {
+      setSenderUrl(activeTenant.domain);
+    } else if (!senderUrl) {
+      setSenderUrl("www.ofia.ng");
+    }
+    if (!senderEmail && activeTenant?.ownerEmail) {
+      setSenderEmail(activeTenant.ownerEmail);
+    } else if (!senderEmail) {
+      setSenderEmail("support@ofia.ng");
+    }
+  }, [activeTenant, senderUrl, senderEmail]);
+
   // Handle auto-populating client info when a deal is chosen
   const handleDealSelect = (dealId: string) => {
     setSelectedDealId(dealId);
@@ -207,6 +228,8 @@ export default function QuotationsPage() {
       {
         id: `item-${Date.now()}`,
         description: "",
+        distance: hasSecondaryCol ? 1 : undefined,
+        detail: hasSecondaryCol ? "1" : "",
         quantity: 1,
         unitPrice: 0,
         discountPercent: 0,
@@ -221,11 +244,36 @@ export default function QuotationsPage() {
       prev.map((item) => {
         if (item.id !== id) return item;
         const updated = { ...item, [field]: value };
+        if (field === "distance") {
+          const parsed = typeof value === "number" ? value : parseInt(String(value), 10);
+          updated.distance = isNaN(parsed) ? 0 : parsed;
+          updated.detail = String(updated.distance);
+        } else if (field === "detail") {
+          const num = parseInt(String(value), 10);
+          if (!isNaN(num)) {
+            updated.distance = num;
+            updated.detail = String(num);
+          } else {
+            updated.detail = String(value);
+          }
+        }
+
         const qty = Number(updated.quantity || 0);
         const price = Number(updated.unitPrice || 0);
         const discount = Number(updated.discountPercent || 0);
         const netPrice = price * (1 - discount / 100);
-        updated.amount = Math.max(0, qty * netPrice);
+
+        // When secondary column is active (Transportation template: Distance (KM)),
+        // Distance is an integer multiplier:
+        // Total = Distance (KM) * Trips * Rate * (1 - discount/100)
+        const hasSecondary = Boolean(columnTitles.secondary && columnTitles.secondary.trim() !== "");
+        const distMultiplier = hasSecondary
+          ? (updated.distance !== undefined && updated.distance !== null
+              ? Number(updated.distance)
+              : (parseInt(String(updated.detail || "0"), 10) || 0))
+          : 1;
+
+        updated.amount = Math.max(0, distMultiplier * qty * netPrice);
         return updated;
       })
     );
@@ -236,18 +284,56 @@ export default function QuotationsPage() {
     setLineItems((prev) => prev.filter((i) => i.id !== id));
   };
 
+  // Synchronize item amounts whenever secondary multiplier column is changed or toggled
+  useEffect(() => {
+    setLineItems((prev) =>
+      prev.map((item) => {
+        const hasSecondary = Boolean(columnTitles.secondary && columnTitles.secondary.trim() !== "");
+        const distMultiplier = hasSecondary
+          ? (item.distance !== undefined && item.distance !== null
+              ? Number(item.distance)
+              : (parseInt(String(item.detail || "1"), 10) || 1))
+          : 1;
+        const qty = Number(item.quantity || 0);
+        const price = Number(item.unitPrice || 0);
+        const discount = Number(item.discountPercent || 0);
+        const netPrice = price * (1 - discount / 100);
+        return {
+          ...item,
+          distance: hasSecondary ? (item.distance !== undefined ? item.distance : (parseInt(item.detail || "1", 10) || 1)) : undefined,
+          detail: hasSecondary ? String(item.distance ?? item.detail ?? 1) : item.detail,
+          amount: Math.max(0, distMultiplier * qty * netPrice),
+        };
+      })
+    );
+  }, [columnTitles.secondary]);
+
   // Live financial calculations
   const calculatedSubtotal = useMemo(() => {
-    return lineItems.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0);
-  }, [lineItems]);
+    return lineItems.reduce((sum, item) => {
+      const distMultiplier = hasSecondaryCol
+        ? (item.distance !== undefined && item.distance !== null
+            ? Number(item.distance)
+            : (parseInt(String(item.detail || "0"), 10) || 0))
+        : 1;
+      const qty = Number(item.quantity || 0);
+      const price = Number(item.unitPrice || 0);
+      return sum + distMultiplier * qty * price;
+    }, 0);
+  }, [lineItems, hasSecondaryCol]);
 
   const calculatedDiscountTotal = useMemo(() => {
     return lineItems.reduce((sum, item) => {
-      const gross = Number(item.quantity || 0) * Number(item.unitPrice || 0);
+      const distMultiplier = hasSecondaryCol
+        ? (item.distance !== undefined && item.distance !== null
+            ? Number(item.distance)
+            : (parseInt(String(item.detail || "0"), 10) || 0))
+        : 1;
+      const gross = distMultiplier * Number(item.quantity || 0) * Number(item.unitPrice || 0);
       const discount = Number(item.discountPercent || 0);
-      return sum + (gross * (discount / 100));
+      return sum + gross * (discount / 100);
     }, 0);
-  }, [lineItems]);
+  }, [lineItems, hasSecondaryCol]);
 
   const calculatedTaxTotal = useMemo(() => {
     const net = calculatedSubtotal - calculatedDiscountTotal;
@@ -281,8 +367,9 @@ export default function QuotationsPage() {
       lineItems: lineItems.length > 0 ? lineItems : [
         {
           id: "item-preview-1",
-          description: columnTitles.secondary ? "Sample Logistics Route" : "Quotation Line Item",
-          detail: columnTitles.secondary ? "500 km" : undefined,
+          description: columnTitles.secondary ? "Sample Logistics Route (Lagos - Abuja)" : "Quotation Line Item",
+          distance: columnTitles.secondary ? 750 : undefined,
+          detail: columnTitles.secondary ? "750" : undefined,
           quantity: 1,
           unitPrice: 0,
           discountPercent: 0,
@@ -297,7 +384,13 @@ export default function QuotationsPage() {
       totalAmount: calculatedGrandTotal,
       paymentTerms: paymentTerms || "Standard B2B Terms",
       notes: notes || "Quotation valid per stated clauses.",
-      columnTitles: columnTitles,
+      senderUrl: senderUrl.trim() || undefined,
+      senderEmail: senderEmail.trim() || undefined,
+      columnTitles: {
+        ...columnTitles,
+        senderUrl: senderUrl.trim() || undefined,
+        senderEmail: senderEmail.trim() || undefined,
+      },
       createdBy: activeTenant?.ownerName || "Current Sales Representative",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -323,6 +416,8 @@ export default function QuotationsPage() {
     const payload = {
       action: "CREATE",
       title: title.trim(),
+      senderUrl: senderUrl.trim() || undefined,
+      senderEmail: senderEmail.trim() || undefined,
       dealId: selectedDealId || undefined,
       leadId: selectedLeadId || undefined,
       companyName: companyName.trim(),
@@ -335,7 +430,11 @@ export default function QuotationsPage() {
       currency: "NGN",
       vatRate,
       lineItems,
-      columnTitles,
+      columnTitles: {
+        ...columnTitles,
+        senderUrl: senderUrl.trim() || undefined,
+        senderEmail: senderEmail.trim() || undefined,
+      },
       subtotal: calculatedSubtotal,
       discountTotal: calculatedDiscountTotal,
       taxTotal: calculatedTaxTotal,
@@ -364,6 +463,8 @@ export default function QuotationsPage() {
 
   const resetForm = () => {
     setTitle("");
+    setSenderUrl(activeTenant?.domain || "www.ofia.ng");
+    setSenderEmail(activeTenant?.ownerEmail || "support@ofia.ng");
     setSelectedDealId("");
     setSelectedLeadId("");
     setCompanyName("");
@@ -647,11 +748,28 @@ export default function QuotationsPage() {
                               setIsPreviewingDraft(false);
                               setPreviewQuote(q);
                             }}
-                            title="Preview / Print Official Quotation"
+                            title="Preview Official Quotation"
                             className="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-[#1A56DB] hover:border-[#1A56DB]/40 transition-colors cursor-pointer"
                           >
                             <Eye className="w-3.5 h-3.5 text-[#1A56DB]" />
                             <span>Preview</span>
+                          </button>
+
+                          {/* DOWNLOAD PDF */}
+                          <button
+                            onClick={() =>
+                              downloadQuotationPdf(q, {
+                                displayName: tenantDisplayName,
+                                domain: q.senderUrl || q.columnTitles?.senderUrl || activeTenant?.domain,
+                                ownerEmail: q.senderEmail || q.columnTitles?.senderEmail || activeTenant?.ownerEmail,
+                                logo: tenantDisplayLogo,
+                              })
+                            }
+                            title="Download Official Quotation PDF"
+                            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-lg border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] hover:text-emerald-600 hover:border-emerald-500/40 transition-colors cursor-pointer"
+                          >
+                            <Download className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>PDF</span>
                           </button>
 
                           {/* SEND QUOTE */}
@@ -785,6 +903,23 @@ export default function QuotationsPage() {
               placeholder="e.g. 100-Seat CBT Lab Setup & ResultsPro Infrastructure"
               required
             />
+
+            {/* CONFIGURABLE URL & CONTACT EMAIL UNDER TITLE */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <NexaInput
+                label="Website Url"
+                value={senderUrl}
+                onChange={(e) => setSenderUrl(e.target.value)}
+                placeholder="e.g. www.ofia.ng or www.yourcompany.com"
+              />
+              <NexaInput
+                label="Contact Email"
+                type="email"
+                value={senderEmail}
+                onChange={(e) => setSenderEmail(e.target.value)}
+                placeholder="e.g. support@ofia.ng or info@yourcompany.com"
+              />
+            </div>
 
             {/* CLIENT DETAILS */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -931,7 +1066,28 @@ export default function QuotationsPage() {
                             <button
                               key={p.label}
                               type="button"
-                              onClick={() => setColumnTitles({ ...p.titles })}
+                              onClick={() => {
+                                setColumnTitles({ ...p.titles });
+                                if (p.label === "Transportation") {
+                                  setLineItems((prev) =>
+                                    prev.map((item) => {
+                                      const isGenericDefault = item.description === "Ofia ERP Enterprise Solution Deployment & Training" || !item.description;
+                                      const dist = item.distance && item.distance > 0 ? item.distance : (parseInt(String(item.detail || ""), 10) || 750);
+                                      const trips = item.quantity > 0 ? item.quantity : 2;
+                                      const rate = item.unitPrice > 0 ? item.unitPrice : 1500;
+                                      return {
+                                        ...item,
+                                        description: isGenericDefault ? "Lagos (Apapa) – Abuja Industrial Hub" : item.description,
+                                        distance: dist,
+                                        detail: String(dist),
+                                        quantity: trips,
+                                        unitPrice: rate,
+                                        amount: dist * trips * rate,
+                                      };
+                                    })
+                                  );
+                                }
+                              }}
                               className={`text-[10px] font-bold px-2 py-0.5 rounded-full border transition-colors cursor-pointer flex items-center gap-1 ${
                                 isActive
                                   ? "bg-[#1A56DB] text-white border-[#1A56DB]"
@@ -961,19 +1117,19 @@ export default function QuotationsPage() {
                         </div>
                         <div>
                           <label className="block text-[10px] font-black uppercase text-[var(--nexa-text-muted)] mb-1">
-                            Column 2 (Distance / Spec)
+                            Column 2 (Distance (KM) / Spec)
                           </label>
                           <input
                             type="text"
                             value={columnTitles.secondary || ""}
                             onChange={(e) => setColumnTitles((prev) => ({ ...prev, secondary: e.target.value }))}
                             className="w-full px-2.5 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-[var(--nexa-text-primary)] focus:outline-none focus:ring-1 focus:ring-[#1A56DB]"
-                            placeholder="Distance (Optional)"
+                            placeholder="Distance (KM) (Optional)"
                           />
                         </div>
                         <div>
                           <label className="block text-[10px] font-black uppercase text-[var(--nexa-text-muted)] mb-1">
-                            Column 3 (Trips / Quantity)
+                            Column 3 (Trips / Multiplier)
                           </label>
                           <input
                             type="text"
@@ -1015,7 +1171,7 @@ export default function QuotationsPage() {
                   {hasSecondaryCol ? (
                     <div className="grid grid-cols-12 gap-2 items-center px-2 py-1 bg-[var(--nexa-bg-surface)] rounded-lg text-[10px] font-black uppercase text-[var(--nexa-text-muted)] tracking-wider">
                       <div className="col-span-3">{columnTitles.description || "Routes"}</div>
-                      <div className="col-span-2">{columnTitles.secondary || "Distance"}</div>
+                      <div className="col-span-2 text-center">{columnTitles.secondary || "Distance (KM)"}</div>
                       <div className="col-span-2 text-center">{columnTitles.quantity || "Trips"}</div>
                       <div className="col-span-2 text-center">{columnTitles.unitPrice || "Rate"}</div>
                       <div className="col-span-2 text-right">{columnTitles.amount || "Total"}</div>
@@ -1048,20 +1204,32 @@ export default function QuotationsPage() {
                             </div>
                             <div className="col-span-2">
                               <input
-                                type="text"
-                                placeholder={columnTitles.secondary || "e.g. 750 km"}
-                                value={item.detail || ""}
-                                onChange={(e) => handleUpdateLineItem(item.id, "detail", e.target.value)}
-                                className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs"
+                                type="number"
+                                min="1"
+                                step="1"
+                                placeholder={columnTitles.secondary || "Distance (KM)"}
+                                value={item.distance !== undefined && item.distance !== null ? (item.distance === 0 ? "" : item.distance) : (item.detail || "")}
+                                onChange={(e) => {
+                                  const raw = e.target.value;
+                                  const parsed = raw === "" ? 0 : parseInt(raw, 10);
+                                  handleUpdateLineItem(item.id, "distance", isNaN(parsed) ? 0 : parsed);
+                                }}
+                                className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-center"
+                                required
                               />
                             </div>
                             <div className="col-span-2">
                               <input
                                 type="number"
                                 min="1"
+                                step="1"
                                 placeholder={columnTitles.quantity || "Trips"}
-                                value={item.quantity}
-                                onChange={(e) => handleUpdateLineItem(item.id, "quantity", Number(e.target.value))}
+                                value={item.quantity !== undefined && item.quantity !== null ? (item.quantity === 0 ? "" : item.quantity) : 1}
+                                onChange={(e) => {
+                                  const raw = e.target.value;
+                                  const parsed = raw === "" ? 0 : parseInt(raw, 10);
+                                  handleUpdateLineItem(item.id, "quantity", isNaN(parsed) || parsed < 1 ? 1 : parsed);
+                                }}
                                 className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-center"
                                 required
                               />
@@ -1071,8 +1239,12 @@ export default function QuotationsPage() {
                                 type="number"
                                 min="0"
                                 placeholder={`${columnTitles.unitPrice || "Rate"} ₦`}
-                                value={item.unitPrice}
-                                onChange={(e) => handleUpdateLineItem(item.id, "unitPrice", Number(e.target.value))}
+                                value={item.unitPrice !== undefined && item.unitPrice !== null ? (item.unitPrice === 0 ? "" : item.unitPrice) : ""}
+                                onChange={(e) => {
+                                  const raw = e.target.value;
+                                  const parsed = raw === "" ? 0 : Number(raw);
+                                  handleUpdateLineItem(item.id, "unitPrice", isNaN(parsed) ? 0 : parsed);
+                                }}
                                 className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-right"
                                 required
                               />
@@ -1097,9 +1269,13 @@ export default function QuotationsPage() {
                               <input
                                 type="number"
                                 min="1"
+                                step="1"
                                 placeholder={columnTitles.quantity || "Qty"}
                                 value={item.quantity}
-                                onChange={(e) => handleUpdateLineItem(item.id, "quantity", Number(e.target.value))}
+                                onChange={(e) => {
+                                  const parsed = parseInt(e.target.value, 10);
+                                  handleUpdateLineItem(item.id, "quantity", isNaN(parsed) || parsed < 1 ? 1 : parsed);
+                                }}
                                 className="w-full px-2 py-1.5 bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] rounded-lg text-xs font-semibold text-center"
                                 required
                               />
@@ -1163,7 +1339,7 @@ export default function QuotationsPage() {
                 placeholder="e.g. 70% mobilization, 30% on delivery"
               />
               <NexaInput
-                label="Proposal Notes & Bank Remittance Details"
+                label="Proposal Notes and Bank Details"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Bank instructions, validity clauses..."
@@ -1243,6 +1419,8 @@ export default function QuotationsPage() {
                   <div className="flex items-center gap-3">
                     {tenantDisplayLogo ? (
                       <img
+                        id="quotation-preview-logo"
+                        crossOrigin="anonymous"
                         src={tenantDisplayLogo}
                         alt={tenantDisplayName}
                         className="w-12 h-12 object-contain rounded-xl p-1 bg-white border border-slate-200 shrink-0 shadow-xs"
@@ -1256,10 +1434,12 @@ export default function QuotationsPage() {
                         {tenantDisplayName}
                       </div>
                       <div className="text-[11px] text-slate-500 font-medium">
-                        {activeTenant?.domain || "Official Commercial & Operations Suite"}
+                        {previewQuote.senderUrl || previewQuote.columnTitles?.senderUrl || senderUrl || activeTenant?.domain || "Official Commercial & Operations Suite"}
                       </div>
                       <div className="text-[10px] text-slate-400 mt-0.5">
-                        {activeTenant?.ownerEmail ? `Contact: ${activeTenant.ownerEmail}` : "Victoria Island / Ikeja Central Depot, Lagos, Nigeria"}
+                        {previewQuote.senderEmail || previewQuote.columnTitles?.senderEmail || senderEmail
+                          ? `Contact: ${previewQuote.senderEmail || previewQuote.columnTitles?.senderEmail || senderEmail}`
+                          : (activeTenant?.ownerEmail ? `Contact: ${activeTenant.ownerEmail}` : "Victoria Island / Ikeja Central Depot, Lagos, Nigeria")}
                       </div>
                     </div>
                   </div>
@@ -1297,7 +1477,7 @@ export default function QuotationsPage() {
                       <th className="py-2.5 px-3">#</th>
                       <th className="py-2.5 px-3">{previewQuote.columnTitles?.description || "Item Description"}</th>
                       {previewQuote.columnTitles?.secondary && (
-                        <th className="py-2.5 px-3">{previewQuote.columnTitles.secondary}</th>
+                        <th className="py-2.5 px-3 text-center">{previewQuote.columnTitles.secondary}</th>
                       )}
                       <th className="py-2.5 px-3 text-center">{previewQuote.columnTitles?.quantity || "Qty"}</th>
                       <th className="py-2.5 px-3 text-right">{previewQuote.columnTitles?.unitPrice || "Unit Price"}</th>
@@ -1310,7 +1490,11 @@ export default function QuotationsPage() {
                         <td className="py-2.5 px-3 text-slate-400 font-mono">{idx + 1}</td>
                         <td className="py-2.5 px-3 font-medium text-slate-800">{item.description}</td>
                         {previewQuote.columnTitles?.secondary && (
-                          <td className="py-2.5 px-3 font-mono text-slate-600">{item.detail || "—"}</td>
+                          <td className="py-2.5 px-3 font-mono font-bold text-center text-slate-700">
+                            {item.distance !== undefined && item.distance !== null
+                              ? item.distance.toLocaleString()
+                              : item.detail || "1"}
+                          </td>
                         )}
                         <td className="py-2.5 px-3 text-center font-bold text-slate-700">{item.quantity}</td>
                         <td className="py-2.5 px-3 text-right font-mono text-slate-700">₦{item.unitPrice.toLocaleString()}</td>
@@ -1350,7 +1534,7 @@ export default function QuotationsPage() {
                     <span className="font-bold text-slate-800">Payment & Settlement Terms:</span> {previewQuote.paymentTerms}
                   </div>
                   <div>
-                    <span className="font-bold text-slate-800">Commercial Notes:</span> {previewQuote.notes}
+                    <span className="font-bold text-slate-800">Proposal Notes and Bank Details:</span> {previewQuote.notes}
                   </div>
                 </div>
 
@@ -1381,16 +1565,23 @@ export default function QuotationsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <NexaButton
-                    variant="secondary"
+                    variant="primary"
                     onClick={() => {
-                      if (typeof window !== "undefined") window.print();
+                      if (previewQuote) {
+                        downloadQuotationPdf(previewQuote, {
+                          displayName: tenantDisplayName,
+                          domain: previewQuote.senderUrl || previewQuote.columnTitles?.senderUrl || senderUrl || activeTenant?.domain,
+                          ownerEmail: previewQuote.senderEmail || previewQuote.columnTitles?.senderEmail || senderEmail || activeTenant?.ownerEmail,
+                          logo: tenantDisplayLogo,
+                        });
+                      }
                     }}
                   >
-                    <Printer className="w-3.5 h-3.5 mr-1.5" />
-                    Print / Export PDF
+                    <Download className="w-3.5 h-3.5 mr-1.5" />
+                    Download PDF
                   </NexaButton>
-                  <NexaButton variant="primary" onClick={handleClosePreview}>
-                    {isPreviewingDraft ? "Back to Editor" : "Done"}
+                  <NexaButton variant="secondary" onClick={handleClosePreview}>
+                    {isPreviewingDraft ? "Back to Editor" : "Close"}
                   </NexaButton>
                 </div>
               </div>

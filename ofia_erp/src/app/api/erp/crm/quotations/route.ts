@@ -399,6 +399,8 @@ export async function POST(request: NextRequest) {
       companyName,
       clientEmail,
       clientPhone,
+      senderUrl: body.senderUrl || columnTitles.senderUrl || undefined,
+      senderEmail: body.senderEmail || columnTitles.senderEmail || undefined,
       status,
       issueDate,
       expiryDate,

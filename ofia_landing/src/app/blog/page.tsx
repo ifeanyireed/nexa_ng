@@ -84,7 +84,8 @@ async function getBlogPosts() {
       const sql = neon(dbUrl);
       const rows = await sql`
         SELECT p.id, p.title, p.slug, p.excerpt, p.content, p.cover_image, p.category_id, p.tags, p.status,
-               p.author_id, p.author_name, p.published_at, p.created_at, p.updated_at,
+               p.author_id, p.author_name, p.author_role, p.author_avatar, p.author_bio,
+               p.published_at, p.created_at, p.updated_at,
                p.meta_title, p.meta_description, p.canonical_url, p.og_image, p.view_count,
                c.name as category
         FROM "BlogPost" p

@@ -40,7 +40,8 @@ export async function GET(
       try {
         const rows = await sql`
           SELECT p.id, p.title, p.slug, p.excerpt, p.content, p.cover_image, p.category_id, p.tags, p.status,
-                 p.author_id, p.author_name, p.published_at, p.created_at, p.updated_at,
+                 p.author_id, p.author_name, p.author_role, p.author_avatar, p.author_bio,
+                 p.published_at, p.created_at, p.updated_at,
                  p.meta_title, p.meta_description, p.canonical_url, p.og_image, p.view_count,
                  c.name as category
           FROM "BlogPost" p
@@ -56,7 +57,16 @@ export async function GET(
           return NextResponse.json({
             ...r,
             category: r.category || "Commerce & AI",
-            author: { full_name: r.author_name || "Ofia Editorial Team" },
+            author_name: r.author_name || "Ofia Editorial Team",
+            author_role: r.author_role || "Author",
+            author_avatar: r.author_avatar || "",
+            author_bio: r.author_bio || "",
+            author: {
+              full_name: r.author_name || "Ofia Editorial Team",
+              role: r.author_role || "Author",
+              avatar: r.author_avatar || "",
+              bio: r.author_bio || "",
+            },
             view_count: Number(r.view_count || 0),
           });
         }

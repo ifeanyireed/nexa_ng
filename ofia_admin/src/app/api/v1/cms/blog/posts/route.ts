@@ -41,7 +41,10 @@ async function ensureBlogPostSchema(sql: any) {
       ADD COLUMN IF NOT EXISTS "meta_description" TEXT DEFAULT '',
       ADD COLUMN IF NOT EXISTS "canonical_url" TEXT DEFAULT '',
       ADD COLUMN IF NOT EXISTS "og_image" TEXT DEFAULT '',
-      ADD COLUMN IF NOT EXISTS "view_count" BIGINT DEFAULT 0;
+      ADD COLUMN IF NOT EXISTS "view_count" BIGINT DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS "author_role" VARCHAR(191) DEFAULT 'Author',
+      ADD COLUMN IF NOT EXISTS "author_avatar" TEXT DEFAULT '',
+      ADD COLUMN IF NOT EXISTS "author_bio" TEXT DEFAULT '';
     `;
     isSchemaEnsured = true;
   } catch (err: any) {
@@ -64,7 +67,8 @@ export async function GET(request: Request) {
           const cleanTarget = (targetId || targetSlug || "").trim();
           const rows = await sql`
             SELECT p.id, p.title, p.slug, p.excerpt, p.content, p.cover_image, p.category_id, p.tags, p.status,
-                   p.author_id, p.author_name, p.published_at, p.created_at, p.updated_at,
+                   p.author_id, p.author_name, p.author_role, p.author_avatar, p.author_bio,
+                   p.published_at, p.created_at, p.updated_at,
                    p.meta_title, p.meta_description, p.canonical_url, p.og_image, p.view_count,
                    c.name as category
             FROM "BlogPost" p
@@ -81,7 +85,16 @@ export async function GET(request: Request) {
             return NextResponse.json({
               ...dbPost,
               category: dbPost.category || "Commerce & AI",
-              author: { full_name: dbPost.author_name || "Admin" },
+              author_name: dbPost.author_name || "Ofia Editorial Team",
+              author_role: dbPost.author_role || "Author",
+              author_avatar: dbPost.author_avatar || "",
+              author_bio: dbPost.author_bio || "",
+              author: {
+                full_name: dbPost.author_name || "Ofia Editorial Team",
+                role: dbPost.author_role || "Author",
+                avatar: dbPost.author_avatar || "",
+                bio: dbPost.author_bio || "",
+              },
               meta_title: dbPost.meta_title || "",
               meta_description: dbPost.meta_description || "",
               canonical_url: dbPost.canonical_url || "",
@@ -93,7 +106,8 @@ export async function GET(request: Request) {
           // List query
           const dbRows = await sql`
             SELECT p.id, p.title, p.slug, p.excerpt, p.content, p.cover_image, p.category_id, p.tags, p.status,
-                   p.author_id, p.author_name, p.published_at, p.created_at, p.updated_at,
+                   p.author_id, p.author_name, p.author_role, p.author_avatar, p.author_bio,
+                   p.published_at, p.created_at, p.updated_at,
                    p.meta_title, p.meta_description, p.canonical_url, p.og_image, p.view_count,
                    c.name as category
             FROM "BlogPost" p
@@ -105,7 +119,16 @@ export async function GET(request: Request) {
             const formatted = dbRows.map((r: any) => ({
               ...r,
               category: r.category || "Commerce & AI",
-              author: { full_name: r.author_name || "Admin" },
+              author_name: r.author_name || "Ofia Editorial Team",
+              author_role: r.author_role || "Author",
+              author_avatar: r.author_avatar || "",
+              author_bio: r.author_bio || "",
+              author: {
+                full_name: r.author_name || "Ofia Editorial Team",
+                role: r.author_role || "Author",
+                avatar: r.author_avatar || "",
+                bio: r.author_bio || "",
+              },
               meta_title: r.meta_title || "",
               meta_description: r.meta_description || "",
               canonical_url: r.canonical_url || "",
@@ -194,7 +217,10 @@ export async function POST(request: Request) {
     const cleanTags = body.tags || "";
     const cleanStatus = body.status || "DRAFT";
     const cleanAuthorId = body.author_id || "admin";
-    const cleanAuthorName = body.author_name || "Ofia Editorial Team";
+    const cleanAuthorName = (body.author_name || body.author?.full_name || "Ofia Editorial Team").trim();
+    const cleanAuthorRole = (body.author_role || body.author?.role || "Author").trim();
+    const cleanAuthorAvatar = (body.author_avatar || body.author?.avatar || "").trim();
+    const cleanAuthorBio = (body.author_bio || body.author?.bio || "").trim();
     const cleanMetaTitle = (body.meta_title !== undefined ? String(body.meta_title) : "").trim();
     const cleanMetaDesc = (body.meta_description !== undefined ? String(body.meta_description) : "").trim();
     const cleanCanonical = (body.canonical_url !== undefined && body.canonical_url !== null ? String(body.canonical_url) : "").trim();
@@ -207,7 +233,8 @@ export async function POST(request: Request) {
         await sql`
           INSERT INTO "BlogPost" (
             id, title, slug, excerpt, content, cover_image, category_id, tags, status,
-            author_id, author_name, published_at, created_at, updated_at,
+            author_id, author_name, author_role, author_avatar, author_bio,
+            published_at, created_at, updated_at,
             meta_title, meta_description, canonical_url, og_image, view_count
           )
           VALUES (
@@ -222,6 +249,9 @@ export async function POST(request: Request) {
             ${cleanStatus},
             ${cleanAuthorId},
             ${cleanAuthorName},
+            ${cleanAuthorRole},
+            ${cleanAuthorAvatar},
+            ${cleanAuthorBio},
             ${publishedAt},
             NOW(),
             NOW(),
@@ -240,6 +270,10 @@ export async function POST(request: Request) {
             category_id = EXCLUDED.category_id,
             tags = EXCLUDED.tags,
             status = EXCLUDED.status,
+            author_name = EXCLUDED.author_name,
+            author_role = EXCLUDED.author_role,
+            author_avatar = EXCLUDED.author_avatar,
+            author_bio = EXCLUDED.author_bio,
             meta_title = EXCLUDED.meta_title,
             meta_description = EXCLUDED.meta_description,
             canonical_url = EXCLUDED.canonical_url,
@@ -258,6 +292,16 @@ export async function POST(request: Request) {
       slug: cleanSlug,
       title: cleanTitle,
       status: cleanStatus,
+      author_name: cleanAuthorName,
+      author_role: cleanAuthorRole,
+      author_avatar: cleanAuthorAvatar,
+      author_bio: cleanAuthorBio,
+      author: {
+        full_name: cleanAuthorName,
+        role: cleanAuthorRole,
+        avatar: cleanAuthorAvatar,
+        bio: cleanAuthorBio,
+      },
       meta_title: cleanMetaTitle,
       meta_description: cleanMetaDesc,
       canonical_url: cleanCanonical,
@@ -321,6 +365,10 @@ export async function PUT(request: Request) {
     const cleanTags = body.tags || "";
     const cleanStatus = body.status || "DRAFT";
     const cleanSlug = body.slug ? String(body.slug).trim() : null;
+    const cleanAuthorName = (body.author_name !== undefined ? body.author_name : (body.author?.full_name !== undefined ? body.author.full_name : "")).trim();
+    const cleanAuthorRole = (body.author_role !== undefined ? body.author_role : (body.author?.role !== undefined ? body.author.role : "")).trim();
+    const cleanAuthorAvatar = (body.author_avatar !== undefined ? body.author_avatar : (body.author?.avatar !== undefined ? body.author.avatar : "")).trim();
+    const cleanAuthorBio = (body.author_bio !== undefined ? body.author_bio : (body.author?.bio !== undefined ? body.author.bio : "")).trim();
 
     if (sql) {
       try {
@@ -339,6 +387,10 @@ export async function PUT(request: Request) {
             tags = COALESCE(NULLIF(${cleanTags}, ''), tags),
             status = COALESCE(NULLIF(${cleanStatus}, ''), status),
             slug = COALESCE(${cleanSlug}, slug),
+            author_name = CASE WHEN ${body.author_name !== undefined || body.author?.full_name !== undefined} THEN ${cleanAuthorName} ELSE author_name END,
+            author_role = CASE WHEN ${body.author_role !== undefined || body.author?.role !== undefined} THEN ${cleanAuthorRole} ELSE author_role END,
+            author_avatar = CASE WHEN ${body.author_avatar !== undefined || body.author?.avatar !== undefined} THEN ${cleanAuthorAvatar} ELSE author_avatar END,
+            author_bio = CASE WHEN ${body.author_bio !== undefined || body.author?.bio !== undefined} THEN ${cleanAuthorBio} ELSE author_bio END,
             updated_at = NOW()
           WHERE id = ${targetId};
         `;

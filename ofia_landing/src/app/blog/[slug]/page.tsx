@@ -65,7 +65,8 @@ async function getBlogPosts() {
       const sql = neon(dbUrl);
       const rows = await sql`
         SELECT p.id, p.title, p.slug, p.excerpt, p.content, p.cover_image, p.category_id, p.tags, p.status,
-               p.author_id, p.author_name, p.published_at, p.created_at, p.updated_at,
+               p.author_id, p.author_name, p.author_role, p.author_avatar, p.author_bio,
+               p.published_at, p.created_at, p.updated_at,
                p.meta_title, p.meta_description, p.canonical_url, p.og_image, p.view_count,
                c.name as category
         FROM "BlogPost" p
@@ -139,7 +140,8 @@ async function getPostBySlug(slug: string) {
       const sql = neon(dbUrl);
       const rows = await sql`
         SELECT p.id, p.title, p.slug, p.excerpt, p.content, p.cover_image, p.category_id, p.tags, p.status,
-               p.author_id, p.author_name, p.published_at, p.created_at, p.updated_at,
+               p.author_id, p.author_name, p.author_role, p.author_avatar, p.author_bio,
+               p.published_at, p.created_at, p.updated_at,
                p.meta_title, p.meta_description, p.canonical_url, p.og_image, p.view_count,
                c.name as category
         FROM "BlogPost" p
@@ -343,6 +345,21 @@ export default async function BlogPostPage({
       ? post.author
       : post.author?.full_name || post.author_name || 'Ofia Editorial Team';
 
+  const authorRole =
+    post.author_role ||
+    (typeof post.author === 'object' ? post.author?.role : '') ||
+    'Author';
+
+  const authorAvatar =
+    post.author_avatar ||
+    (typeof post.author === 'object' ? post.author?.avatar : '') ||
+    'https://res.cloudinary.com/qsdwzejd/image/upload/v1789250545/landing_page/photo04.jpg';
+
+  const authorBio =
+    post.author_bio ||
+    (typeof post.author === 'object' ? post.author?.bio : '') ||
+    "Ofia's dedicated editorial and engineering team bridging the gap between frontier AI, enterprise commerce, and scalable African logistics.";
+
   // Word count and reading time calculation
   const cleanText = (post.content || '').replace(/<[^>]*>/g, ' ').trim();
   const wordCount = cleanText.split(/\s+/).filter(Boolean).length;
@@ -414,6 +431,10 @@ export default async function BlogPostPage({
   const formattedPost = {
     ...post,
     author: authorName,
+    author_name: authorName,
+    author_role: authorRole,
+    author_avatar: authorAvatar,
+    author_bio: authorBio,
     reading_time: readingTime,
     date: new Date(post.published_at || post.created_at || Date.now()).toLocaleDateString('en-US', {
       month: 'short',
@@ -421,6 +442,33 @@ export default async function BlogPostPage({
       year: 'numeric',
     }),
   };
+
+  // Fetch dynamic related posts (excluding active post)
+  let relatedPosts: any[] = [];
+  try {
+    const allPosts = await getBlogPosts();
+    const candidatePosts = (allPosts || []).filter(
+      (p: any) =>
+        p.slug !== post.slug &&
+        String(p.id) !== String(post.id) &&
+        (p.status === 'PUBLISHED' || !p.status)
+    );
+
+    // Prioritize posts in the same category
+    const currentCategory = (post.category || '').toLowerCase().trim();
+    const sameCategoryPosts = candidatePosts.filter((p: any) => {
+      const cat = (p.category || '').toLowerCase().trim();
+      return cat && currentCategory && cat === currentCategory;
+    });
+    const otherCategoryPosts = candidatePosts.filter((p: any) => {
+      const cat = (p.category || '').toLowerCase().trim();
+      return !cat || !currentCategory || cat !== currentCategory;
+    });
+
+    relatedPosts = [...sameCategoryPosts, ...otherCategoryPosts].slice(0, 3);
+  } catch (relErr) {
+    console.warn('[Landing Blog Slug] Failed to resolve related posts:', relErr);
+  }
 
   return (
     <>
@@ -438,7 +486,7 @@ export default async function BlogPostPage({
           <span>⚠️ EDITORIAL PREVIEW MODE — This article is currently saved as Draft in Ofia CMS and not listed on the public journal.</span>
         </div>
       )}
-      <BlogPostContent post={formattedPost} />
+      <BlogPostContent post={formattedPost} relatedPosts={relatedPosts} />
     </>
   );
 }

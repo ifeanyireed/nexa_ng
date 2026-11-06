@@ -23,6 +23,10 @@ interface BlogPost {
   content: string;
   excerpt?: string;
   author: any;
+  author_name?: string;
+  author_role?: string;
+  author_avatar?: string;
+  author_bio?: string;
   user_name?: string;
   comments?: Comment[];
   cover_image?: string;
@@ -49,7 +53,13 @@ const renderCommentContent = (text: string) => {
   });
 };
 
-export default function BlogPostContent({ post }: { post: BlogPost }) {
+export default function BlogPostContent({
+  post,
+  relatedPosts = [],
+}: {
+  post: BlogPost;
+  relatedPosts?: BlogPost[];
+}) {
   const [commentFirstName, setCommentFirstName] = React.useState('');
   const [commentLastName, setCommentLastName] = React.useState('');
   const [commentEmail, setCommentEmail] = React.useState('');
@@ -234,11 +244,17 @@ export default function BlogPostContent({ post }: { post: BlogPost }) {
               
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100 pt-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden">
-                    <img src="https://res.cloudinary.com/qsdwzejd/image/upload/v1789250545/landing_page/photo04.jpg" className="w-full h-full object-cover" alt={typeof post.author === "string" ? post.author : ((post.author as any)?.full_name || "Admin")} />
+                  <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden flex-shrink-0">
+                    <img
+                      src={post.author_avatar || "https://res.cloudinary.com/qsdwzejd/image/upload/v1789250545/landing_page/photo04.jpg"}
+                      className="w-full h-full object-cover"
+                      alt={post.author_name || (typeof post.author === "string" ? post.author : (post.author?.full_name || "Author"))}
+                    />
                   </div>
                   <div>
-                    <p className="text-sm fw-600 text-navy mb-0.5">by: {typeof post.author === "string" ? post.author : ((post.author as any)?.full_name || "Admin")}</p>
+                    <p className="text-sm fw-600 text-navy mb-0.5">
+                      by: {post.author_name || (typeof post.author === "string" ? post.author : (post.author?.full_name || "Ofia Editorial Team"))}
+                    </p>
                     <time dateTime={post.published_at || post.created_at} className="text-xs text-muted block">on: {formattedDate}</time>
                   </div>
                 </div>
@@ -304,12 +320,21 @@ export default function BlogPostContent({ post }: { post: BlogPost }) {
           <ScrollReveal animation="fade-up" duration={0.75} delay={0.1}>
             <div className="bg-white shadow-xl w-full p-8 md:p-12 mb-8 flex flex-col md:flex-row gap-6 items-center md:items-start text-center md:text-left">
               <div className="w-24 h-24 rounded-full bg-gray-200 shrink-0 overflow-hidden">
-                <img src="https://res.cloudinary.com/qsdwzejd/image/upload/v1789250545/landing_page/photo04.jpg" className="w-full h-full object-cover" alt={typeof post.author === "string" ? post.author : ((post.author as any)?.full_name || "Admin")} />
+                <img
+                  src={post.author_avatar || "https://res.cloudinary.com/qsdwzejd/image/upload/v1789250545/landing_page/photo04.jpg"}
+                  className="w-full h-full object-cover"
+                  alt={post.author_name || (typeof post.author === "string" ? post.author : (post.author?.full_name || "Author"))}
+                />
               </div>
-              <div>
-                <h3 className="text-xl fw-700 text-navy mb-2">{typeof post.author === "string" ? post.author : ((post.author as any)?.full_name || "Ofia Editorial Team")} - Author</h3>
+              <div className="flex-1">
+                <h3 className="text-xl fw-700 text-navy mb-1">
+                  {post.author_name || (typeof post.author === "string" ? post.author : (post.author?.full_name || "Ofia Editorial Team"))}
+                  <span className="text-sm font-normal text-muted ml-2">
+                    — {post.author_role || "Author"}
+                  </span>
+                </h3>
                 <p className="text-sm text-muted mb-4 leading-relaxed">
-                  Ofia's dedicated editorial and engineering team bridging the gap between frontier AI, enterprise commerce, and scalable African logistics.
+                  {post.author_bio || "Ofia's dedicated editorial and engineering team bridging the gap between frontier AI, enterprise commerce, and scalable African logistics."}
                 </p>
                 <div className="flex items-center justify-center md:justify-start gap-4">
                   <button onClick={() => handleShare('whatsapp')} className="w-8 h-8 flex items-center justify-center rounded-full bg-nets-light text-navy hover:text-emerald-600 hover:bg-emerald-50 transition-colors" title="WhatsApp">
@@ -434,51 +459,45 @@ export default function BlogPostContent({ post }: { post: BlogPost }) {
           </ScrollReveal>
 
           {/* Card 7: Related Posts */}
-          <ScrollReveal animation="fade-up" duration={0.8} delay={0.1}>
-            <div className="w-full mt-8">
-              <h3 className="text-2xl fw-700 text-navy mb-6 text-center">Related Posts</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200 flex flex-col">
-                  <div className="h-32 bg-gray-200">
-                    <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="p-5 flex-1 flex flex-col">
-                    <span className="text-[10px] fw-700 text-muted uppercase tracking-widest mb-2">Ecosystem &amp; AI</span>
-                    <h4 className="text-sm fw-700 text-navy leading-snug mb-3">Unveiling Ofia: Autonomous AI Voice Intelligence</h4>
-                    <div className="mt-auto">
-                      <Link href="/blog/unveiling-ofia-autonomous-ai-voice" className="text-xs fw-600 text-blue-600 hover:underline">Read full article</Link>
+          {relatedPosts && relatedPosts.length > 0 && (
+            <ScrollReveal animation="fade-up" duration={0.8} delay={0.1}>
+              <div className="w-full mt-8">
+                <h3 className="text-2xl fw-700 text-navy mb-6 text-center">Related Posts</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {relatedPosts.map((rel) => (
+                    <div
+                      key={rel.id || rel.slug}
+                      className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200 flex flex-col hover:shadow-xl transition-shadow group"
+                    >
+                      <div className="h-36 bg-gray-200 overflow-hidden relative">
+                        <img
+                          src={rel.cover_image || "https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/bzilvzajdn8pxlx2m0bb.png"}
+                          alt={rel.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                      <div className="p-5 flex-1 flex flex-col">
+                        <span className="text-[10px] fw-700 text-blue-600 uppercase tracking-widest mb-2 block">
+                          {rel.category || "Commerce & AI"}
+                        </span>
+                        <h4 className="text-sm fw-700 text-navy leading-snug mb-3 line-clamp-2">
+                          {rel.title}
+                        </h4>
+                        <div className="mt-auto pt-2">
+                          <Link
+                            href={`/blog/${rel.slug}`}
+                            className="text-xs fw-600 text-blue-600 hover:underline inline-flex items-center gap-1"
+                          >
+                            Read full article &rarr;
+                          </Link>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                
-                <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200 flex flex-col">
-                  <div className="h-32 bg-gray-200">
-                    <img src="https://res.cloudinary.com/ihfqdysu/image/upload/v1790686487/ofia_ng_assets/aa9nvrmyrc38lbpz1mkp.png" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="p-5 flex-1 flex flex-col">
-                    <span className="text-[10px] fw-700 text-muted uppercase tracking-widest mb-2">Retail &amp; Commerce</span>
-                    <h4 className="text-sm fw-700 text-navy leading-snug mb-3">How Ofia Storefronts Bridge Offline Merchants</h4>
-                    <div className="mt-auto">
-                      <Link href="/blog/how-ofia-storefronts-bridge-offline-merchants" className="text-xs fw-600 text-blue-600 hover:underline">Read full article</Link>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200 flex flex-col">
-                  <div className="h-32 bg-gray-200">
-                    <img src="https://res.cloudinary.com/qsdwzejd/image/upload/v1789250607/landing_page/photo13.jpg" className="w-full h-full object-cover" />
-                  </div>
-                  <div className="p-5 flex-1 flex flex-col">
-                    <span className="text-[10px] fw-700 text-muted uppercase tracking-widest mb-2">Fleet &amp; Logistics</span>
-                    <h4 className="text-sm fw-700 text-navy leading-snug mb-3">Real-Time Fleet Dispatch: Scaling Nationwide</h4>
-                    <div className="mt-auto">
-                      <Link href="/blog/real-time-fleet-dispatch-last-mile-logistics" className="text-xs fw-600 text-blue-600 hover:underline">Read full article</Link>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
-            </div>
-          </ScrollReveal>
+            </ScrollReveal>
+          )}
         </div>
       </div>
     </main>

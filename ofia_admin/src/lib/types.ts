@@ -114,7 +114,11 @@ export interface BlogPost {
   slug: string;
   excerpt: string;
   content: string;
-  author: { full_name?: string } | string;
+  author: { full_name?: string; role?: string; avatar?: string; bio?: string } | string;
+  author_name?: string;
+  author_role?: string;
+  author_avatar?: string;
+  author_bio?: string;
   category: string;
   category_id?: string;
   tags?: string;

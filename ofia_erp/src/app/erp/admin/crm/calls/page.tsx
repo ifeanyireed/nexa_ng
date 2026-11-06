@@ -10,7 +10,6 @@ import {
   PhoneMissed,
   PhoneForwarded,
   Calendar,
-  Clock,
   Plus,
   Search,
   CheckCircle2,
@@ -633,13 +632,6 @@ export default function CrmCallLoggerPage() {
               change: `${displayStats.wonCount} won directly on call`,
               changeType: "success",
               icon: <Award className="w-4 h-4 text-purple-600" />,
-            },
-            {
-              label: "Avg. Call Duration",
-              value: formatDurationDisplay(displayStats.avgDurationSec),
-              change: "Connected conversations",
-              changeType: "neutral",
-              icon: <Clock className="w-4 h-4 text-amber-500" />,
             },
           ]}
         />

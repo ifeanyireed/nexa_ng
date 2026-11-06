@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { MOCK_STORES, MOCK_PRODUCTS } from "@/data/mockStores";
@@ -19,6 +19,7 @@ import {
   Share2,
   X,
   Info,
+  ZoomIn,
 } from "lucide-react";
 
 export default function FashionProductDetailPage() {
@@ -74,6 +75,25 @@ export default function FashionProductDetailPage() {
   );
   const [showSizeGuide, setShowSizeGuide] = useState(false);
   const [addedSuccess, setAddedSuccess] = useState(false);
+
+  // African Fabric Print Preview Modal/Frame
+  const [previewPrint, setPreviewPrint] = useState<{
+    name: string;
+    image: string;
+    description?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setPreviewPrint(null);
+      }
+    };
+    if (previewPrint) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [previewPrint]);
 
   // Find exact SKU matrix variant match (Print + Color + Size)
   const matchingVariant = useMemo(() => {
@@ -197,7 +217,7 @@ export default function FashionProductDetailPage() {
               </div>
             </div>
 
-            {/* AFRICAN FABRIC PRINT SELECTION WITH TEXTURE SNAPSHOTS */}
+            {/* AFRICAN FABRIC PRINT SELECTION WITH TEXTURE SNAPSHOTS & EXPANDABLE PREVIEW */}
             {normalizedPrints && normalizedPrints.length > 0 && (
               <div className="space-y-2.5 pt-4 border-t border-stone-100">
                 <div className="flex items-center justify-between text-xs">
@@ -205,15 +225,14 @@ export default function FashionProductDetailPage() {
                     <span className="font-bold text-zinc-900">African Fabric Print:</span>
                     <span className="font-semibold text-amber-700">{selectedPrint || "Select Print"}</span>
                   </div>
-                  <span className="text-[11px] text-stone-400">Click swatch to view pattern</span>
+                  <span className="text-[11px] text-stone-400">Click circle to expand swatch</span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {normalizedPrints.map((p) => {
                     const isSelected = selectedPrint === p.name;
                     return (
-                      <button
+                      <div
                         key={p.name}
-                        type="button"
                         onClick={() => {
                           setSelectedPrint(p.name);
                           setSelectedPrintImage(p.image);
@@ -225,23 +244,44 @@ export default function FashionProductDetailPage() {
                         }`}
                         title={p.description || p.name}
                       >
-                        <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-stone-200 shrink-0 shadow-xs bg-stone-100">
+                        {/* Circular Swatch with Zoom Indicator & Expand Trigger */}
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviewPrint(p);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.stopPropagation();
+                              setPreviewPrint(p);
+                            }
+                          }}
+                          className="relative w-9 h-9 rounded-full overflow-hidden border-2 border-stone-200 shrink-0 shadow-xs bg-stone-100 cursor-zoom-in group/circle hover:border-amber-600 hover:ring-2 hover:ring-amber-500/30 transition-all duration-200"
+                          title={`Click circle to expand ${p.name} fabric preview`}
+                        >
                           {p.image ? (
                             <img
                               src={p.image}
                               alt={p.name}
-                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover/circle:scale-125"
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-amber-800">
                               {p.name.slice(0, 2).toUpperCase()}
                             </div>
                           )}
+                          {/* Zoom Indicator on Hover */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/circle:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                            <ZoomIn className="w-3.5 h-3.5 text-white drop-shadow-md stroke-[2.5]" />
+                          </div>
                         </div>
+
                         <div className="flex-1 min-w-0">
                           <span className="text-xs font-bold block truncate leading-tight">{p.name}</span>
                           <span className="text-[10px] text-stone-400 font-medium block truncate">
-                            Fabric Swatch
+                            African Weave
                           </span>
                         </div>
                         {isSelected && (
@@ -249,9 +289,91 @@ export default function FashionProductDetailPage() {
                             <Check className="w-2.5 h-2.5 stroke-[3]" />
                           </div>
                         )}
-                      </button>
+                      </div>
                     );
                   })}
+                </div>
+              </div>
+            )}
+
+            {/* EXPANDED FABRIC SWATCH PREVIEW FRAME */}
+            {previewPrint && (
+              <div
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+                onClick={() => setPreviewPrint(null)}
+              >
+                <div
+                  className="relative w-full max-w-sm bg-white rounded-3xl p-5 shadow-2xl border border-stone-200/80 overflow-hidden animate-in zoom-in-95 duration-200"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Top Bar with Title and Close Button */}
+                  <div className="flex items-center justify-between pb-3 border-b border-stone-100">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-amber-600 animate-pulse" />
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-stone-500">
+                        Fabric Swatch Inspection
+                      </h4>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewPrint(null)}
+                      className="w-7 h-7 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-600 flex items-center justify-center transition-colors cursor-pointer"
+                      title="Close Preview"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Expanded Swatch in a Bigger Frame */}
+                  <div className="relative mt-3.5 aspect-square w-full rounded-2xl overflow-hidden border border-stone-200 bg-stone-100 group shadow-inner">
+                    <img
+                      src={previewPrint.image}
+                      alt={previewPrint.name}
+                      className="w-full h-full object-cover cursor-zoom-in transition-transform duration-500 group-hover:scale-135"
+                    />
+                    <div className="absolute bottom-2.5 left-2.5 px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-xs text-[11px] font-semibold text-white flex items-center gap-1.5 shadow-sm">
+                      <ZoomIn className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Hover to magnify weave texture</span>
+                    </div>
+                  </div>
+
+                  {/* Fabric Print Details */}
+                  <div className="mt-4 space-y-1">
+                    <div className="flex items-baseline justify-between">
+                      <h3 className="text-base font-extrabold text-zinc-900">{previewPrint.name}</h3>
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 uppercase tracking-wide">
+                        African Textile
+                      </span>
+                    </div>
+                    {previewPrint.description && (
+                      <p className="text-xs text-stone-500 leading-relaxed pt-0.5">
+                        {previewPrint.description}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Buttons */}
+                  <div className="mt-5 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedPrint(previewPrint.name);
+                        setSelectedPrintImage(previewPrint.image);
+                        setPreviewPrint(null);
+                      }}
+                      className="flex-1 py-2.5 px-4 rounded-xl bg-amber-800 hover:bg-amber-900 text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
+                    >
+                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      <span>Select This Print</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewPrint(null)}
+                      className="py-2.5 px-4 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      Close
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

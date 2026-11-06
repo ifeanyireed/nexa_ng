@@ -27,6 +27,7 @@ import {
   X,
   Check,
   Palette,
+  ZoomIn,
 } from "lucide-react";
 import { BusinessShell } from "@/components/business/BusinessShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -120,6 +121,21 @@ export default function VerticalCatalogPage() {
   const [newCustomColorName, setNewCustomColorName] = useState("");
   const [newCustomColorHex, setNewCustomColorHex] = useState("#C2410C");
   const [newCustomSize, setNewCustomSize] = useState("");
+
+  // Swatch inspection preview state
+  const [previewingSwatch, setPreviewingSwatch] = useState<FabricPrint | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setPreviewingSwatch(null);
+      }
+    };
+    if (previewingSwatch) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [previewingSwatch]);
 
   const handleUploadCustomPrintSwatch = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1107,11 +1123,31 @@ export default function VerticalCatalogPage() {
                         }`}
                         title={print.description}
                       >
-                        <img
-                          src={print.image}
-                          alt={print.name}
-                          className="w-4 h-4 rounded-full object-cover border border-white/30 shrink-0 shadow-xs"
-                        />
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviewingSwatch(print);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.stopPropagation();
+                              setPreviewingSwatch(print);
+                            }
+                          }}
+                          className="relative w-4 h-4 rounded-full overflow-hidden border border-white/40 shrink-0 shadow-xs cursor-zoom-in group/swatch hover:scale-125 transition-transform"
+                          title="Click circle to preview fabric swatch"
+                        >
+                          <img
+                            src={print.image}
+                            alt={print.name}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/35 opacity-0 group-hover/swatch:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                            <ZoomIn className="w-2.5 h-2.5 text-white" />
+                          </div>
+                        </div>
                         <span>{print.name}</span>
                         {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
                       </button>
@@ -1150,11 +1186,29 @@ export default function VerticalCatalogPage() {
 
                     {newCustomPrintImage && (
                       <div className="relative group shrink-0">
-                        <img
-                          src={newCustomPrintImage}
-                          alt="Custom Swatch"
-                          className="w-7 h-7 rounded-lg object-cover border border-[var(--nexa-border)]"
-                        />
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviewingSwatch({
+                              name: newCustomPrint.trim() || "Custom Fabric Swatch",
+                              image: newCustomPrintImage,
+                              description: "Custom uploaded African fabric swatch texture",
+                            });
+                          }}
+                          className="w-7 h-7 rounded-full overflow-hidden border border-[var(--nexa-border)] cursor-zoom-in hover:scale-110 transition-transform relative group/cswatch"
+                          title="Click circle to preview fabric swatch"
+                        >
+                          <img
+                            src={newCustomPrintImage}
+                            alt="Custom Swatch"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/35 opacity-0 group-hover/cswatch:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                            <ZoomIn className="w-3 h-3 text-white" />
+                          </div>
+                        </div>
                         <button
                           type="button"
                           onClick={() => setNewCustomPrintImage("")}
@@ -1184,11 +1238,22 @@ export default function VerticalCatalogPage() {
                         key={p.name}
                         className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[11px] font-medium border border-amber-500/20"
                       >
-                        <img
-                          src={p.image}
-                          alt={p.name}
-                          className="w-3.5 h-3.5 rounded-full object-cover border border-amber-500/30 shrink-0"
-                        />
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviewingSwatch(p);
+                          }}
+                          className="w-3.5 h-3.5 rounded-full overflow-hidden border border-amber-500/30 shrink-0 cursor-zoom-in hover:scale-125 transition-transform"
+                          title="Click circle to preview fabric swatch"
+                        >
+                          <img
+                            src={p.image}
+                            alt={p.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
                         <span>{p.name}</span>
                         <button
                           type="button"
@@ -1457,12 +1522,26 @@ export default function VerticalCatalogPage() {
                             <td className="py-2 px-3">
                               <div className="flex items-center gap-2">
                                 {v.printImage && (
-                                  <img
-                                    src={v.printImage}
-                                    alt={v.print || "Fabric Swatch"}
-                                    title={`Fabric Swatch: ${v.print}`}
-                                    className="w-4 h-4 rounded-full object-cover border border-black/20 shrink-0 shadow-xs"
-                                  />
+                                  <div
+                                    role="button"
+                                    tabIndex={0}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setPreviewingSwatch({
+                                        name: v.print || "Fabric Swatch",
+                                        image: v.printImage || "",
+                                        description: `Variant SKU: ${v.sku} · Size: ${v.size || "Standard"} · Color: ${v.color || "Standard"}`,
+                                      });
+                                    }}
+                                    className="w-4 h-4 rounded-full overflow-hidden border border-black/20 shrink-0 shadow-xs cursor-zoom-in hover:scale-125 transition-transform"
+                                    title={`Click circle to preview fabric swatch: ${v.print}`}
+                                  >
+                                    <img
+                                      src={v.printImage}
+                                      alt={v.print || "Fabric Swatch"}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
                                 )}
                                 {v.colorHex && (
                                   <div
@@ -1608,6 +1687,78 @@ export default function VerticalCatalogPage() {
           </div>
         </form>
       </NexaModal>
+
+      {/* EXPANDED FABRIC SWATCH PREVIEW FRAME */}
+      {previewingSwatch && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+          onClick={() => setPreviewingSwatch(null)}
+        >
+          <div
+            className="relative w-full max-w-sm bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] rounded-3xl p-5 shadow-2xl animate-in zoom-in-95 duration-200 text-[var(--nexa-text-primary)] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Top Bar with Title and Close Button */}
+            <div className="flex items-center justify-between pb-3 border-b border-[var(--nexa-border)]">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--nexa-text-secondary)]">
+                  African Fabric Swatch Inspection
+                </h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewingSwatch(null)}
+                className="w-7 h-7 rounded-full bg-[var(--nexa-bg-base)] hover:bg-rose-500/10 text-[var(--nexa-text-secondary)] hover:text-rose-500 flex items-center justify-center transition-colors cursor-pointer"
+                title="Close Preview"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Expanded Swatch in a Bigger Frame with Macro Zoom */}
+            <div className="relative mt-3.5 aspect-square w-full rounded-2xl overflow-hidden border border-[var(--nexa-border)] bg-[var(--nexa-bg-base)] group shadow-inner">
+              <img
+                src={previewingSwatch.image}
+                alt={previewingSwatch.name}
+                className="w-full h-full object-cover cursor-zoom-in transition-transform duration-500 group-hover:scale-135"
+              />
+              <div className="absolute bottom-2.5 left-2.5 px-2.5 py-1 rounded-lg bg-black/75 backdrop-blur-xs text-[11px] font-semibold text-white flex items-center gap-1.5 shadow-sm">
+                <ZoomIn className="w-3.5 h-3.5 text-amber-400" />
+                <span>Hover to inspect weave texture</span>
+              </div>
+            </div>
+
+            {/* Swatch Details */}
+            <div className="mt-4 space-y-1">
+              <div className="flex items-baseline justify-between">
+                <h3 className="text-base font-extrabold text-[var(--nexa-text-primary)]">
+                  {previewingSwatch.name}
+                </h3>
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 uppercase tracking-wide border border-amber-500/30">
+                  Fabric Weave
+                </span>
+              </div>
+              {previewingSwatch.description && (
+                <p className="text-xs text-[var(--nexa-text-secondary)] leading-relaxed pt-0.5">
+                  {previewingSwatch.description}
+                </p>
+              )}
+            </div>
+
+            {/* Close Action */}
+            <div className="mt-5 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setPreviewingSwatch(null)}
+                className="w-full py-2.5 px-4 rounded-xl bg-[var(--nexa-bg-base)] hover:bg-[var(--nexa-border)] text-[var(--nexa-text-primary)] text-xs font-bold transition-colors cursor-pointer border border-[var(--nexa-border)]"
+              >
+                Close Swatch Preview
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </BusinessShell>
   );
 }

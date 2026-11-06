@@ -206,9 +206,9 @@ export default function DealsPipelinePage() {
               return (
                 <div
                   key={st.key}
-                  className="bg-[var(--nexa-bg-surface)]/60 rounded-2xl p-4 border border-[var(--nexa-border)] flex flex-col min-w-[260px] min-h-[620px]"
+                  className="bg-[var(--nexa-bg-surface)]/60 rounded-2xl p-4 border border-[var(--nexa-border)] flex flex-col min-w-[270px] h-[calc(100vh-250px)] min-h-[600px]"
                 >
-                  <div className="flex items-center justify-between pb-3 border-b border-[var(--nexa-border)] mb-3">
+                  <div className="flex items-center justify-between pb-3 border-b border-[var(--nexa-border)] mb-3 shrink-0">
                     <div className="flex items-center gap-2">
                       <span className={`w-2.5 h-2.5 rounded-full ${st.color.split(" ")[1].replace("text-", "bg-")}`} />
                       <h4 className="text-xs font-extrabold text-[var(--nexa-text-primary)]">{st.label}</h4>
@@ -218,12 +218,13 @@ export default function DealsPipelinePage() {
                     </span>
                   </div>
 
-                  {/* Scrollable Column Container with minimum height */}
-                  <div className="flex flex-col gap-3.5 flex-1 overflow-y-auto min-h-[480px] max-h-[calc(100vh-280px)] pr-1">
+                  {/* Scrollable Column Container */}
+                  <div className="flex flex-col gap-3.5 flex-1 min-h-0 overflow-y-auto pr-1">
                     {stageDeals.map((deal) => (
                       <NexaCard
                         key={deal.id}
-                        className="p-4 hover:border-[#1A56DB] transition-all group shadow-xs space-y-3"
+                        padding="none"
+                        className="shrink-0 w-full p-4 hover:border-[#1A56DB] transition-all group shadow-xs space-y-3"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <h5 className="text-xs font-bold text-[var(--nexa-text-primary)] leading-snug flex-1">
@@ -263,9 +264,9 @@ export default function DealsPipelinePage() {
                               {deal.email}
                             </div>
                           )}
-                          {deal.notes && (
-                            <div className="text-[10px] text-slate-500 bg-[var(--nexa-bg-base)] p-1.5 rounded-lg border border-[var(--nexa-border)] mt-1.5 leading-relaxed">
-                              {deal.notes}
+                          {deal.phone && (
+                            <div className="text-[10px] text-slate-400 pl-5">
+                              {deal.phone}
                             </div>
                           )}
                         </div>
@@ -288,7 +289,7 @@ export default function DealsPipelinePage() {
                     ))}
 
                     {stageDeals.length === 0 && (
-                      <div className="flex-1 min-h-[220px] rounded-xl border border-dashed border-[var(--nexa-border)] flex flex-col items-center justify-center p-4 text-center text-xs text-[var(--nexa-text-muted)]">
+                      <div className="flex-1 min-h-[160px] rounded-xl border border-dashed border-[var(--nexa-border)] flex flex-col items-center justify-center p-4 text-center text-xs text-[var(--nexa-text-muted)]">
                         <Building2 className="w-5 h-5 text-slate-400 mb-1.5 opacity-40" />
                         <span>No deals in {st.label}</span>
                       </div>

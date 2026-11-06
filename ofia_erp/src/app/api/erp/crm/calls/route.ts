@@ -51,9 +51,12 @@ async function ensureCrmCallsTable(sql: any) {
   await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS is_ai BOOLEAN DEFAULT true;`;
   await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS telephony_sid VARCHAR(191);`;
   await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS call_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP;`;
+  await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS call_score INT DEFAULT 0;`;
+  await sql`ALTER TABLE crm_calls ADD COLUMN IF NOT EXISTS score_breakdown JSONB DEFAULT '{}'::jsonb;`;
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_calls_tenant ON crm_calls (LOWER(tenant_slug));`;
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_calls_tenant_created ON crm_calls (LOWER(tenant_slug), created_at DESC);`;
   await sql`CREATE INDEX IF NOT EXISTS idx_crm_calls_tenant_date ON crm_calls (LOWER(tenant_slug), call_date DESC);`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_crm_calls_tenant_score ON crm_calls (LOWER(tenant_slug), call_score DESC);`;
 }
 
 export async function GET(request: NextRequest) {
@@ -76,6 +79,7 @@ export async function GET(request: NextRequest) {
     const outcome = searchParams.get("outcome") || "";
     const direction = searchParams.get("direction") || "";
     const isAi = searchParams.get("is_ai");
+    const minScore = searchParams.get("min_score");
 
     const rows = await sql`
       SELECT 
@@ -91,6 +95,8 @@ export async function GET(request: NextRequest) {
         direction,
         outcome,
         COALESCE(duration_seconds, 0) AS duration_seconds,
+        COALESCE(call_score, 0) AS call_score,
+        COALESCE(score_breakdown::text, '{}') AS score_breakdown,
         COALESCE(notes, '') AS notes,
         COALESCE(followup_date, '') AS followup_date,
         COALESCE(recording_url, '') AS recording_url,
@@ -108,6 +114,7 @@ export async function GET(request: NextRequest) {
         ${outcome && outcome !== "ALL" ? sql`AND outcome = ${outcome}` : sql``}
         ${direction ? sql`AND direction = ${direction}` : sql``}
         ${isAi !== null && isAi !== undefined ? sql`AND is_ai = ${isAi === "true"}` : sql``}
+        ${minScore ? sql`AND COALESCE(call_score, 0) >= ${parseInt(minScore, 10) || 0}` : sql``}
       ORDER BY call_date DESC
       LIMIT 1000;
     `;
@@ -117,6 +124,9 @@ export async function GET(request: NextRequest) {
     let positiveCount = 0;
     let wonCount = 0;
     let todayCount = 0;
+    let totalScore = 0;
+    let scoredCallsCount = 0;
+    let highScoreCount = 0;
     const todayStr = new Date().toISOString().slice(0, 10);
 
     const calls = rows.map((r: any) => {
@@ -133,6 +143,20 @@ export async function GET(request: NextRequest) {
       if (r.outcome === "CONNECTED_WON") wonCount++;
       const callDateStr = (r.call_date ? new Date(r.call_date).toISOString() : "").slice(0, 10);
       if (callDateStr === todayStr) todayCount++;
+
+      const cScore = Math.min(12, Math.max(0, Number(r.call_score) || 0));
+      totalScore += cScore;
+      if (cScore > 0) scoredCallsCount++;
+      if (cScore >= 7) highScoreCount++;
+
+      let breakdown = {};
+      try {
+        breakdown = typeof r.score_breakdown === "object" && r.score_breakdown !== null
+          ? r.score_breakdown
+          : JSON.parse(r.score_breakdown || "{}");
+      } catch {
+        breakdown = {};
+      }
 
       return {
         id: r.id,
@@ -154,6 +178,10 @@ export async function GET(request: NextRequest) {
         outcome: r.outcome,
         durationSeconds: dur,
         duration_seconds: dur,
+        callScore: cScore,
+        call_score: cScore,
+        scoreBreakdown: breakdown,
+        score_breakdown: breakdown,
         notes: r.notes,
         followupDate: r.followup_date,
         followup_date: r.followup_date,
@@ -176,6 +204,7 @@ export async function GET(request: NextRequest) {
     const totalCalls = calls.length;
     const connectRate = totalCalls > 0 ? Math.round((connectedCount / totalCalls) * 100) : 0;
     const avgDurationSec = connectedCount > 0 ? Math.round(totalDuration / connectedCount) : totalCalls > 0 ? Math.round(totalDuration / totalCalls) : 0;
+    const avgCallScore = totalCalls > 0 ? Number((totalScore / totalCalls).toFixed(1)) : 0;
 
     return NextResponse.json({
       success: true,
@@ -191,6 +220,10 @@ export async function GET(request: NextRequest) {
         totalDurationSeconds: totalDuration,
         todayCalls: todayCount,
         todayCount,
+        avgCallScore,
+        avgScore: avgCallScore,
+        highScoreCount,
+        scoredCallsCount,
       },
     });
   } catch (err: any) {
@@ -274,19 +307,51 @@ export async function POST(request: NextRequest) {
         : true;
     const callDate = body.callDate || body.call_date ? new Date(body.callDate || body.call_date) : new Date();
 
+    // Call Scoring Breakdown (Scale 0 - 12):
+    // 1. Caller's name: 3 pts
+    // 2. Request for Proposal: 1 pt
+    // 3. Got a different email/phone: 2 pts
+    // 4. Reschedule follow-up call: 2 pts
+    // 5. Got referred (name and phone): 4 pts
+    let scoreBreakdown = body.scoreBreakdown || body.score_breakdown;
+    if (typeof scoreBreakdown === "string") {
+      try {
+        scoreBreakdown = JSON.parse(scoreBreakdown);
+      } catch {
+        scoreBreakdown = {};
+      }
+    }
+    if (!scoreBreakdown || typeof scoreBreakdown !== "object") {
+      scoreBreakdown = {};
+    }
+
+    let callScore = Number(body.callScore ?? body.call_score);
+    if (isNaN(callScore) || body.callScore === undefined) {
+      let computed = 0;
+      if (scoreBreakdown.callerName) computed += 3;
+      if (scoreBreakdown.rfp) computed += 1;
+      if (scoreBreakdown.differentContact) computed += 2;
+      if (scoreBreakdown.rescheduleFollowup) computed += 2;
+      if (scoreBreakdown.referral) computed += 4;
+      callScore = computed;
+    }
+    callScore = Math.min(12, Math.max(0, callScore));
+
     const [saved] = await sql`
       INSERT INTO crm_calls (
         id, tenant_slug, tenant_id, lead_id, deal_id, contact_name, company, phone_number,
-        rep_name, rep_email, direction, outcome, duration_seconds, notes, followup_date,
+        rep_name, rep_email, direction, outcome, duration_seconds, call_score, score_breakdown, notes, followup_date,
         recording_url, transcript, ai_summary, qualification_json, is_ai, call_date, created_at, updated_at
       ) VALUES (
         ${callId}, ${tenantSlug}, '', ${leadId}, ${dealId}, ${contactName}, ${company}, ${phoneNumber},
-        ${repName}, ${repEmail}, ${direction}, ${outcome}, ${durationSeconds}, ${notes}, ${followupDate},
+        ${repName}, ${repEmail}, ${direction}, ${outcome}, ${durationSeconds}, ${callScore}, ${JSON.stringify(scoreBreakdown)}::jsonb, ${notes}, ${followupDate},
         ${recordingUrl}, ${transcript}, ${aiSummary}, ${qualJsonStr ? sql`${qualJsonStr}::jsonb` : null}, ${isAi}, ${callDate}, NOW(), NOW()
       )
       ON CONFLICT (id) DO UPDATE SET
         outcome = EXCLUDED.outcome,
         duration_seconds = EXCLUDED.duration_seconds,
+        call_score = EXCLUDED.call_score,
+        score_breakdown = EXCLUDED.score_breakdown,
         notes = EXCLUDED.notes,
         recording_url = EXCLUDED.recording_url,
         transcript = EXCLUDED.transcript,
@@ -297,7 +362,7 @@ export async function POST(request: NextRequest) {
       WHERE LOWER(crm_calls.tenant_slug) = ${tenantSlug}
       RETURNING 
         id, tenant_slug, lead_id, contact_name, company, phone_number, outcome,
-        duration_seconds, recording_url, transcript, ai_summary, is_ai, call_date,
+        duration_seconds, call_score, score_breakdown, recording_url, transcript, ai_summary, is_ai, call_date,
         COALESCE(qualification_json::text, '') AS qualification_json;
     `;
 
@@ -306,7 +371,8 @@ export async function POST(request: NextRequest) {
     if (effectiveLeadId) {
       try {
         const durText = durationSeconds > 0 ? ` [${Math.floor(durationSeconds / 60)}m ${durationSeconds % 60}s]` : "";
-        const leadLog = `Call Log (${outcome}) by ${repName}${durText}: ${notes || outcome}${followupDate ? ` (Followup: ${followupDate})` : ""}`;
+        const scoreText = callScore > 0 ? ` [Call Score: ${callScore}/12]` : "";
+        const leadLog = `Call Log (${outcome})${scoreText} by ${repName}${durText}: ${notes || outcome}${followupDate ? ` (Followup: ${followupDate})` : ""}`;
 
         let newStatus = "CONTACTED";
         let newScore = 80;
@@ -354,7 +420,8 @@ export async function POST(request: NextRequest) {
     try {
       const actId = `ACT-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
       const actTitle = `${direction} Call: ${contactName} (${outcome})`;
-      const actNotes = `Call with ${contactName} (${phoneNumber}). Duration: ${durationSeconds}s. Outcome: ${outcome}.\n${notes || aiSummary}`;
+      const scoreNote = callScore > 0 ? ` Call Score: ${callScore}/12.` : "";
+      const actNotes = `Call with ${contactName} (${phoneNumber}). Duration: ${durationSeconds}s.${scoreNote} Outcome: ${outcome}.\n${notes || aiSummary}`;
       await sql`
         INSERT INTO crm_activities (id, tenant_slug, type, title, company, rep, date_time, status, notes, deal_id, lead_id, created_at)
         VALUES (${actId}, ${tenantSlug}, 'CALL', ${actTitle}, ${company}, ${repName}, 'Today, Just now', 'COMPLETED', ${actNotes}, ${dealId}, ${effectiveLeadId}, NOW());
@@ -372,6 +439,8 @@ export async function POST(request: NextRequest) {
         phoneNumber: saved.phone_number,
         outcome: saved.outcome,
         durationSeconds: saved.duration_seconds,
+        callScore: Number(saved.call_score) || callScore,
+        scoreBreakdown: saved.score_breakdown || scoreBreakdown,
         recordingUrl: saved.recording_url,
         transcript: saved.transcript,
         aiSummary: saved.ai_summary,

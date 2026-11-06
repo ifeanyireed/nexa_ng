@@ -32,6 +32,8 @@ import {
   AlertCircle,
   MapPin,
   Download,
+  Star,
+  Award,
 } from "lucide-react";
 import { IconBrandLinkedin } from "@tabler/icons-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
@@ -204,6 +206,7 @@ export default function CrmLeadsPage() {
         outcome?: string;
         direction?: string;
         durationSeconds?: number;
+        callScore?: number;
         recordingUrl?: string;
         followupDate?: string;
       };
@@ -232,6 +235,8 @@ export default function CrmLeadsPage() {
       const durStr = durSec > 0 ? ` [${Math.floor(durSec / 60)}m ${durSec % 60}s]` : "";
       const rep = c.repName || (c as any).rep_name || (c.isAi ? "Ofia Voice Agent" : "Sales Closer");
       const outcome = c.outcome || "COMPLETED";
+      const callScoreNum = Math.min(12, Math.max(0, Number(c.callScore ?? (c as any).call_score) || 0));
+      const scoreStr = callScoreNum > 0 ? ` [Score: ${callScoreNum}/12]` : "";
       const notesText =
         c.notes?.trim() ||
         c.aiSummary?.trim() ||
@@ -240,7 +245,7 @@ export default function CrmLeadsPage() {
       const follow = c.followupDate || (c as any).followup_date || "";
       const followStr = follow.trim() ? ` • Followup: ${follow.trim()}` : "";
 
-      const text = `Call Log (${outcome}) by ${rep}${durStr}: ${notesText}${followStr}`;
+      const text = `Call Log (${outcome})${scoreStr} by ${rep}${durStr}: ${notesText}${followStr}`;
 
       items.push({
         id: `call-${c.id || Math.random()}`,
@@ -254,6 +259,7 @@ export default function CrmLeadsPage() {
           outcome,
           direction: c.direction || "OUTBOUND",
           durationSeconds: durSec,
+          callScore: callScoreNum,
           recordingUrl: c.recordingUrl || (c as any).recording_url || "",
           followupDate: follow,
         },
@@ -2510,6 +2516,15 @@ export default function CrmLeadsPage() {
                           <span>
                             Closer: <strong className="text-[var(--nexa-text-secondary)]">{item.callDetails.repName}</strong>
                           </span>
+                        )}
+                        {item.callDetails.callScore !== undefined && item.callDetails.callScore > 0 && (
+                          <>
+                            <span>•</span>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-mono text-[10px] font-extrabold bg-[#1A56DB]/10 text-[#1A56DB] border border-[#1A56DB]/25">
+                              <Star className="w-2.5 h-2.5 fill-current" />
+                              Score: {item.callDetails.callScore}/12
+                            </span>
+                          </>
                         )}
                         {item.callDetails.durationSeconds !== undefined && item.callDetails.durationSeconds > 0 && (
                           <>

@@ -82,6 +82,7 @@ export default function CheckoutPage() {
         image: i.image,
         selectedVariant: i.selectedVariant,
         selectedPrint: i.selectedPrint,
+        selectedPrintImage: i.selectedPrintImage,
         selectedColor: i.selectedColor,
         selectedSize: i.selectedSize,
       })),

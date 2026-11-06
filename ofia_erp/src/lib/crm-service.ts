@@ -8,7 +8,7 @@ interface DbPoolStub {
 }
 const getDbPool = (): DbPoolStub | null => null;
 const ensureTablesExist = async (): Promise<boolean> => true;
-import { queueMassEmailCampaign, processEmailQueueBatch, SmtpSettings, getTenantSenderProfileById } from "./email-service";
+import type { SmtpSettings } from "./email-service";
 
 export interface CrmDeal {
   id: string;
@@ -203,6 +203,107 @@ export interface CrmQuotation {
   updatedAt?: string;
 }
 
+export interface CallScoreBreakdown {
+  callerName?: boolean; // 3 pts - Caller's name obtained
+  rfp?: boolean; // 1 pt - Request for Proposal
+  differentContact?: boolean; // 2 pts - Got a different email/phone
+  rescheduleFollowup?: boolean; // 2 pts - Reschedule follow-up call
+  referral?: boolean; // 4 pts - Got referred (name and phone)
+  alternateContact?: string; // Optional alternate phone or email details
+  referralDetails?: string; // Optional referral name & phone details
+}
+
+export const CALL_SCORE_CRITERIA = [
+  {
+    key: "callerName" as const,
+    label: "Caller's Name Obtained",
+    points: 3,
+    description: "Got caller's full name and verified contact identity",
+  },
+  {
+    key: "rfp" as const,
+    label: "Request for Proposal (RFP)",
+    points: 1,
+    description: "Client requested quotation, pricing sheet, or formal proposal",
+  },
+  {
+    key: "differentContact" as const,
+    label: "Got Different Email / Phone",
+    points: 2,
+    description: "Acquired direct phone extension, mobile, or direct email",
+  },
+  {
+    key: "rescheduleFollowup" as const,
+    label: "Reschedule Follow-up Call",
+    points: 2,
+    description: "Scheduled an agreed callback date & time with decision maker",
+  },
+  {
+    key: "referral" as const,
+    label: "Got Referred (Name & Phone)",
+    points: 4,
+    description: "Secured referral prospect with contact name and phone number",
+  },
+] as const;
+
+export function computeCallScore(breakdown?: Partial<CallScoreBreakdown> | null): number {
+  if (!breakdown) return 0;
+  let score = 0;
+  if (breakdown.callerName) score += 3;
+  if (breakdown.rfp) score += 1;
+  if (breakdown.differentContact) score += 2;
+  if (breakdown.rescheduleFollowup) score += 2;
+  if (breakdown.referral) score += 4;
+  return Math.min(12, Math.max(0, score));
+}
+
+export function getCallScoreBadge(score: number | undefined | null): {
+  label: string;
+  variant: "success" | "primary" | "warning" | "neutral" | "danger";
+  rating: string;
+  colorClass: string;
+} {
+  const s = Math.min(12, Math.max(0, Number(score) || 0));
+  if (s >= 10) {
+    return {
+      label: `${s}/12`,
+      variant: "success",
+      rating: "High Value Lead",
+      colorClass: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30",
+    };
+  }
+  if (s >= 7) {
+    return {
+      label: `${s}/12`,
+      variant: "primary",
+      rating: "Qualified Opportunity",
+      colorClass: "bg-blue-500/10 text-[#1A56DB] dark:text-blue-400 border border-blue-500/30",
+    };
+  }
+  if (s >= 4) {
+    return {
+      label: `${s}/12`,
+      variant: "warning",
+      rating: "Developing Contact",
+      colorClass: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30",
+    };
+  }
+  if (s >= 1) {
+    return {
+      label: `${s}/12`,
+      variant: "neutral",
+      rating: "Low Engagement",
+      colorClass: "bg-slate-500/10 text-slate-700 dark:text-slate-400 border border-slate-500/30",
+    };
+  }
+  return {
+    label: `0/12`,
+    variant: "neutral",
+    rating: "Unscored",
+    colorClass: "bg-slate-500/5 text-slate-500 border border-slate-300 dark:border-slate-700",
+  };
+}
+
 export interface CrmCall {
   id: string;
   tenantSlug: string;
@@ -225,6 +326,8 @@ export interface CrmCall {
     | "BUSY"
     | "WRONG_NUMBER";
   durationSeconds: number;
+  callScore?: number;
+  scoreBreakdown?: CallScoreBreakdown;
   notes?: string;
   followupDate?: string;
   recordingUrl?: string;
@@ -2677,6 +2780,7 @@ export async function dispatchScheduledBlasts(tenantSlug?: string): Promise<{ di
           const emailSubs = subsRes.rows.filter((s) => s.email && s.email.includes("@"));
 
           if (emailSubs.length > 0) {
+            const { queueMassEmailCampaign, processEmailQueueBatch, getTenantSenderProfileById } = await import("./email-service");
             let senderOverride: Partial<SmtpSettings> | undefined = undefined;
             if (blast.sender_override) {
               try {

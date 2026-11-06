@@ -43,20 +43,11 @@ import {
   getDefaultProductsForVertical,
   CommerceProductItem,
   ProductVariant,
+  FabricPrint,
+  AFRICAN_PRINT_PRESETS,
   VerticalKey,
   getStorefrontUrl,
 } from "@/lib/verticals";
-
-const AFRICAN_PRINT_PRESETS = [
-  "Ankara Wax",
-  "Aso-Oke",
-  "Adire Tie-Dye",
-  "Kente",
-  "Lace Brocade",
-  "Bogolan Mudcloth",
-  "Senegalese Bazin",
-  "Plain Silk-Linen",
-];
 
 const AFRICAN_COLOR_PRESETS: Array<{ name: string; hex: string }> = [
   { name: "Midnight Black", hex: "#111111" },
@@ -112,7 +103,10 @@ export default function VerticalCatalogPage() {
   const [formAttributes, setFormAttributes] = useState<Record<string, any>>({});
 
   // African Fashion Matrix Studio States
-  const [fashionPrints, setFashionPrints] = useState<string[]>(["Ankara Wax", "Aso-Oke"]);
+  const [fashionPrints, setFashionPrints] = useState<FabricPrint[]>([
+    AFRICAN_PRINT_PRESETS[0],
+    AFRICAN_PRINT_PRESETS[1],
+  ]);
   const [fashionColors, setFashionColors] = useState<Array<{ name: string; hex: string }>>([
     AFRICAN_COLOR_PRESETS[0],
     AFRICAN_COLOR_PRESETS[1],
@@ -121,13 +115,43 @@ export default function VerticalCatalogPage() {
   const [fashionVariants, setFashionVariants] = useState<ProductVariant[]>([]);
   const [useMatrix, setUseMatrix] = useState<boolean>(true);
   const [newCustomPrint, setNewCustomPrint] = useState("");
+  const [newCustomPrintImage, setNewCustomPrintImage] = useState("");
+  const [isUploadingSwatch, setIsUploadingSwatch] = useState(false);
   const [newCustomColorName, setNewCustomColorName] = useState("");
   const [newCustomColorHex, setNewCustomColorHex] = useState("#C2410C");
   const [newCustomSize, setNewCustomSize] = useState("");
 
+  const handleUploadCustomPrintSwatch = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingSwatch(true);
+    try {
+      const slug = activeTenant?.slug || "neweratransports";
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("tenantSlug", slug);
+      formData.append("folder", "fabric_swatches");
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.url) {
+        setNewCustomPrintImage(data.url);
+      }
+    } catch (err) {
+      console.error("Swatch upload failed:", err);
+    } finally {
+      setIsUploadingSwatch(false);
+      e.target.value = "";
+    }
+  };
+
   const generateVariantsFromSelections = useCallback(
     (
-      prints: string[],
+      prints: FabricPrint[],
       colors: Array<{ name: string; hex: string }>,
       sizes: string[],
       basePriceNum: number,
@@ -136,7 +160,7 @@ export default function VerticalCatalogPage() {
       existingVariants: ProductVariant[] = []
     ): ProductVariant[] => {
       const list: ProductVariant[] = [];
-      const printList = prints.length > 0 ? prints : [""];
+      const printList = prints.length > 0 ? prints : [{ name: "", image: "" }];
       const colorList = colors.length > 0 ? colors : [{ name: "", hex: "" }];
       const sizeList = sizes.length > 0 ? sizes : [""];
 
@@ -145,23 +169,24 @@ export default function VerticalCatalogPage() {
       for (const p of printList) {
         for (const c of colorList) {
           for (const s of sizeList) {
-            const pCode = p ? p.replace(/[^a-zA-Z]/g, "").slice(0, 3).toUpperCase() : "";
+            const pCode = p.name ? p.name.replace(/[^a-zA-Z]/g, "").slice(0, 3).toUpperCase() : "";
             const cCode = c.name ? c.name.replace(/[^a-zA-Z]/g, "").slice(0, 3).toUpperCase() : "";
             const sCode = s ? s.replace(/[^a-zA-Z0-9]/g, "").toUpperCase() : "";
 
             const skuParts = [cleanBaseSku, pCode, cCode, sCode].filter(Boolean);
             const varSku = skuParts.join("-");
-            const varName = [p, c.name, s].filter(Boolean).join(" · ") || "Standard";
+            const varName = [p.name, c.name, s].filter(Boolean).join(" · ") || "Standard";
 
             const matched = existingVariants.find(
-              (v) => (v.print || "") === p && (v.color || "") === c.name && (v.size || "") === s
+              (v) => (v.print || "") === p.name && (v.color || "") === c.name && (v.size || "") === s
             );
 
             list.push({
               id: matched?.id || `var_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
               sku: matched?.sku || varSku,
               name: varName,
-              print: p || undefined,
+              print: p.name || undefined,
+              printImage: p.image || matched?.printImage || undefined,
               color: c.name || undefined,
               colorHex: c.hex || undefined,
               size: s || undefined,
@@ -185,11 +210,12 @@ export default function VerticalCatalogPage() {
   }, [verticalKey, useMatrix, fashionVariants, formStock]);
 
   // African Fashion Studio Matrix Helpers
-  const togglePrint = (printName: string) => {
+  const togglePrint = (preset: FabricPrint) => {
     setFashionPrints((prev) => {
-      const next = prev.includes(printName)
-        ? prev.filter((p) => p !== printName)
-        : [...prev, printName];
+      const exists = prev.some((p) => p.name.toLowerCase() === preset.name.toLowerCase());
+      const next = exists
+        ? prev.filter((p) => p.name.toLowerCase() !== preset.name.toLowerCase())
+        : [...prev, preset];
       const numPrice = parseFloat(formPrice.replace(/[^0-9.]/g, "")) || 0;
       const numStock = parseInt(formStock) || 0;
       setFashionVariants((curVars) =>
@@ -210,9 +236,10 @@ export default function VerticalCatalogPage() {
   const addCustomPrint = () => {
     const trimmed = newCustomPrint.trim();
     if (!trimmed) return;
+    const swatchImg = newCustomPrintImage || "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80";
     setFashionPrints((prev) => {
-      if (prev.includes(trimmed)) return prev;
-      const next = [...prev, trimmed];
+      if (prev.some((p) => p.name.toLowerCase() === trimmed.toLowerCase())) return prev;
+      const next = [...prev, { name: trimmed, image: swatchImg, description: "Bespoke studio fabric print" }];
       const numPrice = parseFloat(formPrice.replace(/[^0-9.]/g, "")) || 0;
       const numStock = parseInt(formStock) || 0;
       setFashionVariants((curVars) =>
@@ -229,11 +256,12 @@ export default function VerticalCatalogPage() {
       return next;
     });
     setNewCustomPrint("");
+    setNewCustomPrintImage("");
   };
 
   const removePrint = (printName: string) => {
     setFashionPrints((prev) => {
-      const next = prev.filter((p) => p !== printName);
+      const next = prev.filter((p) => p.name.toLowerCase() !== printName.toLowerCase());
       const numPrice = parseFloat(formPrice.replace(/[^0-9.]/g, "")) || 0;
       const numStock = parseInt(formStock) || 0;
       setFashionVariants((curVars) =>
@@ -434,7 +462,8 @@ export default function VerticalCatalogPage() {
   };
 
   const loadProducts = useCallback(async () => {
-    const slug = activeTenant?.slug || "neweratransports";
+    if (!activeTenant?.slug) return;
+    const slug = activeTenant.slug;
     setIsLoading(true);
     try {
       const res = await fetch(
@@ -458,8 +487,10 @@ export default function VerticalCatalogPage() {
   }, [activeTenant?.slug, verticalKey]);
 
   useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
+    if (activeTenant?.slug) {
+      loadProducts();
+    }
+  }, [activeTenant?.slug, loadProducts]);
 
   const handleOpenAddModal = () => {
     const initSku = `SKU-${verticalKey.toUpperCase().slice(0, 3)}-${Date.now().toString().slice(-4)}`;
@@ -475,7 +506,7 @@ export default function VerticalCatalogPage() {
     });
 
     if (verticalKey === "fashion") {
-      const defPrints = ["Ankara Wax", "Aso-Oke"];
+      const defPrints = [AFRICAN_PRINT_PRESETS[0], AFRICAN_PRINT_PRESETS[1]];
       const defColors = [AFRICAN_COLOR_PRESETS[0], AFRICAN_COLOR_PRESETS[1]];
       const defSizes = ["S", "M", "L", "XL"];
       setFashionPrints(defPrints);
@@ -501,9 +532,9 @@ export default function VerticalCatalogPage() {
 
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formName) return;
+    if (!formName || !activeTenant?.slug) return;
 
-    const slug = activeTenant?.slug || "neweratransports";
+    const slug = activeTenant.slug;
     const numPrice = parseFloat(formPrice.replace(/[^0-9.]/g, "")) || 0;
     const finalStock =
       verticalKey === "fashion" && useMatrix && fashionVariants.length > 0
@@ -558,7 +589,8 @@ export default function VerticalCatalogPage() {
   };
 
   const handleDeleteProduct = async (id: string) => {
-    const slug = activeTenant?.slug || "neweratransports";
+    if (!activeTenant?.slug) return;
+    const slug = activeTenant.slug;
     try {
       await fetch(
         `/api/erp/shop/products?id=${encodeURIComponent(id)}&tenant=${encodeURIComponent(slug)}`,
@@ -583,16 +615,50 @@ export default function VerticalCatalogPage() {
     if (verticalKey === "fashion") {
       // 1. Prints
       const rawPrints = product.attributes?.prints;
-      let parsedPrints: string[] = [];
+      let parsedPrints: FabricPrint[] = [];
       if (Array.isArray(rawPrints)) {
-        parsedPrints = rawPrints;
+        parsedPrints = rawPrints.map((p) => {
+          if (typeof p === "string") {
+            const found = AFRICAN_PRINT_PRESETS.find((pre) => pre.name.toLowerCase() === p.toLowerCase());
+            return {
+              name: p,
+              image: found?.image || "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+              description: found?.description,
+            };
+          }
+          return {
+            name: p.name,
+            image: p.image || "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+            description: p.description,
+          };
+        });
       } else if (typeof rawPrints === "string" && rawPrints.trim()) {
-        parsedPrints = rawPrints.split(",").map((s) => s.trim()).filter(Boolean);
+        parsedPrints = rawPrints
+          .split(",")
+          .map((s) => {
+            const name = s.trim();
+            const found = AFRICAN_PRINT_PRESETS.find((pre) => pre.name.toLowerCase() === name.toLowerCase());
+            return {
+              name,
+              image: found?.image || "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+              description: found?.description,
+            };
+          })
+          .filter((p) => p.name);
       }
       if (parsedPrints.length === 0 && product.variants) {
-        parsedPrints = Array.from(new Set(product.variants.map((v) => v.print).filter(Boolean) as string[]));
+        const uniquePrintNames = Array.from(new Set(product.variants.map((v) => v.print).filter(Boolean) as string[]));
+        parsedPrints = uniquePrintNames.map((name) => {
+          const varMatch = product.variants?.find((v) => v.print === name);
+          const found = AFRICAN_PRINT_PRESETS.find((pre) => pre.name.toLowerCase() === name.toLowerCase());
+          return {
+            name,
+            image: varMatch?.printImage || found?.image || "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+            description: found?.description,
+          };
+        });
       }
-      const finalPrints = parsedPrints.length > 0 ? parsedPrints : ["Ankara Wax"];
+      const finalPrints = parsedPrints.length > 0 ? parsedPrints : [AFRICAN_PRINT_PRESETS[0], AFRICAN_PRINT_PRESETS[1]];
       setFashionPrints(finalPrints);
 
       // 2. Colors
@@ -1026,27 +1092,35 @@ export default function VerticalCatalogPage() {
 
                 <div className="flex flex-wrap gap-1.5">
                   {AFRICAN_PRINT_PRESETS.map((print) => {
-                    const isSelected = fashionPrints.includes(print);
+                    const isSelected = fashionPrints.some(
+                      (p) => p.name.toLowerCase() === print.name.toLowerCase()
+                    );
                     return (
                       <button
                         type="button"
-                        key={print}
+                        key={print.name}
                         onClick={() => togglePrint(print)}
-                        className={`px-2.5 py-1 text-xs rounded-xl font-medium transition-all flex items-center gap-1.5 cursor-pointer border ${
+                        className={`px-2.5 py-1.5 text-xs rounded-xl font-medium transition-all flex items-center gap-2 cursor-pointer border ${
                           isSelected
                             ? "bg-amber-600 text-white border-amber-600 shadow-xs"
                             : "bg-[var(--nexa-bg-base)] text-[var(--nexa-text-secondary)] border-[var(--nexa-border)] hover:border-amber-500/40"
                         }`}
+                        title={print.description}
                       >
+                        <img
+                          src={print.image}
+                          alt={print.name}
+                          className="w-4 h-4 rounded-full object-cover border border-white/30 shrink-0 shadow-xs"
+                        />
+                        <span>{print.name}</span>
                         {isSelected && <Check className="w-3 h-3 stroke-[2.5]" />}
-                        <span>{print}</span>
                       </button>
                     );
                   })}
                 </div>
 
-                {/* Custom Print Input */}
-                <div className="flex items-center gap-2 pt-1">
+                {/* Custom Print Input with Device Swatch Upload */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
                   <input
                     type="text"
                     value={newCustomPrint}
@@ -1057,17 +1131,49 @@ export default function VerticalCatalogPage() {
                         addCustomPrint();
                       }
                     }}
-                    placeholder="Add custom print (e.g. Akwete, Adire Alabere, Guipure Lace)..."
+                    placeholder="Custom print name (e.g. Akwete, Adire Alabere, Guipure Lace)..."
                     className="flex-1 px-3 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-amber-500 text-[var(--nexa-text-primary)]"
                   />
-                  <button
-                    type="button"
-                    onClick={addCustomPrint}
-                    disabled={!newCustomPrint.trim()}
-                    className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-[var(--nexa-bg-surface)] hover:bg-amber-500/10 text-amber-600 border border-[var(--nexa-border)] hover:border-amber-500/40 disabled:opacity-50 cursor-pointer"
-                  >
-                    + Add Print
-                  </button>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <label className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] hover:border-amber-500/40 text-[var(--nexa-text-secondary)] cursor-pointer">
+                      <Upload className="w-3 h-3 text-amber-600" />
+                      <span>{isUploadingSwatch ? "Uploading..." : newCustomPrintImage ? "Swatch Attached" : "Upload Swatch"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={isUploadingSwatch}
+                        onChange={handleUploadCustomPrintSwatch}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {newCustomPrintImage && (
+                      <div className="relative group shrink-0">
+                        <img
+                          src={newCustomPrintImage}
+                          alt="Custom Swatch"
+                          className="w-7 h-7 rounded-lg object-cover border border-[var(--nexa-border)]"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setNewCustomPrintImage("")}
+                          className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-2 h-2" />
+                        </button>
+                      </div>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={addCustomPrint}
+                      disabled={!newCustomPrint.trim()}
+                      className="px-3 py-1.5 text-xs font-semibold rounded-xl bg-[var(--nexa-bg-surface)] hover:bg-amber-500/10 text-amber-600 border border-[var(--nexa-border)] hover:border-amber-500/40 disabled:opacity-50 cursor-pointer"
+                    >
+                      + Add Print
+                    </button>
+                  </div>
                 </div>
 
                 {fashionPrints.length > 0 && (
@@ -1075,13 +1181,18 @@ export default function VerticalCatalogPage() {
                     <span className="text-[10px] text-[var(--nexa-text-muted)] font-medium">Active Prints:</span>
                     {fashionPrints.map((p) => (
                       <span
-                        key={p}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[11px] font-medium border border-amber-500/20"
+                        key={p.name}
+                        className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[11px] font-medium border border-amber-500/20"
                       >
-                        <span>{p}</span>
+                        <img
+                          src={p.image}
+                          alt={p.name}
+                          className="w-3.5 h-3.5 rounded-full object-cover border border-amber-500/30 shrink-0"
+                        />
+                        <span>{p.name}</span>
                         <button
                           type="button"
-                          onClick={() => removePrint(p)}
+                          onClick={() => removePrint(p.name)}
                           className="hover:text-red-500 cursor-pointer ml-0.5"
                         >
                           <X className="w-2.5 h-2.5" />
@@ -1345,10 +1456,19 @@ export default function VerticalCatalogPage() {
                           <tr key={v.id || idx} className="hover:bg-black/[0.02] dark:hover:bg-white/[0.02]">
                             <td className="py-2 px-3">
                               <div className="flex items-center gap-2">
+                                {v.printImage && (
+                                  <img
+                                    src={v.printImage}
+                                    alt={v.print || "Fabric Swatch"}
+                                    title={`Fabric Swatch: ${v.print}`}
+                                    className="w-4 h-4 rounded-full object-cover border border-black/20 shrink-0 shadow-xs"
+                                  />
+                                )}
                                 {v.colorHex && (
                                   <div
                                     className="w-3 h-3 rounded-full border border-black/20 shrink-0"
                                     style={{ backgroundColor: v.colorHex }}
+                                    title={`Color: ${v.color}`}
                                   />
                                 )}
                                 <span className="font-semibold text-[var(--nexa-text-primary)]">

@@ -41,9 +41,30 @@ export default function FashionProductDetailPage() {
     allProducts[0] ||
     MOCK_PRODUCTS[0];
 
+  const normalizedPrints = useMemo(() => {
+    if (!product.fashionMeta?.prints || !Array.isArray(product.fashionMeta.prints)) return [];
+    return product.fashionMeta.prints.map((p) => {
+      if (typeof p === "string") {
+        return {
+          name: p,
+          image: "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+          description: "Artisanal African fabric print",
+        };
+      }
+      return {
+        name: p.name,
+        image: p.image || "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+        description: p.description || "Artisanal African fabric print",
+      };
+    });
+  }, [product.fashionMeta?.prints]);
+
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedPrint, setSelectedPrint] = useState(
-    product.fashionMeta?.prints?.[0] || ""
+    normalizedPrints[0]?.name || (typeof product.fashionMeta?.prints?.[0] === "string" ? product.fashionMeta.prints[0] : (product.fashionMeta?.prints?.[0] as any)?.name) || ""
+  );
+  const [selectedPrintImage, setSelectedPrintImage] = useState(
+    normalizedPrints[0]?.image || (product.fashionMeta?.prints?.[0] as any)?.image || ""
   );
   const [selectedColor, setSelectedColor] = useState(
     product.fashionMeta?.colors[0]?.name || "Raw Sandstone"
@@ -76,12 +97,13 @@ export default function FashionProductDetailPage() {
       sku: matchingVariant?.sku || product.sku,
       title: product.title,
       price: effectivePrice,
-      image: product.images[selectedImage] || product.images[0],
+      image: matchingVariant?.image || product.images[selectedImage] || product.images[0],
       quantity: 1,
       vertical: "fashion",
       selectedColor,
       selectedSize,
       selectedPrint: selectedPrint || undefined,
+      selectedPrintImage: selectedPrintImage || matchingVariant?.printImage || undefined,
     });
 
     setAddedSuccess(true);
@@ -175,27 +197,61 @@ export default function FashionProductDetailPage() {
               </div>
             </div>
 
-            {/* AFRICAN FABRIC PRINT SELECTION */}
-            {product.fashionMeta?.prints && product.fashionMeta.prints.length > 0 && (
-              <div className="space-y-2 pt-4 border-t border-stone-100">
+            {/* AFRICAN FABRIC PRINT SELECTION WITH TEXTURE SNAPSHOTS */}
+            {normalizedPrints && normalizedPrints.length > 0 && (
+              <div className="space-y-2.5 pt-4 border-t border-stone-100">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-zinc-900">African Fabric Print:</span>
-                  <span className="font-semibold text-amber-700">{selectedPrint || "Select Print"}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-bold text-zinc-900">African Fabric Print:</span>
+                    <span className="font-semibold text-amber-700">{selectedPrint || "Select Print"}</span>
+                  </div>
+                  <span className="text-[11px] text-stone-400">Click swatch to view pattern</span>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {product.fashionMeta.prints.map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => setSelectedPrint(p)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
-                        selectedPrint === p
-                          ? "bg-amber-700 text-white border-amber-700 shadow-sm"
-                          : "bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100"
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  ))}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {normalizedPrints.map((p) => {
+                    const isSelected = selectedPrint === p.name;
+                    return (
+                      <button
+                        key={p.name}
+                        type="button"
+                        onClick={() => {
+                          setSelectedPrint(p.name);
+                          setSelectedPrintImage(p.image);
+                        }}
+                        className={`group relative p-2 rounded-2xl border transition-all cursor-pointer flex items-center gap-2.5 text-left ${
+                          isSelected
+                            ? "bg-amber-900/10 border-amber-700 text-amber-950 shadow-sm ring-1 ring-amber-700"
+                            : "bg-white border-stone-200 text-stone-700 hover:border-amber-700/40 hover:bg-stone-50/80"
+                        }`}
+                        title={p.description || p.name}
+                      >
+                        <div className="relative w-8 h-8 rounded-xl overflow-hidden border border-stone-200 shrink-0 shadow-xs bg-stone-100">
+                          {p.image ? (
+                            <img
+                              src={p.image}
+                              alt={p.name}
+                              className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-[10px] font-bold text-amber-800">
+                              {p.name.slice(0, 2).toUpperCase()}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-xs font-bold block truncate leading-tight">{p.name}</span>
+                          <span className="text-[10px] text-stone-400 font-medium block truncate">
+                            Fabric Swatch
+                          </span>
+                        </div>
+                        {isSelected && (
+                          <div className="w-4 h-4 rounded-full bg-amber-700 text-white flex items-center justify-center shrink-0">
+                            <Check className="w-2.5 h-2.5 stroke-[3]" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}

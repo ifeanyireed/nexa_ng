@@ -466,12 +466,45 @@ export default function VerticalOrdersPage() {
                 {Array.isArray(selectedOrder.items) && selectedOrder.items.length > 0 ? (
                   <div className="divide-y divide-[var(--nexa-border)]">
                     {selectedOrder.items.map((it: any, idx: number) => (
-                      <div key={idx} className="py-2 flex items-center justify-between text-xs">
-                        <div>
-                          <span className="font-bold text-[var(--nexa-text-primary)] block">
-                            {it.name || it.title || "Catalog Item"}
-                          </span>
-                          {it.sku && <span className="text-[10px] text-[var(--nexa-text-muted)] font-mono">{it.sku}</span>}
+                      <div key={idx} className="py-2.5 flex items-center justify-between text-xs">
+                        <div className="flex items-center gap-2.5">
+                          {it.selectedPrintImage ? (
+                            <img
+                              src={it.selectedPrintImage}
+                              alt={it.selectedPrint || "Fabric Swatch"}
+                              title={`Fabric Swatch: ${it.selectedPrint}`}
+                              className="w-9 h-9 rounded-xl object-cover border border-[var(--nexa-border)] shrink-0 shadow-xs"
+                            />
+                          ) : it.image ? (
+                            <img
+                              src={it.image}
+                              alt="Item"
+                              className="w-9 h-9 rounded-xl object-cover border border-[var(--nexa-border)] shrink-0 shadow-xs"
+                            />
+                          ) : null}
+                          <div>
+                            <span className="font-bold text-[var(--nexa-text-primary)] block">
+                              {it.name || it.title || "Catalog Item"}
+                            </span>
+                            <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                              {it.sku && <span className="text-[10px] text-[var(--nexa-text-muted)] font-mono">{it.sku}</span>}
+                              {it.selectedPrint && (
+                                <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/10 px-1.5 py-0.5 rounded-md border border-amber-500/20">
+                                  {it.selectedPrint}
+                                </span>
+                              )}
+                              {it.selectedColor && (
+                                <span className="text-[10px] font-semibold text-[var(--nexa-text-secondary)] bg-[var(--nexa-bg-surface)] px-1.5 py-0.5 rounded-md border border-[var(--nexa-border)]">
+                                  {it.selectedColor}
+                                </span>
+                              )}
+                              {it.selectedSize && (
+                                <span className="text-[10px] font-semibold text-[var(--nexa-text-secondary)] bg-[var(--nexa-bg-surface)] px-1.5 py-0.5 rounded-md border border-[var(--nexa-border)]">
+                                  {it.selectedSize}
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
                         <div className="text-right">
                           <span className="font-semibold text-[var(--nexa-text-muted)] mr-2">Qty: {it.quantity || 1}</span>

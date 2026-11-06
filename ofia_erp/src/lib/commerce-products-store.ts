@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { CommerceProductItem, VerticalKey } from "./verticals";
+import { CommerceProductItem, VerticalKey, AFRICAN_PRINT_PRESETS } from "./verticals";
 import { getTenantSql, getTenantDatabaseConfig } from "./tenant-db-resolver";
 
 export const VERTICAL_EDITORIAL_FALLBACK_IMAGES: Record<string, string[]> = {
@@ -111,9 +111,42 @@ function mapAttributesToVerticalMeta(vertical: VerticalKey, attrs: Record<string
       const colors = typeof attrs.colors === "string"
         ? attrs.colors.split(",").map((c) => ({ name: c.trim(), hex: "#111111" })).filter((c) => c.name)
         : Array.isArray(attrs.colors) ? attrs.colors : [{ name: "Default", hex: "#111111" }];
-      const prints = typeof attrs.prints === "string"
-        ? attrs.prints.split(",").map((p) => p.trim()).filter(Boolean)
-        : Array.isArray(attrs.prints) ? attrs.prints : [];
+      const rawPrints = attrs.prints;
+      let prints: any[] = [];
+      if (Array.isArray(rawPrints)) {
+        prints = rawPrints.map((p) => {
+          if (typeof p === "string") {
+            const found = AFRICAN_PRINT_PRESETS.find((pre) => pre.name.toLowerCase() === p.toLowerCase());
+            return {
+              name: p,
+              image: found?.image || "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+              description: found?.description,
+            };
+          }
+          return p;
+        });
+      } else if (typeof rawPrints === "string" && rawPrints.trim()) {
+        prints = rawPrints.split(",").map((s) => {
+          const name = s.trim();
+          const found = AFRICAN_PRINT_PRESETS.find((pre) => pre.name.toLowerCase() === name.toLowerCase());
+          return {
+            name,
+            image: found?.image || "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+            description: found?.description,
+          };
+        }).filter((p) => p.name);
+      } else if (attrs.variants && Array.isArray(attrs.variants)) {
+        const uniquePrintNames = Array.from(new Set(attrs.variants.map((v: any) => v.print).filter(Boolean)));
+        prints = uniquePrintNames.map((name) => {
+          const varMatch = attrs.variants.find((v: any) => v.print === name);
+          const found = AFRICAN_PRINT_PRESETS.find((pre) => pre.name.toLowerCase() === (name as string).toLowerCase());
+          return {
+            name,
+            image: varMatch?.printImage || found?.image || "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+            description: found?.description,
+          };
+        });
+      }
 
       return {
         sizes,

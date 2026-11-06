@@ -34,6 +34,7 @@ import {
   ShieldCheck,
   Check,
   Flame,
+  Star,
 } from "lucide-react";
 import { ErpAdminShell } from "@/components/erp/ErpAdminShell";
 import { ErpStatGrid } from "@/components/erp/ErpStatCard";
@@ -44,7 +45,14 @@ import { NexaInput } from "@/components/nexa/NexaInput";
 import { NexaModal } from "@/components/nexa/NexaModal";
 import { Pagination } from "@/components/nexa/Pagination";
 import { RoleGuard } from "@/components/auth/RoleGuard";
-import { CrmCall, CrmLead } from "@/lib/crm-service";
+import {
+  CrmCall,
+  CrmLead,
+  CallScoreBreakdown,
+  CALL_SCORE_CRITERIA,
+  computeCallScore,
+  getCallScoreBadge,
+} from "@/lib/crm-service";
 import { crmFetch } from "@/lib/crm-client";
 import { useAuth } from "@/components/nexa/AuthContext";
 import { filterSalesClosers } from "@/lib/access-control";
@@ -134,6 +142,26 @@ function SalesCloserCallLoggerContent() {
   const [outcome, setOutcome] = useState<OutcomeType>("CONNECTED_INTERESTED");
   const [notes, setNotes] = useState("");
   const [followupDate, setFollowupDate] = useState("");
+
+  // Call Score Breakdown State (Scale 0 - 12):
+  // 1. Caller's name: 3 pts
+  // 2. Request for Proposal: 1 pt
+  // 3. Got a different email/phone: 2 pts
+  // 4. Reschedule follow-up call: 2 pts
+  // 5. Got referred (name and phone): 4 pts
+  const [scoreBreakdown, setScoreBreakdown] = useState<CallScoreBreakdown>({
+    callerName: false,
+    rfp: false,
+    differentContact: false,
+    rescheduleFollowup: false,
+    referral: false,
+    alternateContact: "",
+    referralDetails: "",
+  });
+
+  const currentCallScore = useMemo(() => {
+    return computeCallScore(scoreBreakdown);
+  }, [scoreBreakdown]);
 
   // Determine active closer persona
   const activeCloserName = useMemo(() => {
@@ -271,9 +299,13 @@ function SalesCloserCallLoggerContent() {
     if (!leadId) return;
     const l = leads.find((item) => item.id === leadId);
     if (l) {
-      setContactName(l.contactName || (l as any).name || "");
+      const name = l.contactName || (l as any).name || "";
+      setContactName(name);
       setCompany(l.companyName || (l as any).company || "");
       setPhoneNumber(l.contactPhone || (l as any).phone || "");
+      if (name.trim()) {
+        setScoreBreakdown((prev) => ({ ...prev, callerName: true }));
+      }
     }
   };
 
@@ -294,11 +326,29 @@ function SalesCloserCallLoggerContent() {
   const handleOpenLogModal = (prefillLead?: CrmLead) => {
     if (prefillLead) {
       handleSelectLead(prefillLead.id);
+      setScoreBreakdown({
+        callerName: Boolean(prefillLead.contactName || (prefillLead as any).name),
+        rfp: false,
+        differentContact: false,
+        rescheduleFollowup: false,
+        referral: false,
+        alternateContact: "",
+        referralDetails: "",
+      });
     } else {
       setSelectedLeadId("");
       setContactName("");
       setCompany("");
       setPhoneNumber("");
+      setScoreBreakdown({
+        callerName: false,
+        rfp: false,
+        differentContact: false,
+        rescheduleFollowup: false,
+        referral: false,
+        alternateContact: "",
+        referralDetails: "",
+      });
     }
     setModalCloserName(activeCloserName);
     setModalCloserEmail(activeCloserEmail);
@@ -341,6 +391,8 @@ function SalesCloserCallLoggerContent() {
         direction,
         outcome,
         durationSeconds: effectiveDuration,
+        callScore: currentCallScore,
+        scoreBreakdown,
         notes: notes.trim(),
         followupDate: followupDate.trim() || undefined,
       };
@@ -648,6 +700,7 @@ function SalesCloserCallLoggerContent() {
                   <th className="py-3 px-3.5">Prospect & Company</th>
                   <th className="py-3 px-3">Direction</th>
                   <th className="py-3 px-3">Call Outcome</th>
+                  <th className="py-3 px-3 text-center">Score</th>
                   <th className="py-3 px-3">Duration</th>
                   <th className="py-3 px-3">Date & Time</th>
                   <th className="py-3 px-3">Follow-up / Notes</th>
@@ -657,7 +710,7 @@ function SalesCloserCallLoggerContent() {
               <tbody className="divide-y divide-[var(--nexa-border)]">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-[var(--nexa-text-muted)]">
+                    <td colSpan={8} className="py-12 text-center text-[var(--nexa-text-muted)]">
                       <div className="flex flex-col items-center justify-center gap-2">
                         <RefreshCw className="w-6 h-6 animate-spin text-emerald-600" />
                         <span className="text-xs font-medium">Loading your call history...</span>
@@ -666,7 +719,7 @@ function SalesCloserCallLoggerContent() {
                   </tr>
                 ) : paginatedCalls.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-[var(--nexa-text-muted)]">
+                    <td colSpan={8} className="py-12 text-center text-[var(--nexa-text-muted)]">
                       <div className="max-w-sm mx-auto space-y-2">
                         <PhoneMissed className="w-8 h-8 text-[var(--nexa-text-muted)] mx-auto opacity-50" />
                         <p className="font-bold text-[var(--nexa-text-primary)]">No calls found</p>
@@ -738,6 +791,24 @@ function SalesCloserCallLoggerContent() {
                           <NexaBadge variant={outcomeConf.badge} size="sm">
                             {outcomeConf.label}
                           </NexaBadge>
+                        </td>
+
+                        {/* Call Score (0 - 12) */}
+                        <td className="py-3 px-3 text-center">
+                          {(() => {
+                            const score = Math.min(12, Math.max(0, Number(call.callScore) || 0));
+                            const badge = getCallScoreBadge(score);
+                            return (
+                              <span
+                                className={`inline-flex items-center gap-1 font-mono text-[11px] font-extrabold px-2 py-0.5 rounded-full ${badge.colorClass}`}
+                                title={`Call Score: ${score}/12 (${badge.rating})`}
+                              >
+                                {score >= 10 && <Flame className="w-3 h-3 text-emerald-500 fill-current" />}
+                                {score >= 7 && score < 10 && <Star className="w-3 h-3 text-blue-500 fill-current" />}
+                                {score}/12
+                              </span>
+                            );
+                          })()}
                         </td>
 
                         {/* Duration */}
@@ -1068,10 +1139,258 @@ function SalesCloserCallLoggerContent() {
             <input
               type="date"
               value={followupDate}
-              onChange={(e) => setFollowupDate(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setFollowupDate(val);
+                if (val.trim()) {
+                  setScoreBreakdown((prev) => ({ ...prev, rescheduleFollowup: true }));
+                }
+              }}
               className="w-full px-3 py-2 rounded-xl text-xs bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] cursor-pointer"
             />
           </div>
+
+          {/* CALL SCORE & QUALIFICATION (SCALE 0 - 12) */}
+          {(() => {
+            const scoreBadge = getCallScoreBadge(currentCallScore);
+            return (
+              <div className="p-3.5 rounded-2xl bg-[var(--nexa-bg-surface)] border border-[var(--nexa-border)] space-y-3">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <Award className="w-4 h-4 text-emerald-600" />
+                      <label className="text-xs font-bold text-[var(--nexa-text-primary)]">
+                        Call Score & Qualification (0 – 12 pts)
+                      </label>
+                    </div>
+                    <p className="text-[10px] text-[var(--nexa-text-muted)] mt-0.5">
+                      Record key qualification benchmarks achieved during the pitch.
+                    </p>
+                  </div>
+
+                  <div className="text-right">
+                    <span className={`inline-flex items-center gap-1 font-mono text-xs font-extrabold px-2.5 py-1 rounded-full ${scoreBadge.colorClass}`}>
+                      {currentCallScore >= 10 && <Flame className="w-3.5 h-3.5 text-emerald-500 fill-current" />}
+                      {currentCallScore >= 7 && currentCallScore < 10 && <Star className="w-3.5 h-3.5 text-blue-500 fill-current" />}
+                      Score: {currentCallScore} / 12 pts
+                    </span>
+                    <div className="text-[9px] text-[var(--nexa-text-muted)] font-semibold mt-0.5">
+                      {scoreBadge.rating}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="w-full bg-[var(--nexa-border)] rounded-full h-1.5 overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-300 rounded-full ${
+                      currentCallScore >= 10
+                        ? "bg-emerald-500"
+                        : currentCallScore >= 7
+                        ? "bg-[#1A56DB]"
+                        : currentCallScore >= 4
+                        ? "bg-amber-500"
+                        : currentCallScore > 0
+                        ? "bg-slate-400"
+                        : "bg-transparent"
+                    }`}
+                    style={{ width: `${Math.round((currentCallScore / 12) * 100)}%` }}
+                  />
+                </div>
+
+                {/* Checklist */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setScoreBreakdown((prev) => ({ ...prev, callerName: !prev.callerName }))}
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
+                      scoreBreakdown.callerName
+                        ? "bg-emerald-500/10 border-emerald-500 text-[var(--nexa-text-primary)] shadow-2xs"
+                        : "bg-[var(--nexa-bg-card)] border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] hover:border-slate-400"
+                    }`}
+                  >
+                    <div
+                      className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
+                        scoreBreakdown.callerName
+                          ? "bg-emerald-600 border-emerald-600 text-white"
+                          : "border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]"
+                      }`}
+                    >
+                      {scoreBreakdown.callerName && <Check className="w-3 h-3 stroke-[3]" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-bold truncate">Caller's Name Obtained</span>
+                        <span className="font-mono text-[10px] font-extrabold px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-600 shrink-0">
+                          +3 pts
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-[var(--nexa-text-muted)] line-clamp-1">
+                        Verified contact full name
+                      </p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setScoreBreakdown((prev) => ({ ...prev, rfp: !prev.rfp }))}
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
+                      scoreBreakdown.rfp
+                        ? "bg-emerald-500/10 border-emerald-500 text-[var(--nexa-text-primary)] shadow-2xs"
+                        : "bg-[var(--nexa-bg-card)] border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] hover:border-slate-400"
+                    }`}
+                  >
+                    <div
+                      className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
+                        scoreBreakdown.rfp
+                          ? "bg-emerald-600 border-emerald-600 text-white"
+                          : "border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]"
+                      }`}
+                    >
+                      {scoreBreakdown.rfp && <Check className="w-3 h-3 stroke-[3]" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-bold truncate">Request for Proposal (RFP)</span>
+                        <span className="font-mono text-[10px] font-extrabold px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-600 shrink-0">
+                          +1 pt
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-[var(--nexa-text-muted)] line-clamp-1">
+                        Client requested quote / proposal
+                      </p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setScoreBreakdown((prev) => ({ ...prev, differentContact: !prev.differentContact }))}
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
+                      scoreBreakdown.differentContact
+                        ? "bg-emerald-500/10 border-emerald-500 text-[var(--nexa-text-primary)] shadow-2xs"
+                        : "bg-[var(--nexa-bg-card)] border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] hover:border-slate-400"
+                    }`}
+                  >
+                    <div
+                      className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
+                        scoreBreakdown.differentContact
+                          ? "bg-emerald-600 border-emerald-600 text-white"
+                          : "border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]"
+                      }`}
+                    >
+                      {scoreBreakdown.differentContact && <Check className="w-3 h-3 stroke-[3]" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-bold truncate">Got Different Email / Phone</span>
+                        <span className="font-mono text-[10px] font-extrabold px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-600 shrink-0">
+                          +2 pts
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-[var(--nexa-text-muted)] line-clamp-1">
+                        Acquired direct phone or email
+                      </p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setScoreBreakdown((prev) => ({ ...prev, rescheduleFollowup: !prev.rescheduleFollowup }))}
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-2.5 ${
+                      scoreBreakdown.rescheduleFollowup
+                        ? "bg-emerald-500/10 border-emerald-500 text-[var(--nexa-text-primary)] shadow-2xs"
+                        : "bg-[var(--nexa-bg-card)] border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] hover:border-slate-400"
+                    }`}
+                  >
+                    <div
+                      className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
+                        scoreBreakdown.rescheduleFollowup
+                          ? "bg-emerald-600 border-emerald-600 text-white"
+                          : "border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]"
+                      }`}
+                    >
+                      {scoreBreakdown.rescheduleFollowup && <Check className="w-3 h-3 stroke-[3]" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-bold truncate">Reschedule Follow-up Call</span>
+                        <span className="font-mono text-[10px] font-extrabold px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-600 shrink-0">
+                          +2 pts
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-[var(--nexa-text-muted)] line-clamp-1">
+                        Agreed callback date & time scheduled
+                      </p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setScoreBreakdown((prev) => ({ ...prev, referral: !prev.referral }))}
+                    className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-2.5 sm:col-span-2 ${
+                      scoreBreakdown.referral
+                        ? "bg-emerald-500/10 border-emerald-500 text-[var(--nexa-text-primary)] shadow-2xs"
+                        : "bg-[var(--nexa-bg-card)] border-[var(--nexa-border)] text-[var(--nexa-text-secondary)] hover:border-slate-400"
+                    }`}
+                  >
+                    <div
+                      className={`mt-0.5 w-4 h-4 rounded flex items-center justify-center shrink-0 border ${
+                        scoreBreakdown.referral
+                          ? "bg-emerald-600 border-emerald-600 text-white"
+                          : "border-[var(--nexa-border)] bg-[var(--nexa-bg-surface)]"
+                      }`}
+                    >
+                      {scoreBreakdown.referral && <Check className="w-3 h-3 stroke-[3]" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-bold truncate">Got Referred (Name and Phone)</span>
+                        <span className="font-mono text-[10px] font-extrabold px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-600 shrink-0">
+                          +4 pts
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-[var(--nexa-text-muted)]">
+                        Client provided referral with contact name & phone
+                      </p>
+                    </div>
+                  </button>
+                </div>
+
+                {(scoreBreakdown.differentContact || scoreBreakdown.referral) && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-[var(--nexa-border)]">
+                    {scoreBreakdown.differentContact && (
+                      <div>
+                        <label className="block text-[10px] font-bold text-[var(--nexa-text-secondary)] mb-0.5">
+                          Alternate Email / Phone:
+                        </label>
+                        <input
+                          type="text"
+                          value={scoreBreakdown.alternateContact || ""}
+                          onChange={(e) => setScoreBreakdown((prev) => ({ ...prev, alternateContact: e.target.value }))}
+                          placeholder="e.g. direct@company.com or 0802..."
+                          className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-[var(--nexa-bg-card)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none"
+                        />
+                      </div>
+                    )}
+                    {scoreBreakdown.referral && (
+                      <div className={scoreBreakdown.differentContact ? "" : "sm:col-span-2"}>
+                        <label className="block text-[10px] font-bold text-[var(--nexa-text-secondary)] mb-0.5">
+                          Referral Details (Name & Phone):
+                        </label>
+                        <input
+                          type="text"
+                          value={scoreBreakdown.referralDetails || ""}
+                          onChange={(e) => setScoreBreakdown((prev) => ({ ...prev, referralDetails: e.target.value }))}
+                          placeholder="e.g. Engr. Bolaji - 08031234567"
+                          className="w-full px-2.5 py-1.5 text-xs rounded-lg bg-[var(--nexa-bg-card)] border border-[var(--nexa-border)] text-[var(--nexa-text-primary)] outline-none"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Call Notes */}
           <div>

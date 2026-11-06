@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { Product, VerticalType } from "@/types/storefront";
+import { Product, VerticalType, AFRICAN_PRINT_PRESETS } from "@/types/storefront";
 import { MOCK_PRODUCTS } from "@/data/mockStores";
 import { getTenantSql, getTenantDatabaseConfig } from "./tenant-db-resolver";
 import { SEED_TENANT_HANDSHAKES } from "./storefront-tenant";
@@ -212,7 +212,37 @@ export async function getStorefrontProducts(
                 ? {
                     sizes: (meta.fashionMeta?.sizes || (typeof meta.sizes === "string" ? meta.sizes.split(",").map((s: string) => s.trim()) : meta.sizes) || ["XS", "S", "M", "L", "XL", "Bespoke Cut"]),
                     colors: (meta.fashionMeta?.colors || (typeof meta.colors === "string" ? meta.colors.split(",").map((c: string) => ({ name: c.trim(), hex: "#111111" })) : meta.colors) || FASHION_PALETTES[idx % FASHION_PALETTES.length]),
-                    prints: (meta.fashionMeta?.prints || (typeof meta.prints === "string" ? meta.prints.split(",").map((p: string) => p.trim()) : meta.prints) || []),
+                    prints: (() => {
+                      const raw = meta.fashionMeta?.prints || (typeof meta.prints === "string" ? meta.prints.split(",").map((p: string) => p.trim()) : meta.prints);
+                      if (Array.isArray(raw) && raw.length > 0) {
+                        return raw.map((p: any) => {
+                          if (typeof p === "string") {
+                            const found = AFRICAN_PRINT_PRESETS.find((pre) => pre.name.toLowerCase() === p.toLowerCase());
+                            return {
+                              name: p,
+                              image: found?.image || "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+                              description: found?.description,
+                            };
+                          }
+                          return p;
+                        });
+                      }
+                      if (Array.isArray(meta.variants) && meta.variants.length > 0) {
+                        const uniquePrintNames = Array.from(new Set(meta.variants.map((v: any) => v.print).filter(Boolean)));
+                        if (uniquePrintNames.length > 0) {
+                          return uniquePrintNames.map((name) => {
+                            const varMatch = meta.variants.find((v: any) => v.print === name);
+                            const found = AFRICAN_PRINT_PRESETS.find((pre) => pre.name.toLowerCase() === (name as string).toLowerCase());
+                            return {
+                              name,
+                              image: varMatch?.printImage || found?.image || "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+                              description: found?.description,
+                            };
+                          });
+                        }
+                      }
+                      return [AFRICAN_PRINT_PRESETS[0], AFRICAN_PRINT_PRESETS[1]];
+                    })(),
                     materials: meta.material ? [meta.material] : ["100% Normandy Flax Linen", "Handwoven Aso-Oke"],
                     fit: meta.fit || "Relaxed tailored silhouette with comfortable drape",
                     careInstructions: "Specialist dry clean or delicate cold hand wash.",

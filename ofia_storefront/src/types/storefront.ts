@@ -34,6 +34,55 @@ export interface VendorStore {
   features: string[];
 }
 
+export interface FabricPrint {
+  name: string;
+  image: string;
+  description?: string;
+}
+
+export const AFRICAN_PRINT_PRESETS: FabricPrint[] = [
+  {
+    name: "Ankara Wax",
+    image: "https://images.unsplash.com/photo-1590736704728-f4730bb30770?auto=format&fit=crop&w=400&q=80",
+    description: "Vibrant high-density wax-resist Dutch cotton print",
+  },
+  {
+    name: "Aso-Oke",
+    image: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&w=400&q=80",
+    description: "Hand-loomed Yoruba ceremonial cloth with metallic threading",
+  },
+  {
+    name: "Adire Tie-Dye",
+    image: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=400&q=80",
+    description: "Indigo resist-dyed artisanal cotton weave with swirl motifs",
+  },
+  {
+    name: "Kente",
+    image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=400&q=80",
+    description: "Royal Ghanaian Ashanti silk-and-cotton geometric tapestry",
+  },
+  {
+    name: "Lace Brocade",
+    image: "https://images.unsplash.com/photo-1528458909336-e7a0adfed0a5?auto=format&fit=crop&w=400&q=80",
+    description: "Embroidered Swiss voile brocade for festive celebration",
+  },
+  {
+    name: "Bogolan Mudcloth",
+    image: "https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=400&q=80",
+    description: "Malian fermented river mud-dyed handspun cotton textile",
+  },
+  {
+    name: "Senegalese Bazin",
+    image: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=400&q=80",
+    description: "Glazed Guinea damask fabric with luminous textured sheen",
+  },
+  {
+    name: "Plain Silk-Linen",
+    image: "https://images.unsplash.com/photo-1584589167171-541ce45f1eea?auto=format&fit=crop&w=400&q=80",
+    description: "Breathable raw silk-linen core woven for bespoke tailoring",
+  },
+];
+
 export interface ProductVariant {
   id: string;
   name: string;
@@ -47,6 +96,8 @@ export interface ProductVariant {
   material?: string;
   portion?: string;
   print?: string;
+  printImage?: string;
+  image?: string;
   stock?: number;
 }
 
@@ -76,7 +127,7 @@ export interface Product {
   fashionMeta?: {
     sizes: string[];
     colors: Array<{ name: string; hex: string }>;
-    prints?: string[];
+    prints?: Array<string | FabricPrint>;
     materials: string[];
     fit: string;
     careInstructions: string;
@@ -232,6 +283,7 @@ export interface CartItem {
   selectedColor?: string;
   selectedSize?: string;
   selectedPrint?: string;
+  selectedPrintImage?: string;
   selectedPortion?: string;
   selectedAddOns?: string[];
   specialInstructions?: string;

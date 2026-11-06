@@ -71,6 +71,18 @@ export default function CartDrawer() {
 
                   {/* Selected Variants Pill */}
                   <div className="flex flex-wrap gap-1 mt-1">
+                    {item.selectedPrint && (
+                      <span className="text-[10px] font-semibold bg-amber-50 text-amber-900 border border-amber-200 px-2 py-0.5 rounded flex items-center gap-1">
+                        {item.selectedPrintImage && (
+                          <img
+                            src={item.selectedPrintImage}
+                            alt={item.selectedPrint}
+                            className="w-3 h-3 rounded-full object-cover shrink-0"
+                          />
+                        )}
+                        <span>Print: {item.selectedPrint}</span>
+                      </span>
+                    )}
                     {item.selectedSize && (
                       <span className="text-[10px] font-semibold bg-stone-100 px-2 py-0.5 rounded text-stone-700">
                         Size: {item.selectedSize}

@@ -35,6 +35,7 @@ import { NexaBadge } from "@/components/nexa/NexaBadge";
 import { NexaButton } from "@/components/nexa/NexaButton";
 import { NexaModal } from "@/components/nexa/NexaModal";
 import { Pagination } from "@/components/nexa/Pagination";
+import { ImageUploadInput } from "@/components/common/ImageUploadInput";
 import { useAuth } from "@/components/nexa/AuthContext";
 import { useActiveTenant } from "@/lib/tenant-context";
 import {
@@ -971,15 +972,15 @@ export default function VerticalCatalogPage() {
             </div>
 
             <div className="sm:col-span-2">
-              <label className="block text-xs font-bold text-[var(--nexa-text-primary)] mb-1">
-                Image URL (Unsplash or CDN link)
-              </label>
-              <input
-                type="url"
+              <ImageUploadInput
+                label="Product Image"
                 value={formImage}
-                onChange={(e) => setFormImage(e.target.value)}
-                placeholder="https://..."
-                className="w-full px-3 py-2 text-xs rounded-xl bg-[var(--nexa-bg-base)] border border-[var(--nexa-border)] outline-none focus:border-[#1A56DB] text-[var(--nexa-text-primary)] font-semibold"
+                onChange={(url) => setFormImage(url)}
+                tenantSlug={activeTenant?.slug}
+                aspectRatio="square"
+                folder="catalog"
+                placeholder="https://... or upload from device"
+                helperText="Upload a high-resolution PNG, JPG, or WEBP photo from your device, or paste a CDN link."
               />
             </div>
           </div>

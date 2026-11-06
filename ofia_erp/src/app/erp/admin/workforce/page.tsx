@@ -165,7 +165,7 @@ export default function WorkforceCommandCenter() {
 
   return (
     <ErpAdminShell
-      title="Ofia Workforce Manager"
+      title="Worforce manager"
       subtitle="The end-to-end operating system for managing people, skills, training, tasks, and client deployment."
       activeModule="workforce"
       action={

@@ -43,17 +43,17 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const rawId = (id || "").trim();
-
-  if (!rawId) {
-    return NextResponse.json(
-      { success: false, error: "tenant parameter is required for multi-tenant isolation" },
-      { status: 400 }
-    );
-  }
   try {
+    const { id } = await params;
     const body = await request.json();
+    const rawId = (body.id || body.slug || id || "").trim();
+
+    if (!rawId) {
+      return NextResponse.json(
+        { success: false, error: "tenant parameter is required for multi-tenant isolation" },
+        { status: 400 }
+      );
+    }
     const sql = neon(MASTER_CONNECTION_STRING);
 
     const hasDatabaseUrl = body.database_url !== undefined || body.databaseUrl !== undefined;

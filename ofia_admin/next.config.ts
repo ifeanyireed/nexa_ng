@@ -1,5 +1,17 @@
 import type { NextConfig } from "next";
 import path from "path";
+import fs from "fs";
+
+// Automatically cleanup any conflicting [slug] route folder that collides with [id]
+const conflictingSlugDir = path.resolve(__dirname, "src/app/api/admin/tenants/[slug]");
+if (fs.existsSync(conflictingSlugDir)) {
+  try {
+    fs.rmSync(conflictingSlugDir, { recursive: true, force: true });
+    console.log("[next.config.ts] Automatically removed conflicting [slug] route directory.");
+  } catch (e: any) {
+    console.warn("[next.config.ts] Warning removing conflicting [slug] directory:", e.message);
+  }
+}
 
 const nextConfig: NextConfig = {
   turbopack: {

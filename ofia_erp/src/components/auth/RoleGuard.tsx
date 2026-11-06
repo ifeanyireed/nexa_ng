@@ -379,6 +379,8 @@ export function RoleGuard({
         effectiveAllowedRoles = ["admin", "md"];
       } else if (pathname.startsWith("/erp/hr")) {
         effectiveAllowedRoles = ["admin", "md", "hr"];
+      } else if (pathname.startsWith("/erp/admin/workforce")) {
+        effectiveAllowedRoles = ["admin", "md", "hr"];
       } else if (pathname.startsWith("/erp/accountant")) {
         effectiveAllowedRoles = ["admin", "md", "accountant"];
       } else if (pathname.startsWith("/erp/manager")) {
@@ -434,6 +436,7 @@ export function RoleGuard({
       else if (pathname.startsWith("/erp/admin/marketplace")) requiredMod = "marketplace";
       else if (pathname.startsWith("/erp/admin/mobility")) requiredMod = "mobility";
       else if (pathname.startsWith("/erp/admin/dispatch") || pathname.startsWith("/erp/ops/dispatch")) requiredMod = "dispatch";
+      else if (pathname.startsWith("/erp/admin/workforce")) requiredMod = "workforce";
       else if (pathname.startsWith("/erp/admin/users") || pathname.startsWith("/erp/admin/departments")) requiredMod = "users";
       else if (pathname.startsWith("/erp/employee")) requiredMod = "users";
       else if (pathname.startsWith("/erp/manager")) requiredMod = "users";

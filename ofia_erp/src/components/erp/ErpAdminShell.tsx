@@ -719,6 +719,7 @@ export function ErpAdminShell({
             if (
               (allowedPage === "accounting" && pathname.startsWith("/erp/accountant")) ||
               (allowedPage === "hr" && pathname.startsWith("/erp/hr")) ||
+              (allowedPage === "workforce" && pathname.startsWith("/erp/admin/workforce")) ||
               (allowedPage === "sales_closer" && (pathname.startsWith("/erp/ops/crm") || pathname.startsWith("/erp/ops/calls") || pathname.startsWith("/ops/calls") || pathname.startsWith("/ops/crm"))) ||
               (allowedPage === "crm" && (pathname.startsWith("/erp/admin/crm") || pathname.startsWith("/erp/marketer"))) ||
               (allowedPage === "shop" && pathname.startsWith("/erp/admin/shop")) ||
@@ -757,6 +758,8 @@ export function ErpAdminShell({
           ? "/erp/accountant"
           : (resolvedAssignedPages.includes("hr"))
           ? "/erp/hr"
+          : (resolvedAssignedPages.includes("workforce"))
+          ? "/erp/admin/workforce"
           : (resolvedAssignedPages.includes("employee") ? "/erp/employee" : "/erp/employee");
         if (pathname !== fallback) {
           window.location.href = fallback;
@@ -952,7 +955,7 @@ export function ErpAdminShell({
     // 1. OPERATIONS & REVENUE APPS
     { label: "Overview", icon: <LayoutDashboard className="w-6 h-6" />, href: "/erp/admin", key: "overview", section: "Operations" },
     { label: "Ofia Voice Agent", icon: <PhoneCall className="w-6 h-6" />, href: "/erp/admin/ai", badge: "Voice", key: "ai", section: "Operations" },
-    { label: "Marketplace Manager", icon: <ShoppingBag className="w-6 h-6" />, href: "/erp/admin/marketplace", key: "marketplace", section: "Operations" },
+    { label: "Ofia Marketplace Manager", icon: <ShoppingBag className="w-6 h-6" />, href: "/erp/admin/marketplace", key: "marketplace", section: "Operations" },
     { label: "Ofia Shop Manager", icon: <Store className="w-6 h-6" />, href: "/erp/admin/shop", badge: "Retail", key: "shop", section: "Operations" },
     { label: "Ofia Mobility Manager", icon: <Truck className="w-6 h-6" />, href: "/erp/admin/mobility", badge: "Mobility", key: "mobility", section: "Operations" },
     { label: "Ofia Dispatch Manager", icon: <Bike className="w-6 h-6" />, href: "/erp/admin/dispatch", badge: "Live", key: "dispatch", section: "Operations" },
@@ -961,7 +964,7 @@ export function ErpAdminShell({
     { label: "CRM & Marketing", icon: <BarChart3 className="w-6 h-6" />, href: "/erp/admin/crm", badge: "CRM", key: "crm", section: "Ofia Enterprise Suite" },
     { label: "Accounting & Ledgers", icon: <Layers className="w-6 h-6" />, href: "/erp/accountant", badge: "GL", key: "accounting", section: "Ofia Enterprise Suite" },
     { label: "HR & Appraisals", icon: <Users className="w-6 h-6" />, href: "/erp/hr", key: "hr", section: "Ofia Enterprise Suite" },
-    { label: "Ofia Workforce Manager", icon: <Network className="w-6 h-6" />, href: "/erp/admin/workforce", badge: "OS", key: "workforce", section: "Ofia Enterprise Suite" },
+    { label: "Worforce manager", icon: <Network className="w-6 h-6" />, href: "/erp/admin/workforce", badge: "OS", key: "workforce", section: "Ofia Enterprise Suite" },
     { label: "User Management", icon: <UserCheck className="w-6 h-6" />, href: "/erp/admin/users", badge: "Staff", key: "users", section: "Ofia Enterprise Suite" },
 
     // 3. PORTALS & WORKSPACES
@@ -1292,6 +1295,7 @@ export function ErpAdminShell({
         (activeModKey === "marketplace" && userAssignedPages.includes("marketplace")) ||
         (activeModKey === "ai" && userAssignedPages.includes("ai")) ||
         (activeModKey === "hr" && userAssignedPages.includes("hr")) ||
+        (activeModKey === "workforce" && (userAssignedPages.includes("workforce") || userAssignedPages.includes("hr"))) ||
         (activeModKey === "overview" && (userAssignedPages.includes("overview") || userAssignedPages.includes("admin")))
       ) {
         return rawSubTabs;

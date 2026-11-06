@@ -93,8 +93,15 @@ export async function GET(
           } else if (isEnabled === true) {
             if (!matrix.admin) matrix.admin = {};
             if (!matrix.tenant_provision) matrix.tenant_provision = {};
-            if (matrix.admin[key] === undefined) matrix.admin[key] = true;
-            if (matrix.tenant_provision[key] === undefined) matrix.tenant_provision[key] = true;
+            matrix.admin[key] = true;
+            matrix.tenant_provision[key] = true;
+
+            if (key === "workforce") {
+              if (!matrix.hr) matrix.hr = {};
+              if (!matrix.md) matrix.md = {};
+              matrix.hr.workforce = true;
+              matrix.md.workforce = true;
+            }
           }
         }
 

@@ -213,6 +213,7 @@ function TenantManagementContent() {
     shop: true,
     accounting: true,
     hr: true,
+    workforce: true,
     mobility: true,
     dispatch: true,
     users: true,
@@ -326,6 +327,30 @@ function TenantManagementContent() {
             const mrr = org.mrr !== undefined ? Number(org.mrr) : planTier === "ENTERPRISE" ? 100000 : planTier === "SCALE" ? 48000 : planTier === "STARTER" ? 9000 : planTier === "FREE_TRIAL" ? 0 : 24000;
             const orgSlug = org.slug || org.Slug || `org-${idx + 1}`;
 
+            let rawErp = org.erp_modules || org.erpModules;
+            if (typeof rawErp === "string") {
+              try { rawErp = JSON.parse(rawErp); } catch { rawErp = {}; }
+            }
+            let rawShopSubs = org.shop_sub_modules || org.shopSubModules;
+            if (typeof rawShopSubs === "string") {
+              try { rawShopSubs = JSON.parse(rawShopSubs); } catch { rawShopSubs = {}; }
+            }
+            let rawMobilitySubs = org.mobility_sub_modules || org.mobilitySubModules;
+            if (typeof rawMobilitySubs === "string") {
+              try { rawMobilitySubs = JSON.parse(rawMobilitySubs); } catch { rawMobilitySubs = {}; }
+            }
+
+            const initialErpDefaults = INITIAL_TENANTS[0]?.erpModules || {};
+            const resolvedErpModules: Record<string, boolean> = {
+              ...initialErpDefaults,
+              ...(rawErp && typeof rawErp === "object" ? rawErp : {}),
+            };
+            if (rawErp && typeof rawErp === "object" && rawErp.workforce !== undefined) {
+              resolvedErpModules.workforce = Boolean(rawErp.workforce);
+            } else {
+              resolvedErpModules.workforce = true;
+            }
+
             return {
               id: org.id || org.ID || `org-${idx + 1}`,
               name: org.name || org.Name || "Tenant Workspace",
@@ -346,30 +371,34 @@ function TenantManagementContent() {
               monthlyAiSpendUSD: Math.round(mrr * 0.12),
               integrationHealth: org.integrationHealth || "Healthy",
               vertical: org.vertical || org.Vertical || "retail",
-              erpModules: org.erp_modules || org.erpModules || { ...INITIAL_TENANTS[0].erpModules },
-              shopSubModules: org.shop_sub_modules || org.shopSubModules || {
-                pos: true,
-                inventory: true,
-                catalog: true,
-                services: true,
-                orders: true,
-                store: true,
-                referrals: true,
-              },
-              mobilitySubModules: org.mobility_sub_modules || org.mobilitySubModules || {
-                ops: false,
-                vehicles: false,
-                drivers: false,
-                maintenance: false,
-                routes: false,
-                finance: false,
-                shuttle: false,
-                interstate: false,
-                on_demand: false,
-                rental: false,
-                school: false,
-                staff: false,
-              },
+              erpModules: resolvedErpModules,
+              shopSubModules: (rawShopSubs && typeof rawShopSubs === "object" && Object.keys(rawShopSubs).length > 0)
+                ? rawShopSubs
+                : {
+                    pos: true,
+                    inventory: true,
+                    catalog: true,
+                    services: true,
+                    orders: true,
+                    store: true,
+                    referrals: true,
+                  },
+              mobilitySubModules: (rawMobilitySubs && typeof rawMobilitySubs === "object" && Object.keys(rawMobilitySubs).length > 0)
+                ? rawMobilitySubs
+                : {
+                    ops: false,
+                    vehicles: false,
+                    drivers: false,
+                    maintenance: false,
+                    routes: false,
+                    finance: false,
+                    shuttle: false,
+                    interstate: false,
+                    on_demand: false,
+                    rental: false,
+                    school: false,
+                    staff: false,
+                  },
               databaseUrl: org.database_url || org.databaseUrl || "",
               cloudinaryUrl: org.cloudinary_url || org.cloudinaryUrl || "",
               isCustomDb: Boolean(org.is_custom_db || org.isCustomDb || org.database_url || org.databaseUrl),
@@ -1661,12 +1690,12 @@ function TenantManagementContent() {
                 },
                 {
                   label: "Configured ERP Modules",
-                  value: "8 Modules",
+                  value: `${SUPER_ADMIN_ERP_MODULES.length} Modules`,
                   change: "Active Matrix",
                   trend: "up",
                   changeType: "info",
                   icon: <Boxes className="w-5 h-5 text-purple-500" />,
-                  sub: "AI, IMS, POS, Referrals, HR",
+                  sub: "AI, IMS, POS, HR, Workforce, Fleet",
                 },
                 {
                   label: "Security & RBAC Enforcement",

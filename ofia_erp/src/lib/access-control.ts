@@ -156,7 +156,7 @@ export const ERP_MODULES: ErpModuleDef[] = [
   },
   {
     key: "marketplace",
-    label: "Marketplace Manager",
+    label: "Ofia Marketplace Manager",
     category: "Operations",
     description: "Public storefront, order fulfillments, merchant catalogs, and payments.",
     href: "/erp/admin/marketplace",
@@ -202,7 +202,7 @@ export const ERP_MODULES: ErpModuleDef[] = [
   },
   {
     key: "workforce",
-    label: "Ofia Workforce Manager",
+    label: "Worforce manager",
     category: "Ofia Enterprise Suite",
     description: "Talent acquisition, academy LMS, task rosters, attendance, competency matrices, and client deployment.",
     href: "/erp/admin/workforce",
@@ -313,6 +313,14 @@ export const ASSIGNABLE_PAGES: AssignablePage[] = [
     category: "Ofia Enterprise Suite",
   },
   {
+    key: "workforce",
+    label: "Worforce manager",
+    description: "Recruitment pipelines, academy LMS, tasks, GPS attendance, competency matrices, deployment, and service delivery.",
+    route: "/erp/admin/workforce",
+    category: "Ofia Enterprise Suite",
+    badge: "OS",
+  },
+  {
     key: "users",
     label: "User Management",
     description: "Corporate staff directory, departmental hierarchy, role administration, and page access.",
@@ -346,7 +354,7 @@ export const ASSIGNABLE_PAGES: AssignablePage[] = [
   },
   {
     key: "marketplace",
-    label: "Marketplace Manager",
+    label: "Ofia Marketplace Manager",
     description: "Public storefront, order fulfillments, merchant catalogs, bookings, and payments.",
     route: "/erp/admin/marketplace",
     category: "Operations",
@@ -385,11 +393,11 @@ export function getDefaultPagesForRole(role: RoleKey | string, designation?: str
     case "admin":
       return ASSIGNABLE_PAGES.map((p) => p.key);
     case "md":
-      return ["employee", "md", "crm", "accounting", "hr", "shop", "mobility"];
+      return ["employee", "md", "crm", "accounting", "hr", "workforce", "shop", "mobility"];
     case "manager":
       return ["employee", "manager"];
     case "hr":
-      return ["employee", "manager", "hr", "users"];
+      return ["employee", "manager", "hr", "workforce", "users"];
     case "accountant":
       return ["employee", "accounting"];
     case "marketer":
@@ -495,6 +503,12 @@ export function isRouteOrModuleAssignedToUser(
       cleanPath.startsWith("/erp/hr") ||
       cleanPath.startsWith("/hr") ||
       reqMod === "hr"
+    )) return true;
+
+    // Ofia Workforce Manager
+    if ((p === "workforce" || p === "hr") && (
+      cleanPath.startsWith("/erp/admin/workforce") ||
+      reqMod === "workforce"
     )) return true;
 
     // Users & Departments
@@ -789,6 +803,12 @@ export async function fetchTenantPermissionMatrix(tenantId: string): Promise<Per
         }
       }
 
+      // Explicitly tie Workforce Manager access to executive and HR director roles when provisioned
+      if (merged.admin.workforce === true) {
+        if (merged.hr) merged.hr.workforce = true;
+        if (merged.md) merged.md.workforce = true;
+      }
+
       // Explicitly synchronize role permissions for Sales Closer & Marketer with CRM provisioning
       if (merged.sales_closer) {
         merged.sales_closer.sales_closer = isCrmProvisioned;
@@ -1070,7 +1090,7 @@ export const ROLE_CAPABILITIES: Record<RoleKey, RoleCapability> = {
   md: {
     key: "md",
     label: "Managing Director",
-    controlPanels: ["accounting", "hr", "crm", "shop", "mobility"],
+    controlPanels: ["accounting", "hr", "workforce", "crm", "shop", "mobility"],
     portals: ["md", "employee"],
     homeRoute: "/erp/md",
   },

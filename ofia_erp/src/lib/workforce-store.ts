@@ -20,6 +20,8 @@ import {
   CompensationScale,
   WorkforceKpis,
   ApplicationStage,
+  WorkforceDepartment,
+  WorkforceBranch,
 } from "./workforce-types";
 import {
   INITIAL_JOB_OPENINGS,
@@ -38,6 +40,8 @@ import {
   INITIAL_TICKETS,
   INITIAL_WORK_LOGS,
   INITIAL_SCALES,
+  INITIAL_DEPARTMENTS,
+  INITIAL_BRANCHES,
 } from "./workforce-defaults";
 import { extractSubdomainOrParam } from "./tenant-context";
 
@@ -81,6 +85,8 @@ export function useWorkforceManager() {
   const [tickets, setTickets] = useState<ServiceTicket[]>(INITIAL_TICKETS);
   const [workLogs, setWorkLogs] = useState<DailyWorkLog[]>(INITIAL_WORK_LOGS);
   const [compensationScales, setCompensationScales] = useState<CompensationScale[]>(INITIAL_SCALES);
+  const [departments, setDepartments] = useState<WorkforceDepartment[]>(INITIAL_DEPARTMENTS);
+  const [branches, setBranches] = useState<WorkforceBranch[]>(INITIAL_BRANCHES);
 
   // Save changes to localStorage cache
   const saveLocalCache = useCallback(
@@ -104,6 +110,8 @@ export function useWorkforceManager() {
           tickets: overrides?.tickets ?? tickets,
           workLogs: overrides?.workLogs ?? workLogs,
           compensationScales: overrides?.compensationScales ?? compensationScales,
+          departments: overrides?.departments ?? departments,
+          branches: overrides?.branches ?? branches,
         };
         localStorage.setItem(`ofia_workforce_data_${tenantSlug}`, JSON.stringify(dataToSave));
       } catch (e) {
@@ -128,6 +136,8 @@ export function useWorkforceManager() {
       tickets,
       workLogs,
       compensationScales,
+      departments,
+      branches,
     ]
   );
 
@@ -164,6 +174,8 @@ export function useWorkforceManager() {
           if (Array.isArray(data.tickets) && data.tickets.length > 0) setTickets(data.tickets);
           if (Array.isArray(data.workLogs) && data.workLogs.length > 0) setWorkLogs(data.workLogs);
           if (Array.isArray(data.compensationScales) && data.compensationScales.length > 0) setCompensationScales(data.compensationScales);
+          if (Array.isArray(data.departments) && data.departments.length > 0) setDepartments(data.departments);
+          if (Array.isArray(data.branches) && data.branches.length > 0) setBranches(data.branches);
         }
       }
     } catch (err) {
@@ -574,6 +586,79 @@ export function useWorkforceManager() {
     [saveLocalCache]
   );
 
+  // 9. Department and Branch actions
+  const createDepartment = useCallback(
+    (dept: WorkforceDepartment) => {
+      setDepartments((prev) => {
+        const updated = [...prev, dept];
+        saveLocalCache({ departments: updated });
+        return updated;
+      });
+      mutateBackend("CREATE_DEPARTMENT", dept);
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const updateDepartment = useCallback(
+    (departmentId: string, updates: Partial<WorkforceDepartment>) => {
+      setDepartments((prev) => {
+        const updated = prev.map((d) => (d.id === departmentId ? { ...d, ...updates } : d));
+        saveLocalCache({ departments: updated });
+        return updated;
+      });
+      mutateBackend("UPDATE_DEPARTMENT", { departmentId, ...updates });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const deleteDepartment = useCallback(
+    (departmentId: string) => {
+      setDepartments((prev) => {
+        const updated = prev.filter((d) => d.id !== departmentId);
+        saveLocalCache({ departments: updated });
+        return updated;
+      });
+      mutateBackend("DELETE_DEPARTMENT", { departmentId });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const createBranch = useCallback(
+    (branch: WorkforceBranch) => {
+      setBranches((prev) => {
+        const updated = [...prev, branch];
+        saveLocalCache({ branches: updated });
+        return updated;
+      });
+      mutateBackend("CREATE_BRANCH", branch);
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const updateBranch = useCallback(
+    (branchId: string, updates: Partial<WorkforceBranch>) => {
+      setBranches((prev) => {
+        const updated = prev.map((b) => (b.id === branchId ? { ...b, ...updates } : b));
+        saveLocalCache({ branches: updated });
+        return updated;
+      });
+      mutateBackend("UPDATE_BRANCH", { branchId, ...updates });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const deleteBranch = useCallback(
+    (branchId: string) => {
+      setBranches((prev) => {
+        const updated = prev.filter((b) => b.id !== branchId);
+        saveLocalCache({ branches: updated });
+        return updated;
+      });
+      mutateBackend("DELETE_BRANCH", { branchId });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
   // Real-time KPI calculations
   const kpis: WorkforceKpis = useMemo(() => {
     const total = people.length;
@@ -636,6 +721,8 @@ export function useWorkforceManager() {
     tickets,
     workLogs,
     compensationScales,
+    departments,
+    branches,
     // Action dispatchers
     updateCandidateStage,
     submitApplication,
@@ -657,5 +744,11 @@ export function useWorkforceManager() {
     deployPerson,
     addTicket,
     resolveTicket,
+    createDepartment,
+    updateDepartment,
+    deleteDepartment,
+    createBranch,
+    updateBranch,
+    deleteBranch,
   };
 }

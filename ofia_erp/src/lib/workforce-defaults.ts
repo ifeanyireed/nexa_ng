@@ -15,6 +15,8 @@ import {
   ServiceTicket,
   DailyWorkLog,
   CompensationScale,
+  WorkforceDepartment,
+  WorkforceBranch,
 } from "./workforce-types";
 
 export const INITIAL_JOB_OPENINGS: JobOpening[] = [
@@ -818,3 +820,103 @@ export const INITIAL_SCALES: CompensationScale[] = [
     activeRecipients: 8,
   },
 ];
+
+export const INITIAL_DEPARTMENTS: WorkforceDepartment[] = [
+  {
+    id: "dept-01",
+    name: "Technology & Software Engineering",
+    code: "TECH",
+    headPersonId: "person-01",
+    headPersonName: "Tunde Bakare",
+    budgetMonthly: 3500000,
+    targetHeadcount: 15,
+    activeHeadcount: 8,
+    description: "Core ERP infrastructure, cloud databases, microservices, and AI integrations.",
+  },
+  {
+    id: "dept-02",
+    name: "Operations & Logistics",
+    code: "OPS",
+    headPersonId: "person-02",
+    headPersonName: "Ngozi Adeleke",
+    budgetMonthly: 2800000,
+    targetHeadcount: 12,
+    activeHeadcount: 6,
+    description: "Fleet logistics, driver dispatching, warehousing, and client on-site staffing.",
+  },
+  {
+    id: "dept-03",
+    name: "Customer Success & Merchant Experience",
+    code: "CS",
+    headPersonId: "person-03",
+    headPersonName: "Fatima Aliyu",
+    budgetMonthly: 2200000,
+    targetHeadcount: 10,
+    activeHeadcount: 5,
+    description: "Merchant onboarding, omnichannel retail support, and service SLA governance.",
+  },
+  {
+    id: "dept-04",
+    name: "Talent Academy & LMS",
+    code: "LMS",
+    headPersonId: "person-04",
+    headPersonName: "Dr. Emeka Okonkwo",
+    budgetMonthly: 1800000,
+    targetHeadcount: 8,
+    activeHeadcount: 4,
+    description: "Internship cohorts, continuous professional development, and practical examinations.",
+  },
+  {
+    id: "dept-05",
+    name: "Compliance, Audit & Governance",
+    code: "COMP",
+    headPersonId: "person-05",
+    headPersonName: "Dayo Oladipo",
+    budgetMonthly: 1500000,
+    targetHeadcount: 6,
+    activeHeadcount: 3,
+    description: "Statutory tax audit, CAC filing compliance, and data privacy governance.",
+  },
+  {
+    id: "dept-06",
+    name: "Finance & Corporate Accounting",
+    code: "FIN",
+    headPersonId: "person-06",
+    headPersonName: "Bisi Akande",
+    budgetMonthly: 2500000,
+    targetHeadcount: 6,
+    activeHeadcount: 3,
+    description: "Treasury management, payroll disbursement, merchant escrow ledger, and financial reporting.",
+  },
+];
+
+export const INITIAL_BRANCHES: WorkforceBranch[] = [
+  {
+    id: "branch-01",
+    name: "Lagos Executive Headquarters",
+    city: "Lagos",
+    state: "Lagos State",
+    address: "Plot 12, Adeola Odeku Street, Victoria Island",
+    isHeadquarters: true,
+    managerName: "Tunde Bakare",
+  },
+  {
+    id: "branch-02",
+    name: "Abuja Regional Commercial Hub",
+    city: "Abuja",
+    state: "FCT",
+    address: "4th Floor, Transcorp Hilton Commercial Wing, Maitama",
+    isHeadquarters: false,
+    managerName: "Fatima Aliyu",
+  },
+  {
+    id: "branch-03",
+    name: "Port Harcourt Field Operations Center",
+    city: "Port Harcourt",
+    state: "Rivers State",
+    address: "18 Trans-Amadi Industrial Layout, Peter Odili Road",
+    isHeadquarters: false,
+    managerName: "Ngozi Adeleke",
+  },
+];
+

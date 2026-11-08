@@ -227,6 +227,28 @@ export interface CompensationScale {
   activeRecipients: number;
 }
 
+export interface WorkforceDepartment {
+  id: string;
+  name: string;
+  code: string;
+  headPersonId?: string;
+  headPersonName: string;
+  budgetMonthly: number;
+  targetHeadcount: number;
+  activeHeadcount: number;
+  description: string;
+}
+
+export interface WorkforceBranch {
+  id: string;
+  name: string;
+  city: string;
+  state: string;
+  address: string;
+  isHeadquarters: boolean;
+  managerName: string;
+}
+
 export interface WorkforceKpis {
   totalWorkforce: number;
   activeEmployees: number;

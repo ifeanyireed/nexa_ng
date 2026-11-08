@@ -18,6 +18,8 @@ import {
   DailyWorkLog,
   CompensationScale,
   WorkforceKpis,
+  WorkforceDepartment,
+  WorkforceBranch,
 } from "@/lib/workforce-types";
 import {
   INITIAL_JOB_OPENINGS,
@@ -36,6 +38,8 @@ import {
   INITIAL_TICKETS,
   INITIAL_WORK_LOGS,
   INITIAL_SCALES,
+  INITIAL_DEPARTMENTS,
+  INITIAL_BRANCHES,
 } from "@/lib/workforce-defaults";
 
 function getTenantKey(request: Request): string | null {
@@ -382,6 +386,40 @@ async function ensureWorkforceTables(sql: any, tenantSlug: string) {
         );
 
         CREATE INDEX IF NOT EXISTS idx_wf_comp_scale_tenant_created ON workforce_compensation_scales(LOWER(tenant_slug), created_at DESC);
+
+        CREATE TABLE IF NOT EXISTS workforce_departments (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(191) NOT NULL,
+          tenant_id VARCHAR(191) DEFAULT '',
+          name VARCHAR(100) NOT NULL,
+          code VARCHAR(50) NOT NULL,
+          head_person_id VARCHAR(64) DEFAULT '',
+          head_person_name VARCHAR(255) NOT NULL DEFAULT '',
+          budget_monthly NUMERIC(15,2) DEFAULT 0,
+          target_headcount INT DEFAULT 1,
+          active_headcount INT DEFAULT 0,
+          description TEXT DEFAULT '',
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_wf_dept_tenant_created ON workforce_departments(LOWER(tenant_slug), created_at DESC);
+
+        CREATE TABLE IF NOT EXISTS workforce_branches (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(191) NOT NULL,
+          tenant_id VARCHAR(191) DEFAULT '',
+          name VARCHAR(100) NOT NULL,
+          city VARCHAR(100) NOT NULL,
+          state VARCHAR(100) NOT NULL,
+          address TEXT NOT NULL,
+          is_headquarters BOOLEAN DEFAULT FALSE,
+          manager_name VARCHAR(255) NOT NULL DEFAULT '',
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_wf_branch_tenant_created ON workforce_branches(LOWER(tenant_slug), created_at DESC);
       `;
       ensuredTenantDbs.add(cleanSlug);
     } catch (e: any) {
@@ -615,6 +653,36 @@ async function ensureWorkforceTables(sql: any, tenantSlug: string) {
         `;
       }
     }
+
+    // Check if departments table has data, seed if empty
+    const existingDepts = await sql`
+      SELECT COUNT(*)::int as cnt FROM workforce_departments
+      WHERE LOWER(tenant_slug) = ${cleanSlug};
+    `;
+
+    if (Number(existingDepts[0]?.cnt || 0) === 0) {
+      for (const d of INITIAL_DEPARTMENTS) {
+        await sql`
+          INSERT INTO workforce_departments (
+            id, tenant_slug, tenant_id, name, code, head_person_id, head_person_name,
+            budget_monthly, target_headcount, active_headcount, description
+          ) VALUES (
+            ${d.id}, ${cleanSlug}, ${cleanSlug}, ${d.name}, ${d.code}, ${d.headPersonId || ""}, ${d.headPersonName},
+            ${d.budgetMonthly}, ${d.targetHeadcount}, ${d.activeHeadcount}, ${d.description}
+          ) ON CONFLICT (id) DO NOTHING;
+        `;
+      }
+
+      for (const b of INITIAL_BRANCHES) {
+        await sql`
+          INSERT INTO workforce_branches (
+            id, tenant_slug, tenant_id, name, city, state, address, is_headquarters, manager_name
+          ) VALUES (
+            ${b.id}, ${cleanSlug}, ${cleanSlug}, ${b.name}, ${b.city}, ${b.state}, ${b.address}, ${b.isHeadquarters}, ${b.managerName}
+          ) ON CONFLICT (id) DO NOTHING;
+        `;
+      }
+    }
   } catch (err: any) {
     console.warn(`[Workforce DB] Initial seed notice for '${cleanSlug}':`, err.message);
   }
@@ -653,6 +721,8 @@ export async function GET(request: Request) {
       ticketsRows,
       workLogsRows,
       scalesRows,
+      departmentsRows,
+      branchesRows,
     ] = await Promise.all([
       sql`SELECT * FROM workforce_job_openings WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
       sql`SELECT * FROM workforce_candidates WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
@@ -670,6 +740,8 @@ export async function GET(request: Request) {
       sql`SELECT * FROM workforce_tickets WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
       sql`SELECT * FROM workforce_work_logs WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC LIMIT 50;`,
       sql`SELECT * FROM workforce_compensation_scales WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
+      sql`SELECT * FROM workforce_departments WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at ASC;`,
+      sql`SELECT * FROM workforce_branches WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY is_headquarters DESC, created_at ASC;`,
     ]);
 
     // Map rows to typed models
@@ -888,6 +960,35 @@ export async function GET(request: Request) {
       activeRecipients: Number(r.active_recipients || 0),
     }));
 
+    const departments: WorkforceDepartment[] = departmentsRows.map((r: any) => {
+      const matchingPeople = people.filter(
+        (p) =>
+          p.department.toLowerCase() === r.name.toLowerCase() ||
+          p.department.toLowerCase().includes(r.code.toLowerCase())
+      );
+      return {
+        id: r.id,
+        name: r.name,
+        code: r.code,
+        headPersonId: r.head_person_id || undefined,
+        headPersonName: r.head_person_name || "Unassigned",
+        budgetMonthly: Number(r.budget_monthly || 0),
+        targetHeadcount: Number(r.target_headcount || 1),
+        activeHeadcount: matchingPeople.length > 0 ? matchingPeople.length : Number(r.active_headcount || 0),
+        description: r.description || "",
+      };
+    });
+
+    const branches: WorkforceBranch[] = branchesRows.map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      city: r.city,
+      state: r.state,
+      address: r.address,
+      isHeadquarters: Boolean(r.is_headquarters),
+      managerName: r.manager_name || "Branch Supervisor",
+    }));
+
     // Dynamic KPI Computation
     const totalWorkforce = people.length;
     const activeEmployees = people.filter((p) => p.role === "employee").length;
@@ -949,6 +1050,8 @@ export async function GET(request: Request) {
       jobOpenings,
       candidates,
       people,
+      departments,
+      branches,
       courses,
       assignments,
       tasks,
@@ -1320,6 +1423,82 @@ export async function POST(request: Request) {
           );
         `;
         return NextResponse.json({ success: true, id, message: "Work log submitted" });
+      }
+
+      case "CREATE_DEPARTMENT": {
+        const id = payload.id || `dept-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_departments (
+            id, tenant_slug, tenant_id, name, code, head_person_id, head_person_name,
+            budget_monthly, target_headcount, active_headcount, description
+          ) VALUES (
+            ${id}, ${cleanSlug}, ${cleanSlug}, ${payload.name}, ${payload.code ? payload.code.toUpperCase() : "GEN"},
+            ${payload.headPersonId || ""}, ${payload.headPersonName || "Unassigned"},
+            ${payload.budgetMonthly || 0}, ${payload.targetHeadcount || 1},
+            ${payload.activeHeadcount || 0}, ${payload.description || ""}
+          );
+        `;
+        return NextResponse.json({ success: true, id, message: "Department created successfully" });
+      }
+
+      case "UPDATE_DEPARTMENT": {
+        await sql`
+          UPDATE workforce_departments
+          SET name = COALESCE(${payload.name}, name),
+              code = COALESCE(${payload.code ? payload.code.toUpperCase() : null}, code),
+              head_person_id = COALESCE(${payload.headPersonId}, head_person_id),
+              head_person_name = COALESCE(${payload.headPersonName}, head_person_name),
+              budget_monthly = COALESCE(${payload.budgetMonthly}, budget_monthly),
+              target_headcount = COALESCE(${payload.targetHeadcount}, target_headcount),
+              description = COALESCE(${payload.description}, description),
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${payload.departmentId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+        return NextResponse.json({ success: true, message: "Department updated successfully" });
+      }
+
+      case "DELETE_DEPARTMENT": {
+        await sql`
+          DELETE FROM workforce_departments
+          WHERE id = ${payload.departmentId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+        return NextResponse.json({ success: true, message: "Department removed" });
+      }
+
+      case "CREATE_BRANCH": {
+        const id = payload.id || `branch-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_branches (
+            id, tenant_slug, tenant_id, name, city, state, address, is_headquarters, manager_name
+          ) VALUES (
+            ${id}, ${cleanSlug}, ${cleanSlug}, ${payload.name}, ${payload.city}, ${payload.state},
+            ${payload.address}, ${payload.isHeadquarters || false}, ${payload.managerName || "Branch Manager"}
+          );
+        `;
+        return NextResponse.json({ success: true, id, message: "Branch created successfully" });
+      }
+
+      case "UPDATE_BRANCH": {
+        await sql`
+          UPDATE workforce_branches
+          SET name = COALESCE(${payload.name}, name),
+              city = COALESCE(${payload.city}, city),
+              state = COALESCE(${payload.state}, state),
+              address = COALESCE(${payload.address}, address),
+              is_headquarters = COALESCE(${payload.isHeadquarters}, is_headquarters),
+              manager_name = COALESCE(${payload.managerName}, manager_name),
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${payload.branchId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+        return NextResponse.json({ success: true, message: "Branch updated successfully" });
+      }
+
+      case "DELETE_BRANCH": {
+        await sql`
+          DELETE FROM workforce_branches
+          WHERE id = ${payload.branchId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+        return NextResponse.json({ success: true, message: "Branch removed" });
       }
 
       default:

@@ -424,3 +424,61 @@ export interface WorkforceKpis {
   monthlyClientBilledRevenue: number;
   grossMarginPercent: number;
 }
+
+export interface CourseModuleLesson {
+  id: string;
+  title: string;
+  durationMinutes: number;
+  content: string;
+  resources?: { title: string; url: string }[];
+}
+
+export interface CourseModuleQuizQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  correctOptionIndex: number;
+  explanation: string;
+}
+
+export interface CourseModule {
+  id: string;
+  courseId: string;
+  title: string;
+  orderIndex: number;
+  durationHours: number;
+  summary: string;
+  lessons: CourseModuleLesson[];
+  quiz?: {
+    questionsCount: number;
+    passPercentage: number;
+    questions?: CourseModuleQuizQuestion[];
+  };
+}
+
+export interface CourseEnrollment {
+  id: string;
+  courseId: string;
+  personId: string;
+  personName: string;
+  progressPercentage: number;
+  completedLessons: string[];
+  status: "enrolled" | "in_progress" | "completed";
+  finalScore?: number;
+  enrolledAt: string;
+  completedAt?: string;
+}
+
+export interface CourseCertificate {
+  id: string;
+  certificateNumber: string;
+  courseId: string;
+  courseTitle: string;
+  personId: string;
+  personName: string;
+  issueDate: string;
+  grade: string;
+  verificationHash: string;
+  competenciesAwarded: string[];
+}
+

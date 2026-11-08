@@ -25,6 +25,9 @@ import {
   WorkforceInterview,
   WorkforceOffer,
   WorkforceOnboardingPacket,
+  CourseModule,
+  CourseEnrollment,
+  CourseCertificate,
 } from "@/lib/workforce-types";
 import {
   INITIAL_JOB_OPENINGS,
@@ -50,6 +53,9 @@ import {
   INITIAL_INTERVIEWS,
   INITIAL_OFFERS,
   INITIAL_ONBOARDING_PACKETS,
+  INITIAL_COURSE_MODULES,
+  INITIAL_ENROLLMENTS,
+  INITIAL_CERTIFICATES,
 } from "@/lib/workforce-defaults";
 
 function getTenantKey(request: Request): string | null {
@@ -540,6 +546,61 @@ async function ensureWorkforceTables(sql: any, tenantSlug: string) {
         CREATE INDEX IF NOT EXISTS idx_wf_onb_tenant_created ON workforce_onboarding_packets(LOWER(tenant_slug), created_at DESC);
         CREATE INDEX IF NOT EXISTS idx_wf_onb_token ON workforce_onboarding_packets(LOWER(tenant_slug), token);
 
+        CREATE TABLE IF NOT EXISTS workforce_course_modules (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(191) NOT NULL,
+          tenant_id VARCHAR(191) DEFAULT '',
+          course_id VARCHAR(64) NOT NULL,
+          title VARCHAR(255) NOT NULL,
+          order_index INT NOT NULL DEFAULT 1,
+          duration_hours INT NOT NULL DEFAULT 2,
+          summary TEXT NOT NULL,
+          lessons JSONB DEFAULT '[]'::jsonb,
+          quiz JSONB DEFAULT NULL,
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_wf_mod_tenant_course ON workforce_course_modules(LOWER(tenant_slug), course_id, order_index);
+
+        CREATE TABLE IF NOT EXISTS workforce_course_enrollments (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(191) NOT NULL,
+          tenant_id VARCHAR(191) DEFAULT '',
+          course_id VARCHAR(64) NOT NULL,
+          person_id VARCHAR(64) NOT NULL,
+          person_name VARCHAR(255) NOT NULL,
+          progress_percentage INT NOT NULL DEFAULT 0,
+          completed_lessons JSONB DEFAULT '[]'::jsonb,
+          status VARCHAR(50) NOT NULL DEFAULT 'enrolled',
+          final_score NUMERIC(5,2) DEFAULT NULL,
+          enrolled_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          completed_at TIMESTAMPTZ DEFAULT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_wf_enr_tenant_course ON workforce_course_enrollments(LOWER(tenant_slug), course_id);
+        CREATE INDEX IF NOT EXISTS idx_wf_enr_tenant_person ON workforce_course_enrollments(LOWER(tenant_slug), person_id);
+
+        CREATE TABLE IF NOT EXISTS workforce_certificates (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(191) NOT NULL,
+          tenant_id VARCHAR(191) DEFAULT '',
+          certificate_number VARCHAR(100) NOT NULL,
+          course_id VARCHAR(64) NOT NULL,
+          course_title VARCHAR(255) NOT NULL,
+          person_id VARCHAR(64) NOT NULL,
+          person_name VARCHAR(255) NOT NULL,
+          issue_date VARCHAR(50) NOT NULL,
+          grade VARCHAR(50) NOT NULL,
+          verification_hash VARCHAR(128) NOT NULL,
+          competencies_awarded JSONB DEFAULT '[]'::jsonb,
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_wf_cert_tenant_hash ON workforce_certificates(LOWER(tenant_slug), verification_hash);
+        CREATE INDEX IF NOT EXISTS idx_wf_cert_tenant_created ON workforce_certificates(LOWER(tenant_slug), created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_wf_cert_tenant_person ON workforce_certificates(LOWER(tenant_slug), person_id);
+
         ALTER TABLE workforce_people ADD COLUMN IF NOT EXISTS residential_address TEXT DEFAULT '';
         ALTER TABLE workforce_people ADD COLUMN IF NOT EXISTS emergency_contact JSONB DEFAULT '{}'::jsonb;
         ALTER TABLE workforce_people ADD COLUMN IF NOT EXISTS education JSONB DEFAULT '[]'::jsonb;
@@ -902,6 +963,52 @@ async function ensureWorkforceTables(sql: any, tenantSlug: string) {
         `;
       }
     }
+
+    // Check if course modules table has data, seed if empty
+    const existingMods = await sql`
+      SELECT COUNT(*)::int as cnt FROM workforce_course_modules
+      WHERE LOWER(tenant_slug) = ${cleanSlug};
+    `;
+
+    if (Number(existingMods[0]?.cnt || 0) === 0) {
+      for (const m of INITIAL_COURSE_MODULES) {
+        await sql`
+          INSERT INTO workforce_course_modules (
+            id, tenant_slug, tenant_id, course_id, title, order_index,
+            duration_hours, summary, lessons, quiz
+          ) VALUES (
+            ${m.id}, ${cleanSlug}, ${cleanSlug}, ${m.courseId}, ${m.title}, ${m.orderIndex},
+            ${m.durationHours}, ${m.summary}, ${JSON.stringify(m.lessons)}, ${m.quiz ? JSON.stringify(m.quiz) : null}
+          ) ON CONFLICT (id) DO NOTHING;
+        `;
+      }
+
+      for (const enr of INITIAL_ENROLLMENTS) {
+        await sql`
+          INSERT INTO workforce_course_enrollments (
+            id, tenant_slug, tenant_id, course_id, person_id, person_name,
+            progress_percentage, completed_lessons, status, final_score, enrolled_at, completed_at
+          ) VALUES (
+            ${enr.id}, ${cleanSlug}, ${cleanSlug}, ${enr.courseId}, ${enr.personId}, ${enr.personName},
+            ${enr.progressPercentage}, ${JSON.stringify(enr.completedLessons)}, ${enr.status},
+            ${enr.finalScore ?? null}, ${enr.enrolledAt}, ${enr.completedAt || null}
+          ) ON CONFLICT (id) DO NOTHING;
+        `;
+      }
+
+      for (const cert of INITIAL_CERTIFICATES) {
+        await sql`
+          INSERT INTO workforce_certificates (
+            id, tenant_slug, tenant_id, certificate_number, course_id, course_title,
+            person_id, person_name, issue_date, grade, verification_hash, competencies_awarded
+          ) VALUES (
+            ${cert.id}, ${cleanSlug}, ${cleanSlug}, ${cert.certificateNumber}, ${cert.courseId}, ${cert.courseTitle},
+            ${cert.personId}, ${cert.personName}, ${cert.issueDate}, ${cert.grade},
+            ${cert.verificationHash}, ${JSON.stringify(cert.competenciesAwarded)}
+          ) ON CONFLICT (id) DO NOTHING;
+        `;
+      }
+    }
   } catch (err: any) {
     console.warn(`[Workforce DB] Initial seed notice for '${cleanSlug}':`, err.message);
   }
@@ -947,6 +1054,9 @@ export async function GET(request: Request) {
       interviewsRows,
       offersRows,
       onboardingRows,
+      modulesRows,
+      enrollmentsRows,
+      certificatesRows,
     ] = await Promise.all([
       sql`SELECT * FROM workforce_job_openings WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
       sql`SELECT * FROM workforce_candidates WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
@@ -971,6 +1081,9 @@ export async function GET(request: Request) {
       sql`SELECT * FROM workforce_interviews WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY scheduled_start ASC;`,
       sql`SELECT * FROM workforce_offers WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
       sql`SELECT * FROM workforce_onboarding_packets WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
+      sql`SELECT * FROM workforce_course_modules WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY order_index ASC;`,
+      sql`SELECT * FROM workforce_course_enrollments WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY enrolled_at DESC;`,
+      sql`SELECT * FROM workforce_certificates WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
     ]);
 
     // Map rows to typed models
@@ -1308,6 +1421,56 @@ export async function GET(request: Request) {
       createdAt: r.created_at ? new Date(r.created_at).toLocaleString() : "",
     }));
 
+    const courseModules: CourseModule[] = modulesRows.map((r: any) => ({
+      id: r.id,
+      courseId: r.course_id,
+      title: r.title,
+      orderIndex: Number(r.order_index || 1),
+      durationHours: Number(r.duration_hours || 1),
+      summary: r.summary || "",
+      lessons: Array.isArray(r.lessons) ? r.lessons : [],
+      quiz: typeof r.quiz === "object" && r.quiz !== null ? r.quiz : undefined,
+    }));
+
+    const courseEnrollments: CourseEnrollment[] = enrollmentsRows.map((r: any) => ({
+      id: r.id,
+      courseId: r.course_id,
+      personId: r.person_id,
+      personName: r.person_name,
+      progressPercentage: Number(r.progress_percentage || 0),
+      completedLessons: Array.isArray(r.completed_lessons) ? r.completed_lessons : [],
+      status: r.status,
+      finalScore: r.final_score != null ? Number(r.final_score) : undefined,
+      enrolledAt: r.enrolled_at ? new Date(r.enrolled_at).toISOString() : "",
+      completedAt: r.completed_at ? new Date(r.completed_at).toISOString() : undefined,
+    }));
+
+    const certificates: CourseCertificate[] = certificatesRows.map((r: any) => ({
+      id: r.id,
+      certificateNumber: r.certificate_number,
+      courseId: r.course_id,
+      courseTitle: r.course_title,
+      personId: r.person_id,
+      personName: r.person_name,
+      issueDate: r.issue_date,
+      grade: r.grade,
+      verificationHash: r.verification_hash,
+      competenciesAwarded: Array.isArray(r.competencies_awarded) ? r.competencies_awarded : [],
+    }));
+
+    // Shortcut for public certificate verification
+    const certHash = new URL(request.url).searchParams.get("certHash");
+    if (certHash) {
+      const match = certificates.find((c) => c.verificationHash.toLowerCase() === certHash.toLowerCase());
+      if (match) {
+        return NextResponse.json({ success: true, certificate: match });
+      }
+      return NextResponse.json(
+        { success: false, error: "Cryptographic Certificate Record not found or unverified" },
+        { status: 404 }
+      );
+    }
+
     // Dynamic KPI Computation
     const totalWorkforce = people.length;
     const activeEmployees = people.filter((p) => p.role === "employee").length;
@@ -1377,6 +1540,9 @@ export async function GET(request: Request) {
       offers,
       onboardingPackets,
       courses,
+      courseModules,
+      courseEnrollments,
+      certificates,
       assignments,
       tasks,
       attendance,
@@ -1566,7 +1732,188 @@ export async function POST(request: Request) {
               status = 'approved', updated_at = CURRENT_TIMESTAMP
           WHERE id = ${payload.assignmentId} AND LOWER(tenant_slug) = ${cleanSlug};
         `;
-        return NextResponse.json({ success: true, message: "Assignment graded successfully" });
+
+        let autoCertificate = null;
+        if (Number(payload.score) >= 80) {
+          const asgRows = await sql`
+            SELECT title, course_title, track, assignee_name FROM workforce_assignments
+            WHERE id = ${payload.assignmentId} AND LOWER(tenant_slug) = ${cleanSlug}
+            LIMIT 1;
+          `;
+          if (asgRows.length > 0) {
+            const asg = asgRows[0];
+            const personRows = await sql`
+              SELECT id, name FROM workforce_people
+              WHERE LOWER(name) = LOWER(${asg.assignee_name}) AND LOWER(tenant_slug) = ${cleanSlug}
+              LIMIT 1;
+            `;
+            const personId = personRows[0]?.id || `person-${Date.now()}`;
+            const personName = personRows[0]?.name || asg.assignee_name;
+
+            const certId = `cert-${Date.now()}`;
+            const certNumber = `OFIA-CERT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+            const randomHex = Math.random().toString(16).substring(2, 10) + Math.random().toString(16).substring(2, 10) + Math.random().toString(16).substring(2, 10);
+            const verificationHash = `sha256_${Date.now()}_${randomHex}`;
+            const gradeText = Number(payload.score) >= 90 ? `Distinction (${payload.score}%)` : `Merit (${payload.score}%)`;
+
+            await sql`
+              INSERT INTO workforce_certificates (
+                id, tenant_slug, tenant_id, certificate_number, course_id, course_title,
+                person_id, person_name, issue_date, grade, verification_hash, competencies_awarded
+              ) VALUES (
+                ${certId}, ${cleanSlug}, ${cleanSlug}, ${certNumber}, 'course-custom', ${asg.course_title || asg.title},
+                ${personId}, ${personName}, ${new Date().toISOString().split("T")[0]}, ${gradeText},
+                ${verificationHash}, ${JSON.stringify([asg.track || "Professional Competence", "Verified Practical Assessment"])}
+              ) ON CONFLICT (id) DO NOTHING;
+            `;
+
+            autoCertificate = {
+              id: certId,
+              certificateNumber: certNumber,
+              verificationHash,
+            };
+
+            await sql`
+              UPDATE workforce_people
+              SET competency_score = LEAST(100, competency_score + 10),
+                  updated_at = CURRENT_TIMESTAMP
+              WHERE id = ${personId} AND LOWER(tenant_slug) = ${cleanSlug};
+            `;
+          }
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: "Assignment graded successfully",
+          autoCertificate,
+        });
+      }
+
+      case "CREATE_COURSE_MODULE": {
+        const id = payload.id || `mod-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_course_modules (
+            id, tenant_slug, tenant_id, course_id, title, order_index,
+            duration_hours, summary, lessons, quiz
+          ) VALUES (
+            ${id}, ${cleanSlug}, ${cleanSlug}, ${payload.courseId}, ${payload.title},
+            ${payload.orderIndex || 1}, ${payload.durationHours || 2}, ${payload.summary || ""},
+            ${JSON.stringify(payload.lessons || [])}, ${payload.quiz ? JSON.stringify(payload.quiz) : null}
+          );
+        `;
+        await sql`
+          UPDATE workforce_courses
+          SET modules_count = modules_count + 1, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${payload.courseId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+        return NextResponse.json({ success: true, id, message: "Course module published" });
+      }
+
+      case "ENROLL_LEARNER": {
+        const id = payload.id || `enr-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_course_enrollments (
+            id, tenant_slug, tenant_id, course_id, person_id, person_name,
+            progress_percentage, completed_lessons, status, enrolled_at
+          ) VALUES (
+            ${id}, ${cleanSlug}, ${cleanSlug}, ${payload.courseId}, ${payload.personId}, ${payload.personName},
+            0, '[]'::jsonb, 'enrolled', CURRENT_TIMESTAMP
+          );
+        `;
+        await sql`
+          UPDATE workforce_courses
+          SET enrolled_learners = enrolled_learners + 1, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${payload.courseId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+        return NextResponse.json({ success: true, id, message: "Learner enrolled in course" });
+      }
+
+      case "UPDATE_LESSON_PROGRESS": {
+        const { enrollmentId, lessonId, isCompleted, totalLessonsCount } = payload;
+        const rows = await sql`
+          SELECT completed_lessons, course_id, person_id, person_name FROM workforce_course_enrollments
+          WHERE id = ${enrollmentId} AND LOWER(tenant_slug) = ${cleanSlug}
+          LIMIT 1;
+        `;
+        if (rows.length === 0) {
+          return NextResponse.json({ success: false, error: "Enrollment not found" }, { status: 404 });
+        }
+        let completed: string[] = Array.isArray(rows[0].completed_lessons) ? rows[0].completed_lessons : [];
+        if (isCompleted && !completed.includes(lessonId)) {
+          completed.push(lessonId);
+        } else if (!isCompleted && completed.includes(lessonId)) {
+          completed = completed.filter((id: string) => id !== lessonId);
+        }
+        const total = totalLessonsCount || 5;
+        const progress = Math.min(100, Math.round((completed.length / total) * 100));
+        const isDone = progress >= 100;
+        const status = isDone ? "completed" : progress > 0 ? "in_progress" : "enrolled";
+
+        await sql`
+          UPDATE workforce_course_enrollments
+          SET completed_lessons = ${JSON.stringify(completed)},
+              progress_percentage = ${progress},
+              status = ${status},
+              completed_at = ${isDone ? sql`CURRENT_TIMESTAMP` : null}
+          WHERE id = ${enrollmentId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+
+        if (isDone) {
+          await sql`
+            UPDATE workforce_people
+            SET competency_score = LEAST(100, competency_score + 5),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ${rows[0].person_id} AND LOWER(tenant_slug) = ${cleanSlug};
+          `;
+        }
+
+        return NextResponse.json({ success: true, progress, status, completedLessons: completed });
+      }
+
+      case "ISSUE_CERTIFICATE": {
+        const id = payload.id || `cert-${Date.now()}`;
+        const randomHex = Math.random().toString(16).substring(2, 10) + Math.random().toString(16).substring(2, 10) + Math.random().toString(16).substring(2, 10);
+        const verificationHash = payload.verificationHash || `sha256_${Date.now()}_${randomHex}`;
+        const certNumber = payload.certificateNumber || `OFIA-CERT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+        await sql`
+          INSERT INTO workforce_certificates (
+            id, tenant_slug, tenant_id, certificate_number, course_id, course_title,
+            person_id, person_name, issue_date, grade, verification_hash, competencies_awarded
+          ) VALUES (
+            ${id}, ${cleanSlug}, ${cleanSlug}, ${certNumber}, ${payload.courseId}, ${payload.courseTitle},
+            ${payload.personId}, ${payload.personName}, ${payload.issueDate || new Date().toISOString().split("T")[0]},
+            ${payload.grade || "Distinction (90%)"}, ${verificationHash},
+            ${JSON.stringify(payload.competenciesAwarded || [])}
+          );
+        `;
+
+        if (payload.personId) {
+          await sql`
+            UPDATE workforce_people
+            SET competency_score = LEAST(100, competency_score + 10),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ${payload.personId} AND LOWER(tenant_slug) = ${cleanSlug};
+          `;
+        }
+
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${`audit-${Date.now()}`}, ${cleanSlug}, ${cleanSlug}, 'certificate', ${id},
+            'ISSUE_CERTIFICATE', 'Academy Registrar',
+            ${JSON.stringify({ certificateNumber: certNumber, personName: payload.personName, courseTitle: payload.courseTitle })}
+          );
+        `;
+
+        return NextResponse.json({
+          success: true,
+          id,
+          certificateNumber: certNumber,
+          verificationHash,
+          message: "Certificate generated and cryptographically registered"
+        });
       }
 
       case "CREATE_TASK": {

@@ -28,6 +28,9 @@ import {
   WorkforceOffer,
   WorkforceOnboardingPacket,
   WorkforceRoleCategory,
+  CourseModule,
+  CourseEnrollment,
+  CourseCertificate,
 } from "./workforce-types";
 import {
   INITIAL_JOB_OPENINGS,
@@ -53,6 +56,9 @@ import {
   INITIAL_INTERVIEWS,
   INITIAL_OFFERS,
   INITIAL_ONBOARDING_PACKETS,
+  INITIAL_COURSE_MODULES,
+  INITIAL_ENROLLMENTS,
+  INITIAL_CERTIFICATES,
 } from "./workforce-defaults";
 import { extractSubdomainOrParam } from "./tenant-context";
 
@@ -103,6 +109,9 @@ export function useWorkforceManager() {
   const [interviews, setInterviews] = useState<WorkforceInterview[]>(INITIAL_INTERVIEWS);
   const [offers, setOffers] = useState<WorkforceOffer[]>(INITIAL_OFFERS);
   const [onboardingPackets, setOnboardingPackets] = useState<WorkforceOnboardingPacket[]>(INITIAL_ONBOARDING_PACKETS);
+  const [courseModules, setCourseModules] = useState<CourseModule[]>(INITIAL_COURSE_MODULES);
+  const [courseEnrollments, setCourseEnrollments] = useState<CourseEnrollment[]>(INITIAL_ENROLLMENTS);
+  const [certificates, setCertificates] = useState<CourseCertificate[]>(INITIAL_CERTIFICATES);
 
   // Save changes to localStorage cache
   const saveLocalCache = useCallback(
@@ -114,6 +123,9 @@ export function useWorkforceManager() {
           candidates: overrides?.candidates ?? candidates,
           people: overrides?.people ?? people,
           courses: overrides?.courses ?? courses,
+          courseModules: overrides?.courseModules ?? courseModules,
+          courseEnrollments: overrides?.courseEnrollments ?? courseEnrollments,
+          certificates: overrides?.certificates ?? certificates,
           assignments: overrides?.assignments ?? assignments,
           tasks: overrides?.tasks ?? tasks,
           attendance: overrides?.attendance ?? attendance,
@@ -207,6 +219,9 @@ export function useWorkforceManager() {
           if (Array.isArray(data.interviews) && data.interviews.length > 0) setInterviews(data.interviews);
           if (Array.isArray(data.offers) && data.offers.length > 0) setOffers(data.offers);
           if (Array.isArray(data.onboardingPackets) && data.onboardingPackets.length > 0) setOnboardingPackets(data.onboardingPackets);
+          if (Array.isArray(data.courseModules) && data.courseModules.length > 0) setCourseModules(data.courseModules);
+          if (Array.isArray(data.courseEnrollments) && data.courseEnrollments.length > 0) setCourseEnrollments(data.courseEnrollments);
+          if (Array.isArray(data.certificates) && data.certificates.length > 0) setCertificates(data.certificates);
         }
       }
     } catch (err) {
@@ -253,6 +268,9 @@ export function useWorkforceManager() {
           if (parsed.candidates) setCandidates(parsed.candidates);
           if (parsed.people) setPeople(parsed.people);
           if (parsed.courses) setCourses(parsed.courses);
+          if (parsed.courseModules) setCourseModules(parsed.courseModules);
+          if (parsed.courseEnrollments) setCourseEnrollments(parsed.courseEnrollments);
+          if (parsed.certificates) setCertificates(parsed.certificates);
           if (parsed.assignments) setAssignments(parsed.assignments);
           if (parsed.tasks) setTasks(parsed.tasks);
           if (parsed.attendance) setAttendance(parsed.attendance);
@@ -396,6 +414,7 @@ export function useWorkforceManager() {
 
   const gradeAssignment = useCallback(
     (assignmentId: string, score: number, feedback: string) => {
+      const targetAsg = assignments.find((a) => a.id === assignmentId);
       setAssignments((prev) => {
         const updated = prev.map((a) =>
           a.id === assignmentId
@@ -405,7 +424,132 @@ export function useWorkforceManager() {
         saveLocalCache({ assignments: updated });
         return updated;
       });
+
+      if (score >= 80 && targetAsg) {
+        const certNumber = `OFIA-CERT-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+        const randomHex = Math.random().toString(16).substring(2, 10) + Math.random().toString(16).substring(2, 10) + Math.random().toString(16).substring(2, 10);
+        const verificationHash = `sha256_${Date.now()}_${randomHex}`;
+        const newCert: CourseCertificate = {
+          id: `cert-${Date.now()}`,
+          certificateNumber: certNumber,
+          courseId: "course-custom",
+          courseTitle: targetAsg.courseTitle || targetAsg.title,
+          personId: `person-${Date.now()}`,
+          personName: targetAsg.assigneeName,
+          issueDate: new Date().toISOString().split("T")[0],
+          grade: score >= 90 ? `Distinction (${score}%)` : `Merit (${score}%)`,
+          verificationHash,
+          competenciesAwarded: [targetAsg.track || "Professional Competence", "Verified Practical Assessment"],
+        };
+
+        setCertificates((prev) => {
+          const updated = [newCert, ...prev];
+          saveLocalCache({ certificates: updated });
+          return updated;
+        });
+
+        setPeople((prev) => {
+          const updated = prev.map((p) =>
+            p.name.toLowerCase() === targetAsg.assigneeName.toLowerCase()
+              ? { ...p, competencyScore: Math.min(100, p.competencyScore + 10) }
+              : p
+          );
+          saveLocalCache({ people: updated });
+          return updated;
+        });
+      }
+
       mutateBackend("GRADE_ASSIGNMENT", { assignmentId, score, feedback });
+    },
+    [assignments, saveLocalCache, mutateBackend]
+  );
+
+  const createCourseModule = useCallback(
+    (newModule: CourseModule) => {
+      setCourseModules((prev) => {
+        const updated = [...prev, newModule];
+        saveLocalCache({ courseModules: updated });
+        return updated;
+      });
+      setCourses((prev) => {
+        const updated = prev.map((c) =>
+          c.id === newModule.courseId ? { ...c, modulesCount: c.modulesCount + 1 } : c
+        );
+        saveLocalCache({ courses: updated });
+        return updated;
+      });
+      mutateBackend("CREATE_COURSE_MODULE", newModule);
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const enrollLearner = useCallback(
+    (newEnrollment: CourseEnrollment) => {
+      setCourseEnrollments((prev) => {
+        const updated = [newEnrollment, ...prev];
+        saveLocalCache({ courseEnrollments: updated });
+        return updated;
+      });
+      setCourses((prev) => {
+        const updated = prev.map((c) =>
+          c.id === newEnrollment.courseId ? { ...c, enrolledLearners: c.enrolledLearners + 1 } : c
+        );
+        saveLocalCache({ courses: updated });
+        return updated;
+      });
+      mutateBackend("ENROLL_LEARNER", newEnrollment);
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const updateLessonProgress = useCallback(
+    (enrollmentId: string, lessonId: string, isCompleted: boolean, totalLessonsCount: number = 5) => {
+      setCourseEnrollments((prev) => {
+        const updated = prev.map((enr) => {
+          if (enr.id !== enrollmentId) return enr;
+          let completed = [...enr.completedLessons];
+          if (isCompleted && !completed.includes(lessonId)) {
+            completed.push(lessonId);
+          } else if (!isCompleted && completed.includes(lessonId)) {
+            completed = completed.filter((id) => id !== lessonId);
+          }
+          const progress = Math.min(100, Math.round((completed.length / totalLessonsCount) * 100));
+          const isDone = progress >= 100;
+          return {
+            ...enr,
+            completedLessons: completed,
+            progressPercentage: progress,
+            status: isDone ? ("completed" as const) : progress > 0 ? ("in_progress" as const) : ("enrolled" as const),
+            completedAt: isDone ? new Date().toISOString() : enr.completedAt,
+          };
+        });
+        saveLocalCache({ courseEnrollments: updated });
+        return updated;
+      });
+      mutateBackend("UPDATE_LESSON_PROGRESS", { enrollmentId, lessonId, isCompleted, totalLessonsCount });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const issueCertificate = useCallback(
+    (cert: CourseCertificate) => {
+      setCertificates((prev) => {
+        const updated = [cert, ...prev];
+        saveLocalCache({ certificates: updated });
+        return updated;
+      });
+      if (cert.personId) {
+        setPeople((prev) => {
+          const updated = prev.map((p) =>
+            p.id === cert.personId || p.name.toLowerCase() === cert.personName.toLowerCase()
+              ? { ...p, competencyScore: Math.min(100, p.competencyScore + 10) }
+              : p
+          );
+          saveLocalCache({ people: updated });
+          return updated;
+        });
+      }
+      mutateBackend("ISSUE_CERTIFICATE", cert);
     },
     [saveLocalCache, mutateBackend]
   );
@@ -1085,6 +1229,9 @@ export function useWorkforceManager() {
     candidates,
     people,
     courses,
+    courseModules,
+    courseEnrollments,
+    certificates,
     assignments,
     tasks,
     attendance,
@@ -1120,6 +1267,10 @@ export function useWorkforceManager() {
     provisionSystemUser,
     addPerson,
     addCourse,
+    createCourseModule,
+    enrollLearner,
+    updateLessonProgress,
+    issueCertificate,
     gradeAssignment,
     submitAssignment,
     addTask,

@@ -22,6 +22,9 @@ import {
   WorkforceInterview,
   WorkforceOffer,
   WorkforceOnboardingPacket,
+  CourseModule,
+  CourseEnrollment,
+  CourseCertificate,
 } from "./workforce-types";
 
 export const INITIAL_JOB_OPENINGS: JobOpening[] = [
@@ -1243,6 +1246,340 @@ export const INITIAL_ONBOARDING_PACKETS: WorkforceOnboardingPacket[] = [
     createdAt: "2027-04-17 10:00 AM",
   },
 ];
+
+export const INITIAL_COURSE_MODULES: CourseModule[] = [
+  {
+    id: "mod-101",
+    courseId: "course-01",
+    title: "Multi-Tenant Isolation Foundations & Schema Per-Tenant",
+    orderIndex: 1,
+    durationHours: 6,
+    summary: "Architectural mandate for dedicated tenant databases, zero shared clusters, and query-level multi-tenant guardrails in Next.js & Neon.",
+    lessons: [
+      {
+        id: "les-101",
+        title: "Dedicated Tenancy vs Shared Clusters in Enterprise SaaS",
+        durationMinutes: 35,
+        content: "Understanding physical database isolation for corporate merchants, high-throughput logistics, and banking APIs. Eliminating cross-tenant data leakage risks through dedicated connection strings per tenant workspace.",
+        resources: [
+          { title: "Ofia Tenant Resolver Architecture Doc", url: "/docs/tenant-resolver" },
+          { title: "PostgreSQL Row-Level vs Physical Tenancy", url: "https://www.postgresql.org/docs" }
+        ],
+      },
+      {
+        id: "les-102",
+        title: "Writing Dynamic Resolvers with In-Memory 60s TTL",
+        durationMinutes: 45,
+        content: "How getTenantSql(cleanSlug) dynamically resolves tenant credentials from platform_tenants registry, pooling database connections while invalidating on configuration updates.",
+        resources: [
+          { title: "Connection Resolver Best Practices", url: "/docs/connection-pooling" }
+        ],
+      },
+      {
+        id: "les-103",
+        title: "Mandatory Composite Indexes & Query Guardrails",
+        durationMinutes: 40,
+        content: "Enforcing composite indexes on (LOWER(tenant_slug), created_at DESC) across all tenant-scoped tables, preventing full table scans across millions of order and dispatch records.",
+      },
+    ],
+    quiz: {
+      questionsCount: 3,
+      passPercentage: 80,
+      questions: [
+        {
+          id: "q-101-1",
+          question: "What is the primary isolation model required for Ofia enterprise merchant databases?",
+          options: [
+            "Shared PostgreSQL database with tenant_id foreign keys",
+            "Strict DEDICATED database-per-tenant with dynamic client resolver",
+            "Multi-tenant SQLite file storage",
+            "In-memory Redis cache with fallback cluster"
+          ],
+          correctOptionIndex: 1,
+          explanation: "The Ofia Platform mandates strict DEDICATED database-per-tenant isolation for all merchant commerce, orders, and personnel persistence."
+        },
+        {
+          id: "q-101-2",
+          question: "What is the default TTL for cached tenant connection configurations in getTenantSql?",
+          options: ["5 seconds", "60 seconds", "10 minutes", "Infinite TTL without invalidation"],
+          correctOptionIndex: 1,
+          explanation: "Tenant connection configs are cached in-memory with a 60-second TTL to balance database query latency and administrative updates."
+        },
+        {
+          id: "q-101-3",
+          question: "Which index pattern must be created on every tenant-scoped table?",
+          options: [
+            "CREATE INDEX ON table(created_at);",
+            "CREATE INDEX ON table(LOWER(tenant_slug), created_at DESC);",
+            "CREATE UNIQUE INDEX ON table(id, name);",
+            "No index is necessary for dedicated databases"
+          ],
+          correctOptionIndex: 1,
+          explanation: "Composite indexes on LOWER(tenant_slug) combined with sort keys ensure defense-in-depth query efficiency and cross-tenant guardrails."
+        }
+      ]
+    }
+  },
+  {
+    id: "mod-102",
+    courseId: "course-01",
+    title: "Postgres Serverless & Dynamic Client Pooling",
+    orderIndex: 2,
+    durationHours: 8,
+    summary: "Production scaling with Neon Postgres Serverless, client pool lifecycle management, and schema migration automation.",
+    lessons: [
+      {
+        id: "les-104",
+        title: "Connection Pooling Architecture & Neon Serverless Drivers",
+        durationMinutes: 50,
+        content: "Deploying @neondatabase/serverless with HTTP/WebSocket multiplexing, managing scale-to-zero compute instances, and eliminating connection leakages during traffic spikes.",
+        resources: [
+          { title: "Neon Serverless Connection Guide", url: "https://neon.tech/docs" }
+        ],
+      },
+      {
+        id: "les-105",
+        title: "Schema Bootstrapping & Zero-Downtime Rollouts",
+        durationMinutes: 45,
+        content: "Automated provisioning of fresh tenant databases using bootstrapDedicatedTenantSchema, ensuring table definitions, constraints, and audit logs are created idempotently.",
+      },
+    ],
+    quiz: {
+      questionsCount: 2,
+      passPercentage: 80,
+      questions: [
+        {
+          id: "q-102-1",
+          question: "Why does Ofia ERP pool client instances using a Map<string, any>() keyed by connection string?",
+          options: [
+            "To prevent establishing redundant TCP handshakes on repeated user requests",
+            "Because PostgreSQL only allows one user per application",
+            "To bypass database authentication",
+            "To store transaction logs permanently in memory"
+          ],
+          correctOptionIndex: 0,
+          explanation: "Pooling clients in memory prevents repeated TCP handshakes and keeps serverless cold-start latency under 15ms."
+        },
+        {
+          id: "q-102-2",
+          question: "When should invalidateTenantDbCache(tenantSlug) be invoked?",
+          options: [
+            "After every SELECT query",
+            "Whenever tenant database credentials or settings are modified in ofia_admin",
+            "Only on server reboot",
+            "Never, the cache refreshes automatically every midnight"
+          ],
+          correctOptionIndex: 1,
+          explanation: "Invalidation must be explicitly triggered when an administrator updates or rotates a tenant's database URL or settings."
+        }
+      ]
+    }
+  },
+  {
+    id: "mod-201",
+    courseId: "course-02",
+    title: "SLA Frameworks & Severity Escalation Matrices",
+    orderIndex: 1,
+    durationHours: 5,
+    summary: "Managing contractual SLAs, P1/P2/P3 incident prioritization, and rapid operational mitigation for enterprise accounts.",
+    lessons: [
+      {
+        id: "les-201",
+        title: "P1/P2/P3 Incident Classification for Outsourced Teams",
+        durationMinutes: 30,
+        content: "Defining Severity 1 (total commerce/payment stoppage, 1hr SLA), Severity 2 (degraded dispatch/syncing, 4hr SLA), and Severity 3 (minor configuration, 24hr SLA).",
+      },
+      {
+        id: "les-202",
+        title: "Managing SLA Countdown Timers & Escalation Workflows",
+        durationMinutes: 40,
+        content: "Operational response protocols, notifying account managers before breach thresholds, and conducting blameless post-mortems.",
+      },
+    ],
+    quiz: {
+      questionsCount: 2,
+      passPercentage: 80,
+      questions: [
+        {
+          id: "q-201-1",
+          question: "What is the mandatory response SLA for a P1 Critical Incident at Ofia?",
+          options: ["Within 1 Hour", "Within 24 Hours", "Within 3 Business Days", "End of Week"],
+          correctOptionIndex: 0,
+          explanation: "P1 incidents represent complete service disruption or data loss and require mitigation within 1 hour."
+        },
+        {
+          id: "q-201-2",
+          question: "Who must be alerted when an incident reaches 75% of its remaining SLA budget?",
+          options: [
+            "Account Manager and Client Lead Specialist",
+            "Only the junior trainee on duty",
+            "No one until the deadline has completely elapsed",
+            "External public relations agency"
+          ],
+          correctOptionIndex: 0,
+          explanation: "Proactive alerting to the Account Manager and Specialist allows resource reallocation before a contract SLA breach occurs."
+        }
+      ]
+    }
+  },
+  {
+    id: "mod-301",
+    courseId: "course-03",
+    title: "Nigerian Statutory Deductions (PAYE, Pension & NHF)",
+    orderIndex: 1,
+    durationHours: 4,
+    summary: "Comprehensive guide to Nigerian statutory payroll compliance, LIRS regulations, and the Pension Reform Act 2014.",
+    lessons: [
+      {
+        id: "les-301",
+        title: "Lagos State IRS (LIRS) & State BIR Compliance Rules",
+        durationMinutes: 40,
+        content: "Consolidated relief allowance formulas, progressive tax brackets (7% to 24%), minimum tax rules, and monthly filing schedules before the 10th day.",
+      },
+      {
+        id: "les-302",
+        title: "Pension Reform Act 2014 & RSA Remittance Timelines",
+        durationMinutes: 35,
+        content: "Mandatory 10% employer and 8% employee pension contributions, RSA PIN validation with licensed PFAs, and remittance deadlines via PFCs.",
+      },
+    ],
+    quiz: {
+      questionsCount: 2,
+      passPercentage: 80,
+      questions: [
+        {
+          id: "q-301-1",
+          question: "What is the statutory minimum employer pension contribution under the Nigerian Pension Reform Act 2014?",
+          options: ["5% of monthly emoluments", "10% of monthly emoluments", "20% of basic salary", "Optional for private companies"],
+          correctOptionIndex: 1,
+          explanation: "The Pension Reform Act mandates a minimum of 10% employer contribution and 8% employee contribution."
+        },
+        {
+          id: "q-301-2",
+          question: "By which day of the month must PAYE remittances be paid to State Internal Revenue Services (e.g. LIRS)?",
+          options: [
+            "10th day of the following month",
+            "Last day of the quarter",
+            "Annual filing only",
+            "1st day of the current month"
+          ],
+          correctOptionIndex: 0,
+          explanation: "PAYE deductions must be remitted to the relevant State tax authority on or before the 10th day of the month following deduction."
+        }
+      ]
+    }
+  },
+  {
+    id: "mod-401",
+    courseId: "course-04",
+    title: "Biometric Scanners & Hardware Calibration",
+    orderIndex: 1,
+    durationHours: 5,
+    summary: "Field operational standards for biometric scanners, offline audit syncing, and SUBEB verification protocols in ResultsPro CBT centers.",
+    lessons: [
+      {
+        id: "les-401",
+        title: "Optical vs Capacitive Fingerprint Sensors in SUBEB Audits",
+        durationMinutes: 35,
+        content: "Hardware calibration under dusty Nigerian field environments, FAR/FRR thresholds, and clean surface maintenance.",
+      },
+      {
+        id: "les-402",
+        title: "Offline Verification Cache Synchronization Protocols",
+        durationMinutes: 45,
+        content: "Handling remote school locations with zero cellular connectivity, local SQLite encrypted caches, and batched tamper-evident sync upon reconnecting.",
+      },
+    ],
+  }
+];
+
+export const INITIAL_ENROLLMENTS: CourseEnrollment[] = [
+  {
+    id: "enr-01",
+    courseId: "course-01",
+    personId: "person-02",
+    personName: "Kalu Uche",
+    progressPercentage: 100,
+    completedLessons: ["les-101", "les-102", "les-103", "les-104", "les-105"],
+    status: "completed",
+    finalScore: 95,
+    enrolledAt: "2027-03-01T09:00:00Z",
+    completedAt: "2027-04-10T16:30:00Z",
+  },
+  {
+    id: "enr-02",
+    courseId: "course-02",
+    personId: "person-03",
+    personName: "Halima Bello",
+    progressPercentage: 65,
+    completedLessons: ["les-201", "les-202"],
+    status: "in_progress",
+    finalScore: 82,
+    enrolledAt: "2027-03-15T10:00:00Z",
+  },
+  {
+    id: "enr-03",
+    courseId: "course-03",
+    personId: "person-04",
+    personName: "Dayo Oladipo",
+    progressPercentage: 100,
+    completedLessons: ["les-301", "les-302"],
+    status: "completed",
+    finalScore: 84,
+    enrolledAt: "2027-03-20T11:00:00Z",
+    completedAt: "2027-04-14T14:20:00Z",
+  },
+  {
+    id: "enr-04",
+    courseId: "course-01",
+    personId: "person-04",
+    personName: "Dayo Oladipo",
+    progressPercentage: 40,
+    completedLessons: ["les-101", "les-102"],
+    status: "in_progress",
+    enrolledAt: "2027-04-01T08:30:00Z",
+  },
+];
+
+export const INITIAL_CERTIFICATES: CourseCertificate[] = [
+  {
+    id: "cert-01",
+    certificateNumber: "OFIA-CERT-2027-ENG-0891",
+    courseId: "course-01",
+    courseTitle: "Ofia Platform Architecture & Multi-Tenant Database Isolation",
+    personId: "person-02",
+    personName: "Kalu Uche",
+    issueDate: "2027-04-10",
+    grade: "Distinction (95%)",
+    verificationHash: "a7f9b8c2d1e43567890abcdef1234567890abcdef1234567890abcdef1234567",
+    competenciesAwarded: ["Database Tenancy", "Neon Postgres Serverless", "Next.js Security"],
+  },
+  {
+    id: "cert-02",
+    certificateNumber: "OFIA-CERT-2027-OPS-0442",
+    courseId: "course-02",
+    courseTitle: "Client Service Delivery & SLA Governance for Outsourced Talent",
+    personId: "person-01",
+    personName: "Tunde Bakare",
+    issueDate: "2027-03-28",
+    grade: "Distinction (98%)",
+    verificationHash: "5c8e2b1f4a9d70361284ef75cba09142385617290bcdae4f6172839405bcef12",
+    competenciesAwarded: ["SLA Monitoring", "Incident Escalation", "Weekly Service Reporting"],
+  },
+  {
+    id: "cert-03",
+    certificateNumber: "OFIA-CERT-2027-HR-0219",
+    courseId: "course-03",
+    courseTitle: "Nigerian Labor Law, Statutory Compliance & Workplace Ethics",
+    personId: "person-03",
+    personName: "Halima Bello",
+    issueDate: "2027-04-02",
+    grade: "Credit (88%)",
+    verificationHash: "89ef41b3c0d75a246819feacb1458923056127849defac1029384756bca91823",
+    competenciesAwarded: ["PAYE & Pension Regulations", "Workplace Safety", "Ethics"],
+  },
+];
+
 
 
 

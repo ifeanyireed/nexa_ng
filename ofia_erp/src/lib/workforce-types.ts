@@ -119,19 +119,74 @@ export interface PracticalAssignment {
   submissionDate?: string;
 }
 
+export interface TaskAssignee {
+  id: string;
+  name: string;
+  role: string;
+}
+
+export interface WorkforceProject {
+  id: string;
+  title: string;
+  code: string;
+  department: string;
+  clientId?: string;
+  clientName?: string;
+  leadPersonId?: string;
+  leadPersonName: string;
+  budget: number;
+  spent: number;
+  status: "planning" | "active" | "on_hold" | "completed";
+  priority: "high" | "medium" | "low" | "critical";
+  startDate: string;
+  endDate?: string;
+  description: string;
+  deliverablesCount: number;
+  tasksCount: number;
+  completedTasksCount: number;
+  createdAt: string;
+}
+
 export interface WorkforceTask {
   id: string;
   title: string;
   project: string;
+  projectId?: string;
   department: string;
   assignedTo: string;
+  assignees?: TaskAssignee[];
   supervisor: string;
   priority: "high" | "medium" | "low" | "critical";
   status: "backlog" | "in_progress" | "review" | "approved";
   deadline: string;
+  estimatedHours?: number;
+  actualHours?: number;
+  dependencies?: string[];
   score?: number;
   feedback?: string;
   deliverableSummary?: string;
+  deliverableId?: string;
+  createdAt?: string;
+}
+
+export interface WorkforceDeliverable {
+  id: string;
+  projectId: string;
+  projectTitle?: string;
+  taskId: string;
+  taskTitle?: string;
+  title: string;
+  submittedById: string;
+  submittedByName: string;
+  fileUrl: string;
+  fileType: "pdf" | "zip" | "github_pr" | "figma" | "document" | "code";
+  fileSizeBytes: number;
+  version: number;
+  status: "pending_review" | "approved" | "rejected" | "revision_requested";
+  reviewFeedback?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  submittedAt: string;
 }
 
 export interface AttendanceRecord {

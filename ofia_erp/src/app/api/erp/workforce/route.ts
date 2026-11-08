@@ -28,6 +28,8 @@ import {
   CourseModule,
   CourseEnrollment,
   CourseCertificate,
+  WorkforceProject,
+  WorkforceDeliverable,
 } from "@/lib/workforce-types";
 import {
   INITIAL_JOB_OPENINGS,
@@ -56,6 +58,8 @@ import {
   INITIAL_COURSE_MODULES,
   INITIAL_ENROLLMENTS,
   INITIAL_CERTIFICATES,
+  INITIAL_PROJECTS,
+  INITIAL_DELIVERABLES,
 } from "@/lib/workforce-defaults";
 
 function getTenantKey(request: Request): string | null {
@@ -605,6 +609,64 @@ async function ensureWorkforceTables(sql: any, tenantSlug: string) {
         ALTER TABLE workforce_people ADD COLUMN IF NOT EXISTS emergency_contact JSONB DEFAULT '{}'::jsonb;
         ALTER TABLE workforce_people ADD COLUMN IF NOT EXISTS education JSONB DEFAULT '[]'::jsonb;
         ALTER TABLE workforce_people ADD COLUMN IF NOT EXISTS employment_history JSONB DEFAULT '[]'::jsonb;
+
+        CREATE TABLE IF NOT EXISTS workforce_projects (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(191) NOT NULL,
+          tenant_id VARCHAR(191) DEFAULT '',
+          title VARCHAR(255) NOT NULL,
+          code VARCHAR(50) NOT NULL,
+          department VARCHAR(100) NOT NULL,
+          client_id VARCHAR(64) DEFAULT '',
+          client_name VARCHAR(255) DEFAULT '',
+          lead_person_id VARCHAR(64) DEFAULT '',
+          lead_person_name VARCHAR(255) DEFAULT '',
+          budget NUMERIC(15,2) DEFAULT 0,
+          spent NUMERIC(15,2) DEFAULT 0,
+          status VARCHAR(50) DEFAULT 'active',
+          priority VARCHAR(50) DEFAULT 'medium',
+          start_date VARCHAR(50) NOT NULL,
+          end_date VARCHAR(50) DEFAULT '',
+          description TEXT DEFAULT '',
+          deliverables_count INT DEFAULT 0,
+          tasks_count INT DEFAULT 0,
+          completed_tasks_count INT DEFAULT 0,
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_wf_proj_tenant_created ON workforce_projects(LOWER(tenant_slug), created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_wf_proj_tenant_status ON workforce_projects(LOWER(tenant_slug), status);
+
+        CREATE TABLE IF NOT EXISTS workforce_deliverables (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(191) NOT NULL,
+          tenant_id VARCHAR(191) DEFAULT '',
+          project_id VARCHAR(64) NOT NULL,
+          task_id VARCHAR(64) NOT NULL,
+          title VARCHAR(255) NOT NULL,
+          submitted_by_id VARCHAR(64) NOT NULL,
+          submitted_by_name VARCHAR(255) NOT NULL,
+          file_url TEXT NOT NULL,
+          file_type VARCHAR(50) NOT NULL,
+          file_size_bytes BIGINT DEFAULT 0,
+          version INT DEFAULT 1,
+          status VARCHAR(50) DEFAULT 'pending_review',
+          review_feedback TEXT DEFAULT '',
+          reviewed_by VARCHAR(255) DEFAULT '',
+          reviewed_at TIMESTAMPTZ DEFAULT NULL,
+          submitted_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_wf_deliv_tenant_proj ON workforce_deliverables(LOWER(tenant_slug), project_id);
+        CREATE INDEX IF NOT EXISTS idx_wf_deliv_tenant_task ON workforce_deliverables(LOWER(tenant_slug), task_id);
+
+        ALTER TABLE workforce_tasks ADD COLUMN IF NOT EXISTS project_id VARCHAR(64) DEFAULT '';
+        ALTER TABLE workforce_tasks ADD COLUMN IF NOT EXISTS dependencies JSONB DEFAULT '[]'::jsonb;
+        ALTER TABLE workforce_tasks ADD COLUMN IF NOT EXISTS estimated_hours NUMERIC(6,2) DEFAULT 0;
+        ALTER TABLE workforce_tasks ADD COLUMN IF NOT EXISTS actual_hours NUMERIC(6,2) DEFAULT 0;
+        ALTER TABLE workforce_tasks ADD COLUMN IF NOT EXISTS assignees JSONB DEFAULT '[]'::jsonb;
+        ALTER TABLE workforce_tasks ADD COLUMN IF NOT EXISTS deliverable_id VARCHAR(64) DEFAULT '';
       `;
       ensuredTenantDbs.add(cleanSlug);
     } catch (e: any) {
@@ -1009,6 +1071,46 @@ async function ensureWorkforceTables(sql: any, tenantSlug: string) {
         `;
       }
     }
+
+    // Check if projects table has data, seed if empty
+    const existingProjects = await sql`
+      SELECT COUNT(*)::int as cnt FROM workforce_projects
+      WHERE LOWER(tenant_slug) = ${cleanSlug};
+    `;
+
+    if (Number(existingProjects[0]?.cnt || 0) === 0) {
+      for (const pr of INITIAL_PROJECTS) {
+        await sql`
+          INSERT INTO workforce_projects (
+            id, tenant_slug, tenant_id, title, code, department,
+            client_id, client_name, lead_person_id, lead_person_name,
+            budget, spent, status, priority, start_date, end_date,
+            description, deliverables_count, tasks_count, completed_tasks_count
+          ) VALUES (
+            ${pr.id}, ${cleanSlug}, ${cleanSlug}, ${pr.title}, ${pr.code}, ${pr.department},
+            ${pr.clientId || ""}, ${pr.clientName || ""}, ${pr.leadPersonId || ""}, ${pr.leadPersonName},
+            ${pr.budget}, ${pr.spent}, ${pr.status}, ${pr.priority}, ${pr.startDate}, ${pr.endDate || ""},
+            ${pr.description}, ${pr.deliverablesCount}, ${pr.tasksCount}, ${pr.completedTasksCount}
+          ) ON CONFLICT (id) DO NOTHING;
+        `;
+      }
+
+      for (const dl of INITIAL_DELIVERABLES) {
+        await sql`
+          INSERT INTO workforce_deliverables (
+            id, tenant_slug, tenant_id, project_id, task_id, title,
+            submitted_by_id, submitted_by_name, file_url, file_type,
+            file_size_bytes, version, status, review_feedback,
+            reviewed_by, reviewed_at, submitted_at
+          ) VALUES (
+            ${dl.id}, ${cleanSlug}, ${cleanSlug}, ${dl.projectId}, ${dl.taskId}, ${dl.title},
+            ${dl.submittedById}, ${dl.submittedByName}, ${dl.fileUrl}, ${dl.fileType},
+            ${dl.fileSizeBytes}, ${dl.version}, ${dl.status}, ${dl.reviewFeedback || ""},
+            ${dl.reviewedBy || ""}, ${dl.reviewedAt || null}, ${dl.submittedAt}
+          ) ON CONFLICT (id) DO NOTHING;
+        `;
+      }
+    }
   } catch (err: any) {
     console.warn(`[Workforce DB] Initial seed notice for '${cleanSlug}':`, err.message);
   }
@@ -1057,6 +1159,8 @@ export async function GET(request: Request) {
       modulesRows,
       enrollmentsRows,
       certificatesRows,
+      projectsRows,
+      deliverablesRows,
     ] = await Promise.all([
       sql`SELECT * FROM workforce_job_openings WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
       sql`SELECT * FROM workforce_candidates WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
@@ -1084,6 +1188,8 @@ export async function GET(request: Request) {
       sql`SELECT * FROM workforce_course_modules WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY order_index ASC;`,
       sql`SELECT * FROM workforce_course_enrollments WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY enrolled_at DESC;`,
       sql`SELECT * FROM workforce_certificates WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
+      sql`SELECT * FROM workforce_projects WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
+      sql`SELECT * FROM workforce_deliverables WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY submitted_at DESC;`,
     ]);
 
     // Map rows to typed models
@@ -1176,15 +1282,22 @@ export async function GET(request: Request) {
       id: r.id,
       title: r.title,
       project: r.project,
+      projectId: r.project_id || undefined,
       department: r.department,
       assignedTo: r.assigned_to,
+      assignees: Array.isArray(r.assignees) ? r.assignees : [],
       supervisor: r.supervisor,
       priority: r.priority,
       status: r.status,
       deadline: r.deadline,
+      estimatedHours: r.estimated_hours != null ? Number(r.estimated_hours) : undefined,
+      actualHours: r.actual_hours != null ? Number(r.actual_hours) : undefined,
+      dependencies: Array.isArray(r.dependencies) ? r.dependencies : [],
       score: r.score != null ? Number(r.score) : undefined,
       feedback: r.feedback || undefined,
       deliverableSummary: r.deliverable_summary || undefined,
+      deliverableId: r.deliverable_id || undefined,
+      createdAt: r.created_at ? new Date(r.created_at).toLocaleString() : undefined,
     }));
 
     const attendance: AttendanceRecord[] = attendanceRows.map((r: any) => ({
@@ -1458,6 +1571,48 @@ export async function GET(request: Request) {
       competenciesAwarded: Array.isArray(r.competencies_awarded) ? r.competencies_awarded : [],
     }));
 
+    const projects: WorkforceProject[] = projectsRows.map((r: any) => ({
+      id: r.id,
+      title: r.title,
+      code: r.code,
+      department: r.department,
+      clientId: r.client_id || undefined,
+      clientName: r.client_name || undefined,
+      leadPersonId: r.lead_person_id || undefined,
+      leadPersonName: r.lead_person_name || "Unassigned",
+      budget: Number(r.budget || 0),
+      spent: Number(r.spent || 0),
+      status: r.status,
+      priority: r.priority,
+      startDate: r.start_date,
+      endDate: r.end_date || undefined,
+      description: r.description || "",
+      deliverablesCount: Number(r.deliverables_count || 0),
+      tasksCount: Number(r.tasks_count || 0),
+      completedTasksCount: Number(r.completed_tasks_count || 0),
+      createdAt: r.created_at ? new Date(r.created_at).toISOString() : "",
+    }));
+
+    const deliverables: WorkforceDeliverable[] = deliverablesRows.map((r: any) => ({
+      id: r.id,
+      projectId: r.project_id,
+      projectTitle: projects.find((p) => p.id === r.project_id)?.title,
+      taskId: r.task_id,
+      taskTitle: tasks.find((t) => t.id === r.task_id)?.title,
+      title: r.title,
+      submittedById: r.submitted_by_id,
+      submittedByName: r.submitted_by_name,
+      fileUrl: r.file_url,
+      fileType: r.file_type,
+      fileSizeBytes: Number(r.file_size_bytes || 0),
+      version: Number(r.version || 1),
+      status: r.status,
+      reviewFeedback: r.review_feedback || undefined,
+      reviewedBy: r.reviewed_by || undefined,
+      reviewedAt: r.reviewed_at ? new Date(r.reviewed_at).toISOString() : undefined,
+      submittedAt: r.submitted_at ? new Date(r.submitted_at).toISOString() : "",
+    }));
+
     // Shortcut for public certificate verification
     const certHash = new URL(request.url).searchParams.get("certHash");
     if (certHash) {
@@ -1543,6 +1698,8 @@ export async function GET(request: Request) {
       courseModules,
       courseEnrollments,
       certificates,
+      projects,
+      deliverables,
       assignments,
       tasks,
       attendance,
@@ -1916,19 +2073,62 @@ export async function POST(request: Request) {
         });
       }
 
+      case "CREATE_PROJECT": {
+        const id = payload.id || `proj-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_projects (
+            id, tenant_slug, tenant_id, title, code, department,
+            client_id, client_name, lead_person_id, lead_person_name,
+            budget, spent, status, priority, start_date, end_date,
+            description, deliverables_count, tasks_count, completed_tasks_count
+          ) VALUES (
+            ${id}, ${cleanSlug}, ${cleanSlug}, ${payload.title}, ${payload.code}, ${payload.department},
+            ${payload.clientId || ""}, ${payload.clientName || ""}, ${payload.leadPersonId || ""}, ${payload.leadPersonName || "Unassigned"},
+            ${payload.budget || 0}, ${payload.spent || 0}, ${payload.status || "active"}, ${payload.priority || "medium"},
+            ${payload.startDate || new Date().toISOString().split("T")[0]}, ${payload.endDate || ""},
+            ${payload.description || ""}, ${payload.deliverablesCount || 0}, ${payload.tasksCount || 0}, ${payload.completedTasksCount || 0}
+          );
+        `;
+        return NextResponse.json({ success: true, id, message: "Project created successfully" });
+      }
+
+      case "UPDATE_PROJECT": {
+        await sql`
+          UPDATE workforce_projects
+          SET status = COALESCE(${payload.status ?? null}, status),
+              budget = COALESCE(${payload.budget ?? null}, budget),
+              spent = COALESCE(${payload.spent ?? null}, spent),
+              lead_person_name = COALESCE(${payload.leadPersonName ?? null}, lead_person_name),
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${payload.projectId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+        return NextResponse.json({ success: true, message: "Project updated" });
+      }
+
       case "CREATE_TASK": {
         const id = payload.id || `task-${Date.now()}`;
         await sql`
           INSERT INTO workforce_tasks (
             id, tenant_slug, tenant_id, title, project, department,
-            assigned_to, supervisor, priority, status, deadline, score, feedback, deliverable_summary
+            assigned_to, supervisor, priority, status, deadline, score, feedback, deliverable_summary,
+            project_id, dependencies, estimated_hours, actual_hours, assignees
           ) VALUES (
             ${id}, ${cleanSlug}, ${cleanSlug}, ${payload.title}, ${payload.project}, ${payload.department},
             ${payload.assignedTo}, ${payload.supervisor}, ${payload.priority || "medium"},
             ${payload.status || "backlog"}, ${payload.deadline}, ${payload.score ?? null},
-            ${payload.feedback || ""}, ${payload.deliverableSummary || ""}
+            ${payload.feedback || ""}, ${payload.deliverableSummary || ""},
+            ${payload.projectId || ""}, ${JSON.stringify(payload.dependencies || [])},
+            ${payload.estimatedHours || 0}, ${payload.actualHours || 0},
+            ${JSON.stringify(payload.assignees || [])}
           );
         `;
+        if (payload.projectId) {
+          await sql`
+            UPDATE workforce_projects
+            SET tasks_count = tasks_count + 1, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ${payload.projectId} AND LOWER(tenant_slug) = ${cleanSlug};
+          `;
+        }
         return NextResponse.json({ success: true, id, message: "Task assigned" });
       }
 
@@ -1938,10 +2138,88 @@ export async function POST(request: Request) {
           SET status = ${payload.status},
               score = COALESCE(${payload.score ?? null}, score),
               feedback = COALESCE(${payload.feedback ?? null}, feedback),
+              actual_hours = COALESCE(${payload.actualHours ?? null}, actual_hours),
               updated_at = CURRENT_TIMESTAMP
           WHERE id = ${payload.taskId} AND LOWER(tenant_slug) = ${cleanSlug};
         `;
+        if (payload.status === "approved") {
+          const tRows = await sql`
+            SELECT project_id FROM workforce_tasks
+            WHERE id = ${payload.taskId} AND LOWER(tenant_slug) = ${cleanSlug}
+            LIMIT 1;
+          `;
+          if (tRows.length > 0 && tRows[0].project_id) {
+            await sql`
+              UPDATE workforce_projects
+              SET completed_tasks_count = completed_tasks_count + 1, updated_at = CURRENT_TIMESTAMP
+              WHERE id = ${tRows[0].project_id} AND LOWER(tenant_slug) = ${cleanSlug};
+            `;
+          }
+        }
         return NextResponse.json({ success: true, message: "Task status updated" });
+      }
+
+      case "SUBMIT_DELIVERABLE": {
+        const id = payload.id || `deliv-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_deliverables (
+            id, tenant_slug, tenant_id, project_id, task_id, title,
+            submitted_by_id, submitted_by_name, file_url, file_type,
+            file_size_bytes, version, status, review_feedback,
+            reviewed_by, submitted_at
+          ) VALUES (
+            ${id}, ${cleanSlug}, ${cleanSlug}, ${payload.projectId}, ${payload.taskId}, ${payload.title},
+            ${payload.submittedById}, ${payload.submittedByName}, ${payload.fileUrl}, ${payload.fileType || "document"},
+            ${payload.fileSizeBytes || 0}, ${payload.version || 1}, 'pending_review', '', '', CURRENT_TIMESTAMP
+          );
+        `;
+        await sql`
+          UPDATE workforce_tasks
+          SET deliverable_id = ${id}, status = 'review', updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${payload.taskId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+        if (payload.projectId) {
+          await sql`
+            UPDATE workforce_projects
+            SET deliverables_count = deliverables_count + 1, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ${payload.projectId} AND LOWER(tenant_slug) = ${cleanSlug};
+          `;
+        }
+        return NextResponse.json({ success: true, id, message: "Deliverable uploaded to vault and placed under review" });
+      }
+
+      case "REVIEW_DELIVERABLE": {
+        const isApproved = payload.status === "approved";
+        await sql`
+          UPDATE workforce_deliverables
+          SET status = ${payload.status},
+              review_feedback = ${payload.feedback || ""},
+              reviewed_by = ${payload.reviewerName || "Supervisor"},
+              reviewed_at = CURRENT_TIMESTAMP
+          WHERE id = ${payload.deliverableId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+
+        if (payload.taskId) {
+          await sql`
+            UPDATE workforce_tasks
+            SET status = ${isApproved ? "approved" : "in_progress"},
+                score = COALESCE(${payload.score ?? null}, score),
+                feedback = ${payload.feedback || ""},
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ${payload.taskId} AND LOWER(tenant_slug) = ${cleanSlug};
+          `;
+        }
+
+        if (isApproved && payload.submittedById) {
+          await sql`
+            UPDATE workforce_people
+            SET competency_score = LEAST(100, competency_score + 5),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ${payload.submittedById} AND LOWER(tenant_slug) = ${cleanSlug};
+          `;
+        }
+
+        return NextResponse.json({ success: true, message: `Deliverable marked as ${payload.status}` });
       }
 
       case "CLOCK_IN": {

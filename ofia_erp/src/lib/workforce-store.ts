@@ -31,6 +31,8 @@ import {
   CourseModule,
   CourseEnrollment,
   CourseCertificate,
+  WorkforceProject,
+  WorkforceDeliverable,
 } from "./workforce-types";
 import {
   INITIAL_JOB_OPENINGS,
@@ -59,6 +61,8 @@ import {
   INITIAL_COURSE_MODULES,
   INITIAL_ENROLLMENTS,
   INITIAL_CERTIFICATES,
+  INITIAL_PROJECTS,
+  INITIAL_DELIVERABLES,
 } from "./workforce-defaults";
 import { extractSubdomainOrParam } from "./tenant-context";
 
@@ -112,6 +116,8 @@ export function useWorkforceManager() {
   const [courseModules, setCourseModules] = useState<CourseModule[]>(INITIAL_COURSE_MODULES);
   const [courseEnrollments, setCourseEnrollments] = useState<CourseEnrollment[]>(INITIAL_ENROLLMENTS);
   const [certificates, setCertificates] = useState<CourseCertificate[]>(INITIAL_CERTIFICATES);
+  const [projects, setProjects] = useState<WorkforceProject[]>(INITIAL_PROJECTS);
+  const [deliverables, setDeliverables] = useState<WorkforceDeliverable[]>(INITIAL_DELIVERABLES);
 
   // Save changes to localStorage cache
   const saveLocalCache = useCallback(
@@ -126,6 +132,8 @@ export function useWorkforceManager() {
           courseModules: overrides?.courseModules ?? courseModules,
           courseEnrollments: overrides?.courseEnrollments ?? courseEnrollments,
           certificates: overrides?.certificates ?? certificates,
+          projects: overrides?.projects ?? projects,
+          deliverables: overrides?.deliverables ?? deliverables,
           assignments: overrides?.assignments ?? assignments,
           tasks: overrides?.tasks ?? tasks,
           attendance: overrides?.attendance ?? attendance,
@@ -222,6 +230,8 @@ export function useWorkforceManager() {
           if (Array.isArray(data.courseModules) && data.courseModules.length > 0) setCourseModules(data.courseModules);
           if (Array.isArray(data.courseEnrollments) && data.courseEnrollments.length > 0) setCourseEnrollments(data.courseEnrollments);
           if (Array.isArray(data.certificates) && data.certificates.length > 0) setCertificates(data.certificates);
+          if (Array.isArray(data.projects) && data.projects.length > 0) setProjects(data.projects);
+          if (Array.isArray(data.deliverables) && data.deliverables.length > 0) setDeliverables(data.deliverables);
         }
       }
     } catch (err) {
@@ -271,6 +281,8 @@ export function useWorkforceManager() {
           if (parsed.courseModules) setCourseModules(parsed.courseModules);
           if (parsed.courseEnrollments) setCourseEnrollments(parsed.courseEnrollments);
           if (parsed.certificates) setCertificates(parsed.certificates);
+          if (parsed.projects) setProjects(parsed.projects);
+          if (parsed.deliverables) setDeliverables(parsed.deliverables);
           if (parsed.assignments) setAssignments(parsed.assignments);
           if (parsed.tasks) setTasks(parsed.tasks);
           if (parsed.attendance) setAttendance(parsed.attendance);
@@ -554,7 +566,31 @@ export function useWorkforceManager() {
     [saveLocalCache, mutateBackend]
   );
 
-  // 4. Task actions
+  // 4. Project & Task actions
+  const createProject = useCallback(
+    (project: WorkforceProject) => {
+      setProjects((prev) => {
+        const updated = [project, ...prev];
+        saveLocalCache({ projects: updated });
+        return updated;
+      });
+      mutateBackend("CREATE_PROJECT", project);
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const updateProject = useCallback(
+    (projectId: string, updates: Partial<WorkforceProject>) => {
+      setProjects((prev) => {
+        const updated = prev.map((p) => (p.id === projectId ? { ...p, ...updates } : p));
+        saveLocalCache({ projects: updated });
+        return updated;
+      });
+      mutateBackend("UPDATE_PROJECT", { projectId, ...updates });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
   const addTask = useCallback(
     (task: WorkforceTask) => {
       setTasks((prev) => {
@@ -562,23 +598,141 @@ export function useWorkforceManager() {
         saveLocalCache({ tasks: updated });
         return updated;
       });
+      if (task.projectId) {
+        setProjects((prev) => {
+          const updated = prev.map((p) =>
+            p.id === task.projectId ? { ...p, tasksCount: p.tasksCount + 1 } : p
+          );
+          saveLocalCache({ projects: updated });
+          return updated;
+        });
+      }
       mutateBackend("CREATE_TASK", task);
     },
     [saveLocalCache, mutateBackend]
   );
 
   const updateTaskStatus = useCallback(
-    (taskId: string, status: WorkforceTask["status"], score?: number, feedback?: string) => {
+    (taskId: string, status: WorkforceTask["status"], score?: number, feedback?: string, actualHours?: number) => {
+      let targetProjectId: string | undefined;
+      setTasks((prev) => {
+        const updated = prev.map((t) => {
+          if (t.id === taskId) {
+            targetProjectId = t.projectId;
+            return {
+              ...t,
+              status,
+              ...(score !== undefined ? { score } : {}),
+              ...(feedback ? { feedback } : {}),
+              ...(actualHours !== undefined ? { actualHours } : {}),
+            };
+          }
+          return t;
+        });
+        saveLocalCache({ tasks: updated });
+        return updated;
+      });
+
+      if (status === "approved" && targetProjectId) {
+        setProjects((prev) => {
+          const updated = prev.map((p) =>
+            p.id === targetProjectId ? { ...p, completedTasksCount: p.completedTasksCount + 1 } : p
+          );
+          saveLocalCache({ projects: updated });
+          return updated;
+        });
+      }
+
+      mutateBackend("UPDATE_TASK_STATUS", { taskId, status, score, feedback, actualHours });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const uploadDeliverable = useCallback(
+    (deliverable: WorkforceDeliverable) => {
+      setDeliverables((prev) => {
+        const updated = [deliverable, ...prev];
+        saveLocalCache({ deliverables: updated });
+        return updated;
+      });
       setTasks((prev) => {
         const updated = prev.map((t) =>
-          t.id === taskId
-            ? { ...t, status, ...(score !== undefined ? { score } : {}), ...(feedback ? { feedback } : {}) }
+          t.id === deliverable.taskId
+            ? { ...t, deliverableId: deliverable.id, status: "review" as const, deliverableSummary: deliverable.title }
             : t
         );
         saveLocalCache({ tasks: updated });
         return updated;
       });
-      mutateBackend("UPDATE_TASK_STATUS", { taskId, status, score, feedback });
+      if (deliverable.projectId) {
+        setProjects((prev) => {
+          const updated = prev.map((p) =>
+            p.id === deliverable.projectId ? { ...p, deliverablesCount: p.deliverablesCount + 1 } : p
+          );
+          saveLocalCache({ projects: updated });
+          return updated;
+        });
+      }
+      mutateBackend("SUBMIT_DELIVERABLE", deliverable);
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const reviewDeliverable = useCallback(
+    (deliverableId: string, status: WorkforceDeliverable["status"], feedback?: string, score?: number, reviewerName: string = "Supervisor") => {
+      let targetTaskId: string | undefined;
+      let targetSubmittedById: string | undefined;
+
+      setDeliverables((prev) => {
+        const updated = prev.map((d) => {
+          if (d.id === deliverableId) {
+            targetTaskId = d.taskId;
+            targetSubmittedById = d.submittedById;
+            return {
+              ...d,
+              status,
+              reviewFeedback: feedback || d.reviewFeedback,
+              reviewedBy: reviewerName,
+              reviewedAt: new Date().toISOString(),
+            };
+          }
+          return d;
+        });
+        saveLocalCache({ deliverables: updated });
+        return updated;
+      });
+
+      if (targetTaskId) {
+        const isApproved = status === "approved";
+        setTasks((prev) => {
+          const updated = prev.map((t) =>
+            t.id === targetTaskId
+              ? {
+                  ...t,
+                  status: isApproved ? ("approved" as const) : ("in_progress" as const),
+                  ...(score !== undefined ? { score } : {}),
+                  ...(feedback ? { feedback } : {}),
+                }
+              : t
+          );
+          saveLocalCache({ tasks: updated });
+          return updated;
+        });
+
+        if (isApproved && targetSubmittedById) {
+          setPeople((prev) => {
+            const updated = prev.map((p) =>
+              p.id === targetSubmittedById
+                ? { ...p, competencyScore: Math.min(100, p.competencyScore + 5) }
+                : p
+            );
+            saveLocalCache({ people: updated });
+            return updated;
+          });
+        }
+      }
+
+      mutateBackend("REVIEW_DELIVERABLE", { deliverableId, status, feedback, score, reviewerName, taskId: targetTaskId, submittedById: targetSubmittedById });
     },
     [saveLocalCache, mutateBackend]
   );
@@ -1232,6 +1386,8 @@ export function useWorkforceManager() {
     courseModules,
     courseEnrollments,
     certificates,
+    projects,
+    deliverables,
     assignments,
     tasks,
     attendance,
@@ -1291,6 +1447,10 @@ export function useWorkforceManager() {
     createBranch,
     updateBranch,
     deleteBranch,
+    createProject,
+    updateProject,
+    uploadDeliverable,
+    reviewDeliverable,
     uploadDocument,
     verifyDocument,
     deleteDocument,

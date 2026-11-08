@@ -353,6 +353,39 @@ export function useWorkforceManager() {
     [saveLocalCache, mutateBackend]
   );
 
+  const submitDeliverable = useCallback(
+    (taskId: string, deliverableSummary: string) => {
+      setTasks((prev) => {
+        const updated = prev.map((t) =>
+          t.id === taskId
+            ? { ...t, status: "review" as const, deliverableSummary }
+            : t
+        );
+        saveLocalCache({ tasks: updated });
+        return updated;
+      });
+      mutateBackend("UPDATE_TASK_STATUS", { taskId, status: "review", deliverableSummary });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const submitAssignment = useCallback(
+    (assignmentId: string, notes?: string) => {
+      const today = new Date().toISOString().split("T")[0];
+      setAssignments((prev) => {
+        const updated = prev.map((a) =>
+          a.id === assignmentId
+            ? { ...a, status: "submitted" as const, submissionDate: today, ...(notes ? { feedback: notes } : {}) }
+            : a
+        );
+        saveLocalCache({ assignments: updated });
+        return updated;
+      });
+      mutateBackend("GRADE_ASSIGNMENT", { assignmentId, status: "submitted", submissionDate: today });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
   // 5. Attendance actions
   const recordClockIn = useCallback(
     (personName: string, role: WorkforcePerson["role"] = "employee") => {
@@ -382,6 +415,44 @@ export function useWorkforceManager() {
     [saveLocalCache, mutateBackend]
   );
 
+  const recordClockOut = useCallback(
+    (personName: string) => {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      const dateStr = now.toISOString().split("T")[0];
+
+      setAttendance((prev) => {
+        const updated = prev.map((a) =>
+          a.personName.toLowerCase() === personName.toLowerCase() && a.date === dateStr && !a.clockOut
+            ? { ...a, clockOut: timeStr }
+            : a
+        );
+        saveLocalCache({ attendance: updated });
+        return updated;
+      });
+
+      mutateBackend("CLOCK_OUT", { personName, clockOut: timeStr });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const requestLeave = useCallback(
+    (newRequest: Omit<LeaveRequest, "id" | "status">) => {
+      const req: LeaveRequest = {
+        ...newRequest,
+        id: `leave-${Date.now()}`,
+        status: "pending",
+      };
+      setLeaveRequests((prev) => {
+        const updated = [req, ...prev];
+        saveLocalCache({ leaveRequests: updated });
+        return updated;
+      });
+      mutateBackend("CREATE_LEAVE_REQUEST", req);
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
   const updateLeaveStatus = useCallback(
     (leaveId: string, status: "approved" | "rejected") => {
       setLeaveRequests((prev) => {
@@ -390,6 +461,23 @@ export function useWorkforceManager() {
         return updated;
       });
       mutateBackend("UPDATE_LEAVE_STATUS", { leaveId, status });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const logWorkHours = useCallback(
+    (entry: Omit<DailyWorkLog, "id" | "supervisorSignedOff">) => {
+      const newLog: DailyWorkLog = {
+        ...entry,
+        id: `log-${Date.now()}`,
+        supervisorSignedOff: false,
+      };
+      setWorkLogs((prev) => {
+        const updated = [newLog, ...prev];
+        saveLocalCache({ workLogs: updated });
+        return updated;
+      });
+      mutateBackend("LOG_HOURS", newLog);
     },
     [saveLocalCache, mutateBackend]
   );
@@ -518,10 +606,15 @@ export function useWorkforceManager() {
     addPerson,
     addCourse,
     gradeAssignment,
+    submitAssignment,
     addTask,
     updateTaskStatus,
+    submitDeliverable,
     recordClockIn,
+    recordClockOut,
+    requestLeave,
     updateLeaveStatus,
+    logWorkHours,
     nominatePromotion,
     deployPerson,
     addTicket,

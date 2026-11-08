@@ -1217,12 +1217,33 @@ export function ErpAdminShell({
     }
 
     if (pathname.startsWith("/erp/employee")) {
+      const isWorkforceActive = Boolean(
+        permissionMatrix && (
+          permissionMatrix.admin?.workforce === true ||
+          (permissionMatrix as any)?.tenant_provision?.workforce === true
+        )
+      );
+
       const tabs: SubNavItem[] = [
         { label: "My Overview", href: "/erp/employee", icon: <UserCheck className="w-3.5 h-3.5" /> },
+      ];
+
+      // Workforce OS subtabs — only visible if workforce module is provisioned for tenant
+      if (isWorkforceActive) {
+        tabs.push(
+          { label: "My Tasks", href: "/erp/employee/tasks", icon: <CheckSquare className="w-3.5 h-3.5" />, badge: "Work" },
+          { label: "Talent Academy", href: "/erp/employee/academy", icon: <GraduationCap className="w-3.5 h-3.5" />, badge: "LMS" },
+          { label: "Attendance & Leave", href: "/erp/employee/attendance", icon: <Clock className="w-3.5 h-3.5" /> },
+          { label: "Client Deployment", href: "/erp/employee/deployment", icon: <Network className="w-3.5 h-3.5" />, badge: "Ops" },
+        );
+      }
+
+      tabs.push(
         { label: "Performance Reviews", href: "/erp/employee/reviews", icon: <Activity className="w-3.5 h-3.5" /> },
         { label: "My Team Quests", href: "/erp/employee/quests", icon: <Trophy className="w-3.5 h-3.5" /> },
         { label: "My Profile & Growth", href: "/erp/employee/profile", icon: <Users className="w-3.5 h-3.5" /> },
-      ];
+      );
+
       if (currentRole === "manager") {
         tabs.unshift({ label: "← Back to Manager Portal", href: "/erp/manager", icon: <Sliders className="w-3.5 h-3.5" /> });
       } else if (currentRole === "md") {

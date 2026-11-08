@@ -244,6 +244,42 @@ export function useWorkforceManager() {
     [saveLocalCache, mutateBackend]
   );
 
+  const submitApplication = useCallback(
+    (newCand: Omit<Candidate, "id" | "stage" | "appliedDate">) => {
+      const candidateId = `cand-${Date.now()}`;
+      const fullCand: Candidate = {
+        ...newCand,
+        id: candidateId,
+        stage: "received",
+        appliedDate: new Date().toISOString().split("T")[0],
+      };
+      setCandidates((prev) => {
+        const updated = [fullCand, ...prev];
+        saveLocalCache({ candidates: updated });
+        return updated;
+      });
+      mutateBackend("SUBMIT_APPLICATION", fullCand);
+      return candidateId;
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const recordCandidateAssessment = useCallback(
+    (candidateId: string, score: number) => {
+      setCandidates((prev) => {
+        const updated = prev.map((c) =>
+          c.id === candidateId || c.email?.toLowerCase() === candidateId.toLowerCase()
+            ? { ...c, score, stage: (c.stage === "received" || c.stage === "screening" ? "assessment" : c.stage) as ApplicationStage }
+            : c
+        );
+        saveLocalCache({ candidates: updated });
+        return updated;
+      });
+      mutateBackend("UPDATE_CANDIDATE_SCORE", { candidateId, score });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
   const convertCandidateToPerson = useCallback(
     (candidateId: string, roleCategory: "intern" | "employee" | "contractor" = "intern") => {
       const cand = candidates.find((c) => c.id === candidateId);
@@ -602,6 +638,8 @@ export function useWorkforceManager() {
     compensationScales,
     // Action dispatchers
     updateCandidateStage,
+    submitApplication,
+    recordCandidateAssessment,
     convertCandidateToPerson,
     addPerson,
     addCourse,

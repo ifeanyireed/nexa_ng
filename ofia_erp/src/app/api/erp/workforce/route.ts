@@ -1025,6 +1025,34 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: true, message: "Candidate stage updated" });
       }
 
+      case "SUBMIT_APPLICATION": {
+        const id = payload.id || `cand-${Date.now()}`;
+        const appliedDate = payload.appliedDate || new Date().toISOString().split("T")[0];
+        await sql`
+          INSERT INTO workforce_candidates (
+            id, tenant_slug, tenant_id, name, email, phone, applied_role,
+            department, stage, applied_date, score, experience_years,
+            education, skills, resume_url, interview_notes
+          ) VALUES (
+            ${id}, ${cleanSlug}, ${cleanSlug}, ${payload.name}, ${payload.email},
+            ${payload.phone || ""}, ${payload.appliedRole}, ${payload.department || "Operations"},
+            'received', ${appliedDate}, ${payload.score || 0}, ${payload.experienceYears || 0},
+            ${payload.education || ""}, ${JSON.stringify(payload.skills || [])},
+            ${payload.resumeUrl || ""}, ${payload.coverNote || ""}
+          );
+        `;
+        return NextResponse.json({ success: true, id, referenceId: id, message: "Application submitted successfully" });
+      }
+
+      case "UPDATE_CANDIDATE_SCORE": {
+        await sql`
+          UPDATE workforce_candidates
+          SET score = ${payload.score}, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${payload.candidateId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+        return NextResponse.json({ success: true, message: "Candidate assessment score recorded" });
+      }
+
       case "ONBOARD_CANDIDATE": {
         // Blueprint Section 6.C: Candidate transforms into permanent person record
         const candidateRows = await sql`

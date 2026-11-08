@@ -31,6 +31,7 @@ export function CareersNav() {
     { label: "Opportunities", href: "/careers" },
     { label: "Track Application", href: "/careers/status" },
     { label: "Assessment Centre", href: "/careers/assessment" },
+    { label: "Interview Booking", href: "/careers/interview/schedule" },
   ];
 
   return (

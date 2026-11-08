@@ -19,6 +19,8 @@ import {
   WorkforceBranch,
   WorkforceDocument,
   WorkforceAuditLog,
+  WorkforceInterview,
+  WorkforceOffer,
 } from "./workforce-types";
 
 export const INITIAL_JOB_OPENINGS: JobOpening[] = [
@@ -1029,5 +1031,88 @@ export const INITIAL_AUDIT_LOGS: WorkforceAuditLog[] = [
     createdAt: "2027-02-03 01:20 PM",
   },
 ];
+
+export const INITIAL_INTERVIEWS: WorkforceInterview[] = [
+  {
+    id: "int-01",
+    candidateId: "cand-02",
+    candidateName: "Kalu Uche",
+    appliedRole: "2027 Graduate Tech Internship (Lagos)",
+    stage: "technical",
+    scheduledStart: "2027-04-20T10:00:00Z",
+    scheduledEnd: "2027-04-20T11:00:00Z",
+    meetingUrl: "https://meet.google.com/ofia-tech-eval",
+    locationDetails: "Virtual Google Meet / Ofia Engineering Room",
+    panelMembers: [
+      { name: "Tunde Bakare", designation: "Principal Solutions Architect" },
+      { name: "Chinedu Eze", designation: "Senior Infrastructure Specialist" },
+    ],
+    status: "scheduled",
+    interviewerNotes: "Focus on PostgreSQL query optimization, TypeScript generics, and distributed cache TTL.",
+    score: 92,
+    token: "tok_int_kalu_uche_99a8b",
+    createdAt: "2027-04-12 09:30 AM",
+  },
+  {
+    id: "int-02",
+    candidateId: "cand-04",
+    candidateName: "Fatima Aliyu",
+    appliedRole: "Supervised Compliance Analyst",
+    stage: "partner",
+    scheduledStart: "2027-04-22T14:00:00Z",
+    scheduledEnd: "2027-04-22T15:00:00Z",
+    meetingUrl: "https://meet.google.com/ofia-legal-review",
+    locationDetails: "4th Floor Executive Boardroom, Lagos HQ",
+    panelMembers: [
+      { name: "Dayo Oladipo", designation: "Head of Compliance & Legal" },
+      { name: "Ifeanyi Felix", designation: "Managing Director" },
+    ],
+    status: "scheduled",
+    interviewerNotes: "Assess regulatory knowledge on NDPA 2023, CAC statutory filings, and client SLA governance.",
+    token: "tok_int_fatima_aliyu_77c4d",
+    createdAt: "2027-04-14 11:15 AM",
+  },
+];
+
+export const INITIAL_OFFERS: WorkforceOffer[] = [
+  {
+    id: "offer-01",
+    candidateId: "cand-03",
+    candidateName: "Bolaji Adeleke",
+    candidateEmail: "bolaji.adeleke@yahoo.com",
+    roleCategory: "employee",
+    offeredDesignation: "Customer Success & Onboarding Specialist",
+    department: "Customer Success",
+    monthlyStipendSalary: 280000,
+    allowances: 40000,
+    totalMonthly: 320000,
+    startDate: "2027-05-03",
+    expiryDate: "2027-04-28",
+    offerLetterText: `Dear Bolaji Adeleke,
+
+On behalf of Ofia Enterprise Suite, we are pleased to offer you the full-time position of Customer Success & Onboarding Specialist within our Customer Success Department based in Lagos, Nigeria.
+
+1. Compensation & Remuneration:
+- Gross Monthly Base Salary: ₦280,000.00
+- Monthly Transport & Operational Allowance: ₦40,000.00
+- Total Monthly Remuneration Package: ₦320,000.00 (Subject to statutory PAYE, Pension, and NHF contributions)
+
+2. Commencement Date:
+Your anticipated start date will be Monday, 3rd May 2027, reporting directly to Ngozi Adeleke (Head of Customer Success).
+
+3. Confidentiality & Non-Disclosure:
+This offer is contingent upon your electronic acceptance and the execution of our standard Proprietary Information and Inventions Agreement.
+
+We look forward to welcoming you to the Ofia team!
+
+Sincerely,
+People Operations Department
+Ofia Enterprise Suite`,
+    token: "tok_offer_bolaji_adeleke_33x9",
+    status: "issued",
+    createdAt: "2027-04-15 03:00 PM",
+  },
+];
+
 
 

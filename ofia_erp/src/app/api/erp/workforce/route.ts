@@ -22,6 +22,8 @@ import {
   WorkforceBranch,
   WorkforceDocument,
   WorkforceAuditLog,
+  WorkforceInterview,
+  WorkforceOffer,
 } from "@/lib/workforce-types";
 import {
   INITIAL_JOB_OPENINGS,
@@ -44,6 +46,8 @@ import {
   INITIAL_BRANCHES,
   INITIAL_DOCUMENTS,
   INITIAL_AUDIT_LOGS,
+  INITIAL_INTERVIEWS,
+  INITIAL_OFFERS,
 } from "@/lib/workforce-defaults";
 
 function getTenantKey(request: Request): string | null {
@@ -455,6 +459,55 @@ async function ensureWorkforceTables(sql: any, tenantSlug: string) {
 
         CREATE INDEX IF NOT EXISTS idx_wf_audit_tenant_entity ON workforce_audit_logs(LOWER(tenant_slug), entity_id);
 
+        CREATE TABLE IF NOT EXISTS workforce_interviews (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(191) NOT NULL,
+          tenant_id VARCHAR(191) DEFAULT '',
+          candidate_id VARCHAR(64) NOT NULL,
+          candidate_name VARCHAR(255) NOT NULL,
+          applied_role VARCHAR(255) NOT NULL,
+          stage VARCHAR(50) NOT NULL DEFAULT 'preliminary',
+          scheduled_start TIMESTAMPTZ NOT NULL,
+          scheduled_end TIMESTAMPTZ NOT NULL,
+          meeting_url TEXT DEFAULT '',
+          location_details TEXT DEFAULT '',
+          panel_members JSONB DEFAULT '[]'::jsonb,
+          status VARCHAR(50) NOT NULL DEFAULT 'scheduled',
+          interviewer_notes TEXT DEFAULT '',
+          score INT DEFAULT NULL,
+          token VARCHAR(128) NOT NULL,
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_wf_int_tenant_created ON workforce_interviews(LOWER(tenant_slug), created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_wf_int_token ON workforce_interviews(LOWER(tenant_slug), token);
+
+        CREATE TABLE IF NOT EXISTS workforce_offers (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(191) NOT NULL,
+          tenant_id VARCHAR(191) DEFAULT '',
+          candidate_id VARCHAR(64) NOT NULL,
+          candidate_name VARCHAR(255) NOT NULL,
+          candidate_email VARCHAR(255) NOT NULL,
+          role_category VARCHAR(50) NOT NULL DEFAULT 'employee',
+          offered_designation VARCHAR(255) NOT NULL,
+          department VARCHAR(100) NOT NULL,
+          monthly_stipend_salary NUMERIC(15,2) NOT NULL DEFAULT 0,
+          allowances NUMERIC(15,2) NOT NULL DEFAULT 0,
+          total_monthly NUMERIC(15,2) NOT NULL DEFAULT 0,
+          start_date VARCHAR(50) NOT NULL,
+          expiry_date VARCHAR(50) NOT NULL,
+          offer_letter_text TEXT NOT NULL,
+          token VARCHAR(128) NOT NULL,
+          status VARCHAR(50) NOT NULL DEFAULT 'issued',
+          accepted_at TIMESTAMPTZ DEFAULT NULL,
+          candidate_signature TEXT DEFAULT '',
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_wf_offers_tenant_created ON workforce_offers(LOWER(tenant_slug), created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_wf_offers_token ON workforce_offers(LOWER(tenant_slug), token);
+
         ALTER TABLE workforce_people ADD COLUMN IF NOT EXISTS residential_address TEXT DEFAULT '';
         ALTER TABLE workforce_people ADD COLUMN IF NOT EXISTS emergency_contact JSONB DEFAULT '{}'::jsonb;
         ALTER TABLE workforce_people ADD COLUMN IF NOT EXISTS education JSONB DEFAULT '[]'::jsonb;
@@ -753,6 +806,44 @@ async function ensureWorkforceTables(sql: any, tenantSlug: string) {
         `;
       }
     }
+
+    // Check if interviews table has data, seed if empty
+    const existingInts = await sql`
+      SELECT COUNT(*)::int as cnt FROM workforce_interviews
+      WHERE LOWER(tenant_slug) = ${cleanSlug};
+    `;
+
+    if (Number(existingInts[0]?.cnt || 0) === 0) {
+      for (const it of INITIAL_INTERVIEWS) {
+        await sql`
+          INSERT INTO workforce_interviews (
+            id, tenant_slug, tenant_id, candidate_id, candidate_name, applied_role,
+            stage, scheduled_start, scheduled_end, meeting_url, location_details,
+            panel_members, status, interviewer_notes, score, token
+          ) VALUES (
+            ${it.id}, ${cleanSlug}, ${cleanSlug}, ${it.candidateId}, ${it.candidateName}, ${it.appliedRole},
+            ${it.stage}, ${it.scheduledStart}, ${it.scheduledEnd}, ${it.meetingUrl || ""}, ${it.locationDetails || ""},
+            ${JSON.stringify(it.panelMembers)}, ${it.status}, ${it.interviewerNotes || ""}, ${it.score ?? null}, ${it.token}
+          ) ON CONFLICT (id) DO NOTHING;
+        `;
+      }
+
+      for (const ofr of INITIAL_OFFERS) {
+        await sql`
+          INSERT INTO workforce_offers (
+            id, tenant_slug, tenant_id, candidate_id, candidate_name, candidate_email,
+            role_category, offered_designation, department, monthly_stipend_salary,
+            allowances, total_monthly, start_date, expiry_date, offer_letter_text,
+            token, status, accepted_at, candidate_signature
+          ) VALUES (
+            ${ofr.id}, ${cleanSlug}, ${cleanSlug}, ${ofr.candidateId}, ${ofr.candidateName}, ${ofr.candidateEmail},
+            ${ofr.roleCategory}, ${ofr.offeredDesignation}, ${ofr.department}, ${ofr.monthlyStipendSalary},
+            ${ofr.allowances}, ${ofr.totalMonthly}, ${ofr.startDate}, ${ofr.expiryDate}, ${ofr.offerLetterText},
+            ${ofr.token}, ${ofr.status}, ${ofr.acceptedAt || null}, ${ofr.candidateSignature || ""}
+          ) ON CONFLICT (id) DO NOTHING;
+        `;
+      }
+    }
   } catch (err: any) {
     console.warn(`[Workforce DB] Initial seed notice for '${cleanSlug}':`, err.message);
   }
@@ -795,6 +886,8 @@ export async function GET(request: Request) {
       branchesRows,
       documentsRows,
       auditLogsRows,
+      interviewsRows,
+      offersRows,
     ] = await Promise.all([
       sql`SELECT * FROM workforce_job_openings WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
       sql`SELECT * FROM workforce_candidates WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
@@ -816,6 +909,8 @@ export async function GET(request: Request) {
       sql`SELECT * FROM workforce_branches WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY is_headquarters DESC, created_at ASC;`,
       sql`SELECT * FROM workforce_documents WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
       sql`SELECT * FROM workforce_audit_logs WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC LIMIT 100;`,
+      sql`SELECT * FROM workforce_interviews WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY scheduled_start ASC;`,
+      sql`SELECT * FROM workforce_offers WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
     ]);
 
     // Map rows to typed models
@@ -1089,6 +1184,45 @@ export async function GET(request: Request) {
       createdAt: r.created_at ? new Date(r.created_at).toLocaleString() : "",
     }));
 
+    const interviews: WorkforceInterview[] = interviewsRows.map((r: any) => ({
+      id: r.id,
+      candidateId: r.candidate_id,
+      candidateName: r.candidate_name,
+      appliedRole: r.applied_role,
+      stage: r.stage,
+      scheduledStart: r.scheduled_start ? new Date(r.scheduled_start).toISOString() : "",
+      scheduledEnd: r.scheduled_end ? new Date(r.scheduled_end).toISOString() : "",
+      meetingUrl: r.meeting_url || undefined,
+      locationDetails: r.location_details || undefined,
+      panelMembers: Array.isArray(r.panel_members) ? r.panel_members : [],
+      status: r.status,
+      interviewerNotes: r.interviewer_notes || undefined,
+      score: r.score != null ? Number(r.score) : undefined,
+      token: r.token,
+      createdAt: r.created_at ? new Date(r.created_at).toLocaleString() : "",
+    }));
+
+    const offers: WorkforceOffer[] = offersRows.map((r: any) => ({
+      id: r.id,
+      candidateId: r.candidate_id,
+      candidateName: r.candidate_name,
+      candidateEmail: r.candidate_email,
+      roleCategory: r.role_category,
+      offeredDesignation: r.offered_designation,
+      department: r.department,
+      monthlyStipendSalary: Number(r.monthly_stipend_salary || 0),
+      allowances: Number(r.allowances || 0),
+      totalMonthly: Number(r.total_monthly || 0),
+      startDate: r.start_date,
+      expiryDate: r.expiry_date,
+      offerLetterText: r.offer_letter_text,
+      token: r.token,
+      status: r.status,
+      acceptedAt: r.accepted_at ? new Date(r.accepted_at).toISOString() : undefined,
+      candidateSignature: r.candidate_signature || undefined,
+      createdAt: r.created_at ? new Date(r.created_at).toLocaleString() : "",
+    }));
+
     // Dynamic KPI Computation
     const totalWorkforce = people.length;
     const activeEmployees = people.filter((p) => p.role === "employee").length;
@@ -1154,6 +1288,8 @@ export async function GET(request: Request) {
       branches,
       documents,
       auditLogs,
+      interviews,
+      offers,
       courses,
       assignments,
       tasks,
@@ -1698,6 +1834,147 @@ export async function POST(request: Request) {
           );
         `;
         return NextResponse.json({ success: true, id, message: "Audit event recorded" });
+      }
+
+      case "SCHEDULE_INTERVIEW": {
+        const id = payload.id || `int-${Date.now()}`;
+        const token = payload.token || `tok_int_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        await sql`
+          INSERT INTO workforce_interviews (
+            id, tenant_slug, tenant_id, candidate_id, candidate_name, applied_role,
+            stage, scheduled_start, scheduled_end, meeting_url, location_details,
+            panel_members, status, interviewer_notes, score, token
+          ) VALUES (
+            ${id}, ${cleanSlug}, ${cleanSlug}, ${payload.candidateId}, ${payload.candidateName},
+            ${payload.appliedRole}, ${payload.stage || "technical"}, ${payload.scheduledStart},
+            ${payload.scheduledEnd}, ${payload.meetingUrl || ""}, ${payload.locationDetails || ""},
+            ${JSON.stringify(payload.panelMembers || [])}, 'scheduled', ${payload.interviewerNotes || ""},
+            ${payload.score ?? null}, ${token}
+          );
+        `;
+        await sql`
+          UPDATE workforce_candidates
+          SET stage = 'interview',
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${payload.candidateId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+        const auditId = `audit-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${auditId}, ${cleanSlug}, ${cleanSlug}, 'candidate', ${payload.candidateId},
+            'INTERVIEW_SCHEDULED', ${payload.actorName || "Talent Lead"},
+            ${JSON.stringify({ interviewId: id, stage: payload.stage, scheduledStart: payload.scheduledStart })}
+          );
+        `;
+        return NextResponse.json({ success: true, id, token, message: "Interview scheduled successfully" });
+      }
+
+      case "UPDATE_INTERVIEW_STATUS": {
+        await sql`
+          UPDATE workforce_interviews
+          SET status = COALESCE(${payload.status}, status),
+              score = COALESCE(${payload.score ?? null}, score),
+              interviewer_notes = COALESCE(${payload.interviewerNotes}, interviewer_notes)
+          WHERE (id = ${payload.interviewId} OR token = ${payload.interviewId}) AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+        if (payload.score != null && payload.candidateId) {
+          await sql`
+            UPDATE workforce_candidates
+            SET score = GREATEST(score, ${payload.score}),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ${payload.candidateId} AND LOWER(tenant_slug) = ${cleanSlug};
+          `;
+        }
+        return NextResponse.json({ success: true, message: "Interview evaluation saved" });
+      }
+
+      case "ISSUE_OFFER": {
+        const id = payload.id || `offer-${Date.now()}`;
+        const token = payload.token || `tok_offer_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        await sql`
+          INSERT INTO workforce_offers (
+            id, tenant_slug, tenant_id, candidate_id, candidate_name, candidate_email,
+            role_category, offered_designation, department, monthly_stipend_salary,
+            allowances, total_monthly, start_date, expiry_date, offer_letter_text,
+            token, status
+          ) VALUES (
+            ${id}, ${cleanSlug}, ${cleanSlug}, ${payload.candidateId}, ${payload.candidateName},
+            ${payload.candidateEmail}, ${payload.roleCategory || "employee"}, ${payload.offeredDesignation},
+            ${payload.department}, ${payload.monthlyStipendSalary || 0}, ${payload.allowances || 0},
+            ${payload.totalMonthly || 0}, ${payload.startDate}, ${payload.expiryDate},
+            ${payload.offerLetterText}, ${token}, 'issued'
+          );
+        `;
+        await sql`
+          UPDATE workforce_candidates
+          SET stage = 'offer_issued',
+              offer_amount = ${payload.totalMonthly || 0},
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${payload.candidateId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+        const auditId = `audit-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${auditId}, ${cleanSlug}, ${cleanSlug}, 'candidate', ${payload.candidateId},
+            'OFFER_ISSUED', ${payload.actorName || "Talent Lead"},
+            ${JSON.stringify({ offerId: id, totalMonthly: payload.totalMonthly, offeredDesignation: payload.offeredDesignation })}
+          );
+        `;
+        return NextResponse.json({ success: true, id, token, message: "Offer issued successfully" });
+      }
+
+      case "ACCEPT_OFFER": {
+        await sql`
+          UPDATE workforce_offers
+          SET status = 'accepted',
+              accepted_at = CURRENT_TIMESTAMP,
+              candidate_signature = ${payload.signature || "Candidate Electronic Signature"}
+          WHERE token = ${payload.token} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+        if (payload.candidateId) {
+          await sql`
+            UPDATE workforce_candidates
+            SET stage = 'offer_accepted',
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ${payload.candidateId} AND LOWER(tenant_slug) = ${cleanSlug};
+          `;
+          const auditId = `audit-${Date.now()}`;
+          await sql`
+            INSERT INTO workforce_audit_logs (
+              id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+            ) VALUES (
+              ${auditId}, ${cleanSlug}, ${cleanSlug}, 'candidate', ${payload.candidateId},
+              'OFFER_ACCEPTED', ${payload.candidateName || "Candidate"},
+              ${JSON.stringify({ token: payload.token, signature: payload.signature })}
+            );
+          `;
+        }
+        return NextResponse.json({ success: true, message: "Offer letter signed & accepted" });
+      }
+
+      case "DECLINE_OFFER": {
+        await sql`
+          UPDATE workforce_offers
+          SET status = 'declined'
+          WHERE token = ${payload.token} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+        if (payload.candidateId) {
+          const auditId = `audit-${Date.now()}`;
+          await sql`
+            INSERT INTO workforce_audit_logs (
+              id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+            ) VALUES (
+              ${auditId}, ${cleanSlug}, ${cleanSlug}, 'candidate', ${payload.candidateId},
+              'OFFER_DECLINED', ${payload.candidateName || "Candidate"},
+              ${JSON.stringify({ token: payload.token, reason: payload.reason || "Declined by candidate" })}
+            );
+          `;
+        }
+        return NextResponse.json({ success: true, message: "Offer declined" });
       }
 
       default:

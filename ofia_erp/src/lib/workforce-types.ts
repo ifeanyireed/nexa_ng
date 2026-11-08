@@ -297,6 +297,45 @@ export interface WorkforceAuditLog {
   createdAt: string;
 }
 
+export interface WorkforceInterview {
+  id: string;
+  candidateId: string;
+  candidateName: string;
+  appliedRole: string;
+  stage: "preliminary" | "technical" | "partner" | "final";
+  scheduledStart: string;
+  scheduledEnd: string;
+  meetingUrl?: string;
+  locationDetails?: string;
+  panelMembers: { name: string; designation: string }[];
+  status: "scheduled" | "completed" | "cancelled";
+  interviewerNotes?: string;
+  score?: number;
+  token: string;
+  createdAt: string;
+}
+
+export interface WorkforceOffer {
+  id: string;
+  candidateId: string;
+  candidateName: string;
+  candidateEmail: string;
+  roleCategory: WorkforceRoleCategory;
+  offeredDesignation: string;
+  department: string;
+  monthlyStipendSalary: number;
+  allowances: number;
+  totalMonthly: number;
+  startDate: string;
+  expiryDate: string;
+  offerLetterText: string;
+  token: string;
+  status: "issued" | "accepted" | "declined" | "expired";
+  acceptedAt?: string;
+  candidateSignature?: string;
+  createdAt: string;
+}
+
 export interface WorkforceKpis {
   totalWorkforce: number;
   activeEmployees: number;

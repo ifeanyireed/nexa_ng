@@ -24,6 +24,8 @@ import {
   WorkforceBranch,
   WorkforceDocument,
   WorkforceAuditLog,
+  WorkforceInterview,
+  WorkforceOffer,
 } from "./workforce-types";
 import {
   INITIAL_JOB_OPENINGS,
@@ -46,6 +48,8 @@ import {
   INITIAL_BRANCHES,
   INITIAL_DOCUMENTS,
   INITIAL_AUDIT_LOGS,
+  INITIAL_INTERVIEWS,
+  INITIAL_OFFERS,
 } from "./workforce-defaults";
 import { extractSubdomainOrParam } from "./tenant-context";
 
@@ -93,6 +97,8 @@ export function useWorkforceManager() {
   const [branches, setBranches] = useState<WorkforceBranch[]>(INITIAL_BRANCHES);
   const [documents, setDocuments] = useState<WorkforceDocument[]>(INITIAL_DOCUMENTS);
   const [auditLogs, setAuditLogs] = useState<WorkforceAuditLog[]>(INITIAL_AUDIT_LOGS);
+  const [interviews, setInterviews] = useState<WorkforceInterview[]>(INITIAL_INTERVIEWS);
+  const [offers, setOffers] = useState<WorkforceOffer[]>(INITIAL_OFFERS);
 
   // Save changes to localStorage cache
   const saveLocalCache = useCallback(
@@ -120,6 +126,8 @@ export function useWorkforceManager() {
           branches: overrides?.branches ?? branches,
           documents: overrides?.documents ?? documents,
           auditLogs: overrides?.auditLogs ?? auditLogs,
+          interviews: overrides?.interviews ?? interviews,
+          offers: overrides?.offers ?? offers,
         };
         localStorage.setItem(`ofia_workforce_data_${tenantSlug}`, JSON.stringify(dataToSave));
       } catch (e) {
@@ -148,6 +156,8 @@ export function useWorkforceManager() {
       branches,
       documents,
       auditLogs,
+      interviews,
+      offers,
     ]
   );
 
@@ -188,6 +198,8 @@ export function useWorkforceManager() {
           if (Array.isArray(data.branches) && data.branches.length > 0) setBranches(data.branches);
           if (Array.isArray(data.documents) && data.documents.length > 0) setDocuments(data.documents);
           if (Array.isArray(data.auditLogs) && data.auditLogs.length > 0) setAuditLogs(data.auditLogs);
+          if (Array.isArray(data.interviews) && data.interviews.length > 0) setInterviews(data.interviews);
+          if (Array.isArray(data.offers) && data.offers.length > 0) setOffers(data.offers);
         }
       }
     } catch (err) {
@@ -246,6 +258,12 @@ export function useWorkforceManager() {
           if (parsed.tickets) setTickets(parsed.tickets);
           if (parsed.workLogs) setWorkLogs(parsed.workLogs);
           if (parsed.compensationScales) setCompensationScales(parsed.compensationScales);
+          if (parsed.departments) setDepartments(parsed.departments);
+          if (parsed.branches) setBranches(parsed.branches);
+          if (parsed.documents) setDocuments(parsed.documents);
+          if (parsed.auditLogs) setAuditLogs(parsed.auditLogs);
+          if (parsed.interviews) setInterviews(parsed.interviews);
+          if (parsed.offers) setOffers(parsed.offers);
         }
       } catch (e) {
         console.warn("Failed to parse cached workforce data", e);
@@ -732,6 +750,120 @@ export function useWorkforceManager() {
     [saveLocalCache, mutateBackend]
   );
 
+  const scheduleInterview = useCallback(
+    (interview: Omit<WorkforceInterview, "id" | "token" | "createdAt" | "status">) => {
+      const id = `int-${Date.now()}`;
+      const token = `tok_int_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const newInterview: WorkforceInterview = {
+        ...interview,
+        id,
+        token,
+        status: "scheduled",
+        createdAt: new Date().toLocaleString(),
+      };
+      setInterviews((prev) => {
+        const updated = [newInterview, ...prev];
+        saveLocalCache({ interviews: updated });
+        return updated;
+      });
+      setCandidates((prev) => {
+        const updated = prev.map((c) =>
+          c.id === interview.candidateId ? { ...c, stage: "interview" as ApplicationStage } : c
+        );
+        saveLocalCache({ candidates: updated });
+        return updated;
+      });
+      mutateBackend("SCHEDULE_INTERVIEW", { ...newInterview, actorName: "Talent Acquisition" });
+      return { id, token };
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const updateInterviewStatus = useCallback(
+    (interviewId: string, status: "scheduled" | "completed" | "cancelled", score?: number, notes?: string) => {
+      setInterviews((prev) => {
+        const updated = prev.map((i) =>
+          i.id === interviewId || i.token === interviewId
+            ? { ...i, status, score: score ?? i.score, interviewerNotes: notes ?? i.interviewerNotes }
+            : i
+        );
+        saveLocalCache({ interviews: updated });
+        return updated;
+      });
+      mutateBackend("UPDATE_INTERVIEW_STATUS", { interviewId, status, score, interviewerNotes: notes });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const issueOffer = useCallback(
+    (offer: Omit<WorkforceOffer, "id" | "token" | "createdAt" | "status">) => {
+      const id = `offer-${Date.now()}`;
+      const token = `tok_offer_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const newOffer: WorkforceOffer = {
+        ...offer,
+        id,
+        token,
+        status: "issued",
+        createdAt: new Date().toLocaleString(),
+      };
+      setOffers((prev) => {
+        const updated = [newOffer, ...prev];
+        saveLocalCache({ offers: updated });
+        return updated;
+      });
+      setCandidates((prev) => {
+        const updated = prev.map((c) =>
+          c.id === offer.candidateId
+            ? { ...c, stage: "offer_issued" as ApplicationStage, offerAmount: offer.totalMonthly }
+            : c
+        );
+        saveLocalCache({ candidates: updated });
+        return updated;
+      });
+      mutateBackend("ISSUE_OFFER", { ...newOffer, actorName: "Talent Acquisition" });
+      return { id, token };
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const acceptOffer = useCallback(
+    (token: string, candidateSignature: string, candidateId?: string) => {
+      const acceptedAt = new Date().toISOString();
+      setOffers((prev) => {
+        const updated = prev.map((o) =>
+          o.token === token ? { ...o, status: "accepted" as const, acceptedAt, candidateSignature } : o
+        );
+        saveLocalCache({ offers: updated });
+        return updated;
+      });
+      if (candidateId) {
+        setCandidates((prev) => {
+          const updated = prev.map((c) =>
+            c.id === candidateId ? { ...c, stage: "offer_accepted" as ApplicationStage } : c
+          );
+          saveLocalCache({ candidates: updated });
+          return updated;
+        });
+      }
+      mutateBackend("ACCEPT_OFFER", { token, signature: candidateSignature, candidateId });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const declineOffer = useCallback(
+    (token: string, reason?: string, candidateId?: string) => {
+      setOffers((prev) => {
+        const updated = prev.map((o) =>
+          o.token === token ? { ...o, status: "declined" as const } : o
+        );
+        saveLocalCache({ offers: updated });
+        return updated;
+      });
+      mutateBackend("DECLINE_OFFER", { token, reason, candidateId });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
   // Real-time KPI calculations
   const kpis: WorkforceKpis = useMemo(() => {
     const total = people.length;
@@ -798,11 +930,18 @@ export function useWorkforceManager() {
     branches,
     documents,
     auditLogs,
+    interviews,
+    offers,
     // Action dispatchers
     updateCandidateStage,
     submitApplication,
     recordCandidateAssessment,
     convertCandidateToPerson,
+    scheduleInterview,
+    updateInterviewStatus,
+    issueOffer,
+    acceptOffer,
+    declineOffer,
     addPerson,
     addCourse,
     gradeAssignment,

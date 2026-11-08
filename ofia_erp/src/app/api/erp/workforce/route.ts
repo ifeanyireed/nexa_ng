@@ -24,6 +24,7 @@ import {
   WorkforceAuditLog,
   WorkforceInterview,
   WorkforceOffer,
+  WorkforceOnboardingPacket,
 } from "@/lib/workforce-types";
 import {
   INITIAL_JOB_OPENINGS,
@@ -48,6 +49,7 @@ import {
   INITIAL_AUDIT_LOGS,
   INITIAL_INTERVIEWS,
   INITIAL_OFFERS,
+  INITIAL_ONBOARDING_PACKETS,
 } from "@/lib/workforce-defaults";
 
 function getTenantKey(request: Request): string | null {
@@ -508,6 +510,36 @@ async function ensureWorkforceTables(sql: any, tenantSlug: string) {
         CREATE INDEX IF NOT EXISTS idx_wf_offers_tenant_created ON workforce_offers(LOWER(tenant_slug), created_at DESC);
         CREATE INDEX IF NOT EXISTS idx_wf_offers_token ON workforce_offers(LOWER(tenant_slug), token);
 
+        CREATE TABLE IF NOT EXISTS workforce_onboarding_packets (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(191) NOT NULL,
+          tenant_id VARCHAR(191) DEFAULT '',
+          candidate_id VARCHAR(64) NOT NULL,
+          person_id VARCHAR(64) DEFAULT '',
+          candidate_name VARCHAR(255) NOT NULL,
+          candidate_email VARCHAR(255) NOT NULL,
+          designation VARCHAR(255) NOT NULL,
+          department VARCHAR(100) NOT NULL,
+          role_category VARCHAR(50) NOT NULL DEFAULT 'employee',
+          token VARCHAR(128) NOT NULL,
+          status VARCHAR(50) NOT NULL DEFAULT 'pending_intake',
+          nin VARCHAR(50) DEFAULT '',
+          bvn VARCHAR(50) DEFAULT '',
+          residential_address TEXT DEFAULT '',
+          bank_details JSONB DEFAULT '{}'::jsonb,
+          next_of_kin JSONB DEFAULT '{}'::jsonb,
+          equipment_requisition JSONB DEFAULT '{}'::jsonb,
+          system_account JSONB DEFAULT '{}'::jsonb,
+          documents_submitted JSONB DEFAULT '{}'::jsonb,
+          submitted_at TIMESTAMPTZ DEFAULT NULL,
+          approved_at TIMESTAMPTZ DEFAULT NULL,
+          provisioned_at TIMESTAMPTZ DEFAULT NULL,
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_wf_onb_tenant_created ON workforce_onboarding_packets(LOWER(tenant_slug), created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_wf_onb_token ON workforce_onboarding_packets(LOWER(tenant_slug), token);
+
         ALTER TABLE workforce_people ADD COLUMN IF NOT EXISTS residential_address TEXT DEFAULT '';
         ALTER TABLE workforce_people ADD COLUMN IF NOT EXISTS emergency_contact JSONB DEFAULT '{}'::jsonb;
         ALTER TABLE workforce_people ADD COLUMN IF NOT EXISTS education JSONB DEFAULT '[]'::jsonb;
@@ -844,6 +876,32 @@ async function ensureWorkforceTables(sql: any, tenantSlug: string) {
         `;
       }
     }
+
+    // Check if onboarding packets table has data, seed if empty
+    const existingPackets = await sql`
+      SELECT COUNT(*)::int as cnt FROM workforce_onboarding_packets
+      WHERE LOWER(tenant_slug) = ${cleanSlug};
+    `;
+
+    if (Number(existingPackets[0]?.cnt || 0) === 0) {
+      for (const p of INITIAL_ONBOARDING_PACKETS) {
+        await sql`
+          INSERT INTO workforce_onboarding_packets (
+            id, tenant_slug, tenant_id, candidate_id, person_id, candidate_name,
+            candidate_email, designation, department, role_category, token, status,
+            nin, bvn, residential_address, bank_details, next_of_kin, equipment_requisition,
+            system_account, documents_submitted, submitted_at
+          ) VALUES (
+            ${p.id}, ${cleanSlug}, ${cleanSlug}, ${p.candidateId}, ${p.personId || ""}, ${p.candidateName},
+            ${p.candidateEmail}, ${p.designation}, ${p.department}, ${p.roleCategory}, ${p.token}, ${p.status},
+            ${p.nin || ""}, ${p.bvn || ""}, ${p.residentialAddress || ""},
+            ${JSON.stringify(p.bankDetails || {})}, ${JSON.stringify(p.nextOfKin || {})},
+            ${JSON.stringify(p.equipmentRequisition || {})}, ${JSON.stringify(p.systemAccount || {})},
+            ${JSON.stringify(p.documentsSubmitted || {})}, ${p.submittedAt || null}
+          ) ON CONFLICT (id) DO NOTHING;
+        `;
+      }
+    }
   } catch (err: any) {
     console.warn(`[Workforce DB] Initial seed notice for '${cleanSlug}':`, err.message);
   }
@@ -888,6 +946,7 @@ export async function GET(request: Request) {
       auditLogsRows,
       interviewsRows,
       offersRows,
+      onboardingRows,
     ] = await Promise.all([
       sql`SELECT * FROM workforce_job_openings WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
       sql`SELECT * FROM workforce_candidates WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
@@ -911,6 +970,7 @@ export async function GET(request: Request) {
       sql`SELECT * FROM workforce_audit_logs WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC LIMIT 100;`,
       sql`SELECT * FROM workforce_interviews WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY scheduled_start ASC;`,
       sql`SELECT * FROM workforce_offers WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
+      sql`SELECT * FROM workforce_onboarding_packets WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
     ]);
 
     // Map rows to typed models
@@ -1223,6 +1283,31 @@ export async function GET(request: Request) {
       createdAt: r.created_at ? new Date(r.created_at).toLocaleString() : "",
     }));
 
+    const onboardingPackets: WorkforceOnboardingPacket[] = onboardingRows.map((r: any) => ({
+      id: r.id,
+      candidateId: r.candidate_id,
+      personId: r.person_id || undefined,
+      candidateName: r.candidate_name,
+      candidateEmail: r.candidate_email,
+      designation: r.designation,
+      department: r.department,
+      roleCategory: r.role_category,
+      token: r.token,
+      status: r.status,
+      nin: r.nin || undefined,
+      bvn: r.bvn || undefined,
+      residentialAddress: r.residential_address || undefined,
+      bankDetails: typeof r.bank_details === "object" && r.bank_details !== null && r.bank_details.bankName ? r.bank_details : undefined,
+      nextOfKin: typeof r.next_of_kin === "object" && r.next_of_kin !== null && r.next_of_kin.name ? r.next_of_kin : undefined,
+      equipmentRequisition: typeof r.equipment_requisition === "object" && r.equipment_requisition !== null ? r.equipment_requisition : undefined,
+      systemAccount: typeof r.system_account === "object" && r.system_account !== null ? r.system_account : undefined,
+      documentsSubmitted: typeof r.documents_submitted === "object" && r.documents_submitted !== null ? r.documents_submitted : undefined,
+      submittedAt: r.submitted_at ? new Date(r.submitted_at).toISOString() : undefined,
+      approvedAt: r.approved_at ? new Date(r.approved_at).toISOString() : undefined,
+      provisionedAt: r.provisioned_at ? new Date(r.provisioned_at).toISOString() : undefined,
+      createdAt: r.created_at ? new Date(r.created_at).toLocaleString() : "",
+    }));
+
     // Dynamic KPI Computation
     const totalWorkforce = people.length;
     const activeEmployees = people.filter((p) => p.role === "employee").length;
@@ -1290,6 +1375,7 @@ export async function GET(request: Request) {
       auditLogs,
       interviews,
       offers,
+      onboardingPackets,
       courses,
       assignments,
       tasks,
@@ -1952,6 +2038,21 @@ export async function POST(request: Request) {
               ${JSON.stringify({ token: payload.token, signature: payload.signature })}
             );
           `;
+
+          // Auto-initiate onboarding packet if not existing
+          const onbId = `onb-${Date.now()}`;
+          const onbToken = `tok_onb_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+          await sql`
+            INSERT INTO workforce_onboarding_packets (
+              id, tenant_slug, tenant_id, candidate_id, candidate_name, candidate_email,
+              designation, department, role_category, token, status
+            ) VALUES (
+              ${onbId}, ${cleanSlug}, ${cleanSlug}, ${payload.candidateId},
+              ${payload.candidateName || "New Hire"}, ${payload.candidateEmail || ""},
+              ${payload.offeredDesignation || "Team Member"}, ${payload.department || "General"},
+              ${payload.roleCategory || "employee"}, ${onbToken}, 'pending_intake'
+            );
+          `;
         }
         return NextResponse.json({ success: true, message: "Offer letter signed & accepted" });
       }
@@ -1975,6 +2076,143 @@ export async function POST(request: Request) {
           `;
         }
         return NextResponse.json({ success: true, message: "Offer declined" });
+      }
+
+      case "INITIATE_ONBOARDING": {
+        const id = payload.id || `onb-${Date.now()}`;
+        const token = payload.token || `tok_onb_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        await sql`
+          INSERT INTO workforce_onboarding_packets (
+            id, tenant_slug, tenant_id, candidate_id, person_id, candidate_name,
+            candidate_email, designation, department, role_category, token, status,
+            equipment_requisition, system_account
+          ) VALUES (
+            ${id}, ${cleanSlug}, ${cleanSlug}, ${payload.candidateId}, ${payload.personId || ""},
+            ${payload.candidateName}, ${payload.candidateEmail}, ${payload.designation},
+            ${payload.department}, ${payload.roleCategory || "employee"}, ${token}, 'pending_intake',
+            ${JSON.stringify(payload.equipmentRequisition || {})},
+            ${JSON.stringify(payload.systemAccount || {})}
+          );
+        `;
+        const auditId = `audit-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${auditId}, ${cleanSlug}, ${cleanSlug}, 'onboarding', ${id},
+            'ONBOARDING_INITIATED', ${payload.actorName || "Talent Operations"},
+            ${JSON.stringify({ candidateId: payload.candidateId, designation: payload.designation })}
+          );
+        `;
+        return NextResponse.json({ success: true, id, token, message: "Onboarding initiated successfully" });
+      }
+
+      case "SUBMIT_ONBOARDING_DOSSIER": {
+        await sql`
+          UPDATE workforce_onboarding_packets
+          SET nin = COALESCE(${payload.nin}, nin),
+              bvn = COALESCE(${payload.bvn}, bvn),
+              residential_address = COALESCE(${payload.residentialAddress}, residential_address),
+              bank_details = COALESCE(${payload.bankDetails ? JSON.stringify(payload.bankDetails) : null}::jsonb, bank_details),
+              next_of_kin = COALESCE(${payload.nextOfKin ? JSON.stringify(payload.nextOfKin) : null}::jsonb, next_of_kin),
+              equipment_requisition = COALESCE(${payload.equipmentRequisition ? JSON.stringify(payload.equipmentRequisition) : null}::jsonb, equipment_requisition),
+              documents_submitted = COALESCE(${payload.documentsSubmitted ? JSON.stringify(payload.documentsSubmitted) : null}::jsonb, documents_submitted),
+              status = 'in_review',
+              submitted_at = CURRENT_TIMESTAMP
+          WHERE token = ${payload.token} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+        const auditId = `audit-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${auditId}, ${cleanSlug}, ${cleanSlug}, 'onboarding', ${payload.token},
+            'ONBOARDING_DOSSIER_SUBMITTED', ${payload.candidateName || "Candidate"},
+            ${JSON.stringify({ token: payload.token, submittedAt: new Date().toISOString() })}
+          );
+        `;
+        return NextResponse.json({ success: true, message: "Onboarding packet submitted for HR review" });
+      }
+
+      case "APPROVE_ONBOARDING_DOSSIER": {
+        await sql`
+          UPDATE workforce_onboarding_packets
+          SET status = 'approved',
+              approved_at = CURRENT_TIMESTAMP
+          WHERE (id = ${payload.packetId} OR token = ${payload.packetId}) AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+        const auditId = `audit-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${auditId}, ${cleanSlug}, ${cleanSlug}, 'onboarding', ${payload.packetId},
+            'ONBOARDING_APPROVED', ${payload.actorName || "HR Lead"},
+            ${JSON.stringify({ packetId: payload.packetId })}
+          );
+        `;
+        return NextResponse.json({ success: true, message: "Onboarding packet approved" });
+      }
+
+      case "PROVISION_SYSTEM_USER": {
+        const personId = payload.personId || `per-${Date.now()}`;
+        const corporateEmail = payload.corporateEmail || `${payload.candidateName.toLowerCase().replace(/\s+/g, ".")}@ofia.ng`;
+
+        await sql`
+          UPDATE workforce_onboarding_packets
+          SET status = 'provisioned',
+              person_id = ${personId},
+              provisioned_at = CURRENT_TIMESTAMP,
+              system_account = jsonb_set(
+                COALESCE(system_account, '{}'::jsonb),
+                '{isProvisioned}',
+                'true'::jsonb
+              )
+          WHERE (id = ${payload.packetId} OR token = ${payload.packetId}) AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+
+        await sql`
+          INSERT INTO workforce_people (
+            id, tenant_slug, tenant_id, name, email, phone, role, designation,
+            department, status, location, join_date, residential_address, manager_name
+          ) VALUES (
+            ${personId}, ${cleanSlug}, ${cleanSlug}, ${payload.candidateName},
+            ${corporateEmail}, ${payload.phone || ""}, ${payload.roleCategory || "employee"},
+            ${payload.designation}, ${payload.department}, 'active',
+            ${payload.location || "Lagos HQ"}, ${new Date().toISOString().split("T")[0]},
+            ${payload.residentialAddress || ""}, ${payload.managerName || "HR Lead"}
+          ) ON CONFLICT (id) DO UPDATE SET
+            status = 'active',
+            email = EXCLUDED.email,
+            designation = EXCLUDED.designation,
+            department = EXCLUDED.department;
+        `;
+
+        if (payload.candidateId) {
+          await sql`
+            UPDATE workforce_candidates
+            SET stage = 'onboarded',
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ${payload.candidateId} AND LOWER(tenant_slug) = ${cleanSlug};
+          `;
+        }
+
+        const auditId = `audit-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${auditId}, ${cleanSlug}, ${cleanSlug}, 'person', ${personId},
+            'SYSTEM_USER_PROVISIONED', ${payload.actorName || "IT & People Ops"},
+            ${JSON.stringify({ corporateEmail, designation: payload.designation, accessRole: payload.accessRole })}
+          );
+        `;
+        return NextResponse.json({
+          success: true,
+          personId,
+          corporateEmail,
+          message: "System user provisioned and personnel profile activated",
+        });
       }
 
       default:

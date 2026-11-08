@@ -26,6 +26,8 @@ import {
   WorkforceAuditLog,
   WorkforceInterview,
   WorkforceOffer,
+  WorkforceOnboardingPacket,
+  WorkforceRoleCategory,
 } from "./workforce-types";
 import {
   INITIAL_JOB_OPENINGS,
@@ -50,6 +52,7 @@ import {
   INITIAL_AUDIT_LOGS,
   INITIAL_INTERVIEWS,
   INITIAL_OFFERS,
+  INITIAL_ONBOARDING_PACKETS,
 } from "./workforce-defaults";
 import { extractSubdomainOrParam } from "./tenant-context";
 
@@ -99,6 +102,7 @@ export function useWorkforceManager() {
   const [auditLogs, setAuditLogs] = useState<WorkforceAuditLog[]>(INITIAL_AUDIT_LOGS);
   const [interviews, setInterviews] = useState<WorkforceInterview[]>(INITIAL_INTERVIEWS);
   const [offers, setOffers] = useState<WorkforceOffer[]>(INITIAL_OFFERS);
+  const [onboardingPackets, setOnboardingPackets] = useState<WorkforceOnboardingPacket[]>(INITIAL_ONBOARDING_PACKETS);
 
   // Save changes to localStorage cache
   const saveLocalCache = useCallback(
@@ -128,6 +132,7 @@ export function useWorkforceManager() {
           auditLogs: overrides?.auditLogs ?? auditLogs,
           interviews: overrides?.interviews ?? interviews,
           offers: overrides?.offers ?? offers,
+          onboardingPackets: overrides?.onboardingPackets ?? onboardingPackets,
         };
         localStorage.setItem(`ofia_workforce_data_${tenantSlug}`, JSON.stringify(dataToSave));
       } catch (e) {
@@ -158,6 +163,7 @@ export function useWorkforceManager() {
       auditLogs,
       interviews,
       offers,
+      onboardingPackets,
     ]
   );
 
@@ -200,6 +206,7 @@ export function useWorkforceManager() {
           if (Array.isArray(data.auditLogs) && data.auditLogs.length > 0) setAuditLogs(data.auditLogs);
           if (Array.isArray(data.interviews) && data.interviews.length > 0) setInterviews(data.interviews);
           if (Array.isArray(data.offers) && data.offers.length > 0) setOffers(data.offers);
+          if (Array.isArray(data.onboardingPackets) && data.onboardingPackets.length > 0) setOnboardingPackets(data.onboardingPackets);
         }
       }
     } catch (err) {
@@ -264,6 +271,7 @@ export function useWorkforceManager() {
           if (parsed.auditLogs) setAuditLogs(parsed.auditLogs);
           if (parsed.interviews) setInterviews(parsed.interviews);
           if (parsed.offers) setOffers(parsed.offers);
+          if (parsed.onboardingPackets) setOnboardingPackets(parsed.onboardingPackets);
         }
       } catch (e) {
         console.warn("Failed to parse cached workforce data", e);
@@ -845,9 +853,34 @@ export function useWorkforceManager() {
           return updated;
         });
       }
+
+      // Auto-create onboarding packet
+      const targetOffer = offers.find((o) => o.token === token);
+      if (targetOffer) {
+        const onbId = `onb-${Date.now()}`;
+        const onbToken = `tok_onb_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        const newPacket: WorkforceOnboardingPacket = {
+          id: onbId,
+          candidateId: targetOffer.candidateId,
+          candidateName: targetOffer.candidateName,
+          candidateEmail: targetOffer.candidateEmail,
+          designation: targetOffer.offeredDesignation,
+          department: targetOffer.department,
+          roleCategory: targetOffer.roleCategory,
+          token: onbToken,
+          status: "pending_intake",
+          createdAt: new Date().toLocaleString(),
+        };
+        setOnboardingPackets((prev) => {
+          const updated = [newPacket, ...prev];
+          saveLocalCache({ onboardingPackets: updated });
+          return updated;
+        });
+      }
+
       mutateBackend("ACCEPT_OFFER", { token, signature: candidateSignature, candidateId });
     },
-    [saveLocalCache, mutateBackend]
+    [offers, saveLocalCache, mutateBackend]
   );
 
   const declineOffer = useCallback(
@@ -860,6 +893,144 @@ export function useWorkforceManager() {
         return updated;
       });
       mutateBackend("DECLINE_OFFER", { token, reason, candidateId });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  // 1b. Onboarding actions
+  const initiateOnboarding = useCallback(
+    (packet: Omit<WorkforceOnboardingPacket, "id" | "token" | "createdAt" | "status">) => {
+      const id = `onb-${Date.now()}`;
+      const token = `tok_onb_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const newPacket: WorkforceOnboardingPacket = {
+        ...packet,
+        id,
+        token,
+        status: "pending_intake",
+        createdAt: new Date().toLocaleString(),
+      };
+      setOnboardingPackets((prev) => {
+        const updated = [newPacket, ...prev];
+        saveLocalCache({ onboardingPackets: updated });
+        return updated;
+      });
+      mutateBackend("INITIATE_ONBOARDING", { ...newPacket, actorName: "HR Operations" });
+      return { id, token };
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const submitOnboardingDossier = useCallback(
+    (token: string, updates: Partial<WorkforceOnboardingPacket>) => {
+      const submittedAt = new Date().toISOString();
+      setOnboardingPackets((prev) => {
+        const updated = prev.map((p) =>
+          p.token === token
+            ? { ...p, ...updates, status: "in_review" as const, submittedAt }
+            : p
+        );
+        saveLocalCache({ onboardingPackets: updated });
+        return updated;
+      });
+      mutateBackend("SUBMIT_ONBOARDING_DOSSIER", { token, ...updates, submittedAt });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const approveOnboardingDossier = useCallback(
+    (packetId: string, actorName: string = "HR Lead") => {
+      const approvedAt = new Date().toISOString();
+      setOnboardingPackets((prev) => {
+        const updated = prev.map((p) =>
+          p.id === packetId || p.token === packetId
+            ? { ...p, status: "approved" as const, approvedAt }
+            : p
+        );
+        saveLocalCache({ onboardingPackets: updated });
+        return updated;
+      });
+      mutateBackend("APPROVE_ONBOARDING_DOSSIER", { packetId, actorName, approvedAt });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const provisionSystemUser = useCallback(
+    (
+      packetId: string,
+      payload: {
+        candidateName: string;
+        candidateId?: string;
+        corporateEmail: string;
+        designation: string;
+        department: string;
+        roleCategory: WorkforceRoleCategory;
+        accessRole: string;
+        residentialAddress?: string;
+        phone?: string;
+        location?: string;
+      }
+    ) => {
+      const personId = `per-${Date.now()}`;
+      const provisionedAt = new Date().toISOString();
+
+      setOnboardingPackets((prev) => {
+        const updated = prev.map((p) =>
+          p.id === packetId || p.token === packetId
+            ? {
+                ...p,
+                personId,
+                status: "provisioned" as const,
+                provisionedAt,
+                systemAccount: {
+                  corporateEmail: payload.corporateEmail,
+                  accessRole: payload.accessRole,
+                  isProvisioned: true,
+                  provisionedAt,
+                },
+              }
+            : p
+        );
+        saveLocalCache({ onboardingPackets: updated });
+        return updated;
+      });
+
+      const newPerson: WorkforcePerson = {
+        id: personId,
+        name: payload.candidateName,
+        email: payload.corporateEmail,
+        phone: payload.phone || "+234 800 000 0000",
+        role: payload.roleCategory,
+        designation: payload.designation,
+        department: payload.department,
+        status: "active",
+        location: payload.location || "Lagos HQ",
+        joinDate: new Date().toISOString().split("T")[0],
+        managerName: "HR Lead",
+        competencyScore: 85,
+        skills: [{ name: "Enterprise Onboarding", level: "Advanced", verified: true }],
+        activeTasksCount: 0,
+        attendanceRate: 100,
+        residentialAddress: payload.residentialAddress,
+      };
+
+      setPeople((prev) => {
+        const updated = [newPerson, ...prev];
+        saveLocalCache({ people: updated });
+        return updated;
+      });
+
+      if (payload.candidateId) {
+        setCandidates((prev) => {
+          const updated = prev.map((c) =>
+            c.id === payload.candidateId ? { ...c, stage: "onboarded" as ApplicationStage } : c
+          );
+          saveLocalCache({ candidates: updated });
+          return updated;
+        });
+      }
+
+      mutateBackend("PROVISION_SYSTEM_USER", { packetId, personId, ...payload });
+      return personId;
     },
     [saveLocalCache, mutateBackend]
   );
@@ -932,6 +1103,7 @@ export function useWorkforceManager() {
     auditLogs,
     interviews,
     offers,
+    onboardingPackets,
     // Action dispatchers
     updateCandidateStage,
     submitApplication,
@@ -942,6 +1114,10 @@ export function useWorkforceManager() {
     issueOffer,
     acceptOffer,
     declineOffer,
+    initiateOnboarding,
+    submitOnboardingDossier,
+    approveOnboardingDossier,
+    provisionSystemUser,
     addPerson,
     addCourse,
     gradeAssignment,

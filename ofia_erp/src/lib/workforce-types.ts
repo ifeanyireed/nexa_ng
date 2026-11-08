@@ -336,6 +336,78 @@ export interface WorkforceOffer {
   createdAt: string;
 }
 
+export type OnboardingStatus =
+  | "pending_intake"
+  | "in_review"
+  | "approved"
+  | "rejected"
+  | "provisioned";
+
+export interface OnboardingBankDetails {
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  pfaName?: string;
+  rsaPin?: string;
+}
+
+export interface OnboardingNextOfKin {
+  name: string;
+  relationship: string;
+  phone: string;
+  address?: string;
+}
+
+export interface OnboardingEquipmentRequisition {
+  laptopPreference: "MacBook Pro / M-Series" | "Lenovo ThinkPad X1" | "Dell XPS Enterprise" | "Bring Your Own Device (BYOD)";
+  requiresMonitor: boolean;
+  requiresSecurityKey: boolean;
+  assetTag?: string;
+  serialNumber?: string;
+  dispatchStatus: "pending" | "assigned" | "dispatched" | "received";
+}
+
+export interface OnboardingSystemAccount {
+  corporateEmail: string;
+  initialPassword?: string;
+  accessRole: string;
+  isProvisioned: boolean;
+  provisionedAt?: string;
+}
+
+export interface OnboardingDocumentsSubmitted {
+  offerLetterSigned: boolean;
+  proofOfAddress: boolean;
+  nyscCertificate: boolean;
+  governmentId: boolean;
+  passportPhoto: boolean;
+}
+
+export interface WorkforceOnboardingPacket {
+  id: string;
+  candidateId: string;
+  personId?: string;
+  candidateName: string;
+  candidateEmail: string;
+  designation: string;
+  department: string;
+  roleCategory: WorkforceRoleCategory;
+  token: string;
+  status: OnboardingStatus;
+  nin?: string;
+  bvn?: string;
+  residentialAddress?: string;
+  bankDetails?: OnboardingBankDetails;
+  nextOfKin?: OnboardingNextOfKin;
+  equipmentRequisition?: OnboardingEquipmentRequisition;
+  systemAccount?: OnboardingSystemAccount;
+  documentsSubmitted?: OnboardingDocumentsSubmitted;
+  submittedAt?: string;
+  approvedAt?: string;
+  provisionedAt?: string;
+  createdAt: string;
+}
+
 export interface WorkforceKpis {
   totalWorkforce: number;
   activeEmployees: number;

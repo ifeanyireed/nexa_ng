@@ -17,6 +17,8 @@ import {
   CompensationScale,
   WorkforceDepartment,
   WorkforceBranch,
+  WorkforceDocument,
+  WorkforceAuditLog,
 } from "./workforce-types";
 
 export const INITIAL_JOB_OPENINGS: JobOpening[] = [
@@ -919,4 +921,113 @@ export const INITIAL_BRANCHES: WorkforceBranch[] = [
     managerName: "Ngozi Adeleke",
   },
 ];
+
+export const INITIAL_DOCUMENTS: WorkforceDocument[] = [
+  {
+    id: "doc-01",
+    personId: "person-01",
+    documentType: "cv",
+    title: "Tunde_Bakare_Principal_Architect_CV.pdf",
+    fileUrl: "https://documents.ofia.ng/vault/cv/tunde_bakare_cv.pdf",
+    fileSizeBytes: 2450000,
+    uploadedBy: "Tunde Bakare",
+    verified: true,
+    createdAt: "2025-01-10 10:30 AM",
+  },
+  {
+    id: "doc-02",
+    personId: "person-01",
+    documentType: "contract",
+    title: "Ofia_Executive_Employment_Agreement_2025.pdf",
+    fileUrl: "https://documents.ofia.ng/vault/contracts/tunde_bakare_contract.pdf",
+    fileSizeBytes: 1840000,
+    uploadedBy: "People Department",
+    verified: true,
+    createdAt: "2025-01-12 02:15 PM",
+  },
+  {
+    id: "doc-03",
+    personId: "person-01",
+    documentType: "nda",
+    title: "Proprietary_IP_and_Non_Disclosure_Deed.pdf",
+    fileUrl: "https://documents.ofia.ng/vault/legal/tunde_bakare_nda.pdf",
+    fileSizeBytes: 950000,
+    uploadedBy: "Legal & Compliance",
+    verified: true,
+    createdAt: "2025-01-12 02:20 PM",
+  },
+  {
+    id: "doc-04",
+    personId: "person-03",
+    documentType: "cv",
+    title: "Kalu_Uche_Software_Eng_Intern_Resume.pdf",
+    fileUrl: "https://documents.ofia.ng/vault/cv/kalu_uche_resume.pdf",
+    fileSizeBytes: 1240000,
+    uploadedBy: "Kalu Uche",
+    verified: true,
+    createdAt: "2027-02-01 09:12 AM",
+  },
+  {
+    id: "doc-05",
+    personId: "person-03",
+    documentType: "contract",
+    title: "Ofia_Graduate_Internship_Fellowship_Agreement.pdf",
+    fileUrl: "https://documents.ofia.ng/vault/contracts/kalu_uche_internship_deed.pdf",
+    fileSizeBytes: 1100000,
+    uploadedBy: "Talent Operations",
+    verified: true,
+    createdAt: "2027-02-01 11:45 AM",
+  },
+  {
+    id: "doc-06",
+    personId: "person-03",
+    documentType: "certificate",
+    title: "BSc_Computer_Science_Degree_Certificate_UNILAG.pdf",
+    fileUrl: "https://documents.ofia.ng/vault/credentials/kalu_uche_degree.pdf",
+    fileSizeBytes: 3400000,
+    uploadedBy: "Kalu Uche",
+    verified: true,
+    createdAt: "2027-02-02 04:30 PM",
+  },
+];
+
+export const INITIAL_AUDIT_LOGS: WorkforceAuditLog[] = [
+  {
+    id: "audit-01",
+    entityType: "person",
+    entityId: "person-03",
+    action: "ONBOARDED_TO_WORKFORCE",
+    actorName: "Tunde Bakare",
+    changes: { role: "intern", designation: "Full Stack Engineering Intern", department: "Technology" },
+    createdAt: "2027-02-01 09:30 AM",
+  },
+  {
+    id: "audit-02",
+    entityType: "person",
+    entityId: "person-03",
+    action: "DEPLOYED_TO_CLIENT",
+    actorName: "Ngozi Adeleke",
+    changes: { client: "Prime Logistics Ltd", role: "Junior Cloud & Systems Engineer", allocation: 100 },
+    createdAt: "2027-03-01 10:00 AM",
+  },
+  {
+    id: "audit-03",
+    entityType: "person",
+    entityId: "person-01",
+    action: "DEPARTMENT_HEAD_ASSIGNED",
+    actorName: "Ifeanyi Felix",
+    changes: { department: "Technology", head: "Tunde Bakare" },
+    createdAt: "2025-01-15 08:00 AM",
+  },
+  {
+    id: "audit-04",
+    entityType: "person",
+    entityId: "person-03",
+    action: "DOCUMENT_VERIFIED",
+    actorName: "Dayo Oladipo",
+    changes: { document: "BSc_Computer_Science_Degree_Certificate_UNILAG.pdf", status: "VERIFIED" },
+    createdAt: "2027-02-03 01:20 PM",
+  },
+];
+
 

@@ -45,6 +45,28 @@ export interface JobOpening {
   stipendOrSalary: string;
 }
 
+export interface PersonEmergencyContact {
+  name: string;
+  relationship: string;
+  phone: string;
+  email?: string;
+}
+
+export interface PersonEducation {
+  institution: string;
+  degree: string;
+  field: string;
+  year: string;
+}
+
+export interface PersonEmploymentHistory {
+  organization: string;
+  role: string;
+  startDate: string;
+  endDate: string;
+  summary?: string;
+}
+
 export interface WorkforcePerson {
   id: string;
   name: string;
@@ -64,6 +86,10 @@ export interface WorkforcePerson {
   activeTasksCount: number;
   attendanceRate: number;
   avatar?: string;
+  residentialAddress?: string;
+  emergencyContact?: PersonEmergencyContact;
+  education?: PersonEducation[];
+  employmentHistory?: PersonEmploymentHistory[];
 }
 
 export interface AcademyCourse {
@@ -247,6 +273,28 @@ export interface WorkforceBranch {
   address: string;
   isHeadquarters: boolean;
   managerName: string;
+}
+
+export interface WorkforceDocument {
+  id: string;
+  personId: string;
+  documentType: "cv" | "contract" | "nda" | "certificate" | "id_card" | "other";
+  title: string;
+  fileUrl: string;
+  fileSizeBytes: number;
+  uploadedBy: string;
+  verified: boolean;
+  createdAt: string;
+}
+
+export interface WorkforceAuditLog {
+  id: string;
+  entityType: string;
+  entityId: string;
+  action: string;
+  actorName: string;
+  changes: Record<string, any>;
+  createdAt: string;
 }
 
 export interface WorkforceKpis {

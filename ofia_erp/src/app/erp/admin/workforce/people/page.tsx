@@ -233,9 +233,18 @@ export default function PeopleDirectoryPage() {
 
                 <div className="pt-3 border-t border-nexa-border/60 flex items-center justify-between text-xs text-nexa-text-secondary">
                   <span>Score: {person.competencyScore}%</span>
-                  <span className="text-blue-500 font-semibold group-hover:underline flex items-center gap-1">
-                    View Profile &rarr;
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-blue-500 font-semibold group-hover:underline flex items-center gap-1">
+                      Quick View
+                    </span>
+                    <Link
+                      href={`/erp/admin/workforce/people/${person.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-medium hover:bg-emerald-500/20 transition-colors"
+                    >
+                      Full Dossier &rarr;
+                    </Link>
+                  </div>
                 </div>
               </div>
             ))}
@@ -267,12 +276,20 @@ export default function PeopleDirectoryPage() {
                     <p className="text-sm text-nexa-text-secondary">{selectedPerson.designation} · {selectedPerson.department}</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setSelectedPerson(null)}
-                  className="p-1 rounded-lg hover:bg-nexa-surface/80 text-nexa-text-secondary"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/erp/admin/workforce/people/${selectedPerson.id}`}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm"
+                  >
+                    Open Full 14-Tab Dossier &rarr;
+                  </Link>
+                  <button
+                    onClick={() => setSelectedPerson(null)}
+                    className="p-1 rounded-lg hover:bg-nexa-surface/80 text-nexa-text-secondary"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               {/* TABS */}

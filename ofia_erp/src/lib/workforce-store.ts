@@ -22,6 +22,8 @@ import {
   ApplicationStage,
   WorkforceDepartment,
   WorkforceBranch,
+  WorkforceDocument,
+  WorkforceAuditLog,
 } from "./workforce-types";
 import {
   INITIAL_JOB_OPENINGS,
@@ -42,6 +44,8 @@ import {
   INITIAL_SCALES,
   INITIAL_DEPARTMENTS,
   INITIAL_BRANCHES,
+  INITIAL_DOCUMENTS,
+  INITIAL_AUDIT_LOGS,
 } from "./workforce-defaults";
 import { extractSubdomainOrParam } from "./tenant-context";
 
@@ -87,6 +91,8 @@ export function useWorkforceManager() {
   const [compensationScales, setCompensationScales] = useState<CompensationScale[]>(INITIAL_SCALES);
   const [departments, setDepartments] = useState<WorkforceDepartment[]>(INITIAL_DEPARTMENTS);
   const [branches, setBranches] = useState<WorkforceBranch[]>(INITIAL_BRANCHES);
+  const [documents, setDocuments] = useState<WorkforceDocument[]>(INITIAL_DOCUMENTS);
+  const [auditLogs, setAuditLogs] = useState<WorkforceAuditLog[]>(INITIAL_AUDIT_LOGS);
 
   // Save changes to localStorage cache
   const saveLocalCache = useCallback(
@@ -112,6 +118,8 @@ export function useWorkforceManager() {
           compensationScales: overrides?.compensationScales ?? compensationScales,
           departments: overrides?.departments ?? departments,
           branches: overrides?.branches ?? branches,
+          documents: overrides?.documents ?? documents,
+          auditLogs: overrides?.auditLogs ?? auditLogs,
         };
         localStorage.setItem(`ofia_workforce_data_${tenantSlug}`, JSON.stringify(dataToSave));
       } catch (e) {
@@ -138,6 +146,8 @@ export function useWorkforceManager() {
       compensationScales,
       departments,
       branches,
+      documents,
+      auditLogs,
     ]
   );
 
@@ -176,6 +186,8 @@ export function useWorkforceManager() {
           if (Array.isArray(data.compensationScales) && data.compensationScales.length > 0) setCompensationScales(data.compensationScales);
           if (Array.isArray(data.departments) && data.departments.length > 0) setDepartments(data.departments);
           if (Array.isArray(data.branches) && data.branches.length > 0) setBranches(data.branches);
+          if (Array.isArray(data.documents) && data.documents.length > 0) setDocuments(data.documents);
+          if (Array.isArray(data.auditLogs) && data.auditLogs.length > 0) setAuditLogs(data.auditLogs);
         }
       }
     } catch (err) {
@@ -659,6 +671,67 @@ export function useWorkforceManager() {
     [saveLocalCache, mutateBackend]
   );
 
+  // 10. Document, Dossier Profile & Audit actions
+  const uploadDocument = useCallback(
+    (doc: WorkforceDocument) => {
+      setDocuments((prev) => {
+        const updated = [doc, ...prev];
+        saveLocalCache({ documents: updated });
+        return updated;
+      });
+      mutateBackend("UPLOAD_DOCUMENT", doc);
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const verifyDocument = useCallback(
+    (documentId: string, verifiedBy: string = "Compliance Officer") => {
+      setDocuments((prev) => {
+        const updated = prev.map((d) => (d.id === documentId ? { ...d, verified: true } : d));
+        saveLocalCache({ documents: updated });
+        return updated;
+      });
+      mutateBackend("VERIFY_DOCUMENT", { documentId, verifiedBy });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const deleteDocument = useCallback(
+    (documentId: string) => {
+      setDocuments((prev) => {
+        const updated = prev.filter((d) => d.id !== documentId);
+        saveLocalCache({ documents: updated });
+        return updated;
+      });
+      mutateBackend("DELETE_DOCUMENT", { documentId });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const updatePersonProfile = useCallback(
+    (personId: string, updates: Partial<WorkforcePerson>, actorName: string = "HR Officer") => {
+      setPeople((prev) => {
+        const updated = prev.map((p) => (p.id === personId ? { ...p, ...updates } : p));
+        saveLocalCache({ people: updated });
+        return updated;
+      });
+      mutateBackend("UPDATE_PERSON_PROFILE", { personId, actorName, ...updates });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const recordAuditLog = useCallback(
+    (log: WorkforceAuditLog) => {
+      setAuditLogs((prev) => {
+        const updated = [log, ...prev];
+        saveLocalCache({ auditLogs: updated });
+        return updated;
+      });
+      mutateBackend("RECORD_AUDIT_LOG", log);
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
   // Real-time KPI calculations
   const kpis: WorkforceKpis = useMemo(() => {
     const total = people.length;
@@ -723,6 +796,8 @@ export function useWorkforceManager() {
     compensationScales,
     departments,
     branches,
+    documents,
+    auditLogs,
     // Action dispatchers
     updateCandidateStage,
     submitApplication,
@@ -750,5 +825,10 @@ export function useWorkforceManager() {
     createBranch,
     updateBranch,
     deleteBranch,
+    uploadDocument,
+    verifyDocument,
+    deleteDocument,
+    updatePersonProfile,
+    recordAuditLog,
   };
 }

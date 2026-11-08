@@ -20,6 +20,8 @@ import {
   WorkforceKpis,
   WorkforceDepartment,
   WorkforceBranch,
+  WorkforceDocument,
+  WorkforceAuditLog,
 } from "@/lib/workforce-types";
 import {
   INITIAL_JOB_OPENINGS,
@@ -40,6 +42,8 @@ import {
   INITIAL_SCALES,
   INITIAL_DEPARTMENTS,
   INITIAL_BRANCHES,
+  INITIAL_DOCUMENTS,
+  INITIAL_AUDIT_LOGS,
 } from "@/lib/workforce-defaults";
 
 function getTenantKey(request: Request): string | null {
@@ -420,6 +424,41 @@ async function ensureWorkforceTables(sql: any, tenantSlug: string) {
         );
 
         CREATE INDEX IF NOT EXISTS idx_wf_branch_tenant_created ON workforce_branches(LOWER(tenant_slug), created_at DESC);
+
+        CREATE TABLE IF NOT EXISTS workforce_documents (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(191) NOT NULL,
+          tenant_id VARCHAR(191) DEFAULT '',
+          person_id VARCHAR(64) NOT NULL,
+          document_type VARCHAR(50) NOT NULL,
+          title VARCHAR(255) NOT NULL,
+          file_url TEXT NOT NULL,
+          file_size_bytes BIGINT DEFAULT 0,
+          uploaded_by VARCHAR(255) NOT NULL,
+          verified BOOLEAN DEFAULT FALSE,
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_wf_docs_tenant_person ON workforce_documents(LOWER(tenant_slug), person_id);
+
+        CREATE TABLE IF NOT EXISTS workforce_audit_logs (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(191) NOT NULL,
+          tenant_id VARCHAR(191) DEFAULT '',
+          entity_type VARCHAR(50) NOT NULL,
+          entity_id VARCHAR(64) NOT NULL,
+          action VARCHAR(100) NOT NULL,
+          actor_name VARCHAR(255) NOT NULL,
+          changes JSONB DEFAULT '{}'::jsonb,
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_wf_audit_tenant_entity ON workforce_audit_logs(LOWER(tenant_slug), entity_id);
+
+        ALTER TABLE workforce_people ADD COLUMN IF NOT EXISTS residential_address TEXT DEFAULT '';
+        ALTER TABLE workforce_people ADD COLUMN IF NOT EXISTS emergency_contact JSONB DEFAULT '{}'::jsonb;
+        ALTER TABLE workforce_people ADD COLUMN IF NOT EXISTS education JSONB DEFAULT '[]'::jsonb;
+        ALTER TABLE workforce_people ADD COLUMN IF NOT EXISTS employment_history JSONB DEFAULT '[]'::jsonb;
       `;
       ensuredTenantDbs.add(cleanSlug);
     } catch (e: any) {
@@ -683,6 +722,37 @@ async function ensureWorkforceTables(sql: any, tenantSlug: string) {
         `;
       }
     }
+
+    // Check if documents table has data, seed if empty
+    const existingDocs = await sql`
+      SELECT COUNT(*)::int as cnt FROM workforce_documents
+      WHERE LOWER(tenant_slug) = ${cleanSlug};
+    `;
+
+    if (Number(existingDocs[0]?.cnt || 0) === 0) {
+      for (const doc of INITIAL_DOCUMENTS) {
+        await sql`
+          INSERT INTO workforce_documents (
+            id, tenant_slug, tenant_id, person_id, document_type, title,
+            file_url, file_size_bytes, uploaded_by, verified
+          ) VALUES (
+            ${doc.id}, ${cleanSlug}, ${cleanSlug}, ${doc.personId}, ${doc.documentType},
+            ${doc.title}, ${doc.fileUrl}, ${doc.fileSizeBytes}, ${doc.uploadedBy}, ${doc.verified}
+          ) ON CONFLICT (id) DO NOTHING;
+        `;
+      }
+
+      for (const a of INITIAL_AUDIT_LOGS) {
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${a.id}, ${cleanSlug}, ${cleanSlug}, ${a.entityType}, ${a.entityId},
+            ${a.action}, ${a.actorName}, ${JSON.stringify(a.changes)}
+          ) ON CONFLICT (id) DO NOTHING;
+        `;
+      }
+    }
   } catch (err: any) {
     console.warn(`[Workforce DB] Initial seed notice for '${cleanSlug}':`, err.message);
   }
@@ -723,6 +793,8 @@ export async function GET(request: Request) {
       scalesRows,
       departmentsRows,
       branchesRows,
+      documentsRows,
+      auditLogsRows,
     ] = await Promise.all([
       sql`SELECT * FROM workforce_job_openings WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
       sql`SELECT * FROM workforce_candidates WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
@@ -742,6 +814,8 @@ export async function GET(request: Request) {
       sql`SELECT * FROM workforce_compensation_scales WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
       sql`SELECT * FROM workforce_departments WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at ASC;`,
       sql`SELECT * FROM workforce_branches WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY is_headquarters DESC, created_at ASC;`,
+      sql`SELECT * FROM workforce_documents WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
+      sql`SELECT * FROM workforce_audit_logs WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC LIMIT 100;`,
     ]);
 
     // Map rows to typed models
@@ -797,6 +871,10 @@ export async function GET(request: Request) {
       activeTasksCount: Number(r.active_tasks_count || 0),
       attendanceRate: Number(r.attendance_rate || 100),
       avatar: r.avatar || undefined,
+      residentialAddress: r.residential_address || undefined,
+      emergencyContact: typeof r.emergency_contact === "object" && r.emergency_contact !== null && r.emergency_contact.name ? r.emergency_contact : undefined,
+      education: Array.isArray(r.education) ? r.education : [],
+      employmentHistory: Array.isArray(r.employment_history) ? r.employment_history : [],
     }));
 
     const courses: AcademyCourse[] = coursesRows.map((r: any) => ({
@@ -989,6 +1067,28 @@ export async function GET(request: Request) {
       managerName: r.manager_name || "Branch Supervisor",
     }));
 
+    const documents: WorkforceDocument[] = documentsRows.map((r: any) => ({
+      id: r.id,
+      personId: r.person_id,
+      documentType: r.document_type,
+      title: r.title,
+      fileUrl: r.file_url,
+      fileSizeBytes: Number(r.file_size_bytes || 0),
+      uploadedBy: r.uploaded_by,
+      verified: Boolean(r.verified),
+      createdAt: r.created_at ? new Date(r.created_at).toLocaleString() : "",
+    }));
+
+    const auditLogs: WorkforceAuditLog[] = auditLogsRows.map((r: any) => ({
+      id: r.id,
+      entityType: r.entity_type,
+      entityId: r.entity_id,
+      action: r.action,
+      actorName: r.actor_name,
+      changes: typeof r.changes === "object" && r.changes !== null ? r.changes : {},
+      createdAt: r.created_at ? new Date(r.created_at).toLocaleString() : "",
+    }));
+
     // Dynamic KPI Computation
     const totalWorkforce = people.length;
     const activeEmployees = people.filter((p) => p.role === "employee").length;
@@ -1052,6 +1152,8 @@ export async function GET(request: Request) {
       people,
       departments,
       branches,
+      documents,
+      auditLogs,
       courses,
       assignments,
       tasks,
@@ -1499,6 +1601,103 @@ export async function POST(request: Request) {
           WHERE id = ${payload.branchId} AND LOWER(tenant_slug) = ${cleanSlug};
         `;
         return NextResponse.json({ success: true, message: "Branch removed" });
+      }
+
+      case "UPLOAD_DOCUMENT": {
+        const id = payload.id || `doc-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_documents (
+            id, tenant_slug, tenant_id, person_id, document_type, title,
+            file_url, file_size_bytes, uploaded_by, verified
+          ) VALUES (
+            ${id}, ${cleanSlug}, ${cleanSlug}, ${payload.personId}, ${payload.documentType || "other"},
+            ${payload.title}, ${payload.fileUrl || ""}, ${payload.fileSizeBytes || 0},
+            ${payload.uploadedBy || "HR Officer"}, ${payload.verified ?? false}
+          );
+        `;
+        const auditId = `audit-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${auditId}, ${cleanSlug}, ${cleanSlug}, 'person', ${payload.personId},
+            'DOCUMENT_UPLOADED', ${payload.uploadedBy || "HR Officer"},
+            ${JSON.stringify({ documentTitle: payload.title, documentType: payload.documentType })}
+          );
+        `;
+        return NextResponse.json({ success: true, id, message: "Document uploaded successfully" });
+      }
+
+      case "VERIFY_DOCUMENT": {
+        await sql`
+          UPDATE workforce_documents
+          SET verified = true
+          WHERE id = ${payload.documentId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+        const auditId = `audit-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${auditId}, ${cleanSlug}, ${cleanSlug}, 'document', ${payload.documentId},
+            'DOCUMENT_VERIFIED', ${payload.verifiedBy || "Compliance Officer"},
+            ${JSON.stringify({ verified: true })}
+          );
+        `;
+        return NextResponse.json({ success: true, message: "Document verified" });
+      }
+
+      case "DELETE_DOCUMENT": {
+        await sql`
+          DELETE FROM workforce_documents
+          WHERE id = ${payload.documentId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+        return NextResponse.json({ success: true, message: "Document removed" });
+      }
+
+      case "UPDATE_PERSON_PROFILE": {
+        await sql`
+          UPDATE workforce_people
+          SET name = COALESCE(${payload.name}, name),
+              phone = COALESCE(${payload.phone}, phone),
+              email = COALESCE(${payload.email}, email),
+              designation = COALESCE(${payload.designation}, designation),
+              department = COALESCE(${payload.department}, department),
+              role = COALESCE(${payload.role}, role),
+              location = COALESCE(${payload.location}, location),
+              status = COALESCE(${payload.status}, status),
+              manager_name = COALESCE(${payload.managerName}, manager_name),
+              residential_address = COALESCE(${payload.residentialAddress}, residential_address),
+              emergency_contact = COALESCE(${payload.emergencyContact ? JSON.stringify(payload.emergencyContact) : null}::jsonb, emergency_contact),
+              education = COALESCE(${payload.education ? JSON.stringify(payload.education) : null}::jsonb, education),
+              employment_history = COALESCE(${payload.employmentHistory ? JSON.stringify(payload.employmentHistory) : null}::jsonb, employment_history),
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${payload.personId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+        const auditId = `audit-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${auditId}, ${cleanSlug}, ${cleanSlug}, 'person', ${payload.personId},
+            'PROFILE_UPDATED', ${payload.actorName || "Admin"},
+            ${JSON.stringify(payload)}
+          );
+        `;
+        return NextResponse.json({ success: true, message: "Personnel dossier updated" });
+      }
+
+      case "RECORD_AUDIT_LOG": {
+        const id = payload.id || `audit-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${id}, ${cleanSlug}, ${cleanSlug}, ${payload.entityType}, ${payload.entityId},
+            ${payload.action}, ${payload.actorName || "System"}, ${JSON.stringify(payload.changes || {})}
+          );
+        `;
+        return NextResponse.json({ success: true, id, message: "Audit event recorded" });
       }
 
       default:

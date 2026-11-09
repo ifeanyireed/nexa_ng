@@ -1067,6 +1067,7 @@ export function ErpAdminShell({
         { label: "Client Portal", href: "/erp/client", icon: <ExternalLink className="w-3.5 h-3.5" />, badge: "External" },
         { label: "Compensation", href: "/erp/admin/workforce/compensation", icon: <DollarSign className="w-3.5 h-3.5" />, badge: "Cost" },
         { label: "Reports & BI", href: "/erp/admin/workforce/reports", icon: <BarChart3 className="w-3.5 h-3.5" /> },
+        { label: "AI Operations", href: "/erp/admin/workforce/ai-operations", icon: <Bot className="w-3.5 h-3.5" />, badge: "AI" },
       ];
     }
 

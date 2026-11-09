@@ -31,6 +31,7 @@ import {
   PerformanceScorecard,
   PerformanceImprovementPlan,
   ClientCsatReview,
+  WorkforceNotification,
 } from "./workforce-types";
 
 export const INITIAL_JOB_OPENINGS: JobOpening[] = [
@@ -1944,6 +1945,53 @@ export const INITIAL_CSAT_REVIEWS: ClientCsatReview[] = [
     overallScorePercent: 94,
     feedbackText: "Chinedu Eze demonstrated exemplary technical mastery in biometric calibration. Term exams proceeded with zero hardware downtime.",
     createdAt: "2027-04-29T11:00:00Z",
+  },
+];
+
+export const INITIAL_NOTIFICATIONS: WorkforceNotification[] = [
+  {
+    id: "notif-01",
+    channel: "email",
+    recipient: "femi.adebayo@gmail.com",
+    eventType: "INTERVIEW_INVITE",
+    subject: "Interview Invitation: 2027 Graduate Tech Internship at Ofia",
+    message: "Dear Femi, your technical interview has been scheduled for May 12, 2027 at 10:00 AM WAT via Google Meet.",
+    status: "delivered",
+    metadata: { interviewId: "intv-01", candidateId: "cand-01" },
+    createdAt: "2027-04-20T09:30:00Z",
+  },
+  {
+    id: "notif-02",
+    channel: "whatsapp",
+    recipient: "+2348031234567",
+    eventType: "OFFER_LETTER",
+    subject: "Congratulations: Formal Employment Offer Issued",
+    message: "Hello Femi, your formal offer letter for Associate Software Engineer is ready for digital signature on the Ofia Candidate Portal.",
+    status: "delivered",
+    metadata: { offerId: "off-01", candidateId: "cand-01" },
+    createdAt: "2027-04-22T14:15:00Z",
+  },
+  {
+    id: "notif-03",
+    channel: "webhook",
+    recipient: "https://api.ofia.ng/webhooks/crm-sync",
+    eventType: "CRM_SYNC",
+    subject: "CRM Closed-Won Deal Auto-Converted to Workforce Request",
+    message: "Contract 'Zenith Core Banking CBT Integration' won by Tunde Bakare auto-generated Workforce Request req-crm-01 with 2 specialist openings.",
+    status: "delivered",
+    metadata: { dealId: "deal-099", clientName: "Zenith Microfinance Bank" },
+    createdAt: "2027-04-25T11:00:00Z",
+  },
+  {
+    id: "notif-04",
+    channel: "sms",
+    recipient: "+2348099887766",
+    eventType: "SLA_BREACH_ALERT",
+    subject: "SLA Critical Alert: Ticket INC-8421 Warning",
+    message: "Warning: Service Ticket INC-8421 for Prime Logistics Ltd has less than 30 minutes remaining before SLA breach. Escalated to Lead Specialist.",
+    status: "delivered",
+    metadata: { ticketNumber: "INC-8421", clientName: "Prime Logistics Ltd" },
+    createdAt: "2027-04-26T16:45:00Z",
   },
 ];
 

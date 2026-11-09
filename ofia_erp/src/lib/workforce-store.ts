@@ -37,6 +37,10 @@ import {
   PerformanceScorecard,
   PerformanceImprovementPlan,
   ClientCsatReview,
+  WorkforceNotification,
+  AiStaffMatchResult,
+  AiParsedCandidate,
+  AiExecutiveBriefing,
   WorkforceCapacitySkillDeficit,
   WorkforceGanttAllocation,
   WorkforceGanttItem,
@@ -74,6 +78,7 @@ import {
   INITIAL_SCORECARDS,
   INITIAL_PIPS,
   INITIAL_CSAT_REVIEWS,
+  INITIAL_NOTIFICATIONS,
 } from "./workforce-defaults";
 import { extractSubdomainOrParam } from "./tenant-context";
 
@@ -133,6 +138,7 @@ export function useWorkforceManager() {
   const [scorecards, setScorecards] = useState<PerformanceScorecard[]>(INITIAL_SCORECARDS);
   const [pips, setPips] = useState<PerformanceImprovementPlan[]>(INITIAL_PIPS);
   const [csatReviews, setCsatReviews] = useState<ClientCsatReview[]>(INITIAL_CSAT_REVIEWS);
+  const [notifications, setNotifications] = useState<WorkforceNotification[]>(INITIAL_NOTIFICATIONS);
 
   // Save changes to localStorage cache
   const saveLocalCache = useCallback(
@@ -153,6 +159,7 @@ export function useWorkforceManager() {
           scorecards: overrides?.scorecards ?? scorecards,
           pips: overrides?.pips ?? pips,
           csatReviews: overrides?.csatReviews ?? csatReviews,
+          notifications: overrides?.notifications ?? notifications,
           assignments: overrides?.assignments ?? assignments,
           tasks: overrides?.tasks ?? tasks,
           attendance: overrides?.attendance ?? attendance,
@@ -204,6 +211,7 @@ export function useWorkforceManager() {
       offers,
       onboardingPackets,
       csatReviews,
+      notifications,
     ]
   );
 
@@ -256,6 +264,7 @@ export function useWorkforceManager() {
           if (Array.isArray(data.scorecards) && data.scorecards.length > 0) setScorecards(data.scorecards);
           if (Array.isArray(data.pips) && data.pips.length > 0) setPips(data.pips);
           if (Array.isArray(data.csatReviews) && data.csatReviews.length > 0) setCsatReviews(data.csatReviews);
+          if (Array.isArray(data.notifications) && data.notifications.length > 0) setNotifications(data.notifications);
         }
       }
     } catch (err) {
@@ -330,6 +339,7 @@ export function useWorkforceManager() {
           if (parsed.interviews) setInterviews(parsed.interviews);
           if (parsed.offers) setOffers(parsed.offers);
           if (parsed.onboardingPackets) setOnboardingPackets(parsed.onboardingPackets);
+          if (parsed.notifications) setNotifications(parsed.notifications);
         }
       } catch (e) {
         console.warn("Failed to parse cached workforce data", e);
@@ -1760,6 +1770,106 @@ export function useWorkforceManager() {
     [saveLocalCache, mutateBackend]
   );
 
+  // Phase 10: Enterprise Integrations, Notifications & AI Operations
+  const dispatchNotification = useCallback(
+    async (notif: Omit<WorkforceNotification, "id" | "createdAt" | "status">) => {
+      const newNotif: WorkforceNotification = {
+        id: `notif-${Date.now()}`,
+        ...notif,
+        status: "delivered",
+        createdAt: new Date().toISOString(),
+      };
+      setNotifications((prev) => {
+        const updated = [newNotif, ...prev];
+        saveLocalCache({ notifications: updated });
+        return updated;
+      });
+      await mutateBackend("DISPATCH_NOTIFICATION", newNotif);
+      return newNotif;
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const convertCrmDealToWorkforce = useCallback(
+    async (deal: { dealId: string; company: string; title: string; value?: string; owner?: string; requiredHeadcount?: number; durationMonths?: number }) => {
+      const activeSlug = tenantSlug || getActiveTenantSlug();
+      const res = await fetch(`/api/erp/workforce?tenant=${encodeURIComponent(activeSlug)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Tenant-Slug": activeSlug },
+        body: JSON.stringify({ action: "CONVERT_CRM_DEAL_TO_WORKFORCE", payload: deal }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        await refreshData();
+      }
+      return data;
+    },
+    [tenantSlug, refreshData]
+  );
+
+  const aiParseResume = useCallback(
+    async (rawText: string, candidateName?: string): Promise<AiParsedCandidate | null> => {
+      const activeSlug = tenantSlug || getActiveTenantSlug();
+      try {
+        const res = await fetch(`/api/erp/workforce?tenant=${encodeURIComponent(activeSlug)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Tenant-Slug": activeSlug },
+          body: JSON.stringify({ action: "AI_PARSE_RESUME", payload: { rawText, candidateName } }),
+        });
+        const data = await res.json();
+        if (data.success && data.parsedCandidate) {
+          return data.parsedCandidate;
+        }
+      } catch (e) {
+        console.warn("AI Resume parse error:", e);
+      }
+      return null;
+    },
+    [tenantSlug]
+  );
+
+  const aiMatchWorkforce = useCallback(
+    async (query: string, requiredSkills?: string[], maxResults?: number): Promise<AiStaffMatchResult[]> => {
+      const activeSlug = tenantSlug || getActiveTenantSlug();
+      try {
+        const res = await fetch(`/api/erp/workforce?tenant=${encodeURIComponent(activeSlug)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Tenant-Slug": activeSlug },
+          body: JSON.stringify({ action: "AI_MATCH_WORKFORCE", payload: { query, requiredSkills, maxResults } }),
+        });
+        const data = await res.json();
+        if (data.success && Array.isArray(data.results)) {
+          return data.results;
+        }
+      } catch (e) {
+        console.warn("AI Workforce match error:", e);
+      }
+      return [];
+    },
+    [tenantSlug]
+  );
+
+  const aiSummarizeDailyOperations = useCallback(
+    async (): Promise<AiExecutiveBriefing | null> => {
+      const activeSlug = tenantSlug || getActiveTenantSlug();
+      try {
+        const res = await fetch(`/api/erp/workforce?tenant=${encodeURIComponent(activeSlug)}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Tenant-Slug": activeSlug },
+          body: JSON.stringify({ action: "AI_SUMMARIZE_DAILY_OPERATIONS", payload: {} }),
+        });
+        const data = await res.json();
+        if (data.success && data.briefing) {
+          return data.briefing;
+        }
+      } catch (e) {
+        console.warn("AI Operations summarize error:", e);
+      }
+      return null;
+    },
+    [tenantSlug]
+  );
+
   // Real-time KPI calculations
   const kpis: WorkforceKpis = useMemo(() => {
     const total = people.length;
@@ -1819,6 +1929,7 @@ export function useWorkforceManager() {
     scorecards,
     pips,
     csatReviews,
+    notifications,
     assignments,
     tasks,
     attendance,
@@ -1884,6 +1995,11 @@ export function useWorkforceManager() {
     clientSignWorkLog,
     submitCsatReview,
     logClientTicket,
+    dispatchNotification,
+    convertCrmDealToWorkforce,
+    aiParseResume,
+    aiMatchWorkforce,
+    aiSummarizeDailyOperations,
     addTicket,
     resolveTicket,
     createDepartment,

@@ -674,3 +674,54 @@ export interface ClientCsatReview {
   createdAt: string;
 }
 
+// ----------------------------------------------------
+// Phase 10: Enterprise Integrations, Notifications & AI
+// ----------------------------------------------------
+
+export interface WorkforceNotification {
+  id: string;
+  channel: "email" | "sms" | "whatsapp" | "webhook";
+  recipient: string;
+  eventType: "INTERVIEW_INVITE" | "OFFER_LETTER" | "SLA_BREACH_ALERT" | "ATTENDANCE_ANOMALY" | "DAILY_DIGEST" | "CRM_SYNC";
+  subject?: string;
+  message: string;
+  status: "delivered" | "pending" | "failed";
+  metadata?: Record<string, any>;
+  createdAt: string;
+}
+
+export interface AiStaffMatchResult {
+  personId: string;
+  personName: string;
+  designation: string;
+  department: string;
+  status: string;
+  matchScorePercent: number;
+  matchedSkills: string[];
+  missingSkills: string[];
+  rationale: string;
+  availabilityStatus: "available" | "deployed" | "partial";
+}
+
+export interface AiParsedCandidate {
+  name: string;
+  email: string;
+  phone: string;
+  appliedRole: string;
+  department: string;
+  experienceYears: number;
+  education: string;
+  skills: string[];
+  score: number;
+  summary: string;
+}
+
+export interface AiExecutiveBriefing {
+  generatedAt: string;
+  operationalHealthScore: number;
+  executiveSummary: string;
+  keyHighlights: string[];
+  slaRisksAndAlerts: string[];
+  recommendedActions: string[];
+}
+

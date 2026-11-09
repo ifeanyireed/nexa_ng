@@ -33,6 +33,9 @@ import {
   CourseCertificate,
   WorkforceProject,
   WorkforceDeliverable,
+  EvaluationCycle,
+  PerformanceScorecard,
+  PerformanceImprovementPlan,
 } from "./workforce-types";
 import {
   INITIAL_JOB_OPENINGS,
@@ -63,6 +66,9 @@ import {
   INITIAL_CERTIFICATES,
   INITIAL_PROJECTS,
   INITIAL_DELIVERABLES,
+  INITIAL_EVALUATION_CYCLES,
+  INITIAL_SCORECARDS,
+  INITIAL_PIPS,
 } from "./workforce-defaults";
 import { extractSubdomainOrParam } from "./tenant-context";
 
@@ -118,6 +124,9 @@ export function useWorkforceManager() {
   const [certificates, setCertificates] = useState<CourseCertificate[]>(INITIAL_CERTIFICATES);
   const [projects, setProjects] = useState<WorkforceProject[]>(INITIAL_PROJECTS);
   const [deliverables, setDeliverables] = useState<WorkforceDeliverable[]>(INITIAL_DELIVERABLES);
+  const [evaluationCycles, setEvaluationCycles] = useState<EvaluationCycle[]>(INITIAL_EVALUATION_CYCLES);
+  const [scorecards, setScorecards] = useState<PerformanceScorecard[]>(INITIAL_SCORECARDS);
+  const [pips, setPips] = useState<PerformanceImprovementPlan[]>(INITIAL_PIPS);
 
   // Save changes to localStorage cache
   const saveLocalCache = useCallback(
@@ -134,6 +143,9 @@ export function useWorkforceManager() {
           certificates: overrides?.certificates ?? certificates,
           projects: overrides?.projects ?? projects,
           deliverables: overrides?.deliverables ?? deliverables,
+          evaluationCycles: overrides?.evaluationCycles ?? evaluationCycles,
+          scorecards: overrides?.scorecards ?? scorecards,
+          pips: overrides?.pips ?? pips,
           assignments: overrides?.assignments ?? assignments,
           tasks: overrides?.tasks ?? tasks,
           attendance: overrides?.attendance ?? attendance,
@@ -232,6 +244,9 @@ export function useWorkforceManager() {
           if (Array.isArray(data.certificates) && data.certificates.length > 0) setCertificates(data.certificates);
           if (Array.isArray(data.projects) && data.projects.length > 0) setProjects(data.projects);
           if (Array.isArray(data.deliverables) && data.deliverables.length > 0) setDeliverables(data.deliverables);
+          if (Array.isArray(data.evaluationCycles) && data.evaluationCycles.length > 0) setEvaluationCycles(data.evaluationCycles);
+          if (Array.isArray(data.scorecards) && data.scorecards.length > 0) setScorecards(data.scorecards);
+          if (Array.isArray(data.pips) && data.pips.length > 0) setPips(data.pips);
         }
       }
     } catch (err) {
@@ -283,6 +298,9 @@ export function useWorkforceManager() {
           if (parsed.certificates) setCertificates(parsed.certificates);
           if (parsed.projects) setProjects(parsed.projects);
           if (parsed.deliverables) setDeliverables(parsed.deliverables);
+          if (parsed.evaluationCycles) setEvaluationCycles(parsed.evaluationCycles);
+          if (parsed.scorecards) setScorecards(parsed.scorecards);
+          if (parsed.pips) setPips(parsed.pips);
           if (parsed.assignments) setAssignments(parsed.assignments);
           if (parsed.tasks) setTasks(parsed.tasks);
           if (parsed.attendance) setAttendance(parsed.attendance);
@@ -869,12 +887,162 @@ export function useWorkforceManager() {
   // 6. Performance actions
   const nominatePromotion = useCallback(
     (nomination: PromotionNomination) => {
+      const fullNomination: PromotionNomination = {
+        ...nomination,
+        id: nomination.id || `promo-${Date.now()}`,
+        status: "under_review",
+      };
       setPromotions((prev) => {
-        const updated = [nomination, ...prev];
+        const updated = [fullNomination, ...prev];
         saveLocalCache({ promotions: updated });
         return updated;
       });
-      mutateBackend("NOMINATE_PROMOTION", nomination);
+      mutateBackend("NOMINATE_PROMOTION", fullNomination);
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const approvePromotion = useCallback(
+    async (promotionId: string, approvedBy: string = "HR Executive Committee") => {
+      const targetPromo = promotions.find((p) => p.id === promotionId);
+      if (!targetPromo) return;
+
+      const nowIso = new Date().toISOString();
+      const updatedPromos = promotions.map((p) =>
+        p.id === promotionId
+          ? {
+              ...p,
+              status: "approved" as const,
+              approvedAt: nowIso,
+              approvedBy,
+            }
+          : p
+      );
+      setPromotions(updatedPromos);
+
+      // Automated promotion state machine: update employee's profile
+      const updatedPeople = people.map((p) => {
+        const isMatch = targetPromo.personId ? p.id === targetPromo.personId : p.name.toLowerCase() === targetPromo.personName.toLowerCase();
+        if (isMatch) {
+          return {
+            ...p,
+            designation: targetPromo.proposedDesignation,
+            role: targetPromo.proposedRole || p.role,
+            competencyScore: Math.max(p.competencyScore, targetPromo.competencyRating),
+          };
+        }
+        return p;
+      });
+      setPeople(updatedPeople);
+
+      saveLocalCache({ promotions: updatedPromos, people: updatedPeople });
+      await mutateBackend("APPROVE_PROMOTION", { promotionId, approvedBy });
+    },
+    [promotions, people, saveLocalCache, mutateBackend]
+  );
+
+  const createEvaluationCycle = useCallback(
+    (cycle: Omit<EvaluationCycle, "id" | "totalReviewsCount" | "completedReviewsCount">) => {
+      const id = `cycle-${Date.now()}`;
+      const newCycle: EvaluationCycle = {
+        ...cycle,
+        id,
+        totalReviewsCount: people.length,
+        completedReviewsCount: 0,
+      };
+      setEvaluationCycles((prev) => {
+        const updated = [newCycle, ...prev];
+        saveLocalCache({ evaluationCycles: updated });
+        return updated;
+      });
+      mutateBackend("CREATE_EVALUATION_CYCLE", newCycle);
+      return id;
+    },
+    [people.length, saveLocalCache, mutateBackend]
+  );
+
+  const updateEvaluationCycleStatus = useCallback(
+    (cycleId: string, status: "upcoming" | "active" | "closed") => {
+      setEvaluationCycles((prev) => {
+        const updated = prev.map((c) => (c.id === cycleId ? { ...c, status } : c));
+        saveLocalCache({ evaluationCycles: updated });
+        return updated;
+      });
+      mutateBackend("UPDATE_EVALUATION_CYCLE_STATUS", { cycleId, status });
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const submitScorecard = useCallback(
+    (scorecard: Omit<PerformanceScorecard, "id" | "submittedAt">) => {
+      const id = `sc-${Date.now()}`;
+      const fullScorecard: PerformanceScorecard = {
+        ...scorecard,
+        id,
+        submittedAt: new Date().toISOString(),
+      };
+
+      setScorecards((prev) => {
+        const updated = [fullScorecard, ...prev];
+        saveLocalCache({ scorecards: updated });
+        return updated;
+      });
+
+      // Increment cycle completed reviews count
+      setEvaluationCycles((prev) => {
+        const updated = prev.map((c) =>
+          c.id === scorecard.cycleId
+            ? { ...c, completedReviewsCount: c.completedReviewsCount + 1 }
+            : c
+        );
+        saveLocalCache({ evaluationCycles: updated });
+        return updated;
+      });
+
+      // Update person's competency score
+      setPeople((prev) => {
+        const updated = prev.map((p) =>
+          p.id === scorecard.personId
+            ? { ...p, competencyScore: Math.max(p.competencyScore, Math.round(scorecard.overallRating)) }
+            : p
+        );
+        saveLocalCache({ people: updated });
+        return updated;
+      });
+
+      mutateBackend("SUBMIT_SCORECARD", fullScorecard);
+      return id;
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const createPip = useCallback(
+    (pip: Omit<PerformanceImprovementPlan, "id" | "createdAt">) => {
+      const id = `pip-${Date.now()}`;
+      const newPip: PerformanceImprovementPlan = {
+        ...pip,
+        id,
+        createdAt: new Date().toISOString(),
+      };
+      setPips((prev) => {
+        const updated = [newPip, ...prev];
+        saveLocalCache({ pips: updated });
+        return updated;
+      });
+      mutateBackend("CREATE_PIP", newPip);
+      return id;
+    },
+    [saveLocalCache, mutateBackend]
+  );
+
+  const updatePip = useCallback(
+    (pipId: string, updates: Partial<PerformanceImprovementPlan>) => {
+      setPips((prev) => {
+        const updated = prev.map((p) => (p.id === pipId ? { ...p, ...updates } : p));
+        saveLocalCache({ pips: updated });
+        return updated;
+      });
+      mutateBackend("UPDATE_PIP", { pipId, ...updates });
     },
     [saveLocalCache, mutateBackend]
   );
@@ -1388,6 +1556,9 @@ export function useWorkforceManager() {
     certificates,
     projects,
     deliverables,
+    evaluationCycles,
+    scorecards,
+    pips,
     assignments,
     tasks,
     attendance,
@@ -1438,6 +1609,12 @@ export function useWorkforceManager() {
     updateLeaveStatus,
     logWorkHours,
     nominatePromotion,
+    approvePromotion,
+    createEvaluationCycle,
+    updateEvaluationCycleStatus,
+    submitScorecard,
+    createPip,
+    updatePip,
     deployPerson,
     addTicket,
     resolveTicket,

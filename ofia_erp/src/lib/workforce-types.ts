@@ -224,14 +224,21 @@ export interface CompetencyMatrixItem {
 
 export interface PromotionNomination {
   id: string;
+  personId?: string;
   personName: string;
   currentDesignation: string;
   proposedDesignation: string;
+  currentRole?: WorkforceRoleCategory;
+  proposedRole?: WorkforceRoleCategory;
   department: string;
   nominatedBy: string;
   tenureMonths: number;
   competencyRating: number;
   status: "under_review" | "approved" | "rejected";
+  approvedAt?: string;
+  approvedBy?: string;
+  justification?: string;
+  newSalaryMonthly?: number;
 }
 
 export interface WorkforceRequest {
@@ -535,5 +542,73 @@ export interface CourseCertificate {
   grade: string;
   verificationHash: string;
   competenciesAwarded: string[];
+}
+
+// ----------------------------------------------------
+// Phase 7: Performance Cycles, 360° Scorecards & PIPs
+// ----------------------------------------------------
+
+export interface EvaluationCycle {
+  id: string;
+  name: string;
+  quarter: "Q1" | "Q2" | "Q3" | "Q4";
+  year: number;
+  startDate: string;
+  endDate: string;
+  status: "upcoming" | "active" | "closed";
+  totalReviewsCount: number;
+  completedReviewsCount: number;
+  description?: string;
+}
+
+export interface ScorecardKpiItem {
+  kpi: string;
+  weight: number;
+  score: number;
+  maxScore: number;
+  comments: string;
+}
+
+export interface PerformanceScorecard {
+  id: string;
+  cycleId: string;
+  cycleName: string;
+  personId: string;
+  personName: string;
+  reviewerId: string;
+  reviewerName: string;
+  reviewerType: "self" | "supervisor" | "peer" | "client";
+  kpiScores: ScorecardKpiItem[];
+  overallRating: number;
+  technicalRating: number;
+  deliveryRating: number;
+  cultureRating: number;
+  strengths: string;
+  areasForImprovement: string;
+  status: "draft" | "submitted" | "signed_off";
+  submittedAt: string;
+}
+
+export interface PipActionItem {
+  id: string;
+  item: string;
+  deadline: string;
+  status: "pending" | "completed";
+}
+
+export interface PerformanceImprovementPlan {
+  id: string;
+  personId: string;
+  personName: string;
+  supervisorId: string;
+  supervisorName: string;
+  reason: string;
+  actionItems: PipActionItem[];
+  startDate: string;
+  endDate: string;
+  reviewFrequency: "weekly" | "bi-weekly" | "monthly";
+  status: "active" | "successful" | "failed" | "extended";
+  outcomeNotes?: string;
+  createdAt: string;
 }
 

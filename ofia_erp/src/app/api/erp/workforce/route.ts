@@ -30,6 +30,9 @@ import {
   CourseCertificate,
   WorkforceProject,
   WorkforceDeliverable,
+  EvaluationCycle,
+  PerformanceScorecard,
+  PerformanceImprovementPlan,
 } from "@/lib/workforce-types";
 import {
   INITIAL_JOB_OPENINGS,
@@ -60,6 +63,9 @@ import {
   INITIAL_CERTIFICATES,
   INITIAL_PROJECTS,
   INITIAL_DELIVERABLES,
+  INITIAL_EVALUATION_CYCLES,
+  INITIAL_SCORECARDS,
+  INITIAL_PIPS,
 } from "@/lib/workforce-defaults";
 
 function getTenantKey(request: Request): string | null {
@@ -667,6 +673,86 @@ async function ensureWorkforceTables(sql: any, tenantSlug: string) {
         ALTER TABLE workforce_tasks ADD COLUMN IF NOT EXISTS actual_hours NUMERIC(6,2) DEFAULT 0;
         ALTER TABLE workforce_tasks ADD COLUMN IF NOT EXISTS assignees JSONB DEFAULT '[]'::jsonb;
         ALTER TABLE workforce_tasks ADD COLUMN IF NOT EXISTS deliverable_id VARCHAR(64) DEFAULT '';
+
+        -- Phase 7: Performance Cycles, 360 Scorecards & PIPs
+        ALTER TABLE workforce_promotions ADD COLUMN IF NOT EXISTS person_id VARCHAR(64) DEFAULT '';
+        ALTER TABLE workforce_promotions ADD COLUMN IF NOT EXISTS current_role VARCHAR(50) DEFAULT '';
+        ALTER TABLE workforce_promotions ADD COLUMN IF NOT EXISTS proposed_role VARCHAR(50) DEFAULT '';
+        ALTER TABLE workforce_promotions ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ DEFAULT NULL;
+        ALTER TABLE workforce_promotions ADD COLUMN IF NOT EXISTS approved_by VARCHAR(255) DEFAULT '';
+        ALTER TABLE workforce_promotions ADD COLUMN IF NOT EXISTS justification TEXT DEFAULT '';
+        ALTER TABLE workforce_promotions ADD COLUMN IF NOT EXISTS new_salary_monthly NUMERIC(15,2) DEFAULT 0;
+
+        CREATE TABLE IF NOT EXISTS workforce_evaluation_cycles (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(191) NOT NULL,
+          tenant_id VARCHAR(191) DEFAULT '',
+          name VARCHAR(255) NOT NULL,
+          quarter VARCHAR(10) NOT NULL,
+          year INT NOT NULL,
+          start_date VARCHAR(50) NOT NULL,
+          end_date VARCHAR(50) NOT NULL,
+          status VARCHAR(50) NOT NULL DEFAULT 'active',
+          total_reviews_count INT NOT NULL DEFAULT 0,
+          completed_reviews_count INT NOT NULL DEFAULT 0,
+          description TEXT DEFAULT '',
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_wf_cycle_tenant_created ON workforce_evaluation_cycles(LOWER(tenant_slug), created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_wf_cycle_tenant_status ON workforce_evaluation_cycles(LOWER(tenant_slug), status);
+
+        CREATE TABLE IF NOT EXISTS workforce_scorecards (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(191) NOT NULL,
+          tenant_id VARCHAR(191) DEFAULT '',
+          cycle_id VARCHAR(64) NOT NULL,
+          cycle_name VARCHAR(255) NOT NULL,
+          person_id VARCHAR(64) NOT NULL,
+          person_name VARCHAR(255) NOT NULL,
+          reviewer_id VARCHAR(64) NOT NULL,
+          reviewer_name VARCHAR(255) NOT NULL,
+          reviewer_type VARCHAR(50) NOT NULL DEFAULT 'peer',
+          kpi_scores JSONB DEFAULT '[]'::jsonb,
+          overall_rating NUMERIC(5,2) NOT NULL DEFAULT 0,
+          technical_rating NUMERIC(5,2) NOT NULL DEFAULT 0,
+          delivery_rating NUMERIC(5,2) NOT NULL DEFAULT 0,
+          culture_rating NUMERIC(5,2) NOT NULL DEFAULT 0,
+          strengths TEXT DEFAULT '',
+          areas_for_improvement TEXT DEFAULT '',
+          status VARCHAR(50) NOT NULL DEFAULT 'submitted',
+          submitted_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_wf_score_tenant_cycle ON workforce_scorecards(LOWER(tenant_slug), cycle_id);
+        CREATE INDEX IF NOT EXISTS idx_wf_score_tenant_person ON workforce_scorecards(LOWER(tenant_slug), person_id);
+        CREATE INDEX IF NOT EXISTS idx_wf_score_tenant_created ON workforce_scorecards(LOWER(tenant_slug), created_at DESC);
+
+        CREATE TABLE IF NOT EXISTS workforce_pips (
+          id VARCHAR(64) PRIMARY KEY,
+          tenant_slug VARCHAR(191) NOT NULL,
+          tenant_id VARCHAR(191) DEFAULT '',
+          person_id VARCHAR(64) NOT NULL,
+          person_name VARCHAR(255) NOT NULL,
+          supervisor_id VARCHAR(64) NOT NULL,
+          supervisor_name VARCHAR(255) NOT NULL,
+          reason TEXT NOT NULL,
+          action_items JSONB DEFAULT '[]'::jsonb,
+          start_date VARCHAR(50) NOT NULL,
+          end_date VARCHAR(50) NOT NULL,
+          review_frequency VARCHAR(50) NOT NULL DEFAULT 'weekly',
+          status VARCHAR(50) NOT NULL DEFAULT 'active',
+          outcome_notes TEXT DEFAULT '',
+          created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_wf_pip_tenant_person ON workforce_pips(LOWER(tenant_slug), person_id);
+        CREATE INDEX IF NOT EXISTS idx_wf_pip_tenant_status ON workforce_pips(LOWER(tenant_slug), status);
+        CREATE INDEX IF NOT EXISTS idx_wf_pip_tenant_created ON workforce_pips(LOWER(tenant_slug), created_at DESC);
       `;
       ensuredTenantDbs.add(cleanSlug);
     } catch (e: any) {
@@ -807,11 +893,13 @@ async function ensureWorkforceTables(sql: any, tenantSlug: string) {
       for (const pr of INITIAL_PROMOTIONS) {
         await sql`
           INSERT INTO workforce_promotions (
-            id, tenant_slug, tenant_id, person_name, current_designation,
-            proposed_designation, department, nominated_by, tenure_months, competency_rating, status
+            id, tenant_slug, tenant_id, person_id, person_name, current_designation,
+            proposed_designation, current_role, proposed_role, department, nominated_by,
+            tenure_months, competency_rating, status, justification, new_salary_monthly
           ) VALUES (
-            ${pr.id}, ${cleanSlug}, ${cleanSlug}, ${pr.personName}, ${pr.currentDesignation},
-            ${pr.proposedDesignation}, ${pr.department}, ${pr.nominatedBy}, ${pr.tenureMonths}, ${pr.competencyRating}, ${pr.status}
+            ${pr.id}, ${cleanSlug}, ${cleanSlug}, ${pr.personId || ""}, ${pr.personName}, ${pr.currentDesignation},
+            ${pr.proposedDesignation}, ${pr.currentRole || ""}, ${pr.proposedRole || ""}, ${pr.department}, ${pr.nominatedBy},
+            ${pr.tenureMonths}, ${pr.competencyRating}, ${pr.status}, ${pr.justification || ""}, ${pr.newSalaryMonthly || 0}
           ) ON CONFLICT (id) DO NOTHING;
         `;
       }
@@ -1111,6 +1199,56 @@ async function ensureWorkforceTables(sql: any, tenantSlug: string) {
         `;
       }
     }
+
+    // Check if evaluation cycles table has data, seed if empty
+    const existingCycles = await sql`
+      SELECT COUNT(*)::int as cnt FROM workforce_evaluation_cycles
+      WHERE LOWER(tenant_slug) = ${cleanSlug};
+    `;
+
+    if (Number(existingCycles[0]?.cnt || 0) === 0) {
+      for (const cy of INITIAL_EVALUATION_CYCLES) {
+        await sql`
+          INSERT INTO workforce_evaluation_cycles (
+            id, tenant_slug, tenant_id, name, quarter, year,
+            start_date, end_date, status, total_reviews_count, completed_reviews_count, description
+          ) VALUES (
+            ${cy.id}, ${cleanSlug}, ${cleanSlug}, ${cy.name}, ${cy.quarter}, ${cy.year},
+            ${cy.startDate}, ${cy.endDate}, ${cy.status}, ${cy.totalReviewsCount}, ${cy.completedReviewsCount}, ${cy.description || ""}
+          ) ON CONFLICT (id) DO NOTHING;
+        `;
+      }
+
+      for (const sc of INITIAL_SCORECARDS) {
+        await sql`
+          INSERT INTO workforce_scorecards (
+            id, tenant_slug, tenant_id, cycle_id, cycle_name, person_id,
+            person_name, reviewer_id, reviewer_name, reviewer_type, kpi_scores,
+            overall_rating, technical_rating, delivery_rating, culture_rating,
+            strengths, areas_for_improvement, status, submitted_at
+          ) VALUES (
+            ${sc.id}, ${cleanSlug}, ${cleanSlug}, ${sc.cycleId}, ${sc.cycleName}, ${sc.personId},
+            ${sc.personName}, ${sc.reviewerId}, ${sc.reviewerName}, ${sc.reviewerType}, ${JSON.stringify(sc.kpiScores)},
+            ${sc.overallRating}, ${sc.technicalRating}, ${sc.deliveryRating}, ${sc.cultureRating},
+            ${sc.strengths}, ${sc.areasForImprovement}, ${sc.status}, ${sc.submittedAt}
+          ) ON CONFLICT (id) DO NOTHING;
+        `;
+      }
+
+      for (const pip of INITIAL_PIPS) {
+        await sql`
+          INSERT INTO workforce_pips (
+            id, tenant_slug, tenant_id, person_id, person_name, supervisor_id,
+            supervisor_name, reason, action_items, start_date, end_date,
+            review_frequency, status, outcome_notes, created_at
+          ) VALUES (
+            ${pip.id}, ${cleanSlug}, ${cleanSlug}, ${pip.personId}, ${pip.personName}, ${pip.supervisorId},
+            ${pip.supervisorName}, ${pip.reason}, ${JSON.stringify(pip.actionItems)}, ${pip.startDate}, ${pip.endDate},
+            ${pip.reviewFrequency}, ${pip.status}, ${pip.outcomeNotes || ""}, ${pip.createdAt}
+          ) ON CONFLICT (id) DO NOTHING;
+        `;
+      }
+    }
   } catch (err: any) {
     console.warn(`[Workforce DB] Initial seed notice for '${cleanSlug}':`, err.message);
   }
@@ -1161,6 +1299,9 @@ export async function GET(request: Request) {
       certificatesRows,
       projectsRows,
       deliverablesRows,
+      cyclesRows,
+      scorecardsRows,
+      pipsRows,
     ] = await Promise.all([
       sql`SELECT * FROM workforce_job_openings WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
       sql`SELECT * FROM workforce_candidates WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
@@ -1190,6 +1331,9 @@ export async function GET(request: Request) {
       sql`SELECT * FROM workforce_certificates WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
       sql`SELECT * FROM workforce_projects WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
       sql`SELECT * FROM workforce_deliverables WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY submitted_at DESC;`,
+      sql`SELECT * FROM workforce_evaluation_cycles WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY start_date DESC;`,
+      sql`SELECT * FROM workforce_scorecards WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY submitted_at DESC;`,
+      sql`SELECT * FROM workforce_pips WHERE LOWER(tenant_slug) = ${cleanSlug} ORDER BY created_at DESC;`,
     ]);
 
     // Map rows to typed models
@@ -1335,14 +1479,21 @@ export async function GET(request: Request) {
 
     const promotions: PromotionNomination[] = promotionsRows.map((r: any) => ({
       id: r.id,
+      personId: r.person_id || undefined,
       personName: r.person_name,
       currentDesignation: r.current_designation,
       proposedDesignation: r.proposed_designation,
+      currentRole: r.current_role || undefined,
+      proposedRole: r.proposed_role || undefined,
       department: r.department,
       nominatedBy: r.nominated_by,
       tenureMonths: Number(r.tenure_months || 0),
       competencyRating: Number(r.competency_rating || 0),
       status: r.status,
+      approvedAt: r.approved_at ? new Date(r.approved_at).toISOString() : undefined,
+      approvedBy: r.approved_by || undefined,
+      justification: r.justification || undefined,
+      newSalaryMonthly: r.new_salary_monthly != null ? Number(r.new_salary_monthly) : undefined,
     }));
 
     const workforceRequests: WorkforceRequest[] = requestsRows.map((r: any) => ({
@@ -1613,6 +1764,55 @@ export async function GET(request: Request) {
       submittedAt: r.submitted_at ? new Date(r.submitted_at).toISOString() : "",
     }));
 
+    const evaluationCycles: EvaluationCycle[] = cyclesRows.map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      quarter: r.quarter,
+      year: Number(r.year || 2027),
+      startDate: r.start_date,
+      endDate: r.end_date,
+      status: r.status,
+      totalReviewsCount: Number(r.total_reviews_count || 0),
+      completedReviewsCount: Number(r.completed_reviews_count || 0),
+      description: r.description || undefined,
+    }));
+
+    const scorecards: PerformanceScorecard[] = scorecardsRows.map((r: any) => ({
+      id: r.id,
+      cycleId: r.cycle_id,
+      cycleName: r.cycle_name,
+      personId: r.person_id,
+      personName: r.person_name,
+      reviewerId: r.reviewer_id,
+      reviewerName: r.reviewer_name,
+      reviewerType: r.reviewer_type,
+      kpiScores: Array.isArray(r.kpi_scores) ? r.kpi_scores : [],
+      overallRating: Number(r.overall_rating || 0),
+      technicalRating: Number(r.technical_rating || 0),
+      deliveryRating: Number(r.delivery_rating || 0),
+      cultureRating: Number(r.culture_rating || 0),
+      strengths: r.strengths || "",
+      areasForImprovement: r.areas_for_improvement || "",
+      status: r.status,
+      submittedAt: r.submitted_at ? new Date(r.submitted_at).toISOString() : "",
+    }));
+
+    const pips: PerformanceImprovementPlan[] = pipsRows.map((r: any) => ({
+      id: r.id,
+      personId: r.person_id,
+      personName: r.person_name,
+      supervisorId: r.supervisor_id,
+      supervisorName: r.supervisor_name,
+      reason: r.reason,
+      actionItems: Array.isArray(r.action_items) ? r.action_items : [],
+      startDate: r.start_date,
+      endDate: r.end_date,
+      reviewFrequency: r.review_frequency,
+      status: r.status,
+      outcomeNotes: r.outcome_notes || undefined,
+      createdAt: r.created_at ? new Date(r.created_at).toISOString() : "",
+    }));
+
     // Shortcut for public certificate verification
     const certHash = new URL(request.url).searchParams.get("certHash");
     if (certHash) {
@@ -1700,6 +1900,9 @@ export async function GET(request: Request) {
       certificates,
       projects,
       deliverables,
+      evaluationCycles,
+      scorecards,
+      pips,
       assignments,
       tasks,
       attendance,
@@ -2274,15 +2477,238 @@ export async function POST(request: Request) {
         const id = payload.id || `promo-${Date.now()}`;
         await sql`
           INSERT INTO workforce_promotions (
-            id, tenant_slug, tenant_id, person_name, current_designation,
-            proposed_designation, department, nominated_by, tenure_months, competency_rating, status
+            id, tenant_slug, tenant_id, person_id, person_name, current_designation,
+            proposed_designation, current_role, proposed_role, department, nominated_by,
+            tenure_months, competency_rating, status, justification, new_salary_monthly
           ) VALUES (
-            ${id}, ${cleanSlug}, ${cleanSlug}, ${payload.personName}, ${payload.currentDesignation},
-            ${payload.proposedDesignation}, ${payload.department}, ${payload.nominatedBy},
-            ${payload.tenureMonths || 0}, ${payload.competencyRating || 0}, 'under_review'
+            ${id}, ${cleanSlug}, ${cleanSlug}, ${payload.personId || ""}, ${payload.personName}, ${payload.currentDesignation},
+            ${payload.proposedDesignation}, ${payload.currentRole || ""}, ${payload.proposedRole || ""},
+            ${payload.department}, ${payload.nominatedBy}, ${payload.tenureMonths || 0},
+            ${payload.competencyRating || 0}, 'under_review', ${payload.justification || ""}, ${payload.newSalaryMonthly || 0}
           );
         `;
+
+        const auditId = `audit-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${auditId}, ${cleanSlug}, ${cleanSlug}, 'promotion', ${id},
+            'NOMINATION_SUBMITTED', ${payload.nominatedBy || "Manager"},
+            ${JSON.stringify({ personName: payload.personName, proposedDesignation: payload.proposedDesignation })}
+          );
+        `;
+
         return NextResponse.json({ success: true, id, message: "Promotion nominated" });
+      }
+
+      case "APPROVE_PROMOTION": {
+        const promoRows = await sql`
+          SELECT * FROM workforce_promotions
+          WHERE id = ${payload.promotionId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+
+        if (promoRows.length === 0) {
+          return NextResponse.json({ success: false, error: "Promotion nomination not found" }, { status: 404 });
+        }
+
+        const promo = promoRows[0];
+        const approver = payload.approvedBy || "Executive Talent Committee";
+
+        await sql`
+          UPDATE workforce_promotions
+          SET status = 'approved',
+              approved_at = CURRENT_TIMESTAMP,
+              approved_by = ${approver},
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${payload.promotionId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+
+        // Automated Promotion Execution: Update personnel designation, role category, and competency score
+        if (promo.person_id) {
+          await sql`
+            UPDATE workforce_people
+            SET designation = ${promo.proposed_designation},
+                role = CASE WHEN ${promo.proposed_role || ""} != '' THEN ${promo.proposed_role} ELSE role END,
+                competency_score = GREATEST(competency_score, ${promo.competency_rating || 0}),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ${promo.person_id} AND LOWER(tenant_slug) = ${cleanSlug};
+          `;
+        } else {
+          await sql`
+            UPDATE workforce_people
+            SET designation = ${promo.proposed_designation},
+                role = CASE WHEN ${promo.proposed_role || ""} != '' THEN ${promo.proposed_role} ELSE role END,
+                competency_score = GREATEST(competency_score, ${promo.competency_rating || 0}),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE LOWER(name) = LOWER(${promo.person_name}) AND LOWER(tenant_slug) = ${cleanSlug};
+          `;
+        }
+
+        const auditId = `audit-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${auditId}, ${cleanSlug}, ${cleanSlug}, 'promotion', ${payload.promotionId},
+            'PROMOTION_RATIFIED_AND_EXECUTED', ${approver},
+            ${JSON.stringify({
+              personName: promo.person_name,
+              previousDesignation: promo.current_designation,
+              promotedDesignation: promo.proposed_designation,
+              promotedRole: promo.proposed_role || "employee",
+            })}
+          );
+        `;
+
+        return NextResponse.json({
+          success: true,
+          message: `Promotion ratified: ${promo.person_name} transitioned to ${promo.proposed_designation}`,
+        });
+      }
+
+      case "CREATE_EVALUATION_CYCLE": {
+        const id = payload.id || `cycle-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_evaluation_cycles (
+            id, tenant_slug, tenant_id, name, quarter, year,
+            start_date, end_date, status, total_reviews_count, completed_reviews_count, description
+          ) VALUES (
+            ${id}, ${cleanSlug}, ${cleanSlug}, ${payload.name}, ${payload.quarter},
+            ${payload.year || new Date().getFullYear()}, ${payload.startDate}, ${payload.endDate},
+            ${payload.status || "active"}, ${payload.totalReviewsCount || 0}, 0, ${payload.description || ""}
+          );
+        `;
+
+        const auditId = `audit-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${auditId}, ${cleanSlug}, ${cleanSlug}, 'evaluation_cycle', ${id},
+            'EVALUATION_CYCLE_CREATED', ${payload.actorName || "Talent Operations"},
+            ${JSON.stringify({ name: payload.name, quarter: payload.quarter, year: payload.year })}
+          );
+        `;
+
+        return NextResponse.json({ success: true, id, message: "Performance cycle initiated" });
+      }
+
+      case "UPDATE_EVALUATION_CYCLE_STATUS": {
+        await sql`
+          UPDATE workforce_evaluation_cycles
+          SET status = ${payload.status}, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${payload.cycleId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+        return NextResponse.json({ success: true, message: "Performance cycle status updated" });
+      }
+
+      case "SUBMIT_SCORECARD": {
+        const id = payload.id || `sc-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_scorecards (
+            id, tenant_slug, tenant_id, cycle_id, cycle_name, person_id,
+            person_name, reviewer_id, reviewer_name, reviewer_type, kpi_scores,
+            overall_rating, technical_rating, delivery_rating, culture_rating,
+            strengths, areas_for_improvement, status, submitted_at
+          ) VALUES (
+            ${id}, ${cleanSlug}, ${cleanSlug}, ${payload.cycleId}, ${payload.cycleName || "Annual Appraisal"},
+            ${payload.personId}, ${payload.personName}, ${payload.reviewerId || "mgr-01"},
+            ${payload.reviewerName || "Lead Reviewer"}, ${payload.reviewerType || "supervisor"},
+            ${JSON.stringify(payload.kpiScores || [])}, ${payload.overallRating || 0},
+            ${payload.technicalRating || 0}, ${payload.deliveryRating || 0}, ${payload.cultureRating || 0},
+            ${payload.strengths || ""}, ${payload.areasForImprovement || ""}, ${payload.status || "submitted"},
+            CURRENT_TIMESTAMP
+          );
+        `;
+
+        // Increment review completion counter on the evaluation cycle
+        if (payload.cycleId) {
+          await sql`
+            UPDATE workforce_evaluation_cycles
+            SET completed_reviews_count = completed_reviews_count + 1, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ${payload.cycleId} AND LOWER(tenant_slug) = ${cleanSlug};
+          `;
+        }
+
+        // Dynamically recalculate & update person's competency score
+        if (payload.personId && payload.overallRating) {
+          await sql`
+            UPDATE workforce_people
+            SET competency_score = GREATEST(competency_score, ROUND(${payload.overallRating})),
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ${payload.personId} AND LOWER(tenant_slug) = ${cleanSlug};
+          `;
+        }
+
+        const auditId = `audit-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${auditId}, ${cleanSlug}, ${cleanSlug}, 'scorecard', ${id},
+            'SCORECARD_SUBMITTED', ${payload.reviewerName || "Reviewer"},
+            ${JSON.stringify({ personName: payload.personName, rating: payload.overallRating, reviewerType: payload.reviewerType })}
+          );
+        `;
+
+        return NextResponse.json({ success: true, id, message: "360° scorecard recorded & competency matrix updated" });
+      }
+
+      case "CREATE_PIP": {
+        const id = payload.id || `pip-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_pips (
+            id, tenant_slug, tenant_id, person_id, person_name, supervisor_id,
+            supervisor_name, reason, action_items, start_date, end_date,
+            review_frequency, status, outcome_notes
+          ) VALUES (
+            ${id}, ${cleanSlug}, ${cleanSlug}, ${payload.personId}, ${payload.personName},
+            ${payload.supervisorId || ""}, ${payload.supervisorName || "Supervisor"},
+            ${payload.reason}, ${JSON.stringify(payload.actionItems || [])},
+            ${payload.startDate}, ${payload.endDate}, ${payload.reviewFrequency || "weekly"},
+            ${payload.status || "active"}, ${payload.outcomeNotes || ""}
+          );
+        `;
+
+        const auditId = `audit-${Date.now()}`;
+        await sql`
+          INSERT INTO workforce_audit_logs (
+            id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+          ) VALUES (
+            ${auditId}, ${cleanSlug}, ${cleanSlug}, 'pip', ${id},
+            'PIP_INITIATED', ${payload.supervisorName || "Supervisor"},
+            ${JSON.stringify({ personName: payload.personName, reason: payload.reason, endDate: payload.endDate })}
+          );
+        `;
+
+        return NextResponse.json({ success: true, id, message: "Performance Improvement Plan registered" });
+      }
+
+      case "UPDATE_PIP": {
+        await sql`
+          UPDATE workforce_pips
+          SET action_items = COALESCE(${payload.actionItems ? JSON.stringify(payload.actionItems) : null}::jsonb, action_items),
+              status = COALESCE(${payload.status ?? null}, status),
+              outcome_notes = COALESCE(${payload.outcomeNotes ?? null}, outcome_notes),
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${payload.pipId} AND LOWER(tenant_slug) = ${cleanSlug};
+        `;
+
+        if (payload.status) {
+          const auditId = `audit-${Date.now()}`;
+          await sql`
+            INSERT INTO workforce_audit_logs (
+              id, tenant_slug, tenant_id, entity_type, entity_id, action, actor_name, changes
+            ) VALUES (
+              ${auditId}, ${cleanSlug}, ${cleanSlug}, 'pip', ${payload.pipId},
+              'PIP_STATUS_MODIFIED', ${payload.actorName || "Talent Ops"},
+              ${JSON.stringify({ newStatus: payload.status, outcomeNotes: payload.outcomeNotes })}
+            );
+          `;
+        }
+
+        return NextResponse.json({ success: true, message: "Performance Improvement Plan updated" });
       }
 
       case "CREATE_WORKFORCE_REQUEST": {
